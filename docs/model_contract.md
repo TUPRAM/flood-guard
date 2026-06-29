@@ -127,3 +127,26 @@ The fixture access model compares shortest travel time to any selected facility 
 Blank disrupted edge times mean the edge is closed in the disrupted scenario.
 
 A population node counts as losing X-minute access only when it had normal access within X minutes and disrupted access is missing or greater than X minutes.
+
+## 6. Scenario Mode
+
+Scenario mode reruns access loss and equity gap on fixture data only.
+
+Current scenarios:
+
+- `add_temporary_shelter`: append a temporary shelter at node `P2A`.
+- `close_road`: close the disrupted edge between `P2B` and `F1` unless overridden.
+
+Scenario summaries compare baseline and scenario 30-minute access loss and max numeric equity-gap ratio.
+
+## 7. FPPS Weight Sensitivity
+
+Sensitivity analysis reruns FPPS with deterministic weight scenarios:
+
+- `default`
+- `access_heavy`
+- `exposure_heavy`
+- `road_heavy`
+- `vulnerability_heavy`
+
+Weights are normalized before scoring. Rank instability is flagged when a subdistrict's rank range across scenarios is at least 2. Sensitivity does not override action class or confidence.

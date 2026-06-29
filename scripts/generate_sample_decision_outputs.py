@@ -14,10 +14,14 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from floodguard.access import calculate_access_loss  # noqa: E402
+from floodguard.briefs import write_action_brief  # noqa: E402
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss  # noqa: E402
 from floodguard.exports import write_priority_geojson, write_road_risk_geojson  # noqa: E402
 from floodguard.road_risk import score_road_disruption  # noqa: E402
+from floodguard.scenarios import run_access_scenario  # noqa: E402
 from floodguard.scoring import score_subdistricts  # noqa: E402
+from floodguard.sensitivity import run_weight_sensitivity, summarize_rank_instability  # noqa: E402
+from floodguard.validation import write_validation_summary  # noqa: E402
 
 
 def main() -> None:
@@ -47,6 +51,22 @@ def main() -> None:
     equity_gap.to_csv(equity_gap_path, index=False)
 
     priority = score_subdistricts(pd.read_csv(fixture_dir / "sample_population.csv"))
+    priority_path = output_dir / "sample_priority_scores.csv"
+    priority.loc[
+        :,
+        [
+            "subdistrict_id",
+            "subdistrict_name",
+            "fpps_0_100",
+            "action_class",
+            "top_reason",
+            "confidence_class",
+            "source_name",
+            "source_timestamp",
+            "assumptions",
+        ],
+    ].to_csv(priority_path, index=False)
+
     write_priority_geojson(
         fixture_dir / "sample_admin.geojson",
         priority,
@@ -58,11 +78,62 @@ def main() -> None:
         output_dir / "road_risk.geojson",
     )
 
+    validation_path = write_validation_summary(
+        priority,
+        road_risk,
+        access_loss,
+        equity_gap,
+        output_dir / "validation_summary.md",
+    )
+    action_brief_path = write_action_brief(
+        priority,
+        road_risk,
+        access_loss,
+        equity_gap,
+        output_dir,
+    )
+
+    population = pd.read_csv(fixture_dir / "sample_population_nodes.csv")
+    edges = pd.read_csv(fixture_dir / "sample_access_edges.csv")
+    facilities = pd.read_csv(fixture_dir / "sample_facilities.csv")
+    scenario_summary_frames: list[pd.DataFrame] = []
+    for scenario_name in ("add_temporary_shelter", "close_road"):
+        scenario = run_access_scenario(
+            population,
+            edges,
+            facilities,
+            scenario_name,
+            baseline_access=access_loss,
+            baseline_equity=equity_gap,
+        )
+        scenario_access_path = output_dir / f"sample_scenario_{scenario_name}_access_loss.csv"
+        scenario_equity_path = output_dir / f"sample_scenario_{scenario_name}_equity_gap.csv"
+        scenario["access_loss"].to_csv(scenario_access_path, index=False)
+        scenario["equity_gap"].to_csv(scenario_equity_path, index=False)
+        scenario_summary_frames.append(scenario["scenario_summary"])
+
+    scenario_summary = pd.concat(scenario_summary_frames, ignore_index=True)
+    scenario_summary_path = output_dir / "sample_scenario_summary.csv"
+    scenario_summary.to_csv(scenario_summary_path, index=False)
+
+    sensitivity = run_weight_sensitivity(pd.read_csv(fixture_dir / "sample_population.csv"))
+    sensitivity_path = output_dir / "sample_fpps_sensitivity.csv"
+    sensitivity.to_csv(sensitivity_path, index=False)
+    rank_instability = summarize_rank_instability(sensitivity)
+    rank_instability_path = output_dir / "sample_fpps_rank_instability.csv"
+    rank_instability.to_csv(rank_instability_path, index=False)
+
+    print(f"Wrote {priority_path}")
     print(f"Wrote {road_risk_path}")
     print(f"Wrote {access_loss_path}")
     print(f"Wrote {equity_gap_path}")
     print(f"Wrote {output_dir / 'priority_subdistricts.geojson'}")
     print(f"Wrote {output_dir / 'road_risk.geojson'}")
+    print(f"Wrote {validation_path}")
+    print(f"Wrote {action_brief_path}")
+    print(f"Wrote {scenario_summary_path}")
+    print(f"Wrote {sensitivity_path}")
+    print(f"Wrote {rank_instability_path}")
 
 
 def _geojson_properties(path: Path) -> pd.DataFrame:

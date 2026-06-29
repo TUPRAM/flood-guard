@@ -65,3 +65,27 @@ Generate a simple validation summary with metrics placeholders:
 - score sensitivity
 
 Acceptance: report can be generated from sample fixtures.
+
+## Task 10 - Action Brief Generator
+
+Generate a one-page Markdown action brief for the highest actionable fixture subdistrict.
+
+Acceptance: includes score, action class, top reason, confidence, access loss, equity gap, road risks, assumptions, and recommended actions.
+
+## Task 11 - Scenario Toggle Prototype
+
+Implement fixture-backed `add_temporary_shelter` and `close_road` scenarios.
+
+Acceptance: reruns access loss and equity gap and writes before/after scenario summaries.
+
+## Task 12 - FPPS Sensitivity Analysis
+
+Run deterministic FPPS weight scenarios and flag unstable rankings.
+
+Acceptance: writes sensitivity rows and rank-instability summary from sample fixtures.
+
+## Task 13 - Study-Area Data Inventory
+
+Document real data acquisition needs for Chiang Rai / Mae Sai 2024 and Hat Yai / Songkhla 2025.
+
+Acceptance: inventory is source-backed and explicitly avoids real downloads or remote-sensing model work.

@@ -1,0 +1,6 @@
+subdistrict_id,subdistrict_name,default_rank,best_rank,worst_rank,rank_range,default_action_class,confidence_class,ranking_unstable
+FG-TB-005,Unverified Hillside,1,1,1,0,E,low,False
+FG-TB-001,River Market,2,2,2,0,A,high,False
+FG-TB-002,Bridge Junction,3,3,3,0,B,medium,False
+FG-TB-003,Clinic Basin,4,4,4,0,C,medium,False
+FG-TB-004,Canal Fringe,5,5,5,0,D,high,False

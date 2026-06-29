@@ -10,3 +10,12 @@ Current expected MVP output:
 - `sample_equity_gap.csv`
 - `priority_subdistricts.geojson`
 - `road_risk.geojson`
+- `validation_summary.md`
+- `action_brief_FG-TB-001.md`
+- `sample_scenario_add_temporary_shelter_access_loss.csv`
+- `sample_scenario_add_temporary_shelter_equity_gap.csv`
+- `sample_scenario_close_road_access_loss.csv`
+- `sample_scenario_close_road_equity_gap.csv`
+- `sample_scenario_summary.csv`
+- `sample_fpps_sensitivity.csv`
+- `sample_fpps_rank_instability.csv`

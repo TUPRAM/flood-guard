@@ -8,7 +8,8 @@
         "road_id": "FG-RD-001",
         "road_class": "primary",
         "bridge_flag": false,
-        "subdistrict_id": "FG-TB-001"
+        "subdistrict_id": "FG-TB-001",
+        "surrounding_inundation_0_1": 0.80
       },
       "geometry": {
         "type": "LineString",
@@ -21,7 +22,8 @@
         "road_id": "FG-RD-002",
         "road_class": "secondary",
         "bridge_flag": true,
-        "subdistrict_id": "FG-TB-002"
+        "subdistrict_id": "FG-TB-002",
+        "surrounding_inundation_0_1": 0.65
       },
       "geometry": {
         "type": "LineString",
@@ -34,7 +36,8 @@
         "road_id": "FG-RD-003",
         "road_class": "local",
         "bridge_flag": false,
-        "subdistrict_id": "FG-TB-003"
+        "subdistrict_id": "FG-TB-003",
+        "surrounding_inundation_0_1": 0.35
       },
       "geometry": {
         "type": "LineString",

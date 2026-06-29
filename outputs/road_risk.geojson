@@ -1,0 +1,93 @@
+{
+  "type": "FeatureCollection",
+  "name": "road_risk",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "road_id": "FG-RD-001",
+        "road_class": "primary",
+        "bridge_flag": false,
+        "subdistrict_id": "FG-TB-001",
+        "surrounding_inundation_0_1": 0.8,
+        "road_disruption_probability_0_1": 0.832,
+        "confidence_class": "high",
+        "top_risk_reason": "Highest road-risk driver is flood probability.",
+        "source_name": "synthetic_fixture",
+        "source_timestamp": "2026-06-29T00:00:00Z",
+        "assumptions": "Heuristic road-risk score from flood probability, surrounding inundation, road class, and bridge flag; not an observed closure."
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            100.002,
+            18.01
+          ],
+          [
+            100.018,
+            18.01
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_id": "FG-RD-002",
+        "road_class": "secondary",
+        "bridge_flag": true,
+        "subdistrict_id": "FG-TB-002",
+        "surrounding_inundation_0_1": 0.65,
+        "road_disruption_probability_0_1": 0.717,
+        "confidence_class": "medium",
+        "top_risk_reason": "Highest road-risk driver is flood probability.",
+        "source_name": "synthetic_fixture",
+        "source_timestamp": "2026-06-29T00:00:00Z",
+        "assumptions": "Heuristic road-risk score from flood probability, surrounding inundation, road class, and bridge flag; not an observed closure."
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            100.022,
+            18.01
+          ],
+          [
+            100.038,
+            18.01
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_id": "FG-RD-003",
+        "road_class": "local",
+        "bridge_flag": false,
+        "subdistrict_id": "FG-TB-003",
+        "surrounding_inundation_0_1": 0.35,
+        "road_disruption_probability_0_1": 0.547,
+        "confidence_class": "medium",
+        "top_risk_reason": "Highest road-risk driver is flood probability.",
+        "source_name": "synthetic_fixture",
+        "source_timestamp": "2026-06-29T00:00:00Z",
+        "assumptions": "Heuristic road-risk score from flood probability, surrounding inundation, road class, and bridge flag; not an observed closure."
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            100.004,
+            18.03
+          ],
+          [
+            100.018,
+            18.03
+          ]
+        ]
+      }
+    }
+  ]
+}

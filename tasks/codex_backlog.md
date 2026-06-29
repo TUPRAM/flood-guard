@@ -21,13 +21,13 @@ Implement a simple road-risk function using:
 - surrounding inundation proxy
 - bridge flag if available
 
-Acceptance: outputs segment-level `road_disruption_probability_0_1`.
+Acceptance: outputs segment-level `road_disruption_probability_0_1` from sample fixtures.
 
 ## Task 04 - Access-Loss Prototype
 
 Given a road graph, shelters, hospitals, and population points, compare normal versus disrupted access.
 
-Acceptance: outputs people losing 15-, 30-, and 60-minute access.
+Acceptance: outputs people losing 15-, 30-, and 60-minute access from a deterministic sample graph.
 
 ## Task 05 - Evacuation Equity Gap
 
@@ -35,19 +35,25 @@ Implement vulnerable versus non-vulnerable access-loss rates and ratio.
 
 Acceptance: handles zero denominators and produces interpretation text.
 
-## Task 06 - Action Brief Generator
+## Task 06 - Source Registry
+
+Create a source registry before real study-area data ingestion.
+
+Acceptance: documents candidate sources, licensing/access notes, resolution, time coverage, study-area relevance, and confidence notes.
+
+## Task 07 - Action Brief Generator
 
 Generate a Markdown one-page brief for a selected subdistrict.
 
 Acceptance: includes score, class, reasons, confidence, and recommended actions.
 
-## Task 07 - Dashboard-Ready Export
+## Task 08 - Dashboard-Ready Export
 
 Export priority subdistricts and road-risk segments to GeoJSON.
 
 Acceptance: files open in QGIS or a web-map viewer.
 
-## Task 08 - Validation Report
+## Task 09 - Validation Report
 
 Generate a simple validation summary with metrics placeholders:
 

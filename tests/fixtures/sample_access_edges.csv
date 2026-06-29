@@ -1,0 +1,7 @@
+from_node,to_node,normal_minutes,disrupted_minutes
+P1,F1,10,
+P2A,F1,20,40
+P2B,F1,12,12
+P3,J1,10,10
+J1,F1,20,
+P4,F1,70,

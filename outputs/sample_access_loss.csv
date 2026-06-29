@@ -1,0 +1,5 @@
+subdistrict_id,subdistrict_name,total_population,total_vulnerable_population,total_non_vulnerable_population,people_losing_15_min_access,vulnerable_population_losing_15_min_access,non_vulnerable_population_losing_15_min_access,people_losing_30_min_access,vulnerable_population_losing_30_min_access,non_vulnerable_population_losing_30_min_access,people_losing_60_min_access,vulnerable_population_losing_60_min_access,non_vulnerable_population_losing_60_min_access
+FG-TB-001,River Market,100.0,30.0,70.0,100.0,30.0,70.0,100.0,30.0,70.0,100.0,30.0,70.0
+FG-TB-002,Bridge Junction,80.0,20.0,60.0,0.0,0.0,0.0,30.0,20.0,10.0,0.0,0.0,0.0
+FG-TB-003,Clinic Basin,60.0,20.0,40.0,0.0,0.0,0.0,60.0,20.0,40.0,60.0,20.0,40.0
+FG-TB-004,Canal Fringe,50.0,10.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0

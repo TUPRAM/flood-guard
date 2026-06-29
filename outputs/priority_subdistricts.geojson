@@ -1,0 +1,252 @@
+{
+  "type": "FeatureCollection",
+  "name": "priority_subdistricts",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "subdistrict_id": "FG-TB-001",
+        "subdistrict_name": "River Market",
+        "flood_likelihood_0_100": 88,
+        "exposure_0_100": 86,
+        "access_gap_0_100": 82,
+        "road_criticality_0_100": 64,
+        "vulnerability_context_0_100": 77,
+        "confidence_class": "high",
+        "source_name": "synthetic_fixture",
+        "source_timestamp": "2026-06-29T00:00:00Z",
+        "assumptions": "Open synthetic fixture for FPPS scoring tests",
+        "total_population": 12400,
+        "vulnerable_population": 3100,
+        "fpps_0_100": 81.6,
+        "action_class": "A",
+        "top_reason": "High exposure and access loss require life-safety action."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.0,
+              18.0
+            ],
+            [
+              100.02,
+              18.0
+            ],
+            [
+              100.02,
+              18.02
+            ],
+            [
+              100.0,
+              18.02
+            ],
+            [
+              100.0,
+              18.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "subdistrict_id": "FG-TB-002",
+        "subdistrict_name": "Bridge Junction",
+        "flood_likelihood_0_100": 71,
+        "exposure_0_100": 48,
+        "access_gap_0_100": 62,
+        "road_criticality_0_100": 91,
+        "vulnerability_context_0_100": 45,
+        "confidence_class": "medium",
+        "source_name": "synthetic_fixture",
+        "source_timestamp": "2026-06-29T00:00:00Z",
+        "assumptions": "Open synthetic fixture for FPPS scoring tests",
+        "total_population": 8200,
+        "vulnerable_population": 1460,
+        "fpps_0_100": 63.85,
+        "action_class": "B",
+        "top_reason": "Critical routes and access loss threaten isolation."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.02,
+              18.0
+            ],
+            [
+              100.04,
+              18.0
+            ],
+            [
+              100.04,
+              18.02
+            ],
+            [
+              100.02,
+              18.02
+            ],
+            [
+              100.02,
+              18.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "subdistrict_id": "FG-TB-003",
+        "subdistrict_name": "Clinic Basin",
+        "flood_likelihood_0_100": 68,
+        "exposure_0_100": 67,
+        "access_gap_0_100": 55,
+        "road_criticality_0_100": 44,
+        "vulnerability_context_0_100": 58,
+        "confidence_class": "medium",
+        "source_name": "synthetic_fixture",
+        "source_timestamp": "2026-06-29T00:00:00Z",
+        "assumptions": "Open synthetic fixture for FPPS scoring tests",
+        "total_population": 5600,
+        "vulnerable_population": 1800,
+        "fpps_0_100": 60.55,
+        "action_class": "C",
+        "top_reason": "Exposure and access loss threaten essential services."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.0,
+              18.02
+            ],
+            [
+              100.02,
+              18.02
+            ],
+            [
+              100.02,
+              18.04
+            ],
+            [
+              100.0,
+              18.04
+            ],
+            [
+              100.0,
+              18.02
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "subdistrict_id": "FG-TB-004",
+        "subdistrict_name": "Canal Fringe",
+        "flood_likelihood_0_100": 54,
+        "exposure_0_100": 42,
+        "access_gap_0_100": 28,
+        "road_criticality_0_100": 35,
+        "vulnerability_context_0_100": 50,
+        "confidence_class": "high",
+        "source_name": "synthetic_fixture",
+        "source_timestamp": "2026-06-29T00:00:00Z",
+        "assumptions": "Open synthetic fixture for FPPS scoring tests",
+        "total_population": 3900,
+        "vulnerable_population": 760,
+        "fpps_0_100": 42.55,
+        "action_class": "D",
+        "top_reason": "Highest driver is flood likelihood (54.0/100)."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.02,
+              18.02
+            ],
+            [
+              100.04,
+              18.02
+            ],
+            [
+              100.04,
+              18.04
+            ],
+            [
+              100.02,
+              18.04
+            ],
+            [
+              100.02,
+              18.02
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "subdistrict_id": "FG-TB-005",
+        "subdistrict_name": "Unverified Hillside",
+        "flood_likelihood_0_100": 92,
+        "exposure_0_100": 88,
+        "access_gap_0_100": 84,
+        "road_criticality_0_100": 79,
+        "vulnerability_context_0_100": 80,
+        "confidence_class": "low",
+        "source_name": "synthetic_fixture",
+        "source_timestamp": "2026-06-29T00:00:00Z",
+        "assumptions": "Low confidence row should be monitored before action",
+        "total_population": 2400,
+        "vulnerable_population": 630,
+        "fpps_0_100": 86.25,
+        "action_class": "E",
+        "top_reason": "Monitor and verify because confidence is low."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.04,
+              18.0
+            ],
+            [
+              100.06,
+              18.0
+            ],
+            [
+              100.06,
+              18.02
+            ],
+            [
+              100.04,
+              18.02
+            ],
+            [
+              100.04,
+              18.0
+            ]
+          ]
+        ]
+      }
+    }
+  ],
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  }
+}

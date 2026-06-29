@@ -1,0 +1,4 @@
+road_id,subdistrict_id,road_disruption_probability_0_1,confidence_class,top_risk_reason,source_name,source_timestamp,assumptions
+FG-RD-001,FG-TB-001,0.832,high,Highest road-risk driver is flood probability.,synthetic_fixture,2026-06-29T00:00:00Z,"Heuristic road-risk score from flood probability, surrounding inundation, road class, and bridge flag; not an observed closure."
+FG-RD-002,FG-TB-002,0.717,medium,Highest road-risk driver is flood probability.,synthetic_fixture,2026-06-29T00:00:00Z,"Heuristic road-risk score from flood probability, surrounding inundation, road class, and bridge flag; not an observed closure."
+FG-RD-003,FG-TB-003,0.547,medium,Highest road-risk driver is flood probability.,synthetic_fixture,2026-06-29T00:00:00Z,"Heuristic road-risk score from flood probability, surrounding inundation, road class, and bridge flag; not an observed closure."

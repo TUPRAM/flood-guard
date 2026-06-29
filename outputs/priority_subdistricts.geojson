@@ -20,7 +20,17 @@
         "vulnerable_population": 3100,
         "fpps_0_100": 81.6,
         "action_class": "A",
-        "top_reason": "High exposure and access loss require life-safety action."
+        "top_reason": "High exposure and access loss require life-safety action.",
+        "baseline_people_losing_30_min_access": 100.0,
+        "baseline_equity_gap_ratio": 1.0,
+        "temporary_shelter_people_losing_30_min_access": 100.0,
+        "temporary_shelter_change_people_losing_30_min_access": 0.0,
+        "temporary_shelter_equity_gap_ratio": 1.0,
+        "temporary_shelter_change_equity_gap_ratio": 0.0,
+        "road_closure_people_losing_30_min_access": 100.0,
+        "road_closure_change_people_losing_30_min_access": 0.0,
+        "road_closure_equity_gap_ratio": 1.0,
+        "road_closure_change_equity_gap_ratio": 0.0
       },
       "geometry": {
         "type": "Polygon",
@@ -68,7 +78,17 @@
         "vulnerable_population": 1460,
         "fpps_0_100": 63.85,
         "action_class": "B",
-        "top_reason": "Critical routes and access loss threaten isolation."
+        "top_reason": "Critical routes and access loss threaten isolation.",
+        "baseline_people_losing_30_min_access": 30.0,
+        "baseline_equity_gap_ratio": 5.999,
+        "temporary_shelter_people_losing_30_min_access": 0.0,
+        "temporary_shelter_change_people_losing_30_min_access": -30.0,
+        "temporary_shelter_equity_gap_ratio": 1.0,
+        "temporary_shelter_change_equity_gap_ratio": -4.999,
+        "road_closure_people_losing_30_min_access": 80.0,
+        "road_closure_change_people_losing_30_min_access": 50.0,
+        "road_closure_equity_gap_ratio": 1.0,
+        "road_closure_change_equity_gap_ratio": -4.999
       },
       "geometry": {
         "type": "Polygon",
@@ -116,7 +136,17 @@
         "vulnerable_population": 1800,
         "fpps_0_100": 60.55,
         "action_class": "C",
-        "top_reason": "Exposure and access loss threaten essential services."
+        "top_reason": "Exposure and access loss threaten essential services.",
+        "baseline_people_losing_30_min_access": 60.0,
+        "baseline_equity_gap_ratio": 1.0,
+        "temporary_shelter_people_losing_30_min_access": 60.0,
+        "temporary_shelter_change_people_losing_30_min_access": 0.0,
+        "temporary_shelter_equity_gap_ratio": 1.0,
+        "temporary_shelter_change_equity_gap_ratio": 0.0,
+        "road_closure_people_losing_30_min_access": 60.0,
+        "road_closure_change_people_losing_30_min_access": 0.0,
+        "road_closure_equity_gap_ratio": 1.0,
+        "road_closure_change_equity_gap_ratio": 0.0
       },
       "geometry": {
         "type": "Polygon",
@@ -164,7 +194,17 @@
         "vulnerable_population": 760,
         "fpps_0_100": 42.55,
         "action_class": "D",
-        "top_reason": "Highest driver is flood likelihood (54.0/100)."
+        "top_reason": "Highest driver is flood likelihood (54.0/100).",
+        "baseline_people_losing_30_min_access": 0.0,
+        "baseline_equity_gap_ratio": 1.0,
+        "temporary_shelter_people_losing_30_min_access": 0.0,
+        "temporary_shelter_change_people_losing_30_min_access": 0.0,
+        "temporary_shelter_equity_gap_ratio": 1.0,
+        "temporary_shelter_change_equity_gap_ratio": 0.0,
+        "road_closure_people_losing_30_min_access": 0.0,
+        "road_closure_change_people_losing_30_min_access": 0.0,
+        "road_closure_equity_gap_ratio": 1.0,
+        "road_closure_change_equity_gap_ratio": 0.0
       },
       "geometry": {
         "type": "Polygon",
@@ -212,7 +252,17 @@
         "vulnerable_population": 630,
         "fpps_0_100": 86.25,
         "action_class": "E",
-        "top_reason": "Monitor and verify because confidence is low."
+        "top_reason": "Monitor and verify because confidence is low.",
+        "baseline_people_losing_30_min_access": 0.0,
+        "baseline_equity_gap_ratio": null,
+        "temporary_shelter_people_losing_30_min_access": 0.0,
+        "temporary_shelter_change_people_losing_30_min_access": 0.0,
+        "temporary_shelter_equity_gap_ratio": null,
+        "temporary_shelter_change_equity_gap_ratio": null,
+        "road_closure_people_losing_30_min_access": 0.0,
+        "road_closure_change_people_losing_30_min_access": 0.0,
+        "road_closure_equity_gap_ratio": null,
+        "road_closure_change_equity_gap_ratio": null
       },
       "geometry": {
         "type": "Polygon",

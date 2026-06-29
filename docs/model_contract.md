@@ -139,6 +139,8 @@ Current scenarios:
 
 Scenario summaries compare baseline and scenario 30-minute access loss and max numeric equity-gap ratio.
 
+Dashboard-ready priority GeoJSON must include per-subdistrict scenario comparison fields for baseline, temporary shelter, and road closure 30-minute access loss and equity-gap ratios. Scenario deltas are calculated as scenario value minus baseline value.
+
 ## 7. FPPS Weight Sensitivity
 
 Sensitivity analysis reruns FPPS with deterministic weight scenarios:
@@ -150,3 +152,18 @@ Sensitivity analysis reruns FPPS with deterministic weight scenarios:
 - `vulnerability_heavy`
 
 Weights are normalized before scoring. Rank instability is flagged when a subdistrict's rank range across scenarios is at least 2. Sensitivity does not override action class or confidence.
+
+Validation summaries should report stable/unstable rank counts and disclose when the highest numeric FPPS row is low confidence and is not selected as the top actionable brief target.
+
+## 8. Action Brief And Dashboard Presentation
+
+Action briefs are compact Markdown decision products, not official warnings. Briefs should use bilingual Thai/English section labels for:
+
+- Priority / ลำดับความสำคัญ
+- Access Loss / การสูญเสียการเข้าถึง
+- Equity Gap / ช่องว่างความเสมอภาคในการอพยพ
+- Likely Road Risks / ความเสี่ยงถนนที่อาจถูกตัดขาด
+- Recommended Action / ข้อเสนอการปฏิบัติ
+- Assumptions / สมมติฐาน
+
+The static dashboard is a fixture-backed presentation artifact generated from GeoJSON/Markdown outputs. It should embed its data directly, use no backend, and preserve the non-operational warning boundary.

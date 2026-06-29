@@ -24,10 +24,20 @@ def load_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFram
     )
 
 
+def load_rank_instability() -> pd.DataFrame:
+    return pd.read_csv(OUTPUTS / "sample_fpps_rank_instability.csv")
+
+
 def test_build_validation_summary_includes_fixture_metrics() -> None:
     priority, road_risk, access_loss, equity_gap = load_frames()
 
-    report = build_validation_summary(priority, road_risk, access_loss, equity_gap)
+    report = build_validation_summary(
+        priority,
+        road_risk,
+        access_loss,
+        equity_gap,
+        rank_instability=load_rank_instability(),
+    )
 
     assert "# FloodGuard Validation Summary" in report
     assert "Priority rows: 5" in report
@@ -39,13 +49,39 @@ def test_build_validation_summary_includes_fixture_metrics() -> None:
     assert "Strongest equity-gap subdistrict: FG-TB-002 / Bridge Junction" in report
 
 
+def test_build_validation_summary_includes_sensitivity_summary() -> None:
+    priority, road_risk, access_loss, equity_gap = load_frames()
+
+    report = build_validation_summary(
+        priority,
+        road_risk,
+        access_loss,
+        equity_gap,
+        rank_instability=load_rank_instability(),
+    )
+
+    assert "## Sensitivity Summary" in report
+    assert "Stable rank count: 5" in report
+    assert "Unstable rank count: 0" in report
+    assert "Max rank range: 0" in report
+    assert "All fixture ranks are stable because every rank_range is 0." in report
+    assert "FG-TB-005 / Unverified Hillside (class E, confidence low)" in report
+    assert "not used as the top actionable brief target" in report
+
+
 def test_build_validation_summary_includes_future_metric_placeholders() -> None:
     priority, road_risk, access_loss, equity_gap = load_frames()
 
     report = build_validation_summary(priority, road_risk, access_loss, equity_gap)
 
     for placeholder in FUTURE_METRIC_PLACEHOLDERS:
-        assert f"{placeholder}: pending real reference data" in report
+        if placeholder == "score sensitivity":
+            assert (
+                "score sensitivity: implemented for fixtures; "
+                "real calibration remains pending"
+            ) in report
+        else:
+            assert f"{placeholder}: pending real reference data" in report
 
 
 def test_write_validation_summary_writes_markdown(tmp_path: Path) -> None:

@@ -7,7 +7,13 @@ import pytest
 
 from floodguard.access import calculate_access_loss
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss
-from floodguard.scenarios import ScenarioError, run_access_scenario
+from floodguard.scenarios import (
+    SCENARIO_COMPARISON_COLUMNS,
+    ScenarioError,
+    build_scenario_comparison,
+    merge_scenario_comparison,
+    run_access_scenario,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -108,3 +114,56 @@ def test_scenario_summary_contains_expected_columns() -> None:
         "scenario_max_equity_gap_ratio",
         "change_max_equity_gap_ratio",
     }.issubset(scenario["scenario_summary"].columns)
+
+
+def test_build_scenario_comparison_outputs_geojson_fields() -> None:
+    population, edges, facilities = load_inputs()
+    baseline_access, baseline_equity = baseline_outputs()
+    temporary_shelter = run_access_scenario(
+        population,
+        edges,
+        facilities,
+        "add_temporary_shelter",
+        baseline_access=baseline_access,
+        baseline_equity=baseline_equity,
+    )
+    road_closure = run_access_scenario(
+        population,
+        edges,
+        facilities,
+        "close_road",
+        baseline_access=baseline_access,
+        baseline_equity=baseline_equity,
+    )
+
+    comparison = build_scenario_comparison(
+        baseline_access,
+        baseline_equity,
+        temporary_shelter["access_loss"],
+        temporary_shelter["equity_gap"],
+        road_closure["access_loss"],
+        road_closure["equity_gap"],
+    ).set_index("subdistrict_id")
+
+    assert set(SCENARIO_COMPARISON_COLUMNS).issubset(comparison.columns)
+    assert comparison.loc[
+        "FG-TB-002",
+        "temporary_shelter_change_people_losing_30_min_access",
+    ] == pytest.approx(-30)
+    assert comparison.loc[
+        "FG-TB-002",
+        "road_closure_change_people_losing_30_min_access",
+    ] == pytest.approx(50)
+
+
+def test_merge_scenario_comparison_rejects_missing_priority_rows() -> None:
+    priority = pd.DataFrame({"subdistrict_id": ["FG-TB-001", "FG-TB-002"]})
+    comparison = pd.DataFrame(
+        {
+            "subdistrict_id": ["FG-TB-001"],
+            **{column: [0] for column in SCENARIO_COMPARISON_COLUMNS},
+        }
+    )
+
+    with pytest.raises(ScenarioError, match="Missing scenario comparison row"):
+        merge_scenario_comparison(priority, comparison)

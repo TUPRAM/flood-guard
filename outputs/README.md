@@ -12,6 +12,7 @@ Current expected MVP output:
 - `road_risk.geojson`
 - `validation_summary.md`
 - `action_brief_FG-TB-001.md`
+- `dashboard.html`
 - `sample_scenario_add_temporary_shelter_access_loss.csv`
 - `sample_scenario_add_temporary_shelter_equity_gap.csv`
 - `sample_scenario_close_road_access_loss.csv`

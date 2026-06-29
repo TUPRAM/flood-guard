@@ -38,6 +38,18 @@ EQUITY_REQUIRED_COLUMNS: tuple[str, ...] = (
     "equity_gap_ratio",
 )
 
+RANK_INSTABILITY_REQUIRED_COLUMNS: tuple[str, ...] = (
+    "subdistrict_id",
+    "subdistrict_name",
+    "default_rank",
+    "best_rank",
+    "worst_rank",
+    "rank_range",
+    "default_action_class",
+    "confidence_class",
+    "ranking_unstable",
+)
+
 FUTURE_METRIC_PLACEHOLDERS: tuple[str, ...] = (
     "IoU",
     "F1/Dice",
@@ -60,6 +72,7 @@ def build_validation_summary(
     road_risk: pd.DataFrame,
     access_loss: pd.DataFrame,
     equity_gap: pd.DataFrame,
+    rank_instability: pd.DataFrame | None = None,
 ) -> str:
     """Build a Markdown validation summary from fixture-backed outputs."""
 
@@ -114,6 +127,8 @@ def build_validation_summary(
         max_equity_ratio = float("nan")
         strongest_equity_label = "unavailable"
 
+    sensitivity_lines = _build_sensitivity_lines(priority_frame, rank_instability)
+
     lines = [
         "# FloodGuard Validation Summary",
         "",
@@ -161,13 +176,20 @@ def build_validation_summary(
         f"- Max numeric equity-gap ratio: {_format_float(max_equity_ratio, 3)}",
         f"- Strongest equity-gap subdistrict: {strongest_equity_label}",
         "",
+        "## Sensitivity Summary",
+        "",
+        *sensitivity_lines,
+        "",
         "## Future Validation Metrics",
         "",
     ]
-    lines.extend(
-        f"- {placeholder}: pending real reference data."
-        for placeholder in FUTURE_METRIC_PLACEHOLDERS
-    )
+    for placeholder in FUTURE_METRIC_PLACEHOLDERS:
+        if placeholder == "score sensitivity":
+            lines.append(
+                "- score sensitivity: implemented for fixtures; real calibration remains pending."
+            )
+        else:
+            lines.append(f"- {placeholder}: pending real reference data.")
     lines.extend(
         [
             "",
@@ -188,13 +210,20 @@ def write_validation_summary(
     access_loss: pd.DataFrame,
     equity_gap: pd.DataFrame,
     output_path: str | Path,
+    rank_instability: pd.DataFrame | None = None,
 ) -> Path:
     """Write a Markdown validation summary and return the output path."""
 
     target = Path(output_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
-        build_validation_summary(priority, road_risk, access_loss, equity_gap),
+        build_validation_summary(
+            priority,
+            road_risk,
+            access_loss,
+            equity_gap,
+            rank_instability=rank_instability,
+        ),
         encoding="utf-8",
     )
     return target
@@ -212,6 +241,80 @@ def _select_top_actionable(priority: pd.DataFrame) -> pd.Series:
         ["action_rank", "fpps_0_100", "subdistrict_id"],
         ascending=[True, False, True],
     ).iloc[0]
+
+
+def _build_sensitivity_lines(
+    priority_frame: pd.DataFrame,
+    rank_instability: pd.DataFrame | None,
+) -> list[str]:
+    numeric_top = priority_frame.sort_values(
+        ["fpps_0_100", "subdistrict_id"],
+        ascending=[False, True],
+    ).iloc[0]
+    top_actionable = _select_top_actionable(priority_frame)
+    disclosure = (
+        f"- Top numeric FPPS row: {numeric_top['subdistrict_id']} / "
+        f"{numeric_top['subdistrict_name']} "
+        f"(class {numeric_top['action_class']}, confidence {numeric_top['confidence_class']})."
+    )
+    if str(numeric_top["subdistrict_id"]) != str(top_actionable["subdistrict_id"]):
+        disclosure += " It is not used as the top actionable brief target."
+
+    if rank_instability is None:
+        return [
+            "- Rank-instability rows: unavailable.",
+            "- Fixture sensitivity CSV was not supplied to this report run.",
+            disclosure,
+        ]
+
+    _validate_columns(rank_instability, RANK_INSTABILITY_REQUIRED_COLUMNS, "rank_instability")
+    rank_frame = rank_instability.copy()
+    rank_frame["rank_range"] = pd.to_numeric(rank_frame["rank_range"], errors="coerce")
+    if rank_frame["rank_range"].isna().any():
+        raise ValidationReportError("rank_instability rank_range must be numeric.")
+    unstable_flags = rank_frame["ranking_unstable"].map(_as_bool)
+    if unstable_flags.isna().any():
+        raise ValidationReportError(
+            "rank_instability ranking_unstable must be boolean-like."
+        )
+    unstable_bool = unstable_flags.astype(bool)
+
+    unstable_count = int(unstable_bool.sum())
+    stable_count = int((~unstable_bool).sum())
+    max_rank_range = int(rank_frame["rank_range"].max())
+    lines = [
+        f"- Stable rank count: {stable_count}",
+        f"- Unstable rank count: {unstable_count}",
+        f"- Max rank range: {max_rank_range}",
+    ]
+    if max_rank_range == 0:
+        lines.append("- All fixture ranks are stable because every rank_range is 0.")
+    else:
+        most_variable = rank_frame.sort_values(
+            ["rank_range", "subdistrict_id"],
+            ascending=[False, True],
+        ).iloc[0]
+        lines.append(
+            "- Most variable rank: "
+            f"{most_variable['subdistrict_id']} / "
+            f"{most_variable['subdistrict_name']} "
+            f"(rank_range {int(most_variable['rank_range'])})."
+        )
+    lines.append(disclosure)
+    return lines
+
+
+def _as_bool(value: object) -> bool | object:
+    if isinstance(value, bool):
+        return value
+    if pd.isna(value):
+        return pd.NA
+    text = str(value).strip().lower()
+    if text in {"true", "1", "yes"}:
+        return True
+    if text in {"false", "0", "no"}:
+        return False
+    return pd.NA
 
 
 def _validate_columns(

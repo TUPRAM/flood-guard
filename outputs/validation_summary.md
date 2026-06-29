@@ -6,8 +6,8 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
 
 - Priority rows: 5
 - Road-risk rows: 3
-- Access-loss rows: 4
-- Equity-gap rows: 4
+- Access-loss rows: 5
+- Equity-gap rows: 5
 
 ## Priority Score Summary
 
@@ -37,6 +37,14 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
 - Max numeric equity-gap ratio: 5.999
 - Strongest equity-gap subdistrict: FG-TB-002 / Bridge Junction
 
+## Sensitivity Summary
+
+- Stable rank count: 5
+- Unstable rank count: 0
+- Max rank range: 0
+- All fixture ranks are stable because every rank_range is 0.
+- Top numeric FPPS row: FG-TB-005 / Unverified Hillside (class E, confidence low). It is not used as the top actionable brief target.
+
 ## Future Validation Metrics
 
 - IoU: pending real reference data.
@@ -47,7 +55,7 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
 - Brier score: pending real reference data.
 - calibration: pending real reference data.
 - road closure precision/recall: pending real reference data.
-- score sensitivity: pending real reference data.
+- score sensitivity: implemented for fixtures; real calibration remains pending.
 
 ## Assumptions
 

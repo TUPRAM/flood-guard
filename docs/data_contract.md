@@ -144,6 +144,21 @@ Dashboard-ready GeoJSON exports are generated from fixture outputs and geometrie
 
 Exports must preserve `source_timestamp`, `confidence_class`, and `assumptions` where available.
 
+`outputs/priority_subdistricts.geojson` also carries fixture scenario-comparison fields:
+
+- `baseline_people_losing_30_min_access`
+- `baseline_equity_gap_ratio`
+- `temporary_shelter_people_losing_30_min_access`
+- `temporary_shelter_change_people_losing_30_min_access`
+- `temporary_shelter_equity_gap_ratio`
+- `temporary_shelter_change_equity_gap_ratio`
+- `road_closure_people_losing_30_min_access`
+- `road_closure_change_people_losing_30_min_access`
+- `road_closure_equity_gap_ratio`
+- `road_closure_change_equity_gap_ratio`
+
+Scenario comparison rows must cover every exported priority subdistrict before GeoJSON export.
+
 ## Validation Summary Output
 
 `outputs/validation_summary.md` summarizes fixture-backed priority, road-risk, access-loss, and equity-gap outputs.
@@ -155,10 +170,11 @@ Required report sections:
 - Road Risk Summary
 - Access Loss Summary
 - Equity Gap Summary
+- Sensitivity Summary
 - Future Validation Metrics
 - Assumptions
 
-The future metrics section must explicitly reserve placeholders for IoU, F1/Dice, precision, recall, area error, Brier score, calibration, road closure precision/recall, and score sensitivity.
+The future metrics section must explicitly reserve placeholders for IoU, F1/Dice, precision, recall, area error, Brier score, calibration, road closure precision/recall, and score sensitivity. Fixture score sensitivity is implemented; real calibration remains pending.
 
 ## Action Brief Output
 
@@ -166,6 +182,7 @@ The future metrics section must explicitly reserve placeholders for IoU, F1/Dice
 
 Required content:
 
+- bilingual Thai/English section labels
 - FPPS, action class, top reason, and confidence
 - access-loss counts
 - equity-gap ratio and interpretation
@@ -205,6 +222,21 @@ Outputs:
 - `default_action_class`
 - `confidence_class`
 - `ranking_unstable`
+
+## Static Dashboard Output
+
+`outputs/dashboard.html` is a standalone HTML dashboard generated from:
+
+- `outputs/priority_subdistricts.geojson`
+- `outputs/road_risk.geojson`
+- `outputs/validation_summary.md`
+- `outputs/action_brief_FG-TB-001.md`
+
+It embeds GeoJSON and Markdown directly in the file and uses Leaflet from CDN for map rendering. It has no backend or build step.
+
+## Study-Area Inventory Output
+
+`docs/study_area_inventory.md` records real-data acquisition planning only. It may include exact candidate metadata, product ids, licensing notes, and blockers, but this repository change does not download real imagery or implement remote-sensing model code.
 
 ## GeoJSON Fixtures
 

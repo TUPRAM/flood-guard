@@ -9,6 +9,19 @@ import pandas as pd
 from floodguard.access import calculate_access_loss
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss
 
+SCENARIO_COMPARISON_COLUMNS: tuple[str, ...] = (
+    "baseline_people_losing_30_min_access",
+    "baseline_equity_gap_ratio",
+    "temporary_shelter_people_losing_30_min_access",
+    "temporary_shelter_change_people_losing_30_min_access",
+    "temporary_shelter_equity_gap_ratio",
+    "temporary_shelter_change_equity_gap_ratio",
+    "road_closure_people_losing_30_min_access",
+    "road_closure_change_people_losing_30_min_access",
+    "road_closure_equity_gap_ratio",
+    "road_closure_change_equity_gap_ratio",
+)
+
 
 class ScenarioError(ValueError):
     """Raised when a scenario request is invalid."""
@@ -46,6 +59,93 @@ def run_access_scenario(
         "equity_gap": equity_gap,
         "scenario_summary": scenario_summary,
     }
+
+
+def build_scenario_comparison(
+    baseline_access: pd.DataFrame,
+    baseline_equity: pd.DataFrame,
+    temporary_shelter_access: pd.DataFrame,
+    temporary_shelter_equity: pd.DataFrame,
+    road_closure_access: pd.DataFrame,
+    road_closure_equity: pd.DataFrame,
+) -> pd.DataFrame:
+    """Build one scenario-comparison row per baseline access subdistrict."""
+
+    baseline = _access_equity_frame(
+        baseline_access,
+        baseline_equity,
+        "baseline",
+        include_change=False,
+    )
+    temporary_shelter = _access_equity_frame(
+        temporary_shelter_access,
+        temporary_shelter_equity,
+        "temporary_shelter",
+        baseline=baseline,
+    )
+    road_closure = _access_equity_frame(
+        road_closure_access,
+        road_closure_equity,
+        "road_closure",
+        baseline=baseline,
+    )
+
+    result = baseline.merge(
+        temporary_shelter,
+        on="subdistrict_id",
+        how="left",
+        validate="one_to_one",
+    ).merge(
+        road_closure,
+        on="subdistrict_id",
+        how="left",
+        validate="one_to_one",
+    )
+
+    missing_columns = [
+        column
+        for column in SCENARIO_COMPARISON_COLUMNS
+        if column not in result.columns or result[column].isna().all()
+    ]
+    if missing_columns:
+        raise ScenarioError(
+            "Scenario comparison could not build required column(s): "
+            + ", ".join(missing_columns)
+        )
+    return result.loc[:, ("subdistrict_id", *SCENARIO_COMPARISON_COLUMNS)]
+
+
+def merge_scenario_comparison(
+    priority_frame: pd.DataFrame,
+    scenario_comparison: pd.DataFrame,
+) -> pd.DataFrame:
+    """Merge scenario-comparison fields into priority rows before GeoJSON export."""
+
+    _validate_required(priority_frame, ("subdistrict_id",), "priority")
+    _validate_required(
+        scenario_comparison,
+        ("subdistrict_id", *SCENARIO_COMPARISON_COLUMNS),
+        "scenario_comparison",
+    )
+    _validate_unique(priority_frame, "subdistrict_id", "priority")
+    _validate_unique(scenario_comparison, "subdistrict_id", "scenario_comparison")
+
+    priority_ids = set(priority_frame["subdistrict_id"].astype(str))
+    comparison_ids = set(scenario_comparison["subdistrict_id"].astype(str))
+    missing = sorted(priority_ids - comparison_ids)
+    if missing:
+        raise ScenarioError(
+            "Missing scenario comparison row(s) for subdistrict_id: "
+            + ", ".join(missing)
+        )
+
+    merged = priority_frame.merge(
+        scenario_comparison,
+        on="subdistrict_id",
+        how="left",
+        validate="one_to_one",
+    )
+    return merged
 
 
 def _add_temporary_shelter(
@@ -139,3 +239,112 @@ def _max_equity_ratio(frame: pd.DataFrame | None) -> float | object:
     if numeric.notna().any():
         return float(numeric.max())
     return pd.NA
+
+
+def _access_equity_frame(
+    access: pd.DataFrame,
+    equity: pd.DataFrame,
+    prefix: str,
+    include_change: bool = True,
+    baseline: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    _validate_required(
+        access,
+        ("subdistrict_id", "people_losing_30_min_access"),
+        f"{prefix}_access",
+    )
+    _validate_required(equity, ("subdistrict_id", "equity_gap_ratio"), f"{prefix}_equity")
+    _validate_unique(access, "subdistrict_id", f"{prefix}_access")
+    _validate_unique(equity, "subdistrict_id", f"{prefix}_equity")
+
+    result = access.loc[:, ["subdistrict_id", "people_losing_30_min_access"]].copy()
+    result["subdistrict_id"] = result["subdistrict_id"].astype(str)
+    result["people_losing_30_min_access"] = pd.to_numeric(
+        result["people_losing_30_min_access"],
+        errors="coerce",
+    )
+    if result["people_losing_30_min_access"].isna().any():
+        raise ScenarioError(f"{prefix}_access people_losing_30_min_access must be numeric.")
+
+    equity_values = equity.loc[:, ["subdistrict_id", "equity_gap_ratio"]].copy()
+    equity_values["subdistrict_id"] = equity_values["subdistrict_id"].astype(str)
+    equity_values["equity_gap_ratio"] = pd.to_numeric(
+        equity_values["equity_gap_ratio"],
+        errors="coerce",
+    )
+    result = result.merge(equity_values, on="subdistrict_id", how="left", validate="one_to_one")
+
+    result = result.rename(
+        columns={
+            "people_losing_30_min_access": f"{prefix}_people_losing_30_min_access",
+            "equity_gap_ratio": f"{prefix}_equity_gap_ratio",
+        }
+    )
+
+    if include_change:
+        if baseline is None:
+            raise ScenarioError("Baseline comparison is required for scenario deltas.")
+        baseline_ids = set(baseline["subdistrict_id"].astype(str))
+        scenario_ids = set(result["subdistrict_id"].astype(str))
+        missing = sorted(baseline_ids - scenario_ids)
+        if missing:
+            raise ScenarioError(
+                f"{prefix}_access missing scenario row(s) for subdistrict_id: "
+                + ", ".join(missing)
+            )
+        result = result.merge(
+            baseline.loc[
+                :,
+                [
+                    "subdistrict_id",
+                    "baseline_people_losing_30_min_access",
+                    "baseline_equity_gap_ratio",
+                ],
+            ],
+            on="subdistrict_id",
+            how="left",
+            validate="one_to_one",
+        )
+        result[f"{prefix}_change_people_losing_30_min_access"] = (
+            result[f"{prefix}_people_losing_30_min_access"]
+            - result["baseline_people_losing_30_min_access"]
+        )
+        result[f"{prefix}_change_equity_gap_ratio"] = _numeric_delta(
+            result[f"{prefix}_equity_gap_ratio"],
+            result["baseline_equity_gap_ratio"],
+        )
+        result = result.drop(
+            columns=[
+                "baseline_people_losing_30_min_access",
+                "baseline_equity_gap_ratio",
+            ]
+        )
+
+    return result
+
+
+def _numeric_delta(values: pd.Series, baseline: pd.Series) -> pd.Series:
+    result = values - baseline
+    result[values.isna() | baseline.isna()] = pd.NA
+    return result
+
+
+def _validate_required(
+    frame: pd.DataFrame,
+    required_columns: tuple[str, ...],
+    frame_name: str,
+) -> None:
+    missing = [column for column in required_columns if column not in frame.columns]
+    if missing:
+        raise ScenarioError(
+            f"Missing required {frame_name} column(s): {', '.join(missing)}"
+        )
+
+
+def _validate_unique(frame: pd.DataFrame, column: str, frame_name: str) -> None:
+    duplicated = frame[column].astype(str).duplicated(keep=False)
+    if duplicated.any():
+        values = sorted(set(frame.loc[duplicated, column].astype(str)))
+        raise ScenarioError(
+            f"{frame_name} has duplicate {column} value(s): {', '.join(values)}"
+        )

@@ -40,6 +40,14 @@ def test_build_action_brief_includes_priority_access_equity_and_roads() -> None:
     brief = build_action_brief(priority, road_risk, access_loss, equity_gap)
 
     assert "# Action Brief - River Market (FG-TB-001)" in brief
+    assert "Priority / ลำดับความสำคัญ" in brief
+    assert "Access Loss / การสูญเสียการเข้าถึง" in brief
+    assert "Equity Gap / ช่องว่างความเสมอภาคในการอพยพ" in brief
+    assert "Likely Road Risks / ความเสี่ยงถนนที่อาจถูกตัดขาด" in brief
+    assert "Recommended Action / ข้อเสนอการปฏิบัติ" in brief
+    assert "Assumptions / สมมติฐาน" in brief
+    assert "Immediate local action focus" in brief
+    assert "Routes likely to need verification" in brief
     assert "FPPS: 81.60" in brief
     assert "Action class: A" in brief
     assert "People losing 30-minute access: 100" in brief
@@ -47,6 +55,7 @@ def test_build_action_brief_includes_priority_access_equity_and_roads() -> None:
     assert "FG-RD-001: 0.832" in brief
     assert "Pre-position rescue assets" in brief
     assert "Fixture-backed analysis only" in brief
+    assert "not an official warning" in brief
 
 
 def test_build_action_brief_supports_manual_subdistrict_id() -> None:

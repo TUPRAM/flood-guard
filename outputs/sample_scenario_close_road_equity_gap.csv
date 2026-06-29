@@ -3,3 +3,4 @@ FG-TB-001,River Market,30.0,30.0,70.0,70.0,medium,1.0,1.0,1.0,Access-loss rates 
 FG-TB-002,Bridge Junction,20.0,20.0,60.0,60.0,medium,1.0,1.0,1.0,Access-loss rates are broadly similar between groups.
 FG-TB-003,Clinic Basin,20.0,20.0,40.0,40.0,medium,1.0,1.0,1.0,Access-loss rates are broadly similar between groups.
 FG-TB-004,Canal Fringe,10.0,0.0,40.0,0.0,medium,0.0,0.0,1.0,No measured access-loss gap; both groups have zero loss.
+FG-TB-005,Unverified Hillside,0.0,0.0,0.0,0.0,medium,,,,Equity gap unavailable: no vulnerable population denominator.

@@ -15,10 +15,15 @@ if str(SRC_ROOT) not in sys.path:
 
 from floodguard.access import calculate_access_loss  # noqa: E402
 from floodguard.briefs import write_action_brief  # noqa: E402
+from floodguard.dashboard import write_static_dashboard  # noqa: E402
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss  # noqa: E402
 from floodguard.exports import write_priority_geojson, write_road_risk_geojson  # noqa: E402
 from floodguard.road_risk import score_road_disruption  # noqa: E402
-from floodguard.scenarios import run_access_scenario  # noqa: E402
+from floodguard.scenarios import (  # noqa: E402
+    build_scenario_comparison,
+    merge_scenario_comparison,
+    run_access_scenario,
+)
 from floodguard.scoring import score_subdistricts  # noqa: E402
 from floodguard.sensitivity import run_weight_sensitivity, summarize_rank_instability  # noqa: E402
 from floodguard.validation import write_validation_summary  # noqa: E402
@@ -67,36 +72,11 @@ def main() -> None:
         ],
     ].to_csv(priority_path, index=False)
 
-    write_priority_geojson(
-        fixture_dir / "sample_admin.geojson",
-        priority,
-        output_dir / "priority_subdistricts.geojson",
-    )
-    write_road_risk_geojson(
-        fixture_dir / "sample_roads.geojson",
-        road_risk,
-        output_dir / "road_risk.geojson",
-    )
-
-    validation_path = write_validation_summary(
-        priority,
-        road_risk,
-        access_loss,
-        equity_gap,
-        output_dir / "validation_summary.md",
-    )
-    action_brief_path = write_action_brief(
-        priority,
-        road_risk,
-        access_loss,
-        equity_gap,
-        output_dir,
-    )
-
     population = pd.read_csv(fixture_dir / "sample_population_nodes.csv")
     edges = pd.read_csv(fixture_dir / "sample_access_edges.csv")
     facilities = pd.read_csv(fixture_dir / "sample_facilities.csv")
     scenario_summary_frames: list[pd.DataFrame] = []
+    scenarios: dict[str, dict[str, pd.DataFrame]] = {}
     for scenario_name in ("add_temporary_shelter", "close_road"):
         scenario = run_access_scenario(
             population,
@@ -111,10 +91,32 @@ def main() -> None:
         scenario["access_loss"].to_csv(scenario_access_path, index=False)
         scenario["equity_gap"].to_csv(scenario_equity_path, index=False)
         scenario_summary_frames.append(scenario["scenario_summary"])
+        scenarios[scenario_name] = scenario
 
     scenario_summary = pd.concat(scenario_summary_frames, ignore_index=True)
     scenario_summary_path = output_dir / "sample_scenario_summary.csv"
     scenario_summary.to_csv(scenario_summary_path, index=False)
+
+    scenario_comparison = build_scenario_comparison(
+        access_loss,
+        equity_gap,
+        scenarios["add_temporary_shelter"]["access_loss"],
+        scenarios["add_temporary_shelter"]["equity_gap"],
+        scenarios["close_road"]["access_loss"],
+        scenarios["close_road"]["equity_gap"],
+    )
+    enriched_priority = merge_scenario_comparison(priority, scenario_comparison)
+
+    priority_geojson_path = write_priority_geojson(
+        fixture_dir / "sample_admin.geojson",
+        enriched_priority,
+        output_dir / "priority_subdistricts.geojson",
+    )
+    road_risk_geojson_path = write_road_risk_geojson(
+        fixture_dir / "sample_roads.geojson",
+        road_risk,
+        output_dir / "road_risk.geojson",
+    )
 
     sensitivity = run_weight_sensitivity(pd.read_csv(fixture_dir / "sample_population.csv"))
     sensitivity_path = output_dir / "sample_fpps_sensitivity.csv"
@@ -123,14 +125,38 @@ def main() -> None:
     rank_instability_path = output_dir / "sample_fpps_rank_instability.csv"
     rank_instability.to_csv(rank_instability_path, index=False)
 
+    validation_path = write_validation_summary(
+        priority,
+        road_risk,
+        access_loss,
+        equity_gap,
+        output_dir / "validation_summary.md",
+        rank_instability=rank_instability,
+    )
+    action_brief_path = write_action_brief(
+        priority,
+        road_risk,
+        access_loss,
+        equity_gap,
+        output_dir,
+    )
+    dashboard_path = write_static_dashboard(
+        priority_geojson_path,
+        road_risk_geojson_path,
+        validation_path,
+        action_brief_path,
+        output_dir / "dashboard.html",
+    )
+
     print(f"Wrote {priority_path}")
     print(f"Wrote {road_risk_path}")
     print(f"Wrote {access_loss_path}")
     print(f"Wrote {equity_gap_path}")
-    print(f"Wrote {output_dir / 'priority_subdistricts.geojson'}")
-    print(f"Wrote {output_dir / 'road_risk.geojson'}")
+    print(f"Wrote {priority_geojson_path}")
+    print(f"Wrote {road_risk_geojson_path}")
     print(f"Wrote {validation_path}")
     print(f"Wrote {action_brief_path}")
+    print(f"Wrote {dashboard_path}")
     print(f"Wrote {scenario_summary_path}")
     print(f"Wrote {sensitivity_path}")
     print(f"Wrote {rank_instability_path}")

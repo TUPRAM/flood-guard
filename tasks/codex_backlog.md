@@ -89,3 +89,33 @@ Acceptance: writes sensitivity rows and rank-instability summary from sample fix
 Document real data acquisition needs for Chiang Rai / Mae Sai 2024 and Hat Yai / Songkhla 2025.
 
 Acceptance: inventory is source-backed and explicitly avoids real downloads or remote-sensing model work.
+
+## Task 14 - Bilingual Action Brief V2
+
+Add Thai/English section labels and field-ready non-operational wording to the generated one-page action brief.
+
+Acceptance: `outputs/action_brief_FG-TB-001.md` stays compact, keeps class-specific recommended actions, and says it is not an official warning.
+
+## Task 15 - Scenario GeoJSON Comparison
+
+Merge baseline, temporary-shelter, and road-closure comparison fields into `priority_subdistricts.geojson`.
+
+Acceptance: each priority subdistrict has scenario comparison fields before GeoJSON export; missing comparison rows fail clearly.
+
+## Task 16 - Validation Summary V2
+
+Add a sensitivity section to the validation summary.
+
+Acceptance: `outputs/validation_summary.md` reports stable/unstable rank counts, max rank range, and the low-confidence numeric-top disclaimer.
+
+## Task 17 - Static Dashboard Prototype
+
+Generate a standalone Leaflet dashboard from generated GeoJSON and Markdown outputs.
+
+Acceptance: `outputs/dashboard.html` opens from disk, embeds GeoJSON directly, has layer toggles, and requires no backend.
+
+## Task 18 - Chiang Rai Inventory V2
+
+Record exact candidate Sentinel-1 CDSE metadata for the Mae Sai 2024 planning tile.
+
+Acceptance: inventory lists candidate product ids, access/license status, no-download status, and unresolved flood-mask/licensing blockers.

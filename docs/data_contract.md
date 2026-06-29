@@ -249,6 +249,13 @@ Dashboard v3 also includes summary cards for:
 - best intervention effect, using the most negative temporary-shelter 30-minute access-loss delta
 - worst road-closure stress case, using the most positive road-closure 30-minute access-loss delta
 
+Dashboard v4 adds browser-only export buttons:
+
+- `Download current brief`, which downloads the selected embedded Markdown action brief
+- `Download filtered GeoJSON`, which downloads a FeatureCollection containing priority polygons that match the active A-E filters
+
+The export buttons must use embedded page data only. They must not call `fetch`, require a backend, or write server-side files.
+
 ## CDSE Metadata Query Output
 
 The CDSE metadata query script is no-download and metadata-only. It must not download Sentinel product assets.
@@ -276,7 +283,7 @@ Live metadata snapshots may be written as:
 - `outputs/cdse_mae_sai_2024_metadata.csv`
 - `outputs/cdse_hat_yai_2025_metadata.csv`
 
-These files should only be committed after intentional review.
+These files should only be committed after intentional review using `docs/live_metadata_snapshot_review_checklist.md`.
 
 ## Metadata-Only Ingestion Manifest
 
@@ -299,11 +306,17 @@ Required columns:
 
 Current rows must remain `metadata_only`, with `download_permitted_by_skeleton=False` and `ready_for_processing=False`.
 
+The ingestion skeleton may only write metadata outputs with explicit metadata suffixes such as `.csv`, `.json`, `.md`, or `.txt`. It must reject binary or imagery/product paths such as `.SAFE`, `.tif`, `.tiff`, `.jp2`, `.zip`, `.nc`, and `.grib`.
+
 ## Study-Area Inventory Output
 
 `docs/study_area_inventory.md` records real-data acquisition planning only. It may include exact candidate metadata, product ids, licensing notes, and blockers, but this repository change does not download real imagery or implement remote-sensing model code.
 
 `docs/reference_mask_licensing_log.md` records candidate reference-mask licensing status before processing or redistribution.
+
+`docs/licensing_request_templates.md` contains copy-ready request templates for UNOSAT/UNITAR, GISTDA, International Charter, and Sentinel Asia.
+
+`docs/ml_readiness_plan.md` defines the gates that must pass before real-data ML work starts: usable reference mask, locked Sentinel-1 pair, reviewed metadata snapshot, source files tracked outside Git, reproducible non-ML baseline, and scoped validation metrics.
 
 ## GeoJSON Fixtures
 

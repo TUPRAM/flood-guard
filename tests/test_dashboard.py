@@ -38,6 +38,15 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Worst road-closure stress case" in html
     assert "Temporary shelter: -30 people losing 30-min access" in html
     assert "Road closure: +50 people losing 30-min access" in html
+    assert 'id="download-current-brief"' in html
+    assert 'id="download-filtered-geojson"' in html
+    assert "Download current brief" in html
+    assert "Download filtered GeoJSON" in html
+    assert "function downloadCurrentActionBrief" in html
+    assert "function downloadFilteredGeoJSON" in html
+    assert "function downloadText" in html
+    assert "new Blob" in html
+    assert "priority_subdistricts_filtered.geojson" in html
     assert "Delta improves" in html
     assert "Delta worsens" in html
     assert "Action Brief" in html

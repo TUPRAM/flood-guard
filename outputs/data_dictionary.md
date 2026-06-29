@@ -110,6 +110,13 @@ Files: `priority_subdistricts.geojson` and `road_risk.geojson`
 | `action_brief_FG-TB-003.md` | Compact C-class action brief for Clinic Basin. |
 | `validation_summary.md` | Fixture coverage, priority, road-risk, access, equity, and sensitivity summary. |
 
+Dashboard v4 browser-only exports:
+
+| Control | Meaning |
+| --- | --- |
+| Download current brief | Downloads the currently selected embedded action brief as Markdown. |
+| Download filtered GeoJSON | Downloads a GeoJSON FeatureCollection containing priority polygons that match the active A-E filters. |
+
 ## Metadata Planning Outputs
 
 | Field | Meaning |

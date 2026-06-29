@@ -49,6 +49,8 @@ uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024 --output out
 uv run python scripts/query_cdse_metadata.py --profile hat_yai_2025 --output outputs/cdse_hat_yai_2025_metadata.csv
 ```
 
+Before committing either `outputs/cdse_*_metadata.csv` file, complete `docs/live_metadata_snapshot_review_checklist.md` and record the row count, command, dry-run URL review, and reason for committing the snapshot.
+
 These commands write metadata rows only. They do not download Sentinel-1 assets, flood masks, GISTDA products, Charter products, Sentinel Asia products, or any remote-sensing model inputs.
 
 The metadata-first ingestion skeleton can build a blocked planning manifest:
@@ -58,6 +60,8 @@ uv run python scripts/build_ingestion_manifest.py
 ```
 
 The generated `outputs/real_data_ingestion_manifest.csv` remains `metadata_only`; it does not permit downloads or processing until geometry, license, and redistribution status are confirmed.
+
+ML on real data should wait until the gates in `docs/ml_readiness_plan.md` are satisfied: legally usable reference mask, locked Sentinel-1 pair, reviewed metadata snapshot, source files tracked outside Git with checksums, and a reproducible non-ML baseline.
 
 ## Repository Layout
 

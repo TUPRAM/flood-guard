@@ -167,3 +167,33 @@ Acceptance: all rows remain blocked until geometry, license, redistribution, and
 Add a first real-data ingestion skeleton that records source metadata and blockers only.
 
 Acceptance: generated manifest is `metadata_only`, does not permit downloads, and marks all rows not ready for processing.
+
+## Task 27 - Licensing Request Templates
+
+Add copy-ready request templates for UNOSAT/UNITAR, GISTDA, International Charter, and Sentinel Asia.
+
+Acceptance: templates ask for geometry access, license terms, redistribution status, citation requirements, and permitted research/demo use without claiming operational status.
+
+## Task 28 - Live Metadata Snapshot Checklist
+
+Add a review checklist before committing any `outputs/cdse_*_metadata.csv` files.
+
+Acceptance: checklist covers dry-run URL review, command, profile, row count, product ID spot checks, no product downloads, no secrets, source URL preservation, and reason for committing.
+
+## Task 29 - Ingestion Gate Test
+
+Prevent the metadata-only ingestion skeleton from writing imagery, binary, or product-package outputs.
+
+Acceptance: tests fail if the skeleton accepts `.SAFE`, `.tif`, `.jp2`, `.zip`, NetCDF, GRIB, or similar output paths, and tests confirm the skeleton has no network download calls.
+
+## Task 30 - Dashboard V4 Export Buttons
+
+Add static dashboard buttons for downloading the current action brief and active-filter priority GeoJSON.
+
+Acceptance: exports are generated from embedded browser data only; `outputs/dashboard.html` remains backend-free and contains no `fetch` path.
+
+## Task 31 - ML Readiness Plan
+
+Document when FloodGuard is ready to start ML on real data.
+
+Acceptance: `docs/ml_readiness_plan.md` states the current not-ready status and lists gates for reference-mask licensing, Sentinel-1 pair lock, metadata snapshot review, source file checksums, non-ML baseline, and validation metrics.

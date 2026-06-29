@@ -29,3 +29,7 @@ Optional live metadata snapshots, generated only when intentionally run and revi
 
 - `cdse_mae_sai_2024_metadata.csv`
 - `cdse_hat_yai_2025_metadata.csv`
+
+Before committing optional live metadata snapshots, complete `docs/live_metadata_snapshot_review_checklist.md`.
+
+`dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from embedded fixture data only.

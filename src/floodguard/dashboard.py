@@ -184,6 +184,19 @@ def _build_dashboard_html(
       padding: 8px 9px;
       min-height: 38px;
     }
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #eef2ed;
+      color: var(--ink);
+      cursor: pointer;
+      min-height: 38px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    button:hover {
+      background: #e3e9df;
+    }
     .control-stack {
       display: grid;
       gap: 10px;
@@ -210,6 +223,12 @@ def _build_dashboard_html(
       border-radius: 6px;
       background: #fbfcf8;
       font-size: 13px;
+    }
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 12px 0 4px;
     }
     .metric-grid {
       display: grid;
@@ -402,6 +421,10 @@ def _build_dashboard_html(
           </select>
         </div>
       </div>
+      <div class="button-row" aria-label="Dashboard exports">
+        <button id="download-current-brief" type="button">Download current brief</button>
+        <button id="download-filtered-geojson" type="button">Download filtered GeoJSON</button>
+      </div>
       <div class="metric-grid">
         <div class="metric"><span class="label">Selected</span><span class="value" id="panel-subdistrict">__TOP_SUBDISTRICT__</span></div>
         <div class="metric"><span class="label">Class</span><span class="value" id="panel-class">__TOP_CLASS__</span></div>
@@ -546,6 +569,8 @@ def _build_dashboard_html(
         state.showRoads = event.target.checked;
         state.showRoads ? roadLayer.addTo(map) : roadLayer.removeFrom(map);
       });
+      document.getElementById('download-current-brief').addEventListener('click', downloadCurrentActionBrief);
+      document.getElementById('download-filtered-geojson').addEventListener('click', downloadFilteredGeoJSON);
     }
 
     function bindPriorityFeature(feature, layer) {
@@ -674,6 +699,42 @@ def _build_dashboard_html(
         return;
       }
       element.classList.add(number < 0 ? 'good' : 'bad');
+    }
+
+    function downloadCurrentActionBrief() {
+      const id = state.selectedId || 'selected';
+      const content = briefsBySubdistrict[id] || `# FloodGuard Action Brief\n\nNo generated action brief for ${id}.\n`;
+      downloadText(`action_brief_${sanitizeFilename(id)}.md`, content, 'text/markdown;charset=utf-8');
+    }
+
+    function downloadFilteredGeoJSON() {
+      const filtered = {
+        type: 'FeatureCollection',
+        features: priorityData.features.filter((feature) =>
+          state.visibleClasses.has(String(feature.properties.action_class))
+        )
+      };
+      downloadText(
+        'priority_subdistricts_filtered.geojson',
+        JSON.stringify(filtered, null, 2),
+        'application/geo+json;charset=utf-8'
+      );
+    }
+
+    function downloadText(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function sanitizeFilename(value) {
+      return String(value || 'selected').replace(/[^A-Za-z0-9_.-]/g, '_');
     }
 
     initializeDashboardControls();

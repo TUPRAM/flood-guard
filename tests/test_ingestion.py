@@ -8,10 +8,13 @@ import pytest
 from floodguard.ingestion import (
     INGESTION_OUTPUT_COLUMNS,
     IngestionPlanError,
+    assert_metadata_only_output_path,
     build_ingestion_manifest,
     default_reference_mask_sources,
     write_ingestion_manifest,
 )
+
+REPO_ROOT = Path(__file__).parents[1]
 
 
 def test_default_reference_mask_sources_build_metadata_only_manifest() -> None:
@@ -41,6 +44,44 @@ def test_write_ingestion_manifest_writes_csv(tmp_path: Path) -> None:
     rows = pd.read_csv(output_path)
     assert len(rows) == 5
     assert set(rows["ingestion_stage"]) == {"metadata_only"}
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "mae_sai_reference_mask.tif",
+        "sentinel_product.SAFE",
+        "hat_yai_scene.zip",
+        "era5_precipitation.grib",
+        "flood_depth.nc",
+    ],
+)
+def test_metadata_only_output_path_rejects_binary_or_imagery_targets(
+    tmp_path: Path,
+    filename: str,
+) -> None:
+    with pytest.raises(IngestionPlanError, match="refuses imagery/product|metadata outputs"):
+        assert_metadata_only_output_path(tmp_path / filename)
+
+
+def test_write_ingestion_manifest_rejects_imagery_output_path(tmp_path: Path) -> None:
+    output_path = tmp_path / "blocked_reference_mask.tif"
+
+    with pytest.raises(IngestionPlanError, match="imagery/product output"):
+        write_ingestion_manifest(default_reference_mask_sources(), output_path)
+
+
+def test_ingestion_skeleton_script_has_no_network_download_calls() -> None:
+    script_source = (REPO_ROOT / "scripts" / "build_ingestion_manifest.py").read_text(
+        encoding="utf-8"
+    )
+    module_source = (REPO_ROOT / "src" / "floodguard" / "ingestion.py").read_text(
+        encoding="utf-8"
+    )
+
+    for token in ("urlopen(", "requests.", "urlretrieve(", "rasterio.open", "gdal."):
+        assert token not in script_source
+        assert token not in module_source
 
 
 def test_build_ingestion_manifest_rejects_missing_columns() -> None:

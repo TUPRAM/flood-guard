@@ -177,6 +177,13 @@ Dashboard v3 adds two global scenario summary cards:
 - Best intervention effect: the most negative temporary-shelter 30-minute access-loss delta.
 - Worst road-closure stress case: the most positive road-closure 30-minute access-loss delta.
 
+Dashboard v4 adds static export controls:
+
+- Download the currently selected embedded action brief as Markdown.
+- Download the currently filtered priority GeoJSON from embedded feature data.
+
+These controls must run entirely in the browser and must not require `fetch`, a backend, or a build step.
+
 ## 9. CDSE Metadata Planning
 
 CDSE metadata querying is catalogue-only. It records candidate Sentinel-1 product metadata from OData and must not download product assets.
@@ -191,3 +198,17 @@ Mae Sai reference-mask target v1 is UNOSAT/UNITAR planning evidence only until g
 ## 10. Metadata-Only Real-Data Ingestion Skeleton
 
 The first ingestion skeleton records source metadata, licensing blockers, and next actions only. It must not download real source data, run remote-sensing model code, or mark any row processing-ready until geometry, license, and redistribution status are confirmed.
+
+The skeleton must also reject output paths that look like imagery, product packages, or binary remote-sensing assets. Metadata-only outputs may use `.csv`, `.json`, `.md`, or `.txt`.
+
+## 11. ML Readiness
+
+FloodGuard is not ready for real-data ML until these gates pass:
+
+1. A legally usable flood reference mask is confirmed.
+2. A pre/post Sentinel-1 pair is locked against the flood peak or reference-mask date.
+3. Any live CDSE metadata snapshot has passed the snapshot review checklist.
+4. Source files are tracked outside Git with paths, checksums, product IDs, and access terms.
+5. A deterministic non-ML baseline can report IoU, F1/Dice, precision, recall, area error, and calibration caveats.
+
+The first real-data ML step should be a small, validated experiment that feeds a flood probability or extent layer into the existing decision layer. Do not start with a deep model before label quality, licensing, and validation evidence are credible.

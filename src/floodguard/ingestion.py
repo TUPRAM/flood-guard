@@ -7,6 +7,28 @@ from pathlib import Path
 
 import pandas as pd
 
+METADATA_ONLY_ALLOWED_SUFFIXES: tuple[str, ...] = (
+    ".csv",
+    ".json",
+    ".md",
+    ".txt",
+)
+
+PROHIBITED_REAL_DATA_SUFFIXES: tuple[str, ...] = (
+    ".safe",
+    ".tif",
+    ".tiff",
+    ".jp2",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".nc",
+    ".grib",
+    ".h5",
+    ".hdf",
+    ".img",
+)
+
 INGESTION_REQUIRED_COLUMNS: tuple[str, ...] = (
     "source_name",
     "study_area",
@@ -117,9 +139,33 @@ def write_ingestion_manifest(
     """Write a metadata-only ingestion manifest CSV and return its path."""
 
     manifest = build_ingestion_manifest(source_frame)
-    target = Path(output_path)
+    target = assert_metadata_only_output_path(output_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     manifest.to_csv(target, index=False)
+    return target
+
+
+def assert_metadata_only_output_path(output_path: str | Path) -> Path:
+    """Reject output paths that look like imagery, product, or binary data."""
+
+    target = Path(output_path)
+    suffixes = tuple(suffix.lower() for suffix in target.suffixes)
+    if not suffixes:
+        raise IngestionPlanError(
+            "Metadata-only ingestion outputs must use an explicit metadata suffix: "
+            f"{', '.join(METADATA_ONLY_ALLOWED_SUFFIXES)}."
+        )
+    prohibited = [suffix for suffix in suffixes if suffix in PROHIBITED_REAL_DATA_SUFFIXES]
+    if prohibited:
+        raise IngestionPlanError(
+            "Metadata-only ingestion skeleton refuses imagery/product output paths: "
+            f"{target}"
+        )
+    if suffixes[-1] not in METADATA_ONLY_ALLOWED_SUFFIXES:
+        raise IngestionPlanError(
+            "Metadata-only ingestion skeleton can only write metadata outputs "
+            f"({', '.join(METADATA_ONLY_ALLOWED_SUFFIXES)}): {target}"
+        )
     return target
 
 

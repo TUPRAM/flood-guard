@@ -143,3 +143,27 @@ Acceptance: Mae Sai and Hat Yai profiles print OData URLs without network access
 Add the UNOSAT/UNITAR Mae Sai reference-mask target, provisional Mae Sai pre/post pair, and Hat Yai focused CDSE candidate products.
 
 Acceptance: inventory documents no-download status, unresolved geometry/license blockers, and Charter/Sentinel Asia/GISTDA access notes.
+
+## Task 23 - Output Data Dictionary
+
+Add a judge-facing data dictionary for CSV, GeoJSON, dashboard, brief, and metadata fields.
+
+Acceptance: `outputs/data_dictionary.md` explains the generated outputs without requiring code inspection.
+
+## Task 24 - Dashboard V3 Summary Cards
+
+Add global scenario summary cards for best temporary-shelter intervention effect and worst road-closure stress case.
+
+Acceptance: dashboard cards identify the expected fixture subdistrict and access-loss delta.
+
+## Task 25 - Reference-Mask Licensing Log
+
+Start a reference-mask licensing log for UNOSAT, GISTDA, Charter, Sentinel Asia, and academic/manual candidates.
+
+Acceptance: all rows remain blocked until geometry, license, redistribution, and citation terms are confirmed.
+
+## Task 26 - Metadata-Only Ingestion Skeleton
+
+Add a first real-data ingestion skeleton that records source metadata and blockers only.
+
+Acceptance: generated manifest is `metadata_only`, does not permit downloads, and marks all rows not ready for processing.

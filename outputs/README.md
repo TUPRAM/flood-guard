@@ -5,6 +5,7 @@ Generated sample and demo outputs belong here.
 Current expected MVP output:
 
 - `sample_priority_scores.csv`
+- `data_dictionary.md`
 - `sample_road_risk.csv`
 - `sample_access_loss.csv`
 - `sample_equity_gap.csv`
@@ -22,3 +23,9 @@ Current expected MVP output:
 - `sample_scenario_summary.csv`
 - `sample_fpps_sensitivity.csv`
 - `sample_fpps_rank_instability.csv`
+- `real_data_ingestion_manifest.csv`
+
+Optional live metadata snapshots, generated only when intentionally run and reviewed:
+
+- `cdse_mae_sai_2024_metadata.csv`
+- `cdse_hat_yai_2025_metadata.csv`

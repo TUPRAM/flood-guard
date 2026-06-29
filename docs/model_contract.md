@@ -172,6 +172,11 @@ Dashboard v2 adds subdistrict selection, A-E filtering, and scenario-delta highl
 
 Action brief v3 generates default briefs for actionable A/B/C subdistricts and includes recommended actions in both English and Thai. D/E brief generation remains available only through explicit single-brief selection.
 
+Dashboard v3 adds two global scenario summary cards:
+
+- Best intervention effect: the most negative temporary-shelter 30-minute access-loss delta.
+- Worst road-closure stress case: the most positive road-closure 30-minute access-loss delta.
+
 ## 9. CDSE Metadata Planning
 
 CDSE metadata querying is catalogue-only. It records candidate Sentinel-1 product metadata from OData and must not download product assets.
@@ -182,3 +187,7 @@ Current query profiles:
 - `hat_yai_2025`: `POINT(100.47 7.01)`, `SENTINEL-1`, `IW_GRDH_1SDV`, 2025-11-17 through 2025-12-05.
 
 Mae Sai reference-mask target v1 is UNOSAT/UNITAR planning evidence only until geometry access and redistribution/license terms are confirmed.
+
+## 10. Metadata-Only Real-Data Ingestion Skeleton
+
+The first ingestion skeleton records source metadata, licensing blockers, and next actions only. It must not download real source data, run remote-sensing model code, or mark any row processing-ready until geometry, license, and redistribution status are confirmed.

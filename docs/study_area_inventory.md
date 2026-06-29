@@ -4,6 +4,8 @@ This document is a planning catalog only. This change does not download real dat
 
 Use `docs/source_registry.md` as the source-of-truth list for candidate data providers, license notes, and confidence caveats.
 
+Use `docs/reference_mask_licensing_log.md` as the working log for reference-mask geometry access, license, redistribution, and citation status before any real-data processing.
+
 ## Chiang Rai / Mae Sai 2024
 
 ### Role

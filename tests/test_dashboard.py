@@ -34,6 +34,10 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert 'class="action-filter"' in html
     assert "temporary shelter delta" in html
     assert "road closure delta" in html
+    assert "Best intervention effect" in html
+    assert "Worst road-closure stress case" in html
+    assert "Temporary shelter: -30 people losing 30-min access" in html
+    assert "Road closure: +50 people losing 30-min access" in html
     assert "Delta improves" in html
     assert "Delta worsens" in html
     assert "Action Brief" in html

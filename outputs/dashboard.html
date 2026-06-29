@@ -109,6 +109,28 @@
       background: #fbfcf8;
       min-width: 0;
     }
+    .summary-card-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 10px 0 14px;
+    }
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: #fbfcf8;
+    }
+    .summary-card strong {
+      display: block;
+      margin: 2px 0 4px;
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+    .summary-card span:last-child {
+      color: var(--muted);
+      font-size: 13px;
+    }
     .label {
       display: block;
       color: var(--muted);
@@ -270,6 +292,19 @@
         <div class="metric"><span class="label">Class</span><span class="value" id="panel-class">A</span></div>
         <div class="metric"><span class="label">FPPS</span><span class="value" id="panel-fpps">81.60</span></div>
         <div class="metric"><span class="label">Confidence</span><span class="value" id="panel-confidence">high</span></div>
+      </div>
+      <h2>Scenario Summary</h2>
+      <div class="summary-card-grid">
+        <div class="summary-card" id="summary-best-intervention">
+          <span class="label">Best intervention effect</span>
+          <strong>FG-TB-002 / Bridge Junction</strong>
+          <span>Temporary shelter: -30 people losing 30-min access</span>
+        </div>
+        <div class="summary-card" id="summary-worst-road-closure">
+          <span class="label">Worst road-closure stress case</span>
+          <strong>FG-TB-002 / Bridge Junction</strong>
+          <span>Road closure: +50 people losing 30-min access</span>
+        </div>
       </div>
       <h2>Access and Equity</h2>
       <ul class="summary-list">

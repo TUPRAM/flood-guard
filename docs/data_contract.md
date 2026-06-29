@@ -244,6 +244,11 @@ Dashboard v2 required controls:
 - scenario-delta highlighting for priority polygons
 - embedded action briefs keyed by `subdistrict_id`
 
+Dashboard v3 also includes summary cards for:
+
+- best intervention effect, using the most negative temporary-shelter 30-minute access-loss delta
+- worst road-closure stress case, using the most positive road-closure 30-minute access-loss delta
+
 ## CDSE Metadata Query Output
 
 The CDSE metadata query script is no-download and metadata-only. It must not download Sentinel product assets.
@@ -266,9 +271,39 @@ Supported profiles:
 - `mae_sai_2024`
 - `hat_yai_2025`
 
+Live metadata snapshots may be written as:
+
+- `outputs/cdse_mae_sai_2024_metadata.csv`
+- `outputs/cdse_hat_yai_2025_metadata.csv`
+
+These files should only be committed after intentional review.
+
+## Metadata-Only Ingestion Manifest
+
+`outputs/real_data_ingestion_manifest.csv` is the first real-data ingestion skeleton. It records source planning rows and blockers only.
+
+Required columns:
+
+- `source_name`
+- `study_area`
+- `source_url`
+- `candidate_use`
+- `geometry_access_status`
+- `license_status`
+- `redistribution_status`
+- `next_action`
+- `ingestion_stage`
+- `download_permitted_by_skeleton`
+- `ready_for_processing`
+- `blocked_reason`
+
+Current rows must remain `metadata_only`, with `download_permitted_by_skeleton=False` and `ready_for_processing=False`.
+
 ## Study-Area Inventory Output
 
 `docs/study_area_inventory.md` records real-data acquisition planning only. It may include exact candidate metadata, product ids, licensing notes, and blockers, but this repository change does not download real imagery or implement remote-sensing model code.
+
+`docs/reference_mask_licensing_log.md` records candidate reference-mask licensing status before processing or redistribution.
 
 ## GeoJSON Fixtures
 

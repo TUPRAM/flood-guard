@@ -103,6 +103,16 @@ def _build_dashboard_html(
     top_priority: dict[str, Any],
 ) -> str:
     props = top_priority.get("properties") or {}
+    best_intervention = _scenario_summary(
+        priority_geojson,
+        "temporary_shelter_change_people_losing_30_min_access",
+        prefer="min",
+    )
+    worst_road_closure = _scenario_summary(
+        priority_geojson,
+        "road_closure_change_people_losing_30_min_access",
+        prefer="max",
+    )
     template = """<!doctype html>
 <html lang="en">
 <head>
@@ -213,6 +223,28 @@ def _build_dashboard_html(
       padding: 10px;
       background: #fbfcf8;
       min-width: 0;
+    }
+    .summary-card-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 10px 0 14px;
+    }
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: #fbfcf8;
+    }
+    .summary-card strong {
+      display: block;
+      margin: 2px 0 4px;
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+    .summary-card span:last-child {
+      color: var(--muted);
+      font-size: 13px;
     }
     .label {
       display: block;
@@ -375,6 +407,19 @@ def _build_dashboard_html(
         <div class="metric"><span class="label">Class</span><span class="value" id="panel-class">__TOP_CLASS__</span></div>
         <div class="metric"><span class="label">FPPS</span><span class="value" id="panel-fpps">__TOP_FPPS__</span></div>
         <div class="metric"><span class="label">Confidence</span><span class="value" id="panel-confidence">__TOP_CONFIDENCE__</span></div>
+      </div>
+      <h2>Scenario Summary</h2>
+      <div class="summary-card-grid">
+        <div class="summary-card" id="summary-best-intervention">
+          <span class="label">Best intervention effect</span>
+          <strong>__BEST_INTERVENTION_LABEL__</strong>
+          <span>Temporary shelter: __BEST_INTERVENTION_DELTA__ people losing 30-min access</span>
+        </div>
+        <div class="summary-card" id="summary-worst-road-closure">
+          <span class="label">Worst road-closure stress case</span>
+          <strong>__WORST_ROAD_CLOSURE_LABEL__</strong>
+          <span>Road closure: __WORST_ROAD_CLOSURE_DELTA__ people losing 30-min access</span>
+        </div>
       </div>
       <h2>Access and Equity</h2>
       <ul class="summary-list">
@@ -675,6 +720,10 @@ def _build_dashboard_html(
             0,
         ),
         "__TOP_REASON__": html.escape(str(props.get("top_reason", ""))),
+        "__BEST_INTERVENTION_LABEL__": html.escape(best_intervention["label"]),
+        "__BEST_INTERVENTION_DELTA__": html.escape(best_intervention["delta"]),
+        "__WORST_ROAD_CLOSURE_LABEL__": html.escape(worst_road_closure["label"]),
+        "__WORST_ROAD_CLOSURE_DELTA__": html.escape(worst_road_closure["delta"]),
     }
     for token, value in replacements.items():
         template = template.replace(token, value)
@@ -700,3 +749,30 @@ def _format_signed(value: object, places: int) -> str:
 
 def _js_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)[1:-1]
+
+
+def _scenario_summary(
+    priority_geojson: dict[str, Any],
+    delta_field: str,
+    prefer: str,
+) -> dict[str, str]:
+    candidates: list[tuple[float, str, str]] = []
+    for feature in priority_geojson.get("features", []):
+        props = feature.get("properties") or {}
+        try:
+            delta = float(props[delta_field])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if delta != delta:
+            continue
+        label = f"{props.get('subdistrict_id', '')} / {props.get('subdistrict_name', '')}"
+        candidates.append((delta, label, str(props.get("action_class", ""))))
+    if not candidates:
+        return {"label": "unavailable", "delta": "unavailable"}
+    if prefer == "min":
+        delta, label, _ = min(candidates, key=lambda item: (item[0], item[1]))
+    elif prefer == "max":
+        delta, label, _ = max(candidates, key=lambda item: (item[0], item[1]))
+    else:
+        raise DashboardError(f"Unknown scenario summary preference: {prefer}")
+    return {"label": label, "delta": _format_signed(delta, 0)}

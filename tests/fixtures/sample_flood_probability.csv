@@ -1,0 +1,6 @@
+subdistrict_id,subdistrict_name,mean_flood_probability_0_1,max_flood_probability_0_1,source_name,source_timestamp,confidence_class
+FG-TB-001,River Market,0.88,0.96,synthetic_fixture,2026-06-29T00:00:00Z,high
+FG-TB-002,Bridge Junction,0.71,0.89,synthetic_fixture,2026-06-29T00:00:00Z,medium
+FG-TB-003,Clinic Basin,0.68,0.78,synthetic_fixture,2026-06-29T00:00:00Z,medium
+FG-TB-004,Canal Fringe,0.54,0.66,synthetic_fixture,2026-06-29T00:00:00Z,high
+FG-TB-005,Unverified Hillside,0.92,0.98,synthetic_fixture,2026-06-29T00:00:00Z,low

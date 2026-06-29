@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "floodguard-thailand"
+version = "0.1.0"
+description = "GeoAI decision-support prototype for flood preparedness priority scoring in Thailand."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "FloodGuard Thailand" }
+]
+dependencies = [
+  "pandas>=2.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+geo = [
+  "geopandas>=0.14",
+  "shapely>=2.0",
+  "networkx>=3.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

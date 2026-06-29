@@ -1,0 +1,6 @@
+subdistrict_id,subdistrict_name,fpps_0_100,action_class,top_reason,confidence_class,source_name,source_timestamp,assumptions
+FG-TB-001,River Market,81.6,A,High exposure and access loss require life-safety action.,high,synthetic_fixture,2026-06-29T00:00:00Z,Open synthetic fixture for FPPS scoring tests
+FG-TB-002,Bridge Junction,63.85,B,Critical routes and access loss threaten isolation.,medium,synthetic_fixture,2026-06-29T00:00:00Z,Open synthetic fixture for FPPS scoring tests
+FG-TB-003,Clinic Basin,60.55,C,Exposure and access loss threaten essential services.,medium,synthetic_fixture,2026-06-29T00:00:00Z,Open synthetic fixture for FPPS scoring tests
+FG-TB-004,Canal Fringe,42.55,D,Highest driver is flood likelihood (54.0/100).,high,synthetic_fixture,2026-06-29T00:00:00Z,Open synthetic fixture for FPPS scoring tests
+FG-TB-005,Unverified Hillside,86.25,E,Monitor and verify because confidence is low.,low,synthetic_fixture,2026-06-29T00:00:00Z,Low confidence row should be monitored before action

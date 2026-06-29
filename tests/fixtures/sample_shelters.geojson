@@ -1,0 +1,32 @@
+{
+  "type": "FeatureCollection",
+  "name": "sample_shelters",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "shelter_id": "FG-SH-001",
+        "shelter_name": "River School Shelter",
+        "capacity_people": 1200,
+        "verification_status": "synthetic"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [100.011, 18.012]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "shelter_id": "FG-SH-002",
+        "shelter_name": "Hill Community Hall",
+        "capacity_people": 600,
+        "verification_status": "synthetic"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [100.052, 18.012]
+      }
+    }
+  ]
+}

@@ -27,6 +27,7 @@
 ## Recommended Action / ข้อเสนอการปฏิบัติ
 
 - Pre-position rescue assets, open shelters, issue targeted warnings, and coordinate medical continuity.
+- จัดเตรียมกำลังช่วยเหลือ เปิดศูนย์พักพิง ส่งคำเตือนเฉพาะพื้นที่ และประสานความต่อเนื่องทางการแพทย์
 
 ## Assumptions / สมมติฐาน
 

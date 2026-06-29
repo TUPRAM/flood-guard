@@ -7,9 +7,11 @@ import pytest
 
 from floodguard.briefs import (
     BriefError,
+    THAI_RECOMMENDED_ACTIONS,
     build_action_brief,
     select_highest_actionable,
     write_action_brief,
+    write_action_briefs,
 )
 
 OUTPUTS = Path(__file__).parents[1] / "outputs"
@@ -54,6 +56,7 @@ def test_build_action_brief_includes_priority_access_equity_and_roads() -> None:
     assert "Equity gap ratio: 1.000" in brief
     assert "FG-RD-001: 0.832" in brief
     assert "Pre-position rescue assets" in brief
+    assert THAI_RECOMMENDED_ACTIONS["A"] in brief
     assert "Fixture-backed analysis only" in brief
     assert "not an official warning" in brief
 
@@ -71,6 +74,7 @@ def test_build_action_brief_supports_manual_subdistrict_id() -> None:
 
     assert "# Action Brief - Bridge Junction (FG-TB-002)" in brief
     assert "Plan closures, detours" in brief
+    assert THAI_RECOMMENDED_ACTIONS["B"] in brief
 
 
 def test_write_action_brief_uses_selected_id_in_filename(tmp_path: Path) -> None:
@@ -86,6 +90,29 @@ def test_write_action_brief_uses_selected_id_in_filename(tmp_path: Path) -> None
 
     assert written.name == "action_brief_FG-TB-001.md"
     assert written.exists()
+
+
+def test_write_action_briefs_generates_default_actionable_batch(tmp_path: Path) -> None:
+    priority, road_risk, access_loss, equity_gap = load_frames()
+
+    written = write_action_briefs(
+        priority,
+        road_risk,
+        access_loss,
+        equity_gap,
+        tmp_path,
+    )
+
+    assert [path.name for path in written] == [
+        "action_brief_FG-TB-001.md",
+        "action_brief_FG-TB-002.md",
+        "action_brief_FG-TB-003.md",
+    ]
+    assert not (tmp_path / "action_brief_FG-TB-004.md").exists()
+    assert not (tmp_path / "action_brief_FG-TB-005.md").exists()
+    clinic_brief = (tmp_path / "action_brief_FG-TB-003.md").read_text(encoding="utf-8")
+    assert THAI_RECOMMENDED_ACTIONS["C"] in clinic_brief
+    assert "Recommended Action / ข้อเสนอการปฏิบัติ" in clinic_brief
 
 
 def test_build_action_brief_rejects_missing_subdistrict() -> None:

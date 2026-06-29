@@ -17,6 +17,16 @@ RECOMMENDED_ACTIONS: dict[str, str] = {
     "E": "Monitor conditions, verify field data, and improve source confidence before escalation.",
 }
 
+THAI_RECOMMENDED_ACTIONS: dict[str, str] = {
+    "A": "จัดเตรียมกำลังช่วยเหลือ เปิดศูนย์พักพิง ส่งคำเตือนเฉพาะพื้นที่ และประสานความต่อเนื่องทางการแพทย์",
+    "B": "วางแผนปิดถนน ทางเบี่ยง เครื่องสูบน้ำ จุดข้ามชั่วคราว หรือการยกระดับถนนจุดสำคัญ",
+    "C": "ป้องกันสถานบริการสำคัญจากน้ำท่วม จัดทางเข้าถึงสำรอง และเปิดบริการเคลื่อนที่",
+    "D": "ให้ความสำคัญกับการระบายน้ำ การบำรุงรักษาคลอง พื้นที่รับน้ำ โครงสร้างพื้นฐานสีเขียว-น้ำเงิน และการซ้อมแผนในพื้นที่",
+    "E": "ติดตามสถานการณ์ ตรวจสอบข้อมูลภาคสนาม และปรับปรุงความเชื่อมั่นของแหล่งข้อมูลก่อนยกระดับการดำเนินการ",
+}
+
+DEFAULT_ACTIONABLE_BRIEF_CLASSES: tuple[str, ...] = ("A", "B", "C")
+
 PRIORITY_REQUIRED_COLUMNS: tuple[str, ...] = (
     "subdistrict_id",
     "subdistrict_name",
@@ -118,6 +128,7 @@ def build_action_brief(
     recommended_action = RECOMMENDED_ACTIONS.get(action_class)
     if recommended_action is None:
         raise BriefError(f"Unknown action_class value: {action_class}")
+    thai_recommended_action = THAI_RECOMMENDED_ACTIONS[action_class]
 
     title = f"# Action Brief - {selected['subdistrict_name']} ({selected_id})"
     road_lines = _format_road_lines(roads)
@@ -151,6 +162,7 @@ def build_action_brief(
         "## Recommended Action / ข้อเสนอการปฏิบัติ",
         "",
         f"- {recommended_action}",
+        f"- {thai_recommended_action}",
         "",
         "## Assumptions / สมมติฐาน",
         "",
@@ -183,6 +195,55 @@ def write_action_brief(
         encoding="utf-8",
     )
     return target
+
+
+def write_action_briefs(
+    priority: pd.DataFrame,
+    road_risk: pd.DataFrame,
+    access_loss: pd.DataFrame,
+    equity_gap: pd.DataFrame,
+    output_dir: str | Path,
+    action_classes: Sequence[str] = DEFAULT_ACTIONABLE_BRIEF_CLASSES,
+) -> list[Path]:
+    """Write action briefs for all requested action classes and return paths."""
+
+    _validate_columns(priority, PRIORITY_REQUIRED_COLUMNS, "priority")
+    requested_classes = tuple(str(action_class) for action_class in action_classes)
+    unknown_requested = sorted(set(requested_classes) - set(ACTION_PRIORITY))
+    if unknown_requested:
+        raise BriefError(
+            f"Unknown requested action_class value(s): {', '.join(unknown_requested)}"
+        )
+
+    frame = priority.copy()
+    frame["action_class"] = frame["action_class"].astype(str)
+    unknown_actions = sorted(set(frame["action_class"]) - set(ACTION_PRIORITY))
+    if unknown_actions:
+        raise BriefError(f"Unknown action_class value(s): {', '.join(unknown_actions)}")
+    frame["fpps_0_100"] = pd.to_numeric(frame["fpps_0_100"], errors="coerce")
+    if frame["fpps_0_100"].isna().any():
+        raise BriefError("priority fpps_0_100 must be numeric.")
+
+    selected = frame[frame["action_class"].isin(requested_classes)].copy()
+    selected["action_rank"] = selected["action_class"].map(ACTION_PRIORITY)
+    selected = selected.sort_values(
+        ["action_rank", "fpps_0_100", "subdistrict_id"],
+        ascending=[True, False, True],
+    )
+
+    paths: list[Path] = []
+    for _, row in selected.iterrows():
+        paths.append(
+            write_action_brief(
+                priority,
+                road_risk,
+                access_loss,
+                equity_gap,
+                output_dir,
+                subdistrict_id=str(row["subdistrict_id"]),
+            )
+        )
+    return paths
 
 
 def _validate_columns(

@@ -14,7 +14,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from floodguard.access import calculate_access_loss  # noqa: E402
-from floodguard.briefs import write_action_brief  # noqa: E402
+from floodguard.briefs import write_action_briefs  # noqa: E402
 from floodguard.dashboard import write_static_dashboard  # noqa: E402
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss  # noqa: E402
 from floodguard.exports import write_priority_geojson, write_road_risk_geojson  # noqa: E402
@@ -133,7 +133,7 @@ def main() -> None:
         output_dir / "validation_summary.md",
         rank_instability=rank_instability,
     )
-    action_brief_path = write_action_brief(
+    action_brief_paths = write_action_briefs(
         priority,
         road_risk,
         access_loss,
@@ -144,7 +144,7 @@ def main() -> None:
         priority_geojson_path,
         road_risk_geojson_path,
         validation_path,
-        action_brief_path,
+        action_brief_paths,
         output_dir / "dashboard.html",
     )
 
@@ -155,7 +155,8 @@ def main() -> None:
     print(f"Wrote {priority_geojson_path}")
     print(f"Wrote {road_risk_geojson_path}")
     print(f"Wrote {validation_path}")
-    print(f"Wrote {action_brief_path}")
+    for action_brief_path in action_brief_paths:
+        print(f"Wrote {action_brief_path}")
     print(f"Wrote {dashboard_path}")
     print(f"Wrote {scenario_summary_path}")
     print(f"Wrote {sensitivity_path}")

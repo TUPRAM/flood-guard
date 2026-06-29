@@ -167,3 +167,18 @@ Action briefs are compact Markdown decision products, not official warnings. Bri
 - Assumptions / สมมติฐาน
 
 The static dashboard is a fixture-backed presentation artifact generated from GeoJSON/Markdown outputs. It should embed its data directly, use no backend, and preserve the non-operational warning boundary.
+
+Dashboard v2 adds subdistrict selection, A-E filtering, and scenario-delta highlighting. Negative 30-minute access-loss deltas indicate improvement, positive deltas indicate worsening, and zero or null deltas are neutral/unavailable.
+
+Action brief v3 generates default briefs for actionable A/B/C subdistricts and includes recommended actions in both English and Thai. D/E brief generation remains available only through explicit single-brief selection.
+
+## 9. CDSE Metadata Planning
+
+CDSE metadata querying is catalogue-only. It records candidate Sentinel-1 product metadata from OData and must not download product assets.
+
+Current query profiles:
+
+- `mae_sai_2024`: `POINT(99.88 20.43)`, `SENTINEL-1`, `IW_GRDH_1SDV`, 2024-09-01 through 2024-09-25.
+- `hat_yai_2025`: `POINT(100.47 7.01)`, `SENTINEL-1`, `IW_GRDH_1SDV`, 2025-11-17 through 2025-12-05.
+
+Mae Sai reference-mask target v1 is UNOSAT/UNITAR planning evidence only until geometry access and redistribution/license terms are confirmed.

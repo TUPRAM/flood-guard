@@ -119,3 +119,27 @@ Acceptance: `outputs/dashboard.html` opens from disk, embeds GeoJSON directly, h
 Record exact candidate Sentinel-1 CDSE metadata for the Mae Sai 2024 planning tile.
 
 Acceptance: inventory lists candidate product ids, access/license status, no-download status, and unresolved flood-mask/licensing blockers.
+
+## Task 19 - Dashboard V2 Controls
+
+Add subdistrict selection, A-E filters, scenario mode selection, and scenario-delta highlighting to the standalone dashboard.
+
+Acceptance: `outputs/dashboard.html` remains backend-free, embeds GeoJSON and briefs directly, and updates the panel/map from static JS controls.
+
+## Task 20 - Action Brief V3 Batch
+
+Generate all actionable A/B/C action briefs and include Thai recommended-action text.
+
+Acceptance: default generation writes briefs for FG-TB-001, FG-TB-002, and FG-TB-003 only; D/E remain manual.
+
+## Task 21 - No-Download CDSE Metadata Query
+
+Add reproducible CDSE metadata query helpers and a dry-run capable CLI.
+
+Acceptance: Mae Sai and Hat Yai profiles print OData URLs without network access in dry-run mode and parse mocked OData rows in tests.
+
+## Task 22 - Study-Area Inventory V3
+
+Add the UNOSAT/UNITAR Mae Sai reference-mask target, provisional Mae Sai pre/post pair, and Hat Yai focused CDSE candidate products.
+
+Acceptance: inventory documents no-download status, unresolved geometry/license blockers, and Charter/Sentinel Asia/GISTDA access notes.

@@ -14,7 +14,11 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
         OUTPUTS / "priority_subdistricts.geojson",
         OUTPUTS / "road_risk.geojson",
         OUTPUTS / "validation_summary.md",
-        OUTPUTS / "action_brief_FG-TB-001.md",
+        [
+            OUTPUTS / "action_brief_FG-TB-001.md",
+            OUTPUTS / "action_brief_FG-TB-002.md",
+            OUTPUTS / "action_brief_FG-TB-003.md",
+        ],
         output_path,
     )
 
@@ -24,11 +28,25 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" in html
     assert "const priorityData =" in html
     assert "const roadRiskData =" in html
+    assert "const briefsBySubdistrict =" in html
+    assert 'id="subdistrict-select"' in html
+    assert 'id="scenario-select"' in html
+    assert 'class="action-filter"' in html
+    assert "temporary shelter delta" in html
+    assert "road closure delta" in html
+    assert "Delta improves" in html
+    assert "Delta worsens" in html
     assert "Action Brief" in html
     assert "Validation Summary" in html
     assert "A Protect Lives" in html
+    assert "action_brief_FG-TB-001" not in html
+    assert "FG-TB-001" in html
+    assert "FG-TB-002" in html
+    assert "FG-TB-003" in html
     assert "temporary_shelter_change_people_losing_30_min_access" in html
     assert "road_closure_change_people_losing_30_min_access" in html
+    assert "function selectSubdistrict" in html
+    assert "function renderPriorityLayer" in html
     assert "fetch(" not in html
 
 

@@ -188,9 +188,11 @@ Required content:
 - equity-gap ratio and interpretation
 - likely road-risk rows for the subdistrict
 - assumptions
-- recommended action
+- recommended action in English and Thai
 
 Default selection uses the highest actionable class order `A > B > C > D > E`, then highest FPPS.
+
+Default batch generation writes briefs for actionable `A/B/C` subdistricts only. Manual single-brief generation may still produce `D/E` briefs when explicitly requested.
 
 ## Scenario Outputs
 
@@ -230,9 +232,39 @@ Outputs:
 - `outputs/priority_subdistricts.geojson`
 - `outputs/road_risk.geojson`
 - `outputs/validation_summary.md`
-- `outputs/action_brief_FG-TB-001.md`
+- `outputs/action_brief_<subdistrict_id>.md` files
 
 It embeds GeoJSON and Markdown directly in the file and uses Leaflet from CDN for map rendering. It has no backend or build step.
+
+Dashboard v2 required controls:
+
+- subdistrict selector
+- A-E action-class filters
+- scenario selector with `baseline`, `temporary shelter delta`, and `road closure delta`
+- scenario-delta highlighting for priority polygons
+- embedded action briefs keyed by `subdistrict_id`
+
+## CDSE Metadata Query Output
+
+The CDSE metadata query script is no-download and metadata-only. It must not download Sentinel product assets.
+
+Required CSV columns:
+
+- `acquisition_date`
+- `product_name`
+- `cdse_product_id`
+- `online_status`
+- `mission_platform_prefix`
+- `product_storage_type`
+- `candidate_role`
+- `query_profile`
+- `source_url`
+- `blocker_note`
+
+Supported profiles:
+
+- `mae_sai_2024`
+- `hat_yai_2025`
 
 ## Study-Area Inventory Output
 

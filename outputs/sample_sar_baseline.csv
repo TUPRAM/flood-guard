@@ -1,0 +1,6 @@
+pixel_id,row,col,pre_vv_db,post_vv_db,pre_vh_db,post_vh_db,vv_drop_db,vh_drop_db,combined_drop_db,flood_probability_0_1,binary_flood_extent,reference_flood_extent,confidence_class,assumptions
+PX-001,0,0,-9.0,-14.0,-16.0,-20.0,5.0,4.0,4.6,1.0,1,1,high,Synthetic non-ML SAR threshold fixture; not real Sentinel-1 processing.
+PX-002,0,1,-8.5,-12.5,-15.0,-18.5,4.0,3.5,3.8,0.943,1,1,high,Synthetic non-ML SAR threshold fixture; not real Sentinel-1 processing.
+PX-003,1,0,-10.0,-11.0,-17.0,-18.0,1.0,1.0,1.0,0.143,0,1,high,Synthetic non-ML SAR threshold fixture; not real Sentinel-1 processing.
+PX-004,1,1,-9.5,-14.2,-16.5,-19.9,4.7,3.4,4.18,1.0,1,0,high,Synthetic non-ML SAR threshold fixture; not real Sentinel-1 processing.
+PX-005,2,0,-7.5,-7.8,-14.0,-14.1,0.3,0.1,0.22,0.0,0,0,high,Synthetic non-ML SAR threshold fixture; not real Sentinel-1 processing.

@@ -201,6 +201,18 @@ The first ingestion skeleton records source metadata, licensing blockers, and ne
 
 The skeleton must also reject output paths that look like imagery, product packages, or binary remote-sensing assets. Metadata-only outputs may use `.csv`, `.json`, `.md`, or `.txt`.
 
+File-level readiness fields:
+
+- `product_id`
+- `local_path`
+- `sha256`
+- `source_license_status`
+- `reference_mask_status`
+- `processing_allowed`
+- `reason_blocked`
+
+`processing_allowed=True` is allowed only when geometry, license, redistribution/reference-only status, product id, local path, SHA-256 checksum, source license, and reference-mask gates are all confirmed.
+
 ## 11. ML Readiness
 
 FloodGuard is not ready for real-data ML until these gates pass:
@@ -212,3 +224,27 @@ FloodGuard is not ready for real-data ML until these gates pass:
 5. A deterministic non-ML baseline can report IoU, F1/Dice, precision, recall, area error, and calibration caveats.
 
 The first real-data ML step should be a small, validated experiment that feeds a flood probability or extent layer into the existing decision layer. Do not start with a deep model before label quality, licensing, and validation evidence are credible.
+
+## 12. Synthetic SAR Baseline
+
+The current SAR baseline is a non-ML synthetic fixture, not real Sentinel-1 processing.
+
+Fixture formula:
+
+```text
+vv_drop_db = pre_vv_db - post_vv_db
+vh_drop_db = pre_vh_db - post_vh_db
+combined_drop_db = 0.60 * vv_drop_db + 0.40 * vh_drop_db
+flood_probability_0_1 = clamp((combined_drop_db - 0.5) / (4.0 - 0.5), 0, 1)
+binary_flood_extent = flood_probability_0_1 >= 0.5
+```
+
+Validation metrics:
+
+- IoU
+- F1/Dice
+- precision
+- recall
+- area error ratio
+
+This baseline is the required benchmark before any first ML experiment.

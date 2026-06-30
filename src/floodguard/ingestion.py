@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
+import re
 
 import pandas as pd
 
@@ -40,12 +41,23 @@ INGESTION_REQUIRED_COLUMNS: tuple[str, ...] = (
     "next_action",
 )
 
+FILE_LEVEL_COLUMNS: tuple[str, ...] = (
+    "product_id",
+    "local_path",
+    "sha256",
+    "source_license_status",
+    "reference_mask_status",
+)
+
 INGESTION_OUTPUT_COLUMNS: tuple[str, ...] = (
     *INGESTION_REQUIRED_COLUMNS,
+    *FILE_LEVEL_COLUMNS,
     "ingestion_stage",
     "download_permitted_by_skeleton",
     "ready_for_processing",
+    "processing_allowed",
     "blocked_reason",
+    "reason_blocked",
 )
 
 
@@ -66,6 +78,11 @@ def default_reference_mask_sources() -> pd.DataFrame:
                 "geometry_access_status": "unresolved",
                 "license_status": "unresolved",
                 "redistribution_status": "unresolved",
+                "product_id": "not_selected",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "unresolved",
+                "reference_mask_status": "unresolved",
                 "next_action": "confirm GIS geometry access and redistribution terms",
             },
             {
@@ -76,6 +93,11 @@ def default_reference_mask_sources() -> pd.DataFrame:
                 "geometry_access_status": "unresolved",
                 "license_status": "unresolved",
                 "redistribution_status": "unresolved",
+                "product_id": "not_selected",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "unresolved",
+                "reference_mask_status": "unresolved",
                 "next_action": "identify event-specific product and license terms",
             },
             {
@@ -89,6 +111,11 @@ def default_reference_mask_sources() -> pd.DataFrame:
                 "geometry_access_status": "unresolved",
                 "license_status": "unresolved",
                 "redistribution_status": "unresolved",
+                "product_id": "not_selected",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "unresolved",
+                "reference_mask_status": "unresolved",
                 "next_action": "confirm product geometry access and attribution terms",
             },
             {
@@ -99,6 +126,11 @@ def default_reference_mask_sources() -> pd.DataFrame:
                 "geometry_access_status": "unresolved",
                 "license_status": "unresolved",
                 "redistribution_status": "unresolved",
+                "product_id": "not_selected",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "unresolved",
+                "reference_mask_status": "unresolved",
                 "next_action": "confirm product file access and redistribution terms",
             },
             {
@@ -109,6 +141,11 @@ def default_reference_mask_sources() -> pd.DataFrame:
                 "geometry_access_status": "not_identified",
                 "license_status": "unresolved",
                 "redistribution_status": "unresolved",
+                "product_id": "not_selected",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "unresolved",
+                "reference_mask_status": "unresolved",
                 "next_action": "search only after official/event sources are logged",
             },
         ]
@@ -125,10 +162,24 @@ def build_ingestion_manifest(source_frame: pd.DataFrame) -> pd.DataFrame:
         if frame[column].eq("").any():
             raise IngestionPlanError(f"Column {column} must not contain blank values.")
 
-    frame["ingestion_stage"] = "metadata_only"
+    for column in FILE_LEVEL_COLUMNS:
+        if column not in frame.columns:
+            frame[column] = _file_level_default(column, frame)
+        frame[column] = frame[column].astype(str).str.strip()
+        if frame[column].eq("").any():
+            raise IngestionPlanError(f"Column {column} must not contain blank values.")
+
+    processing_allowed = frame.apply(_processing_allowed, axis=1)
+    _reject_forced_processing_override(source_frame, processing_allowed)
+
+    frame["processing_allowed"] = processing_allowed
+    frame["ingestion_stage"] = processing_allowed.map(
+        {True: "file_ready_metadata", False: "metadata_only"}
+    )
     frame["download_permitted_by_skeleton"] = False
-    frame["ready_for_processing"] = False
+    frame["ready_for_processing"] = processing_allowed
     frame["blocked_reason"] = frame.apply(_blocked_reason, axis=1)
+    frame["reason_blocked"] = frame["blocked_reason"]
     return frame.loc[:, INGESTION_OUTPUT_COLUMNS]
 
 
@@ -177,8 +228,68 @@ def _blocked_reason(row: pd.Series) -> str:
         blockers.append("license not confirmed")
     if row["redistribution_status"] not in {"redistributable", "reference_only"}:
         blockers.append("redistribution status unresolved")
+    if row["product_id"] in {"not_selected", "not_acquired", "unknown"}:
+        blockers.append("product id not selected")
+    if row["local_path"] in {"not_acquired", "not_selected", "unknown"}:
+        blockers.append("local path not recorded")
+    if not _is_valid_sha256(row["sha256"]):
+        blockers.append("sha256 checksum not recorded")
+    if row["source_license_status"] != "confirmed":
+        blockers.append("source license not confirmed")
+    if row["reference_mask_status"] != "confirmed":
+        blockers.append("reference mask not confirmed")
     blockers.append("metadata-only skeleton does not permit downloads")
     return "; ".join(blockers)
+
+
+def _file_level_default(column: str, frame: pd.DataFrame) -> object:
+    if column == "source_license_status" and "license_status" in frame.columns:
+        return frame["license_status"]
+    if column in {"product_id", "local_path", "sha256"}:
+        return "not_acquired" if column != "product_id" else "not_selected"
+    if column == "reference_mask_status":
+        return "unresolved"
+    raise IngestionPlanError(f"Unknown file-level ingestion column: {column}")
+
+
+def _processing_allowed(row: pd.Series) -> bool:
+    return all(
+        [
+            row["geometry_access_status"] in {"confirmed", "available"},
+            row["license_status"] == "confirmed",
+            row["redistribution_status"] in {"redistributable", "reference_only"},
+            row["product_id"] not in {"not_selected", "not_acquired", "unknown"},
+            row["local_path"] not in {"not_acquired", "not_selected", "unknown"},
+            _is_valid_sha256(row["sha256"]),
+            row["source_license_status"] == "confirmed",
+            row["reference_mask_status"] == "confirmed",
+        ]
+    )
+
+
+def _is_valid_sha256(value: object) -> bool:
+    return bool(re.fullmatch(r"[0-9a-fA-F]{64}", str(value).strip()))
+
+
+def _reject_forced_processing_override(
+    source_frame: pd.DataFrame,
+    computed_processing_allowed: pd.Series,
+) -> None:
+    if "processing_allowed" not in source_frame.columns:
+        return
+    requested = source_frame["processing_allowed"].map(_truthy)
+    invalid = requested & ~computed_processing_allowed
+    if bool(invalid.any()):
+        raise IngestionPlanError(
+            "processing_allowed cannot be forced true until license, reference "
+            "mask, local_path, and sha256 gates pass."
+        )
+
+
+def _truthy(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"true", "1", "yes"}
 
 
 def _validate_columns(

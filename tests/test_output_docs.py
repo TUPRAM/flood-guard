@@ -17,6 +17,16 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "cdse_product_id",
         "download_permitted_by_skeleton",
         "ready_for_processing",
+        "product_id",
+        "local_path",
+        "sha256",
+        "processing_allowed",
+        "reason_blocked",
+        "flood_probability_0_1",
+        "binary_flood_extent",
+        "iou",
+        "f1_dice",
+        "area_error_ratio",
     ):
         assert field in text
     assert "not official warnings" in text or "not official warnings" in text.lower()
@@ -37,6 +47,11 @@ def test_reference_mask_licensing_log_has_required_rows() -> None:
         assert source in text
     assert "must not download source data" in text
     assert "redistribution terms not confirmed" in text
+    assert "Licensing Tracker V2" in text
+    assert "Request status" in text
+    assert "blocking_decision" in text
+    assert "processing_allowed=True" in text
+    assert "SHA-256 checksum is recorded" in text
 
 
 def test_readme_documents_no_download_cdse_output_workflow() -> None:
@@ -46,6 +61,9 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "--profile hat_yai_2025 --output outputs/cdse_hat_yai_2025_metadata.csv" in text
     assert "docs/live_metadata_snapshot_review_checklist.md" in text
     assert "docs/ml_readiness_plan.md" in text
+    assert "docs/sar_baseline_contract.md" in text
+    assert "docs/first_ml_experiment_plan.md" in text
+    assert "sample_sar_baseline.csv" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
 
@@ -111,3 +129,29 @@ def test_data_dictionary_mentions_dashboard_v4_exports() -> None:
     assert "Dashboard v4 browser-only exports" in text
     assert "Download current brief" in text
     assert "Download filtered GeoJSON" in text
+
+
+def test_sar_baseline_contract_defines_non_ml_outputs_and_metrics() -> None:
+    text = (REPO_ROOT / "docs" / "sar_baseline_contract.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "synthetic baseline implemented; real Sentinel-1 processing not implemented" in text
+    assert "flood_probability_0_1" in text
+    assert "binary_flood_extent" in text
+    assert "sample_sar_validation_metrics.csv" in text
+    for metric in ("IoU", "F1/Dice", "precision", "recall", "area error ratio"):
+        assert metric in text
+    assert "No real Sentinel-1 downloads" in text
+
+
+def test_first_ml_experiment_plan_keeps_ml_blocked_until_gates_pass() -> None:
+    text = (REPO_ROOT / "docs" / "first_ml_experiment_plan.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Current status: not allowed yet" in text
+    assert "If any condition fails, ML remains blocked." in text
+    assert "processing_allowed=True" in text
+    assert "Do not start with a deep model" in text
+    assert "non-ML threshold baseline remains the benchmark" in text

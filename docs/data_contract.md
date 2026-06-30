@@ -299,14 +299,57 @@ Required columns:
 - `license_status`
 - `redistribution_status`
 - `next_action`
+- `product_id`
+- `local_path`
+- `sha256`
+- `source_license_status`
+- `reference_mask_status`
 - `ingestion_stage`
 - `download_permitted_by_skeleton`
 - `ready_for_processing`
+- `processing_allowed`
 - `blocked_reason`
+- `reason_blocked`
 
 Current rows must remain `metadata_only`, with `download_permitted_by_skeleton=False` and `ready_for_processing=False`.
 
 The ingestion skeleton may only write metadata outputs with explicit metadata suffixes such as `.csv`, `.json`, `.md`, or `.txt`. It must reject binary or imagery/product paths such as `.SAFE`, `.tif`, `.tiff`, `.jp2`, `.zip`, `.nc`, and `.grib`.
+
+`processing_allowed=True` is permitted only when source license status, reference-mask status, local path, product id, and SHA-256 checksum gates all pass. Manual overrides that force processing before those gates pass must fail.
+
+## Synthetic SAR Baseline Output
+
+The current SAR baseline is a synthetic, non-ML fixture used to test validation wiring. It does not read real Sentinel-1 imagery.
+
+`outputs/sample_sar_baseline.csv` required columns:
+
+- `pixel_id`
+- `row`
+- `col`
+- `pre_vv_db`
+- `post_vv_db`
+- `pre_vh_db`
+- `post_vh_db`
+- `vv_drop_db`
+- `vh_drop_db`
+- `combined_drop_db`
+- `flood_probability_0_1`
+- `binary_flood_extent`
+- `reference_flood_extent`
+- `confidence_class`
+- `assumptions`
+
+`outputs/sample_sar_validation_metrics.csv` required columns:
+
+- `true_positive`
+- `false_positive`
+- `false_negative`
+- `true_negative`
+- `iou`
+- `f1_dice`
+- `precision`
+- `recall`
+- `area_error_ratio`
 
 ## Study-Area Inventory Output
 
@@ -317,6 +360,8 @@ The ingestion skeleton may only write metadata outputs with explicit metadata su
 `docs/licensing_request_templates.md` contains copy-ready request templates for UNOSAT/UNITAR, GISTDA, International Charter, and Sentinel Asia.
 
 `docs/ml_readiness_plan.md` defines the gates that must pass before real-data ML work starts: usable reference mask, locked Sentinel-1 pair, reviewed metadata snapshot, source files tracked outside Git, reproducible non-ML baseline, and scoped validation metrics.
+
+`docs/sar_baseline_contract.md` defines the first non-ML Sentinel-1 baseline contract. `docs/first_ml_experiment_plan.md` defines when the first real-data ML experiment is allowed.
 
 ## GeoJSON Fixtures
 

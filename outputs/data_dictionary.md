@@ -131,7 +131,43 @@ Dashboard v4 browser-only exports:
 | `query_profile` | Query profile, such as `mae_sai_2024` or `hat_yai_2025`. |
 | `source_url` | CDSE OData query URL used for metadata. |
 | `blocker_note` | Licensing, geometry, or no-download blocker note. |
-| `ingestion_stage` | Always `metadata_only` in the current ingestion skeleton. |
+| `product_id` | File-level source or reference-mask product id once selected. |
+| `local_path` | Local path for legally acquired source data, stored outside Git. |
+| `sha256` | SHA-256 checksum for the locally tracked file or source package. |
+| `source_license_status` | File-level license status used by the processing gate. |
+| `reference_mask_status` | Reference-mask readiness status used by the processing gate. |
+| `ingestion_stage` | `metadata_only` for blocked rows; `file_ready_metadata` only after file-level gates pass. |
 | `download_permitted_by_skeleton` | Always `False`; the skeleton does not permit downloads. |
-| `ready_for_processing` | Always `False` until geometry, license, and redistribution status are confirmed. |
+| `ready_for_processing` | Mirrors the file-level processing gate. Current generated rows remain `False`. |
+| `processing_allowed` | `True` only when source license, reference mask, local path, product id, and checksum gates all pass. |
 | `blocked_reason` | Human-readable reason the row is not processing-ready. |
+| `reason_blocked` | File-level blocker text mirroring `blocked_reason` for downstream tools. |
+
+## Synthetic SAR Baseline
+
+Files: `sample_sar_baseline.csv` and `sample_sar_validation_metrics.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `pixel_id` | Stable synthetic pixel/cell id. |
+| `row` | Synthetic grid row. |
+| `col` | Synthetic grid column. |
+| `pre_vv_db` | Synthetic pre-event VV backscatter value in dB. |
+| `post_vv_db` | Synthetic post-event VV backscatter value in dB. |
+| `pre_vh_db` | Synthetic pre-event VH backscatter value in dB. |
+| `post_vh_db` | Synthetic post-event VH backscatter value in dB. |
+| `vv_drop_db` | Pre/post VV drop, positive when post-event backscatter is lower. |
+| `vh_drop_db` | Pre/post VH drop, positive when post-event backscatter is lower. |
+| `combined_drop_db` | Weighted synthetic drop score used by the non-ML threshold baseline. |
+| `flood_probability_0_1` | Synthetic flood probability from the threshold baseline. |
+| `binary_flood_extent` | Synthetic predicted flood mask using probability threshold `0.5`. |
+| `reference_flood_extent` | Synthetic reference mask value for validation. |
+| `true_positive` | Predicted flood and reference flood count. |
+| `false_positive` | Predicted flood where reference is non-flood. |
+| `false_negative` | Predicted non-flood where reference is flood. |
+| `true_negative` | Predicted non-flood and reference non-flood count. |
+| `iou` | Intersection over Union for the synthetic mask. |
+| `f1_dice` | F1/Dice score for the synthetic mask. |
+| `precision` | Synthetic flood precision. |
+| `recall` | Synthetic flood recall. |
+| `area_error_ratio` | Signed predicted flood area error relative to reference flood area. |

@@ -23,6 +23,8 @@ Current expected MVP output:
 - `sample_scenario_summary.csv`
 - `sample_fpps_sensitivity.csv`
 - `sample_fpps_rank_instability.csv`
+- `sample_sar_baseline.csv`
+- `sample_sar_validation_metrics.csv`
 - `real_data_ingestion_manifest.csv`
 
 Optional live metadata snapshots, generated only when intentionally run and reviewed:

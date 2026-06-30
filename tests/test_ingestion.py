@@ -25,7 +25,19 @@ def test_default_reference_mask_sources_build_metadata_only_manifest() -> None:
     assert set(manifest["ingestion_stage"]) == {"metadata_only"}
     assert set(manifest["download_permitted_by_skeleton"]) == {False}
     assert set(manifest["ready_for_processing"]) == {False}
+    assert set(manifest["processing_allowed"]) == {False}
     assert manifest["blocked_reason"].str.contains("license not confirmed").all()
+    assert manifest["reason_blocked"].equals(manifest["blocked_reason"])
+    for field in (
+        "product_id",
+        "local_path",
+        "sha256",
+        "source_license_status",
+        "reference_mask_status",
+        "processing_allowed",
+        "reason_blocked",
+    ):
+        assert field in manifest.columns
     assert set(manifest["source_name"]) >= {
         "UNOSAT/UNITAR Mae Sai reference target",
         "GISTDA official flood product candidate",
@@ -44,6 +56,61 @@ def test_write_ingestion_manifest_writes_csv(tmp_path: Path) -> None:
     rows = pd.read_csv(output_path)
     assert len(rows) == 5
     assert set(rows["ingestion_stage"]) == {"metadata_only"}
+
+
+def test_file_level_manifest_marks_ready_only_when_all_gates_pass() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "source_name": "Licensed local Sentinel-1 pair",
+                "study_area": "Chiang Rai / Mae Sai 2024",
+                "source_url": "local metadata record",
+                "candidate_use": "non-ML baseline input",
+                "geometry_access_status": "confirmed",
+                "license_status": "confirmed",
+                "redistribution_status": "reference_only",
+                "product_id": "S1A_SYNTHETIC_PAIR",
+                "local_path": "D:/FloodGuardData/mae_sai/s1_pair",
+                "sha256": "a" * 64,
+                "source_license_status": "confirmed",
+                "reference_mask_status": "confirmed",
+                "next_action": "run non-ML baseline validation",
+            }
+        ]
+    )
+
+    manifest = build_ingestion_manifest(frame)
+
+    assert bool(manifest.loc[0, "processing_allowed"]) is True
+    assert bool(manifest.loc[0, "ready_for_processing"]) is True
+    assert manifest.loc[0, "ingestion_stage"] == "file_ready_metadata"
+    assert "sha256 checksum not recorded" not in manifest.loc[0, "reason_blocked"]
+
+
+def test_file_level_manifest_blocks_missing_checksum_and_reference_mask() -> None:
+    frame = default_reference_mask_sources().iloc[[0]].copy()
+    frame.loc[:, "geometry_access_status"] = "confirmed"
+    frame.loc[:, "license_status"] = "confirmed"
+    frame.loc[:, "redistribution_status"] = "reference_only"
+    frame.loc[:, "product_id"] = "UNOSAT-MAE-SAI-REFERENCE"
+    frame.loc[:, "local_path"] = "D:/FloodGuardData/reference/mae_sai_mask.geojson"
+    frame.loc[:, "sha256"] = "not_acquired"
+    frame.loc[:, "source_license_status"] = "confirmed"
+    frame.loc[:, "reference_mask_status"] = "unresolved"
+
+    manifest = build_ingestion_manifest(frame)
+
+    assert bool(manifest.loc[0, "processing_allowed"]) is False
+    assert "sha256 checksum not recorded" in manifest.loc[0, "reason_blocked"]
+    assert "reference mask not confirmed" in manifest.loc[0, "reason_blocked"]
+
+
+def test_file_level_manifest_rejects_forced_processing_override() -> None:
+    frame = default_reference_mask_sources().iloc[[0]].copy()
+    frame.loc[:, "processing_allowed"] = True
+
+    with pytest.raises(IngestionPlanError, match="cannot be forced true"):
+        build_ingestion_manifest(frame)
 
 
 @pytest.mark.parametrize(

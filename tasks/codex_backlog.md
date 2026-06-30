@@ -197,3 +197,15 @@ Acceptance: exports are generated from embedded browser data only; `outputs/dash
 Document when FloodGuard is ready to start ML on real data.
 
 Acceptance: `docs/ml_readiness_plan.md` states the current not-ready status and lists gates for reference-mask licensing, Sentinel-1 pair lock, metadata snapshot review, source file checksums, non-ML baseline, and validation metrics.
+
+## Task 32 - ML-Readiness Bridge
+
+Add a file-level processing gate, SAR baseline contract, synthetic SAR baseline, and first ML experiment plan.
+
+Acceptance: ingestion manifests include product id, local path, SHA-256, source license status, reference-mask status, processing allowed, and blocker fields; processing cannot be forced before gates pass.
+
+## Task 33 - Synthetic SAR Baseline Metrics
+
+Implement a tiny fixture-backed non-ML SAR threshold baseline and validation metrics.
+
+Acceptance: sample SAR outputs include `flood_probability_0_1`, `binary_flood_extent`, IoU, F1/Dice, precision, recall, and area error ratio, with no real imagery downloads or raster IO.

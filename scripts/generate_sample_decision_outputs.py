@@ -19,6 +19,10 @@ from floodguard.dashboard import write_static_dashboard  # noqa: E402
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss  # noqa: E402
 from floodguard.exports import write_priority_geojson, write_road_risk_geojson  # noqa: E402
 from floodguard.road_risk import score_road_disruption  # noqa: E402
+from floodguard.sar_baseline import (  # noqa: E402
+    run_threshold_sar_baseline,
+    validate_threshold_sar_baseline,
+)
 from floodguard.scenarios import (  # noqa: E402
     build_scenario_comparison,
     merge_scenario_comparison,
@@ -125,6 +129,14 @@ def main() -> None:
     rank_instability_path = output_dir / "sample_fpps_rank_instability.csv"
     rank_instability.to_csv(rank_instability_path, index=False)
 
+    sar_pixels = pd.read_csv(fixture_dir / "sample_sar_pixels.csv")
+    sar_baseline = run_threshold_sar_baseline(sar_pixels)
+    sar_baseline_path = output_dir / "sample_sar_baseline.csv"
+    sar_baseline.to_csv(sar_baseline_path, index=False)
+    sar_metrics = validate_threshold_sar_baseline(sar_pixels)
+    sar_metrics_path = output_dir / "sample_sar_validation_metrics.csv"
+    sar_metrics.to_csv(sar_metrics_path, index=False)
+
     validation_path = write_validation_summary(
         priority,
         road_risk,
@@ -161,6 +173,8 @@ def main() -> None:
     print(f"Wrote {scenario_summary_path}")
     print(f"Wrote {sensitivity_path}")
     print(f"Wrote {rank_instability_path}")
+    print(f"Wrote {sar_baseline_path}")
+    print(f"Wrote {sar_metrics_path}")
 
 
 def _geojson_properties(path: Path) -> pd.DataFrame:

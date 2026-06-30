@@ -155,3 +155,44 @@ def test_first_ml_experiment_plan_keeps_ml_blocked_until_gates_pass() -> None:
     assert "processing_allowed=True" in text
     assert "Do not start with a deep model" in text
     assert "non-ML threshold baseline remains the benchmark" in text
+
+
+def test_licensing_outreach_status_tracks_not_sent_requests() -> None:
+    text = (REPO_ROOT / "docs" / "licensing_outreach_status.md").read_text(
+        encoding="utf-8"
+    )
+
+    for source in (
+        "UNOSAT/UNITAR Mae Sai reference target",
+        "GISTDA official flood product candidate",
+        "International Charter Activation 1004",
+        "Sentinel Asia Southern Thailand 2025",
+    ):
+        assert source in text
+    assert "ready_to_send_not_sent" in text
+    assert "No email or web-form request has been sent" in text
+    assert "sender identity and contact channel required" in text
+
+
+def test_mae_sai_pair_decision_note_locks_planning_pair_not_processing() -> None:
+    text = (REPO_ROOT / "docs" / "mae_sai_pair_decision_note.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "planning pair selected; final processing remains blocked" in text
+    assert "b09f96ca-4a60-43e7-9b8d-158022f0e5bf" in text
+    assert "20a9c3b8-37df-46d5-81d8-d63c7e460225" in text
+    assert "6a02d487-68fa-4be7-9628-f312b9049967" in text
+    assert "Use the September 15 post-event COG as the first baseline target" in text
+    assert "do not download any product until the legal/reference-mask gate is cleared" in text
+
+
+def test_data_dictionary_mentions_mae_sai_file_manifest() -> None:
+    text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "mae_sai_real_data_file_manifest.csv" in text
+    assert "September 6 pre-event Sentinel-1 COG" in text
+    assert "September 15 post-event Sentinel-1 COG" in text
+    assert "processing_allowed=False" in text

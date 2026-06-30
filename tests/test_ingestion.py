@@ -10,6 +10,7 @@ from floodguard.ingestion import (
     IngestionPlanError,
     assert_metadata_only_output_path,
     build_ingestion_manifest,
+    default_mae_sai_file_manifest_sources,
     default_reference_mask_sources,
     write_ingestion_manifest,
 )
@@ -87,6 +88,23 @@ def test_file_level_manifest_marks_ready_only_when_all_gates_pass() -> None:
     assert "sha256 checksum not recorded" not in manifest.loc[0, "reason_blocked"]
 
 
+def test_mae_sai_file_manifest_sources_are_blocked_until_files_are_acquired() -> None:
+    manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
+
+    assert len(manifest) == 4
+    assert set(manifest["processing_allowed"]) == {False}
+    assert set(manifest["ready_for_processing"]) == {False}
+    assert {
+        "UNOSAT-3991",
+        "b09f96ca-4a60-43e7-9b8d-158022f0e5bf",
+        "20a9c3b8-37df-46d5-81d8-d63c7e460225",
+        "6a02d487-68fa-4be7-9628-f312b9049967",
+    } == set(manifest["product_id"])
+    assert manifest["reason_blocked"].str.contains("local path not recorded").all()
+    assert manifest["reason_blocked"].str.contains("sha256 checksum not recorded").all()
+    assert manifest["reason_blocked"].str.contains("reference mask not confirmed").all()
+
+
 def test_file_level_manifest_blocks_missing_checksum_and_reference_mask() -> None:
     frame = default_reference_mask_sources().iloc[[0]].copy()
     frame.loc[:, "geometry_access_status"] = "confirmed"
@@ -149,6 +167,15 @@ def test_ingestion_skeleton_script_has_no_network_download_calls() -> None:
     for token in ("urlopen(", "requests.", "urlretrieve(", "rasterio.open", "gdal."):
         assert token not in script_source
         assert token not in module_source
+
+
+def test_mae_sai_file_manifest_script_has_no_download_calls() -> None:
+    script_source = (REPO_ROOT / "scripts" / "build_mae_sai_file_manifest.py").read_text(
+        encoding="utf-8"
+    )
+
+    for token in ("urlopen(", "requests.", "urlretrieve(", "rasterio.open", "gdal."):
+        assert token not in script_source
 
 
 def test_build_ingestion_manifest_rejects_missing_columns() -> None:

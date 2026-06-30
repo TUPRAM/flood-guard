@@ -152,6 +152,75 @@ def default_reference_mask_sources() -> pd.DataFrame:
     )
 
 
+def default_mae_sai_file_manifest_sources() -> pd.DataFrame:
+    """Return blocked file-level planning rows for the Mae Sai first baseline."""
+
+    return pd.DataFrame(
+        [
+            {
+                "source_name": "UNOSAT/UNITAR Mae Sai reference mask file candidate",
+                "study_area": "Chiang Rai / Mae Sai 2024",
+                "source_url": "https://unosat.org/products/3991",
+                "candidate_use": "reference flood mask for validation",
+                "geometry_access_status": "unresolved",
+                "license_status": "unresolved",
+                "redistribution_status": "unresolved",
+                "product_id": "UNOSAT-3991",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "unresolved",
+                "reference_mask_status": "unresolved",
+                "next_action": "send licensing request and acquire usable geometry terms",
+            },
+            {
+                "source_name": "CDSE Sentinel-1 Mae Sai pre-event COG",
+                "study_area": "Chiang Rai / Mae Sai 2024",
+                "source_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products",
+                "candidate_use": "pre-event SAR source for non-ML baseline",
+                "geometry_access_status": "available",
+                "license_status": "confirmed",
+                "redistribution_status": "reference_only",
+                "product_id": "b09f96ca-4a60-43e7-9b8d-158022f0e5bf",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "confirmed",
+                "reference_mask_status": "unresolved",
+                "next_action": "download only after reference-mask gate is cleared",
+            },
+            {
+                "source_name": "CDSE Sentinel-1 Mae Sai post-event COG primary",
+                "study_area": "Chiang Rai / Mae Sai 2024",
+                "source_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products",
+                "candidate_use": "post-event SAR source for non-ML baseline",
+                "geometry_access_status": "available",
+                "license_status": "confirmed",
+                "redistribution_status": "reference_only",
+                "product_id": "20a9c3b8-37df-46d5-81d8-d63c7e460225",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "confirmed",
+                "reference_mask_status": "unresolved",
+                "next_action": "use as primary post-event candidate if reference date fits",
+            },
+            {
+                "source_name": "CDSE Sentinel-1 Mae Sai post-event COG fallback",
+                "study_area": "Chiang Rai / Mae Sai 2024",
+                "source_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products",
+                "candidate_use": "fallback post-event SAR source for non-ML baseline",
+                "geometry_access_status": "available",
+                "license_status": "confirmed",
+                "redistribution_status": "reference_only",
+                "product_id": "6a02d487-68fa-4be7-9628-f312b9049967",
+                "local_path": "not_acquired",
+                "sha256": "not_acquired",
+                "source_license_status": "confirmed",
+                "reference_mask_status": "unresolved",
+                "next_action": "use only if reference mask or peak date fits later extent",
+            },
+        ]
+    )
+
+
 def build_ingestion_manifest(source_frame: pd.DataFrame) -> pd.DataFrame:
     """Build a metadata-only ingestion manifest without permitting downloads."""
 

@@ -26,6 +26,7 @@ Current expected MVP output:
 - `sample_sar_baseline.csv`
 - `sample_sar_validation_metrics.csv`
 - `real_data_ingestion_manifest.csv`
+- `mae_sai_real_data_file_manifest.csv`
 
 Optional live metadata snapshots, generated only when intentionally run and reviewed:
 

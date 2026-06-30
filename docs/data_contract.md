@@ -363,6 +363,10 @@ The current SAR baseline is a synthetic, non-ML fixture used to test validation 
 
 `docs/sar_baseline_contract.md` defines the first non-ML Sentinel-1 baseline contract. `docs/first_ml_experiment_plan.md` defines when the first real-data ML experiment is allowed.
 
+`docs/licensing_outreach_status.md` tracks send-ready provider requests. Repository automation does not send emails or web forms; request status remains `ready_to_send_not_sent` until the project owner sends them.
+
+`docs/mae_sai_pair_decision_note.md` records the selected Mae Sai planning pair and the fallback post-event acquisition. It is a planning lock, not processing authorization.
+
 ## GeoJSON Fixtures
 
 GeoJSON fixtures should use WGS84 coordinates (`EPSG:4326`) and small synthetic geometries unless source licensing is explicitly documented.

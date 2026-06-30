@@ -119,6 +119,8 @@ Dashboard v4 browser-only exports:
 
 ## Metadata Planning Outputs
 
+Files: `real_data_ingestion_manifest.csv` and `mae_sai_real_data_file_manifest.csv`
+
 | Field | Meaning |
 | --- | --- |
 | `acquisition_date` | CDSE product acquisition timestamp. |
@@ -142,6 +144,8 @@ Dashboard v4 browser-only exports:
 | `processing_allowed` | `True` only when source license, reference mask, local path, product id, and checksum gates all pass. |
 | `blocked_reason` | Human-readable reason the row is not processing-ready. |
 | `reason_blocked` | File-level blocker text mirroring `blocked_reason` for downstream tools. |
+
+`mae_sai_real_data_file_manifest.csv` is a blocked planning manifest for the first real non-ML SAR baseline. It includes the UNOSAT reference-mask target, the selected September 6 pre-event Sentinel-1 COG, the selected September 15 post-event Sentinel-1 COG, and the September 18 fallback post-event COG. No local paths or checksums are recorded yet, so all rows remain `processing_allowed=False`.
 
 ## Synthetic SAR Baseline
 

@@ -6,6 +6,8 @@ Use `docs/source_registry.md` as the source-of-truth list for candidate data pro
 
 Use `docs/reference_mask_licensing_log.md` as the working log for reference-mask geometry access, license, redistribution, and citation status before any real-data processing.
 
+Use `docs/licensing_outreach_status.md` to track send-ready licensing requests and `docs/mae_sai_pair_decision_note.md` for the current Mae Sai Sentinel-1 planning-pair decision.
+
 ## Chiang Rai / Mae Sai 2024
 
 ### Role
@@ -54,7 +56,7 @@ Validation tile for the first real flood-mapping and decision-layer validation.
 - Selected pre-event COG candidate: `S1A_IW_GRDH_1SDV_20240906T113106_20240906T113131_055544_06C73C_B53D_COG.SAFE`, id `b09f96ca-4a60-43e7-9b8d-158022f0e5bf`.
 - Selected post-event COG candidate: `S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_82A9_COG.SAFE`, id `20a9c3b8-37df-46d5-81d8-d63c7e460225`.
 - Fallback post-event COG candidate: `S1A_IW_GRDH_1SDV_20240918T113107_20240918T113132_055719_06CE27_00F2_COG.SAFE`, id `6a02d487-68fa-4be7-9628-f312b9049967`, if the reference mask confirms the later acquisition better matches peak or post-peak extent.
-- Decision status: provisional planning pair only; do not download products or claim validation until the UNOSAT/UNITAR geometry and redistribution terms are locked.
+- Decision status: planning pair selected, final processing blocked. See `docs/mae_sai_pair_decision_note.md`. Do not download products or claim validation until the UNOSAT/UNITAR geometry and redistribution terms are locked.
 
 ### Context Layers
 

@@ -175,3 +175,42 @@ Files: `sample_sar_baseline.csv` and `sample_sar_validation_metrics.csv`
 | `precision` | Synthetic flood precision. |
 | `recall` | Synthetic flood recall. |
 | `area_error_ratio` | Signed predicted flood area error relative to reference flood area. |
+
+## THEOS-2 Local Metadata Manifest
+
+File: `theos2_local_metadata_manifest.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `file_name` | Local THEOS-2 file or package name. |
+| `local_path_hint` | Redacted path hint such as `<input_dir>/filename`, not an absolute local path. |
+| `entry_kind` | File type category, such as `image_tiff`, `overview`, or `zip_package`. |
+| `zip_member_count` | Number of members in a local THEOS-2 zip package. |
+| `zip_categories` | Category counts discovered inside a zip package. |
+| `category` | Sample category inferred from package folders, such as `Disaster`, `Urban`, `Agri`, `Coastal`, or `LULC`. |
+| `file_size_bytes` | Local file size in bytes. |
+| `file_size_gb` | Local file size in decimal GB. |
+| `acquisition_date` | Date parsed from the THEOS-2 filename. |
+| `acquisition_time_utc` | Time parsed from the THEOS-2 filename. |
+| `processing_level` | Product level parsed from the filename, such as `ORTHO` or `PRIMARY`. |
+| `sensor_product` | Product type parsed from the filename, such as `PMS`. |
+| `tile_id` | Tile or product id fragment parsed from the filename. |
+| `sequence_id` | Download or product sequence suffix when present. |
+| `tiff_version` | `BigTIFF` or `ClassicTIFF` for parsed image headers. |
+| `image_width` | TIFF image width from header tags. |
+| `image_height` | TIFF image height from header tags. |
+| `samples_per_pixel` | Number of bands/samples from TIFF header tags. |
+| `bits_per_sample` | Bit depth values from TIFF header tags. |
+| `compression` | TIFF compression tag value. |
+| `pixel_size_m` | Pixel size in meters from GeoTIFF model pixel scale tags when present. |
+| `crs_hint` | CRS text inferred from GeoTIFF metadata. |
+| `bbox_lon_min` | Approximate western longitude from GeoTIFF tags. |
+| `bbox_lat_min` | Approximate southern latitude from GeoTIFF tags. |
+| `bbox_lon_max` | Approximate eastern longitude from GeoTIFF tags. |
+| `bbox_lat_max` | Approximate northern latitude from GeoTIFF tags. |
+| `mvp_overlap` | Whether the image bbox contains the current Mae Sai or Hat Yai MVP point. |
+| `floodguard_relevance` | Plain-language note on how the file may support FloodGuard. |
+| `license_status` | Current usage status; generated rows use `hackathon_terms_unverified`. |
+| `sha256_status` | Checksum status; generated rows use `not_recorded`. |
+| `processing_allowed` | Always `False` until usage terms and checksums are recorded. |
+| `reason_blocked` | Human-readable reason this is metadata-only and blocked. |

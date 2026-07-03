@@ -58,9 +58,10 @@ The metadata-first ingestion skeleton can build a blocked planning manifest:
 ```powershell
 uv run python scripts/build_ingestion_manifest.py
 uv run python scripts/build_mae_sai_file_manifest.py
+uv run python scripts/build_theos2_local_manifest.py
 ```
 
-The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_real_data_file_manifest.csv` remain blocked; they do not permit downloads or processing until geometry, license, redistribution/reference-only status, local paths, checksums, and reference-mask status are confirmed.
+The generated `outputs/real_data_ingestion_manifest.csv`, `outputs/mae_sai_real_data_file_manifest.csv`, and `outputs/theos2_local_metadata_manifest.csv` remain blocked; they do not permit downloads or processing until geometry, license, redistribution/reference-only status, local paths, checksums, and reference-mask status are confirmed.
 
 ML on real data should wait until the gates in `docs/ml_readiness_plan.md` are satisfied: legally usable reference mask, locked Sentinel-1 pair, reviewed metadata snapshot, source files tracked outside Git with checksums, and a reproducible non-ML baseline.
 

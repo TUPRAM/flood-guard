@@ -209,3 +209,9 @@ Acceptance: ingestion manifests include product id, local path, SHA-256, source 
 Implement a tiny fixture-backed non-ML SAR threshold baseline and validation metrics.
 
 Acceptance: sample SAR outputs include `flood_probability_0_1`, `binary_flood_extent`, IoU, F1/Dice, precision, recall, and area error ratio, with no real imagery downloads or raster IO.
+
+## Task 34 - THEOS-2 Metadata-Only Inventory
+
+Inventory local THEOS-2 hackathon sample files without processing pixels or committing imagery.
+
+Acceptance: `outputs/theos2_local_metadata_manifest.csv` records redacted path hints, filename metadata, TIFF header metadata, zip package summaries, usage blockers, and `processing_allowed=False` until hackathon license terms and checksums are recorded.

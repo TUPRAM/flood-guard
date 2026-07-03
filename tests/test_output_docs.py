@@ -27,6 +27,10 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "iou",
         "f1_dice",
         "area_error_ratio",
+        "theos2_local_metadata_manifest.csv",
+        "local_path_hint",
+        "mvp_overlap",
+        "hackathon_terms_unverified",
     ):
         assert field in text
     assert "not official warnings" in text or "not official warnings" in text.lower()
@@ -64,6 +68,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "docs/sar_baseline_contract.md" in text
     assert "docs/first_ml_experiment_plan.md" in text
     assert "sample_sar_baseline.csv" in text
+    assert "build_theos2_local_manifest.py" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
 
@@ -196,3 +201,26 @@ def test_data_dictionary_mentions_mae_sai_file_manifest() -> None:
     assert "September 6 pre-event Sentinel-1 COG" in text
     assert "September 15 post-event Sentinel-1 COG" in text
     assert "processing_allowed=False" in text
+
+
+def test_theos2_inventory_doc_keeps_lane_metadata_only_and_blocked() -> None:
+    text = (REPO_ROOT / "docs" / "theos2_inventory.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Status: metadata-only inventory created" in text
+    assert "outputs/theos2_local_metadata_manifest.csv" in text
+    assert "The repository does not commit THEOS-2 imagery" in text
+    assert "13 standalone THEOS-2 image TIFF files" in text
+    assert "12 THEOS-2 zip packages" in text
+    assert "license_status = hackathon_terms_unverified" in text
+    assert "processing_allowed = False" in text
+    assert "not as the first real validation input for Mae Sai or Hat Yai" in text
+
+
+def test_source_registry_mentions_theos2_as_blocked_optical_context() -> None:
+    text = (REPO_ROOT / "docs" / "source_registry.md").read_text(encoding="utf-8")
+
+    assert "THEOS-2 hackathon sample imagery" in text
+    assert "Optical context" in text or "optical context" in text
+    assert "not the current Mae Sai/Hat Yai validation input" in text

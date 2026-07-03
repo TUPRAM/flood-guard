@@ -367,6 +367,47 @@ The current SAR baseline is a synthetic, non-ML fixture used to test validation 
 
 `docs/mae_sai_pair_decision_note.md` records the selected Mae Sai planning pair and the fallback post-event acquisition. It is a planning lock, not processing authorization.
 
+## THEOS-2 Metadata-Only Inventory
+
+`outputs/theos2_local_metadata_manifest.csv` records local THEOS-2 hackathon sample metadata only. It must not include source imagery pixels or committed absolute local paths.
+
+Required columns include:
+
+- `file_name`
+- `local_path_hint`
+- `entry_kind`
+- `zip_member_count`
+- `zip_categories`
+- `category`
+- `file_size_bytes`
+- `file_size_gb`
+- `acquisition_date`
+- `acquisition_time_utc`
+- `processing_level`
+- `sensor_product`
+- `tile_id`
+- `sequence_id`
+- `tiff_version`
+- `image_width`
+- `image_height`
+- `samples_per_pixel`
+- `bits_per_sample`
+- `compression`
+- `pixel_size_m`
+- `crs_hint`
+- `bbox_lon_min`
+- `bbox_lat_min`
+- `bbox_lon_max`
+- `bbox_lat_max`
+- `mvp_overlap`
+- `floodguard_relevance`
+- `license_status`
+- `sha256_status`
+- `processing_allowed`
+- `reason_blocked`
+
+Current THEOS-2 rows must remain `processing_allowed=False` until hackathon usage terms and SHA-256 checksums are recorded. THEOS-2 is an optical context and feature-development lane, not the legal flood reference-mask lane.
+
 ## GeoJSON Fixtures
 
 GeoJSON fixtures should use WGS84 coordinates (`EPSG:4326`) and small synthetic geometries unless source licensing is explicitly documented.

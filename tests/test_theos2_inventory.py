@@ -45,7 +45,7 @@ def test_parse_tiff_header_reads_metadata_without_pixels(tmp_path: Path) -> None
     assert header.bbox_lat_min is not None
 
 
-def test_build_theos2_manifest_blocks_processing_and_redacts_paths(tmp_path: Path) -> None:
+def test_build_theos2_manifest_tracks_permission_and_redacts_paths(tmp_path: Path) -> None:
     image_path = tmp_path / "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif"
     _write_minimal_geotiff_header(image_path)
     with zipfile.ZipFile(tmp_path / "THEOS-2 Sample Images-20260620T002637Z-3-017.zip", "w") as archive:
@@ -64,8 +64,8 @@ def test_build_theos2_manifest_blocks_processing_and_redacts_paths(tmp_path: Pat
     assert str(tmp_path) not in image_row["local_path_hint"]
     assert image_row["category"] == "Disaster"
     assert bool(image_row["processing_allowed"]) is False
-    assert image_row["license_status"] == "hackathon_terms_unverified"
-    assert "metadata-only inventory" in image_row["reason_blocked"]
+    assert image_row["license_status"] == "user_reported_hackathon_free_use"
+    assert "sha256 checksum not recorded" in image_row["reason_blocked"]
     assert zip_row["zip_member_count"] == 1
     assert zip_row["zip_categories"] == "Disaster=1"
 

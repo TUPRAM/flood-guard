@@ -256,6 +256,13 @@ Dashboard v4 adds browser-only export buttons:
 
 The export buttons must use embedded page data only. They must not call `fetch`, require a backend, or write server-side files.
 
+Dashboard THEOS-2 optical context uses:
+
+- `outputs/theos2_selected_file_manifest.csv`
+- `outputs/theos2_previews/*.svg`
+
+These artifacts are optical context only. They must not be described as flood validation, flood reference masks, or official warnings.
+
 ## CDSE Metadata Query Output
 
 The CDSE metadata query script is no-download and metadata-only. It must not download Sentinel product assets.
@@ -363,7 +370,7 @@ The current SAR baseline is a synthetic, non-ML fixture used to test validation 
 
 `docs/sar_baseline_contract.md` defines the first non-ML Sentinel-1 baseline contract. `docs/first_ml_experiment_plan.md` defines when the first real-data ML experiment is allowed.
 
-`docs/licensing_outreach_status.md` tracks send-ready provider requests. Repository automation does not send emails or web forms; request status remains `ready_to_send_not_sent` until the project owner sends them.
+`docs/licensing_outreach_status.md` tracks provider requests. Repository automation does not send emails or web forms. The project owner reported sending the UNOSAT/UNITAR and GISTDA requests on 2026-07-03; those rows remain blocked until provider responses confirm geometry access, local validation, derived metrics, screenshot, redistribution, and ML-label terms.
 
 `docs/mae_sai_pair_decision_note.md` records the selected Mae Sai planning pair and the fallback post-event acquisition. It is a planning lock, not processing authorization.
 
@@ -406,7 +413,41 @@ Required columns include:
 - `processing_allowed`
 - `reason_blocked`
 
-Current THEOS-2 rows must remain `processing_allowed=False` until hackathon usage terms and SHA-256 checksums are recorded. THEOS-2 is an optical context and feature-development lane, not the legal flood reference-mask lane.
+Current THEOS-2 rows use `license_status=user_reported_hackathon_free_use` based on project-owner reporting on 2026-07-03, logged in `docs/theos2_usage_terms_log.md`. Rows still remain `processing_allowed=False` until SHA-256 checksums are recorded for selected files. THEOS-2 is an optical context and feature-development lane, not the legal flood reference-mask lane.
+
+## THEOS-2 Selected-File Manifest
+
+`outputs/theos2_selected_file_manifest.csv` records only selected local THEOS-2 files that have been SHA-256 checksum tracked. It must not include absolute local paths or source pixels.
+
+Required columns include:
+
+- `file_name`
+- `local_path_hint`
+- `entry_kind`
+- `category`
+- `file_size_bytes`
+- `file_size_gb`
+- `source_timestamp`
+- `bbox_lon_min`
+- `bbox_lat_min`
+- `bbox_lon_max`
+- `bbox_lat_max`
+- `license_status`
+- `checksum_algorithm`
+- `sha256`
+- `sha256_status`
+- `processing_scope`
+- `reference_mask_status`
+- `processing_allowed`
+- `preview_path`
+- `assumptions`
+- `reason_blocked`
+
+Rows may set `processing_allowed=True` only for `processing_scope=theos2_optical_context_preview_only` after `license_status=user_reported_hackathon_free_use` and `sha256_status=recorded`. This is not permission to use THEOS-2 as a flood reference mask or real-data ML label source.
+
+## THEOS-2 Preview Artifacts
+
+`outputs/theos2_previews/*.svg` are small non-operational SVG preview cards generated from checksum-backed metadata. They do not contain source imagery pixels and are intended for dashboard/action-brief context only.
 
 ## GeoJSON Fixtures
 

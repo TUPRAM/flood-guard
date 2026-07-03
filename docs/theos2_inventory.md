@@ -4,17 +4,25 @@ This document explains how local THEOS-2 hackathon sample imagery can support Fl
 
 ## Current Status
 
-Status: metadata-only inventory created.
+Status: metadata-only inventory created; usage permission reported by project owner.
 
-The repository does not commit THEOS-2 imagery, overview files, or zip packages. The generated manifest records only file names, redacted path hints, file sizes, filename metadata, TIFF header metadata, zip package summaries, and blocking status.
+The project owner reported on 2026-07-03 that the hackathon-provided THEOS-2 data and other provided local hackathon data can be used freely for the project. The repository still does not commit THEOS-2 imagery, overview files, or zip packages. The generated manifest records only file names, redacted path hints, file sizes, filename metadata, TIFF header metadata, zip package summaries, and processing-readiness status.
+
+Usage log:
+
+- `docs/theos2_usage_terms_log.md`
 
 Generated manifest:
 
 - `outputs/theos2_local_metadata_manifest.csv`
+- `outputs/theos2_selected_file_manifest.csv`
+- `outputs/theos2_previews/*.svg`
 
 Generator:
 
 - `scripts/build_theos2_local_manifest.py`
+- `scripts/build_theos2_selected_manifest.py`
+- `scripts/generate_theos2_previews.py`
 
 ## What The Local Inventory Found
 
@@ -58,7 +66,7 @@ THEOS-2 should not be treated as:
 - the legal flood reference mask
 - the first Mae Sai Sentinel-1 SAR baseline input
 - official validation evidence
-- redistributable source data unless hackathon terms explicitly allow redistribution
+- committed source data; keep original imagery outside Git even when hackathon use is allowed
 - an official warning product
 
 ## Current Study-Area Fit
@@ -66,6 +74,16 @@ THEOS-2 should not be treated as:
 The parsed local image bboxes do not currently overlap the Mae Sai 2024 or Hat Yai 2025 MVP points used elsewhere in the project.
 
 That means the current local THEOS-2 sample set is useful for optical-context and method-development lanes, but not as the first real validation input for Mae Sai or Hat Yai.
+
+## Usage-Terms Status
+
+Current logged status:
+
+- `license_status = user_reported_hackathon_free_use`
+- `sha256_status = not_recorded`
+- `processing_allowed = False`
+
+This is enough to plan THEOS-2 derived demo work, but selected files still need SHA-256 checksums before pixel-processing outputs are treated as reproducible artifacts. If written organizer terms later narrow the permission, update this document and the manifest before publishing screenshots or derived outputs.
 
 ## Manifest Fields
 
@@ -108,25 +126,48 @@ That means the current local THEOS-2 sample set is useful for optical-context an
 
 ## Processing Gate
 
-Every current row remains blocked:
+Every current row remains blocked for reproducible pixel-processing outputs until checksums are recorded:
 
-- `license_status = hackathon_terms_unverified`
 - `sha256_status = not_recorded`
 - `processing_allowed = False`
 
 Processing may be enabled only after:
 
-- hackathon license terms are recorded
-- allowed use is clear for local analysis, derived metrics, demo screenshots, and redistribution or reference-only use
 - SHA-256 checksums are recorded for files selected for processing
 - imagery remains outside Git
 - any generated derivative outputs are clearly labeled non-operational
+- public screenshots or derived outputs stay within the user-reported hackathon permission
+- any later written organizer terms are checked for local analysis, derived metrics, demo screenshots, and redistribution or reference-only use
+
+THEOS-2 is now the best immediate data lane while UNOSAT/UNITAR and GISTDA reference-mask replies are pending. It can support optical context, land-cover/exposure interpretation, and future optical-water experiments, but it does not unblock real flood-mask validation or real-data ML labels by itself.
+
+## Selected-File Readiness
+
+`outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums for the curated selected disaster/context candidates:
+
+- `IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif`
+- `IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif`
+- `IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif`
+
+These rows use:
+
+- `sha256_status = recorded`
+- `processing_scope = theos2_optical_context_preview_only`
+- `reference_mask_status = not_reference_mask`
+- `processing_allowed = True`
+
+This permission is intentionally narrow. It allows checksum-backed optical-context preview work. It does not turn THEOS-2 into a flood reference mask, does not authorize real flood-label ML, and does not allow source imagery to be committed to Git.
+
+## Preview Use In Dashboard And Briefs
+
+`outputs/theos2_previews/*.svg` are small non-operational preview cards generated from selected-file metadata and checksums. They do not contain source image pixels. The static dashboard can reference these cards as THEOS-2 optical context while keeping flood validation and action-class scoring separate.
+
+Action briefs may cite THEOS-2 only as optical context or local interpretation support. They should not say THEOS-2 proves flood extent unless a separate legally usable flood reference mask or validated flood product is available.
 
 ## Next Work
 
-1. Record the hackathon THEOS-2 license or usage terms.
-2. Decide whether these samples are permitted for public demo screenshots and derived metrics.
-3. Compute SHA-256 checksums only for selected files, not the full sample folder by default.
-4. Add a preview-generation workflow that creates small, non-sensitive thumbnails or map tiles only if license terms allow.
+1. Build a true pixel-thumbnail workflow if a lightweight raster reader is introduced or a safe GDAL/rasterio environment is approved.
+2. Add optional THEOS-2 optical context references to generated action briefs.
+3. Add land-cover/exposure feature experiments from selected THEOS-2 samples.
+4. Keep optical context layers in the dashboard clearly separate from flood-reference validation.
 5. Later, add optional optical feature extraction for land-cover/exposure support, separate from the Sentinel-1 SAR flood-validation lane.
-

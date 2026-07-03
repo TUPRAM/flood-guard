@@ -346,12 +346,12 @@ def _base_row(
         "file_size_bytes": file_size_bytes,
         "file_size_gb": round(file_size_bytes / 1_000_000_000, 3),
         **parsed,
-        "license_status": "hackathon_terms_unverified",
+        "license_status": "user_reported_hackathon_free_use",
         "sha256_status": "not_recorded",
         "processing_allowed": False,
         "reason_blocked": (
-            "hackathon license terms not recorded; sha256 checksum not recorded; "
-            "metadata-only inventory; imagery remains outside Git"
+            "hackathon-provided THEOS-2 samples reported free to use by project owner; "
+            "sha256 checksum not recorded; imagery remains outside Git"
         ),
     }
 
@@ -641,11 +641,11 @@ def _point_in_bbox(point_lonlat: tuple[float, float], bbox: tuple[float, float, 
 
 def _relevance(entry_kind: str, category: str, overlap: str) -> str:
     if overlap in {"mae_sai_2024_point", "hat_yai_2025_point"}:
-        return "candidate optical context for current MVP study point after license and checksum gates"
+        return "candidate optical context for current MVP study point after checksum tracking"
     if "Disaster" in category:
         return "THEOS-2 disaster sample; useful for optical context and future optical-water experiments"
     if any(label in category for label in ("LULC", "Agri", "Urban", "Coastal")):
-        return "useful for land-cover, exposure, and visual-context methods after license gates"
+        return "useful for land-cover, exposure, and visual-context methods after checksum tracking"
     if entry_kind == "zip_package":
         return "metadata package for THEOS-2 optical context; inspect contained files before use"
     return "generic THEOS-2 optical sample; not a current Mae Sai/Hat Yai validation input"

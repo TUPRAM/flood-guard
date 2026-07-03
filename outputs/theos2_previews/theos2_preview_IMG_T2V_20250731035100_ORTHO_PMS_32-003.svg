@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="THEOS-2 optical context preview">
+  <rect width="640" height="360" fill="#f7f8f4"/>
+  <rect x="24" y="24" width="592" height="312" rx="8" fill="#ffffff" stroke="#d8ded4"/>
+  <rect x="48" y="72" width="544" height="108" rx="6" fill="#dceee7" stroke="#21835f"/>
+  <path d="M72 152 L142 108 L205 138 L272 94 L336 132 L402 102 L512 152 Z" fill="#21835f" opacity="0.35"/>
+  <path d="M64 168 C150 136 242 194 330 156 C408 123 482 144 576 112" fill="none" stroke="#2b6c9f" stroke-width="10" opacity="0.55"/>
+  <text x="48" y="54" fill="#202722" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">THEOS-2 Optical Context</text>
+  <text x="48" y="214" fill="#202722" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700">IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif</text>
+  <text x="48" y="242" fill="#5b665f" font-family="Arial, Helvetica, sans-serif" font-size="14">Category: Disaster|LULC</text>
+  <text x="48" y="266" fill="#5b665f" font-family="Arial, Helvetica, sans-serif" font-size="14">Acquisition: 2025-07-31T03:51:00Z</text>
+  <text x="48" y="290" fill="#5b665f" font-family="Arial, Helvetica, sans-serif" font-size="14">BBox: 100.692074, 18.521791, 100.828467, 18.652603</text>
+  <text x="48" y="314" fill="#5b665f" font-family="Arial, Helvetica, sans-serif" font-size="14">SHA-256 prefix: b8dc72dd30f2</text>
+  <text x="48" y="334" fill="#b73c3c" font-family="Arial, Helvetica, sans-serif" font-size="12">Non-operational THEOS-2 optical context only; not flood validation; source imagery remains outside Git</text>
+</svg>

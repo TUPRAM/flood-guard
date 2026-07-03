@@ -59,9 +59,13 @@ The metadata-first ingestion skeleton can build a blocked planning manifest:
 uv run python scripts/build_ingestion_manifest.py
 uv run python scripts/build_mae_sai_file_manifest.py
 uv run python scripts/build_theos2_local_manifest.py
+uv run python scripts/build_theos2_selected_manifest.py
+uv run python scripts/generate_theos2_previews.py
 ```
 
-The generated `outputs/real_data_ingestion_manifest.csv`, `outputs/mae_sai_real_data_file_manifest.csv`, and `outputs/theos2_local_metadata_manifest.csv` remain blocked; they do not permit downloads or processing until geometry, license, redistribution/reference-only status, local paths, checksums, and reference-mask status are confirmed.
+The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_real_data_file_manifest.csv` remain blocked for flood-reference processing until geometry, license, redistribution/reference-only status, local paths, checksums, and reference-mask status are confirmed. `outputs/theos2_local_metadata_manifest.csv` records user-reported hackathon free-use status for THEOS-2 samples from `docs/theos2_usage_terms_log.md`, but selected files still need SHA-256 checksums before reproducible pixel-processing outputs are generated.
+
+`outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums for only the curated selected THEOS-2 files. `outputs/theos2_previews/*.svg` are small non-operational optical-context preview cards generated from checksum-backed metadata. They are not flood masks, not validation labels, and not official warning products. Source TIFFs and overview files remain outside Git.
 
 ML on real data should wait until the gates in `docs/ml_readiness_plan.md` are satisfied: legally usable reference mask, locked Sentinel-1 pair, reviewed metadata snapshot, source files tracked outside Git with checksums, and a reproducible non-ML baseline.
 

@@ -158,6 +158,9 @@ def main() -> None:
         validation_path,
         action_brief_paths,
         output_dir / "dashboard.html",
+        theos2_preview_manifest_path=_optional_path(
+            output_dir / "theos2_selected_file_manifest.csv"
+        ),
     )
 
     print(f"Wrote {priority_path}")
@@ -182,6 +185,10 @@ def _geojson_properties(path: Path) -> pd.DataFrame:
     return pd.DataFrame(
         [feature.get("properties", {}) for feature in geojson.get("features", [])]
     )
+
+
+def _optional_path(path: Path) -> Path | None:
+    return path if path.exists() else None
 
 
 if __name__ == "__main__":

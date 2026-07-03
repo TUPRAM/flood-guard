@@ -17,6 +17,20 @@ data/interim/
 data/processed/
 tmp/
 
+# Remote-sensing source assets stay outside Git
+*.SAFE
+*.SAFE/
+*.tif
+*.tiff
+*.TIF
+*.TIFF
+*.jp2
+*.JP2
+*.ovr
+*.OVR
+*.nc
+*.grib
+
 # OS/editor
 .DS_Store
 Thumbs.db

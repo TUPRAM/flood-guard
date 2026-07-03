@@ -214,4 +214,10 @@ Acceptance: sample SAR outputs include `flood_probability_0_1`, `binary_flood_ex
 
 Inventory local THEOS-2 hackathon sample files without processing pixels or committing imagery.
 
-Acceptance: `outputs/theos2_local_metadata_manifest.csv` records redacted path hints, filename metadata, TIFF header metadata, zip package summaries, usage blockers, and `processing_allowed=False` until hackathon license terms and checksums are recorded.
+Acceptance: `outputs/theos2_local_metadata_manifest.csv` records redacted path hints, filename metadata, TIFF header metadata, zip package summaries, user-reported hackathon free-use status, and `processing_allowed=False` until selected file checksums are recorded.
+
+## Task 35 - THEOS-2 Selected-File Readiness And Preview
+
+Checksum only selected THEOS-2 disaster/context files and generate small non-operational optical-context preview cards.
+
+Acceptance: `outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums, `processing_scope=theos2_optical_context_preview_only`, and `reference_mask_status=not_reference_mask`; `outputs/theos2_previews/*.svg` are small dashboard-ready context artifacts; source imagery remains outside Git.

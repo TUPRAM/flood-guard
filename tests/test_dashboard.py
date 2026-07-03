@@ -20,6 +20,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
             OUTPUTS / "action_brief_FG-TB-003.md",
         ],
         output_path,
+        theos2_preview_manifest_path=OUTPUTS / "theos2_selected_file_manifest.csv",
     )
 
     html = output_path.read_text(encoding="utf-8")
@@ -29,6 +30,10 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const priorityData =" in html
     assert "const roadRiskData =" in html
     assert "const briefsBySubdistrict =" in html
+    assert "const theos2PreviewData =" in html
+    assert "THEOS-2 Optical Context" in html
+    assert "Optical context only; not flood validation or an official warning." in html
+    assert "theos2_previews/theos2_preview_" in html
     assert 'id="subdistrict-select"' in html
     assert 'id="scenario-select"' in html
     assert 'class="action-filter"' in html

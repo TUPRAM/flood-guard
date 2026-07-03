@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from floodguard.theos2_readiness import read_theos2_preview_rows
+
 
 class DashboardError(ValueError):
     """Raised when dashboard inputs violate the dashboard contract."""
@@ -22,6 +24,7 @@ def write_static_dashboard(
     validation_summary_path: str | Path,
     action_brief_path: ActionBriefPaths,
     output_path: str | Path,
+    theos2_preview_manifest_path: str | Path | None = None,
 ) -> Path:
     """Write a standalone HTML dashboard with embedded GeoJSON and Markdown."""
 
@@ -29,6 +32,7 @@ def write_static_dashboard(
     road_risk_geojson = _read_feature_collection(road_risk_geojson_path, "road_risk")
     validation_summary = Path(validation_summary_path).read_text(encoding="utf-8")
     action_briefs = _read_action_briefs(action_brief_path)
+    theos2_preview_rows = read_theos2_preview_rows(theos2_preview_manifest_path)
 
     top_priority = _select_top_actionable(priority_geojson)
     html_text = _build_dashboard_html(
@@ -37,6 +41,7 @@ def write_static_dashboard(
         validation_summary=validation_summary,
         action_briefs=action_briefs,
         top_priority=top_priority,
+        theos2_preview_rows=theos2_preview_rows,
     )
 
     target = Path(output_path)
@@ -101,6 +106,7 @@ def _build_dashboard_html(
     validation_summary: str,
     action_briefs: dict[str, str],
     top_priority: dict[str, Any],
+    theos2_preview_rows: list[dict[str, str]],
 ) -> str:
     props = top_priority.get("properties") or {}
     best_intervention = _scenario_summary(
@@ -291,6 +297,36 @@ def _build_dashboard_html(
       border-top: 1px solid var(--line);
       padding-top: 8px;
     }
+    .theos2-context {
+      display: grid;
+      gap: 8px;
+      margin: 10px 0 4px;
+    }
+    .theos2-card {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: #fbfcf8;
+      display: grid;
+      gap: 8px;
+    }
+    .theos2-card img {
+      display: block;
+      width: 100%;
+      max-height: 150px;
+      object-fit: contain;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f7f8f4;
+    }
+    .theos2-card strong {
+      overflow-wrap: anywhere;
+    }
+    .theos2-card span {
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
     .delta-badge {
       display: inline-block;
       border-radius: 4px;
@@ -453,6 +489,10 @@ def _build_dashboard_html(
       </ul>
       <h2>Decision Note</h2>
       <p id="panel-reason">__TOP_REASON__</p>
+      <h2>THEOS-2 Optical Context</h2>
+      <div class="theos2-context" id="theos2-context">
+        __THEOS2_CONTEXT_HTML__
+      </div>
       <p class="note">Scenario colors show people losing 30-minute access: green improves, red worsens, gray is neutral or unavailable.</p>
     </aside>
     <main>
@@ -493,6 +533,7 @@ def _build_dashboard_html(
     const priorityData = __PRIORITY_JSON__;
     const roadRiskData = __ROAD_JSON__;
     const briefsBySubdistrict = __BRIEFS_JSON__;
+    const theos2PreviewData = __THEOS2_JSON__;
     const actionColors = {
       A: '#b73c3c',
       B: '#d36a35',
@@ -757,6 +798,8 @@ def _build_dashboard_html(
         "__PRIORITY_JSON__": json.dumps(priority_geojson, ensure_ascii=False),
         "__ROAD_JSON__": json.dumps(road_risk_geojson, ensure_ascii=False),
         "__BRIEFS_JSON__": json.dumps(action_briefs, ensure_ascii=False),
+        "__THEOS2_JSON__": json.dumps(theos2_preview_rows, ensure_ascii=False),
+        "__THEOS2_CONTEXT_HTML__": _theos2_context_html(theos2_preview_rows),
         "__VALIDATION_SUMMARY__": html.escape(validation_summary),
         "__INITIAL_BRIEF__": html.escape(initial_brief),
         "__TOP_ID__": _js_string(top_id),
@@ -837,3 +880,29 @@ def _scenario_summary(
     else:
         raise DashboardError(f"Unknown scenario summary preference: {prefer}")
     return {"label": label, "delta": _format_signed(delta, 0)}
+
+
+def _theos2_context_html(rows: list[dict[str, str]]) -> str:
+    if not rows:
+        return (
+            '<p class="note">THEOS-2 preview manifest not generated yet. '
+            "Optical context remains available in the metadata inventory.</p>"
+        )
+    cards: list[str] = []
+    for row in rows[:3]:
+        file_name = html.escape(row.get("file_name", "unknown"))
+        category = html.escape(row.get("category", "unclassified"))
+        timestamp = html.escape(row.get("source_timestamp", "unavailable"))
+        preview_path = html.escape(row.get("preview_path", ""))
+        sha_prefix = html.escape(row.get("sha256", "")[:12])
+        cards.append(
+            '<div class="theos2-card">'
+            f'<img src="{preview_path}" alt="THEOS-2 optical context preview for {file_name}">'
+            f"<strong>{file_name}</strong>"
+            f"<span>Category: {category}</span>"
+            f"<span>Acquisition: {timestamp}</span>"
+            f"<span>SHA-256 prefix: {sha_prefix}</span>"
+            "<span>Optical context only; not flood validation or an official warning.</span>"
+            "</div>"
+        )
+    return "\n".join(cards)

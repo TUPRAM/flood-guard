@@ -117,6 +117,13 @@ Dashboard v4 browser-only exports:
 | Download current brief | Downloads the currently selected embedded action brief as Markdown. |
 | Download filtered GeoJSON | Downloads a GeoJSON FeatureCollection containing priority polygons that match the active A-E filters. |
 
+Dashboard THEOS-2 optical context:
+
+| Artifact | Meaning |
+| --- | --- |
+| `theos2_selected_file_manifest.csv` | Checksum-backed selected-file manifest for local THEOS-2 optical context candidates. |
+| `theos2_previews/*.svg` | Small non-operational optical-context preview cards generated from metadata and checksums, not source image pixels. |
+
 ## Metadata Planning Outputs
 
 Files: `real_data_ingestion_manifest.csv` and `mae_sai_real_data_file_manifest.csv`
@@ -180,6 +187,8 @@ Files: `sample_sar_baseline.csv` and `sample_sar_validation_metrics.csv`
 
 File: `theos2_local_metadata_manifest.csv`
 
+Usage status source: `docs/theos2_usage_terms_log.md`
+
 | Field | Meaning |
 | --- | --- |
 | `file_name` | Local THEOS-2 file or package name. |
@@ -210,7 +219,30 @@ File: `theos2_local_metadata_manifest.csv`
 | `bbox_lat_max` | Approximate northern latitude from GeoTIFF tags. |
 | `mvp_overlap` | Whether the image bbox contains the current Mae Sai or Hat Yai MVP point. |
 | `floodguard_relevance` | Plain-language note on how the file may support FloodGuard. |
-| `license_status` | Current usage status; generated rows use `hackathon_terms_unverified`. |
+| `license_status` | Current usage status; generated rows use `user_reported_hackathon_free_use` based on project-owner reporting. |
 | `sha256_status` | Checksum status; generated rows use `not_recorded`. |
-| `processing_allowed` | Always `False` until usage terms and checksums are recorded. |
+| `processing_allowed` | `False` until selected files have SHA-256 checksums recorded, even though usage permission is reported as clear. |
 | `reason_blocked` | Human-readable reason this is metadata-only and blocked. |
+
+## THEOS-2 Selected File Manifest
+
+File: `theos2_selected_file_manifest.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `file_name` | Selected local THEOS-2 file name. |
+| `local_path_hint` | Redacted path hint such as `<input_dir>/filename`; absolute paths are not committed. |
+| `entry_kind` | Selected file type, currently `image_tiff`. |
+| `category` | Sample category inferred from package folders, such as `Disaster` or `Disaster|LULC`. |
+| `source_timestamp` | Acquisition timestamp parsed from the THEOS-2 filename. |
+| `bbox_lon_min` / `bbox_lat_min` / `bbox_lon_max` / `bbox_lat_max` | Approximate footprint bounds parsed from GeoTIFF header metadata. |
+| `license_status` | `user_reported_hackathon_free_use` based on project-owner reporting. |
+| `checksum_algorithm` | Checksum algorithm, currently `sha256`. |
+| `sha256` | SHA-256 checksum of the selected local source file. |
+| `sha256_status` | `recorded` when the checksum has been computed. |
+| `processing_scope` | Limited use scope, currently `theos2_optical_context_preview_only`. |
+| `reference_mask_status` | `not_reference_mask`; THEOS-2 is not treated as the legal flood label source. |
+| `processing_allowed` | `True` only for the limited optical-context preview scope after checksum recording. |
+| `preview_path` | Relative SVG preview-card path used by `outputs/dashboard.html`. |
+| `assumptions` | Non-operational context note. |
+| `reason_blocked` | Empty for selected rows whose limited preview scope is allowed; populated if a gate fails. |

@@ -28,9 +28,15 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "f1_dice",
         "area_error_ratio",
         "theos2_local_metadata_manifest.csv",
+        "theos2_selected_file_manifest.csv",
+        "theos2_previews/*.svg",
         "local_path_hint",
         "mvp_overlap",
-        "hackathon_terms_unverified",
+        "user_reported_hackathon_free_use",
+        "docs/theos2_usage_terms_log.md",
+        "processing_scope",
+        "theos2_optical_context_preview_only",
+        "reference_mask_status",
     ):
         assert field in text
     assert "not official warnings" in text or "not official warnings" in text.lower()
@@ -174,9 +180,10 @@ def test_licensing_outreach_status_tracks_not_sent_requests() -> None:
         "Sentinel Asia Southern Thailand 2025",
     ):
         assert source in text
-    assert "ready_to_send_not_sent" in text
-    assert "No email or web-form request has been sent" in text
-    assert "sender identity and contact channel required" in text
+    assert "sent_waiting_response" in text
+    assert "2026-07-03" in text
+    assert "Repository automation does not send email" in text
+    assert "provider response pending" in text
 
 
 def test_mae_sai_pair_decision_note_locks_planning_pair_not_processing() -> None:
@@ -208,13 +215,17 @@ def test_theos2_inventory_doc_keeps_lane_metadata_only_and_blocked() -> None:
         encoding="utf-8"
     )
 
-    assert "Status: metadata-only inventory created" in text
+    assert "Status: metadata-only inventory created; usage permission reported" in text
     assert "outputs/theos2_local_metadata_manifest.csv" in text
-    assert "The repository does not commit THEOS-2 imagery" in text
+    assert "does not commit THEOS-2 imagery" in text
     assert "13 standalone THEOS-2 image TIFF files" in text
     assert "12 THEOS-2 zip packages" in text
-    assert "license_status = hackathon_terms_unverified" in text
+    assert "license_status = user_reported_hackathon_free_use" in text
     assert "processing_allowed = False" in text
+    assert "processing_scope = theos2_optical_context_preview_only" in text
+    assert "outputs/theos2_selected_file_manifest.csv" in text
+    assert "outputs/theos2_previews/*.svg" in text
+    assert "do not contain source image pixels" in text
     assert "not as the first real validation input for Mae Sai or Hat Yai" in text
 
 
@@ -224,3 +235,22 @@ def test_source_registry_mentions_theos2_as_blocked_optical_context() -> None:
     assert "THEOS-2 hackathon sample imagery" in text
     assert "Optical context" in text or "optical context" in text
     assert "not the current Mae Sai/Hat Yai validation input" in text
+    assert "user-reported hackathon free-use status" in text or "can be used freely" in text
+
+
+def test_theos2_usage_terms_log_records_user_reported_permission() -> None:
+    text = (REPO_ROOT / "docs" / "theos2_usage_terms_log.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "project owner reported hackathon-provided data can be used freely" in text
+    assert "allowed_by_user_report" in text
+    assert "checksum_required_before_reproducible_pixel_outputs" in text
+    assert "not a flood reference mask" in text
+
+
+def test_gitignore_blocks_remote_sensing_source_assets() -> None:
+    text = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
+
+    for pattern in ("*.tif", "*.TIF", "*.jp2", "*.SAFE", "*.ovr", "*.nc", "*.grib"):
+        assert pattern in text

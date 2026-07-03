@@ -40,6 +40,8 @@ When a provider replies, update `docs/reference_mask_licensing_log.md` first. Re
 
 Then update any file-level ingestion manifest rows. Do not set `processing_allowed=True` for flood-reference processing until the legal response, local file path, SHA-256 checksum, and reference-mask status are all confirmed.
 
+Use `docs/provider_response_logging_guide.md` for the exact response fields and blocking-decision wording.
+
 ## Current Decision
 
 UNOSAT/UNITAR and GISTDA are now waiting on provider responses. Charter and Sentinel Asia remain send-ready for the Hat Yai / Songkhla 2025 story tile. While those responses are pending, THEOS-2 hackathon samples can move into an optical-context lane based on user-reported free-use permission, with imagery still kept outside Git and selected files checksum-tracked before processing.

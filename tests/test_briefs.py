@@ -26,6 +26,10 @@ def load_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFram
     )
 
 
+def load_theos2_context() -> pd.DataFrame:
+    return pd.read_csv(OUTPUTS / "theos2_selected_file_manifest.csv", dtype=str).fillna("")
+
+
 def test_select_highest_actionable_uses_class_before_raw_fpps() -> None:
     priority, _, _, _ = load_frames()
 
@@ -75,6 +79,24 @@ def test_build_action_brief_supports_manual_subdistrict_id() -> None:
     assert "# Action Brief - Bridge Junction (FG-TB-002)" in brief
     assert "Plan closures, detours" in brief
     assert THAI_RECOMMENDED_ACTIONS["B"] in brief
+
+
+def test_build_action_brief_can_include_theos2_optical_context() -> None:
+    priority, road_risk, access_loss, equity_gap = load_frames()
+
+    brief = build_action_brief(
+        priority,
+        road_risk,
+        access_loss,
+        equity_gap,
+        theos2_context=load_theos2_context(),
+    )
+
+    assert "## Optical Context" in brief
+    assert "THEOS-2 previews are local optical context only" in brief
+    assert "not flood validation" in brief
+    assert "not reference masks" in brief
+    assert "theos2_previews/theos2_preview_" in brief
 
 
 def test_write_action_brief_uses_selected_id_in_filename(tmp_path: Path) -> None:

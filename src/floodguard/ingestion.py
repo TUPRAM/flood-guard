@@ -60,6 +60,12 @@ INGESTION_OUTPUT_COLUMNS: tuple[str, ...] = (
     "reason_blocked",
 )
 
+MAE_SAI_REQUIRED_BASELINE_ROLES: tuple[str, ...] = (
+    "reference flood mask for validation",
+    "pre-event SAR source for non-ML baseline",
+    "post-event SAR source for non-ML baseline",
+)
+
 
 class IngestionPlanError(ValueError):
     """Raised when metadata-first ingestion planning inputs are invalid."""
@@ -287,6 +293,57 @@ def assert_metadata_only_output_path(output_path: str | Path) -> Path:
             f"({', '.join(METADATA_ONLY_ALLOWED_SUFFIXES)}): {target}"
         )
     return target
+
+
+def validate_mae_sai_file_manifest_ready(manifest: pd.DataFrame) -> pd.DataFrame:
+    """Return the required Mae Sai baseline rows only when all gates pass."""
+
+    _validate_columns(manifest, INGESTION_OUTPUT_COLUMNS, "Mae Sai manifest")
+    frame = manifest.copy()
+    selected_rows: list[pd.Series] = []
+    blockers: list[str] = []
+    for role in MAE_SAI_REQUIRED_BASELINE_ROLES:
+        matches = frame[frame["candidate_use"].astype(str) == role]
+        if role == "post-event SAR source for non-ML baseline":
+            primary = matches[
+                matches["source_name"].astype(str).str.contains(
+                    "primary",
+                    case=False,
+                    regex=False,
+                )
+            ]
+            if not primary.empty:
+                matches = primary
+        if matches.empty:
+            blockers.append(f"missing required Mae Sai role: {role}")
+            continue
+        row = matches.iloc[0]
+        row_blockers = _mae_sai_readiness_blockers(row)
+        if row_blockers:
+            blockers.append(f"{row['source_name']}: {', '.join(row_blockers)}")
+        selected_rows.append(row)
+    if blockers:
+        raise IngestionPlanError("; ".join(blockers))
+    return pd.DataFrame(selected_rows).reset_index(drop=True)
+
+
+def _mae_sai_readiness_blockers(row: pd.Series) -> list[str]:
+    blockers: list[str] = []
+    if not _truthy(row["processing_allowed"]):
+        blockers.append("processing_allowed is not true")
+    if row["license_status"] != "confirmed":
+        blockers.append("license_status is not confirmed")
+    if row["source_license_status"] != "confirmed":
+        blockers.append("source_license_status is not confirmed")
+    if row["reference_mask_status"] != "confirmed":
+        blockers.append("reference_mask_status is not confirmed")
+    if row["product_id"] in {"not_selected", "not_acquired", "unknown"}:
+        blockers.append("product_id is not selected")
+    if row["local_path"] in {"not_acquired", "not_selected", "unknown"}:
+        blockers.append("local_path is not recorded")
+    if not _is_valid_sha256(row["sha256"]):
+        blockers.append("sha256 is not recorded")
+    return blockers
 
 
 def _blocked_reason(row: pd.Series) -> str:

@@ -9,8 +9,14 @@ from floodguard.sar_baseline import (
     MASK_METRIC_COLUMNS,
     SARBaselineError,
     compute_mask_validation_metrics,
+    run_gated_real_sar_change_baseline,
     run_threshold_sar_baseline,
+    validate_real_sar_baseline_readiness,
     validate_threshold_sar_baseline,
+)
+from floodguard.ingestion import (
+    build_ingestion_manifest,
+    default_mae_sai_file_manifest_sources,
 )
 
 FIXTURES = Path(__file__).parents[1] / "tests" / "fixtures"
@@ -85,3 +91,30 @@ def test_mask_validation_metrics_reject_non_binary_values() -> None:
     with pytest.raises(SARBaselineError, match="binary 0/1"):
         compute_mask_validation_metrics([1, 2, 0], [1, 0, 0])
 
+
+def test_real_sar_baseline_readiness_blocks_current_mae_sai_manifest() -> None:
+    manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
+
+    with pytest.raises(SARBaselineError, match="ingestion gates"):
+        validate_real_sar_baseline_readiness(manifest)
+
+
+def test_gated_real_sar_change_baseline_runs_only_after_manifest_ready() -> None:
+    source = default_mae_sai_file_manifest_sources().iloc[[0, 1, 2]].copy()
+    source.loc[:, "geometry_access_status"] = "confirmed"
+    source.loc[:, "license_status"] = "confirmed"
+    source.loc[:, "redistribution_status"] = "reference_only"
+    source.loc[:, "local_path"] = [
+        "D:/FloodGuardData/mae_sai/reference_mask.geojson",
+        "D:/FloodGuardData/mae_sai/pre_s1.tif",
+        "D:/FloodGuardData/mae_sai/post_s1.tif",
+    ]
+    source.loc[:, "sha256"] = ["a" * 64, "b" * 64, "c" * 64]
+    source.loc[:, "source_license_status"] = "confirmed"
+    source.loc[:, "reference_mask_status"] = "confirmed"
+    manifest = build_ingestion_manifest(source)
+
+    baseline = run_gated_real_sar_change_baseline(load_sar_pixels(), manifest)
+
+    assert list(baseline["binary_flood_extent"]) == [1, 1, 0, 1, 0]
+    assert baseline["assumptions"].str.contains("Gated real-data non-ML SAR").all()

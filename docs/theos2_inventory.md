@@ -17,12 +17,17 @@ Generated manifest:
 - `outputs/theos2_local_metadata_manifest.csv`
 - `outputs/theos2_selected_file_manifest.csv`
 - `outputs/theos2_previews/*.svg`
+- `outputs/theos2_landcover_exposure_features.csv`
+- optional `outputs/theos2_thumbnail_manifest.csv`
+- optional `outputs/theos2_thumbnails/*.png`
 
 Generator:
 
 - `scripts/build_theos2_local_manifest.py`
 - `scripts/build_theos2_selected_manifest.py`
 - `scripts/generate_theos2_previews.py`
+- `scripts/generate_theos2_features.py`
+- `scripts/generate_theos2_true_thumbnails.py`
 
 ## What The Local Inventory Found
 
@@ -164,10 +169,40 @@ This permission is intentionally narrow. It allows checksum-backed optical-conte
 
 Action briefs may cite THEOS-2 only as optical context or local interpretation support. They should not say THEOS-2 proves flood extent unless a separate legally usable flood reference mask or validated flood product is available.
 
+## Optional True Thumbnail Lane
+
+`scripts/generate_theos2_true_thumbnails.py` can generate small PNG thumbnails only when an optional raster reader is available:
+
+- rasterio
+- GDAL
+
+If neither reader is available, the command fails cleanly and does not create thumbnail outputs. The fallback SVG preview cards remain valid dashboard context.
+
+True thumbnails are guarded by:
+
+- `sha256_status = recorded`
+- `processing_scope = theos2_optical_context_preview_only`
+- `reference_mask_status = not_reference_mask`
+- `processing_allowed = True`
+
+They must remain small PNG previews. Do not generate full-resolution exports or source-image tiles in this lane.
+
+## Non-ML Feature Prototype
+
+`outputs/theos2_landcover_exposure_features.csv` records tiny metadata-derived context features:
+
+- disaster/LULC/urban/agri/coastal flags
+- rough footprint area
+- built-up exposure interpretation note
+- water/coastal context note
+- FloodGuard use note
+
+These fields can support FPPS explanation text and action-brief context, but they are not flood labels and are not a validation mask.
+
 ## Next Work
 
-1. Build a true pixel-thumbnail workflow if a lightweight raster reader is introduced or a safe GDAL/rasterio environment is approved.
-2. Add optional THEOS-2 optical context references to generated action briefs.
-3. Add land-cover/exposure feature experiments from selected THEOS-2 samples.
+1. Install or provide rasterio/GDAL if true pixel thumbnails are required in this environment.
+2. Use THEOS-2 optical context in generated action briefs without calling it flood validation.
+3. Expand land-cover/exposure feature experiments from selected THEOS-2 samples.
 4. Keep optical context layers in the dashboard clearly separate from flood-reference validation.
 5. Later, add optional optical feature extraction for land-cover/exposure support, separate from the Sentinel-1 SAR flood-validation lane.

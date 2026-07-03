@@ -231,7 +231,11 @@ def read_theos2_preview_rows(path: str | Path | None) -> list[dict[str, str]]:
     if not source.exists():
         return []
     with source.open("r", encoding="utf-8", newline="") as handle:
-        return list(csv.DictReader(handle))
+        rows = list(csv.DictReader(handle))
+    for row in rows:
+        if not row.get("preview_path") and row.get("thumbnail_path"):
+            row["preview_path"] = row["thumbnail_path"]
+    return rows
 
 
 def build_theos2_preview_svg(row: dict[str, object]) -> str:

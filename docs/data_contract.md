@@ -260,6 +260,7 @@ Dashboard THEOS-2 optical context uses:
 
 - `outputs/theos2_selected_file_manifest.csv`
 - `outputs/theos2_previews/*.svg`
+- optionally `outputs/theos2_thumbnail_manifest.csv` and `outputs/theos2_thumbnails/*.png` when rasterio or GDAL is available
 
 These artifacts are optical context only. They must not be described as flood validation, flood reference masks, or official warnings.
 
@@ -374,6 +375,8 @@ The current SAR baseline is a synthetic, non-ML fixture used to test validation 
 
 `docs/mae_sai_pair_decision_note.md` records the selected Mae Sai planning pair and the fallback post-event acquisition. It is a planning lock, not processing authorization.
 
+`docs/provider_response_logging_guide.md` defines exactly how to log UNOSAT/UNITAR and GISTDA replies. `docs/mae_sai_file_manifest_v2.md` defines the required file-level rows before real non-ML SAR processing.
+
 ## THEOS-2 Metadata-Only Inventory
 
 `outputs/theos2_local_metadata_manifest.csv` records local THEOS-2 hackathon sample metadata only. It must not include source imagery pixels or committed absolute local paths.
@@ -448,6 +451,39 @@ Rows may set `processing_allowed=True` only for `processing_scope=theos2_optical
 ## THEOS-2 Preview Artifacts
 
 `outputs/theos2_previews/*.svg` are small non-operational SVG preview cards generated from checksum-backed metadata. They do not contain source imagery pixels and are intended for dashboard/action-brief context only.
+
+`outputs/theos2_thumbnail_manifest.csv` and `outputs/theos2_thumbnails/*.png` are optional true-thumbnail artifacts. They may be generated only when:
+
+- `outputs/theos2_selected_file_manifest.csv` has recorded checksums
+- `processing_scope=theos2_optical_context_preview_only`
+- `reference_mask_status=not_reference_mask`
+- an optional raster reader, either rasterio or GDAL, is available
+
+True thumbnails must be small PNG outputs and must not be full-resolution imagery or map tiles.
+
+## THEOS-2 Land-Cover/Exposure Feature Prototype
+
+`outputs/theos2_landcover_exposure_features.csv` is a tiny non-ML feature table derived from selected THEOS-2 metadata and preview context.
+
+Required columns include:
+
+- `file_name`
+- `source_timestamp`
+- `category`
+- `has_disaster_context`
+- `has_lulc_context`
+- `has_urban_context`
+- `has_agri_context`
+- `has_coastal_context`
+- `rough_bbox_area_sq_km`
+- `mvp_overlap`
+- `built_up_exposure_note`
+- `water_context_note`
+- `floodguard_use`
+- `confidence_class`
+- `assumptions`
+
+These are not flood labels and must not be used as real-data ML targets.
 
 ## GeoJSON Fixtures
 

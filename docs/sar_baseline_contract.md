@@ -4,9 +4,17 @@ This contract defines the first non-ML Sentinel-1 flood-mapping baseline that mu
 
 ## Status
 
-Current status: synthetic baseline implemented; real Sentinel-1 processing not implemented.
+Current status: synthetic baseline implemented; gated real-data entry point added; direct real Sentinel-1 raster extraction remains blocked until file-level gates pass and a raster extraction implementation is approved.
 
 The repository must not download Sentinel-1 products, read raster imagery, or generate real flood masks until licensing, reference-mask, local-path, and checksum gates pass in the ingestion manifest.
+
+The gated entry point is `run_gated_real_sar_change_baseline`. It accepts a pre-extracted pixel/object table only after `outputs/mae_sai_real_data_file_manifest.csv` has ready rows for:
+
+- reference flood mask for validation
+- pre-event SAR source for non-ML baseline
+- post-event SAR source for non-ML baseline
+
+This does not bypass raster/file gates and does not train ML.
 
 ## Purpose
 
@@ -119,4 +127,3 @@ These metrics are computed on synthetic masks now. Real validation remains block
 - No deep learning model.
 - No operational warning claim.
 - No replacement for official flood products or local agency judgment.
-

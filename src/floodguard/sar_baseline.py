@@ -10,6 +10,11 @@ from collections.abc import Sequence
 
 import pandas as pd
 
+from floodguard.ingestion import (
+    IngestionPlanError,
+    validate_mae_sai_file_manifest_ready,
+)
+
 SAR_INPUT_COLUMNS: tuple[str, ...] = (
     "pixel_id",
     "row",
@@ -61,6 +66,9 @@ def run_threshold_sar_baseline(
     probability_threshold: float = 0.5,
     dry_change_db: float = 0.5,
     flood_change_db: float = 4.0,
+    assumptions: str = (
+        "Synthetic non-ML SAR threshold fixture; not real Sentinel-1 processing."
+    ),
 ) -> pd.DataFrame:
     """Run a deterministic non-ML flood baseline on synthetic SAR pixels.
 
@@ -106,10 +114,47 @@ def run_threshold_sar_baseline(
     ).astype(int)
     frame["reference_flood_extent"] = frame["reference_flood_extent"].astype(int)
     frame["confidence_class"] = frame["flood_probability_0_1"].map(_confidence_class)
-    frame["assumptions"] = (
-        "Synthetic non-ML SAR threshold fixture; not real Sentinel-1 processing."
-    )
+    frame["assumptions"] = assumptions
     return frame.loc[:, SAR_OUTPUT_COLUMNS]
+
+
+def validate_real_sar_baseline_readiness(file_manifest: pd.DataFrame) -> pd.DataFrame:
+    """Validate that Mae Sai real-data gates pass before SAR processing."""
+
+    try:
+        return validate_mae_sai_file_manifest_ready(file_manifest)
+    except IngestionPlanError as exc:
+        raise SARBaselineError(
+            "Real Mae Sai SAR baseline is blocked by ingestion gates: "
+            f"{exc}"
+        ) from exc
+
+
+def run_gated_real_sar_change_baseline(
+    pixels: pd.DataFrame,
+    file_manifest: pd.DataFrame,
+    probability_threshold: float = 0.5,
+    dry_change_db: float = 0.5,
+    flood_change_db: float = 4.0,
+) -> pd.DataFrame:
+    """Run the non-ML SAR formula only after real-data gates pass.
+
+    The current implementation expects a pre-extracted pixel/object table. It
+    does not read Sentinel-1 raster products directly; that raster extraction
+    must remain behind the same file-level gates.
+    """
+
+    validate_real_sar_baseline_readiness(file_manifest)
+    return run_threshold_sar_baseline(
+        pixels,
+        probability_threshold=probability_threshold,
+        dry_change_db=dry_change_db,
+        flood_change_db=flood_change_db,
+        assumptions=(
+            "Gated real-data non-ML SAR change baseline from approved local "
+            "pre/post inputs; non-operational."
+        ),
+    )
 
 
 def compute_mask_validation_metrics(

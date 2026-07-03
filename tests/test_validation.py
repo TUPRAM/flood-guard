@@ -8,8 +8,14 @@ import pytest
 from floodguard.validation import (
     FUTURE_METRIC_PLACEHOLDERS,
     ValidationReportError,
+    build_real_data_validation_summary,
     build_validation_summary,
+    write_real_data_validation_summary,
     write_validation_summary,
+)
+from floodguard.ingestion import (
+    build_ingestion_manifest,
+    default_mae_sai_file_manifest_sources,
 )
 
 OUTPUTS = Path(__file__).parents[1] / "outputs"
@@ -108,3 +114,64 @@ def test_build_validation_summary_rejects_missing_columns() -> None:
 
     with pytest.raises(ValidationReportError, match="action_class"):
         build_validation_summary(bad_priority, road_risk, access_loss, equity_gap)
+
+
+def test_real_data_validation_summary_reports_blocked_manifest() -> None:
+    manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
+
+    report = build_real_data_validation_summary(manifest)
+
+    assert "# Mae Sai Real-Data Validation Summary" in report
+    assert "Processing allowed: false" in report
+    assert "Real IoU, F1/Dice, precision, recall, and area error are pending" in report
+    assert "Log UNOSAT/UNITAR or GISTDA provider response" in report
+
+
+def test_real_data_validation_summary_reports_metrics_when_ready() -> None:
+    source = default_mae_sai_file_manifest_sources().iloc[[0, 1, 2]].copy()
+    source.loc[:, "geometry_access_status"] = "confirmed"
+    source.loc[:, "license_status"] = "confirmed"
+    source.loc[:, "redistribution_status"] = "reference_only"
+    source.loc[:, "local_path"] = [
+        "D:/FloodGuardData/mae_sai/reference_mask.geojson",
+        "D:/FloodGuardData/mae_sai/pre_s1.tif",
+        "D:/FloodGuardData/mae_sai/post_s1.tif",
+    ]
+    source.loc[:, "sha256"] = ["a" * 64, "b" * 64, "c" * 64]
+    source.loc[:, "source_license_status"] = "confirmed"
+    source.loc[:, "reference_mask_status"] = "confirmed"
+    manifest = build_ingestion_manifest(source)
+    metrics = pd.DataFrame(
+        [
+            {
+                "true_positive": 2,
+                "false_positive": 1,
+                "false_negative": 1,
+                "true_negative": 1,
+                "iou": 0.5,
+                "f1_dice": 0.666667,
+                "precision": 0.666667,
+                "recall": 0.666667,
+                "area_error_ratio": 0.0,
+            }
+        ]
+    )
+
+    report = build_real_data_validation_summary(manifest, sar_metrics=metrics)
+
+    assert "Processing allowed: true" in report
+    assert "IoU: 0.500000" in report
+    assert "F1/Dice: 0.666667" in report
+    assert "area error ratio: 0.000000" in report
+
+
+def test_write_real_data_validation_summary_writes_markdown(tmp_path: Path) -> None:
+    manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
+    output_path = tmp_path / "mae_sai_validation_summary.md"
+
+    written = write_real_data_validation_summary(manifest, output_path)
+
+    assert written == output_path
+    assert output_path.read_text(encoding="utf-8").startswith(
+        "# Mae Sai Real-Data Validation Summary"
+    )

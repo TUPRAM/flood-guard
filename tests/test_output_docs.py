@@ -30,6 +30,10 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "theos2_local_metadata_manifest.csv",
         "theos2_selected_file_manifest.csv",
         "theos2_previews/*.svg",
+        "theos2_landcover_exposure_features.csv",
+        "theos2_thumbnail_manifest.csv",
+        "theos2_thumbnails/*.png",
+        "mae_sai_validation_summary.md",
         "local_path_hint",
         "mvp_overlap",
         "user_reported_hackathon_free_use",
@@ -75,6 +79,9 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "docs/first_ml_experiment_plan.md" in text
     assert "sample_sar_baseline.csv" in text
     assert "build_theos2_local_manifest.py" in text
+    assert "generate_theos2_true_thumbnails.py --check-reader" in text
+    assert "generate_theos2_features.py" in text
+    assert "generate_mae_sai_validation_summary.py" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
 
@@ -147,7 +154,8 @@ def test_sar_baseline_contract_defines_non_ml_outputs_and_metrics() -> None:
         encoding="utf-8"
     )
 
-    assert "synthetic baseline implemented; real Sentinel-1 processing not implemented" in text
+    assert "synthetic baseline implemented; gated real-data entry point added" in text
+    assert "run_gated_real_sar_change_baseline" in text
     assert "flood_probability_0_1" in text
     assert "binary_flood_extent" in text
     assert "sample_sar_validation_metrics.csv" in text
@@ -166,6 +174,7 @@ def test_first_ml_experiment_plan_keeps_ml_blocked_until_gates_pass() -> None:
     assert "processing_allowed=True" in text
     assert "Do not start with a deep model" in text
     assert "non-ML threshold baseline remains the benchmark" in text
+    assert "outputs/mae_sai_validation_summary.md" in text
 
 
 def test_licensing_outreach_status_tracks_not_sent_requests() -> None:
@@ -225,7 +234,12 @@ def test_theos2_inventory_doc_keeps_lane_metadata_only_and_blocked() -> None:
     assert "processing_scope = theos2_optical_context_preview_only" in text
     assert "outputs/theos2_selected_file_manifest.csv" in text
     assert "outputs/theos2_previews/*.svg" in text
+    assert "outputs/theos2_landcover_exposure_features.csv" in text
+    assert "generate_theos2_true_thumbnails.py" in text
+    assert "rasterio" in text
+    assert "GDAL" in text
     assert "do not contain source image pixels" in text
+    assert "not flood labels" in text
     assert "not as the first real validation input for Mae Sai or Hat Yai" in text
 
 
@@ -254,3 +268,19 @@ def test_gitignore_blocks_remote_sensing_source_assets() -> None:
 
     for pattern in ("*.tif", "*.TIF", "*.jp2", "*.SAFE", "*.ovr", "*.nc", "*.grib"):
         assert pattern in text
+
+
+def test_provider_response_logging_guide_and_mae_sai_v2_docs_exist() -> None:
+    provider_text = (REPO_ROOT / "docs" / "provider_response_logging_guide.md").read_text(
+        encoding="utf-8"
+    )
+    manifest_text = (REPO_ROOT / "docs" / "mae_sai_file_manifest_v2.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "UNOSAT/UNITAR and GISTDA requests were reported sent" in provider_text
+    assert "blocked_terms_incomplete" in provider_text
+    assert "geometry_access" in provider_text
+    assert "Status: blocked." in manifest_text
+    assert "reference flood mask for validation" in manifest_text
+    assert "processing_allowed=True is not allowed yet" in manifest_text

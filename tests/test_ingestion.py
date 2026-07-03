@@ -12,6 +12,7 @@ from floodguard.ingestion import (
     build_ingestion_manifest,
     default_mae_sai_file_manifest_sources,
     default_reference_mask_sources,
+    validate_mae_sai_file_manifest_ready,
     write_ingestion_manifest,
 )
 
@@ -103,6 +104,45 @@ def test_mae_sai_file_manifest_sources_are_blocked_until_files_are_acquired() ->
     assert manifest["reason_blocked"].str.contains("local path not recorded").all()
     assert manifest["reason_blocked"].str.contains("sha256 checksum not recorded").all()
     assert manifest["reason_blocked"].str.contains("reference mask not confirmed").all()
+
+    with pytest.raises(IngestionPlanError, match="processing_allowed is not true"):
+        validate_mae_sai_file_manifest_ready(manifest)
+
+
+def test_mae_sai_file_manifest_ready_returns_required_rows_when_gates_pass() -> None:
+    source = default_mae_sai_file_manifest_sources().iloc[[0, 1, 2]].copy()
+    source.loc[:, "geometry_access_status"] = "confirmed"
+    source.loc[:, "license_status"] = "confirmed"
+    source.loc[:, "redistribution_status"] = "reference_only"
+    source.loc[:, "local_path"] = [
+        "D:/FloodGuardData/mae_sai/reference_mask.geojson",
+        "D:/FloodGuardData/mae_sai/pre_s1.tif",
+        "D:/FloodGuardData/mae_sai/post_s1.tif",
+    ]
+    source.loc[:, "sha256"] = ["a" * 64, "b" * 64, "c" * 64]
+    source.loc[:, "source_license_status"] = "confirmed"
+    source.loc[:, "reference_mask_status"] = "confirmed"
+    manifest = build_ingestion_manifest(source)
+
+    ready = validate_mae_sai_file_manifest_ready(manifest)
+
+    assert len(ready) == 3
+    assert set(ready["candidate_use"]) == {
+        "reference flood mask for validation",
+        "pre-event SAR source for non-ML baseline",
+        "post-event SAR source for non-ML baseline",
+    }
+
+
+def test_mae_sai_file_manifest_readiness_recomputes_file_level_gates() -> None:
+    manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
+    manifest.loc[:, "processing_allowed"] = True
+
+    with pytest.raises(
+        IngestionPlanError,
+        match="local_path is not recorded|sha256 is not recorded|reference_mask_status",
+    ):
+        validate_mae_sai_file_manifest_ready(manifest)
 
 
 def test_file_level_manifest_blocks_missing_checksum_and_reference_mask() -> None:

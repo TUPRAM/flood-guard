@@ -221,3 +221,27 @@ Acceptance: `outputs/theos2_local_metadata_manifest.csv` records redacted path h
 Checksum only selected THEOS-2 disaster/context files and generate small non-operational optical-context preview cards.
 
 Acceptance: `outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums, `processing_scope=theos2_optical_context_preview_only`, and `reference_mask_status=not_reference_mask`; `outputs/theos2_previews/*.svg` are small dashboard-ready context artifacts; source imagery remains outside Git.
+
+## Task 36 - THEOS-2 True Thumbnail Lane
+
+Add an optional rasterio/GDAL-backed thumbnail workflow for selected THEOS-2 files.
+
+Acceptance: workflow detects raster reader availability, fails cleanly when unavailable, requires checksum-backed selected rows, and writes only small PNG thumbnails plus a manifest when a reader exists.
+
+## Task 37 - THEOS-2 Optical Context In Briefs
+
+Add compact THEOS-2 optical context to generated action briefs.
+
+Acceptance: A/B/C briefs include strict wording that THEOS-2 is optical context only, not flood validation, not a reference mask, and not official warning evidence.
+
+## Task 38 - THEOS-2 Land-Cover/Exposure Feature Prototype
+
+Build a tiny non-ML feature table from selected THEOS-2 metadata.
+
+Acceptance: output includes disaster/LULC/urban/agri/coastal flags, rough footprint area, built-up/water context notes, and assumptions that these are not flood labels.
+
+## Task 39 - Provider Response Logging And Mae Sai Manifest V2
+
+Document and test the transition from sent provider requests to file-level readiness.
+
+Acceptance: docs explain how to log UNOSAT/GISTDA replies, Mae Sai manifest gates reject current blocked rows, and validation summary remains blocked until legal local files/checksums are recorded.

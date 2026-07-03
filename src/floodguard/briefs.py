@@ -57,6 +57,17 @@ EQUITY_REQUIRED_COLUMNS: tuple[str, ...] = (
     "interpretation_text",
 )
 
+THEOS2_CONTEXT_COLUMNS: tuple[str, ...] = (
+    "file_name",
+    "source_timestamp",
+    "category",
+    "mvp_overlap",
+    "processing_scope",
+    "reference_mask_status",
+    "processing_allowed",
+    "preview_path",
+)
+
 
 class BriefError(ValueError):
     """Raised when action-brief inputs violate the brief contract."""
@@ -87,6 +98,7 @@ def build_action_brief(
     access_loss: pd.DataFrame,
     equity_gap: pd.DataFrame,
     subdistrict_id: str | None = None,
+    theos2_context: pd.DataFrame | None = None,
 ) -> str:
     """Build a one-page Markdown action brief."""
 
@@ -132,6 +144,7 @@ def build_action_brief(
 
     title = f"# Action Brief - {selected['subdistrict_name']} ({selected_id})"
     road_lines = _format_road_lines(roads)
+    optical_context_lines = _format_theos2_context_lines(theos2_context)
     lines = [
         title,
         "",
@@ -159,6 +172,7 @@ def build_action_brief(
         "- Routes likely to need verification:",
         *road_lines,
         "",
+        *optical_context_lines,
         "## Recommended Action / ข้อเสนอการปฏิบัติ",
         "",
         f"- {recommended_action}",
@@ -180,6 +194,7 @@ def write_action_brief(
     equity_gap: pd.DataFrame,
     output_dir: str | Path,
     subdistrict_id: str | None = None,
+    theos2_context: pd.DataFrame | None = None,
 ) -> Path:
     """Write an action brief and return the generated path."""
 
@@ -191,7 +206,14 @@ def write_action_brief(
     target = Path(output_dir) / f"action_brief_{output_id}.md"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
-        build_action_brief(priority, road_risk, access_loss, equity_gap, output_id),
+        build_action_brief(
+            priority,
+            road_risk,
+            access_loss,
+            equity_gap,
+            output_id,
+            theos2_context=theos2_context,
+        ),
         encoding="utf-8",
     )
     return target
@@ -204,6 +226,7 @@ def write_action_briefs(
     equity_gap: pd.DataFrame,
     output_dir: str | Path,
     action_classes: Sequence[str] = DEFAULT_ACTIONABLE_BRIEF_CLASSES,
+    theos2_context: pd.DataFrame | None = None,
 ) -> list[Path]:
     """Write action briefs for all requested action classes and return paths."""
 
@@ -241,6 +264,7 @@ def write_action_briefs(
                 equity_gap,
                 output_dir,
                 subdistrict_id=str(row["subdistrict_id"]),
+                theos2_context=theos2_context,
             )
         )
     return paths
@@ -275,3 +299,39 @@ def _format_value(value: object) -> str:
     if pd.isna(value):
         return "unavailable"
     return f"{float(value):.3f}"
+
+
+def _format_theos2_context_lines(context: pd.DataFrame | None) -> list[str]:
+    if context is None:
+        return []
+    _validate_columns(context, THEOS2_CONTEXT_COLUMNS, "theos2_context")
+    frame = context.copy()
+    frame = frame[
+        frame["processing_allowed"].map(_truthy)
+        & (frame["processing_scope"].astype(str) == "theos2_optical_context_preview_only")
+        & (frame["reference_mask_status"].astype(str) == "not_reference_mask")
+    ]
+    if frame.empty:
+        return []
+    lines = [
+        "## Optical Context",
+        "",
+        (
+            "- THEOS-2 previews are local optical context only; they are not flood "
+            "validation, not reference masks, and not official warning evidence."
+        ),
+    ]
+    for _, row in frame.head(3).iterrows():
+        lines.append(
+            "- "
+            f"{row['file_name']} ({row['category']}, {row['source_timestamp']}): "
+            f"{row['mvp_overlap']}; preview `{row['preview_path']}`."
+        )
+    lines.append("")
+    return lines
+
+
+def _truthy(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"true", "1", "yes"}

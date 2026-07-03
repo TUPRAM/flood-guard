@@ -18,6 +18,14 @@ All conditions are required:
 
 If any condition fails, ML remains blocked.
 
+The current gate implementation is:
+
+- `docs/provider_response_logging_guide.md` for provider replies.
+- `docs/mae_sai_file_manifest_v2.md` for required file-level rows.
+- `outputs/mae_sai_real_data_file_manifest.csv` for current blocked file status.
+- `outputs/mae_sai_validation_summary.md` for the blocked or metric-backed validation report.
+- `src/floodguard/sar_baseline.py::run_gated_real_sar_change_baseline` for the gated non-ML SAR formula once a legal pixel/object table exists.
+
 ## First Model Scope
 
 The first model should be small and auditable. Do not start with a deep model.
@@ -62,4 +70,4 @@ ML output may replace fixture flood probability in the decision layer only when:
 3. Commit a reviewed CDSE metadata snapshot only if needed for a stable candidate list.
 4. Add file-level ingestion rows with product ids, local paths, checksums, and licensing status once files are legally acquired.
 5. Run the synthetic SAR baseline and validation metric tests to keep the contract green.
-
+6. Generate `outputs/mae_sai_validation_summary.md`; it must remain blocked until the manifest gates pass.

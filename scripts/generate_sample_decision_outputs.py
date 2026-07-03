@@ -30,6 +30,9 @@ from floodguard.scenarios import (  # noqa: E402
 )
 from floodguard.scoring import score_subdistricts  # noqa: E402
 from floodguard.sensitivity import run_weight_sensitivity, summarize_rank_instability  # noqa: E402
+from floodguard.theos2_features import (  # noqa: E402
+    write_theos2_landcover_exposure_features,
+)
 from floodguard.validation import write_validation_summary  # noqa: E402
 
 
@@ -145,12 +148,26 @@ def main() -> None:
         output_dir / "validation_summary.md",
         rank_instability=rank_instability,
     )
+    theos2_context_path = _optional_path(output_dir / "theos2_selected_file_manifest.csv")
+    theos2_context = (
+        pd.read_csv(theos2_context_path, dtype=str).fillna("")
+        if theos2_context_path is not None
+        else None
+    )
+    if theos2_context_path is not None:
+        theos2_feature_path = write_theos2_landcover_exposure_features(
+            theos2_context_path,
+            output_dir / "theos2_landcover_exposure_features.csv",
+        )
+    else:
+        theos2_feature_path = None
     action_brief_paths = write_action_briefs(
         priority,
         road_risk,
         access_loss,
         equity_gap,
         output_dir,
+        theos2_context=theos2_context,
     )
     dashboard_path = write_static_dashboard(
         priority_geojson_path,
@@ -158,9 +175,7 @@ def main() -> None:
         validation_path,
         action_brief_paths,
         output_dir / "dashboard.html",
-        theos2_preview_manifest_path=_optional_path(
-            output_dir / "theos2_selected_file_manifest.csv"
-        ),
+        theos2_preview_manifest_path=theos2_context_path,
     )
 
     print(f"Wrote {priority_path}")
@@ -170,6 +185,8 @@ def main() -> None:
     print(f"Wrote {priority_geojson_path}")
     print(f"Wrote {road_risk_geojson_path}")
     print(f"Wrote {validation_path}")
+    if theos2_feature_path is not None:
+        print(f"Wrote {theos2_feature_path}")
     for action_brief_path in action_brief_paths:
         print(f"Wrote {action_brief_path}")
     print(f"Wrote {dashboard_path}")

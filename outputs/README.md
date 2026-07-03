@@ -30,14 +30,20 @@ Current expected MVP output:
 - `theos2_local_metadata_manifest.csv`
 - `theos2_selected_file_manifest.csv`
 - `theos2_previews/*.svg`
+- `theos2_landcover_exposure_features.csv`
+- `mae_sai_validation_summary.md`
 
 Optional live metadata snapshots, generated only when intentionally run and reviewed:
 
 - `cdse_mae_sai_2024_metadata.csv`
 - `cdse_hat_yai_2025_metadata.csv`
+- `theos2_thumbnail_manifest.csv`
+- `theos2_thumbnails/*.png`
 
 Before committing optional live metadata snapshots, complete `docs/live_metadata_snapshot_review_checklist.md`.
 
 `dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from embedded fixture data only.
 
 `theos2_selected_file_manifest.csv` and `theos2_previews/*.svg` are THEOS-2 optical-context artifacts. They are checksum-backed and non-operational, but they are not flood masks, validation labels, or official warning products. Source THEOS-2 TIFF/overview files remain outside Git.
+
+`theos2_landcover_exposure_features.csv` is a non-ML metadata-derived context table. `mae_sai_validation_summary.md` remains blocked until provider responses, local paths, checksums, and reference-mask gates pass.

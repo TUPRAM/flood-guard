@@ -123,6 +123,9 @@ Dashboard THEOS-2 optical context:
 | --- | --- |
 | `theos2_selected_file_manifest.csv` | Checksum-backed selected-file manifest for local THEOS-2 optical context candidates. |
 | `theos2_previews/*.svg` | Small non-operational optical-context preview cards generated from metadata and checksums, not source image pixels. |
+| `theos2_thumbnail_manifest.csv` | Optional true-thumbnail manifest written only when rasterio or GDAL is available. |
+| `theos2_thumbnails/*.png` | Optional small PNG thumbnails; never full-resolution imagery. |
+| `theos2_landcover_exposure_features.csv` | Non-ML metadata-derived optical context feature table. |
 
 ## Metadata Planning Outputs
 
@@ -246,3 +249,31 @@ File: `theos2_selected_file_manifest.csv`
 | `preview_path` | Relative SVG preview-card path used by `outputs/dashboard.html`. |
 | `assumptions` | Non-operational context note. |
 | `reason_blocked` | Empty for selected rows whose limited preview scope is allowed; populated if a gate fails. |
+
+## THEOS-2 Land-Cover/Exposure Features
+
+File: `theos2_landcover_exposure_features.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `file_name` | Selected THEOS-2 file used as optical context. |
+| `source_timestamp` | Acquisition timestamp parsed from the file name. |
+| `category` | Hackathon sample category labels. |
+| `has_disaster_context` | Boolean metadata flag for disaster-context samples. |
+| `has_lulc_context` | Boolean metadata flag for land-cover context. |
+| `has_urban_context` | Boolean metadata flag for urban context. |
+| `has_agri_context` | Boolean metadata flag for agricultural context. |
+| `has_coastal_context` | Boolean metadata flag for coastal/water-edge context. |
+| `rough_bbox_area_sq_km` | Approximate footprint area from parsed bounding box metadata. |
+| `mvp_overlap` | Whether the footprint contains the current Mae Sai or Hat Yai MVP point. |
+| `built_up_exposure_note` | Non-ML note about possible built-up exposure relevance. |
+| `water_context_note` | Non-ML note about possible water/coastal context. |
+| `floodguard_use` | Plain-language use in FloodGuard context. |
+| `confidence_class` | Metadata-derived confidence label. |
+| `assumptions` | Explicit note that these are not flood labels or validation data. |
+
+## Mae Sai Validation Summary
+
+File: `mae_sai_validation_summary.md`
+
+This report is blocked until the legal reference mask, local paths, SHA-256 checksums, and file-level processing gates pass. Once ready, it reports IoU, F1/Dice, precision, recall, and area error for the non-ML SAR baseline.

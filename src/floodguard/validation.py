@@ -7,6 +7,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from floodguard.ingestion import (
+    IngestionPlanError,
+    validate_mae_sai_file_manifest_ready,
+)
+from floodguard.sar_baseline import MASK_METRIC_COLUMNS
+
 ACTION_PRIORITY: dict[str, int] = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4}
 ACCESS_THRESHOLDS: tuple[int, ...] = (15, 30, 60)
 
@@ -223,6 +229,115 @@ def write_validation_summary(
             access_loss,
             equity_gap,
             rank_instability=rank_instability,
+        ),
+        encoding="utf-8",
+    )
+    return target
+
+
+def build_real_data_validation_summary(
+    file_manifest: pd.DataFrame,
+    sar_metrics: pd.DataFrame | None = None,
+    title: str = "Mae Sai Real-Data Validation Summary",
+) -> str:
+    """Build a real-data validation report or a blocked status report."""
+
+    lines = [
+        f"# {title}",
+        "",
+        "Status: blocked until reference-mask and file-level ingestion gates pass.",
+        "",
+        "This report is non-operational and must not be used as an official warning.",
+        "",
+        "## Ingestion Gate",
+        "",
+    ]
+    try:
+        ready_rows = validate_mae_sai_file_manifest_ready(file_manifest)
+    except IngestionPlanError as exc:
+        lines.extend(
+            [
+                "- Processing allowed: false",
+                f"- Blocking reason: {exc}",
+                "- Real IoU, F1/Dice, precision, recall, and area error are pending.",
+                "",
+                "## Required Next Action",
+                "",
+                "- Log UNOSAT/UNITAR or GISTDA provider response.",
+                "- Record legal reference-mask status.",
+                "- Record local paths and SHA-256 checksums outside Git.",
+                "- Rebuild `outputs/mae_sai_real_data_file_manifest.csv`.",
+                "",
+            ]
+        )
+        return "\n".join(lines)
+
+    lines.extend(
+        [
+            "- Processing allowed: true",
+            f"- Ready source rows: {len(ready_rows)}",
+            "- Reference mask and Sentinel-1 source rows passed file-level gates.",
+            "",
+            "## Source Rows",
+            "",
+        ]
+    )
+    for _, row in ready_rows.iterrows():
+        lines.append(
+            f"- {row['source_name']}: product_id `{row['product_id']}`, "
+            f"local_path `{row['local_path']}`"
+        )
+    lines.extend(["", "## Flood-Mask Metrics", ""])
+    if sar_metrics is None:
+        lines.extend(
+            [
+                "- IoU: pending gated baseline run.",
+                "- F1/Dice: pending gated baseline run.",
+                "- precision: pending gated baseline run.",
+                "- recall: pending gated baseline run.",
+                "- area error: pending gated baseline run.",
+                "",
+            ]
+        )
+        return "\n".join(lines)
+
+    _validate_columns(sar_metrics, MASK_METRIC_COLUMNS, "sar_metrics")
+    if sar_metrics.empty:
+        raise ValidationReportError("sar_metrics must contain at least one row.")
+    metrics = sar_metrics.iloc[0]
+    lines.extend(
+        [
+            f"- IoU: {float(metrics['iou']):.6f}",
+            f"- F1/Dice: {float(metrics['f1_dice']):.6f}",
+            f"- precision: {float(metrics['precision']):.6f}",
+            f"- recall: {float(metrics['recall']):.6f}",
+            f"- area error ratio: {float(metrics['area_error_ratio']):.6f}",
+            "",
+            "## Assumptions",
+            "",
+            "- Metrics are valid only for the logged reference-mask and source-product versions.",
+            "- Output remains non-operational and not an official warning.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def write_real_data_validation_summary(
+    file_manifest: pd.DataFrame,
+    output_path: str | Path,
+    sar_metrics: pd.DataFrame | None = None,
+    title: str = "Mae Sai Real-Data Validation Summary",
+) -> Path:
+    """Write the real-data validation status/metric report."""
+
+    target = Path(output_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        build_real_data_validation_summary(
+            file_manifest,
+            sar_metrics=sar_metrics,
+            title=title,
         ),
         encoding="utf-8",
     )

@@ -381,6 +381,48 @@ Required columns include:
 
 All local data library rows must remain `processing_allowed=False` until selected into a stricter file-level manifest with recorded SHA-256 checksums and processing gates.
 
+## Sentinel-1 Selected-File Manifest
+
+`outputs/sentinel1_selected_file_manifest.csv` records the selected local Sentinel-1 file that is ready for provenance and timing review. It must not copy, crop, resample, or process source pixels.
+
+Required columns include:
+
+- `file_name`
+- `local_path_hint`
+- `sha256`
+- `sha256_status`
+- `raster_width`
+- `raster_height`
+- `raster_count`
+- `band_descriptions`
+- `crs`
+- `bbox_lon_min`
+- `bbox_lat_min`
+- `bbox_lon_max`
+- `bbox_lat_max`
+- `mvp_overlap`
+- `candidate_use`
+- `source_license_status`
+- `provenance_status`
+- `event_timing_status`
+- `reference_mask_status`
+- `processing_scope`
+- `processing_allowed`
+- `reason_blocked`
+
+Current selected rows are checksum-backed but remain blocked:
+
+- `sha256_status=recorded`
+- `mvp_overlap=mae_sai_2024_point`
+- `source_license_status=user_reported_hackathon_free_use`
+- `provenance_status=unresolved_placeholder_filename`
+- `event_timing_status=unresolved_no_acquisition_date`
+- `reference_mask_status=unresolved`
+- `processing_scope=sentinel1_sar_context_readiness_only`
+- `processing_allowed=False`
+
+The next required step is Sentinel-1 provenance and timing resolution. Processing may not start until product provenance, acquisition timing, and reference-mask status are clear. The source Sentinel-1 TIFF must remain outside Git.
+
 ## Synthetic SAR Baseline Output
 
 The current SAR baseline is a synthetic, non-ML fixture used to test validation wiring. It does not read real Sentinel-1 imagery.

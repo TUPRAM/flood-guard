@@ -29,6 +29,7 @@ Current expected MVP output:
 - `mae_sai_real_data_file_manifest.csv`
 - `local_data_library_manifest.csv`
 - `local_data_library_zip_members.csv`
+- `sentinel1_selected_file_manifest.csv`
 - `theos2_local_metadata_manifest.csv`
 - `theos2_selected_file_manifest.csv`
 - `theos2_previews/*.svg`
@@ -54,5 +55,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 `theos2_landcover_exposure_features.csv` is a non-ML metadata-derived context table. `theos2_visual_review_checklist.csv` is a pending manual-review worksheet for visible water context, built-up area context, road context, cloud/haze, and exposure-explanation usefulness. It is not a flood-label file.
 
 `local_data_library_manifest.csv` and `local_data_library_zip_members.csv` catalog all currently provided local hackathon data files and package members. They are metadata-only and keep all source TIFF/ZIP/overview assets outside Git.
+
+`sentinel1_selected_file_manifest.csv` records the checksum-backed selected Sentinel-1 readiness row for the standalone VV/VH TIFF that overlaps the Mae Sai MVP point. It is not a pre/post pair lock and not processing authorization; provenance, event timing, and reference-mask status remain blocked with `processing_allowed=False`.
 
 `mae_sai_validation_summary.md` remains blocked until provider responses, local paths, checksums, and reference-mask gates pass.

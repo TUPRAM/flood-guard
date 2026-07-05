@@ -185,6 +185,36 @@ Local data library fields:
 | `member_path_hint` | Redacted ZIP member path such as `<input_dir>/package.zip::member.tif`. |
 | `member_kind` | File kind for a ZIP member. |
 
+## Sentinel-1 Selected File Manifest
+
+File: `sentinel1_selected_file_manifest.csv`
+
+This manifest is the checksum-backed readiness lane for the standalone local Sentinel-1 TIFF. It does not process pixels and does not authorize the real SAR baseline.
+
+| Field | Meaning |
+| --- | --- |
+| `file_name` | Selected Sentinel-1 source file name. |
+| `local_path_hint` | Redacted path hint such as `<input_dir>/filename`; absolute source paths are not committed. |
+| `sha256` | SHA-256 checksum of the selected local TIFF. |
+| `sha256_status` | `recorded` after the checksum is computed. |
+| `file_size_bytes` / `file_size_gb` | Local source-file size recorded for review. |
+| `raster_width` / `raster_height` | Raster dimensions from the local data library metadata. |
+| `raster_count` | Number of raster bands; the selected standalone file has `2`. |
+| `raster_dtypes` | Raster data types for the selected bands. |
+| `band_descriptions` | Band labels; the selected standalone file is `VV|VH`. |
+| `crs` | Coordinate reference system string; the selected standalone file is `EPSG:4326`. |
+| `bbox_lon_min` / `bbox_lat_min` / `bbox_lon_max` / `bbox_lat_max` | Approximate footprint bounds. |
+| `mvp_overlap` | Current MVP overlap flag; the selected standalone file overlaps `mae_sai_2024_point`. |
+| `candidate_use` | Conservative use note for why the file is selected. |
+| `source_license_status` | User-reported local hackathon free-use status, not full provenance resolution. |
+| `provenance_status` | Current product-provenance status; now `unresolved_placeholder_filename`. |
+| `event_timing_status` | Current event-timing status; now `unresolved_no_acquisition_date`. |
+| `reference_mask_status` | Current reference-mask gate status; now `unresolved`. |
+| `processing_scope` | Limited scope, currently `sentinel1_sar_context_readiness_only`. |
+| `processing_allowed` | `False` until provenance, event timing, and reference-mask gates are clear. |
+| `reason_blocked` | Human-readable blockers that prevent real processing. |
+| `assumptions` | Non-operational note that the source TIFF remains outside Git. |
+
 ## Synthetic SAR Baseline
 
 Files: `sample_sar_baseline.csv` and `sample_sar_validation_metrics.csv`

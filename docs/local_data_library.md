@@ -48,10 +48,17 @@ Cataloged metadata:
 
 This is the most important new candidate for the SAR lane because it covers the Mae Sai point and exposes VV/VH bands. It is not yet a locked real baseline input because the filename does not identify acquisition date, event timing, orbit, processing level, or whether it is a pre-event or post-event product.
 
+Selected-file readiness:
+
+- Manifest: `outputs/sentinel1_selected_file_manifest.csv`
+- Generator: `scripts/build_sentinel1_selected_manifest.py`
+- Current SHA-256 status: `recorded`
+- Current processing scope: `sentinel1_sar_context_readiness_only`
+- Current processing gate: `processing_allowed=False`
+
 Required before processing:
 
-- SHA-256 checksum for the file
-- source/license status recorded at file level
+- source/license status confirmed beyond user-reported hackathon free-use if required by the final rules
 - acquisition timing or product provenance clarified
 - reference-mask status cleared
 - `processing_allowed=True` achieved through gates, not manual override
@@ -122,6 +129,12 @@ Build the local library:
 
 ```powershell
 uv run python scripts/build_local_data_library.py
+```
+
+Build the selected Sentinel-1 readiness manifest:
+
+```powershell
+uv run python scripts/build_sentinel1_selected_manifest.py
 ```
 
 Inspect top-level groups:

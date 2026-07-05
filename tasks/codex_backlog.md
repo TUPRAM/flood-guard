@@ -251,3 +251,15 @@ Acceptance: docs explain how to log UNOSAT/GISTDA replies, Mae Sai manifest gate
 Catalog all currently provided local hackathon files without committing source imagery or extracting ZIP packages.
 
 Acceptance: `outputs/local_data_library_manifest.csv` records top-level local files, redacted path hints, file groups, raster header metadata where available, MVP overlap, and processing blockers; `outputs/local_data_library_zip_members.csv` records ZIP members without extraction; source TIFF/ZIP/OVR assets remain outside Git.
+
+## Task 41 - Selected Sentinel-1 Readiness Lane
+
+Checksum the standalone Mae Sai-overlapping Sentinel-1 VV/VH TIFF and record file-level readiness metadata without processing pixels.
+
+Acceptance: `outputs/sentinel1_selected_file_manifest.csv` records SHA-256, raster metadata, `mvp_overlap=mae_sai_2024_point`, and `processing_allowed=False` while provenance, event timing, and reference-mask status remain unresolved; source TIFFs remain outside Git.
+
+## Task 42 - Sentinel-1 Provenance And Timing Resolver
+
+Resolve the selected Sentinel-1 file provenance and event timing before any real SAR baseline processing.
+
+Acceptance: selected Sentinel-1 readiness rows identify acquisition date/time, product provenance or source package, whether the file is pre-event/post-event/context-only, and the remaining reference-mask blocker. Processing remains blocked unless all gates pass.

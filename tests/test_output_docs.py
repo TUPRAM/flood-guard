@@ -49,6 +49,12 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "docs/theos2_usage_terms_log.md",
         "processing_scope",
         "theos2_optical_context_preview_only",
+        "sentinel1_selected_file_manifest.csv",
+        "sentinel1_sar_context_readiness_only",
+        "provenance_status",
+        "event_timing_status",
+        "unresolved_placeholder_filename",
+        "unresolved_no_acquisition_date",
         "reference_mask_status",
     ):
         assert field in text
@@ -92,6 +98,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "generate_theos2_true_thumbnails.py --verify-checksum" in text
     assert "generate_theos2_visual_review_checklist.py" in text
     assert "generate_theos2_features.py" in text
+    assert "build_sentinel1_selected_manifest.py" in text
     assert "generate_mae_sai_validation_summary.py" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
@@ -269,6 +276,8 @@ def test_source_registry_mentions_theos2_as_blocked_optical_context() -> None:
     assert "user-reported hackathon free-use status" in text or "can be used freely" in text
     assert "Local hackathon Sentinel-1 and DEM bundles" in text
     assert "Sentinel-1 standalone TIFF overlaps the Mae Sai MVP point" in text
+    assert "outputs/sentinel1_selected_file_manifest.csv" in text
+    assert "processing_allowed=False" in text
 
 
 def test_local_data_library_doc_describes_catalog_and_blockers() -> None:
@@ -280,6 +289,9 @@ def test_local_data_library_doc_describes_catalog_and_blockers() -> None:
         "Sentinel1_Thailand-0000000000-0000000000-002.tif",
         "VV|VH",
         "mae_sai_2024_point",
+        "outputs/sentinel1_selected_file_manifest.csv",
+        "build_sentinel1_selected_manifest.py",
+        "sentinel1_sar_context_readiness_only",
         "drive-download-20260705T102948Z-3-001.zip",
         "Copernicus DEM",
         "THEOS-2 optical",
@@ -321,3 +333,30 @@ def test_provider_response_logging_guide_and_mae_sai_v2_docs_exist() -> None:
     assert "Status: blocked." in manifest_text
     assert "reference flood mask for validation" in manifest_text
     assert "processing_allowed=True is not allowed yet" in manifest_text
+    assert "outputs/sentinel1_selected_file_manifest.csv" in manifest_text
+    assert "provenance and event timing are unresolved" in manifest_text
+
+
+def test_sentinel1_selected_manifest_output_is_documented_and_blocked() -> None:
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(encoding="utf-8")
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in (output_text, contract_text, backlog_text):
+        assert "sentinel1_selected_file_manifest.csv" in text
+        assert "processing_allowed=False" in text
+
+    for phrase in (
+        "sha256_status=recorded",
+        "mvp_overlap=mae_sai_2024_point",
+        "provenance_status=unresolved_placeholder_filename",
+        "event_timing_status=unresolved_no_acquisition_date",
+        "Sentinel-1 provenance and timing resolution",
+    ):
+        assert phrase in contract_text
+
+    assert "Task 42 - Sentinel-1 Provenance And Timing Resolver" in backlog_text

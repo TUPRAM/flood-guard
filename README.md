@@ -63,12 +63,15 @@ uv run python scripts/build_theos2_local_manifest.py
 uv run python scripts/build_theos2_selected_manifest.py
 uv run python scripts/generate_theos2_previews.py
 uv run python scripts/generate_theos2_features.py
+uv run python scripts/build_sentinel1_selected_manifest.py
 uv run python scripts/generate_mae_sai_validation_summary.py
 ```
 
 The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_real_data_file_manifest.csv` remain blocked for flood-reference processing until geometry, license, redistribution/reference-only status, local paths, checksums, and reference-mask status are confirmed. `outputs/theos2_local_metadata_manifest.csv` records user-reported hackathon free-use status for THEOS-2 samples from `docs/theos2_usage_terms_log.md`, but selected files still need SHA-256 checksums before reproducible pixel-processing outputs are generated.
 
 `outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums for only the curated selected THEOS-2 files. `outputs/theos2_previews/*.svg` are small non-operational optical-context preview cards generated from checksum-backed metadata. They are not flood masks, not validation labels, and not official warning products. Source TIFFs and overview files remain outside Git.
+
+`outputs/sentinel1_selected_file_manifest.csv` records the SHA-256 checksum and raster metadata for the standalone local Sentinel-1 TIFF that overlaps the Mae Sai MVP point. It is a readiness manifest only: provenance, event timing, and reference-mask status remain unresolved, so `processing_allowed=False` until the next Sentinel-1 provenance and timing resolver clears those gates. The source TIFF remains outside Git.
 
 Optional true THEOS-2 thumbnails require `rasterio` or GDAL. Check availability first:
 

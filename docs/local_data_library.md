@@ -56,6 +56,14 @@ Selected-file readiness:
 - Current processing scope: `sentinel1_sar_context_readiness_only`
 - Current processing gate: `processing_allowed=False`
 
+Provenance resolution:
+
+- Manifest: `outputs/sentinel1_provenance_resolved_manifest.csv`
+- Report: `docs/sentinel1_local_provenance.md`
+- Current candidate role: `unresolved`
+- Current event timing: `timing_unresolved`
+- Current finding: TIFF tags and ZIP member names do not expose a usable acquisition date or product id.
+
 Required before processing:
 
 - source/license status confirmed beyond user-reported hackathon free-use if required by the final rules
@@ -135,6 +143,12 @@ Build the selected Sentinel-1 readiness manifest:
 
 ```powershell
 uv run python scripts/build_sentinel1_selected_manifest.py
+```
+
+Resolve local Sentinel-1 provenance and timing evidence:
+
+```powershell
+uv run python scripts/resolve_sentinel1_provenance.py
 ```
 
 Inspect top-level groups:

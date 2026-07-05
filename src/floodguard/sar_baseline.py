@@ -133,6 +133,7 @@ def validate_real_sar_baseline_readiness(file_manifest: pd.DataFrame) -> pd.Data
 def run_gated_real_sar_change_baseline(
     pixels: pd.DataFrame,
     file_manifest: pd.DataFrame,
+    sentinel1_provenance: pd.DataFrame | None = None,
     probability_threshold: float = 0.5,
     dry_change_db: float = 0.5,
     flood_change_db: float = 4.0,
@@ -144,6 +145,19 @@ def run_gated_real_sar_change_baseline(
     must remain behind the same file-level gates.
     """
 
+    if sentinel1_provenance is not None:
+        from floodguard.sentinel1_provenance import (
+            Sentinel1ProvenanceError,
+            validate_sentinel1_provenance_ready_for_baseline,
+        )
+
+        try:
+            validate_sentinel1_provenance_ready_for_baseline(sentinel1_provenance)
+        except Sentinel1ProvenanceError as exc:
+            raise SARBaselineError(
+                "Real Mae Sai SAR baseline is blocked by Sentinel-1 provenance "
+                f"gates: {exc}"
+            ) from exc
     validate_real_sar_baseline_readiness(file_manifest)
     return run_threshold_sar_baseline(
         pixels,

@@ -263,3 +263,9 @@ Acceptance: `outputs/sentinel1_selected_file_manifest.csv` records SHA-256, rast
 Resolve the selected Sentinel-1 file provenance and event timing before any real SAR baseline processing.
 
 Acceptance: selected Sentinel-1 readiness rows identify acquisition date/time, product provenance or source package, whether the file is pre-event/post-event/context-only, and the remaining reference-mask blocker. Processing remains blocked unless all gates pass.
+
+## Task 43 - DEM Readiness Lane
+
+Build a metadata-only selected-file readiness lane for the local Copernicus DEM/elevation-slope assets.
+
+Acceptance: selected DEM files or ZIP members are cataloged with redacted path hints, source package, raster metadata where available, checksum status, terrain-context candidate use, and `processing_allowed=False` until local file checksums and scope gates are clear. Source DEM TIFFs and ZIP packages remain outside Git.

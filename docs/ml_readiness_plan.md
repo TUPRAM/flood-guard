@@ -24,7 +24,7 @@ Required before ML:
 - product storage type and acquisition timing are documented
 - metadata snapshot review checklist is complete if a live snapshot is committed
 
-Current status: partially planned. Mae Sai has a provisional pre/post COG pair, but the final post-event choice depends on the reference-mask date.
+Current status: partially planned. Mae Sai has a provisional CDSE pre/post COG pair, but the final post-event choice depends on the reference-mask date. The local hackathon Sentinel-1 TIFF has checksum-backed readiness metadata, but `outputs/sentinel1_provenance_resolved_manifest.csv` currently labels it `candidate_role=unresolved` and `event_timing_status=timing_unresolved`; it cannot replace the locked CDSE pair yet.
 
 ## Gate 3 - Source Files Are Tracked Outside The Repo
 
@@ -45,7 +45,7 @@ Required before supervised ML:
 - candidate features are documented, such as VV/VH backscatter difference, ratio, texture proxy, slope, elevation, and permanent-water mask
 - baseline validation reports IoU, F1/Dice, precision, recall, area error, and calibration caveats
 
-Current status: gated entry point added. `run_gated_real_sar_change_baseline` can run the non-ML SAR formula on a pre-extracted pixel/object table only after Mae Sai file-level gates pass. Direct Sentinel-1 raster extraction remains blocked.
+Current status: gated entry point added. `run_gated_real_sar_change_baseline` can run the non-ML SAR formula on a pre-extracted pixel/object table only after Mae Sai file-level and Sentinel-1 provenance gates pass. Direct Sentinel-1 raster extraction remains blocked.
 
 The non-ML baseline remains the required benchmark before any supervised flood model is trained.
 

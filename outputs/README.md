@@ -30,6 +30,7 @@ Current expected MVP output:
 - `local_data_library_manifest.csv`
 - `local_data_library_zip_members.csv`
 - `sentinel1_selected_file_manifest.csv`
+- `sentinel1_provenance_resolved_manifest.csv`
 - `theos2_local_metadata_manifest.csv`
 - `theos2_selected_file_manifest.csv`
 - `theos2_previews/*.svg`
@@ -57,5 +58,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 `local_data_library_manifest.csv` and `local_data_library_zip_members.csv` catalog all currently provided local hackathon data files and package members. They are metadata-only and keep all source TIFF/ZIP/overview assets outside Git.
 
 `sentinel1_selected_file_manifest.csv` records the checksum-backed selected Sentinel-1 readiness row for the standalone VV/VH TIFF that overlaps the Mae Sai MVP point. It is not a pre/post pair lock and not processing authorization; provenance, event timing, and reference-mask status remain blocked with `processing_allowed=False`.
+
+`sentinel1_provenance_resolved_manifest.csv` records the metadata-only provenance resolver result for the selected Sentinel-1 row. Current status is `candidate_role=unresolved`, `event_timing_status=timing_unresolved`, and `processing_allowed=False`; the local file must not feed the real Mae Sai SAR baseline until provenance, acquisition timing, and reference-mask status are resolved.
 
 `mae_sai_validation_summary.md` remains blocked until provider responses, local paths, checksums, and reference-mask gates pass.

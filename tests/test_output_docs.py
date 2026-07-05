@@ -50,11 +50,15 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "processing_scope",
         "theos2_optical_context_preview_only",
         "sentinel1_selected_file_manifest.csv",
+        "sentinel1_provenance_resolved_manifest.csv",
         "sentinel1_sar_context_readiness_only",
+        "sentinel1_provenance_resolution_only",
         "provenance_status",
         "event_timing_status",
         "unresolved_placeholder_filename",
         "unresolved_no_acquisition_date",
+        "timing_unresolved",
+        "candidate_role",
         "reference_mask_status",
     ):
         assert field in text
@@ -99,6 +103,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "generate_theos2_visual_review_checklist.py" in text
     assert "generate_theos2_features.py" in text
     assert "build_sentinel1_selected_manifest.py" in text
+    assert "resolve_sentinel1_provenance.py" in text
     assert "generate_mae_sai_validation_summary.py" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
@@ -277,6 +282,7 @@ def test_source_registry_mentions_theos2_as_blocked_optical_context() -> None:
     assert "Local hackathon Sentinel-1 and DEM bundles" in text
     assert "Sentinel-1 standalone TIFF overlaps the Mae Sai MVP point" in text
     assert "outputs/sentinel1_selected_file_manifest.csv" in text
+    assert "outputs/sentinel1_provenance_resolved_manifest.csv" in text
     assert "processing_allowed=False" in text
 
 
@@ -290,8 +296,12 @@ def test_local_data_library_doc_describes_catalog_and_blockers() -> None:
         "VV|VH",
         "mae_sai_2024_point",
         "outputs/sentinel1_selected_file_manifest.csv",
+        "outputs/sentinel1_provenance_resolved_manifest.csv",
+        "docs/sentinel1_local_provenance.md",
         "build_sentinel1_selected_manifest.py",
+        "resolve_sentinel1_provenance.py",
         "sentinel1_sar_context_readiness_only",
+        "timing_unresolved",
         "drive-download-20260705T102948Z-3-001.zip",
         "Copernicus DEM",
         "THEOS-2 optical",
@@ -334,7 +344,9 @@ def test_provider_response_logging_guide_and_mae_sai_v2_docs_exist() -> None:
     assert "reference flood mask for validation" in manifest_text
     assert "processing_allowed=True is not allowed yet" in manifest_text
     assert "outputs/sentinel1_selected_file_manifest.csv" in manifest_text
-    assert "provenance and event timing are unresolved" in manifest_text
+    assert "outputs/sentinel1_provenance_resolved_manifest.csv" in manifest_text
+    assert "candidate_role=unresolved" in manifest_text
+    assert "event_timing_status=timing_unresolved" in manifest_text
 
 
 def test_sentinel1_selected_manifest_output_is_documented_and_blocked() -> None:
@@ -360,3 +372,32 @@ def test_sentinel1_selected_manifest_output_is_documented_and_blocked() -> None:
         assert phrase in contract_text
 
     assert "Task 42 - Sentinel-1 Provenance And Timing Resolver" in backlog_text
+
+
+def test_sentinel1_provenance_report_documents_unresolved_timing() -> None:
+    report_text = (REPO_ROOT / "docs" / "sentinel1_local_provenance.md").read_text(
+        encoding="utf-8"
+    )
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(encoding="utf-8")
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    sar_contract_text = (REPO_ROOT / "docs" / "sar_baseline_contract.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "Status: timing unresolved; processing remains blocked.",
+        "TIFF tags were inspected without reading raster pixels.",
+        "no exact selected-file match",
+        "no Sentinel-1 sidecar metadata files found",
+        "no CDSE metadata snapshot supplied",
+        "cannot be called pre-event, post-event, or event-window yet",
+        "Task 43 - DEM Readiness Lane",
+    ):
+        assert phrase in report_text
+
+    for text in (output_text, contract_text, sar_contract_text):
+        assert "sentinel1_provenance_resolved_manifest.csv" in text
+        assert "timing_unresolved" in text
+        assert "processing_allowed=False" in text

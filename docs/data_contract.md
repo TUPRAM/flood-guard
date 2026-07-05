@@ -423,6 +423,59 @@ Current selected rows are checksum-backed but remain blocked:
 
 The next required step is Sentinel-1 provenance and timing resolution. Processing may not start until product provenance, acquisition timing, and reference-mask status are clear. The source Sentinel-1 TIFF must remain outside Git.
 
+## Sentinel-1 Provenance-Resolved Manifest
+
+`outputs/sentinel1_provenance_resolved_manifest.csv` extends the selected-file manifest with metadata-only provenance evidence. It must not read raster pixels, extract ZIP members, download CDSE assets, or promote unresolved rows into the real SAR baseline.
+
+Required columns include:
+
+- `file_name`
+- `sha256`
+- `sha256_status`
+- `resolved_product_id`
+- `source_package`
+- `acquisition_datetime`
+- `orbit_direction`
+- `relative_orbit`
+- `platform`
+- `product_type`
+- `candidate_role`
+- `provenance_status`
+- `event_timing_status`
+- `timing_confidence`
+- `provenance_confidence`
+- `tiff_tag_summary`
+- `filename_evidence`
+- `zip_member_evidence`
+- `cdse_match_evidence`
+- `provider_note_evidence`
+- `reference_mask_status`
+- `processing_scope`
+- `processing_allowed`
+- `still_blocked_reason`
+- `assumptions`
+
+Allowed `candidate_role` values:
+
+- `pre_event_candidate`
+- `post_event_candidate`
+- `context_only`
+- `unresolved`
+
+Current local finding:
+
+- `resolved_product_id=unresolved`
+- `acquisition_datetime=unresolved`
+- `candidate_role=unresolved`
+- `provenance_status=unresolved_placeholder_filename`
+- `event_timing_status=timing_unresolved`
+- `timing_confidence=low`
+- `provenance_confidence=low`
+- `processing_scope=sentinel1_provenance_resolution_only`
+- `processing_allowed=False`
+
+The real SAR baseline gate must reject unresolved Sentinel-1 provenance. A row may only become baseline-ready when provenance is confirmed, event timing is confirmed, reference-mask status is confirmed, a resolved product id exists, and the row is classified as `pre_event_candidate` or `post_event_candidate`.
+
 ## Synthetic SAR Baseline Output
 
 The current SAR baseline is a synthetic, non-ML fixture used to test validation wiring. It does not read real Sentinel-1 imagery.

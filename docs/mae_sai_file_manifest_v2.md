@@ -12,7 +12,8 @@ Reasons:
 - No Mae Sai flood reference-mask file is locally acquired.
 - No local Sentinel-1 source paths are recorded.
 - No SHA-256 checksums are recorded for the reference mask or locked pre/post Sentinel-1 pair.
-- The standalone local Sentinel-1 TIFF now has a selected-file checksum in `outputs/sentinel1_selected_file_manifest.csv`, but its provenance and event timing are unresolved, so it is not yet a real baseline input.
+- The standalone local Sentinel-1 TIFF now has a selected-file checksum in `outputs/sentinel1_selected_file_manifest.csv`.
+- The provenance resolver output in `outputs/sentinel1_provenance_resolved_manifest.csv` and `docs/sentinel1_local_provenance.md` labels that file `candidate_role=unresolved` and `event_timing_status=timing_unresolved`, so it is not yet a real baseline input.
 - `processing_allowed=True` is not allowed yet for the Mae Sai real-data baseline.
 
 In plain terms: processing_allowed=True is not allowed yet.

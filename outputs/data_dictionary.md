@@ -215,6 +215,37 @@ This manifest is the checksum-backed readiness lane for the standalone local Sen
 | `reason_blocked` | Human-readable blockers that prevent real processing. |
 | `assumptions` | Non-operational note that the source TIFF remains outside Git. |
 
+## Sentinel-1 Provenance Resolved Manifest
+
+File: `sentinel1_provenance_resolved_manifest.csv`
+
+This manifest records metadata-only provenance findings for the selected local Sentinel-1 TIFF. It answers whether acquisition timing or product identity can be recovered from current local evidence. It does not process pixels and does not authorize the real SAR baseline.
+
+| Field | Meaning |
+| --- | --- |
+| `resolved_product_id` | CDSE/product id if a trusted metadata match exists; current local row is `unresolved`. |
+| `source_package` | Local package or package-candidate evidence, such as the Drive ZIP containing Sentinel-1 companion tiles. |
+| `acquisition_datetime` | Resolved acquisition timestamp if recoverable; current local row is `unresolved`. |
+| `orbit_direction` | Orbit direction if available from product metadata or tags. |
+| `relative_orbit` | Relative orbit if available from product metadata or tags. |
+| `platform` | Sentinel-1 platform such as `S1A` if resolvable. |
+| `product_type` | Product type such as `GRDH_1SDV` if resolvable. |
+| `candidate_role` | One of `pre_event_candidate`, `post_event_candidate`, `context_only`, or `unresolved`. |
+| `provenance_status` | Product identity status; current local row is `unresolved_placeholder_filename`. |
+| `event_timing_status` | Acquisition/event timing gate; current local row is `timing_unresolved`. |
+| `timing_confidence` | Confidence in timing evidence; current local row is `low`. |
+| `provenance_confidence` | Confidence in product provenance evidence; current local row is `low`. |
+| `tiff_tag_summary` | TIFF tags inspected without reading raster pixels. |
+| `filename_evidence` | Explanation of what the local filename does or does not prove. |
+| `zip_member_evidence` | ZIP-member-name evidence inspected without extraction. |
+| `cdse_match_evidence` | CDSE metadata snapshot match evidence when a snapshot is supplied. |
+| `provider_note_evidence` | Provider or hackathon note evidence; usage notes do not prove acquisition timing. |
+| `processing_scope` | Limited scope, currently `sentinel1_provenance_resolution_only`. |
+| `processing_allowed` | `False` until provenance, acquisition timing, and reference-mask gates pass. |
+| `still_blocked_reason` | Human-readable blockers preventing real baseline use. |
+
+Current local result: the selected TIFF overlaps Mae Sai and has VV/VH bands, but acquisition date and product id are not recoverable from committed evidence. It must not be used as a pre/post real flood baseline input yet.
+
 ## Synthetic SAR Baseline
 
 Files: `sample_sar_baseline.csv` and `sample_sar_validation_metrics.csv`

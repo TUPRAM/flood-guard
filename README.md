@@ -58,6 +58,7 @@ The metadata-first ingestion skeleton can build a blocked planning manifest:
 ```powershell
 uv run python scripts/build_ingestion_manifest.py
 uv run python scripts/build_mae_sai_file_manifest.py
+uv run python scripts/build_local_data_library.py
 uv run python scripts/build_theos2_local_manifest.py
 uv run python scripts/build_theos2_selected_manifest.py
 uv run python scripts/generate_theos2_previews.py

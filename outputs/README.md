@@ -27,6 +27,8 @@ Current expected MVP output:
 - `sample_sar_validation_metrics.csv`
 - `real_data_ingestion_manifest.csv`
 - `mae_sai_real_data_file_manifest.csv`
+- `local_data_library_manifest.csv`
+- `local_data_library_zip_members.csv`
 - `theos2_local_metadata_manifest.csv`
 - `theos2_selected_file_manifest.csv`
 - `theos2_previews/*.svg`
@@ -50,5 +52,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 `theos2_thumbnail_manifest.csv` and `theos2_thumbnails/*.png` are small true thumbnail outputs generated from checksum-backed selected files with an optional raster reader. They are optical context only and never full-resolution imagery.
 
 `theos2_landcover_exposure_features.csv` is a non-ML metadata-derived context table. `theos2_visual_review_checklist.csv` is a pending manual-review worksheet for visible water context, built-up area context, road context, cloud/haze, and exposure-explanation usefulness. It is not a flood-label file.
+
+`local_data_library_manifest.csv` and `local_data_library_zip_members.csv` catalog all currently provided local hackathon data files and package members. They are metadata-only and keep all source TIFF/ZIP/overview assets outside Git.
 
 `mae_sai_validation_summary.md` remains blocked until provider responses, local paths, checksums, and reference-mask gates pass.

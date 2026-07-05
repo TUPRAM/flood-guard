@@ -327,6 +327,60 @@ The ingestion skeleton may only write metadata outputs with explicit metadata su
 
 `processing_allowed=True` is permitted only when source license status, reference-mask status, local path, product id, and SHA-256 checksum gates all pass. Manual overrides that force processing before those gates pass must fail.
 
+## Local Data Library Manifest
+
+`outputs/local_data_library_manifest.csv` catalogs local hackathon-provided files without copying or processing source assets.
+
+Required columns include:
+
+- `source_name`
+- `file_name`
+- `local_path_hint`
+- `asset_scope`
+- `container_name`
+- `entry_kind`
+- `library_group`
+- `candidate_use`
+- `file_size_bytes`
+- `file_size_gb`
+- `zip_member_count`
+- `zip_total_uncompressed_bytes`
+- `raster_width`
+- `raster_height`
+- `raster_count`
+- `raster_dtypes`
+- `band_descriptions`
+- `crs`
+- `bbox_lon_min`
+- `bbox_lat_min`
+- `bbox_lon_max`
+- `bbox_lat_max`
+- `mvp_overlap`
+- `license_status`
+- `sha256_status`
+- `processing_allowed`
+- `reason_blocked`
+- `library_notes`
+
+`outputs/local_data_library_zip_members.csv` catalogs contained ZIP members without extraction.
+
+Required columns include:
+
+- `container_name`
+- `member_name`
+- `member_path_hint`
+- `member_kind`
+- `library_group`
+- `member_size_bytes`
+- `member_size_gb`
+- `candidate_use`
+- `license_status`
+- `sha256_status`
+- `processing_allowed`
+- `reason_blocked`
+
+All local data library rows must remain `processing_allowed=False` until selected into a stricter file-level manifest with recorded SHA-256 checksums and processing gates.
+
 ## Synthetic SAR Baseline Output
 
 The current SAR baseline is a synthetic, non-ML fixture used to test validation wiring. It does not read real Sentinel-1 imagery.

@@ -245,3 +245,9 @@ Acceptance: output includes disaster/LULC/urban/agri/coastal flags, rough footpr
 Document and test the transition from sent provider requests to file-level readiness.
 
 Acceptance: docs explain how to log UNOSAT/GISTDA replies, Mae Sai manifest gates reject current blocked rows, and validation summary remains blocked until legal local files/checksums are recorded.
+
+## Task 40 - Local Hackathon Data Library
+
+Catalog all currently provided local hackathon files without committing source imagery or extracting ZIP packages.
+
+Acceptance: `outputs/local_data_library_manifest.csv` records top-level local files, redacted path hints, file groups, raster header metadata where available, MVP overlap, and processing blockers; `outputs/local_data_library_zip_members.csv` records ZIP members without extraction; source TIFF/ZIP/OVR assets remain outside Git.

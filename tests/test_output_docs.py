@@ -37,6 +37,12 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "preview_source",
         "flood_label_claim",
         "mae_sai_validation_summary.md",
+        "local_data_library_manifest.csv",
+        "local_data_library_zip_members.csv",
+        "sentinel1_sar",
+        "copernicus_dem",
+        "band_descriptions",
+        "member_path_hint",
         "local_path_hint",
         "mvp_overlap",
         "user_reported_hackathon_free_use",
@@ -89,6 +95,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "generate_mae_sai_validation_summary.py" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
+    assert "build_local_data_library.py" in text
 
 
 def test_licensing_request_templates_cover_priority_sources() -> None:
@@ -260,6 +267,26 @@ def test_source_registry_mentions_theos2_as_blocked_optical_context() -> None:
     assert "Optical context" in text or "optical context" in text
     assert "not the current Mae Sai/Hat Yai validation input" in text
     assert "user-reported hackathon free-use status" in text or "can be used freely" in text
+    assert "Local hackathon Sentinel-1 and DEM bundles" in text
+    assert "Sentinel-1 standalone TIFF overlaps the Mae Sai MVP point" in text
+
+
+def test_local_data_library_doc_describes_catalog_and_blockers() -> None:
+    text = (REPO_ROOT / "docs" / "local_data_library.md").read_text(encoding="utf-8")
+
+    for phrase in (
+        "outputs/local_data_library_manifest.csv",
+        "outputs/local_data_library_zip_members.csv",
+        "Sentinel1_Thailand-0000000000-0000000000-002.tif",
+        "VV|VH",
+        "mae_sai_2024_point",
+        "drive-download-20260705T102948Z-3-001.zip",
+        "Copernicus DEM",
+        "THEOS-2 optical",
+        "processing_allowed=False",
+        "Do not commit source TIFFs",
+    ):
+        assert phrase in text
 
 
 def test_theos2_usage_terms_log_records_user_reported_permission() -> None:

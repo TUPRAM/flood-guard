@@ -132,7 +132,7 @@ Dashboard v5 THEOS-2 cards prefer `theos2_thumbnails/*.png` when a true thumbnai
 
 ## Metadata Planning Outputs
 
-Files: `real_data_ingestion_manifest.csv` and `mae_sai_real_data_file_manifest.csv`
+Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, and `local_data_library_zip_members.csv`
 
 | Field | Meaning |
 | --- | --- |
@@ -159,6 +159,31 @@ Files: `real_data_ingestion_manifest.csv` and `mae_sai_real_data_file_manifest.c
 | `reason_blocked` | File-level blocker text mirroring `blocked_reason` for downstream tools. |
 
 `mae_sai_real_data_file_manifest.csv` is a blocked planning manifest for the first real non-ML SAR baseline. It includes the UNOSAT reference-mask target, the selected September 6 pre-event Sentinel-1 COG, the selected September 15 post-event Sentinel-1 COG, and the September 18 fallback post-event COG. No local paths or checksums are recorded yet, so all rows remain `processing_allowed=False`.
+
+`local_data_library_manifest.csv` catalogs every currently provided local hackathon file listed for the project. It includes top-level Google Drive ZIP bundles, the standalone Sentinel-1 TIFF, standalone THEOS-2 TIFF/OVR files, and THEOS-2 sample ZIP packages.
+
+`local_data_library_zip_members.csv` catalogs ZIP members without extracting or committing them. The current catalog includes Sentinel-1 tile TIFF members, Copernicus DEM/elevation-slope TIFF members, THEOS-2 package members, and one screenshot/documentation PNG.
+
+Local data library fields:
+
+| Field | Meaning |
+| --- | --- |
+| `asset_scope` | `local_file` for top-level files; ZIP members are recorded in the separate member catalog. |
+| `entry_kind` | File kind such as `image_tiff`, `overview`, `zip_package`, or `png_image`. |
+| `library_group` | Triage group such as `sentinel1_sar`, `copernicus_dem`, `theos2_optical`, or `documentation_image`. |
+| `candidate_use` | Conservative use note for the asset, such as SAR context, DEM context, or optical context. |
+| `zip_member_count` | Number of contained files for a top-level ZIP package. |
+| `zip_total_uncompressed_bytes` | Sum of uncompressed member sizes for a ZIP package. |
+| `raster_width` / `raster_height` | Raster dimensions from header metadata, when available. |
+| `raster_count` | Number of raster bands from header metadata, when available. |
+| `raster_dtypes` | Raster data types from header metadata, when available. |
+| `band_descriptions` | Band descriptions such as `VV|VH` for the standalone Sentinel-1 TIFF. |
+| `crs` | CRS string from raster metadata, when available. |
+| `mvp_overlap` | Whether the cataloged bbox covers current MVP points such as `mae_sai_2024_point`. |
+| `library_notes` | Human-readable triage note and caution. |
+| `member_name` | Name of a file inside a ZIP package. |
+| `member_path_hint` | Redacted ZIP member path such as `<input_dir>/package.zip::member.tif`. |
+| `member_kind` | File kind for a ZIP member. |
 
 ## Synthetic SAR Baseline
 

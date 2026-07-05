@@ -7,6 +7,7 @@ import pytest
 
 from floodguard.theos2_thumbnails import (
     RGBImage,
+    RasterReaderStatus,
     THEOS2ThumbnailError,
     detect_raster_reader,
     write_theos2_true_thumbnails,
@@ -21,9 +22,20 @@ def test_detect_raster_reader_reports_missing_optional_reader() -> None:
         assert "Install rasterio or GDAL" in status.message
 
 
-def test_true_thumbnail_generation_blocks_without_reader(tmp_path: Path) -> None:
+def test_true_thumbnail_generation_blocks_without_reader(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     selected = "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif"
     (tmp_path / selected).write_bytes(b"selected-theos2-bytes")
+    monkeypatch.setattr(
+        "floodguard.theos2_thumbnails.detect_raster_reader",
+        lambda preferred: RasterReaderStatus(
+            False,
+            "",
+            "No optional raster reader available. Install rasterio or GDAL.",
+        ),
+    )
 
     with pytest.raises(THEOS2ThumbnailError, match="No optional raster reader|rasterio"):
         write_theos2_true_thumbnails(

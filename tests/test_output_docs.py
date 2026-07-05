@@ -33,6 +33,9 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "theos2_landcover_exposure_features.csv",
         "theos2_thumbnail_manifest.csv",
         "theos2_thumbnails/*.png",
+        "theos2_visual_review_checklist.csv",
+        "preview_source",
+        "flood_label_claim",
         "mae_sai_validation_summary.md",
         "local_path_hint",
         "mvp_overlap",
@@ -80,6 +83,8 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "sample_sar_baseline.csv" in text
     assert "build_theos2_local_manifest.py" in text
     assert "generate_theos2_true_thumbnails.py --check-reader" in text
+    assert "generate_theos2_true_thumbnails.py --verify-checksum" in text
+    assert "generate_theos2_visual_review_checklist.py" in text
     assert "generate_theos2_features.py" in text
     assert "generate_mae_sai_validation_summary.py" in text
     assert "They do not download Sentinel-1 assets" in text
@@ -147,6 +152,8 @@ def test_data_dictionary_mentions_dashboard_v4_exports() -> None:
     assert "Dashboard v4 browser-only exports" in text
     assert "Download current brief" in text
     assert "Download filtered GeoJSON" in text
+    assert "Dashboard v5 THEOS-2 cards" in text
+    assert "true_png_thumbnail_via_rasterio" in text
 
 
 def test_sar_baseline_contract_defines_non_ml_outputs_and_metrics() -> None:
@@ -235,9 +242,12 @@ def test_theos2_inventory_doc_keeps_lane_metadata_only_and_blocked() -> None:
     assert "outputs/theos2_selected_file_manifest.csv" in text
     assert "outputs/theos2_previews/*.svg" in text
     assert "outputs/theos2_landcover_exposure_features.csv" in text
+    assert "outputs/theos2_visual_review_checklist.csv" in text
     assert "generate_theos2_true_thumbnails.py" in text
+    assert "generate_theos2_visual_review_checklist.py" in text
     assert "rasterio" in text
     assert "GDAL" in text
+    assert "Current true-thumbnail output was generated with `rasterio`" in text
     assert "do not contain source image pixels" in text
     assert "not flood labels" in text
     assert "not as the first real validation input for Mae Sai or Hat Yai" in text

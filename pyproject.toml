@@ -24,6 +24,9 @@ geo = [
   "shapely>=2.0",
   "networkx>=3.0"
 ]
+theos2 = [
+  "rasterio>=1.4"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

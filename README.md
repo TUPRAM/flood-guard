@@ -72,13 +72,15 @@ The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_re
 Optional true THEOS-2 thumbnails require `rasterio` or GDAL. Check availability first:
 
 ```powershell
+uv sync --extra theos2
 uv run python scripts/generate_theos2_true_thumbnails.py --check-reader
 ```
 
 If a reader is available, generate small PNG thumbnails only from checksum-backed selected files:
 
 ```powershell
-uv run python scripts/generate_theos2_true_thumbnails.py
+uv run python scripts/generate_theos2_true_thumbnails.py --verify-checksum
+uv run python scripts/generate_theos2_visual_review_checklist.py
 ```
 
 If no reader is available, the command exits cleanly with a blocked message and the SVG context previews remain the dashboard fallback.

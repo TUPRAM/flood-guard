@@ -895,12 +895,22 @@ def _theos2_context_html(rows: list[dict[str, str]]) -> str:
         timestamp = html.escape(row.get("source_timestamp", "unavailable"))
         preview_path = html.escape(row.get("preview_path", ""))
         sha_prefix = html.escape(row.get("sha256", "")[:12])
+        thumbnail_format = row.get("thumbnail_format", "")
+        raster_reader = row.get("raster_reader", "")
+        if thumbnail_format:
+            preview_kind = f"True {thumbnail_format.upper()} thumbnail"
+            if raster_reader:
+                preview_kind = f"{preview_kind} via {raster_reader}"
+        else:
+            preview_kind = "Metadata SVG preview card"
+        preview_kind = html.escape(preview_kind)
         cards.append(
             '<div class="theos2-card">'
             f'<img src="{preview_path}" alt="THEOS-2 optical context preview for {file_name}">'
             f"<strong>{file_name}</strong>"
             f"<span>Category: {category}</span>"
             f"<span>Acquisition: {timestamp}</span>"
+            f"<span>Preview: {preview_kind}</span>"
             f"<span>SHA-256 prefix: {sha_prefix}</span>"
             "<span>Optical context only; not flood validation or an official warning.</span>"
             "</div>"

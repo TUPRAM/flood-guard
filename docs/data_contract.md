@@ -256,6 +256,8 @@ Dashboard v4 adds browser-only export buttons:
 
 The export buttons must use embedded page data only. They must not call `fetch`, require a backend, or write server-side files.
 
+Dashboard v5 displays compact THEOS-2 optical-context cards. When `outputs/theos2_thumbnail_manifest.csv` exists, cards should use `outputs/theos2_thumbnails/*.png`; otherwise they fall back to `outputs/theos2_previews/*.svg`.
+
 Dashboard THEOS-2 optical context uses:
 
 - `outputs/theos2_selected_file_manifest.csv`
@@ -460,6 +462,29 @@ Rows may set `processing_allowed=True` only for `processing_scope=theos2_optical
 - an optional raster reader, either rasterio or GDAL, is available
 
 True thumbnails must be small PNG outputs and must not be full-resolution imagery or map tiles.
+
+`outputs/theos2_visual_review_checklist.csv` is a pending manual-review worksheet for selected THEOS-2 previews or thumbnails.
+
+Required columns include:
+
+- `file_name`
+- `source_timestamp`
+- `category`
+- `preview_path`
+- `preview_source`
+- `visible_water_context`
+- `built_up_area_context`
+- `road_context`
+- `cloud_haze_status`
+- `exposure_explanation_usefulness`
+- `review_status`
+- `reviewer`
+- `review_date`
+- `review_notes`
+- `flood_label_claim`
+- `assumptions`
+
+Default values should remain `not_reviewed` or blank until a human reviewer fills them. `flood_label_claim` must remain `not_allowed`; the checklist is optical context only and must not become a flood-label or validation-mask source.
 
 ## THEOS-2 Land-Cover/Exposure Feature Prototype
 

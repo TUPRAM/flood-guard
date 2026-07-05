@@ -27,9 +27,9 @@
 ## Optical Context
 
 - THEOS-2 previews are local optical context only; they are not flood validation, not reference masks, and not official warning evidence.
-- IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif (Disaster, 2025-07-30T03:33:31Z): none_of_current_mvp_points; preview `theos2_previews/theos2_preview_IMG_T2V_20250730033331_ORTHO_PMS_32-004.svg`.
-- IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif (Disaster|LULC, 2025-07-31T03:51:00Z): none_of_current_mvp_points; preview `theos2_previews/theos2_preview_IMG_T2V_20250731035100_ORTHO_PMS_32-001.svg`.
-- IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif (Disaster|LULC, 2025-07-31T03:51:00Z): none_of_current_mvp_points; preview `theos2_previews/theos2_preview_IMG_T2V_20250731035100_ORTHO_PMS_32-003.svg`.
+- IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif (Disaster, 2025-07-30T03:33:31Z): none_of_current_mvp_points; preview `theos2_thumbnails/theos2_thumbnail_IMG_T2V_20250730033331_ORTHO_PMS_32-004.png`.
+- IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif (Disaster|LULC, 2025-07-31T03:51:00Z): none_of_current_mvp_points; preview `theos2_thumbnails/theos2_thumbnail_IMG_T2V_20250731035100_ORTHO_PMS_32-001.png`.
+- IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif (Disaster|LULC, 2025-07-31T03:51:00Z): none_of_current_mvp_points; preview `theos2_thumbnails/theos2_thumbnail_IMG_T2V_20250731035100_ORTHO_PMS_32-003.png`.
 
 ## Recommended Action / ข้อเสนอการปฏิบัติ
 

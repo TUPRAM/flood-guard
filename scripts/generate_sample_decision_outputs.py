@@ -33,6 +33,7 @@ from floodguard.sensitivity import run_weight_sensitivity, summarize_rank_instab
 from floodguard.theos2_features import (  # noqa: E402
     write_theos2_landcover_exposure_features,
 )
+from floodguard.theos2_review import write_theos2_visual_review_checklist  # noqa: E402
 from floodguard.validation import write_validation_summary  # noqa: E402
 
 
@@ -148,19 +149,23 @@ def main() -> None:
         output_dir / "validation_summary.md",
         rank_instability=rank_instability,
     )
-    theos2_context_path = _optional_path(output_dir / "theos2_selected_file_manifest.csv")
-    theos2_context = (
-        pd.read_csv(theos2_context_path, dtype=str).fillna("")
-        if theos2_context_path is not None
-        else None
-    )
-    if theos2_context_path is not None:
+    theos2_selected_path = _optional_path(output_dir / "theos2_selected_file_manifest.csv")
+    theos2_thumbnail_path = _optional_path(output_dir / "theos2_thumbnail_manifest.csv")
+    theos2_dashboard_manifest_path = theos2_thumbnail_path or theos2_selected_path
+    theos2_context = _theos2_brief_context(theos2_selected_path, theos2_thumbnail_path)
+    if theos2_selected_path is not None:
         theos2_feature_path = write_theos2_landcover_exposure_features(
-            theos2_context_path,
+            theos2_selected_path,
             output_dir / "theos2_landcover_exposure_features.csv",
+        )
+        theos2_review_path = write_theos2_visual_review_checklist(
+            selected_manifest_path=theos2_selected_path,
+            thumbnail_manifest_path=theos2_thumbnail_path,
+            output_path=output_dir / "theos2_visual_review_checklist.csv",
         )
     else:
         theos2_feature_path = None
+        theos2_review_path = None
     action_brief_paths = write_action_briefs(
         priority,
         road_risk,
@@ -175,7 +180,7 @@ def main() -> None:
         validation_path,
         action_brief_paths,
         output_dir / "dashboard.html",
-        theos2_preview_manifest_path=theos2_context_path,
+        theos2_preview_manifest_path=theos2_dashboard_manifest_path,
     )
 
     print(f"Wrote {priority_path}")
@@ -187,6 +192,8 @@ def main() -> None:
     print(f"Wrote {validation_path}")
     if theos2_feature_path is not None:
         print(f"Wrote {theos2_feature_path}")
+    if theos2_review_path is not None:
+        print(f"Wrote {theos2_review_path}")
     for action_brief_path in action_brief_paths:
         print(f"Wrote {action_brief_path}")
     print(f"Wrote {dashboard_path}")
@@ -206,6 +213,28 @@ def _geojson_properties(path: Path) -> pd.DataFrame:
 
 def _optional_path(path: Path) -> Path | None:
     return path if path.exists() else None
+
+
+def _theos2_brief_context(
+    selected_path: Path | None,
+    thumbnail_path: Path | None,
+) -> pd.DataFrame | None:
+    if selected_path is None:
+        return None
+    selected = pd.read_csv(selected_path, dtype=str).fillna("")
+    if thumbnail_path is None:
+        return selected
+    thumbnails = pd.read_csv(thumbnail_path, dtype=str).fillna("")
+    if "thumbnail_path" not in thumbnails.columns:
+        return selected
+    thumbnail_paths = thumbnails.loc[:, ["file_name", "thumbnail_path"]].drop_duplicates(
+        subset=["file_name"],
+        keep="first",
+    )
+    merged = selected.merge(thumbnail_paths, on="file_name", how="left")
+    has_thumbnail = merged["thumbnail_path"].astype(str).str.len() > 0
+    merged.loc[has_thumbnail, "preview_path"] = merged.loc[has_thumbnail, "thumbnail_path"]
+    return merged.drop(columns=["thumbnail_path"])
 
 
 if __name__ == "__main__":

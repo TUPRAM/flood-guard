@@ -68,5 +68,35 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "fetch(" not in html
 
 
+def test_write_static_dashboard_can_render_true_thumbnail_cards(tmp_path: Path) -> None:
+    thumbnail_manifest = tmp_path / "theos2_thumbnail_manifest.csv"
+    thumbnail_manifest.write_text(
+        "\n".join(
+            [
+                "file_name,source_timestamp,category,sha256,thumbnail_path,thumbnail_format,raster_reader",
+                "IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif,2025-07-30T03:33:31Z,Disaster,"
+                "aaaaaaaaaaaa,theos2_thumbnails/theos2_thumbnail_004.png,png,rasterio",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "dashboard.html"
+
+    write_static_dashboard(
+        OUTPUTS / "priority_subdistricts.geojson",
+        OUTPUTS / "road_risk.geojson",
+        OUTPUTS / "validation_summary.md",
+        OUTPUTS / "action_brief_FG-TB-001.md",
+        output_path,
+        theos2_preview_manifest_path=thumbnail_manifest,
+    )
+
+    html = output_path.read_text(encoding="utf-8")
+    assert "theos2_thumbnails/theos2_thumbnail_004.png" in html
+    assert "True PNG thumbnail via rasterio" in html
+    assert "Metadata SVG preview card" not in html
+    assert "not flood validation or an official warning" in html
+
+
 def test_dashboard_output_contract_path() -> None:
     assert (OUTPUTS / "dashboard.html").as_posix().endswith("outputs/dashboard.html")

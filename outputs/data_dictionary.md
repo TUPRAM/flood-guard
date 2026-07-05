@@ -126,6 +126,9 @@ Dashboard THEOS-2 optical context:
 | `theos2_thumbnail_manifest.csv` | Optional true-thumbnail manifest written only when rasterio or GDAL is available. |
 | `theos2_thumbnails/*.png` | Optional small PNG thumbnails; never full-resolution imagery. |
 | `theos2_landcover_exposure_features.csv` | Non-ML metadata-derived optical context feature table. |
+| `theos2_visual_review_checklist.csv` | Pending manual-review worksheet for interpreting optical context without creating flood labels. |
+
+Dashboard v5 THEOS-2 cards prefer `theos2_thumbnails/*.png` when a true thumbnail manifest exists, and fall back to `theos2_previews/*.svg` otherwise.
 
 ## Metadata Planning Outputs
 
@@ -271,6 +274,29 @@ File: `theos2_landcover_exposure_features.csv`
 | `floodguard_use` | Plain-language use in FloodGuard context. |
 | `confidence_class` | Metadata-derived confidence label. |
 | `assumptions` | Explicit note that these are not flood labels or validation data. |
+
+## THEOS-2 Visual Review Checklist
+
+File: `theos2_visual_review_checklist.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `file_name` | Selected THEOS-2 file being reviewed. |
+| `source_timestamp` | Acquisition timestamp parsed from the file name. |
+| `category` | Hackathon sample category labels. |
+| `preview_path` | Relative path to the SVG preview card or true PNG thumbnail used for review. |
+| `preview_source` | `metadata_svg_preview` or a true-thumbnail source such as `true_png_thumbnail_via_rasterio`. |
+| `visible_water_context` | Manual note field initialized as `not_reviewed`; context only, not a flood label. |
+| `built_up_area_context` | Manual note field for built-up/exposure interpretation, initialized as `not_reviewed`. |
+| `road_context` | Manual note field for road/access context, initialized as `not_reviewed`. |
+| `cloud_haze_status` | Manual note field for visual quality limitations, initialized as `not_reviewed`. |
+| `exposure_explanation_usefulness` | Manual reviewer assessment of whether the image helps explain exposure context. |
+| `review_status` | Review workflow state, initialized as `pending_manual_review`. |
+| `reviewer` | Optional reviewer name or initials. |
+| `review_date` | Optional manual review date. |
+| `review_notes` | Optional free-text note. |
+| `flood_label_claim` | Must remain `not_allowed`; THEOS-2 context is not a validation mask or ML label source. |
+| `assumptions` | Explicit note that the row is optical context only and not an official warning. |
 
 ## Mae Sai Validation Summary
 

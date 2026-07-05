@@ -30,15 +30,16 @@ Current expected MVP output:
 - `theos2_local_metadata_manifest.csv`
 - `theos2_selected_file_manifest.csv`
 - `theos2_previews/*.svg`
+- `theos2_thumbnail_manifest.csv`
+- `theos2_thumbnails/*.png`
 - `theos2_landcover_exposure_features.csv`
+- `theos2_visual_review_checklist.csv`
 - `mae_sai_validation_summary.md`
 
 Optional live metadata snapshots, generated only when intentionally run and reviewed:
 
 - `cdse_mae_sai_2024_metadata.csv`
 - `cdse_hat_yai_2025_metadata.csv`
-- `theos2_thumbnail_manifest.csv`
-- `theos2_thumbnails/*.png`
 
 Before committing optional live metadata snapshots, complete `docs/live_metadata_snapshot_review_checklist.md`.
 
@@ -46,4 +47,8 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `theos2_selected_file_manifest.csv` and `theos2_previews/*.svg` are THEOS-2 optical-context artifacts. They are checksum-backed and non-operational, but they are not flood masks, validation labels, or official warning products. Source THEOS-2 TIFF/overview files remain outside Git.
 
-`theos2_landcover_exposure_features.csv` is a non-ML metadata-derived context table. `mae_sai_validation_summary.md` remains blocked until provider responses, local paths, checksums, and reference-mask gates pass.
+`theos2_thumbnail_manifest.csv` and `theos2_thumbnails/*.png` are small true thumbnail outputs generated from checksum-backed selected files with an optional raster reader. They are optical context only and never full-resolution imagery.
+
+`theos2_landcover_exposure_features.csv` is a non-ML metadata-derived context table. `theos2_visual_review_checklist.csv` is a pending manual-review worksheet for visible water context, built-up area context, road context, cloud/haze, and exposure-explanation usefulness. It is not a flood-label file.
+
+`mae_sai_validation_summary.md` remains blocked until provider responses, local paths, checksums, and reference-mask gates pass.

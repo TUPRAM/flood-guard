@@ -210,15 +210,17 @@ def _read_with_rasterio(path: Path, max_size: int) -> RGBImage:
     from rasterio.enums import Resampling
 
     with rasterio.open(path) as dataset:
-        width, height = _fit_size(dataset.width, dataset.height, max_size)
-        indexes = [1, 2, 3] if dataset.count >= 3 else [1]
+        window = _valid_rasterio_window(dataset, max_size)
+        width, height = _fit_size(int(window.width), int(window.height), max_size)
+        indexes = _rasterio_rgb_indexes(dataset)
         data = dataset.read(
             indexes,
+            window=window,
             out_shape=(len(indexes), height, width),
             resampling=Resampling.bilinear,
             masked=True,
         )
-    return _normalize_to_rgb(np.asarray(data), width, height)
+    return _normalize_to_rgb(np.ma.filled(data.astype("float32"), np.nan), width, height)
 
 
 def _read_with_gdal(path: Path, max_size: int) -> RGBImage:
@@ -233,17 +235,60 @@ def _read_with_gdal(path: Path, max_size: int) -> RGBImage:
     if band_count <= 0:
         raise THEOS2ThumbnailError(f"THEOS-2 source has no raster bands: {path.name}")
     bands = []
-    for index in range(1, band_count + 1):
+    indexes = [3, 2, 1] if band_count >= 3 else list(range(1, band_count + 1))
+    for index in indexes:
         band = dataset.GetRasterBand(index)
-        bands.append(
-            band.ReadAsArray(
-                buf_xsize=width,
-                buf_ysize=height,
-                resample_alg=gdal.GRIORA_Bilinear,
-            )
+        array = band.ReadAsArray(
+            buf_xsize=width,
+            buf_ysize=height,
+            resample_alg=gdal.GRIORA_Bilinear,
         )
+        nodata = band.GetNoDataValue()
+        if nodata is not None:
+            array = np.asarray(array, dtype="float32")
+            array[array == nodata] = np.nan
+        bands.append(array)
     data = np.stack(bands, axis=0)
     return _normalize_to_rgb(data, width, height)
+
+
+def _valid_rasterio_window(dataset: object, max_size: int) -> object:
+    import numpy as np
+    from rasterio.enums import Resampling
+    from rasterio.windows import Window
+
+    sample_width, sample_height = _fit_size(dataset.width, dataset.height, max_size)
+    mask = dataset.read_masks(
+        1,
+        out_shape=(sample_height, sample_width),
+        resampling=Resampling.nearest,
+    )
+    valid_rows, valid_cols = np.where(mask > 0)
+    if valid_rows.size == 0 or valid_cols.size == 0:
+        return Window(0, 0, dataset.width, dataset.height)
+    scale_x = dataset.width / sample_width
+    scale_y = dataset.height / sample_height
+    col_off = max(0, int(valid_cols.min() * scale_x) - 2)
+    row_off = max(0, int(valid_rows.min() * scale_y) - 2)
+    col_stop = min(dataset.width, int((valid_cols.max() + 1) * scale_x) + 2)
+    row_stop = min(dataset.height, int((valid_rows.max() + 1) * scale_y) + 2)
+    return Window(col_off, row_off, max(1, col_stop - col_off), max(1, row_stop - row_off))
+
+
+def _rasterio_rgb_indexes(dataset: object) -> list[int]:
+    try:
+        names = [str(value).lower() for value in dataset.colorinterp]
+    except AttributeError:
+        names = []
+    if {"red", "green", "blue"}.issubset(set(names)):
+        return [
+            names.index("red") + 1,
+            names.index("green") + 1,
+            names.index("blue") + 1,
+        ]
+    if dataset.count >= 3:
+        return [3, 2, 1]
+    return [1]
 
 
 def _normalize_to_rgb(data: object, width: int, height: int) -> RGBImage:

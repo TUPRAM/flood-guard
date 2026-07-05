@@ -18,8 +18,9 @@ Generated manifest:
 - `outputs/theos2_selected_file_manifest.csv`
 - `outputs/theos2_previews/*.svg`
 - `outputs/theos2_landcover_exposure_features.csv`
-- optional `outputs/theos2_thumbnail_manifest.csv`
-- optional `outputs/theos2_thumbnails/*.png`
+- `outputs/theos2_thumbnail_manifest.csv`
+- `outputs/theos2_thumbnails/*.png`
+- `outputs/theos2_visual_review_checklist.csv`
 
 Generator:
 
@@ -28,6 +29,7 @@ Generator:
 - `scripts/generate_theos2_previews.py`
 - `scripts/generate_theos2_features.py`
 - `scripts/generate_theos2_true_thumbnails.py`
+- `scripts/generate_theos2_visual_review_checklist.py`
 
 ## What The Local Inventory Found
 
@@ -187,6 +189,20 @@ True thumbnails are guarded by:
 
 They must remain small PNG previews. Do not generate full-resolution exports or source-image tiles in this lane.
 
+Current true-thumbnail output was generated with `rasterio` after verifying selected-file SHA-256 checksums. The source TIFFs remain outside Git.
+
+## Visual Review Checklist
+
+`outputs/theos2_visual_review_checklist.csv` initializes one pending manual-review row per selected THEOS-2 preview. It tracks:
+
+- visible water context
+- built-up area context
+- road context
+- cloud/haze status
+- usefulness for exposure explanation
+
+The checklist is deliberately initialized as `not_reviewed`. It is not a flood-label file, not a validation mask, and not an official warning input.
+
 ## Non-ML Feature Prototype
 
 `outputs/theos2_landcover_exposure_features.csv` records tiny metadata-derived context features:
@@ -201,7 +217,7 @@ These fields can support FPPS explanation text and action-brief context, but the
 
 ## Next Work
 
-1. Install or provide rasterio/GDAL if true pixel thumbnails are required in this environment.
+1. Fill `outputs/theos2_visual_review_checklist.csv` manually for selected previews.
 2. Use THEOS-2 optical context in generated action briefs without calling it flood validation.
 3. Expand land-cover/exposure feature experiments from selected THEOS-2 samples.
 4. Keep optical context layers in the dashboard clearly separate from flood-reference validation.

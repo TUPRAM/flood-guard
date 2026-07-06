@@ -275,3 +275,15 @@ Acceptance: `outputs/dem_selected_file_manifest.csv` catalogs selected DEM ZIP m
 Expose the local data library and selected readiness lanes in the static dashboard as a compact metadata panel.
 
 Acceptance: `outputs/dashboard.html` shows counts and statuses for local Sentinel-1, DEM, and THEOS-2 lanes from generated manifests; it distinguishes fixture/demo outputs from local metadata readiness; it does not fetch files, expose absolute paths, or imply that local assets are official flood observations.
+
+## Task 45 - Sentinel-1 Context Quicklook
+
+Generate small non-operational SAR context quicklooks for the selected checksum-backed Sentinel-1 VV/VH TIFF.
+
+Acceptance: `outputs/sentinel1_quicklook_manifest.csv`, `outputs/sentinel1_quicklook_vv.png`, and `outputs/sentinel1_quicklook_vh.png` are generated only after `sha256_status=recorded`; source TIFFs remain outside Git; the dashboard shows SAR context cards with strict wording that they are not flood detection, not validation, not an official warning, and event timing remains unresolved.
+
+## Task 46 - DEM Context Quicklook
+
+Generate a tiny DEM/elevation/slope preview only if a selected DEM TIFF member is extracted locally outside Git and checksum-tracked.
+
+Acceptance: output is a small PNG and metadata CSV, DEM is described as terrain context only, and it is not used as a flood observation, flood label, reference mask, or official warning product.

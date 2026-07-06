@@ -263,6 +263,7 @@ Dashboard v6 displays a compact Local Data Library panel. It embeds summary coun
 - `outputs/local_data_library_manifest.csv`
 - `outputs/sentinel1_selected_file_manifest.csv`
 - `outputs/sentinel1_provenance_resolved_manifest.csv`
+- optionally `outputs/sentinel1_quicklook_manifest.csv`
 - `outputs/dem_selected_file_manifest.csv`
 - `outputs/theos2_selected_file_manifest.csv`
 - optionally `outputs/theos2_thumbnail_manifest.csv`
@@ -276,6 +277,14 @@ Dashboard THEOS-2 optical context uses:
 - optionally `outputs/theos2_thumbnail_manifest.csv` and `outputs/theos2_thumbnails/*.png` when rasterio or GDAL is available
 
 These artifacts are optical context only. They must not be described as flood validation, flood reference masks, or official warnings.
+
+Dashboard Sentinel-1 SAR context uses:
+
+- `outputs/sentinel1_quicklook_manifest.csv`
+- `outputs/sentinel1_quicklook_vv.png`
+- `outputs/sentinel1_quicklook_vh.png`
+
+These artifacts are SAR context only. They must not be described as flood detection, flood validation, reference masks, official warnings, or evidence that event timing is resolved.
 
 ## CDSE Metadata Query Output
 
@@ -486,6 +495,43 @@ Current local finding:
 - `processing_allowed=False`
 
 The real SAR baseline gate must reject unresolved Sentinel-1 provenance. A row may only become baseline-ready when provenance is confirmed, event timing is confirmed, reference-mask status is confirmed, a resolved product id exists, and the row is classified as `pre_event_candidate` or `post_event_candidate`.
+
+## Sentinel-1 Context Quicklook Manifest
+
+`outputs/sentinel1_quicklook_manifest.csv` records small PNG quicklooks derived from the selected checksum-backed Sentinel-1 TIFF. The quicklook workflow may read source pixels only to create small context previews after `sha256_status=recorded`; it must not copy source TIFFs into Git and must not authorize flood detection, validation, or real baseline processing.
+
+Required columns include:
+
+- `file_name`
+- `sha256_prefix`
+- `sha256_status`
+- `mvp_overlap`
+- `event_timing_status`
+- `provenance_status`
+- `band`
+- `band_description`
+- `quicklook_path`
+- `quicklook_format`
+- `quicklook_width`
+- `quicklook_height`
+- `quicklook_file_size_bytes`
+- `raster_reader`
+- `processing_scope`
+- `warning_text`
+- `assumptions`
+
+Current quicklook rows must remain:
+
+- `sha256_status=recorded`
+- `mvp_overlap=mae_sai_2024_point`
+- `event_timing_status=timing_unresolved`
+- `provenance_status=unresolved_placeholder_filename`
+- `band=VV` or `band=VH`
+- `quicklook_format=png`
+- `processing_scope=sentinel1_sar_context_quicklook_only`
+- `warning_text=SAR context only; not flood detection; not validation; not an official warning; event timing unresolved unless proven otherwise.`
+
+The PNG quicklooks should be small dashboard artifacts, currently `outputs/sentinel1_quicklook_vv.png` and `outputs/sentinel1_quicklook_vh.png`. Source Sentinel-1 TIFF files remain outside Git.
 
 ## DEM Selected-File Manifest
 

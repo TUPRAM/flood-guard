@@ -104,7 +104,7 @@ Files: `priority_subdistricts.geojson` and `road_risk.geojson`
 
 | Artifact | Meaning |
 | --- | --- |
-| `dashboard.html` | Standalone Leaflet dashboard with embedded GeoJSON, action briefs, validation summary, controls, scenario cards, THEOS-2 optical cards, and Local Data Library readiness panel. |
+| `dashboard.html` | Standalone Leaflet dashboard with embedded GeoJSON, action briefs, validation summary, controls, scenario cards, Sentinel-1 SAR context cards, THEOS-2 optical cards, and Local Data Library readiness panel. |
 | `action_brief_FG-TB-001.md` | Compact A-class action brief for River Market. |
 | `action_brief_FG-TB-002.md` | Compact B-class action brief for Bridge Junction. |
 | `action_brief_FG-TB-003.md` | Compact C-class action brief for Clinic Basin. |
@@ -129,6 +129,16 @@ Dashboard THEOS-2 optical context:
 | `theos2_visual_review_checklist.csv` | Pending manual-review worksheet for interpreting optical context without creating flood labels. |
 
 Dashboard v5 THEOS-2 cards prefer `theos2_thumbnails/*.png` when a true thumbnail manifest exists, and fall back to `theos2_previews/*.svg` otherwise.
+
+Dashboard Sentinel-1 SAR context:
+
+| Artifact | Meaning |
+| --- | --- |
+| `sentinel1_quicklook_manifest.csv` | Manifest for small checksum-gated SAR context quicklooks. |
+| `sentinel1_quicklook_vv.png` | Small VV-band SAR context PNG; not flood detection or validation. |
+| `sentinel1_quicklook_vh.png` | Small VH-band SAR context PNG; not flood detection or validation. |
+| `sentinel1_sar_context_quicklook_only` | Processing scope for quicklook previews only. |
+| `event timing unresolved unless proven otherwise` | Required warning because local Sentinel-1 provenance is not solved. |
 
 Dashboard v6 Local Data Library panel:
 
@@ -256,6 +266,30 @@ This manifest records metadata-only provenance findings for the selected local S
 | `still_blocked_reason` | Human-readable blockers preventing real baseline use. |
 
 Current local result: the selected TIFF overlaps Mae Sai and has VV/VH bands, but acquisition date and product id are not recoverable from committed evidence. It must not be used as a pre/post real flood baseline input yet.
+
+## Sentinel-1 Context Quicklook Manifest
+
+File: `sentinel1_quicklook_manifest.csv`
+
+This manifest records small PNG quicklooks from the selected local Sentinel-1 file. It is a context-preview lane only and does not authorize flood detection, validation, official warning use, or the real Mae Sai SAR baseline.
+
+| Field | Meaning |
+| --- | --- |
+| `file_name` | Selected Sentinel-1 source file name. |
+| `sha256_prefix` | First 12 characters of the selected source SHA-256 checksum for review. |
+| `sha256_status` | Must be `recorded`; quicklook generation refuses unrecorded checksums. |
+| `mvp_overlap` | Current overlap flag; the selected file overlaps `mae_sai_2024_point`. |
+| `event_timing_status` | Current timing state, still `timing_unresolved`. |
+| `provenance_status` | Current provenance state, still `unresolved_placeholder_filename`. |
+| `band` / `band_description` | SAR polarization shown in the quicklook, currently `VV` or `VH`. |
+| `quicklook_path` | Relative PNG path used by `outputs/dashboard.html`. |
+| `quicklook_format` | Output image format, currently `png`. |
+| `quicklook_width` / `quicklook_height` | Small preview dimensions. |
+| `quicklook_file_size_bytes` | PNG file size; output should remain small. |
+| `raster_reader` | Optional local raster reader used, such as `rasterio` or GDAL. |
+| `processing_scope` | `sentinel1_sar_context_quicklook_only`; not real flood processing. |
+| `warning_text` | Required warning: SAR context only, not flood detection, not validation, not an official warning, and event timing unresolved unless proven otherwise. |
+| `assumptions` | Source TIFF remains outside Git and the quicklook is non-operational. |
 
 ## DEM Selected File Manifest
 

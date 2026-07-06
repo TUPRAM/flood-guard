@@ -65,6 +65,7 @@ uv run python scripts/generate_theos2_previews.py
 uv run python scripts/generate_theos2_features.py
 uv run python scripts/build_sentinel1_selected_manifest.py
 uv run python scripts/resolve_sentinel1_provenance.py
+uv run python scripts/generate_sentinel1_quicklooks.py --check-reader
 uv run python scripts/build_dem_selected_manifest.py
 uv run python scripts/generate_mae_sai_validation_summary.py
 ```
@@ -76,6 +77,14 @@ The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_re
 `outputs/sentinel1_selected_file_manifest.csv` records the SHA-256 checksum and raster metadata for the standalone local Sentinel-1 TIFF that overlaps the Mae Sai MVP point. It is a readiness manifest only: provenance, event timing, and reference-mask status remain unresolved, so `processing_allowed=False` until the next Sentinel-1 provenance and timing resolver clears those gates. The source TIFF remains outside Git.
 
 `outputs/sentinel1_provenance_resolved_manifest.csv` and `docs/sentinel1_local_provenance.md` record the current Sentinel-1 provenance finding. The standalone local TIFF has VV/VH bands and Mae Sai overlap, but the filename uses placeholder numeric offsets, TIFF tags do not expose acquisition timing or a product id, ZIP members are tiled companions only, and no CDSE snapshot match is committed. It remains `candidate_role=unresolved`, `event_timing_status=timing_unresolved`, and `processing_allowed=False`.
+
+Optional Sentinel-1 SAR quicklooks require `rasterio` or GDAL and a recorded SHA-256 row in `outputs/sentinel1_selected_file_manifest.csv`. They are small context PNGs only:
+
+```powershell
+uv run python scripts/generate_sentinel1_quicklooks.py
+```
+
+The command writes `outputs/sentinel1_quicklook_vv.png`, `outputs/sentinel1_quicklook_vh.png`, and `outputs/sentinel1_quicklook_manifest.csv`. These quicklooks are SAR context only: not flood detection, not validation, not an official warning, and event timing remains unresolved unless provenance is solved. The source Sentinel-1 TIFF remains outside Git.
 
 `outputs/dem_selected_file_manifest.csv` records package-level SHA-256 checksums for the two local Copernicus DEM/elevation-slope ZIP packages and one row per DEM TIFF member. It is terrain context only: no ZIP extraction is committed, member-level checksums wait until controlled extraction, and DEM rows are not flood observations, not flood labels, and not reference masks.
 

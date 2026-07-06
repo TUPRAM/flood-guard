@@ -53,6 +53,11 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "sentinel1_provenance_resolved_manifest.csv",
         "sentinel1_sar_context_readiness_only",
         "sentinel1_provenance_resolution_only",
+        "sentinel1_quicklook_manifest.csv",
+        "sentinel1_quicklook_vv.png",
+        "sentinel1_quicklook_vh.png",
+        "sentinel1_sar_context_quicklook_only",
+        "quicklook_path",
         "dem_selected_file_manifest.csv",
         "package_sha256",
         "package_sha256_status",
@@ -111,6 +116,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "generate_theos2_features.py" in text
     assert "build_sentinel1_selected_manifest.py" in text
     assert "resolve_sentinel1_provenance.py" in text
+    assert "generate_sentinel1_quicklooks.py --check-reader" in text
     assert "build_dem_selected_manifest.py" in text
     assert "generate_mae_sai_validation_summary.py" in text
     assert "They do not download Sentinel-1 assets" in text
@@ -181,6 +187,10 @@ def test_data_dictionary_mentions_dashboard_v4_exports() -> None:
     assert "Download filtered GeoJSON" in text
     assert "Dashboard v5 THEOS-2 cards" in text
     assert "Dashboard v6 Local Data Library panel" in text
+    assert "Dashboard Sentinel-1 SAR context" in text
+    assert "sentinel1_quicklook_vv.png" in text
+    assert "sentinel1_quicklook_vh.png" in text
+    assert "not flood detection" in text
     assert "sentinel1_sar" in text
     assert "copernicus_dem" in text
     assert "theos2_optical" in text
@@ -388,6 +398,39 @@ def test_sentinel1_selected_manifest_output_is_documented_and_blocked() -> None:
         assert phrase in contract_text
 
     assert "Task 42 - Sentinel-1 Provenance And Timing Resolver" in backlog_text
+
+
+def test_sentinel1_quicklook_output_is_documented_and_context_only() -> None:
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(encoding="utf-8")
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in (output_text, contract_text, dictionary_text, backlog_text):
+        assert "sentinel1_quicklook_manifest.csv" in text
+        assert "sentinel1_quicklook_vv.png" in text
+        assert "sentinel1_quicklook_vh.png" in text
+        assert "not flood detection" in text
+        assert "not validation" in text
+        assert "not an official warning" in text
+
+    for phrase in (
+        "sha256_status=recorded",
+        "event_timing_status=timing_unresolved",
+        "provenance_status=unresolved_placeholder_filename",
+        "processing_scope=sentinel1_sar_context_quicklook_only",
+        "Source Sentinel-1 TIFF files remain outside Git",
+    ):
+        assert phrase in contract_text
+
+    assert "Task 45 - Sentinel-1 Context Quicklook" in backlog_text
+    assert "Task 46 - DEM Context Quicklook" in backlog_text
 
 
 def test_sentinel1_provenance_report_documents_unresolved_timing() -> None:

@@ -31,7 +31,17 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const roadRiskData =" in html
     assert "const briefsBySubdistrict =" in html
     assert "const theos2PreviewData =" in html
+    assert "const sentinel1QuicklookData =" in html
     assert "const localDataLibrarySummary =" in html
+    assert "Sentinel-1 SAR Context" in html
+    assert 'id="sentinel1-sar-context"' in html
+    assert "sentinel1_quicklook_vv.png" in html
+    assert "sentinel1_quicklook_vh.png" in html
+    assert "SAR context only" in html
+    assert "not flood detection" in html
+    assert "not validation" in html
+    assert "not an official warning" in html
+    assert "event timing unresolved unless proven otherwise" in html
     assert "THEOS-2 Optical Context" in html
     assert "Optical context only; not flood validation or an official warning." in html
     assert "theos2_previews/theos2_preview_" in html
@@ -43,6 +53,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Local Sentinel-1 readiness" in html
     assert "Sentinel-1 provenance status" in html
     assert "timing_unresolved" in html
+    assert "SAR quicklooks: 2" in html
     assert "DEM readiness" in html
     assert "terrain context only" in html
     assert "THEOS-2 optical context readiness" in html
@@ -51,6 +62,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "local_data_library_manifest.csv" in html
     assert "sentinel1_selected_file_manifest.csv" in html
     assert "sentinel1_provenance_resolved_manifest.csv" in html
+    assert "sentinel1_quicklook_manifest.csv" in html
     assert "dem_selected_file_manifest.csv" in html
     assert "C:\\Users" not in html
     assert "C:/Users" not in html

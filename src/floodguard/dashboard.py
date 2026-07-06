@@ -29,6 +29,7 @@ def write_static_dashboard(
     local_library_manifest_path: str | Path | None = None,
     sentinel1_selected_manifest_path: str | Path | None = None,
     sentinel1_provenance_manifest_path: str | Path | None = None,
+    sentinel1_quicklook_manifest_path: str | Path | None = None,
     dem_selected_manifest_path: str | Path | None = None,
     theos2_selected_manifest_path: str | Path | None = None,
     theos2_thumbnail_manifest_path: str | Path | None = None,
@@ -41,11 +42,16 @@ def write_static_dashboard(
     validation_summary = Path(validation_summary_path).read_text(encoding="utf-8")
     action_briefs = _read_action_briefs(action_brief_path)
     theos2_preview_rows = read_theos2_preview_rows(theos2_preview_manifest_path)
+    sentinel1_quicklook_rows = _read_sentinel1_quicklook_rows(
+        output_dir,
+        sentinel1_quicklook_manifest_path,
+    )
     local_data_summary = _read_local_data_summary(
         output_dir=output_dir,
         local_library_manifest_path=local_library_manifest_path,
         sentinel1_selected_manifest_path=sentinel1_selected_manifest_path,
         sentinel1_provenance_manifest_path=sentinel1_provenance_manifest_path,
+        sentinel1_quicklook_manifest_path=sentinel1_quicklook_manifest_path,
         dem_selected_manifest_path=dem_selected_manifest_path,
         theos2_selected_manifest_path=theos2_selected_manifest_path,
         theos2_thumbnail_manifest_path=theos2_thumbnail_manifest_path,
@@ -59,6 +65,7 @@ def write_static_dashboard(
         action_briefs=action_briefs,
         top_priority=top_priority,
         theos2_preview_rows=theos2_preview_rows,
+        sentinel1_quicklook_rows=sentinel1_quicklook_rows,
         local_data_summary=local_data_summary,
     )
 
@@ -98,12 +105,25 @@ def _read_action_briefs(action_brief_paths: ActionBriefPaths) -> dict[str, str]:
     return briefs
 
 
+def _read_sentinel1_quicklook_rows(
+    output_dir: Path,
+    sentinel1_quicklook_manifest_path: str | Path | None,
+) -> list[dict[str, str]]:
+    quicklook_path = _resolve_manifest_path(
+        output_dir,
+        sentinel1_quicklook_manifest_path,
+        "sentinel1_quicklook_manifest.csv",
+    )
+    return _read_csv_rows(quicklook_path)
+
+
 def _read_local_data_summary(
     *,
     output_dir: Path,
     local_library_manifest_path: str | Path | None,
     sentinel1_selected_manifest_path: str | Path | None,
     sentinel1_provenance_manifest_path: str | Path | None,
+    sentinel1_quicklook_manifest_path: str | Path | None,
     dem_selected_manifest_path: str | Path | None,
     theos2_selected_manifest_path: str | Path | None,
     theos2_thumbnail_manifest_path: str | Path | None,
@@ -122,6 +142,11 @@ def _read_local_data_summary(
         output_dir,
         sentinel1_provenance_manifest_path,
         "sentinel1_provenance_resolved_manifest.csv",
+    )
+    sentinel_quicklook_path = _resolve_manifest_path(
+        output_dir,
+        sentinel1_quicklook_manifest_path,
+        "sentinel1_quicklook_manifest.csv",
     )
     dem_path = _resolve_manifest_path(
         output_dir,
@@ -142,6 +167,7 @@ def _read_local_data_summary(
     library_rows = _read_csv_rows(library_path)
     sentinel_selected = _read_csv_rows(sentinel_selected_path)
     sentinel_provenance = _read_csv_rows(sentinel_provenance_path)
+    sentinel_quicklooks = _read_csv_rows(sentinel_quicklook_path)
     dem_rows = _read_csv_rows(dem_path)
     theos2_selected = _read_csv_rows(theos2_selected_path)
     theos2_thumbnails = _read_csv_rows(theos2_thumbnail_path)
@@ -168,6 +194,7 @@ def _read_local_data_summary(
                 "processing_allowed",
                 sentinel_ready.get("processing_allowed", "False"),
             ),
+            "quicklook_count": len(sentinel_quicklooks),
             "blocked_reason": sentinel_provenance_row.get(
                 "still_blocked_reason",
                 sentinel_ready.get("reason_blocked", "unavailable"),
@@ -204,6 +231,10 @@ def _read_local_data_summary(
                 "label": "sentinel1_provenance_resolved_manifest.csv",
                 "href": "sentinel1_provenance_resolved_manifest.csv",
             },
+            {
+                "label": "sentinel1_quicklook_manifest.csv",
+                "href": "sentinel1_quicklook_manifest.csv",
+            },
             {"label": "dem_selected_file_manifest.csv", "href": "dem_selected_file_manifest.csv"},
             {"label": "theos2_selected_file_manifest.csv", "href": "theos2_selected_file_manifest.csv"},
         ],
@@ -238,6 +269,7 @@ def _build_dashboard_html(
     action_briefs: dict[str, str],
     top_priority: dict[str, Any],
     theos2_preview_rows: list[dict[str, str]],
+    sentinel1_quicklook_rows: list[dict[str, str]],
     local_data_summary: dict[str, Any],
 ) -> str:
     props = top_priority.get("properties") or {}
@@ -429,12 +461,14 @@ def _build_dashboard_html(
       border-top: 1px solid var(--line);
       padding-top: 8px;
     }
-    .theos2-context {
+    .theos2-context,
+    .sar-context {
       display: grid;
       gap: 8px;
       margin: 10px 0 4px;
     }
-    .theos2-card {
+    .theos2-card,
+    .sar-card {
       border: 1px solid var(--line);
       border-radius: 6px;
       padding: 10px;
@@ -442,7 +476,8 @@ def _build_dashboard_html(
       display: grid;
       gap: 8px;
     }
-    .theos2-card img {
+    .theos2-card img,
+    .sar-card img {
       display: block;
       width: 100%;
       max-height: 150px;
@@ -451,10 +486,12 @@ def _build_dashboard_html(
       border-radius: 6px;
       background: #f7f8f4;
     }
-    .theos2-card strong {
+    .theos2-card strong,
+    .sar-card strong {
       overflow-wrap: anywhere;
     }
-    .theos2-card span {
+    .theos2-card span,
+    .sar-card span {
       color: var(--muted);
       font-size: 12px;
       overflow-wrap: anywhere;
@@ -676,6 +713,10 @@ def _build_dashboard_html(
       </ul>
       <h2>Decision Note</h2>
       <p id="panel-reason">__TOP_REASON__</p>
+      <h2>Sentinel-1 SAR Context</h2>
+      <div class="sar-context" id="sentinel1-sar-context">
+        __SENTINEL1_CONTEXT_HTML__
+      </div>
       <h2>THEOS-2 Optical Context</h2>
       <div class="theos2-context" id="theos2-context">
         __THEOS2_CONTEXT_HTML__
@@ -725,6 +766,7 @@ def _build_dashboard_html(
     const roadRiskData = __ROAD_JSON__;
     const briefsBySubdistrict = __BRIEFS_JSON__;
     const theos2PreviewData = __THEOS2_JSON__;
+    const sentinel1QuicklookData = __SENTINEL1_QUICKLOOK_JSON__;
     const localDataLibrarySummary = __LOCAL_DATA_JSON__;
     const actionColors = {
       A: '#b73c3c',
@@ -991,8 +1033,15 @@ def _build_dashboard_html(
         "__ROAD_JSON__": json.dumps(road_risk_geojson, ensure_ascii=False),
         "__BRIEFS_JSON__": json.dumps(action_briefs, ensure_ascii=False),
         "__THEOS2_JSON__": json.dumps(theos2_preview_rows, ensure_ascii=False),
+        "__SENTINEL1_QUICKLOOK_JSON__": json.dumps(
+            sentinel1_quicklook_rows,
+            ensure_ascii=False,
+        ),
         "__LOCAL_DATA_JSON__": json.dumps(local_data_summary, ensure_ascii=False),
         "__THEOS2_CONTEXT_HTML__": _theos2_context_html(theos2_preview_rows),
+        "__SENTINEL1_CONTEXT_HTML__": _sentinel1_context_html(
+            sentinel1_quicklook_rows
+        ),
         "__LOCAL_DATA_LIBRARY_HTML__": _local_data_library_html(local_data_summary),
         "__VALIDATION_SUMMARY__": html.escape(validation_summary),
         "__INITIAL_BRIEF__": html.escape(initial_brief),
@@ -1095,6 +1144,7 @@ def _local_data_library_html(summary: dict[str, Any]) -> str:
             f"<span>Mae Sai overlap: {html.escape(str(sentinel.get('mvp_overlap', 'unavailable')))}</span>",
             f"<span>Bands: {html.escape(str(sentinel.get('band_descriptions', 'unavailable')))}</span>",
             f"<span>Checksum: {html.escape(str(sentinel.get('sha256_status', 'unavailable')))}</span>",
+            f"<span>SAR quicklooks: {html.escape(str(sentinel.get('quicklook_count', 0)))}</span>",
             "</div>",
             '<div class="readiness-card">',
             "<strong>Sentinel-1 provenance status</strong>",
@@ -1142,6 +1192,41 @@ def _manifest_links_html(links: list[dict[str, str]]) -> str:
         if link.get("href") and link.get("label")
     ]
     return '<div class="manifest-links">CSV summaries: ' + " ".join(anchors) + "</div>"
+
+
+def _sentinel1_context_html(rows: list[dict[str, str]]) -> str:
+    if not rows:
+        return (
+            '<p class="note">Sentinel-1 SAR quicklooks have not been generated. '
+            "SAR context remains checksum-gated and event timing remains unresolved.</p>"
+        )
+    cards: list[str] = []
+    for row in rows[:2]:
+        file_name = html.escape(row.get("file_name", "unknown"))
+        band = html.escape(row.get("band", "SAR"))
+        quicklook_path = html.escape(row.get("quicklook_path", ""))
+        sha_prefix = html.escape(row.get("sha256_prefix", ""))
+        timing = html.escape(row.get("event_timing_status", "timing_unresolved"))
+        provenance = html.escape(row.get("provenance_status", "unresolved"))
+        warning = html.escape(
+            row.get(
+                "warning_text",
+                "SAR context only; not flood detection; not validation; not an "
+                "official warning; event timing unresolved unless proven otherwise.",
+            )
+        )
+        cards.append(
+            '<div class="sar-card">'
+            f'<img src="{quicklook_path}" alt="Sentinel-1 SAR context quicklook {band}">'
+            f"<strong>Sentinel-1 {band} SAR quicklook</strong>"
+            f"<span>Source: {file_name}</span>"
+            f"<span>Timing: {timing}</span>"
+            f"<span>Provenance: {provenance}</span>"
+            f"<span>SHA-256 prefix: {sha_prefix}</span>"
+            f"<span>{warning}</span>"
+            "</div>"
+        )
+    return "\n".join(cards)
 
 
 def _theos2_context_html(rows: list[dict[str, str]]) -> str:

@@ -104,7 +104,7 @@ Files: `priority_subdistricts.geojson` and `road_risk.geojson`
 
 | Artifact | Meaning |
 | --- | --- |
-| `dashboard.html` | Standalone Leaflet dashboard with embedded GeoJSON, action briefs, validation summary, controls, and scenario cards. |
+| `dashboard.html` | Standalone Leaflet dashboard with embedded GeoJSON, action briefs, validation summary, controls, scenario cards, THEOS-2 optical cards, and Local Data Library readiness panel. |
 | `action_brief_FG-TB-001.md` | Compact A-class action brief for River Market. |
 | `action_brief_FG-TB-002.md` | Compact B-class action brief for Bridge Junction. |
 | `action_brief_FG-TB-003.md` | Compact C-class action brief for Clinic Basin. |
@@ -129,6 +129,17 @@ Dashboard THEOS-2 optical context:
 | `theos2_visual_review_checklist.csv` | Pending manual-review worksheet for interpreting optical context without creating flood labels. |
 
 Dashboard v5 THEOS-2 cards prefer `theos2_thumbnails/*.png` when a true thumbnail manifest exists, and fall back to `theos2_previews/*.svg` otherwise.
+
+Dashboard v6 Local Data Library panel:
+
+| Item | Meaning |
+| --- | --- |
+| `sentinel1_sar` | Count of local Sentinel-1 library assets and selected Sentinel-1 readiness/provenance status. |
+| `copernicus_dem` | Count of local DEM package assets and selected DEM terrain-context readiness status. |
+| `theos2_optical` | Count of local THEOS-2 optical assets and selected optical-context readiness status. |
+| `timing_unresolved` | Sentinel-1 provenance status showing local timing is not ready for real baseline use. |
+| `terrain context only` | DEM use boundary; not flood observation, not label, and not reference mask. |
+| `optical context only` | THEOS-2 use boundary; not flood validation and not an official warning. |
 
 ## Metadata Planning Outputs
 

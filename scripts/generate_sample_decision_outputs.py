@@ -181,6 +181,12 @@ def main() -> None:
         action_brief_paths,
         output_dir / "dashboard.html",
         theos2_preview_manifest_path=theos2_dashboard_manifest_path,
+        local_library_manifest_path=output_dir / "local_data_library_manifest.csv",
+        sentinel1_selected_manifest_path=output_dir / "sentinel1_selected_file_manifest.csv",
+        sentinel1_provenance_manifest_path=output_dir / "sentinel1_provenance_resolved_manifest.csv",
+        dem_selected_manifest_path=output_dir / "dem_selected_file_manifest.csv",
+        theos2_selected_manifest_path=theos2_selected_path,
+        theos2_thumbnail_manifest_path=theos2_thumbnail_path,
     )
 
     print(f"Wrote {priority_path}")

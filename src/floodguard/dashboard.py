@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from collections.abc import Sequence
 import html
 import json
@@ -25,14 +26,30 @@ def write_static_dashboard(
     action_brief_path: ActionBriefPaths,
     output_path: str | Path,
     theos2_preview_manifest_path: str | Path | None = None,
+    local_library_manifest_path: str | Path | None = None,
+    sentinel1_selected_manifest_path: str | Path | None = None,
+    sentinel1_provenance_manifest_path: str | Path | None = None,
+    dem_selected_manifest_path: str | Path | None = None,
+    theos2_selected_manifest_path: str | Path | None = None,
+    theos2_thumbnail_manifest_path: str | Path | None = None,
 ) -> Path:
     """Write a standalone HTML dashboard with embedded GeoJSON and Markdown."""
 
+    output_dir = Path(priority_geojson_path).parent
     priority_geojson = _read_feature_collection(priority_geojson_path, "priority")
     road_risk_geojson = _read_feature_collection(road_risk_geojson_path, "road_risk")
     validation_summary = Path(validation_summary_path).read_text(encoding="utf-8")
     action_briefs = _read_action_briefs(action_brief_path)
     theos2_preview_rows = read_theos2_preview_rows(theos2_preview_manifest_path)
+    local_data_summary = _read_local_data_summary(
+        output_dir=output_dir,
+        local_library_manifest_path=local_library_manifest_path,
+        sentinel1_selected_manifest_path=sentinel1_selected_manifest_path,
+        sentinel1_provenance_manifest_path=sentinel1_provenance_manifest_path,
+        dem_selected_manifest_path=dem_selected_manifest_path,
+        theos2_selected_manifest_path=theos2_selected_manifest_path,
+        theos2_thumbnail_manifest_path=theos2_thumbnail_manifest_path,
+    )
 
     top_priority = _select_top_actionable(priority_geojson)
     html_text = _build_dashboard_html(
@@ -42,6 +59,7 @@ def write_static_dashboard(
         action_briefs=action_briefs,
         top_priority=top_priority,
         theos2_preview_rows=theos2_preview_rows,
+        local_data_summary=local_data_summary,
     )
 
     target = Path(output_path)
@@ -80,6 +98,119 @@ def _read_action_briefs(action_brief_paths: ActionBriefPaths) -> dict[str, str]:
     return briefs
 
 
+def _read_local_data_summary(
+    *,
+    output_dir: Path,
+    local_library_manifest_path: str | Path | None,
+    sentinel1_selected_manifest_path: str | Path | None,
+    sentinel1_provenance_manifest_path: str | Path | None,
+    dem_selected_manifest_path: str | Path | None,
+    theos2_selected_manifest_path: str | Path | None,
+    theos2_thumbnail_manifest_path: str | Path | None,
+) -> dict[str, Any]:
+    library_path = _resolve_manifest_path(
+        output_dir,
+        local_library_manifest_path,
+        "local_data_library_manifest.csv",
+    )
+    sentinel_selected_path = _resolve_manifest_path(
+        output_dir,
+        sentinel1_selected_manifest_path,
+        "sentinel1_selected_file_manifest.csv",
+    )
+    sentinel_provenance_path = _resolve_manifest_path(
+        output_dir,
+        sentinel1_provenance_manifest_path,
+        "sentinel1_provenance_resolved_manifest.csv",
+    )
+    dem_path = _resolve_manifest_path(
+        output_dir,
+        dem_selected_manifest_path,
+        "dem_selected_file_manifest.csv",
+    )
+    theos2_selected_path = _resolve_manifest_path(
+        output_dir,
+        theos2_selected_manifest_path,
+        "theos2_selected_file_manifest.csv",
+    )
+    theos2_thumbnail_path = _resolve_manifest_path(
+        output_dir,
+        theos2_thumbnail_manifest_path,
+        "theos2_thumbnail_manifest.csv",
+    )
+
+    library_rows = _read_csv_rows(library_path)
+    sentinel_selected = _read_csv_rows(sentinel_selected_path)
+    sentinel_provenance = _read_csv_rows(sentinel_provenance_path)
+    dem_rows = _read_csv_rows(dem_path)
+    theos2_selected = _read_csv_rows(theos2_selected_path)
+    theos2_thumbnails = _read_csv_rows(theos2_thumbnail_path)
+    library_counts = _counts_by_field(library_rows, "library_group")
+    sentinel_ready = _first_row(sentinel_selected)
+    sentinel_provenance_row = _first_row(sentinel_provenance)
+    dem_package_count = len({row.get("package_name", "") for row in dem_rows if row.get("package_name")})
+
+    return {
+        "library_counts": {
+            "sentinel1_sar": library_counts.get("sentinel1_sar", 0),
+            "copernicus_dem": library_counts.get("copernicus_dem", 0),
+            "theos2_optical": library_counts.get("theos2_optical", 0),
+        },
+        "sentinel1": {
+            "file_name": sentinel_ready.get("file_name", "unavailable"),
+            "mvp_overlap": sentinel_ready.get("mvp_overlap", "unavailable"),
+            "band_descriptions": sentinel_ready.get("band_descriptions", "unavailable"),
+            "sha256_status": sentinel_ready.get("sha256_status", "unavailable"),
+            "candidate_role": sentinel_provenance_row.get("candidate_role", "unavailable"),
+            "event_timing_status": sentinel_provenance_row.get("event_timing_status", "unavailable"),
+            "provenance_status": sentinel_provenance_row.get("provenance_status", "unavailable"),
+            "processing_allowed": sentinel_provenance_row.get(
+                "processing_allowed",
+                sentinel_ready.get("processing_allowed", "False"),
+            ),
+            "blocked_reason": sentinel_provenance_row.get(
+                "still_blocked_reason",
+                sentinel_ready.get("reason_blocked", "unavailable"),
+            ),
+        },
+        "dem": {
+            "package_count": dem_package_count,
+            "member_count": len(dem_rows),
+            "package_sha256_status": _common_status(dem_rows, "package_sha256_status"),
+            "processing_scope": _common_status(dem_rows, "processing_scope"),
+            "processing_allowed": _common_status(dem_rows, "processing_allowed"),
+            "reference_mask_status": _common_status(dem_rows, "reference_mask_status"),
+            "flood_observation_status": _common_status(dem_rows, "flood_observation_status"),
+            "flood_label_status": _common_status(dem_rows, "flood_label_status"),
+            "blocked_reason": _first_nonblank(dem_rows, "reason_blocked"),
+        },
+        "theos2": {
+            "selected_count": len(theos2_selected),
+            "thumbnail_count": len(theos2_thumbnails),
+            "sha256_status": _common_status(theos2_selected, "sha256_status"),
+            "processing_scope": _common_status(theos2_selected, "processing_scope"),
+            "reference_mask_status": _common_status(theos2_selected, "reference_mask_status"),
+            "processing_allowed": _common_status(theos2_selected, "processing_allowed"),
+            "blocked_reason": (
+                "optical context only; not flood validation or a reference mask"
+                if theos2_selected
+                else "THEOS-2 selected manifest unavailable"
+            ),
+        },
+        "links": [
+            {"label": "local_data_library_manifest.csv", "href": "local_data_library_manifest.csv"},
+            {"label": "sentinel1_selected_file_manifest.csv", "href": "sentinel1_selected_file_manifest.csv"},
+            {
+                "label": "sentinel1_provenance_resolved_manifest.csv",
+                "href": "sentinel1_provenance_resolved_manifest.csv",
+            },
+            {"label": "dem_selected_file_manifest.csv", "href": "dem_selected_file_manifest.csv"},
+            {"label": "theos2_selected_file_manifest.csv", "href": "theos2_selected_file_manifest.csv"},
+        ],
+        "status_note": "Source files are outside Git and processing remains gated.",
+    }
+
+
 def _select_top_actionable(priority_geojson: dict[str, Any]) -> dict[str, Any]:
     action_order = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4}
     features = priority_geojson.get("features", [])
@@ -107,6 +238,7 @@ def _build_dashboard_html(
     action_briefs: dict[str, str],
     top_priority: dict[str, Any],
     theos2_preview_rows: list[dict[str, str]],
+    local_data_summary: dict[str, Any],
 ) -> str:
     props = top_priority.get("properties") or {}
     best_intervention = _scenario_summary(
@@ -327,6 +459,61 @@ def _build_dashboard_html(
       font-size: 12px;
       overflow-wrap: anywhere;
     }
+    .local-library {
+      display: grid;
+      gap: 10px;
+      margin: 10px 0 4px;
+    }
+    .local-counts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .local-chip {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px;
+      background: #fbfcf8;
+      min-width: 0;
+    }
+    .local-chip span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      overflow-wrap: anywhere;
+    }
+    .local-chip strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 18px;
+    }
+    .readiness-card {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: #fbfcf8;
+      display: grid;
+      gap: 5px;
+      font-size: 13px;
+    }
+    .readiness-card strong {
+      overflow-wrap: anywhere;
+    }
+    .readiness-card span {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .manifest-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .manifest-links a {
+      color: var(--green);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(33, 131, 95, .35);
+    }
     .delta-badge {
       display: inline-block;
       border-radius: 4px;
@@ -493,6 +680,10 @@ def _build_dashboard_html(
       <div class="theos2-context" id="theos2-context">
         __THEOS2_CONTEXT_HTML__
       </div>
+      <h2>Local Data Library</h2>
+      <div class="local-library" id="local-data-library">
+        __LOCAL_DATA_LIBRARY_HTML__
+      </div>
       <p class="note">Scenario colors show people losing 30-minute access: green improves, red worsens, gray is neutral or unavailable.</p>
     </aside>
     <main>
@@ -534,6 +725,7 @@ def _build_dashboard_html(
     const roadRiskData = __ROAD_JSON__;
     const briefsBySubdistrict = __BRIEFS_JSON__;
     const theos2PreviewData = __THEOS2_JSON__;
+    const localDataLibrarySummary = __LOCAL_DATA_JSON__;
     const actionColors = {
       A: '#b73c3c',
       B: '#d36a35',
@@ -799,7 +991,9 @@ def _build_dashboard_html(
         "__ROAD_JSON__": json.dumps(road_risk_geojson, ensure_ascii=False),
         "__BRIEFS_JSON__": json.dumps(action_briefs, ensure_ascii=False),
         "__THEOS2_JSON__": json.dumps(theos2_preview_rows, ensure_ascii=False),
+        "__LOCAL_DATA_JSON__": json.dumps(local_data_summary, ensure_ascii=False),
         "__THEOS2_CONTEXT_HTML__": _theos2_context_html(theos2_preview_rows),
+        "__LOCAL_DATA_LIBRARY_HTML__": _local_data_library_html(local_data_summary),
         "__VALIDATION_SUMMARY__": html.escape(validation_summary),
         "__INITIAL_BRIEF__": html.escape(initial_brief),
         "__TOP_ID__": _js_string(top_id),
@@ -882,6 +1076,74 @@ def _scenario_summary(
     return {"label": label, "delta": _format_signed(delta, 0)}
 
 
+def _local_data_library_html(summary: dict[str, Any]) -> str:
+    counts = summary.get("library_counts", {})
+    sentinel = summary.get("sentinel1", {})
+    dem = summary.get("dem", {})
+    theos2 = summary.get("theos2", {})
+    links = summary.get("links", [])
+    return "\n".join(
+        [
+            '<div class="local-counts" aria-label="Local data counts by group">',
+            _local_count_chip("sentinel1_sar", counts.get("sentinel1_sar", 0)),
+            _local_count_chip("copernicus_dem", counts.get("copernicus_dem", 0)),
+            _local_count_chip("theos2_optical", counts.get("theos2_optical", 0)),
+            "</div>",
+            '<div class="readiness-card">',
+            "<strong>Local Sentinel-1 readiness</strong>",
+            f"<span>Asset: {html.escape(str(sentinel.get('file_name', 'unavailable')))}</span>",
+            f"<span>Mae Sai overlap: {html.escape(str(sentinel.get('mvp_overlap', 'unavailable')))}</span>",
+            f"<span>Bands: {html.escape(str(sentinel.get('band_descriptions', 'unavailable')))}</span>",
+            f"<span>Checksum: {html.escape(str(sentinel.get('sha256_status', 'unavailable')))}</span>",
+            "</div>",
+            '<div class="readiness-card">',
+            "<strong>Sentinel-1 provenance status</strong>",
+            f"<span>Candidate role: {html.escape(str(sentinel.get('candidate_role', 'unavailable')))}</span>",
+            f"<span>Event timing: {html.escape(str(sentinel.get('event_timing_status', 'unavailable')))}</span>",
+            f"<span>Provenance: {html.escape(str(sentinel.get('provenance_status', 'unavailable')))}</span>",
+            f"<span>Blocked: {html.escape(str(sentinel.get('blocked_reason', 'unavailable')))}</span>",
+            "</div>",
+            '<div class="readiness-card">',
+            "<strong>DEM readiness</strong>",
+            f"<span>Packages: {html.escape(str(dem.get('package_count', 0)))}; DEM members: {html.escape(str(dem.get('member_count', 0)))}</span>",
+            f"<span>Status: terrain context only; {html.escape(str(dem.get('processing_scope', 'unavailable')))}</span>",
+            f"<span>Checksum: {html.escape(str(dem.get('package_sha256_status', 'unavailable')))}</span>",
+            f"<span>Not flood observation: {html.escape(str(dem.get('flood_observation_status', 'unavailable')))}</span>",
+            f"<span>Not flood label: {html.escape(str(dem.get('flood_label_status', 'unavailable')))}</span>",
+            "</div>",
+            '<div class="readiness-card">',
+            "<strong>THEOS-2 optical context readiness</strong>",
+            f"<span>Selected files: {html.escape(str(theos2.get('selected_count', 0)))}; true thumbnails: {html.escape(str(theos2.get('thumbnail_count', 0)))}</span>",
+            f"<span>Status: optical context only; {html.escape(str(theos2.get('processing_scope', 'unavailable')))}</span>",
+            f"<span>Checksum: {html.escape(str(theos2.get('sha256_status', 'unavailable')))}</span>",
+            f"<span>Reference mask status: {html.escape(str(theos2.get('reference_mask_status', 'unavailable')))}</span>",
+            "</div>",
+            f'<p class="note">{html.escape(str(summary.get("status_note", "")))}</p>',
+            _manifest_links_html(links),
+        ]
+    )
+
+
+def _local_count_chip(label: str, count: object) -> str:
+    return (
+        '<div class="local-chip">'
+        f"<span>{html.escape(label)}</span>"
+        f"<strong>{html.escape(str(count))}</strong>"
+        "</div>"
+    )
+
+
+def _manifest_links_html(links: list[dict[str, str]]) -> str:
+    if not links:
+        return ""
+    anchors = [
+        f'<a href="{html.escape(link["href"])}">{html.escape(link["label"])}</a>'
+        for link in links
+        if link.get("href") and link.get("label")
+    ]
+    return '<div class="manifest-links">CSV summaries: ' + " ".join(anchors) + "</div>"
+
+
 def _theos2_context_html(rows: list[dict[str, str]]) -> str:
     if not rows:
         return (
@@ -916,3 +1178,53 @@ def _theos2_context_html(rows: list[dict[str, str]]) -> str:
             "</div>"
         )
     return "\n".join(cards)
+
+
+def _resolve_manifest_path(
+    output_dir: Path,
+    explicit_path: str | Path | None,
+    default_name: str,
+) -> Path | None:
+    if explicit_path is not None:
+        path = Path(explicit_path)
+        return path if path.exists() else None
+    path = output_dir / default_name
+    return path if path.exists() else None
+
+
+def _read_csv_rows(path: Path | None) -> list[dict[str, str]]:
+    if path is None or not path.exists():
+        return []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return [dict(row) for row in csv.DictReader(handle)]
+
+
+def _counts_by_field(rows: list[dict[str, str]], field: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        value = row.get(field, "")
+        if not value:
+            continue
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def _first_row(rows: list[dict[str, str]]) -> dict[str, str]:
+    return rows[0] if rows else {}
+
+
+def _first_nonblank(rows: list[dict[str, str]], field: str) -> str:
+    for row in rows:
+        value = row.get(field, "")
+        if value:
+            return value
+    return "unavailable"
+
+
+def _common_status(rows: list[dict[str, str]], field: str) -> str:
+    values = sorted({row.get(field, "") for row in rows if row.get(field, "")})
+    if not values:
+        return "unavailable"
+    if len(values) == 1:
+        return values[0]
+    return "|".join(values)

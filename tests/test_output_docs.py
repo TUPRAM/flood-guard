@@ -180,6 +180,10 @@ def test_data_dictionary_mentions_dashboard_v4_exports() -> None:
     assert "Download current brief" in text
     assert "Download filtered GeoJSON" in text
     assert "Dashboard v5 THEOS-2 cards" in text
+    assert "Dashboard v6 Local Data Library panel" in text
+    assert "sentinel1_sar" in text
+    assert "copernicus_dem" in text
+    assert "theos2_optical" in text
     assert "true_png_thumbnail_via_rasterio" in text
 
 

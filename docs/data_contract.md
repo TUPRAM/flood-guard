@@ -258,6 +258,17 @@ The export buttons must use embedded page data only. They must not call `fetch`,
 
 Dashboard v5 displays compact THEOS-2 optical-context cards. When `outputs/theos2_thumbnail_manifest.csv` exists, cards should use `outputs/theos2_thumbnails/*.png`; otherwise they fall back to `outputs/theos2_previews/*.svg`.
 
+Dashboard v6 displays a compact Local Data Library panel. It embeds summary counts and blocker states from:
+
+- `outputs/local_data_library_manifest.csv`
+- `outputs/sentinel1_selected_file_manifest.csv`
+- `outputs/sentinel1_provenance_resolved_manifest.csv`
+- `outputs/dem_selected_file_manifest.csv`
+- `outputs/theos2_selected_file_manifest.csv`
+- optionally `outputs/theos2_thumbnail_manifest.csv`
+
+The panel must clearly separate `sentinel1_sar`, `copernicus_dem`, and `theos2_optical`, show `timing_unresolved` for unresolved Sentinel-1 provenance, show DEM as terrain context only, and show THEOS-2 as optical context only. It must not call `fetch`, require a backend, expose absolute local paths, or imply local metadata assets are official flood products.
+
 Dashboard THEOS-2 optical context uses:
 
 - `outputs/theos2_selected_file_manifest.csv`

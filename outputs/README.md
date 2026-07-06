@@ -50,6 +50,8 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from embedded fixture data only.
 
+`dashboard.html` also includes a Local Data Library panel with embedded metadata summaries for Sentinel-1, DEM, and THEOS-2 readiness lanes. It shows counts, key blocker statuses, and relative CSV links only; source files remain outside Git and processing remains gated.
+
 `theos2_selected_file_manifest.csv` and `theos2_previews/*.svg` are THEOS-2 optical-context artifacts. They are checksum-backed and non-operational, but they are not flood masks, validation labels, or official warning products. Source THEOS-2 TIFF/overview files remain outside Git.
 
 `theos2_thumbnail_manifest.csv` and `theos2_thumbnails/*.png` are small true thumbnail outputs generated from checksum-backed selected files with an optional raster reader. They are optical context only and never full-resolution imagery.

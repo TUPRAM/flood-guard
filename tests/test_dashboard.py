@@ -31,9 +31,30 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const roadRiskData =" in html
     assert "const briefsBySubdistrict =" in html
     assert "const theos2PreviewData =" in html
+    assert "const localDataLibrarySummary =" in html
     assert "THEOS-2 Optical Context" in html
     assert "Optical context only; not flood validation or an official warning." in html
     assert "theos2_previews/theos2_preview_" in html
+    assert "Local Data Library" in html
+    assert 'id="local-data-library"' in html
+    assert "sentinel1_sar" in html
+    assert "copernicus_dem" in html
+    assert "theos2_optical" in html
+    assert "Local Sentinel-1 readiness" in html
+    assert "Sentinel-1 provenance status" in html
+    assert "timing_unresolved" in html
+    assert "DEM readiness" in html
+    assert "terrain context only" in html
+    assert "THEOS-2 optical context readiness" in html
+    assert "optical context only" in html
+    assert "Source files are outside Git and processing remains gated." in html
+    assert "local_data_library_manifest.csv" in html
+    assert "sentinel1_selected_file_manifest.csv" in html
+    assert "sentinel1_provenance_resolved_manifest.csv" in html
+    assert "dem_selected_file_manifest.csv" in html
+    assert "C:\\Users" not in html
+    assert "C:/Users" not in html
+    assert "official flood observations" not in html
     assert 'id="subdistrict-select"' in html
     assert 'id="scenario-select"' in html
     assert 'class="action-filter"' in html

@@ -59,10 +59,14 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "sentinel1_sar_context_quicklook_only",
         "quicklook_path",
         "dem_selected_file_manifest.csv",
+        "dem_quicklook_manifest.csv",
+        "dem_quicklook.png",
         "package_sha256",
         "package_sha256_status",
+        "member_sha256_status",
         "checksum_strategy",
         "dem_terrain_context_readiness_only",
+        "dem_terrain_context_quicklook_only",
         "not_flood_observation",
         "not_flood_label",
         "provenance_status",
@@ -118,6 +122,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "resolve_sentinel1_provenance.py" in text
     assert "generate_sentinel1_quicklooks.py --check-reader" in text
     assert "build_dem_selected_manifest.py" in text
+    assert "generate_dem_quicklook.py --check-reader" in text
     assert "generate_mae_sai_validation_summary.py" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
@@ -188,8 +193,10 @@ def test_data_dictionary_mentions_dashboard_v4_exports() -> None:
     assert "Dashboard v5 THEOS-2 cards" in text
     assert "Dashboard v6 Local Data Library panel" in text
     assert "Dashboard Sentinel-1 SAR context" in text
+    assert "Dashboard DEM terrain context" in text
     assert "sentinel1_quicklook_vv.png" in text
     assert "sentinel1_quicklook_vh.png" in text
+    assert "dem_quicklook.png" in text
     assert "not flood detection" in text
     assert "sentinel1_sar" in text
     assert "copernicus_dem" in text
@@ -490,3 +497,37 @@ def test_dem_selected_manifest_output_is_documented_and_context_only() -> None:
         assert phrase in contract_text
 
     assert "Task 44 - Local Data Library Dashboard Panel" in backlog_text
+
+
+def test_dem_quicklook_output_is_documented_and_context_only() -> None:
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(encoding="utf-8")
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in (output_text, contract_text, dictionary_text, backlog_text):
+        assert "dem_quicklook_manifest.csv" in text
+        assert "dem_quicklook.png" in text
+        assert "terrain context" in text
+        assert "not flood observation" in text
+        assert "not flood label" in text
+        assert "not reference mask" in text
+        assert "not an official warning" in text
+
+    for phrase in (
+        "package_sha256_status=recorded",
+        "member_sha256_status=recorded",
+        "local_extracted_path_hint=<external_data_workspace>/...",
+        "processing_scope=dem_terrain_context_quicklook_only",
+        "extracted DEM TIFF must remain outside Git",
+    ):
+        assert phrase in contract_text
+
+    assert "Task 46 - DEM Context Quicklook" in backlog_text
+    assert "Task 47 - Real Mae Sai Gate Update" in backlog_text

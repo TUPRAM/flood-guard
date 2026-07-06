@@ -67,6 +67,7 @@ uv run python scripts/build_sentinel1_selected_manifest.py
 uv run python scripts/resolve_sentinel1_provenance.py
 uv run python scripts/generate_sentinel1_quicklooks.py --check-reader
 uv run python scripts/build_dem_selected_manifest.py
+uv run python scripts/generate_dem_quicklook.py --check-reader
 uv run python scripts/generate_mae_sai_validation_summary.py
 ```
 
@@ -87,6 +88,15 @@ uv run python scripts/generate_sentinel1_quicklooks.py
 The command writes `outputs/sentinel1_quicklook_vv.png`, `outputs/sentinel1_quicklook_vh.png`, and `outputs/sentinel1_quicklook_manifest.csv`. These quicklooks are SAR context only: not flood detection, not validation, not an official warning, and event timing remains unresolved unless provenance is solved. The source Sentinel-1 TIFF remains outside Git.
 
 `outputs/dem_selected_file_manifest.csv` records package-level SHA-256 checksums for the two local Copernicus DEM/elevation-slope ZIP packages and one row per DEM TIFF member. It is terrain context only: no ZIP extraction is committed, member-level checksums wait until controlled extraction, and DEM rows are not flood observations, not flood labels, and not reference masks.
+
+Optional DEM terrain quicklooks require `rasterio` or GDAL, an extracted DEM TIFF outside Git, and an explicit member-level SHA-256 checksum. The command stays blocked unless those gates are provided:
+
+```powershell
+uv run python scripts/generate_dem_quicklook.py --check-reader
+uv run python scripts/generate_dem_quicklook.py --extracted-dem-path <outside-git-dem.tif> --member-name <selected-member-name> --member-sha256 <sha256> --local-path-hint <external_data_workspace>/<selected-member-name>
+```
+
+The command writes `outputs/dem_quicklook.png` and `outputs/dem_quicklook_manifest.csv`. These are DEM terrain context only: not flood observation, not flood label, not reference mask, and not an official warning. Extracted DEM source TIFFs remain outside Git.
 
 Optional true THEOS-2 thumbnails require `rasterio` or GDAL. Check availability first:
 

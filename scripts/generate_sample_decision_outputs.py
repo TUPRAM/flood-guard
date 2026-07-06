@@ -186,6 +186,7 @@ def main() -> None:
         sentinel1_provenance_manifest_path=output_dir / "sentinel1_provenance_resolved_manifest.csv",
         sentinel1_quicklook_manifest_path=output_dir / "sentinel1_quicklook_manifest.csv",
         dem_selected_manifest_path=output_dir / "dem_selected_file_manifest.csv",
+        dem_quicklook_manifest_path=output_dir / "dem_quicklook_manifest.csv",
         theos2_selected_manifest_path=theos2_selected_path,
         theos2_thumbnail_manifest_path=theos2_thumbnail_path,
     )

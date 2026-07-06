@@ -286,4 +286,10 @@ Acceptance: `outputs/sentinel1_quicklook_manifest.csv`, `outputs/sentinel1_quick
 
 Generate a tiny DEM/elevation/slope preview only if a selected DEM TIFF member is extracted locally outside Git and checksum-tracked.
 
-Acceptance: output is a small PNG and metadata CSV, DEM is described as terrain context only, and it is not used as a flood observation, flood label, reference mask, or official warning product.
+Acceptance: `outputs/dem_quicklook_manifest.csv` and `outputs/dem_quicklook.png` are generated only after package-level checksum, extracted outside-Git TIFF path, and member-level SHA-256 gates pass; DEM is described as terrain context only; it is not flood observation, not flood label, not reference mask, and not an official warning product.
+
+## Task 47 - Real Mae Sai Gate Update
+
+Update legal/reference-mask readiness when UNOSAT, GISTDA, Charter, Sentinel Asia, or another valid provider replies.
+
+Acceptance: `docs/reference_mask_licensing_log.md` and `docs/licensing_outreach_status.md` record geometry access, local validation permission, derived metrics permission, screenshot/demo permission, redistribution or reference-only status, ML-label use, citation/disclaimer requirements, and final blocking decision. At least one reference mask source must be no longer blocked before real Mae Sai validation or ML labels can proceed.

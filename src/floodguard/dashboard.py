@@ -31,6 +31,7 @@ def write_static_dashboard(
     sentinel1_provenance_manifest_path: str | Path | None = None,
     sentinel1_quicklook_manifest_path: str | Path | None = None,
     dem_selected_manifest_path: str | Path | None = None,
+    dem_quicklook_manifest_path: str | Path | None = None,
     theos2_selected_manifest_path: str | Path | None = None,
     theos2_thumbnail_manifest_path: str | Path | None = None,
 ) -> Path:
@@ -46,6 +47,7 @@ def write_static_dashboard(
         output_dir,
         sentinel1_quicklook_manifest_path,
     )
+    dem_quicklook_rows = _read_dem_quicklook_rows(output_dir, dem_quicklook_manifest_path)
     local_data_summary = _read_local_data_summary(
         output_dir=output_dir,
         local_library_manifest_path=local_library_manifest_path,
@@ -53,6 +55,7 @@ def write_static_dashboard(
         sentinel1_provenance_manifest_path=sentinel1_provenance_manifest_path,
         sentinel1_quicklook_manifest_path=sentinel1_quicklook_manifest_path,
         dem_selected_manifest_path=dem_selected_manifest_path,
+        dem_quicklook_manifest_path=dem_quicklook_manifest_path,
         theos2_selected_manifest_path=theos2_selected_manifest_path,
         theos2_thumbnail_manifest_path=theos2_thumbnail_manifest_path,
     )
@@ -66,6 +69,7 @@ def write_static_dashboard(
         top_priority=top_priority,
         theos2_preview_rows=theos2_preview_rows,
         sentinel1_quicklook_rows=sentinel1_quicklook_rows,
+        dem_quicklook_rows=dem_quicklook_rows,
         local_data_summary=local_data_summary,
     )
 
@@ -117,6 +121,18 @@ def _read_sentinel1_quicklook_rows(
     return _read_csv_rows(quicklook_path)
 
 
+def _read_dem_quicklook_rows(
+    output_dir: Path,
+    dem_quicklook_manifest_path: str | Path | None,
+) -> list[dict[str, str]]:
+    quicklook_path = _resolve_manifest_path(
+        output_dir,
+        dem_quicklook_manifest_path,
+        "dem_quicklook_manifest.csv",
+    )
+    return _read_csv_rows(quicklook_path)
+
+
 def _read_local_data_summary(
     *,
     output_dir: Path,
@@ -125,6 +141,7 @@ def _read_local_data_summary(
     sentinel1_provenance_manifest_path: str | Path | None,
     sentinel1_quicklook_manifest_path: str | Path | None,
     dem_selected_manifest_path: str | Path | None,
+    dem_quicklook_manifest_path: str | Path | None,
     theos2_selected_manifest_path: str | Path | None,
     theos2_thumbnail_manifest_path: str | Path | None,
 ) -> dict[str, Any]:
@@ -153,6 +170,11 @@ def _read_local_data_summary(
         dem_selected_manifest_path,
         "dem_selected_file_manifest.csv",
     )
+    dem_quicklook_path = _resolve_manifest_path(
+        output_dir,
+        dem_quicklook_manifest_path,
+        "dem_quicklook_manifest.csv",
+    )
     theos2_selected_path = _resolve_manifest_path(
         output_dir,
         theos2_selected_manifest_path,
@@ -169,6 +191,7 @@ def _read_local_data_summary(
     sentinel_provenance = _read_csv_rows(sentinel_provenance_path)
     sentinel_quicklooks = _read_csv_rows(sentinel_quicklook_path)
     dem_rows = _read_csv_rows(dem_path)
+    dem_quicklooks = _read_csv_rows(dem_quicklook_path)
     theos2_selected = _read_csv_rows(theos2_selected_path)
     theos2_thumbnails = _read_csv_rows(theos2_thumbnail_path)
     library_counts = _counts_by_field(library_rows, "library_group")
@@ -203,6 +226,7 @@ def _read_local_data_summary(
         "dem": {
             "package_count": dem_package_count,
             "member_count": len(dem_rows),
+            "quicklook_count": len(dem_quicklooks),
             "package_sha256_status": _common_status(dem_rows, "package_sha256_status"),
             "processing_scope": _common_status(dem_rows, "processing_scope"),
             "processing_allowed": _common_status(dem_rows, "processing_allowed"),
@@ -236,6 +260,7 @@ def _read_local_data_summary(
                 "href": "sentinel1_quicklook_manifest.csv",
             },
             {"label": "dem_selected_file_manifest.csv", "href": "dem_selected_file_manifest.csv"},
+            {"label": "dem_quicklook_manifest.csv", "href": "dem_quicklook_manifest.csv"},
             {"label": "theos2_selected_file_manifest.csv", "href": "theos2_selected_file_manifest.csv"},
         ],
         "status_note": "Source files are outside Git and processing remains gated.",
@@ -270,6 +295,7 @@ def _build_dashboard_html(
     top_priority: dict[str, Any],
     theos2_preview_rows: list[dict[str, str]],
     sentinel1_quicklook_rows: list[dict[str, str]],
+    dem_quicklook_rows: list[dict[str, str]],
     local_data_summary: dict[str, Any],
 ) -> str:
     props = top_priority.get("properties") or {}
@@ -462,13 +488,15 @@ def _build_dashboard_html(
       padding-top: 8px;
     }
     .theos2-context,
-    .sar-context {
+    .sar-context,
+    .dem-context {
       display: grid;
       gap: 8px;
       margin: 10px 0 4px;
     }
     .theos2-card,
-    .sar-card {
+    .sar-card,
+    .dem-card {
       border: 1px solid var(--line);
       border-radius: 6px;
       padding: 10px;
@@ -477,7 +505,8 @@ def _build_dashboard_html(
       gap: 8px;
     }
     .theos2-card img,
-    .sar-card img {
+    .sar-card img,
+    .dem-card img {
       display: block;
       width: 100%;
       max-height: 150px;
@@ -487,11 +516,13 @@ def _build_dashboard_html(
       background: #f7f8f4;
     }
     .theos2-card strong,
-    .sar-card strong {
+    .sar-card strong,
+    .dem-card strong {
       overflow-wrap: anywhere;
     }
     .theos2-card span,
-    .sar-card span {
+    .sar-card span,
+    .dem-card span {
       color: var(--muted);
       font-size: 12px;
       overflow-wrap: anywhere;
@@ -717,6 +748,10 @@ def _build_dashboard_html(
       <div class="sar-context" id="sentinel1-sar-context">
         __SENTINEL1_CONTEXT_HTML__
       </div>
+      <h2>DEM Terrain Context</h2>
+      <div class="dem-context" id="dem-terrain-context">
+        __DEM_CONTEXT_HTML__
+      </div>
       <h2>THEOS-2 Optical Context</h2>
       <div class="theos2-context" id="theos2-context">
         __THEOS2_CONTEXT_HTML__
@@ -767,6 +802,7 @@ def _build_dashboard_html(
     const briefsBySubdistrict = __BRIEFS_JSON__;
     const theos2PreviewData = __THEOS2_JSON__;
     const sentinel1QuicklookData = __SENTINEL1_QUICKLOOK_JSON__;
+    const demQuicklookData = __DEM_QUICKLOOK_JSON__;
     const localDataLibrarySummary = __LOCAL_DATA_JSON__;
     const actionColors = {
       A: '#b73c3c',
@@ -1037,11 +1073,13 @@ def _build_dashboard_html(
             sentinel1_quicklook_rows,
             ensure_ascii=False,
         ),
+        "__DEM_QUICKLOOK_JSON__": json.dumps(dem_quicklook_rows, ensure_ascii=False),
         "__LOCAL_DATA_JSON__": json.dumps(local_data_summary, ensure_ascii=False),
         "__THEOS2_CONTEXT_HTML__": _theos2_context_html(theos2_preview_rows),
         "__SENTINEL1_CONTEXT_HTML__": _sentinel1_context_html(
             sentinel1_quicklook_rows
         ),
+        "__DEM_CONTEXT_HTML__": _dem_context_html(dem_quicklook_rows),
         "__LOCAL_DATA_LIBRARY_HTML__": _local_data_library_html(local_data_summary),
         "__VALIDATION_SUMMARY__": html.escape(validation_summary),
         "__INITIAL_BRIEF__": html.escape(initial_brief),
@@ -1156,6 +1194,7 @@ def _local_data_library_html(summary: dict[str, Any]) -> str:
             '<div class="readiness-card">',
             "<strong>DEM readiness</strong>",
             f"<span>Packages: {html.escape(str(dem.get('package_count', 0)))}; DEM members: {html.escape(str(dem.get('member_count', 0)))}</span>",
+            f"<span>DEM quicklooks: {html.escape(str(dem.get('quicklook_count', 0)))}</span>",
             f"<span>Status: terrain context only; {html.escape(str(dem.get('processing_scope', 'unavailable')))}</span>",
             f"<span>Checksum: {html.escape(str(dem.get('package_sha256_status', 'unavailable')))}</span>",
             f"<span>Not flood observation: {html.escape(str(dem.get('flood_observation_status', 'unavailable')))}</span>",
@@ -1223,6 +1262,38 @@ def _sentinel1_context_html(rows: list[dict[str, str]]) -> str:
             f"<span>Timing: {timing}</span>"
             f"<span>Provenance: {provenance}</span>"
             f"<span>SHA-256 prefix: {sha_prefix}</span>"
+            f"<span>{warning}</span>"
+            "</div>"
+        )
+    return "\n".join(cards)
+
+
+def _dem_context_html(rows: list[dict[str, str]]) -> str:
+    if not rows:
+        return (
+            '<p class="note">DEM terrain quicklook has not been generated. DEM remains '
+            "terrain context only and requires extracted member checksums outside Git.</p>"
+        )
+    cards: list[str] = []
+    for row in rows[:1]:
+        member_name = html.escape(row.get("member_name", "unknown"))
+        quicklook_path = html.escape(row.get("quicklook_path", ""))
+        package_prefix = html.escape(row.get("package_sha256_prefix", ""))
+        member_prefix = html.escape(row.get("member_sha256_prefix", ""))
+        warning = html.escape(
+            row.get(
+                "warning_text",
+                "DEM terrain context only; not flood observation; not flood label; "
+                "not reference mask; not an official warning.",
+            )
+        )
+        cards.append(
+            '<div class="dem-card">'
+            f'<img src="{quicklook_path}" alt="DEM terrain context quicklook">'
+            "<strong>DEM terrain quicklook</strong>"
+            f"<span>Member: {member_name}</span>"
+            f"<span>Package SHA-256 prefix: {package_prefix}</span>"
+            f"<span>Member SHA-256 prefix: {member_prefix}</span>"
             f"<span>{warning}</span>"
             "</div>"
         )

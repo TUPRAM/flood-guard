@@ -140,6 +140,17 @@ Dashboard Sentinel-1 SAR context:
 | `sentinel1_sar_context_quicklook_only` | Processing scope for quicklook previews only. |
 | `event timing unresolved unless proven otherwise` | Required warning because local Sentinel-1 provenance is not solved. |
 
+Dashboard DEM terrain context:
+
+| Artifact | Meaning |
+| --- | --- |
+| `dem_quicklook_manifest.csv` | Manifest for a small extracted-member DEM terrain quicklook. |
+| `dem_quicklook.png` | Small DEM terrain context PNG; not flood observation or validation. |
+| `dem_terrain_context_quicklook_only` | Processing scope for DEM quicklook previews only. |
+| `not_flood_observation` | DEM is terrain context, not observed flood water. |
+| `not_flood_label` | DEM must not be used as an ML label or target. |
+| `not_reference_mask` | DEM must not be used as the legal flood reference mask. |
+
 Dashboard v6 Local Data Library panel:
 
 | Item | Meaning |
@@ -320,6 +331,34 @@ This manifest records package-level readiness for local Copernicus DEM/elevation
 | `processing_allowed` | `False` for current rows. |
 | `reason_blocked` | Human-readable blocker explaining context-only use and no extraction. |
 | `assumptions` | Non-operational note that source ZIPs remain outside Git. |
+
+## DEM Context Quicklook Manifest
+
+File: `dem_quicklook_manifest.csv`
+
+This manifest records a small PNG terrain preview from one selected DEM TIFF member that was extracted outside Git and checksum-tracked. It is not a flood observation, flood label, reference mask, validation layer, or official warning product.
+
+| Field | Meaning |
+| --- | --- |
+| `source_name` | Source family for the DEM package. |
+| `package_name` | Local DEM ZIP package containing the selected member. |
+| `member_name` | Selected DEM TIFF member name. |
+| `package_sha256_prefix` | First 12 characters of the package-level SHA-256. |
+| `package_sha256_status` | Must be `recorded`. |
+| `member_sha256_prefix` | First 12 characters of the extracted member SHA-256. |
+| `member_sha256_status` | Must be `recorded`; generation refuses absent member checksums. |
+| `local_extracted_path_hint` | Redacted outside-Git path hint such as `<external_data_workspace>/member.tif`. |
+| `quicklook_path` | Relative PNG path used by `outputs/dashboard.html`. |
+| `quicklook_format` | Output image format, currently `png`. |
+| `quicklook_width` / `quicklook_height` | Small preview dimensions. |
+| `quicklook_file_size_bytes` | PNG file size; output should remain small. |
+| `raster_reader` | Optional local raster reader used, such as `rasterio` or GDAL. |
+| `reference_mask_status` | Must be `not_reference_mask`. |
+| `flood_observation_status` | Must be `not_flood_observation`. |
+| `flood_label_status` | Must be `not_flood_label`. |
+| `processing_scope` | `dem_terrain_context_quicklook_only`; not real flood processing. |
+| `warning_text` | Required warning: terrain context only, not flood observation, not flood label, not reference mask, and not an official warning. |
+| `assumptions` | Extracted DEM source remains outside Git and the quicklook is non-operational. |
 
 ## Synthetic SAR Baseline
 

@@ -32,6 +32,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const briefsBySubdistrict =" in html
     assert "const theos2PreviewData =" in html
     assert "const sentinel1QuicklookData =" in html
+    assert "const demQuicklookData =" in html
     assert "const localDataLibrarySummary =" in html
     assert "Sentinel-1 SAR Context" in html
     assert 'id="sentinel1-sar-context"' in html
@@ -42,6 +43,15 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "not validation" in html
     assert "not an official warning" in html
     assert "event timing unresolved unless proven otherwise" in html
+    assert "DEM Terrain Context" in html
+    assert 'id="dem-terrain-context"' in html
+    assert "dem_quicklook.png" in html
+    assert "DEM terrain quicklook" in html
+    assert "DEM terrain context only" in html
+    assert "not flood observation" in html
+    assert "not flood label" in html
+    assert "not reference mask" in html
+    assert "not an official warning" in html
     assert "THEOS-2 Optical Context" in html
     assert "Optical context only; not flood validation or an official warning." in html
     assert "theos2_previews/theos2_preview_" in html
@@ -55,6 +65,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "timing_unresolved" in html
     assert "SAR quicklooks: 2" in html
     assert "DEM readiness" in html
+    assert "DEM quicklooks: 1" in html
     assert "terrain context only" in html
     assert "THEOS-2 optical context readiness" in html
     assert "optical context only" in html
@@ -64,6 +75,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "sentinel1_provenance_resolved_manifest.csv" in html
     assert "sentinel1_quicklook_manifest.csv" in html
     assert "dem_selected_file_manifest.csv" in html
+    assert "dem_quicklook_manifest.csv" in html
     assert "C:\\Users" not in html
     assert "C:/Users" not in html
     assert "official flood observations" not in html

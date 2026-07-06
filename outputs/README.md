@@ -35,6 +35,8 @@ Current expected MVP output:
 - `sentinel1_quicklook_vv.png`
 - `sentinel1_quicklook_vh.png`
 - `dem_selected_file_manifest.csv`
+- `dem_quicklook_manifest.csv`
+- `dem_quicklook.png`
 - `theos2_local_metadata_manifest.csv`
 - `theos2_selected_file_manifest.csv`
 - `theos2_previews/*.svg`
@@ -70,5 +72,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 `sentinel1_quicklook_manifest.csv`, `sentinel1_quicklook_vv.png`, and `sentinel1_quicklook_vh.png` are small non-operational SAR context artifacts generated only after a selected Sentinel-1 SHA-256 record exists. They are not flood detection, not validation, not an official warning, and event timing remains unresolved unless provenance is solved. The source Sentinel-1 TIFF remains outside Git.
 
 `dem_selected_file_manifest.csv` records package-level checksums for local Copernicus DEM/elevation-slope ZIP packages and catalogs their DEM TIFF members without extraction. Rows remain `processing_allowed=False` and are terrain/slope context only, not flood observations, not flood labels, and not reference masks.
+
+`dem_quicklook_manifest.csv` and `dem_quicklook.png` are small non-operational terrain-context artifacts generated only after a selected DEM package checksum exists, a DEM TIFF member is extracted outside Git, and a member-level SHA-256 checksum is provided. They are terrain context only, not flood observation, not flood label, not reference mask, and not an official warning.
 
 `mae_sai_validation_summary.md` remains blocked until provider responses, local paths, checksums, and reference-mask gates pass.

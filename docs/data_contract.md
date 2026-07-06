@@ -265,6 +265,7 @@ Dashboard v6 displays a compact Local Data Library panel. It embeds summary coun
 - `outputs/sentinel1_provenance_resolved_manifest.csv`
 - optionally `outputs/sentinel1_quicklook_manifest.csv`
 - `outputs/dem_selected_file_manifest.csv`
+- optionally `outputs/dem_quicklook_manifest.csv`
 - `outputs/theos2_selected_file_manifest.csv`
 - optionally `outputs/theos2_thumbnail_manifest.csv`
 
@@ -285,6 +286,13 @@ Dashboard Sentinel-1 SAR context uses:
 - `outputs/sentinel1_quicklook_vh.png`
 
 These artifacts are SAR context only. They must not be described as flood detection, flood validation, reference masks, official warnings, or evidence that event timing is resolved.
+
+Dashboard DEM terrain context uses:
+
+- `outputs/dem_quicklook_manifest.csv`
+- `outputs/dem_quicklook.png`
+
+These artifacts are terrain context only. They must not be described as flood observations, flood labels, reference masks, official warnings, or real validation evidence.
 
 ## CDSE Metadata Query Output
 
@@ -577,6 +585,48 @@ Current DEM rows must remain:
 - `processing_allowed=False`
 
 DEM packages are terrain context only. They must not be used as flood observations, flood reference masks, or ML labels. The `member-level checksum` values may only be recorded later if members are extracted into a controlled local data workspace outside Git.
+
+## DEM Context Quicklook Manifest
+
+`outputs/dem_quicklook_manifest.csv` records a small PNG terrain preview from a selected DEM TIFF member. Generation is allowed only after the selected DEM package has `package_sha256_status=recorded`, the DEM member is extracted to a local workspace outside Git, and a member-level SHA-256 checksum is supplied and verified.
+
+Required columns include:
+
+- `source_name`
+- `package_name`
+- `member_name`
+- `package_sha256_prefix`
+- `package_sha256_status`
+- `member_sha256_prefix`
+- `member_sha256_status`
+- `local_extracted_path_hint`
+- `quicklook_path`
+- `quicklook_format`
+- `quicklook_width`
+- `quicklook_height`
+- `quicklook_file_size_bytes`
+- `raster_reader`
+- `reference_mask_status`
+- `flood_observation_status`
+- `flood_label_status`
+- `processing_scope`
+- `warning_text`
+- `assumptions`
+
+Current DEM quicklook rows must remain:
+
+- `package_sha256_status=recorded`
+- `member_sha256_status=recorded`
+- `local_extracted_path_hint=<external_data_workspace>/...`
+- `quicklook_path=dem_quicklook.png`
+- `quicklook_format=png`
+- `reference_mask_status=not_reference_mask`
+- `flood_observation_status=not_flood_observation`
+- `flood_label_status=not_flood_label`
+- `processing_scope=dem_terrain_context_quicklook_only`
+- `warning_text=DEM terrain context only; not flood observation; not flood label; not reference mask; not an official warning.`
+
+The extracted DEM TIFF must remain outside Git. The committed PNG is a small dashboard artifact and must not be treated as a source DEM product.
 
 ## Synthetic SAR Baseline Output
 

@@ -53,6 +53,13 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "sentinel1_provenance_resolved_manifest.csv",
         "sentinel1_sar_context_readiness_only",
         "sentinel1_provenance_resolution_only",
+        "dem_selected_file_manifest.csv",
+        "package_sha256",
+        "package_sha256_status",
+        "checksum_strategy",
+        "dem_terrain_context_readiness_only",
+        "not_flood_observation",
+        "not_flood_label",
         "provenance_status",
         "event_timing_status",
         "unresolved_placeholder_filename",
@@ -104,6 +111,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "generate_theos2_features.py" in text
     assert "build_sentinel1_selected_manifest.py" in text
     assert "resolve_sentinel1_provenance.py" in text
+    assert "build_dem_selected_manifest.py" in text
     assert "generate_mae_sai_validation_summary.py" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
@@ -283,6 +291,7 @@ def test_source_registry_mentions_theos2_as_blocked_optical_context() -> None:
     assert "Sentinel-1 standalone TIFF overlaps the Mae Sai MVP point" in text
     assert "outputs/sentinel1_selected_file_manifest.csv" in text
     assert "outputs/sentinel1_provenance_resolved_manifest.csv" in text
+    assert "outputs/dem_selected_file_manifest.csv" in text
     assert "processing_allowed=False" in text
 
 
@@ -298,10 +307,13 @@ def test_local_data_library_doc_describes_catalog_and_blockers() -> None:
         "outputs/sentinel1_selected_file_manifest.csv",
         "outputs/sentinel1_provenance_resolved_manifest.csv",
         "docs/sentinel1_local_provenance.md",
+        "outputs/dem_selected_file_manifest.csv",
         "build_sentinel1_selected_manifest.py",
         "resolve_sentinel1_provenance.py",
+        "build_dem_selected_manifest.py",
         "sentinel1_sar_context_readiness_only",
         "timing_unresolved",
+        "dem_terrain_context_readiness_only",
         "drive-download-20260705T102948Z-3-001.zip",
         "Copernicus DEM",
         "THEOS-2 optical",
@@ -401,3 +413,33 @@ def test_sentinel1_provenance_report_documents_unresolved_timing() -> None:
         assert "sentinel1_provenance_resolved_manifest.csv" in text
         assert "timing_unresolved" in text
         assert "processing_allowed=False" in text
+
+
+def test_dem_selected_manifest_output_is_documented_and_context_only() -> None:
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(encoding="utf-8")
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in (output_text, contract_text, dictionary_text, backlog_text):
+        assert "dem_selected_file_manifest.csv" in text
+
+    for phrase in (
+        "package-level checksum",
+        "member-level checksum",
+        "terrain/slope context",
+        "not_flood_observation",
+        "not_flood_label",
+        "not_reference_mask",
+        "dem_terrain_context_readiness_only",
+        "processing_allowed=False",
+    ):
+        assert phrase in contract_text
+
+    assert "Task 44 - Local Data Library Dashboard Panel" in backlog_text

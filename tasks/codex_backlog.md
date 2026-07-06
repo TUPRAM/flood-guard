@@ -268,4 +268,10 @@ Acceptance: selected Sentinel-1 readiness rows identify acquisition date/time, p
 
 Build a metadata-only selected-file readiness lane for the local Copernicus DEM/elevation-slope assets.
 
-Acceptance: selected DEM files or ZIP members are cataloged with redacted path hints, source package, raster metadata where available, checksum status, terrain-context candidate use, and `processing_allowed=False` until local file checksums and scope gates are clear. Source DEM TIFFs and ZIP packages remain outside Git.
+Acceptance: `outputs/dem_selected_file_manifest.csv` catalogs selected DEM ZIP members with redacted path hints, source package, package-level checksum status, terrain-context candidate use, and `processing_allowed=False` until member-level extraction/checksum and scope gates are clear. Source DEM TIFFs and ZIP packages remain outside Git.
+
+## Task 44 - Local Data Library Dashboard Panel
+
+Expose the local data library and selected readiness lanes in the static dashboard as a compact metadata panel.
+
+Acceptance: `outputs/dashboard.html` shows counts and statuses for local Sentinel-1, DEM, and THEOS-2 lanes from generated manifests; it distinguishes fixture/demo outputs from local metadata readiness; it does not fetch files, expose absolute paths, or imply that local assets are official flood observations.

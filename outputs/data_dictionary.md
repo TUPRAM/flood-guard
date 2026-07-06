@@ -246,6 +246,36 @@ This manifest records metadata-only provenance findings for the selected local S
 
 Current local result: the selected TIFF overlaps Mae Sai and has VV/VH bands, but acquisition date and product id are not recoverable from committed evidence. It must not be used as a pre/post real flood baseline input yet.
 
+## DEM Selected File Manifest
+
+File: `dem_selected_file_manifest.csv`
+
+This manifest records package-level readiness for local Copernicus DEM/elevation-slope ZIP assets. It is terrain context only and does not extract or commit source DEM TIFF members.
+
+| Field | Meaning |
+| --- | --- |
+| `package_name` | Local DEM ZIP package name. |
+| `member_name` | DEM/elevation-slope TIFF member name inside the package. |
+| `local_package_path_hint` | Redacted package path such as `<input_dir>/package.zip`. |
+| `member_path_hint` | Redacted package/member hint such as `<input_dir>/package.zip::member.tif`. |
+| `package_sha256` | SHA-256 checksum of the whole ZIP package. |
+| `package_sha256_status` | `recorded` after the package checksum is computed. |
+| `package_file_size_bytes` / `package_file_size_gb` | Local ZIP package size. |
+| `zip_member_count` | Number of members in the selected ZIP package from the local data library. |
+| `member_size_bytes` / `member_size_gb` | Uncompressed member size from the ZIP catalog. |
+| `member_kind` | Member type, currently `image_tiff` for DEM rows. |
+| `checksum_strategy` | Package-level checksum first; member-level checksum only if extracted later into a controlled workspace. |
+| `candidate_use` | Terrain/slope context for false-positive review and exposure explanation. |
+| `source_license_status` | User-reported local hackathon free-use status, not an operational authorization. |
+| `reference_mask_status` | `not_reference_mask`; DEM is not a flood reference mask. |
+| `flood_observation_status` | `not_flood_observation`; DEM is terrain context, not observed water. |
+| `flood_label_status` | `not_flood_label`; DEM must not be used as an ML target. |
+| `processing_scope` | Limited scope, currently `dem_terrain_context_readiness_only`. |
+| `processing_status` | Current state, `blocked_until_member_extraction_and_scope_review`. |
+| `processing_allowed` | `False` for current rows. |
+| `reason_blocked` | Human-readable blocker explaining context-only use and no extraction. |
+| `assumptions` | Non-operational note that source ZIPs remain outside Git. |
+
 ## Synthetic SAR Baseline
 
 Files: `sample_sar_baseline.csv` and `sample_sar_validation_metrics.csv`

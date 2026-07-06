@@ -476,6 +476,51 @@ Current local finding:
 
 The real SAR baseline gate must reject unresolved Sentinel-1 provenance. A row may only become baseline-ready when provenance is confirmed, event timing is confirmed, reference-mask status is confirmed, a resolved product id exists, and the row is classified as `pre_event_candidate` or `post_event_candidate`.
 
+## DEM Selected-File Manifest
+
+`outputs/dem_selected_file_manifest.csv` records selected local Copernicus DEM/elevation-slope ZIP packages and their contained DEM TIFF member names without extracting source data.
+
+Required columns include:
+
+- `source_name`
+- `package_name`
+- `member_name`
+- `local_package_path_hint`
+- `member_path_hint`
+- `package_sha256`
+- `package_sha256_status`
+- `package_file_size_bytes`
+- `package_file_size_gb`
+- `zip_member_count`
+- `member_size_bytes`
+- `member_size_gb`
+- `member_kind`
+- `checksum_strategy`
+- `candidate_use`
+- `source_license_status`
+- `reference_mask_status`
+- `flood_observation_status`
+- `flood_label_status`
+- `processing_scope`
+- `processing_status`
+- `processing_allowed`
+- `reason_blocked`
+- `assumptions`
+
+Current DEM rows must remain:
+
+- `package_sha256_status=recorded`
+- `checksum_strategy=package-level checksum recorded first`
+- `candidate_use=terrain/slope context for false-positive review and exposure explanation`
+- `reference_mask_status=not_reference_mask`
+- `flood_observation_status=not_flood_observation`
+- `flood_label_status=not_flood_label`
+- `processing_scope=dem_terrain_context_readiness_only`
+- `processing_status=blocked_until_member_extraction_and_scope_review`
+- `processing_allowed=False`
+
+DEM packages are terrain context only. They must not be used as flood observations, flood reference masks, or ML labels. The `member-level checksum` values may only be recorded later if members are extracted into a controlled local data workspace outside Git.
+
 ## Synthetic SAR Baseline Output
 
 The current SAR baseline is a synthetic, non-ML fixture used to test validation wiring. It does not read real Sentinel-1 imagery.

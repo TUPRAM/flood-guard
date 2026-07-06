@@ -98,6 +98,18 @@ These contain DEM/elevation-slope TIFF tiles. They are useful for:
 
 They are not flood observations, not reference masks, and not validation labels.
 
+Selected DEM readiness:
+
+- Manifest: `outputs/dem_selected_file_manifest.csv`
+- Generator: `scripts/build_dem_selected_manifest.py`
+- Current checksum strategy: package-level SHA-256 first
+- Current package SHA-256 status: `recorded`
+- Current processing scope: `dem_terrain_context_readiness_only`
+- Current processing gate: `processing_allowed=False`
+- Current use: terrain/slope context for false-positive review and exposure explanation
+
+Member-level checksums are intentionally not recorded yet because that would require extraction. If DEM members are extracted later, they must go into a controlled local data workspace outside Git and receive their own file-level checksums before any raster processing.
+
 ### THEOS-2 Optical Files
 
 THEOS-2 remains the optical context lane:
@@ -151,6 +163,12 @@ Resolve local Sentinel-1 provenance and timing evidence:
 uv run python scripts/resolve_sentinel1_provenance.py
 ```
 
+Build the selected DEM package-readiness manifest:
+
+```powershell
+uv run python scripts/build_dem_selected_manifest.py
+```
+
 Inspect top-level groups:
 
 ```powershell
@@ -168,5 +186,6 @@ Import-Csv outputs/local_data_library_zip_members.csv | Group-Object library_gro
 - Do not commit source TIFFs, overview files, ZIP packages, or extracted ZIP members.
 - Do not treat the standalone Sentinel-1 TIFF as a pre/post flood pair until provenance and timing are clarified.
 - Do not treat DEM or THEOS-2 imagery as flood labels.
+- Do not treat DEM as a flood observation, flood reference mask, or ML target.
 - Do not train ML from this library manifest.
 - Do not present any output as an official warning.

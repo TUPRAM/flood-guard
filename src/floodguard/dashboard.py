@@ -59,6 +59,7 @@ def write_static_dashboard(
         theos2_selected_manifest_path=theos2_selected_manifest_path,
         theos2_thumbnail_manifest_path=theos2_thumbnail_manifest_path,
     )
+    validation_metric_cards = _read_validation_metric_cards(output_dir)
 
     top_priority = _select_top_actionable(priority_geojson)
     html_text = _build_dashboard_html(
@@ -71,6 +72,7 @@ def write_static_dashboard(
         sentinel1_quicklook_rows=sentinel1_quicklook_rows,
         dem_quicklook_rows=dem_quicklook_rows,
         local_data_summary=local_data_summary,
+        validation_metric_cards=validation_metric_cards,
     )
 
     target = Path(output_path)
@@ -297,6 +299,7 @@ def _build_dashboard_html(
     sentinel1_quicklook_rows: list[dict[str, str]],
     dem_quicklook_rows: list[dict[str, str]],
     local_data_summary: dict[str, Any],
+    validation_metric_cards: list[dict[str, str]],
 ) -> str:
     props = top_priority.get("properties") or {}
     best_intervention = _scenario_summary(
@@ -395,11 +398,10 @@ def _build_dashboard_html(
       background: #e3e9df;
     }
     .app-shell {
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 16px;
+      gap: 12px;
+      padding: 14px 16px 0;
     }
     .app-header {
       display: grid;
@@ -409,7 +411,7 @@ def _build_dashboard_html(
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 14px 16px;
+      padding: 12px 16px;
       box-shadow: 0 10px 26px rgba(32, 39, 34, .06);
     }
     .brand-row {
@@ -433,7 +435,7 @@ def _build_dashboard_html(
     }
     .brand-copy h1 {
       margin: 0 0 4px;
-      font-size: 26px;
+      font-size: 25px;
     }
     .brand-copy p {
       margin: 0;
@@ -472,7 +474,7 @@ def _build_dashboard_html(
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 12px;
+      padding: 10px 11px;
       display: grid;
       gap: 4px;
       box-shadow: 0 8px 20px rgba(32, 39, 34, .04);
@@ -490,9 +492,10 @@ def _build_dashboard_html(
       overflow-wrap: anywhere;
     }
     .dashboard-workspace {
-      min-height: calc(100vh - 190px);
+      height: clamp(500px, calc(100vh - 390px), 540px);
+      min-height: 500px;
       display: grid;
-      grid-template-columns: minmax(250px, 280px) minmax(540px, 1fr) minmax(330px, 390px);
+      grid-template-columns: minmax(250px, 280px) minmax(540px, 1fr) minmax(330px, 380px);
       gap: 14px;
       align-items: stretch;
     }
@@ -506,9 +509,9 @@ def _build_dashboard_html(
       min-width: 0;
     }
     .control-panel {
-      padding: 14px;
+      padding: 12px;
       overflow-y: auto;
-      max-height: calc(100vh - 190px);
+      max-height: 100%;
     }
     .panel-title {
       display: flex;
@@ -528,16 +531,16 @@ def _build_dashboard_html(
     }
     .map-panel {
       display: grid;
-      grid-template-rows: auto minmax(520px, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
       overflow: hidden;
-      min-height: 640px;
+      min-height: 500px;
     }
     .map-heading {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       border-bottom: 1px solid var(--line);
     }
     .map-heading h2 {
@@ -559,9 +562,9 @@ def _build_dashboard_html(
       z-index: 480;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px 18px;
+      gap: 7px 16px;
       max-width: min(560px, calc(100% - 28px));
-      padding: 12px;
+      padding: 10px;
       background: rgba(255, 255, 255, .94);
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -591,9 +594,23 @@ def _build_dashboard_html(
     .road-sample.medium { border-color: #d36a35; border-style: dashed; }
     .road-sample.low { border-color: #d8a629; border-style: dashed; }
     .road-sample.very-low { border-color: #7f8a82; border-style: dotted; }
+    .leaflet-tooltip.subdistrict-label {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      color: #101712;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, .9);
+      white-space: normal;
+      width: 110px;
+      pointer-events: none;
+    }
     .decision-panel {
       overflow-y: auto;
-      max-height: calc(100vh - 190px);
+      max-height: 100%;
       padding: 0;
     }
     .panel-tabs {
@@ -622,7 +639,7 @@ def _build_dashboard_html(
       box-shadow: inset 0 -2px 0 #255fb8;
     }
     .panel-section {
-      padding: 14px;
+      padding: 12px;
       border-bottom: 1px solid var(--line);
     }
     .panel-section:last-child {
@@ -789,30 +806,61 @@ def _build_dashboard_html(
       border-top: 1px solid var(--line);
       padding-top: 8px;
     }
+    .safety-note {
+      margin-top: 10px;
+      border: 1px solid #b8cdea;
+      border-radius: 6px;
+      background: #f4f8ff;
+      color: #255fb8;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .context-preview-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .context-preview-heading h2 {
+      margin: 0;
+    }
+    .context-preview-heading span {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .context-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
     .theos2-context,
     .sar-context,
     .dem-context {
       display: grid;
       gap: 8px;
-      margin: 10px 0 4px;
+      margin: 0;
     }
     .theos2-card,
     .sar-card,
     .dem-card {
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 10px;
+      padding: 7px;
       background: #fbfcf8;
       display: grid;
-      gap: 8px;
+      gap: 5px;
     }
     .theos2-card img,
     .sar-card img,
     .dem-card img {
       display: block;
       width: 100%;
-      max-height: 150px;
-      object-fit: contain;
+      aspect-ratio: 1 / 1;
+      max-height: 92px;
+      object-fit: cover;
       border: 1px solid var(--line);
       border-radius: 6px;
       background: #f7f8f4;
@@ -820,19 +868,29 @@ def _build_dashboard_html(
     .theos2-card strong,
     .sar-card strong,
     .dem-card strong {
+      font-size: 11px;
+      line-height: 1.2;
       overflow-wrap: anywhere;
     }
     .theos2-card span,
     .sar-card span,
     .dem-card span {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 10px;
+      line-height: 1.25;
       overflow-wrap: anywhere;
+    }
+    .sar-card:nth-child(n+2),
+    .theos2-card:nth-child(n+2),
+    .theos2-card span:nth-of-type(n+2),
+    .sar-card span:nth-of-type(n+2),
+    .dem-card span:nth-of-type(n+2) {
+      display: none;
     }
     .local-library {
       display: grid;
-      gap: 10px;
-      margin: 10px 0 4px;
+      gap: 7px;
+      margin: 6px 0 4px;
     }
     .local-counts {
       display: grid;
@@ -860,11 +918,11 @@ def _build_dashboard_html(
     .readiness-card {
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 10px;
+      padding: 8px 10px;
       background: #fbfcf8;
       display: grid;
-      gap: 5px;
-      font-size: 13px;
+      gap: 3px;
+      font-size: 12px;
     }
     .readiness-card strong {
       overflow-wrap: anywhere;
@@ -917,7 +975,7 @@ def _build_dashboard_html(
       white-space: nowrap;
     }
     #map {
-      min-height: 520px;
+      min-height: 0;
       height: 100%;
       width: 100%;
       position: relative;
@@ -946,13 +1004,20 @@ def _build_dashboard_html(
     }
     .docs {
       border-top: 1px solid var(--line);
-      padding: 18px 22px 28px;
-      background: var(--panel);
+      padding: 8px 16px 8px;
+      background: var(--bg);
     }
     .doc-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+    }
+    .doc-grid article {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 8px 20px rgba(32, 39, 34, .04);
     }
     pre {
       margin: 0;
@@ -961,11 +1026,84 @@ def _build_dashboard_html(
       background: #f6f7f1;
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 12px;
-      max-height: 360px;
+      padding: 9px;
+      max-height: 76px;
       overflow: auto;
       font: 12px/1.45 Consolas, Monaco, monospace;
       color: #263027;
+    }
+    .report-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .report-heading h2 {
+      margin: 0;
+    }
+    .report-heading span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .validation-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .validation-metric {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 8px;
+      background: #fbfcf8;
+      min-width: 0;
+    }
+    .validation-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+    .validation-metric strong {
+      font-size: 18px;
+      line-height: 1.1;
+    }
+    .report-notes {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .brief-summary {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 9px;
+      background: #fbfcf8;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .brief-summary strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .brief-summary ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    .app-footer {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.3fr) minmax(180px, auto);
+      gap: 12px;
+      align-items: center;
+      padding: 10px 16px 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .app-footer strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 2px;
     }
     .note {
       font-size: 12px;
@@ -1004,6 +1142,9 @@ def _build_dashboard_html(
         min-height: 560px;
         grid-template-rows: auto 500px;
       }
+      .context-preview-grid {
+        grid-template-columns: 1fr;
+      }
       .map-legend {
         position: static;
         max-width: none;
@@ -1017,6 +1158,8 @@ def _build_dashboard_html(
       }
       .doc-grid { grid-template-columns: 1fr; }
       .legend { grid-template-columns: 1fr 1fr; }
+      .app-footer { grid-template-columns: 1fr; }
+      .validation-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -1052,7 +1195,7 @@ def _build_dashboard_html(
     <section class="dashboard-workspace" data-dashboard-section="dashboard-workspace" aria-label="FloodGuard judge-demo workspace">
       <aside class="control-panel" data-dashboard-section="control-panel">
         <div class="panel-title">
-          <h2>Controls</h2>
+          <h2>Controls &amp; Scenario</h2>
           <span>Scenario setup</span>
         </div>
         <div class="control-stack">
@@ -1157,23 +1300,32 @@ def _build_dashboard_html(
             <li>Temporary shelter delta: <strong id="panel-detail-temp">__TOP_TEMP_DELTA__</strong></li>
             <li>Road closure delta: <strong id="panel-detail-road">__TOP_ROAD_DELTA__</strong></li>
           </ul>
+          <div class="safety-note">Context only. Not flood detection. Not validation. Not an official warning.</div>
         </section>
         <section class="panel-section" data-dashboard-section="context-readiness-panel">
-          <div class="panel-title">
+          <div class="context-preview-heading">
             <h2>Context Assets</h2>
-            <span>not flood labels</span>
+            <span>preview only; not flood labels</span>
           </div>
-          <h3>Sentinel-1 SAR Context</h3>
-          <div class="sar-context" id="sentinel1-sar-context">
-            __SENTINEL1_CONTEXT_HTML__
-          </div>
-          <h3>DEM Terrain Context</h3>
-          <div class="dem-context" id="dem-terrain-context">
-            __DEM_CONTEXT_HTML__
-          </div>
-          <h3>THEOS-2 Optical Context</h3>
-          <div class="theos2-context" id="theos2-context">
-            __THEOS2_CONTEXT_HTML__
+          <div class="context-preview-grid">
+            <div>
+              <h3>Sentinel-1 SAR Context</h3>
+              <div class="sar-context" id="sentinel1-sar-context">
+                __SENTINEL1_CONTEXT_HTML__
+              </div>
+            </div>
+            <div>
+              <h3>DEM Terrain Context</h3>
+              <div class="dem-context" id="dem-terrain-context">
+                __DEM_CONTEXT_HTML__
+              </div>
+            </div>
+            <div>
+              <h3>THEOS-2 Optical Context</h3>
+              <div class="theos2-context" id="theos2-context">
+                __THEOS2_CONTEXT_HTML__
+              </div>
+            </div>
           </div>
         </section>
         <section class="panel-section">
@@ -1192,15 +1344,31 @@ def _build_dashboard_html(
   <section class="docs report-section" data-dashboard-section="report-section">
     <div class="doc-grid">
       <article id="validation-summary">
-        <h2>Validation Summary</h2>
+        <div class="report-heading"><h2>Validation Summary</h2><span>Fixture Metrics</span></div>
+        <div class="validation-metric-grid">__VALIDATION_METRIC_CARDS__</div>
+        <p class="report-notes">Toy metrics are synthetic fixtures only. Real flood validation remains blocked until legal reference masks and file-level gates pass.</p>
         <pre>__VALIDATION_SUMMARY__</pre>
       </article>
       <article id="action-brief">
-        <h2>Action Brief</h2>
+        <div class="report-heading"><h2>Action Brief</h2><span>Detailed</span></div>
+        <div class="brief-summary">
+          <strong>__TOP_SUBDISTRICT__ / __TOP_NAME__ (Class __TOP_CLASS__)</strong>
+          <ul>
+            <li>Immediate local action focus: __TOP_REASON__</li>
+            <li>Access-loss impact: __TOP_BASELINE_ACCESS__ people losing 30-minute access.</li>
+            <li>This is not an official warning. Use with local assessment and official advisories.</li>
+          </ul>
+        </div>
         <pre id="action-brief-pre">__INITIAL_BRIEF__</pre>
       </article>
     </div>
   </section>
+
+  <footer class="app-footer" data-dashboard-section="app-footer">
+    <div><strong>FloodGuard Thailand</strong>Preparedness and rapid post-event prioritization</div>
+    <div>Data sources and assumptions are shown in this dashboard. See accompanying reports for details.</div>
+    <div>Generated: 2025-07-07 08:00 ICT</div>
+  </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -1301,8 +1469,14 @@ def _build_dashboard_html(
 
     function bindPriorityFeature(feature, layer) {
       const id = String(feature.properties.subdistrict_id);
+      const name = String(feature.properties.subdistrict_name || '');
       featureLayers.set(id, layer);
       layer.bindPopup(popup(feature.properties));
+      layer.bindTooltip(`${id}<br>${name}`, {
+        permanent: true,
+        direction: 'center',
+        className: 'subdistrict-label'
+      });
       layer.on('click', () => selectSubdistrict(id, false));
     }
 
@@ -1536,6 +1710,9 @@ def _build_dashboard_html(
         ),
         "__DEM_CONTEXT_HTML__": _dem_context_html(dem_quicklook_rows),
         "__LOCAL_DATA_LIBRARY_HTML__": _local_data_library_html(local_data_summary),
+        "__VALIDATION_METRIC_CARDS__": _validation_metric_cards_html(
+            validation_metric_cards
+        ),
         "__VALIDATION_SUMMARY__": html.escape(validation_summary),
         "__INITIAL_BRIEF__": html.escape(initial_brief),
         "__TOP_ID__": _js_string(top_id),
@@ -1629,6 +1806,64 @@ def _scenario_summary(
     else:
         raise DashboardError(f"Unknown scenario summary preference: {prefer}")
     return {"label": label, "delta": _format_signed(delta, 0)}
+
+
+def _read_validation_metric_cards(output_dir: Path) -> list[dict[str, str]]:
+    rows = _read_csv_rows(output_dir / "sample_sar_validation_metrics.csv")
+    if not rows:
+        return [
+            {"label": "IoU", "value": "pending"},
+            {"label": "F1 / Dice", "value": "pending"},
+            {"label": "Precision", "value": "pending"},
+            {"label": "Recall", "value": "pending"},
+            {"label": "Area Error", "value": "pending"},
+        ]
+
+    row = rows[0]
+    return [
+        {"label": "IoU", "value": _format_metric_value(row.get("iou"))},
+        {"label": "F1 / Dice", "value": _format_metric_value(row.get("f1_dice"))},
+        {"label": "Precision", "value": _format_metric_value(row.get("precision"))},
+        {"label": "Recall", "value": _format_metric_value(row.get("recall"))},
+        {
+            "label": "Area Error",
+            "value": _format_metric_value(
+                row.get("area_error_ratio"),
+                signed=True,
+                percent=True,
+            ),
+        },
+    ]
+
+
+def _format_metric_value(
+    value: object,
+    *,
+    signed: bool = False,
+    percent: bool = False,
+) -> str:
+    try:
+        numeric = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return "pending"
+    if percent:
+        numeric *= 100
+        prefix = "+" if signed and numeric > 0 else ""
+        return f"{prefix}{numeric:.1f}%"
+    prefix = "+" if signed and numeric > 0 else ""
+    return f"{prefix}{numeric:.2f}"
+
+
+def _validation_metric_cards_html(cards: list[dict[str, str]]) -> str:
+    return "".join(
+        [
+            '<div class="validation-metric">'
+            f"<span>{html.escape(card['label'])}</span>"
+            f"<strong>{html.escape(card['value'])}</strong>"
+            "</div>"
+            for card in cards
+        ]
+    )
 
 
 def _local_data_library_html(summary: dict[str, Any]) -> str:

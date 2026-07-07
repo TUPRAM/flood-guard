@@ -84,11 +84,10 @@
       background: #e3e9df;
     }
     .app-shell {
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 16px;
+      gap: 12px;
+      padding: 14px 16px 0;
     }
     .app-header {
       display: grid;
@@ -98,7 +97,7 @@
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 14px 16px;
+      padding: 12px 16px;
       box-shadow: 0 10px 26px rgba(32, 39, 34, .06);
     }
     .brand-row {
@@ -122,7 +121,7 @@
     }
     .brand-copy h1 {
       margin: 0 0 4px;
-      font-size: 26px;
+      font-size: 25px;
     }
     .brand-copy p {
       margin: 0;
@@ -161,7 +160,7 @@
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 12px;
+      padding: 10px 11px;
       display: grid;
       gap: 4px;
       box-shadow: 0 8px 20px rgba(32, 39, 34, .04);
@@ -179,9 +178,10 @@
       overflow-wrap: anywhere;
     }
     .dashboard-workspace {
-      min-height: calc(100vh - 190px);
+      height: clamp(500px, calc(100vh - 390px), 540px);
+      min-height: 500px;
       display: grid;
-      grid-template-columns: minmax(250px, 280px) minmax(540px, 1fr) minmax(330px, 390px);
+      grid-template-columns: minmax(250px, 280px) minmax(540px, 1fr) minmax(330px, 380px);
       gap: 14px;
       align-items: stretch;
     }
@@ -195,9 +195,9 @@
       min-width: 0;
     }
     .control-panel {
-      padding: 14px;
+      padding: 12px;
       overflow-y: auto;
-      max-height: calc(100vh - 190px);
+      max-height: 100%;
     }
     .panel-title {
       display: flex;
@@ -217,16 +217,16 @@
     }
     .map-panel {
       display: grid;
-      grid-template-rows: auto minmax(520px, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
       overflow: hidden;
-      min-height: 640px;
+      min-height: 500px;
     }
     .map-heading {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       border-bottom: 1px solid var(--line);
     }
     .map-heading h2 {
@@ -248,9 +248,9 @@
       z-index: 480;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px 18px;
+      gap: 7px 16px;
       max-width: min(560px, calc(100% - 28px));
-      padding: 12px;
+      padding: 10px;
       background: rgba(255, 255, 255, .94);
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -280,9 +280,23 @@
     .road-sample.medium { border-color: #d36a35; border-style: dashed; }
     .road-sample.low { border-color: #d8a629; border-style: dashed; }
     .road-sample.very-low { border-color: #7f8a82; border-style: dotted; }
+    .leaflet-tooltip.subdistrict-label {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      color: #101712;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, .9);
+      white-space: normal;
+      width: 110px;
+      pointer-events: none;
+    }
     .decision-panel {
       overflow-y: auto;
-      max-height: calc(100vh - 190px);
+      max-height: 100%;
       padding: 0;
     }
     .panel-tabs {
@@ -311,7 +325,7 @@
       box-shadow: inset 0 -2px 0 #255fb8;
     }
     .panel-section {
-      padding: 14px;
+      padding: 12px;
       border-bottom: 1px solid var(--line);
     }
     .panel-section:last-child {
@@ -478,30 +492,61 @@
       border-top: 1px solid var(--line);
       padding-top: 8px;
     }
+    .safety-note {
+      margin-top: 10px;
+      border: 1px solid #b8cdea;
+      border-radius: 6px;
+      background: #f4f8ff;
+      color: #255fb8;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .context-preview-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .context-preview-heading h2 {
+      margin: 0;
+    }
+    .context-preview-heading span {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .context-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
     .theos2-context,
     .sar-context,
     .dem-context {
       display: grid;
       gap: 8px;
-      margin: 10px 0 4px;
+      margin: 0;
     }
     .theos2-card,
     .sar-card,
     .dem-card {
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 10px;
+      padding: 7px;
       background: #fbfcf8;
       display: grid;
-      gap: 8px;
+      gap: 5px;
     }
     .theos2-card img,
     .sar-card img,
     .dem-card img {
       display: block;
       width: 100%;
-      max-height: 150px;
-      object-fit: contain;
+      aspect-ratio: 1 / 1;
+      max-height: 92px;
+      object-fit: cover;
       border: 1px solid var(--line);
       border-radius: 6px;
       background: #f7f8f4;
@@ -509,19 +554,29 @@
     .theos2-card strong,
     .sar-card strong,
     .dem-card strong {
+      font-size: 11px;
+      line-height: 1.2;
       overflow-wrap: anywhere;
     }
     .theos2-card span,
     .sar-card span,
     .dem-card span {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 10px;
+      line-height: 1.25;
       overflow-wrap: anywhere;
+    }
+    .sar-card:nth-child(n+2),
+    .theos2-card:nth-child(n+2),
+    .theos2-card span:nth-of-type(n+2),
+    .sar-card span:nth-of-type(n+2),
+    .dem-card span:nth-of-type(n+2) {
+      display: none;
     }
     .local-library {
       display: grid;
-      gap: 10px;
-      margin: 10px 0 4px;
+      gap: 7px;
+      margin: 6px 0 4px;
     }
     .local-counts {
       display: grid;
@@ -549,11 +604,11 @@
     .readiness-card {
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 10px;
+      padding: 8px 10px;
       background: #fbfcf8;
       display: grid;
-      gap: 5px;
-      font-size: 13px;
+      gap: 3px;
+      font-size: 12px;
     }
     .readiness-card strong {
       overflow-wrap: anywhere;
@@ -606,7 +661,7 @@
       white-space: nowrap;
     }
     #map {
-      min-height: 520px;
+      min-height: 0;
       height: 100%;
       width: 100%;
       position: relative;
@@ -635,13 +690,20 @@
     }
     .docs {
       border-top: 1px solid var(--line);
-      padding: 18px 22px 28px;
-      background: var(--panel);
+      padding: 8px 16px 8px;
+      background: var(--bg);
     }
     .doc-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+    }
+    .doc-grid article {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 8px 20px rgba(32, 39, 34, .04);
     }
     pre {
       margin: 0;
@@ -650,11 +712,84 @@
       background: #f6f7f1;
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 12px;
-      max-height: 360px;
+      padding: 9px;
+      max-height: 76px;
       overflow: auto;
       font: 12px/1.45 Consolas, Monaco, monospace;
       color: #263027;
+    }
+    .report-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .report-heading h2 {
+      margin: 0;
+    }
+    .report-heading span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .validation-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .validation-metric {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 8px;
+      background: #fbfcf8;
+      min-width: 0;
+    }
+    .validation-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+    .validation-metric strong {
+      font-size: 18px;
+      line-height: 1.1;
+    }
+    .report-notes {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .brief-summary {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 9px;
+      background: #fbfcf8;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .brief-summary strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .brief-summary ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    .app-footer {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.3fr) minmax(180px, auto);
+      gap: 12px;
+      align-items: center;
+      padding: 10px 16px 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .app-footer strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 2px;
     }
     .note {
       font-size: 12px;
@@ -693,6 +828,9 @@
         min-height: 560px;
         grid-template-rows: auto 500px;
       }
+      .context-preview-grid {
+        grid-template-columns: 1fr;
+      }
       .map-legend {
         position: static;
         max-width: none;
@@ -706,6 +844,8 @@
       }
       .doc-grid { grid-template-columns: 1fr; }
       .legend { grid-template-columns: 1fr 1fr; }
+      .app-footer { grid-template-columns: 1fr; }
+      .validation-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -741,7 +881,7 @@
     <section class="dashboard-workspace" data-dashboard-section="dashboard-workspace" aria-label="FloodGuard judge-demo workspace">
       <aside class="control-panel" data-dashboard-section="control-panel">
         <div class="panel-title">
-          <h2>Controls</h2>
+          <h2>Controls &amp; Scenario</h2>
           <span>Scenario setup</span>
         </div>
         <div class="control-stack">
@@ -846,26 +986,35 @@
             <li>Temporary shelter delta: <strong id="panel-detail-temp">0</strong></li>
             <li>Road closure delta: <strong id="panel-detail-road">0</strong></li>
           </ul>
+          <div class="safety-note">Context only. Not flood detection. Not validation. Not an official warning.</div>
         </section>
         <section class="panel-section" data-dashboard-section="context-readiness-panel">
-          <div class="panel-title">
+          <div class="context-preview-heading">
             <h2>Context Assets</h2>
-            <span>not flood labels</span>
+            <span>preview only; not flood labels</span>
           </div>
-          <h3>Sentinel-1 SAR Context</h3>
-          <div class="sar-context" id="sentinel1-sar-context">
-            <div class="sar-card"><img src="sentinel1_quicklook_vv.png" alt="Sentinel-1 SAR context quicklook VV"><strong>Sentinel-1 VV SAR quicklook</strong><span>Source: Sentinel1_Thailand-0000000000-0000000000-002.tif</span><span>Timing: timing_unresolved</span><span>Provenance: unresolved_placeholder_filename</span><span>SHA-256 prefix: 3ab55fb0c043</span><span>SAR context only; not flood detection; not validation; not an official warning; event timing unresolved unless proven otherwise.</span></div>
+          <div class="context-preview-grid">
+            <div>
+              <h3>Sentinel-1 SAR Context</h3>
+              <div class="sar-context" id="sentinel1-sar-context">
+                <div class="sar-card"><img src="sentinel1_quicklook_vv.png" alt="Sentinel-1 SAR context quicklook VV"><strong>Sentinel-1 VV SAR quicklook</strong><span>Source: Sentinel1_Thailand-0000000000-0000000000-002.tif</span><span>Timing: timing_unresolved</span><span>Provenance: unresolved_placeholder_filename</span><span>SHA-256 prefix: 3ab55fb0c043</span><span>SAR context only; not flood detection; not validation; not an official warning; event timing unresolved unless proven otherwise.</span></div>
 <div class="sar-card"><img src="sentinel1_quicklook_vh.png" alt="Sentinel-1 SAR context quicklook VH"><strong>Sentinel-1 VH SAR quicklook</strong><span>Source: Sentinel1_Thailand-0000000000-0000000000-002.tif</span><span>Timing: timing_unresolved</span><span>Provenance: unresolved_placeholder_filename</span><span>SHA-256 prefix: 3ab55fb0c043</span><span>SAR context only; not flood detection; not validation; not an official warning; event timing unresolved unless proven otherwise.</span></div>
-          </div>
-          <h3>DEM Terrain Context</h3>
-          <div class="dem-context" id="dem-terrain-context">
-            <div class="dem-card"><img src="dem_quicklook.png" alt="DEM terrain context quicklook"><strong>DEM terrain quicklook</strong><span>Member: CopernicusDEM_Elevation_Slope_Thailand-0000046592-0000023296.tif</span><span>Package SHA-256 prefix: 9cb4b87c1dac</span><span>Member SHA-256 prefix: 9d6f4b2f8401</span><span>DEM terrain context only; not flood observation; not flood label; not reference mask; not an official warning.</span></div>
-          </div>
-          <h3>THEOS-2 Optical Context</h3>
-          <div class="theos2-context" id="theos2-context">
-            <div class="theos2-card"><img src="theos2_thumbnails/theos2_thumbnail_IMG_T2V_20250730033331_ORTHO_PMS_32-004.png" alt="THEOS-2 optical context preview for IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif"><strong>IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif</strong><span>Category: Disaster</span><span>Acquisition: 2025-07-30T03:33:31Z</span><span>Preview: True PNG thumbnail via rasterio</span><span>SHA-256 prefix: 1d18c3091f57</span><span>Optical context only; not flood validation or an official warning.</span></div>
+              </div>
+            </div>
+            <div>
+              <h3>DEM Terrain Context</h3>
+              <div class="dem-context" id="dem-terrain-context">
+                <div class="dem-card"><img src="dem_quicklook.png" alt="DEM terrain context quicklook"><strong>DEM terrain quicklook</strong><span>Member: CopernicusDEM_Elevation_Slope_Thailand-0000046592-0000023296.tif</span><span>Package SHA-256 prefix: 9cb4b87c1dac</span><span>Member SHA-256 prefix: 9d6f4b2f8401</span><span>DEM terrain context only; not flood observation; not flood label; not reference mask; not an official warning.</span></div>
+              </div>
+            </div>
+            <div>
+              <h3>THEOS-2 Optical Context</h3>
+              <div class="theos2-context" id="theos2-context">
+                <div class="theos2-card"><img src="theos2_thumbnails/theos2_thumbnail_IMG_T2V_20250730033331_ORTHO_PMS_32-004.png" alt="THEOS-2 optical context preview for IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif"><strong>IMG_T2V_20250730033331_ORTHO_PMS_32-004.tif</strong><span>Category: Disaster</span><span>Acquisition: 2025-07-30T03:33:31Z</span><span>Preview: True PNG thumbnail via rasterio</span><span>SHA-256 prefix: 1d18c3091f57</span><span>Optical context only; not flood validation or an official warning.</span></div>
 <div class="theos2-card"><img src="theos2_thumbnails/theos2_thumbnail_IMG_T2V_20250731035100_ORTHO_PMS_32-001.png" alt="THEOS-2 optical context preview for IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif"><strong>IMG_T2V_20250731035100_ORTHO_PMS_32-001.tif</strong><span>Category: Disaster|LULC</span><span>Acquisition: 2025-07-31T03:51:00Z</span><span>Preview: True PNG thumbnail via rasterio</span><span>SHA-256 prefix: 89caf5946e6b</span><span>Optical context only; not flood validation or an official warning.</span></div>
 <div class="theos2-card"><img src="theos2_thumbnails/theos2_thumbnail_IMG_T2V_20250731035100_ORTHO_PMS_32-003.png" alt="THEOS-2 optical context preview for IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif"><strong>IMG_T2V_20250731035100_ORTHO_PMS_32-003.tif</strong><span>Category: Disaster|LULC</span><span>Acquisition: 2025-07-31T03:51:00Z</span><span>Preview: True PNG thumbnail via rasterio</span><span>SHA-256 prefix: b8dc72dd30f2</span><span>Optical context only; not flood validation or an official warning.</span></div>
+              </div>
+            </div>
           </div>
         </section>
         <section class="panel-section">
@@ -921,7 +1070,9 @@
   <section class="docs report-section" data-dashboard-section="report-section">
     <div class="doc-grid">
       <article id="validation-summary">
-        <h2>Validation Summary</h2>
+        <div class="report-heading"><h2>Validation Summary</h2><span>Fixture Metrics</span></div>
+        <div class="validation-metric-grid"><div class="validation-metric"><span>IoU</span><strong>0.50</strong></div><div class="validation-metric"><span>F1 / Dice</span><strong>0.67</strong></div><div class="validation-metric"><span>Precision</span><strong>0.67</strong></div><div class="validation-metric"><span>Recall</span><strong>0.67</strong></div><div class="validation-metric"><span>Area Error</span><strong>0.0%</strong></div></div>
+        <p class="report-notes">Toy metrics are synthetic fixtures only. Real flood validation remains blocked until legal reference masks and file-level gates pass.</p>
         <pre># FloodGuard Validation Summary
 
 Generated from fixture-backed outputs. This is not a real flood validation report.
@@ -1018,7 +1169,15 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
 </pre>
       </article>
       <article id="action-brief">
-        <h2>Action Brief</h2>
+        <div class="report-heading"><h2>Action Brief</h2><span>Detailed</span></div>
+        <div class="brief-summary">
+          <strong>FG-TB-001 / River Market (Class A)</strong>
+          <ul>
+            <li>Immediate local action focus: High exposure and access loss require life-safety action.</li>
+            <li>Access-loss impact: 100 people losing 30-minute access.</li>
+            <li>This is not an official warning. Use with local assessment and official advisories.</li>
+          </ul>
+        </div>
         <pre id="action-brief-pre"># Action Brief - River Market (FG-TB-001)
 
 ## Priority / ลำดับความสำคัญ
@@ -1065,6 +1224,12 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
       </article>
     </div>
   </section>
+
+  <footer class="app-footer" data-dashboard-section="app-footer">
+    <div><strong>FloodGuard Thailand</strong>Preparedness and rapid post-event prioritization</div>
+    <div>Data sources and assumptions are shown in this dashboard. See accompanying reports for details.</div>
+    <div>Generated: 2025-07-07 08:00 ICT</div>
+  </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -1165,8 +1330,14 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
 
     function bindPriorityFeature(feature, layer) {
       const id = String(feature.properties.subdistrict_id);
+      const name = String(feature.properties.subdistrict_name || '');
       featureLayers.set(id, layer);
       layer.bindPopup(popup(feature.properties));
+      layer.bindTooltip(`${id}<br>${name}`, {
+        permanent: true,
+        direction: 'center',
+        className: 'subdistrict-label'
+      });
       layer.on('click', () => selectSubdistrict(id, false));
     }
 

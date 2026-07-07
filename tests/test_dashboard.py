@@ -59,8 +59,22 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "bounds.pad(mapBoundsPadding)" in html
     assert "ResizeObserver" in html
     assert "bounds.pad(0.18)" not in html
+    assert "subdistrict-label" in html
+    assert "layer.bindTooltip" in html
     assert "minmax(540px, 1fr)" in html
-    assert "min-height: 520px" in html
+    assert "height: clamp(500px, calc(100vh - 390px), 540px)" in html
+    assert "Controls &amp; Scenario" in html
+    assert "Context only. Not flood detection. Not validation. Not an official warning." in html
+    assert 'class="context-preview-grid"' in html
+    assert 'class="app-footer"' in html
+    assert 'data-dashboard-section="app-footer"' in html
+    assert "Generated: 2025-07-07 08:00 ICT" in html
+    assert 'class="validation-metric-grid"' in html
+    assert 'class="validation-metric"' in html
+    assert "Toy metrics are synthetic fixtures only" in html
+    assert "F1 / Dice" in html
+    assert "0.67" in html
+    assert 'class="brief-summary"' in html
     assert "Data Readiness" in html
     assert "Read This First" in html
     assert "Fixture-backed decision demo" in html

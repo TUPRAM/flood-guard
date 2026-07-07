@@ -53,6 +53,12 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Static HTML | embedded data | no backend" in html
     assert "Priority Map" in html
     assert "map.invalidateSize" in html
+    assert "const mapBoundsPadding = 0.42" in html
+    assert "function fitPriorityMapToData" in html
+    assert "function settleMapLayout" in html
+    assert "bounds.pad(mapBoundsPadding)" in html
+    assert "ResizeObserver" in html
+    assert "bounds.pad(0.18)" not in html
     assert "minmax(540px, 1fr)" in html
     assert "min-height: 520px" in html
     assert "Data Readiness" in html

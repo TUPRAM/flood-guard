@@ -1230,6 +1230,7 @@ def _build_dashboard_html(
       worsening: '#b73c3c',
       neutral: '#7f8a82'
     };
+    const mapBoundsPadding = 0.42;
     const state = {
       selectedId: '__TOP_ID__',
       scenario: 'baseline',
@@ -1314,6 +1315,22 @@ def _build_dashboard_html(
       if (state.showPriority) {
         priorityLayer.addData(visibleFeatures);
       }
+    }
+
+    function fitPriorityMapToData() {
+      map.invalidateSize({ pan: false });
+      const bounds = priorityLayer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds.pad(mapBoundsPadding), { animate: false });
+      } else {
+        map.setView([18.02, 100.02], 13);
+      }
+    }
+
+    function settleMapLayout() {
+      fitPriorityMapToData();
+      window.setTimeout(fitPriorityMapToData, 80);
+      window.setTimeout(fitPriorityMapToData, 350);
     }
 
     function selectSubdistrict(subdistrictId, zoomToFeature) {
@@ -1484,14 +1501,15 @@ def _build_dashboard_html(
     initializeDashboardControls();
     renderPriorityLayer();
     updateSelectedPanel();
-    const bounds = priorityLayer.getBounds();
-    if (bounds.isValid()) {
-      map.fitBounds(bounds.pad(0.18));
-    } else {
-      map.setView([18.02, 100.02], 13);
+    requestAnimationFrame(settleMapLayout);
+    window.addEventListener('load', settleMapLayout);
+    window.addEventListener('resize', settleMapLayout);
+    if ('ResizeObserver' in window) {
+      const mapPanel = document.querySelector('.map-panel');
+      if (mapPanel) {
+        new ResizeObserver(settleMapLayout).observe(mapPanel);
+      }
     }
-    requestAnimationFrame(() => map.invalidateSize());
-    window.addEventListener('resize', () => map.invalidateSize());
   </script>
 </body>
 </html>

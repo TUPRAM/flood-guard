@@ -46,6 +46,18 @@ def test_build_validation_summary_includes_fixture_metrics() -> None:
     )
 
     assert "# FloodGuard Validation Summary" in report
+    assert "## Decision Narrative" in report
+    assert "fixture-backed decision demo" in report
+    assert "not an official warning" in report
+    assert "## What The Fixture Proves" in report
+    assert "## Data Readiness Narrative" in report
+    assert "not agency flood products" in report
+    assert "provider response pending" in report
+    assert "## What Remains Blocked" in report
+    assert "Real-data ML remains blocked" in report
+    assert "## Real Mae Sai Gate Update" in report
+    assert "geometry access" in report
+    assert "ML-label use status" in report
     assert "Priority rows: 5" in report
     assert "Road-risk rows: 3" in report
     assert "Top actionable subdistrict: FG-TB-001 / River Market" in report

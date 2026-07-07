@@ -106,6 +106,14 @@ def test_reference_mask_licensing_log_has_required_rows() -> None:
 def test_readme_documents_no_download_cdse_output_workflow() -> None:
     text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
 
+    assert "Run The System Locally" in text
+    assert 'cd "C:\\Users\\iputu\\Documents\\Flood Guard"' in text
+    assert "uv sync --extra dev --extra theos2" in text
+    assert "uv run python scripts/generate_sample_decision_outputs.py" in text
+    assert "start outputs\\dashboard.html" in text
+    assert "uv run python -m http.server 8000 -d outputs" in text
+    assert "http://localhost:8000/dashboard.html" in text
+    assert "Do not commit source TIFF, ZIP, SAFE, JP2, NetCDF, GRIB, or overview files" in text
     assert "--profile mae_sai_2024 --output outputs/cdse_mae_sai_2024_metadata.csv" in text
     assert "--profile hat_yai_2025 --output outputs/cdse_hat_yai_2025_metadata.csv" in text
     assert "docs/live_metadata_snapshot_review_checklist.md" in text
@@ -192,6 +200,13 @@ def test_data_dictionary_mentions_dashboard_v4_exports() -> None:
     assert "Download filtered GeoJSON" in text
     assert "Dashboard v5 THEOS-2 cards" in text
     assert "Dashboard v6 Local Data Library panel" in text
+    assert "Dashboard v7 narrative panel" in text
+    assert "Read This First" in text
+    assert "What this dashboard can answer" in text
+    assert "What remains blocked" in text
+    assert "Real Mae Sai Gate Update" in text
+    assert "provider response pending" in text
+    assert "context layers are not flood labels" in text
     assert "Dashboard Sentinel-1 SAR context" in text
     assert "Dashboard DEM terrain context" in text
     assert "sentinel1_quicklook_vv.png" in text

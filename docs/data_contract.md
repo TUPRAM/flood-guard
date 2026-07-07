@@ -271,6 +271,16 @@ Dashboard v6 displays a compact Local Data Library panel. It embeds summary coun
 
 The panel must clearly separate `sentinel1_sar`, `copernicus_dem`, and `theos2_optical`, show `timing_unresolved` for unresolved Sentinel-1 provenance, show DEM as terrain context only, and show THEOS-2 as optical context only. It must not call `fetch`, require a backend, expose absolute local paths, or imply local metadata assets are official flood products.
 
+Dashboard v7 adds a dashboard status narrative. It must include:
+
+- `Read This First`
+- `What this dashboard can answer`
+- `What remains blocked`
+- `Next gate`
+- `Real Mae Sai Gate Update`
+
+The narrative must state that the current dashboard is a fixture-backed decision demo, that context layers are not flood labels or agency flood products, that real Mae Sai validation is blocked while provider response items remain pending, and that real-data ML is blocked until legal reference-mask and file-level gates pass.
+
 Dashboard THEOS-2 optical context uses:
 
 - `outputs/theos2_selected_file_manifest.csv`

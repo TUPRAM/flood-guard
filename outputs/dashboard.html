@@ -150,6 +150,47 @@
       color: var(--muted);
       font-size: 13px;
     }
+    .status-panel {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #fbfcf8;
+      display: grid;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .status-panel > strong {
+      font-size: 15px;
+    }
+    .status-panel p {
+      margin: 0;
+      font-size: 13px;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .status-item {
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
+      font-size: 13px;
+    }
+    .status-item strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+    .boundary-list,
+    .gate-list {
+      margin: 4px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .boundary-list li,
+    .gate-list li {
+      margin: 2px 0;
+    }
     .label {
       display: block;
       color: var(--muted);
@@ -377,6 +418,40 @@
     <aside>
       <h1>FloodGuard Decision Dashboard</h1>
       <p>Fixture-backed prototype for local prioritization. Not an official warning.</p>
+      <div class="status-panel" aria-label="Dashboard status narrative">
+        <strong>Read This First</strong>
+        <p><strong>Current status:</strong> Fixture-backed decision demo. It shows how FloodGuard turns flood probability, access loss, equity, road risk, and scenario changes into local action priorities.</p>
+        <div class="status-grid">
+          <div class="status-item">
+            <strong>What this dashboard can answer</strong>
+            <ul class="boundary-list">
+              <li>Which sample subdistrict is the highest actionable priority.</li>
+              <li>How temporary shelters or road closures change 30-minute access loss.</li>
+              <li>Which local Sentinel-1, DEM, and THEOS-2 assets are cataloged for context.</li>
+            </ul>
+          </div>
+          <div class="status-item">
+            <strong>What remains blocked</strong>
+            <ul class="boundary-list">
+              <li>Real Mae Sai validation is blocked until provider response pending items are resolved.</li>
+              <li>Context layers are not flood labels, not reference masks, and not agency flood products.</li>
+              <li>Real-data ML is not allowed until legal reference-mask and file-level gates pass.</li>
+            </ul>
+          </div>
+          <div class="status-item">
+            <strong>Next gate</strong>
+            <span>Real Mae Sai Gate Update requires:</span>
+            <ul class="gate-list">
+              <li>geometry access</li>
+              <li>local validation permission</li>
+              <li>derived metrics and screenshots/demo permission</li>
+              <li>redistribution or reference-only status</li>
+              <li>ML-label use status</li>
+              <li>citation and disclaimer requirements</li>
+            </ul>
+          </div>
+        </div>
+      </div>
       <div class="control-stack">
         <div>
           <label class="control-label" for="subdistrict-select">Subdistrict</label>
@@ -518,6 +593,35 @@
         <pre># FloodGuard Validation Summary
 
 Generated from fixture-backed outputs. This is not a real flood validation report.
+
+## Decision Narrative
+
+- Current status: fixture-backed decision demo for prioritization, scenario comparison, access loss, equity gap, road risk, and action briefs.
+- The dashboard and this report show the decision layer working end to end, but they do not prove real flood-detection accuracy.
+- This output is non-operational, not an official warning, and not a real-time sensor.
+
+## What The Fixture Proves
+
+- FPPS scoring, A-E action class assignment, and top-reason generation are deterministic.
+- Road-risk, access-loss, equity-gap, scenario, and sensitivity outputs can be joined into dashboard-ready GeoJSON.
+- Actionable brief selection favors A/B/C decision classes over a low-confidence numeric score leader.
+
+## Data Readiness Narrative
+
+- Local THEOS-2, Sentinel-1, and DEM assets are cataloged as context/readiness lanes with checksums or blocker states where available.
+- Sentinel-1 and DEM context quicklooks are not flood labels, not reference masks, and not agency flood products.
+- Real Mae Sai validation is blocked because provider response pending items still control reference-mask use, local processing, and redistribution/reference-only terms.
+
+## What Remains Blocked
+
+- Real IoU, F1/Dice, precision, recall, and area error remain blocked until a legal reference mask exists.
+- Real Sentinel-1 baseline processing remains blocked until local paths, checksums, timing, provenance, and reference-mask gates pass.
+- Real-data ML remains blocked until the non-ML baseline and legal label gates pass.
+
+## Real Mae Sai Gate Update
+
+- Required before real validation: geometry access, local validation permission, derived metrics permission, screenshots/demo permission, redistribution or reference-only status, ML-label use status, citation, and disclaimers.
+- Provider response pending: update `docs/reference_mask_licensing_log.md` and `docs/licensing_outreach_status.md` when UNOSAT/UNITAR or GISTDA replies arrive.
 
 ## Fixture Coverage
 

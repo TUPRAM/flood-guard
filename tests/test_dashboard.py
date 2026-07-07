@@ -34,6 +34,17 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const sentinel1QuicklookData =" in html
     assert "const demQuicklookData =" in html
     assert "const localDataLibrarySummary =" in html
+    assert "Read This First" in html
+    assert "Fixture-backed decision demo" in html
+    assert "What this dashboard can answer" in html
+    assert "What remains blocked" in html
+    assert "Real Mae Sai validation is blocked" in html
+    assert "provider response pending" in html
+    assert "Context layers are not flood labels" in html
+    assert "Real-data ML is not allowed" in html
+    assert "Next gate" in html
+    assert "geometry access" in html
+    assert "ML-label use status" in html
     assert "Sentinel-1 SAR Context" in html
     assert 'id="sentinel1-sar-context"' in html
     assert "sentinel1_quicklook_vv.png" in html

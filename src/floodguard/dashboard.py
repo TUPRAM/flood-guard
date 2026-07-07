@@ -461,6 +461,47 @@ def _build_dashboard_html(
       color: var(--muted);
       font-size: 13px;
     }
+    .status-panel {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #fbfcf8;
+      display: grid;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .status-panel > strong {
+      font-size: 15px;
+    }
+    .status-panel p {
+      margin: 0;
+      font-size: 13px;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .status-item {
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
+      font-size: 13px;
+    }
+    .status-item strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+    .boundary-list,
+    .gate-list {
+      margin: 4px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .boundary-list li,
+    .gate-list li {
+      margin: 2px 0;
+    }
     .label {
       display: block;
       color: var(--muted);
@@ -688,6 +729,40 @@ def _build_dashboard_html(
     <aside>
       <h1>FloodGuard Decision Dashboard</h1>
       <p>Fixture-backed prototype for local prioritization. Not an official warning.</p>
+      <div class="status-panel" aria-label="Dashboard status narrative">
+        <strong>Read This First</strong>
+        <p><strong>Current status:</strong> Fixture-backed decision demo. It shows how FloodGuard turns flood probability, access loss, equity, road risk, and scenario changes into local action priorities.</p>
+        <div class="status-grid">
+          <div class="status-item">
+            <strong>What this dashboard can answer</strong>
+            <ul class="boundary-list">
+              <li>Which sample subdistrict is the highest actionable priority.</li>
+              <li>How temporary shelters or road closures change 30-minute access loss.</li>
+              <li>Which local Sentinel-1, DEM, and THEOS-2 assets are cataloged for context.</li>
+            </ul>
+          </div>
+          <div class="status-item">
+            <strong>What remains blocked</strong>
+            <ul class="boundary-list">
+              <li>Real Mae Sai validation is blocked until provider response pending items are resolved.</li>
+              <li>Context layers are not flood labels, not reference masks, and not agency flood products.</li>
+              <li>Real-data ML is not allowed until legal reference-mask and file-level gates pass.</li>
+            </ul>
+          </div>
+          <div class="status-item">
+            <strong>Next gate</strong>
+            <span>Real Mae Sai Gate Update requires:</span>
+            <ul class="gate-list">
+              <li>geometry access</li>
+              <li>local validation permission</li>
+              <li>derived metrics and screenshots/demo permission</li>
+              <li>redistribution or reference-only status</li>
+              <li>ML-label use status</li>
+              <li>citation and disclaimer requirements</li>
+            </ul>
+          </div>
+        </div>
+      </div>
       <div class="control-stack">
         <div>
           <label class="control-label" for="subdistrict-select">Subdistrict</label>

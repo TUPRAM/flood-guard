@@ -20,6 +20,42 @@ This scaffold implements the first testable decision-layer component:
 - generates a short top reason
 - writes a sample priority CSV from fixture data
 
+## Run The System Locally
+
+Use this path when you want to regenerate the fixture-backed FloodGuard system and open the dashboard yourself.
+
+```powershell
+cd "C:\Users\iputu\Documents\Flood Guard"
+uv sync --extra dev --extra theos2
+uv run pytest
+uv run python scripts/generate_sample_priority.py
+uv run python scripts/generate_sample_decision_outputs.py
+start outputs\dashboard.html
+```
+
+The dashboard is static. It has no backend, no build step, and no browser-side `fetch` call. Opening `outputs\dashboard.html` is enough for the fixture demo.
+
+If your browser blocks direct file rendering or you prefer a local URL, serve the `outputs/` folder:
+
+```powershell
+uv run python -m http.server 8000 -d outputs
+```
+
+Then open:
+
+```text
+http://localhost:8000/dashboard.html
+```
+
+Recommended local operating loop:
+
+1. Edit code or fixtures.
+2. Run `uv run pytest`.
+3. Run `uv run python scripts/generate_sample_decision_outputs.py`.
+4. Open or refresh `outputs\dashboard.html`.
+
+Do not commit source TIFF, ZIP, SAFE, JP2, NetCDF, GRIB, or overview files. The repo commits only small generated outputs, manifests, docs, tests, and code.
+
 ## Quick Start
 
 ```powershell

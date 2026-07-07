@@ -162,6 +162,16 @@ Dashboard v6 Local Data Library panel:
 | `terrain context only` | DEM use boundary; not flood observation, not label, and not reference mask. |
 | `optical context only` | THEOS-2 use boundary; not flood validation and not an official warning. |
 
+Dashboard v7 narrative panel:
+
+| Item | Meaning |
+| --- | --- |
+| `Read This First` | Top-of-dashboard status narrative for judges and operators. |
+| `What this dashboard can answer` | Fixture-backed questions the current demo can answer: highest actionable sample priority, scenario access-loss change, and local context asset readiness. |
+| `What remains blocked` | Real validation blockers: provider response pending, context layers are not flood labels, and real-data ML is not allowed until legal/file gates pass. |
+| `Next gate` | Real Mae Sai Gate Update checklist for geometry access, local validation permission, derived metrics, screenshots/demo, redistribution/reference-only terms, ML-label use, citation, and disclaimers. |
+| `Real Mae Sai Gate Update` | The required legal and file-level transition before real flood validation can replace fixture-only reporting. |
+
 ## Metadata Planning Outputs
 
 Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, and `local_data_library_zip_members.csv`

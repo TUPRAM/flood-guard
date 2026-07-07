@@ -53,7 +53,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Static HTML | embedded data | no backend" in html
     assert "Priority Map" in html
     assert "map.invalidateSize" in html
-    assert "const mapBoundsPadding = 0.42" in html
+    assert "const mapBoundsPadding = 0.16" in html
     assert "function fitPriorityMapToData" in html
     assert "function settleMapLayout" in html
     assert "bounds.pad(mapBoundsPadding)" in html
@@ -61,6 +61,8 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "bounds.pad(0.18)" not in html
     assert "subdistrict-label" in html
     assert "layer.bindTooltip" in html
+    assert "escapeHtml(id)" in html
+    assert "width: 74px" in html
     assert "minmax(540px, 1fr)" in html
     assert "height: clamp(500px, calc(100vh - 390px), 540px)" in html
     assert "Controls &amp; Scenario" in html

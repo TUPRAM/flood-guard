@@ -599,14 +599,23 @@ def _build_dashboard_html(
       border: 0;
       box-shadow: none;
       color: #101712;
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.08;
       text-align: center;
       text-shadow: 0 1px 2px rgba(255, 255, 255, .9);
       white-space: normal;
-      width: 110px;
+      width: 74px;
       pointer-events: none;
+    }
+    .leaflet-tooltip.subdistrict-label strong,
+    .leaflet-tooltip.subdistrict-label span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .leaflet-tooltip.subdistrict-label span {
+      font-weight: 600;
     }
     .decision-panel {
       overflow-y: auto;
@@ -1398,7 +1407,7 @@ def _build_dashboard_html(
       worsening: '#b73c3c',
       neutral: '#7f8a82'
     };
-    const mapBoundsPadding = 0.42;
+    const mapBoundsPadding = 0.16;
     const state = {
       selectedId: '__TOP_ID__',
       scenario: 'baseline',
@@ -1472,11 +1481,14 @@ def _build_dashboard_html(
       const name = String(feature.properties.subdistrict_name || '');
       featureLayers.set(id, layer);
       layer.bindPopup(popup(feature.properties));
-      layer.bindTooltip(`${id}<br>${name}`, {
-        permanent: true,
-        direction: 'center',
-        className: 'subdistrict-label'
-      });
+      layer.bindTooltip(
+        `<strong>${escapeHtml(id)}</strong><span>${escapeHtml(name)}</span>`,
+        {
+          permanent: true,
+          direction: 'center',
+          className: 'subdistrict-label'
+        }
+      );
       layer.on('click', () => selectSubdistrict(id, false));
     }
 
@@ -1598,8 +1610,17 @@ def _build_dashboard_html(
 
     function popup(properties) {
       return Object.entries(properties)
-        .map(([key, value]) => `<strong>${key}</strong>: ${value ?? 'unavailable'}`)
+        .map(([key, value]) => `<strong>${escapeHtml(key)}</strong>: ${escapeHtml(value ?? 'unavailable')}`)
         .join('<br>');
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function formatNumber(value, places) {

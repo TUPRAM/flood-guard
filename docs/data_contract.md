@@ -281,6 +281,17 @@ Dashboard v7 adds a dashboard status narrative. It must include:
 
 The narrative must state that the current dashboard is a fixture-backed decision demo, that context layers are not flood labels or agency flood products, that real Mae Sai validation is blocked while provider response items remain pending, and that real-data ML is blocked until legal reference-mask and file-level gates pass.
 
+Dashboard v8 defines the judge-demo command-center layout. It must include:
+
+- `app-header` with `Fixture demo`, `Non-operational`, and `Real validation blocked` status chips
+- `kpi-strip` for selected subdistrict, FPPS, action class, confidence, access loss, equity gap, and scenario deltas
+- `dashboard-workspace` with `control-panel`, `map-panel`, and `decision-panel`
+- `map-panel` as the primary workspace canvas with explicit viewport-safe sizing and embedded action/scenario legends
+- `context-readiness-panel` inside the decision panel for SAR, DEM, THEOS-2, and local data readiness summaries
+- `report-section` below the first viewport for the embedded validation summary and action brief
+
+The v8 layout must avoid a long overloaded left rail, avoid disconnected legends, call Leaflet `invalidateSize()` after initialization, and preserve all no-backend/no-`fetch` constraints.
+
 Dashboard THEOS-2 optical context uses:
 
 - `outputs/theos2_selected_file_manifest.csv`

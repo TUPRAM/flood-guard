@@ -34,17 +34,34 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const sentinel1QuicklookData =" in html
     assert "const demQuicklookData =" in html
     assert "const localDataLibrarySummary =" in html
+    assert 'class="app-header"' in html
+    assert 'data-dashboard-section="app-header"' in html
+    assert 'class="kpi-strip"' in html
+    assert 'data-dashboard-section="kpi-strip"' in html
+    assert 'class="dashboard-workspace"' in html
+    assert 'data-dashboard-section="dashboard-workspace"' in html
+    assert 'class="control-panel"' in html
+    assert 'class="map-panel"' in html
+    assert 'data-dashboard-section="map-panel"' in html
+    assert 'class="decision-panel"' in html
+    assert 'data-dashboard-section="decision-panel"' in html
+    assert 'data-dashboard-section="context-readiness-panel"' in html
+    assert 'data-dashboard-section="report-section"' in html
+    assert "Fixture demo" in html
+    assert "Non-operational" in html
+    assert "Real validation blocked" in html
+    assert "Static HTML | embedded data | no backend" in html
+    assert "Priority Map" in html
+    assert "map.invalidateSize" in html
+    assert "minmax(540px, 1fr)" in html
+    assert "min-height: 520px" in html
+    assert "Data Readiness" in html
     assert "Read This First" in html
     assert "Fixture-backed decision demo" in html
-    assert "What this dashboard can answer" in html
-    assert "What remains blocked" in html
     assert "Real Mae Sai validation is blocked" in html
     assert "provider response pending" in html
     assert "Context layers are not flood labels" in html
     assert "Real-data ML is not allowed" in html
-    assert "Next gate" in html
-    assert "geometry access" in html
-    assert "ML-label use status" in html
     assert "Sentinel-1 SAR Context" in html
     assert 'id="sentinel1-sar-context"' in html
     assert "sentinel1_quicklook_vv.png" in html

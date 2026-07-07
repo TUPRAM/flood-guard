@@ -315,6 +315,7 @@ def _build_dashboard_html(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FloodGuard Static Dashboard</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
@@ -392,6 +393,266 @@ def _build_dashboard_html(
     }
     button:hover {
       background: #e3e9df;
+    }
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+    }
+    .app-header {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 26px rgba(32, 39, 34, .06);
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #0f5f6d;
+      color: #0f5f6d;
+      font-weight: 800;
+      font-size: 13px;
+      background: #eef8f5;
+      flex: 0 0 auto;
+    }
+    .brand-copy h1 {
+      margin: 0 0 4px;
+      font-size: 26px;
+    }
+    .brand-copy p {
+      margin: 0;
+      font-size: 13px;
+    }
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+    .status-chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: #fbfcf8;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .status-chip.demo { color: #255fb8; border-color: #9eb9ec; background: #f4f8ff; }
+    .status-chip.warn { color: #9a5a00; border-color: #e1bd6b; background: #fff9e9; }
+    .status-chip.blocked { color: #b73c3c; border-color: #e5a5a5; background: #fff4f4; }
+    .timestamp {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(112px, 1fr));
+      gap: 10px;
+    }
+    .kpi-card {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      gap: 4px;
+      box-shadow: 0 8px 20px rgba(32, 39, 34, .04);
+    }
+    .kpi-card .label {
+      margin: 0;
+    }
+    .kpi-card .value {
+      font-size: 21px;
+      line-height: 1.05;
+    }
+    .kpi-note {
+      color: var(--muted);
+      font-size: 11px;
+      overflow-wrap: anywhere;
+    }
+    .dashboard-workspace {
+      min-height: calc(100vh - 190px);
+      display: grid;
+      grid-template-columns: minmax(250px, 280px) minmax(540px, 1fr) minmax(330px, 390px);
+      gap: 14px;
+      align-items: stretch;
+    }
+    .control-panel,
+    .map-panel,
+    .decision-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 10px 26px rgba(32, 39, 34, .06);
+      min-width: 0;
+    }
+    .control-panel {
+      padding: 14px;
+      overflow-y: auto;
+      max-height: calc(100vh - 190px);
+    }
+    .panel-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .panel-title h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .panel-title span {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .map-panel {
+      display: grid;
+      grid-template-rows: auto minmax(520px, 1fr);
+      overflow: hidden;
+      min-height: 640px;
+    }
+    .map-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .map-heading h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .map-heading p {
+      margin: 3px 0 0;
+      font-size: 12px;
+    }
+    .map-body {
+      position: relative;
+      min-height: 0;
+    }
+    .map-legend {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      z-index: 480;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 18px;
+      max-width: min(560px, calc(100% - 28px));
+      padding: 12px;
+      background: rgba(255, 255, 255, .94);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 12px 26px rgba(32, 39, 34, .12);
+      font-size: 12px;
+    }
+    .legend-group {
+      display: grid;
+      gap: 6px;
+    }
+    .legend-group strong {
+      font-size: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      color: var(--muted);
+    }
+    .road-sample {
+      width: 24px;
+      height: 0;
+      border-top: 2px solid #b73c3c;
+      flex: 0 0 auto;
+    }
+    .road-sample.medium { border-color: #d36a35; border-style: dashed; }
+    .road-sample.low { border-color: #d8a629; border-style: dashed; }
+    .road-sample.very-low { border-color: #7f8a82; border-style: dotted; }
+    .decision-panel {
+      overflow-y: auto;
+      max-height: calc(100vh - 190px);
+      padding: 0;
+    }
+    .panel-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-bottom: 1px solid var(--line);
+      background: #fbfcf8;
+      border-radius: 8px 8px 0 0;
+    }
+    .panel-tab {
+      min-height: 42px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .panel-tab:last-child {
+      border-right: 0;
+    }
+    .panel-tab.active {
+      color: #255fb8;
+      background: #ffffff;
+      box-shadow: inset 0 -2px 0 #255fb8;
+    }
+    .panel-section {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-section:last-child {
+      border-bottom: 0;
+    }
+    .brief-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .brief-heading-row strong {
+      overflow-wrap: anywhere;
+    }
+    .class-pill {
+      border-radius: 6px;
+      padding: 5px 8px;
+      background: #fff4f4;
+      color: var(--red);
+      border: 1px solid #e5a5a5;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .compact-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12px;
     }
     .control-stack {
       display: grid;
@@ -638,18 +899,16 @@ def _build_dashboard_html(
       min-width: 0;
     }
     .toolbar {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      z-index: 500;
-      background: rgba(255, 255, 255, .96);
+      position: static;
+      z-index: auto;
+      background: #fbfcf8;
       border: 1px solid var(--line);
       border-radius: 6px;
       padding: 8px 10px;
       display: flex;
       gap: 12px;
       font-size: 13px;
-      box-shadow: 0 8px 20px rgba(32, 39, 34, .08);
+      box-shadow: none;
     }
     .toolbar label {
       display: flex;
@@ -658,7 +917,7 @@ def _build_dashboard_html(
       white-space: nowrap;
     }
     #map {
-      min-height: 460px;
+      min-height: 520px;
       height: 100%;
       width: 100%;
       position: relative;
@@ -713,7 +972,44 @@ def _build_dashboard_html(
       color: var(--muted);
       margin-top: 12px;
     }
+    @media (max-width: 1200px) {
+      .kpi-strip { grid-template-columns: repeat(4, minmax(140px, 1fr)); }
+      .dashboard-workspace {
+        grid-template-columns: 280px minmax(520px, 1fr);
+      }
+      .decision-panel {
+        grid-column: 1 / -1;
+        max-height: none;
+      }
+    }
     @media (max-width: 900px) {
+      .app-shell { padding: 10px; }
+      .app-header { grid-template-columns: 1fr; }
+      .status-row { justify-content: flex-start; }
+      .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dashboard-workspace {
+        display: flex;
+        flex-direction: column;
+      }
+      .control-panel,
+      .map-panel,
+      .decision-panel {
+        margin-bottom: 12px;
+        max-height: none;
+      }
+      .map-panel { order: 1; }
+      .control-panel { order: 2; }
+      .decision-panel { order: 3; }
+      .map-panel {
+        min-height: 560px;
+        grid-template-rows: auto 500px;
+      }
+      .map-legend {
+        position: static;
+        max-width: none;
+        margin: 10px;
+        grid-template-columns: 1fr;
+      }
       .shell { display: block; }
       aside {
         border-right: 0;
@@ -725,139 +1021,175 @@ def _build_dashboard_html(
   </style>
 </head>
 <body>
-  <div class="shell">
-    <aside>
-      <h1>FloodGuard Decision Dashboard</h1>
-      <p>Fixture-backed prototype for local prioritization. Not an official warning.</p>
-      <div class="status-panel" aria-label="Dashboard status narrative">
-        <strong>Read This First</strong>
-        <p><strong>Current status:</strong> Fixture-backed decision demo. It shows how FloodGuard turns flood probability, access loss, equity, road risk, and scenario changes into local action priorities.</p>
-        <div class="status-grid">
-          <div class="status-item">
-            <strong>What this dashboard can answer</strong>
-            <ul class="boundary-list">
-              <li>Which sample subdistrict is the highest actionable priority.</li>
-              <li>How temporary shelters or road closures change 30-minute access loss.</li>
-              <li>Which local Sentinel-1, DEM, and THEOS-2 assets are cataloged for context.</li>
-            </ul>
+  <div class="app-shell">
+    <header class="app-header" data-dashboard-section="app-header">
+      <div class="brand-row">
+        <div class="brand-mark" aria-hidden="true">FG</div>
+        <div class="brand-copy">
+          <h1>FloodGuard Decision Dashboard</h1>
+          <p>Judge-demo command center for fixture-backed local prioritization. Not an official warning.</p>
+        </div>
+      </div>
+      <div class="status-row" aria-label="Dashboard status">
+        <span class="status-chip demo">Fixture demo</span>
+        <span class="status-chip warn">Non-operational</span>
+        <span class="status-chip blocked">Real validation blocked</span>
+        <span class="timestamp">Static HTML | embedded data | no backend</span>
+      </div>
+    </header>
+
+    <section class="kpi-strip" data-dashboard-section="kpi-strip" aria-label="Priority KPIs">
+      <div class="kpi-card"><span class="label">Selected</span><span class="value" id="panel-subdistrict">__TOP_SUBDISTRICT__</span><span class="kpi-note">__TOP_NAME__</span></div>
+      <div class="kpi-card"><span class="label">FPPS</span><span class="value" id="panel-fpps">__TOP_FPPS__</span><span class="kpi-note">0-100 priority score</span></div>
+      <div class="kpi-card"><span class="label">Action class</span><span class="value" id="panel-class">__TOP_CLASS__</span><span class="kpi-note" id="panel-action-label">__TOP_ACTION_LABEL__</span></div>
+      <div class="kpi-card"><span class="label">Confidence</span><span class="value" id="panel-confidence">__TOP_CONFIDENCE__</span><span class="kpi-note">fixture class</span></div>
+      <div class="kpi-card"><span class="label">30-min access loss</span><span class="value" id="panel-baseline-access">__TOP_BASELINE_ACCESS__</span><span class="kpi-note">baseline people</span></div>
+      <div class="kpi-card"><span class="label">Equity gap</span><span class="value" id="panel-baseline-equity">__TOP_BASELINE_EQUITY__</span><span class="kpi-note">ratio</span></div>
+      <div class="kpi-card"><span class="label">Shelter scenario</span><span class="value"><span class="delta-badge" id="panel-temp-delta">__TOP_TEMP_DELTA__</span></span><span class="kpi-note">30-min access change</span></div>
+      <div class="kpi-card"><span class="label">Road closure</span><span class="value"><span class="delta-badge" id="panel-road-delta">__TOP_ROAD_DELTA__</span></span><span class="kpi-note">stress-case change</span></div>
+    </section>
+
+    <section class="dashboard-workspace" data-dashboard-section="dashboard-workspace" aria-label="FloodGuard judge-demo workspace">
+      <aside class="control-panel" data-dashboard-section="control-panel">
+        <div class="panel-title">
+          <h2>Controls</h2>
+          <span>Scenario setup</span>
+        </div>
+        <div class="control-stack">
+          <div>
+            <label class="control-label" for="subdistrict-select">Subdistrict</label>
+            <select id="subdistrict-select"></select>
           </div>
-          <div class="status-item">
-            <strong>What remains blocked</strong>
-            <ul class="boundary-list">
-              <li>Real Mae Sai validation is blocked until provider response pending items are resolved.</li>
-              <li>Context layers are not flood labels, not reference masks, and not agency flood products.</li>
-              <li>Real-data ML is not allowed until legal reference-mask and file-level gates pass.</li>
-            </ul>
+          <div>
+            <span class="control-label">Action class filters</span>
+            <div class="filter-row" id="action-class-filters" aria-label="Action class filters">
+              <label><input class="action-filter" type="checkbox" value="A" checked> A</label>
+              <label><input class="action-filter" type="checkbox" value="B" checked> B</label>
+              <label><input class="action-filter" type="checkbox" value="C" checked> C</label>
+              <label><input class="action-filter" type="checkbox" value="D" checked> D</label>
+              <label><input class="action-filter" type="checkbox" value="E" checked> E</label>
+            </div>
           </div>
-          <div class="status-item">
-            <strong>Next gate</strong>
-            <span>Real Mae Sai Gate Update requires:</span>
-            <ul class="gate-list">
-              <li>geometry access</li>
-              <li>local validation permission</li>
-              <li>derived metrics and screenshots/demo permission</li>
-              <li>redistribution or reference-only status</li>
-              <li>ML-label use status</li>
-              <li>citation and disclaimer requirements</li>
-            </ul>
+          <div>
+            <label class="control-label" for="scenario-select">Scenario mode</label>
+            <select id="scenario-select">
+              <option value="baseline">baseline</option>
+              <option value="temporary_shelter">temporary shelter delta</option>
+              <option value="road_closure">road closure delta</option>
+            </select>
           </div>
         </div>
-      </div>
-      <div class="control-stack">
-        <div>
-          <label class="control-label" for="subdistrict-select">Subdistrict</label>
-          <select id="subdistrict-select"></select>
+        <div class="button-row" aria-label="Dashboard exports">
+          <button id="download-current-brief" type="button">Download current brief</button>
+          <button id="download-filtered-geojson" type="button">Download filtered GeoJSON</button>
         </div>
-        <div>
-          <span class="control-label">Action class filters</span>
-          <div class="filter-row" id="action-class-filters" aria-label="Action class filters">
-            <label><input class="action-filter" type="checkbox" value="A" checked> A</label>
-            <label><input class="action-filter" type="checkbox" value="B" checked> B</label>
-            <label><input class="action-filter" type="checkbox" value="C" checked> C</label>
-            <label><input class="action-filter" type="checkbox" value="D" checked> D</label>
-            <label><input class="action-filter" type="checkbox" value="E" checked> E</label>
+        <h2>Scenario Summary</h2>
+        <div class="summary-card-grid">
+          <div class="summary-card" id="summary-best-intervention">
+            <span class="label">Best intervention effect</span>
+            <strong>__BEST_INTERVENTION_LABEL__</strong>
+            <span>Temporary shelter: __BEST_INTERVENTION_DELTA__ people losing 30-min access</span>
+          </div>
+          <div class="summary-card" id="summary-worst-road-closure">
+            <span class="label">Worst road-closure stress case</span>
+            <strong>__WORST_ROAD_CLOSURE_LABEL__</strong>
+            <span>Road closure: __WORST_ROAD_CLOSURE_DELTA__ people losing 30-min access</span>
           </div>
         </div>
-        <div>
-          <label class="control-label" for="scenario-select">Scenario mode</label>
-          <select id="scenario-select">
-            <option value="baseline">baseline</option>
-            <option value="temporary_shelter">temporary shelter delta</option>
-            <option value="road_closure">road closure delta</option>
-          </select>
+        <h2>Read This First</h2>
+        <p><strong>Current status:</strong> Fixture-backed decision demo. It shows prioritization behavior but does not prove real flood-detection accuracy.</p>
+        <ul class="compact-list">
+          <li>Real Mae Sai validation is blocked until provider response pending items are resolved.</li>
+          <li>Context layers are not flood labels, not reference masks, and not agency flood products.</li>
+          <li>Real-data ML is not allowed until legal reference-mask and file-level gates pass.</li>
+        </ul>
+      </aside>
+
+      <section class="map-panel" data-dashboard-section="map-panel" aria-label="FloodGuard map panel">
+        <div class="map-heading">
+          <div>
+            <h2>Priority Map</h2>
+            <p>Priority polygons and road-risk segments from embedded fixture GeoJSON.</p>
+          </div>
+          <div class="toolbar" aria-label="Layer toggles">
+            <label><input id="toggle-priority" type="checkbox" checked> Priority</label>
+            <label><input id="toggle-roads" type="checkbox" checked> Road risk</label>
+          </div>
         </div>
-      </div>
-      <div class="button-row" aria-label="Dashboard exports">
-        <button id="download-current-brief" type="button">Download current brief</button>
-        <button id="download-filtered-geojson" type="button">Download filtered GeoJSON</button>
-      </div>
-      <div class="metric-grid">
-        <div class="metric"><span class="label">Selected</span><span class="value" id="panel-subdistrict">__TOP_SUBDISTRICT__</span></div>
-        <div class="metric"><span class="label">Class</span><span class="value" id="panel-class">__TOP_CLASS__</span></div>
-        <div class="metric"><span class="label">FPPS</span><span class="value" id="panel-fpps">__TOP_FPPS__</span></div>
-        <div class="metric"><span class="label">Confidence</span><span class="value" id="panel-confidence">__TOP_CONFIDENCE__</span></div>
-      </div>
-      <h2>Scenario Summary</h2>
-      <div class="summary-card-grid">
-        <div class="summary-card" id="summary-best-intervention">
-          <span class="label">Best intervention effect</span>
-          <strong>__BEST_INTERVENTION_LABEL__</strong>
-          <span>Temporary shelter: __BEST_INTERVENTION_DELTA__ people losing 30-min access</span>
+        <div class="map-body">
+          <div id="map"></div>
+          <div class="map-legend" aria-label="Map legend">
+            <div class="legend-group">
+              <strong>Action class</strong>
+              <span class="legend-item"><i class="swatch" style="background:#b73c3c"></i>A Protect Lives</span>
+              <span class="legend-item"><i class="swatch" style="background:#d36a35"></i>B Routes</span>
+              <span class="legend-item"><i class="swatch" style="background:#d8a629"></i>C Services</span>
+              <span class="legend-item"><i class="swatch" style="background:#21835f"></i>D Resilience</span>
+              <span class="legend-item"><i class="swatch" style="background:#6d5aa8"></i>E Monitor</span>
+            </div>
+            <div class="legend-group">
+              <strong>Scenario and road risk</strong>
+              <span class="legend-item"><i class="swatch" style="background:#21835f"></i>Delta improves</span>
+              <span class="legend-item"><i class="swatch" style="background:#b73c3c"></i>Delta worsens</span>
+              <span class="legend-item"><i class="swatch" style="background:#7f8a82"></i>Neutral/unavailable</span>
+              <span class="legend-item"><i class="road-sample"></i>High road risk</span>
+              <span class="legend-item"><i class="road-sample medium"></i>Medium road risk</span>
+            </div>
+          </div>
         </div>
-        <div class="summary-card" id="summary-worst-road-closure">
-          <span class="label">Worst road-closure stress case</span>
-          <strong>__WORST_ROAD_CLOSURE_LABEL__</strong>
-          <span>Road closure: __WORST_ROAD_CLOSURE_DELTA__ people losing 30-min access</span>
-        </div>
-      </div>
-      <h2>Access and Equity</h2>
-      <ul class="summary-list">
-        <li>Baseline 30-min access loss: <strong id="panel-baseline-access">__TOP_BASELINE_ACCESS__</strong></li>
-        <li>Baseline equity gap ratio: <strong id="panel-baseline-equity">__TOP_BASELINE_EQUITY__</strong></li>
-        <li>Temporary shelter 30-min change: <span class="delta-badge" id="panel-temp-delta">__TOP_TEMP_DELTA__</span></li>
-        <li>Road closure 30-min change: <span class="delta-badge" id="panel-road-delta">__TOP_ROAD_DELTA__</span></li>
-      </ul>
-      <h2>Decision Note</h2>
-      <p id="panel-reason">__TOP_REASON__</p>
-      <h2>Sentinel-1 SAR Context</h2>
-      <div class="sar-context" id="sentinel1-sar-context">
-        __SENTINEL1_CONTEXT_HTML__
-      </div>
-      <h2>DEM Terrain Context</h2>
-      <div class="dem-context" id="dem-terrain-context">
-        __DEM_CONTEXT_HTML__
-      </div>
-      <h2>THEOS-2 Optical Context</h2>
-      <div class="theos2-context" id="theos2-context">
-        __THEOS2_CONTEXT_HTML__
-      </div>
-      <h2>Local Data Library</h2>
-      <div class="local-library" id="local-data-library">
-        __LOCAL_DATA_LIBRARY_HTML__
-      </div>
-      <p class="note">Scenario colors show people losing 30-minute access: green improves, red worsens, gray is neutral or unavailable.</p>
-    </aside>
-    <main>
-      <section class="map-wrap" aria-label="FloodGuard map">
-        <div class="toolbar" aria-label="Layer toggles">
-          <label><input id="toggle-priority" type="checkbox" checked> Priority</label>
-          <label><input id="toggle-roads" type="checkbox" checked> Road risk</label>
-        </div>
-        <div id="map"></div>
       </section>
-      <section class="legend" aria-label="Legend">
-        <span><i class="swatch" style="background:#b73c3c"></i>A Protect Lives</span>
-        <span><i class="swatch" style="background:#d36a35"></i>B Routes</span>
-        <span><i class="swatch" style="background:#d8a629"></i>C Services</span>
-        <span><i class="swatch" style="background:#21835f"></i>D Resilience</span>
-        <span><i class="swatch" style="background:#6d5aa8"></i>E Monitor</span>
-        <span><i class="swatch" style="background:#21835f"></i>Delta improves</span>
-        <span><i class="swatch" style="background:#b73c3c"></i>Delta worsens</span>
-        <span><i class="swatch" style="background:#7f8a82"></i>Neutral/unavailable</span>
-      </section>
-    </main>
+
+      <aside class="decision-panel" data-dashboard-section="decision-panel">
+        <div class="panel-tabs" aria-label="Decision panel sections">
+          <button class="panel-tab active" type="button">Action Brief</button>
+          <button class="panel-tab" type="button">Context Assets</button>
+          <button class="panel-tab" type="button">Data Readiness</button>
+        </div>
+        <section class="panel-section" id="decision-brief-panel">
+          <div class="brief-heading-row">
+            <strong id="panel-detail-title">__TOP_SUBDISTRICT__ / __TOP_NAME__</strong>
+            <span class="class-pill" id="panel-detail-class">Class __TOP_CLASS__</span>
+          </div>
+          <p id="panel-reason">__TOP_REASON__</p>
+          <ul class="summary-list">
+            <li>Baseline 30-minute access loss: <strong id="panel-detail-access">__TOP_BASELINE_ACCESS__</strong></li>
+            <li>Equity gap ratio: <strong id="panel-detail-equity">__TOP_BASELINE_EQUITY__</strong></li>
+            <li>Temporary shelter delta: <strong id="panel-detail-temp">__TOP_TEMP_DELTA__</strong></li>
+            <li>Road closure delta: <strong id="panel-detail-road">__TOP_ROAD_DELTA__</strong></li>
+          </ul>
+        </section>
+        <section class="panel-section" data-dashboard-section="context-readiness-panel">
+          <div class="panel-title">
+            <h2>Context Assets</h2>
+            <span>not flood labels</span>
+          </div>
+          <h3>Sentinel-1 SAR Context</h3>
+          <div class="sar-context" id="sentinel1-sar-context">
+            __SENTINEL1_CONTEXT_HTML__
+          </div>
+          <h3>DEM Terrain Context</h3>
+          <div class="dem-context" id="dem-terrain-context">
+            __DEM_CONTEXT_HTML__
+          </div>
+          <h3>THEOS-2 Optical Context</h3>
+          <div class="theos2-context" id="theos2-context">
+            __THEOS2_CONTEXT_HTML__
+          </div>
+        </section>
+        <section class="panel-section">
+          <div class="panel-title">
+            <h2>Local Data Library</h2>
+            <span>processing gated</span>
+          </div>
+          <div class="local-library" id="local-data-library">
+            __LOCAL_DATA_LIBRARY_HTML__
+          </div>
+        </section>
+      </aside>
+    </section>
   </div>
-  <section class="docs">
+
+  <section class="docs report-section" data-dashboard-section="report-section">
     <div class="doc-grid">
       <article id="validation-summary">
         <h2>Validation Summary</h2>
@@ -885,6 +1217,13 @@ def _build_dashboard_html(
       C: '#d8a629',
       D: '#21835f',
       E: '#6d5aa8'
+    };
+    const actionLabels = {
+      A: 'Protect Lives Now',
+      B: 'Keep Routes Open',
+      C: 'Protect Essential Services',
+      D: 'Build Resilience',
+      E: 'Monitor and Verify'
     };
     const deltaColors = {
       improvement: '#21835f',
@@ -993,17 +1332,26 @@ def _build_dashboard_html(
         return;
       }
       const props = feature.properties;
-      document.getElementById('panel-subdistrict').textContent = `${props.subdistrict_id}`;
-      document.getElementById('panel-class').textContent = props.action_class || 'unavailable';
-      document.getElementById('panel-fpps').textContent = formatNumber(props.fpps_0_100, 2);
-      document.getElementById('panel-confidence').textContent = props.confidence_class || 'unavailable';
-      document.getElementById('panel-baseline-access').textContent = formatNumber(props.baseline_people_losing_30_min_access, 0);
-      document.getElementById('panel-baseline-equity').textContent = formatNumber(props.baseline_equity_gap_ratio, 3);
+      setText('panel-subdistrict', `${props.subdistrict_id}`);
+      setText('panel-class', props.action_class || 'unavailable');
+      setText('panel-action-label', actionLabels[props.action_class] || 'unavailable');
+      setText('panel-fpps', formatNumber(props.fpps_0_100, 2));
+      setText('panel-confidence', props.confidence_class || 'unavailable');
+      setText('panel-baseline-access', formatNumber(props.baseline_people_losing_30_min_access, 0));
+      setText('panel-baseline-equity', formatNumber(props.baseline_equity_gap_ratio, 3));
       setDeltaBadge('panel-temp-delta', props.temporary_shelter_change_people_losing_30_min_access);
       setDeltaBadge('panel-road-delta', props.road_closure_change_people_losing_30_min_access);
-      document.getElementById('panel-reason').textContent = props.top_reason || '';
-      document.getElementById('action-brief-pre').textContent =
-        briefsBySubdistrict[state.selectedId] || 'No generated action brief for this subdistrict.';
+      setText('panel-detail-title', `${props.subdistrict_id} / ${props.subdistrict_name || 'unavailable'}`);
+      setText('panel-detail-class', `Class ${props.action_class || 'unavailable'}`);
+      setText('panel-detail-access', formatNumber(props.baseline_people_losing_30_min_access, 0));
+      setText('panel-detail-equity', formatNumber(props.baseline_equity_gap_ratio, 3));
+      setText('panel-detail-temp', formatSigned(props.temporary_shelter_change_people_losing_30_min_access, 0));
+      setText('panel-detail-road', formatSigned(props.road_closure_change_people_losing_30_min_access, 0));
+      setText('panel-reason', props.top_reason || '');
+      setText(
+        'action-brief-pre',
+        briefsBySubdistrict[state.selectedId] || 'No generated action brief for this subdistrict.'
+      );
     }
 
     function zoomToSelectedFeature() {
@@ -1076,8 +1424,18 @@ def _build_dashboard_html(
       return `${number > 0 ? '+' : ''}${number.toFixed(places)}`;
     }
 
+    function setText(elementId, value) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.textContent = value;
+      }
+    }
+
     function setDeltaBadge(elementId, value) {
       const element = document.getElementById(elementId);
+      if (!element) {
+        return;
+      }
       const number = Number(value);
       element.textContent = formatSigned(value, 0);
       element.classList.remove('good', 'bad');
@@ -1132,12 +1490,16 @@ def _build_dashboard_html(
     } else {
       map.setView([18.02, 100.02], 13);
     }
+    requestAnimationFrame(() => map.invalidateSize());
+    window.addEventListener('resize', () => map.invalidateSize());
   </script>
 </body>
 </html>
 """
 
     top_id = str(props.get("subdistrict_id", ""))
+    top_name = str(props.get("subdistrict_name", ""))
+    top_class = str(props.get("action_class", ""))
     initial_brief = action_briefs.get(top_id) or next(iter(action_briefs.values()))
     replacements = {
         "__PRIORITY_JSON__": json.dumps(priority_geojson, ensure_ascii=False),
@@ -1160,7 +1522,9 @@ def _build_dashboard_html(
         "__INITIAL_BRIEF__": html.escape(initial_brief),
         "__TOP_ID__": _js_string(top_id),
         "__TOP_SUBDISTRICT__": html.escape(top_id),
-        "__TOP_CLASS__": html.escape(str(props.get("action_class", ""))),
+        "__TOP_NAME__": html.escape(top_name),
+        "__TOP_CLASS__": html.escape(top_class),
+        "__TOP_ACTION_LABEL__": html.escape(_action_label(top_class)),
         "__TOP_FPPS__": _format_number(props.get("fpps_0_100"), 2),
         "__TOP_CONFIDENCE__": html.escape(str(props.get("confidence_class", ""))),
         "__TOP_BASELINE_ACCESS__": _format_number(
@@ -1196,6 +1560,17 @@ def _format_number(value: object, places: int) -> str:
     except (TypeError, ValueError):
         return "unavailable"
     return f"{numeric:.{places}f}"
+
+
+def _action_label(action_class: str) -> str:
+    labels = {
+        "A": "Protect Lives Now",
+        "B": "Keep Routes Open",
+        "C": "Protect Essential Services",
+        "D": "Build Resilience",
+        "E": "Monitor and Verify",
+    }
+    return labels.get(action_class, "unavailable")
 
 
 def _format_signed(value: object, places: int) -> str:

@@ -59,6 +59,8 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `dashboard.html` now includes a `Read This First` status narrative. It explains what the fixture demo can answer, what remains blocked, and the Real Mae Sai Gate Update needed before real validation or real-data ML can proceed. The narrative must continue to say that context layers are not flood labels, not reference masks, and not agency flood products.
 
+`dashboard.html` v8 uses a judge-demo command-center layout: app header, KPI strip, three-zone workspace, primary map panel with embedded legends, right-side decision/context/readiness panel, and a below-workspace report section. The layout is still static HTML with embedded data, no backend, and no browser-side `fetch`.
+
 `theos2_selected_file_manifest.csv` and `theos2_previews/*.svg` are THEOS-2 optical-context artifacts. They are checksum-backed and non-operational, but they are not flood masks, validation labels, or official warning products. Source THEOS-2 TIFF/overview files remain outside Git.
 
 `theos2_thumbnail_manifest.csv` and `theos2_thumbnails/*.png` are small true thumbnail outputs generated from checksum-backed selected files with an optional raster reader. They are optical context only and never full-resolution imagery.

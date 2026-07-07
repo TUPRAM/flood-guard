@@ -172,6 +172,18 @@ Dashboard v7 narrative panel:
 | `Next gate` | Real Mae Sai Gate Update checklist for geometry access, local validation permission, derived metrics, screenshots/demo, redistribution/reference-only terms, ML-label use, citation, and disclaimers. |
 | `Real Mae Sai Gate Update` | The required legal and file-level transition before real flood validation can replace fixture-only reporting. |
 
+Dashboard v8 Judge Demo Layout:
+
+| Item | Meaning |
+| --- | --- |
+| `app-header` | Top command-center header with product name, fixture/non-operational status, and blocked real-validation state. |
+| `kpi-strip` | Compact first-viewport KPI row for selected subdistrict, FPPS, action class, confidence, access loss, equity gap, and scenario deltas. |
+| `dashboard-workspace` | Three-zone first-viewport workspace containing controls, the primary map canvas, and decision/context panels. |
+| `map-panel` | Main Leaflet map region with embedded action-class, scenario-delta, and road-risk legends. |
+| `decision-panel` | Right-side decision area for action brief summary, context assets, and data readiness. |
+| `context-readiness-panel` | Compact SAR, DEM, THEOS-2, and Local Data Library readiness summary area; context only, not validation. |
+| `report-section` | Below-workspace Markdown report area for validation summary and full action brief content. |
+
 ## Metadata Planning Outputs
 
 Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, and `local_data_library_zip_members.csv`

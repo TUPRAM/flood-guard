@@ -201,6 +201,14 @@ def test_data_dictionary_mentions_dashboard_v4_exports() -> None:
     assert "Dashboard v5 THEOS-2 cards" in text
     assert "Dashboard v6 Local Data Library panel" in text
     assert "Dashboard v7 narrative panel" in text
+    assert "Dashboard v8 Judge Demo Layout" in text
+    assert "app-header" in text
+    assert "kpi-strip" in text
+    assert "dashboard-workspace" in text
+    assert "map-panel" in text
+    assert "decision-panel" in text
+    assert "context-readiness-panel" in text
+    assert "report-section" in text
     assert "Read This First" in text
     assert "What this dashboard can answer" in text
     assert "What remains blocked" in text

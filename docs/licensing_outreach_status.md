@@ -42,6 +42,15 @@ Then update any file-level ingestion manifest rows. Do not set `processing_allow
 
 Use `docs/provider_response_logging_guide.md` for the exact response fields and blocking-decision wording.
 
+After updating the log, run:
+
+```powershell
+uv run python scripts/check_real_data_gates.py --allow-blocked
+uv run python scripts/validate_mae_sai_file_manifest.py --allow-blocked
+```
+
+Remove `--allow-blocked` only when you expect at least one reference-mask source and the Mae Sai file manifest to be ready. ML-label use is checked separately from local validation permission and must be explicit before any real-data ML starts.
+
 ## Current Decision
 
 UNOSAT/UNITAR and GISTDA are now waiting on provider responses. Charter and Sentinel Asia remain send-ready for the Hat Yai / Songkhla 2025 story tile. While those responses are pending, THEOS-2 hackathon samples can move into an optical-context lane based on user-reported free-use permission, with imagery still kept outside Git and selected files checksum-tracked before processing.

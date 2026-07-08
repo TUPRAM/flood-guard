@@ -293,3 +293,21 @@ Acceptance: `outputs/dem_quicklook_manifest.csv` and `outputs/dem_quicklook.png`
 Update legal/reference-mask readiness when UNOSAT, GISTDA, Charter, Sentinel Asia, or another valid provider replies.
 
 Acceptance: `docs/reference_mask_licensing_log.md` and `docs/licensing_outreach_status.md` record geometry access, local validation permission, derived metrics permission, screenshot/demo permission, redistribution or reference-only status, ML-label use, citation/disclaimer requirements, and final blocking decision. At least one reference mask source must be no longer blocked before real Mae Sai validation or ML labels can proceed.
+
+## Task 48 - Dashboard Demo Reliability And Visual QA
+
+Add a dependency-light smoke-check command and committed manual QA checklist for the static judge dashboard.
+
+Acceptance: `scripts/smoke_dashboard.py` serves `outputs/dashboard.html` through a local static server and reports pass/fail for page identity, embedded data, Leaflet/map landmarks, priority polygon rendering hooks, subdistrict label guards, validation/action summary visibility, export buttons, strict non-operational wording, and absence of absolute local source paths. `docs/dashboard_demo_qa_checklist.md` documents `1536x1024`, `2048x1152`, and `1440x900` visual checks.
+
+## Task 49 - Judge Demo Narrative Pack
+
+Add a compact judge-facing narrative and walkthrough so the fixture-backed demo can be presented without reading source code.
+
+Acceptance: `outputs/judge_demo_readme.md` explains what the fixture demo proves, what it does not prove, why FloodGuard is more than a flood map, and why real validation/ML remain blocked. `docs/demo_walkthrough.md` includes a 3-5 minute path and a 10 minute expanded path using `FG-TB-001`, A/B/C action briefs, scenario toggles, and the context/readiness panels.
+
+## Task 50 - Reference Gate And Mae Sai Manifest Dry-Run Checks
+
+Add executable no-download checks for provider/legal gates and the Mae Sai file-level manifest.
+
+Acceptance: `scripts/check_real_data_gates.py` keeps all current rows blocked until provider responses clear geometry access, local validation, derived metrics, screenshots/demo, redistribution/reference-only status, citation, and final blocking decision. `scripts/validate_mae_sai_file_manifest.py` explains which reference-mask, pre-event SAR, or post-event SAR row blocks the real non-ML baseline. ML-label use remains a separate explicit gate.

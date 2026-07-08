@@ -76,6 +76,12 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "timing_unresolved",
         "candidate_role",
         "reference_mask_status",
+        "judge_demo_readme.md",
+        "scripts/smoke_dashboard.py",
+        "reference_validation_allowed",
+        "ml_label_allowed",
+        "screenshots_demo_allowed",
+        "ml_label_use_allowed",
     ):
         assert field in text
     assert "not official warnings" in text or "not official warnings" in text.lower()
@@ -98,9 +104,12 @@ def test_reference_mask_licensing_log_has_required_rows() -> None:
     assert "redistribution terms not confirmed" in text
     assert "Licensing Tracker V2" in text
     assert "Request status" in text
+    assert "Screenshots/demo allowed" in text
+    assert "ML-label use allowed" in text
     assert "blocking_decision" in text
     assert "processing_allowed=True" in text
     assert "SHA-256 checksum is recorded" in text
+    assert "scripts/check_real_data_gates.py" in text
 
 
 def test_readme_documents_no_download_cdse_output_workflow() -> None:
@@ -110,6 +119,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert 'cd "C:\\Users\\iputu\\Documents\\Flood Guard"' in text
     assert "uv sync --extra dev --extra theos2" in text
     assert "uv run python scripts/generate_sample_decision_outputs.py" in text
+    assert "uv run python scripts/smoke_dashboard.py" in text
     assert "start outputs\\dashboard.html" in text
     assert "uv run python -m http.server 8000 -d outputs" in text
     assert "http://localhost:8000/dashboard.html" in text
@@ -132,6 +142,8 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "build_dem_selected_manifest.py" in text
     assert "generate_dem_quicklook.py --check-reader" in text
     assert "generate_mae_sai_validation_summary.py" in text
+    assert "check_real_data_gates.py --allow-blocked" in text
+    assert "validate_mae_sai_file_manifest.py --allow-blocked" in text
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
     assert "build_local_data_library.py" in text
@@ -202,6 +214,9 @@ def test_data_dictionary_mentions_dashboard_v4_exports() -> None:
     assert "Dashboard v6 Local Data Library panel" in text
     assert "Dashboard v7 narrative panel" in text
     assert "Dashboard v8 Judge Demo Layout" in text
+    assert "Dashboard QA support" in text
+    assert "docs/dashboard_demo_qa_checklist.md" in text
+    assert "docs/demo_walkthrough.md" in text
     assert "app-header" in text
     assert "kpi-strip" in text
     assert "dashboard-workspace" in text
@@ -271,6 +286,51 @@ def test_licensing_outreach_status_tracks_not_sent_requests() -> None:
     assert "2026-07-03" in text
     assert "Repository automation does not send email" in text
     assert "provider response pending" in text
+    assert "scripts/check_real_data_gates.py --allow-blocked" in text
+    assert "scripts/validate_mae_sai_file_manifest.py --allow-blocked" in text
+
+
+def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
+    judge_text = (REPO_ROOT / "outputs" / "judge_demo_readme.md").read_text(
+        encoding="utf-8"
+    )
+    walkthrough_text = (REPO_ROOT / "docs" / "demo_walkthrough.md").read_text(
+        encoding="utf-8"
+    )
+    qa_text = (REPO_ROOT / "docs" / "dashboard_demo_qa_checklist.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "fixture-backed decision-layer prototype",
+        "What The Fixture Demo Proves",
+        "does not prove real flood-detection accuracy",
+        "Real-data ML remains blocked",
+        "FG-TB-001 / River Market",
+        "Sentinel-1 SAR quicklooks: context only",
+    ):
+        assert phrase in judge_text
+
+    for phrase in (
+        "3-5 Minute Judge Path",
+        "10 Minute Expanded Path",
+        "temporary shelter delta",
+        "road closure delta",
+        "Context Assets",
+        "Data Readiness",
+        "not an official warning",
+    ):
+        assert phrase in walkthrough_text
+
+    for phrase in (
+        "1536x1024",
+        "2048x1152",
+        "1440x900",
+        "scripts/smoke_dashboard.py",
+        "uv run python -m http.server 8000 -d outputs",
+        "no absolute local source paths",
+    ):
+        assert phrase in qa_text
 
 
 def test_mae_sai_pair_decision_note_locks_planning_pair_not_processing() -> None:

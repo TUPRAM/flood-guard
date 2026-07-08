@@ -30,6 +30,7 @@ uv sync --extra dev --extra theos2
 uv run pytest
 uv run python scripts/generate_sample_priority.py
 uv run python scripts/generate_sample_decision_outputs.py
+uv run python scripts/smoke_dashboard.py
 start outputs\dashboard.html
 ```
 
@@ -52,7 +53,8 @@ Recommended local operating loop:
 1. Edit code or fixtures.
 2. Run `uv run pytest`.
 3. Run `uv run python scripts/generate_sample_decision_outputs.py`.
-4. Open or refresh `outputs\dashboard.html`.
+4. Run `uv run python scripts/smoke_dashboard.py`.
+5. Open or refresh `outputs\dashboard.html`.
 
 Do not commit source TIFF, ZIP, SAFE, JP2, NetCDF, GRIB, or overview files. The repo commits only small generated outputs, manifests, docs, tests, and code.
 
@@ -105,9 +107,11 @@ uv run python scripts/generate_sentinel1_quicklooks.py --check-reader
 uv run python scripts/build_dem_selected_manifest.py
 uv run python scripts/generate_dem_quicklook.py --check-reader
 uv run python scripts/generate_mae_sai_validation_summary.py
+uv run python scripts/check_real_data_gates.py --allow-blocked
+uv run python scripts/validate_mae_sai_file_manifest.py --allow-blocked
 ```
 
-The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_real_data_file_manifest.csv` remain blocked for flood-reference processing until geometry, license, redistribution/reference-only status, local paths, checksums, and reference-mask status are confirmed. `outputs/theos2_local_metadata_manifest.csv` records user-reported hackathon free-use status for THEOS-2 samples from `docs/theos2_usage_terms_log.md`, but selected files still need SHA-256 checksums before reproducible pixel-processing outputs are generated.
+The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_real_data_file_manifest.csv` remain blocked for flood-reference processing until geometry, license, redistribution/reference-only status, local paths, checksums, and reference-mask status are confirmed. `scripts/check_real_data_gates.py` confirms whether provider responses clear reference-mask use for local validation and separately whether ML-label use is allowed. `scripts/validate_mae_sai_file_manifest.py` explains exactly which file-level rows block the real Mae Sai non-ML baseline. `outputs/theos2_local_metadata_manifest.csv` records user-reported hackathon free-use status for THEOS-2 samples from `docs/theos2_usage_terms_log.md`, but selected files still need SHA-256 checksums before reproducible pixel-processing outputs are generated.
 
 `outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums for only the curated selected THEOS-2 files. `outputs/theos2_previews/*.svg` are small non-operational optical-context preview cards generated from checksum-backed metadata. They are not flood masks, not validation labels, and not official warning products. Source TIFFs and overview files remain outside Git.
 

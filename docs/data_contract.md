@@ -292,6 +292,13 @@ Dashboard v8 defines the judge-demo command-center layout. It must include:
 
 The v8 layout must avoid a long overloaded left rail, avoid disconnected legends, call Leaflet `invalidateSize()` after initialization, and preserve all no-backend/no-`fetch` constraints.
 
+Dashboard QA and judge-demo narrative support:
+
+- `scripts/smoke_dashboard.py` must serve `outputs/dashboard.html` through a local static server and report pass/fail for page identity, embedded data, map/rendering landmarks, label overlap guards, validation/action summary visibility, export buttons, strict non-operational wording, and absence of absolute local source paths.
+- `docs/dashboard_demo_qa_checklist.md` must document the required judge-demo viewports: `1536x1024`, `2048x1152`, and `1440x900`.
+- `outputs/judge_demo_readme.md` must explain what the fixture demo proves, what it does not prove, why FloodGuard is more than a flood map, and why real validation/ML remain blocked.
+- `docs/demo_walkthrough.md` must provide a 3-5 minute path and a 10 minute expanded path that starts with `FG-TB-001 / River Market`, shows A/B/C briefs, toggles temporary-shelter and road-closure scenarios, and ends with the real-data readiness blocker.
+
 Dashboard THEOS-2 optical context uses:
 
 - `outputs/theos2_selected_file_manifest.csv`
@@ -375,6 +382,20 @@ Current rows must remain `metadata_only`, with `download_permitted_by_skeleton=F
 The ingestion skeleton may only write metadata outputs with explicit metadata suffixes such as `.csv`, `.json`, `.md`, or `.txt`. It must reject binary or imagery/product paths such as `.SAFE`, `.tif`, `.tiff`, `.jp2`, `.zip`, `.nc`, and `.grib`.
 
 `processing_allowed=True` is permitted only when source license status, reference-mask status, local path, product id, and SHA-256 checksum gates all pass. Manual overrides that force processing before those gates pass must fail.
+
+`scripts/check_real_data_gates.py` provides a no-download reference-mask gate check. It must keep local validation blocked unless provider responses clearly resolve:
+
+- geometry access
+- local analysis permission
+- derived metrics permission
+- screenshots/demo permission
+- redistribution or reference-only status
+- citation requirement
+- blocking decision
+
+ML-label use is a separate gate. It may only be marked allowed when `ml_label_use_allowed=yes`.
+
+`scripts/validate_mae_sai_file_manifest.py` provides a no-download dry-run file-manifest validator. It must explain which reference-mask, pre-event SAR, or post-event SAR row blocks the real Mae Sai non-ML baseline. It may exit successfully in the current blocked state only when run with `--allow-blocked`.
 
 ## Local Data Library Manifest
 

@@ -105,6 +105,7 @@ Files: `priority_subdistricts.geojson` and `road_risk.geojson`
 | Artifact | Meaning |
 | --- | --- |
 | `dashboard.html` | Standalone Leaflet dashboard with embedded GeoJSON, action briefs, validation summary, controls, scenario cards, Sentinel-1 SAR context cards, THEOS-2 optical cards, and Local Data Library readiness panel. |
+| `judge_demo_readme.md` | Judge-facing narrative pack explaining what the fixture demo proves, what it does not prove, and why real validation/ML gates remain blocked. |
 | `action_brief_FG-TB-001.md` | Compact A-class action brief for River Market. |
 | `action_brief_FG-TB-002.md` | Compact B-class action brief for Bridge Junction. |
 | `action_brief_FG-TB-003.md` | Compact C-class action brief for Clinic Basin. |
@@ -184,6 +185,14 @@ Dashboard v8 Judge Demo Layout:
 | `context-readiness-panel` | Compact SAR, DEM, THEOS-2, and Local Data Library readiness summary area; context only, not validation. |
 | `report-section` | Below-workspace Markdown report area for validation summary and full action brief content. |
 
+Dashboard QA support:
+
+| Artifact | Meaning |
+| --- | --- |
+| `docs/dashboard_demo_qa_checklist.md` | Manual and command-line QA checklist for judge demo sizes `1536x1024`, `2048x1152`, and `1440x900`. |
+| `scripts/smoke_dashboard.py` | Dependency-light smoke check that serves `outputs/dashboard.html` locally and verifies page identity, embedded data, map/rendering landmarks, label guards, export buttons, strict wording, and absence of source paths. |
+| `docs/demo_walkthrough.md` | Three-to-five-minute and ten-minute walkthrough for presenting the fixture-backed dashboard honestly. |
+
 ## Metadata Planning Outputs
 
 Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, and `local_data_library_zip_members.csv`
@@ -211,6 +220,24 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 | `processing_allowed` | `True` only when source license, reference mask, local path, product id, and checksum gates all pass. |
 | `blocked_reason` | Human-readable reason the row is not processing-ready. |
 | `reason_blocked` | File-level blocker text mirroring `blocked_reason` for downstream tools. |
+
+Reference-mask legal gate fields used by `scripts/check_real_data_gates.py`:
+
+| Field | Meaning |
+| --- | --- |
+| `request_status` | Provider outreach state, such as `sent_waiting_response` or `response_received`. |
+| `request_sent_date` | Date the provider request was sent, or `not_sent`. |
+| `response_date` | Provider response date, or `no_response`. |
+| `geometry_access` | Whether usable vector/raster mask geometry access is confirmed. |
+| `local_analysis_allowed` | Whether local validation analysis is explicitly allowed. |
+| `derived_metrics_allowed` | Whether derived metrics such as IoU, F1/Dice, precision, recall, and area error may be reported. |
+| `screenshots_demo_allowed` | Whether screenshots or demo use of derived outputs is allowed. |
+| `redistribution_allowed` | Whether source geometry is redistributable, reference-only, or unresolved. |
+| `citation_required` | Provider citation/attribution requirement once resolved. |
+| `ml_label_use_allowed` | Whether the reference mask may be used as ML labels; this must be explicit before ML starts. |
+| `blocking_decision` | Final provider/legal decision. It must be cleared before real validation can start. |
+| `reference_validation_allowed` | Computed gate result for local validation. |
+| `ml_label_allowed` | Computed gate result for ML-label use, separate from validation. |
 
 `mae_sai_real_data_file_manifest.csv` is a blocked planning manifest for the first real non-ML SAR baseline. It includes the UNOSAT reference-mask target, the selected September 6 pre-event Sentinel-1 COG, the selected September 15 post-event Sentinel-1 COG, and the September 18 fallback post-event COG. No local paths or checksums are recorded yet, so all rows remain `processing_allowed=False`.
 

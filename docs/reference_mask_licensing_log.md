@@ -16,15 +16,15 @@ All rows remain blocked for processing. The first real-data ingestion skeleton m
 
 ## Licensing Tracker V2
 
-This execution tracker is the operational gate for reference-mask use. A source is not usable for real-data ML or validation until `blocking_decision` is `cleared_for_local_validation` or a similarly explicit approved status. Blank dates mean no request or response has been recorded in this repository. Column names in downstream trackers should preserve `request_status`, `request_sent_date`, `response_date`, `geometry_access`, `local_analysis_allowed`, `derived_metrics_allowed`, `redistribution_allowed`, `citation_required`, and `blocking_decision`.
+This execution tracker is the operational gate for reference-mask use. A source is not usable for real-data validation until `blocking_decision` is `cleared_for_local_validation` or a similarly explicit approved status. A source is not usable for ML labels until `ml_label_use_allowed` is explicitly `yes`. Blank dates mean no request or response has been recorded in this repository. Column names in downstream trackers should preserve `request_status`, `request_sent_date`, `response_date`, `geometry_access`, `local_analysis_allowed`, `derived_metrics_allowed`, `screenshots_demo_allowed`, `redistribution_allowed`, `citation_required`, `ml_label_use_allowed`, and `blocking_decision`.
 
-| Source | Request status | Request sent date | Response date | Geometry access | Local analysis allowed | Derived metrics allowed | Redistribution allowed | Citation required | Blocking decision | Next action |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| UNOSAT/UNITAR Mae Sai reference target | sent_waiting_response | 2026-07-03 | no_response | unresolved | unresolved | unresolved | unresolved | yes_expected | blocked_provider_response_pending | log reply and confirm GIS geometry access before any reference-mask processing |
-| GISTDA official flood product candidate | sent_waiting_response | 2026-07-03 | no_response | unresolved | unresolved | unresolved | unresolved | yes_expected | blocked_provider_response_pending | log reply and confirm event-specific product access and terms |
-| International Charter Activation 1004 | draft_not_sent | not_sent | no_response | unresolved | unresolved | unresolved | unresolved | yes_expected | blocked_activation_product_terms_unconfirmed | request product access and reuse terms |
-| Sentinel Asia Southern Thailand 2025 | draft_not_sent | not_sent | no_response | unresolved | unresolved | unresolved | unresolved | yes_expected | blocked_product_file_terms_unconfirmed | request detected-water/flood-proxy product terms |
-| Academic or manual reference mask | not_started | not_sent | no_response | not_identified | unresolved | unresolved | unresolved | source_specific | blocked_no_candidate_selected | search only after official/event source status is logged |
+| Source | Request status | Request sent date | Response date | Geometry access | Local analysis allowed | Derived metrics allowed | Screenshots/demo allowed | Redistribution allowed | Citation required | ML-label use allowed | Blocking decision | Next action |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| UNOSAT/UNITAR Mae Sai reference target | sent_waiting_response | 2026-07-03 | no_response | unresolved | unresolved | unresolved | unresolved | unresolved | yes_expected | unresolved | blocked_provider_response_pending | log reply and confirm GIS geometry access before any reference-mask processing |
+| GISTDA official flood product candidate | sent_waiting_response | 2026-07-03 | no_response | unresolved | unresolved | unresolved | unresolved | unresolved | yes_expected | unresolved | blocked_provider_response_pending | log reply and confirm event-specific product access and terms |
+| International Charter Activation 1004 | draft_not_sent | not_sent | no_response | unresolved | unresolved | unresolved | unresolved | unresolved | yes_expected | unresolved | blocked_activation_product_terms_unconfirmed | request product access and reuse terms |
+| Sentinel Asia Southern Thailand 2025 | draft_not_sent | not_sent | no_response | unresolved | unresolved | unresolved | unresolved | unresolved | yes_expected | unresolved | blocked_product_file_terms_unconfirmed | request detected-water/flood-proxy product terms |
+| Academic or manual reference mask | not_started | not_sent | no_response | not_identified | unresolved | unresolved | unresolved | unresolved | source_specific | unresolved | blocked_no_candidate_selected | search only after official/event source status is logged |
 
 ## Processing Gate
 
@@ -39,3 +39,12 @@ The real-data ingestion manifest may set `processing_allowed=True` only when all
 - SHA-256 checksum is recorded
 
 The current tracker does not clear any source for real-data ML.
+
+Run the current gate check after any provider response update:
+
+```powershell
+uv run python scripts/check_real_data_gates.py --allow-blocked
+uv run python scripts/validate_mae_sai_file_manifest.py --allow-blocked
+```
+
+The first command checks legal/reference-mask permission fields. The second command checks file-level product id, local path, SHA-256, source license, and reference-mask status. Both must pass without `--allow-blocked` before real Mae Sai non-ML validation can start.

@@ -296,6 +296,7 @@ Dashboard QA and judge-demo narrative support:
 
 - `scripts/smoke_dashboard.py` must serve `outputs/dashboard.html` through a local static server and report pass/fail for page identity, embedded data, map/rendering landmarks, label overlap guards, validation/action summary visibility, export buttons, strict non-operational wording, and absence of absolute local source paths.
 - `docs/dashboard_demo_qa_checklist.md` must document the required judge-demo viewports: `1536x1024`, `2048x1152`, and `1440x900`.
+- `docs/dashboard_visual_qa_notes.md` records manual viewport QA notes after a run. It should save notes only, not committed screenshot evidence, unless the project owner explicitly asks for screenshot artifacts.
 - `outputs/judge_demo_readme.md` must explain what the fixture demo proves, what it does not prove, why FloodGuard is more than a flood map, and why real validation/ML remain blocked.
 - `docs/demo_walkthrough.md` must provide a 3-5 minute path and a 10 minute expanded path that starts with `FG-TB-001 / River Market`, shows A/B/C briefs, toggles temporary-shelter and road-closure scenarios, and ends with the real-data readiness blocker.
 

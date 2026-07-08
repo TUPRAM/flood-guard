@@ -300,6 +300,9 @@ def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
     qa_text = (REPO_ROOT / "docs" / "dashboard_demo_qa_checklist.md").read_text(
         encoding="utf-8"
     )
+    qa_notes_text = (REPO_ROOT / "docs" / "dashboard_visual_qa_notes.md").read_text(
+        encoding="utf-8"
+    )
 
     for phrase in (
         "fixture-backed decision-layer prototype",
@@ -331,6 +334,18 @@ def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
         "no absolute local source paths",
     ):
         assert phrase in qa_text
+
+    for phrase in (
+        "No screenshot files were saved or committed",
+        "1536x1024",
+        "2048x1152",
+        "1440x900",
+        "FG-TB-002",
+        "Temporary shelter delta: `-30`",
+        "Road closure delta: `+50`",
+        "Real Mae Sai validation remains blocked",
+    ):
+        assert phrase in qa_notes_text
 
 
 def test_mae_sai_pair_decision_note_locks_planning_pair_not_processing() -> None:

@@ -29,7 +29,7 @@ http://localhost:8000/dashboard.html
 
 1. Start on `FG-TB-001 / River Market`.
    - Point to FPPS `81.60`, action class `A`, confidence `high`, baseline 30-minute access loss, and equity gap.
-   - Say: FloodGuard is ranking local action priorities, not just drawing flood water.
+   - Say: FloodGuard ranks local action priorities from flood, exposure, access, equity, and road-risk evidence. It is not just showing where water might be.
 
 2. Explain the map.
    - Polygons are synthetic subdistrict priorities.
@@ -41,14 +41,14 @@ http://localhost:8000/dashboard.html
    - Mention that A/B/C briefs are generated for actionable subdistricts.
 
 4. Switch to `FG-TB-002 / Bridge Junction`.
-   - This is useful because scenario deltas are visible.
+   - This is the best scenario demo row because the intervention and stress-test deltas are visible.
 
 5. Toggle `temporary shelter delta`.
-   - Explain that a temporary shelter reduces 30-minute access loss in the fixture.
+   - Explain that the temporary shelter reduces 30-minute access loss by `30` people in the fixture.
    - The dashboard shows the intervention effect without claiming it is a real deployment plan.
 
 6. Toggle `road closure delta`.
-   - Explain the stress case: closing a road can increase people losing 30-minute access.
+   - Explain the stress case: closing the selected road increases people losing 30-minute access by `50` in the fixture.
    - This is why road-risk and access-loss are part of the decision layer.
 
 7. Open `Context Assets`.
@@ -58,7 +58,7 @@ http://localhost:8000/dashboard.html
    - None of these are legal flood labels in the current dashboard.
 
 8. Open `Data Readiness`.
-   - End with the blocker: real Mae Sai validation waits for reference-mask legal clearance, local paths, checksums, and a locked pre/post pair.
+   - End with the blocker: real Mae Sai validation waits for provider/legal clearance, local paths, SHA-256 checksums, and a locked pre/post Sentinel-1 pair.
 
 ## 10 Minute Expanded Path
 
@@ -90,6 +90,7 @@ http://localhost:8000/dashboard.html
    - `baseline`
    - `temporary shelter delta`
    - `road closure delta`
+   - For `FG-TB-002`, say the temporary shelter improves 30-minute access by `30` people and the road-closure stress case worsens it by `50` people.
 
 8. Use export buttons:
    - `Download current brief`
@@ -106,17 +107,17 @@ http://localhost:8000/dashboard.html
 
 ## Exact Phrases To Use
 
-- “This is a fixture-backed decision demo.”
-- “This is non-operational and not an official warning.”
-- “The context assets are not flood labels or reference masks.”
-- “Real-data ML starts only after legal reference masks and the non-ML baseline are ready.”
-- “The differentiator is turning flood information into access, equity, road risk, scenario effects, and local action briefs.”
+- "This is a fixture-backed decision demo."
+- "This is non-operational and not an official warning."
+- "The context assets are not flood labels or reference masks."
+- "Real-data ML starts only after legal reference masks and the non-ML baseline are ready."
+- "The differentiator is turning flood information into access, equity, road risk, scenario effects, and local action briefs."
 
 ## Avoid Saying
 
-- “Real-time detection”
-- “Official warning”
-- “Validated flood extent”
-- “THEOS-2 confirms flooding”
-- “Sentinel-1 quicklook proves flood water”
-- “ML is ready”
+- "Real-time detection"
+- "Official warning"
+- "Validated flood extent"
+- "THEOS-2 confirms flooding"
+- "Sentinel-1 quicklook proves flood water"
+- "ML is ready"

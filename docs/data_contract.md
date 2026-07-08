@@ -344,13 +344,62 @@ Supported profiles:
 
 - `mae_sai_2024`
 - `hat_yai_2025`
+- `mae_sai_2024_sentinel2`
+- `hat_yai_2025_sentinel2`
 
 Live metadata snapshots may be written as:
 
 - `outputs/cdse_mae_sai_2024_metadata.csv`
 - `outputs/cdse_hat_yai_2025_metadata.csv`
+- `outputs/cdse_mae_sai_2024_sentinel2_metadata.csv`
+- `outputs/cdse_hat_yai_2025_sentinel2_metadata.csv`
 
 These files should only be committed after intentional review using `docs/live_metadata_snapshot_review_checklist.md`.
+
+## Public Reference Candidate Manifest
+
+`outputs/public_reference_candidate_manifest.csv` records public/open fallback source candidates while provider responses are pending. It must remain metadata-only and must not download or commit source products.
+
+Required columns:
+
+- `source_name`
+- `source_group`
+- `study_area`
+- `source_url`
+- `data_or_product_type`
+- `candidate_role`
+- `access_route`
+- `license_status`
+- `geometry_status`
+- `redistribution_status`
+- `can_use_for_validation`
+- `can_use_for_ml_labels`
+- `download_action`
+- `repo_storage`
+- `processing_scope`
+- `confidence_class`
+- `blocker`
+- `next_action`
+- `retrieved_at_utc`
+
+Current source groups include:
+
+- `cdse_sentinel1`
+- `cdse_sentinel2`
+- `cems_rapid_mapping`
+- `sentinel_asia_event`
+- `sentinel_asia_product`
+- `unosat_public_report`
+- `nasa_nrt_flood`
+- `worldpop_population`
+- `osm_geofabrik`
+- `copernicus_dem`
+- `hdx_cod_ab`
+- `theos2_optical`
+- `local_sentinel1_sar`
+- `local_copernicus_dem`
+
+`outputs/sentinel_asia_public_product_links.csv` uses the same columns and contains only public product-link rows scraped from the Sentinel Asia Northern Thailand 2024 page. The shapefile/GIS ZIP rows are possible geometry candidates only. They must not become validation masks or ML labels until product-level license, geometry, checksum, and processing gates are clear.
 
 ## Metadata-Only Ingestion Manifest
 

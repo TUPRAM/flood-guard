@@ -78,6 +78,8 @@ CDSE metadata queries are no-download catalogue queries. Use dry-run first to in
 ```powershell
 uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024 --dry-run
 uv run python scripts/query_cdse_metadata.py --profile hat_yai_2025 --dry-run
+uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024_sentinel2 --dry-run
+uv run python scripts/query_cdse_metadata.py --profile hat_yai_2025_sentinel2 --dry-run
 ```
 
 Only run the `--output` form when you intentionally want to create and review a live metadata snapshot for commit:
@@ -85,11 +87,21 @@ Only run the `--output` form when you intentionally want to create and review a 
 ```powershell
 uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024 --output outputs/cdse_mae_sai_2024_metadata.csv
 uv run python scripts/query_cdse_metadata.py --profile hat_yai_2025 --output outputs/cdse_hat_yai_2025_metadata.csv
+uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024_sentinel2 --output outputs/cdse_mae_sai_2024_sentinel2_metadata.csv
+uv run python scripts/query_cdse_metadata.py --profile hat_yai_2025_sentinel2 --output outputs/cdse_hat_yai_2025_sentinel2_metadata.csv
 ```
 
-Before committing either `outputs/cdse_*_metadata.csv` file, complete `docs/live_metadata_snapshot_review_checklist.md` and record the row count, command, dry-run URL review, and reason for committing the snapshot.
+Before committing any `outputs/cdse_*_metadata.csv` file, complete `docs/live_metadata_snapshot_review_checklist.md` and record the row count, command, dry-run URL review, and reason for committing the snapshot. Committed snapshot decisions are logged in `docs/live_metadata_snapshot_review_log.md`.
 
 These commands write metadata rows only. They do not download Sentinel-1 assets, flood masks, GISTDA products, Charter products, Sentinel Asia products, or any remote-sensing model inputs.
+
+The public open-data fallback inventory can be refreshed with:
+
+```powershell
+uv run python scripts/build_public_reference_manifest.py
+```
+
+This writes `outputs/public_reference_candidate_manifest.csv` and `outputs/sentinel_asia_public_product_links.csv`. The script records public source candidates and Sentinel Asia public product URLs only. It does not download product ZIPs, JPG maps, GeoTIFFs, SAFE packages, flood masks, or NASA/WorldPop/OSM/DEM assets into the repo. The current approach is documented in `docs/public_open_data_acquisition.md`.
 
 The metadata-first ingestion skeleton can build a blocked planning manifest:
 

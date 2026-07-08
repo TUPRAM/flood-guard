@@ -46,13 +46,25 @@ Current expected MVP output:
 - `theos2_landcover_exposure_features.csv`
 - `theos2_visual_review_checklist.csv`
 - `mae_sai_validation_summary.md`
+- `public_reference_candidate_manifest.csv`
+- `sentinel_asia_public_product_links.csv`
+- `cdse_mae_sai_2024_metadata.csv`
+- `cdse_hat_yai_2025_metadata.csv`
+- `cdse_mae_sai_2024_sentinel2_metadata.csv`
+- `cdse_hat_yai_2025_sentinel2_metadata.csv`
 
 Optional live metadata snapshots, generated only when intentionally run and reviewed:
 
 - `cdse_mae_sai_2024_metadata.csv`
 - `cdse_hat_yai_2025_metadata.csv`
+- `cdse_mae_sai_2024_sentinel2_metadata.csv`
+- `cdse_hat_yai_2025_sentinel2_metadata.csv`
 
 Before committing optional live metadata snapshots, complete `docs/live_metadata_snapshot_review_checklist.md`.
+
+`public_reference_candidate_manifest.csv` is the public/open data fallback inventory. It records source candidates for CDSE Sentinel-1/Sentinel-2, CEMS EMSR754/EMSR756, Sentinel Asia Northern Thailand 2024, UNOSAT/UN Thailand public reports, NASA flood products, WorldPop, OSM/Geofabrik, Copernicus DEM, HDX COD-AB, and local hackathon lanes. It is metadata-only and contains no source imagery or product packages.
+
+`sentinel_asia_public_product_links.csv` records public product URLs scraped from the Sentinel Asia Northern Thailand 2024 event page. These links are event evidence and possible geometry candidates, not automatically validation masks or ML labels. Product files must be downloaded outside Git, checksummed, inspected, and legally reviewed before any use beyond metadata.
 
 `dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from embedded fixture data only.
 

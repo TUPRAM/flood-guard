@@ -311,3 +311,9 @@ Acceptance: `outputs/judge_demo_readme.md` explains what the fixture demo proves
 Add executable no-download checks for provider/legal gates and the Mae Sai file-level manifest.
 
 Acceptance: `scripts/check_real_data_gates.py` keeps all current rows blocked until provider responses clear geometry access, local validation, derived metrics, screenshots/demo, redistribution/reference-only status, citation, and final blocking decision. `scripts/validate_mae_sai_file_manifest.py` explains which reference-mask, pre-event SAR, or post-event SAR row blocks the real non-ML baseline. ML-label use remains a separate explicit gate.
+
+## Task 51 - Public Open-Data Acquisition Lane
+
+Build a no-download public/open source inventory while provider responses are pending.
+
+Acceptance: `scripts/build_public_reference_manifest.py` writes `outputs/public_reference_candidate_manifest.csv` and `outputs/sentinel_asia_public_product_links.csv`; CDSE profiles cover Sentinel-1 and Sentinel-2 for Mae Sai 2024 and Hat Yai 2025; outputs record public source URLs, product-link candidates, validation/ML-label status, storage rules, blockers, and next actions without downloading source imagery or product packages into Git.

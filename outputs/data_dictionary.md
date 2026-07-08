@@ -195,7 +195,7 @@ Dashboard QA support:
 
 ## Metadata Planning Outputs
 
-Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, and `local_data_library_zip_members.csv`
+Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, `local_data_library_zip_members.csv`, `public_reference_candidate_manifest.csv`, `sentinel_asia_public_product_links.csv`, and `cdse_*_metadata.csv`
 
 | Field | Meaning |
 | --- | --- |
@@ -209,6 +209,14 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 | `query_profile` | Query profile, such as `mae_sai_2024` or `hat_yai_2025`. |
 | `source_url` | CDSE OData query URL used for metadata. |
 | `blocker_note` | Licensing, geometry, or no-download blocker note. |
+| `source_group` | Public/open source family, such as `cdse_sentinel1`, `cems_rapid_mapping`, `sentinel_asia_product`, `worldpop_population`, or `osm_geofabrik`. |
+| `data_or_product_type` | Public inventory type, such as open SAR imagery, rapid mapping activation, shapefile ZIP candidate, report page, or population raster. |
+| `access_route` | How the data can be accessed, such as CDSE metadata query, public event page, Earthdata registration, or external local workspace. |
+| `geometry_status` | Whether machine-readable geometry exists, is unresolved, or requires external inspection. |
+| `can_use_for_validation` | Conservative validation status. Values may be possible only after product coverage, geometry, license, and file gates are checked. |
+| `can_use_for_ml_labels` | Conservative ML-label status. Current public candidates are not cleared as ML labels by default. |
+| `download_action` | What action is allowed next. Current rows permit metadata capture and external review, not product downloads into Git. |
+| `repo_storage` | Repository storage rule. Public inventory rows are metadata CSV only and must not commit source products. |
 | `product_id` | File-level source or reference-mask product id once selected. |
 | `local_path` | Local path for legally acquired source data, stored outside Git. |
 | `sha256` | SHA-256 checksum for the locally tracked file or source package. |
@@ -240,6 +248,12 @@ Reference-mask legal gate fields used by `scripts/check_real_data_gates.py`:
 | `ml_label_allowed` | Computed gate result for ML-label use, separate from validation. |
 
 `mae_sai_real_data_file_manifest.csv` is a blocked planning manifest for the first real non-ML SAR baseline. It includes the UNOSAT reference-mask target, the selected September 6 pre-event Sentinel-1 COG, the selected September 15 post-event Sentinel-1 COG, and the September 18 fallback post-event COG. No local paths or checksums are recorded yet, so all rows remain `processing_allowed=False`.
+
+`public_reference_candidate_manifest.csv` is the public/open fallback source inventory. It includes CDSE Sentinel-1/Sentinel-2, CEMS EMSR754/EMSR756, Sentinel Asia public product links, UNOSAT/UN Thailand report evidence, NASA flood products, WorldPop, OSM/Geofabrik, Copernicus DEM, HDX COD-AB, and local hackathon lanes. It is metadata-only and does not make any source a legal flood label by itself.
+
+`sentinel_asia_public_product_links.csv` records public Sentinel Asia Northern Thailand 2024 product URLs. Current generated rows include JPG map/quicklook links, GIS ZIP candidates, and one shapefile ZIP candidate. These are not automatically validation masks or ML labels.
+
+`cdse_mae_sai_2024_metadata.csv` and `cdse_hat_yai_2025_metadata.csv` are Sentinel-1 no-download CDSE product metadata snapshots. `cdse_mae_sai_2024_sentinel2_metadata.csv` and `cdse_hat_yai_2025_sentinel2_metadata.csv` are Sentinel-2 L2A optical-context metadata snapshots.
 
 `local_data_library_manifest.csv` catalogs every currently provided local hackathon file listed for the project. It includes top-level Google Drive ZIP bundles, the standalone Sentinel-1 TIFF, standalone THEOS-2 TIFF/OVR files, and THEOS-2 sample ZIP packages.
 

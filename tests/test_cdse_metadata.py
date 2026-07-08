@@ -85,3 +85,29 @@ def test_cdse_cli_dry_run_prints_url_without_network() -> None:
     assert "catalogue.dataspace.copernicus.eu/odata/v1/Products" in result.stdout
     assert "POINT(99.88+20.43)" in result.stdout
     assert "2024-09-01T00:00:00.000Z" in result.stdout
+
+
+def test_sentinel2_profiles_are_optical_context_only() -> None:
+    profile = get_cdse_profile("mae_sai_2024_sentinel2", top=5)
+
+    url = build_cdse_products_url(profile)
+    rows = parse_cdse_products(
+        {
+            "value": [
+                {
+                    "ContentDate": {"Start": "2024-09-05T03:45:39.024000Z"},
+                    "Name": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+                    "Id": "4f09f5d1-6895-43f7-a2dd-5143f5c4c123",
+                    "Online": True,
+                }
+            ]
+        },
+        profile,
+        source_url=url,
+    )
+
+    assert "Collection/Name+eq+'SENTINEL-2'" in url
+    assert "contains(Name,'MSIL2A')" in url
+    assert rows[0]["product_storage_type"] == "SAFE"
+    assert rows[0]["candidate_role"] == "pre-event optical context candidate"
+    assert "not a flood reference mask" in rows[0]["blocker_note"]

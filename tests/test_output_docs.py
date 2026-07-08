@@ -82,6 +82,14 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "ml_label_allowed",
         "screenshots_demo_allowed",
         "ml_label_use_allowed",
+        "public_reference_candidate_manifest.csv",
+        "sentinel_asia_public_product_links.csv",
+        "cdse_mae_sai_2024_sentinel2_metadata.csv",
+        "cdse_hat_yai_2025_sentinel2_metadata.csv",
+        "source_group",
+        "can_use_for_validation",
+        "can_use_for_ml_labels",
+        "metadata CSV only",
     ):
         assert field in text
     assert "not official warnings" in text or "not official warnings" in text.lower()
@@ -126,7 +134,14 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "Do not commit source TIFF, ZIP, SAFE, JP2, NetCDF, GRIB, or overview files" in text
     assert "--profile mae_sai_2024 --output outputs/cdse_mae_sai_2024_metadata.csv" in text
     assert "--profile hat_yai_2025 --output outputs/cdse_hat_yai_2025_metadata.csv" in text
+    assert "--profile mae_sai_2024_sentinel2 --output outputs/cdse_mae_sai_2024_sentinel2_metadata.csv" in text
+    assert "--profile hat_yai_2025_sentinel2 --output outputs/cdse_hat_yai_2025_sentinel2_metadata.csv" in text
+    assert "build_public_reference_manifest.py" in text
+    assert "public_reference_candidate_manifest.csv" in text
+    assert "sentinel_asia_public_product_links.csv" in text
+    assert "does not download product ZIPs" in text
     assert "docs/live_metadata_snapshot_review_checklist.md" in text
+    assert "docs/live_metadata_snapshot_review_log.md" in text
     assert "docs/ml_readiness_plan.md" in text
     assert "docs/sar_baseline_contract.md" in text
     assert "docs/first_ml_experiment_plan.md" in text
@@ -147,6 +162,69 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "They do not download Sentinel-1 assets" in text
     assert "build_ingestion_manifest.py" in text
     assert "build_local_data_library.py" in text
+
+
+def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
+    doc_text = (REPO_ROOT / "docs" / "public_open_data_acquisition.md").read_text(
+        encoding="utf-8"
+    )
+    log_text = (
+        REPO_ROOT / "docs" / "live_metadata_snapshot_review_log.md"
+    ).read_text(encoding="utf-8")
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(encoding="utf-8")
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    manifest_text = (
+        REPO_ROOT / "outputs" / "public_reference_candidate_manifest.csv"
+    ).read_text(encoding="utf-8")
+    sentinel_asia_text = (
+        REPO_ROOT / "outputs" / "sentinel_asia_public_product_links.csv"
+    ).read_text(encoding="utf-8")
+
+    for phrase in (
+        "No source imagery",
+        "public_reference_candidate_manifest.csv",
+        "sentinel_asia_public_product_links.csv",
+        "CEMS EMSR754",
+        "Sentinel-2 metadata only",
+        "not automatically validation masks",
+        "does not clear ML-label gates",
+    ):
+        assert phrase in doc_text
+
+    assert "Download performed" in log_text
+    assert "| `outputs/sentinel_asia_public_product_links.csv` | 33 | no |" in log_text
+    assert "no raw source assets" in log_text
+    assert "public_reference_candidate_manifest.csv" in output_text
+    assert "sentinel_asia_public_product_links.csv" in output_text
+    assert "Public Reference Candidate Manifest" in contract_text
+    assert "sentinel_asia_product" in contract_text
+    assert "can_use_for_ml_labels" in manifest_text
+    assert "not_cleared_for_ml_labels" in sentinel_asia_text
+    assert "shapefile_zip" in sentinel_asia_text
+
+
+def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
+    source_text = (REPO_ROOT / "docs" / "source_registry.md").read_text(
+        encoding="utf-8"
+    )
+    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "Copernicus Sentinel-2 via CDSE",
+        "Copernicus EMS Rapid Mapping EMSR754/EMSR756",
+        "Sentinel Asia Northern Thailand 2024 public products",
+        "NASA MODIS/VIIRS NRT Global Flood Products",
+    ):
+        assert phrase in source_text
+
+    assert "Task 51 - Public Open-Data Acquisition Lane" in backlog_text
+    assert "outputs/public_reference_candidate_manifest.csv" in backlog_text
+    assert "outputs/sentinel_asia_public_product_links.csv" in backlog_text
+    assert "without downloading source imagery or product packages into Git" in backlog_text
 
 
 def test_licensing_request_templates_cover_priority_sources() -> None:

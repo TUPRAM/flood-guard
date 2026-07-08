@@ -68,6 +68,34 @@ CDSE_PROFILES: dict[str, CDSEQueryProfile] = {
             "geometry access and license status not confirmed"
         ),
     ),
+    "mae_sai_2024_sentinel2": CDSEQueryProfile(
+        name="mae_sai_2024_sentinel2",
+        point_wkt="POINT(99.88 20.43)",
+        collection="SENTINEL-2",
+        product_name_contains="MSIL2A",
+        start_datetime="2024-09-01T00:00:00.000Z",
+        end_datetime="2024-09-25T23:59:59.999Z",
+        default_top=50,
+        role_mode="mae_sai_sentinel2",
+        blocker_note=(
+            "download not performed; Sentinel-2 is open optical context and "
+            "feature input only, not a flood reference mask"
+        ),
+    ),
+    "hat_yai_2025_sentinel2": CDSEQueryProfile(
+        name="hat_yai_2025_sentinel2",
+        point_wkt="POINT(100.47 7.01)",
+        collection="SENTINEL-2",
+        product_name_contains="MSIL2A",
+        start_datetime="2025-11-17T00:00:00.000Z",
+        end_datetime="2025-12-05T23:59:59.999Z",
+        default_top=50,
+        role_mode="hat_yai_sentinel2",
+        blocker_note=(
+            "download not performed; Sentinel-2 is open optical context and "
+            "feature input only, not a flood reference mask"
+        ),
+    ),
 }
 
 
@@ -182,4 +210,12 @@ def _candidate_role(
         return f"fallback post-event {suffix}"
     if profile.role_mode == "hat_yai":
         return f"event-window {suffix}"
+    if profile.role_mode == "mae_sai_sentinel2":
+        if acquisition_date < "2024-09-10":
+            return "pre-event optical context candidate"
+        if acquisition_date < "2024-09-18":
+            return "post-event optical context candidate"
+        return "fallback post-event optical context candidate"
+    if profile.role_mode == "hat_yai_sentinel2":
+        return "event-window optical context candidate"
     return suffix

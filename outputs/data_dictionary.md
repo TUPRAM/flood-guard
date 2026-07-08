@@ -192,7 +192,7 @@ Dashboard v9 dataset mode switch:
 | `dataset-mode-select` | Static control that lets the viewer choose `fixture demo`, `public-data Mae Sai candidate`, or `blocked/metadata-only view` narrative mode. |
 | `dataset-mode-note` | Plain-language note explaining whether the viewer is seeing fixture outputs, a public Mae Sai reference-candidate narrative, or blocked metadata-only readiness. |
 | `fixture demo` | Current dashboard mode using synthetic fixture priority, access, equity, and road-risk outputs. |
-| `public-data Mae Sai candidate` | Narrative mode showing that Sentinel Asia geometry and CDSE metadata are cataloged, while real validation remains blocked. |
+| `public-data Mae Sai candidate` | Narrative mode showing that Sentinel Asia / MBRSC geometry QA found a Mae Sai reference candidate and CDSE pre/post Sentinel-1 rows are selected, while real validation remains blocked. |
 | `blocked/metadata-only view` | Narrative mode emphasizing that source candidates alone do not authorize real flood baselines or ML. |
 
 Dashboard QA support:
@@ -205,7 +205,13 @@ Dashboard QA support:
 
 ## Metadata Planning Outputs
 
-Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, `local_data_library_zip_members.csv`, `public_reference_candidate_manifest.csv`, `sentinel_asia_public_product_links.csv`, `public_reference_file_inspection_manifest.csv`, `cems_product_candidate_manifest.csv`, `mae_sai_reference_candidate_decision.md`, `open_context_data_file_manifest.csv`, and `cdse_*_metadata.csv`
+Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, `local_data_library_zip_members.csv`, `public_reference_candidate_manifest.csv`, `sentinel_asia_public_product_links.csv`, `public_reference_file_inspection_manifest.csv`, `sentinel_asia_geometry_quality_review.csv`, `sentinel_asia_product_terms_review.csv`, `cems_product_candidate_manifest.csv`, `mae_sai_reference_candidate_decision.md`, `open_context_data_file_manifest.csv`, `cdse_mae_sai_acquisition_manifest.csv`, and `cdse_*_metadata.csv`
+
+`sentinel_asia_geometry_quality_review.csv` is the QGIS/GDAL review of the selected outside-Git MBRSC shapefile ZIP. Current values show WGS84 polygon geometry, `6506` full-layer features, `514` features intersecting the Mae Sai review bbox, `464.234` km2 full-layer area-field sum, and `47.164` km2 inside the Mae Sai review bbox. This is geometry quality evidence only; it does not clear validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use.
+
+`sentinel_asia_product_terms_review.csv` records the conservative product-terms decision. Current status is `reference_candidate_only` because no explicit product-level terms were found for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use.
+
+`cdse_mae_sai_acquisition_manifest.csv` records selected Mae Sai Sentinel-1 CDSE acquisition rows. Current rows are `blocked_missing_cdse_credentials` when `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD` are absent; no product assets are downloaded into Git.
 
 | Field | Meaning |
 | --- | --- |
@@ -219,6 +225,11 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 | `query_profile` | Query profile, such as `mae_sai_2024` or `hat_yai_2025`. |
 | `source_url` | CDSE OData query URL used for metadata. |
 | `blocker_note` | Licensing, geometry, or no-download blocker note. |
+| `download_url` | CDSE product `$value` endpoint or public product URL when exposed; source products must still stay outside Git. |
+| `download_attempted` | Whether the CDSE acquisition helper attempted an asset download. Current blocked rows are `False`. |
+| `download_status` | CDSE acquisition state such as `blocked_missing_cdse_credentials`, `dry_run_no_download`, or `downloaded_outside_git`. |
+| `sha256_status` | Whether a selected outside-Git file checksum is recorded. |
+| `file_size_bytes` | Size of the downloaded outside-Git product when available. |
 | `source_group` | Public/open source family, such as `cdse_sentinel1`, `cems_rapid_mapping`, `sentinel_asia_product`, `worldpop_population`, or `osm_geofabrik`. |
 | `data_or_product_type` | Public inventory type, such as open SAR imagery, rapid mapping activation, shapefile ZIP candidate, report page, or population raster. |
 | `access_route` | How the data can be accessed, such as CDSE metadata query, public event page, Earthdata registration, or external local workspace. |
@@ -246,6 +257,20 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 | `flood_water_extent_evidence` | Header/member-name evidence that the candidate likely contains flood-water geometry. |
 | `flood_water_extent_geometry_assessment` | Conservative geometry assessment; still requires product-term and quality review before validation. |
 | `reference_candidate_status` | Candidate status such as `candidate_geometry_intersects_mae_sai_bbox`. |
+| `qgis_tool` | Review tool family used for geometry QA, currently QGIS/GDAL `ogrinfo` without exposing the absolute executable path. |
+| `qgis_gdal_version` | GDAL/QGIS runtime version used to inspect the shapefile. |
+| `area_field_sum_km2` | Full-layer sum of the shapefile `Area` attribute converted from square meters to square kilometers. |
+| `mae_sai_review_feature_count` | QGIS/GDAL count of features intersecting the Mae Sai review bbox. |
+| `mae_sai_review_bbox_area_sum_km2` | Sum of the shapefile `Area` attribute for features intersecting the Mae Sai review bbox. |
+| `gridcode_values` | Distinct gridcode values reported by QGIS/GDAL; current inspected layer uses `1`. |
+| `geometry_quality_status` | Conservative spatial QA status; current status is useful reference-candidate geometry, not validation truth. |
+| `validation_use_status` | Whether the geometry may be used for validation; current status remains terms and quality review required. |
+| `ml_label_use_status` | Whether the geometry may be used as ML labels; current status is not cleared for ML labels. |
+| `terms_found` | Whether explicit product-level terms were found for the inspected Sentinel Asia product. |
+| `validation_metrics_allowed` | Product-terms status for computing local validation metrics; current status is unresolved. |
+| `screenshots_demo_allowed` | Product-terms status for screenshots/demo use; current status is unresolved. |
+| `derived_metrics_allowed` | Product-terms status for derived metrics such as IoU and area statistics; current status is unresolved. |
+| `ml_label_use_allowed` | Product-terms status for weak-label or ML-label use; current status is blocked or unresolved unless explicitly cleared. |
 | `activation_code` | CEMS activation code such as `EMSR754` or `EMSR756`. |
 | `activation_name` | CEMS activation name returned by the public API. |
 | `countries` | Pipe-delimited CEMS activation country list. |

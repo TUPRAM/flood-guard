@@ -85,10 +85,21 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "public_reference_candidate_manifest.csv",
         "sentinel_asia_public_product_links.csv",
         "public_reference_file_inspection_manifest.csv",
+        "sentinel_asia_geometry_quality_review.csv",
+        "sentinel_asia_product_terms_review.csv",
         "cems_product_candidate_manifest.csv",
         "mae_sai_reference_candidate_decision.md",
         "open_context_data_file_manifest.csv",
+        "cdse_mae_sai_acquisition_manifest.csv",
         "dataset-mode-select",
+        "qgis_tool",
+        "geometry_quality_status",
+        "validation_use_status",
+        "ml_label_use_status",
+        "terms_found",
+        "validation_metrics_allowed",
+        "download_status",
+        "blocked_missing_cdse_credentials",
         "feature_bbox_count",
         "mae_sai_review_bbox_feature_count",
         "mae_sai_reference_relevance",
@@ -197,6 +208,9 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
         "CEMS EMSR754",
         "Current rows do not cover Mae Sai",
         "WGS84 polygon geometry",
+        "QGIS/GDAL review confirms",
+        "product terms remain unresolved",
+        "blocked acquisition manifest",
         "Sentinel-2 metadata only",
         "not automatically validation masks",
         "does not clear ML-label gates",
@@ -209,12 +223,18 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "public_reference_candidate_manifest.csv" in output_text
     assert "sentinel_asia_public_product_links.csv" in output_text
     assert "public_reference_file_inspection_manifest.csv" in output_text
+    assert "sentinel_asia_geometry_quality_review.csv" in output_text
+    assert "sentinel_asia_product_terms_review.csv" in output_text
     assert "cems_product_candidate_manifest.csv" in output_text
     assert "mae_sai_reference_candidate_decision.md" in output_text
     assert "open_context_data_file_manifest.csv" in output_text
+    assert "cdse_mae_sai_acquisition_manifest.csv" in output_text
     assert "Public Reference Candidate Manifest" in contract_text
     assert "Public Reference File Inspection Manifest" in contract_text
+    assert "Sentinel Asia Geometry Quality Review" in contract_text
+    assert "Sentinel Asia Product Terms Review" in contract_text
     assert "CEMS Product Candidate Manifest" in contract_text
+    assert "CDSE Mae Sai Acquisition Manifest" in contract_text
     assert "Open Context Data File Manifest" in contract_text
     assert "Dashboard v9 Dataset Mode Switch" in contract_text
     assert "sentinel_asia_product" in contract_text
@@ -236,6 +256,9 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
         "Copernicus EMS Rapid Mapping EMSR754/EMSR756",
         "Sentinel Asia Northern Thailand 2024 public products",
         "NASA MODIS/VIIRS NRT Global Flood Products",
+        "outputs/cdse_mae_sai_acquisition_manifest.csv",
+        "QGIS/GDAL",
+        "6,506 full-layer features",
     ):
         assert phrase in source_text
 
@@ -245,8 +268,15 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
     assert "Task 54 - Mae Sai Public Reference Candidate Decision" in backlog_text
     assert "Task 55 - Open Context Data File Manifest" in backlog_text
     assert "Task 56 - Dashboard Dataset Mode Switch" in backlog_text
+    assert "Task 57 - Sentinel Asia QGIS Geometry Quality Review" in backlog_text
+    assert "Task 58 - Sentinel Asia Product Terms Review" in backlog_text
+    assert "Task 59 - CDSE Sentinel-1 Mae Sai Acquisition Gate" in backlog_text
+    assert "Task 60 - Mae Sai Manifest Public Reference Update" in backlog_text
+    assert "Task 61 - Real Baseline And ML Gate Reminder" in backlog_text
     assert "outputs/public_reference_candidate_manifest.csv" in backlog_text
     assert "outputs/sentinel_asia_public_product_links.csv" in backlog_text
+    assert "outputs/sentinel_asia_geometry_quality_review.csv" in backlog_text
+    assert "outputs/cdse_mae_sai_acquisition_manifest.csv" in backlog_text
     assert "without downloading source imagery or product packages into Git" in backlog_text
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import pandas as pd
@@ -17,6 +18,14 @@ from floodguard.ingestion import (
 )
 
 REPO_ROOT = Path(__file__).parents[1]
+_SCRIPT_SPEC = importlib.util.spec_from_file_location(
+    "build_mae_sai_file_manifest",
+    REPO_ROOT / "scripts" / "build_mae_sai_file_manifest.py",
+)
+assert _SCRIPT_SPEC is not None
+assert _SCRIPT_SPEC.loader is not None
+build_mae_sai_file_manifest = importlib.util.module_from_spec(_SCRIPT_SPEC)
+_SCRIPT_SPEC.loader.exec_module(build_mae_sai_file_manifest)
 
 
 def test_default_reference_mask_sources_build_metadata_only_manifest() -> None:
@@ -107,6 +116,48 @@ def test_mae_sai_file_manifest_sources_are_blocked_until_files_are_acquired() ->
 
     with pytest.raises(IngestionPlanError, match="processing_allowed is not true"):
         validate_mae_sai_file_manifest_ready(manifest)
+
+
+def test_mae_sai_manifest_absorbs_cdse_acquisition_rows(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    outputs_dir = tmp_path / "outputs"
+    outputs_dir.mkdir()
+    pd.DataFrame(
+        [
+            {
+                "product_id": "b09f96ca-4a60-43e7-9b8d-158022f0e5bf",
+                "product_name": "S1A_PRE_COG.SAFE",
+                "candidate_role": "pre-event COG candidate",
+                "acquisition_date": "2024-09-06T11:31:06Z",
+                "download_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(b09)/$value",
+                "local_path_hint": "<external_data_workspace>/cdse/mae_sai_2024/pre.zip",
+                "sha256": "b" * 64,
+                "sha256_status": "recorded",
+                "file_size_bytes": "123",
+                "download_attempted": "True",
+                "download_status": "downloaded_outside_git",
+                "source_license_status": "confirmed_copernicus_sentinel_legal_notice",
+                "reference_mask_status": "unresolved",
+                "processing_allowed": "False",
+                "reason_blocked": "reference mask status remains unresolved",
+                "retrieved_at_utc": "2026-07-08T00:00:00Z",
+            }
+        ]
+    ).to_csv(outputs_dir / "cdse_mae_sai_acquisition_manifest.csv", index=False)
+    monkeypatch.setattr(build_mae_sai_file_manifest, "REPO_ROOT", tmp_path)
+
+    sources = build_mae_sai_file_manifest._with_cdse_acquisition_rows(
+        default_mae_sai_file_manifest_sources()
+    )
+    manifest = build_ingestion_manifest(sources)
+    row = manifest[
+        manifest["product_id"] == "b09f96ca-4a60-43e7-9b8d-158022f0e5bf"
+    ].iloc[0]
+
+    assert row["local_path"] == "<external_data_workspace>/cdse/mae_sai_2024/pre.zip"
+    assert row["sha256"] == "b" * 64
+    assert row["source_license_status"] == "confirmed"
+    assert bool(row["processing_allowed"]) is False
+    assert "reference mask not confirmed" in row["reason_blocked"]
 
 
 def test_mae_sai_file_manifest_ready_returns_required_rows_when_gates_pass() -> None:

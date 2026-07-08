@@ -136,7 +136,8 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "public-data Mae Sai candidate" in html
     assert "blocked/metadata-only view" in html
     assert "const datasetModeNotes =" in html
-    assert "Public-data Mae Sai candidate: Sentinel Asia geometry and CDSE metadata are cataloged" in html
+    assert "Public-data Mae Sai candidate: Sentinel Asia / MBRSC geometry QA found 514 Mae Sai review-bbox features" in html
+    assert "CDSE pre/post Sentinel-1 rows are selected" in html
     assert "Blocked/metadata-only view: source candidates are documented" in html
     assert "dataset-mode-note" in html
     assert 'class="action-filter"' in html

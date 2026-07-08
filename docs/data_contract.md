@@ -356,6 +356,31 @@ Live metadata snapshots may be written as:
 
 These files should only be committed after intentional review using `docs/live_metadata_snapshot_review_checklist.md`.
 
+## CDSE Mae Sai Acquisition Manifest
+
+`outputs/cdse_mae_sai_acquisition_manifest.csv` records the selected Mae Sai Sentinel-1 pre/post acquisition attempt. It may download CDSE products only to an external data workspace when credentials are supplied; it must never write product ZIPs, SAFE packages, TIFFs, or raw imagery into this repo.
+
+Required columns:
+
+- `product_id`
+- `product_name`
+- `candidate_role`
+- `acquisition_date`
+- `download_url`
+- `local_path_hint`
+- `sha256`
+- `sha256_status`
+- `file_size_bytes`
+- `download_attempted`
+- `download_status`
+- `source_license_status`
+- `reference_mask_status`
+- `processing_allowed`
+- `reason_blocked`
+- `retrieved_at_utc`
+
+Current rows remain blocked with `download_status=blocked_missing_cdse_credentials` when `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD` are unavailable. Even after outside-Git downloads succeed and SHA-256 checksums are recorded, `processing_allowed` remains `False` until a reference-mask source is cleared and the Mae Sai file manifest validates.
+
 ## Public Reference Candidate Manifest
 
 `outputs/public_reference_candidate_manifest.csv` records public/open fallback source candidates while provider responses are pending. It must remain metadata-only and must not download or commit source products.
@@ -446,6 +471,67 @@ The ZIP source file must remain outside Git, normally under an external workspac
 
 The current geometry inspection is metadata/header based plus shapefile record-bbox overlap counting. It does not assert that every polygon is flood water, and it does not clear ML-label use.
 
+## Sentinel Asia Geometry Quality Review
+
+`outputs/sentinel_asia_geometry_quality_review.csv` records the QGIS/GDAL spatial review of the selected Sentinel Asia / MBRSC shapefile ZIP that stays outside Git.
+
+Required columns:
+
+- `source_name`
+- `source_url`
+- `local_path_hint`
+- `qgis_tool`
+- `qgis_gdal_version`
+- `layer_name`
+- `geometry_type`
+- `crs`
+- `dbf_update_date`
+- `attribute_fields`
+- `feature_count`
+- `area_field_sum_m2`
+- `area_field_sum_km2`
+- `area_field_min_m2`
+- `area_field_max_m2`
+- `gridcode_values`
+- `mae_sai_review_bbox`
+- `mae_sai_review_feature_count`
+- `mae_sai_review_area_sum_m2`
+- `mae_sai_review_area_sum_km2`
+- `mae_sai_review_area_min_m2`
+- `mae_sai_review_area_max_m2`
+- `geometry_quality_status`
+- `flood_extent_interpretation`
+- `validation_use_status`
+- `ml_label_use_status`
+- `review_notes`
+- `reviewed_at_utc`
+
+Current QGIS/GDAL finding: the layer is WGS84 polygon data with `6506` full-layer features, `514` features intersecting the Mae Sai review bbox, about `464.234` km2 full-layer area-field sum, and about `47.164` km2 inside the Mae Sai review bbox. This makes the file a practical public reference candidate, not a cleared validation mask. Product-level terms, human visual QA, local file gates, and reference-mask status remain unresolved.
+
+`docs/sentinel_asia_geometry_quality_notes.md` is the human-readable companion note. It must not include the source shapefile or absolute local paths.
+
+## Sentinel Asia Product Terms Review
+
+`outputs/sentinel_asia_product_terms_review.csv` records a conservative terms review for the inspected Sentinel Asia / MBRSC product.
+
+Required columns:
+
+- `source_name`
+- `source_url`
+- `terms_found`
+- `geometry_access_status`
+- `validation_metrics_allowed`
+- `screenshots_demo_allowed`
+- `derived_metrics_allowed`
+- `redistribution_status`
+- `ml_label_use_allowed`
+- `current_decision`
+- `reason_blocked`
+- `next_action`
+- `reviewed_at_utc`
+
+Current decision: the public product page exposes a download link and the geometry is inspectable, but explicit product-level terms for validation metrics, screenshots/demo, derived metrics, redistribution, and ML-label use were not found. The product remains `reference_candidate_only`, not validation truth and not ML labels.
+
 ## CEMS Product Candidate Manifest
 
 `outputs/cems_product_candidate_manifest.csv` records CEMS public API AOI/product metadata for EMSR754 and EMSR756 without downloading product packages.
@@ -532,6 +618,8 @@ Dashboard v9 adds a static dataset mode selector:
 - `blocked/metadata-only view`
 
 The selector changes dashboard narrative text only. It does not substitute real data for fixture outputs, and it does not imply that public reference candidates are validated flood products.
+
+Current `public-data Mae Sai candidate` wording may reference the QGIS/GDAL Sentinel Asia / MBRSC review count and selected CDSE Sentinel-1 rows, but it must also state that real validation remains blocked until product terms, credentials, outside-Git local files, checksums, and reference-mask status clear.
 
 ## Metadata-Only Ingestion Manifest
 

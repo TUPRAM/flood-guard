@@ -1418,7 +1418,7 @@ def _build_dashboard_html(
     };
     const datasetModeNotes = {
       fixture_demo: 'Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision-layer workflow, not real flood accuracy.',
-      mae_sai_public_candidate: 'Public-data Mae Sai candidate: Sentinel Asia geometry and CDSE metadata are cataloged, but real validation remains blocked until product terms, quality review, local paths, and checksums clear.',
+      mae_sai_public_candidate: 'Public-data Mae Sai candidate: Sentinel Asia / MBRSC geometry QA found 514 Mae Sai review-bbox features, and CDSE pre/post Sentinel-1 rows are selected. Real validation remains blocked until product terms, CDSE credentials, outside-Git local files, checksums, and reference-mask status clear.',
       blocked_metadata_only: 'Blocked/metadata-only view: source candidates are documented, but no real flood baseline or ML output is allowed from metadata alone.'
     };
     const mapBoundsPadding = 0.16;

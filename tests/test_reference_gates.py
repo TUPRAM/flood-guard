@@ -23,6 +23,10 @@ def test_default_reference_gate_rows_remain_blocked() -> None:
     assert set(report["reference_validation_allowed"]) == {False}
     assert set(report["ml_label_allowed"]) == {False}
     assert set(report["gate_status"]) == {"blocked"}
+    assert (
+        report["source_name"]
+        == "Sentinel Asia / MBRSC Northern Thailand 2024 public shapefile"
+    ).any()
     assert report["reason_blocked"].str.contains("geometry access not confirmed").any()
     assert report["reason_blocked"].str.contains(
         "blocking_decision is not cleared for local validation"
@@ -83,7 +87,7 @@ def test_reference_gate_filter_by_study_area() -> None:
         study_area_contains="Chiang Rai",
     )
 
-    assert len(report) == 2
+    assert len(report) == 3
     assert report["study_area"].str.contains("Chiang Rai").all()
 
 

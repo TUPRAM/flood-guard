@@ -49,9 +49,12 @@ Current expected MVP output:
 - `public_reference_candidate_manifest.csv`
 - `sentinel_asia_public_product_links.csv`
 - `public_reference_file_inspection_manifest.csv`
+- `sentinel_asia_geometry_quality_review.csv`
+- `sentinel_asia_product_terms_review.csv`
 - `cems_product_candidate_manifest.csv`
 - `mae_sai_reference_candidate_decision.md`
 - `open_context_data_file_manifest.csv`
+- `cdse_mae_sai_acquisition_manifest.csv`
 - `cdse_mae_sai_2024_metadata.csv`
 - `cdse_hat_yai_2025_metadata.csv`
 - `cdse_mae_sai_2024_sentinel2_metadata.csv`
@@ -72,11 +75,17 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `public_reference_file_inspection_manifest.csv` records the selected Sentinel Asia MBRSC shapefile ZIP inspection. The ZIP itself is outside Git. The manifest stores a redacted local path hint, SHA-256 checksum, ZIP members, shapefile CRS, geometry type, bbox, DBF fields, and Mae Sai overlap status. It remains `processing_allowed=False` and `can_use_for_ml_labels=not_cleared_for_ml_labels`.
 
+`sentinel_asia_geometry_quality_review.csv` and `docs/sentinel_asia_geometry_quality_notes.md` record the QGIS/GDAL geometry quality review. Current findings: `6506` full-layer polygon features, `514` Mae Sai review-bbox intersecting features, `464.234` km2 full-layer area-field sum, and `47.164` km2 Mae Sai review-bbox area-field sum. This remains reference-candidate evidence only.
+
+`sentinel_asia_product_terms_review.csv` and `docs/sentinel_asia_product_terms_review.md` record the product-terms review. Current status: no explicit product-level terms were found for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use, so the source remains `reference_candidate_only`.
+
 `cems_product_candidate_manifest.csv` records public CEMS AOI/product rows for EMSR754 and EMSR756. It contains product names, AOIs, product types, public package URLs where the API exposes them, dates, layer names, and Mae Sai relevance. No CEMS product package is downloaded into Git.
 
 `mae_sai_reference_candidate_decision.md` compares Sentinel Asia, CEMS, UNOSAT public report evidence, and NASA coarse flood products. Current decision: Sentinel Asia MBRSC shapefile is the first practical public reference-candidate lane, not a cleared validation mask.
 
 `open_context_data_file_manifest.csv` records planned context-source rows for WorldPop Thailand 100m, HDX Thailand COD-AB, Geofabrik Thailand OSM, and Copernicus DEM GLO-30. These rows are context only and remain blocked until local paths and SHA-256 checksums are recorded outside Git.
+
+`cdse_mae_sai_acquisition_manifest.csv` records the selected Mae Sai pre/post Sentinel-1 CDSE acquisition attempt. Product downloads require `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD`; when credentials are missing, rows remain `blocked_missing_cdse_credentials`, with no source products downloaded into Git.
 
 `dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from embedded fixture data only.
 

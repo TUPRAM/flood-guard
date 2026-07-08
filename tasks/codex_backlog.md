@@ -347,3 +347,33 @@ Acceptance: `scripts/build_open_context_manifest.py` writes `outputs/open_contex
 Add a static dashboard dataset-mode selector so judges can distinguish fixture demo outputs from public Mae Sai reference-candidate planning and blocked metadata-only readiness.
 
 Acceptance: `outputs/dashboard.html` includes modes for `fixture demo`, `public-data Mae Sai candidate`, and `blocked/metadata-only view`; the selector changes narrative text only and does not imply real validation, official warning status, or ML readiness.
+
+## Task 57 - Sentinel Asia QGIS Geometry Quality Review
+
+Use QGIS/GDAL to review the selected outside-Git Sentinel Asia / MBRSC shapefile ZIP.
+
+Acceptance: `outputs/sentinel_asia_geometry_quality_review.csv` and `docs/sentinel_asia_geometry_quality_notes.md` record geometry type, CRS, full-layer feature count, Mae Sai review-bbox feature count, area-field sums, gridcode values, QA status, and strict reference-candidate wording without committing the shapefile.
+
+## Task 58 - Sentinel Asia Product Terms Review
+
+Document whether the public Sentinel Asia / MBRSC shapefile can be used for validation metrics, screenshots/demo, derived metrics, redistribution, and weak/ML labels.
+
+Acceptance: `docs/sentinel_asia_product_terms_review.md` and `outputs/sentinel_asia_product_terms_review.csv` keep the layer `reference_candidate_only` unless explicit product-level terms clear the relevant uses.
+
+## Task 59 - CDSE Sentinel-1 Mae Sai Acquisition Gate
+
+Add a credential-gated CDSE downloader that stores selected Sentinel-1 products outside Git and commits only path hints, SHA-256 checksums, and blocker status.
+
+Acceptance: `outputs/cdse_mae_sai_acquisition_manifest.csv` records the selected September 6 pre-event and September 15 post-event products, blocks cleanly without credentials, and never downloads source products into the repo.
+
+## Task 60 - Mae Sai Manifest Public Reference Update
+
+Wire the Mae Sai file manifest to absorb the inspected Sentinel Asia reference candidate and CDSE acquisition rows while preserving processing gates.
+
+Acceptance: `outputs/mae_sai_real_data_file_manifest.csv` can show the Sentinel Asia candidate row and selected CDSE SAR rows with file-level metadata, but `scripts/validate_mae_sai_file_manifest.py` keeps the real baseline blocked until product terms, reference-mask status, local paths, and checksums all pass.
+
+## Task 61 - Real Baseline And ML Gate Reminder
+
+Keep the real non-ML SAR baseline, Validation Report V3, dashboard real-data mode, and first ML experiment blocked until the Mae Sai file manifest validates.
+
+Acceptance: tests and docs continue to reject unresolved reference-candidate terms, unresolved CDSE acquisition, and unresolved reference-mask status before real SAR extraction or ML can start.

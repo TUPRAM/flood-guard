@@ -131,6 +131,14 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "official flood observations" not in html
     assert 'id="subdistrict-select"' in html
     assert 'id="scenario-select"' in html
+    assert 'id="dataset-mode-select"' in html
+    assert "fixture demo" in html
+    assert "public-data Mae Sai candidate" in html
+    assert "blocked/metadata-only view" in html
+    assert "const datasetModeNotes =" in html
+    assert "Public-data Mae Sai candidate: Sentinel Asia geometry and CDSE metadata are cataloged" in html
+    assert "Blocked/metadata-only view: source candidates are documented" in html
+    assert "dataset-mode-note" in html
     assert 'class="action-filter"' in html
     assert "temporary shelter delta" in html
     assert "road closure delta" in html

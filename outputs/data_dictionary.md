@@ -185,6 +185,16 @@ Dashboard v8 Judge Demo Layout:
 | `context-readiness-panel` | Compact SAR, DEM, THEOS-2, and Local Data Library readiness summary area; context only, not validation. |
 | `report-section` | Below-workspace Markdown report area for validation summary and full action brief content. |
 
+Dashboard v9 dataset mode switch:
+
+| Item | Meaning |
+| --- | --- |
+| `dataset-mode-select` | Static control that lets the viewer choose `fixture demo`, `public-data Mae Sai candidate`, or `blocked/metadata-only view` narrative mode. |
+| `dataset-mode-note` | Plain-language note explaining whether the viewer is seeing fixture outputs, a public Mae Sai reference-candidate narrative, or blocked metadata-only readiness. |
+| `fixture demo` | Current dashboard mode using synthetic fixture priority, access, equity, and road-risk outputs. |
+| `public-data Mae Sai candidate` | Narrative mode showing that Sentinel Asia geometry and CDSE metadata are cataloged, while real validation remains blocked. |
+| `blocked/metadata-only view` | Narrative mode emphasizing that source candidates alone do not authorize real flood baselines or ML. |
+
 Dashboard QA support:
 
 | Artifact | Meaning |
@@ -195,7 +205,7 @@ Dashboard QA support:
 
 ## Metadata Planning Outputs
 
-Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, `local_data_library_zip_members.csv`, `public_reference_candidate_manifest.csv`, `sentinel_asia_public_product_links.csv`, and `cdse_*_metadata.csv`
+Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, `local_data_library_zip_members.csv`, `public_reference_candidate_manifest.csv`, `sentinel_asia_public_product_links.csv`, `public_reference_file_inspection_manifest.csv`, `cems_product_candidate_manifest.csv`, `mae_sai_reference_candidate_decision.md`, `open_context_data_file_manifest.csv`, and `cdse_*_metadata.csv`
 
 | Field | Meaning |
 | --- | --- |
@@ -217,6 +227,37 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 | `can_use_for_ml_labels` | Conservative ML-label status. Current public candidates are not cleared as ML labels by default. |
 | `download_action` | What action is allowed next. Current rows permit metadata capture and external review, not product downloads into Git. |
 | `repo_storage` | Repository storage rule. Public inventory rows are metadata CSV only and must not commit source products. |
+| `selected_reason` | Why one public reference-candidate file was selected for external inspection. |
+| `local_path_hint` | Redacted external-workspace location for a file that must remain outside Git. |
+| `zip_member_count` | Number of files inside an inspected ZIP package. |
+| `zip_members` | Pipe-delimited list of inspected ZIP members. |
+| `shapefile_name` | `.shp` member selected inside the inspected reference-candidate ZIP. |
+| `shapefile_shape_type` | Numeric ESRI Shapefile shape type from the `.shp` header. |
+| `geometry_type` | Human-readable geometry type such as `Polygon`. |
+| `crs` | Coordinate reference system summary from `.prj`, currently `GCS_WGS_1984` for the inspected Sentinel Asia candidate. |
+| `bbox_lon_min` / `bbox_lat_min` / `bbox_lon_max` / `bbox_lat_max` | Overall shapefile bounding box from the `.shp` header. |
+| `mae_sai_point_in_bbox` | Whether the Mae Sai point falls inside the overall shapefile bbox. |
+| `hat_yai_point_in_bbox` | Whether the Hat Yai point falls inside the overall shapefile bbox. |
+| `feature_bbox_count` | Number of polygon/polyline record bounding boxes parsed from the shapefile records. |
+| `mae_sai_review_bbox` | Small review bbox used for approximate Mae Sai geometry-overlap screening. |
+| `mae_sai_review_bbox_feature_count` | Number of parsed record bboxes that overlap the Mae Sai review bbox. |
+| `dbf_record_count` | Number of rows reported by the shapefile `.dbf` header. |
+| `dbf_fields` | Pipe-delimited DBF field summary, for example `Id:N10|gridcode:N10|Area:F13`. |
+| `flood_water_extent_evidence` | Header/member-name evidence that the candidate likely contains flood-water geometry. |
+| `flood_water_extent_geometry_assessment` | Conservative geometry assessment; still requires product-term and quality review before validation. |
+| `reference_candidate_status` | Candidate status such as `candidate_geometry_intersects_mae_sai_bbox`. |
+| `activation_code` | CEMS activation code such as `EMSR754` or `EMSR756`. |
+| `activation_name` | CEMS activation name returned by the public API. |
+| `countries` | Pipe-delimited CEMS activation country list. |
+| `aoi_number` / `aoi_name` | CEMS area-of-interest identifier and name. |
+| `mae_sai_point_in_aoi_bbox` | Whether the CEMS AOI bbox contains the Mae Sai point. |
+| `hat_yai_point_in_aoi_bbox` | Whether the CEMS AOI bbox contains the Hat Yai point. |
+| `download_url` | Public product package URL exposed by the CEMS API when available; no package is downloaded into Git. |
+| `observed_event_layer_present` | Whether a CEMS product row includes an observed-event layer. |
+| `flood_layer_present` | Whether a CEMS product row includes a flood-related layer name. |
+| `mae_sai_reference_relevance` | CEMS relevance flag; current EMSR754/EMSR756 rows are not Mae Sai candidates. |
+| `download_performed` | Must remain `False` for CEMS/public product resolver rows committed to the repo. |
+| `data_type` | Planned context-source type such as `population_raster`, `admin_boundary_vector`, `osm_pbf_or_shapefile_extract`, or `dem_raster`. |
 | `product_id` | File-level source or reference-mask product id once selected. |
 | `local_path` | Local path for legally acquired source data, stored outside Git. |
 | `sha256` | SHA-256 checksum for the locally tracked file or source package. |
@@ -247,11 +288,19 @@ Reference-mask legal gate fields used by `scripts/check_real_data_gates.py`:
 | `reference_validation_allowed` | Computed gate result for local validation. |
 | `ml_label_allowed` | Computed gate result for ML-label use, separate from validation. |
 
-`mae_sai_real_data_file_manifest.csv` is a blocked planning manifest for the first real non-ML SAR baseline. It includes the UNOSAT reference-mask target, the selected September 6 pre-event Sentinel-1 COG, the selected September 15 post-event Sentinel-1 COG, and the September 18 fallback post-event COG. No local paths or checksums are recorded yet, so all rows remain `processing_allowed=False`.
+`mae_sai_real_data_file_manifest.csv` is a blocked planning manifest for the first real non-ML SAR baseline. After the public reference inspection lane runs, it includes the Sentinel Asia MBRSC shapefile as a checksummed public reference-candidate row, plus the selected September 6 pre-event Sentinel-1 COG, the selected September 15 post-event Sentinel-1 COG, and the September 18 fallback post-event COG. The reference candidate has geometry and checksum metadata but unresolved product terms and quality gates, so all rows remain `processing_allowed=False`.
 
 `public_reference_candidate_manifest.csv` is the public/open fallback source inventory. It includes CDSE Sentinel-1/Sentinel-2, CEMS EMSR754/EMSR756, Sentinel Asia public product links, UNOSAT/UN Thailand report evidence, NASA flood products, WorldPop, OSM/Geofabrik, Copernicus DEM, HDX COD-AB, and local hackathon lanes. It is metadata-only and does not make any source a legal flood label by itself.
 
 `sentinel_asia_public_product_links.csv` records public Sentinel Asia Northern Thailand 2024 product URLs. Current generated rows include JPG map/quicklook links, GIS ZIP candidates, and one shapefile ZIP candidate. These are not automatically validation masks or ML labels.
+
+`public_reference_file_inspection_manifest.csv` records the selected Sentinel Asia / MBRSC shapefile ZIP inspection. It stores SHA-256, ZIP members, CRS, geometry type, bbox, DBF fields, feature-bbox counts, and Mae Sai overlap screening. It is a reference candidate only.
+
+`cems_product_candidate_manifest.csv` records CEMS EMSR754/EMSR756 AOI and product metadata from the public backend API. Current rows do not provide a Mae Sai reference candidate.
+
+`mae_sai_reference_candidate_decision.md` documents the current comparison across Sentinel Asia, CEMS, UNOSAT report evidence, and NASA coarse flood products. The current decision is to pursue Sentinel Asia / MBRSC as the first public reference-candidate lane while keeping real validation blocked.
+
+`open_context_data_file_manifest.csv` records planned rows for WorldPop Thailand 100m, HDX COD-AB, Geofabrik OSM, and Copernicus DEM GLO-30. These are context sources for exposure, aggregation, roads, and terrain, not flood labels.
 
 `cdse_mae_sai_2024_metadata.csv` and `cdse_hat_yai_2025_metadata.csv` are Sentinel-1 no-download CDSE product metadata snapshots. `cdse_mae_sai_2024_sentinel2_metadata.csv` and `cdse_hat_yai_2025_sentinel2_metadata.csv` are Sentinel-2 L2A optical-context metadata snapshots.
 

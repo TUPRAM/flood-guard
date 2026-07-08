@@ -84,6 +84,14 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "ml_label_use_allowed",
         "public_reference_candidate_manifest.csv",
         "sentinel_asia_public_product_links.csv",
+        "public_reference_file_inspection_manifest.csv",
+        "cems_product_candidate_manifest.csv",
+        "mae_sai_reference_candidate_decision.md",
+        "open_context_data_file_manifest.csv",
+        "dataset-mode-select",
+        "feature_bbox_count",
+        "mae_sai_review_bbox_feature_count",
+        "mae_sai_reference_relevance",
         "cdse_mae_sai_2024_sentinel2_metadata.csv",
         "cdse_hat_yai_2025_sentinel2_metadata.csv",
         "source_group",
@@ -187,6 +195,8 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
         "public_reference_candidate_manifest.csv",
         "sentinel_asia_public_product_links.csv",
         "CEMS EMSR754",
+        "Current rows do not cover Mae Sai",
+        "WGS84 polygon geometry",
         "Sentinel-2 metadata only",
         "not automatically validation masks",
         "does not clear ML-label gates",
@@ -198,7 +208,15 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "no raw source assets" in log_text
     assert "public_reference_candidate_manifest.csv" in output_text
     assert "sentinel_asia_public_product_links.csv" in output_text
+    assert "public_reference_file_inspection_manifest.csv" in output_text
+    assert "cems_product_candidate_manifest.csv" in output_text
+    assert "mae_sai_reference_candidate_decision.md" in output_text
+    assert "open_context_data_file_manifest.csv" in output_text
     assert "Public Reference Candidate Manifest" in contract_text
+    assert "Public Reference File Inspection Manifest" in contract_text
+    assert "CEMS Product Candidate Manifest" in contract_text
+    assert "Open Context Data File Manifest" in contract_text
+    assert "Dashboard v9 Dataset Mode Switch" in contract_text
     assert "sentinel_asia_product" in contract_text
     assert "can_use_for_ml_labels" in manifest_text
     assert "not_cleared_for_ml_labels" in sentinel_asia_text
@@ -222,6 +240,11 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
         assert phrase in source_text
 
     assert "Task 51 - Public Open-Data Acquisition Lane" in backlog_text
+    assert "Task 52 - Sentinel Asia Geometry Inspection Lane" in backlog_text
+    assert "Task 53 - CEMS EMSR754/EMSR756 Product Resolver" in backlog_text
+    assert "Task 54 - Mae Sai Public Reference Candidate Decision" in backlog_text
+    assert "Task 55 - Open Context Data File Manifest" in backlog_text
+    assert "Task 56 - Dashboard Dataset Mode Switch" in backlog_text
     assert "outputs/public_reference_candidate_manifest.csv" in backlog_text
     assert "outputs/sentinel_asia_public_product_links.csv" in backlog_text
     assert "without downloading source imagery or product packages into Git" in backlog_text

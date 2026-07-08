@@ -1230,6 +1230,14 @@ def _build_dashboard_html(
               <option value="road_closure">road closure delta</option>
             </select>
           </div>
+          <div>
+            <label class="control-label" for="dataset-mode-select">Dataset mode</label>
+            <select id="dataset-mode-select">
+              <option value="fixture_demo">fixture demo</option>
+              <option value="mae_sai_public_candidate">public-data Mae Sai candidate</option>
+              <option value="blocked_metadata_only">blocked/metadata-only view</option>
+            </select>
+          </div>
         </div>
         <div class="button-row" aria-label="Dashboard exports">
           <button id="download-current-brief" type="button">Download current brief</button>
@@ -1249,6 +1257,7 @@ def _build_dashboard_html(
           </div>
         </div>
         <h2>Read This First</h2>
+        <p class="dataset-mode-note" id="dataset-mode-note">Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision-layer workflow, not real flood accuracy.</p>
         <p><strong>Current status:</strong> Fixture-backed decision demo. It shows prioritization behavior but does not prove real flood-detection accuracy.</p>
         <ul class="compact-list">
           <li>Real Mae Sai validation is blocked until provider response pending items are resolved.</li>
@@ -1407,10 +1416,16 @@ def _build_dashboard_html(
       worsening: '#b73c3c',
       neutral: '#7f8a82'
     };
+    const datasetModeNotes = {
+      fixture_demo: 'Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision-layer workflow, not real flood accuracy.',
+      mae_sai_public_candidate: 'Public-data Mae Sai candidate: Sentinel Asia geometry and CDSE metadata are cataloged, but real validation remains blocked until product terms, quality review, local paths, and checksums clear.',
+      blocked_metadata_only: 'Blocked/metadata-only view: source candidates are documented, but no real flood baseline or ML output is allowed from metadata alone.'
+    };
     const mapBoundsPadding = 0.16;
     const state = {
       selectedId: '__TOP_ID__',
       scenario: 'baseline',
+      datasetMode: 'fixture_demo',
       visibleClasses: new Set(['A', 'B', 'C', 'D', 'E']),
       showPriority: true,
       showRoads: true
@@ -1462,6 +1477,10 @@ def _build_dashboard_html(
       document.getElementById('scenario-select').addEventListener('change', (event) => {
         state.scenario = event.target.value;
         renderPriorityLayer();
+        updateSelectedPanel();
+      });
+      document.getElementById('dataset-mode-select').addEventListener('change', (event) => {
+        state.datasetMode = event.target.value;
         updateSelectedPanel();
       });
       document.getElementById('toggle-priority').addEventListener('change', (event) => {
@@ -1551,6 +1570,7 @@ def _build_dashboard_html(
       setText('panel-detail-temp', formatSigned(props.temporary_shelter_change_people_losing_30_min_access, 0));
       setText('panel-detail-road', formatSigned(props.road_closure_change_people_losing_30_min_access, 0));
       setText('panel-reason', props.top_reason || '');
+      setText('dataset-mode-note', datasetModeNotes[state.datasetMode] || datasetModeNotes.fixture_demo);
       setText(
         'action-brief-pre',
         briefsBySubdistrict[state.selectedId] || 'No generated action brief for this subdistrict.'

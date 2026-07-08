@@ -317,3 +317,33 @@ Acceptance: `scripts/check_real_data_gates.py` keeps all current rows blocked un
 Build a no-download public/open source inventory while provider responses are pending.
 
 Acceptance: `scripts/build_public_reference_manifest.py` writes `outputs/public_reference_candidate_manifest.csv` and `outputs/sentinel_asia_public_product_links.csv`; CDSE profiles cover Sentinel-1 and Sentinel-2 for Mae Sai 2024 and Hat Yai 2025; outputs record public source URLs, product-link candidates, validation/ML-label status, storage rules, blockers, and next actions without downloading source imagery or product packages into Git.
+
+## Task 52 - Sentinel Asia Geometry Inspection Lane
+
+Download only the selected Sentinel Asia / MBRSC shapefile ZIP candidate outside Git, then inspect ZIP members and shapefile headers without promoting it to a validation mask.
+
+Acceptance: `scripts/inspect_sentinel_asia_reference_candidate.py` writes `outputs/public_reference_file_inspection_manifest.csv` with redacted local path hint, SHA-256, ZIP member list, CRS, geometry type, bbox, DBF fields, feature-bbox count, Mae Sai review-bbox overlap count, and blocker status. The source ZIP remains outside Git, `processing_allowed=False`, and ML-label use remains not cleared.
+
+## Task 53 - CEMS EMSR754/EMSR756 Product Resolver
+
+Resolve CEMS Rapid Mapping AOI/product rows from the public backend API without downloading packages.
+
+Acceptance: `scripts/resolve_cems_products.py` writes `outputs/cems_product_candidate_manifest.csv` with activation, AOI, product, layer, product-date, download-URL, and Mae Sai relevance fields. Current EMSR754/EMSR756 rows are documented as not Mae Sai reference candidates.
+
+## Task 54 - Mae Sai Public Reference Candidate Decision
+
+Compare Sentinel Asia candidate geometry, CEMS product rows, UNOSAT public report evidence, and NASA coarse flood products to choose the first practical public reference-candidate lane.
+
+Acceptance: `outputs/mae_sai_reference_candidate_decision.md` selects Sentinel Asia / MBRSC as the first practical public reference-candidate lane while explicitly keeping real validation, real SAR baseline processing, and ML labels blocked until product terms, geometry quality, file-level gates, and reference-mask status are cleared.
+
+## Task 55 - Open Context Data File Manifest
+
+Add planned acquisition rows for open context sources that unlock real exposure, aggregation, road-risk, and terrain context once files are acquired outside Git.
+
+Acceptance: `scripts/build_open_context_manifest.py` writes `outputs/open_context_data_file_manifest.csv` for WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and Copernicus DEM GLO-30. Rows remain context-only, with no local paths/checksums and `processing_allowed=False`.
+
+## Task 56 - Dashboard Dataset Mode Switch
+
+Add a static dashboard dataset-mode selector so judges can distinguish fixture demo outputs from public Mae Sai reference-candidate planning and blocked metadata-only readiness.
+
+Acceptance: `outputs/dashboard.html` includes modes for `fixture demo`, `public-data Mae Sai candidate`, and `blocked/metadata-only view`; the selector changes narrative text only and does not imply real validation, official warning status, or ML readiness.

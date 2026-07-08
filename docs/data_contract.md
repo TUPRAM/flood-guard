@@ -401,6 +401,138 @@ Current source groups include:
 
 `outputs/sentinel_asia_public_product_links.csv` uses the same columns and contains only public product-link rows scraped from the Sentinel Asia Northern Thailand 2024 page. The shapefile/GIS ZIP rows are possible geometry candidates only. They must not become validation masks or ML labels until product-level license, geometry, checksum, and processing gates are clear.
 
+## Public Reference File Inspection Manifest
+
+`outputs/public_reference_file_inspection_manifest.csv` records one selected public reference-candidate file after it has been downloaded outside Git. The current selected candidate is the Sentinel Asia / MBRSC Northern Thailand flood shapefile ZIP.
+
+Required columns:
+
+- `source_name`
+- `source_group`
+- `study_area`
+- `source_url`
+- `selected_reason`
+- `local_path_hint`
+- `sha256`
+- `file_size_bytes`
+- `zip_member_count`
+- `zip_members`
+- `shapefile_name`
+- `shapefile_shape_type`
+- `geometry_type`
+- `crs`
+- `bbox_lon_min`
+- `bbox_lat_min`
+- `bbox_lon_max`
+- `bbox_lat_max`
+- `mae_sai_point_in_bbox`
+- `hat_yai_point_in_bbox`
+- `feature_bbox_count`
+- `mae_sai_review_bbox`
+- `mae_sai_review_bbox_feature_count`
+- `dbf_record_count`
+- `dbf_fields`
+- `flood_water_extent_evidence`
+- `flood_water_extent_geometry_assessment`
+- `reference_candidate_status`
+- `can_use_for_validation`
+- `can_use_for_ml_labels`
+- `processing_allowed`
+- `reason_blocked`
+- `next_action`
+- `retrieved_at_utc`
+
+The ZIP source file must remain outside Git, normally under an external workspace such as `<external_data_workspace>/sentinel_asia/`. The manifest may record a SHA-256 checksum and redacted path hint, but it must keep `processing_allowed=False` until product-level terms, geometry quality, redistribution/reference-only status, local path, and reference-mask status are cleared.
+
+The current geometry inspection is metadata/header based plus shapefile record-bbox overlap counting. It does not assert that every polygon is flood water, and it does not clear ML-label use.
+
+## CEMS Product Candidate Manifest
+
+`outputs/cems_product_candidate_manifest.csv` records CEMS public API AOI/product metadata for EMSR754 and EMSR756 without downloading product packages.
+
+Required columns:
+
+- `activation_code`
+- `activation_name`
+- `countries`
+- `event_time`
+- `activation_time`
+- `aoi_number`
+- `aoi_name`
+- `aoi_bbox_lon_min`
+- `aoi_bbox_lat_min`
+- `aoi_bbox_lon_max`
+- `aoi_bbox_lat_max`
+- `mae_sai_point_in_aoi_bbox`
+- `hat_yai_point_in_aoi_bbox`
+- `product_id`
+- `product_name`
+- `product_type`
+- `monitoring`
+- `monitoring_number`
+- `version_number`
+- `version_status`
+- `delivery_time`
+- `download_url`
+- `product_date`
+- `sensor_names`
+- `layer_names`
+- `observed_event_layer_present`
+- `flood_layer_present`
+- `candidate_role`
+- `mae_sai_reference_relevance`
+- `download_performed`
+- `processing_allowed`
+- `reason_blocked`
+- `source_url`
+- `retrieved_at_utc`
+
+Current EMSR754 and EMSR756 rows do not cover Mae Sai and are not better Mae Sai reference candidates. Any future CEMS row may become a reference candidate only after AOI/date/product coverage and product terms are verified, with source files stored outside Git.
+
+## Open Context Data File Manifest
+
+`outputs/open_context_data_file_manifest.csv` is a planned file manifest for open context sources that can support exposure, road-risk, terrain review, and aggregation after files are acquired outside Git.
+
+Required columns:
+
+- `source_name`
+- `source_group`
+- `study_area`
+- `source_url`
+- `candidate_use`
+- `data_type`
+- `license_status`
+- `local_path`
+- `sha256`
+- `processing_scope`
+- `processing_allowed`
+- `reason_blocked`
+- `next_action`
+- `retrieved_at_utc`
+
+Current rows cover WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and Copernicus DEM GLO-30. These are context layers only. They are not flood labels, reference masks, official warnings, or real validation outputs.
+
+## Mae Sai Reference Candidate Decision
+
+`outputs/mae_sai_reference_candidate_decision.md` compares the currently inspected public reference candidates:
+
+- Sentinel Asia / MBRSC public shapefile ZIP
+- CEMS EMSR754 and EMSR756 product metadata
+- UNOSAT/UN Thailand public report evidence
+- NASA coarse flood products
+
+The current decision selects Sentinel Asia / MBRSC as the first practical public reference-candidate lane, not a cleared validation mask and not ML labels. Real non-ML SAR baseline processing remains blocked until file-level and reference-mask gates pass.
+
+## Dashboard v9 Dataset Mode Switch
+
+Dashboard v9 adds a static dataset mode selector:
+
+- `fixture demo`
+- `public-data Mae Sai candidate`
+- `blocked/metadata-only view`
+
+The selector changes dashboard narrative text only. It does not substitute real data for fixture outputs, and it does not imply that public reference candidates are validated flood products.
+
 ## Metadata-Only Ingestion Manifest
 
 `outputs/real_data_ingestion_manifest.csv` is the first real-data ingestion skeleton. It records source planning rows and blockers only.

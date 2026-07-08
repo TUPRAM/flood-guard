@@ -99,9 +99,14 @@ The public open-data fallback inventory can be refreshed with:
 
 ```powershell
 uv run python scripts/build_public_reference_manifest.py
+uv run python scripts/inspect_sentinel_asia_reference_candidate.py
+uv run python scripts/resolve_cems_products.py
+uv run python scripts/build_mae_sai_reference_decision.py
+uv run python scripts/build_open_context_manifest.py
+uv run python scripts/build_mae_sai_file_manifest.py
 ```
 
-This writes `outputs/public_reference_candidate_manifest.csv` and `outputs/sentinel_asia_public_product_links.csv`. The script records public source candidates and Sentinel Asia public product URLs only. It does not download product ZIPs, JPG maps, GeoTIFFs, SAFE packages, flood masks, or NASA/WorldPop/OSM/DEM assets into the repo. The current approach is documented in `docs/public_open_data_acquisition.md`.
+This writes `outputs/public_reference_candidate_manifest.csv`, `outputs/sentinel_asia_public_product_links.csv`, `outputs/public_reference_file_inspection_manifest.csv`, `outputs/cems_product_candidate_manifest.csv`, `outputs/mae_sai_reference_candidate_decision.md`, and `outputs/open_context_data_file_manifest.csv`. The Sentinel Asia shapefile ZIP is downloaded only to an external data workspace such as `<external_data_workspace>/sentinel_asia/`; the repo commits only redacted path hints, SHA-256 checksums, file lists, CRS, bbox, and blocker status. The workflow does not download product ZIPs, JPG maps, GeoTIFFs, SAFE packages, NASA rasters, WorldPop rasters, OSM extracts, or DEM source assets into the repo. The current approach is documented in `docs/public_open_data_acquisition.md`.
 
 The metadata-first ingestion skeleton can build a blocked planning manifest:
 

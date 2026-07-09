@@ -60,6 +60,7 @@ def write_static_dashboard(
         theos2_thumbnail_manifest_path=theos2_thumbnail_manifest_path,
     )
     validation_metric_cards = _read_validation_metric_cards(output_dir)
+    mae_sai_weak_summary = _read_mae_sai_weak_priority_summary(output_dir)
 
     top_priority = _select_top_actionable(priority_geojson)
     html_text = _build_dashboard_html(
@@ -73,6 +74,7 @@ def write_static_dashboard(
         dem_quicklook_rows=dem_quicklook_rows,
         local_data_summary=local_data_summary,
         validation_metric_cards=validation_metric_cards,
+        mae_sai_weak_summary=mae_sai_weak_summary,
     )
 
     target = Path(output_path)
@@ -300,6 +302,7 @@ def _build_dashboard_html(
     dem_quicklook_rows: list[dict[str, str]],
     local_data_summary: dict[str, Any],
     validation_metric_cards: list[dict[str, str]],
+    mae_sai_weak_summary: dict[str, Any],
 ) -> str:
     props = top_priority.get("properties") or {}
     best_intervention = _scenario_summary(
@@ -1397,6 +1400,7 @@ def _build_dashboard_html(
     const sentinel1QuicklookData = __SENTINEL1_QUICKLOOK_JSON__;
     const demQuicklookData = __DEM_QUICKLOOK_JSON__;
     const localDataLibrarySummary = __LOCAL_DATA_JSON__;
+    const maeSaiWeakReferencePriorityData = __MAE_SAI_WEAK_JSON__;
     const actionColors = {
       A: '#b73c3c',
       B: '#d36a35',
@@ -1418,7 +1422,7 @@ def _build_dashboard_html(
     };
     const datasetModeNotes = {
       fixture_demo: 'Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision-layer workflow, not real flood accuracy.',
-      mae_sai_public_candidate: 'Public-data Mae Sai candidate: Sentinel Asia / MBRSC geometry QA found 514 Mae Sai review-bbox features, and CDSE pre/post Sentinel-1 rows are selected. Real validation remains blocked until product terms, CDSE credentials, outside-Git local files, checksums, and reference-mask status clear.',
+      mae_sai_public_candidate: '__MAE_SAI_WEAK_NOTE__',
       blocked_metadata_only: 'Blocked/metadata-only view: source candidates are documented, but no real flood baseline or ML output is allowed from metadata alone.'
     };
     const mapBoundsPadding = 0.16;
@@ -1745,6 +1749,13 @@ def _build_dashboard_html(
         ),
         "__DEM_QUICKLOOK_JSON__": json.dumps(dem_quicklook_rows, ensure_ascii=False),
         "__LOCAL_DATA_JSON__": json.dumps(local_data_summary, ensure_ascii=False),
+        "__MAE_SAI_WEAK_JSON__": json.dumps(
+            mae_sai_weak_summary,
+            ensure_ascii=False,
+        ),
+        "__MAE_SAI_WEAK_NOTE__": _js_string(
+            _mae_sai_weak_dataset_note(mae_sai_weak_summary)
+        ),
         "__THEOS2_CONTEXT_HTML__": _theos2_context_html(theos2_preview_rows),
         "__SENTINEL1_CONTEXT_HTML__": _sentinel1_context_html(
             sentinel1_quicklook_rows
@@ -1875,6 +1886,60 @@ def _read_validation_metric_cards(output_dir: Path) -> list[dict[str, str]]:
             ),
         },
     ]
+
+
+def _read_mae_sai_weak_priority_summary(output_dir: Path) -> dict[str, Any]:
+    path = output_dir / "mae_sai_priority_subdistricts.geojson"
+    if not path.exists():
+        return {"available": False, "feature_count": 0, "status": "not_generated"}
+    try:
+        geojson = _read_feature_collection(path, "mae_sai_weak_priority")
+    except DashboardError:
+        return {"available": False, "feature_count": 0, "status": "invalid_geojson"}
+    features = geojson.get("features", [])
+    if not features:
+        return {"available": False, "feature_count": 0, "status": "empty_geojson"}
+    props = features[0].get("properties") or {}
+    return {
+        "available": True,
+        "feature_count": len(features),
+        "status": "weak_reference_decision_bridge_available",
+        "subdistrict_id": str(props.get("subdistrict_id", "unavailable")),
+        "subdistrict_name": str(props.get("subdistrict_name", "unavailable")),
+        "fpps_0_100": _format_number(props.get("fpps_0_100"), 2),
+        "action_class": str(props.get("action_class", "unavailable")),
+        "mean_flood_probability_0_1": _format_number(
+            props.get("mean_flood_probability_0_1"),
+            6,
+        ),
+        "confidence_class": str(props.get("confidence_class", "unavailable")),
+        "reference_status": str(props.get("reference_status", "unavailable")),
+        "context_status": str(props.get("context_status", "unavailable")),
+        "source_timestamp": str(props.get("source_timestamp", "unavailable")),
+    }
+
+
+def _mae_sai_weak_dataset_note(summary: dict[str, Any]) -> str:
+    base = (
+        "Public-data Mae Sai candidate: Sentinel Asia / MBRSC geometry QA found "
+        "514 Mae Sai review-bbox features, and CDSE pre/post Sentinel-1 rows are "
+        "selected."
+    )
+    if not summary.get("available"):
+        return (
+            f"{base} Weak-reference decision bridge is not generated yet. Real "
+            "validation remains blocked until product terms, outside-Git local "
+            "files, checksums, and reference-mask status clear."
+        )
+    return (
+        f"{base} Mae Sai weak-reference decision bridge is available with "
+        f"{summary.get('feature_count')} review-area feature, FPPS "
+        f"{summary.get('fpps_0_100')}, class {summary.get('action_class')}, "
+        f"mean flood probability {summary.get('mean_flood_probability_0_1')}, "
+        f"confidence {summary.get('confidence_class')}. This remains "
+        "weak-reference, non-operational, not official validation, and not field "
+        "validated."
+    )
 
 
 def _format_metric_value(

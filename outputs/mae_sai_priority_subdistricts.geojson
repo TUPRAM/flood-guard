@@ -1,0 +1,64 @@
+{
+  "type": "FeatureCollection",
+  "name": "priority_subdistricts",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "subdistrict_id": "MS-WR-001",
+        "subdistrict_name": "Mae Sai Weak-Reference Review Area",
+        "geometry_status": "manual_reference_bbox_review_area",
+        "reference_id": "MANUAL-QGIS-MAE-SAI-2024",
+        "mean_flood_probability_0_1": 0.046621,
+        "flood_likelihood_0_100": 4.66,
+        "exposure_0_100": 19.16,
+        "access_gap_0_100": 0.0,
+        "road_criticality_0_100": 0.0,
+        "vulnerability_context_0_100": 0.0,
+        "confidence_class": "low",
+        "source_name": "CDSE Sentinel-1 weak-reference SAR baseline",
+        "source_timestamp": "2024-09-15T23:16:01Z",
+        "assumptions": "Weak-reference Sentinel-1 non-ML candidate. Non-operational. Not official validation. Not field validated. Flood likelihood comes from the weak SAR probability proxy; exposure is a sampled inundation-share proxy; real population, road, access, and vulnerability context are not joined yet.",
+        "processing_scope": "weak_reference_real_sentinel1_non_ml_candidate",
+        "reference_status": "weak_reference_candidate",
+        "context_status": "weak_sar_only_real_context_not_joined",
+        "fpps_0_100": 6.19,
+        "action_class": "E",
+        "top_reason": "Monitor and verify because confidence is low."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              99.81417084,
+              20.48330307
+            ],
+            [
+              99.82511139,
+              20.48330307
+            ],
+            [
+              99.82511139,
+              20.49144745
+            ],
+            [
+              99.81417084,
+              20.49144745
+            ],
+            [
+              99.81417084,
+              20.48330307
+            ]
+          ]
+        ]
+      }
+    }
+  ],
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  }
+}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -18,6 +19,10 @@ from floodguard.briefs import write_action_briefs  # noqa: E402
 from floodguard.dashboard import write_static_dashboard  # noqa: E402
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss  # noqa: E402
 from floodguard.exports import write_priority_geojson, write_road_risk_geojson  # noqa: E402
+from floodguard.flood_aggregation import (  # noqa: E402
+    build_mae_sai_review_area_admin_geojson,
+    build_mae_sai_weak_decision_inputs,
+)
 from floodguard.road_risk import score_road_disruption  # noqa: E402
 from floodguard.sar_baseline import (  # noqa: E402
     run_threshold_sar_baseline,
@@ -166,6 +171,7 @@ def main() -> None:
     else:
         theos2_feature_path = None
         theos2_review_path = None
+    mae_sai_decision_paths = _write_optional_mae_sai_weak_decision_outputs(output_dir)
     action_brief_paths = write_action_briefs(
         priority,
         road_risk,
@@ -202,6 +208,8 @@ def main() -> None:
         print(f"Wrote {theos2_feature_path}")
     if theos2_review_path is not None:
         print(f"Wrote {theos2_review_path}")
+    for mae_sai_path in mae_sai_decision_paths:
+        print(f"Wrote {mae_sai_path}")
     for action_brief_path in action_brief_paths:
         print(f"Wrote {action_brief_path}")
     print(f"Wrote {dashboard_path}")
@@ -243,6 +251,30 @@ def _theos2_brief_context(
     has_thumbnail = merged["thumbnail_path"].astype(str).str.len() > 0
     merged.loc[has_thumbnail, "preview_path"] = merged.loc[has_thumbnail, "thumbnail_path"]
     return merged.drop(columns=["thumbnail_path"])
+
+
+def _write_optional_mae_sai_weak_decision_outputs(output_dir: Path) -> list[Path]:
+    weak_feature_path = output_dir / "mae_sai_weak_sar_feature_manifest.csv"
+    manual_reference_path = output_dir / "manual_reference_mask_manifest.csv"
+    if not weak_feature_path.exists() or not manual_reference_path.exists():
+        return []
+
+    weak_feature_manifest = pd.read_csv(weak_feature_path, dtype=str).fillna("")
+    manual_reference_manifest = pd.read_csv(manual_reference_path, dtype=str).fillna("")
+    decision_inputs = build_mae_sai_weak_decision_inputs(
+        weak_feature_manifest,
+        manual_reference_manifest,
+    )
+    decision_input_path = output_dir / "mae_sai_subdistrict_flood_inputs.csv"
+    decision_inputs.to_csv(decision_input_path, index=False)
+    priority = score_subdistricts(decision_inputs)
+    admin_geojson = build_mae_sai_review_area_admin_geojson(manual_reference_manifest)
+    priority_geojson_path = output_dir / "mae_sai_priority_subdistricts.geojson"
+    with tempfile.TemporaryDirectory(prefix="floodguard_mae_sai_admin_") as tmpdir:
+        admin_path = Path(tmpdir) / "mae_sai_review_area_admin.geojson"
+        admin_path.write_text(json.dumps(admin_geojson), encoding="utf-8")
+        write_priority_geojson(admin_path, priority, priority_geojson_path)
+    return [decision_input_path, priority_geojson_path]
 
 
 if __name__ == "__main__":

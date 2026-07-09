@@ -34,6 +34,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const sentinel1QuicklookData =" in html
     assert "const demQuicklookData =" in html
     assert "const localDataLibrarySummary =" in html
+    assert "const maeSaiWeakReferencePriorityData =" in html
     assert 'class="app-header"' in html
     assert 'data-dashboard-section="app-header"' in html
     assert 'class="kpi-strip"' in html
@@ -137,6 +138,10 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "blocked/metadata-only view" in html
     assert "const datasetModeNotes =" in html
     assert "Public-data Mae Sai candidate: Sentinel Asia / MBRSC geometry QA found 514 Mae Sai review-bbox features" in html
+    assert "Mae Sai weak-reference decision bridge is available" in html
+    assert "MS-WR-001" in html
+    assert "weak_reference_candidate" in html
+    assert "weak_sar_only_real_context_not_joined" in html
     assert "CDSE pre/post Sentinel-1 rows are selected" in html
     assert "Blocked/metadata-only view: source candidates are documented" in html
     assert "dataset-mode-note" in html

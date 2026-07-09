@@ -37,6 +37,11 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "preview_source",
         "flood_label_claim",
         "mae_sai_validation_summary.md",
+        "mae_sai_subdistrict_flood_inputs.csv",
+        "mae_sai_priority_subdistricts.geojson",
+        "mean_flood_probability_0_1",
+        "weak_sar_only_real_context_not_joined",
+        "MS-WR-001",
         "local_data_library_manifest.csv",
         "local_data_library_zip_members.csv",
         "sentinel1_sar",
@@ -260,6 +265,9 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "sentinel_asia_product_terms_review.csv" in output_text
     assert "mbrsc_reference_mask_clearance_memo.md" in output_text
     assert "manual_reference_mask_manifest.csv" in output_text
+    assert "mae_sai_subdistrict_flood_inputs.csv" in output_text
+    assert "mae_sai_priority_subdistricts.geojson" in output_text
+    assert "FloodGuard decision layer" in output_text
     assert "cems_product_candidate_manifest.csv" in output_text
     assert "mae_sai_reference_candidate_decision.md" in output_text
     assert "open_context_data_file_manifest.csv" in output_text
@@ -271,6 +279,8 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "Sentinel Asia Product Terms Review" in contract_text
     assert "MBRSC Reference-Mask Clearance Memo" in contract_text
     assert "Manual QGIS Weak-Reference Manifest" in contract_text
+    assert "Mae Sai Weak-Reference Decision Input Output" in contract_text
+    assert "real context is not joined" in contract_text
     assert "CEMS Product Candidate Manifest" in contract_text
     assert "CDSE Mae Sai Acquisition Manifest" in contract_text
     assert "Open Context Data File Manifest" in contract_text

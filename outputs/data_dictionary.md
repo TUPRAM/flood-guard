@@ -580,6 +580,35 @@ These outputs are candidate metrics against a manually digitized weak-reference 
 | `area_error_ratio` | Signed predicted flood area error relative to manual weak-reference area. |
 | `warning_text` | Required safety wording: candidate metrics only, non-operational, not official validation, and not field validated. |
 
+## Mae Sai Weak-Reference Decision Bridge
+
+Files: `mae_sai_subdistrict_flood_inputs.csv` and `mae_sai_priority_subdistricts.geojson`
+
+These outputs turn the real Sentinel-1 weak-reference probability summary into FloodGuard decision inputs. They remain weak-reference, non-operational, not official validation, not field validated, and not ML labels. Current rows are a one-feature review-area bridge, not official subdistrict aggregation.
+
+| Field | Meaning |
+| --- | --- |
+| `subdistrict_id` | Review-area id used for FPPS and GeoJSON joins, currently `MS-WR-001`. |
+| `subdistrict_name` | Human-readable review-area label, currently `Mae Sai Weak-Reference Review Area`. |
+| `mean_flood_probability_0_1` | Mean non-ML Sentinel-1 flood probability proxy from `mae_sai_weak_sar_feature_manifest.csv`. |
+| `flood_likelihood_0_100` | `mean_flood_probability_0_1 * 100`, used by FPPS. |
+| `exposure_0_100` | Sampled manual weak-reference positive-pixel share. This is an inundation-share proxy, not population exposure. |
+| `access_gap_0_100` | Current placeholder `0.0` until real access-loss context is joined. |
+| `road_criticality_0_100` | Current placeholder `0.0` until real road-risk context is joined. |
+| `vulnerability_context_0_100` | Current placeholder `0.0` until real vulnerability/population context is joined. |
+| `confidence_class` | Current bridge confidence, kept `low` because context and official validation are incomplete. |
+| `source_name` | Source label for the weak-reference SAR baseline feeding the decision layer. |
+| `source_timestamp` | Post-event Sentinel-1 acquisition timestamp used by the weak-reference baseline. |
+| `assumptions` | Required non-operational weak-reference caveat and missing-context explanation. |
+| `processing_scope` | Current scope, `weak_reference_real_sentinel1_non_ml_candidate`. |
+| `reference_status` | Current reference status, `weak_reference_candidate`; this does not clear the official reference-mask gate. |
+| `context_status` | Explicit status showing real population, road, access, and vulnerability context is not joined; current value is `weak_sar_only_real_context_not_joined`. |
+| `geometry_status` | GeoJSON property showing the polygon is a manual-reference bbox review area, not official admin geometry. |
+| `reference_id` | Manual weak-reference id used to create the review-area geometry. |
+| `fpps_0_100` | Flood Preparedness Priority Score computed by `scoring.py` from the weak-reference decision inputs. |
+| `action_class` | A-E action class from the existing FPPS scoring contract. Current row is expected to monitor/verify because confidence is low. |
+| `top_reason` | Existing FPPS reason text, preserving low-confidence monitoring language. |
+
 ## THEOS-2 Local Metadata Manifest
 
 File: `theos2_local_metadata_manifest.csv`

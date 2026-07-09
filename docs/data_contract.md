@@ -1151,6 +1151,56 @@ Required wording:
 
 Source Sentinel-1 ZIPs, SAFE packages, TIFFs, and manual GeoPackages must remain outside Git. The official Mae Sai file-level gate remains blocked unless a cleared reference-mask source sets `reference_mask_status=confirmed`; the weak-reference lane must not force `processing_allowed=True`.
 
+## Mae Sai Weak-Reference Decision Input Output
+
+`outputs/mae_sai_subdistrict_flood_inputs.csv` turns the weak-reference Sentinel-1 probability summary into the FPPS input contract. It is a one-row review-area bridge, not a real administrative aggregation yet.
+
+Required columns:
+
+- `subdistrict_id`
+- `subdistrict_name`
+- `mean_flood_probability_0_1`
+- `flood_likelihood_0_100`
+- `exposure_0_100`
+- `access_gap_0_100`
+- `road_criticality_0_100`
+- `vulnerability_context_0_100`
+- `confidence_class`
+- `source_name`
+- `source_timestamp`
+- `assumptions`
+- `processing_scope`
+- `reference_status`
+- `context_status`
+
+Current context rule:
+
+- `flood_likelihood_0_100` is `mean_flood_probability_0_1 * 100`.
+- `exposure_0_100` is the sampled manual weak-reference positive-pixel share, not population exposure.
+- `access_gap_0_100`, `road_criticality_0_100`, and `vulnerability_context_0_100` remain `0.0` until real access, road, and vulnerability context layers are joined.
+- `confidence_class` remains `low`.
+- `context_status` must say real context is not joined.
+
+`outputs/mae_sai_priority_subdistricts.geojson` scores the same row through `scoring.py` and exports a dashboard-ready review-area polygon keyed by `subdistrict_id`. The geometry is the manual reference bounding box and must be treated as a review area, not official subdistrict geometry.
+
+Required GeoJSON properties include:
+
+- all `mae_sai_subdistrict_flood_inputs.csv` fields
+- `fpps_0_100`
+- `action_class`
+- `top_reason`
+- `geometry_status`
+- `reference_id`
+
+Required wording:
+
+- weak-reference
+- non-operational
+- not official validation
+- not field validated
+
+This bridge proves the real weak Sentinel-1 flood probability can feed FPPS. It does not prove official flood accuracy, does not replace real population/road/access/equity joins, and does not clear ML-label use.
+
 ## Study-Area Inventory Output
 
 `docs/study_area_inventory.md` records real-data acquisition planning only. It may include exact candidate metadata, product ids, licensing notes, and blockers, but this repository change does not download real imagery or implement remote-sensing model code.

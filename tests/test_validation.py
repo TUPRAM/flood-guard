@@ -134,10 +134,16 @@ def test_real_data_validation_summary_reports_blocked_manifest() -> None:
     report = build_real_data_validation_summary(manifest)
 
     assert "# Mae Sai Real-Data Validation Summary" in report
+    assert "## Data Status" in report
+    assert "## Sentinel-1 Product IDs" in report
+    assert "## Manual Reference Mask Metadata" in report
+    assert "## Method Assumptions" in report
+    assert "## Candidate Metrics" in report
+    assert "## Failure Modes" in report
+    assert "## Safety Note" in report
     assert "Processing allowed: false" in report
     assert "Real IoU, F1/Dice, precision, recall, and area error are pending" in report
     assert "Log UNOSAT/UNITAR or GISTDA provider response" in report
-    assert "Weak-Reference Candidate Baseline" in report
     assert "No weak-reference candidate metrics were supplied" in report
 
 
@@ -188,10 +194,16 @@ def test_real_data_validation_summary_reports_weak_reference_metrics_while_block
 
     assert "Processing allowed: false" in report
     assert "candidate metrics generated against a manually digitized weak-reference mask" in report
+    assert "## Sentinel-1 Product IDs" in report
+    assert "## Manual Reference Mask Metadata" in report
+    assert "## Method Assumptions" in report
+    assert "## Candidate Metrics" in report
+    assert "## Failure Modes" in report
+    assert "## Safety Note" in report
     assert "IoU: 0.500000" in report
     assert "F1/Dice: 0.666667" in report
     assert "Pre-event Sentinel-1 product id: `pre-product`" in report
-    assert "Manual mask not-official status: confirmed_true" in report
+    assert "Not-official status: confirmed_true" in report
     assert "Not an emergency warning" in report
 
 

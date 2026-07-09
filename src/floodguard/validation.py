@@ -287,104 +287,83 @@ def build_real_data_validation_summary(
     manual_reference_manifest: pd.DataFrame | None = None,
     title: str = "Mae Sai Real-Data Validation Summary",
 ) -> str:
-    """Build a real-data validation report or a blocked status report."""
+    """Build a Mae Sai real-data report with official and weak-reference status."""
+
+    gate_allowed = True
+    gate_error = ""
+    try:
+        ready_rows = validate_mae_sai_file_manifest_ready(file_manifest)
+    except IngestionPlanError as exc:
+        gate_allowed = False
+        gate_error = str(exc)
+        ready_rows = pd.DataFrame()
+
+    weak_available = weak_reference_metrics is not None and not weak_reference_metrics.empty
+    if weak_available:
+        _validate_columns(
+            weak_reference_metrics,
+            MASK_METRIC_COLUMNS,
+            "weak_reference_metrics",
+        )
+    if sar_metrics is not None:
+        _validate_columns(sar_metrics, MASK_METRIC_COLUMNS, "sar_metrics")
+        if sar_metrics.empty:
+            raise ValidationReportError("sar_metrics must contain at least one row.")
+
+    status_line = (
+        "Weak-reference candidate metrics are available; official validation remains blocked."
+        if weak_available and not gate_allowed
+        else "Official validation gate is open and metric rows can be reported."
+        if gate_allowed
+        else "Official validation remains blocked and weak-reference metrics are pending."
+    )
 
     lines = [
         f"# {title}",
         "",
-        "Status: blocked until reference-mask and file-level ingestion gates pass.",
+        f"Report status: {status_line}",
         "",
-        "This report is non-operational and must not be used as an official warning.",
+        (
+            "Strict use statement: Candidate metrics against manually digitized "
+            "weak-reference mask. Non-operational. Not official validation. "
+            "Not field validated."
+        ),
         "",
-        "## Ingestion Gate",
+        "## Data Status",
         "",
+        f"- Official processing allowed: {str(gate_allowed).lower()}",
     ]
-    try:
-        ready_rows = validate_mae_sai_file_manifest_ready(file_manifest)
-    except IngestionPlanError as exc:
+
+    if gate_allowed:
         lines.extend(
             [
-                "- Processing allowed: false",
-                f"- Blocking reason: {exc}",
-                "- Real IoU, F1/Dice, precision, recall, and area error are pending.",
-                "",
-                "## Required Next Action",
-                "",
-                "- Log UNOSAT/UNITAR or GISTDA provider response.",
-                "- Record legal reference-mask status.",
-                "- Record local paths and SHA-256 checksums outside Git.",
-                "- Rebuild `outputs/mae_sai_real_data_file_manifest.csv`.",
-                "",
+                f"- Ready official source rows: {len(ready_rows)}",
+                "- Reference mask and Sentinel-1 rows passed file-level gates.",
             ]
         )
-        _append_weak_reference_section(
-            lines,
-            weak_reference_metrics,
-            weak_reference_feature_manifest,
-            manual_reference_manifest,
+    else:
+        lines.extend(
+            [
+                f"- Official blocking reason: {gate_error}",
+                "- Official IoU, F1/Dice, precision, recall, and area error remain pending.",
+            ]
         )
-        return "\n".join(lines)
-
     lines.extend(
         [
-            "- Processing allowed: true",
-            f"- Ready source rows: {len(ready_rows)}",
-            "- Reference mask and Sentinel-1 source rows passed file-level gates.",
-            "",
-            "## Source Rows",
+            f"- Weak-reference candidate metrics available: {str(weak_available).lower()}",
+            "- Source imagery and manual GeoPackage files stay outside Git; this report stores only derived metadata and metrics.",
+            "- Real-data ML remains blocked because the weak-reference mask is not an official or cleared label source.",
             "",
         ]
     )
-    for _, row in ready_rows.iterrows():
-        lines.append(
-            f"- {row['source_name']}: product_id `{row['product_id']}`, "
-            f"local_path `{row['local_path']}`"
-        )
-    lines.extend(["", "## Flood-Mask Metrics", ""])
-    if sar_metrics is None:
-        lines.extend(
-            [
-                "- IoU: pending gated baseline run.",
-                "- F1/Dice: pending gated baseline run.",
-                "- precision: pending gated baseline run.",
-                "- recall: pending gated baseline run.",
-                "- area error: pending gated baseline run.",
-                "",
-            ]
-        )
-        _append_weak_reference_section(
-            lines,
-            weak_reference_metrics,
-            weak_reference_feature_manifest,
-            manual_reference_manifest,
-        )
-        return "\n".join(lines)
 
-    _validate_columns(sar_metrics, MASK_METRIC_COLUMNS, "sar_metrics")
-    if sar_metrics.empty:
-        raise ValidationReportError("sar_metrics must contain at least one row.")
-    metrics = sar_metrics.iloc[0]
-    lines.extend(
-        [
-            f"- IoU: {float(metrics['iou']):.6f}",
-            f"- F1/Dice: {float(metrics['f1_dice']):.6f}",
-            f"- precision: {float(metrics['precision']):.6f}",
-            f"- recall: {float(metrics['recall']):.6f}",
-            f"- area error ratio: {float(metrics['area_error_ratio']):.6f}",
-            "",
-            "## Assumptions",
-            "",
-            "- Metrics are valid only for the logged reference-mask and source-product versions.",
-            "- Output remains non-operational and not an official warning.",
-            "",
-        ]
-    )
-    _append_weak_reference_section(
-        lines,
-        weak_reference_metrics,
-        weak_reference_feature_manifest,
-        manual_reference_manifest,
-    )
+    _append_sentinel1_product_section(lines, file_manifest, weak_reference_feature_manifest)
+    _append_manual_reference_metadata_section(lines, manual_reference_manifest)
+    _append_method_assumptions_section(lines, weak_reference_feature_manifest)
+    _append_candidate_metrics_section(lines, weak_reference_metrics, sar_metrics)
+    _append_failure_modes_section(lines)
+    _append_safety_note_section(lines)
+    _append_official_gate_detail_section(lines, gate_allowed, gate_error, ready_rows)
     return "\n".join(lines)
 
 
@@ -413,6 +392,283 @@ def write_real_data_validation_summary(
         encoding="utf-8",
     )
     return target
+
+
+def _append_sentinel1_product_section(
+    lines: list[str],
+    file_manifest: pd.DataFrame,
+    weak_reference_feature_manifest: pd.DataFrame | None,
+) -> None:
+    lines.extend(["## Sentinel-1 Product IDs", ""])
+
+    if weak_reference_feature_manifest is not None and not weak_reference_feature_manifest.empty:
+        feature = weak_reference_feature_manifest.iloc[0]
+        lines.extend(
+            [
+                f"- Pre-event Sentinel-1 product id: `{_cell(feature, 'pre_product_id', 'unavailable')}`",
+                f"- Post-event Sentinel-1 product id: `{_cell(feature, 'post_product_id', 'unavailable')}`",
+                f"- Post-event source timestamp: {_cell(feature, 'source_timestamp', 'unavailable')}",
+                f"- Pre-event source name: {_cell(feature, 'pre_source_name', 'unavailable')}",
+                f"- Post-event source name: {_cell(feature, 'post_source_name', 'unavailable')}",
+                "- Source rasters were read from the external data workspace, not from Git.",
+                "",
+            ]
+        )
+        return
+
+    sentinel_rows = file_manifest[
+        file_manifest.astype(str).apply(
+            lambda row: row.str.contains("Sentinel-1|sentinel-1", regex=True).any(),
+            axis=1,
+        )
+    ]
+    if sentinel_rows.empty:
+        lines.extend(["- Sentinel-1 product rows: unavailable.", ""])
+        return
+    for _, row in sentinel_rows.iterrows():
+        lines.append(
+            f"- {_cell(row, 'source_name', 'Sentinel-1 source')}: "
+            f"`{_cell(row, 'product_id', 'unavailable')}`"
+        )
+    lines.append("")
+
+
+def _append_manual_reference_metadata_section(
+    lines: list[str],
+    manual_reference_manifest: pd.DataFrame | None,
+) -> None:
+    lines.extend(["## Manual Reference Mask Metadata", ""])
+    if manual_reference_manifest is None or manual_reference_manifest.empty:
+        lines.extend(
+            [
+                "- Manual weak-reference manifest: unavailable.",
+                "- Candidate metrics cannot be interpreted without manual-mask metadata.",
+                "",
+            ]
+        )
+        return
+
+    manual = manual_reference_manifest.iloc[0]
+    bbox = _format_bbox(
+        manual,
+        ("bbox_lon_min", "bbox_lat_min", "bbox_lon_max", "bbox_lat_max"),
+    )
+    lines.extend(
+        [
+            f"- Reference id: `{_cell(manual, 'reference_id', 'unavailable')}`",
+            f"- Study area: {_cell(manual, 'study_area', 'unavailable')}",
+            f"- Layer name: {_cell(manual, 'layer_name', 'unavailable')}",
+            f"- Geometry type: {_cell(manual, 'geometry_type', 'unavailable')}",
+            f"- CRS: {_cell(manual, 'crs', 'unavailable')}",
+            f"- Feature count: {_cell(manual, 'feature_count', 'unavailable')}",
+            f"- Bounding box: {bbox}",
+            f"- SHA-256 status: {_cell(manual, 'sha256_status', 'unavailable')}",
+            f"- Not-official status: {_cell(manual, 'not_official_status', 'unavailable')}",
+            f"- Reference-mask status: {_cell(manual, 'reference_mask_status', 'unavailable')}",
+            f"- Candidate readiness: {_cell(manual, 'candidate_readiness_status', 'unavailable')}",
+            (
+                "- Candidate validation metrics allowed: "
+                f"{_cell(manual, 'candidate_validation_metrics_allowed', 'unavailable')}"
+            ),
+            f"- Allowed use: {_cell(manual, 'allowed_use', 'unavailable')}",
+            f"- Not allowed use: {_cell(manual, 'not_allowed_use', 'unavailable')}",
+            "",
+        ]
+    )
+
+
+def _append_method_assumptions_section(
+    lines: list[str],
+    weak_reference_feature_manifest: pd.DataFrame | None,
+) -> None:
+    lines.extend(["## Method Assumptions", ""])
+    lines.extend(
+        [
+            "- Method type: non-ML Sentinel-1 pre/post SAR change baseline.",
+            "- Inputs: pre-event VV/VH and post-event VV/VH from local CDSE Sentinel-1 products outside Git.",
+            "- Reference: manually digitized weak-reference flood polygon from QGIS.",
+            "- Interpretation: candidate engineering metric only, not official accuracy.",
+        ]
+    )
+    if weak_reference_feature_manifest is not None and not weak_reference_feature_manifest.empty:
+        feature = weak_reference_feature_manifest.iloc[0]
+        lines.extend(
+            [
+                f"- Window strategy: {_cell(feature, 'window_strategy', 'unavailable')}",
+                f"- Sample size: {_cell(feature, 'sample_width', '?')} x {_cell(feature, 'sample_height', '?')} pixels",
+                f"- Georeferencing method: {_cell(feature, 'georeferencing_method', 'unavailable')}",
+                f"- Probability threshold: {_cell(feature, 'probability_threshold', 'unavailable')}",
+                f"- Dry-change threshold: {_cell(feature, 'dry_change_db', 'unavailable')} dB",
+                f"- Flood-change threshold: {_cell(feature, 'flood_change_db', 'unavailable')} dB",
+                f"- Confidence class: {_cell(feature, 'confidence_class', 'unavailable')}",
+                f"- Assumptions: {_cell(feature, 'assumptions', 'unavailable')}",
+            ]
+        )
+    lines.extend(
+        [
+            "- Terrain correction, calibration refinement, permanent-water masking, and threshold tuning remain future work.",
+            "",
+        ]
+    )
+
+
+def _append_candidate_metrics_section(
+    lines: list[str],
+    weak_reference_metrics: pd.DataFrame | None,
+    sar_metrics: pd.DataFrame | None,
+) -> None:
+    lines.extend(["## Candidate Metrics", ""])
+
+    if weak_reference_metrics is None or weak_reference_metrics.empty:
+        lines.extend(
+            [
+                "- Weak-reference candidate metrics: pending.",
+                "- No weak-reference candidate metrics were supplied.",
+                "",
+            ]
+        )
+    else:
+        metrics = weak_reference_metrics.iloc[0]
+        lines.extend(
+            [
+                "- Status: candidate metrics generated against a manually digitized weak-reference mask.",
+                "- Metric status: candidate weak-reference metrics.",
+                f"- IoU: {float(metrics['iou']):.6f}",
+                f"- F1/Dice: {float(metrics['f1_dice']):.6f}",
+                f"- precision: {float(metrics['precision']):.6f}",
+                f"- recall: {float(metrics['recall']):.6f}",
+                f"- area error ratio: {float(metrics['area_error_ratio']):.6f}",
+            ]
+        )
+        for column, label in (
+            ("true_positive", "True positive pixels"),
+            ("false_positive", "False positive pixels"),
+            ("false_negative", "False negative pixels"),
+            ("true_negative", "True negative pixels"),
+            ("sample_pixel_count", "Sample pixels"),
+            ("reference_positive_pixel_count", "Manual weak-reference positive pixels"),
+            ("predicted_positive_pixel_count", "Predicted positive pixels"),
+        ):
+            if column in weak_reference_metrics.columns:
+                lines.append(f"- {label}: {int(float(metrics[column]))}")
+        lines.extend(
+            [
+                f"- Source timestamp: {_cell(metrics, 'source_timestamp', 'unavailable')}",
+                f"- Confidence class: {_cell(metrics, 'confidence_class', 'unavailable')}",
+                f"- Warning text: {_cell(metrics, 'warning_text', 'unavailable')}",
+                "",
+            ]
+        )
+
+    if sar_metrics is not None and not sar_metrics.empty:
+        official = sar_metrics.iloc[0]
+        lines.extend(
+            [
+                "### Officially Gated Metrics",
+                "",
+                f"- IoU: {float(official['iou']):.6f}",
+                f"- F1/Dice: {float(official['f1_dice']):.6f}",
+                f"- precision: {float(official['precision']):.6f}",
+                f"- recall: {float(official['recall']):.6f}",
+                f"- area error ratio: {float(official['area_error_ratio']):.6f}",
+                "",
+            ]
+        )
+
+
+def _append_failure_modes_section(lines: list[str]) -> None:
+    lines.extend(
+        [
+            "## Failure Modes",
+            "",
+            "- SAR layover/shadow can look like water or hide flood signal in steep terrain.",
+            "- Permanent water confusion can inflate flood detections if baseline water is not masked.",
+            "- Urban double-bounce can make built-up flood areas brighter or inconsistent across VV/VH.",
+            "- Manual mask uncertainty affects every candidate metric because the reference is not field validated.",
+            "- Date mismatch can occur if the manual interpretation and Sentinel-1 acquisition do not capture the same flood stage.",
+            "",
+        ]
+    )
+
+
+def _append_safety_note_section(lines: list[str]) -> None:
+    lines.extend(
+        [
+            "## Safety Note",
+            "",
+            "- Not official.",
+            "- Not real-time.",
+            "- Not field validated.",
+            "- Not an emergency warning.",
+            "- Do not use this report for public alerting, evacuation orders, insurance decisions, or operational response without official validation.",
+            "",
+        ]
+    )
+
+
+def _append_official_gate_detail_section(
+    lines: list[str],
+    gate_allowed: bool,
+    gate_error: str,
+    ready_rows: pd.DataFrame,
+) -> None:
+    lines.extend(["## Official Gate Details", "", "### Ingestion Gate", ""])
+    if gate_allowed:
+        lines.extend(
+            [
+                "- Processing allowed: true",
+                f"- Ready source rows: {len(ready_rows)}",
+                "- Official flood-mask metrics may be generated only for these gated rows.",
+                "",
+                "### Source Rows",
+                "",
+            ]
+        )
+        for _, row in ready_rows.iterrows():
+            lines.append(
+                f"- {_cell(row, 'source_name', 'source')}: product_id "
+                f"`{_cell(row, 'product_id', 'unavailable')}`"
+            )
+        lines.append("")
+        return
+
+    lines.extend(
+        [
+            "- Processing allowed: false",
+            f"- Blocking reason: {gate_error}",
+            "- Real IoU, F1/Dice, precision, recall, and area error are pending for official validation.",
+            "",
+            "### Required Next Action",
+            "",
+            "- Log UNOSAT/UNITAR or GISTDA provider response.",
+            "- Record legal reference-mask status.",
+            "- Record local paths and SHA-256 checksums outside Git.",
+            "- Rebuild `outputs/mae_sai_real_data_file_manifest.csv`.",
+            "",
+        ]
+    )
+
+
+def _cell(row: pd.Series, column: str, default: str) -> str:
+    if column not in row.index:
+        return default
+    value = row[column]
+    if pd.isna(value) or str(value).strip() == "":
+        return default
+    return str(value)
+
+
+def _format_bbox(row: pd.Series, columns: tuple[str, str, str, str]) -> str:
+    values: list[str] = []
+    for column in columns:
+        text = _cell(row, column, "")
+        if text == "":
+            return "unavailable"
+        try:
+            values.append(f"{float(text):.6f}")
+        except ValueError:
+            return "unavailable"
+    return f"{values[0]}, {values[1]}, {values[2]}, {values[3]}"
 
 
 def _append_weak_reference_section(

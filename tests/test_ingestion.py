@@ -267,6 +267,7 @@ def test_mae_sai_file_manifest_script_has_no_download_calls() -> None:
 
     for token in ("urlopen(", "requests.", "urlretrieve(", "rasterio.open", "gdal."):
         assert token not in script_source
+    assert "manual_reference_mask_manifest.csv" in script_source
 
 
 def test_build_ingestion_manifest_rejects_missing_columns() -> None:

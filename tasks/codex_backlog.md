@@ -377,3 +377,9 @@ Acceptance: `outputs/mae_sai_real_data_file_manifest.csv` can show the Sentinel 
 Keep the real non-ML SAR baseline, Validation Report V3, dashboard real-data mode, and first ML experiment blocked until the Mae Sai file manifest validates.
 
 Acceptance: tests and docs continue to reject unresolved reference-candidate terms, unresolved CDSE acquisition, and unresolved reference-mask status before real SAR extraction or ML can start.
+
+## Task 62 - Manual QGIS Weak-Reference Mask Lane
+
+Implement a manual QGIS fallback for Mae Sai when provider clearance is too slow.
+
+Acceptance: `docs/manual_reference_mask_protocol.md`, `src/floodguard/manual_reference.py`, `scripts/inspect_manual_reference_mask.py`, and `outputs/manual_reference_mask_manifest.csv` define a checksum-backed outside-Git GeoPackage lane with required fields, `weak_reference_candidate` status, candidate-metrics-only wording, and tests. The manual lane must not clear official validation truth, official warning, redistribution, or unqualified ML-label gates.

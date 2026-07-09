@@ -88,6 +88,12 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "sentinel_asia_geometry_quality_review.csv",
         "sentinel_asia_mbrsc_visual_qa_review.csv",
         "sentinel_asia_product_terms_review.csv",
+        "manual_reference_mask_manifest.csv",
+        "manual_qgis_weak_reference",
+        "weak_reference_candidate",
+        "candidate_validation_metrics_allowed",
+        "official_validation_truth_allowed",
+        "unqualified_ml_label_allowed",
         "cems_product_candidate_manifest.csv",
         "mae_sai_reference_candidate_decision.md",
         "open_context_data_file_manifest.csv",
@@ -147,6 +153,8 @@ def test_reference_mask_licensing_log_has_required_rows() -> None:
     assert "SHA-256 checksum is recorded" in text
     assert "scripts/check_real_data_gates.py" in text
     assert "mbrsc_reference_mask_clearance_memo.md" in text
+    assert "manual_reference_mask_protocol.md" in text
+    assert "weak-reference status does not clear official validation" in text
     assert "blocked_product_terms_unresolved" in text
 
 
@@ -216,6 +224,7 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     for phrase in (
         "No source imagery",
         "mbrsc_reference_mask_clearance_memo.md",
+        "manual_reference_mask_manifest.csv",
         "public_reference_candidate_manifest.csv",
         "sentinel_asia_public_product_links.csv",
         "CEMS EMSR754",
@@ -235,6 +244,8 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
         "Sentinel-2 metadata only",
         "not automatically validation masks",
         "does not clear ML-label gates",
+        "manual QGIS weak-reference lane",
+        "candidate metrics only",
     ):
         assert phrase in doc_text
 
@@ -248,6 +259,7 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "sentinel_asia_mbrsc_visual_qa_review.csv" in output_text
     assert "sentinel_asia_product_terms_review.csv" in output_text
     assert "mbrsc_reference_mask_clearance_memo.md" in output_text
+    assert "manual_reference_mask_manifest.csv" in output_text
     assert "cems_product_candidate_manifest.csv" in output_text
     assert "mae_sai_reference_candidate_decision.md" in output_text
     assert "open_context_data_file_manifest.csv" in output_text
@@ -258,6 +270,7 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "Sentinel Asia MBRSC Visual QA Review" in contract_text
     assert "Sentinel Asia Product Terms Review" in contract_text
     assert "MBRSC Reference-Mask Clearance Memo" in contract_text
+    assert "Manual QGIS Weak-Reference Manifest" in contract_text
     assert "CEMS Product Candidate Manifest" in contract_text
     assert "CDSE Mae Sai Acquisition Manifest" in contract_text
     assert "Open Context Data File Manifest" in contract_text
@@ -288,6 +301,7 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
         "exact Mae Sai point is not inside",
         "supplying-agency copyright applies",
         "Thailand_flood.shp.xml",
+        "FloodGuard manual QGIS weak-reference mask",
     ):
         assert phrase in source_text
 
@@ -303,7 +317,9 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
     assert "Task 59 - CDSE Sentinel-1 Mae Sai Acquisition Gate" in backlog_text
     assert "Task 60 - Mae Sai Manifest Public Reference Update" in backlog_text
     assert "Task 61 - Real Baseline And ML Gate Reminder" in backlog_text
+    assert "Task 62 - Manual QGIS Weak-Reference Mask Lane" in backlog_text
     assert "outputs/public_reference_candidate_manifest.csv" in backlog_text
+    assert "outputs/manual_reference_mask_manifest.csv" in backlog_text
     assert "outputs/sentinel_asia_public_product_links.csv" in backlog_text
     assert "outputs/sentinel_asia_geometry_quality_review.csv" in backlog_text
     assert "outputs/sentinel_asia_mbrsc_visual_qa_review.csv" in backlog_text
@@ -577,6 +593,42 @@ def test_data_dictionary_mentions_mae_sai_file_manifest() -> None:
     assert "September 6 pre-event Sentinel-1 COG" in text
     assert "September 15 post-event Sentinel-1 COG" in text
     assert "processing_allowed=False" in text
+    assert "manual_reference_mask_manifest.csv" in text
+
+
+def test_manual_reference_mask_protocol_and_manifest_are_documented() -> None:
+    protocol_text = (
+        REPO_ROOT / "docs" / "manual_reference_mask_protocol.md"
+    ).read_text(encoding="utf-8")
+    manifest_text = (
+        REPO_ROOT / "outputs" / "manual_reference_mask_manifest.csv"
+    ).read_text(encoding="utf-8")
+    mae_sai_manifest_text = (
+        REPO_ROOT / "outputs" / "mae_sai_real_data_file_manifest.csv"
+    ).read_text(encoding="utf-8")
+    dictionary_text = (
+        REPO_ROOT / "outputs" / "data_dictionary.md"
+    ).read_text(encoding="utf-8")
+
+    for phrase in (
+        "weak_reference_candidate",
+        "candidate validation metrics",
+        "not official validation truth",
+        "not an official warning",
+        "mae_sai_manual_flood_reference.gpkg",
+        "not_official",
+        "scripts/inspect_manual_reference_mask.py",
+    ):
+        assert phrase in protocol_text
+
+    assert "missing_source_file" in manifest_text
+    assert "manual_qgis_weak_reference" in manifest_text
+    assert "official validation truth" in manifest_text
+    assert "unqualified ML labels" in manifest_text
+    assert "FloodGuard manual QGIS Mae Sai weak-reference candidate" in mae_sai_manifest_text
+    assert "manual weak-reference candidate for candidate validation metrics" in mae_sai_manifest_text
+    assert "candidate_validation_metrics_allowed" in dictionary_text
+    assert "official_validation_truth_allowed" in dictionary_text
 
 
 def test_theos2_inventory_doc_keeps_lane_metadata_only_and_blocked() -> None:

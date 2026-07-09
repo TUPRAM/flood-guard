@@ -551,6 +551,58 @@ Required content:
 
 Current decision: the MBRSC shapefile may remain an outside-Git reference candidate for geometry QA and planning, but it is not cleared for real validation metrics, derived reporting, screenshots/demo use, redistribution, or ML labels. Real non-ML SAR extraction remains blocked until a product-specific clearance or replacement legal reference mask exists.
 
+## Manual QGIS Weak-Reference Manifest
+
+`outputs/manual_reference_mask_manifest.csv` records the manual QGIS weak-reference fallback defined in `docs/manual_reference_mask_protocol.md`.
+
+The manual GeoPackage itself must stay outside Git at a path such as:
+
+```text
+<external_data_workspace>/manual_reference/mae_sai_2024/mae_sai_manual_flood_reference.gpkg
+```
+
+Required columns:
+
+- `source_name`
+- `study_area`
+- `reference_id`
+- `file_name`
+- `local_path_hint`
+- `sha256`
+- `sha256_status`
+- `file_size_bytes`
+- `file_found`
+- `source_type`
+- `layer_name`
+- `geometry_type`
+- `crs`
+- `bbox_lon_min`
+- `bbox_lat_min`
+- `bbox_lon_max`
+- `bbox_lat_max`
+- `feature_count`
+- `required_fields`
+- `required_fields_present`
+- `missing_fields`
+- `not_official_status`
+- `reference_mask_status`
+- `candidate_readiness_status`
+- `allowed_use`
+- `not_allowed_use`
+- `candidate_validation_metrics_allowed`
+- `visual_qa_allowed`
+- `non_operational_demo_reporting_allowed`
+- `official_validation_truth_allowed`
+- `official_warning_allowed`
+- `redistributable_source_claim_allowed`
+- `unqualified_ml_label_allowed`
+- `processing_allowed`
+- `reason_blocked`
+- `next_action`
+- `inspected_at_utc`
+
+Current gate rule: a complete manual GeoPackage may set `candidate_validation_metrics_allowed=True`, but `reference_mask_status` remains `weak_reference_candidate` and `processing_allowed=False` in the official file-level gate. This lane is for candidate metrics, visual QA, and non-operational demo reporting only.
+
 ## Sentinel Asia MBRSC Visual QA Review
 
 `docs/sentinel_asia_mbrsc_visual_qa_notes.md` and `outputs/sentinel_asia_mbrsc_visual_qa_review.csv` record the human visual/spatial QA pass for the MBRSC Mae Sai reference-candidate layer.

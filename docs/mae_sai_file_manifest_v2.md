@@ -10,6 +10,7 @@ Reasons:
 
 - UNOSAT/UNITAR and GISTDA provider responses are still pending.
 - The Sentinel Asia / MBRSC public shapefile ZIP is acquired outside Git and checksum-tracked as a reference candidate, but its product-level validation/derived-reporting/redistribution/ML-label terms remain unresolved.
+- The manual QGIS weak-reference lane is implemented. It remains missing until `mae_sai_manual_flood_reference.gpkg` is digitized outside Git and inspected with `scripts/inspect_manual_reference_mask.py`.
 - The selected CDSE Sentinel-1 September 6 pre-event COG and September 15 post-event COG are downloaded outside Git with SHA-256 checksums recorded.
 - No cleared Mae Sai flood reference-mask file exists yet.
 - The September 18 fallback post-event COG is not acquired.
@@ -42,6 +43,8 @@ Each row must include:
 ## Source File Rule
 
 The actual reference mask and Sentinel-1 files must remain outside Git. Do not commit `.SAFE`, `.tif`, `.tiff`, `.jp2`, `.zip`, NetCDF, GRIB, or provider product packages.
+
+Manual QGIS weak-reference GeoPackages must also remain outside Git. Commit only `outputs/manual_reference_mask_manifest.csv` and derived notes/metrics.
 
 ## Next Command Sequence After Legal Acquisition
 

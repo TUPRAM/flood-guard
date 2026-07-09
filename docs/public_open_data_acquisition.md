@@ -22,6 +22,7 @@ Generated outputs:
 - `outputs/mae_sai_reference_candidate_decision.md`
 - `outputs/open_context_data_file_manifest.csv`
 - `outputs/cdse_mae_sai_acquisition_manifest.csv`
+- `outputs/manual_reference_mask_manifest.csv`
 - `outputs/cdse_mae_sai_2024_metadata.csv`
 - `outputs/cdse_hat_yai_2025_metadata.csv`
 - `outputs/cdse_mae_sai_2024_sentinel2_metadata.csv`
@@ -41,6 +42,7 @@ Current generated row counts:
 | `mae_sai_reference_candidate_decision.md` | 1 note | Current public reference-candidate comparison and gate decision. |
 | `open_context_data_file_manifest.csv` | 4 | Planned WorldPop, HDX COD-AB, Geofabrik OSM, and Copernicus DEM context rows. |
 | `cdse_mae_sai_acquisition_manifest.csv` | 2 | Selected pre/post Sentinel-1 acquisition rows downloaded outside Git with SHA-256 checksums recorded; still blocked for processing until reference-mask status clears. |
+| `manual_reference_mask_manifest.csv` | 1 | Manual QGIS weak-reference lane; current row is a blocked skeleton until the GeoPackage is digitized outside Git. |
 | `cdse_mae_sai_2024_metadata.csv` | 8 | Sentinel-1 Mae Sai event-window product metadata. |
 | `cdse_hat_yai_2025_metadata.csv` | 10 | Sentinel-1 Hat Yai event-window product metadata. |
 | `cdse_mae_sai_2024_sentinel2_metadata.csv` | 5 | Sentinel-2 L2A Mae Sai optical-context metadata. |
@@ -59,6 +61,7 @@ Current generated row counts:
 - The embedded `Thailand_flood.shp.xml` file was reviewed. It contains ArcGIS lineage and field/projection metadata, but no license, access constraints, use constraints, redistribution terms, or ML-label permission. `docs/mbrsc_reference_mask_clearance_memo.md` is the current blocked gate decision.
 - CDSE Sentinel-1 products are free/full/open Sentinel data, but product download through CDSE requires an access token or account credentials. The selected Mae Sai pre/post COG products are now downloaded outside Git with SHA-256 checksums recorded in the acquisition manifest; processing remains blocked until reference-mask status clears.
 - UNOSAT/UNITAR public pages remain report/citation evidence unless redistributable geometry and derivative-use terms are confirmed.
+- The manual QGIS weak-reference lane is a project-owned fallback for candidate metrics only. It does not clear official validation, official warning, redistribution, or unqualified ML-label gates.
 - NASA flood products are coarse context/proxy candidates, not subdistrict/road-scale validation labels.
 - WorldPop, OSM/Geofabrik, Copernicus DEM, and HDX COD-AB are decision-layer context sources, not flood labels.
 - THEOS-2, local Sentinel-1, and local DEM assets remain in their existing local metadata/readiness lanes.
@@ -105,6 +108,7 @@ uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024_sentinel2 --
 2. Use `outputs/public_reference_file_inspection_manifest.csv`, `outputs/sentinel_asia_geometry_quality_review.csv`, and `outputs/sentinel_asia_mbrsc_visual_qa_review.csv` as the first public Mae Sai reference-candidate evidence. The geometry is useful because it is WGS84 polygon data, intersects the Mae Sai review bbox, has area-field metadata, and visually aligns with the east/southeast floodplain/waterway context. It remains blocked for validation until product terms are clear and the QA is repeated with any required approved basemap/source context.
 3. Use Sentinel-2 metadata only for optical context and cloud-screened visual support. It is not a flood label.
 4. Use WorldPop, OSM, Copernicus DEM, and HDX COD-AB as open context layers after they are added to file-level manifests with local paths and checksums outside Git.
+5. If provider clearance remains blocked, digitize `mae_sai_manual_flood_reference.gpkg` outside Git using `docs/manual_reference_mask_protocol.md`, then rerun `scripts/inspect_manual_reference_mask.py`.
 
 ## Current Boundaries
 

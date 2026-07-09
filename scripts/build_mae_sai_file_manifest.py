@@ -24,6 +24,7 @@ def main() -> None:
     output_path = REPO_ROOT / "outputs" / "mae_sai_real_data_file_manifest.csv"
     sources = _with_public_reference_candidate(default_mae_sai_file_manifest_sources())
     sources = _with_cdse_acquisition_rows(sources)
+    sources = _with_manual_reference_candidate(sources)
     written = write_ingestion_manifest(
         sources,
         output_path,
@@ -106,6 +107,45 @@ def _with_cdse_acquisition_rows(source_frame: pd.DataFrame) -> pd.DataFrame:
                 f"CDSE acquisition row is not file-ready yet: {download_status}"
             )
     return frame
+
+
+def _with_manual_reference_candidate(source_frame: pd.DataFrame) -> pd.DataFrame:
+    manual_path = REPO_ROOT / "outputs" / "manual_reference_mask_manifest.csv"
+    if not manual_path.exists():
+        return source_frame
+    manual = pd.read_csv(manual_path, dtype=str).fillna("")
+    if manual.empty:
+        return source_frame
+    row = manual.iloc[0]
+    candidate_metrics_allowed = row.get(
+        "candidate_validation_metrics_allowed",
+        "",
+    ).lower() == "true"
+    file_found = row.get("file_found", "").lower() == "true"
+    candidate = {
+        "source_name": "FloodGuard manual QGIS Mae Sai weak-reference candidate",
+        "study_area": "Chiang Rai / Mae Sai 2024",
+        "source_url": "local manual QGIS weak-reference protocol",
+        "candidate_use": "manual weak-reference candidate for candidate validation metrics",
+        "geometry_access_status": "available" if file_found else "unresolved",
+        "license_status": "confirmed" if candidate_metrics_allowed else "unresolved",
+        "redistribution_status": "reference_only",
+        "product_id": row.get("reference_id", "MANUAL-QGIS-MAE-SAI-2024")
+        or "MANUAL-QGIS-MAE-SAI-2024",
+        "local_path": row.get("local_path_hint", "not_acquired"),
+        "sha256": row.get("sha256", "not_acquired"),
+        "source_license_status": "confirmed" if candidate_metrics_allowed else "unresolved",
+        "reference_mask_status": row.get(
+            "reference_mask_status",
+            "weak_reference_candidate",
+        )
+        or "weak_reference_candidate",
+        "next_action": (
+            "candidate metrics are allowed only when the manual manifest is ready; "
+            "official validation and ML-label gates remain blocked"
+        ),
+    }
+    return pd.concat([source_frame, pd.DataFrame([candidate])], ignore_index=True)
 
 
 if __name__ == "__main__":

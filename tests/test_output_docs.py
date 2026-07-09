@@ -218,6 +218,8 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
         "Visual QA indicates",
         "not a single broad event boundary",
         "exact Mae Sai point is not inside",
+        "supplying-agency copyright applies",
+        "humanitarian/academic/non-commercial",
         "product terms remain unresolved",
         "blocked acquisition manifest",
         "Sentinel-2 metadata only",
@@ -272,6 +274,7 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
         "6,506 full-layer features",
         "east/southeast of the Mae Sai point",
         "exact Mae Sai point is not inside",
+        "supplying-agency copyright applies",
     ):
         assert phrase in source_text
 

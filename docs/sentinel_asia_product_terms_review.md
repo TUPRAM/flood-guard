@@ -5,6 +5,7 @@ Status: terms unresolved; keep as `reference_candidate`, not validation truth an
 ## Reviewed Source
 
 - Event page: https://sentinel-asia.org/EO/2024/article20240910TH.html
+- Sentinel Asia general DPN procedure: https://sentinel-asia.org/e-learning/SentinelAsiaProcedures/PDPN.pdf
 - Selected product: `MBRSC_THAILAND_FLOOD-MAP-SHP.zip`
 - Product description on event page: `DETECTED FLOOD WATER IN NORTHERN PROVINCES OF THAILAND`, observed by Sentinel-1 image on 15 September 2024.
 - Local file: outside Git at `<external_data_workspace>/sentinel_asia/MBRSC_THAILAND_FLOOD-MAP-SHP.zip`
@@ -19,10 +20,12 @@ Status: terms unresolved; keep as `reference_candidate`, not validation truth an
 - QGIS/GDAL inspection confirms the ZIP contains a polygon shapefile over northern Thailand with Mae Sai review-bbox overlap.
 - QGIS/GDAL visual QA on 2026-07-09 supports treating the layer as flood-water reference-candidate geometry rather than a broad event boundary, but the layer still needs product-term clearance before validation use.
 - Sentinel Asia general documentation says distributed data include satellite imagery/data permitted by the data provider and value-added images; it does not provide product-specific reuse terms for this MBRSC shapefile.
+- Sentinel Asia DPN procedure says supplier copyright rules apply to data/products supplied through Sentinel Asia, copyright marks should appear on images or derived products, outputs are for humanitarian, academic, and non-commercial purposes, and some data supplied by a Data Provider Node may not be distributed to third parties. This is useful policy context, but it still does not explicitly clear FloodGuard validation metrics, screenshots/demo use, redistribution/reference-only status, or ML-label use for this MBRSC product.
 
 ## What Is Not Clear
 
-- No product-level license text was found in the event page or embedded shapefile metadata during this review.
+- No product-level license text was found in the event page, embedded shapefile metadata, or general Sentinel Asia policy documents during this review.
+- The general Sentinel Asia policy does not identify whether MBRSC, Sentinel Asia, JAXA, or another provider can approve this exact public shapefile for local validation metrics and derived reporting.
 - Reuse for published validation metrics is not explicitly cleared.
 - Screenshot/demo use is not explicitly cleared.
 - Redistribution or reference-only status is not explicitly cleared.
@@ -54,8 +57,8 @@ Do not use it yet as:
 | --- | --- | --- |
 | Geometry review | allowed as local candidate review | Public product file is accessible and checksum-tracked outside Git. |
 | Visual QA | complete for reference-candidate planning | Polygons are concentrated east/southeast of Mae Sai and broadly align with floodplain/waterway context, but manual QA and terms remain required. |
-| Local validation metrics | unresolved | Product-level terms were not found. |
-| Screenshots/demo | unresolved | Product-level terms were not found. |
-| Derived metrics | unresolved | Product-level terms were not found. |
-| Redistribution | unresolved | Product-level terms were not found. |
+| Local validation metrics | unresolved | General Sentinel Asia policy was found, but product-level validation-metric permission was not found. |
+| Screenshots/demo | unresolved | General Sentinel Asia policy requires copyright marks but does not explicitly clear demo screenshots for this product. |
+| Derived metrics | unresolved | General Sentinel Asia policy requires attribution on derived products but does not explicitly clear derived validation reporting for this product. |
+| Redistribution | unresolved | General Sentinel Asia policy says some DPN-provided data may not be distributed to third parties; this product's redistribution/reference-only status is not explicit. |
 | ML-label use | blocked/unresolved | Explicit label-use permission was not found. |

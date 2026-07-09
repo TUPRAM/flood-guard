@@ -506,7 +506,7 @@ Required columns:
 - `review_notes`
 - `reviewed_at_utc`
 
-Current QGIS/GDAL finding: the layer is WGS84 polygon data with `6506` full-layer features, `514` features intersecting the Mae Sai review bbox, about `464.234` km2 full-layer area-field sum, and about `47.164` km2 inside the Mae Sai review bbox. This makes the file a practical public reference candidate, not a cleared validation mask. Product-level terms, human visual QA, local file gates, and reference-mask status remain unresolved.
+Current QGIS/GDAL finding: the layer is WGS84 polygon data with `6506` full-layer features, `514` features intersecting the Mae Sai review bbox, about `464.234` km2 full-layer area-field sum, and about `47.164` km2 inside the Mae Sai review bbox. This makes the file a practical public reference candidate, not a cleared validation mask. Product-level terms, local file gates, and reference-mask status remain unresolved.
 
 `docs/sentinel_asia_geometry_quality_notes.md` is the human-readable companion note. It must not include the source shapefile or absolute local paths.
 
@@ -518,19 +518,21 @@ Required columns:
 
 - `source_name`
 - `source_url`
+- `product_name`
+- `public_product_page_status`
+- `product_file_access`
 - `terms_found`
-- `geometry_access_status`
-- `validation_metrics_allowed`
+- `local_validation_metrics_allowed`
 - `screenshots_demo_allowed`
 - `derived_metrics_allowed`
-- `redistribution_status`
+- `redistribution_allowed`
 - `ml_label_use_allowed`
 - `current_decision`
 - `reason_blocked`
 - `next_action`
 - `reviewed_at_utc`
 
-Current decision: the public product page exposes a download link and the geometry is inspectable, but explicit product-level terms for validation metrics, screenshots/demo, derived metrics, redistribution, and ML-label use were not found. The product remains `reference_candidate_only`, not validation truth and not ML labels.
+Current decision: the public product page exposes a download link and the geometry is inspectable. Sentinel Asia general policy says supplying-agency copyright applies, derived products need copyright marks, outputs are humanitarian/academic/non-commercial, and some Data Provider Node data may not be distributed to third parties. This does not explicitly clear this MBRSC product for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use. The product remains `reference_candidate_only`, not validation truth and not ML labels.
 
 ## Sentinel Asia MBRSC Visual QA Review
 

@@ -379,7 +379,7 @@ Required columns:
 - `reason_blocked`
 - `retrieved_at_utc`
 
-Current rows remain blocked with `download_status=blocked_missing_cdse_credentials` when `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD` are unavailable. Even after outside-Git downloads succeed and SHA-256 checksums are recorded, `processing_allowed` remains `False` until a reference-mask source is cleared and the Mae Sai file manifest validates.
+Current selected pre/post COG rows are `download_status=downloaded_outside_git` with `sha256_status=recorded`. `processing_allowed` remains `False` until a reference-mask source is cleared and the Mae Sai file manifest validates. When `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD` are unavailable, regenerated rows may instead show `download_status=blocked_missing_cdse_credentials`.
 
 ## Public Reference Candidate Manifest
 

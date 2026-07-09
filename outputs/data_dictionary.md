@@ -213,7 +213,7 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 
 `sentinel_asia_product_terms_review.csv` records the conservative product-terms decision. Current status is `reference_candidate_only` because no explicit product-level terms were found for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use.
 
-`cdse_mae_sai_acquisition_manifest.csv` records selected Mae Sai Sentinel-1 CDSE acquisition rows. Current rows are `blocked_missing_cdse_credentials` when `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD` are absent; no product assets are downloaded into Git.
+`cdse_mae_sai_acquisition_manifest.csv` records selected Mae Sai Sentinel-1 CDSE acquisition rows. Current rows are `downloaded_outside_git` with `sha256_status=recorded` for the selected pre/post COG products. Source assets remain outside Git; processing remains blocked until reference-mask status clears.
 
 | Field | Meaning |
 | --- | --- |
@@ -228,7 +228,7 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 | `source_url` | CDSE OData query URL used for metadata. |
 | `blocker_note` | Licensing, geometry, or no-download blocker note. |
 | `download_url` | CDSE product `$value` endpoint or public product URL when exposed; source products must still stay outside Git. |
-| `download_attempted` | Whether the CDSE acquisition helper attempted an asset download. Current blocked rows are `False`. |
+| `download_attempted` | Whether the CDSE acquisition helper attempted an asset download. Current selected CDSE rows are `True`, with assets stored outside Git. |
 | `download_status` | CDSE acquisition state such as `blocked_missing_cdse_credentials`, `dry_run_no_download`, or `downloaded_outside_git`. |
 | `sha256_status` | Whether a selected outside-Git file checksum is recorded. |
 | `file_size_bytes` | Size of the downloaded outside-Git product when available. |

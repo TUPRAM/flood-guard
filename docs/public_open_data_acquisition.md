@@ -39,7 +39,7 @@ Current generated row counts:
 | `cems_product_candidate_manifest.csv` | 46 | CEMS EMSR754/EMSR756 AOI/product metadata rows. |
 | `mae_sai_reference_candidate_decision.md` | 1 note | Current public reference-candidate comparison and gate decision. |
 | `open_context_data_file_manifest.csv` | 4 | Planned WorldPop, HDX COD-AB, Geofabrik OSM, and Copernicus DEM context rows. |
-| `cdse_mae_sai_acquisition_manifest.csv` | 2 | Selected pre/post Sentinel-1 acquisition rows; currently blocked without CDSE credentials. |
+| `cdse_mae_sai_acquisition_manifest.csv` | 2 | Selected pre/post Sentinel-1 acquisition rows downloaded outside Git with SHA-256 checksums recorded; still blocked for processing until reference-mask status clears. |
 | `cdse_mae_sai_2024_metadata.csv` | 8 | Sentinel-1 Mae Sai event-window product metadata. |
 | `cdse_hat_yai_2025_metadata.csv` | 10 | Sentinel-1 Hat Yai event-window product metadata. |
 | `cdse_mae_sai_2024_sentinel2_metadata.csv` | 5 | Sentinel-2 L2A Mae Sai optical-context metadata. |
@@ -55,7 +55,7 @@ Current generated row counts:
 - QGIS/GDAL review confirms `6506` full-layer features, `514` Mae Sai review-bbox intersecting features, about `464.234` km2 full-layer area-field sum, and about `47.164` km2 Mae Sai review-bbox area-field sum. This is geometry QA evidence, not final validation clearance.
 - Visual QA indicates the layer is not a single broad event boundary. Candidate polygons concentrate east/southeast of the Mae Sai point and broadly align with floodplain/waterway context, but fragmented patches remain and the exact Mae Sai point is not inside a candidate polygon.
 - Sentinel Asia / MBRSC product terms remain unresolved for validation metrics, screenshots/demo, derived metrics, redistribution, and ML-label use. The general Sentinel Asia DPN procedure says supplying-agency copyright applies, derived products need copyright marks, outputs are humanitarian/academic/non-commercial, and some DPN-provided data may not be distributed to third parties; that is useful context but not product-specific clearance for this MBRSC shapefile.
-- CDSE Sentinel-1 products are free/full/open Sentinel data, but product download through CDSE requires an access token or account credentials. The repo records a blocked acquisition manifest when credentials are absent.
+- CDSE Sentinel-1 products are free/full/open Sentinel data, but product download through CDSE requires an access token or account credentials. The selected Mae Sai pre/post COG products are now downloaded outside Git with SHA-256 checksums recorded in the acquisition manifest; processing remains blocked until reference-mask status clears.
 - UNOSAT/UNITAR public pages remain report/citation evidence unless redistributable geometry and derivative-use terms are confirmed.
 - NASA flood products are coarse context/proxy candidates, not subdistrict/road-scale validation labels.
 - WorldPop, OSM/Geofabrik, Copernicus DEM, and HDX COD-AB are decision-layer context sources, not flood labels.

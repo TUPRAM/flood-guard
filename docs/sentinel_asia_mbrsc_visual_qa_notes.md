@@ -63,7 +63,7 @@ Do not use it yet as:
 
 - Product-level terms for validation metrics, screenshots/demo, derived metrics, redistribution, and ML-label use are still unresolved.
 - Human QA should be repeated in the QGIS GUI with any locally approved basemap before final local validation.
-- CDSE Sentinel-1 pre/post source files are not acquired yet because no CDSE credentials/token are available in this environment.
+- CDSE Sentinel-1 pre/post source files are downloaded outside Git and SHA-256 checksums are recorded, but they still cannot be used for the real baseline until reference-mask status clears.
 - `outputs/mae_sai_real_data_file_manifest.csv` still fails the real baseline gate.
 
 ## Next Action

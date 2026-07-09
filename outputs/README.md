@@ -88,7 +88,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `open_context_data_file_manifest.csv` records planned context-source rows for WorldPop Thailand 100m, HDX Thailand COD-AB, Geofabrik Thailand OSM, and Copernicus DEM GLO-30. These rows are context only and remain blocked until local paths and SHA-256 checksums are recorded outside Git.
 
-`cdse_mae_sai_acquisition_manifest.csv` records the selected Mae Sai pre/post Sentinel-1 CDSE acquisition attempt. Product downloads require `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD`; when credentials are missing, rows remain `blocked_missing_cdse_credentials`, with no source products downloaded into Git.
+`cdse_mae_sai_acquisition_manifest.csv` records the selected Mae Sai pre/post Sentinel-1 CDSE acquisition attempt. The selected pre/post COG products are now downloaded outside Git with SHA-256 checksums recorded. Product downloads require `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD`; source products must never be committed into Git, and processing remains blocked until reference-mask status clears.
 
 `dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from embedded fixture data only.
 

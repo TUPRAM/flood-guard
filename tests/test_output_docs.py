@@ -184,7 +184,8 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     assert "generate_mae_sai_validation_summary.py" in text
     assert "check_real_data_gates.py --allow-blocked" in text
     assert "validate_mae_sai_file_manifest.py --allow-blocked" in text
-    assert "They do not download Sentinel-1 assets" in text
+    assert "These CDSE metadata commands write metadata rows only" in text
+    assert "downloaded outside Git with SHA-256 checksums recorded" in text
     assert "build_ingestion_manifest.py" in text
     assert "build_local_data_library.py" in text
 
@@ -220,8 +221,9 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
         "exact Mae Sai point is not inside",
         "supplying-agency copyright applies",
         "humanitarian/academic/non-commercial",
+        "downloaded outside Git with SHA-256 checksums recorded",
         "product terms remain unresolved",
-        "blocked acquisition manifest",
+        "still blocked for processing until reference-mask status clears",
         "Sentinel-2 metadata only",
         "not automatically validation masks",
         "does not clear ML-label gates",

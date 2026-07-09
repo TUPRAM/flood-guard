@@ -205,13 +205,13 @@ Dashboard QA support:
 
 ## Metadata Planning Outputs
 
-Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, `local_data_library_zip_members.csv`, `public_reference_candidate_manifest.csv`, `sentinel_asia_public_product_links.csv`, `public_reference_file_inspection_manifest.csv`, `sentinel_asia_geometry_quality_review.csv`, `sentinel_asia_mbrsc_visual_qa_review.csv`, `sentinel_asia_product_terms_review.csv`, `cems_product_candidate_manifest.csv`, `mae_sai_reference_candidate_decision.md`, `open_context_data_file_manifest.csv`, `cdse_mae_sai_acquisition_manifest.csv`, and `cdse_*_metadata.csv`
+Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`, `local_data_library_manifest.csv`, `local_data_library_zip_members.csv`, `public_reference_candidate_manifest.csv`, `sentinel_asia_public_product_links.csv`, `public_reference_file_inspection_manifest.csv`, `sentinel_asia_geometry_quality_review.csv`, `sentinel_asia_mbrsc_visual_qa_review.csv`, `sentinel_asia_product_terms_review.csv`, `docs/mbrsc_reference_mask_clearance_memo.md`, `cems_product_candidate_manifest.csv`, `mae_sai_reference_candidate_decision.md`, `open_context_data_file_manifest.csv`, `cdse_mae_sai_acquisition_manifest.csv`, and `cdse_*_metadata.csv`
 
 `sentinel_asia_geometry_quality_review.csv` is the QGIS/GDAL review of the selected outside-Git MBRSC shapefile ZIP. Current values show WGS84 polygon geometry, `6506` full-layer features, `514` features intersecting the Mae Sai review bbox, `464.234` km2 full-layer area-field sum, and `47.164` km2 inside the Mae Sai review bbox. This is geometry quality evidence only; it does not clear validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use.
 
 `sentinel_asia_mbrsc_visual_qa_review.csv` is the notes-only visual QA result. It says the MBRSC polygons are not a single broad event boundary; they concentrate east/southeast of the Mae Sai point and broadly align with floodplain/waterway context, while still containing fragmented patches that require manual QA. Current `validation_status` is `reference_candidate_only_not_validation_truth`.
 
-`sentinel_asia_product_terms_review.csv` records the conservative product-terms decision. Current status is `reference_candidate_only` because no explicit product-level terms were found for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use.
+`sentinel_asia_product_terms_review.csv` records the conservative product-terms decision. Current status is `reference_candidate_only` because no explicit product-level terms were found for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use. `docs/mbrsc_reference_mask_clearance_memo.md` is the controlling decision memo and says not to set `processing_allowed=True` or `blocking_decision=cleared_for_local_validation`.
 
 `cdse_mae_sai_acquisition_manifest.csv` records selected Mae Sai Sentinel-1 CDSE acquisition rows. Current rows are `downloaded_outside_git` with `sha256_status=recorded` for the selected pre/post COG products. Source assets remain outside Git; processing remains blocked until reference-mask status clears.
 
@@ -269,6 +269,7 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 | `validation_use_status` | Whether the geometry may be used for validation; current status remains terms and quality review required. |
 | `ml_label_use_status` | Whether the geometry may be used as ML labels; current status is not cleared for ML labels. |
 | `terms_found` | Whether explicit product-level terms were found for the inspected Sentinel Asia product. |
+| `Thailand_flood.shp.xml` | Embedded MBRSC shapefile metadata reviewed for license/use constraints; current finding is technical lineage only, not legal clearance. |
 | `mae_sai_point_intersects_polygon` | Visual QA result for whether the exact Mae Sai point falls inside a candidate flood polygon. Current result is `no`. |
 | `mae_sai_core_feature_count` | Visual QA count for features in the small Mae Sai core bbox. |
 | `east_southeast_floodplain_feature_count` | Visual QA count for features in the east/southeast floodplain bbox where most candidate geometry appears. |

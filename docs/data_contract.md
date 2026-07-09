@@ -532,7 +532,24 @@ Required columns:
 - `next_action`
 - `reviewed_at_utc`
 
-Current decision: the public product page exposes a download link and the geometry is inspectable. Sentinel Asia general policy says supplying-agency copyright applies, derived products need copyright marks, outputs are humanitarian/academic/non-commercial, and some Data Provider Node data may not be distributed to third parties. This does not explicitly clear this MBRSC product for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use. The product remains `reference_candidate_only`, not validation truth and not ML labels.
+Current decision: the public product page exposes a download link and the geometry is inspectable. Sentinel Asia general policy says supplying-agency copyright applies, derived products need copyright marks, outputs are humanitarian/academic/non-commercial, and some Data Provider Node data may not be distributed to third parties. The embedded `Thailand_flood.shp.xml` metadata records technical lineage but no license, access constraints, use constraints, redistribution terms, or ML-label permission. This does not explicitly clear this MBRSC product for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use. The product remains `reference_candidate_only`, not validation truth and not ML labels.
+
+`docs/mbrsc_reference_mask_clearance_memo.md` is the current controlling decision note for this product. It records the reviewed evidence, explicitly says not to set `processing_allowed=True`, and keeps the reference-mask gate at `blocked_product_terms_unresolved`.
+
+## MBRSC Reference-Mask Clearance Memo
+
+`docs/mbrsc_reference_mask_clearance_memo.md` records the current clearance decision for `MBRSC_THAILAND_FLOOD-MAP-SHP.zip`.
+
+Required content:
+
+- reviewed Sentinel Asia event-page evidence
+- reviewed Sentinel Asia DPN policy evidence
+- reviewed local ZIP members, including `Thailand_flood.shp.xml`
+- current use-decision table
+- blocked gate fields
+- exact follow-up questions needed to clear the gate
+
+Current decision: the MBRSC shapefile may remain an outside-Git reference candidate for geometry QA and planning, but it is not cleared for real validation metrics, derived reporting, screenshots/demo use, redistribution, or ML labels. Real non-ML SAR extraction remains blocked until a product-specific clearance or replacement legal reference mask exists.
 
 ## Sentinel Asia MBRSC Visual QA Review
 

@@ -80,7 +80,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `sentinel_asia_mbrsc_visual_qa_review.csv` and `docs/sentinel_asia_mbrsc_visual_qa_notes.md` record the notes-only visual QA pass. Current finding: polygons are not a single broad event boundary; they concentrate east/southeast of the Mae Sai point and broadly align with floodplain/waterway context, but the exact Mae Sai point is not inside a flood polygon and the layer contains fragmented patches that need manual QA.
 
-`sentinel_asia_product_terms_review.csv` and `docs/sentinel_asia_product_terms_review.md` record the product-terms review. Current status: no explicit product-level terms were found for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use, so the source remains `reference_candidate_only`.
+`sentinel_asia_product_terms_review.csv`, `docs/sentinel_asia_product_terms_review.md`, and `docs/mbrsc_reference_mask_clearance_memo.md` record the product-terms and clearance review. Current status: no explicit product-level terms were found in the event page, general Sentinel Asia policy, or embedded `Thailand_flood.shp.xml` metadata for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use, so the source remains `reference_candidate_only`.
 
 `cems_product_candidate_manifest.csv` records public CEMS AOI/product rows for EMSR754 and EMSR756. It contains product names, AOIs, product types, public package URLs where the API exposes them, dates, layer names, and Mae Sai relevance. No CEMS product package is downloaded into Git.
 

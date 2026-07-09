@@ -6,6 +6,7 @@ Status: terms unresolved; keep as `reference_candidate`, not validation truth an
 
 - Event page: https://sentinel-asia.org/EO/2024/article20240910TH.html
 - Sentinel Asia general DPN procedure: https://sentinel-asia.org/e-learning/SentinelAsiaProcedures/PDPN.pdf
+- Clearance decision memo: `docs/mbrsc_reference_mask_clearance_memo.md`
 - Selected product: `MBRSC_THAILAND_FLOOD-MAP-SHP.zip`
 - Product description on event page: `DETECTED FLOOD WATER IN NORTHERN PROVINCES OF THAILAND`, observed by Sentinel-1 image on 15 September 2024.
 - Local file: outside Git at `<external_data_workspace>/sentinel_asia/MBRSC_THAILAND_FLOOD-MAP-SHP.zip`
@@ -17,6 +18,7 @@ Status: terms unresolved; keep as `reference_candidate`, not validation truth an
 - The selected MBRSC product is a public shapefile ZIP link on the event page.
 - The event page states the disaster type is flood, the country is Thailand, the occurrence date is 10 September 2024, and the requester is GISTDA.
 - The selected product is described as detected flood water in northern provinces of Thailand from a 15 September 2024 Sentinel-1 image.
+- The local ZIP contains `Thailand_flood.shp.xml`; embedded metadata records ArcGIS lineage, EPSG:32647 metadata, shapefile fields, and processing history, but no license, access constraints, use constraints, redistribution terms, or ML-label permission.
 - QGIS/GDAL inspection confirms the ZIP contains a polygon shapefile over northern Thailand with Mae Sai review-bbox overlap.
 - QGIS/GDAL visual QA on 2026-07-09 supports treating the layer as flood-water reference-candidate geometry rather than a broad event boundary, but the layer still needs product-term clearance before validation use.
 - Sentinel Asia general documentation says distributed data include satellite imagery/data permitted by the data provider and value-added images; it does not provide product-specific reuse terms for this MBRSC shapefile.
@@ -36,9 +38,12 @@ Status: terms unresolved; keep as `reference_candidate`, not validation truth an
 
 Use the MBRSC shapefile as the first public Mae Sai reference-candidate lane for geometry review and planning.
 
+`docs/mbrsc_reference_mask_clearance_memo.md` is the current controlling project decision record. It explicitly says not to set `processing_allowed=True`, not to change `blocking_decision` to `cleared_for_local_validation`, and not to use this source for real validation metrics or ML labels until product-level terms are cleared.
+
 Do not use it yet as:
 
 - a final validation mask
+- a source for published IoU, F1/Dice, precision, recall, or area-error metrics
 - a redistributed data layer
 - supervised ML labels
 - an official flood observation

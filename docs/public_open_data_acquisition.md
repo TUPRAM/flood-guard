@@ -16,6 +16,7 @@ Generated outputs:
 - `outputs/sentinel_asia_mbrsc_visual_qa_review.csv`
 - `docs/sentinel_asia_mbrsc_visual_qa_notes.md`
 - `docs/sentinel_asia_product_terms_review.md`
+- `docs/mbrsc_reference_mask_clearance_memo.md`
 - `outputs/sentinel_asia_product_terms_review.csv`
 - `outputs/cems_product_candidate_manifest.csv`
 - `outputs/mae_sai_reference_candidate_decision.md`
@@ -35,7 +36,7 @@ Current generated row counts:
 | `public_reference_file_inspection_manifest.csv` | 1 | External Sentinel Asia shapefile ZIP inspection result. |
 | `sentinel_asia_geometry_quality_review.csv` | 1 | QGIS/GDAL geometry quality review row. |
 | `sentinel_asia_mbrsc_visual_qa_review.csv` | 1 | Notes-only visual QA row; no shapefile or image artifacts committed. |
-| `sentinel_asia_product_terms_review.csv` | 1 | Conservative product-terms decision row. |
+| `sentinel_asia_product_terms_review.csv` | 1 | Conservative product-terms decision row; companion memo keeps validation and ML gates blocked. |
 | `cems_product_candidate_manifest.csv` | 46 | CEMS EMSR754/EMSR756 AOI/product metadata rows. |
 | `mae_sai_reference_candidate_decision.md` | 1 note | Current public reference-candidate comparison and gate decision. |
 | `open_context_data_file_manifest.csv` | 4 | Planned WorldPop, HDX COD-AB, Geofabrik OSM, and Copernicus DEM context rows. |
@@ -55,6 +56,7 @@ Current generated row counts:
 - QGIS/GDAL review confirms `6506` full-layer features, `514` Mae Sai review-bbox intersecting features, about `464.234` km2 full-layer area-field sum, and about `47.164` km2 Mae Sai review-bbox area-field sum. This is geometry QA evidence, not final validation clearance.
 - Visual QA indicates the layer is not a single broad event boundary. Candidate polygons concentrate east/southeast of the Mae Sai point and broadly align with floodplain/waterway context, but fragmented patches remain and the exact Mae Sai point is not inside a candidate polygon.
 - Sentinel Asia / MBRSC product terms remain unresolved for validation metrics, screenshots/demo, derived metrics, redistribution, and ML-label use. The general Sentinel Asia DPN procedure says supplying-agency copyright applies, derived products need copyright marks, outputs are humanitarian/academic/non-commercial, and some DPN-provided data may not be distributed to third parties; that is useful context but not product-specific clearance for this MBRSC shapefile.
+- The embedded `Thailand_flood.shp.xml` file was reviewed. It contains ArcGIS lineage and field/projection metadata, but no license, access constraints, use constraints, redistribution terms, or ML-label permission. `docs/mbrsc_reference_mask_clearance_memo.md` is the current blocked gate decision.
 - CDSE Sentinel-1 products are free/full/open Sentinel data, but product download through CDSE requires an access token or account credentials. The selected Mae Sai pre/post COG products are now downloaded outside Git with SHA-256 checksums recorded in the acquisition manifest; processing remains blocked until reference-mask status clears.
 - UNOSAT/UNITAR public pages remain report/citation evidence unless redistributable geometry and derivative-use terms are confirmed.
 - NASA flood products are coarse context/proxy candidates, not subdistrict/road-scale validation labels.

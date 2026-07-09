@@ -99,6 +99,8 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "ml_label_use_status",
         "terms_found",
         "validation_metrics_allowed",
+        "Thailand_flood.shp.xml",
+        "docs/mbrsc_reference_mask_clearance_memo.md",
         "download_status",
         "blocked_missing_cdse_credentials",
         "feature_bbox_count",
@@ -131,6 +133,7 @@ def test_reference_mask_licensing_log_has_required_rows() -> None:
         "International Charter Activation 1004",
         "Sentinel Asia Southern Thailand 2025",
         "Academic or manual reference mask",
+        "Sentinel Asia / MBRSC Northern Thailand 2024 public shapefile",
     ):
         assert source in text
     assert "must not download source data" in text
@@ -143,6 +146,8 @@ def test_reference_mask_licensing_log_has_required_rows() -> None:
     assert "processing_allowed=True" in text
     assert "SHA-256 checksum is recorded" in text
     assert "scripts/check_real_data_gates.py" in text
+    assert "mbrsc_reference_mask_clearance_memo.md" in text
+    assert "blocked_product_terms_unresolved" in text
 
 
 def test_readme_documents_no_download_cdse_output_workflow() -> None:
@@ -210,6 +215,7 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
 
     for phrase in (
         "No source imagery",
+        "mbrsc_reference_mask_clearance_memo.md",
         "public_reference_candidate_manifest.csv",
         "sentinel_asia_public_product_links.csv",
         "CEMS EMSR754",
@@ -221,6 +227,8 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
         "exact Mae Sai point is not inside",
         "supplying-agency copyright applies",
         "humanitarian/academic/non-commercial",
+        "Thailand_flood.shp.xml",
+        "not product-specific clearance",
         "downloaded outside Git with SHA-256 checksums recorded",
         "product terms remain unresolved",
         "still blocked for processing until reference-mask status clears",
@@ -239,6 +247,7 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "sentinel_asia_geometry_quality_review.csv" in output_text
     assert "sentinel_asia_mbrsc_visual_qa_review.csv" in output_text
     assert "sentinel_asia_product_terms_review.csv" in output_text
+    assert "mbrsc_reference_mask_clearance_memo.md" in output_text
     assert "cems_product_candidate_manifest.csv" in output_text
     assert "mae_sai_reference_candidate_decision.md" in output_text
     assert "open_context_data_file_manifest.csv" in output_text
@@ -248,6 +257,7 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "Sentinel Asia Geometry Quality Review" in contract_text
     assert "Sentinel Asia MBRSC Visual QA Review" in contract_text
     assert "Sentinel Asia Product Terms Review" in contract_text
+    assert "MBRSC Reference-Mask Clearance Memo" in contract_text
     assert "CEMS Product Candidate Manifest" in contract_text
     assert "CDSE Mae Sai Acquisition Manifest" in contract_text
     assert "Open Context Data File Manifest" in contract_text
@@ -277,6 +287,7 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
         "east/southeast of the Mae Sai point",
         "exact Mae Sai point is not inside",
         "supplying-agency copyright applies",
+        "Thailand_flood.shp.xml",
     ):
         assert phrase in source_text
 
@@ -288,6 +299,7 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
     assert "Task 56 - Dashboard Dataset Mode Switch" in backlog_text
     assert "Task 57 - Sentinel Asia QGIS Geometry Quality Review" in backlog_text
     assert "Task 58 - Sentinel Asia Product Terms Review" in backlog_text
+    assert "mbrsc_reference_mask_clearance_memo.md" in backlog_text
     assert "Task 59 - CDSE Sentinel-1 Mae Sai Acquisition Gate" in backlog_text
     assert "Task 60 - Mae Sai Manifest Public Reference Update" in backlog_text
     assert "Task 61 - Real Baseline And ML Gate Reminder" in backlog_text
@@ -430,6 +442,7 @@ def test_licensing_outreach_status_tracks_not_sent_requests() -> None:
         "UNOSAT/UNITAR Mae Sai reference target",
         "GISTDA official flood product candidate",
         "International Charter Activation 1004",
+        "Sentinel Asia / MBRSC Northern Thailand 2024 public shapefile",
         "Sentinel Asia Southern Thailand 2025",
     ):
         assert source in text
@@ -437,6 +450,8 @@ def test_licensing_outreach_status_tracks_not_sent_requests() -> None:
     assert "2026-07-03" in text
     assert "Repository automation does not send email" in text
     assert "provider response pending" in text
+    assert "visual_qa_complete_terms_unresolved" in text
+    assert "mbrsc_reference_mask_clearance_memo.md" in text
     assert "scripts/check_real_data_gates.py --allow-blocked" in text
     assert "scripts/validate_mae_sai_file_manifest.py --allow-blocked" in text
 
@@ -510,6 +525,47 @@ def test_mae_sai_pair_decision_note_locks_planning_pair_not_processing() -> None
     assert "6a02d487-68fa-4be7-9628-f312b9049967" in text
     assert "Use the September 15 post-event COG as the first baseline target" in text
     assert "do not download any product until the legal/reference-mask gate is cleared" in text
+
+
+def test_mbrsc_reference_mask_clearance_memo_keeps_gate_blocked() -> None:
+    text = (
+        REPO_ROOT / "docs" / "mbrsc_reference_mask_clearance_memo.md"
+    ).read_text(encoding="utf-8")
+    terms_text = (
+        REPO_ROOT / "docs" / "sentinel_asia_product_terms_review.md"
+    ).read_text(encoding="utf-8")
+    csv_text = (
+        REPO_ROOT / "outputs" / "sentinel_asia_product_terms_review.csv"
+    ).read_text(encoding="utf-8")
+    decision_text = (
+        REPO_ROOT / "outputs" / "mae_sai_reference_candidate_decision.md"
+    ).read_text(encoding="utf-8")
+
+    for phrase in (
+        "Status: not cleared for validation metrics",
+        "Thailand_flood.shp.xml",
+        "It does not include use constraints",
+        "Do not set `processing_allowed=True`",
+        "blocked_product_terms_unresolved",
+        "not cleared",
+        "not cleared for ML labels",
+        "Do not use it yet as",
+    ):
+        assert phrase in text
+
+    for phrase in (
+        "mbrsc_reference_mask_clearance_memo.md",
+        "Thailand_flood.shp.xml",
+        "not to set `processing_allowed=True`",
+        "not validation truth and not ML labels",
+    ):
+        assert phrase in terms_text
+
+    assert "general_sentinel_asia_policy_and_Thailand_flood_shp_xml_reviewed" in csv_text
+    assert "reference_candidate_only" in csv_text
+    assert "blocked_unresolved" in csv_text
+    assert "not legal clearance" in decision_text
+    assert "processing_allowed=False" in decision_text
 
 
 def test_data_dictionary_mentions_mae_sai_file_manifest() -> None:

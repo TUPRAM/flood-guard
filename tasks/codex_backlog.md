@@ -358,7 +358,7 @@ Acceptance: `outputs/sentinel_asia_geometry_quality_review.csv`, `docs/sentinel_
 
 Document whether the public Sentinel Asia / MBRSC shapefile can be used for validation metrics, screenshots/demo, derived metrics, redistribution, and weak/ML labels.
 
-Acceptance: `docs/sentinel_asia_product_terms_review.md` and `outputs/sentinel_asia_product_terms_review.csv` keep the layer `reference_candidate_only` unless explicit product-level terms clear the relevant uses. Visual QA completion must not clear validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use by itself.
+Acceptance: `docs/sentinel_asia_product_terms_review.md`, `docs/mbrsc_reference_mask_clearance_memo.md`, and `outputs/sentinel_asia_product_terms_review.csv` keep the layer `reference_candidate_only` unless explicit product-level terms clear the relevant uses. Visual QA completion must not clear validation metrics. Embedded `Thailand_flood.shp.xml` technical lineage must not clear validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use by itself.
 
 ## Task 59 - CDSE Sentinel-1 Mae Sai Acquisition Gate
 

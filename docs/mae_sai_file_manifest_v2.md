@@ -9,9 +9,10 @@ Status: blocked.
 Reasons:
 
 - UNOSAT/UNITAR and GISTDA provider responses are still pending.
-- No Mae Sai flood reference-mask file is locally acquired.
-- No local Sentinel-1 source paths are recorded.
-- No SHA-256 checksums are recorded for the reference mask or locked pre/post Sentinel-1 pair.
+- The Sentinel Asia / MBRSC public shapefile ZIP is acquired outside Git and checksum-tracked as a reference candidate, but its product-level validation/derived-reporting/redistribution/ML-label terms remain unresolved.
+- The selected CDSE Sentinel-1 September 6 pre-event COG and September 15 post-event COG are downloaded outside Git with SHA-256 checksums recorded.
+- No cleared Mae Sai flood reference-mask file exists yet.
+- The September 18 fallback post-event COG is not acquired.
 - The standalone local Sentinel-1 TIFF now has a selected-file checksum in `outputs/sentinel1_selected_file_manifest.csv`.
 - The provenance resolver output in `outputs/sentinel1_provenance_resolved_manifest.csv` and `docs/sentinel1_local_provenance.md` labels that file `candidate_role=unresolved` and `event_timing_status=timing_unresolved`, so it is not yet a real baseline input.
 - `processing_allowed=True` is not allowed yet for the Mae Sai real-data baseline.

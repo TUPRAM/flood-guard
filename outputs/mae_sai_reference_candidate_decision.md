@@ -24,3 +24,9 @@ Status: provisional public geometry candidate selected; real validation remains 
 Use the Sentinel Asia MBRSC shapefile as the first public reference-candidate lane, not as a cleared validation mask and not as ML labels.
 
 Processing remains blocked until product-level terms, redistribution/reference-only status, geometry quality, local-file record, and reference-mask status are explicitly cleared.
+
+## Current Clearance Memo
+
+`docs/mbrsc_reference_mask_clearance_memo.md` is the current controlling memo for the selected Sentinel Asia / MBRSC source. It records that `Thailand_flood.shp.xml` was reviewed and contains technical lineage, but no license, access constraints, use constraints, redistribution terms, or ML-label permission. That is useful provenance, not legal clearance.
+
+Current gate decision: keep `processing_allowed=False`, keep `blocking_decision=blocked_product_terms_unresolved`, and do not compute real validation metrics or train ML labels from this source until product-level clearance or a replacement legal reference mask exists.

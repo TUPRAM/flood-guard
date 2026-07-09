@@ -1077,6 +1077,80 @@ The current SAR baseline is a synthetic, non-ML fixture used to test validation 
 - `recall`
 - `area_error_ratio`
 
+## Mae Sai Weak-Reference SAR Baseline Output
+
+The weak-reference baseline reads external CDSE Sentinel-1 pre/post ZIPs and the external manual QGIS GeoPackage, then writes only derived CSV/Markdown outputs into this repo. It is a real-raster non-ML candidate run, but it is not official validation and does not clear ML-label use.
+
+Required outputs:
+
+- `outputs/mae_sai_weak_sar_feature_manifest.csv`
+- `outputs/mae_sai_weak_baseline_metrics.csv`
+- `outputs/mae_sai_weak_baseline_summary.md`
+
+`outputs/mae_sai_weak_sar_feature_manifest.csv` required columns:
+
+- `study_area`
+- `processing_scope`
+- `pre_product_id`
+- `post_product_id`
+- `pre_source_name`
+- `post_source_name`
+- `reference_product_id`
+- `reference_status`
+- `sample_pixel_count`
+- `reference_positive_pixel_count`
+- `predicted_positive_pixel_count`
+- `sample_width`
+- `sample_height`
+- `bbox_lon_min`
+- `bbox_lat_min`
+- `bbox_lon_max`
+- `bbox_lat_max`
+- `window_strategy`
+- `georeferencing_method`
+- `probability_threshold`
+- `dry_change_db`
+- `flood_change_db`
+- `mean_combined_sar_change_score`
+- `mean_flood_probability_0_1`
+- `source_timestamp`
+- `confidence_class`
+- `assumptions`
+
+`outputs/mae_sai_weak_baseline_metrics.csv` required columns:
+
+- `study_area`
+- `processing_scope`
+- `reference_status`
+- `metric_status`
+- `true_positive`
+- `false_positive`
+- `false_negative`
+- `true_negative`
+- `iou`
+- `f1_dice`
+- `precision`
+- `recall`
+- `area_error_ratio`
+- `sample_pixel_count`
+- `reference_positive_pixel_count`
+- `predicted_positive_pixel_count`
+- `probability_threshold`
+- `source_timestamp`
+- `confidence_class`
+- `warning_text`
+- `assumptions`
+
+Required wording:
+
+- `Candidate metrics against manually digitized weak-reference mask.`
+- `Non-operational.`
+- `Not official validation.`
+- `Not field validated.`
+- `Not an emergency warning.`
+
+Source Sentinel-1 ZIPs, SAFE packages, TIFFs, and manual GeoPackages must remain outside Git. The official Mae Sai file-level gate remains blocked unless a cleared reference-mask source sets `reference_mask_status=confirmed`; the weak-reference lane must not force `processing_allowed=True`.
+
 ## Study-Area Inventory Output
 
 `docs/study_area_inventory.md` records real-data acquisition planning only. It may include exact candidate metadata, product ids, licensing notes, and blockers, but this repository change does not download real imagery or implement remote-sensing model code.

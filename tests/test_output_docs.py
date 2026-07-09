@@ -621,7 +621,10 @@ def test_manual_reference_mask_protocol_and_manifest_are_documented() -> None:
     ):
         assert phrase in protocol_text
 
-    assert "missing_source_file" in manifest_text
+    assert (
+        "missing_source_file" in manifest_text
+        or "ready_for_candidate_metrics" in manifest_text
+    )
     assert "manual_qgis_weak_reference" in manifest_text
     assert "official validation truth" in manifest_text
     assert "unqualified ML labels" in manifest_text

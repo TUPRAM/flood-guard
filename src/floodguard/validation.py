@@ -282,6 +282,9 @@ def write_validation_summary(
 def build_real_data_validation_summary(
     file_manifest: pd.DataFrame,
     sar_metrics: pd.DataFrame | None = None,
+    weak_reference_metrics: pd.DataFrame | None = None,
+    weak_reference_feature_manifest: pd.DataFrame | None = None,
+    manual_reference_manifest: pd.DataFrame | None = None,
     title: str = "Mae Sai Real-Data Validation Summary",
 ) -> str:
     """Build a real-data validation report or a blocked status report."""
@@ -314,6 +317,12 @@ def build_real_data_validation_summary(
                 "",
             ]
         )
+        _append_weak_reference_section(
+            lines,
+            weak_reference_metrics,
+            weak_reference_feature_manifest,
+            manual_reference_manifest,
+        )
         return "\n".join(lines)
 
     lines.extend(
@@ -343,6 +352,12 @@ def build_real_data_validation_summary(
                 "",
             ]
         )
+        _append_weak_reference_section(
+            lines,
+            weak_reference_metrics,
+            weak_reference_feature_manifest,
+            manual_reference_manifest,
+        )
         return "\n".join(lines)
 
     _validate_columns(sar_metrics, MASK_METRIC_COLUMNS, "sar_metrics")
@@ -364,6 +379,12 @@ def build_real_data_validation_summary(
             "",
         ]
     )
+    _append_weak_reference_section(
+        lines,
+        weak_reference_metrics,
+        weak_reference_feature_manifest,
+        manual_reference_manifest,
+    )
     return "\n".join(lines)
 
 
@@ -371,6 +392,9 @@ def write_real_data_validation_summary(
     file_manifest: pd.DataFrame,
     output_path: str | Path,
     sar_metrics: pd.DataFrame | None = None,
+    weak_reference_metrics: pd.DataFrame | None = None,
+    weak_reference_feature_manifest: pd.DataFrame | None = None,
+    manual_reference_manifest: pd.DataFrame | None = None,
     title: str = "Mae Sai Real-Data Validation Summary",
 ) -> Path:
     """Write the real-data validation status/metric report."""
@@ -381,11 +405,101 @@ def write_real_data_validation_summary(
         build_real_data_validation_summary(
             file_manifest,
             sar_metrics=sar_metrics,
+            weak_reference_metrics=weak_reference_metrics,
+            weak_reference_feature_manifest=weak_reference_feature_manifest,
+            manual_reference_manifest=manual_reference_manifest,
             title=title,
         ),
         encoding="utf-8",
     )
     return target
+
+
+def _append_weak_reference_section(
+    lines: list[str],
+    weak_reference_metrics: pd.DataFrame | None,
+    weak_reference_feature_manifest: pd.DataFrame | None,
+    manual_reference_manifest: pd.DataFrame | None,
+) -> None:
+    if weak_reference_metrics is None:
+        lines.extend(
+            [
+                "## Weak-Reference Candidate Baseline",
+                "",
+                "- Status: pending. No weak-reference candidate metrics were supplied.",
+                "- This section will use the manual QGIS weak-reference lane only for candidate metrics, not official validation.",
+                "",
+            ]
+        )
+        return
+    _validate_columns(weak_reference_metrics, MASK_METRIC_COLUMNS, "weak_reference_metrics")
+    if weak_reference_metrics.empty:
+        raise ValidationReportError("weak_reference_metrics must contain at least one row.")
+    metrics = weak_reference_metrics.iloc[0]
+    lines.extend(
+        [
+            "## Weak-Reference Candidate Baseline",
+            "",
+            (
+                "- Status: candidate metrics generated against a manually digitized "
+                "weak-reference mask."
+            ),
+            "- These are not official validation metrics and must not be used as emergency-warning evidence.",
+            f"- IoU: {float(metrics['iou']):.6f}",
+            f"- F1/Dice: {float(metrics['f1_dice']):.6f}",
+            f"- precision: {float(metrics['precision']):.6f}",
+            f"- recall: {float(metrics['recall']):.6f}",
+            f"- area error ratio: {float(metrics['area_error_ratio']):.6f}",
+        ]
+    )
+    if "sample_pixel_count" in weak_reference_metrics.columns:
+        lines.append(f"- Sample pixels: {int(metrics['sample_pixel_count'])}")
+    if "reference_positive_pixel_count" in weak_reference_metrics.columns:
+        lines.append(
+            f"- Manual weak-reference positive pixels: {int(metrics['reference_positive_pixel_count'])}"
+        )
+    if weak_reference_feature_manifest is not None and not weak_reference_feature_manifest.empty:
+        feature = weak_reference_feature_manifest.iloc[0]
+        if {"pre_product_id", "post_product_id", "reference_product_id"}.issubset(
+            set(weak_reference_feature_manifest.columns)
+        ):
+            lines.extend(
+                [
+                    f"- Pre-event Sentinel-1 product id: `{feature['pre_product_id']}`",
+                    f"- Post-event Sentinel-1 product id: `{feature['post_product_id']}`",
+                    f"- Manual reference id: `{feature['reference_product_id']}`",
+                ]
+            )
+        if "georeferencing_method" in weak_reference_feature_manifest.columns:
+            lines.append(f"- Georeferencing method: {feature['georeferencing_method']}")
+    if manual_reference_manifest is not None and not manual_reference_manifest.empty:
+        manual = manual_reference_manifest.iloc[0]
+        if "not_official_status" in manual_reference_manifest.columns:
+            lines.append(f"- Manual mask not-official status: {manual['not_official_status']}")
+        if "candidate_readiness_status" in manual_reference_manifest.columns:
+            lines.append(
+                f"- Manual mask readiness: {manual['candidate_readiness_status']}"
+            )
+    lines.extend(
+        [
+            "",
+            "### Weak-Reference Failure Modes",
+            "",
+            "- SAR layover/shadow.",
+            "- Permanent water confusion.",
+            "- Urban double-bounce.",
+            "- Manual mask uncertainty.",
+            "- Date mismatch between manual interpretation and Sentinel-1 acquisition.",
+            "",
+            "### Weak-Reference Safety Note",
+            "",
+            "- Not official.",
+            "- Not real-time.",
+            "- Not field validated.",
+            "- Not an emergency warning.",
+            "",
+        ]
+    )
 
 
 def _select_top_actionable(priority: pd.DataFrame) -> pd.Series:

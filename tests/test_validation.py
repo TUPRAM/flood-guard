@@ -137,6 +137,62 @@ def test_real_data_validation_summary_reports_blocked_manifest() -> None:
     assert "Processing allowed: false" in report
     assert "Real IoU, F1/Dice, precision, recall, and area error are pending" in report
     assert "Log UNOSAT/UNITAR or GISTDA provider response" in report
+    assert "Weak-Reference Candidate Baseline" in report
+    assert "No weak-reference candidate metrics were supplied" in report
+
+
+def test_real_data_validation_summary_reports_weak_reference_metrics_while_blocked() -> None:
+    manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
+    weak_metrics = pd.DataFrame(
+        [
+            {
+                "true_positive": 2,
+                "false_positive": 1,
+                "false_negative": 1,
+                "true_negative": 1,
+                "iou": 0.5,
+                "f1_dice": 0.666667,
+                "precision": 0.666667,
+                "recall": 0.666667,
+                "area_error_ratio": 0.0,
+                "sample_pixel_count": 5,
+                "reference_positive_pixel_count": 3,
+            }
+        ]
+    )
+    weak_feature_manifest = pd.DataFrame(
+        [
+            {
+                "pre_product_id": "pre-product",
+                "post_product_id": "post-product",
+                "reference_product_id": "manual-reference",
+                "georeferencing_method": "sentinel1_safe_gcps_affine_fit",
+            }
+        ]
+    )
+    manual_manifest = pd.DataFrame(
+        [
+            {
+                "not_official_status": "confirmed_true",
+                "candidate_readiness_status": "ready_for_candidate_metrics",
+            }
+        ]
+    )
+
+    report = build_real_data_validation_summary(
+        manifest,
+        weak_reference_metrics=weak_metrics,
+        weak_reference_feature_manifest=weak_feature_manifest,
+        manual_reference_manifest=manual_manifest,
+    )
+
+    assert "Processing allowed: false" in report
+    assert "candidate metrics generated against a manually digitized weak-reference mask" in report
+    assert "IoU: 0.500000" in report
+    assert "F1/Dice: 0.666667" in report
+    assert "Pre-event Sentinel-1 product id: `pre-product`" in report
+    assert "Manual mask not-official status: confirmed_true" in report
+    assert "Not an emergency warning" in report
 
 
 def test_real_data_validation_summary_reports_metrics_when_ready() -> None:

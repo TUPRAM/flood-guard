@@ -549,6 +549,37 @@ Files: `sample_sar_baseline.csv` and `sample_sar_validation_metrics.csv`
 | `recall` | Synthetic flood recall. |
 | `area_error_ratio` | Signed predicted flood area error relative to reference flood area. |
 
+## Mae Sai Weak-Reference Sentinel-1 Baseline
+
+Files: `mae_sai_weak_sar_feature_manifest.csv`, `mae_sai_weak_baseline_metrics.csv`, and `mae_sai_weak_baseline_summary.md`
+
+These outputs are candidate metrics against a manually digitized weak-reference mask. They are non-operational, not official validation, not field validated, and not ML labels. Source Sentinel-1 ZIPs and the manual GeoPackage remain outside Git.
+
+| Field | Meaning |
+| --- | --- |
+| `processing_scope` | `weak_reference_real_sentinel1_non_ml_candidate`; this is a candidate baseline, not official validation. |
+| `pre_product_id` | CDSE Sentinel-1 pre-event product id used for the candidate run. |
+| `post_product_id` | CDSE Sentinel-1 post-event product id used for the candidate run. |
+| `reference_product_id` | Manual weak-reference id from the QGIS GeoPackage manifest. |
+| `reference_status` | Must remain `weak_reference_candidate`; this does not clear the official reference-mask gate. |
+| `sample_pixel_count` | Number of sampled pixels/cells used in the candidate metric calculation. |
+| `reference_positive_pixel_count` | Number of sampled pixels marked as flood in the manual weak-reference mask. |
+| `predicted_positive_pixel_count` | Number of sampled pixels predicted as flood by the non-ML SAR threshold. |
+| `georeferencing_method` | Current method for locating the sample window, such as `sentinel1_safe_gcps_affine_fit`. |
+| `vv_drop` / `vh_drop` | Pre-event dB minus post-event dB; positive values indicate lower post-event backscatter. |
+| `vv_ratio` / `vh_ratio` | Post-event amplitude divided by pre-event amplitude. |
+| `combined_sar_change_score` | Weighted SAR change score; current first baseline weights VH at 0.60 and VV at 0.40. |
+| `flood_probability_0_1` | Non-ML probability proxy derived from the combined SAR change score. |
+| `binary_flood_extent` | Candidate binary flood prediction using the configured probability threshold. |
+| `reference_flood_extent` | Manual weak-reference mask value used for candidate metrics. |
+| `true_positive` / `false_positive` / `false_negative` / `true_negative` | Binary mask comparison counts against the manual weak reference. |
+| `iou` | Intersection over Union against the manual weak-reference candidate. |
+| `f1_dice` | F1/Dice score against the manual weak-reference candidate. |
+| `precision` | Candidate precision against the manual weak-reference candidate. |
+| `recall` | Candidate recall against the manual weak-reference candidate. |
+| `area_error_ratio` | Signed predicted flood area error relative to manual weak-reference area. |
+| `warning_text` | Required safety wording: candidate metrics only, non-operational, not official validation, and not field validated. |
+
 ## THEOS-2 Local Metadata Manifest
 
 File: `theos2_local_metadata_manifest.csv`
@@ -662,4 +693,4 @@ File: `theos2_visual_review_checklist.csv`
 
 File: `mae_sai_validation_summary.md`
 
-This report is blocked until the legal reference mask, local paths, SHA-256 checksums, and file-level processing gates pass. Once ready, it reports IoU, F1/Dice, precision, recall, and area error for the non-ML SAR baseline.
+This report remains officially blocked until the legal reference mask, local paths, SHA-256 checksums, and file-level processing gates pass. When weak-reference candidate metrics exist, the report includes them in a separate section and keeps the warning that they are not official validation, not field validated, and not an emergency warning.

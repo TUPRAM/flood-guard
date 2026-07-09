@@ -34,11 +34,44 @@ def main() -> None:
         default=REPO_ROOT / "outputs" / "mae_sai_validation_summary.md",
         help="Output Markdown validation summary.",
     )
+    parser.add_argument(
+        "--weak-metrics",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_weak_baseline_metrics.csv",
+        help="Optional weak-reference candidate metric CSV.",
+    )
+    parser.add_argument(
+        "--weak-feature-manifest",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_weak_sar_feature_manifest.csv",
+        help="Optional weak-reference SAR feature manifest CSV.",
+    )
+    parser.add_argument(
+        "--manual-reference-manifest",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "manual_reference_mask_manifest.csv",
+        help="Optional manual weak-reference manifest CSV.",
+    )
     args = parser.parse_args()
 
     manifest = pd.read_csv(args.manifest, dtype=str).fillna("")
-    written = write_real_data_validation_summary(manifest, args.output)
+    weak_metrics = _read_optional_csv(args.weak_metrics)
+    weak_feature_manifest = _read_optional_csv(args.weak_feature_manifest)
+    manual_reference_manifest = _read_optional_csv(args.manual_reference_manifest)
+    written = write_real_data_validation_summary(
+        manifest,
+        args.output,
+        weak_reference_metrics=weak_metrics,
+        weak_reference_feature_manifest=weak_feature_manifest,
+        manual_reference_manifest=manual_reference_manifest,
+    )
     print(f"Wrote {written}")
+
+
+def _read_optional_csv(path: Path) -> pd.DataFrame | None:
+    if not path.exists():
+        return None
+    return pd.read_csv(path, dtype=str).fillna("")
 
 
 if __name__ == "__main__":

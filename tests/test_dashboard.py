@@ -134,16 +134,28 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert 'id="scenario-select"' in html
     assert 'id="dataset-mode-select"' in html
     assert "fixture demo" in html
-    assert "public-data Mae Sai candidate" in html
-    assert "blocked/metadata-only view" in html
+    assert "Mae Sai weak-reference candidate" in html
+    assert "Metadata/blocker view" in html
     assert "const datasetModeNotes =" in html
-    assert "Public-data Mae Sai candidate: Sentinel Asia / MBRSC geometry QA found 514 Mae Sai review-bbox features" in html
-    assert "Mae Sai weak-reference decision bridge is available" in html
+    assert "Mae Sai weak-reference candidate: this mode is separated from the fixture demo" in html
+    assert "The weak-reference decision bridge is available" in html
+    assert 'id="mae-sai-weak-reference-card"' in html
+    assert "b09f96ca-4a60-43e7-9b8d-158022f0e5bf" in html
+    assert "20a9c3b8-37df-46d5-81d8-d63c7e460225" in html
+    assert "MANUAL-QGIS-MAE-SAI-2024" in html
+    assert "ready_for_candidate_metrics" in html
+    assert "confirmed_true" in html
     assert "MS-WR-001" in html
     assert "weak_reference_candidate" in html
     assert "weak_sar_only_real_context_not_joined" in html
-    assert "CDSE pre/post Sentinel-1 rows are selected" in html
-    assert "Blocked/metadata-only view: source candidates are documented" in html
+    assert "IoU 0.006079" in html
+    assert "F1 0.012085" in html
+    assert "precision 0.038494" in html
+    assert "recall 0.007167" in html
+    assert "area error -0.813809" in html
+    assert "Candidate metrics against manually digitized weak-reference mask" in html
+    assert "Not official validation" in html
+    assert "Metadata/blocker view: source candidates and local files are documented" in html
     assert "dataset-mode-note" in html
     assert 'class="action-filter"' in html
     assert "temporary shelter delta" in html

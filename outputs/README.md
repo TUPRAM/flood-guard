@@ -106,6 +106,8 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `dashboard.html` v8 uses a judge-demo command-center layout: app header, KPI strip, three-zone workspace, primary map panel with embedded legends, right-side decision/context/readiness panel, and a below-workspace report section. The layout is still static HTML with embedded data, no backend, and no browser-side `fetch`.
 
+`dashboard.html` v9 includes dataset modes for `Fixture demo`, `Mae Sai weak-reference candidate`, and `Metadata/blocker view`. The Mae Sai weak-reference mode summarizes downloaded outside-Git CDSE Sentinel-1 pre/post product ids, manual QGIS weak-reference status, candidate metrics, flood-probability summary, and the generated weak-reference decision bridge when available. It remains non-operational, not official validation, not field validated, and not an official warning.
+
 `judge_demo_readme.md` is a short judge-facing narrative pack. It explains what the fixture demo proves, what it does not prove, how FPPS/access/equity/road-risk/scenario outputs connect, and why real validation and ML remain blocked until provider/legal and file-level gates clear.
 
 `theos2_selected_file_manifest.csv` and `theos2_previews/*.svg` are THEOS-2 optical-context artifacts. They are checksum-backed and non-operational, but they are not flood masks, validation labels, or official warning products. Source THEOS-2 TIFF/overview files remain outside Git.

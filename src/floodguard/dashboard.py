@@ -751,6 +751,38 @@ def _build_dashboard_html(
       color: var(--muted);
       font-size: 13px;
     }
+    .mae-sai-weak-card {
+      border: 1px solid #d6c48f;
+      border-radius: 6px;
+      background: #fffaf0;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      margin: 10px 0 14px;
+      font-size: 12px;
+    }
+    .mae-sai-weak-card strong {
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .mae-sai-weak-card dl {
+      display: grid;
+      grid-template-columns: minmax(94px, auto) minmax(0, 1fr);
+      gap: 4px 8px;
+      margin: 0;
+    }
+    .mae-sai-weak-card dt {
+      color: var(--muted);
+    }
+    .mae-sai-weak-card dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+    .mae-sai-weak-card .warning {
+      border-top: 1px solid #eadcb2;
+      padding-top: 7px;
+      color: #8b5b00;
+    }
     .status-panel {
       border: 1px solid var(--line);
       border-radius: 6px;
@@ -1236,9 +1268,9 @@ def _build_dashboard_html(
           <div>
             <label class="control-label" for="dataset-mode-select">Dataset mode</label>
             <select id="dataset-mode-select">
-              <option value="fixture_demo">fixture demo</option>
-              <option value="mae_sai_public_candidate">public-data Mae Sai candidate</option>
-              <option value="blocked_metadata_only">blocked/metadata-only view</option>
+              <option value="fixture_demo">Fixture demo</option>
+              <option value="mae_sai_weak_reference">Mae Sai weak-reference candidate</option>
+              <option value="metadata_blocker_view">Metadata/blocker view</option>
             </select>
           </div>
         </div>
@@ -1267,6 +1299,7 @@ def _build_dashboard_html(
           <li>Context layers are not flood labels, not reference masks, and not agency flood products.</li>
           <li>Real-data ML is not allowed until legal reference-mask and file-level gates pass.</li>
         </ul>
+        __MAE_SAI_WEAK_CARD_HTML__
       </aside>
 
       <section class="map-panel" data-dashboard-section="map-panel" aria-label="FloodGuard map panel">
@@ -1422,8 +1455,8 @@ def _build_dashboard_html(
     };
     const datasetModeNotes = {
       fixture_demo: 'Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision-layer workflow, not real flood accuracy.',
-      mae_sai_public_candidate: '__MAE_SAI_WEAK_NOTE__',
-      blocked_metadata_only: 'Blocked/metadata-only view: source candidates are documented, but no real flood baseline or ML output is allowed from metadata alone.'
+      mae_sai_weak_reference: '__MAE_SAI_WEAK_NOTE__',
+      metadata_blocker_view: 'Metadata/blocker view: source candidates and local files are documented, but official validation and real-data ML remain blocked until legal/reference-mask and file-level gates clear.'
     };
     const mapBoundsPadding = 0.16;
     const state = {
@@ -1756,6 +1789,9 @@ def _build_dashboard_html(
         "__MAE_SAI_WEAK_NOTE__": _js_string(
             _mae_sai_weak_dataset_note(mae_sai_weak_summary)
         ),
+        "__MAE_SAI_WEAK_CARD_HTML__": _mae_sai_weak_card_html(
+            mae_sai_weak_summary
+        ),
         "__THEOS2_CONTEXT_HTML__": _theos2_context_html(theos2_preview_rows),
         "__SENTINEL1_CONTEXT_HTML__": _sentinel1_context_html(
             sentinel1_quicklook_rows
@@ -1890,56 +1926,228 @@ def _read_validation_metric_cards(output_dir: Path) -> list[dict[str, str]]:
 
 def _read_mae_sai_weak_priority_summary(output_dir: Path) -> dict[str, Any]:
     path = output_dir / "mae_sai_priority_subdistricts.geojson"
+    metrics_row = _first_csv_row(output_dir / "mae_sai_weak_baseline_metrics.csv")
+    feature_row = _first_csv_row(output_dir / "mae_sai_weak_sar_feature_manifest.csv")
+    reference_row = _first_csv_row(output_dir / "manual_reference_mask_manifest.csv")
+
+    summary: dict[str, Any] = {
+        "metrics_available": bool(metrics_row),
+        "feature_manifest_available": bool(feature_row),
+        "manual_reference_available": bool(reference_row),
+        "pre_product_id": feature_row.get("pre_product_id", "unavailable")
+        if feature_row
+        else "unavailable",
+        "post_product_id": feature_row.get("post_product_id", "unavailable")
+        if feature_row
+        else "unavailable",
+        "reference_id": reference_row.get("reference_id", "unavailable")
+        if reference_row
+        else feature_row.get("reference_product_id", "unavailable")
+        if feature_row
+        else "unavailable",
+        "manual_reference_status": reference_row.get(
+            "reference_mask_status",
+            "unavailable",
+        )
+        if reference_row
+        else "unavailable",
+        "candidate_readiness_status": reference_row.get(
+            "candidate_readiness_status",
+            "unavailable",
+        )
+        if reference_row
+        else "unavailable",
+        "not_official_status": reference_row.get(
+            "not_official_status",
+            "unavailable",
+        )
+        if reference_row
+        else "unavailable",
+        "iou": _format_number(metrics_row.get("iou"), 6)
+        if metrics_row
+        else "unavailable",
+        "f1_dice": _format_number(metrics_row.get("f1_dice"), 6)
+        if metrics_row
+        else "unavailable",
+        "precision": _format_number(metrics_row.get("precision"), 6)
+        if metrics_row
+        else "unavailable",
+        "recall": _format_number(metrics_row.get("recall"), 6)
+        if metrics_row
+        else "unavailable",
+        "area_error_ratio": _format_signed(metrics_row.get("area_error_ratio"), 6)
+        if metrics_row
+        else "unavailable",
+        "warning_text": metrics_row.get(
+            "warning_text",
+            "Candidate metrics against manually digitized weak-reference mask. "
+            "Non-operational. Not official validation. Not field validated.",
+        )
+        if metrics_row
+        else (
+            "Weak-reference candidate metrics have not been generated. "
+            "Non-operational. Not official validation. Not field validated."
+        ),
+        "sample_pixel_count": metrics_row.get("sample_pixel_count", "unavailable")
+        if metrics_row
+        else "unavailable",
+        "reference_positive_pixel_count": metrics_row.get(
+            "reference_positive_pixel_count",
+            "unavailable",
+        )
+        if metrics_row
+        else "unavailable",
+        "predicted_positive_pixel_count": metrics_row.get(
+            "predicted_positive_pixel_count",
+            "unavailable",
+        )
+        if metrics_row
+        else "unavailable",
+        "mean_flood_probability_0_1": _format_number(
+            feature_row.get("mean_flood_probability_0_1"),
+            6,
+        )
+        if feature_row
+        else "unavailable",
+    }
+
     if not path.exists():
-        return {"available": False, "feature_count": 0, "status": "not_generated"}
+        summary.update(
+            {"available": False, "feature_count": 0, "status": "not_generated"}
+        )
+        return summary
     try:
         geojson = _read_feature_collection(path, "mae_sai_weak_priority")
     except DashboardError:
-        return {"available": False, "feature_count": 0, "status": "invalid_geojson"}
+        summary.update(
+            {"available": False, "feature_count": 0, "status": "invalid_geojson"}
+        )
+        return summary
     features = geojson.get("features", [])
     if not features:
-        return {"available": False, "feature_count": 0, "status": "empty_geojson"}
+        summary.update(
+            {"available": False, "feature_count": 0, "status": "empty_geojson"}
+        )
+        return summary
     props = features[0].get("properties") or {}
-    return {
-        "available": True,
-        "feature_count": len(features),
-        "status": "weak_reference_decision_bridge_available",
-        "subdistrict_id": str(props.get("subdistrict_id", "unavailable")),
-        "subdistrict_name": str(props.get("subdistrict_name", "unavailable")),
-        "fpps_0_100": _format_number(props.get("fpps_0_100"), 2),
-        "action_class": str(props.get("action_class", "unavailable")),
-        "mean_flood_probability_0_1": _format_number(
-            props.get("mean_flood_probability_0_1"),
-            6,
-        ),
-        "confidence_class": str(props.get("confidence_class", "unavailable")),
-        "reference_status": str(props.get("reference_status", "unavailable")),
-        "context_status": str(props.get("context_status", "unavailable")),
-        "source_timestamp": str(props.get("source_timestamp", "unavailable")),
-    }
+    summary.update(
+        {
+            "available": True,
+            "feature_count": len(features),
+            "status": "weak_reference_decision_bridge_available",
+            "subdistrict_id": str(props.get("subdistrict_id", "unavailable")),
+            "subdistrict_name": str(props.get("subdistrict_name", "unavailable")),
+            "fpps_0_100": _format_number(props.get("fpps_0_100"), 2),
+            "action_class": str(props.get("action_class", "unavailable")),
+            "mean_flood_probability_0_1": _format_number(
+                props.get(
+                    "mean_flood_probability_0_1",
+                    summary.get("mean_flood_probability_0_1"),
+                ),
+                6,
+            ),
+            "confidence_class": str(props.get("confidence_class", "unavailable")),
+            "reference_status": str(props.get("reference_status", "unavailable")),
+            "context_status": str(props.get("context_status", "unavailable")),
+            "source_timestamp": str(props.get("source_timestamp", "unavailable")),
+        }
+    )
+    return summary
 
 
 def _mae_sai_weak_dataset_note(summary: dict[str, Any]) -> str:
     base = (
-        "Public-data Mae Sai candidate: Sentinel Asia / MBRSC geometry QA found "
-        "514 Mae Sai review-bbox features, and CDSE pre/post Sentinel-1 rows are "
-        "selected."
+        "Mae Sai weak-reference candidate: this mode is separated from the "
+        "fixture demo. It summarizes downloaded outside-Git CDSE Sentinel-1 "
+        "pre/post products, a manual QGIS weak-reference mask, candidate "
+        "metrics, and the low-confidence decision bridge."
     )
     if not summary.get("available"):
         return (
-            f"{base} Weak-reference decision bridge is not generated yet. Real "
-            "validation remains blocked until product terms, outside-Git local "
-            "files, checksums, and reference-mask status clear."
+            f"{base} The real-data decision output is not generated yet. This "
+            "remains non-operational, not official validation, not field "
+            "validated, and not an official warning."
         )
     return (
-        f"{base} Mae Sai weak-reference decision bridge is available with "
+        f"{base} The weak-reference decision bridge is available with "
         f"{summary.get('feature_count')} review-area feature, FPPS "
         f"{summary.get('fpps_0_100')}, class {summary.get('action_class')}, "
         f"mean flood probability {summary.get('mean_flood_probability_0_1')}, "
-        f"confidence {summary.get('confidence_class')}. This remains "
+        f"IoU {summary.get('iou')}, F1/Dice {summary.get('f1_dice')}, "
+        f"precision {summary.get('precision')}, recall {summary.get('recall')}, "
+        f"area error {summary.get('area_error_ratio')}, and confidence "
+        f"{summary.get('confidence_class')}. This remains "
         "weak-reference, non-operational, not official validation, and not field "
-        "validated."
+        "validated. Not an official warning."
     )
+
+
+def _mae_sai_weak_card_html(summary: dict[str, Any]) -> str:
+    """Render a compact Mae Sai weak-reference card for the status narrative."""
+
+    if not any(
+        summary.get(key)
+        for key in ("available", "metrics_available", "manual_reference_available")
+    ):
+        return (
+            '<div class="mae-sai-weak-card" id="mae-sai-weak-reference-card">'
+            "<strong>Mae Sai weak-reference candidate</strong>"
+            "<p>Real-data candidate outputs have not been generated yet. This "
+            "mode remains metadata-only, non-operational, and not an official "
+            "warning.</p>"
+            "</div>"
+        )
+
+    fields = [
+        ("Pre S1 product", summary.get("pre_product_id", "unavailable")),
+        ("Post S1 product", summary.get("post_product_id", "unavailable")),
+        ("Manual mask", summary.get("reference_id", "unavailable")),
+        ("Mask status", summary.get("manual_reference_status", "unavailable")),
+        (
+            "Candidate status",
+            summary.get("candidate_readiness_status", "unavailable"),
+        ),
+        ("Not official", summary.get("not_official_status", "unavailable")),
+        ("Mean flood probability", summary.get("mean_flood_probability_0_1")),
+        (
+            "Candidate metrics",
+            (
+                f"IoU {summary.get('iou')}; F1 {summary.get('f1_dice')}; "
+                f"precision {summary.get('precision')}; "
+                f"recall {summary.get('recall')}; "
+                f"area error {summary.get('area_error_ratio')}"
+            ),
+        ),
+        (
+            "Decision output",
+            (
+                f"{summary.get('subdistrict_id', 'unavailable')}, FPPS "
+                f"{summary.get('fpps_0_100', 'unavailable')}, class "
+                f"{summary.get('action_class', 'unavailable')}, confidence "
+                f"{summary.get('confidence_class', 'unavailable')}"
+            ),
+        ),
+        ("Context status", summary.get("context_status", "unavailable")),
+    ]
+    definition_rows = "".join(
+        f"<dt>{html.escape(label)}</dt><dd>{html.escape(str(value))}</dd>"
+        for label, value in fields
+    )
+    warning = html.escape(
+        f"{summary.get('warning_text')} Not an official warning."
+    )
+    return (
+        '<div class="mae-sai-weak-card" id="mae-sai-weak-reference-card">'
+        "<strong>Mae Sai weak-reference candidate</strong>"
+        f"<dl>{definition_rows}</dl>"
+        f'<div class="warning">{warning}</div>'
+        "</div>"
+    )
+
+
+def _first_csv_row(path: Path) -> dict[str, str]:
+    rows = _read_csv_rows(path)
+    return rows[0] if rows else {}
 
 
 def _format_metric_value(

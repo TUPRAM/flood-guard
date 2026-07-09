@@ -189,11 +189,16 @@ Dashboard v9 dataset mode switch:
 
 | Item | Meaning |
 | --- | --- |
-| `dataset-mode-select` | Static control that lets the viewer choose `fixture demo`, `public-data Mae Sai candidate`, or `blocked/metadata-only view` narrative mode. |
-| `dataset-mode-note` | Plain-language note explaining whether the viewer is seeing fixture outputs, a public Mae Sai reference-candidate narrative, or blocked metadata-only readiness. |
+| `dataset-mode-select` | Static control that lets the viewer choose `fixture demo`, `Mae Sai weak-reference candidate`, or `Metadata/blocker view` narrative mode. |
+| `dataset-mode-note` | Plain-language note explaining whether the viewer is seeing fixture outputs, the Mae Sai weak-reference real-data candidate path, or blocked metadata-only readiness. |
 | `fixture demo` | Current dashboard mode using synthetic fixture priority, access, equity, and road-risk outputs. |
-| `public-data Mae Sai candidate` | Narrative mode showing that Sentinel Asia / MBRSC geometry QA found a Mae Sai reference candidate and CDSE pre/post Sentinel-1 rows are selected, while real validation remains blocked. |
-| `blocked/metadata-only view` | Narrative mode emphasizing that source candidates alone do not authorize real flood baselines or ML. |
+| `Mae Sai weak-reference candidate` | Narrative mode showing downloaded outside-Git CDSE Sentinel-1 pre/post product ids, manual QGIS weak-reference status, candidate IoU/F1/Dice/precision/recall/area-error metrics, flood-probability summary, and generated weak-reference decision output when available. |
+| `Metadata/blocker view` | Narrative mode emphasizing that source candidates and local file manifests alone do not authorize official validation or ML. |
+| `mae-sai-weak-reference-card` | Compact status card embedded in the dashboard narrative. It must keep weak-reference wording visible and must not call the output official validation. |
+| `pre_product_id` / `post_product_id` | CDSE Sentinel-1 products used by the weak-reference candidate summary; source ZIPs remain outside Git. |
+| `manual_reference_status` | Manual QGIS mask status, currently `weak_reference_candidate`. |
+| `candidate_readiness_status` | Whether the manual weak-reference mask is ready for candidate metrics; this does not clear official validation gates. |
+| `not_official_status` | Required status confirming the manual reference is not official. |
 
 Dashboard QA support:
 

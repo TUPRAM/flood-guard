@@ -434,6 +434,38 @@
       color: var(--muted);
       font-size: 13px;
     }
+    .mae-sai-weak-card {
+      border: 1px solid #d6c48f;
+      border-radius: 6px;
+      background: #fffaf0;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      margin: 10px 0 14px;
+      font-size: 12px;
+    }
+    .mae-sai-weak-card strong {
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .mae-sai-weak-card dl {
+      display: grid;
+      grid-template-columns: minmax(94px, auto) minmax(0, 1fr);
+      gap: 4px 8px;
+      margin: 0;
+    }
+    .mae-sai-weak-card dt {
+      color: var(--muted);
+    }
+    .mae-sai-weak-card dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+    .mae-sai-weak-card .warning {
+      border-top: 1px solid #eadcb2;
+      padding-top: 7px;
+      color: #8b5b00;
+    }
     .status-panel {
       border: 1px solid var(--line);
       border-radius: 6px;
@@ -919,9 +951,9 @@
           <div>
             <label class="control-label" for="dataset-mode-select">Dataset mode</label>
             <select id="dataset-mode-select">
-              <option value="fixture_demo">fixture demo</option>
-              <option value="mae_sai_public_candidate">public-data Mae Sai candidate</option>
-              <option value="blocked_metadata_only">blocked/metadata-only view</option>
+              <option value="fixture_demo">Fixture demo</option>
+              <option value="mae_sai_weak_reference">Mae Sai weak-reference candidate</option>
+              <option value="metadata_blocker_view">Metadata/blocker view</option>
             </select>
           </div>
         </div>
@@ -950,6 +982,7 @@
           <li>Context layers are not flood labels, not reference masks, and not agency flood products.</li>
           <li>Real-data ML is not allowed until legal reference-mask and file-level gates pass.</li>
         </ul>
+        <div class="mae-sai-weak-card" id="mae-sai-weak-reference-card"><strong>Mae Sai weak-reference candidate</strong><dl><dt>Pre S1 product</dt><dd>b09f96ca-4a60-43e7-9b8d-158022f0e5bf</dd><dt>Post S1 product</dt><dd>20a9c3b8-37df-46d5-81d8-d63c7e460225</dd><dt>Manual mask</dt><dd>MANUAL-QGIS-MAE-SAI-2024</dd><dt>Mask status</dt><dd>weak_reference_candidate</dd><dt>Candidate status</dt><dd>ready_for_candidate_metrics</dd><dt>Not official</dt><dd>confirmed_true</dd><dt>Mean flood probability</dt><dd>0.046621</dd><dt>Candidate metrics</dt><dd>IoU 0.006079; F1 0.012085; precision 0.038494; recall 0.007167; area error -0.813809</dd><dt>Decision output</dt><dd>MS-WR-001, FPPS 6.19, class E, confidence low</dd><dt>Context status</dt><dd>weak_sar_only_real_context_not_joined</dd></dl><div class="warning">Candidate metrics against manually digitized weak-reference mask. Non-operational. Not official validation. Not field validated. Not an official warning.</div></div>
       </aside>
 
       <section class="map-panel" data-dashboard-section="map-panel" aria-label="FloodGuard map panel">
@@ -1258,7 +1291,7 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
     const sentinel1QuicklookData = [{"file_name": "Sentinel1_Thailand-0000000000-0000000000-002.tif", "sha256_prefix": "3ab55fb0c043", "sha256_status": "recorded", "mvp_overlap": "mae_sai_2024_point", "event_timing_status": "timing_unresolved", "provenance_status": "unresolved_placeholder_filename", "band": "VV", "band_description": "VV", "quicklook_path": "sentinel1_quicklook_vv.png", "quicklook_format": "png", "quicklook_width": "512", "quicklook_height": "512", "quicklook_file_size_bytes": "223164", "raster_reader": "rasterio", "processing_scope": "sentinel1_sar_context_quicklook_only", "warning_text": "SAR context only; not flood detection; not validation; not an official warning; event timing unresolved unless proven otherwise.", "assumptions": "Small non-operational Sentinel-1 SAR context quicklook; not flood detection, not validation, not an official warning; source TIFF remains outside Git."}, {"file_name": "Sentinel1_Thailand-0000000000-0000000000-002.tif", "sha256_prefix": "3ab55fb0c043", "sha256_status": "recorded", "mvp_overlap": "mae_sai_2024_point", "event_timing_status": "timing_unresolved", "provenance_status": "unresolved_placeholder_filename", "band": "VH", "band_description": "VH", "quicklook_path": "sentinel1_quicklook_vh.png", "quicklook_format": "png", "quicklook_width": "512", "quicklook_height": "512", "quicklook_file_size_bytes": "218580", "raster_reader": "rasterio", "processing_scope": "sentinel1_sar_context_quicklook_only", "warning_text": "SAR context only; not flood detection; not validation; not an official warning; event timing unresolved unless proven otherwise.", "assumptions": "Small non-operational Sentinel-1 SAR context quicklook; not flood detection, not validation, not an official warning; source TIFF remains outside Git."}];
     const demQuicklookData = [{"source_name": "Hackathon-provided Copernicus DEM Thailand raster", "package_name": "drive-download-20260705T104354Z-3-001.zip", "member_name": "CopernicusDEM_Elevation_Slope_Thailand-0000046592-0000023296.tif", "package_sha256_prefix": "9cb4b87c1dac", "package_sha256_status": "recorded", "member_sha256_prefix": "9d6f4b2f8401", "member_sha256_status": "recorded", "local_extracted_path_hint": "<external_data_workspace>/CopernicusDEM_Elevation_Slope_Thailand-0000046592-0000023296.tif", "quicklook_path": "dem_quicklook.png", "quicklook_format": "png", "quicklook_width": "449", "quicklook_height": "512", "quicklook_file_size_bytes": "749", "raster_reader": "rasterio", "reference_mask_status": "not_reference_mask", "flood_observation_status": "not_flood_observation", "flood_label_status": "not_flood_label", "processing_scope": "dem_terrain_context_quicklook_only", "warning_text": "DEM terrain context only; not flood observation; not flood label; not reference mask; not an official warning.", "assumptions": "Small non-operational DEM terrain-context quicklook; not flood observation, not flood label, not reference mask, not an official warning; extracted DEM source remains outside Git."}];
     const localDataLibrarySummary = {"library_counts": {"sentinel1_sar": 2, "copernicus_dem": 2, "theos2_optical": 28}, "sentinel1": {"file_name": "Sentinel1_Thailand-0000000000-0000000000-002.tif", "mvp_overlap": "mae_sai_2024_point", "band_descriptions": "VV|VH", "sha256_status": "recorded", "candidate_role": "unresolved", "event_timing_status": "timing_unresolved", "provenance_status": "unresolved_placeholder_filename", "processing_allowed": "False", "quicklook_count": 2, "blocked_reason": "Sentinel-1 product provenance unresolved; acquisition timing unresolved; candidate role is not pre/post baseline ready; resolved product id unavailable; reference mask not confirmed"}, "dem": {"package_count": 2, "member_count": 6, "quicklook_count": 1, "package_sha256_status": "recorded", "processing_scope": "dem_terrain_context_readiness_only", "processing_allowed": "False", "reference_mask_status": "not_reference_mask", "flood_observation_status": "not_flood_observation", "flood_label_status": "not_flood_label", "blocked_reason": "DEM is context only, not flood observation; DEM is not a flood label or reference mask; member-level checksum not recorded because ZIP was not extracted; source ZIP remains outside Git"}, "theos2": {"selected_count": 3, "thumbnail_count": 3, "sha256_status": "recorded", "processing_scope": "theos2_optical_context_preview_only", "reference_mask_status": "not_reference_mask", "processing_allowed": "True", "blocked_reason": "optical context only; not flood validation or a reference mask"}, "links": [{"label": "local_data_library_manifest.csv", "href": "local_data_library_manifest.csv"}, {"label": "sentinel1_selected_file_manifest.csv", "href": "sentinel1_selected_file_manifest.csv"}, {"label": "sentinel1_provenance_resolved_manifest.csv", "href": "sentinel1_provenance_resolved_manifest.csv"}, {"label": "sentinel1_quicklook_manifest.csv", "href": "sentinel1_quicklook_manifest.csv"}, {"label": "dem_selected_file_manifest.csv", "href": "dem_selected_file_manifest.csv"}, {"label": "dem_quicklook_manifest.csv", "href": "dem_quicklook_manifest.csv"}, {"label": "theos2_selected_file_manifest.csv", "href": "theos2_selected_file_manifest.csv"}], "status_note": "Source files are outside Git and processing remains gated."};
-    const maeSaiWeakReferencePriorityData = {"available": true, "feature_count": 1, "status": "weak_reference_decision_bridge_available", "subdistrict_id": "MS-WR-001", "subdistrict_name": "Mae Sai Weak-Reference Review Area", "fpps_0_100": "6.19", "action_class": "E", "mean_flood_probability_0_1": "0.046621", "confidence_class": "low", "reference_status": "weak_reference_candidate", "context_status": "weak_sar_only_real_context_not_joined", "source_timestamp": "2024-09-15T23:16:01Z"};
+    const maeSaiWeakReferencePriorityData = {"metrics_available": true, "feature_manifest_available": true, "manual_reference_available": true, "pre_product_id": "b09f96ca-4a60-43e7-9b8d-158022f0e5bf", "post_product_id": "20a9c3b8-37df-46d5-81d8-d63c7e460225", "reference_id": "MANUAL-QGIS-MAE-SAI-2024", "manual_reference_status": "weak_reference_candidate", "candidate_readiness_status": "ready_for_candidate_metrics", "not_official_status": "confirmed_true", "iou": "0.006079", "f1_dice": "0.012085", "precision": "0.038494", "recall": "0.007167", "area_error_ratio": "-0.813809", "warning_text": "Candidate metrics against manually digitized weak-reference mask. Non-operational. Not official validation. Not field validated.", "sample_pixel_count": "65536", "reference_positive_pixel_count": "12557", "predicted_positive_pixel_count": "2338", "mean_flood_probability_0_1": "0.046621", "available": true, "feature_count": 1, "status": "weak_reference_decision_bridge_available", "subdistrict_id": "MS-WR-001", "subdistrict_name": "Mae Sai Weak-Reference Review Area", "fpps_0_100": "6.19", "action_class": "E", "confidence_class": "low", "reference_status": "weak_reference_candidate", "context_status": "weak_sar_only_real_context_not_joined", "source_timestamp": "2024-09-15T23:16:01Z"};
     const actionColors = {
       A: '#b73c3c',
       B: '#d36a35',
@@ -1280,8 +1313,8 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
     };
     const datasetModeNotes = {
       fixture_demo: 'Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision-layer workflow, not real flood accuracy.',
-      mae_sai_public_candidate: 'Public-data Mae Sai candidate: Sentinel Asia / MBRSC geometry QA found 514 Mae Sai review-bbox features, and CDSE pre/post Sentinel-1 rows are selected. Mae Sai weak-reference decision bridge is available with 1 review-area feature, FPPS 6.19, class E, mean flood probability 0.046621, confidence low. This remains weak-reference, non-operational, not official validation, and not field validated.',
-      blocked_metadata_only: 'Blocked/metadata-only view: source candidates are documented, but no real flood baseline or ML output is allowed from metadata alone.'
+      mae_sai_weak_reference: 'Mae Sai weak-reference candidate: this mode is separated from the fixture demo. It summarizes downloaded outside-Git CDSE Sentinel-1 pre/post products, a manual QGIS weak-reference mask, candidate metrics, and the low-confidence decision bridge. The weak-reference decision bridge is available with 1 review-area feature, FPPS 6.19, class E, mean flood probability 0.046621, IoU 0.006079, F1/Dice 0.012085, precision 0.038494, recall 0.007167, area error -0.813809, and confidence low. This remains weak-reference, non-operational, not official validation, and not field validated. Not an official warning.',
+      metadata_blocker_view: 'Metadata/blocker view: source candidates and local files are documented, but official validation and real-data ML remain blocked until legal/reference-mask and file-level gates clear.'
     };
     const mapBoundsPadding = 0.16;
     const state = {

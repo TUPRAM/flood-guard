@@ -717,12 +717,14 @@ The current decision selects Sentinel Asia / MBRSC as the first practical public
 Dashboard v9 adds a static dataset mode selector:
 
 - `fixture demo`
-- `public-data Mae Sai candidate`
-- `blocked/metadata-only view`
+- `Mae Sai weak-reference candidate`
+- `Metadata/blocker view`
 
-The selector changes dashboard narrative text only. It does not substitute real data for fixture outputs, and it does not imply that public reference candidates are validated flood products.
+The selector changes dashboard narrative text only. It keeps fixture outputs, weak-reference real-data candidate outputs, and metadata/blocker readiness explicitly separated.
 
-Current `public-data Mae Sai candidate` wording may reference the QGIS/GDAL Sentinel Asia / MBRSC review count and selected CDSE Sentinel-1 rows, but it must also state that real validation remains blocked until product terms, credentials, outside-Git local files, checksums, and reference-mask status clear.
+Current `Mae Sai weak-reference candidate` wording may reference downloaded outside-Git CDSE Sentinel-1 pre/post product ids, the manual QGIS weak-reference mask status, candidate IoU/F1/Dice/precision/recall/area-error metrics, flood-probability summary, and any generated weak-reference decision output. It must also state that the result is non-operational, not official validation, not field validated, and not an official warning.
+
+Current `Metadata/blocker view` wording must emphasize that source candidates and local file manifests alone do not authorize real official validation or ML. It must not imply that public reference candidates are validated flood products.
 
 ## Metadata-Only Ingestion Manifest
 

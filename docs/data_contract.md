@@ -680,7 +680,7 @@ Current EMSR754 and EMSR756 rows do not cover Mae Sai and are not better Mae Sai
 
 ## Open Context Data File Manifest
 
-`outputs/open_context_data_file_manifest.csv` is a planned file manifest for open context sources that can support exposure, road-risk, terrain review, and aggregation after files are acquired outside Git.
+`outputs/open_context_data_file_manifest.csv` is a file-level manifest for open context sources that can support exposure, road-risk, terrain review, and aggregation. Source files are stored outside Git; the repo stores redacted path hints and SHA-256 checksums only.
 
 Required columns:
 
@@ -688,18 +688,23 @@ Required columns:
 - `source_group`
 - `study_area`
 - `source_url`
+- `download_url`
+- `file_name`
 - `candidate_use`
 - `data_type`
 - `license_status`
 - `local_path`
 - `sha256`
+- `sha256_status`
+- `file_size_bytes`
+- `acquisition_status`
 - `processing_scope`
 - `processing_allowed`
 - `reason_blocked`
 - `next_action`
 - `retrieved_at_utc`
 
-Current rows cover WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and Copernicus DEM GLO-30. These are context layers only. They are not flood labels, reference masks, official warnings, or real validation outputs.
+Current rows cover WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and a current local Copernicus DEM Thailand tile. Rows with `sha256_status=recorded` and `acquisition_status=available_outside_git` may be processed only for context scopes such as exposure, admin aggregation, roads/facilities, and terrain review. These are not flood labels, reference masks, official warnings, or real validation outputs.
 
 ## Mae Sai Reference Candidate Decision
 

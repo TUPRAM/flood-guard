@@ -92,7 +92,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `mae_sai_reference_candidate_decision.md` compares Sentinel Asia, CEMS, UNOSAT public report evidence, and NASA coarse flood products. Current decision: Sentinel Asia MBRSC shapefile is the first practical public reference-candidate lane, not a cleared validation mask.
 
-`open_context_data_file_manifest.csv` records planned context-source rows for WorldPop Thailand 100m, HDX Thailand COD-AB, Geofabrik Thailand OSM, and Copernicus DEM GLO-30. These rows are context only and remain blocked until local paths and SHA-256 checksums are recorded outside Git.
+`open_context_data_file_manifest.csv` records file-level context-source rows for WorldPop Thailand 100m, HDX Thailand COD-AB, Geofabrik Thailand OSM, and a current local Copernicus DEM Thailand tile. The selected files are stored outside Git with SHA-256 checksums and redacted path hints committed here. These rows are context only: population exposure, admin aggregation, road/facility extraction, and terrain review. They are not flood labels, reference masks, official warnings, or real validation outputs.
 
 `cdse_mae_sai_acquisition_manifest.csv` records the selected Mae Sai pre/post Sentinel-1 CDSE acquisition attempt. The selected pre/post COG products are now downloaded outside Git with SHA-256 checksums recorded. Product downloads require `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD`; source products must never be committed into Git, and processing remains blocked until reference-mask status clears.
 

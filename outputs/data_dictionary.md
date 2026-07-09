@@ -353,7 +353,20 @@ Reference-mask legal gate fields used by `scripts/check_real_data_gates.py`:
 
 `mae_sai_reference_candidate_decision.md` documents the current comparison across Sentinel Asia, CEMS, UNOSAT report evidence, and NASA coarse flood products. The current decision is to pursue Sentinel Asia / MBRSC as the first public reference-candidate lane while keeping real validation blocked.
 
-`open_context_data_file_manifest.csv` records planned rows for WorldPop Thailand 100m, HDX COD-AB, Geofabrik OSM, and Copernicus DEM GLO-30. These are context sources for exposure, aggregation, roads, and terrain, not flood labels.
+`open_context_data_file_manifest.csv` records file-level rows for WorldPop Thailand 100m, HDX COD-AB, Geofabrik OSM, and a current local Copernicus DEM Thailand tile. These are checksum-backed context sources for exposure, aggregation, roads/facilities, and terrain review. They are not flood labels, reference masks, official warnings, or real validation outputs.
+
+Open context manifest fields:
+
+| Field | Meaning |
+| --- | --- |
+| `download_url` | Direct public download URL or `local_current_dem_package` for the existing outside-Git DEM TIFF. |
+| `file_name` | Selected local file name recorded for the context lane. |
+| `local_path` | Redacted path hint under `<external_data_workspace>/`; absolute local paths must not be committed. |
+| `sha256` | SHA-256 checksum of the outside-Git context file when acquired. |
+| `sha256_status` | `recorded` when the checksum is present; otherwise `not_recorded`. |
+| `file_size_bytes` | Local file size for acquired context files. |
+| `acquisition_status` | `available_outside_git`, `missing_external_file`, or `download_failed`. |
+| `processing_allowed` | `True` only for the row's context scope, never for flood-label or official validation use. |
 
 `cdse_mae_sai_2024_metadata.csv` and `cdse_hat_yai_2025_metadata.csv` are Sentinel-1 no-download CDSE product metadata snapshots. `cdse_mae_sai_2024_sentinel2_metadata.csv` and `cdse_hat_yai_2025_sentinel2_metadata.csv` are Sentinel-2 L2A optical-context metadata snapshots.
 

@@ -338,9 +338,11 @@ Acceptance: `outputs/mae_sai_reference_candidate_decision.md` selects Sentinel A
 
 ## Task 55 - Open Context Data File Manifest
 
-Add planned acquisition rows for open context sources that unlock real exposure, aggregation, road-risk, and terrain context once files are acquired outside Git.
+Add file-level acquisition rows for open context sources that unlock real exposure, aggregation, road-risk, and terrain context once files are acquired outside Git.
 
-Acceptance: `scripts/build_open_context_manifest.py` writes `outputs/open_context_data_file_manifest.csv` for WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and Copernicus DEM GLO-30. Rows remain context-only, with no local paths/checksums and `processing_allowed=False`.
+Acceptance: `scripts/build_open_context_file_manifest.py` writes `outputs/open_context_data_file_manifest.csv` for WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and a current local Copernicus DEM Thailand tile. Rows remain context-only, source files stay outside Git, redacted path hints and SHA-256 checksums are recorded, and `processing_allowed=True` means context processing only.
+
+Next integration: derive clipped population, admin boundary, road/facility, and terrain context tables for Mae Sai before feeding real context into FPPS/access/equity.
 
 ## Task 56 - Dashboard Dataset Mode Switch
 

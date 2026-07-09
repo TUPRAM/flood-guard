@@ -40,7 +40,7 @@ Current generated row counts:
 | `sentinel_asia_product_terms_review.csv` | 1 | Conservative product-terms decision row; companion memo keeps validation and ML gates blocked. |
 | `cems_product_candidate_manifest.csv` | 46 | CEMS EMSR754/EMSR756 AOI/product metadata rows. |
 | `mae_sai_reference_candidate_decision.md` | 1 note | Current public reference-candidate comparison and gate decision. |
-| `open_context_data_file_manifest.csv` | 4 | Planned WorldPop, HDX COD-AB, Geofabrik OSM, and Copernicus DEM context rows. |
+| `open_context_data_file_manifest.csv` | 4 | File-level WorldPop, HDX COD-AB, Geofabrik OSM, and current DEM context rows with outside-Git path hints and SHA-256 checksums. |
 | `cdse_mae_sai_acquisition_manifest.csv` | 2 | Selected pre/post Sentinel-1 acquisition rows downloaded outside Git with SHA-256 checksums recorded; still blocked for processing until reference-mask status clears. |
 | `manual_reference_mask_manifest.csv` | 1 | Manual QGIS weak-reference lane; current row is a blocked skeleton until the GeoPackage is digitized outside Git. |
 | `cdse_mae_sai_2024_metadata.csv` | 8 | Sentinel-1 Mae Sai event-window product metadata. |
@@ -63,7 +63,7 @@ Current generated row counts:
 - UNOSAT/UNITAR public pages remain report/citation evidence unless redistributable geometry and derivative-use terms are confirmed.
 - The manual QGIS weak-reference lane is a project-owned fallback for candidate metrics only. It does not clear official validation, official warning, redistribution, or unqualified ML-label gates.
 - NASA flood products are coarse context/proxy candidates, not subdistrict/road-scale validation labels.
-- WorldPop, OSM/Geofabrik, Copernicus DEM, and HDX COD-AB are decision-layer context sources, not flood labels.
+- WorldPop, OSM/Geofabrik, Copernicus DEM, and HDX COD-AB are decision-layer context sources, not flood labels. Current selected files are acquired outside Git and checksum-tracked in `outputs/open_context_data_file_manifest.csv`.
 - THEOS-2, local Sentinel-1, and local DEM assets remain in their existing local metadata/readiness lanes.
 
 ## Commands
@@ -76,8 +76,14 @@ uv run python scripts/inspect_sentinel_asia_reference_candidate.py
 uv run python scripts/review_sentinel_asia_geometry_quality.py
 uv run python scripts/resolve_cems_products.py
 uv run python scripts/build_mae_sai_reference_decision.py
-uv run python scripts/build_open_context_manifest.py
+uv run python scripts/build_open_context_file_manifest.py
 uv run python scripts/acquire_cdse_mae_sai_sentinel1.py
+```
+
+Download or refresh open context files outside Git:
+
+```powershell
+uv run python scripts/build_open_context_file_manifest.py --download
 ```
 
 Run without live page scraping when you only want deterministic seed rows:
@@ -107,7 +113,7 @@ uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024_sentinel2 --
 1. Use `outputs/cdse_mae_sai_2024_metadata.csv` to keep the existing Mae Sai Sentinel-1 pre/post planning pair grounded in live CDSE metadata.
 2. Use `outputs/public_reference_file_inspection_manifest.csv`, `outputs/sentinel_asia_geometry_quality_review.csv`, and `outputs/sentinel_asia_mbrsc_visual_qa_review.csv` as the first public Mae Sai reference-candidate evidence. The geometry is useful because it is WGS84 polygon data, intersects the Mae Sai review bbox, has area-field metadata, and visually aligns with the east/southeast floodplain/waterway context. It remains blocked for validation until product terms are clear and the QA is repeated with any required approved basemap/source context.
 3. Use Sentinel-2 metadata only for optical context and cloud-screened visual support. It is not a flood label.
-4. Use WorldPop, OSM, Copernicus DEM, and HDX COD-AB as open context layers after they are added to file-level manifests with local paths and checksums outside Git.
+4. Use WorldPop, OSM, Copernicus DEM, and HDX COD-AB as open context layers now that they are added to the file-level manifest with outside-Git path hints and checksums. Next work is derived clipping/extraction, not committing source files.
 5. If provider clearance remains blocked, digitize `mae_sai_manual_flood_reference.gpkg` outside Git using `docs/manual_reference_mask_protocol.md`, then rerun `scripts/inspect_manual_reference_mask.py`.
 
 ## Current Boundaries

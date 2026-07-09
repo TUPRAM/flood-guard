@@ -55,8 +55,8 @@ def _with_public_reference_candidate(source_frame: pd.DataFrame) -> pd.DataFrame
         "source_license_status": "unresolved",
         "reference_mask_status": "candidate_geometry_inspected_not_cleared",
         "next_action": (
-            "confirm Sentinel Asia product terms and geometry quality before real "
-            "validation or ML-label use"
+            "confirm Sentinel Asia product terms before real validation or ML-label "
+            "use; repeat manual QA if provider terms require"
         ),
     }
     remaining = source_frame[

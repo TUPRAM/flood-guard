@@ -51,3 +51,15 @@ def test_generated_geometry_review_notes_keep_reference_candidate_boundary() -> 
     assert "reference candidate, not validation truth and not ML labels" in notes
     assert "QGIS/GDAL Inspection" in notes
     assert "Do not run the real non-ML SAR baseline" in notes
+
+
+def test_visual_qa_review_records_reference_candidate_boundary() -> None:
+    manifest = Path("outputs/sentinel_asia_mbrsc_visual_qa_review.csv")
+
+    row = pd.read_csv(manifest).iloc[0]
+
+    assert row["mae_sai_point_intersects_polygon"] == "no"
+    assert int(row["east_southeast_floodplain_feature_count"]) == 477
+    assert "not a single broad event boundary" in row["broad_event_noise_assessment"]
+    assert row["validation_status"] == "reference_candidate_only_not_validation_truth"
+    assert row["ml_label_status"] == "not_cleared_for_ml_labels"

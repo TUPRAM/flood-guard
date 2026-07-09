@@ -352,13 +352,13 @@ Acceptance: `outputs/dashboard.html` includes modes for `fixture demo`, `public-
 
 Use QGIS/GDAL to review the selected outside-Git Sentinel Asia / MBRSC shapefile ZIP.
 
-Acceptance: `outputs/sentinel_asia_geometry_quality_review.csv` and `docs/sentinel_asia_geometry_quality_notes.md` record geometry type, CRS, full-layer feature count, Mae Sai review-bbox feature count, area-field sums, gridcode values, QA status, and strict reference-candidate wording without committing the shapefile.
+Acceptance: `outputs/sentinel_asia_geometry_quality_review.csv`, `docs/sentinel_asia_geometry_quality_notes.md`, `outputs/sentinel_asia_mbrsc_visual_qa_review.csv`, and `docs/sentinel_asia_mbrsc_visual_qa_notes.md` record geometry type, CRS, full-layer feature count, Mae Sai review-bbox feature count, area-field sums, gridcode values, visual alignment notes, point/core/floodplain checks, QA status, and strict reference-candidate wording without committing the shapefile, clipped geometry, screenshots, or source imagery.
 
 ## Task 58 - Sentinel Asia Product Terms Review
 
 Document whether the public Sentinel Asia / MBRSC shapefile can be used for validation metrics, screenshots/demo, derived metrics, redistribution, and weak/ML labels.
 
-Acceptance: `docs/sentinel_asia_product_terms_review.md` and `outputs/sentinel_asia_product_terms_review.csv` keep the layer `reference_candidate_only` unless explicit product-level terms clear the relevant uses.
+Acceptance: `docs/sentinel_asia_product_terms_review.md` and `outputs/sentinel_asia_product_terms_review.csv` keep the layer `reference_candidate_only` unless explicit product-level terms clear the relevant uses. Visual QA completion must not clear validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use by itself.
 
 ## Task 59 - CDSE Sentinel-1 Mae Sai Acquisition Gate
 

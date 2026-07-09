@@ -27,6 +27,14 @@ def test_default_reference_gate_rows_remain_blocked() -> None:
         report["source_name"]
         == "Sentinel Asia / MBRSC Northern Thailand 2024 public shapefile"
     ).any()
+    mbrsc = report.loc[
+        report["source_name"]
+        == "Sentinel Asia / MBRSC Northern Thailand 2024 public shapefile"
+    ].iloc[0]
+    assert mbrsc["request_status"] == "visual_qa_complete_terms_unresolved"
+    assert mbrsc["geometry_access"] == "available_candidate_geometry"
+    assert "geometry access not confirmed" not in mbrsc["reason_blocked"]
+    assert "local analysis permission not confirmed" in mbrsc["reason_blocked"]
     assert report["reason_blocked"].str.contains("geometry access not confirmed").any()
     assert report["reason_blocked"].str.contains(
         "blocking_decision is not cleared for local validation"

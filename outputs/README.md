@@ -50,6 +50,7 @@ Current expected MVP output:
 - `sentinel_asia_public_product_links.csv`
 - `public_reference_file_inspection_manifest.csv`
 - `sentinel_asia_geometry_quality_review.csv`
+- `sentinel_asia_mbrsc_visual_qa_review.csv`
 - `sentinel_asia_product_terms_review.csv`
 - `cems_product_candidate_manifest.csv`
 - `mae_sai_reference_candidate_decision.md`
@@ -76,6 +77,8 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 `public_reference_file_inspection_manifest.csv` records the selected Sentinel Asia MBRSC shapefile ZIP inspection. The ZIP itself is outside Git. The manifest stores a redacted local path hint, SHA-256 checksum, ZIP members, shapefile CRS, geometry type, bbox, DBF fields, and Mae Sai overlap status. It remains `processing_allowed=False` and `can_use_for_ml_labels=not_cleared_for_ml_labels`.
 
 `sentinel_asia_geometry_quality_review.csv` and `docs/sentinel_asia_geometry_quality_notes.md` record the QGIS/GDAL geometry quality review. Current findings: `6506` full-layer polygon features, `514` Mae Sai review-bbox intersecting features, `464.234` km2 full-layer area-field sum, and `47.164` km2 Mae Sai review-bbox area-field sum. This remains reference-candidate evidence only.
+
+`sentinel_asia_mbrsc_visual_qa_review.csv` and `docs/sentinel_asia_mbrsc_visual_qa_notes.md` record the notes-only visual QA pass. Current finding: polygons are not a single broad event boundary; they concentrate east/southeast of the Mae Sai point and broadly align with floodplain/waterway context, but the exact Mae Sai point is not inside a flood polygon and the layer contains fragmented patches that need manual QA.
 
 `sentinel_asia_product_terms_review.csv` and `docs/sentinel_asia_product_terms_review.md` record the product-terms review. Current status: no explicit product-level terms were found for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use, so the source remains `reference_candidate_only`.
 

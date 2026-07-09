@@ -532,6 +532,38 @@ Required columns:
 
 Current decision: the public product page exposes a download link and the geometry is inspectable, but explicit product-level terms for validation metrics, screenshots/demo, derived metrics, redistribution, and ML-label use were not found. The product remains `reference_candidate_only`, not validation truth and not ML labels.
 
+## Sentinel Asia MBRSC Visual QA Review
+
+`docs/sentinel_asia_mbrsc_visual_qa_notes.md` and `outputs/sentinel_asia_mbrsc_visual_qa_review.csv` record the human visual/spatial QA pass for the MBRSC Mae Sai reference-candidate layer.
+
+Required CSV columns:
+
+- `source_name`
+- `review_date`
+- `review_method`
+- `qgis_gdal_version`
+- `source_storage`
+- `temp_artifacts_committed`
+- `mae_sai_point`
+- `mae_sai_point_intersects_polygon`
+- `mae_sai_core_bbox`
+- `mae_sai_core_feature_count`
+- `mae_sai_core_area_sum_km2`
+- `east_southeast_floodplain_bbox`
+- `east_southeast_floodplain_feature_count`
+- `east_southeast_floodplain_area_sum_km2`
+- `west_review_bbox`
+- `west_review_feature_count`
+- `full_review_bbox_feature_count`
+- `full_review_bbox_area_sum_km2`
+- `visual_alignment_assessment`
+- `broad_event_noise_assessment`
+- `validation_status`
+- `ml_label_status`
+- `next_action`
+
+This review may use temporary render images or clipped vectors outside Git, but committed artifacts must remain notes/CSV only. It does not clear product terms, validation truth, redistribution, or ML-label status.
+
 ## CEMS Product Candidate Manifest
 
 `outputs/cems_product_candidate_manifest.csv` records CEMS public API AOI/product metadata for EMSR754 and EMSR756 without downloading product packages.

@@ -86,6 +86,7 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "sentinel_asia_public_product_links.csv",
         "public_reference_file_inspection_manifest.csv",
         "sentinel_asia_geometry_quality_review.csv",
+        "sentinel_asia_mbrsc_visual_qa_review.csv",
         "sentinel_asia_product_terms_review.csv",
         "cems_product_candidate_manifest.csv",
         "mae_sai_reference_candidate_decision.md",
@@ -103,6 +104,11 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "feature_bbox_count",
         "mae_sai_review_bbox_feature_count",
         "mae_sai_reference_relevance",
+        "mae_sai_point_intersects_polygon",
+        "east_southeast_floodplain_feature_count",
+        "visual_alignment_assessment",
+        "broad_event_noise_assessment",
+        "reference_candidate_only_not_validation_truth",
         "cdse_mae_sai_2024_sentinel2_metadata.csv",
         "cdse_hat_yai_2025_sentinel2_metadata.csv",
         "source_group",
@@ -209,6 +215,9 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
         "Current rows do not cover Mae Sai",
         "WGS84 polygon geometry",
         "QGIS/GDAL review confirms",
+        "Visual QA indicates",
+        "not a single broad event boundary",
+        "exact Mae Sai point is not inside",
         "product terms remain unresolved",
         "blocked acquisition manifest",
         "Sentinel-2 metadata only",
@@ -224,6 +233,7 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "sentinel_asia_public_product_links.csv" in output_text
     assert "public_reference_file_inspection_manifest.csv" in output_text
     assert "sentinel_asia_geometry_quality_review.csv" in output_text
+    assert "sentinel_asia_mbrsc_visual_qa_review.csv" in output_text
     assert "sentinel_asia_product_terms_review.csv" in output_text
     assert "cems_product_candidate_manifest.csv" in output_text
     assert "mae_sai_reference_candidate_decision.md" in output_text
@@ -232,6 +242,7 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "Public Reference Candidate Manifest" in contract_text
     assert "Public Reference File Inspection Manifest" in contract_text
     assert "Sentinel Asia Geometry Quality Review" in contract_text
+    assert "Sentinel Asia MBRSC Visual QA Review" in contract_text
     assert "Sentinel Asia Product Terms Review" in contract_text
     assert "CEMS Product Candidate Manifest" in contract_text
     assert "CDSE Mae Sai Acquisition Manifest" in contract_text
@@ -259,6 +270,8 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
         "outputs/cdse_mae_sai_acquisition_manifest.csv",
         "QGIS/GDAL",
         "6,506 full-layer features",
+        "east/southeast of the Mae Sai point",
+        "exact Mae Sai point is not inside",
     ):
         assert phrase in source_text
 
@@ -276,6 +289,8 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
     assert "outputs/public_reference_candidate_manifest.csv" in backlog_text
     assert "outputs/sentinel_asia_public_product_links.csv" in backlog_text
     assert "outputs/sentinel_asia_geometry_quality_review.csv" in backlog_text
+    assert "outputs/sentinel_asia_mbrsc_visual_qa_review.csv" in backlog_text
+    assert "Visual QA completion must not clear validation metrics" in backlog_text
     assert "outputs/cdse_mae_sai_acquisition_manifest.csv" in backlog_text
     assert "without downloading source imagery or product packages into Git" in backlog_text
 

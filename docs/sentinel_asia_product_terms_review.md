@@ -17,6 +17,8 @@ Status: terms unresolved; keep as `reference_candidate`, not validation truth an
 - The event page states the disaster type is flood, the country is Thailand, the occurrence date is 10 September 2024, and the requester is GISTDA.
 - The selected product is described as detected flood water in northern provinces of Thailand from a 15 September 2024 Sentinel-1 image.
 - QGIS/GDAL inspection confirms the ZIP contains a polygon shapefile over northern Thailand with Mae Sai review-bbox overlap.
+- QGIS/GDAL visual QA on 2026-07-09 supports treating the layer as flood-water reference-candidate geometry rather than a broad event boundary, but the layer still needs product-term clearance before validation use.
+- Sentinel Asia general documentation says distributed data include satellite imagery/data permitted by the data provider and value-added images; it does not provide product-specific reuse terms for this MBRSC shapefile.
 
 ## What Is Not Clear
 
@@ -41,20 +43,19 @@ Do not use it yet as:
 
 ## Required Next Action
 
-1. Open the layer in QGIS and complete human visual QA against a basemap and known Mae Sai flood context.
-2. Confirm product-level terms with Sentinel Asia / MBRSC / JAXA or a public license source.
-3. If local validation metrics are allowed, update `docs/reference_mask_licensing_log.md`.
-4. If redistribution is reference-only, keep the source ZIP and any derived clipped geometry outside Git.
-5. If ML-label use is not explicitly allowed, keep any model experiment scoped as weak-label research only or do not train on this source.
+1. Confirm product-level terms with Sentinel Asia / MBRSC / JAXA or a public license source.
+2. If local validation metrics are allowed, update `docs/reference_mask_licensing_log.md`.
+3. If redistribution is reference-only, keep the source ZIP and any derived clipped geometry outside Git.
+4. If ML-label use is not explicitly allowed, keep any model experiment scoped as weak-label research only or do not train on this source.
 
 ## Decision Fields
 
 | Use | Current status | Reason |
 | --- | --- | --- |
 | Geometry review | allowed as local candidate review | Public product file is accessible and checksum-tracked outside Git. |
+| Visual QA | complete for reference-candidate planning | Polygons are concentrated east/southeast of Mae Sai and broadly align with floodplain/waterway context, but manual QA and terms remain required. |
 | Local validation metrics | unresolved | Product-level terms were not found. |
 | Screenshots/demo | unresolved | Product-level terms were not found. |
 | Derived metrics | unresolved | Product-level terms were not found. |
 | Redistribution | unresolved | Product-level terms were not found. |
 | ML-label use | blocked/unresolved | Explicit label-use permission was not found. |
-

@@ -101,7 +101,7 @@ def default_reference_gate_rows() -> pd.DataFrame:
             {
                 "source_name": "Sentinel Asia / MBRSC Northern Thailand 2024 public shapefile",
                 "study_area": "Chiang Rai / Mae Sai 2024",
-                "request_status": "public_file_inspected_terms_unresolved",
+                "request_status": "visual_qa_complete_terms_unresolved",
                 "request_sent_date": "2026-07-08",
                 "response_date": "no_provider_response",
                 "geometry_access": "available_candidate_geometry",
@@ -111,7 +111,7 @@ def default_reference_gate_rows() -> pd.DataFrame:
                 "redistribution_allowed": "unresolved",
                 "citation_required": "yes_expected",
                 "ml_label_use_allowed": "unresolved",
-                "blocking_decision": "blocked_terms_and_visual_qa_pending",
+                "blocking_decision": "blocked_product_terms_unresolved",
             },
             {
                 "source_name": "International Charter Activation 1004",

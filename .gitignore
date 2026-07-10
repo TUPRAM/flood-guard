@@ -34,6 +34,7 @@ tmp/
 # OS/editor
 .DS_Store
 Thumbs.db
+*.Rhistory
 .vscode/
 .idea/
 

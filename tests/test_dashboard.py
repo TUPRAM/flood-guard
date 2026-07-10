@@ -34,7 +34,12 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const sentinel1QuicklookData =" in html
     assert "const demQuicklookData =" in html
     assert "const localDataLibrarySummary =" in html
-    assert "const maeSaiWeakReferencePriorityData =" in html
+    assert "const maeSaiPriorityData =" in html
+    assert "const maeSaiRoadRiskData =" in html
+    assert "const maeSaiFacilityData =" in html
+    assert "const maeSaiAccessHotspotData =" in html
+    assert "const maeSaiContextQuality =" in html
+    assert "const maeSaiBriefsBySubdistrict =" in html
     assert 'class="app-header"' in html
     assert 'data-dashboard-section="app-header"' in html
     assert 'class="kpi-strip"' in html
@@ -54,7 +59,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Static HTML | embedded data | no backend" in html
     assert "Priority Map" in html
     assert "map.invalidateSize" in html
-    assert "const mapBoundsPadding = 0.16" in html
+    assert "const mapBoundsPadding = 0.12" in html
     assert "function fitPriorityMapToData" in html
     assert "function settleMapLayout" in html
     assert "bounds.pad(mapBoundsPadding)" in html
@@ -63,11 +68,13 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "subdistrict-label" in html
     assert "layer.bindTooltip" in html
     assert "escapeHtml(id)" in html
-    assert "width: 74px" in html
-    assert "minmax(540px, 1fr)" in html
-    assert "height: clamp(500px, calc(100vh - 390px), 540px)" in html
+    assert "TH570901: [0, -11]" in html
+    assert "TH570906: [0, 11]" in html
+    assert "width: 64px" in html
+    assert "minmax(520px, 1fr)" in html
+    assert "height: clamp(540px, calc(100vh - 330px), 620px)" in html
     assert "Controls &amp; Scenario" in html
-    assert "Context only. Not flood detection. Not validation. Not an official warning." in html
+    assert "Fixture context only. Not flood detection, validation, or an official warning." in html
     assert 'class="context-preview-grid"' in html
     assert 'class="app-footer"' in html
     assert 'data-dashboard-section="app-footer"' in html
@@ -80,11 +87,11 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert 'class="brief-summary"' in html
     assert "Data Readiness" in html
     assert "Read This First" in html
-    assert "Fixture-backed decision demo" in html
+    assert "Synthetic inputs demonstrate prioritization and scenarios" in html
     assert "Real Mae Sai validation is blocked" in html
     assert "provider response pending" in html
     assert "Context layers are not flood labels" in html
-    assert "Real-data ML is not allowed" in html
+    assert "Real-data ML remains blocked" in html
     assert "Sentinel-1 SAR Context" in html
     assert 'id="sentinel1-sar-context"' in html
     assert "sentinel1_quicklook_vv.png" in html
@@ -150,13 +157,13 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "real_open_context_joined_with_proxy_vulnerability" in html
     assert "8 ADM3 reporting units" in html
     assert "IoU 0.006079" in html
-    assert "F1 0.012085" in html
+    assert "F1/Dice 0.012085" in html
     assert "precision 0.038494" in html
     assert "recall 0.007167" in html
     assert "area error -0.813809" in html
     assert "Candidate metrics against manually digitized weak-reference mask" in html
     assert "Not official validation" in html
-    assert "Metadata/blocker view: source candidates and local files are documented" in html
+    assert "Metadata/blocker view: source inventory and file readiness are visible" in html
     assert "dataset-mode-note" in html
     assert 'class="action-filter"' in html
     assert "temporary shelter delta" in html
@@ -167,13 +174,15 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Road closure: +50 people losing 30-min access" in html
     assert 'id="download-current-brief"' in html
     assert 'id="download-filtered-geojson"' in html
+    assert "document.getElementById('download-current-brief').disabled = metadataOnly" in html
+    assert "document.getElementById('download-filtered-geojson').disabled = metadataOnly" in html
     assert "Download current brief" in html
     assert "Download filtered GeoJSON" in html
     assert "function downloadCurrentActionBrief" in html
     assert "function downloadFilteredGeoJSON" in html
     assert "function downloadText" in html
     assert "new Blob" in html
-    assert "priority_subdistricts_filtered.geojson" in html
+    assert "_priority_filtered.geojson" in html
     assert "Delta improves" in html
     assert "Delta worsens" in html
     assert "Action Brief" in html
@@ -187,6 +196,23 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "road_closure_change_people_losing_30_min_access" in html
     assert "function selectSubdistrict" in html
     assert "function renderPriorityLayer" in html
+    assert "function applyDatasetMode" in html
+    assert "function renderAllMapLayers" in html
+    assert "function updateEvidencePanel" in html
+    assert "function updateComparison" in html
+    assert "function updateQualityPanel" in html
+    assert 'id="mode-warning"' in html
+    assert 'class="evidence-grid"' in html
+    assert 'class="comparison-grid"' in html
+    assert 'id="source-quality-panel"' in html
+    assert 'id="toggle-facilities"' in html
+    assert 'id="toggle-hotspots"' in html
+    assert "candidate_closed" in html
+    assert "unverified_osm_candidate" in html
+    assert "modeled_access_loss_candidate" in html
+    assert "--font-sans:" in html
+    assert "--radius-md:" in html
+    assert "--shadow-md:" in html
     assert "fetch(" not in html
 
 

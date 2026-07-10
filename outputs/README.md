@@ -57,6 +57,9 @@ Current expected MVP output:
 - `mae_sai_population_context.csv`
 - `mae_sai_road_risk.csv`
 - `mae_sai_facility_context.csv`
+- `mae_sai_road_risk.geojson`
+- `mae_sai_facilities.geojson`
+- `mae_sai_access_hotspots.geojson`
 - `mae_sai_access_loss.csv`
 - `mae_sai_equity_gap.csv`
 - `mae_sai_real_context_decision_inputs.csv`
@@ -112,7 +115,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `manual_reference_mask_manifest.csv` records the manual QGIS weak-reference fallback from `docs/manual_reference_mask_protocol.md`. The manual GeoPackage remains outside Git. Current rows are either a blocked skeleton when the file is missing or checksum/layer metadata when the file exists. Even when ready, this lane is only for candidate validation metrics, visual QA, and non-operational demo reporting; it is not official validation truth, not an official warning, and not unqualified ML labels.
 
-`dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from embedded fixture data only.
+`dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from whichever embedded decision dataset is active; they never read source files or call a backend.
 
 `dashboard.html` also includes a Local Data Library panel with embedded metadata summaries for Sentinel-1, DEM, and THEOS-2 readiness lanes. It shows counts, key blocker statuses, and relative CSV links only; source files remain outside Git and processing remains gated.
 
@@ -121,6 +124,8 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 `dashboard.html` v8 uses a judge-demo command-center layout: app header, KPI strip, three-zone workspace, primary map panel with embedded legends, right-side decision/context/readiness panel, and a below-workspace report section. The layout is still static HTML with embedded data, no backend, and no browser-side `fetch`.
 
 `dashboard.html` v9 includes dataset modes for `Fixture demo`, `Mae Sai weak-reference candidate`, and `Metadata/blocker view`. The Mae Sai weak-reference mode summarizes downloaded outside-Git CDSE Sentinel-1 pre/post product ids, manual QGIS weak-reference status, candidate metrics, flood-probability summary, and the generated weak-reference decision bridge when available. It remains non-operational, not official validation, not field validated, and not an official warning.
+
+`dashboard.html` v10 switches the full map and decision workspace between the fixture dataset, eight real Mae Sai ADM3 candidate polygons, and the metadata/blocker state. Mae Sai mode embeds derived road-risk lines, candidate facility points, modeled access-loss hotspots, selected-unit evidence, comparison values, source-quality indicators, and provenance. An always-visible warning keeps the weak-reference boundary explicit. All layers are committed derivatives; raw Sentinel-1, WorldPop, OSM, COD-AB, DEM, and manual-reference source files remain outside Git.
 
 `judge_demo_readme.md` is a short judge-facing narrative pack. It explains what the fixture demo proves, what it does not prove, how FPPS/access/equity/road-risk/scenario outputs connect, and why real validation and ML remain blocked until provider/legal and file-level gates clear.
 
@@ -146,7 +151,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `mae_sai_weak_label_ml_metrics.csv`, `mae_sai_weak_label_ml_prediction_manifest.csv`, and `mae_sai_weak_label_ml_summary.md` record the first small auditable weak-label ML experiment. The experiment trains a repo-local logistic model on SAR change features, evaluates it on a spatial holdout, and compares it against the non-ML threshold baseline. These outputs are weak-label experiment artifacts only: non-operational, not official labels, not field validation, and not an official warning. ML probability may feed a candidate decision-layer run only when `can_feed_decision_layer=True`; otherwise it remains report-only.
 
-`mae_sai_admin_context.geojson`, the real-context CSVs, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson` bridge candidate Sentinel-1 flood probability into the FloodGuard decision layer for eight official HDX COD-AB Mae Sai ADM3 reporting polygons. WorldPop supplies modeled population, OSM supplies candidate roads/bridges/facilities and a routing graph, and Copernicus DEM supplies terrain context where the selected tile covers population points. Road disruption, access loss, and equity are modeled candidates; vulnerability is a terrain/remoteness proxy, not demographic vulnerability. The nearby manual weak-reference geometry does not overlap the official Thailand ADM3 polygons and remains cross-border calibration evidence only.
+`mae_sai_admin_context.geojson`, the real-context CSVs, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson` bridge candidate Sentinel-1 flood probability into the FloodGuard decision layer for eight official HDX COD-AB Mae Sai ADM3 reporting polygons. `mae_sai_road_risk.geojson`, `mae_sai_facilities.geojson`, and `mae_sai_access_hotspots.geojson` add compact candidate map layers without source paths. WorldPop supplies modeled population, OSM supplies candidate roads/bridges/facilities and a routing graph, and Copernicus DEM supplies terrain context where the selected tile covers population points. Road disruption, access loss, and equity are modeled candidates; vulnerability is a terrain/remoteness proxy, not demographic vulnerability. The nearby manual weak-reference geometry does not overlap the official Thailand ADM3 polygons and remains cross-border calibration evidence only.
 
 `mae_sai_context_quality_summary.csv` and `mae_sai_context_quality_report.md` expose join quality, including reporting-unit counts, population/road/facility coverage, DEM coverage, and the manual-reference/admin mismatch. Missing context is not silently converted into confirmed zero impact.
 

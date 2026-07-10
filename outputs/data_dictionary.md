@@ -189,16 +189,30 @@ Dashboard v9 dataset mode switch:
 
 | Item | Meaning |
 | --- | --- |
-| `dataset-mode-select` | Static control that lets the viewer choose `fixture demo`, `Mae Sai weak-reference candidate`, or `Metadata/blocker view` narrative mode. |
-| `dataset-mode-note` | Plain-language note explaining whether the viewer is seeing fixture outputs, the Mae Sai weak-reference real-data candidate path, or blocked metadata-only readiness. |
+| `dataset-mode-select` | Static control that switches the complete map, selector, legends, evidence, reports, briefs, and exports between `fixture demo`, `Mae Sai weak-reference candidate`, and `Metadata/blocker view`. |
+| `dataset-mode-note` | Plain-language note explaining whether the viewer is seeing fixture outputs, Mae Sai weak-reference candidate outputs, or blocked metadata-only readiness. |
 | `fixture demo` | Current dashboard mode using synthetic fixture priority, access, equity, and road-risk outputs. |
-| `Mae Sai weak-reference candidate` | Narrative mode showing downloaded outside-Git CDSE Sentinel-1 pre/post product ids, manual QGIS weak-reference status, candidate IoU/F1/Dice/precision/recall/area-error metrics, flood-probability summary, and generated weak-reference decision output when available. |
+| `Mae Sai weak-reference candidate` | Full real-study-area candidate mode showing eight ADM3 polygons, derived road risk, candidate facilities, modeled access hotspots, Sentinel-1 product ids, weak-reference metrics, flood evidence, source quality, provenance, and generated decision outputs. |
 | `Metadata/blocker view` | Narrative mode emphasizing that source candidates and local file manifests alone do not authorize official validation or ML. |
 | `mae-sai-weak-reference-card` | Compact status card embedded in the dashboard narrative. It must keep weak-reference wording visible and must not call the output official validation. |
 | `pre_product_id` / `post_product_id` | CDSE Sentinel-1 products used by the weak-reference candidate summary; source ZIPs remain outside Git. |
 | `manual_reference_status` | Manual QGIS mask status, currently `weak_reference_candidate`. |
 | `candidate_readiness_status` | Whether the manual weak-reference mask is ready for candidate metrics; this does not clear official validation gates. |
 | `not_official_status` | Required status confirming the manual reference is not official. |
+
+Dashboard v10 real dataset workspace:
+
+| Item | Meaning |
+| --- | --- |
+| `mode-warning` | Persistent first-viewport warning. Mae Sai mode says weak-reference candidate; blocker mode says decision processing is gated. |
+| `evidence-grid` | Compact selected-unit values for FPPS, flood probability, expected exposed population proxy, modeled access loss, proxy equity, and context coverage. |
+| `comparison-grid` | Selected-unit rank and differences from the active dataset mean; values are comparisons, not confidence intervals. |
+| `source-quality-list` | Population-bbox, road-snap, DEM, and weak-reference quality indicators with explicit caveats. |
+| `provenance-list` | Sentinel-1 acquisition, reference status, processing scope, source timestamp, and assumptions for the active Mae Sai unit. |
+| `priority-layer-toggle` | Shows the active dataset's priority polygons. |
+| `road-layer-toggle` | Shows fixture road risk or Mae Sai candidate road-risk segments. |
+| `facility-layer-toggle` | Shows candidate OSM facility points in Mae Sai mode. |
+| `hotspot-layer-toggle` | Shows representative modeled access-loss hotspot points in Mae Sai mode. |
 
 Dashboard QA support:
 
@@ -631,7 +645,7 @@ These outputs train and evaluate a small logistic model against the manual weak-
 
 ## Mae Sai Weak-Reference Decision Bridge
 
-Files: `mae_sai_admin_context.geojson`, `mae_sai_adm3_sar_context.csv`, `mae_sai_population_context.csv`, `mae_sai_road_risk.csv`, `mae_sai_facility_context.csv`, `mae_sai_access_loss.csv`, `mae_sai_equity_gap.csv`, `mae_sai_real_context_decision_inputs.csv`, `mae_sai_context_quality_summary.csv`, `mae_sai_context_quality_report.md`, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson`
+Files: `mae_sai_admin_context.geojson`, `mae_sai_adm3_sar_context.csv`, `mae_sai_population_context.csv`, `mae_sai_road_risk.csv`, `mae_sai_facility_context.csv`, `mae_sai_road_risk.geojson`, `mae_sai_facilities.geojson`, `mae_sai_access_hotspots.geojson`, `mae_sai_access_loss.csv`, `mae_sai_equity_gap.csv`, `mae_sai_real_context_decision_inputs.csv`, `mae_sai_context_quality_summary.csv`, `mae_sai_context_quality_report.md`, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson`
 
 These outputs join real Sentinel-1 candidate change with HDX COD-AB, WorldPop, OSM/Geofabrik, and Copernicus DEM context. They remain weak-reference, non-operational, not official validation, not field validated, and not an official warning. Current rows cover eight official COD-AB ADM3 reporting polygons; the nearby manual weak-reference geometry is calibration evidence only and does not overlap those polygons.
 
@@ -667,6 +681,19 @@ These outputs join real Sentinel-1 candidate change with HDX COD-AB, WorldPop, O
 | `fpps_0_100` | Flood Preparedness Priority Score computed by `scoring.py` from the weak-reference decision inputs. |
 | `action_class` | A-E action class from the existing FPPS scoring contract. Current rows remain E because confidence is low. |
 | `top_reason` | Existing FPPS reason text, preserving low-confidence monitoring language. |
+
+Derived Mae Sai map-layer fields:
+
+| File / field | Meaning |
+| --- | --- |
+| `mae_sai_road_risk.geojson / road_id` | OSM-derived candidate road identifier used to join risk geometry. |
+| `road_disruption_probability_0_1` | Heuristic candidate disruption probability; not an observed closure probability. |
+| `modeled_status` | Candidate road status such as modeled open, delay, or closure; requires field verification. |
+| `mae_sai_facilities.geojson / facility_id` | Candidate OSM facility identifier. |
+| `facility_type` | OSM-derived candidate facility class; not field verified. |
+| `mae_sai_access_hotspots.geojson / hotspot_status` | Marks a representative ADM3 point as a modeled access-loss candidate or no modeled loss. |
+| `people_losing_30_min_access` | Modeled population losing 30-minute access for the containing ADM3 unit. |
+| `warning_text` | Layer-specific non-operational warning forbidding observed-impact or official-warning interpretation. |
 
 ## THEOS-2 Local Metadata Manifest
 

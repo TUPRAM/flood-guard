@@ -189,20 +189,38 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
         ),
         _contains(
             html,
+            "embedded_mae_sai_geojson",
+            "const maeSaiPriorityData =",
+            "Mae Sai priority GeoJSON is embedded.",
+        ),
+        _contains(
+            html,
+            "embedded_mae_sai_context_layers",
+            "const maeSaiAccessHotspotData =",
+            "Mae Sai road, facility, and access context layers are embedded.",
+        ),
+        _contains(
+            html,
             "priority_polygon_renderer",
-            "priorityLayer.addData(visibleFeatures)",
+            "priorityLayer.addData({ type: 'FeatureCollection', features: visibleFeatures })",
             "Priority polygons are rendered from filtered embedded data.",
         ),
         _contains(
             html,
             "road_risk_renderer",
-            "L.geoJSON(roadRiskData",
+            "roadLayer.addData(dataset.roads",
             "Road-risk segments are rendered from embedded data.",
         ),
         _contains(
             html,
+            "dataset_map_switch",
+            "function applyDatasetMode",
+            "Dataset changes replace map and evidence state.",
+        ),
+        _contains(
+            html,
             "label_overlap_guard",
-            "width: 74px",
+            "width: 64px",
             "Subdistrict label width guard is present.",
         ),
         _contains(
@@ -214,8 +232,20 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
         _contains(
             html,
             "map_viewport_safe_sizing",
-            "height: clamp(500px, calc(100vh - 390px), 540px)",
+            "height: clamp(540px, calc(100vh - 330px), 620px)",
             "Map workspace has explicit viewport-safe sizing.",
+        ),
+        _contains(
+            html,
+            "structured_evidence_panel",
+            'class="evidence-grid"',
+            "Structured selected-unit evidence is present.",
+        ),
+        _contains(
+            html,
+            "persistent_weak_reference_warning",
+            'id="mode-warning"',
+            "Persistent evidence-status warning is present.",
         ),
         _contains(
             html,

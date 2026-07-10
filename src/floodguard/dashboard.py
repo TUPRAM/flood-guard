@@ -34,6 +34,11 @@ def write_static_dashboard(
     dem_quicklook_manifest_path: str | Path | None = None,
     theos2_selected_manifest_path: str | Path | None = None,
     theos2_thumbnail_manifest_path: str | Path | None = None,
+    mae_sai_priority_geojson_path: str | Path | None = None,
+    mae_sai_road_risk_geojson_path: str | Path | None = None,
+    mae_sai_facilities_geojson_path: str | Path | None = None,
+    mae_sai_access_hotspots_geojson_path: str | Path | None = None,
+    mae_sai_context_quality_path: str | Path | None = None,
 ) -> Path:
     """Write a standalone HTML dashboard with embedded GeoJSON and Markdown."""
 
@@ -61,6 +66,42 @@ def write_static_dashboard(
     )
     validation_metric_cards = _read_validation_metric_cards(output_dir)
     mae_sai_weak_summary = _read_mae_sai_weak_priority_summary(output_dir)
+    mae_sai_validation_path = output_dir / "mae_sai_validation_summary.md"
+    mae_sai_validation_summary = (
+        mae_sai_validation_path.read_text(encoding="utf-8")
+        if mae_sai_validation_path.exists()
+        else "Mae Sai weak-reference validation summary is unavailable."
+    )
+    mae_sai_priority_geojson = _read_optional_feature_collection(
+        output_dir,
+        mae_sai_priority_geojson_path,
+        "mae_sai_priority_subdistricts.geojson",
+        "mae_sai_priority",
+    )
+    mae_sai_road_risk_geojson = _read_optional_feature_collection(
+        output_dir,
+        mae_sai_road_risk_geojson_path,
+        "mae_sai_road_risk.geojson",
+        "mae_sai_road_risk",
+    )
+    mae_sai_facilities_geojson = _read_optional_feature_collection(
+        output_dir,
+        mae_sai_facilities_geojson_path,
+        "mae_sai_facilities.geojson",
+        "mae_sai_facilities",
+    )
+    mae_sai_access_hotspots_geojson = _read_optional_feature_collection(
+        output_dir,
+        mae_sai_access_hotspots_geojson_path,
+        "mae_sai_access_hotspots.geojson",
+        "mae_sai_access_hotspots",
+    )
+    mae_sai_context_quality = _first_csv_row(
+        Path(mae_sai_context_quality_path)
+        if mae_sai_context_quality_path is not None
+        else output_dir / "mae_sai_context_quality_summary.csv"
+    )
+    mae_sai_action_briefs = _read_mae_sai_action_briefs(output_dir)
 
     top_priority = _select_top_actionable(priority_geojson)
     html_text = _build_dashboard_html(
@@ -75,6 +116,13 @@ def write_static_dashboard(
         local_data_summary=local_data_summary,
         validation_metric_cards=validation_metric_cards,
         mae_sai_weak_summary=mae_sai_weak_summary,
+        mae_sai_priority_geojson=mae_sai_priority_geojson,
+        mae_sai_road_risk_geojson=mae_sai_road_risk_geojson,
+        mae_sai_facilities_geojson=mae_sai_facilities_geojson,
+        mae_sai_access_hotspots_geojson=mae_sai_access_hotspots_geojson,
+        mae_sai_context_quality=mae_sai_context_quality,
+        mae_sai_action_briefs=mae_sai_action_briefs,
+        mae_sai_validation_summary=mae_sai_validation_summary,
     )
 
     target = Path(output_path)
@@ -90,6 +138,28 @@ def _read_feature_collection(path: str | Path, label: str) -> dict[str, Any]:
     if not isinstance(data.get("features"), list):
         raise DashboardError(f"{label} GeoJSON must include a features list.")
     return data
+
+
+def _read_optional_feature_collection(
+    output_dir: Path,
+    explicit_path: str | Path | None,
+    default_name: str,
+    label: str,
+) -> dict[str, Any]:
+    path = Path(explicit_path) if explicit_path is not None else output_dir / default_name
+    if not path.exists():
+        return {"type": "FeatureCollection", "features": []}
+    return _read_feature_collection(path, label)
+
+
+def _read_mae_sai_action_briefs(output_dir: Path) -> dict[str, str]:
+    prefix = "mae_sai_action_brief_"
+    briefs: dict[str, str] = {}
+    for path in sorted(output_dir.glob(f"{prefix}*.md")):
+        subdistrict_id = path.stem.removeprefix(prefix)
+        if subdistrict_id:
+            briefs[subdistrict_id] = path.read_text(encoding="utf-8")
+    return briefs
 
 
 def _read_action_briefs(action_brief_paths: ActionBriefPaths) -> dict[str, str]:
@@ -303,6 +373,13 @@ def _build_dashboard_html(
     local_data_summary: dict[str, Any],
     validation_metric_cards: list[dict[str, str]],
     mae_sai_weak_summary: dict[str, Any],
+    mae_sai_priority_geojson: dict[str, Any],
+    mae_sai_road_risk_geojson: dict[str, Any],
+    mae_sai_facilities_geojson: dict[str, Any],
+    mae_sai_access_hotspots_geojson: dict[str, Any],
+    mae_sai_context_quality: dict[str, str],
+    mae_sai_action_briefs: dict[str, str],
+    mae_sai_validation_summary: str,
 ) -> str:
     props = top_priority.get("properties") or {}
     best_intervention = _scenario_summary(
@@ -326,25 +403,44 @@ def _build_dashboard_html(
   <style>
     :root {
       color-scheme: light;
-      --bg: #f7f8f4;
+      --font-sans: "Segoe UI", Inter, Arial, sans-serif;
+      --bg: #f3f6f4;
       --panel: #ffffff;
-      --ink: #202722;
-      --muted: #5b665f;
-      --line: #d8ded4;
-      --green: #21835f;
-      --red: #b73c3c;
-      --orange: #d36a35;
-      --yellow: #d8a629;
-      --violet: #6d5aa8;
-      --neutral: #7f8a82;
+      --panel-subtle: #f8faf9;
+      --ink: #15241f;
+      --muted: #607169;
+      --line: #d9e3de;
+      --line-strong: #bdcbc4;
+      --brand: #0f6b62;
+      --brand-soft: #e8f4f1;
+      --green: #167a55;
+      --red: #c13f3f;
+      --orange: #cf6a32;
+      --yellow: #d39d20;
+      --violet: #6956a3;
+      --blue: #2867b8;
+      --neutral: #7b8982;
+      --warning-bg: #fff8e8;
+      --warning-line: #e5c36e;
+      --radius-sm: 5px;
+      --radius-md: 7px;
+      --radius-lg: 8px;
+      --shadow-sm: 0 4px 14px rgba(26, 48, 39, .05);
+      --shadow-md: 0 12px 30px rgba(26, 48, 39, .09);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       background: var(--bg);
       color: var(--ink);
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: var(--font-sans);
       line-height: 1.45;
+      font-size: 14px;
     }
     .shell {
       min-height: 100vh;
@@ -403,8 +499,10 @@ def _build_dashboard_html(
     .app-shell {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding: 14px 16px 0;
+      gap: var(--space-3);
+      padding: 14px 18px 0;
+      max-width: 2200px;
+      margin: 0 auto;
     }
     .app-header {
       display: grid;
@@ -413,9 +511,9 @@ def _build_dashboard_html(
       gap: 16px;
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: var(--radius-lg);
       padding: 12px 16px;
-      box-shadow: 0 10px 26px rgba(32, 39, 34, .06);
+      box-shadow: var(--shadow-sm);
     }
     .brand-row {
       display: flex;
@@ -438,7 +536,8 @@ def _build_dashboard_html(
     }
     .brand-copy h1 {
       margin: 0 0 4px;
-      font-size: 25px;
+      font-size: 23px;
+      white-space: nowrap;
     }
     .brand-copy p {
       margin: 0;
@@ -470,17 +569,17 @@ def _build_dashboard_html(
     .kpi-strip {
       display: grid;
       grid-template-columns: repeat(8, minmax(112px, 1fr));
-      gap: 10px;
+      gap: var(--space-2);
     }
     .kpi-card {
       min-width: 0;
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px 11px;
+      border-radius: var(--radius-md);
+      padding: 11px 12px;
       display: grid;
       gap: 4px;
-      box-shadow: 0 8px 20px rgba(32, 39, 34, .04);
+      box-shadow: var(--shadow-sm);
     }
     .kpi-card .label {
       margin: 0;
@@ -495,10 +594,10 @@ def _build_dashboard_html(
       overflow-wrap: anywhere;
     }
     .dashboard-workspace {
-      height: clamp(500px, calc(100vh - 390px), 540px);
-      min-height: 500px;
+      height: clamp(540px, calc(100vh - 330px), 620px);
+      min-height: 540px;
       display: grid;
-      grid-template-columns: minmax(250px, 280px) minmax(540px, 1fr) minmax(330px, 380px);
+      grid-template-columns: minmax(238px, 270px) minmax(520px, 1fr) minmax(350px, 410px);
       gap: 14px;
       align-items: stretch;
     }
@@ -602,13 +701,13 @@ def _build_dashboard_html(
       border: 0;
       box-shadow: none;
       color: #101712;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       line-height: 1.08;
       text-align: center;
       text-shadow: 0 1px 2px rgba(255, 255, 255, .9);
       white-space: normal;
-      width: 74px;
+      width: 64px;
       pointer-events: none;
     }
     .leaflet-tooltip.subdistrict-label strong,
@@ -1154,10 +1253,236 @@ def _build_dashboard_html(
       color: var(--muted);
       margin-top: 12px;
     }
-    @media (max-width: 1200px) {
+    .mode-warning {
+      position: sticky;
+      top: 6px;
+      z-index: 900;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 8px 12px;
+      border: 1px solid #a9c7bd;
+      border-radius: var(--radius-md);
+      background: #edf7f4;
+      box-shadow: var(--shadow-sm);
+      color: #174b40;
+      font-size: 12px;
+    }
+    .mode-warning.weak-reference {
+      border-color: var(--warning-line);
+      background: var(--warning-bg);
+      color: #78500a;
+    }
+    .mode-warning.blocked {
+      border-color: #e6b2b2;
+      background: #fff3f3;
+      color: #8c2f2f;
+    }
+    .mode-warning strong { white-space: nowrap; }
+    .mode-warning span { overflow-wrap: anywhere; }
+    .mode-warning .warning-status {
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      padding: 3px 7px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .dataset-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: var(--panel-subtle);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .evidence-panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .evidence-panel-header h2 {
+      margin: 0 0 3px;
+      font-size: 16px;
+    }
+    .evidence-panel-header p {
+      margin: 0;
+      font-size: 12px;
+    }
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      margin: 10px 0;
+    }
+    .evidence-item {
+      min-width: 0;
+      min-height: 66px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 8px 9px;
+      background: var(--panel-subtle);
+    }
+    .evidence-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .evidence-item strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+    .evidence-item small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.25;
+    }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .comparison-item {
+      border-top: 2px solid var(--brand);
+      background: var(--panel-subtle);
+      padding: 7px 8px;
+      min-width: 0;
+    }
+    .comparison-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 3px;
+    }
+    .comparison-item strong {
+      display: block;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+    .quality-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .quality-row {
+      display: grid;
+      grid-template-columns: minmax(110px, 1fr) minmax(86px, 1.1fr) auto;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+    .quality-row > span:first-child { color: var(--muted); }
+    .quality-track {
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e6ece8;
+    }
+    .quality-fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--brand);
+      transition: width .18s ease;
+    }
+    .quality-fill.partial { background: var(--orange); }
+    .quality-value { font-weight: 700; white-space: nowrap; }
+    .provenance-list {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 0;
+    }
+    .provenance-row {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 8px;
+      padding-top: 6px;
+      border-top: 1px solid var(--line);
+      font-size: 11px;
+    }
+    .provenance-row dt { color: var(--muted); }
+    .provenance-row dd { margin: 0; overflow-wrap: anywhere; }
+    .map-heading-copy { min-width: 0; }
+    .map-heading-copy p { overflow-wrap: anywhere; }
+    .map-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .map-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      flex: 0 0 auto;
+    }
+    .map-status-dot.weak { background: var(--orange); }
+    .map-status-dot.blocked { background: var(--red); }
+    .marker-sample {
+      width: 12px;
+      height: 12px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px var(--line-strong);
+      background: var(--blue);
+      flex: 0 0 auto;
+    }
+    .marker-sample.hotspot {
+      width: 14px;
+      height: 14px;
+      background: var(--red);
+    }
+    .section-eyebrow {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .control-context {
+      display: grid;
+      gap: 5px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--panel-subtle);
+      padding: 8px 9px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .control-context strong { color: var(--ink); }
+    .toolbar { flex-wrap: wrap; }
+    [hidden] { display: none !important; }
+    @media (max-width: 1300px) {
+      .leaflet-tooltip.subdistrict-label {
+        width: 54px;
+        font-size: 8px;
+        line-height: 1.05;
+      }
+    }
+    @media (max-width: 1100px) {
       .kpi-strip { grid-template-columns: repeat(4, minmax(140px, 1fr)); }
       .dashboard-workspace {
         grid-template-columns: 280px minmax(520px, 1fr);
+        height: auto;
+        min-height: 0;
       }
       .decision-panel {
         grid-column: 1 / -1;
@@ -1167,12 +1492,18 @@ def _build_dashboard_html(
     @media (max-width: 900px) {
       .app-shell { padding: 10px; }
       .app-header { grid-template-columns: 1fr; }
+      .brand-copy h1 { white-space: normal; }
       .status-row { justify-content: flex-start; }
       .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .dashboard-workspace {
         display: flex;
         flex-direction: column;
+        height: auto;
+        min-height: 0;
       }
+      .mode-warning { grid-template-columns: 1fr; }
+      .mode-warning strong,
+      .mode-warning .warning-status { justify-self: start; }
       .control-panel,
       .map-panel,
       .decision-panel {
@@ -1214,27 +1545,33 @@ def _build_dashboard_html(
         <div class="brand-mark" aria-hidden="true">FG</div>
         <div class="brand-copy">
           <h1>FloodGuard Decision Dashboard</h1>
-          <p>Judge-demo command center for fixture-backed local prioritization. Not an official warning.</p>
+          <p id="header-subtitle">Judge-demo command center for fixture-backed local prioritization. Not an official warning.</p>
         </div>
       </div>
       <div class="status-row" aria-label="Dashboard status">
-        <span class="status-chip demo">Fixture demo</span>
+        <span class="status-chip demo" id="status-dataset">Fixture demo</span>
         <span class="status-chip warn">Non-operational</span>
-        <span class="status-chip blocked">Real validation blocked</span>
+        <span class="status-chip blocked" id="status-validation">Real validation blocked</span>
         <span class="timestamp">Static HTML | embedded data | no backend</span>
       </div>
     </header>
 
     <section class="kpi-strip" data-dashboard-section="kpi-strip" aria-label="Priority KPIs">
-      <div class="kpi-card"><span class="label">Selected</span><span class="value" id="panel-subdistrict">__TOP_SUBDISTRICT__</span><span class="kpi-note">__TOP_NAME__</span></div>
+      <div class="kpi-card"><span class="label">Selected</span><span class="value" id="panel-subdistrict">__TOP_SUBDISTRICT__</span><span class="kpi-note" id="panel-subdistrict-name">__TOP_NAME__</span></div>
       <div class="kpi-card"><span class="label">FPPS</span><span class="value" id="panel-fpps">__TOP_FPPS__</span><span class="kpi-note">0-100 priority score</span></div>
       <div class="kpi-card"><span class="label">Action class</span><span class="value" id="panel-class">__TOP_CLASS__</span><span class="kpi-note" id="panel-action-label">__TOP_ACTION_LABEL__</span></div>
-      <div class="kpi-card"><span class="label">Confidence</span><span class="value" id="panel-confidence">__TOP_CONFIDENCE__</span><span class="kpi-note">fixture class</span></div>
-      <div class="kpi-card"><span class="label">30-min access loss</span><span class="value" id="panel-baseline-access">__TOP_BASELINE_ACCESS__</span><span class="kpi-note">baseline people</span></div>
+      <div class="kpi-card"><span class="label">Confidence</span><span class="value" id="panel-confidence">__TOP_CONFIDENCE__</span><span class="kpi-note" id="panel-confidence-note">fixture class</span></div>
+      <div class="kpi-card"><span class="label" id="panel-access-label">30-min access loss</span><span class="value" id="panel-baseline-access">__TOP_BASELINE_ACCESS__</span><span class="kpi-note" id="panel-access-note">baseline people</span></div>
       <div class="kpi-card"><span class="label">Equity gap</span><span class="value" id="panel-baseline-equity">__TOP_BASELINE_EQUITY__</span><span class="kpi-note">ratio</span></div>
-      <div class="kpi-card"><span class="label">Shelter scenario</span><span class="value"><span class="delta-badge" id="panel-temp-delta">__TOP_TEMP_DELTA__</span></span><span class="kpi-note">30-min access change</span></div>
-      <div class="kpi-card"><span class="label">Road closure</span><span class="value"><span class="delta-badge" id="panel-road-delta">__TOP_ROAD_DELTA__</span></span><span class="kpi-note">stress-case change</span></div>
+      <div class="kpi-card"><span class="label" id="panel-kpi-seven-label">Shelter scenario</span><span class="value"><span class="delta-badge" id="panel-temp-delta">__TOP_TEMP_DELTA__</span></span><span class="kpi-note" id="panel-kpi-seven-note">30-min access change</span></div>
+      <div class="kpi-card"><span class="label" id="panel-kpi-eight-label">Road closure</span><span class="value"><span class="delta-badge" id="panel-road-delta">__TOP_ROAD_DELTA__</span></span><span class="kpi-note" id="panel-kpi-eight-note">stress-case change</span></div>
     </section>
+
+    <div class="mode-warning" id="mode-warning" role="status" aria-live="polite">
+      <strong id="mode-warning-title">Fixture demonstration</strong>
+      <span id="mode-warning-text">Synthetic decision inputs demonstrate the workflow. They do not establish real flood accuracy.</span>
+      <span class="warning-status" id="mode-warning-status">Not official</span>
+    </div>
 
     <section class="dashboard-workspace" data-dashboard-section="dashboard-workspace" aria-label="FloodGuard judge-demo workspace">
       <aside class="control-panel" data-dashboard-section="control-panel">
@@ -1243,6 +1580,14 @@ def _build_dashboard_html(
           <span>Scenario setup</span>
         </div>
         <div class="control-stack">
+          <div>
+            <label class="control-label" for="dataset-mode-select">Dataset mode</label>
+            <select id="dataset-mode-select">
+              <option value="fixture_demo">Fixture demo</option>
+              <option value="mae_sai_weak_reference">Mae Sai weak-reference candidate</option>
+              <option value="metadata_blocker_view">Metadata/blocker view</option>
+            </select>
+          </div>
           <div>
             <label class="control-label" for="subdistrict-select">Subdistrict</label>
             <select id="subdistrict-select"></select>
@@ -1265,19 +1610,17 @@ def _build_dashboard_html(
               <option value="road_closure">road closure delta</option>
             </select>
           </div>
-          <div>
-            <label class="control-label" for="dataset-mode-select">Dataset mode</label>
-            <select id="dataset-mode-select">
-              <option value="fixture_demo">Fixture demo</option>
-              <option value="mae_sai_weak_reference">Mae Sai weak-reference candidate</option>
-              <option value="metadata_blocker_view">Metadata/blocker view</option>
-            </select>
+          <div class="control-context">
+            <span class="section-eyebrow">Current evidence scope</span>
+            <strong id="control-evidence-title">Synthetic fixture</strong>
+            <span id="control-evidence-note">Scenario controls are available for the fixture workflow.</span>
           </div>
         </div>
         <div class="button-row" aria-label="Dashboard exports">
           <button id="download-current-brief" type="button">Download current brief</button>
           <button id="download-filtered-geojson" type="button">Download filtered GeoJSON</button>
         </div>
+        <div id="fixture-scenario-summary">
         <h2>Scenario Summary</h2>
         <div class="summary-card-grid">
           <div class="summary-card" id="summary-best-intervention">
@@ -1291,70 +1634,102 @@ def _build_dashboard_html(
             <span>Road closure: __WORST_ROAD_CLOSURE_DELTA__ people losing 30-min access</span>
           </div>
         </div>
-        <h2>Read This First</h2>
+        </div>
+        <h2>Evidence Boundary</h2>
         <p class="dataset-mode-note" id="dataset-mode-note">Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision-layer workflow, not real flood accuracy.</p>
-        <p><strong>Current status:</strong> Fixture-backed decision demo. It shows prioritization behavior but does not prove real flood-detection accuracy.</p>
-        <ul class="compact-list">
-          <li>Real Mae Sai validation is blocked until provider response pending items are resolved.</li>
-          <li>Context layers are not flood labels, not reference masks, and not agency flood products.</li>
-          <li>Real-data ML is not allowed until legal reference-mask and file-level gates pass.</li>
-        </ul>
-        __MAE_SAI_WEAK_CARD_HTML__
+        <div class="control-context">
+          <strong>Read This First</strong>
+          <span>Context layers are not flood labels, observed closures, or agency warning products.</span>
+          <span>Official validation remains blocked; weak-reference metrics stay candidate evidence.</span>
+        </div>
       </aside>
 
       <section class="map-panel" data-dashboard-section="map-panel" aria-label="FloodGuard map panel">
         <div class="map-heading">
-          <div>
-            <h2>Priority Map</h2>
-            <p>Priority polygons and road-risk segments from embedded fixture GeoJSON.</p>
+          <div class="map-heading-copy">
+            <h2 id="map-title">Fixture Priority Map</h2>
+            <p id="map-subtitle">Synthetic priority polygons and road-risk segments from embedded GeoJSON.</p>
+            <div class="map-status"><i class="map-status-dot" id="map-status-dot"></i><span id="map-status-text">Fixture-backed decision workflow</span></div>
           </div>
           <div class="toolbar" aria-label="Layer toggles">
             <label><input id="toggle-priority" type="checkbox" checked> Priority</label>
             <label><input id="toggle-roads" type="checkbox" checked> Road risk</label>
+            <label><input id="toggle-facilities" type="checkbox" checked> Facilities</label>
+            <label><input id="toggle-hotspots" type="checkbox" checked> Access hotspots</label>
           </div>
         </div>
         <div class="map-body">
           <div id="map"></div>
           <div class="map-legend" aria-label="Map legend">
             <div class="legend-group">
-              <strong>Action class</strong>
-              <span class="legend-item"><i class="swatch" style="background:#b73c3c"></i>A Protect Lives</span>
-              <span class="legend-item"><i class="swatch" style="background:#d36a35"></i>B Routes</span>
-              <span class="legend-item"><i class="swatch" style="background:#d8a629"></i>C Services</span>
-              <span class="legend-item"><i class="swatch" style="background:#21835f"></i>D Resilience</span>
-              <span class="legend-item"><i class="swatch" style="background:#6d5aa8"></i>E Monitor</span>
+              <strong id="legend-primary-title">Action class</strong>
+              <div class="legend-group" id="legend-primary-items">
+                <span class="legend-item"><i class="swatch" style="background:#b73c3c"></i>A Protect Lives</span>
+                <span class="legend-item"><i class="swatch" style="background:#d36a35"></i>B Routes</span>
+                <span class="legend-item"><i class="swatch" style="background:#d8a629"></i>C Services</span>
+                <span class="legend-item"><i class="swatch" style="background:#21835f"></i>D Resilience</span>
+                <span class="legend-item"><i class="swatch" style="background:#6d5aa8"></i>E Monitor</span>
+              </div>
             </div>
             <div class="legend-group">
-              <strong>Scenario and road risk</strong>
-              <span class="legend-item"><i class="swatch" style="background:#21835f"></i>Delta improves</span>
-              <span class="legend-item"><i class="swatch" style="background:#b73c3c"></i>Delta worsens</span>
-              <span class="legend-item"><i class="swatch" style="background:#7f8a82"></i>Neutral/unavailable</span>
-              <span class="legend-item"><i class="road-sample"></i>High road risk</span>
-              <span class="legend-item"><i class="road-sample medium"></i>Medium road risk</span>
+              <strong id="legend-secondary-title">Scenario and road risk</strong>
+              <div class="legend-group" id="legend-secondary-items">
+                <span class="legend-item"><i class="swatch" style="background:#21835f"></i>Delta improves</span>
+                <span class="legend-item"><i class="swatch" style="background:#b73c3c"></i>Delta worsens</span>
+                <span class="legend-item"><i class="road-sample"></i>High road risk</span>
+                <span class="legend-item"><i class="road-sample medium"></i>Medium road risk</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <aside class="decision-panel" data-dashboard-section="decision-panel">
-        <div class="panel-tabs" aria-label="Decision panel sections">
-          <button class="panel-tab active" type="button">Action Brief</button>
-          <button class="panel-tab" type="button">Context Assets</button>
-          <button class="panel-tab" type="button">Data Readiness</button>
-        </div>
         <section class="panel-section" id="decision-brief-panel">
-          <div class="brief-heading-row">
-            <strong id="panel-detail-title">__TOP_SUBDISTRICT__ / __TOP_NAME__</strong>
-            <span class="class-pill" id="panel-detail-class">Class __TOP_CLASS__</span>
+          <div class="evidence-panel-header">
+            <div>
+              <span class="section-eyebrow">Selected decision unit</span>
+              <h2 id="panel-detail-title">__TOP_SUBDISTRICT__ / __TOP_NAME__</h2>
+              <p id="panel-reason">__TOP_REASON__</p>
+            </div>
+            <div>
+              <span class="class-pill" id="panel-detail-class">Class __TOP_CLASS__</span>
+            </div>
           </div>
-          <p id="panel-reason">__TOP_REASON__</p>
-          <ul class="summary-list">
-            <li>Baseline 30-minute access loss: <strong id="panel-detail-access">__TOP_BASELINE_ACCESS__</strong></li>
-            <li>Equity gap ratio: <strong id="panel-detail-equity">__TOP_BASELINE_EQUITY__</strong></li>
-            <li>Temporary shelter delta: <strong id="panel-detail-temp">__TOP_TEMP_DELTA__</strong></li>
-            <li>Road closure delta: <strong id="panel-detail-road">__TOP_ROAD_DELTA__</strong></li>
-          </ul>
-          <div class="safety-note">Context only. Not flood detection. Not validation. Not an official warning.</div>
+          <div class="evidence-grid" aria-label="Selected evidence metrics">
+            <div class="evidence-item"><span>Flood evidence</span><strong id="panel-evidence-flood">unavailable</strong><small id="panel-evidence-flood-note">candidate probability</small></div>
+            <div class="evidence-item"><span>Expected exposure</span><strong id="panel-evidence-exposure">unavailable</strong><small id="panel-evidence-exposure-note">modeled proxy</small></div>
+            <div class="evidence-item"><span>30-min access loss</span><strong id="panel-detail-access">__TOP_BASELINE_ACCESS__</strong><small id="panel-evidence-access-note">modeled people</small></div>
+            <div class="evidence-item"><span>Proxy equity gap</span><strong id="panel-detail-equity">__TOP_BASELINE_EQUITY__</strong><small id="panel-evidence-equity-note">ratio</small></div>
+            <div class="evidence-item"><span>Road evidence</span><strong id="panel-evidence-roads">unavailable</strong><small id="panel-evidence-roads-note">candidate network risk</small></div>
+            <div class="evidence-item"><span>Terrain context</span><strong id="panel-evidence-terrain">unavailable</strong><small id="panel-evidence-terrain-note">DEM candidate coverage</small></div>
+          </div>
+          <span class="section-eyebrow">Selected vs current dataset</span>
+          <div class="comparison-grid" aria-label="Selected subdistrict comparison">
+            <div class="comparison-item"><span>FPPS rank</span><strong id="comparison-rank">unavailable</strong></div>
+            <div class="comparison-item"><span>Flood vs median</span><strong id="comparison-flood">unavailable</strong></div>
+            <div class="comparison-item"><span>Access vs maximum</span><strong id="comparison-access">unavailable</strong></div>
+          </div>
+          <div class="safety-note" id="panel-safety-note">Context only. Not flood detection. Not validation. Not an official warning.</div>
+        </section>
+        <section class="panel-section" id="source-quality-panel">
+          <div class="panel-title"><h2>Source Quality</h2><span id="quality-confidence">candidate</span></div>
+          <div class="quality-list">
+            <div class="quality-row"><span>Population coverage</span><div class="quality-track"><i class="quality-fill" id="quality-population-fill"></i></div><strong class="quality-value" id="quality-population-value">unavailable</strong></div>
+            <div class="quality-row"><span>Road snap coverage</span><div class="quality-track"><i class="quality-fill" id="quality-road-fill"></i></div><strong class="quality-value" id="quality-road-value">unavailable</strong></div>
+            <div class="quality-row"><span>DEM coverage</span><div class="quality-track"><i class="quality-fill" id="quality-dem-fill"></i></div><strong class="quality-value" id="quality-dem-value">unavailable</strong></div>
+            <div class="quality-row"><span>Reference alignment</span><div class="quality-track"><i class="quality-fill partial" id="quality-reference-fill"></i></div><strong class="quality-value" id="quality-reference-value">unavailable</strong></div>
+          </div>
+        </section>
+        <section class="panel-section mae-sai-weak-card" id="mae-sai-weak-reference-card">
+          <div class="panel-title"><h2>Provenance</h2><span id="provenance-status">embedded</span></div>
+          <dl class="provenance-list">
+            <div class="provenance-row"><dt>Source time</dt><dd id="provenance-time">unavailable</dd></div>
+            <div class="provenance-row"><dt>Pre Sentinel-1</dt><dd id="provenance-pre">unavailable</dd></div>
+            <div class="provenance-row"><dt>Post Sentinel-1</dt><dd id="provenance-post">unavailable</dd></div>
+            <div class="provenance-row"><dt>Reference</dt><dd id="provenance-reference">unavailable</dd></div>
+            <div class="provenance-row"><dt>Scope</dt><dd id="provenance-scope">unavailable</dd></div>
+          </dl>
         </section>
         <section class="panel-section" data-dashboard-section="context-readiness-panel">
           <div class="context-preview-heading">
@@ -1398,19 +1773,19 @@ def _build_dashboard_html(
   <section class="docs report-section" data-dashboard-section="report-section">
     <div class="doc-grid">
       <article id="validation-summary">
-        <div class="report-heading"><h2>Validation Summary</h2><span>Fixture Metrics</span></div>
+        <div class="report-heading"><h2>Validation Summary</h2><span id="report-validation-scope">Fixture Metrics</span></div>
         <div class="validation-metric-grid">__VALIDATION_METRIC_CARDS__</div>
-        <p class="report-notes">Toy metrics are synthetic fixtures only. Real flood validation remains blocked until legal reference masks and file-level gates pass.</p>
-        <pre>__VALIDATION_SUMMARY__</pre>
+        <p class="report-notes" id="report-validation-note">Toy metrics are synthetic fixtures only. Real flood validation remains blocked until legal reference masks and file-level gates pass.</p>
+        <pre id="validation-summary-pre">__VALIDATION_SUMMARY__</pre>
       </article>
       <article id="action-brief">
         <div class="report-heading"><h2>Action Brief</h2><span>Detailed</span></div>
         <div class="brief-summary">
-          <strong>__TOP_SUBDISTRICT__ / __TOP_NAME__ (Class __TOP_CLASS__)</strong>
+          <strong id="report-brief-title">__TOP_SUBDISTRICT__ / __TOP_NAME__ (Class __TOP_CLASS__)</strong>
           <ul>
-            <li>Immediate local action focus: __TOP_REASON__</li>
-            <li>Access-loss impact: __TOP_BASELINE_ACCESS__ people losing 30-minute access.</li>
-            <li>This is not an official warning. Use with local assessment and official advisories.</li>
+            <li id="report-brief-focus">Immediate local action focus: __TOP_REASON__</li>
+            <li id="report-brief-access">Access-loss impact: __TOP_BASELINE_ACCESS__ people losing 30-minute access.</li>
+            <li id="report-brief-warning">This is not an official warning. Use with local assessment and official advisories.</li>
           </ul>
         </div>
         <pre id="action-brief-pre">__INITIAL_BRIEF__</pre>
@@ -1429,17 +1804,23 @@ def _build_dashboard_html(
     const priorityData = __PRIORITY_JSON__;
     const roadRiskData = __ROAD_JSON__;
     const briefsBySubdistrict = __BRIEFS_JSON__;
+    const maeSaiPriorityData = __MAE_SAI_PRIORITY_JSON__;
+    const maeSaiRoadRiskData = __MAE_SAI_ROAD_JSON__;
+    const maeSaiFacilityData = __MAE_SAI_FACILITY_JSON__;
+    const maeSaiAccessHotspotData = __MAE_SAI_ACCESS_HOTSPOT_JSON__;
+    const maeSaiContextQuality = __MAE_SAI_CONTEXT_QUALITY_JSON__;
+    const maeSaiBriefsBySubdistrict = __MAE_SAI_BRIEFS_JSON__;
+    const maeSaiWeakReferenceSummary = __MAE_SAI_WEAK_JSON__;
     const theos2PreviewData = __THEOS2_JSON__;
     const sentinel1QuicklookData = __SENTINEL1_QUICKLOOK_JSON__;
     const demQuicklookData = __DEM_QUICKLOOK_JSON__;
     const localDataLibrarySummary = __LOCAL_DATA_JSON__;
-    const maeSaiWeakReferencePriorityData = __MAE_SAI_WEAK_JSON__;
+    const fixtureValidationMetrics = __FIXTURE_VALIDATION_METRICS_JSON__;
+    const fixtureValidationSummary = __FIXTURE_VALIDATION_SUMMARY_JSON__;
+    const maeSaiValidationSummary = __MAE_SAI_VALIDATION_SUMMARY_JSON__;
+    const emptyFeatureCollection = { type: 'FeatureCollection', features: [] };
     const actionColors = {
-      A: '#b73c3c',
-      B: '#d36a35',
-      C: '#d8a629',
-      D: '#21835f',
-      E: '#6d5aa8'
+      A: '#c13f3f', B: '#cf6a32', C: '#d39d20', D: '#167a55', E: '#6956a3'
     };
     const actionLabels = {
       A: 'Protect Lives Now',
@@ -1449,28 +1830,60 @@ def _build_dashboard_html(
       E: 'Monitor and Verify'
     };
     const deltaColors = {
-      improvement: '#21835f',
-      worsening: '#b73c3c',
-      neutral: '#7f8a82'
+      improvement: '#167a55', worsening: '#c13f3f', neutral: '#7b8982'
     };
     const datasetModeNotes = {
-      fixture_demo: 'Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision-layer workflow, not real flood accuracy.',
+      fixture_demo: 'Fixture demo: synthetic priority, access, equity, and road-risk outputs. Use this mode to judge the decision workflow, not real flood accuracy.',
       mae_sai_weak_reference: '__MAE_SAI_WEAK_NOTE__',
-      metadata_blocker_view: 'Metadata/blocker view: source candidates and local files are documented, but official validation and real-data ML remain blocked until legal/reference-mask and file-level gates clear.'
+      metadata_blocker_view: 'Metadata/blocker view: source inventory and file readiness are visible, while decision values and operational interpretation remain gated.'
     };
-    const mapBoundsPadding = 0.16;
+    const datasetRegistry = {
+      fixture_demo: {
+        label: 'Fixture demo',
+        priority: priorityData,
+        roads: roadRiskData,
+        facilities: emptyFeatureCollection,
+        hotspots: emptyFeatureCollection,
+        briefs: briefsBySubdistrict,
+        supportsScenarios: true,
+        metadataOnly: false
+      },
+      mae_sai_weak_reference: {
+        label: 'Mae Sai weak-reference candidate',
+        priority: maeSaiPriorityData,
+        roads: maeSaiRoadRiskData,
+        facilities: maeSaiFacilityData,
+        hotspots: maeSaiAccessHotspotData,
+        briefs: maeSaiBriefsBySubdistrict,
+        supportsScenarios: false,
+        metadataOnly: false
+      },
+      metadata_blocker_view: {
+        label: 'Metadata/blocker view',
+        priority: maeSaiPriorityData,
+        roads: emptyFeatureCollection,
+        facilities: emptyFeatureCollection,
+        hotspots: emptyFeatureCollection,
+        briefs: {},
+        supportsScenarios: false,
+        metadataOnly: true
+      }
+    };
+    const mapBoundsPadding = 0.12;
     const state = {
       selectedId: '__TOP_ID__',
       scenario: 'baseline',
       datasetMode: 'fixture_demo',
       visibleClasses: new Set(['A', 'B', 'C', 'D', 'E']),
       showPriority: true,
-      showRoads: true
+      showRoads: true,
+      showFacilities: true,
+      showHotspots: true
     };
-    const featuresById = new Map(priorityData.features.map((feature) => [String(feature.properties.subdistrict_id), feature]));
+    let featuresById = new Map();
     const featureLayers = new Map();
 
-    const map = L.map('map', { scrollWheelZoom: false });
+    const map = L.map('map', { scrollWheelZoom: false, preferCanvas: true });
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
@@ -1479,29 +1892,28 @@ def _build_dashboard_html(
     const priorityLayer = L.geoJSON(null, {
       style: priorityStyle,
       onEachFeature: bindPriorityFeature
-    }).addTo(map);
-    const roadLayer = L.geoJSON(roadRiskData, {
+    });
+    const roadLayer = L.geoJSON(null, {
       style: roadStyle,
-      onEachFeature: (feature, layer) => layer.bindPopup(popup(feature.properties))
-    }).addTo(map);
+      onEachFeature: (feature, layer) => layer.bindPopup(roadPopup(feature.properties))
+    });
+    const facilityLayer = L.geoJSON(null, {
+      pointToLayer: facilityPoint,
+      onEachFeature: (feature, layer) => layer.bindPopup(facilityPopup(feature.properties))
+    });
+    const accessHotspotLayer = L.geoJSON(null, {
+      pointToLayer: accessHotspotPoint,
+      onEachFeature: (feature, layer) => layer.bindPopup(accessHotspotPopup(feature.properties))
+    });
+
+    function activeDataset() {
+      return datasetRegistry[state.datasetMode] || datasetRegistry.fixture_demo;
+    }
 
     function initializeDashboardControls() {
-      const selector = document.getElementById('subdistrict-select');
-      priorityData.features
-        .slice()
-        .sort((left, right) => String(left.properties.subdistrict_id).localeCompare(String(right.properties.subdistrict_id)))
-        .forEach((feature) => {
-          const props = feature.properties;
-          const option = document.createElement('option');
-          option.value = props.subdistrict_id;
-          option.textContent = `${props.subdistrict_id} / ${props.subdistrict_name}`;
-          selector.appendChild(option);
-        });
-      selector.value = state.selectedId;
-      selector.addEventListener('change', (event) => {
+      document.getElementById('subdistrict-select').addEventListener('change', (event) => {
         selectSubdistrict(event.target.value, true);
       });
-
       document.querySelectorAll('.action-filter').forEach((input) => {
         input.addEventListener('change', () => {
           state.visibleClasses = new Set(
@@ -1510,7 +1922,6 @@ def _build_dashboard_html(
           renderPriorityLayer();
         });
       });
-
       document.getElementById('scenario-select').addEventListener('change', (event) => {
         state.scenario = event.target.value;
         renderPriorityLayer();
@@ -1518,45 +1929,166 @@ def _build_dashboard_html(
       });
       document.getElementById('dataset-mode-select').addEventListener('change', (event) => {
         state.datasetMode = event.target.value;
-        updateSelectedPanel();
+        applyDatasetMode();
       });
-      document.getElementById('toggle-priority').addEventListener('change', (event) => {
-        state.showPriority = event.target.checked;
-        state.showPriority ? priorityLayer.addTo(map) : priorityLayer.removeFrom(map);
-      });
-      document.getElementById('toggle-roads').addEventListener('change', (event) => {
-        state.showRoads = event.target.checked;
-        state.showRoads ? roadLayer.addTo(map) : roadLayer.removeFrom(map);
-      });
+      bindLayerToggle('toggle-priority', 'showPriority', priorityLayer);
+      bindLayerToggle('toggle-roads', 'showRoads', roadLayer);
+      bindLayerToggle('toggle-facilities', 'showFacilities', facilityLayer);
+      bindLayerToggle('toggle-hotspots', 'showHotspots', accessHotspotLayer);
       document.getElementById('download-current-brief').addEventListener('click', downloadCurrentActionBrief);
       document.getElementById('download-filtered-geojson').addEventListener('click', downloadFilteredGeoJSON);
+      applyDatasetMode(true);
     }
 
-    function bindPriorityFeature(feature, layer) {
-      const id = String(feature.properties.subdistrict_id);
-      const name = String(feature.properties.subdistrict_name || '');
-      featureLayers.set(id, layer);
-      layer.bindPopup(popup(feature.properties));
-      layer.bindTooltip(
-        `<strong>${escapeHtml(id)}</strong><span>${escapeHtml(name)}</span>`,
-        {
-          permanent: true,
-          direction: 'center',
-          className: 'subdistrict-label'
+    function bindLayerToggle(elementId, stateKey, layer) {
+      document.getElementById(elementId).addEventListener('change', (event) => {
+        state[stateKey] = event.target.checked;
+        syncLayerVisibility(layer, state[stateKey]);
+      });
+    }
+
+    function applyDatasetMode(initial = false) {
+      const dataset = activeDataset();
+      state.scenario = 'baseline';
+      state.visibleClasses = new Set(['A', 'B', 'C', 'D', 'E']);
+      document.querySelectorAll('.action-filter').forEach((input) => {
+        input.checked = true;
+        input.disabled = dataset.metadataOnly;
+      });
+      const scenarioSelect = document.getElementById('scenario-select');
+      scenarioSelect.value = 'baseline';
+      scenarioSelect.disabled = !dataset.supportsScenarios;
+      state.selectedId = selectDefaultId(dataset.priority, state.datasetMode === 'fixture_demo');
+      rebuildFeatureIndex();
+      populateSubdistrictSelector();
+      renderAllMapLayers();
+      updateModeChrome();
+      updateSelectedPanel();
+      if (!initial) {
+        requestAnimationFrame(settleMapLayout);
+      }
+    }
+
+    function selectDefaultId(collection, actionableFirst) {
+      const features = collection.features || [];
+      if (!features.length) {
+        return '';
+      }
+      const order = { A: 0, B: 1, C: 2, D: 3, E: 4 };
+      const sorted = features.slice().sort((left, right) => {
+        const leftProps = left.properties || {};
+        const rightProps = right.properties || {};
+        if (actionableFirst) {
+          const classDifference = (order[leftProps.action_class] ?? 9) - (order[rightProps.action_class] ?? 9);
+          if (classDifference !== 0) {
+            return classDifference;
+          }
         }
+        return numeric(rightProps.fpps_0_100, -Infinity) - numeric(leftProps.fpps_0_100, -Infinity);
+      });
+      return String(sorted[0].properties.subdistrict_id || '');
+    }
+
+    function rebuildFeatureIndex() {
+      featuresById = new Map(
+        (activeDataset().priority.features || []).map((feature) => [
+          String(feature.properties.subdistrict_id), feature
+        ])
       );
-      layer.on('click', () => selectSubdistrict(id, false));
+    }
+
+    function populateSubdistrictSelector() {
+      const selector = document.getElementById('subdistrict-select');
+      selector.replaceChildren();
+      [...featuresById.values()]
+        .sort((left, right) => String(left.properties.subdistrict_id).localeCompare(String(right.properties.subdistrict_id)))
+        .forEach((feature) => {
+          const props = feature.properties;
+          const option = document.createElement('option');
+          option.value = String(props.subdistrict_id);
+          option.textContent = `${props.subdistrict_id} / ${props.subdistrict_name || 'unavailable'}`;
+          selector.appendChild(option);
+        });
+      selector.value = state.selectedId;
+      selector.disabled = selector.options.length === 0;
+    }
+
+    function renderAllMapLayers() {
+      renderPriorityLayer();
+      const dataset = activeDataset();
+      roadLayer.clearLayers();
+      roadLayer.addData(dataset.roads || emptyFeatureCollection);
+      facilityLayer.clearLayers();
+      facilityLayer.addData(dataset.facilities || emptyFeatureCollection);
+      accessHotspotLayer.clearLayers();
+      accessHotspotLayer.addData({
+        type: 'FeatureCollection',
+        features: (dataset.hotspots.features || []).filter((feature) =>
+          numeric(feature.properties.people_losing_30_min_access, 0) > 0
+        )
+      });
+      syncLayerVisibility(priorityLayer, state.showPriority);
+      syncLayerVisibility(roadLayer, state.showRoads && roadLayer.getLayers().length > 0);
+      syncLayerVisibility(facilityLayer, state.showFacilities && facilityLayer.getLayers().length > 0);
+      syncLayerVisibility(accessHotspotLayer, state.showHotspots && accessHotspotLayer.getLayers().length > 0);
+      updateLayerToggleAvailability();
     }
 
     function renderPriorityLayer() {
       featureLayers.clear();
       priorityLayer.clearLayers();
-      const visibleFeatures = priorityData.features.filter((feature) =>
+      const visibleFeatures = (activeDataset().priority.features || []).filter((feature) =>
         state.visibleClasses.has(String(feature.properties.action_class))
       );
-      if (state.showPriority) {
-        priorityLayer.addData(visibleFeatures);
+      priorityLayer.addData({ type: 'FeatureCollection', features: visibleFeatures });
+      syncLayerVisibility(priorityLayer, state.showPriority);
+    }
+
+    function syncLayerVisibility(layer, shouldShow) {
+      if (shouldShow && !map.hasLayer(layer)) {
+        layer.addTo(map);
+      } else if (!shouldShow && map.hasLayer(layer)) {
+        layer.removeFrom(map);
       }
+    }
+
+    function updateLayerToggleAvailability() {
+      const dataset = activeDataset();
+      setToggleAvailability('toggle-roads', (dataset.roads.features || []).length > 0);
+      setToggleAvailability('toggle-facilities', (dataset.facilities.features || []).length > 0);
+      setToggleAvailability(
+        'toggle-hotspots',
+        (dataset.hotspots.features || []).some((feature) =>
+          numeric(feature.properties.people_losing_30_min_access, 0) > 0
+        )
+      );
+    }
+
+    function setToggleAvailability(elementId, available) {
+      const input = document.getElementById(elementId);
+      input.disabled = !available;
+      input.closest('label').style.opacity = available ? '1' : '.45';
+    }
+
+    function bindPriorityFeature(feature, layer) {
+      const id = String(feature.properties.subdistrict_id);
+      const name = String(feature.properties.subdistrict_name || '');
+      const labelOffsets = {
+        TH570901: [0, -11],
+        TH570906: [0, 11]
+      };
+      featureLayers.set(id, layer);
+      layer.bindPopup(priorityPopup(feature.properties));
+      layer.bindTooltip(
+        `<strong>${escapeHtml(id)}</strong><span>${escapeHtml(name)}</span>`,
+        {
+          permanent: true,
+          direction: 'center',
+          className: 'subdistrict-label',
+          offset: labelOffsets[id] || [0, 0]
+        }
+      );
+      layer.on('click', () => selectSubdistrict(id, false));
     }
 
     function fitPriorityMapToData() {
@@ -1565,7 +2097,7 @@ def _build_dashboard_html(
       if (bounds.isValid()) {
         map.fitBounds(bounds.pad(mapBoundsPadding), { animate: false });
       } else {
-        map.setView([18.02, 100.02], 13);
+        map.setView([20.43, 99.88], 11);
       }
     }
 
@@ -1590,35 +2122,254 @@ def _build_dashboard_html(
       if (!feature) {
         return;
       }
+      const dataset = activeDataset();
       const props = feature.properties;
-      setText('panel-subdistrict', `${props.subdistrict_id}`);
-      setText('panel-class', props.action_class || 'unavailable');
-      setText('panel-action-label', actionLabels[props.action_class] || 'unavailable');
-      setText('panel-fpps', formatNumber(props.fpps_0_100, 2));
+      const metrics = normalizedMetrics(props);
+      const metadataOnly = dataset.metadataOnly;
+      setText('panel-subdistrict', props.subdistrict_id);
+      setText('panel-subdistrict-name', props.subdistrict_name || 'unavailable');
+      setText('panel-class', metadataOnly ? '—' : (props.action_class || 'unavailable'));
+      setText('panel-action-label', metadataOnly ? 'Decision values gated' : (actionLabels[props.action_class] || 'unavailable'));
+      setText('panel-fpps', metadataOnly ? 'gated' : formatNumber(props.fpps_0_100, 2));
       setText('panel-confidence', props.confidence_class || 'unavailable');
-      setText('panel-baseline-access', formatNumber(props.baseline_people_losing_30_min_access, 0));
-      setText('panel-baseline-equity', formatNumber(props.baseline_equity_gap_ratio, 3));
-      setDeltaBadge('panel-temp-delta', props.temporary_shelter_change_people_losing_30_min_access);
-      setDeltaBadge('panel-road-delta', props.road_closure_change_people_losing_30_min_access);
+      setText('panel-confidence-note', state.datasetMode === 'fixture_demo' ? 'fixture class' : 'candidate confidence');
+      setText('panel-baseline-access', metadataOnly ? 'gated' : formatCompact(metrics.accessLoss));
+      setText('panel-baseline-equity', metadataOnly ? 'gated' : formatNumber(metrics.equityGap, 3));
       setText('panel-detail-title', `${props.subdistrict_id} / ${props.subdistrict_name || 'unavailable'}`);
-      setText('panel-detail-class', `Class ${props.action_class || 'unavailable'}`);
-      setText('panel-detail-access', formatNumber(props.baseline_people_losing_30_min_access, 0));
-      setText('panel-detail-equity', formatNumber(props.baseline_equity_gap_ratio, 3));
-      setText('panel-detail-temp', formatSigned(props.temporary_shelter_change_people_losing_30_min_access, 0));
-      setText('panel-detail-road', formatSigned(props.road_closure_change_people_losing_30_min_access, 0));
-      setText('panel-reason', props.top_reason || '');
+      setText('panel-detail-class', metadataOnly ? 'Metadata only' : `Class ${props.action_class || 'unavailable'}`);
+      setText('panel-detail-access', metadataOnly ? 'Not displayed' : formatCompact(metrics.accessLoss));
+      setText('panel-detail-equity', metadataOnly ? 'Not displayed' : formatNumber(metrics.equityGap, 3));
+      setText('panel-reason', metadataOnly ? 'Decision outputs are intentionally withheld in blocker view.' : (props.top_reason || 'No reason recorded.'));
+      updateKpiMode(props, metrics, metadataOnly);
+      updateEvidencePanel(props, metrics, metadataOnly);
+      updateComparison(props, metadataOnly);
+      updateQualityPanel(props);
+      updateProvenancePanel(props);
+      updateReportPanel(props, metrics, metadataOnly);
       setText('dataset-mode-note', datasetModeNotes[state.datasetMode] || datasetModeNotes.fixture_demo);
-      setText(
-        'action-brief-pre',
-        briefsBySubdistrict[state.selectedId] || 'No generated action brief for this subdistrict.'
-      );
+      const brief = currentBriefContent(props);
+      setText('action-brief-pre', brief);
+      document.getElementById('download-current-brief').disabled = metadataOnly;
+      document.getElementById('download-filtered-geojson').disabled = metadataOnly;
+      updateClassPill(props.action_class, metadataOnly);
+    }
+
+    function normalizedMetrics(props) {
+      const fixture = state.datasetMode === 'fixture_demo';
+      return {
+        accessLoss: fixture ? props.baseline_people_losing_30_min_access : props.people_losing_30_min_access,
+        equityGap: fixture ? props.baseline_equity_gap_ratio : props.equity_gap_ratio,
+        floodLikelihood: props.flood_likelihood_0_100,
+        exposure: fixture ? props.exposure_0_100 : props.expected_exposed_population_proxy,
+        roadCriticality: props.road_criticality_0_100,
+        terrain: props.mean_slope_degrees,
+        demCoverage: props.dem_population_coverage_rate
+      };
+    }
+
+    function updateKpiMode(props, metrics, metadataOnly) {
+      const fixture = state.datasetMode === 'fixture_demo';
+      setText('panel-access-note', fixture ? 'baseline people' : 'modeled candidate people');
+      setText('panel-kpi-seven-label', fixture ? 'Shelter scenario' : 'Flood likelihood');
+      setText('panel-kpi-seven-note', fixture ? '30-min access change' : 'mean candidate probability');
+      setText('panel-kpi-eight-label', fixture ? 'Road closure' : 'Expected exposure');
+      setText('panel-kpi-eight-note', fixture ? 'stress-case change' : 'WorldPop probability proxy');
+      if (metadataOnly) {
+        setKpiValue('panel-temp-delta', 'gated');
+        setKpiValue('panel-road-delta', 'gated');
+      } else if (fixture) {
+        setDeltaBadge('panel-temp-delta', props.temporary_shelter_change_people_losing_30_min_access);
+        setDeltaBadge('panel-road-delta', props.road_closure_change_people_losing_30_min_access);
+      } else {
+        setKpiValue('panel-temp-delta', `${formatNumber(metrics.floodLikelihood, 1)}%`);
+        setKpiValue('panel-road-delta', formatCompact(metrics.exposure));
+      }
+    }
+
+    function setKpiValue(elementId, value) {
+      const element = document.getElementById(elementId);
+      element.textContent = value;
+      element.classList.remove('good', 'bad');
+    }
+
+    function updateEvidencePanel(props, metrics, metadataOnly) {
+      if (metadataOnly) {
+        ['panel-evidence-flood', 'panel-evidence-exposure', 'panel-evidence-roads', 'panel-evidence-terrain'].forEach((id) => setText(id, 'Not displayed'));
+        setText('panel-evidence-flood-note', 'metadata and gates only');
+        setText('panel-evidence-exposure-note', 'metadata and gates only');
+        setText('panel-evidence-access-note', 'metadata and gates only');
+        setText('panel-evidence-equity-note', 'metadata and gates only');
+        setText('panel-evidence-roads-note', 'metadata and gates only');
+        setText('panel-evidence-terrain-note', 'metadata and gates only');
+        return;
+      }
+      const fixture = state.datasetMode === 'fixture_demo';
+      setText('panel-evidence-flood', `${formatNumber(metrics.floodLikelihood, 1)}%`);
+      setText('panel-evidence-flood-note', fixture ? 'synthetic likelihood score' : `P90 ${formatPercent(props.p90_flood_probability_0_1)}`);
+      setText('panel-evidence-exposure', fixture ? `${formatNumber(metrics.exposure, 1)} / 100` : `${formatCompact(metrics.exposure)} people`);
+      setText('panel-evidence-exposure-note', fixture ? 'synthetic exposure score' : 'WorldPop probability proxy');
+      setText('panel-evidence-access-note', fixture ? 'synthetic baseline people' : 'heuristic disrupted routing');
+      setText('panel-evidence-equity-note', fixture ? 'fixture vulnerable/non-vulnerable ratio' : 'terrain/remoteness proxy ratio');
+      setText('panel-evidence-roads', `${formatNumber(metrics.roadCriticality, 1)} / 100`);
+      setText('panel-evidence-roads-note', fixture ? 'fixture road criticality' : `${formatCompact(props.road_count)} candidate ways`);
+      setText('panel-evidence-terrain', fixture ? 'Fixture context' : `${formatNumber(metrics.terrain, 1)}° mean slope`);
+      setText('panel-evidence-terrain-note', fixture ? 'not real terrain evidence' : `${formatPercent(metrics.demCoverage)} DEM coverage`);
+    }
+
+    function updateComparison(props, metadataOnly) {
+      if (metadataOnly) {
+        setText('comparison-rank', 'withheld');
+        setText('comparison-flood', 'withheld');
+        setText('comparison-access', 'withheld');
+        return;
+      }
+      const features = activeDataset().priority.features || [];
+      const sorted = features.slice().sort((left, right) => numeric(right.properties.fpps_0_100, -Infinity) - numeric(left.properties.fpps_0_100, -Infinity));
+      const rank = sorted.findIndex((feature) => String(feature.properties.subdistrict_id) === state.selectedId) + 1;
+      const floodValues = features.map((feature) => numeric(feature.properties.flood_likelihood_0_100, NaN)).filter(Number.isFinite).sort((a, b) => a - b);
+      const selectedFlood = numeric(props.flood_likelihood_0_100, NaN);
+      const accessValues = features.map((feature) => numeric(normalizedMetrics(feature.properties).accessLoss, 0));
+      const maxAccess = accessValues.length ? Math.max(...accessValues) : 0;
+      setText('comparison-rank', `${rank} of ${features.length}`);
+      setText('comparison-flood', `${formatNumber(selectedFlood, 1)} vs ${formatNumber(median(floodValues), 1)}%`);
+      setText('comparison-access', `${formatCompact(normalizedMetrics(props).accessLoss)} of ${formatCompact(maxAccess)}`);
+    }
+
+    function updateQualityPanel(props) {
+      const fixture = state.datasetMode === 'fixture_demo';
+      if (fixture) {
+        setQualityRow('quality-population', 1, 'synthetic');
+        setQualityRow('quality-road', 1, 'synthetic');
+        setQualityRow('quality-dem', 1, 'synthetic');
+        setQualityRow('quality-reference', 1, 'fixture');
+        setText('quality-confidence', 'fixture completeness');
+        return;
+      }
+      setQualityRow('quality-population', numeric(props.worldpop_bbox_coverage_rate, numeric(maeSaiContextQuality.minimum_worldpop_bbox_coverage_rate, 0)), formatPercent(props.worldpop_bbox_coverage_rate));
+      setQualityRow('quality-road', numeric(props.road_snap_population_coverage_rate, numeric(maeSaiContextQuality.minimum_road_snap_population_coverage_rate, 0)), formatPercent(props.road_snap_population_coverage_rate));
+      setQualityRow('quality-dem', numeric(props.dem_population_coverage_rate, numeric(maeSaiContextQuality.minimum_dem_population_coverage_rate, 0)), formatPercent(props.dem_population_coverage_rate));
+      setQualityRow('quality-reference', 0, 'cross-border only');
+      setText('quality-confidence', `${props.confidence_class || 'low'} confidence`);
+    }
+
+    function setQualityRow(prefix, ratio, label) {
+      const bounded = Math.max(0, Math.min(1, numeric(ratio, 0)));
+      const fill = document.getElementById(`${prefix}-fill`);
+      fill.style.width = `${bounded * 100}%`;
+      fill.classList.toggle('partial', bounded < .95);
+      setText(`${prefix}-value`, label === 'unavailable' ? `${(bounded * 100).toFixed(0)}%` : label);
+    }
+
+    function updateProvenancePanel(props) {
+      const fixture = state.datasetMode === 'fixture_demo';
+      setText('provenance-status', fixture ? 'fixture' : (state.datasetMode === 'metadata_blocker_view' ? 'gated' : 'weak reference'));
+      setText('provenance-time', props.source_timestamp || 'unavailable');
+      setText('provenance-pre', fixture ? 'synthetic fixture' : (maeSaiWeakReferenceSummary.pre_product_id || 'unavailable'));
+      setText('provenance-post', fixture ? 'synthetic fixture' : (maeSaiWeakReferenceSummary.post_product_id || 'unavailable'));
+      setText('provenance-reference', fixture ? 'synthetic fixture mask' : (props.reference_status || maeSaiWeakReferenceSummary.manual_reference_status || 'unavailable'));
+      setText('provenance-scope', props.processing_scope || (fixture ? 'fixture_demo' : 'candidate context'));
+    }
+
+    function updateReportPanel(props, metrics, metadataOnly) {
+      const fixture = state.datasetMode === 'fixture_demo';
+      const reportMetrics = fixture
+        ? Object.fromEntries(fixtureValidationMetrics.map((item) => [
+            String(item.label).toLowerCase().replace(' / ', '_').replace(' ', '_'),
+            item.value
+          ]))
+        : metadataOnly
+          ? { iou: 'gated', f1_dice: 'gated', precision: 'gated', recall: 'gated', area_error: 'gated' }
+          : {
+              iou: formatNumber(maeSaiWeakReferenceSummary.iou, 3),
+              f1_dice: formatNumber(maeSaiWeakReferenceSummary.f1_dice, 3),
+              precision: formatNumber(maeSaiWeakReferenceSummary.precision, 3),
+              recall: formatNumber(maeSaiWeakReferenceSummary.recall, 3),
+              area_error: formatRatioPercent(maeSaiWeakReferenceSummary.area_error_ratio)
+            };
+      const fixtureMetricFallback = {
+        iou: fixtureValidationMetrics[0]?.value,
+        f1_dice: fixtureValidationMetrics[1]?.value,
+        precision: fixtureValidationMetrics[2]?.value,
+        recall: fixtureValidationMetrics[3]?.value,
+        area_error: fixtureValidationMetrics[4]?.value
+      };
+      for (const key of ['iou', 'f1_dice', 'precision', 'recall', 'area_error']) {
+        const element = document.querySelector(`[data-metric-key="${key}"] strong`);
+        if (element) element.textContent = fixture ? fixtureMetricFallback[key] : reportMetrics[key];
+      }
+      setText('report-validation-scope', fixture ? 'Fixture metrics' : metadataOnly ? 'Processing gates' : 'Weak-reference candidate metrics');
+      setText('report-validation-note', fixture
+        ? 'Toy metrics are synthetic fixtures only. Real flood validation remains blocked.'
+        : metadataOnly
+          ? 'No decision accuracy claim is shown in metadata/blocker mode.'
+          : 'Candidate metrics use a manually digitized cross-border weak reference. Not official validation or field validation.');
+      setText('validation-summary-pre', fixture ? fixtureValidationSummary : metadataOnly ? 'Metadata and blocker view. Candidate decision metrics are intentionally withheld.' : maeSaiValidationSummary);
+      setText('report-brief-title', `${props.subdistrict_id} / ${props.subdistrict_name || 'unavailable'} (${metadataOnly ? 'metadata only' : `Class ${props.action_class || 'unavailable'}`})`);
+      setText('report-brief-focus', metadataOnly ? 'Decision recommendation withheld in blocker view.' : `Decision focus: ${props.top_reason || 'No reason recorded.'}`);
+      setText('report-brief-access', metadataOnly ? 'Access-loss value withheld.' : `Modeled 30-minute access loss: ${formatCompact(metrics.accessLoss)} people.`);
+      setText('report-brief-warning', fixture ? 'Fixture-backed and non-operational. Not an official warning.' : 'Weak-reference candidate analysis. Not field validated and not an official warning.');
+    }
+
+    function updateModeChrome() {
+      const fixture = state.datasetMode === 'fixture_demo';
+      const metadata = state.datasetMode === 'metadata_blocker_view';
+      const warning = document.getElementById('mode-warning');
+      warning.className = `mode-warning ${metadata ? 'blocked' : fixture ? '' : 'weak-reference'}`.trim();
+      setText('status-dataset', activeDataset().label);
+      setText('status-validation', fixture ? 'Real validation blocked' : metadata ? 'Processing gated' : 'Weak reference only');
+      setText('header-subtitle', fixture
+        ? 'Judge-demo command center for fixture-backed local prioritization. Not an official warning.'
+        : 'Mae Sai candidate decision evidence from real Sentinel-1 and open context. Non-operational.');
+      setText('mode-warning-title', fixture ? 'Fixture demonstration' : metadata ? 'Metadata and blocker view' : 'Weak-reference candidate');
+      setText('mode-warning-text', fixture
+        ? 'Synthetic inputs demonstrate prioritization and scenarios; they do not establish real flood accuracy.'
+        : metadata
+          ? 'Files and provenance are documented, but official validation and operational processing remain gated.'
+          : 'Real Sentinel-1 and open context are joined. The manual reference is cross-border calibration only; results are not field validated.');
+      setText('mode-warning-status', fixture ? 'Not official' : metadata ? 'Blocked' : 'Not official / not field validated');
+      setText('control-evidence-title', fixture ? 'Synthetic fixture' : metadata ? 'Metadata inventory' : 'Real-data candidate');
+      setText('control-evidence-note', fixture
+        ? 'Scenario controls are available for the fixture workflow.'
+        : metadata
+          ? 'Decision values are withheld; use this view to inspect readiness.'
+          : 'Scenarios are not yet calibrated for the real candidate dataset.');
+      setText('map-title', fixture ? 'Fixture Priority Map' : metadata ? 'Mae Sai Readiness Footprint' : 'Mae Sai Candidate Priority Map');
+      setText('map-subtitle', fixture
+        ? 'Synthetic priority polygons and road-risk segments from embedded GeoJSON.'
+        : metadata
+          ? 'Official COD-AB reporting boundaries shown without decision-layer overlays.'
+          : 'Eight COD-AB ADM3 units with candidate road risk, OSM facilities, and modeled access hotspots.');
+      setText('map-status-text', fixture ? 'Fixture-backed decision workflow' : metadata ? 'Metadata and reporting geometry only' : 'Weak-reference candidate evidence');
+      document.getElementById('map-status-dot').className = `map-status-dot ${metadata ? 'blocked' : fixture ? '' : 'weak'}`.trim();
+      document.getElementById('fixture-scenario-summary').hidden = !fixture;
+      setText('panel-safety-note', fixture
+        ? 'Fixture context only. Not flood detection, validation, or an official warning.'
+        : metadata
+          ? 'Metadata-only view. Processing and official validation remain gated.'
+          : 'Weak-reference candidate analysis. Non-operational, not field validated, and not an official warning.');
+      updateLegend();
+    }
+
+    function updateLegend() {
+      const fixture = state.datasetMode === 'fixture_demo';
+      const metadata = state.datasetMode === 'metadata_blocker_view';
+      setText('legend-primary-title', fixture ? 'Action class' : metadata ? 'Reporting geometry' : 'Candidate FPPS');
+      setText('legend-secondary-title', fixture ? 'Scenario and road risk' : metadata ? 'Processing status' : 'Candidate context');
+      document.getElementById('legend-primary-items').innerHTML = fixture
+        ? '<span class="legend-item"><i class="swatch" style="background:#c13f3f"></i>A Protect Lives</span><span class="legend-item"><i class="swatch" style="background:#cf6a32"></i>B Routes</span><span class="legend-item"><i class="swatch" style="background:#d39d20"></i>C Services</span><span class="legend-item"><i class="swatch" style="background:#167a55"></i>D Resilience</span><span class="legend-item"><i class="swatch" style="background:#6956a3"></i>E Monitor</span>'
+        : metadata
+          ? '<span class="legend-item"><i class="swatch" style="background:#cbd5d1"></i>COD-AB ADM3 boundary</span>'
+          : '<span class="legend-item"><i class="swatch" style="background:#b4533c"></i>FPPS ≥ 30</span><span class="legend-item"><i class="swatch" style="background:#d88736"></i>FPPS 20–29.9</span><span class="legend-item"><i class="swatch" style="background:#e2b33f"></i>FPPS 10–19.9</span><span class="legend-item"><i class="swatch" style="background:#6e9c88"></i>FPPS &lt; 10</span>';
+      document.getElementById('legend-secondary-items').innerHTML = fixture
+        ? '<span class="legend-item"><i class="swatch" style="background:#167a55"></i>Delta improves</span><span class="legend-item"><i class="swatch" style="background:#c13f3f"></i>Delta worsens</span><span class="legend-item"><i class="road-sample"></i>High road risk</span><span class="legend-item"><i class="road-sample medium"></i>Medium road risk</span>'
+        : metadata
+          ? '<span class="legend-item"><i class="swatch" style="background:#c13f3f"></i>Official validation blocked</span>'
+          : '<span class="legend-item"><i class="road-sample"></i>Candidate closed</span><span class="legend-item"><i class="road-sample medium"></i>Candidate delayed</span><span class="legend-item"><i class="marker-sample"></i>OSM facility candidate</span><span class="legend-item"><i class="marker-sample hotspot"></i>Modeled access hotspot</span>';
     }
 
     function zoomToSelectedFeature() {
       const layer = featureLayers.get(state.selectedId);
-      if (!layer) {
-        return;
-      }
+      if (!layer) return;
       if (typeof layer.getBounds === 'function') {
         map.fitBounds(layer.getBounds().pad(0.25));
       }
@@ -1627,24 +2378,33 @@ def _build_dashboard_html(
 
     function priorityStyle(feature) {
       const props = feature.properties;
-      const isSelected = String(props.subdistrict_id) === state.selectedId;
-      const scenarioColor = scenarioFillColor(props);
+      const selected = String(props.subdistrict_id) === state.selectedId;
+      const metadata = state.datasetMode === 'metadata_blocker_view';
+      const realCandidate = state.datasetMode === 'mae_sai_weak_reference';
+      const fillColor = metadata
+        ? '#cbd5d1'
+        : realCandidate
+          ? maeSaiFppsColor(numeric(props.fpps_0_100, 0))
+          : scenarioFillColor(props);
       return {
-        color: isSelected ? '#111814' : '#202722',
-        weight: isSelected ? 3 : 1,
-        fillColor: scenarioColor,
-        fillOpacity: state.scenario === 'baseline' ? 0.45 : 0.6
+        color: selected ? '#10231e' : realCandidate ? '#4b5f57' : '#26352f',
+        weight: selected ? 3 : 1.2,
+        fillColor,
+        fillOpacity: metadata ? 0.22 : state.scenario === 'baseline' ? 0.52 : 0.64
       };
     }
 
+    function maeSaiFppsColor(score) {
+      if (score >= 30) return '#b4533c';
+      if (score >= 20) return '#d88736';
+      if (score >= 10) return '#e2b33f';
+      return '#6e9c88';
+    }
+
     function scenarioFillColor(props) {
-      if (state.scenario === 'baseline') {
-        return actionColors[props.action_class] || actionColors.E;
-      }
+      if (state.scenario === 'baseline') return actionColors[props.action_class] || actionColors.E;
       const value = scenarioDelta(props);
-      if (value === null || value === 0) {
-        return deltaColors.neutral;
-      }
+      if (value === null || value === 0) return deltaColors.neutral;
       return value < 0 ? deltaColors.improvement : deltaColors.worsening;
     }
 
@@ -1652,86 +2412,143 @@ def _build_dashboard_html(
       const field = state.scenario === 'temporary_shelter'
         ? 'temporary_shelter_change_people_losing_30_min_access'
         : 'road_closure_change_people_losing_30_min_access';
-      const value = Number(props[field]);
+      const value = numeric(props[field], NaN);
       return Number.isFinite(value) ? value : null;
     }
 
     function roadStyle(feature) {
-      const risk = Number(feature.properties.road_disruption_probability_0_1 || 0);
-      return {
-        color: risk >= 0.7 ? '#b73c3c' : risk >= 0.5 ? '#d36a35' : '#21835f',
-        weight: 3 + risk * 4,
-        opacity: 0.9
-      };
+      const props = feature.properties || {};
+      if (state.datasetMode === 'mae_sai_weak_reference') {
+        const status = String(props.candidate_status || 'candidate_open_with_delay');
+        return {
+          color: status === 'candidate_closed' ? '#c13f3f' : status === 'candidate_delayed' ? '#cf6a32' : '#2d7b68',
+          weight: status === 'candidate_closed' ? 4 : status === 'candidate_delayed' ? 2.8 : 1.4,
+          opacity: status === 'candidate_open_with_delay' ? 0.42 : 0.82
+        };
+      }
+      const risk = numeric(props.road_disruption_probability_0_1, 0);
+      return { color: risk >= .7 ? '#c13f3f' : risk >= .5 ? '#cf6a32' : '#167a55', weight: 3 + risk * 4, opacity: .9 };
     }
 
-    function popup(properties) {
-      return Object.entries(properties)
-        .map(([key, value]) => `<strong>${escapeHtml(key)}</strong>: ${escapeHtml(value ?? 'unavailable')}`)
-        .join('<br>');
+    function facilityPoint(feature, latlng) {
+      return L.circleMarker(latlng, { radius: 4.5, color: '#ffffff', weight: 1.5, fillColor: '#2867b8', fillOpacity: .9 });
+    }
+
+    function accessHotspotPoint(feature, latlng) {
+      const loss = numeric(feature.properties.people_losing_30_min_access, 0);
+      return L.circleMarker(latlng, { radius: Math.min(14, 6 + Math.sqrt(loss) / 2), color: '#ffffff', weight: 2, fillColor: '#c13f3f', fillOpacity: .88 });
+    }
+
+    function priorityPopup(props) {
+      const metrics = normalizedMetrics(props);
+      return `<strong>${escapeHtml(props.subdistrict_id)} / ${escapeHtml(props.subdistrict_name || '')}</strong><br>FPPS: ${escapeHtml(formatNumber(props.fpps_0_100, 2))}<br>Action: ${escapeHtml(props.action_class || 'unavailable')}<br>30-min access loss: ${escapeHtml(formatCompact(metrics.accessLoss))}<br><small>Non-operational candidate evidence.</small>`;
+    }
+
+    function roadPopup(props) {
+      return `<strong>${escapeHtml(props.road_name || props.road_id || 'Road candidate')}</strong><br>Status: ${escapeHtml(props.candidate_status || 'candidate risk')}<br>Risk: ${escapeHtml(formatNumber(props.road_disruption_probability_0_1, 3))}<br><small>Not an observed closure.</small>`;
+    }
+
+    function facilityPopup(props) {
+      return `<strong>${escapeHtml(props.facility_name || props.facility_type || 'Facility candidate')}</strong><br>Type: ${escapeHtml(props.facility_type || 'unavailable')}<br>Status: unverified OSM candidate<br><small>Not a confirmed emergency facility.</small>`;
+    }
+
+    function accessHotspotPopup(props) {
+      return `<strong>${escapeHtml(props.subdistrict_id)} / ${escapeHtml(props.subdistrict_name || '')}</strong><br>Modeled 30-min loss: ${escapeHtml(formatCompact(props.people_losing_30_min_access))}<br>Proxy equity gap: ${escapeHtml(formatNumber(props.equity_gap_ratio, 3))}<br><small>Not an observed service outage.</small>`;
+    }
+
+    function currentBriefContent(props) {
+      const brief = activeDataset().briefs[state.selectedId];
+      if (brief) return brief;
+      if (activeDataset().metadataOnly) return 'Metadata/blocker view does not generate action briefs.';
+      return `# FloodGuard Candidate Summary - ${props.subdistrict_name || state.selectedId}\n\n- FPPS: ${formatNumber(props.fpps_0_100, 2)}\n- Action class: ${props.action_class || 'unavailable'}\n- Confidence: ${props.confidence_class || 'unavailable'}\n- Status: Non-operational. Not an official warning.\n`;
+    }
+
+    function updateClassPill(actionClass, metadataOnly) {
+      const pill = document.getElementById('panel-detail-class');
+      const color = metadataOnly ? '#7b8982' : (actionColors[actionClass] || '#7b8982');
+      pill.style.color = color;
+      pill.style.borderColor = color;
+      pill.style.background = '#ffffff';
     }
 
     function escapeHtml(value) {
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+      return String(value ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function numeric(value, fallback = NaN) {
+      if (value === null || value === undefined || value === '') return fallback;
+      const number = Number(value);
+      return Number.isFinite(number) ? number : fallback;
     }
 
     function formatNumber(value, places) {
-      const number = Number(value);
+      const number = numeric(value, NaN);
       return Number.isFinite(number) ? number.toFixed(places) : 'unavailable';
     }
 
+    function formatCompact(value) {
+      const number = numeric(value, NaN);
+      if (!Number.isFinite(number)) return 'unavailable';
+      return new Intl.NumberFormat('en-US', { maximumFractionDigits: number < 10 ? 1 : 0 }).format(number);
+    }
+
+    function formatPercent(value) {
+      const number = numeric(value, NaN);
+      return Number.isFinite(number) ? `${(number * 100).toFixed(1)}%` : 'unavailable';
+    }
+
+    function formatRatioPercent(value) {
+      const number = numeric(value, NaN);
+      if (!Number.isFinite(number)) return 'unavailable';
+      return `${number > 0 ? '+' : ''}${(number * 100).toFixed(1)}%`;
+    }
+
     function formatSigned(value, places) {
-      const number = Number(value);
-      if (!Number.isFinite(number)) {
-        return 'unavailable';
-      }
+      const number = numeric(value, NaN);
+      if (!Number.isFinite(number)) return 'unavailable';
       return `${number > 0 ? '+' : ''}${number.toFixed(places)}`;
+    }
+
+    function median(values) {
+      if (!values.length) return NaN;
+      const midpoint = Math.floor(values.length / 2);
+      return values.length % 2 ? values[midpoint] : (values[midpoint - 1] + values[midpoint]) / 2;
     }
 
     function setText(elementId, value) {
       const element = document.getElementById(elementId);
-      if (element) {
-        element.textContent = value;
-      }
+      if (element) element.textContent = value;
     }
 
     function setDeltaBadge(elementId, value) {
       const element = document.getElementById(elementId);
-      if (!element) {
-        return;
-      }
-      const number = Number(value);
+      if (!element) return;
+      const number = numeric(value, NaN);
       element.textContent = formatSigned(value, 0);
       element.classList.remove('good', 'bad');
-      if (!Number.isFinite(number) || number === 0) {
-        return;
-      }
-      element.classList.add(number < 0 ? 'good' : 'bad');
+      if (Number.isFinite(number) && number !== 0) element.classList.add(number < 0 ? 'good' : 'bad');
     }
 
     function downloadCurrentActionBrief() {
       const id = state.selectedId || 'selected';
-      const content = briefsBySubdistrict[id] || `# FloodGuard Action Brief\n\nNo generated action brief for ${id}.\n`;
-      downloadText(`action_brief_${sanitizeFilename(id)}.md`, content, 'text/markdown;charset=utf-8');
+      const feature = featuresById.get(id);
+      const content = feature ? currentBriefContent(feature.properties) : `# FloodGuard Action Brief
+
+No selected decision unit.
+`;
+      downloadText(`${state.datasetMode}_action_brief_${sanitizeFilename(id)}.md`, content, 'text/markdown;charset=utf-8');
     }
 
     function downloadFilteredGeoJSON() {
       const filtered = {
         type: 'FeatureCollection',
-        features: priorityData.features.filter((feature) =>
+        features: (activeDataset().priority.features || []).filter((feature) =>
           state.visibleClasses.has(String(feature.properties.action_class))
         )
       };
-      downloadText(
-        'priority_subdistricts_filtered.geojson',
-        JSON.stringify(filtered, null, 2),
-        'application/geo+json;charset=utf-8'
-      );
+      downloadText(`${state.datasetMode}_priority_filtered.geojson`, JSON.stringify(filtered, null, 2), 'application/geo+json;charset=utf-8');
     }
 
     function downloadText(filename, content, mimeType) {
@@ -1782,8 +2599,44 @@ def _build_dashboard_html(
         ),
         "__DEM_QUICKLOOK_JSON__": json.dumps(dem_quicklook_rows, ensure_ascii=False),
         "__LOCAL_DATA_JSON__": json.dumps(local_data_summary, ensure_ascii=False),
+        "__FIXTURE_VALIDATION_METRICS_JSON__": json.dumps(
+            validation_metric_cards,
+            ensure_ascii=False,
+        ),
+        "__MAE_SAI_VALIDATION_SUMMARY_JSON__": json.dumps(
+            mae_sai_validation_summary,
+            ensure_ascii=False,
+        ),
+        "__FIXTURE_VALIDATION_SUMMARY_JSON__": json.dumps(
+            validation_summary,
+            ensure_ascii=False,
+        ),
         "__MAE_SAI_WEAK_JSON__": json.dumps(
             mae_sai_weak_summary,
+            ensure_ascii=False,
+        ),
+        "__MAE_SAI_PRIORITY_JSON__": json.dumps(
+            mae_sai_priority_geojson,
+            ensure_ascii=False,
+        ),
+        "__MAE_SAI_ROAD_JSON__": json.dumps(
+            mae_sai_road_risk_geojson,
+            ensure_ascii=False,
+        ),
+        "__MAE_SAI_FACILITY_JSON__": json.dumps(
+            mae_sai_facilities_geojson,
+            ensure_ascii=False,
+        ),
+        "__MAE_SAI_ACCESS_HOTSPOT_JSON__": json.dumps(
+            mae_sai_access_hotspots_geojson,
+            ensure_ascii=False,
+        ),
+        "__MAE_SAI_CONTEXT_QUALITY_JSON__": json.dumps(
+            mae_sai_context_quality,
+            ensure_ascii=False,
+        ),
+        "__MAE_SAI_BRIEFS_JSON__": json.dumps(
+            mae_sai_action_briefs,
             ensure_ascii=False,
         ),
         "__MAE_SAI_WEAK_NOTE__": _js_string(
@@ -2178,13 +3031,14 @@ def _format_metric_value(
 
 
 def _validation_metric_cards_html(cards: list[dict[str, str]]) -> str:
+    metric_keys = ("iou", "f1_dice", "precision", "recall", "area_error")
     return "".join(
         [
-            '<div class="validation-metric">'
+            f'<div class="validation-metric" data-metric-key="{metric_keys[index]}">'
             f"<span>{html.escape(card['label'])}</span>"
             f"<strong>{html.escape(card['value'])}</strong>"
             "</div>"
-            for card in cards
+            for index, card in enumerate(cards)
         ]
     )
 

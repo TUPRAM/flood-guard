@@ -16,8 +16,11 @@ if str(SRC_ROOT) not in sys.path:
 from floodguard.exports import write_priority_geojson  # noqa: E402
 from floodguard.mae_sai_context import (  # noqa: E402
     MaeSaiContextError,
+    build_access_hotspot_geojson,
     build_context_quality_report,
+    build_facility_geojson,
     build_mae_sai_context_outputs,
+    build_road_risk_geojson,
 )
 from floodguard.open_context_extract import (  # noqa: E402
     OpenContextExtractError,
@@ -116,6 +119,16 @@ def main() -> None:
             worldpop_path=str(source_paths["worldpop_population"]),
             dem_path=str(source_paths["copernicus_dem_glo30"]),
         )
+        road_risk_geojson = build_road_risk_geojson(
+            roads_geojson,
+            outputs.road_risk,
+        )
+        facility_geojson = build_facility_geojson(outputs.facilities)
+        access_hotspot_geojson = build_access_hotspot_geojson(
+            admin_geojson,
+            outputs.access_loss,
+            outputs.equity_gap,
+        )
         scored = score_subdistricts(outputs.decision_inputs)
     except (
         FileNotFoundError,
@@ -137,13 +150,25 @@ def main() -> None:
             output_dir / "mae_sai_population_context.csv",
         ),
         "roads": _write_csv(outputs.road_risk, output_dir / "mae_sai_road_risk.csv"),
+        "road_geometry": write_geojson(
+            road_risk_geojson,
+            output_dir / "mae_sai_road_risk.geojson",
+        ),
         "facilities": _write_csv(
             outputs.facilities,
             output_dir / "mae_sai_facility_context.csv",
         ),
+        "facility_geometry": write_geojson(
+            facility_geojson,
+            output_dir / "mae_sai_facilities.geojson",
+        ),
         "access": _write_csv(
             outputs.access_loss,
             output_dir / "mae_sai_access_loss.csv",
+        ),
+        "access_hotspots": write_geojson(
+            access_hotspot_geojson,
+            output_dir / "mae_sai_access_hotspots.geojson",
         ),
         "equity": _write_csv(
             outputs.equity_gap,

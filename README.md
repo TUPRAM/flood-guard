@@ -34,7 +34,7 @@ uv run python scripts/smoke_dashboard.py
 start outputs\dashboard.html
 ```
 
-The dashboard is static. It has no backend, no build step, and no browser-side `fetch` call. Opening `outputs\dashboard.html` is enough for the fixture demo.
+The dashboard is static. It has no backend, no build step, and no browser-side `fetch` call. Opening `outputs\dashboard.html` is enough for the fixture demo and the embedded Mae Sai weak-reference candidate mode.
 
 If your browser blocks direct file rendering or you prefer a local URL, serve the `outputs/` folder:
 
@@ -143,7 +143,7 @@ uv run python scripts/build_mae_sai_decision_inputs.py
 uv run python scripts/generate_mae_sai_action_brief.py
 ```
 
-The real-context builder validates checksum-tracked outside-Git files, derives eight HDX COD-AB Mae Sai ADM3 rows, joins WorldPop exposure, OSM road/facility routing, and Copernicus DEM terrain context, and writes source-quality evidence. The final command writes the current highest-priority ADM3 brief, currently `outputs/mae_sai_action_brief_TH570906.md`, from committed derived evidence only. The brief remains non-operational, not an official warning, and for planning/demo use only.
+The real-context builder validates checksum-tracked outside-Git files, derives eight HDX COD-AB Mae Sai ADM3 rows, joins WorldPop exposure, OSM road/facility routing, and Copernicus DEM terrain context, and writes source-quality evidence. It also writes compact dashboard layers for candidate road risk, candidate facilities, and modeled access hotspots. The final command writes the current highest-priority ADM3 brief, currently `outputs/mae_sai_action_brief_TH570906.md`, from committed derived evidence only. The brief remains non-operational, not an official warning, and for planning/demo use only.
 
 `outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums for only the curated selected THEOS-2 files. `outputs/theos2_previews/*.svg` are small non-operational optical-context preview cards generated from checksum-backed metadata. They are not flood masks, not validation labels, and not official warning products. Source TIFFs and overview files remain outside Git.
 

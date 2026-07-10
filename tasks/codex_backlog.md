@@ -401,3 +401,9 @@ Acceptance: `src/floodguard/mae_sai_brief.py` and `scripts/generate_mae_sai_acti
 Join checksum-tracked HDX COD-AB, WorldPop, Geofabrik OSM, and Copernicus DEM context to candidate Sentinel-1 flood probability at Mae Sai ADM3 grain.
 
 Acceptance: `scripts/build_mae_sai_real_context.py` writes eight COD-AB ADM3 decision rows plus derived admin, SAR, population, road-risk, facility, access-loss, equity-gap, quality, FPPS, and GeoJSON outputs. Source files and bounded extraction intermediates remain outside Git. WorldPop exposure, OSM road/facility routing, heuristic disruption, partial DEM coverage, proxy vulnerability, and the cross-border manual-reference mismatch remain explicit. The generated brief uses the joined context without claiming observed impacts, official validation, field validation, or an official warning.
+
+## Task 66 - Dashboard V10 Real Dataset Workspace
+
+Make the Mae Sai candidate lane a complete map-and-evidence dataset and apply a durable visual system to the static judge dashboard.
+
+Acceptance: `outputs/dashboard.html` switches the map between fixture polygons and eight Mae Sai ADM3 polygons, embeds `outputs/mae_sai_road_risk.geojson`, `outputs/mae_sai_facilities.geojson`, and `outputs/mae_sai_access_hotspots.geojson`, and changes selectors, legends, reports, briefs, exports, evidence, comparison, source-quality, and provenance panels with the active dataset. A persistent weak-reference warning remains visible; metadata/blocker mode gates unavailable values. The dashboard uses shared design tokens, contains no `fetch`, exposes no absolute source paths, remains non-operational, and passes browser QA at `1440x900`, `1536x1024`, and `2048x1152`.

@@ -92,6 +92,217 @@ class MaeSaiContextOutputs:
     quality_summary: pd.DataFrame
 
 
+def build_road_risk_geojson(
+    roads_geojson: Mapping[str, object],
+    road_risk: pd.DataFrame,
+) -> dict[str, object]:
+    """Join derived candidate road risk back to OSM line geometry."""
+
+    required = {
+        "road_id",
+        "subdistrict_id",
+        "subdistrict_name",
+        "road_disruption_probability_0_1",
+        "closure_status",
+        "confidence_class",
+        "top_risk_reason",
+        "source_name",
+        "source_timestamp",
+        "assumptions",
+    }
+    missing = sorted(required.difference(road_risk.columns))
+    if missing:
+        raise MaeSaiContextError(
+            "Road-risk frame is missing GeoJSON fields: " + ", ".join(missing)
+        )
+    rows = road_risk.set_index(road_risk["road_id"].astype(str)).to_dict("index")
+    features: list[dict[str, object]] = []
+    for feature in _features(roads_geojson, "roads"):
+        properties = feature.get("properties")
+        geometry = feature.get("geometry")
+        if not isinstance(properties, Mapping) or not isinstance(geometry, Mapping):
+            continue
+        road_id = str(properties.get("osm_id", "")).strip()
+        row = rows.get(road_id)
+        if row is None or geometry.get("type") != "LineString":
+            continue
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {
+                    "road_id": road_id,
+                    "subdistrict_id": str(row["subdistrict_id"]),
+                    "subdistrict_name": str(row["subdistrict_name"]),
+                    "road_name": str(row.get("osm_name", "")),
+                    "road_class": str(row.get("road_class", "")),
+                    "osm_highway": str(row.get("osm_highway", "")),
+                    "bridge_flag": bool(row.get("bridge_flag", False)),
+                    "road_disruption_probability_0_1": round(
+                        float(row["road_disruption_probability_0_1"]), 3
+                    ),
+                    "candidate_status": str(row["closure_status"]),
+                    "top_risk_reason": str(row["top_risk_reason"]),
+                    "confidence_class": str(row["confidence_class"]),
+                    "source_name": str(row["source_name"]),
+                    "source_timestamp": str(row["source_timestamp"]),
+                    "assumptions": str(row["assumptions"]),
+                    "warning_text": (
+                        "Candidate road risk only. Not an observed closure and not "
+                        "an official warning."
+                    ),
+                },
+                "geometry": dict(geometry),
+            }
+        )
+    if not features:
+        raise MaeSaiContextError("No Mae Sai road-risk geometry could be joined.")
+    return {
+        "type": "FeatureCollection",
+        "name": "mae_sai_candidate_road_risk",
+        "features": features,
+    }
+
+
+def build_facility_geojson(facilities: pd.DataFrame) -> dict[str, object]:
+    """Build candidate OSM facility points for dashboard context."""
+
+    required = {
+        "facility_id",
+        "facility_type",
+        "facility_name",
+        "longitude",
+        "latitude",
+        "subdistrict_id",
+        "subdistrict_name",
+        "confidence_class",
+        "source_name",
+        "source_timestamp",
+        "assumptions",
+    }
+    missing = sorted(required.difference(facilities.columns))
+    if missing:
+        raise MaeSaiContextError(
+            "Facility frame is missing GeoJSON fields: " + ", ".join(missing)
+        )
+    features = []
+    for row in facilities.to_dict("records"):
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {
+                    "facility_id": str(row["facility_id"]),
+                    "facility_type": str(row["facility_type"]),
+                    "facility_name": str(row["facility_name"]),
+                    "amenity": str(row.get("amenity", "")),
+                    "subdistrict_id": str(row["subdistrict_id"]),
+                    "subdistrict_name": str(row["subdistrict_name"]),
+                    "snap_distance_m": round(float(row["snap_distance_m"]), 1),
+                    "candidate_status": "unverified_osm_candidate",
+                    "confidence_class": str(row["confidence_class"]),
+                    "source_name": str(row["source_name"]),
+                    "source_timestamp": str(row["source_timestamp"]),
+                    "assumptions": str(row["assumptions"]),
+                    "warning_text": (
+                        "Candidate facility context only. Not a confirmed emergency "
+                        "facility or shelter."
+                    ),
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [float(row["longitude"]), float(row["latitude"])],
+                },
+            }
+        )
+    return {
+        "type": "FeatureCollection",
+        "name": "mae_sai_candidate_facilities",
+        "features": features,
+    }
+
+
+def build_access_hotspot_geojson(
+    admin_geojson: Mapping[str, object],
+    access_loss: pd.DataFrame,
+    equity_gap: pd.DataFrame,
+) -> dict[str, object]:
+    """Build one modeled access-loss marker per ADM3 reporting unit."""
+
+    access_required = {
+        "subdistrict_id",
+        "people_losing_15_min_access",
+        "people_losing_30_min_access",
+        "people_losing_60_min_access",
+        "confidence_class",
+        "source_timestamp",
+        "assumptions",
+    }
+    missing = sorted(access_required.difference(access_loss.columns))
+    if missing:
+        raise MaeSaiContextError(
+            "Access-loss frame is missing hotspot fields: " + ", ".join(missing)
+        )
+    access_rows = access_loss.set_index(access_loss["subdistrict_id"].astype(str))
+    equity_rows = equity_gap.set_index(equity_gap["subdistrict_id"].astype(str))
+    features: list[dict[str, object]] = []
+    for feature in _features(admin_geojson, "admin"):
+        properties = feature["properties"]
+        geometry = feature["geometry"]
+        subdistrict_id = str(properties["subdistrict_id"])
+        if subdistrict_id not in access_rows.index:
+            raise MaeSaiContextError(
+                f"Access-loss hotspot is missing subdistrict {subdistrict_id}."
+            )
+        access_row = access_rows.loc[subdistrict_id]
+        equity_ratio: float | None = None
+        if subdistrict_id in equity_rows.index:
+            value = pd.to_numeric(
+                pd.Series([equity_rows.loc[subdistrict_id, "equity_gap_ratio"]]),
+                errors="coerce",
+            ).iloc[0]
+            if not pd.isna(value):
+                equity_ratio = round(float(value), 3)
+        losing_30 = float(access_row["people_losing_30_min_access"])
+        longitude, latitude = geometry_representative_point(geometry)
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {
+                    "subdistrict_id": subdistrict_id,
+                    "subdistrict_name": str(properties["subdistrict_name"]),
+                    "people_losing_15_min_access": round(
+                        float(access_row["people_losing_15_min_access"]), 3
+                    ),
+                    "people_losing_30_min_access": round(losing_30, 3),
+                    "people_losing_60_min_access": round(
+                        float(access_row["people_losing_60_min_access"]), 3
+                    ),
+                    "equity_gap_ratio": equity_ratio,
+                    "candidate_status": (
+                        "modeled_access_loss_candidate"
+                        if losing_30 > 0
+                        else "no_modeled_30_minute_loss"
+                    ),
+                    "confidence_class": str(access_row["confidence_class"]),
+                    "source_timestamp": str(access_row["source_timestamp"]),
+                    "assumptions": str(access_row["assumptions"]),
+                    "warning_text": (
+                        "Modeled access-loss candidate only. Not an observed service "
+                        "outage and not an official warning."
+                    ),
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [longitude, latitude],
+                },
+            }
+        )
+    return {
+        "type": "FeatureCollection",
+        "name": "mae_sai_modeled_access_hotspots",
+        "features": features,
+    }
+
+
 class NearestRoadNodeIndex:
     """Small grid index for snapping population and facility points to roads."""
 
@@ -622,6 +833,8 @@ def build_facility_context(
                 "facility_type": facility_type,
                 "amenity": amenity,
                 "facility_name": str(properties.get("name", "")),
+                "longitude": round(longitude, 7),
+                "latitude": round(latitude, 7),
                 "node_id": snapped[0],
                 "snap_distance_m": round(snapped[1], 1),
                 "subdistrict_id": str(admin["properties"]["subdistrict_id"]),
@@ -911,6 +1124,40 @@ def point_in_geometry(
     raise MaeSaiContextError(f"Unsupported admin geometry type: {geometry_type}")
 
 
+def geometry_representative_point(
+    geometry: Mapping[str, object],
+) -> tuple[float, float]:
+    """Return a deterministic label point for a Polygon or MultiPolygon."""
+
+    geometry_type = str(geometry.get("type", ""))
+    coordinates = geometry.get("coordinates", [])
+    polygons = [coordinates] if geometry_type == "Polygon" else coordinates
+    if geometry_type not in {"Polygon", "MultiPolygon"} or not polygons:
+        raise MaeSaiContextError(
+            f"Unsupported representative-point geometry: {geometry_type}"
+        )
+    ranked: list[tuple[float, Sequence[object]]] = []
+    for polygon in polygons:
+        if not isinstance(polygon, Sequence) or not polygon:
+            continue
+        ring = polygon[0]
+        area, centroid = _ring_area_centroid(ring)
+        if centroid is not None:
+            ranked.append((abs(area), polygon))
+    if not ranked:
+        raise MaeSaiContextError("Polygon has no usable exterior ring.")
+    polygon = max(ranked, key=lambda item: item[0])[1]
+    _, centroid = _ring_area_centroid(polygon[0])
+    if centroid is not None and _point_in_polygon(centroid[0], centroid[1], polygon):
+        return centroid
+    bounds = _geometry_bounds({"type": "Polygon", "coordinates": polygon})
+    center = ((bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0)
+    if _point_in_polygon(center[0], center[1], polygon):
+        return center
+    first = polygon[0][0]
+    return float(first[0]), float(first[1])
+
+
 def haversine_m(
     longitude_a: float,
     latitude_a: float,
@@ -1070,3 +1317,31 @@ def _point_in_ring(longitude: float, latitude: float, ring: object) -> bool:
                 inside = not inside
         previous = current
     return inside
+
+
+def _ring_area_centroid(
+    ring: object,
+) -> tuple[float, tuple[float, float] | None]:
+    if not isinstance(ring, Sequence) or len(ring) < 3:
+        return 0.0, None
+    area_twice = 0.0
+    centroid_x = 0.0
+    centroid_y = 0.0
+    previous = ring[-1]
+    for current in ring:
+        x1, y1 = float(previous[0]), float(previous[1])
+        x2, y2 = float(current[0]), float(current[1])
+        cross = x1 * y2 - x2 * y1
+        area_twice += cross
+        centroid_x += (x1 + x2) * cross
+        centroid_y += (y1 + y2) * cross
+        previous = current
+    if abs(area_twice) < 1e-12:
+        return 0.0, None
+    return (
+        area_twice / 2.0,
+        (
+            centroid_x / (3.0 * area_twice),
+            centroid_y / (3.0 * area_twice),
+        ),
+    )

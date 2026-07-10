@@ -231,8 +231,14 @@ Outputs:
 
 - `outputs/priority_subdistricts.geojson`
 - `outputs/road_risk.geojson`
+- `outputs/mae_sai_priority_subdistricts.geojson`
+- `outputs/mae_sai_road_risk.geojson`
+- `outputs/mae_sai_facilities.geojson`
+- `outputs/mae_sai_access_hotspots.geojson`
 - `outputs/validation_summary.md`
+- `outputs/mae_sai_validation_summary.md`
 - `outputs/action_brief_<subdistrict_id>.md` files
+- `outputs/mae_sai_action_brief_<subdistrict_id>.md` files
 
 It embeds GeoJSON and Markdown directly in the file and uses Leaflet from CDN for map rendering. It has no backend or build step.
 
@@ -715,6 +721,9 @@ Current rows cover WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Th
 - `outputs/mae_sai_population_context.csv`
 - `outputs/mae_sai_road_risk.csv`
 - `outputs/mae_sai_facility_context.csv`
+- `outputs/mae_sai_road_risk.geojson`
+- `outputs/mae_sai_facilities.geojson`
+- `outputs/mae_sai_access_hotspots.geojson`
 - `outputs/mae_sai_access_loss.csv`
 - `outputs/mae_sai_equity_gap.csv`
 - `outputs/mae_sai_real_context_decision_inputs.csv`
@@ -746,11 +755,34 @@ Dashboard v9 adds a static dataset mode selector:
 - `Mae Sai weak-reference candidate`
 - `Metadata/blocker view`
 
-The selector changes dashboard narrative text only. It keeps fixture outputs, weak-reference real-data candidate outputs, and metadata/blocker readiness explicitly separated.
+Dashboard v9 introduced the three explicit dataset states and their safety wording. Dashboard v10 extends the selector into a complete map-and-evidence switch while preserving the same separation.
 
 Current `Mae Sai weak-reference candidate` wording may reference downloaded outside-Git CDSE Sentinel-1 pre/post product ids, the manual QGIS weak-reference mask status, candidate IoU/F1/Dice/precision/recall/area-error metrics, flood-probability summary, and any generated weak-reference decision output. It must also state that the result is non-operational, not official validation, not field validated, and not an official warning.
 
 Current `Metadata/blocker view` wording must emphasize that source candidates and local file manifests alone do not authorize real official validation or ML. It must not imply that public reference candidates are validated flood products.
+
+## Dashboard v10 Real Dataset Workspace
+
+Dashboard v10 makes `Mae Sai weak-reference candidate` a complete static dataset rather than a text-only narrative state. The mode must replace the fixture map and evidence with:
+
+- all eight HDX COD-AB Mae Sai ADM3 priority polygons from `outputs/mae_sai_priority_subdistricts.geojson`
+- candidate OSM road-risk segments from `outputs/mae_sai_road_risk.geojson`
+- candidate OSM facilities from `outputs/mae_sai_facilities.geojson`
+- modeled access-loss hotspot points from `outputs/mae_sai_access_hotspots.geojson`
+- the matching Mae Sai validation summary, candidate action-brief summary, source-quality evidence, and provenance
+
+The dashboard embeds every dataset directly in the HTML. Mode changes must not call `fetch`, read local source files, or expose absolute paths. Fixture scenarios remain available only in fixture mode. Mae Sai map layers must use candidate-status symbology and must never be described as observed closures, verified facilities, official validation, field validation, or an official warning.
+
+The v10 visual contract includes:
+
+- a shared design-token system for typography, spacing, surfaces, borders, shadows, action colors, and status colors
+- a persistent weak-reference or blocked-status warning directly below the KPI strip
+- a structured selected-unit evidence panel covering FPPS, flood evidence, modeled access loss, proxy equity, context coverage, and provenance
+- selected-unit comparison against the current dataset mean and rank
+- source-quality indicators for population, road snapping, terrain, and weak-reference status
+- mode-specific legends, subdistrict selectors, layer toggles, reports, briefs, and browser-only exports
+
+The metadata/blocker mode must clear decision geometry from the map and show only readiness boundaries. A disabled or unavailable layer must not be silently represented as zero impact.
 
 ## Metadata-Only Ingestion Manifest
 
@@ -1247,6 +1279,14 @@ Required wording:
 - not field validated
 
 This bridge proves candidate Sentinel-1 probability and real open context can feed FPPS, road risk, access loss, and proxy equity at a real reporting grain. It does not prove official flood accuracy, observed closures, demographic vulnerability, or field-validated access loss, and it does not clear ML-label use. The manual weak-reference geometry is cross-border calibration evidence and does not directly validate these ADM3 summaries.
+
+Dashboard map derivatives preserve only compact, non-sensitive attributes:
+
+- `outputs/mae_sai_road_risk.geojson` joins candidate risk rows to OSM road geometry by `road_id`; properties include disruption probability, modeled closure/delay status, road class, bridge flag, confidence, provenance, and strict candidate wording.
+- `outputs/mae_sai_facilities.geojson` contains candidate OSM facility points with facility type, subdistrict id, confidence, provenance, and a warning that facilities are not field verified.
+- `outputs/mae_sai_access_hotspots.geojson` contains one representative point per ADM3 unit with modeled 15/30/60-minute access-loss counts, proxy equity ratio, confidence, provenance, and a warning that points are modeled summaries rather than observed incident locations.
+
+All three derivatives are WGS84 GeoJSON, contain no source file paths, and are safe to embed in the static dashboard. They do not change the weak-reference, non-operational status of the Mae Sai lane.
 
 ## Mae Sai Weak-Label ML Experiment Output
 

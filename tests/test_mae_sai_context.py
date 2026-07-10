@@ -9,7 +9,11 @@ import rasterio
 from rasterio.transform import from_origin
 
 from floodguard.mae_sai_context import (
+    build_access_hotspot_geojson,
+    build_facility_geojson,
     build_mae_sai_context_outputs,
+    build_road_risk_geojson,
+    geometry_representative_point,
     point_in_geometry,
 )
 from floodguard.sar_raster_extract import (
@@ -214,6 +218,22 @@ def test_build_mae_sai_context_outputs_joins_real_context_contracts(
     assert outputs.road_risk["assumptions"].str.contains(
         "not a segment-level raster intersection"
     ).all()
+    road_geojson = build_road_risk_geojson(roads_geojson(), outputs.road_risk)
+    facility_geojson = build_facility_geojson(outputs.facilities)
+    hotspot_geojson = build_access_hotspot_geojson(
+        admin_geojson(),
+        outputs.access_loss,
+        outputs.equity_gap,
+    )
+    assert len(road_geojson["features"]) == 2
+    assert len(facility_geojson["features"]) == 2
+    assert len(hotspot_geojson["features"]) == 2
+    assert road_geojson["features"][0]["properties"]["candidate_status"].startswith(
+        "candidate_"
+    )
+    assert facility_geojson["features"][0]["properties"]["candidate_status"] == (
+        "unverified_osm_candidate"
+    )
     assert outputs.decision_inputs["context_status"].eq(
         "real_open_context_joined_with_proxy_vulnerability"
     ).all()
@@ -222,6 +242,14 @@ def test_build_mae_sai_context_outputs_joins_real_context_contracts(
             0, "manual_reference_overlaps_official_adm3"
         ]
     )
+
+
+def test_geometry_representative_point_stays_inside_reporting_polygon() -> None:
+    geometry = square_feature("A", "Area A", 99.80, 99.84)["geometry"]
+
+    longitude, latitude = geometry_representative_point(geometry)
+
+    assert point_in_geometry(longitude, latitude, geometry)
 
 
 def test_sar_probability_summary_uses_polygons_as_aggregation_not_labels(
@@ -274,6 +302,15 @@ def test_committed_mae_sai_context_outputs_keep_real_grain_and_redacted_paths() 
             encoding="utf-8"
         )
     )
+    road_geometry = json.loads(
+        (output_dir / "mae_sai_road_risk.geojson").read_text(encoding="utf-8")
+    )
+    facility_geometry = json.loads(
+        (output_dir / "mae_sai_facilities.geojson").read_text(encoding="utf-8")
+    )
+    hotspot_geometry = json.loads(
+        (output_dir / "mae_sai_access_hotspots.geojson").read_text(encoding="utf-8")
+    )
 
     assert len(decision) == 8
     assert decision["subdistrict_id"].nunique() == 8
@@ -283,6 +320,16 @@ def test_committed_mae_sai_context_outputs_keep_real_grain_and_redacted_paths() 
     ).all()
     assert (pd.to_numeric(decision["road_count"]) > 0).all()
     assert len(priority["features"]) == 8
+    assert len(road_geometry["features"]) == int(quality.loc[0, "road_way_count"])
+    assert len(facility_geometry["features"]) == int(
+        quality.loc[0, "facility_count"]
+    )
+    assert len(hotspot_geometry["features"]) == 8
+    assert any(
+        feature["properties"]["candidate_status"]
+        == "modeled_access_loss_candidate"
+        for feature in hotspot_geometry["features"]
+    )
     assert int(quality.loc[0, "road_way_count"]) > 0
     assert int(quality.loc[0, "facility_count"]) > 0
     assert float(quality.loc[0, "worldpop_total_population"]) > 0
@@ -293,6 +340,9 @@ def test_committed_mae_sai_context_outputs_keep_real_grain_and_redacted_paths() 
             output_dir / "mae_sai_real_context_decision_inputs.csv",
             output_dir / "mae_sai_context_quality_summary.csv",
             output_dir / "mae_sai_priority_subdistricts.geojson",
+            output_dir / "mae_sai_road_risk.geojson",
+            output_dir / "mae_sai_facilities.geojson",
+            output_dir / "mae_sai_access_hotspots.geojson",
         )
     )
     assert "C:\\Users\\" not in derived_text

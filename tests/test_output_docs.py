@@ -531,14 +531,14 @@ def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
         assert phrase in qa_text
 
     for phrase in (
-        "No screenshot files were saved or committed",
+        "Screenshot evidence was saved outside Git; no screenshot files were committed",
         "1536x1024",
         "2048x1152",
         "1440x900",
-        "FG-TB-002",
-        "Temporary shelter delta: `-30`",
-        "Road closure delta: `+50`",
-        "Real Mae Sai validation remains blocked",
+        "eight ADM3 labels rendered with zero overlaps",
+        "Action-brief and filtered-GeoJSON exports were disabled",
+        "weak_reference_candidate_cross_border_calibration",
+        "not official validation",
     ):
         assert phrase in qa_notes_text
 
@@ -733,6 +733,43 @@ def test_gitignore_blocks_remote_sensing_source_assets() -> None:
 
     for pattern in ("*.tif", "*.TIF", "*.jp2", "*.SAFE", "*.ovr", "*.nc", "*.grib"):
         assert pattern in text
+
+
+def test_dashboard_v10_real_dataset_contract_is_documented() -> None:
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(
+        encoding="utf-8"
+    )
+    dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in (contract_text, output_text, dictionary_text, backlog_text):
+        for artifact in (
+            "mae_sai_road_risk.geojson",
+            "mae_sai_facilities.geojson",
+            "mae_sai_access_hotspots.geojson",
+        ):
+            assert artifact in text
+
+    for phrase in (
+        "Dashboard v10 Real Dataset Workspace",
+        "all eight HDX COD-AB Mae Sai ADM3 priority polygons",
+        "persistent weak-reference",
+        "selected-unit comparison",
+        "source-quality indicators",
+        "must not call `fetch`",
+    ):
+        assert phrase in contract_text
+
+    assert "Task 66 - Dashboard V10 Real Dataset Workspace" in backlog_text
+    assert "mode-warning" in dictionary_text
+    assert "modeled access-loss hotspot" in dictionary_text
 
 
 def test_provider_response_logging_guide_and_mae_sai_v2_docs_exist() -> None:

@@ -598,6 +598,37 @@ These outputs are candidate metrics against a manually digitized weak-reference 
 | `area_error_ratio` | Signed predicted flood area error relative to manual weak-reference area. |
 | `warning_text` | Required safety wording: candidate metrics only, non-operational, not official validation, and not field validated. |
 
+## Mae Sai Weak-Label ML Experiment
+
+Files: `mae_sai_weak_label_ml_metrics.csv`, `mae_sai_weak_label_ml_prediction_manifest.csv`, and `mae_sai_weak_label_ml_summary.md`
+
+These outputs train and evaluate a small logistic model against the manual weak-reference mask. They are weak-label experiment artifacts only: non-operational, not official labels, not field validation, not official flood validation, and not an emergency warning.
+
+| Field | Meaning |
+| --- | --- |
+| `experiment_name` | Stable experiment id, currently `mae_sai_weak_label_logistic_v1`. |
+| `model_family` | Small auditable model type, currently `logistic_regression_from_scratch`. |
+| `label_source` | Source of the target labels, currently the manual weak-reference mask. |
+| `label_status` | Required status showing labels are weak, not official, and not field validated. |
+| `split_strategy` | Evaluation split method, currently `spatial_block_holdout`; random pixel splits are not used as the only evidence. |
+| `feature_columns` | Pipe-delimited SAR change features used by the model: `vv_drop`, `vh_drop`, `vv_ratio`, `vh_ratio`, and `combined_sar_change_score`. |
+| `train_sample_count` | Number of sampled pixels/cells used for model fitting. |
+| `holdout_sample_count` | Number of spatial-holdout sampled pixels/cells used for evaluation. |
+| `decision_threshold` | Probability threshold selected on the training split before holdout evaluation. |
+| `baseline_<metric>` | Non-ML threshold baseline metric on the same holdout. |
+| `ml_<metric>` | Weak-label ML metric on the same holdout. |
+| `delta_<metric>` | ML metric minus baseline metric. |
+| `ml_improves_baseline` | `True` when ML improves IoU or F1/Dice against the non-ML baseline. |
+| `ml_complements_baseline` | `True` when ML improves precision or recall without collapsing the other metric below a bounded level. |
+| `can_feed_decision_layer` | `True` only when ML improves or complements the non-ML baseline; otherwise ML probability stays report-only. |
+| `mean_ml_flood_probability_0_1` | Mean weak-label ML probability over the sampled feature grid. |
+| `holdout_mean_ml_flood_probability_0_1` | Mean weak-label ML probability over the spatial holdout only. |
+| `ml_predicted_positive_pixel_count` | Count of sampled pixels predicted as flood by the weak-label ML model. |
+| `baseline_predicted_positive_pixel_count` | Count of sampled pixels predicted as flood by the non-ML baseline. |
+| `reference_positive_pixel_count` | Count of sampled pixels marked as flood in the manual weak-reference mask. |
+| `warning_text` | Required wording: weak-label experiment, non-operational, not official labels, and not field validation. |
+| `assumptions` | Candidate-only caveat and storage rule; raw Sentinel-1 and manual GeoPackage inputs remain outside Git. |
+
 ## Mae Sai Weak-Reference Decision Bridge
 
 Files: `mae_sai_subdistrict_flood_inputs.csv` and `mae_sai_priority_subdistricts.geojson`

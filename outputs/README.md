@@ -49,6 +49,9 @@ Current expected MVP output:
 - `mae_sai_weak_sar_feature_manifest.csv`
 - `mae_sai_weak_baseline_metrics.csv`
 - `mae_sai_weak_baseline_summary.md`
+- `mae_sai_weak_label_ml_metrics.csv`
+- `mae_sai_weak_label_ml_prediction_manifest.csv`
+- `mae_sai_weak_label_ml_summary.md`
 - `mae_sai_subdistrict_flood_inputs.csv`
 - `mae_sai_priority_subdistricts.geojson`
 - `public_reference_candidate_manifest.csv`
@@ -129,6 +132,8 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 `dem_quicklook_manifest.csv` and `dem_quicklook.png` are small non-operational terrain-context artifacts generated only after a selected DEM package checksum exists, a DEM TIFF member is extracted outside Git, and a member-level SHA-256 checksum is provided. They are terrain context only, not flood observation, not flood label, not reference mask, and not an official warning.
 
 `mae_sai_weak_sar_feature_manifest.csv`, `mae_sai_weak_baseline_metrics.csv`, and `mae_sai_weak_baseline_summary.md` record the first real Sentinel-1 non-ML candidate baseline against the manual QGIS weak-reference mask. These outputs read the CDSE Sentinel-1 ZIPs and manual GeoPackage from outside Git and commit only derived CSV/Markdown artifacts. They are candidate metrics only: non-operational, not official validation, not field validated, and not ML labels.
+
+`mae_sai_weak_label_ml_metrics.csv`, `mae_sai_weak_label_ml_prediction_manifest.csv`, and `mae_sai_weak_label_ml_summary.md` record the first small auditable weak-label ML experiment. The experiment trains a repo-local logistic model on SAR change features, evaluates it on a spatial holdout, and compares it against the non-ML threshold baseline. These outputs are weak-label experiment artifacts only: non-operational, not official labels, not field validation, and not an official warning. ML probability may feed a candidate decision-layer run only when `can_feed_decision_layer=True`; otherwise it remains report-only.
 
 `mae_sai_subdistrict_flood_inputs.csv` and `mae_sai_priority_subdistricts.geojson` bridge the weak-reference Sentinel-1 probability summary into the FloodGuard decision layer. The current bridge is one low-confidence review-area row, not a real subdistrict aggregation. It uses `mean_flood_probability_0_1` from the weak SAR baseline, uses sampled manual-reference positive-pixel share as an exposure proxy, leaves real access/road/vulnerability context at zero until joined, and scores the row through FPPS. The GeoJSON geometry is the manual reference bbox review area, not official admin geometry.
 

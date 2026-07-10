@@ -1208,6 +1208,84 @@ Required wording:
 
 This bridge proves the real weak Sentinel-1 flood probability can feed FPPS. It does not prove official flood accuracy, does not replace real population/road/access/equity joins, and does not clear ML-label use.
 
+## Mae Sai Weak-Label ML Experiment Output
+
+`outputs/mae_sai_weak_label_ml_metrics.csv`, `outputs/mae_sai_weak_label_ml_prediction_manifest.csv`, and `outputs/mae_sai_weak_label_ml_summary.md` record the first small auditable ML experiment against the manual QGIS weak-reference mask.
+
+This lane is explicitly a weak-label experiment. It is not official labels, not field validation, not official flood validation, not a real-time product, and not an emergency warning.
+
+Required metric columns:
+
+- `experiment_name`
+- `study_area`
+- `model_family`
+- `label_source`
+- `label_status`
+- `split_strategy`
+- `feature_columns`
+- `train_sample_count`
+- `holdout_sample_count`
+- `decision_threshold`
+- `baseline_iou`
+- `ml_iou`
+- `delta_iou`
+- `baseline_f1_dice`
+- `ml_f1_dice`
+- `delta_f1_dice`
+- `baseline_precision`
+- `ml_precision`
+- `delta_precision`
+- `baseline_recall`
+- `ml_recall`
+- `delta_recall`
+- `baseline_area_error_ratio`
+- `ml_area_error_ratio`
+- `delta_area_error_ratio`
+- `ml_improves_baseline`
+- `ml_complements_baseline`
+- `can_feed_decision_layer`
+- `source_timestamp`
+- `confidence_class`
+- `warning_text`
+- `assumptions`
+
+Required prediction-manifest columns:
+
+- `study_area`
+- `processing_scope`
+- `model_family`
+- `pre_product_id`
+- `post_product_id`
+- `reference_product_id`
+- `reference_status`
+- `sample_pixel_count`
+- `train_sample_count`
+- `holdout_sample_count`
+- `feature_columns`
+- `decision_threshold`
+- `mean_ml_flood_probability_0_1`
+- `holdout_mean_ml_flood_probability_0_1`
+- `ml_predicted_positive_pixel_count`
+- `baseline_predicted_positive_pixel_count`
+- `reference_positive_pixel_count`
+- `split_strategy`
+- `can_feed_decision_layer`
+- `source_timestamp`
+- `confidence_class`
+- `warning_text`
+- `assumptions`
+
+Required wording:
+
+- `Weak-label experiment against manually digitized weak-reference mask.`
+- `Non-operational.`
+- `Not official labels.`
+- `Not field validation.`
+
+The ML output may feed a candidate `flood_probability_0_1` decision-layer run only when `can_feed_decision_layer=True`, which requires the holdout metrics to improve or complement the non-ML threshold baseline. If that flag is false, the ML probability must remain report-only.
+
+Source Sentinel-1 ZIPs, SAFE packages, TIFFs, manual GeoPackages, and full per-pixel ML prediction tables must remain outside Git unless a later task defines a bounded derived-output format.
+
 ## Study-Area Inventory Output
 
 `docs/study_area_inventory.md` records real-data acquisition planning only. It may include exact candidate metadata, product ids, licensing notes, and blockers, but this repository change does not download real imagery or implement remote-sensing model code.

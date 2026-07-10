@@ -385,3 +385,9 @@ Acceptance: tests and docs continue to reject unresolved reference-candidate ter
 Implement a manual QGIS fallback for Mae Sai when provider clearance is too slow.
 
 Acceptance: `docs/manual_reference_mask_protocol.md`, `src/floodguard/manual_reference.py`, `scripts/inspect_manual_reference_mask.py`, and `outputs/manual_reference_mask_manifest.csv` define a checksum-backed outside-Git GeoPackage lane with required fields, `weak_reference_candidate` status, candidate-metrics-only wording, and tests. The manual lane must not clear official validation truth, official warning, redistribution, or unqualified ML-label gates.
+
+## Task 63 - Weak-Label ML Experiment
+
+Run the first small auditable ML experiment only against the manual weak-reference mask, not against official labels.
+
+Acceptance: `src/floodguard/weak_label_ml.py` and `scripts/run_mae_sai_weak_label_ml.py` train a dependency-light logistic model on SAR change features, evaluate with a spatial holdout, compare against the non-ML threshold baseline, and write `outputs/mae_sai_weak_label_ml_metrics.csv`, `outputs/mae_sai_weak_label_ml_prediction_manifest.csv`, and `outputs/mae_sai_weak_label_ml_summary.md`. The outputs must say weak-label experiment, not official labels, and not field validation. `can_feed_decision_layer=True` is allowed only when ML improves or complements the non-ML baseline.

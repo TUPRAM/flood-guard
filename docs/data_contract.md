@@ -1438,3 +1438,34 @@ These are not flood labels and must not be used as real-data ML targets.
 ## GeoJSON Fixtures
 
 GeoJSON fixtures should use WGS84 coordinates (`EPSG:4326`) and small synthetic geometries unless source licensing is explicitly documented.
+
+## Mae Sai Weak-Reference Action Brief
+
+`outputs/mae_sai_action_brief_MS-WR-001.md` is the first bilingual real-study-area candidate action brief. It is generated only from committed derived outputs; the generator does not read or copy raw Sentinel-1 rasters or the manual GeoPackage.
+
+Required derived inputs:
+
+- `outputs/mae_sai_subdistrict_flood_inputs.csv`, rescored through `scoring.py`
+- `outputs/mae_sai_weak_sar_feature_manifest.csv`
+- `outputs/mae_sai_weak_baseline_metrics.csv`
+- `outputs/manual_reference_mask_manifest.csv`
+- optional `outputs/mae_sai_weak_label_ml_metrics.csv`
+
+Required report sections:
+
+- executive summary and FPPS/action class
+- real Sentinel-1 pre/post product identifiers and flood evidence
+- candidate weak-reference metrics
+- road risk, access loss, and equity gap
+- bilingual recommended local actions
+- assumptions, known failure modes, and strict warning
+
+When real road-risk, access-loss, or equity-gap frames are unavailable, the brief must say `unavailable`. The current zero FPPS context components are unjoined placeholders and must not be described as measured zero impact.
+
+The brief must include this wording exactly:
+
+```text
+Based on weak-reference candidate flood analysis. Non-operational. Not official warning. Use only for planning/demo.
+```
+
+The current geometry is `MS-WR-001`, a manual-reference review-area bbox rather than a confirmed official subdistrict boundary. Weak-label ML metrics may be included as a cross-check, but the brief must state when the current FPPS still uses the non-ML flood-probability proxy.

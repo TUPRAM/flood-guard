@@ -135,6 +135,15 @@ The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_re
 
 `docs/manual_reference_mask_protocol.md` defines the QGIS manual weak-reference fallback. `outputs/manual_reference_mask_manifest.csv` records the redacted path hint, SHA-256, GeoPackage layer metadata, required field check, and allowed/not-allowed uses. It can support candidate validation metrics after the manual GeoPackage exists, but it does not clear official validation truth, official warning, redistribution, or unqualified ML-label gates.
 
+After the weak-reference SAR, validation, and decision-bridge outputs exist, regenerate the first bilingual Mae Sai candidate action brief with:
+
+```powershell
+uv run python scripts/build_mae_sai_decision_inputs.py
+uv run python scripts/generate_mae_sai_action_brief.py
+```
+
+The command writes `outputs/mae_sai_action_brief_MS-WR-001.md` from derived CSV evidence only. Missing real road, access, and equity context remains explicitly unavailable; the brief is non-operational, not an official warning, and for planning/demo use only.
+
 `outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums for only the curated selected THEOS-2 files. `outputs/theos2_previews/*.svg` are small non-operational optical-context preview cards generated from checksum-backed metadata. They are not flood masks, not validation labels, and not official warning products. Source TIFFs and overview files remain outside Git.
 
 `outputs/sentinel1_selected_file_manifest.csv` records the SHA-256 checksum and raster metadata for the standalone local Sentinel-1 TIFF that overlaps the Mae Sai MVP point. It is a readiness manifest only: provenance, event timing, and reference-mask status remain unresolved, so `processing_allowed=False` until the next Sentinel-1 provenance and timing resolver clears those gates. The source TIFF remains outside Git.

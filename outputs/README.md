@@ -54,6 +54,7 @@ Current expected MVP output:
 - `mae_sai_weak_label_ml_summary.md`
 - `mae_sai_subdistrict_flood_inputs.csv`
 - `mae_sai_priority_subdistricts.geojson`
+- `mae_sai_action_brief_MS-WR-001.md`
 - `public_reference_candidate_manifest.csv`
 - `sentinel_asia_public_product_links.csv`
 - `public_reference_file_inspection_manifest.csv`
@@ -136,5 +137,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 `mae_sai_weak_label_ml_metrics.csv`, `mae_sai_weak_label_ml_prediction_manifest.csv`, and `mae_sai_weak_label_ml_summary.md` record the first small auditable weak-label ML experiment. The experiment trains a repo-local logistic model on SAR change features, evaluates it on a spatial holdout, and compares it against the non-ML threshold baseline. These outputs are weak-label experiment artifacts only: non-operational, not official labels, not field validation, and not an official warning. ML probability may feed a candidate decision-layer run only when `can_feed_decision_layer=True`; otherwise it remains report-only.
 
 `mae_sai_subdistrict_flood_inputs.csv` and `mae_sai_priority_subdistricts.geojson` bridge the weak-reference Sentinel-1 probability summary into the FloodGuard decision layer. The current bridge is one low-confidence review-area row, not a real subdistrict aggregation. It uses `mean_flood_probability_0_1` from the weak SAR baseline, uses sampled manual-reference positive-pixel share as an exposure proxy, leaves real access/road/vulnerability context at zero until joined, and scores the row through FPPS. The GeoJSON geometry is the manual reference bbox review area, not official admin geometry.
+
+`mae_sai_action_brief_MS-WR-001.md` is the first bilingual real-study-area candidate action brief. It combines the current FPPS Class E result with real Sentinel-1 product evidence, non-ML weak-reference metrics, the weak-label ML spatial-holdout cross-check, explicit unavailable road/access/equity sections, assumptions, and local verification actions. It is based on weak-reference candidate flood analysis, non-operational, not an official warning, and for planning/demo use only.
 
 `mae_sai_validation_summary.md` remains officially blocked until provider responses, local paths, checksums, and reference-mask gates pass. When weak-reference candidate metrics exist, it includes those metrics in a separate weak-reference section without promoting them to official validation.

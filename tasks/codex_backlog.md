@@ -391,3 +391,9 @@ Acceptance: `docs/manual_reference_mask_protocol.md`, `src/floodguard/manual_ref
 Run the first small auditable ML experiment only against the manual weak-reference mask, not against official labels.
 
 Acceptance: `src/floodguard/weak_label_ml.py` and `scripts/run_mae_sai_weak_label_ml.py` train a dependency-light logistic model on SAR change features, evaluate with a spatial holdout, compare against the non-ML threshold baseline, and write `outputs/mae_sai_weak_label_ml_metrics.csv`, `outputs/mae_sai_weak_label_ml_prediction_manifest.csv`, and `outputs/mae_sai_weak_label_ml_summary.md`. The outputs must say weak-label experiment, not official labels, and not field validation. `can_feed_decision_layer=True` is allowed only when ML improves or complements the non-ML baseline.
+
+## Task 64 - Mae Sai Weak-Reference Action Brief
+
+Generate the first bilingual real-study-area candidate action brief from derived Mae Sai Sentinel-1, FPPS, manual weak-reference, and candidate metric outputs.
+
+Acceptance: `src/floodguard/mae_sai_brief.py` and `scripts/generate_mae_sai_action_brief.py` write `outputs/mae_sai_action_brief_MS-WR-001.md` with FPPS, action class, flood evidence, candidate metrics, road/access/equity status, assumptions, and bilingual recommended actions. Missing real context must remain explicitly unavailable, zero placeholders must not imply zero impact, raw assets remain outside Git, and the brief must say it is based on weak-reference candidate flood analysis, non-operational, not an official warning, and for planning/demo use only.

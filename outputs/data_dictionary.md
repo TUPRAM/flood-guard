@@ -772,3 +772,23 @@ File: `theos2_visual_review_checklist.csv`
 File: `mae_sai_validation_summary.md`
 
 This report remains officially blocked until the legal reference mask, local paths, SHA-256 checksums, and file-level processing gates pass. When weak-reference candidate metrics exist, the report includes them in a separate section and keeps the warning that they are not official validation, not field validated, and not an emergency warning.
+
+## Mae Sai Weak-Reference Action Brief
+
+File: `mae_sai_action_brief_MS-WR-001.md`
+
+This is a bilingual Markdown decision brief generated from derived Mae Sai outputs. It contains no raw imagery or source GeoPackage content.
+
+| Brief item | Meaning |
+| --- | --- |
+| Review area | `MS-WR-001`, currently a weak-reference bbox review area rather than an official subdistrict boundary. |
+| FPPS and action class | Existing deterministic score and A-E class from `scoring.py`; current low confidence forces monitor-and-verify behavior. |
+| Flood evidence | Real CDSE Sentinel-1 pre/post product ids, observation timestamp, mean non-ML flood-probability proxy, and sampled flood-positive counts. |
+| Candidate validation metrics | IoU, F1/Dice, precision, recall, and area error against the manually digitized weak-reference candidate. These are not official validation metrics. |
+| Weak-label ML cross-check | Spatial-holdout baseline-versus-logistic metrics. The brief discloses that the ML candidate overpredicts area and is not the current FPPS input. |
+| Road risk | Real linked road-risk rows when supplied; otherwise explicitly unavailable. A zero placeholder is not interpreted as safe roads. |
+| Access loss | Real linked 15/30/60-minute access-loss counts when supplied; otherwise explicitly unavailable. |
+| Equity gap | Real linked vulnerable/non-vulnerable loss ratio when supplied; otherwise explicitly unavailable. |
+| Confidence | Current evidence confidence, expected to remain `low` while official validation and real decision context are incomplete. |
+| Assumptions | Source, reference, extraction, geometry, and missing-context limitations. |
+| Warning | `Based on weak-reference candidate flood analysis. Non-operational. Not official warning. Use only for planning/demo.` |

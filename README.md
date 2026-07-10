@@ -36,6 +36,8 @@ start outputs\dashboard.html
 
 The dashboard is static. It has no backend, no build step, and no browser-side `fetch` call. Opening `outputs\dashboard.html` is enough for the fixture demo and the embedded Mae Sai weak-reference candidate mode.
 
+Dashboard v11 includes an English/Thai interface, semantic regional/detail map density, selected-ADM3 focus, compact Sentinel-1 evidence and provenance, and a judge presentation mode. In Mae Sai mode, select an ADM3 unit to zoom into detailed candidate roads and typed facilities. Judge mode removes secondary controls while keeping the weak-reference warning and provenance visible.
+
 If your browser blocks direct file rendering or you prefer a local URL, serve the `outputs/` folder:
 
 ```powershell

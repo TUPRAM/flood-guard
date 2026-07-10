@@ -784,6 +784,27 @@ The v10 visual contract includes:
 
 The metadata/blocker mode must clear decision geometry from the map and show only readiness boundaries. A disabled or unavailable layer must not be silently represented as zero impact.
 
+## Dashboard v11 Semantic Presentation Layer
+
+Dashboard v11 keeps the v10 dataset contracts and adds semantic map density, bilingual operation, and a judge-presentation state. These are presentation rules only; they do not change source quality, validation status, FPPS formulas, or the weak-reference boundary.
+
+Mae Sai map density rules:
+
+- below zoom level `12`, show only `candidate_closed`, `candidate_delayed`, or road segments with `road_disruption_probability_0_1 >= 0.20`
+- at zoom level `12` or closer, show all candidate road segments in the selected ADM3 unit and suppress roads outside it
+- below zoom level `12`, aggregate candidate facilities into one cluster marker per ADM3 unit
+- at zoom level `12` or closer, show individual facility symbols for hospital, clinic, other healthcare, school, shelter, emergency service, and community facility candidates
+- selecting an ADM3 unit must zoom to at least level `12`, preserve the selected unit at full emphasis, and dim surrounding ADM3 polygons without removing geographic context
+- window resize, language changes, and judge-mode changes must preserve the selected-area map view rather than resetting to the regional extent
+
+The English/Thai toggle must translate operational controls, dataset names, evidence labels, warnings, legends, map-detail status, and ADM3 display names where Thai names exist. Thai mode uses a Thai-capable font stack headed by `Noto Sans Thai` and `Leelawadee UI`. Identifiers, numeric values, source product ids, and metric definitions remain unchanged.
+
+The selected-unit Sentinel-1 drawer embeds pre-event date/product, post-event date/product, mean flood probability, P90 flood probability, binary flood share, and `mean_combined_sar_change_score` from `outputs/mae_sai_adm3_sar_context.csv`. It must always say that these are derived ADM3 statistics from a weak-reference candidate, not official validation, not field validated, and not an official warning.
+
+Provenance is shown first as compact source-time, reference-status, and processing-scope rows. Full Sentinel-1 product ids and assumptions remain available through expandable technical details.
+
+Judge presentation mode may hide scenario controls, export controls, context thumbnails, the local data library, and long report bodies. It must retain the active dataset selector, selected ADM3 selector, KPI strip, map, selected-unit evidence, source-quality indicators, Sentinel-1 drawer, compact provenance, and the always-visible safety warning. The page remains static HTML with embedded data, no backend, and no browser-side `fetch`.
+
 ## Metadata-Only Ingestion Manifest
 
 `outputs/real_data_ingestion_manifest.csv` is the first real-data ingestion skeleton. It records source planning rows and blockers only.

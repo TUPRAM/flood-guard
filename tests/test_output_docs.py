@@ -500,10 +500,11 @@ def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
     )
 
     for phrase in (
-        "fixture-backed decision-layer prototype",
+        "fixture decision layer and a Mae Sai weak-reference candidate lane",
         "What The Fixture Demo Proves",
         "does not prove real flood-detection accuracy",
-        "Real-data ML remains blocked",
+        "Official-label ML remains blocked",
+        "What The Mae Sai Candidate Adds",
         "FG-TB-001 / River Market",
         "Sentinel-1 SAR quicklooks: context only",
     ):
@@ -514,8 +515,9 @@ def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
         "10 Minute Expanded Path",
         "temporary shelter delta",
         "road closure delta",
-        "Context Assets",
-        "Data Readiness",
+        "Sentinel-1 evidence",
+        "Judge mode",
+        "English/Thai",
         "not an official warning",
     ):
         assert phrase in walkthrough_text
@@ -770,6 +772,49 @@ def test_dashboard_v10_real_dataset_contract_is_documented() -> None:
     assert "Task 66 - Dashboard V10 Real Dataset Workspace" in backlog_text
     assert "mode-warning" in dictionary_text
     assert "modeled access-loss hotspot" in dictionary_text
+
+
+def test_dashboard_v11_semantic_presentation_contract_is_documented() -> None:
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(
+        encoding="utf-8"
+    )
+    dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "Dashboard v11 Semantic Presentation Layer",
+        "zoom level `12`",
+        "English/Thai",
+        "Sentinel-1 drawer",
+        "Judge presentation mode",
+        "preserve the selected-area map view",
+    ):
+        assert phrase in contract_text
+
+    for field in (
+        "semanticDetailZoom",
+        "map-detail-status",
+        "toggle-focus",
+        "facility-cluster-shell",
+        "facility-marker-shell",
+        "language-en",
+        "language-th",
+        "sar-evidence-drawer",
+        "mean_combined_sar_change_score",
+        "technical-provenance",
+        "judge-mode-toggle",
+    ):
+        assert field in dictionary_text
+
+    assert "`dashboard.html` v11" in output_text
+    assert "Task 67 - Dashboard V11 Semantic Presentation Layer" in backlog_text
 
 
 def test_provider_response_logging_guide_and_mae_sai_v2_docs_exist() -> None:

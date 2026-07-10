@@ -214,6 +214,23 @@ Dashboard v10 real dataset workspace:
 | `facility-layer-toggle` | Shows candidate OSM facility points in Mae Sai mode. |
 | `hotspot-layer-toggle` | Shows representative modeled access-loss hotspot points in Mae Sai mode. |
 
+Dashboard v11 semantic presentation layer:
+
+| Item | Meaning |
+| --- | --- |
+| `semanticDetailZoom` | Map zoom threshold `12`. Regional Mae Sai view uses priority roads and ADM3 facility clusters; selected-area detail uses all candidate roads and individual facilities inside the selected ADM3 unit. |
+| `map-detail-status` | Compact statement of the active semantic density, including visible road and facility/cluster counts. |
+| `toggle-focus` | Keeps the selected ADM3 polygon at full emphasis while dimming surrounding polygons; geographic context remains visible. |
+| `facility-cluster-shell` | Regional marker aggregating candidate facilities by ADM3 unit. It is a display cluster, not a verified service count. |
+| `facility-marker-shell` | Selected-area candidate facility marker. Symbols distinguish `hospital`, `clinic`, other `healthcare`, `school`, `shelter_candidate`, `emergency_service`, and `community_facility`. Hospital/clinic classification uses the embedded OSM `amenity` value and remains unverified candidate context. |
+| `language-en` / `language-th` | English/Thai interface toggle. It changes labels and Thai ADM3 display names but not identifiers, numbers, metrics, or evidence status. |
+| `sar-evidence-drawer` | Compact selected-ADM3 Sentinel-1 pre/post/change evidence from `mae_sai_adm3_sar_context.csv`. Values remain weak-reference candidate statistics, not official validation. |
+| `mean_combined_sar_change_score` | Mean combined SAR change score for the selected ADM3 unit, displayed in the evidence drawer with the source acquisition pair. |
+| `provenance-summary-grid` | Concise source timestamp, reference status, and processing scope for the active selection. |
+| `technical-provenance` | Expandable full Sentinel-1 product identifiers and assumptions. |
+| `judge-mode-toggle` | Presentation state that hides secondary controls and long context/report sections while retaining warnings, map, selected evidence, source quality, SAR evidence, and provenance. |
+| `judge-secondary` | UI element allowed to be hidden in judge mode. It must never be applied to the safety warning or compact provenance. |
+
 Dashboard QA support:
 
 | Artifact | Meaning |

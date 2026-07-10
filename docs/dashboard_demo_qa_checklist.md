@@ -75,6 +75,13 @@ Capture or inspect these exact browser sizes:
 - `Data Readiness` says processing remains gated.
 - The compact evidence-boundary narrative is visible in the controls panel and does not dominate the layout.
 - The `Validation Summary` cards and `Action Brief` summary are reachable immediately below the main workspace.
+- Mae Sai regional view shows only priority road candidates and one candidate-facility cluster per populated ADM3 unit; detail symbols distinguish hospital, clinic, other healthcare, school, shelter, emergency service, and community candidates where present.
+- Selecting a Mae Sai ADM3 unit switches the map status to selected-area detail and reveals typed facility symbols without resetting on layout changes.
+- The selected ADM3 remains visually emphasized while surrounding polygons are dimmed but still visible.
+- Thai mode uses a Thai-capable font and translates controls, warnings, legends, evidence labels, and Thai ADM3 names without changing identifiers or metrics.
+- The Sentinel-1 drawer shows pre/post/change evidence and retains explicit weak-reference, non-official wording.
+- Compact provenance is visible; full product ids and assumptions are available under expandable technical details.
+- Judge mode hides secondary controls and long content while keeping the warning, map, selected evidence, source quality, SAR evidence, and provenance visible.
 
 ## Interaction Checks
 
@@ -89,9 +96,14 @@ Capture or inspect these exact browser sizes:
 9. Click `Download filtered GeoJSON`.
 10. Switch dataset mode to `Mae Sai weak-reference candidate`.
 11. Confirm exactly eight ADM3 choices, candidate road/facility/hotspot toggles, structured evidence, source quality, and provenance.
-12. Select a second Mae Sai subdistrict and confirm evidence, comparison, map focus, and action summary update.
-13. Switch to `Metadata/blocker view` and confirm decision values and unavailable layers are gated rather than shown as zeros.
-14. Switch back to `Fixture demo` and confirm scenario controls and fixture geometry return.
+12. Confirm the regional map status reports priority roads plus facility clusters.
+13. Select a second Mae Sai subdistrict and confirm the map reaches selected-area detail, evidence/comparison/action values update, and individual facility symbols are categorized.
+14. Switch to Thai and confirm the selected-area map state is preserved; switch back to English.
+15. Toggle selected-unit focus off and on; confirm surrounding polygons remain geographic context and no layer disappears unexpectedly.
+16. Open the Sentinel-1 evidence drawer and technical provenance details; confirm product/date/change fields and safety wording are visible.
+17. Enter judge mode and confirm secondary controls hide while `mode-warning`, source quality, Sentinel-1 evidence, and provenance remain visible. Exit with the button or `Escape`.
+18. Switch to `Metadata/blocker view` and confirm decision values and unavailable layers are gated rather than shown as zeros.
+19. Switch back to `Fixture demo` and confirm scenario controls and fixture geometry return.
 
 ## Required Wording
 

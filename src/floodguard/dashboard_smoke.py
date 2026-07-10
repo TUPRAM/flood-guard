@@ -208,8 +208,32 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
         _contains(
             html,
             "road_risk_renderer",
-            "roadLayer.addData(dataset.roads",
-            "Road-risk segments are rendered from embedded data.",
+            "function visibleRoadFeatures",
+            "Road-risk segments use semantic regional/detail filtering.",
+        ),
+        _contains(
+            html,
+            "facility_cluster_renderer",
+            "function facilityClusterMarker",
+            "Facilities use regional clusters and selected-area symbols.",
+        ),
+        _contains(
+            html,
+            "bilingual_interface",
+            "function setLanguage",
+            "English/Thai interface switching is present.",
+        ),
+        _contains(
+            html,
+            "sar_evidence_drawer",
+            'id="sar-evidence-drawer"',
+            "Selected-area Sentinel-1 evidence drawer is present.",
+        ),
+        _contains(
+            html,
+            "judge_presentation_mode",
+            "function setJudgeMode",
+            "Judge presentation mode is present.",
         ),
         _contains(
             html,

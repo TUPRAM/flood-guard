@@ -39,6 +39,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const maeSaiFacilityData =" in html
     assert "const maeSaiAccessHotspotData =" in html
     assert "const maeSaiContextQuality =" in html
+    assert "const maeSaiSarContext =" in html
     assert "const maeSaiBriefsBySubdistrict =" in html
     assert 'class="app-header"' in html
     assert 'data-dashboard-section="app-header"' in html
@@ -62,6 +63,8 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const mapBoundsPadding = 0.12" in html
     assert "function fitPriorityMapToData" in html
     assert "function settleMapLayout" in html
+    assert "function preserveMapViewAfterLayout" in html
+    assert "new ResizeObserver(preserveMapViewAfterLayout)" in html
     assert "bounds.pad(mapBoundsPadding)" in html
     assert "ResizeObserver" in html
     assert "bounds.pad(0.18)" not in html
@@ -201,6 +204,38 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "function updateEvidencePanel" in html
     assert "function updateComparison" in html
     assert "function updateQualityPanel" in html
+    assert "const semanticDetailZoom = 12" in html
+    assert "function visibleRoadFeatures" in html
+    assert "Fixture map detail" in html
+    assert "Reporting boundaries only" in html
+    assert "function facilityClusterMarker" in html
+    assert "function facilityMarker" in html
+    assert "candidate_open_with_delay" in html
+    assert "facility-cluster-shell" in html
+    assert "facility-marker-shell" in html
+    assert "hospital" in html
+    assert "clinic" in html
+    assert "healthcare" in html
+    assert "emergency_service" in html
+    assert "community_facility" in html
+    assert 'id="toggle-focus"' in html
+    assert "focusSelected: true" in html
+    assert "map.getZoom() >= semanticDetailZoom" in html
+    assert 'id="language-en"' in html
+    assert 'id="language-th"' in html
+    assert "function setLanguage" in html
+    assert "แดชบอร์ดการตัดสินใจ FloodGuard" in html
+    assert '--font-thai: "Noto Sans Thai"' in html
+    assert 'id="sar-evidence-drawer"' in html
+    assert "mean_combined_sar_change_score" in html
+    assert "Derived ADM3 statistics only" in html
+    assert 'class="provenance-summary-grid"' in html
+    assert 'id="technical-provenance"' in html
+    assert 'id="judge-mode-toggle"' in html
+    assert "function setJudgeMode" in html
+    assert "Dataset & Selection" in html
+    assert "if (state.judgeMode) map.closePopup()" in html
+    assert "body.judge-mode .judge-secondary" in html
     assert 'id="mode-warning"' in html
     assert 'class="evidence-grid"' in html
     assert 'class="comparison-grid"' in html

@@ -113,7 +113,7 @@ uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024_sentinel2 --
 1. Use `outputs/cdse_mae_sai_2024_metadata.csv` to keep the existing Mae Sai Sentinel-1 pre/post planning pair grounded in live CDSE metadata.
 2. Use `outputs/public_reference_file_inspection_manifest.csv`, `outputs/sentinel_asia_geometry_quality_review.csv`, and `outputs/sentinel_asia_mbrsc_visual_qa_review.csv` as the first public Mae Sai reference-candidate evidence. The geometry is useful because it is WGS84 polygon data, intersects the Mae Sai review bbox, has area-field metadata, and visually aligns with the east/southeast floodplain/waterway context. It remains blocked for validation until product terms are clear and the QA is repeated with any required approved basemap/source context.
 3. Use Sentinel-2 metadata only for optical context and cloud-screened visual support. It is not a flood label.
-4. Use WorldPop, OSM, Copernicus DEM, and HDX COD-AB as open context layers now that they are added to the file-level manifest with outside-Git path hints and checksums. Next work is derived clipping/extraction, not committing source files.
+4. WorldPop, OSM, Copernicus DEM, and HDX COD-AB now feed the derived Mae Sai context integration. Source files and bounded extraction intermediates remain outside Git; only compact aggregate context, scoring, and quality outputs are committed.
 5. If provider clearance remains blocked, digitize `mae_sai_manual_flood_reference.gpkg` outside Git using `docs/manual_reference_mask_protocol.md`, then rerun `scripts/inspect_manual_reference_mask.py`.
 
 ## Current Boundaries

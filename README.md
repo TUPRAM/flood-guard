@@ -138,11 +138,12 @@ The generated `outputs/real_data_ingestion_manifest.csv` and `outputs/mae_sai_re
 After the weak-reference SAR, validation, and decision-bridge outputs exist, regenerate the first bilingual Mae Sai candidate action brief with:
 
 ```powershell
+uv run python scripts/build_mae_sai_real_context.py
 uv run python scripts/build_mae_sai_decision_inputs.py
 uv run python scripts/generate_mae_sai_action_brief.py
 ```
 
-The command writes `outputs/mae_sai_action_brief_MS-WR-001.md` from derived CSV evidence only. Missing real road, access, and equity context remains explicitly unavailable; the brief is non-operational, not an official warning, and for planning/demo use only.
+The real-context builder validates checksum-tracked outside-Git files, derives eight HDX COD-AB Mae Sai ADM3 rows, joins WorldPop exposure, OSM road/facility routing, and Copernicus DEM terrain context, and writes source-quality evidence. The final command writes the current highest-priority ADM3 brief, currently `outputs/mae_sai_action_brief_TH570906.md`, from committed derived evidence only. The brief remains non-operational, not an official warning, and for planning/demo use only.
 
 `outputs/theos2_selected_file_manifest.csv` records SHA-256 checksums for only the curated selected THEOS-2 files. `outputs/theos2_previews/*.svg` are small non-operational optical-context preview cards generated from checksum-backed metadata. They are not flood masks, not validation labels, and not official warning products. Source TIFFs and overview files remain outside Git.
 

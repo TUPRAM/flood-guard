@@ -33,6 +33,18 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--real-context-inputs",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_real_context_decision_inputs.csv",
+        help="Preferred ADM3 real-context FPPS input CSV when available.",
+    )
+    parser.add_argument(
+        "--real-admin-geojson",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_admin_context.geojson",
+        help="Preferred COD-AB ADM3 GeoJSON when real-context inputs are available.",
+    )
+    parser.add_argument(
         "--weak-feature-manifest",
         type=Path,
         default=REPO_ROOT / "outputs" / "mae_sai_weak_sar_feature_manifest.csv",
@@ -58,21 +70,32 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    weak_feature_manifest = pd.read_csv(args.weak_feature_manifest, dtype=str).fillna("")
-    manual_reference_manifest = pd.read_csv(
-        args.manual_reference_manifest,
-        dtype=str,
-    ).fillna("")
     try:
-        decision_inputs = build_mae_sai_weak_decision_inputs(
-            weak_feature_manifest,
-            manual_reference_manifest,
-        )
-        priority = score_subdistricts(decision_inputs)
-        admin_geojson = build_mae_sai_review_area_admin_geojson(
-            manual_reference_manifest,
-        )
-    except (FloodAggregationError, ValueError) as exc:
+        if args.real_context_inputs.exists() and args.real_admin_geojson.exists():
+            decision_inputs = pd.read_csv(
+                args.real_context_inputs, dtype=str
+            ).fillna("")
+            priority = score_subdistricts(decision_inputs)
+            admin_geojson = json.loads(
+                args.real_admin_geojson.read_text(encoding="utf-8")
+            )
+        else:
+            weak_feature_manifest = pd.read_csv(
+                args.weak_feature_manifest, dtype=str
+            ).fillna("")
+            manual_reference_manifest = pd.read_csv(
+                args.manual_reference_manifest,
+                dtype=str,
+            ).fillna("")
+            decision_inputs = build_mae_sai_weak_decision_inputs(
+                weak_feature_manifest,
+                manual_reference_manifest,
+            )
+            priority = score_subdistricts(decision_inputs)
+            admin_geojson = build_mae_sai_review_area_admin_geojson(
+                manual_reference_manifest,
+            )
+    except (FloodAggregationError, ValueError, json.JSONDecodeError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
 

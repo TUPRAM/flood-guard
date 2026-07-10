@@ -25,7 +25,7 @@ Committed manifests redact that root as:
 | WorldPop Thailand 100m | `tha_ppp_2020.tif` | Population exposure and reachable-demand denominator | Context only; not a flood label or reference mask. |
 | HDX Thailand COD-AB | `tha_admin_boundaries.gdb.zip` | Administrative boundary aggregation geometry | Context only; boundary vintage must be verified before public claims. |
 | OpenStreetMap Thailand via Geofabrik | `thailand-latest.osm.pbf` | Roads, bridges, facilities, and candidate routing graph | ODbL attribution/share-alike obligations apply; not official infrastructure truth. |
-| Current local Copernicus DEM Thailand tile | `CopernicusDEM_Elevation_Slope_Thailand-0000046592-0000023296.tif` | Terrain, slope, and false-positive review context | Terrain context only; not flood observation, not flood label, not reference mask. |
+| Copernicus DEM GLO-30 Mae Sai tile | `Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif` | Terrain, slope, and false-positive review context | Public GLO-30 context tile; not flood observation, not flood label, not reference mask. |
 
 ## Command
 
@@ -44,7 +44,7 @@ uv run python scripts/build_open_context_file_manifest.py --download
 The script downloads only remote WorldPop, HDX, and Geofabrik files. The DEM row uses an existing outside-Git TIFF by default:
 
 ```text
-C:\Users\iputu\Documents\FloodGuard_external_data\open_context\copernicus_dem_glo30\CopernicusDEM_Elevation_Slope_Thailand-0000046592-0000023296.tif
+C:\Users\iputu\Documents\FloodGuard_external_data\open_context\copernicus_dem_glo30\Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif
 ```
 
 Use a different DEM TIFF if needed:
@@ -64,12 +64,22 @@ Rows should be treated as ready only when:
 - `local_path` is redacted under `<external_data_workspace>/`
 - `processing_scope` explicitly says the file is context only
 
-## Next Integration Steps
+## Implemented Mae Sai Integration
 
-1. Clip WorldPop to Mae Sai and aggregate population to the selected admin or review polygon.
-2. Read HDX COD-AB boundaries and choose the administrative level used for reporting.
-3. Extract OSM roads, bridge tags, and candidate facilities from the Geofabrik PBF.
-4. Sample DEM/elevation/slope around weak-reference flood candidates for terrain and SAR false-positive review.
-5. Feed derived context tables into FPPS, road risk, access loss, and equity modules.
+Run:
 
-These are follow-up processing steps. This acquisition lane only proves that context files are locally available and checksum-tracked outside Git.
+```powershell
+uv run python scripts/build_mae_sai_real_context.py
+uv run python scripts/generate_mae_sai_action_brief.py
+```
+
+The integration now:
+
+1. verifies all four outside-Git source checksums;
+2. extracts eight Mae Sai COD-AB ADM3 polygons and bounded OSM roads/facilities outside Git through QGIS/GDAL;
+3. summarizes real Sentinel-1 candidate change by ADM3 without treating admin polygons as flood labels;
+4. aggregates WorldPop 2020 population and Copernicus DEM terrain context;
+5. computes heuristic road risk, modeled access loss, proxy equity gap, and FPPS inputs;
+6. writes only compact derived CSV, GeoJSON, Markdown, and manifest outputs into the repo.
+
+The original local DEM package was rejected for Mae Sai because its footprint was near 103.6-105.6E. The selected public GLO-30 N20/E099 tile covers Mae Sai west of 100E; eastern-edge DEM coverage remains partial and is reported explicitly.

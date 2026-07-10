@@ -2029,7 +2029,15 @@ def _read_mae_sai_weak_priority_summary(output_dir: Path) -> dict[str, Any]:
             {"available": False, "feature_count": 0, "status": "empty_geojson"}
         )
         return summary
-    props = features[0].get("properties") or {}
+    def _feature_score(feature: dict[str, Any]) -> float:
+        properties = feature.get("properties") or {}
+        try:
+            return float(properties.get("fpps_0_100", float("-inf")))
+        except (TypeError, ValueError):
+            return float("-inf")
+
+    selected_feature = max(features, key=_feature_score)
+    props = selected_feature.get("properties") or {}
     summary.update(
         {
             "available": True,
@@ -2070,7 +2078,8 @@ def _mae_sai_weak_dataset_note(summary: dict[str, Any]) -> str:
         )
     return (
         f"{base} The weak-reference decision bridge is available with "
-        f"{summary.get('feature_count')} review-area feature, FPPS "
+        f"{summary.get('feature_count')} ADM3 reporting units; the highest-FPPS "
+        "unit has FPPS "
         f"{summary.get('fpps_0_100')}, class {summary.get('action_class')}, "
         f"mean flood probability {summary.get('mean_flood_probability_0_1')}, "
         f"IoU {summary.get('iou')}, F1/Dice {summary.get('f1_dice')}, "

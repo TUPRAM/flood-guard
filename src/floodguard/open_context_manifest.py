@@ -34,18 +34,16 @@ OPEN_CONTEXT_COLUMNS: tuple[str, ...] = (
 )
 
 DEFAULT_EXTERNAL_DATA_ROOT = Path.home() / "Documents" / "FloodGuard_external_data"
-DEFAULT_DEM_FILE_NAME = "CopernicusDEM_Elevation_Slope_Thailand-0000046592-0000023296.tif"
+DEFAULT_DEM_FILE_NAME = "Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif"
+DEFAULT_DEM_DOWNLOAD_URL = (
+    "https://copernicus-dem-30m.s3.amazonaws.com/"
+    "Copernicus_DSM_COG_10_N20_00_E099_00_DEM/"
+    "Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif"
+)
 DEFAULT_DEM_PATH = (
     DEFAULT_EXTERNAL_DATA_ROOT
     / "open_context"
     / "copernicus_dem_glo30"
-    / DEFAULT_DEM_FILE_NAME
-)
-FALLBACK_DEM_PATH = (
-    Path.home()
-    / "Downloads"
-    / "FloodGuardLocalExtracts"
-    / "dem"
     / DEFAULT_DEM_FILE_NAME
 )
 
@@ -139,19 +137,19 @@ def open_context_sources() -> tuple[OpenContextSource, ...]:
             blocked_reason="source file not downloaded outside Git and checksum not recorded",
         ),
         OpenContextSource(
-            source_name="Current local Copernicus DEM Thailand tile",
+            source_name="Copernicus DEM GLO-30 Mae Sai tile N20/E099",
             source_group="copernicus_dem_glo30",
             study_area="Thailand",
             source_url=(
                 "https://dataspace.copernicus.eu/explore-data/data-collections/"
                 "copernicus-contributing-missions/collections-description/COP-DEM"
             ),
-            download_url="local_current_dem_package",
+            download_url=DEFAULT_DEM_DOWNLOAD_URL,
             file_name=DEFAULT_DEM_FILE_NAME,
             candidate_use="terrain, slope, and false-positive review context",
             data_type="dem_raster_geotiff",
             license_status=(
-                "current_local_dem_package_user_reported_hackathon_free_use"
+                "copernicus_dem_glo30_public_free_use_attribution_required"
             ),
             processing_scope="terrain_context_only_not_flood_observation_or_label",
             ready_next_action=(
@@ -216,12 +214,17 @@ def build_open_context_rows(
     elif DEFAULT_DEM_PATH.exists():
         selected_dem_path = DEFAULT_DEM_PATH
     else:
-        selected_dem_path = FALLBACK_DEM_PATH
+        selected_dem_path = root / "open_context" / "copernicus_dem_glo30" / DEFAULT_DEM_FILE_NAME
     rows = []
     for source in open_context_sources():
         download_error = ""
-        if source.download_url == "local_current_dem_package":
+        if source.source_group == "copernicus_dem_glo30":
             local_path = selected_dem_path
+            if download and not local_path.exists():
+                try:
+                    _download_to_path(source.download_url, local_path)
+                except RuntimeError as exc:
+                    download_error = str(exc)
         else:
             local_path = root / "open_context" / source.source_group / source.file_name
             if download and not local_path.exists():

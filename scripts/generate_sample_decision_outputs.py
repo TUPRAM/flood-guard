@@ -254,6 +254,19 @@ def _theos2_brief_context(
 
 
 def _write_optional_mae_sai_weak_decision_outputs(output_dir: Path) -> list[Path]:
+    real_context_path = output_dir / "mae_sai_real_context_decision_inputs.csv"
+    real_admin_path = output_dir / "mae_sai_admin_context.geojson"
+    if real_context_path.exists() and real_admin_path.exists():
+        decision_inputs = pd.read_csv(real_context_path, dtype=str).fillna("")
+        decision_input_path = output_dir / "mae_sai_subdistrict_flood_inputs.csv"
+        decision_inputs.to_csv(decision_input_path, index=False)
+        priority_geojson_path = write_priority_geojson(
+            real_admin_path,
+            score_subdistricts(decision_inputs),
+            output_dir / "mae_sai_priority_subdistricts.geojson",
+        )
+        return [decision_input_path, priority_geojson_path]
+
     weak_feature_path = output_dir / "mae_sai_weak_sar_feature_manifest.csv"
     manual_reference_path = output_dir / "manual_reference_mask_manifest.csv"
     if not weak_feature_path.exists() or not manual_reference_path.exists():

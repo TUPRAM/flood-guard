@@ -75,11 +75,14 @@ def calculate_access_loss(
     if not facility_nodes:
         raise AccessError("At least one facility node is required for access analysis.")
 
+    normal_distances = _facility_minutes_by_node(normal_graph, facility_nodes)
+    disrupted_distances = _facility_minutes_by_node(disrupted_graph, facility_nodes)
+
     node_results: list[dict[str, object]] = []
     for _, row in pop.iterrows():
         node = str(row["node_id"])
-        normal_minutes = _nearest_facility_minutes(normal_graph, node, facility_nodes)
-        disrupted_minutes = _nearest_facility_minutes(disrupted_graph, node, facility_nodes)
+        normal_minutes = normal_distances.get(node)
+        disrupted_minutes = disrupted_distances.get(node)
         node_record: dict[str, object] = row.to_dict()
         node_record["normal_access_minutes"] = normal_minutes
         node_record["disrupted_access_minutes"] = disrupted_minutes
@@ -188,21 +191,26 @@ def _nearest_facility_minutes(
     start_node: str,
     facility_nodes: set[str],
 ) -> float | None:
-    if start_node in facility_nodes:
-        return 0.0
+    return _facility_minutes_by_node(graph, facility_nodes).get(start_node)
 
-    queue: list[tuple[float, str]] = [(0.0, start_node)]
-    best: dict[str, float] = {start_node: 0.0}
+
+def _facility_minutes_by_node(
+    graph: dict[str, list[tuple[str, float]]],
+    facility_nodes: set[str],
+) -> dict[str, float]:
+    """Return nearest-facility travel time for every reachable graph node."""
+
+    queue: list[tuple[float, str]] = [(0.0, node) for node in facility_nodes]
+    heapq.heapify(queue)
+    best: dict[str, float] = {node: 0.0 for node in facility_nodes}
 
     while queue:
         minutes, node = heapq.heappop(queue)
         if minutes > best[node]:
             continue
-        if node in facility_nodes:
-            return minutes
         for neighbor, weight in graph.get(node, []):
             candidate = minutes + weight
             if candidate < best.get(neighbor, math.inf):
                 best[neighbor] = candidate
                 heapq.heappush(queue, (candidate, neighbor))
-    return None
+    return best

@@ -704,7 +704,28 @@ Required columns:
 - `next_action`
 - `retrieved_at_utc`
 
-Current rows cover WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and a current local Copernicus DEM Thailand tile. Rows with `sha256_status=recorded` and `acquisition_status=available_outside_git` may be processed only for context scopes such as exposure, admin aggregation, roads/facilities, and terrain review. These are not flood labels, reference masks, official warnings, or real validation outputs.
+Current rows cover WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and the public Copernicus DEM GLO-30 N20/E099 tile. Rows with `sha256_status=recorded` and `acquisition_status=available_outside_git` may be processed only for context scopes such as exposure, admin aggregation, roads/facilities, and terrain review. These are not flood labels, reference masks, official warnings, or real validation outputs.
+
+## Mae Sai Real Open-Context Outputs
+
+`scripts/build_mae_sai_real_context.py` writes the following compact derived outputs while keeping source rasters, PBF, GDB ZIP, SAFE ZIPs, and bounded extraction intermediates outside Git:
+
+- `outputs/mae_sai_admin_context.geojson`
+- `outputs/mae_sai_adm3_sar_context.csv`
+- `outputs/mae_sai_population_context.csv`
+- `outputs/mae_sai_road_risk.csv`
+- `outputs/mae_sai_facility_context.csv`
+- `outputs/mae_sai_access_loss.csv`
+- `outputs/mae_sai_equity_gap.csv`
+- `outputs/mae_sai_real_context_decision_inputs.csv`
+- `outputs/mae_sai_context_quality_summary.csv`
+- `outputs/mae_sai_context_quality_report.md`
+
+Reporting grain is one HDX COD-AB ADM3 feature. Current Mae Sai coverage contains eight unique subdistrict codes. Sentinel-1 probabilities are summarized within those reporting polygons; the polygons are never used as flood labels.
+
+WorldPop population is a 2020 modeled surface. `exposure_0_100` is a relative expected-exposure proxy normalized across the eight units, not an exposed-person count. OSM roads, bridges, shelters, and facilities are candidate context and are not verified emergency infrastructure. Road disruption and access loss are heuristic candidate outputs, not observed closures. Vulnerability uses a pre-disruption terrain/remoteness proxy and is not demographic vulnerability.
+
+The manual weak-reference geometry does not overlap official Thailand ADM3 geometry. Its candidate validation/ML metrics remain nearby cross-border calibration evidence only and must not be described as direct validation of the ADM3 summaries.
 
 ## Mae Sai Reference Candidate Decision
 
@@ -1160,18 +1181,35 @@ Source Sentinel-1 ZIPs, SAFE packages, TIFFs, and manual GeoPackages must remain
 
 ## Mae Sai Weak-Reference Decision Input Output
 
-`outputs/mae_sai_subdistrict_flood_inputs.csv` turns the weak-reference Sentinel-1 probability summary into the FPPS input contract. It is a one-row review-area bridge, not a real administrative aggregation yet.
+`outputs/mae_sai_subdistrict_flood_inputs.csv` turns candidate Sentinel-1 flood probability and checksum-tracked open context into the FPPS input contract at HDX COD-AB ADM3 grain. The current output contains eight official Mae Sai reporting polygons. It remains a weak-reference, non-operational candidate analysis.
 
 Required columns:
 
 - `subdistrict_id`
 - `subdistrict_name`
+- `subdistrict_name_th`
 - `mean_flood_probability_0_1`
+- `p90_flood_probability_0_1`
+- `binary_flood_share_0_1`
 - `flood_likelihood_0_100`
 - `exposure_0_100`
 - `access_gap_0_100`
 - `road_criticality_0_100`
 - `vulnerability_context_0_100`
+- `total_population`
+- `expected_exposed_population_proxy`
+- `people_losing_15_min_access`
+- `people_losing_30_min_access`
+- `people_losing_60_min_access`
+- `equity_gap_ratio`
+- `road_count`
+- `bridge_count`
+- `facility_count`
+- `mean_elevation_m`
+- `mean_slope_degrees`
+- `worldpop_bbox_coverage_rate`
+- `road_snap_population_coverage_rate`
+- `dem_population_coverage_rate`
 - `confidence_class`
 - `source_name`
 - `source_timestamp`
@@ -1183,12 +1221,15 @@ Required columns:
 Current context rule:
 
 - `flood_likelihood_0_100` is `mean_flood_probability_0_1 * 100`.
-- `exposure_0_100` is the sampled manual weak-reference positive-pixel share, not population exposure.
-- `access_gap_0_100`, `road_criticality_0_100`, and `vulnerability_context_0_100` remain `0.0` until real access, road, and vulnerability context layers are joined.
+- `exposure_0_100` is a relative WorldPop expected-exposure proxy normalized across current ADM3 rows; it is not a confirmed exposed-person count.
+- `access_gap_0_100` is a modeled 30-minute access-loss share from OSM routing and heuristic disruption.
+- `road_criticality_0_100` summarizes candidate OSM road disruption scores; it is not an observed closure rate.
+- `vulnerability_context_0_100` uses a terrain/remoteness proxy and must not be described as demographic vulnerability.
 - `confidence_class` remains `low`.
-- `context_status` must say real context is not joined.
+- `context_status` must say that real open context is joined with proxy vulnerability.
+- source coverage fields must remain visible so partial WorldPop or DEM coverage cannot be interpreted as zero impact.
 
-`outputs/mae_sai_priority_subdistricts.geojson` scores the same row through `scoring.py` and exports a dashboard-ready review-area polygon keyed by `subdistrict_id`. The geometry is the manual reference bounding box and must be treated as a review area, not official subdistrict geometry.
+`outputs/mae_sai_priority_subdistricts.geojson` scores the same eight rows through `scoring.py` and exports dashboard-ready HDX COD-AB ADM3 polygons keyed by `subdistrict_id`.
 
 Required GeoJSON properties include:
 
@@ -1196,8 +1237,7 @@ Required GeoJSON properties include:
 - `fpps_0_100`
 - `action_class`
 - `top_reason`
-- `geometry_status`
-- `reference_id`
+- source-quality and context coverage fields from the decision-input CSV
 
 Required wording:
 
@@ -1206,7 +1246,7 @@ Required wording:
 - not official validation
 - not field validated
 
-This bridge proves the real weak Sentinel-1 flood probability can feed FPPS. It does not prove official flood accuracy, does not replace real population/road/access/equity joins, and does not clear ML-label use.
+This bridge proves candidate Sentinel-1 probability and real open context can feed FPPS, road risk, access loss, and proxy equity at a real reporting grain. It does not prove official flood accuracy, observed closures, demographic vulnerability, or field-validated access loss, and it does not clear ML-label use. The manual weak-reference geometry is cross-border calibration evidence and does not directly validate these ADM3 summaries.
 
 ## Mae Sai Weak-Label ML Experiment Output
 
@@ -1441,7 +1481,7 @@ GeoJSON fixtures should use WGS84 coordinates (`EPSG:4326`) and small synthetic 
 
 ## Mae Sai Weak-Reference Action Brief
 
-`outputs/mae_sai_action_brief_MS-WR-001.md` is the first bilingual real-study-area candidate action brief. It is generated only from committed derived outputs; the generator does not read or copy raw Sentinel-1 rasters or the manual GeoPackage.
+`outputs/mae_sai_action_brief_TH570906.md` is the current highest-priority bilingual real-study-area candidate action brief. It is generated only from committed derived outputs; the generator does not read or copy raw Sentinel-1 rasters or the manual GeoPackage.
 
 Required derived inputs:
 
@@ -1450,6 +1490,10 @@ Required derived inputs:
 - `outputs/mae_sai_weak_baseline_metrics.csv`
 - `outputs/manual_reference_mask_manifest.csv`
 - optional `outputs/mae_sai_weak_label_ml_metrics.csv`
+- `outputs/mae_sai_adm3_sar_context.csv`
+- `outputs/mae_sai_road_risk.csv`
+- `outputs/mae_sai_access_loss.csv`
+- `outputs/mae_sai_equity_gap.csv`
 
 Required report sections:
 
@@ -1460,7 +1504,7 @@ Required report sections:
 - bilingual recommended local actions
 - assumptions, known failure modes, and strict warning
 
-When real road-risk, access-loss, or equity-gap frames are unavailable, the brief must say `unavailable`. The current zero FPPS context components are unjoined placeholders and must not be described as measured zero impact.
+When real road-risk, access-loss, or equity-gap frames are unavailable, the brief must say `unavailable`. When real-context frames are present, the brief must describe them as modeled candidates, identify proxy vulnerability, and avoid presenting them as observed impacts.
 
 The brief must include this wording exactly:
 
@@ -1468,4 +1512,4 @@ The brief must include this wording exactly:
 Based on weak-reference candidate flood analysis. Non-operational. Not official warning. Use only for planning/demo.
 ```
 
-The current geometry is `MS-WR-001`, a manual-reference review-area bbox rather than a confirmed official subdistrict boundary. Weak-label ML metrics may be included as a cross-check, but the brief must state when the current FPPS still uses the non-ML flood-probability proxy.
+The current brief geometry is HDX COD-AB ADM3 `TH570906 / Wiang Phang Kham`. Weak-label metrics may be included as a cross-border calibration cross-check, but the brief must state that the current FPPS uses the non-ML ADM3 flood-probability proxy.

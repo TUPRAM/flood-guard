@@ -340,9 +340,7 @@ Acceptance: `outputs/mae_sai_reference_candidate_decision.md` selects Sentinel A
 
 Add file-level acquisition rows for open context sources that unlock real exposure, aggregation, road-risk, and terrain context once files are acquired outside Git.
 
-Acceptance: `scripts/build_open_context_file_manifest.py` writes `outputs/open_context_data_file_manifest.csv` for WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and a current local Copernicus DEM Thailand tile. Rows remain context-only, source files stay outside Git, redacted path hints and SHA-256 checksums are recorded, and `processing_allowed=True` means context processing only.
-
-Next integration: derive clipped population, admin boundary, road/facility, and terrain context tables for Mae Sai before feeding real context into FPPS/access/equity.
+Acceptance: `scripts/build_open_context_file_manifest.py` writes `outputs/open_context_data_file_manifest.csv` for WorldPop Thailand 100m, HDX Thailand COD-AB, OpenStreetMap Thailand via Geofabrik, and the public Copernicus DEM GLO-30 N20/E099 tile. Rows remain context-only, source files stay outside Git, redacted path hints and SHA-256 checksums are recorded, and `processing_allowed=True` means context processing only.
 
 ## Task 56 - Dashboard Dataset Mode Switch
 
@@ -396,4 +394,10 @@ Acceptance: `src/floodguard/weak_label_ml.py` and `scripts/run_mae_sai_weak_labe
 
 Generate the first bilingual real-study-area candidate action brief from derived Mae Sai Sentinel-1, FPPS, manual weak-reference, and candidate metric outputs.
 
-Acceptance: `src/floodguard/mae_sai_brief.py` and `scripts/generate_mae_sai_action_brief.py` write `outputs/mae_sai_action_brief_MS-WR-001.md` with FPPS, action class, flood evidence, candidate metrics, road/access/equity status, assumptions, and bilingual recommended actions. Missing real context must remain explicitly unavailable, zero placeholders must not imply zero impact, raw assets remain outside Git, and the brief must say it is based on weak-reference candidate flood analysis, non-operational, not an official warning, and for planning/demo use only.
+Acceptance: `src/floodguard/mae_sai_brief.py` and `scripts/generate_mae_sai_action_brief.py` write `outputs/mae_sai_action_brief_TH570906.md` with FPPS, action class, flood evidence, candidate metrics, modeled road/access/proxy-equity context, source-quality caveats, assumptions, and bilingual recommended actions. Missing context must remain explicitly unavailable, zero placeholders must not imply zero impact, raw assets remain outside Git, and the brief must say it is based on weak-reference candidate flood analysis, non-operational, not an official warning, and for planning/demo use only.
+
+## Task 65 - Mae Sai Real Open-Context Decision Integration
+
+Join checksum-tracked HDX COD-AB, WorldPop, Geofabrik OSM, and Copernicus DEM context to candidate Sentinel-1 flood probability at Mae Sai ADM3 grain.
+
+Acceptance: `scripts/build_mae_sai_real_context.py` writes eight COD-AB ADM3 decision rows plus derived admin, SAR, population, road-risk, facility, access-loss, equity-gap, quality, FPPS, and GeoJSON outputs. Source files and bounded extraction intermediates remain outside Git. WorldPop exposure, OSM road/facility routing, heuristic disruption, partial DEM coverage, proxy vulnerability, and the cross-border manual-reference mismatch remain explicit. The generated brief uses the joined context without claiming observed impacts, official validation, field validation, or an official warning.

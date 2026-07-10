@@ -51,7 +51,7 @@ def test_build_open_context_rows_records_existing_external_files(tmp_path: Path)
     worldpop = root / "open_context" / "worldpop_population" / "tha_ppp_2020.tif"
     hdx = root / "open_context" / "hdx_cod_ab" / "tha_admin_boundaries.gdb.zip"
     osm = root / "open_context" / "osm_geofabrik" / "thailand-latest.osm.pbf"
-    dem = root / "dem" / "CopernicusDEM_Elevation_Slope_Thailand-0000046592-0000023296.tif"
+    dem = root / "dem" / "Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif"
     for path, content in (
         (worldpop, b"worldpop"),
         (hdx, b"hdx"),
@@ -107,6 +107,5 @@ def test_download_failure_is_recorded_without_aborting(
         retrieved_at_utc="2026-07-09T00:00:00Z",
     )
 
-    remote_rows = rows[rows["download_url"] != "local_current_dem_package"]
-    assert remote_rows["acquisition_status"].eq("download_failed").all()
-    assert remote_rows["reason_blocked"].str.contains("mock failed").all()
+    assert rows["acquisition_status"].eq("download_failed").all()
+    assert rows["reason_blocked"].str.contains("mock failed").all()

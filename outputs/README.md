@@ -52,9 +52,19 @@ Current expected MVP output:
 - `mae_sai_weak_label_ml_metrics.csv`
 - `mae_sai_weak_label_ml_prediction_manifest.csv`
 - `mae_sai_weak_label_ml_summary.md`
+- `mae_sai_admin_context.geojson`
+- `mae_sai_adm3_sar_context.csv`
+- `mae_sai_population_context.csv`
+- `mae_sai_road_risk.csv`
+- `mae_sai_facility_context.csv`
+- `mae_sai_access_loss.csv`
+- `mae_sai_equity_gap.csv`
+- `mae_sai_real_context_decision_inputs.csv`
+- `mae_sai_context_quality_summary.csv`
+- `mae_sai_context_quality_report.md`
 - `mae_sai_subdistrict_flood_inputs.csv`
 - `mae_sai_priority_subdistricts.geojson`
-- `mae_sai_action_brief_MS-WR-001.md`
+- `mae_sai_action_brief_TH570906.md`
 - `public_reference_candidate_manifest.csv`
 - `sentinel_asia_public_product_links.csv`
 - `public_reference_file_inspection_manifest.csv`
@@ -96,7 +106,7 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `mae_sai_reference_candidate_decision.md` compares Sentinel Asia, CEMS, UNOSAT public report evidence, and NASA coarse flood products. Current decision: Sentinel Asia MBRSC shapefile is the first practical public reference-candidate lane, not a cleared validation mask.
 
-`open_context_data_file_manifest.csv` records file-level context-source rows for WorldPop Thailand 100m, HDX Thailand COD-AB, Geofabrik Thailand OSM, and a current local Copernicus DEM Thailand tile. The selected files are stored outside Git with SHA-256 checksums and redacted path hints committed here. These rows are context only: population exposure, admin aggregation, road/facility extraction, and terrain review. They are not flood labels, reference masks, official warnings, or real validation outputs.
+`open_context_data_file_manifest.csv` records file-level context-source rows for WorldPop Thailand 100m, HDX Thailand COD-AB, Geofabrik Thailand OSM, and the public Copernicus DEM GLO-30 N20/E099 tile. The selected files are stored outside Git with SHA-256 checksums and redacted path hints committed here. These rows are context only: population exposure, admin aggregation, road/facility extraction, and terrain review. They are not flood labels, reference masks, official warnings, or real validation outputs.
 
 `cdse_mae_sai_acquisition_manifest.csv` records the selected Mae Sai pre/post Sentinel-1 CDSE acquisition attempt. The selected pre/post COG products are now downloaded outside Git with SHA-256 checksums recorded. Product downloads require `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD`; source products must never be committed into Git, and processing remains blocked until reference-mask status clears.
 
@@ -136,8 +146,10 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `mae_sai_weak_label_ml_metrics.csv`, `mae_sai_weak_label_ml_prediction_manifest.csv`, and `mae_sai_weak_label_ml_summary.md` record the first small auditable weak-label ML experiment. The experiment trains a repo-local logistic model on SAR change features, evaluates it on a spatial holdout, and compares it against the non-ML threshold baseline. These outputs are weak-label experiment artifacts only: non-operational, not official labels, not field validation, and not an official warning. ML probability may feed a candidate decision-layer run only when `can_feed_decision_layer=True`; otherwise it remains report-only.
 
-`mae_sai_subdistrict_flood_inputs.csv` and `mae_sai_priority_subdistricts.geojson` bridge the weak-reference Sentinel-1 probability summary into the FloodGuard decision layer. The current bridge is one low-confidence review-area row, not a real subdistrict aggregation. It uses `mean_flood_probability_0_1` from the weak SAR baseline, uses sampled manual-reference positive-pixel share as an exposure proxy, leaves real access/road/vulnerability context at zero until joined, and scores the row through FPPS. The GeoJSON geometry is the manual reference bbox review area, not official admin geometry.
+`mae_sai_admin_context.geojson`, the real-context CSVs, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson` bridge candidate Sentinel-1 flood probability into the FloodGuard decision layer for eight official HDX COD-AB Mae Sai ADM3 reporting polygons. WorldPop supplies modeled population, OSM supplies candidate roads/bridges/facilities and a routing graph, and Copernicus DEM supplies terrain context where the selected tile covers population points. Road disruption, access loss, and equity are modeled candidates; vulnerability is a terrain/remoteness proxy, not demographic vulnerability. The nearby manual weak-reference geometry does not overlap the official Thailand ADM3 polygons and remains cross-border calibration evidence only.
 
-`mae_sai_action_brief_MS-WR-001.md` is the first bilingual real-study-area candidate action brief. It combines the current FPPS Class E result with real Sentinel-1 product evidence, non-ML weak-reference metrics, the weak-label ML spatial-holdout cross-check, explicit unavailable road/access/equity sections, assumptions, and local verification actions. It is based on weak-reference candidate flood analysis, non-operational, not an official warning, and for planning/demo use only.
+`mae_sai_context_quality_summary.csv` and `mae_sai_context_quality_report.md` expose join quality, including reporting-unit counts, population/road/facility coverage, DEM coverage, and the manual-reference/admin mismatch. Missing context is not silently converted into confirmed zero impact.
+
+`mae_sai_action_brief_TH570906.md` is the current highest-priority bilingual Mae Sai candidate action brief. It combines FPPS with ADM3 Sentinel-1 evidence, modeled road risk, access loss, proxy equity, source-quality caveats, and local verification actions. It is based on weak-reference candidate flood analysis, non-operational, not an official warning, and for planning/demo use only.
 
 `mae_sai_validation_summary.md` remains officially blocked until provider responses, local paths, checksums, and reference-mask gates pass. When weak-reference candidate metrics exist, it includes those metrics in a separate weak-reference section without promoting them to official validation.

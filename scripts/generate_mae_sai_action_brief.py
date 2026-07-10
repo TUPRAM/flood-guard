@@ -50,6 +50,26 @@ def main() -> None:
         default=REPO_ROOT / "outputs" / "mae_sai_weak_label_ml_metrics.csv",
     )
     parser.add_argument(
+        "--adm3-sar-context",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_adm3_sar_context.csv",
+    )
+    parser.add_argument(
+        "--road-risk",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_road_risk.csv",
+    )
+    parser.add_argument(
+        "--access-loss",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_access_loss.csv",
+    )
+    parser.add_argument(
+        "--equity-gap",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_equity_gap.csv",
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=REPO_ROOT / "outputs",
@@ -67,6 +87,10 @@ def main() -> None:
             if args.weak_label_ml_metrics.exists()
             else None
         )
+        adm3_sar = _read_csv(args.adm3_sar_context) if args.adm3_sar_context.exists() else None
+        road_risk = _read_csv(args.road_risk) if args.road_risk.exists() else None
+        access_loss = _read_csv(args.access_loss) if args.access_loss.exists() else None
+        equity_gap = _read_csv(args.equity_gap) if args.equity_gap.exists() else None
         target = write_mae_sai_action_brief(
             priority,
             sar_feature,
@@ -74,6 +98,10 @@ def main() -> None:
             manual,
             args.output_dir,
             weak_label_ml_metrics=ml_metrics,
+            adm3_sar_context=adm3_sar,
+            road_risk=road_risk,
+            access_loss=access_loss,
+            equity_gap=equity_gap,
         )
     except (FileNotFoundError, MaeSaiActionBriefError, ValueError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)

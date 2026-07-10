@@ -353,13 +353,13 @@ Reference-mask legal gate fields used by `scripts/check_real_data_gates.py`:
 
 `mae_sai_reference_candidate_decision.md` documents the current comparison across Sentinel Asia, CEMS, UNOSAT report evidence, and NASA coarse flood products. The current decision is to pursue Sentinel Asia / MBRSC as the first public reference-candidate lane while keeping real validation blocked.
 
-`open_context_data_file_manifest.csv` records file-level rows for WorldPop Thailand 100m, HDX COD-AB, Geofabrik OSM, and a current local Copernicus DEM Thailand tile. These are checksum-backed context sources for exposure, aggregation, roads/facilities, and terrain review. They are not flood labels, reference masks, official warnings, or real validation outputs.
+`open_context_data_file_manifest.csv` records file-level rows for WorldPop Thailand 100m, HDX COD-AB, Geofabrik OSM, and the public Copernicus DEM GLO-30 N20/E099 tile. These are checksum-backed context sources for exposure, aggregation, roads/facilities, and terrain review. They are not flood labels, reference masks, official warnings, or real validation outputs.
 
 Open context manifest fields:
 
 | Field | Meaning |
 | --- | --- |
-| `download_url` | Direct public download URL or `local_current_dem_package` for the existing outside-Git DEM TIFF. |
+| `download_url` | Direct public download URL for the selected outside-Git context file. |
 | `file_name` | Selected local file name recorded for the context lane. |
 | `local_path` | Redacted path hint under `<external_data_workspace>/`; absolute local paths must not be committed. |
 | `sha256` | SHA-256 checksum of the outside-Git context file when acquired. |
@@ -631,31 +631,41 @@ These outputs train and evaluate a small logistic model against the manual weak-
 
 ## Mae Sai Weak-Reference Decision Bridge
 
-Files: `mae_sai_subdistrict_flood_inputs.csv` and `mae_sai_priority_subdistricts.geojson`
+Files: `mae_sai_admin_context.geojson`, `mae_sai_adm3_sar_context.csv`, `mae_sai_population_context.csv`, `mae_sai_road_risk.csv`, `mae_sai_facility_context.csv`, `mae_sai_access_loss.csv`, `mae_sai_equity_gap.csv`, `mae_sai_real_context_decision_inputs.csv`, `mae_sai_context_quality_summary.csv`, `mae_sai_context_quality_report.md`, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson`
 
-These outputs turn the real Sentinel-1 weak-reference probability summary into FloodGuard decision inputs. They remain weak-reference, non-operational, not official validation, not field validated, and not ML labels. Current rows are a one-feature review-area bridge, not official subdistrict aggregation.
+These outputs join real Sentinel-1 candidate change with HDX COD-AB, WorldPop, OSM/Geofabrik, and Copernicus DEM context. They remain weak-reference, non-operational, not official validation, not field validated, and not an official warning. Current rows cover eight official COD-AB ADM3 reporting polygons; the nearby manual weak-reference geometry is calibration evidence only and does not overlap those polygons.
 
 | Field | Meaning |
 | --- | --- |
-| `subdistrict_id` | Review-area id used for FPPS and GeoJSON joins, currently `MS-WR-001`. |
-| `subdistrict_name` | Human-readable review-area label, currently `Mae Sai Weak-Reference Review Area`. |
-| `mean_flood_probability_0_1` | Mean non-ML Sentinel-1 flood probability proxy from `mae_sai_weak_sar_feature_manifest.csv`. |
+| `subdistrict_id` | HDX COD-AB ADM3 code, such as `TH570906`. |
+| `subdistrict_name` | COD-AB ADM3 English name, such as `Wiang Phang Kham`. |
+| `subdistrict_name_th` | COD-AB ADM3 Thai name. |
+| `mean_flood_probability_0_1` | Mean non-ML Sentinel-1 candidate probability summarized inside the ADM3 polygon. |
+| `p90_flood_probability_0_1` | 90th-percentile Sentinel-1 candidate probability inside the ADM3 polygon. |
+| `binary_flood_share_0_1` | Share of sampled ADM3 SAR pixels above the non-ML candidate threshold. |
 | `flood_likelihood_0_100` | `mean_flood_probability_0_1 * 100`, used by FPPS. |
-| `exposure_0_100` | Sampled manual weak-reference positive-pixel share. This is an inundation-share proxy, not population exposure. |
-| `access_gap_0_100` | Current placeholder `0.0` until real access-loss context is joined. |
-| `road_criticality_0_100` | Current placeholder `0.0` until real road-risk context is joined. |
-| `vulnerability_context_0_100` | Current placeholder `0.0` until real vulnerability/population context is joined. |
-| `confidence_class` | Current bridge confidence, kept `low` because context and official validation are incomplete. |
-| `source_name` | Source label for the weak-reference SAR baseline feeding the decision layer. |
+| `exposure_0_100` | Relative expected-exposure proxy from WorldPop total times mean flood probability, normalized across the eight ADM3 units. |
+| `access_gap_0_100` | Modeled 30-minute access-loss share from candidate OSM routing and heuristic disruption. |
+| `road_criticality_0_100` | Mean/max heuristic road-risk blend for OSM ways assigned to the ADM3 unit. |
+| `vulnerability_context_0_100` | Population share meeting the terrain/remoteness proxy definition; not demographic vulnerability. |
+| `total_population` | WorldPop 2020 modeled population aggregate. |
+| `expected_exposed_population_proxy` | `total_population * mean_flood_probability_0_1`; not a confirmed exposed-person count. |
+| `people_losing_15_min_access` / `30` / `60` | Modeled population losing threshold access under the heuristic disrupted graph. |
+| `equity_gap_ratio` | Access-loss rate ratio for proxy-vulnerable versus other modeled population. |
+| `road_count` / `bridge_count` / `facility_count` | OSM candidate context counts assigned to the ADM3 unit. |
+| `mean_elevation_m` / `mean_slope_degrees` | Population-weighted GLO-30 terrain context where covered. |
+| `worldpop_bbox_coverage_rate` | Approximate WorldPop bbox coverage of the ADM3 polygon. |
+| `road_snap_population_coverage_rate` | Share of modeled population snapped to a drivable OSM road node. |
+| `dem_population_coverage_rate` | Share of modeled population with valid selected-tile DEM sampling. |
+| `confidence_class` | Kept `low` because flood calibration is weak/cross-border and context sources are candidate/proxy inputs. |
+| `source_name` | Combined Sentinel-1, COD-AB, WorldPop, OSM, and Copernicus DEM provenance label. |
 | `source_timestamp` | Post-event Sentinel-1 acquisition timestamp used by the weak-reference baseline. |
-| `assumptions` | Required non-operational weak-reference caveat and missing-context explanation. |
-| `processing_scope` | Current scope, `weak_reference_real_sentinel1_non_ml_candidate`. |
-| `reference_status` | Current reference status, `weak_reference_candidate`; this does not clear the official reference-mask gate. |
-| `context_status` | Explicit status showing real population, road, access, and vulnerability context is not joined; current value is `weak_sar_only_real_context_not_joined`. |
-| `geometry_status` | GeoJSON property showing the polygon is a manual-reference bbox review area, not official admin geometry. |
-| `reference_id` | Manual weak-reference id used to create the review-area geometry. |
+| `assumptions` | Required non-operational weak-reference, proxy, and source-quality caveats. |
+| `processing_scope` | Current scope, `mae_sai_adm3_real_context_candidate`. |
+| `reference_status` | `weak_reference_candidate_cross_border_calibration`; this does not clear official validation. |
+| `context_status` | `real_open_context_joined_with_proxy_vulnerability`. |
 | `fpps_0_100` | Flood Preparedness Priority Score computed by `scoring.py` from the weak-reference decision inputs. |
-| `action_class` | A-E action class from the existing FPPS scoring contract. Current row is expected to monitor/verify because confidence is low. |
+| `action_class` | A-E action class from the existing FPPS scoring contract. Current rows remain E because confidence is low. |
 | `top_reason` | Existing FPPS reason text, preserving low-confidence monitoring language. |
 
 ## THEOS-2 Local Metadata Manifest
@@ -775,20 +785,20 @@ This report remains officially blocked until the legal reference mask, local pat
 
 ## Mae Sai Weak-Reference Action Brief
 
-File: `mae_sai_action_brief_MS-WR-001.md`
+File: `mae_sai_action_brief_TH570906.md`
 
 This is a bilingual Markdown decision brief generated from derived Mae Sai outputs. It contains no raw imagery or source GeoPackage content.
 
 | Brief item | Meaning |
 | --- | --- |
-| Review area | `MS-WR-001`, currently a weak-reference bbox review area rather than an official subdistrict boundary. |
+| Review area | `TH570906 / Wiang Phang Kham`, an HDX COD-AB ADM3 reporting polygon. |
 | FPPS and action class | Existing deterministic score and A-E class from `scoring.py`; current low confidence forces monitor-and-verify behavior. |
 | Flood evidence | Real CDSE Sentinel-1 pre/post product ids, observation timestamp, mean non-ML flood-probability proxy, and sampled flood-positive counts. |
 | Candidate validation metrics | IoU, F1/Dice, precision, recall, and area error against the manually digitized weak-reference candidate. These are not official validation metrics. |
 | Weak-label ML cross-check | Spatial-holdout baseline-versus-logistic metrics. The brief discloses that the ML candidate overpredicts area and is not the current FPPS input. |
-| Road risk | Real linked road-risk rows when supplied; otherwise explicitly unavailable. A zero placeholder is not interpreted as safe roads. |
-| Access loss | Real linked 15/30/60-minute access-loss counts when supplied; otherwise explicitly unavailable. |
-| Equity gap | Real linked vulnerable/non-vulnerable loss ratio when supplied; otherwise explicitly unavailable. |
+| Road risk | Top OSM candidate roads/bridges from the Sentinel-1 heuristic risk calculation; not observed closures. |
+| Access loss | Modeled 15/30/60-minute population access loss on the candidate OSM network. |
+| Equity gap | Ratio for the terrain/remoteness proxy group versus other modeled population; not demographic equity measurement. |
 | Confidence | Current evidence confidence, expected to remain `low` while official validation and real decision context are incomplete. |
-| Assumptions | Source, reference, extraction, geometry, and missing-context limitations. |
+| Assumptions | Source, cross-border weak calibration, extraction, OSM, WorldPop, DEM coverage, and proxy-vulnerability limitations. |
 | Warning | `Based on weak-reference candidate flood analysis. Non-operational. Not official warning. Use only for planning/demo.` |

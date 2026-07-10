@@ -145,9 +145,10 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "MANUAL-QGIS-MAE-SAI-2024" in html
     assert "ready_for_candidate_metrics" in html
     assert "confirmed_true" in html
-    assert "MS-WR-001" in html
+    assert "TH570906" in html
     assert "weak_reference_candidate" in html
-    assert "weak_sar_only_real_context_not_joined" in html
+    assert "real_open_context_joined_with_proxy_vulnerability" in html
+    assert "8 ADM3 reporting units" in html
     assert "IoU 0.006079" in html
     assert "F1 0.012085" in html
     assert "precision 0.038494" in html

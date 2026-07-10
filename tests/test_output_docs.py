@@ -40,8 +40,10 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "mae_sai_subdistrict_flood_inputs.csv",
         "mae_sai_priority_subdistricts.geojson",
         "mean_flood_probability_0_1",
-        "weak_sar_only_real_context_not_joined",
-        "MS-WR-001",
+        "real_open_context_joined_with_proxy_vulnerability",
+        "TH570906",
+        "mae_sai_context_quality_report.md",
+        "dem_population_coverage_rate",
         "local_data_library_manifest.csv",
         "local_data_library_zip_members.csv",
         "sentinel1_sar",
@@ -280,7 +282,8 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "MBRSC Reference-Mask Clearance Memo" in contract_text
     assert "Manual QGIS Weak-Reference Manifest" in contract_text
     assert "Mae Sai Weak-Reference Decision Input Output" in contract_text
-    assert "real context is not joined" in contract_text
+    assert "real open context is joined" in contract_text
+    assert "eight official Mae Sai reporting polygons" in contract_text
     assert "CEMS Product Candidate Manifest" in contract_text
     assert "CDSE Mae Sai Acquisition Manifest" in contract_text
     assert "Open Context Data File Manifest" in contract_text

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 import math
 from pathlib import Path
@@ -63,6 +63,20 @@ SAR_FEATURE_MANIFEST_COLUMNS: tuple[str, ...] = (
     "assumptions",
 )
 
+SAR_CONTEXT_SUMMARY_COLUMNS: tuple[str, ...] = (
+    "subdistrict_id",
+    "subdistrict_name",
+    "mean_flood_probability_0_1",
+    "p90_flood_probability_0_1",
+    "binary_flood_share_0_1",
+    "mean_combined_sar_change_score",
+    "sample_pixel_count",
+    "source_timestamp",
+    "confidence_class",
+    "processing_scope",
+    "assumptions",
+)
+
 
 class SARRasterExtractError(ValueError):
     """Raised when real Sentinel-1 weak-reference extraction is blocked."""
@@ -78,6 +92,26 @@ class SARRasterInputs:
     post_vh_uri: str
     reference_geometries: tuple[dict[str, object], ...]
     reference_crs: str = "EPSG:4326"
+
+
+@dataclass(frozen=True)
+class SARChangeArrays:
+    """Aligned Sentinel-1 change arrays for one geographic window."""
+
+    pre_vv_db: object
+    post_vv_db: object
+    pre_vh_db: object
+    post_vh_db: object
+    vv_drop: object
+    vh_drop: object
+    vv_ratio: object
+    vh_ratio: object
+    combined: object
+    probability: object
+    binary: object
+    valid: object
+    transform: object
+    georeferencing_method: str
 
 
 def resolve_external_path_hint(
@@ -250,94 +284,28 @@ def extract_sar_change_features(
         raise SARRasterExtractError("output_shape dimensions must be positive.")
 
     import numpy as np
-    import rasterio
-    from rasterio.enums import Resampling
     from rasterio.features import rasterize
 
     bbox = _geometry_bounds(inputs.reference_geometries, buffer_degrees=buffer_degrees)
-    with rasterio.open(inputs.post_vh_uri) as post_vh_dataset:
-        post_transform, post_crs, post_georef = _dataset_geo_transform(post_vh_dataset)
-        _require_compatible_crs(inputs.reference_crs, post_crs)
-        post_window = _window_from_geo_bounds(
-            bbox,
-            post_transform,
-            post_vh_dataset.width,
-            post_vh_dataset.height,
-        )
-        sample_height, sample_width = output_shape
-        post_vh = _read_window(
-            post_vh_dataset,
-            post_window,
-            output_shape=output_shape,
-            resampling=Resampling.bilinear,
-        )
-        window_transform = _window_transform(
-            post_transform,
-            post_window,
-            output_shape=output_shape,
-        )
-        reference_mask = rasterize(
-            [(geometry, 1) for geometry in inputs.reference_geometries],
-            out_shape=output_shape,
-            transform=window_transform,
-            fill=0,
-            all_touched=True,
-            dtype="uint8",
-        )
-
-    post_vv = _read_matching_geo_window(
-        inputs.post_vv_uri,
+    arrays = _read_sar_change_arrays(
+        inputs,
         bbox,
-        output_shape,
-        reference_crs=inputs.reference_crs,
+        output_shape=output_shape,
+        probability_threshold=probability_threshold,
+        dry_change_db=dry_change_db,
+        flood_change_db=flood_change_db,
     )
-    pre_vv = _read_matching_geo_window(
-        inputs.pre_vv_uri,
-        bbox,
-        output_shape,
-        reference_crs=inputs.reference_crs,
-    )
-    pre_vh = _read_matching_geo_window(
-        inputs.pre_vh_uri,
-        bbox,
-        output_shape,
-        reference_crs=inputs.reference_crs,
+    sample_height, sample_width = output_shape
+    reference_mask = rasterize(
+        [(geometry, 1) for geometry in inputs.reference_geometries],
+        out_shape=output_shape,
+        transform=arrays.transform,
+        fill=0,
+        all_touched=True,
+        dtype="uint8",
     )
 
-    pre_vv_db = _linear_to_db(pre_vv)
-    post_vv_db = _linear_to_db(post_vv)
-    pre_vh_db = _linear_to_db(pre_vh)
-    post_vh_db = _linear_to_db(post_vh)
-    vv_drop = pre_vv_db - post_vv_db
-    vh_drop = pre_vh_db - post_vh_db
-    vv_ratio = np.divide(
-        post_vv,
-        pre_vv,
-        out=np.full_like(post_vv, np.nan, dtype="float32"),
-        where=pre_vv > 0,
-    )
-    vh_ratio = np.divide(
-        post_vh,
-        pre_vh,
-        out=np.full_like(post_vh, np.nan, dtype="float32"),
-        where=pre_vh > 0,
-    )
-    combined = 0.4 * vv_drop + 0.6 * vh_drop
-    probability = np.clip(
-        (combined - dry_change_db) / (flood_change_db - dry_change_db),
-        0.0,
-        1.0,
-    )
-    binary = (probability >= probability_threshold).astype("uint8")
-
-    valid = (
-        np.isfinite(pre_vv_db)
-        & np.isfinite(post_vv_db)
-        & np.isfinite(pre_vh_db)
-        & np.isfinite(post_vh_db)
-        & np.isfinite(combined)
-    )
-    if not bool(valid.any()):
+    if not bool(arrays.valid.any()):
         raise SARRasterExtractError("No valid SAR pixels were extracted.")
     if int(reference_mask.sum()) <= 0:
         raise SARRasterExtractError(
@@ -352,19 +320,19 @@ def extract_sar_change_features(
             ],
             "row": rows.reshape(-1),
             "col": cols.reshape(-1),
-            "pre_vv_db": pre_vv_db.reshape(-1),
-            "post_vv_db": post_vv_db.reshape(-1),
-            "pre_vh_db": pre_vh_db.reshape(-1),
-            "post_vh_db": post_vh_db.reshape(-1),
-            "vv_drop": vv_drop.reshape(-1),
-            "vh_drop": vh_drop.reshape(-1),
-            "vv_ratio": vv_ratio.reshape(-1),
-            "vh_ratio": vh_ratio.reshape(-1),
-            "combined_sar_change_score": combined.reshape(-1),
-            "flood_probability_0_1": probability.reshape(-1),
-            "binary_flood_extent": binary.reshape(-1),
+            "pre_vv_db": arrays.pre_vv_db.reshape(-1),
+            "post_vv_db": arrays.post_vv_db.reshape(-1),
+            "pre_vh_db": arrays.pre_vh_db.reshape(-1),
+            "post_vh_db": arrays.post_vh_db.reshape(-1),
+            "vv_drop": arrays.vv_drop.reshape(-1),
+            "vh_drop": arrays.vh_drop.reshape(-1),
+            "vv_ratio": arrays.vv_ratio.reshape(-1),
+            "vh_ratio": arrays.vh_ratio.reshape(-1),
+            "combined_sar_change_score": arrays.combined.reshape(-1),
+            "flood_probability_0_1": arrays.probability.reshape(-1),
+            "binary_flood_extent": arrays.binary.reshape(-1),
             "reference_flood_extent": reference_mask.reshape(-1),
-            "_valid": valid.reshape(-1),
+            "_valid": arrays.valid.reshape(-1),
         }
     )
     frame = frame[frame["_valid"]].drop(columns=["_valid"]).reset_index(drop=True)
@@ -386,8 +354,99 @@ def extract_sar_change_features(
     frame.attrs["bbox"] = bbox
     frame.attrs["sample_width"] = sample_width
     frame.attrs["sample_height"] = sample_height
-    frame.attrs["georeferencing_method"] = post_georef
+    frame.attrs["georeferencing_method"] = arrays.georeferencing_method
     return frame.loc[:, SAR_FEATURE_COLUMNS]
+
+
+def summarize_sar_probability_by_geometries(
+    inputs: SARRasterInputs,
+    features: Sequence[Mapping[str, object]],
+    *,
+    id_property: str = "subdistrict_id",
+    name_property: str = "subdistrict_name",
+    output_shape: tuple[int, int] = (128, 128),
+    probability_threshold: float = 0.5,
+    dry_change_db: float = 0.5,
+    flood_change_db: float = 4.0,
+    source_timestamp: str = "2024-09-15T23:16:01Z",
+) -> pd.DataFrame:
+    """Summarize Sentinel-1 change probabilities inside reporting polygons.
+
+    Reporting polygons are spatial aggregation units only. They are never
+    rasterized as flood labels or used to compute validation metrics.
+    """
+
+    import numpy as np
+    from rasterio.features import rasterize
+
+    if not features:
+        raise SARRasterExtractError("At least one reporting geometry is required.")
+    if output_shape[0] <= 0 or output_shape[1] <= 0:
+        raise SARRasterExtractError("output_shape dimensions must be positive.")
+
+    rows: list[dict[str, object]] = []
+    for index, feature in enumerate(features):
+        properties = feature.get("properties")
+        geometry = feature.get("geometry")
+        if not isinstance(properties, Mapping) or not isinstance(geometry, Mapping):
+            raise SARRasterExtractError(
+                f"Reporting feature {index} must contain properties and geometry."
+            )
+        subdistrict_id = str(properties.get(id_property, "")).strip()
+        subdistrict_name = str(properties.get(name_property, "")).strip()
+        if not subdistrict_id or not subdistrict_name:
+            raise SARRasterExtractError(
+                f"Reporting feature {index} is missing {id_property} or {name_property}."
+            )
+        geometry_dict = dict(geometry)
+        bbox = _geometry_bounds((geometry_dict,), buffer_degrees=0.0)
+        arrays = _read_sar_change_arrays(
+            inputs,
+            bbox,
+            output_shape=output_shape,
+            probability_threshold=probability_threshold,
+            dry_change_db=dry_change_db,
+            flood_change_db=flood_change_db,
+        )
+        polygon_mask = rasterize(
+            [(geometry_dict, 1)],
+            out_shape=output_shape,
+            transform=arrays.transform,
+            fill=0,
+            all_touched=False,
+            dtype="uint8",
+        ).astype(bool)
+        selected = polygon_mask & arrays.valid
+        if not bool(selected.any()):
+            raise SARRasterExtractError(
+                f"No valid SAR pixels overlap reporting unit {subdistrict_id}."
+            )
+        probabilities = arrays.probability[selected]
+        combined = arrays.combined[selected]
+        binary = arrays.binary[selected]
+        rows.append(
+            {
+                "subdistrict_id": subdistrict_id,
+                "subdistrict_name": subdistrict_name,
+                "mean_flood_probability_0_1": round(float(np.mean(probabilities)), 6),
+                "p90_flood_probability_0_1": round(
+                    float(np.percentile(probabilities, 90)), 6
+                ),
+                "binary_flood_share_0_1": round(float(np.mean(binary)), 6),
+                "mean_combined_sar_change_score": round(float(np.mean(combined)), 6),
+                "sample_pixel_count": int(selected.sum()),
+                "source_timestamp": source_timestamp,
+                "confidence_class": "low",
+                "processing_scope": "real_sentinel1_adm3_candidate_context",
+                "assumptions": (
+                    "Real CDSE Sentinel-1 pre/post change summarized inside COD-AB "
+                    "ADM3 geometry. The manual weak-reference mask is a nearby "
+                    "cross-border calibration candidate, not the aggregation geometry. "
+                    "Non-operational and not official validation."
+                ),
+            }
+        )
+    return pd.DataFrame(rows, columns=SAR_CONTEXT_SUMMARY_COLUMNS)
 
 
 def build_sar_feature_manifest(
@@ -449,6 +508,118 @@ def build_sar_feature_manifest(
         ),
     }
     return pd.DataFrame([row], columns=SAR_FEATURE_MANIFEST_COLUMNS)
+
+
+def _read_sar_change_arrays(
+    inputs: SARRasterInputs,
+    bbox: tuple[float, float, float, float],
+    *,
+    output_shape: tuple[int, int],
+    probability_threshold: float,
+    dry_change_db: float,
+    flood_change_db: float,
+) -> SARChangeArrays:
+    import numpy as np
+    import rasterio
+    from rasterio.enums import Resampling
+
+    if flood_change_db <= dry_change_db:
+        raise SARRasterExtractError("flood_change_db must be greater than dry_change_db.")
+    if not 0 <= probability_threshold <= 1:
+        raise SARRasterExtractError("probability_threshold must be between 0 and 1.")
+
+    with rasterio.open(inputs.post_vh_uri) as post_vh_dataset:
+        post_transform, post_crs, georeferencing_method = _dataset_geo_transform(
+            post_vh_dataset
+        )
+        _require_compatible_crs(inputs.reference_crs, post_crs)
+        post_window = _window_from_geo_bounds(
+            bbox,
+            post_transform,
+            post_vh_dataset.width,
+            post_vh_dataset.height,
+        )
+        post_vh = _read_window(
+            post_vh_dataset,
+            post_window,
+            output_shape=output_shape,
+            resampling=Resampling.bilinear,
+        )
+        window_transform = _window_transform(
+            post_transform,
+            post_window,
+            output_shape=output_shape,
+        )
+
+    post_vv = _read_matching_geo_window(
+        inputs.post_vv_uri,
+        bbox,
+        output_shape,
+        reference_crs=inputs.reference_crs,
+    )
+    pre_vv = _read_matching_geo_window(
+        inputs.pre_vv_uri,
+        bbox,
+        output_shape,
+        reference_crs=inputs.reference_crs,
+    )
+    pre_vh = _read_matching_geo_window(
+        inputs.pre_vh_uri,
+        bbox,
+        output_shape,
+        reference_crs=inputs.reference_crs,
+    )
+
+    pre_vv_db = _linear_to_db(pre_vv)
+    post_vv_db = _linear_to_db(post_vv)
+    pre_vh_db = _linear_to_db(pre_vh)
+    post_vh_db = _linear_to_db(post_vh)
+    vv_drop = pre_vv_db - post_vv_db
+    vh_drop = pre_vh_db - post_vh_db
+    vv_ratio = np.divide(
+        post_vv,
+        pre_vv,
+        out=np.full_like(post_vv, np.nan, dtype="float32"),
+        where=pre_vv > 0,
+    )
+    vh_ratio = np.divide(
+        post_vh,
+        pre_vh,
+        out=np.full_like(post_vh, np.nan, dtype="float32"),
+        where=pre_vh > 0,
+    )
+    combined = 0.4 * vv_drop + 0.6 * vh_drop
+    probability = np.clip(
+        (combined - dry_change_db) / (flood_change_db - dry_change_db),
+        0.0,
+        1.0,
+    )
+    binary = (probability >= probability_threshold).astype("uint8")
+    valid = (
+        np.isfinite(pre_vv_db)
+        & np.isfinite(post_vv_db)
+        & np.isfinite(pre_vh_db)
+        & np.isfinite(post_vh_db)
+        & np.isfinite(combined)
+    )
+    if not bool(valid.any()):
+        raise SARRasterExtractError("No valid SAR pixels were extracted.")
+    return SARChangeArrays(
+        pre_vv_db=pre_vv_db,
+        post_vv_db=post_vv_db,
+        pre_vh_db=pre_vh_db,
+        post_vh_db=post_vh_db,
+        vv_drop=vv_drop,
+        vh_drop=vh_drop,
+        vv_ratio=vv_ratio,
+        vh_ratio=vh_ratio,
+        combined=combined,
+        probability=probability,
+        binary=binary,
+        valid=valid,
+        transform=window_transform,
+        georeferencing_method=georeferencing_method,
+    )
 
 
 def _read_matching_geo_window(

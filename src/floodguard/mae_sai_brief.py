@@ -103,6 +103,18 @@ ML_REQUIRED_COLUMNS: tuple[str, ...] = (
     "warning_text",
 )
 
+ADM3_SAR_REQUIRED_COLUMNS: tuple[str, ...] = (
+    "subdistrict_id",
+    "subdistrict_name",
+    "mean_flood_probability_0_1",
+    "p90_flood_probability_0_1",
+    "binary_flood_share_0_1",
+    "sample_pixel_count",
+    "source_timestamp",
+    "confidence_class",
+    "assumptions",
+)
+
 ROAD_REQUIRED_COLUMNS: tuple[str, ...] = (
     "road_id",
     "subdistrict_id",
@@ -135,6 +147,7 @@ def build_mae_sai_action_brief(
     manual_reference_manifest: pd.DataFrame,
     *,
     weak_label_ml_metrics: pd.DataFrame | None = None,
+    adm3_sar_context: pd.DataFrame | None = None,
     road_risk: pd.DataFrame | None = None,
     access_loss: pd.DataFrame | None = None,
     equity_gap: pd.DataFrame | None = None,
@@ -177,8 +190,25 @@ def build_mae_sai_action_brief(
     if action_class not in RECOMMENDED_ACTIONS:
         raise MaeSaiActionBriefError(f"Unknown action_class value: {action_class}")
 
+    adm3_sar: pd.Series | None = None
+    if adm3_sar_context is not None:
+        _require_columns(adm3_sar_context, ADM3_SAR_REQUIRED_COLUMNS, "ADM3 SAR")
+        matches = adm3_sar_context[
+            adm3_sar_context["subdistrict_id"].astype(str) == selected_id
+        ]
+        if len(matches) != 1:
+            raise MaeSaiActionBriefError(
+                f"Expected one ADM3 SAR row for {selected_id}; found {len(matches)}."
+            )
+        adm3_sar = matches.iloc[0]
+
+    probability_source = (
+        adm3_sar["mean_flood_probability_0_1"]
+        if adm3_sar is not None
+        else feature["mean_flood_probability_0_1"]
+    )
     mean_probability = _bounded_float(
-        feature["mean_flood_probability_0_1"],
+        probability_source,
         0.0,
         1.0,
         "mean_flood_probability_0_1",
@@ -199,8 +229,112 @@ def build_mae_sai_action_brief(
     road_lines = _road_risk_lines(road_risk, selected_id, selected)
     access_lines = _access_loss_lines(access_loss, selected_id, selected)
     equity_lines = _equity_gap_lines(equity_gap, selected_id, selected)
+    district_signal_lines = _district_access_signal_lines(
+        access_loss, equity_gap, selected_id
+    )
     metric_lines = _candidate_metric_lines(baseline, ml)
     ml_summary_lines = _ml_summary_lines(ml)
+    real_context_joined = str(selected["context_status"]).startswith(
+        "real_open_context_joined"
+    )
+    if real_context_joined:
+        interpretation_text = (
+            "Class E means monitor and verify. Real admin, population, road, facility, "
+            "terrain, access, and proxy-equity context is joined, but flood calibration "
+            "and operational source verification remain low confidence."
+        )
+        component_lines = [
+            (
+                "- Component status: flood likelihood "
+                f"{_number(selected['flood_likelihood_0_100'], 'flood likelihood'):.2f}/100; "
+                f"relative exposure {_number(selected['exposure_0_100'], 'exposure'):.2f}/100; "
+                f"modeled access gap {_number(selected['access_gap_0_100'], 'access gap'):.2f}/100; "
+                f"road criticality {_number(selected['road_criticality_0_100'], 'road criticality'):.2f}/100; "
+                f"proxy vulnerability {_number(selected['vulnerability_context_0_100'], 'vulnerability context'):.2f}/100."
+            ),
+            (
+                "- These are candidate model outputs from open context sources; they "
+                "are not observed emergency impacts or official operational data."
+            ),
+        ]
+        context_action_lines = [
+            (
+                "- Field-verify the highest-risk OSM road and bridge candidates, and "
+                "confirm that mapped facilities are valid emergency destinations."
+            ),
+            (
+                "- ตรวจสอบถนนและสะพาน OSM ที่มีความเสี่ยงสูงในภาคสนาม "
+                "และยืนยันว่าสถานที่ที่ทำแผนที่ไว้ใช้เป็นจุดหมายฉุกเฉินได้จริง"
+            ),
+            (
+                "- Replace the terrain/remoteness vulnerability proxy with current "
+                "demographic and local-service data before equity decisions."
+            ),
+            (
+                "- แทนที่ตัวแทนความเปราะบางด้านภูมิประเทศและความห่างไกลด้วยข้อมูลประชากร "
+                "และบริการท้องถิ่นปัจจุบันก่อนตัดสินใจด้านความเสมอภาค"
+            ),
+        ]
+    else:
+        interpretation_text = (
+            "Class E means monitor and verify. It does not mean no flood risk; real "
+            "administrative, population, road, access, and vulnerability joins are incomplete."
+        )
+        component_lines = [
+            (
+                "- Component status: flood likelihood "
+                f"{_number(selected['flood_likelihood_0_100'], 'flood likelihood'):.2f}/100; "
+                f"exposure proxy {_number(selected['exposure_0_100'], 'exposure'):.2f}/100."
+            ),
+            (
+                "- Access gap, road criticality, and vulnerability/context are "
+                "unjoined placeholders in this run, not measured zero impact."
+            ),
+        ]
+        context_action_lines = [
+            (
+                "- Join real admin boundaries, population, roads, facilities, terrain, "
+                "and vulnerability data before revising FPPS or planning routes and shelters."
+            ),
+            (
+                "- เชื่อมข้อมูลเขตการปกครอง ประชากร ถนน สถานบริการ ภูมิประเทศ และกลุ่มเปราะบางจริง "
+                "ก่อนปรับ FPPS หรือวางแผนเส้นทางและศูนย์พักพิง"
+            ),
+        ]
+    if adm3_sar is not None:
+        sample_pixel_count = _integer(adm3_sar["sample_pixel_count"], "ADM3 sample pixels")
+        predicted_positive_pixel_count = round(
+            _bounded_float(
+                adm3_sar["binary_flood_share_0_1"],
+                0.0,
+                1.0,
+                "ADM3 binary flood share",
+            )
+            * sample_pixel_count
+        )
+        evidence_scope = "inside the official COD-AB ADM3 aggregation unit"
+        reference_status_text = (
+            "manual cross-border weak-reference candidate used for calibration only; "
+            "it does not overlap the official Thailand ADM3 geometry"
+        )
+        geometry_status_text = (
+            "Current geometry is an HDX COD-AB ADM3 boundary; flood calibration still "
+            "depends on a nearby cross-border manual weak reference."
+        )
+    else:
+        sample_pixel_count = _integer(feature["sample_pixel_count"], "sample pixels")
+        predicted_positive_pixel_count = _integer(
+            feature["predicted_positive_pixel_count"], "predicted positive pixels"
+        )
+        evidence_scope = "inside the weak-reference review sample"
+        reference_status_text = (
+            "manually digitized weak-reference candidate; not official validation "
+            "truth and not field validated"
+        )
+        geometry_status_text = (
+            "Current geometry is a weak-reference review area, not a confirmed "
+            "official subdistrict boundary."
+        )
 
     lines = [
         (
@@ -224,13 +358,12 @@ def build_mae_sai_action_brief(
         (
             "- **Evidence / หลักฐาน:** Real CDSE Sentinel-1 pre/post imagery "
             f"produced a mean non-ML flood-probability proxy of {mean_probability:.1%} "
-            "inside the weak-reference review sample."
+            f"{evidence_scope}."
         ),
         (
-            "- **Interpretation / การตีความ:** Class E means monitor and verify. "
-            "It does not mean no flood risk; real administrative, population, road, "
-            "access, and vulnerability joins are incomplete."
+            f"- **Interpretation / การตีความ:** {interpretation_text}"
         ),
+        *district_signal_lines,
         "",
         "## Priority / ลำดับความสำคัญ",
         "",
@@ -238,15 +371,7 @@ def build_mae_sai_action_brief(
         f"- Action class: {action_class}",
         f"- Confidence: {selected['confidence_class']}",
         f"- Top reason: {selected['top_reason']}",
-        (
-            "- Component status: flood likelihood "
-            f"{_number(selected['flood_likelihood_0_100'], 'flood_likelihood_0_100'):.2f}/100; "
-            f"exposure proxy {_number(selected['exposure_0_100'], 'exposure_0_100'):.2f}/100."
-        ),
-        (
-            "- Access gap, road criticality, and vulnerability/context are "
-            "unjoined placeholders in this run, not measured zero impact."
-        ),
+        *component_lines,
         "",
         "## Flood Evidence / หลักฐานน้ำท่วม",
         "",
@@ -257,18 +382,14 @@ def build_mae_sai_action_brief(
         f"- Mean flood-probability proxy: {mean_probability:.1%}",
         (
             "- Thresholded flood-positive sample: "
-            f"{_integer(feature['predicted_positive_pixel_count'], 'predicted positive pixels'):,} "
-            f"of {_integer(feature['sample_pixel_count'], 'sample pixels'):,} pixels."
+            f"{predicted_positive_pixel_count:,} of {sample_pixel_count:,} pixels."
         ),
         (
-            "- Manual weak-reference positive sample: "
+            "- Cross-border calibration reference-positive sample: "
             f"{_integer(feature['reference_positive_pixel_count'], 'reference positive pixels'):,} pixels."
         ),
         f"- Reference candidate: `{manual['reference_id']}` ({manual['geometry_type']}, {manual['crs']}).",
-        (
-            "- Reference status: manually digitized weak-reference candidate; "
-            "not official validation truth and not field validated."
-        ),
+        f"- Reference status: {reference_status_text}.",
         "",
         "## Candidate Validation Metrics / ตัวชี้วัดการตรวจสอบแบบอ้างอิงอย่างอ่อน",
         "",
@@ -299,14 +420,7 @@ def build_mae_sai_action_brief(
             "- ตรวจสอบพื้นที่น้ำท่วมที่เป็นผลลัพธ์เบื้องต้นกับข้อมูลภาคสนามและแหล่งอ้างอิงอิสระ "
             "ก่อนใช้ตัดสินใจเชิงปฏิบัติการ"
         ),
-        (
-            "- Join real admin boundaries, population, roads, facilities, terrain, "
-            "and vulnerability data before revising FPPS or planning routes and shelters."
-        ),
-        (
-            "- เชื่อมข้อมูลเขตการปกครอง ประชากร ถนน สถานบริการ ภูมิประเทศ และกลุ่มเปราะบางจริง "
-            "ก่อนปรับ FPPS หรือวางแผนเส้นทางและศูนย์พักพิง"
-        ),
+        *context_action_lines,
         (
             "- Do not issue warnings, closures, evacuations, or shelter decisions "
             "from this brief alone."
@@ -323,8 +437,7 @@ def build_mae_sai_action_brief(
         f"- Manual-reference allowed use: {manual['allowed_use']}.",
         f"- Manual-reference prohibited use: {manual['not_allowed_use']}.",
         (
-            "- Current geometry is a weak-reference review area, not a confirmed "
-            "official subdistrict boundary."
+            f"- {geometry_status_text}"
         ),
         "- SAR layover/shadow, permanent water, urban double-bounce, manual-mask uncertainty, and date mismatch may affect results.",
         "",
@@ -342,6 +455,7 @@ def write_mae_sai_action_brief(
     output_dir: str | Path,
     *,
     weak_label_ml_metrics: pd.DataFrame | None = None,
+    adm3_sar_context: pd.DataFrame | None = None,
     road_risk: pd.DataFrame | None = None,
     access_loss: pd.DataFrame | None = None,
     equity_gap: pd.DataFrame | None = None,
@@ -360,6 +474,7 @@ def write_mae_sai_action_brief(
             baseline_metrics,
             manual_reference_manifest,
             weak_label_ml_metrics=weak_label_ml_metrics,
+            adm3_sar_context=adm3_sar_context,
             road_risk=road_risk,
             access_loss=access_loss,
             equity_gap=equity_gap,
@@ -376,7 +491,7 @@ def _candidate_metric_lines(
 ) -> list[str]:
     lines = [
         (
-            "- Full-sample non-ML threshold candidate: "
+            "- Cross-border weak-reference full-sample non-ML threshold candidate: "
             f"IoU {_metric(baseline, 'iou'):.3f}; "
             f"F1/Dice {_metric(baseline, 'f1_dice'):.3f}; "
             f"precision {_metric(baseline, 'precision'):.3f}; "
@@ -408,7 +523,7 @@ def _candidate_metric_lines(
             ),
             "",
             (
-                "- The ML candidate improves overlap and recall on the spatial holdout, "
+                "- The cross-border ML candidate improves overlap and recall on its spatial holdout, "
                 "but its positive area error shows severe overprediction. Treat it as a "
                 "screening signal, not confirmed flood extent."
             ),
@@ -466,14 +581,20 @@ def _road_risk_lines(
         ["road_disruption_probability_0_1", "road_id"],
         ascending=[False, True],
     )
-    return [
-        (
-            f"- {row['road_id']}: "
-            f"{float(row['road_disruption_probability_0_1']):.1%} candidate risk; "
-            f"{row['top_risk_reason']}"
+    lines: list[str] = []
+    for _, row in rows.head(3).iterrows():
+        name = str(row.get("osm_name", "")).strip()
+        label = (
+            f"{name} (`{row['road_id']}`)"
+            if name
+            else f"OSM way `{row['road_id']}`"
         )
-        for _, row in rows.head(3).iterrows()
-    ]
+        bridge = " bridge-tagged;" if _truthy(row.get("bridge_flag", False)) else ""
+        lines.append(
+            f"- {label}: {float(row['road_disruption_probability_0_1']):.1%} "
+            f"candidate risk;{bridge} {row['top_risk_reason']}"
+        )
+    return lines
 
 
 def _access_loss_lines(
@@ -496,9 +617,9 @@ def _access_loss_lines(
         return ["- Unavailable: no real access-loss row matches this review area."]
     row = rows.iloc[0]
     return [
-        f"- People losing 15-minute access: {_integer(row['people_losing_15_min_access'], '15-minute access loss'):,}",
-        f"- People losing 30-minute access: {_integer(row['people_losing_30_min_access'], '30-minute access loss'):,}",
-        f"- People losing 60-minute access: {_integer(row['people_losing_60_min_access'], '60-minute access loss'):,}",
+        f"- People losing 15-minute access: {_population_count(row['people_losing_15_min_access'], '15-minute access loss')}",
+        f"- People losing 30-minute access: {_population_count(row['people_losing_30_min_access'], '30-minute access loss')}",
+        f"- People losing 60-minute access: {_population_count(row['people_losing_60_min_access'], '60-minute access loss')}",
     ]
 
 
@@ -522,9 +643,53 @@ def _equity_gap_lines(
         return ["- Unavailable: no real equity-gap row matches this review area."]
     row = rows.iloc[0]
     ratio = "unavailable" if pd.isna(row["equity_gap_ratio"]) else f"{_number(row['equity_gap_ratio'], 'equity gap ratio'):.3f}"
-    return [
+    lines = [
         f"- Equity gap ratio: {ratio}",
         f"- Interpretation: {row['interpretation_text']}",
+    ]
+    definition = str(row.get("vulnerability_definition", "")).strip()
+    if definition:
+        lines.append(f"- Vulnerability basis: {definition}.")
+    return lines
+
+
+def _district_access_signal_lines(
+    access_loss: pd.DataFrame | None,
+    equity_gap: pd.DataFrame | None,
+    selected_id: str,
+) -> list[str]:
+    if access_loss is None or equity_gap is None:
+        return []
+    if "people_losing_30_min_access" not in access_loss.columns:
+        return []
+    frame = access_loss.copy()
+    frame["people_losing_30_min_access"] = pd.to_numeric(
+        frame["people_losing_30_min_access"], errors="coerce"
+    )
+    if frame["people_losing_30_min_access"].isna().all():
+        return []
+    row = frame.sort_values(
+        ["people_losing_30_min_access", "subdistrict_id"],
+        ascending=[False, True],
+    ).iloc[0]
+    loss = float(row["people_losing_30_min_access"])
+    if loss <= 0 or str(row["subdistrict_id"]) == selected_id:
+        return []
+    equity_matches = equity_gap[
+        equity_gap["subdistrict_id"].astype(str) == str(row["subdistrict_id"])
+    ]
+    ratio_text = "unavailable"
+    if (
+        not equity_matches.empty
+        and not pd.isna(equity_matches.iloc[0]["equity_gap_ratio"])
+    ):
+        ratio_text = f"{float(equity_matches.iloc[0]['equity_gap_ratio']):.3f}"
+    return [
+        (
+            "- **District cross-check / การตรวจสอบระดับอำเภอ:** "
+            f"{row['subdistrict_name']} has the highest modeled 30-minute access loss "
+            f"({loss:,.0f} people) and proxy equity-gap ratio {ratio_text}."
+        )
     ]
 
 
@@ -556,9 +721,9 @@ def _validate_weak_reference_evidence(
     baseline: pd.Series,
     manual: pd.Series,
 ) -> None:
-    if str(selected["reference_status"]) != "weak_reference_candidate":
+    if not str(selected["reference_status"]).startswith("weak_reference_candidate"):
         raise MaeSaiActionBriefError(
-            "priority reference_status must be weak_reference_candidate."
+            "priority reference_status must remain a weak-reference candidate."
         )
     if str(feature["reference_status"]) != "weak_reference_candidate":
         raise MaeSaiActionBriefError(
@@ -709,6 +874,13 @@ def _integer(value: object, label: str) -> int:
     if numeric < 0 or not numeric.is_integer():
         raise MaeSaiActionBriefError(f"{label} must be a non-negative integer.")
     return int(numeric)
+
+
+def _population_count(value: object, label: str) -> str:
+    numeric = _number(value, label)
+    if numeric < 0:
+        raise MaeSaiActionBriefError(f"{label} must be non-negative.")
+    return f"{numeric:,.0f}"
 
 
 def _truthy(value: object) -> bool:

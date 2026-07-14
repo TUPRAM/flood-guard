@@ -16,6 +16,7 @@ data/raw/
 data/interim/
 data/processed/
 tmp/
+.tmp/
 
 # Remote-sensing source assets stay outside Git
 *.SAFE

@@ -7,6 +7,8 @@ import math
 
 import pandas as pd
 
+from floodguard.decision_safety import reject_label_factory_query_input
+
 ROAD_REQUIRED_COLUMNS: tuple[str, ...] = (
     "road_id",
     "road_class",
@@ -67,6 +69,10 @@ def score_road_disruption(
         required by the road-risk contract.
     """
 
+    reject_label_factory_query_input(
+        flood_probability,
+        ingress="road-disruption flood input",
+    )
     _validate_columns(roads, ROAD_REQUIRED_COLUMNS, "roads")
     _validate_columns(flood_probability, FLOOD_REQUIRED_COLUMNS, "flood_probability")
     _validate_unique(flood_probability, "subdistrict_id", "flood_probability")

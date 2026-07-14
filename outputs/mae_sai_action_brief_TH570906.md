@@ -50,8 +50,8 @@
 - Model: logistic_regression_from_scratch with spatial_block_holdout.
 - Holdout sample: 16,384 pixels.
 - Candidate decision threshold: 0.44.
-- Decision-layer eligibility flag: true; the current FPPS still uses the non-ML mean probability proxy and has not been rescored from ML output.
-- Warning: Weak-label experiment against manually digitized weak-reference mask. Non-operational. Not official labels. Not field validation.
+- Decision-layer eligibility flag: false; the current FPPS still uses the non-ML mean probability proxy and has not been rescored from ML output.
+- Warning: Weak-label experiment against manually digitized weak-reference mask. Non-operational. Not official labels. Not field validation. Ineligible for the decision layer, FPPS, action classes, or warnings.
 
 ## Likely Road Risks / ความเสี่ยงถนนที่อาจเกิดขึ้น
 

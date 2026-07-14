@@ -29,8 +29,9 @@ def test_weak_label_ml_compares_against_spatial_holdout_baseline() -> None:
     assert row["label_status"] == "weak_label_not_official_not_field_validated"
     assert row["ml_f1_dice"] > row["baseline_f1_dice"]
     assert row["ml_iou"] > row["baseline_iou"]
-    assert row["can_feed_decision_layer"] == True
-    assert manifest.iloc[0]["can_feed_decision_layer"] == True
+    assert row["can_feed_decision_layer"] == False
+    assert manifest.iloc[0]["can_feed_decision_layer"] == False
+    assert row["ml_improves_baseline"] == True
     assert manifest.iloc[0]["pre_product_id"] == "pre-product"
     assert manifest.iloc[0]["post_product_id"] == "post-product"
 
@@ -86,6 +87,7 @@ def test_weak_label_ml_summary_preserves_warning_language() -> None:
     assert "Not official labels" in summary
     assert "Not field validation" in summary
     assert "Non-ML baseline" in summary
+    assert "not eligible to feed the decision layer" in summary
 
 
 def test_write_weak_label_ml_outputs_writes_compact_outputs(tmp_path: Path) -> None:

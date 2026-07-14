@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 import pandas as pd
 
 from floodguard.config import VALID_CONFIDENCE_CLASSES
+from floodguard.decision_safety import reject_label_factory_query_input
 
 SCORE_COMPONENTS: tuple[str, ...] = (
     "flood_likelihood_0_100",
@@ -153,6 +154,7 @@ def score_subdistricts(
         `fpps_0_100`, `action_class`, and `top_reason`.
     """
 
+    reject_label_factory_query_input(frame, ingress="FPPS scoring")
     validate_required_columns(frame)
     validate_component_values(frame)
     active_weights = validate_weights(weights or DEFAULT_WEIGHTS)

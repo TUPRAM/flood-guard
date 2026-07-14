@@ -18,7 +18,8 @@ from floodguard.sar_baseline import MASK_METRIC_COLUMNS, compute_mask_validation
 
 WEAK_LABEL_ML_WARNING = (
     "Weak-label experiment against manually digitized weak-reference mask. "
-    "Non-operational. Not official labels. Not field validation."
+    "Non-operational. Not official labels. Not field validation. Ineligible "
+    "for the decision layer, FPPS, action classes, or warnings."
 )
 
 WEAK_LABEL_FEATURE_COLUMNS: tuple[str, ...] = (
@@ -271,12 +272,15 @@ def build_weak_label_ml_summary(
     metric = metrics.iloc[0]
     manifest = prediction_manifest.iloc[0]
     can_feed = bool(metric["can_feed_decision_layer"])
+    if can_feed:
+        raise WeakLabelMLError(
+            "Weak-reference ML cannot be decision-layer eligible; regenerate this "
+            "legacy artifact with the fail-closed contract."
+        )
     feed_text = (
-        "The ML probability may feed a candidate decision-layer run because it "
-        "improves or complements the non-ML threshold baseline."
-        if can_feed
-        else "The ML probability is not eligible to feed the decision layer because "
-        "it does not improve or complement the non-ML threshold baseline."
+        "The ML probability is not eligible to feed the decision layer, FPPS, "
+        "action classes, or warnings. Baseline improvement does not override "
+        "weak-label provenance."
     )
     lines = [
         f"# {title}",
@@ -308,7 +312,7 @@ def build_weak_label_ml_summary(
         _metric_row(metric, "Recall", "recall"),
         _metric_row(metric, "Area error ratio", "area_error_ratio"),
         "",
-        "## Decision-Layer Eligibility",
+        "## Hard Safety Boundary",
         "",
         f"- ML improves baseline: {metric['ml_improves_baseline']}",
         f"- ML complements baseline: {metric['ml_complements_baseline']}",
@@ -481,7 +485,12 @@ def _build_metric_frame(
         or float(ml_metrics["iou"]) > float(baseline_metrics["iou"])
     )
     complements = _ml_complements_baseline(baseline_metrics, ml_metrics)
-    can_feed = improves or complements
+    # This legacy experiment is trained against a positive/negative weak mask
+    # whose exterior does not establish reviewed dry land.  Performance against
+    # that same weak source can be useful screening evidence, but it can never
+    # authorize a decision-layer flood input.  A separately reviewed, immutable
+    # labelset and model-promotion programme are required.
+    can_feed = False
     row = {
         "experiment_name": "mae_sai_weak_label_logistic_v1",
         "study_area": "Chiang Rai / Mae Sai 2024",
@@ -507,7 +516,8 @@ def _build_metric_frame(
         "assumptions": (
             "Logistic regression trained on manual weak-reference labels with "
             "a spatial holdout. Candidate metrics only; not official labels or "
-            "field validation."
+            "field validation. Baseline improvement cannot override the hard "
+            "decision-layer safety boundary."
         ),
     }
     return pd.DataFrame([row], columns=WEAK_LABEL_ML_METRIC_COLUMNS)

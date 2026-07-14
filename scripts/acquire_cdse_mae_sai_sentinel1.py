@@ -1,4 +1,4 @@
-"""Acquire selected Mae Sai CDSE Sentinel-1 products outside Git when credentials exist."""
+"""Acquire or register selected Mae Sai CDSE Sentinel-1 products outside Git."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ if str(SRC_ROOT) not in sys.path:
 
 from floodguard.cdse_download import (  # noqa: E402
     DEFAULT_EXTERNAL_DATA_DIR,
+    MAE_SAI_SELECTED_PRODUCT_IDS,
     write_cdse_mae_sai_acquisition_manifest,
 )
 
@@ -38,6 +39,23 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_EXTERNAL_DATA_DIR,
         help="External data workspace outside the Git repository.",
     )
+    parser.add_argument(
+        "--product-id",
+        action="append",
+        dest="product_ids",
+        help=(
+            "CDSE product id to acquire. Repeat for each product. "
+            "Defaults to the approved Mae Sai pre/event pair."
+        ),
+    )
+    parser.add_argument(
+        "--register-existing",
+        action="store_true",
+        help=(
+            "Validate and register exact existing SAFE ZIPs in --external-data-dir "
+            "without using credentials or downloading bytes."
+        ),
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--retrieved-at", default=None)
     args = parser.parse_args(argv)
@@ -46,10 +64,14 @@ def main(argv: list[str] | None = None) -> int:
         args.metadata,
         args.output,
         external_data_dir=args.external_data_dir,
-        access_token=os.environ.get("CDSE_ACCESS_TOKEN"),
-        username=os.environ.get("CDSE_USERNAME"),
-        password=os.environ.get("CDSE_PASSWORD"),
+        access_token=(
+            None if args.register_existing else os.environ.get("CDSE_ACCESS_TOKEN")
+        ),
+        username=None if args.register_existing else os.environ.get("CDSE_USERNAME"),
+        password=None if args.register_existing else os.environ.get("CDSE_PASSWORD"),
+        product_ids=tuple(args.product_ids or MAE_SAI_SELECTED_PRODUCT_IDS),
         dry_run=args.dry_run,
+        register_existing=args.register_existing,
         retrieved_at_utc=args.retrieved_at,
     )
     print(f"Wrote {written}")

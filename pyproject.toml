@@ -19,6 +19,9 @@ dependencies = [
 dev = [
   "pytest>=8.0"
 ]
+ml = [
+  "scikit-learn>=1.4"
+]
 geo = [
   "geopandas>=0.14",
   "shapely>=2.0",

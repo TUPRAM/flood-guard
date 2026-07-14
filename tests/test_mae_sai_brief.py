@@ -108,7 +108,7 @@ def test_brief_includes_bilingual_recommended_actions() -> None:
 def test_ml_candidate_is_not_misrepresented_as_current_fpps_input() -> None:
     brief = build_current_brief()
 
-    assert "Decision-layer eligibility flag: true" in brief
+    assert "Decision-layer eligibility flag: false" in brief
     assert "current FPPS still uses the non-ML mean probability proxy" in brief
     assert "Not official labels. Not field validation." in brief
 
@@ -118,6 +118,24 @@ def test_brief_rejects_reference_status_promotion() -> None:
     manual.loc[0, "reference_mask_status"] = "official_validation_truth"
 
     with pytest.raises(MaeSaiActionBriefError, match="weak_reference_candidate"):
+        build_mae_sai_action_brief(
+            priority,
+            features,
+            baseline,
+            manual,
+            weak_label_ml_metrics=ml,
+            adm3_sar_context=adm3,
+            road_risk=roads,
+            access_loss=access,
+            equity_gap=equity,
+        )
+
+
+def test_brief_rejects_legacy_weak_ml_decision_eligibility() -> None:
+    priority, features, baseline, manual, ml, adm3, roads, access, equity = load_evidence()
+    ml.loc[0, "can_feed_decision_layer"] = "True"
+
+    with pytest.raises(MaeSaiActionBriefError, match="must remain false"):
         build_mae_sai_action_brief(
             priority,
             features,

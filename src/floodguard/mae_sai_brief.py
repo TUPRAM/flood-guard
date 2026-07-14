@@ -806,6 +806,11 @@ def _validate_ml_evidence(ml: pd.Series) -> None:
         raise MaeSaiActionBriefError(
             "ML warning_text must preserve weak-label limitations."
         )
+    if _truthy(ml["can_feed_decision_layer"]):
+        raise MaeSaiActionBriefError(
+            "Weak-label ML can_feed_decision_layer must remain false; weak-source "
+            "metrics cannot authorize FPPS or decision-layer use."
+        )
     for column in (
         "decision_threshold",
         "baseline_iou",

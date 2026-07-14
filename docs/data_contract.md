@@ -1383,7 +1383,7 @@ Required wording:
 - `Not official labels.`
 - `Not field validation.`
 
-The ML output may feed a candidate `flood_probability_0_1` decision-layer run only when `can_feed_decision_layer=True`, which requires the holdout metrics to improve or complement the non-ML threshold baseline. If that flag is false, the ML probability must remain report-only.
+The historical weak-label ML output must remain report-only and records `can_feed_decision_layer=False`. Improvement or complementarity against the same weak-reference mask is screening evidence, not permission to enter the decision layer. Any future promotion requires an independently reviewed immutable labelset, untouched geographic evaluation, explicit calibration, and a separate safety decision.
 
 Source Sentinel-1 ZIPs, SAFE packages, TIFFs, manual GeoPackages, and full per-pixel ML prediction tables must remain outside Git unless a later task defines a bounded derived-output format.
 

@@ -192,6 +192,30 @@ ML on real data should wait until the gates in `docs/ml_readiness_plan.md` are s
 
 The first ML-readiness bridge is documented in `docs/sar_baseline_contract.md` and `docs/first_ml_experiment_plan.md`. The current SAR baseline is synthetic only and writes toy outputs to `outputs/sample_sar_baseline.csv` and `outputs/sample_sar_validation_metrics.csv`; it does not read or download real Sentinel-1 imagery.
 
+The active-learning label-factory foundation is documented in `docs/label_factory_protocol.md`, `docs/label_factory_data_contract.md`, `docs/label_factory_runbook.md`, and `docs/label_factory_implementation_status.md`. It treats the existing manual polygon as weak positive-unlabeled evidence, keeps uncertain, unobservable, and unreviewed states out of binary training, generates an internal-only operator queue plus model-blinded reviewer packages, and permanently marks query-model artifacts as ineligible for the decision layer, FPPS, and warnings. Canonical grids require an immutable `floodguard.processing_alignment_receipt.v1` that re-hashes the processed raster plus coverage, valid-data, and registration evidence and binds them to the exact source registry/common affine; source metadata alone cannot clear the grid. Known label-factory/query artifacts are rejected at current decision ingresses; a future operational flood-input contract must additionally require positive approved-model provenance. The repository now contains tested fail-closed contracts, immutable artifact writers, reviewer-agreement gates, a logistic-plus-boosted query committee, Round 0 and 60/20/20 selection logic, and an equal-cost evaluation scaffold. The controlled Mae Sai workspace now also contains the real processing/alignment receipt, a 20-tile/854-core canonical grid, 874,496 aligned `sar_change_v2` pool cells, governed static strata, and a batch positive-unlabeled weak-query summary. It does **not** contain completed human reviews, an adjudicated training release, a trained real-data query committee, a real selected operator queue, additional processed Thailand development events, or evidence that active learning is more efficient than random review. Those remain external evidence gates and are never fabricated.
+
+### Reviewer A practice workbench
+
+The local Reviewer A Workbench provides a real painting-and-review interface for the 20 synthetic 32 x 32 teaching cases. It includes evidence-layer switching, multiclass cell painting, undo/redo, timing, confidence and ambiguity recording, local draft recovery, irreversible first-attempt locking, post-lock feedback, and practice-only export. It does not open the formal 12-query calibration or any of the 854 real Mae Sai cores, and its output cannot enter the canonical annotation log, model training, the decision layer, FPPS, or warnings.
+
+Build it from the checksum-verified synthetic package, then open the generated `index.html`:
+
+```powershell
+$pilot = "C:\Users\iputu\Documents\FloodGuard_external_data\label_factory\mae_sai_pilot_v1"
+$createdUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+uv run python scripts/build_reviewer_a_practice_workspace.py `
+  --source-directory "$pilot\human_coordination_v2\synthetic_cases_v1" `
+  --output-directory "$pilot\human_coordination_v2\reviewer_a_practice_workspace_v1" `
+  --reviewer-display-name "I Putu Pramana Putra" `
+  --created-at-utc $createdUtc `
+  --formal-hold-path "$pilot\human_coordination_v2\FORMAL_REVIEW_HOLD.json"
+
+Start-Process "$pilot\human_coordination_v2\reviewer_a_practice_workspace_v1\index.html"
+```
+
+Read `docs/reviewer_a_workbench_guide.md` before reviewing. It explains the practice/formal boundary, label taxonomy, evidence rules, human roles, calibration gates, first-20 workflow, adjudication, label release, and the later active-learning evaluation.
+
 ## Repository Layout
 
 ```text

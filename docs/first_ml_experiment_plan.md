@@ -23,7 +23,7 @@ Exception for the current hackathon bridge:
 - `src/floodguard/weak_label_ml.py` may train a small auditable logistic model against the manual weak-reference mask.
 - The experiment must use a spatial holdout and must compare against the non-ML threshold baseline.
 - Outputs must say `weak-label experiment`, `not official labels`, and `not field validation`.
-- The output may feed candidate `flood_probability_0_1` only when `can_feed_decision_layer=True`.
+- The historical output records `can_feed_decision_layer=False` unconditionally. Improvement against the same weak mask is screening evidence only and cannot authorize a flood input.
 - This exception does not clear the official Mae Sai validation gate, does not create official labels, and does not authorize emergency-warning use.
 
 The current gate implementation is:
@@ -46,7 +46,7 @@ Recommended first ML candidate:
 - split rule: spatial holdout by tile, polygon, or connected area; do not use random pixel splits as the only evidence
 - output: `flood_probability_0_1` and `binary_flood_extent`
 
-The non-ML threshold baseline remains the benchmark. The ML model must beat or clarify the baseline before it can feed the decision layer.
+The non-ML threshold baseline remains the benchmark for this research comparison. Beating or clarifying it does not override weak-label provenance and does not make the ML output decision-layer eligible.
 
 Current weak-label implementation:
 
@@ -72,7 +72,7 @@ Report at least:
 
 ## Promotion Rule
 
-ML output may replace fixture flood probability in the decision layer only when:
+This weak-label ML output may not replace fixture flood probability. A separate cleared-label model-promotion programme would require:
 
 - the reference mask is legally usable
 - the ingestion manifest allows processing

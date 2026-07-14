@@ -1419,6 +1419,52 @@ def _build_dashboard_html(
       font-size: 10px;
       line-height: 1.25;
     }
+    .model-context-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      margin: 10px 0;
+    }
+    .model-context-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--brand);
+      border-radius: var(--radius-sm);
+      padding: 8px 9px;
+      background: var(--panel-subtle);
+    }
+    .model-context-card.conflict {
+      border-color: var(--warning-line);
+      border-left-color: var(--orange);
+      background: var(--warning-bg);
+    }
+    .model-context-card > span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .model-context-card strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+    .model-context-card small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+    .model-context-boundary {
+      color: #78500a !important;
+      font-weight: 700;
+    }
     .comparison-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1836,6 +1882,9 @@ def _build_dashboard_html(
       .context-preview-grid {
         grid-template-columns: 1fr;
       }
+      .model-context-grid {
+        grid-template-columns: 1fr;
+      }
       .map-legend {
         position: static;
         max-width: none;
@@ -2032,6 +2081,23 @@ def _build_dashboard_html(
             <div class="evidence-item"><span data-i18n="evidence.roads">Road evidence</span><strong id="panel-evidence-roads">unavailable</strong><small id="panel-evidence-roads-note">candidate network risk</small></div>
             <div class="evidence-item"><span data-i18n="evidence.terrain">Terrain context</span><strong id="panel-evidence-terrain">unavailable</strong><small id="panel-evidence-terrain-note">DEM candidate coverage</small></div>
           </div>
+          <div class="model-context-grid" id="model-context-panel" data-dashboard-section="model-context-panel" aria-label="Model pathway and historical context">
+            <div class="model-context-card" id="modality-context-card">
+              <span data-i18n="model.modality">Research fusion candidate</span>
+              <strong id="panel-modality-used">unavailable</strong>
+              <small id="panel-modality-reason" data-i18n="model.noFusion">No fusion decision metadata is available.</small>
+              <small id="panel-modality-meta" data-i18n="model.noSource">Source and confidence unavailable.</small>
+              <small class="model-context-boundary" data-i18n="model.sidecarBoundary">Research sidecar; not used by FPPS or action class.</small>
+            </div>
+            <div class="model-context-card" id="historical-context-card">
+              <span data-i18n="model.historical">Historical susceptibility/context</span>
+              <strong id="panel-historical-susceptibility">unavailable</strong>
+              <small id="panel-historical-explanation" data-i18n="model.noHistorical">Historical context is unavailable for this reporting unit.</small>
+              <small id="panel-historical-warning" data-i18n="model.noComparison">No plausibility comparison is available.</small>
+              <small id="panel-historical-meta" data-i18n="model.noHistoricalMeta">Source, confidence, and calibration unavailable.</small>
+              <small class="model-context-boundary" data-i18n="model.boundary">Not observed current flooding. Not a forecast.</small>
+            </div>
+          </div>
           <span class="section-eyebrow" data-i18n="evidence.comparison">Selected vs current dataset</span>
           <div class="comparison-grid" aria-label="Selected subdistrict comparison">
             <div class="comparison-item"><span data-i18n="evidence.rank">FPPS rank</span><strong id="comparison-rank">unavailable</strong></div>
@@ -2221,6 +2287,24 @@ def _build_dashboard_html(
         'evidence.rank': 'FPPS rank',
         'evidence.floodMedian': 'Flood vs median',
         'evidence.accessMax': 'Access vs maximum',
+        'model.modality': 'Research fusion candidate',
+        'model.historical': 'Historical susceptibility/context',
+        'model.boundary': 'Not observed current flooding. Not a forecast.',
+        'model.noFusion': 'No fusion decision metadata is available.',
+        'model.noSource': 'Source and confidence unavailable.',
+        'model.noHistorical': 'Historical context is unavailable for this reporting unit.',
+        'model.noComparison': 'No plausibility comparison is available.',
+        'model.noHistoricalMeta': 'Source, confidence, and calibration unavailable.',
+        'model.decisionWithheld': 'Decision imagery is withheld in metadata/blocker view.',
+        'model.historicalWithheld': 'Historical context values are withheld in metadata/blocker view.',
+        'model.gatesOnly': 'Metadata and readiness gates only.',
+        'model.noComparisonView': 'No plausibility comparison is made in this view.',
+        'model.existingSar': 'Existing Sentinel-1 candidate path; no aligned, quality-qualified optical fusion input.',
+        'model.noMode': 'No observation-modality decision metadata is available.',
+        'model.sourceTime': 'Source time',
+        'model.confidence': 'confidence',
+        'model.calibration': 'calibration',
+        'model.sidecarBoundary': 'Research sidecar; not used by FPPS or action class.',
         'quality.title': 'Source Quality',
         'quality.population': 'Population coverage',
         'quality.road': 'Road snap coverage',
@@ -2318,6 +2402,24 @@ def _build_dashboard_html(
         'evidence.rank': 'อันดับ FPPS',
         'evidence.floodMedian': 'น้ำท่วมเทียบค่ามัธยฐาน',
         'evidence.accessMax': 'การเข้าถึงเทียบค่าสูงสุด',
+        'model.modality': 'ผลการผสานข้อมูลเพื่อการวิจัย',
+        'model.historical': 'ความไวต่อน้ำท่วมในอดีต/บริบท',
+        'model.boundary': 'ไม่ใช่การสังเกตน้ำท่วมปัจจุบัน และไม่ใช่การพยากรณ์',
+        'model.noFusion': 'ไม่มีข้อมูลการตัดสินใจจากการผสานข้อมูล',
+        'model.noSource': 'ไม่มีข้อมูลแหล่งที่มาและความเชื่อมั่น',
+        'model.noHistorical': 'ไม่มีบริบทน้ำท่วมในอดีตสำหรับหน่วยรายงานนี้',
+        'model.noComparison': 'ไม่มีข้อมูลเปรียบเทียบความสมเหตุสมผล',
+        'model.noHistoricalMeta': 'ไม่มีข้อมูลแหล่งที่มา ความเชื่อมั่น และการสอบเทียบ',
+        'model.decisionWithheld': 'ซ่อนข้อมูลภาพประกอบการตัดสินใจในมุมมองข้อมูลกำกับ/ข้อจำกัด',
+        'model.historicalWithheld': 'ซ่อนค่าบริบทในอดีตในมุมมองข้อมูลกำกับ/ข้อจำกัด',
+        'model.gatesOnly': 'แสดงเฉพาะข้อมูลกำกับและเงื่อนไขความพร้อม',
+        'model.noComparisonView': 'ไม่มีการเปรียบเทียบความสมเหตุสมผลในมุมมองนี้',
+        'model.existingSar': 'ใช้เส้นทาง Sentinel-1 เดิม โดยไม่มีข้อมูลภาพเชิงแสงที่ผ่านเกณฑ์คุณภาพและการจัดแนว',
+        'model.noMode': 'ไม่มีข้อมูลรูปแบบการสังเกตที่ใช้ตัดสินใจ',
+        'model.sourceTime': 'เวลาของแหล่งข้อมูล',
+        'model.confidence': 'ความเชื่อมั่น',
+        'model.calibration': 'การสอบเทียบ',
+        'model.sidecarBoundary': 'ข้อมูลประกอบการวิจัย ไม่ได้นำไปใช้คำนวณ FPPS หรือระดับการปฏิบัติ',
         'quality.title': 'คุณภาพแหล่งข้อมูล',
         'quality.population': 'ความครอบคลุมประชากร',
         'quality.road': 'ความครอบคลุมการเชื่อมถนน',
@@ -2918,6 +3020,7 @@ def _build_dashboard_html(
       setText('panel-reason', metadataOnly ? (state.language === 'th' ? 'ซ่อนผลการตัดสินใจในโหมดข้อจำกัด' : 'Decision outputs are intentionally withheld in blocker view.') : localizedDecisionReason(props));
       updateKpiMode(props, metrics, metadataOnly);
       updateEvidencePanel(props, metrics, metadataOnly);
+      updateModelContextPanel(props, metadataOnly);
       updateComparison(props, metadataOnly);
       updateQualityPanel(props);
       updateSarEvidencePanel(props, metadataOnly);
@@ -2992,6 +3095,65 @@ def _build_dashboard_html(
       setText('panel-evidence-roads-note', fixture ? (state.language === 'th' ? 'ความสำคัญของถนนในข้อมูลตัวอย่าง' : 'fixture road criticality') : `${formatCompact(props.road_count)} ${state.language === 'th' ? 'เส้นทางผู้สมัคร' : 'candidate ways'}`);
       setText('panel-evidence-terrain', fixture ? (state.language === 'th' ? 'บริบทตัวอย่าง' : 'Fixture context') : `${formatNumber(metrics.terrain, 1)}° ${state.language === 'th' ? 'ความชันเฉลี่ย' : 'mean slope'}`);
       setText('panel-evidence-terrain-note', fixture ? (state.language === 'th' ? 'ไม่ใช่หลักฐานภูมิประเทศจริง' : 'not real terrain evidence') : `${formatPercent(metrics.demCoverage)} ${state.language === 'th' ? 'ความครอบคลุม DEM' : 'DEM coverage'}`);
+    }
+
+    function updateModelContextPanel(props, metadataOnly) {
+      const historicalCard = document.getElementById('historical-context-card');
+      historicalCard.classList.remove('conflict');
+      if (metadataOnly) {
+        setText('panel-modality-used', tr('common.gated'));
+        setText('panel-modality-reason', tr('model.decisionWithheld'));
+        setText('panel-modality-meta', tr('model.gatesOnly'));
+        setText('panel-historical-susceptibility', tr('common.gated'));
+        setText('panel-historical-explanation', tr('model.historicalWithheld'));
+        setText('panel-historical-warning', tr('model.noComparisonView'));
+        setText('panel-historical-meta', tr('model.gatesOnly'));
+        return;
+      }
+
+      const fixture = state.datasetMode === 'fixture_demo';
+      const hasDeclaredSarEvidence = (
+        Number.isFinite(numeric(props.mean_flood_probability_0_1, NaN))
+        && String(props.source_name || '').includes('Sentinel-1')
+      );
+      const modality = props.fusion_candidate_mode || props.decision_input_mode || (hasDeclaredSarEvidence ? 'SAR only' : 'unavailable');
+      const fallbackReason = props.fusion_fallback_reason || (
+        hasDeclaredSarEvidence
+          ? tr('model.existingSar')
+          : fixture
+          ? tr('model.noFusion')
+          : tr('model.noMode')
+      );
+      const modalityTimestamp = props.fusion_source_timestamp || props.source_timestamp || tr('common.unavailable');
+      const modalityConfidence = props.fusion_confidence_class || props.confidence_class || tr('common.unavailable');
+      setText('panel-modality-used', modality);
+      setText('panel-modality-reason', fallbackReason);
+      setText('panel-modality-meta', `${tr('model.sourceTime')}: ${modalityTimestamp} | ${tr('model.confidence')}: ${modalityConfidence}`);
+
+      const susceptibility = numeric(props.historical_susceptibility_0_100, NaN);
+      const susceptibilityClass = props.historical_susceptibility_class || 'unavailable';
+      const explanation = props.historical_explanation || tr('model.noHistorical');
+      const conflictStatus = props.historical_conflict_status || 'unavailable';
+      const conflictWarning = props.historical_conflict_warning || tr('model.noComparison');
+      const historicalTimestamp = props.historical_source_timestamp || tr('common.unavailable');
+      const historicalConfidence = props.historical_confidence_class || tr('common.unavailable');
+      const calibrationStatus = props.calibration_status || tr('common.unavailable');
+      setText(
+        'panel-historical-susceptibility',
+        Number.isFinite(susceptibility)
+          ? `${formatNumber(susceptibility, 1)} / 100 · ${susceptibilityClass}`
+          : tr('common.unavailable')
+      );
+      setText('panel-historical-explanation', explanation);
+      setText('panel-historical-warning', conflictWarning);
+      setText(
+        'panel-historical-meta',
+        `${tr('model.sourceTime')}: ${historicalTimestamp} | ${tr('model.confidence')}: ${historicalConfidence} | ${tr('model.calibration')}: ${calibrationStatus}`
+      );
+      historicalCard.classList.toggle(
+        'conflict',
+        !['none', 'unavailable', 'not_evaluated'].includes(String(conflictStatus))
+      );
     }
 
     function updateComparison(props, metadataOnly) {

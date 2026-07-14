@@ -99,6 +99,65 @@ Files: `priority_subdistricts.geojson` and `road_risk.geojson`
 | `road_closure_change_people_losing_30_min_access` | Road closure scenario minus baseline. Positive means worsening. |
 | `road_closure_equity_gap_ratio` | Equity-gap ratio after the road closure stress case. |
 | `road_closure_change_equity_gap_ratio` | Road closure equity ratio minus baseline ratio. |
+| `fusion_candidate_mode` | Dashboard/GeoJSON research-sidecar mode: `SAR only` or `SAR + optical`; not the current FPPS input. |
+| `decision_input_mode` | Exact mode inside `sample_sar_optical_fusion.csv`; interpret only with `decision_layer_use_status`. |
+| `decision_layer_use_status` | `research_sidecar_not_used_by_fpps` for the current synthetic integration. |
+| `fusion_fallback_reason` | Machine-readable reason optical evidence was not used; `none` for fused rows. |
+| `fusion_flood_probability_0_1` | Separate synthetic fusion-contract probability. It does not replace the FPPS flood-likelihood field. |
+| `historical_susceptibility_0_100` | Static historical susceptibility/context score, never observed current flooding. |
+| `historical_susceptibility_class` | `low`, `moderate`, `high`, or `unavailable` historical context class. |
+| `historical_conflict_status` | Current-SAR versus historical-context plausibility comparison status. |
+| `historical_conflict_warning` | Verification warning only; it never overrides event-time SAR. |
+| `context_label` | Required dashboard label: `Historical susceptibility/context`. |
+| `context_boundary` | Required wording: `Not observed current flooding. Not a forecast.` |
+
+## Sentinel-2 Optical And SAR Fusion
+
+Files: `sample_sentinel2_optical_features.csv`, `sample_optical_fusion_candidate_assessment.csv`, `sample_sar_optical_fusion.csv`, and `sample_sar_optical_fusion_validation.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `pre_B02` through `post_B12` | Preserved synthetic raw pre/event Sentinel-2 Level-2A surface-reflectance inputs for lineage; these raw columns are not encoder-ready. |
+| `pre_B02_masked` through `post_B12_masked` | Cloud-, shadow-, SCL-, and distance-masked reflectance columns admitted to the optical encoder contract only when their phase is valid. |
+| `pre_SCL` / `post_SCL` | Scene-classification inputs used for fail-closed cloud, shadow, cirrus, snow, nodata, and defective-pixel masking. |
+| `pre_cloud_distance_m` / `post_cloud_distance_m` | Distance to the excluded cloud mask for each phase. |
+| `pre_ndwi` / `post_ndwi` / `ndwi_change` | NDWI features and event-minus-pre change. MNDWI, NDVI, and AWEIsh use the same naming pattern. |
+| `optical_valid` | True only when both phases pass SCL, cloud-distance, and safe-denominator checks. |
+| `optical_invalid_reason` | Stable reason codes for any failed optical phase. |
+| `flood_truth_status` | Always `not_flood_truth` for optical research/context features. |
+| `optical_eligible` | Candidate-level fusion eligibility after all common and THEOS-2-specific gates. |
+| `optical_eligibility_reason` | Stable candidate-level pass/fail reasons, retained even when another optical candidate is selected. |
+| `decision_input_mode` | `SAR only` or `SAR + optical`. |
+| `fallback_equivalence_status` | `passed` when the SAR-only probability is byte-equivalent to the input SAR probability. |
+| `selected_optical_source_family` | `sentinel2`, `theos2`, or blank when no optical candidate passes. |
+| `quality_policy_sha256` | Hash of the complete optical eligibility policy embedded in the row. |
+| `model_contract_sha256` | Hash of the separate-encoder, late-fusion, modality-dropout contract embedded in the row. |
+| `optical_source_family` in model contract | Exactly one encoder family, `sentinel2` or `theos2`; cross-family candidate reuse fails closed. |
+| `evaluation_slice` | `sar_all`, `sar_paired_subset`, `optical_only`, or `fused`. |
+| `improvement_claim_status` | Explicit status that fixture metrics do not establish an improvement claim. |
+
+## Historical Susceptibility Context
+
+Files: `sample_historical_susceptibility_context.csv`, `sample_historical_susceptibility_monotonicity.csv`, and `sample_historical_basin_event_partitions.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `historical_susceptibility_0_100` | Monotonic additive historical-context score after available-weight renormalization; missing when coverage is below the declared floor. |
+| `historical_susceptibility_class` | `low`, `moderate`, `high`, or `unavailable`. |
+| `historical_feature_contributions_json` | Per-feature contribution points that sum to the emitted score. |
+| `historical_top_driver` | Machine-readable feature key for the largest positive contribution; the dashboard explanation uses its human-readable label. |
+| `historical_available_weight_0_1` | Fraction of configured feature weight supported by non-missing inputs. |
+| `historical_missing_features` | Pipe-separated normalized context features that were unavailable. |
+| `historical_conflict_status` | `none`, `not_evaluated`, `current_sar_high_historical_low`, or `current_sar_low_historical_high`. |
+| `eligible_as_current_flood` | Always false. Historical context is not an event-time observation. |
+| `eligible_as_forecast` | Always false. Historical context is not a forecast. |
+| `eligible_to_replace_event_sar` | Always false. Historical context cannot replace current SAR evidence. |
+| `calibration_status` | Current fixture status: `uncalibrated_requires_basin_event_target_corpus`. |
+| `monotonicity_passed` | True only when increasing one normalized susceptibility feature does not reduce the score. |
+| `partition` | `train`, `calibration`, or `test`, assigned to complete connected basin/event groups. |
+| `source_timestamp` | Source time inherited by score/monotonicity rows or declared by the split-integrity fixture. |
+| `confidence_class` | Confidence for the underlying historical context or diagnostic fixture. |
+| `assumptions` | Explicit evidence boundary and diagnostic limitations for the row. |
 
 ## Dashboard And Briefs
 
@@ -230,6 +289,19 @@ Dashboard v11 semantic presentation layer:
 | `technical-provenance` | Expandable full Sentinel-1 product identifiers and assumptions. |
 | `judge-mode-toggle` | Presentation state that hides secondary controls and long context/report sections while retaining warnings, map, selected evidence, source quality, SAR evidence, and provenance. |
 | `judge-secondary` | UI element allowed to be hidden in judge mode. It must never be applied to the safety warning or compact provenance. |
+
+Dashboard v12 fusion and historical context:
+
+| Item | Meaning |
+| --- | --- |
+| `model-context-panel` | Selected-unit cards for the observation pathway and historical plausibility context. |
+| `panel-modality-used` | Displays the exact `SAR only` or `SAR + optical` research-candidate mode from the fusion contract. |
+| `panel-modality-reason` | Displays the optical fallback reason or `none`; the adjacent boundary says the sidecar never changes FPPS. |
+| `Historical susceptibility/context` | Required title separating the static susceptibility layer from event-time observations. |
+| `panel-historical-susceptibility` | Historical score and class, or unavailable when context coverage is below policy. |
+| `panel-historical-warning` | Current-SAR plausibility warning that requests verification but never overrides event evidence. |
+| `panel-historical-meta` | Historical context source timestamp, confidence class, and calibration status. |
+| `Not observed current flooding. Not a forecast.` | Permanent boundary shown on every historical-context card. |
 
 Dashboard QA support:
 

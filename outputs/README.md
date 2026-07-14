@@ -26,6 +26,13 @@ Current expected MVP output:
 - `sample_fpps_rank_instability.csv`
 - `sample_sar_baseline.csv`
 - `sample_sar_validation_metrics.csv`
+- `sample_sentinel2_optical_features.csv`
+- `sample_optical_fusion_candidate_assessment.csv`
+- `sample_sar_optical_fusion.csv`
+- `sample_sar_optical_fusion_validation.csv`
+- `sample_historical_susceptibility_context.csv`
+- `sample_historical_susceptibility_monotonicity.csv`
+- `sample_historical_basin_event_partitions.csv`
 - `real_data_ingestion_manifest.csv`
 - `mae_sai_real_data_file_manifest.csv`
 - `local_data_library_manifest.csv`
@@ -92,6 +99,10 @@ Optional live metadata snapshots, generated only when intentionally run and revi
 - `cdse_hat_yai_2025_sentinel2_metadata.csv`
 
 Before committing optional live metadata snapshots, complete `docs/live_metadata_snapshot_review_checklist.md`.
+
+`sample_sentinel2_optical_features.csv`, `sample_optical_fusion_candidate_assessment.csv`, `sample_sar_optical_fusion.csv`, and `sample_sar_optical_fusion_validation.csv` are synthetic research-contract evidence. They demonstrate cloud masking, pre/event optical feature changes, per-candidate gate reasons, explicit `SAR only` / `SAR + optical` modes, fail-closed quality gates, bit-equivalent SAR fallback, and separate SAR/optical/fused validation slices. The values are not trained real-event results and do not establish higher precision or cleaner boundaries.
+
+`sample_historical_susceptibility_context.csv`, `sample_historical_susceptibility_monotonicity.csv`, and `sample_historical_basin_event_partitions.csv` are synthetic evidence for the historical-context contract. They demonstrate normalized features, explicit missingness, contributions, monotonicity, complete basin/event holdouts, and current-SAR conflict warnings. The score is uncalibrated and must be labeled `Historical susceptibility/context`, never `Current flood` or `Forecast`.
 
 `public_reference_candidate_manifest.csv` is the public/open data fallback inventory. It records source candidates for CDSE Sentinel-1/Sentinel-2, CEMS EMSR754/EMSR756, Sentinel Asia Northern Thailand 2024, UNOSAT/UN Thailand public reports, NASA flood products, WorldPop, OSM/Geofabrik, Copernicus DEM, HDX COD-AB, and local hackathon lanes. It is metadata-only and contains no source imagery or product packages.
 

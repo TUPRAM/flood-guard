@@ -267,6 +267,24 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
         ),
         _contains(
             html,
+            "modality_context_panel",
+            'id="panel-modality-used"',
+            "Selected-unit research fusion candidate mode is present.",
+        ),
+        _contains(
+            html,
+            "historical_susceptibility_context",
+            "Historical susceptibility/context",
+            "Historical susceptibility is labeled as context.",
+        ),
+        _contains(
+            html,
+            "historical_context_boundary",
+            "Not observed current flooding. Not a forecast.",
+            "Historical context is separated from current observation and forecast claims.",
+        ),
+        _contains(
+            html,
             "persistent_weak_reference_warning",
             'id="mode-warning"',
             "Persistent evidence-status warning is present.",

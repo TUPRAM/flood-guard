@@ -238,6 +238,32 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "body.judge-mode .judge-secondary" in html
     assert 'id="mode-warning"' in html
     assert 'class="evidence-grid"' in html
+    assert 'id="model-context-panel"' in html
+    assert 'data-dashboard-section="model-context-panel"' in html
+    assert 'id="panel-modality-used"' in html
+    assert "function updateModelContextPanel" in html
+    assert "hasDeclaredSarEvidence" in html
+    assert "No observation-modality decision metadata is available." in html
+    assert "Research fusion candidate" in html
+    assert 'data-i18n="model.modality"' in html
+    assert 'data-i18n="model.historical"' in html
+    assert "ผลการผสานข้อมูลเพื่อการวิจัย" in html
+    assert "ความไวต่อน้ำท่วมในอดีต/บริบท" in html
+    assert "ไม่ใช่การสังเกตน้ำท่วมปัจจุบัน และไม่ใช่การพยากรณ์" in html
+    assert "Research sidecar; not used by FPPS or action class." in html
+    assert "SAR only" in html
+    assert "SAR + optical" in html
+    assert "S2-FIXTURE-CLEAR-001" in html
+    assert "no_optical_candidate" in html
+    assert "Historical susceptibility/context" in html
+    assert "Not observed current flooding. Not a forecast." in html
+    assert '"historical_susceptibility_0_100": 87.45' in html
+    assert "current_sar_high_historical_low" in html
+    assert "uncalibrated_requires_basin_event_target_corpus" in html
+    assert "research_sidecar_not_used_by_fpps" in html
+    assert 'id="panel-historical-susceptibility"' in html
+    assert 'id="panel-historical-warning"' in html
+    assert 'id="panel-historical-meta"' in html
     assert 'class="comparison-grid"' in html
     assert 'id="source-quality-panel"' in html
     assert 'id="toggle-facilities"' in html

@@ -23,6 +23,19 @@ from floodguard.flood_aggregation import (  # noqa: E402
     build_mae_sai_review_area_admin_geojson,
     build_mae_sai_weak_decision_inputs,
 )
+from floodguard.fusion import (  # noqa: E402
+    FusionModelContract,
+    FusionQualityPolicy,
+    assess_optical_candidates,
+    evaluate_fusion_modes,
+    run_late_fusion,
+)
+from floodguard.historical_susceptibility import (  # noqa: E402
+    partition_basin_event_groups,
+    run_monotonicity_checks,
+    score_historical_susceptibility,
+)
+from floodguard.optical_features import build_sentinel2_optical_features  # noqa: E402
 from floodguard.road_risk import score_road_disruption  # noqa: E402
 from floodguard.sar_baseline import (  # noqa: E402
     run_threshold_sar_baseline,
@@ -84,6 +97,14 @@ def main() -> None:
             "assumptions",
         ],
     ].to_csv(priority_path, index=False)
+    fusion_dashboard, multimodal_paths = _write_sample_optical_and_fusion_outputs(
+        fixture_dir,
+        output_dir,
+    )
+    historical_dashboard, historical_paths = _write_sample_historical_context_outputs(
+        fixture_dir,
+        output_dir,
+    )
 
     population = pd.read_csv(fixture_dir / "sample_population_nodes.csv")
     edges = pd.read_csv(fixture_dir / "sample_access_edges.csv")
@@ -118,7 +139,17 @@ def main() -> None:
         scenarios["close_road"]["access_loss"],
         scenarios["close_road"]["equity_gap"],
     )
-    enriched_priority = merge_scenario_comparison(priority, scenario_comparison)
+    enriched_priority = merge_scenario_comparison(priority, scenario_comparison).merge(
+        fusion_dashboard,
+        on="subdistrict_id",
+        how="left",
+        validate="one_to_one",
+    ).merge(
+        historical_dashboard,
+        on="subdistrict_id",
+        how="left",
+        validate="one_to_one",
+    )
 
     priority_geojson_path = write_priority_geojson(
         fixture_dir / "sample_admin.geojson",
@@ -218,6 +249,191 @@ def main() -> None:
     print(f"Wrote {rank_instability_path}")
     print(f"Wrote {sar_baseline_path}")
     print(f"Wrote {sar_metrics_path}")
+    for multimodal_path in multimodal_paths:
+        print(f"Wrote {multimodal_path}")
+    for historical_path in historical_paths:
+        print(f"Wrote {historical_path}")
+
+
+def _write_sample_optical_and_fusion_outputs(
+    fixture_dir: Path,
+    output_dir: Path,
+) -> tuple[pd.DataFrame, list[Path]]:
+    """Write auditable synthetic optical features and late-fusion evidence."""
+
+    optical_features = build_sentinel2_optical_features(
+        pd.read_csv(fixture_dir / "sample_sentinel2_optical_pixels.csv"),
+        minimum_cloud_distance_m=1000.0,
+    )
+    optical_features_path = output_dir / "sample_sentinel2_optical_features.csv"
+    optical_features.to_csv(optical_features_path, index=False)
+
+    policy = FusionQualityPolicy(
+        max_cloud_shadow_fraction_0_1=0.35,
+        max_temporal_offset_hours=72.0,
+        min_valid_fraction_0_1=0.80,
+        min_overlap_fraction_0_1=0.90,
+    )
+    contract = FusionModelContract(
+        sar_model_id="synthetic_fixture_sar_encoder_v1",
+        optical_model_id="synthetic_fixture_optical_encoder_v1",
+        fusion_model_id="synthetic_fixture_late_fusion_v1",
+        sar_input_features=("pre_vv_db", "post_vv_db", "pre_vh_db", "post_vh_db"),
+        optical_input_features=(
+            "pre_B02_masked",
+            "pre_B03_masked",
+            "pre_B04_masked",
+            "pre_B05_masked",
+            "pre_B06_masked",
+            "pre_B07_masked",
+            "pre_B08_masked",
+            "pre_B8A_masked",
+            "pre_B11_masked",
+            "pre_B12_masked",
+            "post_B02_masked",
+            "post_B03_masked",
+            "post_B04_masked",
+            "post_B05_masked",
+            "post_B06_masked",
+            "post_B07_masked",
+            "post_B08_masked",
+            "post_B8A_masked",
+            "post_B11_masked",
+            "post_B12_masked",
+            "SCL",
+            "cloud_distance_m",
+            "ndwi",
+            "mndwi",
+            "ndvi",
+            "awei",
+            "spectral_change",
+        ),
+        sar_weight=0.65,
+        optical_weight=0.35,
+        modality_dropout_probability=0.30,
+        optical_source_family="sentinel2",
+    )
+    sar_inputs = pd.read_csv(fixture_dir / "sample_fusion_sar_inputs.csv")
+    optical_candidates = pd.read_csv(
+        fixture_dir / "sample_optical_fusion_candidates.csv",
+        keep_default_na=False,
+    )
+    candidate_assessment = assess_optical_candidates(optical_candidates, policy)
+    candidate_assessment_path = (
+        output_dir / "sample_optical_fusion_candidate_assessment.csv"
+    )
+    candidate_assessment.to_csv(candidate_assessment_path, index=False)
+    decisions = run_late_fusion(
+        sar_inputs,
+        optical_candidates,
+        policy=policy,
+        contract=contract,
+    )
+    decisions_path = output_dir / "sample_sar_optical_fusion.csv"
+    decisions.to_csv(decisions_path, index=False)
+    validation = evaluate_fusion_modes(
+        sar_inputs,
+        optical_candidates,
+        policy=policy,
+        contract=contract,
+    )
+    validation_path = output_dir / "sample_sar_optical_fusion_validation.csv"
+    validation.to_csv(validation_path, index=False)
+
+    dashboard = decisions.rename(
+        columns={
+            "cell_id": "subdistrict_id",
+            "flood_probability_0_1": "fusion_flood_probability_0_1",
+            "decision_input_mode": "fusion_candidate_mode",
+            "source_timestamp": "fusion_source_timestamp",
+            "confidence_class": "fusion_confidence_class",
+            "assumptions": "fusion_assumptions",
+        }
+    ).loc[
+        :,
+        [
+            "subdistrict_id",
+            "fusion_flood_probability_0_1",
+            "fusion_candidate_mode",
+            "decision_layer_use_status",
+            "selected_optical_candidate_id",
+            "selected_optical_source_family",
+            "fusion_fallback_reason",
+            "fallback_equivalence_status",
+            "fusion_source_timestamp",
+            "fusion_confidence_class",
+            "fusion_assumptions",
+            "quality_policy_sha256",
+            "model_contract_sha256",
+        ],
+    ]
+    return dashboard, [
+        optical_features_path,
+        candidate_assessment_path,
+        decisions_path,
+        validation_path,
+    ]
+
+
+def _write_sample_historical_context_outputs(
+    fixture_dir: Path,
+    output_dir: Path,
+) -> tuple[pd.DataFrame, list[Path]]:
+    """Write synthetic historical context, monotonicity, and group-holdout evidence."""
+
+    historical_features = pd.read_csv(
+        fixture_dir / "sample_historical_susceptibility_features.csv"
+    )
+    context = score_historical_susceptibility(historical_features)
+    context_path = output_dir / "sample_historical_susceptibility_context.csv"
+    context.to_csv(context_path, index=False)
+
+    monotonicity = run_monotonicity_checks(historical_features)
+    monotonicity_path = output_dir / "sample_historical_susceptibility_monotonicity.csv"
+    monotonicity.to_csv(monotonicity_path, index=False)
+
+    event_groups = pd.read_csv(fixture_dir / "sample_historical_event_groups.csv")
+    partitions = partition_basin_event_groups(
+        event_groups,
+        test_basins=("BASIN-01",),
+        test_events=(),
+        calibration_basins=("BASIN-04",),
+    )
+    partitions_path = output_dir / "sample_historical_basin_event_partitions.csv"
+    partitions.to_csv(partitions_path, index=False)
+
+    dashboard = context.rename(
+        columns={
+            "unit_id": "subdistrict_id",
+            "source_timestamp": "historical_source_timestamp",
+            "confidence_class": "historical_confidence_class",
+            "assumptions": "historical_assumptions",
+        }
+    ).loc[
+        :,
+        [
+            "subdistrict_id",
+            "historical_susceptibility_0_100",
+            "historical_susceptibility_class",
+            "historical_explanation",
+            "historical_top_driver",
+            "historical_available_weight_0_1",
+            "historical_missing_features",
+            "historical_conflict_status",
+            "historical_conflict_warning",
+            "context_label",
+            "context_boundary",
+            "eligible_as_current_flood",
+            "eligible_as_forecast",
+            "eligible_to_replace_event_sar",
+            "model_method",
+            "calibration_status",
+            "historical_source_timestamp",
+            "historical_confidence_class",
+            "historical_assumptions",
+        ],
+    ]
+    return dashboard, [context_path, monotonicity_path, partitions_path]
 
 
 def _geojson_properties(path: Path) -> pd.DataFrame:

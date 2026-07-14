@@ -5,6 +5,61 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).parents[1]
 
 
+def test_multimodal_and_historical_context_docs_keep_evidence_boundaries() -> None:
+    feature_doc = (
+        REPO_ROOT / "docs" / "multimodal_fusion_and_historical_susceptibility.md"
+    ).read_text(encoding="utf-8")
+    dictionary = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+    output_readme = (REPO_ROOT / "outputs" / "README.md").read_text(
+        encoding="utf-8"
+    )
+    source_registry = (REPO_ROOT / "docs" / "source_registry.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "SAR only",
+        "SAR + optical",
+        "modality dropout",
+        "WorldFloods",
+        "THEOS-2",
+        "Historical susceptibility/context",
+        "Not observed current flooding. Not a forecast.",
+        "uncalibrated_requires_basin_event_target_corpus",
+        "complete connected basin/event groups",
+        "do not claim higher precision",
+    ):
+        assert phrase.lower() in feature_doc.lower()
+    for field in (
+        "sample_sentinel2_optical_features.csv",
+        "sample_optical_fusion_candidate_assessment.csv",
+        "sample_sar_optical_fusion.csv",
+        "sample_sar_optical_fusion_validation.csv",
+        "sample_historical_susceptibility_context.csv",
+        "sample_historical_susceptibility_monotonicity.csv",
+        "sample_historical_basin_event_partitions.csv",
+        "decision_input_mode",
+        "fusion_fallback_reason",
+        "historical_conflict_status",
+        "eligible_as_current_flood",
+        "eligible_as_forecast",
+        "eligible_to_replace_event_sar",
+    ):
+        assert field in dictionary
+        if field.endswith((".csv",)):
+            assert field in output_readme
+    for source in (
+        "Copernicus Sentinel-2 via CDSE (Level-2A)",
+        "WorldFloods v2",
+        "Global Flood Database v1",
+        "JRC Global Surface Water",
+        "ESA WorldCover",
+    ):
+        assert source in source_registry
+
+
 def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
     text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(encoding="utf-8")
 

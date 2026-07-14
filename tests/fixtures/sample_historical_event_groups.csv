@@ -1,0 +1,7 @@
+sample_id,basin_id,event_id,target_historical_flood_occurrence,source_timestamp,confidence_class,assumptions
+HIST-001,BASIN-01,EVENT-01,1,2025-12-31T00:00:00Z,medium,Synthetic basin/event grouping fixture for split-integrity tests only
+HIST-002,BASIN-01,EVENT-02,1,2025-12-31T00:00:00Z,medium,Synthetic basin/event grouping fixture for split-integrity tests only
+HIST-003,BASIN-02,EVENT-02,0,2025-12-31T00:00:00Z,medium,Synthetic basin/event grouping fixture for split-integrity tests only
+HIST-004,BASIN-03,EVENT-03,0,2025-12-31T00:00:00Z,medium,Synthetic basin/event grouping fixture for split-integrity tests only
+HIST-005,BASIN-04,EVENT-04,1,2025-12-31T00:00:00Z,medium,Synthetic basin/event grouping fixture for split-integrity tests only
+HIST-006,BASIN-05,EVENT-05,0,2025-12-31T00:00:00Z,medium,Synthetic basin/event grouping fixture for split-integrity tests only

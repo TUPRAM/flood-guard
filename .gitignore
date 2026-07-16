@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.uv-cache/
 .venv/
 venv/
 
@@ -31,6 +32,12 @@ tmp/
 *.OVR
 *.nc
 *.grib
+*.grib2
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.zip
 
 # OS/editor
 .DS_Store
@@ -38,6 +45,18 @@ Thumbs.db
 *.Rhistory
 .vscode/
 .idea/
+
+# JavaScript / Next.js
+node_modules/
+.next/
+apps/web/out/
+coverage/
+*.tsbuildinfo
+
+# Local service and browser-test artifacts
+services/**/.venv/
+test-results/
+playwright-report/
 
 # Keep generated sample outputs reviewable for the MVP.
 !outputs/sample_priority_scores.csv

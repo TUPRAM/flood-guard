@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "floodguard-api"
+version = "0.1.0"
+description = "Typed, artifact-backed FastAPI boundary for FloodGuard Thailand."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi==0.116.1",
+  "floodguard-thailand",
+  "pydantic==2.11.7",
+  "uvicorn[standard]==0.35.0",
+]
+
+[dependency-groups]
+dev = [
+  "httpx==0.28.1",
+  "jsonschema==4.25.1",
+  "pytest==8.4.1",
+  "ruff==0.12.4",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.uv.sources]
+floodguard-thailand = { path = "../..", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/floodguard_api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"

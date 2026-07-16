@@ -1,6 +1,6 @@
 # FloodGuard Thailand
 
-FloodGuard Thailand is a reproducible GeoAI decision-support prototype that converts flood extent or flood probability into subdistrict-level action priorities for flood preparedness and rapid post-event response in Thailand.
+FloodGuard Thailand is a reproducible geospatial decision-support prototype that converts flood extent or flood probability into subdistrict-level action priorities for flood preparedness and rapid post-event planning in Thailand.
 
 The core product is not another flood map. It is a decision layer that turns flood pixels into exposed population, likely road disruption, access loss, equity gaps, shelter demand, a Flood Preparedness Priority Score, and an A-E action class.
 
@@ -10,22 +10,70 @@ The core product is not another flood map. It is a decision layer that turns flo
 2. Hat Yai / Songkhla 2025 - story and stress-test tile.
 3. Lower Chao Phraya / Greater Bangkok - scale target.
 
-## Current Vertical Slice
+FloodGuard is not an official warning system, a guaranteed real-time flood detector, or a live evacuation navigator. Fixture and candidate modes are non-operational and always set `official_warning=false`.
 
-This scaffold implements the first testable decision-layer component:
+## Role-Specific Platform
+
+The repository now keeps five boundaries explicit:
+
+```text
+apps/web                Next.js/TypeScript responsive PWA
+services/api            FastAPI artifact and deterministic scenario API
+services/geoai-runner   isolated Python 3.12 GeoAI candidate environment
+packages/contracts      JSON Schema and TypeScript contracts
+src/floodguard          preserved, tested decision engine
+```
+
+The responsive application has three deliberately different routes:
+
+- `/public` is Thai-first, mobile-first preparedness guidance with verified official contact links, fixture GeoJSON, and no evacuation commands.
+- `/command` is a map-first planning workspace with fixed A-E/FPPS policy, evidence panels, server-owned scenarios, and downloads.
+- `/studio` exposes data gates, model cards, validation metrics, and `can_feed_decision_layer`; it does not expose public emergency actions.
+
+Run the offline judging application:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm verify:frontend
+pnpm --filter @floodguard/web dev
+```
+
+`pnpm verify:frontend` includes a real-browser offline navigation smoke. On
+machines without installed Chrome, install the pinned Playwright browser once
+with `pnpm exec playwright install chromium`; the application itself makes no
+external requests during the smoke.
+
+Run the API in its separate environment:
+
+```powershell
+uv sync --project services/api --group dev
+uv run --project services/api uvicorn floodguard_api.app:app --reload
+```
+
+The web app defaults to its committed fixture bundle and needs no API or external network. To exercise API mode, set `NEXT_PUBLIC_FLOODGUARD_API_URL=http://127.0.0.1:8000` before starting the web app. A successful, path-sanitized API payload is cached locally as a last-known snapshot; if that API later becomes unavailable, the snapshot is visibly labelled `Stale / offline`. With no valid cached API snapshot, the app falls back to the separately labelled `Fixture demo` / `Non-operational` bundle. The existing `outputs/dashboard.html` remains the legacy reproducible fallback: it embeds pinned Leaflet 1.9.4 assets and decision vectors, while OpenStreetMap tiles are optional online context.
+
+The API validates CSV, GeoJSON, and Markdown artifact structure before advertising data as ready. Missing or malformed artifacts return explicit unavailable/blocked states while `/api/v1/health` continues to report service-process health independently.
+
+GeoAI is optional and isolated. Normal root tests, API tests, and web tests do not install or import it. See `services/geoai-runner/README.md`; no real-data training is allowed until the repository's provenance, licensing, timing, checksum, reference-mask, and spatial-validation gates pass.
+
+## Preserved Decision Engine
+
+The tested domain package implements the decision-layer components used by the application:
 
 - validates subdistrict priority inputs
 - computes the default Flood Preparedness Priority Score
 - assigns A-E action classes
 - generates a short top reason
-- writes a sample priority CSV from fixture data
+- computes nearest-facility shortest-path access loss at fixed time thresholds (not capacity-aware 2SFCA)
+- computes equity and road-risk evidence
+- writes reproducible CSV, GeoJSON, Markdown, and static-dashboard artifacts
 
 ## Run The System Locally
 
 Use this path when you want to regenerate the fixture-backed FloodGuard system and open the dashboard yourself.
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
+Set-Location "<repository-root>"
 uv sync --extra dev --extra theos2
 uv run pytest
 uv run python scripts/generate_sample_priority.py
@@ -34,7 +82,7 @@ uv run python scripts/smoke_dashboard.py
 start outputs\dashboard.html
 ```
 
-The dashboard is static. It has no backend, no build step, and no browser-side `fetch` call. Opening `outputs\dashboard.html` is enough for the fixture demo and the embedded Mae Sai weak-reference candidate mode.
+The dashboard is static. It has no backend, no build step, and no browser-side `fetch` call. Leaflet, the decision vectors, and a map text equivalent are embedded in the HTML; optional OpenStreetMap tiles fail over to a visible offline-basemap status. Opening `outputs\dashboard.html` is enough for the fixture demo and the embedded Mae Sai weak-reference candidate mode.
 
 Dashboard v11 includes an English/Thai interface, semantic regional/detail map density, selected-ADM3 focus, compact Sentinel-1 evidence and provenance, and a judge presentation mode. In Mae Sai mode, select an ADM3 unit to zoom into detailed candidate roads and typed facilities. Judge mode removes secondary controls while keeping the weak-reference warning and provenance visible.
 
@@ -198,10 +246,12 @@ The active-learning label-factory foundation is documented in `docs/label_factor
 
 The local Reviewer A Workbench provides a real painting-and-review interface for the 20 synthetic 32 x 32 teaching cases. It includes evidence-layer switching, multiclass cell painting, undo/redo, timing, confidence and ambiguity recording, local draft recovery, irreversible first-attempt locking, post-lock feedback, and practice-only export. It does not open the formal 12-query calibration or any of the 854 real Mae Sai cores, and its output cannot enter the canonical annotation log, model training, the decision layer, FPPS, or warnings.
 
-Build it from the checksum-verified synthetic package, then open the generated `index.html`:
+Set `FLOODGUARD_EXTERNAL_WORKSPACE` to the operator-managed external-data
+directory, build from the checksum-verified synthetic package, then open the
+generated `index.html`:
 
 ```powershell
-$pilot = "C:\Users\iputu\Documents\FloodGuard_external_data\label_factory\mae_sai_pilot_v1"
+$pilot = Join-Path $env:FLOODGUARD_EXTERNAL_WORKSPACE "label_factory\mae_sai_pilot_v1"
 $createdUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
 uv run python scripts/build_reviewer_a_practice_workspace.py `

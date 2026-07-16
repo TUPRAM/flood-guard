@@ -1,0 +1,11 @@
+{
+  "type": "FeatureCollection",
+  "name": "floodguard_fixture_priority_areas",
+  "features": [
+    {"type":"Feature","properties":{"area_id":"FG-TB-001","area_name_en":"River Market (fixture)","area_name_th":"ตลาดริมน้ำ (พื้นที่สาธิต)","action_class":"A","fpps_0_100":81.6,"confidence_class":"high"},"geometry":{"type":"Polygon","coordinates":[[[100.0,18.0],[100.02,18.0],[100.02,18.02],[100.0,18.02],[100.0,18.0]]]}},
+    {"type":"Feature","properties":{"area_id":"FG-TB-002","area_name_en":"Bridge Junction (fixture)","area_name_th":"ชุมทางสะพาน (พื้นที่สาธิต)","action_class":"B","fpps_0_100":63.85,"confidence_class":"medium"},"geometry":{"type":"Polygon","coordinates":[[[100.02,18.0],[100.04,18.0],[100.04,18.02],[100.02,18.02],[100.02,18.0]]]}},
+    {"type":"Feature","properties":{"area_id":"FG-TB-003","area_name_en":"Clinic Basin (fixture)","area_name_th":"แอ่งคลินิก (พื้นที่สาธิต)","action_class":"C","fpps_0_100":60.55,"confidence_class":"medium"},"geometry":{"type":"Polygon","coordinates":[[[100.0,18.02],[100.02,18.02],[100.02,18.04],[100.0,18.04],[100.0,18.02]]]}},
+    {"type":"Feature","properties":{"area_id":"FG-TB-004","area_name_en":"Canal Fringe (fixture)","area_name_th":"ชายคลอง (พื้นที่สาธิต)","action_class":"D","fpps_0_100":42.55,"confidence_class":"high"},"geometry":{"type":"Polygon","coordinates":[[[100.02,18.02],[100.04,18.02],[100.04,18.04],[100.02,18.04],[100.02,18.02]]]}},
+    {"type":"Feature","properties":{"area_id":"FG-TB-005","area_name_en":"Unverified Hillside (fixture)","area_name_th":"เนินเขาที่ยังไม่ยืนยัน (พื้นที่สาธิต)","action_class":"E","fpps_0_100":86.25,"confidence_class":"low"},"geometry":{"type":"Polygon","coordinates":[[[100.04,18.0],[100.06,18.0],[100.06,18.02],[100.04,18.02],[100.04,18.0]]]}}
+  ]
+}

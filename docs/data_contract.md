@@ -240,7 +240,11 @@ Outputs:
 - `outputs/action_brief_<subdistrict_id>.md` files
 - `outputs/mae_sai_action_brief_<subdistrict_id>.md` files
 
-It embeds GeoJSON and Markdown directly in the file and uses Leaflet from CDN for map rendering. It has no backend or build step.
+It embeds GeoJSON, Markdown, and the pinned Leaflet 1.9.4 runtime directly in
+the file. Embedded decision vectors and a text equivalent work without a
+network; OpenStreetMap tiles are optional online context with a visible
+tile-error/offline fallback. It has no backend, runtime package install, or
+browser-side `fetch` dependency.
 
 Dashboard v2 required controls:
 

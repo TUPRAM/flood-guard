@@ -224,7 +224,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "Run The System Locally" in text
-    assert 'cd "C:\\Users\\iputu\\Documents\\Flood Guard"' in text
+    assert 'Set-Location "<repository-root>"' in text
     assert "uv sync --extra dev --extra theos2" in text
     assert "uv run python scripts/generate_sample_decision_outputs.py" in text
     assert "uv run python scripts/smoke_dashboard.py" in text

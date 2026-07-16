@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "dataset_mode": "candidate",
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "generated_at": "2026-07-16T00:00:00Z",
+  "confidence_class": "low",
+  "source_name": "Mae Sai weak-reference candidate artifacts",
+  "assumptions": [
+    "Candidate analysis is not field validated and cannot be used as an official warning."
+  ],
+  "official_warning": false,
+  "data_version": "mae-sai-candidate-1",
+  "git_commit": "58cb508acbfac43a21cf347259cf6d12beef533c",
+  "study_area": "mae_sai_2024",
+  "data_state": "stale",
+  "message_th": "ข้อมูลผู้สมัครแบบไม่ใช้งานจริงสำหรับการวางแผนเท่านั้น",
+  "message_en": "Non-operational candidate evidence for planning only."
+}

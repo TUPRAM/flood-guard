@@ -13,6 +13,15 @@ flood extent or probability
   -> dashboard-ready exports and action brief
 ```
 
+## Access-method boundary
+
+The implemented access engine is a nearest-facility shortest-path threshold
+analysis. It compares each population node's shortest travel time to any
+selected facility under the normal and disrupted networks, then reports newly
+lost 15-, 30-, and 60-minute access. It is not a capacity-aware two-step
+floating catchment area (2SFCA) model. A 2SFCA extension remains future work
+until trustworthy facility-capacity inputs and separate contract tests exist.
+
 ## Modules
 
 - `config.py`: shared constants and lightweight configuration helpers.

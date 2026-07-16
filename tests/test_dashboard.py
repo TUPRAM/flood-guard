@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from floodguard.dashboard import write_static_dashboard
+from floodguard.dashboard import DashboardError, write_static_dashboard
 
 OUTPUTS = Path(__file__).parents[1] / "outputs"
+LEAFLET_ASSETS = Path(__file__).parents[1] / "src" / "floodguard" / "static" / "leaflet"
 
 
 def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: Path) -> None:
@@ -25,8 +26,28 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
 
     html = output_path.read_text(encoding="utf-8")
     assert written == output_path
-    assert "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" in html
-    assert "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" in html
+    assert "unpkg.com/leaflet" not in html
+    assert '<link rel="stylesheet" href="http' not in html
+    assert '<script src="http' not in html
+    assert 'id="leaflet-vendored-css" data-leaflet-version="1.9.4"' in html
+    assert 'id="leaflet-vendored-js" data-leaflet-version="1.9.4"' in html
+    assert "Leaflet 1.9.4 is vendored under BSD-2-Clause" in html
+    assert "Leaflet 1.9.4, a JS library" in html
+    assert ".leaflet-container" in html
+    assert "sourceMappingURL=leaflet.js.map" not in html
+    assert "function loadLeafletEnhancement()" not in html
+    assert "function startVendoredLeafletDashboard()" in html
+    assert "function showOfflineMapFallback()" in html
+    assert 'id="offline-map-fallback"' in html
+    assert 'id="basemap-status"' in html
+    assert "optionalBasemap.on('tileerror'" in html
+    assert "Basemap unavailable; embedded vector layers remain active" in html
+    assert "Offline mode; embedded vector layers remain active" in html
+    assert "window.addEventListener('offline'" in html
+    assert "offlineMapSummary.classList.add('enhanced-text-summary')" in html
+    assert "mapNode.insertAdjacentElement('afterend', offlineMapSummary)" in html
+    assert "Offline map text equivalent" in html
+    assert "The interactive map is an optional enhancement" in html
     assert "const priorityData =" in html
     assert "const roadRiskData =" in html
     assert "const briefsBySubdistrict =" in html
@@ -309,3 +330,36 @@ def test_write_static_dashboard_can_render_true_thumbnail_cards(tmp_path: Path) 
 
 def test_dashboard_output_contract_path() -> None:
     assert (OUTPUTS / "dashboard.html").as_posix().endswith("outputs/dashboard.html")
+
+
+def test_vendored_leaflet_assets_are_pinned_and_licensed() -> None:
+    leaflet_js = (LEAFLET_ASSETS / "leaflet.js").read_text(encoding="utf-8")
+    leaflet_css = (LEAFLET_ASSETS / "leaflet.css").read_text(encoding="utf-8")
+    license_text = (LEAFLET_ASSETS / "LICENSE").read_text(encoding="utf-8")
+
+    assert "Leaflet 1.9.4" in leaflet_js
+    assert ".leaflet-container" in leaflet_css
+    assert "BSD 2-Clause License" in license_text
+    assert "Copyright (c) 2010-2023, Volodymyr Agafonkin" in license_text
+
+
+def test_static_dashboard_rejects_missing_vendored_leaflet_assets(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    import floodguard.dashboard as dashboard
+
+    monkeypatch.setattr(dashboard, "LEAFLET_STATIC_DIR", tmp_path)
+
+    try:
+        write_static_dashboard(
+            OUTPUTS / "priority_subdistricts.geojson",
+            OUTPUTS / "road_risk.geojson",
+            OUTPUTS / "validation_summary.md",
+            OUTPUTS / "action_brief_FG-TB-001.md",
+            tmp_path / "dashboard.html",
+        )
+    except DashboardError as exc:
+        assert "Vendored Leaflet 1.9.4 asset is unavailable" in str(exc)
+    else:
+        raise AssertionError("Expected missing vendored Leaflet assets to fail closed.")

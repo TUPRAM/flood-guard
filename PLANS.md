@@ -15,16 +15,15 @@
 
 ## Current Milestone
 
-Build the first testable policy-product slice:
+Deliver the competition-ready role-specific platform without weakening the tested policy engine:
 
-- sample subdistrict priority fixture
-- deterministic FPPS score
-- A-E action class
-- top reason
-- confidence passthrough
-- generated sample CSV
-- passing tests
+- versioned shared schemas and drift tests
+- `/public`, `/command`, and `/studio` responsive PWA surfaces
+- offline judging bundle with explicit fixture/non-operational status
+- FastAPI artifact and server-owned deterministic scenario boundary
+- isolated, optional GeoAI 0.41.1 runner with fail-closed promotion gates
+- full Python, frontend, API, schema, offline, and visual verification
 
 ## Near-Term Decision
 
-The project should continue with equity and access modules before remote-sensing model complexity. This preserves the differentiator: converting flood extent into access, equity, prioritization, and action.
+The decision engine remains the source of truth. The next evidence milestone is not broader UI scope: it is clearing real-input provenance and reference-mask gates, running a spatial-holdout baseline/weak-label/GeoAI comparison, and independently reviewing calibration and geographic transfer before any candidate can feed the decision layer.

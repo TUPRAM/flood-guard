@@ -38,7 +38,7 @@ Real Sentinel-1 non-ML baseline evaluated against a manually digitized weak-refe
 Create one small polygon layer outside Git:
 
 ```text
-C:\Users\iputu\Documents\FloodGuard_external_data\manual_reference\mae_sai_2024\
+<external-data-workspace>/manual_reference/mae_sai_2024/
 ```
 
 Suggested file:
@@ -105,8 +105,6 @@ The legacy binary raster must not be used as an unqualified training labelset.
 After creating the GeoPackage, run:
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
-
 uv run python scripts/inspect_manual_reference_mask.py --require-existing
 uv run python scripts/build_mae_sai_file_manifest.py
 uv run python scripts/validate_mae_sai_file_manifest.py --allow-blocked

@@ -39,6 +39,18 @@ def test_dashboard_smoke_checks_current_output() -> None:
         "export_current_brief",
         "export_filtered_geojson",
         "leaflet_tile_probe",
+        "embedded_leaflet_css",
+        "embedded_leaflet_js",
+        "embedded_leaflet_license_notice",
+        "no_leaflet_cdn_dependency",
+        "optional_tile_error_status",
+        "offline_vector_status",
+        "offline_map_fallback",
+        "offline_text_fallback",
+        "vendored_leaflet_initializer",
+        "accessible_map_text_equivalent",
+        "no_static_leaflet_css_dependency",
+        "no_static_leaflet_script_dependency",
     }.issubset(names)
 
 

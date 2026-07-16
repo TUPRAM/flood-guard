@@ -20,7 +20,6 @@ Never copy an internal acquisition CSV into a reviewer package. Never reinterpre
 From the repository root:
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
 uv sync --extra dev --extra geo --extra ml
 uv run pytest
 ```

@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0",
+  "dataset_mode": "candidate",
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "generated_at": "2026-07-16T00:00:00Z",
+  "confidence_class": "low",
+  "source_name": "Synthetic GeoAI contract proof",
+  "assumptions": [
+    "Synthetic inputs prove integration wiring and do not establish flood accuracy."
+  ],
+  "official_warning": false,
+  "data_version": "geoai-contract-proof-1",
+  "git_commit": "58cb508acbfac43a21cf347259cf6d12beef533c",
+  "run_id": "geoai-synthetic-001",
+  "study_area": "synthetic_contract_grid",
+  "model_family": "geoai",
+  "run_status": "completed",
+  "geoai_version": "0.41.1",
+  "geoai_commit": "6833c8b71fb18f5b8ea17d5d9f8e0745157643c2",
+  "model_id": "floodguard/synthetic-unet",
+  "model_revision": "contract-proof-1",
+  "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "architecture": "unet",
+  "encoder": "resnet34",
+  "encoder_weights": null,
+  "num_channels": 8,
+  "channel_names": [
+    "pre_vv_db",
+    "post_vv_db",
+    "pre_vh_db",
+    "post_vh_db",
+    "vv_change_db",
+    "vh_change_db",
+    "slope",
+    "permanent_water_flag"
+  ],
+  "preprocessing": {
+    "method": "fixed_clip_scale_to_uint8",
+    "value_domain": "uint8_0_255",
+    "sidecar_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "transforms": [
+      {"name":"pre_vv_db","physical_min":-35.0,"physical_max":5.0,"units":"dB","description":"Clip and linearly encode pre-event VV."},
+      {"name":"post_vv_db","physical_min":-35.0,"physical_max":5.0,"units":"dB","description":"Clip and linearly encode post-event VV."},
+      {"name":"pre_vh_db","physical_min":-45.0,"physical_max":0.0,"units":"dB","description":"Clip and linearly encode pre-event VH."},
+      {"name":"post_vh_db","physical_min":-45.0,"physical_max":0.0,"units":"dB","description":"Clip and linearly encode post-event VH."},
+      {"name":"vv_change_db","physical_min":-20.0,"physical_max":20.0,"units":"dB","description":"Clip and linearly encode VV change."},
+      {"name":"vh_change_db","physical_min":-20.0,"physical_max":20.0,"units":"dB","description":"Clip and linearly encode VH change."},
+      {"name":"slope","physical_min":0.0,"physical_max":60.0,"units":"degrees","description":"Clip and linearly encode terrain slope."},
+      {"name":"permanent_water_flag","physical_min":0.0,"physical_max":1.0,"units":"binary","description":"Encode the permanent-water flag."}
+    ]
+  },
+  "input_manifest_rows": [
+    {
+      "product_id": "SYNTHETIC-PRE-001",
+      "role": "pre_event_sar",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "source_timestamp": "2024-09-10T00:00:00Z",
+      "processing_allowed": true
+    },
+    {
+      "product_id": "SYNTHETIC-POST-001",
+      "role": "post_event_sar",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "source_timestamp": "2024-09-15T23:16:01Z",
+      "processing_allowed": true
+    },
+    {
+      "product_id": "SYNTHETIC-MASK-001",
+      "role": "reference_mask",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "source_timestamp": "2024-09-15T23:16:01Z",
+      "processing_allowed": true
+    }
+  ],
+  "encoded_feature_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "reference_mask_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "prepared_tile_manifest_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "spatial_holdout_ids": ["synthetic-block-east"],
+  "spatial_partitions": [
+    {
+      "spatial_group_id": "synthetic-block-west",
+      "split": "train",
+      "bounds": [600000.0, 2200000.0, 600160.0, 2200320.0]
+    },
+    {
+      "spatial_group_id": "synthetic-block-east",
+      "split": "holdout",
+      "bounds": [600160.0, 2200000.0, 600320.0, 2200320.0]
+    }
+  ],
+  "reference_mask_id": "SYNTHETIC-MASK-001",
+  "reference_mask_status": "synthetic_fixture_only",
+  "target_crs": "EPSG:32647",
+  "resolution": [10.0, 10.0],
+  "bounds": [600000.0, 2200000.0, 600320.0, 2200320.0],
+  "tile_size": 16,
+  "overlap": 4,
+  "stride": 12,
+  "batch_size": 1,
+  "device": "cpu",
+  "flood_class_index": 1,
+  "probability_threshold": 0.5,
+  "external_output_workspace": "<external_data_workspace>/geoai-synthetic-001",
+  "processing_scope": "synthetic_contract_proof_only",
+  "processing_allowed": true,
+  "can_feed_decision_layer": false,
+  "reason_blocked": "Synthetic candidate proof cannot feed the decision layer.",
+  "validation_metrics": {
+    "iou": 1.0,
+    "f1_dice": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "area_error_ratio": 0.0,
+    "brier_score": 0.02,
+    "expected_calibration_error": null
+  },
+  "error_categories": []
+}

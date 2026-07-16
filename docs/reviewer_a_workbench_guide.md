@@ -161,11 +161,13 @@ Nothing may be copied from the practice workbench into this lane.
 
 ## 3. Build and open the practice workbench
 
-Run the following from the Flood Guard repository in PowerShell. The command uses
-the existing synthetic case package and the authoritative formal-hold file.
+Run the following from the Flood Guard repository in PowerShell after setting
+`FLOODGUARD_EXTERNAL_WORKSPACE` to the operator-managed external-data directory.
+The command uses the existing synthetic case package and the authoritative
+formal-hold file.
 
 ```powershell
-$pilot = "C:\Users\iputu\Documents\FloodGuard_external_data\label_factory\mae_sai_pilot_v1"
+$pilot = Join-Path $env:FLOODGUARD_EXTERNAL_WORKSPACE "label_factory\mae_sai_pilot_v1"
 $createdUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
 python scripts/build_reviewer_a_practice_workspace.py `

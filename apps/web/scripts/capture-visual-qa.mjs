@@ -1,0 +1,205 @@
+import { createReadStream, existsSync, mkdirSync, statSync } from "node:fs";
+import { createServer } from "node:http";
+import { extname, resolve, sep } from "node:path";
+
+import { chromium } from "@playwright/test";
+
+const out = resolve(process.cwd(), "out");
+const evidenceDir = resolve(
+  process.cwd(),
+  "..",
+  "..",
+  "docs",
+  "visual-qa",
+  "2026-07-16",
+);
+if (!existsSync(resolve(out, "public", "index.html"))) {
+  throw new Error("Build output is missing; run the production build first.");
+}
+mkdirSync(evidenceDir, { recursive: true });
+
+const contentTypes = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".woff2": "font/woff2",
+};
+
+const server = createServer((request, response) => {
+  const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+  const relativePath = decodeURIComponent(requestUrl.pathname).replace(/^\/+/, "");
+  let filePath = resolve(out, relativePath || "index.html");
+  if (!filePath.startsWith(`${out}${sep}`) && filePath !== out) {
+    response.writeHead(403).end("Forbidden");
+    return;
+  }
+  if (existsSync(filePath) && statSync(filePath).isDirectory()) {
+    filePath = resolve(filePath, "index.html");
+  }
+  if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+    response.writeHead(404).end("Not found");
+    return;
+  }
+  response.writeHead(200, {
+    "Cache-Control": "no-store",
+    "Content-Type": contentTypes[extname(filePath)] ?? "application/octet-stream",
+    "Service-Worker-Allowed": "/",
+  });
+  createReadStream(filePath).pipe(response);
+});
+
+await new Promise((resolveListen, rejectListen) => {
+  server.once("error", rejectListen);
+  server.listen(0, "127.0.0.1", resolveListen);
+});
+const address = server.address();
+if (!address || typeof address === "string") throw new Error("Static server did not bind.");
+const baseUrl = `http://127.0.0.1:${address.port}`;
+
+const browser = await chromium.launch(
+  process.env.FLOODGUARD_BROWSER_EXECUTABLE
+    ? { executablePath: process.env.FLOODGUARD_BROWSER_EXECUTABLE, headless: true }
+    : process.platform === "win32"
+      ? { channel: "chrome", headless: true }
+      : { headless: true },
+);
+
+const captures = [
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-390x844.png" },
+  { route: "/public/", selector: "main.public-page", width: 430, height: 932, file: "public-map-430x932.png", publicTab: 2 },
+  { route: "/command/", selector: "main.command-page", width: 1024, height: 768, file: "command-1024x768.png" },
+  { route: "/command/", selector: "main.command-page", width: 1440, height: 900, file: "command-1440x900.png" },
+  { route: "/command/", selector: "main.command-page", width: 1536, height: 1024, file: "command-1536x1024.png" },
+  { route: "/studio/", selector: "main.studio-page", width: 2048, height: 1152, file: "studio-2048x1152.png" },
+];
+const externalRequests = new Set();
+const browserErrors = [];
+
+try {
+  for (const capture of captures) {
+    const context = await browser.newContext({
+      serviceWorkers: "block",
+      viewport: { width: capture.width, height: capture.height },
+    });
+    await context.route("**/*", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin !== baseUrl) {
+        externalRequests.add(url.href);
+        await route.abort("blockedbyclient");
+        return;
+      }
+      await route.continue();
+    });
+    const page = await context.newPage();
+    page.on("pageerror", (error) => browserErrors.push(`${capture.file}: ${error.message}`));
+    page.on("console", (message) => {
+      if (message.type() === "error") browserErrors.push(`${capture.file}: ${message.text()}`);
+    });
+
+    await page.goto(`${baseUrl}${capture.route}`, { waitUntil: "networkidle" });
+    await page.locator(capture.selector).waitFor({ state: "visible" });
+    if (capture.publicTab) {
+      await page.locator(`.public-bottom-nav button:nth-child(${capture.publicTab})`).click();
+      await page.locator(".public-map-view .leaflet-container").waitFor({ state: "visible" });
+    } else if (capture.route === "/command/") {
+      await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
+    }
+
+    if (capture.route !== "/public/") {
+      await page.locator('.language-toggle button[lang="th"]').click();
+      const thaiBody = await page.locator("body").innerText();
+      if (!/[\u0e00-\u0e7f]/u.test(thaiBody)) {
+        throw new Error(`${capture.file} did not render Thai text after switching language.`);
+      }
+      await page.locator('.language-toggle button[lang="en"]').click();
+    }
+
+    const pageAudit = await page.evaluate(() => {
+      const bodyText = document.body.innerText;
+      const mapControls = [...document.querySelectorAll(".leaflet-control-container .leaflet-control")]
+        .filter((element) => element instanceof HTMLElement && element.offsetParent !== null)
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+        });
+      return {
+        bodyText,
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        mapControls,
+      };
+    });
+    if (pageAudit.documentWidth > pageAudit.viewportWidth + 1) {
+      throw new Error(
+        `${capture.file} has horizontal overflow: ${pageAudit.documentWidth}px > ${pageAudit.viewportWidth}px.`,
+      );
+    }
+    for (const control of pageAudit.mapControls) {
+      if (
+        control.left < -1
+        || control.right > capture.width + 1
+        || control.top < -1
+        || control.bottom > capture.height + 1
+      ) {
+        throw new Error(`${capture.file} has a clipped map control: ${JSON.stringify(control)}.`);
+      }
+    }
+    if (/[A-Za-z]:[\\/](?:Users|Documents)|file:\/\//u.test(pageAudit.bodyText)) {
+      throw new Error(`${capture.file} exposes a private local path.`);
+    }
+    if (/updated every 2 minutes|critical now|rescue count/iu.test(pageAudit.bodyText)) {
+      throw new Error(`${capture.file} contains an unsupported live-state claim.`);
+    }
+    if (!/fixture demo|ชุดข้อมูลสาธิต/iu.test(pageAudit.bodyText)) {
+      throw new Error(`${capture.file} is missing the fixture-demo disclosure.`);
+    }
+    if (!/non-operational|ไม่ใช่ระบบปฏิบัติการ/iu.test(pageAudit.bodyText)) {
+      throw new Error(`${capture.file} is missing the non-operational disclosure.`);
+    }
+    if (!/source time|เวลาข้อมูล/iu.test(pageAudit.bodyText)) {
+      throw new Error(`${capture.file} is missing the source timestamp label.`);
+    }
+    if (!/confidence|ความเชื่อมั่น/iu.test(pageAudit.bodyText)) {
+      throw new Error(`${capture.file} is missing the confidence label.`);
+    }
+
+    await page.keyboard.press("Tab");
+    const focusAudit = await page.evaluate(() => {
+      const element = document.activeElement;
+      if (!(element instanceof HTMLElement) || element === document.body) return null;
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return {
+        visible: rect.width > 0 && rect.height > 0,
+        styled:
+          (style.outlineStyle !== "none" && style.outlineWidth !== "0px")
+          || style.boxShadow !== "none",
+      };
+    });
+    if (!focusAudit?.visible || !focusAudit.styled) {
+      throw new Error(`${capture.file} did not expose a visible keyboard focus treatment.`);
+    }
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    });
+
+    await page.screenshot({ path: resolve(evidenceDir, capture.file), fullPage: false });
+    await context.close();
+    console.log(`visual QA: ${capture.file} ${capture.width}x${capture.height} PASS`);
+  }
+
+  if (externalRequests.size > 0) {
+    throw new Error(`External requests were attempted: ${[...externalRequests].join(", ")}`);
+  }
+  if (browserErrors.length > 0) {
+    throw new Error(`Browser errors: ${browserErrors.join(" | ")}`);
+  }
+  console.log(`visual QA: ${captures.length} captures, 0 external requests, all checks PASS`);
+} finally {
+  await browser.close();
+  await new Promise((resolveClose, rejectClose) => {
+    server.close((error) => error ? rejectClose(error) : resolveClose());
+  });
+}

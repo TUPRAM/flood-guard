@@ -12,6 +12,10 @@ from typing import Any
 from floodguard.theos2_readiness import read_theos2_preview_rows
 
 
+LEAFLET_VERSION = "1.9.4"
+LEAFLET_STATIC_DIR = Path(__file__).resolve().parent / "static" / "leaflet"
+
+
 class DashboardError(ValueError):
     """Raised when dashboard inputs violate the dashboard contract."""
 
@@ -377,6 +381,36 @@ def _select_top_actionable(priority_geojson: dict[str, Any]) -> dict[str, Any]:
     return sorted(features, key=sort_key)[0]
 
 
+def _read_vendored_leaflet_asset(file_name: str) -> str:
+    """Read a pinned Leaflet asset that is shipped with the Python package."""
+
+    if file_name not in {"leaflet.css", "leaflet.js"}:
+        raise DashboardError(f"Unsupported vendored Leaflet asset: {file_name}")
+    path = LEAFLET_STATIC_DIR / file_name
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise DashboardError(
+            f"Vendored Leaflet {LEAFLET_VERSION} asset is unavailable: {file_name}"
+        ) from exc
+    version_marker_missing = file_name.endswith(".js") and (
+        f"Leaflet {LEAFLET_VERSION}" not in content
+    )
+    css_marker_missing = file_name.endswith(".css") and (
+        ".leaflet-container" not in content
+    )
+    if not content.strip() or version_marker_missing or css_marker_missing:
+        raise DashboardError(
+            f"Vendored Leaflet asset is empty or has the wrong version: {file_name}"
+        )
+    closing_tag = "</style" if file_name.endswith(".css") else "</script"
+    if closing_tag in content.casefold():
+        raise DashboardError(
+            f"Vendored Leaflet asset contains an unsafe inline closing tag: {file_name}"
+        )
+    return content
+
+
 def _build_dashboard_html(
     priority_geojson: dict[str, Any],
     road_risk_geojson: dict[str, Any],
@@ -398,6 +432,11 @@ def _build_dashboard_html(
     mae_sai_action_briefs: dict[str, str],
     mae_sai_validation_summary: str,
 ) -> str:
+    leaflet_css = _read_vendored_leaflet_asset("leaflet.css")
+    leaflet_js = _read_vendored_leaflet_asset("leaflet.js").replace(
+        "//# sourceMappingURL=leaflet.js.map",
+        "",
+    )
     props = top_priority.get("properties") or {}
     best_intervention = _scenario_summary(
         priority_geojson,
@@ -416,7 +455,10 @@ def _build_dashboard_html(
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FloodGuard Static Dashboard</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Leaflet 1.9.4 is vendored under BSD-2-Clause; see the packaged LICENSE. -->
+  <style id="leaflet-vendored-css" data-leaflet-version="1.9.4">
+__LEAFLET_CSS__
+  </style>
   <style>
     :root {
       color-scheme: light;
@@ -1191,6 +1233,29 @@ def _build_dashboard_html(
       width: 100%;
       position: relative;
     }
+    .offline-map-fallback {
+      height: 100%;
+      overflow: auto;
+      padding: 22px;
+      background: linear-gradient(145deg, #edf6f3, #f8faf9);
+      color: var(--ink);
+    }
+    .offline-map-fallback strong { display: block; font-size: 16px; }
+    .offline-map-fallback p { max-width: 72ch; }
+    .offline-map-fallback ul { margin: 14px 0 0; padding-left: 20px; }
+    .offline-map-fallback li { margin: 8px 0; }
+    .offline-map-fallback.enhanced-text-summary {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      clip-path: inset(50%) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
     .legend {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1564,6 +1629,8 @@ def _build_dashboard_html(
       font-weight: 700;
       white-space: nowrap;
     }
+    .map-detail-status.online { color: var(--green); border-color: #a8d7c4; }
+    .map-detail-status.offline { color: #8b4a24; border-color: #e1bd9b; }
     .marker-sample {
       width: 12px;
       height: 12px;
@@ -2025,7 +2092,7 @@ def _build_dashboard_html(
           <div class="map-heading-copy">
             <h2 id="map-title">Fixture Priority Map</h2>
             <p id="map-subtitle">Synthetic priority polygons and road-risk segments from embedded GeoJSON.</p>
-            <div class="map-status"><i class="map-status-dot" id="map-status-dot"></i><span id="map-status-text">Fixture-backed decision workflow</span><span class="map-detail-status" id="map-detail-status">Regional view</span></div>
+            <div class="map-status"><i class="map-status-dot" id="map-status-dot"></i><span id="map-status-text">Fixture-backed decision workflow</span><span class="map-detail-status" id="map-detail-status">Regional view</span><span class="map-detail-status" id="basemap-status" role="status" aria-live="polite">Basemap optional; embedded vectors are ready</span></div>
           </div>
           <div class="toolbar" aria-label="Layer toggles">
             <label><input id="toggle-priority" type="checkbox" checked> <span data-i18n="layer.priority">Priority</span></label>
@@ -2036,7 +2103,7 @@ def _build_dashboard_html(
           </div>
         </div>
         <div class="map-body">
-          <div id="map"></div>
+          <div id="map">__OFFLINE_MAP_SUMMARY__</div>
           <div class="map-legend" aria-label="Map legend">
             <div class="legend-group">
               <strong id="legend-primary-title">Action class</strong>
@@ -2217,8 +2284,18 @@ def _build_dashboard_html(
     <div>Generated: 2025-07-07 08:00 ICT</div>
   </footer>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script id="leaflet-vendored-js" data-leaflet-version="1.9.4">
+__LEAFLET_JS__
+  </script>
   <script>
+    function startInteractiveDashboard() {
+    const mapNode = document.getElementById('map');
+    const offlineMapSummary = document.getElementById('offline-map-fallback');
+    if (offlineMapSummary) {
+      offlineMapSummary.classList.add('enhanced-text-summary');
+      mapNode.insertAdjacentElement('afterend', offlineMapSummary);
+    }
+    mapNode.replaceChildren();
     const priorityData = __PRIORITY_JSON__;
     const roadRiskData = __ROAD_JSON__;
     const briefsBySubdistrict = __BRIEFS_JSON__;
@@ -2536,10 +2613,52 @@ def _build_dashboard_html(
     const featureLayers = new Map();
 
     const map = L.map('map', { scrollWheelZoom: false, preferCanvas: true });
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const optionalBasemap = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    });
+    let basemapHasLoadedTile = false;
+
+    function setBasemapStatus(message, stateName) {
+      const status = document.getElementById('basemap-status');
+      if (!status) return;
+      status.textContent = message;
+      status.classList.remove('online', 'offline');
+      if (stateName) status.classList.add(stateName);
+    }
+
+    function enableOptionalBasemap() {
+      if (!map.hasLayer(optionalBasemap)) optionalBasemap.addTo(map);
+      setBasemapStatus('Optional OSM basemap: checking tiles', '');
+    }
+
+    optionalBasemap.on('tileload', () => {
+      if (basemapHasLoadedTile) return;
+      basemapHasLoadedTile = true;
+      setBasemapStatus('Optional OSM basemap available', 'online');
+    });
+    optionalBasemap.on('tileerror', () => {
+      setBasemapStatus(
+        'Basemap unavailable; embedded vector layers remain active',
+        'offline'
+      );
+    });
+    window.addEventListener('offline', () => {
+      if (map.hasLayer(optionalBasemap)) map.removeLayer(optionalBasemap);
+      setBasemapStatus(
+        'Offline mode; embedded vector layers remain active',
+        'offline'
+      );
+    });
+    window.addEventListener('online', enableOptionalBasemap);
+    if (navigator.onLine) {
+      enableOptionalBasemap();
+    } else {
+      setBasemapStatus(
+        'Offline mode; embedded vector layers remain active',
+        'offline'
+      );
+    }
 
     const priorityLayer = L.geoJSON(null, {
       style: priorityStyle,
@@ -3601,6 +3720,43 @@ No selected decision unit.
         new ResizeObserver(preserveMapViewAfterLayout).observe(mapPanel);
       }
     }
+    }
+
+    function showOfflineMapFallback() {
+      const mapNode = document.getElementById('map');
+      const summary = document.getElementById('offline-map-fallback');
+      if (summary) {
+        summary.classList.remove('enhanced-text-summary');
+        mapNode.replaceChildren(summary);
+      }
+      mapNode.setAttribute('role', 'region');
+      mapNode.setAttribute('aria-label', 'Offline text equivalent for the embedded FloodGuard map');
+      const status = document.getElementById('map-status-text');
+      if (status) status.textContent = 'Embedded text summary; map library unavailable';
+      const basemapStatus = document.getElementById('basemap-status');
+      if (basemapStatus) {
+        basemapStatus.textContent = 'Offline text fallback active';
+        basemapStatus.classList.add('offline');
+      }
+      document.querySelectorAll('.map-panel input').forEach((input) => {
+        input.disabled = true;
+      });
+    }
+
+    function startVendoredLeafletDashboard() {
+      if (typeof L === 'undefined' || L.version !== '1.9.4') {
+        showOfflineMapFallback();
+        return;
+      }
+      try {
+        startInteractiveDashboard();
+      } catch (error) {
+        console.error('Vendored Leaflet initialization failed.', error);
+        showOfflineMapFallback();
+      }
+    }
+
+    startVendoredLeafletDashboard();
   </script>
 </body>
 </html>
@@ -3611,7 +3767,10 @@ No selected decision unit.
     top_class = str(props.get("action_class", ""))
     initial_brief = action_briefs.get(top_id) or next(iter(action_briefs.values()))
     replacements = {
+        "__LEAFLET_CSS__": leaflet_css,
+        "__LEAFLET_JS__": leaflet_js,
         "__PRIORITY_JSON__": json.dumps(priority_geojson, ensure_ascii=False),
+        "__OFFLINE_MAP_SUMMARY__": _offline_map_summary_html(priority_geojson),
         "__ROAD_JSON__": json.dumps(road_risk_geojson, ensure_ascii=False),
         "__BRIEFS_JSON__": json.dumps(action_briefs, ensure_ascii=False),
         "__THEOS2_JSON__": json.dumps(theos2_preview_rows, ensure_ascii=False),
@@ -3967,6 +4126,35 @@ def _mae_sai_weak_dataset_note(summary: dict[str, Any]) -> str:
         f"{summary.get('confidence_class')}. This remains "
         "weak-reference, non-operational, not official validation, and not field "
         "validated. Not an official warning."
+    )
+
+
+def _offline_map_summary_html(priority_geojson: dict[str, Any]) -> str:
+    """Render an always-available text equivalent for the optional Leaflet map."""
+
+    items: list[str] = []
+    for feature in priority_geojson.get("features", []):
+        props = feature.get("properties") or {}
+        area_id = html.escape(str(props.get("subdistrict_id", "unavailable")))
+        name = html.escape(str(props.get("subdistrict_name", "unavailable")))
+        action_class = html.escape(str(props.get("action_class", "unavailable")))
+        score = html.escape(_format_number(props.get("fpps_0_100"), 2))
+        confidence = html.escape(str(props.get("confidence_class", "unavailable")))
+        source_time = html.escape(str(props.get("source_timestamp", "unavailable")))
+        items.append(
+            "<li>"
+            f"<b>{area_id} / {name}</b>: class {action_class}, FPPS {score}, "
+            f"confidence {confidence}, source time {source_time}."
+            "</li>"
+        )
+    return (
+        '<div class="offline-map-fallback" id="offline-map-fallback">'
+        "<strong>Offline map text equivalent</strong>"
+        "<p>The interactive map is an optional enhancement. These embedded "
+        "fixture decisions remain readable without network access. They are "
+        "non-operational and not an official warning.</p>"
+        f"<ul>{''.join(items)}</ul>"
+        "</div>"
     )
 
 

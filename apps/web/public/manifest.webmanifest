@@ -1,0 +1,13 @@
+{
+  "name": "FloodGuard Thailand Preparedness",
+  "short_name": "FloodGuard",
+  "description": "Non-operational flood preparedness and planning demonstration.",
+  "start_url": "/public/",
+  "display": "standalone",
+  "background_color": "#f4f8fb",
+  "theme_color": "#073b4c",
+  "lang": "th",
+  "icons": [
+    {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}

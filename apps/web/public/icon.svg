@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">FloodGuard Thailand</title>
+  <desc id="desc">A shield containing three calm water lines.</desc>
+  <rect width="128" height="128" rx="28" fill="#073b4c"/>
+  <path d="M64 17 103 31v29c0 26-15 43-39 53C40 103 25 86 25 60V31Z" fill="#e7fbf7"/>
+  <path d="M39 52c8 0 8-5 16-5s8 5 16 5 8-5 16-5" fill="none" stroke="#0c8f83" stroke-width="8" stroke-linecap="round"/>
+  <path d="M39 70c8 0 8-5 16-5s8 5 16 5 8-5 16-5" fill="none" stroke="#25b6a4" stroke-width="8" stroke-linecap="round"/>
+  <path d="M44 87h40" stroke="#7fd6cb" stroke-width="8" stroke-linecap="round"/>
+</svg>

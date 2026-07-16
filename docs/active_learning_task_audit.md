@@ -60,7 +60,7 @@ honestly before the human calibration and release gates pass.
 ## Current real Mae Sai evidence locations
 
 Controlled external root:
-`C:\Users\iputu\Documents\FloodGuard_external_data\label_factory\mae_sai_pilot_v1`
+`<external-data-workspace>/label_factory/mae_sai_pilot_v1`
 
 - Source/governance: `governance_cleared_v2`
 - Processing receipt: `receipts/processing_alignment_v2.json`

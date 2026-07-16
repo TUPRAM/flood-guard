@@ -7,7 +7,6 @@ This walkthrough is for the static fixture-backed dashboard at `outputs/dashboar
 Regenerate the dashboard:
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
 uv run python scripts/generate_sample_priority.py
 uv run python scripts/generate_sample_decision_outputs.py
 uv run python scripts/smoke_dashboard.py

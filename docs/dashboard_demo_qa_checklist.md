@@ -7,7 +7,6 @@ Use this checklist before a judge demo or recorded walkthrough. The dashboard is
 Run from the repository root:
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
 uv run pytest
 uv run python scripts/generate_sample_priority.py
 uv run python scripts/generate_sample_decision_outputs.py
@@ -24,7 +23,9 @@ The smoke check must report pass/fail for:
 
 - page title and app identity
 - local static-server fetch
-- Leaflet and OpenStreetMap tile configuration
+- vendored Leaflet 1.9.4 markers with no external initial-load dependency
+- embedded decision vectors and map text equivalent while the browser is offline
+- optional OpenStreetMap tile status and visible tile-error/offline fallback
 - embedded priority polygons and road-risk segments
 - embedded Mae Sai ADM3 polygons, candidate facilities, and modeled access hotspots
 - full dataset switching between fixture, Mae Sai candidate, and blocker modes

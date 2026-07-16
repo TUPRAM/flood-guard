@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "dataset_mode": "fixture_demo",
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-12T00:00:00Z",
+  "generated_at": "2026-07-16T00:00:00Z",
+  "confidence_class": "low",
+  "source_name": "FloodGuard committed fixture bundle",
+  "assumptions": [
+    "Fixture values are synthetic and intended only to exercise deterministic FloodGuard outputs."
+  ],
+  "official_warning": false,
+  "data_version": "fixture-demo-1",
+  "git_commit": "58cb508acbfac43a21cf347259cf6d12beef533c",
+  "area_id": "S1",
+  "area_name_th": "พื้นที่สาธิตหนึ่ง",
+  "area_name_en": "Fixture Area One",
+  "fpps_0_100": 62.4,
+  "action_class": "D",
+  "top_reason": "Fixture exposure is the largest modeled score component.",
+  "flood_likelihood_0_100": 70.0,
+  "exposure_0_100": 68.0,
+  "access_gap_0_100": 50.0,
+  "road_criticality_0_100": 48.0,
+  "vulnerability_context_0_100": 22.0,
+  "people_losing_30_min_access": 120,
+  "equity_gap_ratio": 1.2,
+  "road_evidence": {
+    "at_risk_segments": 2,
+    "bridge_count": 1,
+    "summary": "Modeled fixture road evidence; not an observed closure."
+  },
+  "facility_evidence": {
+    "facility_count": 2,
+    "summary": "Fixture facilities are provided for deterministic access tests."
+  }
+}

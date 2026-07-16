@@ -1,0 +1,9 @@
+{
+  "type": "FeatureCollection",
+  "name": "floodguard_fixture_road_risk",
+  "features": [
+    {"type":"Feature","properties":{"road_id":"FG-RD-001","area_id":"FG-TB-001","road_disruption_probability_0_1":0.832,"status":"modelled_risk_not_observed_closure"},"geometry":{"type":"LineString","coordinates":[[100.002,18.01],[100.018,18.01]]}},
+    {"type":"Feature","properties":{"road_id":"FG-RD-002","area_id":"FG-TB-002","road_disruption_probability_0_1":0.717,"status":"modelled_risk_not_observed_closure"},"geometry":{"type":"LineString","coordinates":[[100.022,18.01],[100.038,18.01]]}},
+    {"type":"Feature","properties":{"road_id":"FG-RD-003","area_id":"FG-TB-003","road_disruption_probability_0_1":0.547,"status":"modelled_risk_not_observed_closure"},"geometry":{"type":"LineString","coordinates":[[100.004,18.03],[100.018,18.03]]}}
+  ]
+}

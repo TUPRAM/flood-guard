@@ -56,7 +56,7 @@ and priority are operator-only and must never be shown to a formal reviewer.
 Controlled external root:
 
 ```text
-C:\Users\iputu\Documents\FloodGuard_external_data\label_factory\mae_sai_pilot_v1
+<external-data-workspace>/label_factory/mae_sai_pilot_v1
 ```
 
 The learning notebook should resolve that root through one visible parameter,

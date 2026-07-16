@@ -128,6 +128,11 @@ Blank disrupted edge times mean the edge is closed in the disrupted scenario.
 
 A population node counts as losing X-minute access only when it had normal access within X minutes and disrupted access is missing or greater than X minutes.
 
+This is nearest-facility shortest-path threshold analysis, not full 2SFCA.
+Facility capacity and competing catchment demand are not modeled. Do not label
+the current output as 2SFCA unless a later capacity-aware extension and its
+contract tests are implemented.
+
 ## 6. Scenario Mode
 
 Scenario mode reruns access loss and equity gap on fixture data only.

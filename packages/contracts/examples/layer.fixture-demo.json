@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "dataset_mode": "fixture_demo",
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-12T00:00:00Z",
+  "generated_at": "2026-07-16T00:00:00Z",
+  "confidence_class": "low",
+  "source_name": "FloodGuard committed fixture bundle",
+  "assumptions": [
+    "The small GeoJSON geometry and attributes are synthetic judging fixtures."
+  ],
+  "official_warning": false,
+  "data_version": "fixture-demo-1",
+  "git_commit": "58cb508acbfac43a21cf347259cf6d12beef533c",
+  "layer_id": "fixture_area_priorities",
+  "title_th": "ลำดับความสำคัญของพื้นที่สาธิต",
+  "title_en": "Fixture area priorities",
+  "role_visibility": ["public", "command", "studio"],
+  "format": "geojson",
+  "url": "/offline-demo/areas.geojson",
+  "data_state": "ready",
+  "model_run_id": null,
+  "attribution": ["FloodGuard synthetic fixtures"]
+}

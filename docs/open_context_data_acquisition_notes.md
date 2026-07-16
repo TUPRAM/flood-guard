@@ -9,7 +9,7 @@ Current status: file-level manifest rows are expected in `outputs/open_context_d
 Default outside-Git workspace:
 
 ```text
-C:\Users\iputu\Documents\FloodGuard_external_data\open_context\
+<external-data-workspace>/open_context/
 ```
 
 Committed manifests redact that root as:
@@ -44,7 +44,7 @@ uv run python scripts/build_open_context_file_manifest.py --download
 The script downloads only remote WorldPop, HDX, and Geofabrik files. The DEM row uses an existing outside-Git TIFF by default:
 
 ```text
-C:\Users\iputu\Documents\FloodGuard_external_data\open_context\copernicus_dem_glo30\Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif
+<external-data-workspace>/open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif
 ```
 
 Use a different DEM TIFF if needed:

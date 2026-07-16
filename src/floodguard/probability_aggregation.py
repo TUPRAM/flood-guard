@@ -187,11 +187,11 @@ def aggregate_probability_cells(
     ``official_input`` manifest and raster receipt are rejected after receipt
     validation because this function cannot independently re-hash a raster or
     prove that the supplied cells came from the named area's zonal mask. A
-    future trusted raster-and-zonal extraction adapter must own that boundary
-    before this bridge can emit decision or FPPS eligibility. Fixture,
-    candidate, or otherwise blocked runs raise by default; they may be
-    summarized only with ``allow_report_only=True`` and then carry false
-    eligibility flags.
+    trusted raster-and-zonal extraction adapter in
+    ``floodguard.trusted_zonal_adapter`` owns that filesystem and signing
+    boundary. Fixture, candidate, or otherwise blocked runs raise by default;
+    they may be summarized only with ``allow_report_only=True`` and then carry
+    false eligibility flags.
     """
 
     area_id = _nonempty_text(subdistrict_id, "subdistrict_id")
@@ -268,8 +268,9 @@ def aggregate_probability_cells(
         )
         raise ProbabilityAggregationError(
             "Decision feed is disabled for caller-supplied probability cells: "
-            "a trusted raster-and-zonal extraction adapter must independently "
-            "verify the raster bytes and bind the selected cells to the area."
+            "use the trusted raster-and-zonal extraction adapter in "
+            "floodguard.trusted_zonal_adapter to independently verify the raster "
+            "bytes and bind the selected cells to the area."
         )
 
     ordered = sorted(valid)

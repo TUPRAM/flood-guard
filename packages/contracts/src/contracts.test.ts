@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import areaDecisionSchema from "../schemas/area-decision.schema.json";
+import acceptanceReceiptSchema from "../schemas/agency-acceptance-receipt.schema.json";
+import fieldValidationReceiptSchema from "../schemas/field-validation-receipt.schema.json";
 import layerSchema from "../schemas/layer.schema.json";
 import modelRunSchema from "../schemas/model-run.schema.json";
+import pilotReadinessSchema from "../schemas/pilot-readiness.schema.json";
 import statusSchema from "../schemas/status.schema.json";
 import {
+  ACCEPTANCE_RECEIPT_STATES,
   ACTION_CLASSES,
   COMMON_METADATA_FIELDS,
   CONFIDENCE_CLASSES,
@@ -14,6 +18,7 @@ import {
   MODEL_FAMILIES,
   MODEL_RUN_STATUSES,
   OPERATIONAL_STATUSES,
+  PILOT_ROLES,
   PREPROCESSING_VALUE_DOMAINS,
   ROLE_VISIBILITIES,
   SCHEMA_VERSION,
@@ -75,5 +80,24 @@ describe("contract drift", () => {
       ]);
       expect(nonOfficialRule.then.properties.official_warning?.const).toBe(false);
     }
+  });
+
+  it("keeps pilot roles and acceptance states aligned", () => {
+    expect(PILOT_ROLES).toEqual(
+      pilotReadinessSchema.properties.roles.items.enum,
+    );
+    expect(ACCEPTANCE_RECEIPT_STATES).toEqual(
+      pilotReadinessSchema.properties.acceptance_receipt_state.enum,
+    );
+    expect(
+      acceptanceReceiptSchema.properties.payload.properties.dataset_mode.const,
+    ).toBe("official_input");
+    expect(
+      acceptanceReceiptSchema.properties.payload.properties
+        .requested_operational_status.const,
+    ).toBe("agency_operational");
+    expect(fieldValidationReceiptSchema.properties.protocol_version.const).toBe(
+      "field-validation-v1",
+    );
   });
 });

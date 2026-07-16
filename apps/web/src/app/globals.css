@@ -218,6 +218,27 @@ button { color: inherit; }
 .download-actions button.secondary { border: 1px solid var(--teal); background: #fff; color: var(--teal); }
 .small-screen-command-note { display: none; }
 
+/* Bounded agency pilot: status only, never a client-side authorization gate. */
+.pilot-readiness-panel { margin-top: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: var(--shadow); }
+.pilot-readiness-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.pilot-readiness-heading h2 { margin: 0; font-size: 1.05rem; }
+.pilot-readiness-heading > span { max-width: 220px; padding: 6px 9px; border-radius: 999px; text-align: center; font-size: .65rem; font-weight: 850; }
+.pilot-readiness-heading > span.blocked { background: var(--red-soft); color: var(--danger); }
+.pilot-readiness-heading > span.accepted { background: var(--teal-soft); color: #075d57; }
+.pilot-readiness-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 0; }
+.pilot-readiness-grid div { min-width: 0; padding: 10px; border: 1px solid #dce7e5; border-radius: 9px; background: #f8fbfa; }
+.pilot-readiness-grid dt { color: var(--muted); font-size: .61rem; }
+.pilot-readiness-grid dd { margin: 4px 0 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .68rem; font-weight: 800; }
+.pilot-blocked-reason { margin: 12px 0 0; padding: 10px; border-left: 4px solid #d57b2d; background: var(--amber-soft); font-size: .7rem; line-height: 1.45; }
+.pilot-auth-boundary { margin: 10px 0 0; color: var(--muted); font-size: .65rem; line-height: 1.45; }
+.pilot-readiness-panel.compact { margin: 0 0 17px; padding: 12px; box-shadow: none; }
+.pilot-readiness-panel.compact .pilot-readiness-heading { display: grid; }
+.pilot-readiness-panel.compact .pilot-readiness-heading h2 { font-size: .8rem; }
+.pilot-readiness-panel.compact .pilot-readiness-heading > span { max-width: none; justify-self: start; text-align: left; }
+.pilot-readiness-panel.compact .pilot-readiness-grid { grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+.pilot-readiness-panel.compact .pilot-readiness-grid div { padding: 7px; }
+.pilot-readiness-panel.compact .pilot-blocked-reason { padding: 7px; font-size: .63rem; }
+
 /* Studio */
 .studio-shell { width: min(1440px, calc(100% - 40px)); margin: 0 auto; padding: 30px 0 52px; }
 .studio-intro { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 30px; padding: 10px 0 28px; }
@@ -283,6 +304,7 @@ button.model-card { cursor: pointer; }
   .decision-title, .fpps-block, .top-reason { grid-column: 1; }.decision-scores, .evidence-grid { grid-column: 2; }.recommended-action, .provenance-details, .download-actions { grid-column: 1 / -1; }
   .model-comparison-grid { grid-template-columns: 1fr; }
   .model-detail-grid { grid-template-columns: 1fr; }
+  .pilot-readiness-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 680px) {
@@ -314,6 +336,7 @@ button.model-card { cursor: pointer; }
   .contract-list { grid-template-columns: 1fr; }
   .error-grid { grid-template-columns: 1fr; }
   .studio-footer { flex-direction: column; }
+  .pilot-readiness-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

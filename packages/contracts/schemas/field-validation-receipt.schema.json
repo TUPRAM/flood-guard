@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/field-validation-receipt.schema.json",
+  "title": "FloodGuard field-validation receipt",
+  "description": "A validation receipt is planning evidence. It never grants agency-operational status by itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "protocol_version", "receipt_id", "dataset_mode",
+    "operational_status", "source_timestamp", "generated_at", "confidence_class",
+    "source_name", "assumptions", "official_warning", "data_version", "git_commit",
+    "can_feed_decision_layer", "study_area", "event_id", "observation_window",
+    "evidence_hashes", "stratum_counts", "reviewer_calibration", "metrics",
+    "error_categories", "safety_incidents", "stop_work_events",
+    "data_protection_confirmed", "licensing_confirmed", "decision_th", "decision_en",
+    "issued_at", "review_due_at", "accountable_role_ids", "status"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "protocol_version": { "const": "field-validation-v1" },
+    "receipt_id": { "$ref": "#/$defs/safe_id" },
+    "dataset_mode": { "enum": ["fixture_demo", "candidate", "official_input"] },
+    "operational_status": { "enum": ["non_operational", "planning_only"] },
+    "source_timestamp": { "type": "string", "format": "date-time" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "confidence_class": { "enum": ["low", "medium", "high"] },
+    "source_name": { "type": "string", "minLength": 1 },
+    "assumptions": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "official_warning": { "const": false },
+    "data_version": { "$ref": "#/$defs/safe_id" },
+    "git_commit": { "type": "string", "pattern": "^[0-9a-fA-F]{7,40}$" },
+    "can_feed_decision_layer": { "const": false },
+    "study_area": { "$ref": "#/$defs/safe_id" },
+    "event_id": { "$ref": "#/$defs/safe_id" },
+    "observation_window": {
+      "type": "object", "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" }
+      }
+    },
+    "evidence_hashes": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "product_manifest_sha256", "model_manifest_sha256",
+        "probability_raster_sha256", "zonal_receipt_sha256",
+        "reporting_geometry_sha256", "sampling_plan_sha256",
+        "holdout_geometry_sha256"
+      ],
+      "properties": {
+        "product_manifest_sha256": { "$ref": "#/$defs/nullable_sha256" },
+        "model_manifest_sha256": { "$ref": "#/$defs/nullable_sha256" },
+        "probability_raster_sha256": { "$ref": "#/$defs/nullable_sha256" },
+        "zonal_receipt_sha256": { "$ref": "#/$defs/nullable_sha256" },
+        "reporting_geometry_sha256": { "$ref": "#/$defs/nullable_sha256" },
+        "sampling_plan_sha256": { "$ref": "#/$defs/nullable_sha256" },
+        "holdout_geometry_sha256": { "$ref": "#/$defs/nullable_sha256" }
+      }
+    },
+    "stratum_counts": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["stratum_id", "observed", "usable", "excluded"],
+        "properties": {
+          "stratum_id": { "$ref": "#/$defs/safe_id" },
+          "observed": { "type": "integer", "minimum": 0 },
+          "usable": { "type": "integer", "minimum": 0 },
+          "excluded": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "reviewer_calibration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "metric", "score", "threshold", "evidence_sha256"],
+      "properties": {
+        "status": { "enum": ["passed", "failed", "not_evaluated"] },
+        "metric": { "type": ["string", "null"] },
+        "score": { "$ref": "#/$defs/nullable_unit_metric" },
+        "threshold": { "$ref": "#/$defs/nullable_unit_metric" },
+        "evidence_sha256": { "$ref": "#/$defs/nullable_sha256" }
+      }
+    },
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "iou", "f1_dice", "precision", "recall", "signed_area_error_ratio",
+        "absolute_area_error_ratio", "brier_score", "expected_calibration_error"
+      ],
+      "properties": {
+        "iou": { "$ref": "#/$defs/nullable_unit_metric" },
+        "f1_dice": { "$ref": "#/$defs/nullable_unit_metric" },
+        "precision": { "$ref": "#/$defs/nullable_unit_metric" },
+        "recall": { "$ref": "#/$defs/nullable_unit_metric" },
+        "signed_area_error_ratio": { "type": ["number", "null"] },
+        "absolute_area_error_ratio": {
+          "type": ["number", "null"], "minimum": 0
+        },
+        "brier_score": { "$ref": "#/$defs/nullable_unit_metric" },
+        "expected_calibration_error": { "$ref": "#/$defs/nullable_unit_metric" }
+      }
+    },
+    "error_categories": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["category", "count"],
+        "properties": {
+          "category": { "$ref": "#/$defs/safe_id" },
+          "count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "safety_incidents": { "type": "integer", "minimum": 0 },
+    "stop_work_events": { "type": "integer", "minimum": 0 },
+    "data_protection_confirmed": { "type": "boolean" },
+    "licensing_confirmed": { "type": "boolean" },
+    "decision_th": { "type": "string", "minLength": 1 },
+    "decision_en": { "type": "string", "minLength": 1 },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "review_due_at": { "type": "string", "format": "date-time" },
+    "accountable_role_ids": {
+      "type": "array", "minItems": 2, "uniqueItems": true,
+      "items": { "$ref": "#/$defs/safe_id" }
+    },
+    "status": { "enum": ["accepted", "rejected", "incomplete"] }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "dataset_mode": { "enum": ["fixture_demo", "candidate"] } },
+        "required": ["dataset_mode"]
+      },
+      "then": { "properties": { "operational_status": { "const": "non_operational" } } }
+    },
+    {
+      "if": { "properties": { "status": { "const": "accepted" } }, "required": ["status"] },
+      "then": {
+        "properties": {
+          "dataset_mode": { "const": "official_input" },
+          "operational_status": { "const": "planning_only" },
+          "data_protection_confirmed": { "const": true },
+          "licensing_confirmed": { "const": true },
+          "reviewer_calibration": {
+            "properties": {
+              "status": { "const": "passed" },
+              "metric": { "type": "string", "minLength": 1 },
+              "score": { "$ref": "#/$defs/unit_metric" },
+              "threshold": { "$ref": "#/$defs/unit_metric" },
+              "evidence_sha256": { "$ref": "#/$defs/sha256" }
+            }
+          },
+          "metrics": {
+            "properties": {
+              "iou": { "$ref": "#/$defs/unit_metric" },
+              "f1_dice": { "$ref": "#/$defs/unit_metric" },
+              "precision": { "$ref": "#/$defs/unit_metric" },
+              "recall": { "$ref": "#/$defs/unit_metric" },
+              "signed_area_error_ratio": { "type": "number" },
+              "absolute_area_error_ratio": { "type": "number", "minimum": 0 },
+              "brier_score": { "$ref": "#/$defs/unit_metric" },
+              "expected_calibration_error": { "$ref": "#/$defs/unit_metric" }
+            }
+          },
+          "evidence_hashes": {
+            "properties": {
+              "product_manifest_sha256": { "$ref": "#/$defs/sha256" },
+              "model_manifest_sha256": { "$ref": "#/$defs/sha256" },
+              "probability_raster_sha256": { "$ref": "#/$defs/sha256" },
+              "zonal_receipt_sha256": { "$ref": "#/$defs/sha256" },
+              "reporting_geometry_sha256": { "$ref": "#/$defs/sha256" },
+              "sampling_plan_sha256": { "$ref": "#/$defs/sha256" },
+              "holdout_geometry_sha256": { "$ref": "#/$defs/sha256" }
+            }
+          },
+          "stratum_counts": { "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "nullable_sha256": {
+      "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }]
+    },
+    "safe_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$" },
+    "unit_metric": { "type": "number", "minimum": 0, "maximum": 1 },
+    "nullable_unit_metric": {
+      "oneOf": [{ "$ref": "#/$defs/unit_metric" }, { "type": "null" }]
+    }
+  }
+}

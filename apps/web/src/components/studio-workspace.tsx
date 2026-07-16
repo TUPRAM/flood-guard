@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { ModelRun } from "@floodguard/contracts";
 
 import { LanguageToggle } from "@/components/language-toggle";
+import { PilotReadinessPanel } from "@/components/pilot-readiness-panel";
 import { StatusBar } from "@/components/status-bar";
 import { downloadText } from "@/lib/download";
 import { formatNumber } from "@/lib/format";
@@ -58,6 +59,8 @@ export function StudioWorkspace() {
           <div><p className="eyebrow">{th ? "หลักฐานก่อนการใช้งาน" : "Evidence before promotion"}</p><h1>{th ? "มองเห็นข้อจำกัด ไม่ซ่อนสถานะบล็อก" : "Expose gates, not emergency actions"}</h1><p>{th ? "พื้นที่นี้แสดงความพร้อมของข้อมูล การ์ดแบบจำลอง และผลตรวจสอบ โดยไม่อ้างว่าแบบจำลองพร้อมใช้ตัดสินใจ" : "This workspace surfaces data readiness, model cards, and validation evidence without claiming operational readiness."}</p></div>
           <div className={`studio-verdict ${decisionEligible ? "ready" : "blocked"}`}><span>{th ? "ชั้นการตัดสินใจ" : "Decision layer"}</span><b>{decisionEligible ? (th ? "ผ่านเกณฑ์ตาม manifest" : "Manifest eligible") : (th ? "ยังไม่อนุญาต" : "Blocked")}</b><small>can_feed_decision_layer = {String(decisionEligible)}</small></div>
         </section>
+
+        <PilotReadinessPanel readiness={data.pilot_readiness} language={language} surface="studio" />
 
         <section className="studio-section" aria-labelledby="readiness-title">
           <div className="section-heading"><div><p className="eyebrow">01 · DATA</p><h2 id="readiness-title">{th ? "ความพร้อมของข้อมูล" : "Data readiness"}</h2></div><span className="section-count">{data.readiness.filter((row) => row.status === "blocked").length} {th ? "รายการบล็อก" : "blocked"}</span></div>

@@ -19,6 +19,8 @@ describe("offline judging bundle", () => {
     expect(data.status.dataset_mode).toBe("fixture_demo");
     expect(data.status.operational_status).toBe("non_operational");
     expect(data.status.official_warning).toBe(false);
+    expect(data.pilot_readiness.operational_status).toBe("non_operational");
+    expect(data.pilot_readiness.agency_operational_allowed).toBe(false);
     expect(data.areas).toHaveLength(5);
     expect(data.areas.every((area) => area.official_warning === false)).toBe(true);
   });
@@ -83,6 +85,61 @@ describe("partial API availability", () => {
     expect(data.degradedReason).toMatch(/Model-run catalog unavailable/);
   });
 
+  it("downgrades agency claims when pilot acceptance cannot be revalidated", async () => {
+    const fixture = getOfflineData();
+    const apiStatus = {
+      ...fixture.status,
+      dataset_mode: "official_input" as const,
+      operational_status: "agency_operational" as const,
+      official_warning: true,
+      study_area: "example_study_area",
+      data_version: "example-official-v1",
+    };
+    const apiAreas = fixture.areas.map((area) => ({
+      ...area,
+      dataset_mode: "official_input" as const,
+      operational_status: "agency_operational" as const,
+      official_warning: true,
+    }));
+    const apiLayers = fixture.layers.map((layer) => ({
+      ...layer,
+      dataset_mode: "official_input" as const,
+      operational_status: "agency_operational" as const,
+      official_warning: true,
+    }));
+    const apiRuns = fixture.model_runs.map((run) => ({
+      ...run,
+      dataset_mode: "official_input" as const,
+      operational_status: "agency_operational" as const,
+      official_warning: true,
+      can_feed_decision_layer: true,
+      reason_blocked: "",
+    }));
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/status")) return Response.json(apiStatus);
+      if (url.endsWith("/api/v1/areas")) return Response.json({ items: apiAreas });
+      if (url.endsWith("/api/v1/layers")) return Response.json({ items: apiLayers });
+      if (url.endsWith("/api/v1/model-runs")) return Response.json({ items: apiRuns });
+      if (url.endsWith("/api/v1/data-readiness")) return Response.json({ items: fixture.readiness });
+      if (url.endsWith("/api/v1/pilot/readiness")) return new Response(null, { status: 503 });
+      if (url.endsWith("/offline-demo/areas.geojson")) return Response.json(areaFeatures);
+      if (url.endsWith("/offline-demo/roads.geojson")) return Response.json(roadFeatures);
+      return new Response(null, { status: 404 });
+    }));
+
+    const data = await loadFloodGuardData("https://api.example");
+
+    expect(data.dataOrigin).toBe("api");
+    expect(data.status.operational_status).toBe("non_operational");
+    expect(data.status.official_warning).toBe(false);
+    expect(data.areas.every((area) => area.operational_status === "non_operational")).toBe(true);
+    expect(data.layers.every((layer) => layer.operational_status === "non_operational")).toBe(true);
+    expect(data.model_runs.every((run) => run.can_feed_decision_layer === false)).toBe(true);
+    expect(data.pilot_readiness.agency_operational_allowed).toBe(false);
+    expect(data.degradedReason).toMatch(/Pilot-readiness control unavailable/);
+  });
+
   it("uses the stale offline fixture only when the core API fails", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 503 })));
 
@@ -100,8 +157,8 @@ describe("last-known API snapshot", () => {
     const storage = memoryStorage();
     const apiStatus = {
       ...fixture.status,
-      dataset_mode: "candidate" as const,
-      operational_status: "planning_only" as const,
+      dataset_mode: "official_input" as const,
+      operational_status: "agency_operational" as const,
       study_area: "candidate_api_area",
       source_name: "Current contract API",
       data_state: "ready" as const,
@@ -113,6 +170,22 @@ describe("last-known API snapshot", () => {
       if (url.endsWith("/api/v1/layers")) return Response.json({ items: fixture.layers });
       if (url.endsWith("/api/v1/model-runs")) return Response.json({ items: [] });
       if (url.endsWith("/api/v1/data-readiness")) return Response.json({ items: fixture.readiness });
+      if (url.endsWith("/api/v1/pilot/readiness")) return Response.json({
+        ...fixture.pilot_readiness,
+        operational_status: "agency_operational",
+        agency_operational_allowed: true,
+        identity_state: "configured",
+        acceptance_receipt_state: "accepted",
+        audit_state: "valid",
+        retention_state: "configured",
+        deployment_state: "accepted_for_agency_operation",
+        acceptance_criteria: fixture.pilot_readiness.acceptance_criteria.map((item) => ({
+          ...item,
+          status: "accepted",
+        })),
+        reason_blocked_th: "",
+        reason_blocked_en: "",
+      });
       if (url.endsWith("/offline-demo/areas.geojson")) return Response.json(areaFeatures);
       if (url.endsWith("/offline-demo/roads.geojson")) return Response.json(roadFeatures);
       return new Response(null, { status: 404 });
@@ -121,6 +194,7 @@ describe("last-known API snapshot", () => {
     const current = await loadFloodGuardData("https://api.example", storage);
     expect(current.dataOrigin).toBe("api");
     expect(current.status.source_name).toBe("Current contract API");
+    expect(current.pilot_readiness.agency_operational_allowed).toBe(true);
     expect(storage.getItem(LAST_KNOWN_API_SNAPSHOT_KEY)).not.toBeNull();
 
     vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 503 })));
@@ -130,6 +204,13 @@ describe("last-known API snapshot", () => {
     expect(cached.dataState).toBe("stale_offline");
     expect(cached.scenarioState).toBe("unavailable");
     expect(cached.status.source_name).toBe("Current contract API");
+    expect(cached.status.operational_status).toBe("non_operational");
+    expect(cached.status.official_warning).toBe(false);
+    expect(cached.areas.every((area) => area.operational_status === "non_operational")).toBe(true);
+    expect(cached.model_runs.every((run) => run.can_feed_decision_layer === false)).toBe(true);
+    expect(cached.pilot_readiness.operational_status).toBe("non_operational");
+    expect(cached.pilot_readiness.agency_operational_allowed).toBe(false);
+    expect(cached.pilot_readiness.deployment_state).toBe("degraded");
     expect(cached.status.source_timestamp).toBe(current.status.source_timestamp);
     expect(cached.snapshotCachedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(cached.fallbackReason).toMatch(/Core API returned 503/);

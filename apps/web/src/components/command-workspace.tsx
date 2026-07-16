@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 
 import { GeoMap } from "@/components/geo-map";
 import { LanguageToggle } from "@/components/language-toggle";
+import { PilotReadinessPanel } from "@/components/pilot-readiness-panel";
 import { ScoreBar } from "@/components/score-bar";
 import { StatusBar } from "@/components/status-bar";
 import { toggleCommandClass } from "@/lib/command-filter";
@@ -145,6 +146,7 @@ export function CommandWorkspace() {
           <fieldset className="rail-section class-filters"><legend>{th ? "กรองชั้น A–E" : "A–E filters"}</legend><div>{ACTION_CLASSES.map((actionClass) => <button type="button" aria-pressed={activeClasses.has(actionClass)} className={activeClasses.has(actionClass) ? `active class-${actionClass.toLowerCase()}` : ""} key={actionClass} onClick={() => toggleClass(actionClass)}>{actionClass}</button>)}</div></fieldset>
           <fieldset className="rail-section layer-toggles"><legend>{th ? "ชั้นข้อมูล" : "Layers"}</legend><label><input type="checkbox" checked readOnly /> {th ? "พื้นที่ FPPS" : "FPPS areas"}</label><label className={roadLayerAvailable ? undefined : "disabled"}><input type="checkbox" checked={roadLayerAvailable && showRoads} disabled={!roadLayerAvailable} onChange={(event) => setShowRoads(event.target.checked)} /> {roadLayerAvailable ? (th ? "ความเสี่ยงถนน" : "Road risk") : (th ? "ความเสี่ยงถนน (ไม่มี)" : "Road risk (unavailable)")}</label><label className="disabled"><input type="checkbox" disabled /> {th ? "ความน่าจะเป็นน้ำท่วม (ไม่มี)" : "Flood probability (unavailable)"}</label></fieldset>
           <div className="rail-section locked-policy"><p className="rail-label">{th ? "นโยบายน้ำหนัก" : "Weight policy"}</p><b>30 / 25 / 20 / 15 / 10</b><p>{th ? "ล็อกตามสัญญาเดิม การวิเคราะห์ความไวแยกจากสถานการณ์" : "Locked to the existing contract. Sensitivity is separate from scenarios."}</p></div>
+          <PilotReadinessPanel readiness={data.pilot_readiness} language={language} surface="command" compact />
         </aside>
 
         <section className="map-workspace" aria-label={th ? "พื้นที่ทำงานแผนที่" : "Map workspace"}>

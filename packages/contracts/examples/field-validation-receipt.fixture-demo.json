@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "protocol_version": "field-validation-v1",
+  "receipt_id": "fixture-field-validation-v1",
+  "dataset_mode": "fixture_demo",
+  "operational_status": "non_operational",
+  "source_timestamp": "2026-06-29T01:00:00Z",
+  "generated_at": "2026-07-16T00:00:00Z",
+  "confidence_class": "low",
+  "source_name": "FloodGuard field-validation contract fixture",
+  "assumptions": [
+    "This is a schema example only; no field observations or accuracy evidence are claimed.",
+    "All evaluation metrics remain null until an authorized field protocol is completed."
+  ],
+  "official_warning": false,
+  "data_version": "fixture-pilot-contract-v1",
+  "git_commit": "58cb508acbfac43a21cf347259cf6d12beef533c",
+  "can_feed_decision_layer": false,
+  "study_area": "example_fixture_area",
+  "event_id": "example_fixture_event",
+  "observation_window": {
+    "start": "2026-06-29T00:00:00Z",
+    "end": "2026-06-29T01:00:00Z"
+  },
+  "evidence_hashes": {
+    "product_manifest_sha256": null,
+    "model_manifest_sha256": null,
+    "probability_raster_sha256": null,
+    "zonal_receipt_sha256": null,
+    "reporting_geometry_sha256": null,
+    "sampling_plan_sha256": null,
+    "holdout_geometry_sha256": null
+  },
+  "stratum_counts": [],
+  "reviewer_calibration": {
+    "status": "not_evaluated",
+    "metric": null,
+    "score": null,
+    "threshold": null,
+    "evidence_sha256": null
+  },
+  "metrics": {
+    "iou": null,
+    "f1_dice": null,
+    "precision": null,
+    "recall": null,
+    "signed_area_error_ratio": null,
+    "absolute_area_error_ratio": null,
+    "brier_score": null,
+    "expected_calibration_error": null
+  },
+  "error_categories": [],
+  "safety_incidents": 0,
+  "stop_work_events": 0,
+  "data_protection_confirmed": true,
+  "licensing_confirmed": true,
+  "decision_th": "ตัวอย่างสัญญาเท่านั้น ยังไม่ผ่านการตรวจสอบภาคสนาม",
+  "decision_en": "Contract fixture only; field validation has not been completed.",
+  "issued_at": "2026-07-16T00:00:00Z",
+  "review_due_at": "2026-08-15T00:00:00Z",
+  "accountable_role_ids": ["example-data-owner-role", "example-reviewer-role"],
+  "status": "incomplete"
+}

@@ -2,13 +2,22 @@ import bundleJson from "../../public/offline-demo/bundle.json";
 import areasGeoJson from "../data/areas.json";
 import roadsGeoJson from "../data/roads.json";
 
-import type { AreaDecision, LayerCatalogItem, ModelRun, StatusResponse } from "@floodguard/contracts";
+import {
+  ACCEPTANCE_RECEIPT_STATES,
+  OPERATIONAL_STATUSES,
+  PILOT_ROLES,
+  type AreaDecision,
+  type LayerCatalogItem,
+  type ModelRun,
+  type PilotReadiness,
+  type StatusResponse,
+} from "@floodguard/contracts";
 
 import type { AreaRecord, FeatureCollection, FloodGuardData, OfflineBundle, ReadinessRow, ScenarioId, ScenarioResult } from "./types";
 
 const offlineBundle = bundleJson as unknown as OfflineBundle;
 
-export const LAST_KNOWN_API_SNAPSHOT_KEY = "floodguard:last-known-api-snapshot:v1";
+export const LAST_KNOWN_API_SNAPSHOT_KEY = "floodguard:last-known-api-snapshot:v2";
 const SNAPSHOT_SCHEMA_VERSION = "1.0";
 
 export interface SnapshotStorage {
@@ -60,9 +69,10 @@ export async function loadFloodGuardData(
     const areas = asItems<AreaDecision>(areasRaw);
     const layers = asItems<LayerCatalogItem>(layersRaw);
     const degradationReasons: string[] = [];
-    const [runsResult, readinessResult] = await Promise.allSettled([
+    const [runsResult, readinessResult, pilotResult] = await Promise.allSettled([
       loadCollection<ModelRun>(`${base}/api/v1/model-runs`),
       loadCollection<Record<string, unknown>>(`${base}/api/v1/data-readiness`),
+      loadPilotReadiness(`${base}/api/v1/pilot/readiness`),
     ]);
     const modelRuns = runsResult.status === "fulfilled" ? runsResult.value : [];
     if (runsResult.status === "rejected") degradationReasons.push("Model-run catalog unavailable.");
@@ -76,9 +86,48 @@ export async function loadFloodGuardData(
           reason_blocked: "The current API data-readiness artifact is unavailable.",
         }];
     if (readinessResult.status === "rejected") degradationReasons.push("Data-readiness artifact unavailable.");
+    const pilotReadiness = pilotResult.status === "fulfilled"
+      ? pilotResult.value
+      : offlineBundle.pilot_readiness;
+    if (pilotResult.status === "rejected") degradationReasons.push("Pilot-readiness control unavailable.");
+    const agencyOperationVerified = (
+      pilotResult.status === "fulfilled"
+      && status.dataset_mode === "official_input"
+      && status.operational_status === "agency_operational"
+      && pilotReadiness.operational_status === "agency_operational"
+      && pilotReadiness.agency_operational_allowed
+      && pilotReadiness.acceptance_receipt_state === "accepted"
+      && pilotReadiness.audit_state === "valid"
+      && pilotReadiness.retention_state === "configured"
+      && pilotReadiness.deployment_state === "accepted_for_agency_operation"
+    );
+    const boundedStatus = !agencyOperationVerified && status.operational_status === "agency_operational"
+      ? { ...status, operational_status: "non_operational" as const, official_warning: false }
+      : status;
+    const boundedAreas = areas.map((area) => (
+      !agencyOperationVerified && area.operational_status === "agency_operational"
+        ? { ...area, operational_status: "non_operational" as const, official_warning: false }
+        : area
+    ));
+    const boundedLayers = layers.map((layer) => (
+      !agencyOperationVerified && layer.operational_status === "agency_operational"
+        ? { ...layer, operational_status: "non_operational" as const, official_warning: false }
+        : layer
+    ));
+    const boundedModelRuns = modelRuns.map((run) => (
+      !agencyOperationVerified && run.operational_status === "agency_operational"
+        ? {
+            ...run,
+            operational_status: "non_operational" as const,
+            official_warning: false,
+            can_feed_decision_layer: false,
+            reason_blocked: "Pilot acceptance controls could not be revalidated.",
+          }
+        : run
+    ));
     const fixtureCompatible = status.dataset_mode === "fixture_demo" && status.study_area === "fixture_thailand_demo";
-    const errorCategories = modelRuns.length > 0
-      ? [...new Set(modelRuns.flatMap((run) => run.error_categories))].map((category) => ({
+    const errorCategories = boundedModelRuns.length > 0
+      ? [...new Set(boundedModelRuns.flatMap((run) => run.error_categories))].map((category) => ({
           category,
           status: "reviewed" as const,
           note: "Reported by the current API model-run manifest.",
@@ -104,18 +153,19 @@ export async function loadFloodGuardData(
     const scenarioState = scenarioEligible && scenarioResult.status === "fulfilled" ? "ready" : "unavailable";
     if (scenarioEligible && scenarioResult.status === "rejected") degradationReasons.push("Scenario artifacts unavailable.");
     const publicLayers = roadLayerResult.status === "fulfilled"
-      ? layers
-      : layers.map((layer) => layer.layer_id === "road_risk" ? { ...layer, data_state: "unavailable" as const } : layer);
+      ? boundedLayers
+      : boundedLayers.map((layer) => layer.layer_id === "road_risk" ? { ...layer, data_state: "unavailable" as const } : layer);
     const candidate = {
       ...offlineBundle,
-      status,
-      areas: areas.map((area) => adaptArea(area, scenarioResults)),
+      status: boundedStatus,
+      areas: boundedAreas.map((area) => adaptArea(area, scenarioResults)),
       layers: publicLayers,
-      model_runs: modelRuns,
+      model_runs: boundedModelRuns,
       readiness,
+      pilot_readiness: pilotReadiness,
       shelters: fixtureCompatible ? offlineBundle.shelters : [],
       error_categories: fixtureCompatible ? offlineBundle.error_categories : errorCategories,
-      dataState: status.data_state,
+      dataState: boundedStatus.data_state,
       dataOrigin: "api",
       scenarioState,
       apiBase: base,
@@ -182,6 +232,38 @@ function readLastKnownApiSnapshot(
     assertNoPrivatePaths(envelope);
     return {
       ...envelope.data,
+      status: {
+        ...envelope.data.status,
+        operational_status: "non_operational",
+        official_warning: false,
+        data_state: "stale",
+      },
+      areas: envelope.data.areas.map((area) => ({
+        ...area,
+        operational_status: "non_operational",
+        official_warning: false,
+      })),
+      layers: envelope.data.layers.map((layer) => ({
+        ...layer,
+        operational_status: "non_operational",
+        official_warning: false,
+        data_state: "stale",
+      })),
+      model_runs: envelope.data.model_runs.map((run) => ({
+        ...run,
+        operational_status: "non_operational",
+        official_warning: false,
+        can_feed_decision_layer: false,
+        reason_blocked: run.reason_blocked || "Cached offline evidence cannot feed the decision layer.",
+      })),
+      pilot_readiness: {
+        ...envelope.data.pilot_readiness,
+        operational_status: "non_operational",
+        agency_operational_allowed: false,
+        deployment_state: "degraded",
+        reason_blocked_th: "โหมดออฟไลน์ไม่สามารถตรวจสอบใบรับรองการยอมรับกับเซิร์ฟเวอร์ได้",
+        reason_blocked_en: "Offline mode cannot revalidate the acceptance receipt with the server.",
+      },
       dataState: "stale_offline",
       dataOrigin: "cached_api",
       scenarioState: "unavailable",
@@ -205,8 +287,83 @@ function isSnapshotEnvelope(
   if (typeof data.status.source_name !== "string" || typeof data.status.official_warning !== "boolean") return false;
   if (!Array.isArray(data.areas) || !Array.isArray(data.layers)) return false;
   if (!Array.isArray(data.readiness) || !Array.isArray(data.model_runs)) return false;
+  if (!isRecord(data.pilot_readiness)) return false;
+  if (typeof data.pilot_readiness.agency_operational_allowed !== "boolean") return false;
   if (!Array.isArray(data.hotlines) || !Array.isArray(data.shelters)) return false;
   if (!isFeatureCollection(data.areaFeatures) || !isFeatureCollection(data.roadFeatures)) return false;
+  return true;
+}
+
+async function loadObject<T>(url: string): Promise<T> {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`API returned ${response.status} for ${url}`);
+  const payload = await response.json() as unknown;
+  if (!isRecord(payload)) throw new Error(`API object contract failed for ${url}`);
+  return payload as T;
+}
+
+async function loadPilotReadiness(url: string): Promise<PilotReadiness> {
+  const payload = await loadObject<unknown>(url);
+  if (!isPilotReadiness(payload)) {
+    throw new Error(`Pilot-readiness contract failed for ${url}`);
+  }
+  return payload;
+}
+
+function isPilotReadiness(value: unknown): value is PilotReadiness {
+  if (!isRecord(value) || value.schema_version !== "1.0") return false;
+  if (!OPERATIONAL_STATUSES.includes(value.operational_status as never)) return false;
+  if (typeof value.agency_operational_allowed !== "boolean") return false;
+  if (!["unconfigured", "configured"].includes(String(value.identity_state))) return false;
+  if (!ACCEPTANCE_RECEIPT_STATES.includes(value.acceptance_receipt_state as never)) return false;
+  if (!["unconfigured", "valid", "invalid"].includes(String(value.audit_state))) return false;
+  if (!["unconfigured", "configured"].includes(String(value.retention_state))) return false;
+  if (![
+    "pilot_not_configured",
+    "pilot_ready_non_operational",
+    "degraded",
+    "accepted_for_agency_operation",
+  ].includes(String(value.deployment_state))) return false;
+  if (value.field_validation_protocol_version !== "field-validation-v1") return false;
+  if (typeof value.reason_blocked_th !== "string" || typeof value.reason_blocked_en !== "string") return false;
+  const roles = value.roles;
+  if (!Array.isArray(roles) || roles.length !== PILOT_ROLES.length) return false;
+  if (new Set(roles).size !== PILOT_ROLES.length) return false;
+  if (!PILOT_ROLES.every((role) => roles.includes(role))) return false;
+  const requiredCriteria = [
+    "AC-SAFETY-01",
+    "AC-DATA-02",
+    "AC-OFFLINE-03",
+    "AC-AUTH-04",
+    "AC-FIELD-05",
+  ];
+  if (!Array.isArray(value.acceptance_criteria) || value.acceptance_criteria.length !== requiredCriteria.length) return false;
+  const criteria = value.acceptance_criteria;
+  for (const criterion of criteria) {
+    if (!isRecord(criterion)) return false;
+    if (!requiredCriteria.includes(String(criterion.criterion_id))) return false;
+    if (criterion.required !== true) return false;
+    if (!["pending", "accepted"].includes(String(criterion.status))) return false;
+    if (typeof criterion.text_th !== "string" || !criterion.text_th) return false;
+    if (typeof criterion.text_en !== "string" || !criterion.text_en) return false;
+  }
+  if (new Set(criteria.map((item) => item.criterion_id)).size !== requiredCriteria.length) return false;
+  if (value.operational_status === "agency_operational") {
+    if (
+      !value.agency_operational_allowed
+      || value.acceptance_receipt_state !== "accepted"
+      || value.identity_state !== "configured"
+      || value.audit_state !== "valid"
+      || value.retention_state !== "configured"
+      || value.deployment_state !== "accepted_for_agency_operation"
+      || criteria.some((criterion) => criterion.status !== "accepted")
+    ) return false;
+  } else if (
+    value.agency_operational_allowed
+    || value.deployment_state === "accepted_for_agency_operation"
+  ) {
+    return false;
+  }
   return true;
 }
 

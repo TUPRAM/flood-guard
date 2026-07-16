@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from typing import Annotated, Any, Literal
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, Query, Request
+from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
@@ -27,6 +27,21 @@ from floodguard_api.models import (
     StatusResponse,
     StudyArea,
 )
+from floodguard_api.pilot import PilotConfigurationError, PilotControl, PilotError
+from floodguard_api.pilot_models import (
+    AcceptanceReceiptRequest,
+    AuditLogResponse,
+    DeploymentMonitoringResponse,
+    OperationalAssessmentRequest,
+    OperationalAssessmentResponse,
+    PilotCredential,
+    PilotReadiness,
+    PilotSessionResponse,
+    ReceiptVerificationResponse,
+    RetentionRequest,
+    RetentionResponse,
+    SignedAcceptanceReceipt,
+)
 from floodguard_api.repository import (
     ArtifactNotFound,
     ArtifactRepository,
@@ -41,10 +56,12 @@ DEFAULT_CORS_ORIGINS = ("http://localhost:3000", "http://127.0.0.1:3000")
 def create_app(
     repository: ArtifactRepository | None = None,
     allowed_origins: Sequence[str] | None = None,
+    pilot_control: PilotControl | None = None,
 ) -> FastAPI:
     """Build an injectable application for production and no-network tests."""
 
     artifact_repository = repository or ArtifactRepository()
+    pilot = pilot_control or PilotControl.from_environment()
     application = FastAPI(
         title="FloodGuard Thailand artifact API",
         summary="Versioned decision-support artifacts for planning and judging.",
@@ -58,12 +75,13 @@ def create_app(
         redoc_url=None,
     )
     application.state.repository = artifact_repository
+    application.state.pilot_control = pilot
     application.add_middleware(
         CORSMiddleware,
         allow_origins=list(allowed_origins or _configured_cors_origins()),
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "Authorization"],
     )
 
     @application.exception_handler(ArtifactNotFound)
@@ -85,6 +103,131 @@ def create_app(
         error = ApiError(error="unsafe_response_rejected", detail=str(exc))
         return JSONResponse(status_code=500, content=error.model_dump(mode="json"))
 
+    @application.exception_handler(PilotError)
+    async def pilot_error(_: Request, exc: PilotError) -> JSONResponse:
+        error = ApiError(error=exc.error_code, detail=str(exc))
+        headers = {"WWW-Authenticate": "Bearer"} if exc.status_code == 401 else None
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=error.model_dump(mode="json"),
+            headers=headers,
+        )
+
+    def audit_protected_request(
+        *,
+        identity: PilotCredential | None,
+        action: str,
+        capability: str,
+        outcome: Literal["allowed", "denied"],
+        dataset_mode: str,
+        reason: str,
+        required: bool,
+    ) -> None:
+        """Append a redacted authorization outcome without persisting request input."""
+
+        if not pilot.audit.configured:
+            if required:
+                raise PilotConfigurationError(
+                    "Protected pilot operations require configured audit logging."
+                )
+            return
+        now = pilot.now()
+        audit_identity = identity or PilotCredential.model_construct(
+            schema_version="1.0",
+            subject="anonymous-request",
+            roles=[],
+            issued_at=now,
+            expires_at=now,
+            token_id="unverified-request",
+            key_id="unverified-request",
+        )
+        pilot.audit.append(
+            identity=audit_identity,
+            action=action,
+            outcome=outcome,
+            details={
+                "capability": capability,
+                "dataset_mode": dataset_mode,
+                "reason": reason,
+            },
+            now=now,
+        )
+
+    def require_capability(
+        capability: str,
+        action: str,
+        *,
+        official_input_only: bool = False,
+    ) -> Any:
+        def dependency(
+            authorization: Annotated[str | None, Header()] = None,
+        ) -> PilotCredential | None:
+            dataset_mode = artifact_repository.status().dataset_mode.value
+            if official_input_only and dataset_mode != "official_input":
+                return None
+            identity: PilotCredential | None = None
+            try:
+                identity = pilot.authenticate(authorization)
+                pilot.require(identity, capability)
+            except PilotError as exc:
+                audit_protected_request(
+                    identity=identity,
+                    action=action,
+                    capability=capability,
+                    outcome="denied",
+                    dataset_mode=dataset_mode,
+                    reason=exc.error_code,
+                    required=False,
+                )
+                raise
+            audit_protected_request(
+                identity=identity,
+                action=action,
+                capability=capability,
+                outcome="allowed",
+                dataset_mode=dataset_mode,
+                reason="role_matrix",
+                required=True,
+            )
+            return identity
+
+        return dependency
+
+    require_official_command_data = require_capability(
+        "monitoring:read",
+        "api:command-data:read",
+        official_input_only=True,
+    )
+    require_official_scenario = require_capability(
+        "assessment:run",
+        "api:scenario:operate",
+        official_input_only=True,
+    )
+    require_official_model = require_capability(
+        "assessment:run",
+        "api:model-evidence:read",
+        official_input_only=True,
+    )
+    require_official_readiness = require_capability(
+        "assessment:run",
+        "api:data-readiness:read",
+        official_input_only=True,
+    )
+    require_official_pilot_readiness = require_capability(
+        "monitoring:read",
+        "api:pilot-readiness:read",
+        official_input_only=True,
+    )
+    require_session = require_capability("session:read", "api:pilot-session:read")
+    require_monitoring = require_capability("monitoring:read", "api:pilot-monitoring:read")
+    require_receipt_signing = require_capability("receipt:sign", "api:acceptance-receipt:sign")
+    require_receipt_verification = require_capability(
+        "receipt:verify", "api:acceptance-receipt:verify"
+    )
+    require_assessment = require_capability("assessment:run", "api:operational-assessment:run")
+    require_audit_read = require_capability("audit:read", "api:audit-log:read")
+    require_retention = require_capability("session:read", "api:retention:operate")
+
     @application.get(
         "/api/v1/health",
         response_model=HealthResponse,
@@ -105,7 +248,7 @@ def create_app(
         tags=["data"],
     )
     def status() -> StatusResponse:
-        return _public(artifact_repository.status())
+        return _public(artifact_repository.status(), pilot)
 
     @application.get(
         "/api/v1/study-areas",
@@ -113,7 +256,7 @@ def create_app(
         tags=["data"],
     )
     def study_areas() -> list[StudyArea]:
-        return _public(artifact_repository.study_areas())
+        return _public(artifact_repository.study_areas(), pilot)
 
     @application.get(
         "/api/v1/areas",
@@ -127,6 +270,7 @@ def create_app(
         action_class: Annotated[list[ActionClass] | None, Query()] = None,
         confidence_class: Annotated[list[ConfidenceClass] | None, Query()] = None,
         min_fpps: Annotated[float, Query(ge=0, le=100)] = 0,
+        _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
     ) -> list[AreaDecision]:
         del study_area
         result = artifact_repository.areas()
@@ -137,7 +281,7 @@ def create_app(
             allowed_confidence = set(confidence_class)
             result = [area for area in result if area.confidence_class in allowed_confidence]
         result = [area for area in result if area.fpps_0_100 >= min_fpps]
-        return _public(result)
+        return _public(result, pilot)
 
     @application.get(
         "/api/v1/areas/{area_id}",
@@ -146,16 +290,21 @@ def create_app(
         responses={404: {"model": ApiError}, 503: {"model": ApiError}},
         tags=["decisions"],
     )
-    def area(area_id: str) -> AreaDecision:
-        return _public(artifact_repository.area(area_id))
+    def area(
+        area_id: str,
+        _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
+    ) -> AreaDecision:
+        return _public(artifact_repository.area(area_id), pilot)
 
     @application.get(
         "/api/v1/layers",
         response_model=list[LayerCatalogItem],
         tags=["data"],
     )
-    def layers() -> list[LayerCatalogItem]:
-        return _public(artifact_repository.layers())
+    def layers(
+        _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
+    ) -> list[LayerCatalogItem]:
+        return _public(artifact_repository.layers(), pilot)
 
     @application.get(
         "/api/v1/layer-data/{layer_id}",
@@ -164,8 +313,12 @@ def create_app(
         tags=["data"],
         include_in_schema=True,
     )
-    def layer_data(layer_id: str) -> JSONResponse:
+    def layer_data(
+        layer_id: str,
+        _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
+    ) -> JSONResponse:
         payload = artifact_repository.layer_data(layer_id)
+        pilot.assert_operational_boundary(payload)
         assert_public_payload(payload)
         return JSONResponse(
             content=payload,
@@ -182,8 +335,13 @@ def create_app(
         responses={404: {"model": ApiError}, 503: {"model": ApiError}},
         tags=["decisions"],
     )
-    def brief(area_id: str, download: bool = False) -> Any:
+    def brief(
+        area_id: str,
+        download: bool = False,
+        _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
+    ) -> Any:
         result = artifact_repository.brief(area_id)
+        pilot.assert_operational_boundary(result)
         assert_public_payload(result)
         if download:
             return Response(
@@ -202,8 +360,10 @@ def create_app(
         response_model=list[ScenarioDefinition],
         tags=["scenarios"],
     )
-    def scenarios() -> list[ScenarioDefinition]:
-        return _public(definitions())
+    def scenarios(
+        _: PilotCredential | None = Depends(require_official_scenario),  # noqa: B008
+    ) -> list[ScenarioDefinition]:
+        return _public(definitions(), pilot)
 
     @application.post(
         "/api/v1/scenario-runs",
@@ -212,8 +372,11 @@ def create_app(
         responses={503: {"model": ApiError}},
         tags=["scenarios"],
     )
-    def scenario_run(request: ScenarioRunRequest) -> ScenarioRunResponse:
-        return _public(artifact_repository.run_scenario(request))
+    def scenario_run(
+        request: ScenarioRunRequest,
+        _: PilotCredential | None = Depends(require_official_scenario),  # noqa: B008
+    ) -> ScenarioRunResponse:
+        return _public(artifact_repository.run_scenario(request), pilot)
 
     @application.get(
         "/api/v1/scenario-runs/{run_id}",
@@ -221,11 +384,14 @@ def create_app(
         responses={404: {"model": ApiError}, 503: {"model": ApiError}},
         tags=["scenarios"],
     )
-    def scenario_run_result(run_id: str) -> ScenarioRunResponse:
+    def scenario_run_result(
+        run_id: str,
+        _: PilotCredential | None = Depends(require_official_scenario),  # noqa: B008
+    ) -> ScenarioRunResponse:
         request = request_from_run_id(run_id)
         if request is None:
             raise ArtifactNotFound(f"Unknown scenario run_id: {run_id}")
-        return _public(artifact_repository.run_scenario(request))
+        return _public(artifact_repository.run_scenario(request), pilot)
 
     @application.get(
         "/api/v1/model-runs",
@@ -233,8 +399,10 @@ def create_app(
         responses={503: {"model": ApiError}},
         tags=["models"],
     )
-    def model_runs() -> list[ModelRun]:
-        return _public(artifact_repository.model_runs())
+    def model_runs(
+        _: PilotCredential | None = Depends(require_official_model),  # noqa: B008
+    ) -> list[ModelRun]:
+        return _public(artifact_repository.model_runs(), pilot)
 
     @application.get(
         "/api/v1/model-runs/{run_id}",
@@ -242,16 +410,121 @@ def create_app(
         responses={404: {"model": ApiError}, 503: {"model": ApiError}},
         tags=["models"],
     )
-    def model_run(run_id: str) -> ModelRun:
-        return _public(artifact_repository.model_run(run_id))
+    def model_run(
+        run_id: str,
+        _: PilotCredential | None = Depends(require_official_model),  # noqa: B008
+    ) -> ModelRun:
+        return _public(artifact_repository.model_run(run_id), pilot)
 
     @application.get(
         "/api/v1/data-readiness",
         response_model=list[ReadinessItem],
         tags=["models"],
     )
-    def data_readiness() -> list[ReadinessItem]:
-        return _public(artifact_repository.readiness())
+    def data_readiness(
+        _: PilotCredential | None = Depends(require_official_readiness),  # noqa: B008
+    ) -> list[ReadinessItem]:
+        return _public(artifact_repository.readiness(), pilot)
+
+    @application.get(
+        "/api/v1/pilot/readiness",
+        response_model=PilotReadiness,
+        tags=["agency-pilot"],
+        summary="Expose sanitized pilot readiness without granting operational status",
+    )
+    def pilot_readiness(
+        _: PilotCredential | None = Depends(require_official_pilot_readiness),  # noqa: B008
+    ) -> PilotReadiness:
+        current = artifact_repository.status()
+        return pilot.readiness(
+            dataset_mode=current.dataset_mode.value,
+            study_area=current.study_area,
+            data_version=current.data_version,
+            served_payload=current,
+        )
+
+    @application.get(
+        "/api/v1/pilot/session",
+        response_model=PilotSessionResponse,
+        tags=["agency-pilot"],
+    )
+    def pilot_session(
+        identity: PilotCredential = Depends(require_session),  # noqa: B008
+    ) -> PilotSessionResponse:
+        return pilot.session(identity)
+
+    @application.get(
+        "/api/v1/pilot/monitoring",
+        response_model=DeploymentMonitoringResponse,
+        tags=["agency-pilot"],
+    )
+    def pilot_monitoring(
+        _: PilotCredential = Depends(require_monitoring),  # noqa: B008
+    ) -> DeploymentMonitoringResponse:
+        current = artifact_repository.status()
+        return pilot.monitoring(
+            dataset_mode=current.dataset_mode.value,
+            study_area=current.study_area,
+            data_version=current.data_version,
+            data_state=current.data_state.value,
+            source_timestamp=current.source_timestamp,
+            served_payload=current,
+        )
+
+    @application.post(
+        "/api/v1/pilot/acceptance-receipts",
+        response_model=SignedAcceptanceReceipt,
+        status_code=201,
+        tags=["agency-pilot"],
+    )
+    def sign_acceptance_receipt(
+        request: AcceptanceReceiptRequest,
+        identity: PilotCredential = Depends(require_receipt_signing),  # noqa: B008
+    ) -> SignedAcceptanceReceipt:
+        return pilot.sign_acceptance(request, identity)
+
+    @application.post(
+        "/api/v1/pilot/acceptance-receipts/verify",
+        response_model=ReceiptVerificationResponse,
+        tags=["agency-pilot"],
+    )
+    def verify_acceptance_receipt(
+        receipt: SignedAcceptanceReceipt,
+        _: PilotCredential = Depends(require_receipt_verification),  # noqa: B008
+    ) -> ReceiptVerificationResponse:
+        return pilot.verify_receipt(receipt)
+
+    @application.post(
+        "/api/v1/pilot/operational-assessments",
+        response_model=OperationalAssessmentResponse,
+        tags=["agency-pilot"],
+    )
+    def operational_assessment(
+        request: OperationalAssessmentRequest,
+        _: PilotCredential = Depends(require_assessment),  # noqa: B008
+    ) -> OperationalAssessmentResponse:
+        return pilot.assess(request)
+
+    @application.get(
+        "/api/v1/pilot/audit-log",
+        response_model=AuditLogResponse,
+        tags=["agency-pilot"],
+    )
+    def pilot_audit_log(
+        _: PilotCredential = Depends(require_audit_read),  # noqa: B008
+    ) -> AuditLogResponse:
+        return pilot.audit.read()
+
+    @application.post(
+        "/api/v1/pilot/retention",
+        response_model=RetentionResponse,
+        tags=["agency-pilot"],
+    )
+    def pilot_retention(
+        request: RetentionRequest,
+        identity: PilotCredential = Depends(require_retention),  # noqa: B008
+    ) -> RetentionResponse:
+        return pilot.run_retention(request, identity)
 
     return application
 
@@ -281,7 +554,8 @@ def _configured_cors_origins() -> tuple[str, ...]:
     return origins
 
 
-def _public(value: Any) -> Any:
+def _public(value: Any, pilot: PilotControl) -> Any:
+    pilot.assert_operational_boundary(value)
     assert_public_payload(value)
     return value
 

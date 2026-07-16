@@ -72,14 +72,68 @@ Candidate and blocked model outputs may be summarized for research reporting
 only when that mode is explicitly requested. They cannot be marked eligible for
 the decision layer. Promotion requires both `processing_allowed=true` and
 `can_feed_decision_layer=true` on an official-input run after all underlying
-gates and output checks pass. Those flags are necessary but not sufficient at
-the current integration boundary: `aggregate_probability_cells` accepts a
-caller-supplied iterable and therefore cannot independently prove that the
-values came from the receipt-bound raster or the named area's zonal mask. It
-remains report-only and rejects promotion even for a schema-complete receipt.
-A future trusted raster-and-zonal extraction adapter must read and hash the
-raster bytes itself, apply the authoritative area geometry, and bind the
-selected cells to that receipt before any model output can feed FPPS.
+gates and output checks pass. Those flags are necessary but not sufficient for
+`aggregate_probability_cells`: that function accepts a caller-supplied iterable
+and therefore cannot independently prove that the values came from the
+receipt-bound raster or the named area's zonal mask. It remains report-only and
+rejects promotion even for a schema-complete receipt.
+
+Decision-eligible aggregation instead uses
+`floodguard.trusted_zonal_adapter`. The adapter opens a verified raster source
+descriptor once, hashes its bytes while copying them to a private temporary
+snapshot, and makes rasterio parse that snapshot rather than reopening the
+mutable source path. It likewise parses authoritative GeoJSON from the exact
+in-memory byte buffer used for its checksum. This prevents a
+substitute-read-restore race from producing statistics for bytes other than
+those named by the signed hashes. The adapter binds the actual
+CRS/grid/nodata metadata to the model-run receipt, validates and reprojects
+non-overlapping administrative polygons, derives cells with a fixed
+pixel-centre rule, and emits deterministic zonal statistics in a canonical
+HMAC-SHA256 receipt. The signing key is supplied externally and is never
+serialized. Downstream consumers must verify the signature, key ID, complete
+model/raster lineage, geometry receipt, and statistic consistency before the
+result may feed FPPS. Fixture and candidate sources remain blocked from this
+path. GeoPackage input is intentionally not claimed in the root dependency
+profile because no vector GPKG reader is required by or installed for normal
+FloodGuard tests.
+
+The non-interactive entry point is:
+
+```text
+python -m floodguard.trusted_zonal_cli \
+  --probability-raster <probability.tif> \
+  --authoritative-geometry <areas.geojson> \
+  --model-run-manifest <model-run.json> \
+  --probability-raster-receipt <raster-receipt.json> \
+  --authoritative-geometry-receipt <geometry-receipt.json> \
+  --output <external-workspace/receipt.json> \
+  --key-id <managed-key-id> \
+  --generated-at <RFC-3339-time>
+```
+
+The HMAC key is never accepted on the command line. The CLI reads a
+hex-encoded key of at least 32 bytes from
+`FLOODGUARD_ZONAL_SIGNING_KEY_HEX` (or an explicitly named environment
+variable), writes only outside the repository, and uses exclusive creation so
+an existing receipt is never overwritten. Its stdout receipt evidence contains
+only the canonical output hash, public key ID, and area count; no input or
+output path is emitted. Model-run, probability-raster, and authoritative-
+geometry receipt JSON is read from one regular non-symlink descriptor per
+file; parsing consumes the exact in-memory bytes captured from that descriptor.
+Descriptor size/modification metadata is checked across the read, duplicate or
+non-finite JSON is rejected, and receipt content containing private absolute
+paths is rejected. The CLI never performs a path check followed by a separate
+`read_text` reopen.
+
+HMAC provides integrity and shared-secret authentication, not public-key
+non-repudiation: any holder of the secret can create a valid receipt. A bounded
+pilot must therefore keep the secret in an external secret manager, restrict
+which runtime identity can access it, rotate key IDs, retain audit evidence for
+each use, and replace or augment HMAC with agency-managed asymmetric signing if
+legal non-repudiation becomes an acceptance requirement. The adapter requires
+`dataset_mode=official_input` and complete `can_feed_decision_layer=true`
+evidence because signing cannot repair missing licences, product identity,
+reference-mask qualification, spatial validation, or other upstream gates.
 
 ## Alternatives considered
 

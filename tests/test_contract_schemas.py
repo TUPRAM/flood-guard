@@ -19,6 +19,11 @@ TYPESCRIPT = CONTRACTS / "src" / "index.ts"
 OFFLINE_BUNDLE = ROOT / "apps" / "web" / "public" / "offline-demo" / "bundle.json"
 
 SCHEMA_NAMES = ("status", "area-decision", "layer", "model-run")
+PILOT_SCHEMA_NAMES = (
+    "pilot-readiness",
+    "agency-acceptance-receipt",
+    "field-validation-receipt",
+)
 COMMON_FIELDS = {
     "schema_version",
     "dataset_mode",
@@ -50,7 +55,7 @@ def _validate(schema_name: str, payload: dict[str, Any]) -> None:
 
 
 def _schema_name_for_example(path: Path) -> str:
-    for name in sorted(SCHEMA_NAMES, key=len, reverse=True):
+    for name in sorted(SCHEMA_NAMES + PILOT_SCHEMA_NAMES, key=len, reverse=True):
         if path.name.startswith(f"{name}."):
             return name
     raise AssertionError(f"No schema mapping for {path.name}")
@@ -66,7 +71,7 @@ def _typescript_array(source: str, constant: str) -> list[str]:
     return re.findall(r'"([^"]+)"', match.group(1))
 
 
-@pytest.mark.parametrize("schema_name", SCHEMA_NAMES)
+@pytest.mark.parametrize("schema_name", SCHEMA_NAMES + PILOT_SCHEMA_NAMES)
 def test_contract_schemas_are_valid_draft_2020_12(schema_name: str) -> None:
     schema = _schema(schema_name)
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
@@ -77,8 +82,10 @@ def test_every_contract_example_validates_against_its_schema() -> None:
     example_paths = sorted(EXAMPLES.glob("*.json"))
     assert {path.name for path in example_paths} == {
         "area-decision.fixture-demo.json",
+        "field-validation-receipt.fixture-demo.json",
         "layer.fixture-demo.json",
         "model-run.candidate.json",
+        "pilot-readiness.fixture-demo.json",
         "status.candidate.json",
         "status.fixture-demo.json",
     }
@@ -91,7 +98,10 @@ def test_offline_judging_bundle_validates_against_shared_contracts() -> None:
     _validate("status", bundle["status"])
     area_contract_fields = set(_schema("area-decision")["properties"])
     for area in bundle["areas"]:
-        assert set(area) - area_contract_fields == {"total_population", "scenario_results"}
+        assert set(area) - area_contract_fields == {
+            "total_population",
+            "scenario_results",
+        }
         _validate(
             "area-decision",
             {key: value for key, value in area.items() if key in area_contract_fields},
@@ -100,15 +110,19 @@ def test_offline_judging_bundle_validates_against_shared_contracts() -> None:
         _validate("layer", layer)
     for run in bundle["model_runs"]:
         _validate("model-run", run)
+    _validate("pilot-readiness", bundle["pilot_readiness"])
 
     assert bundle["status"]["dataset_mode"] == "fixture_demo"
     assert bundle["status"]["operational_status"] == "non_operational"
     assert bundle["status"]["official_warning"] is False
     assert all(run["can_feed_decision_layer"] is False for run in bundle["model_runs"])
-    assert re.search(
-        r"(?:(?<![A-Za-z])[A-Za-z]:[\\/]|/home/|/Users/|\\\\)",
-        json.dumps(bundle),
-    ) is None
+    assert (
+        re.search(
+            r"(?:(?<![A-Za-z])[A-Za-z]:[\\/]|/home/|/Users/|\\\\)",
+            json.dumps(bundle),
+        )
+        is None
+    )
 
 
 def test_offline_area_decisions_match_locked_score_and_class_contract() -> None:
@@ -302,33 +316,113 @@ def test_examples_do_not_contain_private_absolute_paths() -> None:
         assert private_path.search(serialized) is None, path.name
 
 
+def test_pilot_contracts_fail_closed_without_signed_acceptance() -> None:
+    readiness = _load_json(EXAMPLES / "pilot-readiness.fixture-demo.json")
+    readiness["operational_status"] = "agency_operational"
+    with pytest.raises(ValidationError):
+        _validate("pilot-readiness", readiness)
+
+    receipt = {
+        "payload": {
+            "schema_version": "1.0",
+            "acceptance_id": "test-acceptance-v1",
+            "study_area": "example_study_area",
+            "dataset_mode": "official_input",
+            "data_version": "example-official-v1",
+            "artifact_manifest_sha256": "1" * 64,
+            "source_timestamp": "2026-07-01T00:00:00Z",
+            "requested_operational_status": "agency_operational",
+            "acceptance_status": "accepted",
+            "acceptance_criteria_ids": [
+                "AC-SAFETY-01",
+                "AC-DATA-02",
+                "AC-OFFLINE-03",
+                "AC-AUTH-04",
+                "AC-FIELD-05",
+            ],
+            "field_validation_receipt_sha256": "2" * 64,
+            "field_validation_protocol_version": "field-validation-v1",
+            "issued_at": "2026-07-16T00:00:00Z",
+            "expires_at": "2026-08-15T00:00:00Z",
+            "issuer_subject": "test-pilot-admin",
+        },
+        "signature": {
+            "algorithm": "HMAC-SHA256",
+            "key_id": "test-key-id",
+            "payload_sha256": "3" * 64,
+            "value": "4" * 64,
+        },
+    }
+    _validate("agency-acceptance-receipt", receipt)
+    receipt["payload"]["dataset_mode"] = "fixture_demo"
+    with pytest.raises(ValidationError):
+        _validate("agency-acceptance-receipt", receipt)
+
+
+def test_field_validation_fixture_is_explicitly_incomplete_and_non_operational() -> (
+    None
+):
+    receipt = _load_json(EXAMPLES / "field-validation-receipt.fixture-demo.json")
+    assert receipt["dataset_mode"] == "fixture_demo"
+    assert receipt["operational_status"] == "non_operational"
+    assert receipt["official_warning"] is False
+    assert receipt["can_feed_decision_layer"] is False
+    assert receipt["status"] == "incomplete"
+    assert all(value is None for value in receipt["metrics"].values())
+    assert all(value is None for value in receipt["evidence_hashes"].values())
+
+    receipt["metrics"]["signed_area_error_ratio"] = -0.25
+    _validate("field-validation-receipt", receipt)
+    receipt["metrics"]["absolute_area_error_ratio"] = -0.25
+    with pytest.raises(ValidationError):
+        _validate("field-validation-receipt", receipt)
+
+    accepted_claim = _load_json(EXAMPLES / "field-validation-receipt.fixture-demo.json")
+    accepted_claim["status"] = "accepted"
+    with pytest.raises(ValidationError):
+        _validate("field-validation-receipt", accepted_claim)
+
+
+def test_pilot_readiness_fixture_exposes_exact_mandatory_criteria() -> None:
+    readiness = _load_json(EXAMPLES / "pilot-readiness.fixture-demo.json")
+    assert {item["criterion_id"] for item in readiness["acceptance_criteria"]} == {
+        "AC-SAFETY-01",
+        "AC-DATA-02",
+        "AC-OFFLINE-03",
+        "AC-AUTH-04",
+        "AC-FIELD-05",
+    }
+
+
 def test_typescript_runtime_constants_match_schema_enums() -> None:
     source = TYPESCRIPT.read_text(encoding="utf-8")
     expected = {
         "DATASET_MODES": _schema("status")["properties"]["dataset_mode"]["enum"],
-        "OPERATIONAL_STATUSES": _schema("status")["properties"][
-            "operational_status"
-        ]["enum"],
-        "CONFIDENCE_CLASSES": _schema("status")["properties"][
-            "confidence_class"
-        ]["enum"],
+        "OPERATIONAL_STATUSES": _schema("status")["properties"]["operational_status"][
+            "enum"
+        ],
+        "CONFIDENCE_CLASSES": _schema("status")["properties"]["confidence_class"][
+            "enum"
+        ],
         "DATA_STATES": _schema("status")["properties"]["data_state"]["enum"],
         "ACTION_CLASSES": _schema("area-decision")["properties"]["action_class"][
             "enum"
         ],
-        "ROLE_VISIBILITIES": _schema("layer")["properties"]["role_visibility"][
-            "items"
-        ]["enum"],
+        "ROLE_VISIBILITIES": _schema("layer")["properties"]["role_visibility"]["items"][
+            "enum"
+        ],
         "LAYER_FORMATS": _schema("layer")["properties"]["format"]["enum"],
-        "MODEL_FAMILIES": _schema("model-run")["properties"]["model_family"][
-            "enum"
-        ],
-        "MODEL_RUN_STATUSES": _schema("model-run")["properties"]["run_status"][
-            "enum"
-        ],
+        "MODEL_FAMILIES": _schema("model-run")["properties"]["model_family"]["enum"],
+        "MODEL_RUN_STATUSES": _schema("model-run")["properties"]["run_status"]["enum"],
         "PREPROCESSING_VALUE_DOMAINS": _schema("model-run")["properties"][
             "preprocessing"
         ]["properties"]["value_domain"]["enum"],
+        "PILOT_ROLES": _schema("pilot-readiness")["properties"]["roles"]["items"][
+            "enum"
+        ],
+        "ACCEPTANCE_RECEIPT_STATES": _schema("pilot-readiness")["properties"][
+            "acceptance_receipt_state"
+        ]["enum"],
     }
     for constant, enum_values in expected.items():
         assert _typescript_array(source, constant) == enum_values
@@ -360,6 +454,10 @@ def test_required_public_types_are_exported() -> None:
         "AreaDecision",
         "LayerCatalogItem",
         "ModelRun",
+        "PilotRole",
+        "PilotReadiness",
+        "SignedAcceptanceReceipt",
+        "FieldValidationReceipt",
     ):
         assert re.search(rf"export (?:type|interface) {type_name}\b", source)
 

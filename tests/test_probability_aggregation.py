@@ -2,16 +2,28 @@ from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
+import hmac
 import json
 import math
 from pathlib import Path
 
+import numpy as np
 import pytest
+import rasterio
+from rasterio.transform import from_origin
+from rasterio.warp import transform_geom
 
+import floodguard.trusted_zonal_adapter as trusted_zonal_module
+import floodguard.trusted_zonal_cli as trusted_zonal_cli_module
 from floodguard.probability_aggregation import (
     ProbabilityAggregationError,
     aggregate_probability_cells,
 )
+from floodguard.trusted_zonal_adapter import (
+    create_signed_zonal_receipt,
+    verify_signed_zonal_receipt,
+)
+from floodguard.trusted_zonal_cli import main as zonal_cli_main
 
 
 NODATA = -9999.0
@@ -727,3 +739,1073 @@ def test_decision_feed_binds_probability_threshold_to_model_run() -> None:
 
     with pytest.raises(ProbabilityAggregationError, match="probability_threshold"):
         aggregate(source_metadata=metadata, probability_threshold=0.5)
+
+
+ZONAL_SIGNING_KEY = b"floodguard-zonal-test-signing-key-0001"
+ZONAL_KEY_ID = "test/zonal-key-2026-01"
+ZONAL_GENERATED_AT = "2024-09-16T01:00:00Z"
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write_probability_raster(
+    path: Path,
+    *,
+    values: np.ndarray | None = None,
+    crs: str = "EPSG:32647",
+    transform: object | None = None,
+    dtype: str = "float32",
+    description: str = "flood_probability_0_1",
+    nodata: float = NODATA,
+) -> Path:
+    if values is None:
+        values = np.full((32, 32), 0.2, dtype=np.float32)
+        values[:, 16:] = 0.8
+        values[0, 0] = NODATA
+    transform = transform or from_origin(600000.0, 2200320.0, 10.0, 10.0)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=values.shape[1],
+        height=values.shape[0],
+        count=1,
+        dtype=dtype,
+        crs=crs,
+        transform=transform,
+        nodata=nodata,
+    ) as dataset:
+        dataset.write(values.astype(dtype), 1)
+        dataset.set_band_description(1, description)
+    return path
+
+
+def polygon_geometry(
+    left: float, bottom: float, right: float, top: float
+) -> dict[str, object]:
+    return {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [left, bottom],
+                [right, bottom],
+                [right, top],
+                [left, top],
+                [left, bottom],
+            ]
+        ],
+    }
+
+
+def default_area_features() -> list[dict[str, object]]:
+    # Deliberately reversed: the adapter must emit stable ID ordering.
+    return [
+        {
+            "type": "Feature",
+            "properties": {"ADM_ID": "AREA-B", "ADM_NAME": "East"},
+            "geometry": polygon_geometry(600160.0, 2200000.0, 600320.0, 2200320.0),
+        },
+        {
+            "type": "Feature",
+            "properties": {"ADM_ID": "AREA-A", "ADM_NAME": "West"},
+            "geometry": polygon_geometry(600000.0, 2200000.0, 600160.0, 2200320.0),
+        },
+    ]
+
+
+def write_area_geojson(
+    path: Path,
+    *,
+    features: list[dict[str, object]] | None = None,
+    crs: str | None = "EPSG:32647",
+) -> Path:
+    document: dict[str, object] = {
+        "type": "FeatureCollection",
+        "features": features if features is not None else default_area_features(),
+    }
+    if crs is not None:
+        document["crs"] = {"type": "name", "properties": {"name": crs}}
+    path.write_text(
+        json.dumps(document, ensure_ascii=False, sort_keys=True), encoding="utf-8"
+    )
+    return path
+
+
+def geometry_lineage(path: Path, **overrides: object) -> dict[str, object]:
+    receipt: dict[str, object] = {
+        "dataset_id": "TH-ADMIN-AUTH-001",
+        "data_version": "2024-09-reviewed",
+        "sha256": file_sha256(path),
+        "source_name": "Qualified authoritative administrative geometry",
+        "source_timestamp": "2024-09-01T00:00:00Z",
+        "crs": "EPSG:32647",
+        "area_id_field": "ADM_ID",
+        "area_name_field": "ADM_NAME",
+        "feature_count": 2,
+        "authority_status": "authoritative_for_study_area",
+        "processing_allowed": True,
+    }
+    receipt.update(overrides)
+    return receipt
+
+
+def zonal_contract(
+    tmp_path: Path,
+    *,
+    raster_values: np.ndarray | None = None,
+    raster_crs: str = "EPSG:32647",
+    raster_transform: object | None = None,
+    raster_dtype: str = "float32",
+    raster_description: str = "flood_probability_0_1",
+    features: list[dict[str, object]] | None = None,
+    geometry_crs: str | None = "EPSG:32647",
+    geometry_overrides: dict[str, object] | None = None,
+    metadata_overrides: dict[str, object] | None = None,
+) -> dict[str, object]:
+    raster_path = write_probability_raster(
+        tmp_path / "probability.tif",
+        values=raster_values,
+        crs=raster_crs,
+        transform=raster_transform,
+        dtype=raster_dtype,
+        description=raster_description,
+    )
+    geometry_path = write_area_geojson(
+        tmp_path / "areas.geojson", features=features, crs=geometry_crs
+    )
+    metadata = source_metadata(**(metadata_overrides or {}))
+    raster_receipt = probability_raster_receipt(
+        metadata, probability_raster_sha256=file_sha256(raster_path)
+    )
+    geometry_receipt = geometry_lineage(geometry_path, **(geometry_overrides or {}))
+    return {
+        "raster_path": raster_path,
+        "geometry_path": geometry_path,
+        "metadata": metadata,
+        "raster_receipt": raster_receipt,
+        "geometry_receipt": geometry_receipt,
+    }
+
+
+def create_zonal(contract: dict[str, object], **overrides: object) -> dict[str, object]:
+    kwargs: dict[str, object] = {
+        "probability_raster_path": contract["raster_path"],
+        "authoritative_geometry_path": contract["geometry_path"],
+        "source_metadata": contract["metadata"],
+        "probability_raster_receipt": contract["raster_receipt"],
+        "authoritative_geometry_receipt": contract["geometry_receipt"],
+        "signing_key": ZONAL_SIGNING_KEY,
+        "key_id": ZONAL_KEY_ID,
+        "generated_at": ZONAL_GENERATED_AT,
+    }
+    kwargs.update(overrides)
+    return create_signed_zonal_receipt(**kwargs)  # type: ignore[arg-type]
+
+
+def verify_zonal(
+    receipt: dict[str, object], contract: dict[str, object], **overrides: object
+) -> list[dict[str, object]]:
+    kwargs: dict[str, object] = {
+        "signing_key": ZONAL_SIGNING_KEY,
+        "expected_key_id": ZONAL_KEY_ID,
+        "source_metadata": contract["metadata"],
+        "probability_raster_receipt": contract["raster_receipt"],
+        "authoritative_geometry_receipt": contract["geometry_receipt"],
+    }
+    kwargs.update(overrides)
+    return verify_signed_zonal_receipt(receipt, **kwargs)  # type: ignore[arg-type]
+
+
+def resign_zonal(receipt: dict[str, object], key: bytes = ZONAL_SIGNING_KEY) -> None:
+    unsigned = deepcopy(receipt)
+    unsigned["signature"] = {
+        name: value for name, value in unsigned["signature"].items() if name != "value"
+    }
+    encoded = json.dumps(
+        unsigned,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    signature = deepcopy(receipt["signature"])
+    signature["value"] = hmac.new(key, encoded, hashlib.sha256).hexdigest()
+    receipt["signature"] = signature
+
+
+def test_trusted_zonal_adapter_derives_signs_and_verifies_area_statistics(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+
+    assert receipt["receipt_type"] == "floodguard.trusted_probability_zonal"
+    assert receipt["can_feed_decision_layer"] is True
+    assert receipt["eligible_for_decision_layer"] is True
+    assert receipt["eligible_for_fpps"] is True
+    assert receipt["key_id"] == ZONAL_KEY_ID
+    assert receipt["signature"]["algorithm"] == "HMAC-SHA256"
+    assert receipt["signature"]["key_id"] == ZONAL_KEY_ID
+    assert receipt["probability_raster_sha256"] == file_sha256(contract["raster_path"])
+    assert receipt["authoritative_geometry_sha256"] == file_sha256(
+        contract["geometry_path"]
+    )
+
+    areas = verify_zonal(receipt, contract)
+    assert [area["subdistrict_id"] for area in areas] == ["AREA-A", "AREA-B"]
+    assert areas[0]["sample_pixel_count"] == 511
+    assert areas[0]["mean_flood_probability_0_1"] == pytest.approx(0.2)
+    assert areas[0]["binary_flood_share_0_1"] == 0.0
+    assert areas[1]["sample_pixel_count"] == 512
+    assert areas[1]["mean_flood_probability_0_1"] == pytest.approx(0.8)
+    assert areas[1]["binary_flood_share_0_1"] == 1.0
+    assert areas[1]["estimated_flood_area_square_map_units"] == 51200.0
+
+    areas[0]["subdistrict_name"] = "mutated copy"
+    assert receipt["areas"][0]["subdistrict_name"] == "West"
+
+
+def test_trusted_zonal_receipt_is_deterministic_canonical_and_path_private(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    first = create_zonal(contract)
+    second = create_zonal(contract)
+    assert first == second
+
+    reordered = dict(reversed(list(first.items())))
+    assert verify_zonal(reordered, contract)[0]["subdistrict_id"] == "AREA-A"
+    serialized = json.dumps(first, ensure_ascii=False)
+    assert str(tmp_path) not in serialized
+    assert str(contract["raster_path"]) not in serialized
+    assert ZONAL_SIGNING_KEY.decode("ascii") not in serialized
+
+
+@pytest.mark.parametrize("dataset_mode", ["fixture_demo", "candidate"])
+def test_trusted_zonal_adapter_blocks_fixture_and_candidate_sources(
+    tmp_path: Path, dataset_mode: str
+) -> None:
+    contract = zonal_contract(
+        tmp_path,
+        metadata_overrides={
+            "dataset_mode": dataset_mode,
+            "operational_status": "non_operational",
+            "confidence_class": "low",
+            "can_feed_decision_layer": False,
+            "reason_blocked": "The source remains report-only.",
+        },
+    )
+    contract["raster_receipt"] = probability_raster_receipt(
+        contract["metadata"],
+        probability_raster_sha256=file_sha256(contract["raster_path"]),
+    )
+    with pytest.raises(ProbabilityAggregationError, match="remain report-only"):
+        create_zonal(contract)
+
+
+@pytest.mark.parametrize(
+    ("artifact", "message"),
+    [
+        ("raster", "Probability raster checksum"),
+        ("geometry", "Authoritative geometry checksum"),
+    ],
+)
+def test_trusted_zonal_adapter_rejects_artifact_substitution(
+    tmp_path: Path, artifact: str, message: str
+) -> None:
+    contract = zonal_contract(tmp_path)
+    path = contract[f"{artifact}_path"]
+    path.write_bytes(path.read_bytes() + b"substituted")
+
+    with pytest.raises(ProbabilityAggregationError, match=message):
+        create_zonal(contract)
+
+
+def test_trusted_zonal_adapter_rejects_geometry_feature_order_substitution(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    document = json.loads(contract["geometry_path"].read_text(encoding="utf-8"))
+    document["features"].reverse()
+    contract["geometry_path"].write_text(
+        json.dumps(document, ensure_ascii=False, sort_keys=True), encoding="utf-8"
+    )
+
+    with pytest.raises(ProbabilityAggregationError, match="geometry checksum"):
+        create_zonal(contract)
+
+
+def test_trusted_zonal_snapshot_defeats_substitute_read_restore_race(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    contract = zonal_contract(tmp_path)
+    raster_path = contract["raster_path"]
+    original_bytes = raster_path.read_bytes()
+    alternate_values = np.full((32, 32), 0.95, dtype=np.float32)
+    alternate_path = write_probability_raster(
+        tmp_path / "substitute.tif", values=alternate_values
+    )
+    alternate_bytes = alternate_path.read_bytes()
+    actual_reader = trusted_zonal_module._read_probability_raster
+    observed_snapshot: list[object] = []
+
+    def substitute_while_parsing(
+        source: object, *, expected_grid: dict[str, object]
+    ) -> dict[str, object]:
+        observed_snapshot.append(source)
+        raster_path.write_bytes(alternate_bytes)
+        try:
+            return actual_reader(source, expected_grid=expected_grid)
+        finally:
+            raster_path.write_bytes(original_bytes)
+
+    monkeypatch.setattr(
+        trusted_zonal_module,
+        "_read_probability_raster",
+        substitute_while_parsing,
+    )
+
+    receipt = create_zonal(contract)
+    areas = verify_zonal(receipt, contract)
+    assert len(observed_snapshot) == 1
+    assert observed_snapshot[0] != raster_path
+    assert areas[0]["mean_flood_probability_0_1"] == pytest.approx(0.2)
+    assert areas[1]["mean_flood_probability_0_1"] == pytest.approx(0.8)
+    assert (
+        receipt["probability_raster_sha256"]
+        == hashlib.sha256(original_bytes).hexdigest()
+    )
+    assert raster_path.read_bytes() == original_bytes
+
+
+def test_trusted_zonal_geometry_buffer_defeats_substitute_read_restore_race(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    contract = zonal_contract(tmp_path)
+    geometry_path = contract["geometry_path"]
+    original_bytes = geometry_path.read_bytes()
+    substitute_features = default_area_features()
+    substitute_features[0]["properties"]["ADM_NAME"] = "Substitute East"
+    substitute_features[1]["properties"]["ADM_NAME"] = "Substitute West"
+    substitute_path = write_area_geojson(
+        tmp_path / "substitute.geojson", features=substitute_features
+    )
+    substitute_bytes = substitute_path.read_bytes()
+    actual_reader = trusted_zonal_module._read_authoritative_geojson_snapshot
+    observed_buffers: list[bytes] = []
+
+    def substitute_while_parsing(
+        document_bytes: bytes, **kwargs: object
+    ) -> dict[str, object]:
+        observed_buffers.append(document_bytes)
+        geometry_path.write_bytes(substitute_bytes)
+        try:
+            return actual_reader(document_bytes, **kwargs)
+        finally:
+            geometry_path.write_bytes(original_bytes)
+
+    monkeypatch.setattr(
+        trusted_zonal_module,
+        "_read_authoritative_geojson_snapshot",
+        substitute_while_parsing,
+    )
+
+    receipt = create_zonal(contract)
+    areas = verify_zonal(receipt, contract)
+    assert observed_buffers == [original_bytes]
+    assert [area["subdistrict_name"] for area in areas] == ["West", "East"]
+    assert (
+        receipt["authoritative_geometry_sha256"]
+        == hashlib.sha256(original_bytes).hexdigest()
+    )
+    assert geometry_path.read_bytes() == original_bytes
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("crs", "file CRS"),
+        ("transform", "file transform"),
+        ("shape", "file width"),
+        ("dtype", "file dtypes"),
+        ("description", "file descriptions"),
+    ],
+)
+def test_trusted_zonal_adapter_binds_actual_raster_grid(
+    tmp_path: Path, mutation: str, message: str
+) -> None:
+    values = None
+    crs = "EPSG:32647"
+    transform: object | None = None
+    dtype = "float32"
+    description = "flood_probability_0_1"
+    if mutation == "crs":
+        crs = "EPSG:32648"
+    elif mutation == "transform":
+        transform = from_origin(600010.0, 2200320.0, 10.0, 10.0)
+    elif mutation == "shape":
+        values = np.full((32, 31), 0.4, dtype=np.float32)
+    elif mutation == "dtype":
+        dtype = "int16"
+    elif mutation == "description":
+        description = "class_1"
+    contract = zonal_contract(
+        tmp_path,
+        raster_values=values,
+        raster_crs=crs,
+        raster_transform=transform,
+        raster_dtype=dtype,
+        raster_description=description,
+    )
+
+    with pytest.raises(ProbabilityAggregationError, match=message):
+        create_zonal(contract)
+
+
+@pytest.mark.parametrize(
+    ("invalid", "message"),
+    [
+        (np.float32(1.01), r"within \[0, 1\]"),
+        (np.float32(-0.01), r"within \[0, 1\]"),
+        (np.float32(np.nan), "non-finite"),
+        (np.float32(np.inf), "non-finite"),
+    ],
+)
+def test_trusted_zonal_adapter_rejects_invalid_probability_values(
+    tmp_path: Path, invalid: np.float32, message: str
+) -> None:
+    values = np.full((32, 32), 0.4, dtype=np.float32)
+    values[5, 5] = invalid
+    contract = zonal_contract(tmp_path, raster_values=values)
+
+    with pytest.raises(ProbabilityAggregationError, match=message):
+        create_zonal(contract)
+
+
+def test_trusted_zonal_adapter_requires_nodata_outside_probability_domain(
+    tmp_path: Path,
+) -> None:
+    values = np.full((32, 32), 0.4, dtype=np.float32)
+    contract = zonal_contract(tmp_path, raster_values=values)
+    write_probability_raster(contract["raster_path"], values=values, nodata=0.0)
+    raster_receipt = probability_raster_receipt(
+        contract["metadata"],
+        probability_raster_sha256=file_sha256(contract["raster_path"]),
+    )
+    raster_receipt["grid"]["nodata"] = 0.0
+    contract["raster_receipt"] = raster_receipt
+
+    with pytest.raises(ProbabilityAggregationError, match="outside.*probability range"):
+        create_zonal(contract)
+
+
+def test_trusted_zonal_adapter_rejects_unbound_internal_raster_mask(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    mask = np.full((32, 32), 255, dtype=np.uint8)
+    mask[0, 0] = 0
+    mask[2, 2] = 0
+    with rasterio.open(contract["raster_path"], "r+") as dataset:
+        dataset.write_mask(mask)
+    contract["raster_receipt"] = probability_raster_receipt(
+        contract["metadata"],
+        probability_raster_sha256=file_sha256(contract["raster_path"]),
+    )
+
+    with pytest.raises(ProbabilityAggregationError, match="internal mask"):
+        create_zonal(contract)
+
+
+@pytest.mark.parametrize(
+    ("features", "geometry_crs", "overrides", "message"),
+    [
+        (default_area_features(), None, {}, "explicit named CRS"),
+        (default_area_features(), "EPSG:32647", {"crs": "EPSG:4326"}, "CRS"),
+        (
+            [default_area_features()[0], deepcopy(default_area_features()[0])],
+            "EPSG:32647",
+            {},
+            "area IDs must be unique",
+        ),
+        (
+            [
+                default_area_features()[0],
+                {
+                    "type": "Feature",
+                    "properties": {"ADM_ID": "AREA-A", "ADM_NAME": "Invalid"},
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [600000.0, 2200000.0],
+                                [600160.0, 2200320.0],
+                                [600000.0, 2200320.0],
+                                [600160.0, 2200000.0],
+                                [600000.0, 2200000.0],
+                            ]
+                        ],
+                    },
+                },
+            ],
+            "EPSG:32647",
+            {},
+            "valid non-empty polygon",
+        ),
+        (
+            [
+                default_area_features()[0],
+                {
+                    "type": "Feature",
+                    "properties": {"ADM_ID": "AREA-A", "ADM_NAME": "Away"},
+                    "geometry": polygon_geometry(1.0, 1.0, 2.0, 2.0),
+                },
+            ],
+            "EPSG:32647",
+            {},
+            "no areal overlap",
+        ),
+        (
+            [
+                default_area_features()[0],
+                {
+                    "type": "Feature",
+                    "properties": {"ADM_ID": "AREA-A", "ADM_NAME": "Overlap"},
+                    "geometry": polygon_geometry(
+                        600150.0, 2200000.0, 600250.0, 2200320.0
+                    ),
+                },
+            ],
+            "EPSG:32647",
+            {},
+            "must not overlap",
+        ),
+    ],
+)
+def test_trusted_zonal_adapter_rejects_untrusted_or_invalid_geometry(
+    tmp_path: Path,
+    features: list[dict[str, object]],
+    geometry_crs: str | None,
+    overrides: dict[str, object],
+    message: str,
+) -> None:
+    contract = zonal_contract(
+        tmp_path,
+        features=features,
+        geometry_crs=geometry_crs,
+        geometry_overrides=overrides,
+    )
+
+    with pytest.raises(ProbabilityAggregationError, match=message):
+        create_zonal(contract)
+
+
+def test_trusted_zonal_adapter_reprojects_explicit_authoritative_geometry(
+    tmp_path: Path,
+) -> None:
+    wgs84_features = deepcopy(default_area_features())
+    for feature in wgs84_features:
+        feature["geometry"] = transform_geom(
+            "EPSG:32647", "EPSG:4326", feature["geometry"], precision=12
+        )
+    contract = zonal_contract(
+        tmp_path,
+        features=wgs84_features,
+        geometry_crs="EPSG:4326",
+        geometry_overrides={"crs": "EPSG:4326"},
+    )
+
+    receipt = create_zonal(contract)
+    areas = verify_zonal(receipt, contract)
+    assert [area["subdistrict_id"] for area in areas] == ["AREA-A", "AREA-B"]
+    assert receipt["authoritative_geometry"]["crs"] == "EPSG:4326"
+
+
+def test_trusted_zonal_adapter_rejects_area_without_valid_pixel_centres(
+    tmp_path: Path,
+) -> None:
+    features = [
+        default_area_features()[0],
+        {
+            "type": "Feature",
+            "properties": {"ADM_ID": "AREA-A", "ADM_NAME": "Too narrow"},
+            "geometry": polygon_geometry(600000.0, 2200000.0, 600001.0, 2200320.0),
+        },
+    ]
+    contract = zonal_contract(tmp_path, features=features)
+
+    with pytest.raises(ProbabilityAggregationError, match="no valid probability"):
+        create_zonal(contract)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"feature_count": 3}, "feature count"),
+        ({"authority_status": "candidate"}, "authority_status"),
+        ({"processing_allowed": False}, "processing_allowed"),
+        ({"area_id_field": "ADM_NAME", "area_name_field": "ADM_NAME"}, "distinct"),
+        ({"source_name": r"C:\Users\private\areas.geojson"}, "private path"),
+        ({"dataset_id": "/etc/private-area-source"}, "private path"),
+    ],
+)
+def test_trusted_zonal_adapter_validates_authoritative_geometry_lineage(
+    tmp_path: Path, overrides: dict[str, object], message: str
+) -> None:
+    contract = zonal_contract(tmp_path, geometry_overrides=overrides)
+
+    with pytest.raises(ProbabilityAggregationError, match=message):
+        create_zonal(contract)
+
+
+def test_trusted_zonal_adapter_rejects_receipt_timestamp_before_lineage(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    with pytest.raises(ProbabilityAggregationError, match="cannot predate"):
+        create_zonal(contract, generated_at="2024-09-15T23:30:00Z")
+
+    contract["geometry_receipt"]["source_timestamp"] = "2024-09-17T00:00:00Z"
+    with pytest.raises(ProbabilityAggregationError, match="cannot predate"):
+        create_zonal(contract)
+
+
+def test_trusted_zonal_adapter_rejects_private_path_in_area_properties(
+    tmp_path: Path,
+) -> None:
+    features = default_area_features()
+    features[0]["properties"]["ADM_NAME"] = "/tmp/private/area.geojson"
+    contract = zonal_contract(tmp_path, features=features)
+
+    with pytest.raises(ProbabilityAggregationError, match="private path"):
+        create_zonal(contract)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("area", "signature is invalid"),
+        ("raster_sha", "signature is invalid"),
+        ("geometry_sha", "signature is invalid"),
+        ("grid", "signature is invalid"),
+        ("generated_at", "signature is invalid"),
+    ],
+)
+def test_signed_zonal_receipt_rejects_unsigned_mutation(
+    tmp_path: Path, mutation: str, message: str
+) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+    if mutation == "area":
+        receipt["areas"][0]["mean_flood_probability_0_1"] = 0.99
+    elif mutation == "raster_sha":
+        receipt["probability_raster_sha256"] = "0" * 64
+    elif mutation == "geometry_sha":
+        receipt["authoritative_geometry_sha256"] = "0" * 64
+    elif mutation == "grid":
+        receipt["probability_grid"]["width"] = 31
+    elif mutation == "generated_at":
+        receipt["generated_at"] = "2024-09-17T00:00:00Z"
+
+    with pytest.raises(ProbabilityAggregationError, match=message):
+        verify_zonal(receipt, contract)
+
+
+def test_signed_zonal_receipt_rejects_wrong_key_and_key_id(tmp_path: Path) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+
+    with pytest.raises(ProbabilityAggregationError, match="signature is invalid"):
+        verify_zonal(receipt, contract, signing_key=b"x" * 32)
+    with pytest.raises(ProbabilityAggregationError, match="at least 32 bytes"):
+        verify_zonal(receipt, contract, signing_key=b"short")
+    with pytest.raises(ProbabilityAggregationError, match="external bytes"):
+        verify_zonal(receipt, contract, signing_key=None)
+    with pytest.raises(ProbabilityAggregationError, match="key ID is not trusted"):
+        verify_zonal(receipt, contract, expected_key_id="test/other-key")
+
+    receipt["signature"]["key_id"] = "test/other-key"
+    with pytest.raises(ProbabilityAggregationError, match="signed key ID"):
+        verify_zonal(receipt, contract)
+
+    receipt["key_id"] = "test/other-key"
+    with pytest.raises(ProbabilityAggregationError, match="signature is invalid"):
+        verify_zonal(receipt, contract, expected_key_id="test/other-key")
+
+
+@pytest.mark.parametrize("field", ["signature", "key_id", "areas", "probability_grid"])
+def test_signed_zonal_receipt_rejects_missing_required_fields(
+    tmp_path: Path, field: str
+) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+    del receipt[field]
+
+    with pytest.raises(ProbabilityAggregationError, match="missing required fields"):
+        verify_zonal(receipt, contract)
+
+
+def test_signed_zonal_receipt_rejects_unsupported_fields(tmp_path: Path) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+    receipt["private_path"] = str(tmp_path)
+
+    with pytest.raises(ProbabilityAggregationError, match="unsupported fields"):
+        verify_zonal(receipt, contract)
+
+
+def test_signed_zonal_receipt_rejects_unsupported_signature_algorithm(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+    receipt["signature"]["algorithm"] = "SHA256"
+
+    with pytest.raises(ProbabilityAggregationError, match="HMAC-SHA256"):
+        verify_zonal(receipt, contract)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("share", "binary share"),
+        ("sample_area", "sampled area"),
+        ("flood_area", "estimated flood area"),
+        ("threshold", "probability threshold"),
+        ("eligibility", "not marked"),
+        ("order", "ascending order"),
+    ],
+)
+def test_signed_zonal_receipt_rejects_resigned_inconsistent_statistics(
+    tmp_path: Path, mutation: str, message: str
+) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+    if mutation == "share":
+        receipt["areas"][0]["binary_flood_share_0_1"] = 0.5
+    elif mutation == "sample_area":
+        receipt["areas"][0]["sampled_area_square_map_units"] = 1.0
+    elif mutation == "flood_area":
+        receipt["areas"][1]["estimated_flood_area_square_map_units"] = 1.0
+    elif mutation == "threshold":
+        receipt["areas"][0]["probability_threshold"] = 0.6
+    elif mutation == "eligibility":
+        receipt["areas"][0]["eligible_for_fpps"] = False
+    elif mutation == "order":
+        receipt["areas"].reverse()
+    resign_zonal(receipt)
+
+    with pytest.raises(ProbabilityAggregationError, match=message):
+        verify_zonal(receipt, contract)
+
+
+def test_signed_zonal_receipt_rejects_lineage_substitution_after_valid_signature(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+
+    changed_geometry = deepcopy(contract["geometry_receipt"])
+    changed_geometry["data_version"] = "substituted-version"
+    with pytest.raises(ProbabilityAggregationError, match="geometry_receipt_sha256"):
+        verify_zonal(
+            receipt,
+            contract,
+            authoritative_geometry_receipt=changed_geometry,
+        )
+
+    changed_metadata = deepcopy(contract["metadata"])
+    changed_metadata["model_revision"] = "substituted-model"
+    changed_raster_receipt = probability_raster_receipt(
+        changed_metadata,
+        probability_raster_sha256=file_sha256(contract["raster_path"]),
+    )
+    with pytest.raises(ProbabilityAggregationError, match="model_revision"):
+        verify_zonal(
+            receipt,
+            contract,
+            source_metadata=changed_metadata,
+            probability_raster_receipt=changed_raster_receipt,
+        )
+
+
+def test_trusted_zonal_errors_and_receipts_do_not_disclose_private_paths(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    contract["geometry_path"].write_text("not-json", encoding="utf-8")
+    contract["geometry_receipt"]["sha256"] = file_sha256(contract["geometry_path"])
+
+    with pytest.raises(ProbabilityAggregationError) as caught:
+        create_zonal(contract)
+    assert str(tmp_path) not in str(caught.value)
+
+
+def test_trusted_zonal_signing_contract_rejects_weak_or_invalid_keys(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    with pytest.raises(ProbabilityAggregationError, match="at least 32 bytes"):
+        create_zonal(contract, signing_key=b"short")
+    with pytest.raises(ProbabilityAggregationError, match="external bytes"):
+        create_zonal(contract, signing_key="not-bytes")
+    with pytest.raises(ProbabilityAggregationError, match="external bytes"):
+        create_zonal(contract, signing_key=None)
+    with pytest.raises(ProbabilityAggregationError, match="private path"):
+        create_zonal(contract, key_id=r"C:\Users\private\secret.key")
+
+
+def zonal_cli_arguments(
+    contract: dict[str, object], tmp_path: Path, output: Path
+) -> list[str]:
+    manifest_path = tmp_path / "model-run.json"
+    raster_receipt_path = tmp_path / "probability-raster-receipt.json"
+    geometry_receipt_path = tmp_path / "geometry-receipt.json"
+    for path, document in (
+        (manifest_path, contract["metadata"]),
+        (raster_receipt_path, contract["raster_receipt"]),
+        (geometry_receipt_path, contract["geometry_receipt"]),
+    ):
+        path.write_text(
+            json.dumps(document, ensure_ascii=False, sort_keys=True), encoding="utf-8"
+        )
+    return [
+        "--probability-raster",
+        str(contract["raster_path"]),
+        "--authoritative-geometry",
+        str(contract["geometry_path"]),
+        "--model-run-manifest",
+        str(manifest_path),
+        "--probability-raster-receipt",
+        str(raster_receipt_path),
+        "--authoritative-geometry-receipt",
+        str(geometry_receipt_path),
+        "--output",
+        str(output),
+        "--key-id",
+        ZONAL_KEY_ID,
+        "--generated-at",
+        ZONAL_GENERATED_AT,
+    ]
+
+
+def test_trusted_zonal_cli_writes_exclusive_canonical_external_receipt(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    contract = zonal_contract(tmp_path)
+    output = tmp_path / "trusted-zonal-receipt.json"
+    arguments = zonal_cli_arguments(contract, tmp_path, output)
+    environment = {"FLOODGUARD_ZONAL_SIGNING_KEY_HEX": ZONAL_SIGNING_KEY.hex()}
+
+    assert zonal_cli_main(arguments, environ=environment) == 0
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert "trusted_zonal_receipt_written" in captured.out
+    assert str(tmp_path) not in captured.out
+    assert ZONAL_SIGNING_KEY.hex() not in captured.out
+    serialized = output.read_text(encoding="utf-8")
+    assert serialized.endswith("\n")
+    assert (
+        serialized
+        == json.dumps(
+            json.loads(serialized),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    )
+    receipt = json.loads(serialized)
+    assert verify_zonal(receipt, contract)[0]["subdistrict_id"] == "AREA-A"
+    assert str(tmp_path) not in serialized
+    assert ZONAL_SIGNING_KEY.hex() not in serialized
+
+    before = output.read_bytes()
+    assert zonal_cli_main(arguments, environ=environment) == 2
+    captured = capsys.readouterr()
+    assert "never overwritten" in captured.err
+    assert str(tmp_path) not in captured.err
+    assert output.read_bytes() == before
+
+
+def test_trusted_zonal_cli_requires_external_environment_key_without_leakage(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    contract = zonal_contract(tmp_path)
+    output = tmp_path / "missing-key.json"
+    arguments = zonal_cli_arguments(contract, tmp_path, output)
+
+    assert zonal_cli_main(arguments, environ={}) == 2
+    captured = capsys.readouterr()
+    assert "absent or empty" in captured.err
+    assert str(tmp_path) not in captured.err
+    assert not output.exists()
+
+    assert (
+        zonal_cli_main(
+            arguments,
+            environ={"FLOODGUARD_ZONAL_SIGNING_KEY_HEX": "00" * 16},
+        )
+        == 2
+    )
+    captured = capsys.readouterr()
+    assert "at least 32 bytes" in captured.err
+    assert "00" * 16 not in captured.err
+    assert not output.exists()
+
+
+def test_trusted_zonal_cli_rejects_repository_internal_output(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    contract = zonal_contract(tmp_path)
+    output = ROOT / f"zonal-cli-must-not-write-{tmp_path.name}.json"
+    assert not output.exists()
+    arguments = zonal_cli_arguments(contract, tmp_path, output)
+    environment = {"FLOODGUARD_ZONAL_SIGNING_KEY_HEX": ZONAL_SIGNING_KEY.hex()}
+
+    assert zonal_cli_main(arguments, environ=environment) == 2
+    captured = capsys.readouterr()
+    assert "outside the FloodGuard repository" in captured.err
+    assert str(output) not in captured.err
+    assert not output.exists()
+
+
+def test_trusted_zonal_cli_snapshots_all_receipts_before_coordinated_substitution(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    output = tmp_path / "coordinated-race-receipt.json"
+    arguments = zonal_cli_arguments(contract, tmp_path, output)
+    environment = {"FLOODGUARD_ZONAL_SIGNING_KEY_HEX": ZONAL_SIGNING_KEY.hex()}
+    paths = {
+        "model-run manifest": tmp_path / "model-run.json",
+        "probability-raster receipt": tmp_path / "probability-raster-receipt.json",
+        "authoritative-geometry receipt": tmp_path / "geometry-receipt.json",
+    }
+    originals = {label: path.read_bytes() for label, path in paths.items()}
+    alternate_metadata = deepcopy(contract["metadata"])
+    alternate_metadata["model_revision"] = "transient-substitute-model"
+    alternate_raster_receipt = probability_raster_receipt(
+        alternate_metadata,
+        probability_raster_sha256=file_sha256(contract["raster_path"]),
+    )
+    alternate_geometry_receipt = deepcopy(contract["geometry_receipt"])
+    alternate_geometry_receipt["data_version"] = "transient-substitute-geometry"
+    alternates = {
+        "model-run manifest": json.dumps(
+            alternate_metadata, ensure_ascii=False, sort_keys=True
+        ).encode("utf-8"),
+        "probability-raster receipt": json.dumps(
+            alternate_raster_receipt, ensure_ascii=False, sort_keys=True
+        ).encode("utf-8"),
+        "authoritative-geometry receipt": json.dumps(
+            alternate_geometry_receipt, ensure_ascii=False, sort_keys=True
+        ).encode("utf-8"),
+    }
+    actual_parser = trusted_zonal_cli_module._parse_json_snapshot
+    parsed_snapshot_hashes: dict[str, str] = {}
+
+    def substitute_all_paths_while_parsing(content: bytes, label: str) -> object:
+        parsed_snapshot_hashes[label] = hashlib.sha256(content).hexdigest()
+        for receipt_label, path in paths.items():
+            path.write_bytes(alternates[receipt_label])
+        try:
+            return actual_parser(content, label)
+        finally:
+            for receipt_label, path in paths.items():
+                path.write_bytes(originals[receipt_label])
+
+    monkeypatch.setattr(
+        trusted_zonal_cli_module,
+        "_parse_json_snapshot",
+        substitute_all_paths_while_parsing,
+    )
+
+    assert zonal_cli_main(arguments, environ=environment) == 0
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert parsed_snapshot_hashes == {
+        label: hashlib.sha256(content).hexdigest()
+        for label, content in originals.items()
+    }
+    receipt = json.loads(output.read_text(encoding="utf-8"))
+    assert receipt["model_revision"] == "contract-proof-1"
+    assert receipt["authoritative_geometry"]["data_version"] == "2024-09-reviewed"
+    assert "transient-substitute" not in json.dumps(receipt, ensure_ascii=False)
+    assert verify_zonal(receipt, contract)[0]["subdistrict_id"] == "AREA-A"
+    assert {label: path.read_bytes() for label, path in paths.items()} == originals
+
+
+def test_trusted_zonal_cli_rejects_detected_mid_read_receipt_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    output = tmp_path / "mid-read-mutation.json"
+    arguments = zonal_cli_arguments(contract, tmp_path, output)
+    environment = {"FLOODGUARD_ZONAL_SIGNING_KEY_HEX": ZONAL_SIGNING_KEY.hex()}
+    actual_state = trusted_zonal_module._descriptor_state
+    calls = 0
+
+    def mutated_descriptor_state(stream: object) -> tuple[int, int, int, int, int]:
+        nonlocal calls
+        calls += 1
+        state = actual_state(stream)
+        if calls == 2:
+            return (*state[:-1], state[-1] + 1)
+        return state
+
+    monkeypatch.setattr(
+        trusted_zonal_module,
+        "_descriptor_state",
+        mutated_descriptor_state,
+    )
+
+    assert zonal_cli_main(arguments, environ=environment) == 2
+    captured = capsys.readouterr()
+    assert "changed while its byte snapshot was read" in captured.err
+    assert str(tmp_path) not in captured.err
+    assert ZONAL_SIGNING_KEY.hex() not in captured.err
+    assert not output.exists()
+
+
+def test_trusted_zonal_cli_rejects_private_paths_inside_receipt_json(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    contract = zonal_contract(tmp_path)
+    output = tmp_path / "private-path-receipt.json"
+    arguments = zonal_cli_arguments(contract, tmp_path, output)
+    private_manifest = deepcopy(contract["metadata"])
+    private_path = r"C:\Users\private\model-output.tif"
+    private_manifest["source_name"] = private_path
+    (tmp_path / "model-run.json").write_text(
+        json.dumps(private_manifest, ensure_ascii=False, sort_keys=True),
+        encoding="utf-8",
+    )
+    environment = {"FLOODGUARD_ZONAL_SIGNING_KEY_HEX": ZONAL_SIGNING_KEY.hex()}
+
+    assert zonal_cli_main(arguments, environ=environment) == 2
+    captured = capsys.readouterr()
+    assert "private absolute paths" in captured.err
+    assert private_path not in captured.err
+    assert str(tmp_path) not in captured.err
+    assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (b'{"run_id":"first","run_id":"second"}', "duplicate keys"),
+        (b'{"metric":NaN}', "non-finite"),
+    ],
+)
+def test_trusted_zonal_cli_rejects_ambiguous_json_snapshots(
+    content: bytes, message: str
+) -> None:
+    with pytest.raises(trusted_zonal_cli_module.TrustedZonalCliError, match=message):
+        trusted_zonal_cli_module._parse_json_snapshot(content, "test receipt")

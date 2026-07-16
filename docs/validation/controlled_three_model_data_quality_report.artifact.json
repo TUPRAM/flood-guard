@@ -1,0 +1,294 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "FloodGuard Controlled Three-Model Experiment - Gate Evidence Report",
+    "description": "Fail-closed evidence review for the Mae Sai controlled experiment.",
+    "generatedAt": "2026-07-16T14:51:13Z",
+    "sources": [
+      {
+        "id": "gate-receipt",
+        "label": "Controlled three-model gate receipt",
+        "path": "docs/validation/controlled_three_model_gate_receipt.json",
+        "query": {
+          "id": "gate-status-inline-v1",
+          "language": "sql",
+          "engine": "SQLite",
+          "description": "Deterministic projection of the audited gate receipt used by the chart and table.",
+          "sql": "WITH gate_status(gate,status,status_score,evidence,impact,stage) AS (VALUES ('Pre-event Sentinel-1 identity','Verified',1,'Official Copernicus UUID aaaef3af-fa49-4115-bf0f-f54175e7aedf','Pre-event source identity is bound','source'),('Post-event Sentinel-1 identity','Verified',1,'Official Copernicus UUID 5251b74b-0bbd-4365-9eb4-fa33292e175a','Post-event source identity is bound','source'),('Sentinel-1 SAFE checksums','Verified',1,'Pre 42433d6c...6543d; post ff4a604f...6755b','No SAFE source substitution detected','source'),('Signed acquisition authority receipt','Blocked',0,'No externally keyed catalog and licence allowlist receipt exists','Editable manifest claims cannot authorize processing','authority'),('Qualified reference authority and terms','Blocked',0,'Candidate mask terms and qualification are unresolved','No validation, labels, or real metric claims','reference'),('Independent reviewer calibration','Blocked',0,'Reviewer A/B and adjudicator C not accepted; no passing receipt','No formal labels or training','review'),('Immutable spatial holdout','Blocked',0,'No accepted fixed holdout polygons and digest','No controlled model comparison','evaluation'),('Signed qualified reference cells','Blocked',0,'No externally signed cell labels and error strata exist','Truth cannot be sourced from model prediction files','reference_cells'),('Completed three-model evidence','Blocked',0,'No completed bound evidence manifest exists','No comparison metrics may be reported','model_evidence')) SELECT gate,status,status_score,evidence,impact,stage FROM gate_status ORDER BY status_score ASC, gate ASC;",
+          "metric_definitions": [
+            "status_score is 1 only when a required control is verified; blocked controls are 0."
+          ],
+          "tables_used": []
+        }
+      },
+      {
+        "id": "source-manifest",
+        "label": "Controlled acquisition manifest",
+        "path": "docs/validation/controlled_three_model_acquisition_manifest.csv"
+      },
+      {
+        "id": "copernicus-terms",
+        "label": "Copernicus Data Space Ecosystem terms",
+        "href": "https://dataspace.copernicus.eu/terms-and-conditions"
+      },
+      {
+        "id": "unosat-3991",
+        "label": "UNOSAT Mae Sai flood assessment product 3991",
+        "href": "https://unosat.org/products/3991"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# FloodGuard Controlled Three-Model Experiment - Gate Evidence Report\n\nThe experiment remains fail-closed. The two Sentinel-1 product identities and SAFE checksums are verified, but a signed acquisition-authority receipt, qualified reference authority and terms, independent reviewer calibration, immutable holdout evidence, signed qualified reference-cell evidence, and completed three-model evidence are absent. No model-comparison metrics are reported as real evidence."
+      },
+      {
+        "id": "summary",
+        "type": "markdown",
+        "body": "## Technical summary\n\nThe governed Sentinel-1 pre/post pair re-hashes exactly to the acquisition registry. No externally keyed catalog and licence allowlist receipt authorizes the editable acquisition manifest. The reference-mask candidate is not qualified and its product-specific permissions remain unresolved. Reviewer calibration, frozen holdout, signed qualified reference-cell evidence, and completed three-model evidence are missing; therefore model comparison, decision-layer use, FPPS use, and warning claims remain prohibited.",
+        "sourceId": "gate-receipt"
+      },
+      {
+        "id": "gate-chart-block",
+        "type": "chart",
+        "chartId": "gate-chart"
+      },
+      {
+        "id": "findings",
+        "type": "markdown",
+        "body": "## Key findings\n\nThree machine-verifiable Sentinel-1 source controls pass. Six authority, reference, review, holdout, reference-cell, and model-evidence control groups remain blocked. A metric value of zero would falsely imply measured performance, so IoU, Dice/F1, precision, recall, area error, Brier score, and calibration are intentionally absent rather than zero-filled.",
+        "sourceId": "gate-receipt"
+      },
+      {
+        "id": "gate-table-block",
+        "type": "table",
+        "tableId": "gate-table"
+      },
+      {
+        "id": "scope",
+        "type": "markdown",
+        "body": "## Scope, data, and metric definitions\n\nScope is the governed Mae Sai event package. A real comparison requires a deterministic SAR baseline, the weak-label logistic model, and an isolated GeoAI U-Net/FPN candidate evaluated on the same valid pixels inside immutable spatial holdout polygons against one qualified binary reference mask. IoU is TP/(TP+FP+FN); Dice/F1 is 2TP/(2TP+FP+FN); precision is TP/(TP+FP); recall is TP/(TP+FN). Area error is predicted flood area minus reference flood area and is also reported as a percentage of reference area. Brier score is the mean squared difference between class-1 probability and the binary reference. Calibration is reported with fixed probability-bin predicted-versus-observed rates plus expected calibration error. Error review categories are false-wet, false-dry, permanent-water confusion, radar shadow or layover, terrain effects, temporal mismatch, and reference-boundary ambiguity."
+      },
+      {
+        "id": "method",
+        "type": "markdown",
+        "body": "## Methodology\n\nThe audit checks immutable product IDs, source identity, acquisition timestamps, assumptions, SHA-256 digests, explicit use permissions and timing, reference authority, and reviewer roles and calibration. Spatial holdout membership must be re-derived from descriptor-bound geometry, membership, and signed equal-area grid-contract bytes; physical cell area comes from the affine determinant, and cell IDs, indices, and centers must match exactly. Each signed model-run receipt must bind one strict lane-specific contract for the deterministic SAR baseline, weak-label logistic model, or pinned GeoAI candidate. Any missing or substituted required control blocks downstream execution and promotion."
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "body": "## Limitations and robustness\n\nUNOSAT product 3991 is preliminary and not field validated; the discovered public artifact is a map product, not an accepted project reference mask. The local manual reference package has no accepted authority or calibrated independent review. These are evidence gaps, not model-performance results.",
+        "sourceId": "unosat-3991"
+      },
+      {
+        "id": "next",
+        "type": "markdown",
+        "body": "## Next steps\n\n1. Obtain the product-specific permissions and externally signed catalog/licence allowlist receipt, then name the reference authority, reviewer A, distinct reviewer B, and adjudicator C.\n2. Freeze a qualified reference mask plus immutable spatial holdout polygons, the exact projected-metre equal-area grid contract, affine-derived cell membership, signed reference-cell labels and error strata, checksums, and trusted signatures.\n3. Complete blinded reviewer calibration and issue a passing receipt before producing the three strict lane contracts and signed model-run manifests with pre-holdout thresholds."
+      },
+      {
+        "id": "questions",
+        "type": "markdown",
+        "body": "## Further questions\n\nWhich agency or qualified external authority can accept the reference-mask specification? Who will serve as two independent reviewers and adjudicator? What retention and attribution terms govern the resulting labels?"
+      }
+    ],
+    "charts": [
+      {
+        "id": "gate-chart",
+        "title": "Controlled experiment gate status",
+        "description": "Binary audit status by required control; 1 means verified and 0 means blocked.",
+        "type": "bar",
+        "dataset": "gate_status",
+        "encodings": {
+          "x": {
+            "field": "gate",
+            "type": "nominal",
+            "title": "Required control"
+          },
+          "y": {
+            "field": "status_score",
+            "type": "quantitative",
+            "title": "Verified status"
+          }
+        },
+        "sourceId": "gate-receipt"
+      }
+    ],
+    "tables": [
+      {
+        "id": "gate-table",
+        "title": "Gate evidence and blocking impact",
+        "dataset": "gate_status",
+        "columns": [
+          {
+            "field": "gate",
+            "label": "Required control",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Status",
+            "type": "text"
+          },
+          {
+            "field": "evidence",
+            "label": "Evidence",
+            "type": "text"
+          },
+          {
+            "field": "impact",
+            "label": "Downstream impact",
+            "type": "text"
+          }
+        ],
+        "defaultSort": {
+          "field": "status",
+          "direction": "asc"
+        },
+        "sourceId": "gate-receipt"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "status": "blocked",
+    "generatedAt": "2026-07-16T14:51:13Z",
+    "datasets": {
+      "gate_status": [
+        {
+          "gate": "Pre-event Sentinel-1 identity",
+          "status": "Verified",
+          "status_score": 1,
+          "evidence": "Official Copernicus UUID aaaef3af-fa49-4115-bf0f-f54175e7aedf",
+          "impact": "Pre-event source identity is bound",
+          "stage": "source"
+        },
+        {
+          "gate": "Post-event Sentinel-1 identity",
+          "status": "Verified",
+          "status_score": 1,
+          "evidence": "Official Copernicus UUID 5251b74b-0bbd-4365-9eb4-fa33292e175a",
+          "impact": "Post-event source identity is bound",
+          "stage": "source"
+        },
+        {
+          "gate": "Sentinel-1 SAFE checksums",
+          "status": "Verified",
+          "status_score": 1,
+          "evidence": "Pre 42433d6c...6543d; post ff4a604f...6755b",
+          "impact": "No SAFE source substitution detected",
+          "stage": "source"
+        },
+        {
+          "gate": "Signed acquisition authority receipt",
+          "status": "Blocked",
+          "status_score": 0,
+          "evidence": "No externally keyed catalog and licence allowlist receipt exists",
+          "impact": "Editable manifest claims cannot authorize processing",
+          "stage": "authority"
+        },
+        {
+          "gate": "Qualified reference authority and terms",
+          "status": "Blocked",
+          "status_score": 0,
+          "evidence": "Candidate mask terms and qualification are unresolved",
+          "impact": "No validation, labels, or real metric claims",
+          "stage": "reference"
+        },
+        {
+          "gate": "Independent reviewer calibration",
+          "status": "Blocked",
+          "status_score": 0,
+          "evidence": "Reviewer A/B and adjudicator C not accepted; no passing receipt",
+          "impact": "No formal labels or training",
+          "stage": "review"
+        },
+        {
+          "gate": "Immutable spatial holdout",
+          "status": "Blocked",
+          "status_score": 0,
+          "evidence": "No accepted fixed holdout polygons and digest",
+          "impact": "No controlled model comparison",
+          "stage": "evaluation"
+        },
+        {
+          "gate": "Signed qualified reference cells",
+          "status": "Blocked",
+          "status_score": 0,
+          "evidence": "No externally signed cell labels and error strata exist",
+          "impact": "Truth cannot be sourced from model prediction files",
+          "stage": "reference_cells"
+        },
+        {
+          "gate": "Completed three-model evidence",
+          "status": "Blocked",
+          "status_score": 0,
+          "evidence": "No completed bound evidence manifest exists",
+          "impact": "No comparison metrics may be reported",
+          "stage": "model_evidence"
+        }
+      ]
+    },
+    "accessIssues": [
+      {
+        "id": "acquisition-authority",
+        "message": "An externally keyed catalog and licence allowlist receipt must bind the exact product IDs, rights, and artifact hashes."
+      },
+      {
+        "id": "reference-authority",
+        "message": "A qualified reference-mask authority and accepted reference mask are required."
+      },
+      {
+        "id": "reviewer-calibration",
+        "message": "Two independent reviewers, an adjudicator, blinded calibration evidence, and a passing receipt are required."
+      },
+      {
+        "id": "spatial-holdout",
+        "message": "Immutable spatial holdout polygons, an exact signed equal-area grid contract, affine-derived cell membership, and checksums are required."
+      },
+      {
+        "id": "reference-cells",
+        "message": "Externally signed qualified reference-cell labels and documented error strata must be bound to the accepted mask and holdout."
+      },
+      {
+        "id": "model-evidence",
+        "message": "Completed baseline, weak-label, and GeoAI evidence must be bound to the same cleared inputs and holdout."
+      }
+    ]
+  },
+  "sources": [
+    {
+      "id": "gate-receipt",
+      "label": "Controlled three-model gate receipt",
+      "path": "docs/validation/controlled_three_model_gate_receipt.json",
+      "query": {
+        "id": "gate-status-inline-v1",
+        "language": "sql",
+        "engine": "SQLite",
+        "description": "Deterministic projection of the audited gate receipt used by the chart and table.",
+        "sql": "WITH gate_status(gate,status,status_score,evidence,impact,stage) AS (VALUES ('Pre-event Sentinel-1 identity','Verified',1,'Official Copernicus UUID aaaef3af-fa49-4115-bf0f-f54175e7aedf','Pre-event source identity is bound','source'),('Post-event Sentinel-1 identity','Verified',1,'Official Copernicus UUID 5251b74b-0bbd-4365-9eb4-fa33292e175a','Post-event source identity is bound','source'),('Sentinel-1 SAFE checksums','Verified',1,'Pre 42433d6c...6543d; post ff4a604f...6755b','No SAFE source substitution detected','source'),('Signed acquisition authority receipt','Blocked',0,'No externally keyed catalog and licence allowlist receipt exists','Editable manifest claims cannot authorize processing','authority'),('Qualified reference authority and terms','Blocked',0,'Candidate mask terms and qualification are unresolved','No validation, labels, or real metric claims','reference'),('Independent reviewer calibration','Blocked',0,'Reviewer A/B and adjudicator C not accepted; no passing receipt','No formal labels or training','review'),('Immutable spatial holdout','Blocked',0,'No accepted fixed holdout polygons and digest','No controlled model comparison','evaluation'),('Signed qualified reference cells','Blocked',0,'No externally signed cell labels and error strata exist','Truth cannot be sourced from model prediction files','reference_cells'),('Completed three-model evidence','Blocked',0,'No completed bound evidence manifest exists','No comparison metrics may be reported','model_evidence')) SELECT gate,status,status_score,evidence,impact,stage FROM gate_status ORDER BY status_score ASC, gate ASC;",
+        "metric_definitions": [
+          "status_score is 1 only when a required control is verified; blocked controls are 0."
+        ],
+        "tables_used": []
+      }
+    },
+    {
+      "id": "source-manifest",
+      "label": "Controlled acquisition manifest",
+      "path": "docs/validation/controlled_three_model_acquisition_manifest.csv"
+    },
+    {
+      "id": "copernicus-terms",
+      "label": "Copernicus Data Space Ecosystem terms",
+      "href": "https://dataspace.copernicus.eu/terms-and-conditions"
+    },
+    {
+      "id": "unosat-3991",
+      "label": "UNOSAT Mae Sai flood assessment product 3991",
+      "href": "https://unosat.org/products/3991"
+    }
+  ]
+}

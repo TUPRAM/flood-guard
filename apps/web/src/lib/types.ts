@@ -2,6 +2,7 @@ import type {
   AreaDecision,
   LayerCatalogItem,
   ModelRun,
+  PilotReadiness,
   StatusResponse,
 } from "@floodguard/contracts";
 
@@ -84,6 +85,7 @@ export interface OfflineBundle {
   hotlines: Hotline[];
   shelters: ShelterRecord[];
   error_categories: ErrorCategory[];
+  pilot_readiness: PilotReadiness;
 }
 
 export interface FloodGuardData extends OfflineBundle {

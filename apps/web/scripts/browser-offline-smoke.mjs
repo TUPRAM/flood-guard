@@ -98,7 +98,7 @@ try {
       fetch("/offline-demo/areas.geojson").then((response) => response.json()),
       fetch("/offline-demo/roads.geojson").then((response) => response.json()),
     ]);
-    localStorage.setItem("floodguard:last-known-api-snapshot:v1", JSON.stringify({
+    localStorage.setItem("floodguard:last-known-api-snapshot:v2", JSON.stringify({
       schema_version: "1.0",
       cached_at: new Date().toISOString(),
       data: {
@@ -122,7 +122,7 @@ try {
   } catch (error) {
     const diagnostic = await page.evaluate(() => ({
       body: document.body.innerText.slice(0, 800),
-      snapshot: localStorage.getItem("floodguard:last-known-api-snapshot:v1")?.slice(0, 400),
+      snapshot: localStorage.getItem("floodguard:last-known-api-snapshot:v2")?.slice(0, 400),
     }));
     throw new Error(`Cached snapshot did not load: ${JSON.stringify(diagnostic)}`, {
       cause: error,
@@ -151,6 +151,14 @@ try {
     }
     if (!normalizedBody.includes("non-operational") && !body.includes("ไม่ใช่ระบบปฏิบัติการ")) {
       throw new Error(`${route.path} lost its non-operational disclosure while offline.`);
+    }
+    if (["/command/", "/studio/"].includes(route.path)) {
+      if (!normalizedBody.includes("bounded agency pilot")) {
+        throw new Error(`${route.path} lost its bounded agency-pilot readiness panel.`);
+      }
+      if (!normalizedBody.includes("not authorized for operation")) {
+        throw new Error(`${route.path} falsely suggests agency operation while offline.`);
+      }
     }
   }
 

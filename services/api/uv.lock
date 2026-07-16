@@ -131,6 +131,7 @@ requires-dist = [
     { name = "jsonschema", marker = "extra == 'dev'", specifier = ">=4.23" },
     { name = "networkx", marker = "extra == 'geo'", specifier = ">=3.0" },
     { name = "pandas", specifier = ">=2.0" },
+    { name = "pyproj", marker = "extra == 'geo'", specifier = ">=3.6" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "rasterio", marker = "extra == 'theos2'", specifier = ">=1.4" },
     { name = "scikit-learn", marker = "extra == 'ml'", specifier = ">=1.4" },

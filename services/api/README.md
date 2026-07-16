@@ -38,3 +38,47 @@ Scenario requests are restricted to the service-owned registry. The temporary
 shelter capacity is preserved as planning metadata because the tested access
 engine is nearest-facility shortest-path threshold analysis and does not model
 capacity. No scenario response is an evacuation route or live condition.
+
+## Bounded agency pilot
+
+The `/api/v1/pilot/*` routes add server-enforced identity, role capabilities,
+signed acceptance receipts, tamper-evident audit logging, governed retention,
+and deployment monitoring. FastAPI revalidates authorization on every protected
+request; a browser role display is never sufficient.
+
+The default installation has no pilot key material, pre-provisioned audit
+ledger, independently mounted audit anchor, governed retention root/private
+quarantine, current signed retention catalog, or acceptance receipt and
+therefore remains non-operational. Configuration must come from an external
+secret manager and external artifact workspace. The service stores and exposes
+key IDs only.
+
+The JSONL audit implementation is single-process. A configured audit path
+requires `FLOODGUARD_PILOT_AUDIT_ANCHOR`,
+`FLOODGUARD_PILOT_AUDIT_WRITER_MODE=single_process`, and a single API worker.
+Provision the empty ledger and signed genesis anchor once with
+`scripts/provision_audit_ledger.py`; normal startup never creates or repairs
+them. Use a transactional append store before multi-worker deployment.
+
+Retention requests name signed-catalog artifact IDs only. The catalog supplies
+server-owned paths, categories, creation times, legal holds, and SHA-256 values;
+it expires within 30 days and must cover the mandatory pilot evidence set. The
+mandatory entries must resolve to the exact configured ledger, anchor, served
+manifest, field receipt, and—after installation—acceptance receipt. Audit roles
+bind to the signed immutable audit-instance ID; immutable evidence binds exact
+bytes. The bootstrap acceptance target must contain the exact signed sentinel
+bytes, and one descriptor-bound manifest/field snapshot is reused through each
+acceptance or promotion decision. Dummy files, mid-check substitutions, and
+identical copies at different paths are rejected.
+Agency-operational responses additionally require exact canonical-response
+membership in the accepted served-response manifest, including source time,
+data version, and underlying artifact hashes. Monitoring evaluates the exact
+current status payload through that same membership check.
+
+See:
+
+- `docs/agency-pilot-architecture.md`;
+- `docs/agency-pilot-deployment-runbook.md`;
+- `docs/agency-pilot-acceptance-criteria.md`;
+- `docs/agency-pilot-field-validation-protocol.md`;
+- `docs/agency-pilot-retention-policy.md`.

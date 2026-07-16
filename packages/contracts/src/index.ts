@@ -39,6 +39,24 @@ export type DataState = (typeof DATA_STATES)[number];
 export const ACTION_CLASSES = ["A", "B", "C", "D", "E"] as const;
 export type ActionClass = (typeof ACTION_CLASSES)[number];
 
+export const PILOT_ROLES = [
+  "public_viewer",
+  "command_viewer",
+  "analyst",
+  "data_steward",
+  "pilot_admin",
+] as const;
+export type PilotRole = (typeof PILOT_ROLES)[number];
+
+export const ACCEPTANCE_RECEIPT_STATES = [
+  "missing",
+  "invalid",
+  "expired",
+  "accepted",
+] as const;
+export type AcceptanceReceiptState =
+  (typeof ACCEPTANCE_RECEIPT_STATES)[number];
+
 export const ROLE_VISIBILITIES = ["public", "command", "studio"] as const;
 export type RoleVisibility = (typeof ROLE_VISIBILITIES)[number];
 
@@ -223,4 +241,123 @@ export interface ModelRun extends CommonMetadata {
   reason_blocked: string;
   validation_metrics: ValidationMetrics;
   error_categories: string[];
+}
+
+export interface BilingualAcceptanceCriterion {
+  criterion_id: string;
+  required: boolean;
+  status: "pending" | "accepted";
+  text_th: string;
+  text_en: string;
+}
+
+export interface PilotReadiness {
+  schema_version: typeof SCHEMA_VERSION;
+  operational_status: OperationalStatus;
+  agency_operational_allowed: boolean;
+  identity_state: "unconfigured" | "configured";
+  acceptance_receipt_state: AcceptanceReceiptState;
+  audit_state: "unconfigured" | "valid" | "invalid";
+  retention_state: "unconfigured" | "configured";
+  deployment_state:
+    | "pilot_not_configured"
+    | "pilot_ready_non_operational"
+    | "degraded"
+    | "accepted_for_agency_operation";
+  acceptance_criteria: BilingualAcceptanceCriterion[];
+  field_validation_protocol_version: "field-validation-v1";
+  roles: PilotRole[];
+  reason_blocked_th: string;
+  reason_blocked_en: string;
+}
+
+export interface AcceptanceReceiptPayload {
+  schema_version: typeof SCHEMA_VERSION;
+  acceptance_id: string;
+  study_area: string;
+  dataset_mode: "official_input";
+  data_version: string;
+  artifact_manifest_sha256: string;
+  source_timestamp: string;
+  requested_operational_status: "agency_operational";
+  acceptance_status: "accepted";
+  acceptance_criteria_ids: string[];
+  field_validation_receipt_sha256: string;
+  field_validation_protocol_version: "field-validation-v1";
+  issued_at: string;
+  expires_at: string;
+  issuer_subject: string;
+}
+
+export interface SignedAcceptanceReceipt {
+  payload: AcceptanceReceiptPayload;
+  signature: {
+    algorithm: "HMAC-SHA256";
+    key_id: string;
+    payload_sha256: string;
+    value: string;
+  };
+}
+
+export interface FieldValidationReceipt {
+  schema_version: typeof SCHEMA_VERSION;
+  protocol_version: "field-validation-v1";
+  receipt_id: string;
+  dataset_mode: DatasetMode;
+  operational_status: "non_operational" | "planning_only";
+  source_timestamp: string;
+  generated_at: string;
+  confidence_class: ConfidenceClass;
+  source_name: string;
+  assumptions: string[];
+  official_warning: false;
+  git_commit: string;
+  can_feed_decision_layer: false;
+  study_area: string;
+  event_id: string;
+  data_version: string;
+  observation_window: { start: string; end: string };
+  evidence_hashes: {
+    product_manifest_sha256: string | null;
+    model_manifest_sha256: string | null;
+    probability_raster_sha256: string | null;
+    zonal_receipt_sha256: string | null;
+    reporting_geometry_sha256: string | null;
+    sampling_plan_sha256: string | null;
+    holdout_geometry_sha256: string | null;
+  };
+  stratum_counts: Array<{
+    stratum_id: string;
+    observed: number;
+    usable: number;
+    excluded: number;
+  }>;
+  reviewer_calibration: {
+    status: "passed" | "failed" | "not_evaluated";
+    metric: string | null;
+    score: number | null;
+    threshold: number | null;
+    evidence_sha256: string | null;
+  };
+  metrics: {
+    iou: number | null;
+    f1_dice: number | null;
+    precision: number | null;
+    recall: number | null;
+    signed_area_error_ratio: number | null;
+    absolute_area_error_ratio: number | null;
+    brier_score: number | null;
+    expected_calibration_error: number | null;
+  };
+  error_categories: Array<{ category: string; count: number }>;
+  safety_incidents: number;
+  stop_work_events: number;
+  data_protection_confirmed: boolean;
+  licensing_confirmed: boolean;
+  decision_th: string;
+  decision_en: string;
+  issued_at: string;
+  review_due_at: string;
+  accountable_role_ids: string[];
+  status: "accepted" | "rejected" | "incomplete";
 }

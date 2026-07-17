@@ -9,7 +9,7 @@
       "kind": "geoai_proof_receipt",
       "relative_path": "services/geoai-runner/evidence/geoai-proof-receipt.json",
       "media_type": "application/json",
-      "sha256": "90b55bffa2f05f40498dffff00a59f2927f68bff07188ad38d44ee192e9ecd26"
+      "sha256": "fb10acb7cf11b5150585e6ae2892ae9896c85bf179c81946311d800a4074d58f"
     },
     {
       "kind": "geoai_probability_thumbnail",

@@ -26,7 +26,10 @@ REQUIRED_SITE_FILES = (
 )
 TEXT_SUFFIXES = {".css", ".html", ".js", ".json", ".md", ".mjs", ".svg", ".txt"}
 PRIVATE_PATH_PATTERNS = (
-    re.compile(r"[A-Za-z]:[\\/]+Users[\\/]", re.IGNORECASE),
+    re.compile(r"(?<![A-Za-z0-9_])[A-Za-z]:[\\/][A-Za-z0-9._ -]+"),
+    re.compile(r"\\\\[A-Za-z0-9][A-Za-z0-9._-]*\\[A-Za-z0-9$._-]+"),
+    re.compile(r"/(?:Users|home|tmp|var|private)/", re.IGNORECASE),
+    re.compile(r"/root/"),
     re.compile(r"file://", re.IGNORECASE),
 )
 ZIP_TIMESTAMP = (2026, 1, 1, 0, 0, 0)

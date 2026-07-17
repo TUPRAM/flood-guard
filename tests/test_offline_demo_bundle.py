@@ -83,11 +83,26 @@ def test_build_bundle_rejects_missing_route(tmp_path: Path) -> None:
         )
 
 
-def test_build_bundle_rejects_private_windows_path(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "private_path",
+    [
+        r"C:\Users\private\source.tif",
+        r"D:\data\private\source.tif",
+        r"\\server\private-share\source.tif",
+        "/home/private/source.tif",
+        "/Users/private/source.tif",
+        "/root/private/source.tif",
+        "/tmp/private-run/source.tif",
+        "file:///private/source.tif",
+    ],
+)
+def test_build_bundle_rejects_private_absolute_paths(
+    tmp_path: Path, private_path: str
+) -> None:
     site = tmp_path / "site"
     templates = tmp_path / "templates"
     _make_site(site)
-    (site / "index.html").write_text(r"C:\Users\private\source.tif", encoding="utf-8")
+    (site / "index.html").write_text(private_path, encoding="utf-8")
     templates.mkdir()
     _make_templates(templates)
 

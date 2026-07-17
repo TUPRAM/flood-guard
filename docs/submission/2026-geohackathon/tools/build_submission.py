@@ -19,6 +19,7 @@ import sys
 import tempfile
 from typing import Any, Mapping
 from urllib.parse import urlparse
+import zipfile
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +30,11 @@ TEST_RECEIPT_PATH = PACKAGE_ROOT / "evidence/test-results.json"
 EVIDENCE_PATH = PACKAGE_ROOT / "evidence/proposal-evidence.json"
 EVIDENCE_TEMPLATE_PATH = PACKAGE_ROOT / "evidence/proposal-evidence.template.json"
 FINAL_STEM = "FloodGuard_GeoHackathon_2026_Proposal"
+FINAL_DOCX_PATH = PACKAGE_ROOT / "release" / f"{FINAL_STEM}.docx"
+FINAL_PDF_PATH = PACKAGE_ROOT / "release" / f"{FINAL_STEM}.pdf"
+FINAL_PDF_INSPECTION_PATH = PACKAGE_ROOT / "release" / "final-pdf-inspection.json"
+SOURCE_DOCX_PATH = PACKAGE_ROOT / "source" / f"{FINAL_STEM}.docx"
+SOURCE_PDF_PATH = PACKAGE_ROOT / "source" / f"{FINAL_STEM}.pdf"
 PRIVATE_PATH_RE = re.compile(
     r"(?:[A-Za-z]:[\\/]|\\\\|file://|/(?:Users|home|root|tmp|var|private)/)",
     re.IGNORECASE,
@@ -173,8 +179,8 @@ def test_receipt_errors(receipt: Mapping[str, Any], tested_commit: str) -> list[
     """Require an all-green receipt bound to the tested source commit."""
 
     errors: list[str] = []
-    if receipt.get("release_status") != "ready":
-        errors.append("test receipt release_status must be 'ready'")
+    if receipt.get("verification_status") != "passed":
+        errors.append("test receipt verification_status must be 'passed'")
     if receipt.get("git_commit") != tested_commit:
         errors.append("test receipt git_commit must equal the tested source commit")
     if not _timestamp(receipt.get("generated_at")):
@@ -203,6 +209,12 @@ def test_receipt_errors(receipt: Mapping[str, Any], tested_commit: str) -> list[
                 errors.append(f"test suite {name} requires passed >= 1")
             if not isinstance(skipped, int) or isinstance(skipped, bool) or skipped < 0:
                 errors.append(f"test suite {name} has invalid skipped count")
+            if suite.get("source_commit") != tested_commit:
+                errors.append(f"test suite {name} source_commit must equal tested commit")
+            if not isinstance(suite.get("junit_sha256"), str) or not SHA256_RE.fullmatch(
+                suite["junit_sha256"]
+            ):
+                errors.append(f"test suite {name} requires a JUnit SHA-256")
     return errors
 
 
@@ -271,6 +283,105 @@ def evidence_errors(
     serialized = json.dumps(manifest, ensure_ascii=False)
     if PRIVATE_PATH_RE.search(serialized):
         errors.append("proposal evidence contains a private absolute path")
+    return errors
+
+
+def final_release_artifact_errors(
+    manifest: Mapping[str, Any],
+    *,
+    require_clean_worktree: bool,
+    repository_root: Path = REPOSITORY_ROOT,
+) -> list[str]:
+    """Require source-derived final documents and a page-inspection receipt."""
+
+    errors: list[str] = []
+    required = {
+        "final_proposal_docx": FINAL_DOCX_PATH,
+        "final_proposal_pdf": FINAL_PDF_PATH,
+        "final_pdf_inspection_receipt": FINAL_PDF_INSPECTION_PATH,
+    }
+    artifacts = manifest.get("artifacts")
+    by_kind = {
+        artifact.get("kind"): artifact
+        for artifact in artifacts
+        if isinstance(artifacts, list) and isinstance(artifact, Mapping)
+    } if isinstance(artifacts, list) else {}
+
+    for kind, path in required.items():
+        if not path.is_file():
+            errors.append(f"final release artifact is missing: {path.name}")
+        artifact = by_kind.get(kind)
+        if not isinstance(artifact, Mapping):
+            errors.append(f"proposal evidence is missing artifact kind: {kind}")
+            continue
+        try:
+            expected = path.resolve().relative_to(repository_root.resolve()).as_posix()
+        except ValueError:
+            errors.append(f"final release artifact escapes repository: {path.name}")
+            continue
+        if artifact.get("relative_path") != expected:
+            errors.append(f"proposal evidence {kind} path must be {expected}")
+
+    if FINAL_DOCX_PATH.is_file():
+        if SOURCE_DOCX_PATH.is_file() and _sha256(FINAL_DOCX_PATH) == _sha256(SOURCE_DOCX_PATH):
+            errors.append("final proposal DOCX must not be the unchanged retained template")
+        try:
+            with zipfile.ZipFile(FINAL_DOCX_PATH) as archive:
+                document_xml = archive.read("word/document.xml").decode("utf-8", errors="replace")
+        except (OSError, KeyError, zipfile.BadZipFile) as exc:
+            errors.append(f"final proposal DOCX cannot be inspected: {exc}")
+        else:
+            if LEGACY_PLACEHOLDER_RE.search(document_xml) or MUSTACHE_RE.search(document_xml):
+                errors.append("final proposal DOCX contains an owner placeholder")
+            if "DRAFT - RELEASE BLOCKED" in document_xml:
+                errors.append("final proposal DOCX contains the draft watermark")
+            if PRIVATE_PATH_RE.search(document_xml):
+                errors.append("final proposal DOCX contains a private absolute path")
+
+    if (
+        FINAL_PDF_PATH.is_file()
+        and SOURCE_PDF_PATH.is_file()
+        and _sha256(FINAL_PDF_PATH) == _sha256(SOURCE_PDF_PATH)
+    ):
+        errors.append("final proposal PDF must not be the unchanged retained reference")
+
+    if FINAL_PDF_INSPECTION_PATH.is_file():
+        try:
+            inspection = load_json(FINAL_PDF_INSPECTION_PATH)
+        except SubmissionBuildError as exc:
+            errors.append(str(exc))
+        else:
+            if inspection.get("schema_version") != "1.0":
+                errors.append("final PDF inspection schema_version must be '1.0'")
+            if not _timestamp(inspection.get("inspected_at")):
+                errors.append("final PDF inspection requires an offset-aware inspected_at")
+            if not isinstance(inspection.get("reviewer"), str) or not inspection["reviewer"].strip():
+                errors.append("final PDF inspection requires a reviewer")
+            page_count = inspection.get("page_count")
+            if not isinstance(page_count, int) or isinstance(page_count, bool) or page_count < 1:
+                errors.append("final PDF inspection requires page_count >= 1")
+            checks = (
+                "all_pages_visually_inspected",
+                "placeholder_scan_passed",
+                "private_path_scan_passed",
+                "claim_scan_passed",
+                "links_checked",
+                "source_derived_from_retained_docx",
+            )
+            for check in checks:
+                if inspection.get(check) is not True:
+                    errors.append(f"final PDF inspection requires {check}=true")
+            if FINAL_DOCX_PATH.is_file() and inspection.get("docx_sha256") != _sha256(
+                FINAL_DOCX_PATH
+            ):
+                errors.append("final PDF inspection DOCX checksum is stale")
+            if FINAL_PDF_PATH.is_file() and inspection.get("pdf_sha256") != _sha256(
+                FINAL_PDF_PATH
+            ):
+                errors.append("final PDF inspection PDF checksum is stale")
+
+    if require_clean_worktree and not _worktree_is_clean(repository_root):
+        errors.append("post-tag submission check requires a clean worktree")
     return errors
 
 
@@ -473,7 +584,14 @@ def build(
         if not EVIDENCE_PATH.is_file():
             errors.append("final proposal evidence manifest is missing")
         else:
-            errors.extend(evidence_errors(load_json(EVIDENCE_PATH), tested_commit))
+            manifest = load_json(EVIDENCE_PATH)
+            errors.extend(evidence_errors(manifest, tested_commit))
+            errors.extend(
+                final_release_artifact_errors(
+                    manifest,
+                    require_clean_worktree=not pre_tag,
+                )
+            )
         if errors:
             raise SubmissionBuildError("\n- " + "\n- ".join(sorted(set(errors))))
 
@@ -603,6 +721,19 @@ def _commit_is_ancestor(
         text=True,
     )
     return completed.returncode == 0
+
+
+def _worktree_is_clean(repository_root: Path = REPOSITORY_ROOT) -> bool:
+    """Return whether tracked and untracked release-relevant files are clean."""
+
+    completed = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=all"],
+        cwd=repository_root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return completed.returncode == 0 and not completed.stdout.strip()
 
 
 def _timestamp(value: Any) -> bool:

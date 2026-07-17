@@ -89,11 +89,18 @@ def test_html_renderer_cannot_create_final_submission_pdf(tmp_path: Path) -> Non
 def test_test_and_evidence_receipts_bind_to_tested_source_commit() -> None:
     tested = "a" * 40
     receipt = {
-        "release_status": "ready",
+        "verification_status": "passed",
         "git_commit": tested,
         "generated_at": "2026-07-17T00:00:00Z",
         "suites": [
-            {"name": "root", "result": "passed", "passed": 1, "skipped": 0}
+            {
+                "name": "root",
+                "result": "passed",
+                "passed": 1,
+                "skipped": 0,
+                "source_commit": tested,
+                "junit_sha256": "c" * 64,
+            }
         ],
     }
 
@@ -124,3 +131,14 @@ def test_current_commit_is_its_own_valid_tested_ancestor() -> None:
 
     assert submission._commit_exists(commit)
     assert submission._commit_is_ancestor(commit, commit)
+
+
+def test_final_release_requires_source_derived_documents_and_inspection() -> None:
+    errors = submission.final_release_artifact_errors(
+        {"artifacts": []},
+        require_clean_worktree=False,
+    )
+
+    assert any("final_proposal_docx" in error for error in errors)
+    assert any("final_proposal_pdf" in error for error in errors)
+    assert any("final_pdf_inspection_receipt" in error for error in errors)

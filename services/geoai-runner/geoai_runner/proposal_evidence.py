@@ -250,18 +250,59 @@ def write_proposal_proof_artifacts(
 
 
 def validate_proposal_proof_receipt(path: Path) -> dict[str, object]:
-    """Validate the self-checksum and fail-closed public claim boundary."""
+    """Validate the self-checksum and every safety-significant claim boundary."""
 
     payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("Proposal proof receipt must be a JSON object.")
     receipt_sha256 = payload.pop("receipt_payload_sha256", None)
     if not isinstance(receipt_sha256, str) or receipt_sha256 != _canonical_sha256(payload):
         raise ValueError("Proposal proof receipt checksum is invalid.")
+
+    aggregation = payload.get("aggregation")
+    probability = payload.get("probability")
+    validation = payload.get("validation_checks")
+    execution_mode = payload.get("execution_mode")
+    if execution_mode == "real_geoai_smoke":
+        execution_is_valid = (
+            payload.get("training_execution") == "model_construction_only"
+            and payload.get("actual_geoai_calls")
+            == [
+                "geoai.utils.training.export_geotiff_tiles",
+                "geoai.inference.predict_geotiff",
+            ]
+        )
+    elif execution_mode == "mocked_unit":
+        execution_is_valid = (
+            payload.get("training_execution") == "mocked_wrapper_only"
+            and payload.get("actual_geoai_calls") == []
+        )
+    else:
+        execution_is_valid = False
+
     if (
-        payload.get("dataset_mode") != "candidate"
+        payload.get("proof_scope") != "synthetic_integration_only"
+        or payload.get("dataset_mode") != "candidate"
         or payload.get("operational_status") != "non_operational"
         or payload.get("official_warning") is not False
         or payload.get("can_feed_decision_layer") is not False
-        or not payload.get("reason_blocked")
+        or not isinstance(payload.get("reason_blocked"), str)
+        or not payload["reason_blocked"].strip()
+        or payload.get("claim_boundary")
+        != "Synthetic integration proof; not evidence of real flood-detection accuracy."
+        or not execution_is_valid
+        or not isinstance(aggregation, Mapping)
+        or aggregation.get("status") != "report_only"
+        or aggregation.get("eligible_for_decision_layer") is not False
+        or aggregation.get("eligible_for_fpps") is not False
+        or not isinstance(probability, Mapping)
+        or probability.get("class_index") != 1
+        or probability.get("band_name") != "flood_probability_0_1"
+        or probability.get("dtype") != "float32"
+        or not isinstance(validation, Mapping)
+        or not validation
+        or any(value is not True for value in validation.values())
+        or aggregation.get("sample_pixel_count") != probability.get("valid_pixel_count")
     ):
         raise ValueError("Proposal proof receipt is not fail-closed.")
     payload["receipt_payload_sha256"] = receipt_sha256

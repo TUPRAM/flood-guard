@@ -162,6 +162,27 @@ def _sync_geoai_proof(payload: dict[str, Any], *, repository_root: Path) -> None
     if not isinstance(claimed_receipt, str) or claimed_receipt != _canonical_sha256(proof):
         raise EvidenceBuildError("GeoAI proof receipt self-checksum is invalid.")
 
+    expected_calls = [
+        "geoai.utils.training.export_geotiff_tiles",
+        "geoai.inference.predict_geotiff",
+    ]
+    if (
+        proof.get("floodguard_commit") != payload.get("git_commit")
+        or proof.get("proof_scope") != "synthetic_integration_only"
+        or proof.get("dataset_mode") != "candidate"
+        or proof.get("operational_status") != "non_operational"
+        or proof.get("official_warning") is not False
+        or proof.get("can_feed_decision_layer") is not False
+        or proof.get("execution_mode") != "real_geoai_smoke"
+        or proof.get("training_execution") != "model_construction_only"
+        or proof.get("actual_geoai_calls") != expected_calls
+        or proof.get("claim_boundary")
+        != "Synthetic integration proof; not evidence of real flood-detection accuracy."
+        or not isinstance(proof.get("reason_blocked"), str)
+        or not proof["reason_blocked"].strip()
+    ):
+        raise EvidenceBuildError("GeoAI proof receipt is not commit-bound and fail-closed.")
+
     feature_stack = proof.get("feature_stack")
     probability = proof.get("probability")
     validation = proof.get("validation_checks")
@@ -169,12 +190,21 @@ def _sync_geoai_proof(payload: dict[str, Any], *, repository_root: Path) -> None
     if not all(isinstance(value, dict) for value in (feature_stack, probability, validation, aggregation)):
         raise EvidenceBuildError("GeoAI proof receipt is missing required evidence sections.")
     if not validation or any(value is not True for value in validation.values()):
-        validation_status = "failed"
-    else:
-        validation_status = "passed"
+        raise EvidenceBuildError(
+            "GeoAI proof validation is not fail-closed because not all checks passed."
+        )
+    validation_status = "passed"
     aggregation_status = aggregation.get("status")
-    if aggregation_status not in {"passed", "report_only", "failed", "blocked"}:
-        raise EvidenceBuildError("GeoAI proof aggregation status is invalid.")
+    if (
+        aggregation_status != "report_only"
+        or aggregation.get("eligible_for_decision_layer") is not False
+        or aggregation.get("eligible_for_fpps") is not False
+        or probability.get("class_index") != 1
+        or probability.get("band_name") != "flood_probability_0_1"
+        or probability.get("dtype") != "float32"
+        or aggregation.get("sample_pixel_count") != probability.get("valid_pixel_count")
+    ):
+        raise EvidenceBuildError("GeoAI proof aggregation is not fail-closed.")
 
     thumbnail = proof.get("thumbnail")
     thumbnail_artifacts = [

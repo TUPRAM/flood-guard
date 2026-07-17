@@ -63,3 +63,45 @@ def test_committed_proof_rejects_checksum_and_claim_substitution(tmp_path: Path)
     tampered.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="fail-closed"):
         validate_proposal_proof_receipt(tampered)
+
+
+@pytest.mark.parametrize(
+    ("field_path", "replacement"),
+    [
+        (("proof_scope",), "decision_ready"),
+        (("execution_mode",), "mocked_unit"),
+        (("training_execution",), "one_epoch_completed"),
+        (("actual_geoai_calls",), []),
+        (("aggregation", "status"), "passed"),
+        (("aggregation", "eligible_for_decision_layer"), True),
+        (("aggregation", "eligible_for_fpps"), True),
+        (("claim_boundary",), "Validated real flood model."),
+        (("probability", "class_index"), 0),
+        (("probability", "band_name"), "water_probability"),
+        (("validation_checks", "crs"), False),
+    ],
+)
+def test_committed_proof_rejects_rehashed_safety_substitution(
+    tmp_path: Path,
+    field_path: tuple[str, ...],
+    replacement: object,
+) -> None:
+    payload = json.loads(RECEIPT.read_text(encoding="utf-8"))
+    payload.pop("receipt_payload_sha256")
+    target = payload
+    for key in field_path[:-1]:
+        target = target[key]
+    target[field_path[-1]] = replacement
+    canonical = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    payload["receipt_payload_sha256"] = hashlib.sha256(canonical).hexdigest()
+    tampered = tmp_path / "tampered.json"
+    tampered.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="fail-closed"):
+        validate_proposal_proof_receipt(tampered)

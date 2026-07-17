@@ -199,15 +199,40 @@ def test_builder_derives_geoai_summary_from_checksum_valid_receipt(tmp_path: Pat
     thumbnail.write_bytes(b"small png fixture")
     thumbnail_sha = module.file_sha256(thumbnail)
     proof = {
+        "floodguard_commit": "a" * 40,
+        "proof_scope": "synthetic_integration_only",
+        "dataset_mode": "candidate",
+        "operational_status": "non_operational",
+        "official_warning": False,
+        "execution_mode": "real_geoai_smoke",
+        "training_execution": "model_construction_only",
+        "actual_geoai_calls": [
+            "geoai.utils.training.export_geotiff_tiles",
+            "geoai.inference.predict_geotiff",
+        ],
+        "claim_boundary": (
+            "Synthetic integration proof; not evidence of real flood-detection accuracy."
+        ),
         "geoai_version": "0.41.1",
         "feature_stack": {
             "feature_stack_id": "bound-eight-band",
             "preprocessing_id": "clip_linear_uint8_v1",
             "input_manifest_sha256": "1" * 64,
         },
-        "probability": {"sha256": "2" * 64},
+        "probability": {
+            "sha256": "2" * 64,
+            "class_index": 1,
+            "band_name": "flood_probability_0_1",
+            "dtype": "float32",
+            "valid_pixel_count": 64,
+        },
         "validation_checks": {"crs": True, "range": True},
-        "aggregation": {"status": "report_only"},
+        "aggregation": {
+            "status": "report_only",
+            "eligible_for_decision_layer": False,
+            "eligible_for_fpps": False,
+            "sample_pixel_count": 64,
+        },
         "thumbnail": {"sha256": thumbnail_sha},
         "processing_allowed": True,
         "can_feed_decision_layer": False,
@@ -253,3 +278,94 @@ def test_builder_derives_geoai_summary_from_checksum_valid_receipt(tmp_path: Pat
         "can_feed_decision_layer": False,
         "reason_blocked": "Synthetic proof is report-only.",
     }
+
+
+@pytest.mark.parametrize(
+    ("field_path", "replacement"),
+    [
+        (("floodguard_commit",), "b" * 40),
+        (("proof_scope",), "decision_ready"),
+        (("aggregation", "eligible_for_fpps"), True),
+        (("validation_checks", "crs"), False),
+    ],
+)
+def test_builder_rejects_rehashed_geoai_safety_substitution(
+    tmp_path: Path,
+    field_path: tuple[str, ...],
+    replacement: object,
+) -> None:
+    module = _module()
+    thumbnail = tmp_path / "evidence" / "proof.png"
+    thumbnail.parent.mkdir()
+    thumbnail.write_bytes(b"small png fixture")
+    proof = {
+        "floodguard_commit": "a" * 40,
+        "proof_scope": "synthetic_integration_only",
+        "dataset_mode": "candidate",
+        "operational_status": "non_operational",
+        "official_warning": False,
+        "execution_mode": "real_geoai_smoke",
+        "training_execution": "model_construction_only",
+        "actual_geoai_calls": [
+            "geoai.utils.training.export_geotiff_tiles",
+            "geoai.inference.predict_geotiff",
+        ],
+        "claim_boundary": (
+            "Synthetic integration proof; not evidence of real flood-detection accuracy."
+        ),
+        "geoai_version": "0.41.1",
+        "feature_stack": {
+            "feature_stack_id": "bound-eight-band",
+            "preprocessing_id": "clip_linear_uint8_v1",
+            "input_manifest_sha256": "1" * 64,
+        },
+        "probability": {
+            "sha256": "2" * 64,
+            "class_index": 1,
+            "band_name": "flood_probability_0_1",
+            "dtype": "float32",
+            "valid_pixel_count": 64,
+        },
+        "validation_checks": {"crs": True, "range": True},
+        "aggregation": {
+            "status": "report_only",
+            "eligible_for_decision_layer": False,
+            "eligible_for_fpps": False,
+            "sample_pixel_count": 64,
+        },
+        "thumbnail": {"sha256": module.file_sha256(thumbnail)},
+        "processing_allowed": True,
+        "can_feed_decision_layer": False,
+        "reason_blocked": "Synthetic proof is report-only.",
+    }
+    target = proof
+    for key in field_path[:-1]:
+        target = target[key]
+    target[field_path[-1]] = replacement
+    proof["receipt_payload_sha256"] = module._canonical_sha256(proof)
+    receipt = tmp_path / "evidence" / "proof.json"
+    receipt.write_text(json.dumps(proof), encoding="utf-8")
+    template = _template("evidence/proof.json")
+    template["artifacts"] = [
+        {
+            "kind": "geoai_proof_receipt",
+            "relative_path": "evidence/proof.json",
+            "media_type": "application/json",
+            "sha256": "0" * 64,
+        },
+        {
+            "kind": "geoai_probability_thumbnail",
+            "relative_path": "evidence/proof.png",
+            "media_type": "image/png",
+            "sha256": "0" * 64,
+        },
+    ]
+
+    with pytest.raises(module.EvidenceBuildError, match="fail-closed"):
+        module.build_manifest(
+            template,
+            repository_root=tmp_path,
+            junit_by_suite={},
+            git_commit="a" * 40,
+            generated_at="2026-07-17T08:00:00Z",
+        )

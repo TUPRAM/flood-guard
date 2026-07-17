@@ -162,7 +162,7 @@ button { color: inherit; }
 .public-bottom-nav button { min-height: 58px; display: grid; place-items: center; gap: 1px; border: 0; border-radius: 13px; background: transparent; color: #cfe8e5; cursor: pointer; }
 .public-bottom-nav button.active { background: #fff; color: var(--navy); }
 .public-bottom-nav span { font-size: 1.1rem; }
-.public-bottom-nav small { font-size: .61rem; font-weight: 750; }
+.public-bottom-nav small { font-size: .72rem; font-weight: 750; line-height: 1.15; }
 .technical-link { text-align: right; }.technical-link a { color: var(--teal); font-weight: 800; }
 
 /* Local geospatial map */
@@ -204,7 +204,7 @@ button { color: inherit; }
 .ranked-areas button.selected { border-color: #7cbab3; background: var(--teal-soft); box-shadow: inset 3px 0 0 var(--teal); }
 .rank-number { color: #6b7e82; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .6rem; font-weight: 800; }
 .rank-name { min-width: 0; display: grid; gap: 2px; }
-.rank-name b { overflow: hidden; font-size: .67rem; text-overflow: ellipsis; white-space: nowrap; }
+.rank-name b { font-size: .67rem; line-height: 1.18; overflow-wrap: anywhere; white-space: normal; }
 .rank-name small { color: var(--muted); font-size: .55rem; }
 .rank-score { min-width: 44px; display: grid; padding: 5px; border-radius: 7px; background: var(--navy); color: #fff; text-align: right; }
 .rank-score b { font-size: .7rem; }

@@ -212,3 +212,22 @@ uv run --project services/geoai-runner --extra geoai pytest services/geoai-runne
 
 The smoke proves environment and wiring only. Synthetic metrics do not establish
 real flood accuracy or decision-layer eligibility.
+
+For a proposal evidence build, the same opt-in smoke can emit only a small,
+path-redacted JSON receipt and probability thumbnail. The receipt records that
+the model was constructed with deterministic seed 42 but was not trained, and
+binds the actual GeoAI tile-export and tiled-inference calls to report-only
+FloodGuard aggregation:
+
+```powershell
+$env:RUN_GEOAI_SMOKE = "1"
+$env:FLOODGUARD_PROOF_COMMIT = git rev-parse HEAD
+$env:GEOAI_PROOF_OUTPUT_DIR = Join-Path (Get-Location) "services/geoai-runner/evidence"
+uv run --project services/geoai-runner --extra geoai pytest services/geoai-runner/tests/test_geoai_smoke.py -m geoai_smoke
+```
+
+The generated receipt says `training_execution=model_construction_only`,
+`aggregation.status=report_only`, and `can_feed_decision_layer=false`. It does
+not retain the temporary raster, tiles, or checkpoint and contains no private
+workspace path. Re-run it against the final pinned commit before packaging the
+proposal evidence manifest.

@@ -1,0 +1,133 @@
+name: FloodGuard verification
+
+on:
+  push:
+    branches: [master, "codex/**"]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: floodguard-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Core and schema contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Sync root environment without GeoAI
+        run: uv sync --locked --all-extras
+      - name: Run root tests
+        run: uv run pytest --junitxml=.tmp/proposal-evidence/root.xml
+      - name: Upload core test receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-junit
+          path: .tmp/proposal-evidence/root.xml
+          if-no-files-found: error
+          retention-days: 14
+
+  api:
+    name: FastAPI contract boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Sync API environment
+        run: uv sync --project services/api --locked --group dev
+      - name: Lint API
+        run: uv run --project services/api ruff check services/api/src services/api/tests
+      - name: Run API tests
+        run: >-
+          uv run --project services/api pytest services/api/tests
+          --junitxml=.tmp/proposal-evidence/api.xml
+      - name: Upload API test receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-junit
+          path: .tmp/proposal-evidence/api.xml
+          if-no-files-found: error
+          retention-days: 14
+
+  frontend:
+    name: Static PWA and offline judging mode
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Enable pinned pnpm
+        run: corepack enable
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install offline browser runtime
+        run: pnpm --filter @floodguard/web exec playwright install --with-deps chromium
+      - name: Verify contracts, web, build, and offline mode
+        run: >-
+          python scripts/run_check_with_junit.py
+          --suite frontend
+          --output .tmp/proposal-evidence/frontend.xml
+          -- pnpm verify:frontend
+      - name: Upload frontend verification receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-junit
+          path: .tmp/proposal-evidence/frontend.xml
+          if-no-files-found: error
+          retention-days: 14
+
+  geoai-normal:
+    name: Isolated GeoAI runner (dependency-light)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Sync runner without the GeoAI extra
+        run: uv sync --project services/geoai-runner --locked --group test
+      - name: Confirm normal environment excludes GeoAI and PyTorch
+        run: >-
+          uv run --project services/geoai-runner python -c
+          "import importlib.util;
+          assert importlib.util.find_spec('geoai') is None;
+          assert importlib.util.find_spec('torch') is None"
+      - name: Lint isolated runner
+        run: >-
+          uv run --project services/geoai-runner ruff check
+          services/geoai-runner/geoai_runner services/geoai-runner/tests
+      - name: Run dependency-light runner tests
+        run: >-
+          uv run --project services/geoai-runner pytest
+          services/geoai-runner/tests -m "not geoai_smoke"
+          --junitxml=.tmp/proposal-evidence/geoai-normal.xml
+      - name: Upload runner test receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: geoai-normal-junit
+          path: .tmp/proposal-evidence/geoai-normal.xml
+          if-no-files-found: error
+          retention-days: 14

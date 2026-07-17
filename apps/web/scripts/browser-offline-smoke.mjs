@@ -113,6 +113,12 @@ try {
   });
   await page.reload({ waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
+  if (await page.locator("html").getAttribute("lang") !== "en") {
+    throw new Error("Language switch did not update the document language.");
+  }
+  if (await page.locator('.language-toggle button[lang="en"]').getAttribute("aria-pressed") !== "true") {
+    throw new Error("Language switch did not expose its selected state.");
+  }
   try {
     await page.waitForFunction(
       () => document.body.innerText.toLowerCase().includes("cached api snapshot (stale/offline)"),
@@ -131,6 +137,13 @@ try {
   const cachedBody = await page.locator("body").innerText();
   if (!cachedBody.toLowerCase().includes("stale / offline")) {
     throw new Error("Cached API snapshot did not expose its stale/offline state.");
+  }
+  await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
+  if (await page.locator("html").getAttribute("lang") !== "en" || await page.locator('.language-toggle button[lang="en"]').getAttribute("aria-pressed") !== "true") {
+    throw new Error("Language preference did not persist between product surfaces.");
+  }
+  if (await page.locator(".ranked-areas button").count() === 0) {
+    throw new Error("Command route did not render its synchronized FPPS ranking.");
   }
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
   const cacheKeys = await page.evaluate(() => caches.keys());
@@ -159,6 +172,9 @@ try {
       if (!normalizedBody.includes("not authorized for operation")) {
         throw new Error(`${route.path} falsely suggests agency operation while offline.`);
       }
+    }
+    if (route.path === "/studio/" && !normalizedBody.includes("synthetic integration proof")) {
+      throw new Error("Studio lost its synthetic-proof limitation while offline.");
     }
   }
 

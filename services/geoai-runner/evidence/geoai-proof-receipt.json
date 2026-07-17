@@ -1,0 +1,142 @@
+{
+  "actual_geoai_calls": [
+    "geoai.utils.training.export_geotiff_tiles",
+    "geoai.inference.predict_geotiff"
+  ],
+  "aggregation": {
+    "eligible_for_decision_layer": false,
+    "eligible_for_fpps": false,
+    "mean_flood_probability_0_1": 0.437502,
+    "p90_flood_probability_0_1": 0.508423,
+    "sample_pixel_count": 1024,
+    "status": "report_only"
+  },
+  "can_feed_decision_layer": false,
+  "claim_boundary": "Synthetic integration proof; not evidence of real flood-detection accuracy.",
+  "dataset_mode": "candidate",
+  "execution_mode": "real_geoai_smoke",
+  "feature_stack": {
+    "channel_count": 8,
+    "channel_names": [
+      "pre_vv_db",
+      "post_vv_db",
+      "pre_vh_db",
+      "post_vh_db",
+      "vv_change_db",
+      "vh_change_db",
+      "slope_degrees",
+      "permanent_water_flag"
+    ],
+    "encoded_feature_sha256": "c40dca1e5090faedcdd2ad4bb5409ca4f274ca4b77e3b2da9a8ce30086c07ea4",
+    "feature_stack_id": "clip_linear_uint8_v1-8-band",
+    "input_manifest_sha256": "c401c3d618f6bcba14fcd692af94416712ca8d227580112e67ecf87860dfeb11",
+    "preprocessing_id": "clip_linear_uint8_v1",
+    "preprocessing_sidecar_sha256": "377eb50712d9f96fa5daf29b21e575e451faca4995071118039affef784ce581",
+    "value_domain": "uint8_0_255"
+  },
+  "floodguard_commit": "f424b52e6b2769416a15f8c481bca4e6bcb10168",
+  "generated_at": "2026-07-17T05:59:44.220515Z",
+  "geoai_commit": "6833c8b71fb18f5b8ea17d5d9f8e0745157643c2",
+  "geoai_version": "0.41.1",
+  "model": {
+    "architecture": "unet",
+    "encoder": "resnet34",
+    "encoder_weights": null,
+    "model_id": "floodguard/synthetic-unet",
+    "model_revision": "contract-proof-1",
+    "model_sha256": "e59874382b37817cd0313efe0a5ed20b104a61eb81a39014868eb6591aad685d"
+  },
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "probability": {
+    "artifact_name": "external-workspace/flood-probability.tif",
+    "band_name": "flood_probability_0_1",
+    "class_index": 1,
+    "dtype": "float32",
+    "grid": {
+      "bounds": [
+        600000.0,
+        2199760.0,
+        600320.0,
+        2200080.0
+      ],
+      "crs": "EPSG:32647",
+      "height": 32,
+      "resolution": [
+        10.0,
+        10.0
+      ],
+      "transform": [
+        10.0,
+        0.0,
+        600000.0,
+        0.0,
+        -10.0,
+        2200080.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 32
+    },
+    "histogram_bin_edges": [
+      0.0,
+      0.1,
+      0.2,
+      0.30000000000000004,
+      0.4,
+      0.5,
+      0.6000000000000001,
+      0.7000000000000001,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "histogram_counts": [
+      0,
+      0,
+      13,
+      252,
+      627,
+      102,
+      30,
+      0,
+      0,
+      0
+    ],
+    "maximum": 0.6815974116325378,
+    "mean": 0.4375015173718566,
+    "minimum": 0.21587321162223816,
+    "nodata": -9999.0,
+    "sha256": "d0ca1fca0d7c2b622eca5800804b7af420e42260c415c481b438c8b3ecdfaa85",
+    "valid_pixel_count": 1024
+  },
+  "processing_allowed": true,
+  "proof_scope": "synthetic_integration_only",
+  "reason_blocked": "Synthetic candidate proof cannot feed the decision layer.",
+  "receipt_payload_sha256": "f65ff4144dbca38f4245907b5e62c21be1a33e7f81aebbd4dc76f9720902f119",
+  "run_id": "geoai-synthetic-proof-001",
+  "schema_version": "1.0",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "thumbnail": {
+    "media_type": "image/png",
+    "relative_path": "geoai-probability-thumbnail.png",
+    "sha256": "b00b02cddbad969d6a91e3abd15fcfb00ebc73363c9e9f883a96a84ee4a42700"
+  },
+  "tile_export": {
+    "holdout_tile_count": 55,
+    "prepared_tile_manifest_sha256": "c1297d12e1b215a3e6c1af9cc8e7fc53ca332ee300b9ecb886c4dc4420de3a95",
+    "rejected_boundary_tile_count": 11,
+    "training_tile_count": 55
+  },
+  "training_execution": "model_construction_only",
+  "validation_checks": {
+    "class_mapping": true,
+    "crs": true,
+    "nodata": true,
+    "probability_range": true,
+    "provenance_tags": true,
+    "shape": true,
+    "transform": true
+  }
+}

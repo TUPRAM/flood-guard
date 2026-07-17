@@ -3,12 +3,13 @@
 import Image from "next/image";
 import { useCallback, useState } from "react";
 
+import { EvidenceNotice } from "@/components/evidence-notice";
 import { GeoMap } from "@/components/geo-map";
 import { LanguageToggle } from "@/components/language-toggle";
 import { StatusBar } from "@/components/status-bar";
 import { formatConfidence, formatNumber, formatTopReason } from "@/lib/format";
-import type { Language } from "@/lib/types";
 import { useFloodGuardData } from "@/lib/use-floodguard-data";
+import { useLanguage } from "@/lib/use-language";
 
 type PublicTab = "home" | "map" | "shelters" | "prepare" | "data";
 
@@ -30,7 +31,7 @@ const PREPAREDNESS_ITEMS = [
 
 export function PublicExperience() {
   const data = useFloodGuardData();
-  const [language, setLanguage] = useState<Language>("th");
+  const [language, setLanguage] = useLanguage("th");
   const [tab, setTab] = useState<PublicTab>("home");
   const [selectedId, setSelectedId] = useState("FG-TB-002");
   const th = language === "th";
@@ -55,7 +56,7 @@ export function PublicExperience() {
 
       <StatusBar data={data} language={language} compact />
 
-      <section className="public-content" aria-live="polite">
+      <section className="public-content" id="public-active-panel" role="tabpanel" aria-labelledby={`public-tab-${tab}`} aria-live="polite">
         {tab === "home" && (
           <>
             <section className="hero-status card">
@@ -118,10 +119,9 @@ export function PublicExperience() {
           <section className="public-map-view">
             <div className="section-heading"><div><p className="eyebrow">{th ? `แผนที่ GeoJSON · ${datasetLabel}` : `GeoJSON map · ${datasetLabel}`}</p><h1>{th ? "ภาพรวมพื้นที่เพื่อการฝึกซ้อม" : "Area planning rehearsal"}</h1></div></div>
             <GeoMap areas={data.areas} selectedId={selected.area_id} onSelect={selectArea} language={language} showRoads={false} height="390px" areaFeatures={data.areaFeatures} roadFeatures={data.roadFeatures} datasetMode={data.status.dataset_mode} />
-            <article className="card rehearsal-card">
-              <span aria-hidden="true">↝</span>
-              <div><h2>{th ? "เส้นทางใช้เพื่อการซ้อมเตรียมพร้อมเท่านั้น" : "Routes are for preparedness rehearsal only"}</h2><p>{th ? "ชุดข้อมูลนี้ไม่คำนวณเส้นทางปลอดภัยและไม่แสดงการปิดถนนแบบสด" : "This dataset does not calculate a safe route or show live road closures."}</p></div>
-            </article>
+            <EvidenceNotice tone="caution" title={th ? "เส้นทางใช้เพื่อการซ้อมเตรียมพร้อมเท่านั้น" : "Routes are for preparedness rehearsal only"}>
+              {th ? "ชุดข้อมูลนี้ไม่คำนวณเส้นทางปลอดภัยและไม่แสดงการปิดถนนแบบสด" : "This dataset does not calculate a safe route or show live road closures."}
+            </EvidenceNotice>
           </section>
         )}
 
@@ -161,9 +161,9 @@ export function PublicExperience() {
         )}
       </section>
 
-      <nav className="public-bottom-nav" aria-label={th ? "เมนูหลัก" : "Primary navigation"}>
+      <nav className="public-bottom-nav" aria-label={th ? "เมนูหลัก" : "Primary navigation"} role="tablist">
         {(Object.keys(TAB_LABELS) as PublicTab[]).map((key) => (
-          <button key={key} type="button" className={tab === key ? "active" : ""} aria-current={tab === key ? "page" : undefined} onClick={() => setTab(key)}>
+          <button key={key} id={`public-tab-${key}`} type="button" role="tab" aria-controls="public-active-panel" aria-selected={tab === key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>
             <span aria-hidden="true">{TAB_LABELS[key].icon}</span><small>{TAB_LABELS[key][language]}</small>
           </button>
         ))}

@@ -3,6 +3,10 @@ interface FilterableArea {
   action_class: string;
 }
 
+interface RankableArea extends FilterableArea {
+  fpps_0_100: number;
+}
+
 export interface CommandFilterState {
   activeClasses: Set<string>;
   selectedId: string;
@@ -32,4 +36,16 @@ export function toggleCommandClass(
     activeClasses,
     selectedId: replacement?.area_id ?? selectedId,
   };
+}
+
+/** Rank only already-computed engine output; this function never recomputes FPPS. */
+export function rankVisibleAreas<T extends RankableArea>(
+  areas: readonly T[],
+  activeClasses: ReadonlySet<string>,
+): T[] {
+  return areas
+    .filter((area) => activeClasses.has(area.action_class))
+    .toSorted((left, right) => (
+      right.fpps_0_100 - left.fpps_0_100 || left.area_id.localeCompare(right.area_id)
+    ));
 }

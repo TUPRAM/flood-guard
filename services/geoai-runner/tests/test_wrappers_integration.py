@@ -19,10 +19,15 @@ from geoai_runner.infer import (
     run_prediction,
 )
 from geoai_runner.prepare import (
+    TileExportReceipt,
     TileMembership,
     export_training_tiles,
     validate_prepared_inputs,
     write_prepared_tile_manifest,
+)
+from geoai_runner.proposal_evidence import (
+    validate_proposal_proof_receipt,
+    write_proposal_proof_artifacts,
 )
 from geoai_runner.train import train_segmentation_candidate
 from geoai_runner.validate import RasterValidationError
@@ -699,6 +704,31 @@ def test_mocked_geotiff_prediction_and_root_report_only_bridge(tmp_path: Path) -
     assert summary["aggregation_status"] == "report_only"
     assert summary["eligible_for_decision_layer"] is False
     assert summary["eligible_for_fpps"] is False
+
+    proof = write_proposal_proof_artifacts(
+        evidence["inference_contract"],
+        evidence["probability"],
+        TileExportReceipt(
+            grid=grid,
+            prepared_manifest_relative_path="prepared-tile-manifest.json",
+            prepared_manifest_sha256=evidence[
+                "inference_contract"
+            ].prepared_tile_manifest_sha256,
+            training_tile_count=1,
+            holdout_tile_count=1,
+            rejected_boundary_tile_count=0,
+        ),
+        summary,
+        evidence["workspace"] / "proposal-proof",
+        execution_mode="mocked_unit",
+        training_execution="mocked_wrapper_only",
+    )
+    receipt = validate_proposal_proof_receipt(proof.receipt_path)
+    assert receipt["execution_mode"] == "mocked_unit"
+    assert receipt["actual_geoai_calls"] == []
+    assert receipt["aggregation"]["status"] == "report_only"
+    assert proof.thumbnail_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert len(proof.receipt_file_sha256) == 64
 
 
 def test_prediction_rejects_checkpoint_mismatch_before_predictor(tmp_path: Path) -> None:

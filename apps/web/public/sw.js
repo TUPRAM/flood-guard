@@ -1,4 +1,5 @@
 const CACHE_NAME = "floodguard-offline-__BUILD__";
+const PROPOSAL_EVIDENCE_ASSETS = []; /* __PROPOSAL_EVIDENCE_ASSETS__ */
 const CORE_ASSETS = [
   "/public/",
   "/command/",
@@ -7,7 +8,8 @@ const CORE_ASSETS = [
   "/icon.svg",
   "/offline-demo/bundle.json",
   "/offline-demo/areas.geojson",
-  "/offline-demo/roads.geojson"
+  "/offline-demo/roads.geojson",
+  ...PROPOSAL_EVIDENCE_ASSETS
 ];
 
 self.addEventListener("install", (event) => {

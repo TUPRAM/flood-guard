@@ -134,6 +134,9 @@ export function GeoMap({
         ))}
         {showRoads && <span><i className="road-swatch" />{language === "th" ? "ความเสี่ยงถนนเชิงแบบจำลอง" : "Modelled road risk"}</span>}
       </div>
+      <span className={`map-provenance-badge ${datasetMode}`}>
+        {mapGeometryDisclosure(language, datasetMode)}
+      </span>
       <details className="map-text-alternative">
         <summary>{language === "th" ? "ข้อความทดแทนแผนที่" : "Map text alternative"}</summary>
         <p>{mapProvenanceLabel(language, datasetMode)}</p>
@@ -149,6 +152,18 @@ export function GeoMap({
       </details>
     </div>
   );
+}
+
+function mapGeometryDisclosure(language: Language, datasetMode: DatasetMode): string {
+  if (datasetMode === "fixture_demo") {
+    return language === "th"
+      ? "เรขาคณิตสาธิต · ไม่ใช่เขตปกครอง"
+      : "Synthetic geometry · not an administrative boundary";
+  }
+  if (datasetMode === "candidate") {
+    return language === "th" ? "เรขาคณิตผู้สมัคร · ต้องตรวจสอบแหล่งที่มา" : "Candidate geometry · verify provenance";
+  }
+  return language === "th" ? "เรขาคณิตจากข้อมูลนำเข้าทางการ" : "Official-input geometry";
 }
 
 function mapProvenanceLabel(language: Language, datasetMode: DatasetMode): string {

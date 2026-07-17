@@ -6,6 +6,7 @@ import fieldValidationReceiptSchema from "../schemas/field-validation-receipt.sc
 import layerSchema from "../schemas/layer.schema.json";
 import modelRunSchema from "../schemas/model-run.schema.json";
 import pilotReadinessSchema from "../schemas/pilot-readiness.schema.json";
+import proposalEvidenceSchema from "../schemas/proposal-evidence.schema.json";
 import statusSchema from "../schemas/status.schema.json";
 import {
   ACCEPTANCE_RECEIPT_STATES,
@@ -14,6 +15,9 @@ import {
   CONFIDENCE_CLASSES,
   DATASET_MODES,
   DATA_STATES,
+  EVIDENCE_RESULTS,
+  GEOAI_AGGREGATION_STATUSES,
+  GEOAI_VALIDATION_STATUSES,
   LAYER_FORMATS,
   MODEL_FAMILIES,
   MODEL_RUN_STATUSES,
@@ -98,6 +102,19 @@ describe("contract drift", () => {
     ).toBe("agency_operational");
     expect(fieldValidationReceiptSchema.properties.protocol_version.const).toBe(
       "field-validation-v1",
+    );
+  });
+
+  it("keeps proposal evidence receipt states aligned", () => {
+    const suite = proposalEvidenceSchema.properties.test_suites.items;
+    const proof = proposalEvidenceSchema.properties.geoai_proof.properties;
+    expect(EVIDENCE_RESULTS).toEqual(suite.properties.result.enum);
+    expect(GEOAI_VALIDATION_STATUSES).toEqual(proof.validation_status.enum);
+    expect(GEOAI_AGGREGATION_STATUSES).toEqual(
+      proof.aggregation_status.enum,
+    );
+    expect(proposalEvidenceSchema.properties.schema_version.const).toBe(
+      SCHEMA_VERSION,
     );
   });
 });

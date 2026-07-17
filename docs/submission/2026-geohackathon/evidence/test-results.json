@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "release_status": "pending_final_verification",
+  "generated_at": null,
+  "git_commit": null,
+  "suites": [
+    {
+      "name": "root-python",
+      "command": "uv run pytest --junitxml=.artifacts/junit/root-python.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "api",
+      "command": "uv run --project services/api pytest services/api/tests --junitxml=.artifacts/junit/api.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "contracts",
+      "command": "pnpm --filter @floodguard/contracts test",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "web-unit",
+      "command": "pnpm --filter @floodguard/web test",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "frontend-quality-and-offline",
+      "command": "pnpm verify:frontend",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "geoai-normal",
+      "command": "uv run --project services/geoai-runner pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.artifacts/junit/geoai-normal.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "geoai-real-smoke",
+      "command": "powershell -NoProfile -Command \"$env:RUN_GEOAI_SMOKE='1'; uv run --project services/geoai-runner --extra geoai pytest services/geoai-runner/tests/test_geoai_smoke.py -m 'geoai_smoke' --junitxml=.artifacts/junit/geoai-real-smoke.xml\"",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    }
+  ],
+  "reason_blocked": "Final test commands must be rerun on the release candidate and recorded from machine-readable receipts."
+}

@@ -1,0 +1,186 @@
+{
+  "artifacts": [
+    {
+      "kind": "proposal_editable_source",
+      "media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "relative_path": "docs/submission/2026-geohackathon/source/FloodGuard_GeoHackathon_2026_Proposal.docx",
+      "sha256": "6615334437814db7bc303004481db68b5ad2c7d97fff320746c1ffae4d5984e6"
+    },
+    {
+      "kind": "proposal_visual_reference",
+      "media_type": "application/pdf",
+      "relative_path": "docs/submission/2026-geohackathon/source/FloodGuard_GeoHackathon_2026_Proposal.pdf",
+      "sha256": "fe56037edae41fce08d47d60ac9526d4a881de06028ac398d0abbf7d7ac709d7"
+    },
+    {
+      "kind": "proposal_source_fidelity_contract",
+      "media_type": "text/markdown",
+      "relative_path": "docs/submission/2026-geohackathon/source/artifact.md",
+      "sha256": "1ac1199de476551d66846c99630a0d808e195c91f91271d2963a29a2fbd238ac"
+    },
+    {
+      "kind": "proposal_source",
+      "media_type": "text/markdown",
+      "relative_path": "docs/submission/2026-geohackathon/proposal.md",
+      "sha256": "b3a47c9bf05703ee66f39c5ccd64c1be5d536887ccd24fd4f238c2b87531aefa"
+    },
+    {
+      "kind": "model_card",
+      "media_type": "text/markdown",
+      "relative_path": "docs/submission/2026-geohackathon/model-card.md",
+      "sha256": "abcb851a5aad206a36e7816feed8419c75b829a3251036d87b5d4213dfeb768a"
+    },
+    {
+      "kind": "validation_summary",
+      "media_type": "text/markdown",
+      "relative_path": "docs/submission/2026-geohackathon/validation-summary.md",
+      "sha256": "36aec3c2edee4ad1ae4778993789183736b65f173d796bfef6fdeafcac087ad4"
+    },
+    {
+      "kind": "bilingual_action_brief",
+      "media_type": "text/markdown",
+      "relative_path": "docs/submission/2026-geohackathon/bilingual-action-brief-reference.md",
+      "sha256": "6efb14cb5bf13cc11191a2cb64ad338b74e74647af983e244310680e97f7c805"
+    },
+    {
+      "kind": "architecture_api_inventory",
+      "media_type": "text/markdown",
+      "relative_path": "docs/submission/2026-geohackathon/architecture-and-api-inventory.md",
+      "sha256": "0ea7a72ada733fe1b8f0aa8ce268573ede5a308dc195ba811f1a07fd1a8113ed"
+    },
+    {
+      "kind": "offline_demo_instructions",
+      "media_type": "text/markdown",
+      "relative_path": "docs/submission/2026-geohackathon/offline-demo-instructions.md",
+      "sha256": "74b390c588acb0d376d44424f1d010cf7f85df78e0c9fc91ed79e9e99629dee9"
+    },
+    {
+      "kind": "test_results_receipt",
+      "media_type": "application/json",
+      "relative_path": "docs/submission/2026-geohackathon/evidence/test-results.json",
+      "sha256": "2f8cc265890c68525fb8b5eb77662070e3ec33ca1cfb0cf6402c08b691a3b948"
+    },
+    {
+      "kind": "visual_public_390x844",
+      "media_type": "image/png",
+      "relative_path": "docs/visual-qa/proposal-stage/public-390x844.png",
+      "sha256": "d0a9337ffd444818f3ccb69e4bc4408d8ebe63a9e04c0982fa96b69ec5e570ba"
+    },
+    {
+      "kind": "visual_public_map_430x932",
+      "media_type": "image/png",
+      "relative_path": "docs/visual-qa/proposal-stage/public-map-430x932.png",
+      "sha256": "77244dbf92a489713ebd49e47e291dab95b11c3e3f73f47db30097ac01bd7f8b"
+    },
+    {
+      "kind": "visual_command_1024x768",
+      "media_type": "image/png",
+      "relative_path": "docs/visual-qa/proposal-stage/command-1024x768.png",
+      "sha256": "680b364d77d6ea598558dffad1512739c298776202e1fcbbab73d3db7d943148"
+    },
+    {
+      "kind": "visual_command_1440x900",
+      "media_type": "image/png",
+      "relative_path": "docs/visual-qa/proposal-stage/command-1440x900.png",
+      "sha256": "6bb2e0d5b6488b71b5e6a074d710fabbbe22abf75bbae9b25e9055d375e336c0"
+    },
+    {
+      "kind": "visual_command_1536x1024",
+      "media_type": "image/png",
+      "relative_path": "docs/visual-qa/proposal-stage/command-1536x1024.png",
+      "sha256": "99209d222c2336c4940c4959ef942e9bd90933aec3f80ab5d0b075b77c2a616f"
+    },
+    {
+      "kind": "visual_studio_2048x1152",
+      "media_type": "image/png",
+      "relative_path": "docs/visual-qa/proposal-stage/studio-2048x1152.png",
+      "sha256": "fe246accd0ce96a46611320f9907ebc3ba4abd7a3b6380e2ceec351ab99bb4ae"
+    },
+    {
+      "kind": "three_model_gate_receipt",
+      "media_type": "application/json",
+      "relative_path": "docs/validation/controlled_three_model_gate_receipt.json",
+      "sha256": "7ab8643a58af3aea3db1bdafb57a8ac6aea35f0073c633bbaeac4e8b13981139"
+    },
+    {
+      "kind": "geoai_proof_receipt",
+      "media_type": "application/json",
+      "relative_path": "services/geoai-runner/evidence/geoai-proof-receipt.json",
+      "sha256": "90b55bffa2f05f40498dffff00a59f2927f68bff07188ad38d44ee192e9ecd26"
+    },
+    {
+      "kind": "geoai_probability_thumbnail",
+      "media_type": "image/png",
+      "relative_path": "services/geoai-runner/evidence/geoai-probability-thumbnail.png",
+      "sha256": "b00b02cddbad969d6a91e3abd15fcfb00ebc73363c9e9f883a96a84ee4a42700"
+    }
+  ],
+  "dataset_mode": "candidate",
+  "generated_at": "2026-07-17T06:32:00.994447Z",
+  "geoai_proof": {
+    "aggregation_status": "report_only",
+    "can_feed_decision_layer": false,
+    "feature_stack_id": "clip_linear_uint8_v1-8-band",
+    "geoai_version": "0.41.1",
+    "input_manifest_sha256": "c401c3d618f6bcba14fcd692af94416712ca8d227580112e67ecf87860dfeb11",
+    "output_probability_sha256": "d0ca1fca0d7c2b622eca5800804b7af420e42260c415c481b438c8b3ecdfaa85",
+    "preprocessing_id": "clip_linear_uint8_v1",
+    "processing_allowed": true,
+    "reason_blocked": "Synthetic candidate proof cannot feed the decision layer.",
+    "validation_status": "passed"
+  },
+  "git_commit": "f424b52e6b2769416a15f8c481bca4e6bcb10168",
+  "operational_status": "non_operational",
+  "schema_version": "1.0",
+  "test_suites": [
+    {
+      "command": "uv run pytest --junitxml=.artifacts/junit/root-python.xml",
+      "name": "root-python",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "uv run --project services/api pytest services/api/tests --junitxml=.artifacts/junit/api.xml",
+      "name": "api",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "pnpm --filter @floodguard/contracts test",
+      "name": "contracts",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "pnpm --filter @floodguard/web test",
+      "name": "web-unit",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "pnpm verify:frontend",
+      "name": "frontend-quality-and-offline",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "uv run --project services/geoai-runner pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.artifacts/junit/geoai-normal.xml",
+      "name": "geoai-normal",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "powershell -NoProfile -Command \"$env:RUN_GEOAI_SMOKE='1'; uv run --project services/geoai-runner --extra geoai pytest services/geoai-runner/tests/test_geoai_smoke.py -m 'geoai_smoke' --junitxml=.artifacts/junit/geoai-real-smoke.xml\"",
+      "name": "geoai-real-smoke",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    }
+  ]
+}

@@ -24,6 +24,7 @@ PILOT_SCHEMA_NAMES = (
     "agency-acceptance-receipt",
     "field-validation-receipt",
 )
+EVIDENCE_SCHEMA_NAMES = ("proposal-evidence",)
 COMMON_FIELDS = {
     "schema_version",
     "dataset_mode",
@@ -55,7 +56,11 @@ def _validate(schema_name: str, payload: dict[str, Any]) -> None:
 
 
 def _schema_name_for_example(path: Path) -> str:
-    for name in sorted(SCHEMA_NAMES + PILOT_SCHEMA_NAMES, key=len, reverse=True):
+    for name in sorted(
+        SCHEMA_NAMES + PILOT_SCHEMA_NAMES + EVIDENCE_SCHEMA_NAMES,
+        key=len,
+        reverse=True,
+    ):
         if path.name.startswith(f"{name}."):
             return name
     raise AssertionError(f"No schema mapping for {path.name}")
@@ -71,7 +76,10 @@ def _typescript_array(source: str, constant: str) -> list[str]:
     return re.findall(r'"([^"]+)"', match.group(1))
 
 
-@pytest.mark.parametrize("schema_name", SCHEMA_NAMES + PILOT_SCHEMA_NAMES)
+@pytest.mark.parametrize(
+    "schema_name",
+    SCHEMA_NAMES + PILOT_SCHEMA_NAMES + EVIDENCE_SCHEMA_NAMES,
+)
 def test_contract_schemas_are_valid_draft_2020_12(schema_name: str) -> None:
     schema = _schema(schema_name)
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
@@ -86,6 +94,7 @@ def test_every_contract_example_validates_against_its_schema() -> None:
         "layer.fixture-demo.json",
         "model-run.candidate.json",
         "pilot-readiness.fixture-demo.json",
+        "proposal-evidence.fixture-demo.json",
         "status.candidate.json",
         "status.fixture-demo.json",
     }
@@ -316,6 +325,38 @@ def test_examples_do_not_contain_private_absolute_paths() -> None:
         assert private_path.search(serialized) is None, path.name
 
 
+def test_proposal_evidence_artifacts_are_checksum_bound_and_repo_relative() -> None:
+    payload = _load_json(EXAMPLES / "proposal-evidence.fixture-demo.json")
+    for artifact in payload["artifacts"]:
+        relative = Path(*artifact["relative_path"].split("/"))
+        path = (ROOT / relative).resolve()
+        assert path.is_relative_to(ROOT.resolve())
+        assert path.is_file()
+        import hashlib
+
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == artifact["sha256"]
+
+
+def test_proposal_evidence_candidate_proof_stays_fail_closed() -> None:
+    payload = _load_json(EXAMPLES / "proposal-evidence.fixture-demo.json")
+    assert payload["dataset_mode"] == "candidate"
+    assert payload["operational_status"] == "non_operational"
+    assert payload["geoai_proof"]["validation_status"] == "passed"
+    assert payload["geoai_proof"]["aggregation_status"] == "report_only"
+    assert payload["geoai_proof"]["can_feed_decision_layer"] is False
+
+    claim = deepcopy(payload)
+    claim["geoai_proof"]["can_feed_decision_layer"] = True
+    claim["geoai_proof"]["reason_blocked"] = ""
+    with pytest.raises(ValidationError):
+        _validate("proposal-evidence", claim)
+
+    operational_claim = deepcopy(payload)
+    operational_claim["operational_status"] = "planning_only"
+    with pytest.raises(ValidationError):
+        _validate("proposal-evidence", operational_claim)
+
+
 def test_pilot_contracts_fail_closed_without_signed_acceptance() -> None:
     readiness = _load_json(EXAMPLES / "pilot-readiness.fixture-demo.json")
     readiness["operational_status"] = "agency_operational"
@@ -423,6 +464,15 @@ def test_typescript_runtime_constants_match_schema_enums() -> None:
         "ACCEPTANCE_RECEIPT_STATES": _schema("pilot-readiness")["properties"][
             "acceptance_receipt_state"
         ]["enum"],
+        "EVIDENCE_RESULTS": _schema("proposal-evidence")["properties"][
+            "test_suites"
+        ]["items"]["properties"]["result"]["enum"],
+        "GEOAI_VALIDATION_STATUSES": _schema("proposal-evidence")["properties"][
+            "geoai_proof"
+        ]["properties"]["validation_status"]["enum"],
+        "GEOAI_AGGREGATION_STATUSES": _schema("proposal-evidence")["properties"][
+            "geoai_proof"
+        ]["properties"]["aggregation_status"]["enum"],
     }
     for constant, enum_values in expected.items():
         assert _typescript_array(source, constant) == enum_values
@@ -458,6 +508,7 @@ def test_required_public_types_are_exported() -> None:
         "PilotReadiness",
         "SignedAcceptanceReceipt",
         "FieldValidationReceipt",
+        "ProposalEvidenceManifest",
     ):
         assert re.search(rf"export (?:type|interface) {type_name}\b", source)
 

@@ -7,13 +7,15 @@ import { GeoMap } from "@/components/geo-map";
 import { LanguageToggle } from "@/components/language-toggle";
 import { PilotReadinessPanel } from "@/components/pilot-readiness-panel";
 import { ScoreBar } from "@/components/score-bar";
+import { StatePill } from "@/components/state-pill";
 import { StatusBar } from "@/components/status-bar";
-import { toggleCommandClass } from "@/lib/command-filter";
+import { rankVisibleAreas, toggleCommandClass } from "@/lib/command-filter";
 import { downloadText } from "@/lib/download";
 import { formatConfidence, formatNumber, formatTopReason } from "@/lib/format";
 import { loadApiBrief } from "@/lib/data-provider";
-import type { AreaRecord, Language, ScenarioId } from "@/lib/types";
+import type { AreaRecord, ScenarioId } from "@/lib/types";
 import { useFloodGuardData } from "@/lib/use-floodguard-data";
+import { useLanguage } from "@/lib/use-language";
 
 const ACTION_CLASSES = ["A", "B", "C", "D", "E"] as const;
 
@@ -66,7 +68,7 @@ Fixture demo / ชุดข้อมูลสาธิต — Non-operational / 
 
 export function CommandWorkspace() {
   const data = useFloodGuardData();
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguage] = useLanguage("en");
   const [selectedId, setSelectedId] = useState("FG-TB-002");
   const [scenario, setScenario] = useState<ScenarioId>("baseline");
   const [activeClasses, setActiveClasses] = useState<Set<string>>(() => new Set(ACTION_CLASSES));
@@ -78,6 +80,8 @@ export function CommandWorkspace() {
   const roadLayerAvailable = data.layers.some((layer) => layer.layer_id === "road_risk" && layer.data_state === "ready") && data.roadFeatures.features.length > 0;
   const activeScenario: ScenarioId = supportsScenarios ? scenario : "baseline";
   const scenarioResult = selected.scenario_results[activeScenario];
+  const rankedAreas = rankVisibleAreas(data.areas, activeClasses);
+  const selectedRank = rankedAreas.findIndex((area) => area.area_id === selected.area_id) + 1;
   const selectArea = useCallback((areaId: string) => setSelectedId(areaId), []);
 
   const toggleClass = (actionClass: string) => {
@@ -134,6 +138,20 @@ export function CommandWorkspace() {
               {data.areas.map((area) => <option value={area.area_id} key={area.area_id}>{area.area_id} · {th ? "ชั้น" : "Class"} {area.action_class}</option>)}
             </select>
           </div>
+          <section className="rail-section ranked-areas" aria-labelledby="ranked-areas-title">
+            <div className="rail-section-heading"><p className="rail-label" id="ranked-areas-title">{th ? "ลำดับ FPPS" : "FPPS ranking"}</p><span>{rankedAreas.length}/{data.areas.length}</span></div>
+            <ol>
+              {rankedAreas.map((area, index) => (
+                <li key={area.area_id}>
+                  <button type="button" className={area.area_id === selected.area_id ? "selected" : ""} aria-current={area.area_id === selected.area_id ? "true" : undefined} onClick={() => selectArea(area.area_id)}>
+                    <span className="rank-number">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="rank-name"><b>{th ? area.area_name_th : area.area_name_en}</b><small>{area.area_id}</small></span>
+                    <span className={`rank-score class-${area.action_class.toLowerCase()}`}><b>{area.fpps_0_100.toFixed(1)}</b><small>{th ? "ชั้น" : "Class"} {area.action_class}</small></span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
           <div className="rail-section">
             <p className="rail-label">{th ? "สถานการณ์จำลองที่เอนจินคำนวณไว้" : "Engine-computed scenario"}</p>
             <select value={activeScenario} disabled={!supportsScenarios} onChange={(event) => setScenario(event.target.value as ScenarioId)} aria-label={th ? "เลือกสถานการณ์" : "Select scenario"}>
@@ -150,15 +168,17 @@ export function CommandWorkspace() {
         </aside>
 
         <section className="map-workspace" aria-label={th ? "พื้นที่ทำงานแผนที่" : "Map workspace"}>
-          <div className="map-workspace-heading"><div><p className="eyebrow">{th ? "พื้นที่ทำงานหลัก" : "Primary workspace"}</p><h1>{th ? selected.area_name_th : selected.area_name_en}</h1></div><span>{th ? "เลือกพื้นที่บนแผนที่เพื่อซิงค์หลักฐาน" : "Select a polygon to synchronize evidence"}</span></div>
+          <div className="map-workspace-heading"><div><p className="eyebrow">{th ? "พื้นที่ทำงานหลัก" : "Primary workspace"}</p><h1>{th ? selected.area_name_th : selected.area_name_en}</h1></div><span>{selectedRank > 0 ? `#${selectedRank} FPPS` : "—"} · {th ? "เลือกพื้นที่เพื่อซิงค์หลักฐาน" : "select an area to synchronize evidence"}</span></div>
           <GeoMap areas={data.areas} selectedId={selected.area_id} onSelect={selectArea} language={language} showRoads={roadLayerAvailable && showRoads} classFilter={activeClasses} height="100%" areaFeatures={data.areaFeatures} roadFeatures={data.roadFeatures} datasetMode={data.status.dataset_mode} />
           <div className="scenario-delta-strip" aria-live="polite"><span>{activeScenario === "baseline" ? (th ? "ค่าฐาน" : "Baseline") : activeScenario === "add_temporary_shelter" ? (th ? "ที่พักพิงชั่วคราว" : "Temporary shelter") : (th ? "ทดสอบถนนปิด" : "Road-closure stress")}</span><b>{formatNumber(scenarioResult.people_losing_30_min_access, language)} {th ? "คนสูญเสียการเข้าถึง 30 นาที" : "people lose 30-min access"}</b><strong className={scenarioResult.delta < 0 ? "improves" : scenarioResult.delta > 0 ? "worsens" : "neutral"}>{scenarioResult.delta > 0 ? "+" : ""}{scenarioResult.delta} {th ? "เทียบค่าฐาน" : "vs baseline"}</strong></div>
         </section>
 
         <aside className="decision-panel" aria-label={th ? "หลักฐานการตัดสินใจ" : "Decision evidence"}>
-          <div className="decision-title"><div><p className="eyebrow">{selected.area_id}</p><h2>{th ? selected.area_name_th : selected.area_name_en}</h2></div><span className={`decision-class class-${selected.action_class.toLowerCase()}`}>{selected.action_class}</span></div>
+          <div className="decision-title" aria-live="polite"><div><p className="eyebrow">{th ? "หลักฐานพื้นที่" : "Area evidence"} · {selected.area_id}</p><h2>{th ? selected.area_name_th : selected.area_name_en}</h2><StatePill tone="caution">{formatConfidence(selected.confidence_class, language)} {th ? "ความเชื่อมั่น" : "confidence"}</StatePill></div><span className={`decision-class class-${selected.action_class.toLowerCase()}`} aria-label={`${th ? "ชั้น" : "Class"} ${selected.action_class}`}>{selected.action_class}</span></div>
           <div className="fpps-block"><span>FPPS</span><b>{selected.fpps_0_100.toFixed(1)}</b><small>/ 100</small></div>
           <p className="top-reason">{formatTopReason(selected.action_class, selected.top_reason, language)}</p>
+          <dl className="evidence-grid"><div><dt>{th ? "สูญเสียการเข้าถึง 30 นาที" : "30-min access loss"}</dt><dd>{formatNumber(selected.people_losing_30_min_access, language)}</dd></div><div><dt>{th ? "อัตราช่องว่างความเสมอภาค" : "Equity-gap ratio"}</dt><dd>{formatNumber(selected.equity_gap_ratio, language, 2)}</dd></div><div><dt>{th ? "หลักฐานถนน" : "Road evidence"}</dt><dd>{roadLayerAvailable ? `${data.roadFeatures.features.filter((feature) => feature.properties.area_id === selected.area_id).length} ${th ? "ช่วง (แบบจำลอง)" : "modelled segment(s)"}` : (th ? "ไม่มีข้อมูล" : "Unavailable")}</dd></div><div><dt>{th ? "สถานะสถานที่" : "Facility evidence"}</dt><dd>{th ? "ไม่ได้ยืนยัน" : "Unconfirmed"}</dd></div></dl>
+          <p className="decision-section-label">{th ? "องค์ประกอบคะแนนที่เอนจินคำนวณ" : "Engine-computed score components"}</p>
           <div className="decision-scores">
             <ScoreBar label={th ? "โอกาสน้ำท่วม" : "Flood likelihood"} value={selected.flood_likelihood_0_100} />
             <ScoreBar label={th ? "การสัมผัส" : "Exposure"} value={selected.exposure_0_100} />
@@ -166,9 +186,8 @@ export function CommandWorkspace() {
             <ScoreBar label={th ? "ความสำคัญถนน" : "Road criticality"} value={selected.road_criticality_0_100} />
             <ScoreBar label={th ? "บริบทความเปราะบาง" : "Vulnerability context"} value={selected.vulnerability_context_0_100} />
           </div>
-          <dl className="evidence-grid"><div><dt>{th ? "สูญเสียการเข้าถึง 30 นาที" : "30-min access loss"}</dt><dd>{formatNumber(selected.people_losing_30_min_access, language)}</dd></div><div><dt>{th ? "อัตราช่องว่างความเสมอภาค" : "Equity-gap ratio"}</dt><dd>{formatNumber(selected.equity_gap_ratio, language, 2)}</dd></div><div><dt>{th ? "หลักฐานถนน" : "Road evidence"}</dt><dd>{roadLayerAvailable ? `${data.roadFeatures.features.filter((feature) => feature.properties.area_id === selected.area_id).length} ${th ? "ช่วง (แบบจำลอง)" : "modelled segment(s)"}` : (th ? "ไม่มีข้อมูล" : "Unavailable")}</dd></div><div><dt>{th ? "สถานะสถานที่" : "Facility evidence"}</dt><dd>{th ? "ไม่ได้ยืนยัน" : "Unconfirmed"}</dd></div></dl>
           <article className="recommended-action"><p className="eyebrow">{th ? "ข้อเสนอเพื่อการวางแผน" : "Planning action"}</p><p>{ACTION_TEXT[selected.action_class as keyof typeof ACTION_TEXT]?.[language] ?? ACTION_TEXT.E[language]}</p></article>
-          <details className="provenance-details"><summary>{th ? "แหล่งที่มา ความเชื่อมั่น และสมมติฐาน" : "Provenance, confidence, assumptions"}</summary><dl><div><dt>{th ? "แหล่งข้อมูล" : "Source"}</dt><dd>{selected.source_name}</dd></div><div><dt>{th ? "เวลาข้อมูล" : "Source time"}</dt><dd>{selected.source_timestamp}</dd></div><div><dt>{th ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{formatConfidence(selected.confidence_class, language)}</dd></div></dl><ul>{selected.assumptions.map((item) => <li key={item}>{item}</li>)}</ul></details>
+          <section className="provenance-details" aria-labelledby="provenance-title"><h3 id="provenance-title">{th ? "แหล่งที่มา ความเชื่อมั่น และสมมติฐาน" : "Provenance, confidence, assumptions"}</h3><dl><div><dt>{th ? "แหล่งข้อมูล" : "Source"}</dt><dd>{selected.source_name}</dd></div><div><dt>{th ? "เวลาข้อมูล" : "Source time"}</dt><dd>{selected.source_timestamp}</dd></div><div><dt>{th ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{formatConfidence(selected.confidence_class, language)}</dd></div></dl><ul>{selected.assumptions.map((item) => <li key={item}>{item}</li>)}</ul></section>
           <div className="download-actions"><button type="button" onClick={() => void downloadBrief()}>{th ? "ดาวน์โหลดสรุปสองภาษา" : "Download bilingual brief"}</button><button className="secondary" type="button" onClick={downloadFilteredGeoJson}>{th ? "ดาวน์โหลด GeoJSON ที่กรอง" : "Download filtered GeoJSON"}</button></div>
           {briefError && <p className="download-error" role="status">{th ? "ไม่สามารถดาวน์โหลดสรุปได้: " : "Brief download unavailable: "}{briefError}</p>}
         </aside>

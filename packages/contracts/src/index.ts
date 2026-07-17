@@ -79,6 +79,28 @@ export const MODEL_RUN_STATUSES = [
 ] as const;
 export type ModelRunStatus = (typeof MODEL_RUN_STATUSES)[number];
 
+export const EVIDENCE_RESULTS = ["not_run", "passed", "failed"] as const;
+export type EvidenceResult = (typeof EVIDENCE_RESULTS)[number];
+
+export const GEOAI_VALIDATION_STATUSES = [
+  "not_run",
+  "passed",
+  "failed",
+  "blocked",
+] as const;
+export type GeoAIValidationStatus =
+  (typeof GEOAI_VALIDATION_STATUSES)[number];
+
+export const GEOAI_AGGREGATION_STATUSES = [
+  "not_run",
+  "passed",
+  "report_only",
+  "failed",
+  "blocked",
+] as const;
+export type GeoAIAggregationStatus =
+  (typeof GEOAI_AGGREGATION_STATUSES)[number];
+
 export const PREPROCESSING_VALUE_DOMAINS = [
   "uint8_0_255",
   "float_0_1",
@@ -360,4 +382,44 @@ export interface FieldValidationReceipt {
   review_due_at: string;
   accountable_role_ids: string[];
   status: "accepted" | "rejected" | "incomplete";
+}
+
+export interface ProposalEvidenceArtifact {
+  kind: string;
+  /** Repository-relative or public artifact path; never a private absolute path. */
+  relative_path: string;
+  media_type: string;
+  sha256: string;
+}
+
+export interface ProposalTestSuiteReceipt {
+  name: string;
+  command: string;
+  result: EvidenceResult;
+  passed: number;
+  skipped: number;
+}
+
+export interface ProposalGeoAIProof {
+  geoai_version: "0.41.1";
+  feature_stack_id: string;
+  preprocessing_id: string;
+  input_manifest_sha256: string | null;
+  output_probability_sha256: string | null;
+  validation_status: GeoAIValidationStatus;
+  aggregation_status: GeoAIAggregationStatus;
+  processing_allowed: boolean;
+  can_feed_decision_layer: boolean;
+  reason_blocked: string;
+}
+
+export interface ProposalEvidenceManifest {
+  schema_version: typeof SCHEMA_VERSION;
+  generated_at: string;
+  git_commit: string;
+  dataset_mode: DatasetMode;
+  operational_status: OperationalStatus;
+  artifacts: ProposalEvidenceArtifact[];
+  test_suites: ProposalTestSuiteReceipt[];
+  geoai_proof: ProposalGeoAIProof;
 }

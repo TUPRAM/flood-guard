@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toggleCommandClass } from "./command-filter";
+import { rankVisibleAreas, toggleCommandClass } from "./command-filter";
 
 const areas = [
   { area_id: "area-b", action_class: "B" },
@@ -37,5 +37,21 @@ describe("command class filtering", () => {
 
     expect([...result.activeClasses]).toEqual(["B"]);
     expect(result.selectedId).toBe("area-b");
+  });
+});
+
+describe("command ranked list", () => {
+  it("orders visible engine outputs without changing their scores", () => {
+    const input = [
+      { area_id: "area-c", action_class: "C", fpps_0_100: 61.2 },
+      { area_id: "area-a", action_class: "A", fpps_0_100: 82.4 },
+      { area_id: "area-b", action_class: "B", fpps_0_100: 70.1 },
+    ] as const;
+
+    const ranked = rankVisibleAreas(input, new Set(["A", "C"]));
+
+    expect(ranked.map((area) => area.area_id)).toEqual(["area-a", "area-c"]);
+    expect(ranked.map((area) => area.fpps_0_100)).toEqual([82.4, 61.2]);
+    expect(input.map((area) => area.area_id)).toEqual(["area-c", "area-a", "area-b"]);
   });
 });

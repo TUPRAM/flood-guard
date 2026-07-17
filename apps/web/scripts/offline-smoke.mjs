@@ -10,6 +10,7 @@ const requiredPublicAssets = [
   "offline-demo/bundle.json",
   "offline-demo/areas.geojson",
   "offline-demo/roads.geojson",
+  "proposal-evidence-status.json",
   "offline-assets.json",
 ];
 
@@ -32,7 +33,7 @@ for (const relative of routeFiles) {
 }
 
 const serviceWorker = readFileSync(resolve(out, "sw.js"), "utf8");
-if (serviceWorker.includes("__BUILD__") || !/floodguard-offline-[0-9a-f]{12}/.test(serviceWorker)) {
+if (serviceWorker.includes("__BUILD__") || serviceWorker.includes("__PROPOSAL_EVIDENCE_ASSETS__") || !/floodguard-offline-[0-9a-f]{12}/.test(serviceWorker)) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
 for (const route of ["/public/", "/command/", "/studio/"]) {
@@ -58,6 +59,21 @@ if (bundle.status.dataset_mode !== "fixture_demo" || bundle.status.operational_s
 }
 if (JSON.stringify(bundle).match(/(?:[A-Za-z]:[\\/](?:Users|home|private)[\\/]|\/(?:Users|home|private)\/)/i)) {
   throw new Error("Offline bundle contains a private absolute path");
+}
+
+const proposalEvidencePath = resolve(out, "proposal-evidence.json");
+if (existsSync(proposalEvidencePath)) {
+  const proposalEvidence = JSON.parse(readFileSync(proposalEvidencePath, "utf8"));
+  const serialized = JSON.stringify(proposalEvidence);
+  if (/(?:[A-Za-z]:[\\/]|file:\/\/|\/(?:Users|home|root|tmp|var|opt|mnt|srv)\/)/i.test(serialized)) {
+    throw new Error("Proposal evidence contains a private absolute path");
+  }
+  if (proposalEvidence.dataset_mode !== "official_input" && proposalEvidence.geoai_proof?.can_feed_decision_layer !== false) {
+    throw new Error("Proposal evidence does not fail closed for fixture/candidate data");
+  }
+  if (!serviceWorker.includes('"/proposal-evidence.json"')) {
+    throw new Error("Proposal evidence is not included in the offline cache");
+  }
 }
 
 console.log(`offline smoke: ${routeFiles.length} routes and ${requiredPublicAssets.length} core assets verified; no external runtime resources`);

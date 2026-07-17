@@ -5,14 +5,9 @@ import { extname, resolve, sep } from "node:path";
 import { chromium } from "@playwright/test";
 
 const out = resolve(process.cwd(), "out");
-const evidenceDir = resolve(
-  process.cwd(),
-  "..",
-  "..",
-  "docs",
-  "visual-qa",
-  "2026-07-16",
-);
+const evidenceDir = process.argv[2]
+  ? resolve(process.argv[2])
+  : resolve(process.cwd(), "..", "..", "docs", "visual-qa", "proposal-stage");
 if (!existsSync(resolve(out, "public", "index.html"))) {
   throw new Error("Build output is missing; run the production build first.");
 }
@@ -109,11 +104,24 @@ try {
 
     if (capture.route !== "/public/") {
       await page.locator('.language-toggle button[lang="th"]').click();
+      if (await page.locator("html").getAttribute("lang") !== "th") {
+        throw new Error(`${capture.file} did not update the document language to Thai.`);
+      }
+      if (await page.locator('.language-toggle button[lang="th"]').getAttribute("aria-pressed") !== "true") {
+        throw new Error(`${capture.file} did not expose the Thai toggle as selected.`);
+      }
       const thaiBody = await page.locator("body").innerText();
       if (!/[\u0e00-\u0e7f]/u.test(thaiBody)) {
         throw new Error(`${capture.file} did not render Thai text after switching language.`);
       }
       await page.locator('.language-toggle button[lang="en"]').click();
+    }
+
+    if (capture.route === "/command/" && await page.locator(".ranked-areas button").count() === 0) {
+      throw new Error(`${capture.file} is missing the FPPS ranked list.`);
+    }
+    if (capture.route === "/studio/" && await page.locator(".geoai-proof").count() !== 1) {
+      throw new Error(`${capture.file} is missing the above-fold GeoAI proof panel.`);
     }
 
     const pageAudit = await page.evaluate(() => {

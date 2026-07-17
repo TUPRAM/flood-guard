@@ -8,12 +8,17 @@ from pathlib import Path
 import numpy as np
 import pytest
 import rasterio
+from floodguard.probability_aggregation import aggregate_probability_cells
 from rasterio.transform import from_origin
 
 from geoai_runner.contract import SpatialPartitionContract
 from geoai_runner.environment import EXPECTED_GEOAI_COMMIT, inspect_environment
 from geoai_runner.infer import run_prediction
 from geoai_runner.prepare import export_training_tiles, file_sha256
+from geoai_runner.proposal_evidence import (
+    validate_proposal_proof_receipt,
+    write_proposal_proof_artifacts,
+)
 from geoai_runner.train import package_trained_checkpoint
 
 from .helpers import build_synthetic_workspace
@@ -37,6 +42,10 @@ def test_real_geoai_export_and_bound_checkpoint_inference_path(tmp_path: Path) -
     )
     preparation_contract = replace(
         evidence["contract"],
+        floodguard_commit=os.environ.get(
+            "FLOODGUARD_PROOF_COMMIT",
+            evidence["contract"].floodguard_commit,
+        ),
         encoded_feature_sha256=file_sha256(large_feature),
         reference_mask_sha256=file_sha256(large_mask),
         input_manifest_rows=reference_rows,
@@ -76,6 +85,7 @@ def test_real_geoai_export_and_bound_checkpoint_inference_path(tmp_path: Path) -
 
     assert "ignore_index" in signature(train_segmentation_model).parameters
 
+    torch.manual_seed(42)
     model = get_smp_model(
         architecture=preparation_contract.architecture,
         encoder_name=preparation_contract.encoder,
@@ -128,6 +138,57 @@ def test_real_geoai_export_and_bound_checkpoint_inference_path(tmp_path: Path) -
     assert probability.count() > 0
     assert float(probability.min()) >= 0
     assert float(probability.max()) <= 1
+    summary = aggregate_probability_cells(
+        probability.filled(-9999.0).reshape(-1),
+        subdistrict_id="SYNTHETIC-AREA-001",
+        subdistrict_name="Synthetic contract area",
+        nodata=-9999.0,
+        probability_threshold=inference_contract.probability_threshold,
+        source_metadata={
+            "dataset_mode": inference_contract.dataset_mode,
+            "operational_status": inference_contract.operational_status,
+            "run_status": inference_contract.run_status,
+            "source_name": inference_contract.source_name,
+            "source_timestamp": inference_contract.source_timestamp,
+            "confidence_class": inference_contract.confidence_class,
+            "assumptions": list(inference_contract.assumptions),
+            "processing_scope": inference_contract.processing_scope,
+            "reference_mask_status": inference_contract.reference_mask_status,
+            "processing_allowed": inference_contract.processing_allowed,
+            "can_feed_decision_layer": inference_contract.can_feed_decision_layer,
+            "reason_blocked": inference_contract.reason_blocked,
+            "validation_metrics": inference_contract.validation_metrics.as_dict(),
+        },
+        allow_report_only=True,
+    )
+    local_evidence = write_proposal_proof_artifacts(
+        inference_contract,
+        evidence["probability"],
+        export_receipt,
+        summary,
+        evidence["workspace"] / "proposal-evidence",
+        execution_mode="real_geoai_smoke",
+        training_execution="model_construction_only",
+    )
+    receipt_payload = validate_proposal_proof_receipt(local_evidence.receipt_path)
+    assert receipt_payload["actual_geoai_calls"] == [
+        "geoai.utils.training.export_geotiff_tiles",
+        "geoai.inference.predict_geotiff",
+    ]
+    assert receipt_payload["training_execution"] == "model_construction_only"
+    assert receipt_payload["can_feed_decision_layer"] is False
+
+    public_output = os.environ.get("GEOAI_PROOF_OUTPUT_DIR")
+    if public_output:
+        write_proposal_proof_artifacts(
+            inference_contract,
+            evidence["probability"],
+            export_receipt,
+            summary,
+            Path(public_output),
+            execution_mode="real_geoai_smoke",
+            training_execution="model_construction_only",
+        )
 
 
 def _label_has_real_nodata(path: Path) -> bool:

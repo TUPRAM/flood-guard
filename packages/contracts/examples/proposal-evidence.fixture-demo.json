@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-17T05:59:44.220515Z",
+  "git_commit": "f424b52e6b2769416a15f8c481bca4e6bcb10168",
+  "dataset_mode": "candidate",
+  "operational_status": "non_operational",
+  "artifacts": [
+    {
+      "kind": "geoai_proof_receipt",
+      "relative_path": "services/geoai-runner/evidence/geoai-proof-receipt.json",
+      "media_type": "application/json",
+      "sha256": "90b55bffa2f05f40498dffff00a59f2927f68bff07188ad38d44ee192e9ecd26"
+    },
+    {
+      "kind": "geoai_probability_thumbnail",
+      "relative_path": "services/geoai-runner/evidence/geoai-probability-thumbnail.png",
+      "media_type": "image/png",
+      "sha256": "b00b02cddbad969d6a91e3abd15fcfb00ebc73363c9e9f883a96a84ee4a42700"
+    }
+  ],
+  "test_suites": [
+    {
+      "name": "root",
+      "command": "uv run pytest --junitxml=.tmp/proposal-evidence/root.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "api",
+      "command": "uv run --project services/api pytest services/api/tests --junitxml=.tmp/proposal-evidence/api.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "frontend",
+      "command": "python scripts/run_check_with_junit.py --suite frontend --output .tmp/proposal-evidence/frontend.xml -- pnpm verify:frontend",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "geoai_normal",
+      "command": "uv run --project services/geoai-runner pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.tmp/proposal-evidence/geoai-normal.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    }
+  ],
+  "geoai_proof": {
+    "geoai_version": "0.41.1",
+    "feature_stack_id": "clip_linear_uint8_v1-8-band",
+    "preprocessing_id": "clip_linear_uint8_v1",
+    "input_manifest_sha256": "c401c3d618f6bcba14fcd692af94416712ca8d227580112e67ecf87860dfeb11",
+    "output_probability_sha256": "d0ca1fca0d7c2b622eca5800804b7af420e42260c415c481b438c8b3ecdfaa85",
+    "validation_status": "passed",
+    "aggregation_status": "report_only",
+    "processing_allowed": true,
+    "can_feed_decision_layer": false,
+    "reason_blocked": "Synthetic candidate proof validates integration wiring only and cannot feed the decision layer."
+  }
+}

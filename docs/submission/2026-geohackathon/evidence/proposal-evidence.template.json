@@ -1,0 +1,186 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-17T00:00:00Z",
+  "git_commit": "f424b52",
+  "dataset_mode": "candidate",
+  "operational_status": "non_operational",
+  "artifacts": [
+    {
+      "kind": "proposal_editable_source",
+      "relative_path": "docs/submission/2026-geohackathon/source/FloodGuard_GeoHackathon_2026_Proposal.docx",
+      "media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "proposal_visual_reference",
+      "relative_path": "docs/submission/2026-geohackathon/source/FloodGuard_GeoHackathon_2026_Proposal.pdf",
+      "media_type": "application/pdf",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "proposal_source_fidelity_contract",
+      "relative_path": "docs/submission/2026-geohackathon/source/artifact.md",
+      "media_type": "text/markdown",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "proposal_source",
+      "relative_path": "docs/submission/2026-geohackathon/proposal.md",
+      "media_type": "text/markdown",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "model_card",
+      "relative_path": "docs/submission/2026-geohackathon/model-card.md",
+      "media_type": "text/markdown",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "validation_summary",
+      "relative_path": "docs/submission/2026-geohackathon/validation-summary.md",
+      "media_type": "text/markdown",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "bilingual_action_brief",
+      "relative_path": "docs/submission/2026-geohackathon/bilingual-action-brief-reference.md",
+      "media_type": "text/markdown",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "architecture_api_inventory",
+      "relative_path": "docs/submission/2026-geohackathon/architecture-and-api-inventory.md",
+      "media_type": "text/markdown",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "offline_demo_instructions",
+      "relative_path": "docs/submission/2026-geohackathon/offline-demo-instructions.md",
+      "media_type": "text/markdown",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "test_results_receipt",
+      "relative_path": "docs/submission/2026-geohackathon/evidence/test-results.json",
+      "media_type": "application/json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "visual_public_390x844",
+      "relative_path": "docs/visual-qa/proposal-stage/public-390x844.png",
+      "media_type": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "visual_public_map_430x932",
+      "relative_path": "docs/visual-qa/proposal-stage/public-map-430x932.png",
+      "media_type": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "visual_command_1024x768",
+      "relative_path": "docs/visual-qa/proposal-stage/command-1024x768.png",
+      "media_type": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "visual_command_1440x900",
+      "relative_path": "docs/visual-qa/proposal-stage/command-1440x900.png",
+      "media_type": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "visual_command_1536x1024",
+      "relative_path": "docs/visual-qa/proposal-stage/command-1536x1024.png",
+      "media_type": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "visual_studio_2048x1152",
+      "relative_path": "docs/visual-qa/proposal-stage/studio-2048x1152.png",
+      "media_type": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "three_model_gate_receipt",
+      "relative_path": "docs/validation/controlled_three_model_gate_receipt.json",
+      "media_type": "application/json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "geoai_proof_receipt",
+      "relative_path": "services/geoai-runner/evidence/geoai-proof-receipt.json",
+      "media_type": "application/json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "kind": "geoai_probability_thumbnail",
+      "relative_path": "services/geoai-runner/evidence/geoai-probability-thumbnail.png",
+      "media_type": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "test_suites": [
+    {
+      "name": "root-python",
+      "command": "uv run pytest --junitxml=.artifacts/junit/root-python.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "api",
+      "command": "uv run --project services/api pytest services/api/tests --junitxml=.artifacts/junit/api.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "contracts",
+      "command": "pnpm --filter @floodguard/contracts test",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "web-unit",
+      "command": "pnpm --filter @floodguard/web test",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "frontend-quality-and-offline",
+      "command": "pnpm verify:frontend",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "geoai-normal",
+      "command": "uv run --project services/geoai-runner pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.artifacts/junit/geoai-normal.xml",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "geoai-real-smoke",
+      "command": "powershell -NoProfile -Command \"$env:RUN_GEOAI_SMOKE='1'; uv run --project services/geoai-runner --extra geoai pytest services/geoai-runner/tests/test_geoai_smoke.py -m 'geoai_smoke' --junitxml=.artifacts/junit/geoai-real-smoke.xml\"",
+      "result": "not_run",
+      "passed": 0,
+      "skipped": 0
+    }
+  ],
+  "geoai_proof": {
+    "geoai_version": "0.41.1",
+    "feature_stack_id": "clip_linear_uint8_v1-8-band",
+    "preprocessing_id": "clip_linear_uint8_v1",
+    "input_manifest_sha256": "c401c3d618f6bcba14fcd692af94416712ca8d227580112e67ecf87860dfeb11",
+    "output_probability_sha256": "d0ca1fca0d7c2b622eca5800804b7af420e42260c415c481b438c8b3ecdfaa85",
+    "validation_status": "passed",
+    "aggregation_status": "report_only",
+    "processing_allowed": true,
+    "can_feed_decision_layer": false,
+    "reason_blocked": "Synthetic candidate proof cannot feed the decision layer."
+  }
+}

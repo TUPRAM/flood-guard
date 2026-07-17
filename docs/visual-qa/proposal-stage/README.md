@@ -22,5 +22,6 @@ boundary.
 Regenerate after a successful static build:
 
 ```powershell
-pnpm qa:visual -- docs/visual-qa/proposal-stage
+Set-Location apps/web
+pnpm qa:visual
 ```

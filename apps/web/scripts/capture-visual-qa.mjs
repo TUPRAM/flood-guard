@@ -5,8 +5,12 @@ import { extname, resolve, sep } from "node:path";
 import { chromium } from "@playwright/test";
 
 const out = resolve(process.cwd(), "out");
-const evidenceDir = process.argv[2]
-  ? resolve(process.argv[2])
+const positionalArgs = process.argv.slice(2).filter((argument) => argument !== "--");
+if (positionalArgs.length > 1) {
+  throw new Error(`Expected at most one evidence directory, received: ${positionalArgs.join(", ")}`);
+}
+const evidenceDir = positionalArgs[0]
+  ? resolve(positionalArgs[0])
   : resolve(process.cwd(), "..", "..", "docs", "visual-qa", "proposal-stage");
 if (!existsSync(resolve(out, "public", "index.html"))) {
   throw new Error("Build output is missing; run the production build first.");

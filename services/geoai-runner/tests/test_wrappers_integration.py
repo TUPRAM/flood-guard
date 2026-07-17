@@ -727,6 +727,7 @@ def test_mocked_geotiff_prediction_and_root_report_only_bridge(tmp_path: Path) -
     assert receipt["execution_mode"] == "mocked_unit"
     assert receipt["actual_geoai_calls"] == []
     assert receipt["aggregation"]["status"] == "report_only"
+    assert b"\r\n" not in proof.receipt_path.read_bytes()
     assert proof.thumbnail_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
     assert len(proof.receipt_file_sha256) == 64
 

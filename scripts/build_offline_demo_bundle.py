@@ -122,7 +122,11 @@ def build_bundle(
             "files": packaged_files,
         }
         manifest_path = package_root / "offline-bundle-manifest.json"
-        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
         _write_reproducible_zip(package_root, output_zip)
     return manifest
 

@@ -59,7 +59,9 @@ def test_build_bundle_is_reproducible_and_records_safe_status(tmp_path: Path) ->
         names = set(archive.namelist())
         assert "site/public/index.html" in names
         assert "README_TH_EN.md" in names
-        packaged_manifest = json.loads(archive.read("offline-bundle-manifest.json"))
+        packaged_manifest_bytes = archive.read("offline-bundle-manifest.json")
+        packaged_manifest = json.loads(packaged_manifest_bytes)
+    assert b"\r\n" not in packaged_manifest_bytes
     assert packaged_manifest["git_commit"] == "a" * 40
     assert all(not item["relative_path"].startswith("/") for item in packaged_manifest["files"])
 

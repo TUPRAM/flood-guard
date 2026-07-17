@@ -274,6 +274,7 @@ def write_manifest(payload: Mapping[str, Any], output_path: Path) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)
         + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     temporary.replace(output_path)
 

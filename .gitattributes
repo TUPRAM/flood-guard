@@ -1,0 +1,11 @@
+# Proposal evidence is checksummed byte-for-byte and must survive clean checkouts.
+docs/submission/2026-geohackathon/**/*.md text eol=lf
+docs/submission/2026-geohackathon/**/*.json text eol=lf
+packages/contracts/examples/proposal-evidence.fixture-demo.json text eol=lf
+services/geoai-runner/evidence/*.json text eol=lf
+
+# Keep rendered and retained source artifacts opaque to line-ending filters.
+docs/visual-qa/proposal-stage/*.png binary
+services/geoai-runner/evidence/*.png binary
+docs/submission/2026-geohackathon/source/*.docx binary
+docs/submission/2026-geohackathon/source/*.pdf binary

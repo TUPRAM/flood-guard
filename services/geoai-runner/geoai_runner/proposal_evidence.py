@@ -238,6 +238,7 @@ def write_proposal_proof_artifacts(
         json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)
         + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     return ProposalProofArtifacts(
         receipt_path=receipt_path,

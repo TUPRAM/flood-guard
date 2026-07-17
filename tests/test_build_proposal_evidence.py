@@ -192,6 +192,17 @@ def test_non_test_check_wrapper_writes_machine_readable_status(tmp_path: Path) -
     }
 
 
+def test_write_manifest_uses_portable_lf_bytes(tmp_path: Path) -> None:
+    module = _module()
+    output = tmp_path / "manifest.json"
+
+    module.write_manifest({"schema_version": "1.0", "label": "portable"}, output)
+
+    content = output.read_bytes()
+    assert content.endswith(b"\n")
+    assert b"\r\n" not in content
+
+
 def test_builder_derives_geoai_summary_from_checksum_valid_receipt(tmp_path: Path) -> None:
     module = _module()
     thumbnail = tmp_path / "evidence" / "proof.png"

@@ -136,18 +136,38 @@ try {
           const rect = element.getBoundingClientRect();
           return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
         });
-      const touchTargets = [...document.querySelectorAll(
-        ".language-toggle button, .leaflet-control-zoom a, .map-text-alternative summary",
-      )]
-        .filter((element) => element instanceof HTMLElement && element.offsetParent !== null)
-        .map((element) => {
+      const interactiveElements = [...document.querySelectorAll(
+        "a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), summary",
+      )];
+      const measuredElements = [];
+      const seenElements = new Set();
+      for (const element of interactiveElements) {
+        const compositeTarget = element instanceof HTMLInputElement
+          && (element.type === "checkbox" || element.type === "radio")
+          ? element.closest("label") ?? element
+          : element;
+        if (
+          !(compositeTarget instanceof HTMLElement)
+          || compositeTarget.offsetParent === null
+          || seenElements.has(compositeTarget)
+        ) {
+          continue;
+        }
+        seenElements.add(compositeTarget);
+        measuredElements.push(compositeTarget);
+      }
+      const touchTargets = measuredElements.map((element) => {
           const rect = element.getBoundingClientRect();
+          const accessibleName = element.getAttribute("aria-label")
+            ?? element.textContent?.trim().replace(/\s+/gu, " ").slice(0, 80)
+            ?? "";
           return {
-            selector: element.matches(".language-toggle button")
-              ? "language-toggle"
-              : element.matches(".leaflet-control-zoom a")
-                ? "map-zoom"
-                : "map-text-alternative",
+            selector: element.id
+              ? `#${element.id}`
+              : element.classList.length > 0
+                ? `${element.tagName.toLowerCase()}.${[...element.classList].join(".")}`
+                : element.tagName.toLowerCase(),
+            accessibleName,
             width: rect.width,
             height: rect.height,
           };

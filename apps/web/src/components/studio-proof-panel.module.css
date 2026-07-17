@@ -1,0 +1,204 @@
+.receiptGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.receiptCard {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, #fff, #f4faf8);
+}
+
+.receiptCard h3 {
+  margin: 3px 0 11px;
+  font-size: .92rem;
+}
+
+.receiptCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.receiptCardHeader p {
+  margin: 0;
+}
+
+.receiptList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.receiptList div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.receiptList dt {
+  color: var(--muted);
+  font-size: .64rem;
+}
+
+.receiptList dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .66rem;
+  font-weight: 800;
+}
+
+.validationList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.validationList li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: #e3f5ef;
+  color: #0c5d4c;
+  font-size: .64rem;
+  font-weight: 800;
+}
+
+.validationList li::before {
+  content: "✓";
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #17765e;
+  color: #fff;
+  font-size: .58rem;
+}
+
+.histogram {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  align-items: end;
+  gap: 4px;
+  height: 78px;
+  margin: 0;
+  padding: 7px 0 0;
+  border-bottom: 1px solid var(--line);
+  list-style: none;
+}
+
+.histogram li {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.histogram span {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #44c8b1, #0a6d75);
+}
+
+.histogramAxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .58rem;
+}
+
+.metricStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.metricStrip div {
+  min-width: 0;
+  padding: 7px;
+  border-radius: 8px;
+  background: #edf5f3;
+  text-align: center;
+}
+
+.metricStrip span,
+.metricStrip strong {
+  display: block;
+}
+
+.metricStrip span {
+  color: var(--muted);
+  font-size: .57rem;
+  text-transform: uppercase;
+}
+
+.metricStrip strong {
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .72rem;
+}
+
+.blockedReceipt {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #ead08e;
+  border-radius: var(--radius-md);
+  background: #fff9e8;
+  color: #684b00;
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.visuallyHidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (max-width: 1100px) {
+  .receiptGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .receiptCard:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .receiptGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receiptCard:last-child {
+    grid-column: auto;
+  }
+}

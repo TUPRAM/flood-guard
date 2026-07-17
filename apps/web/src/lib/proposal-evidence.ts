@@ -9,13 +9,19 @@ import {
   type ProposalTestSuiteReceipt,
 } from "@floodguard/contracts";
 
+import {
+  type GeoAiProofReceipt,
+  validateGeoAiProofReceipt,
+} from "./geoai-proof-receipt";
+
 export type { ProposalEvidenceManifest } from "@floodguard/contracts";
+export type { GeoAiProofReceipt } from "./geoai-proof-receipt";
 
 const SHA256 = /^[a-f0-9]{64}$/i;
 const PRIVATE_PATH = /(?:^|[^A-Za-z0-9_])[A-Za-z]:[\\/]|\\\\|file:\/\/|(?:^|[^A-Za-z0-9_.-])\/(?:Users|home|root|tmp|var|opt|mnt|srv)(?:\/|$)/i;
 
 export type ProposalEvidenceResult =
-  | { state: "ready"; manifest: ProposalEvidenceManifest }
+  | { state: "ready"; manifest: ProposalEvidenceManifest; proofReceipt: GeoAiProofReceipt | null }
   | { state: "unavailable"; reason: string };
 
 export function validateProposalEvidenceManifest(value: unknown): ProposalEvidenceManifest {
@@ -79,13 +85,49 @@ export async function loadProposalEvidence(
     if (!response.ok) {
       return { state: "unavailable", reason: `Evidence manifest returned ${response.status}.` };
     }
-    return { state: "ready", manifest: validateProposalEvidenceManifest(await response.json()) };
+    const manifest = validateProposalEvidenceManifest(await response.json());
+    const proofReceipt = await loadValidatedProofReceipt(manifest, fetcher, signal);
+    return { state: "ready", manifest, proofReceipt };
   } catch (error) {
     return {
       state: "unavailable",
       reason: error instanceof Error ? error.message : "Evidence manifest is unavailable.",
     };
   }
+}
+
+async function loadValidatedProofReceipt(
+  manifest: ProposalEvidenceManifest,
+  fetcher: typeof fetch,
+  signal?: AbortSignal,
+): Promise<GeoAiProofReceipt | null> {
+  if (manifest.geoai_proof.validation_status !== "passed") return null;
+  const receiptArtifacts = manifest.artifacts.filter((artifact) => artifact.kind === "geoai_proof_receipt");
+  if (receiptArtifacts.length !== 1) throw new Error("Validated GeoAI proof requires exactly one receipt artifact.");
+  const artifact = receiptArtifacts[0];
+  if (artifact.media_type !== "application/json") throw new Error("GeoAI proof receipt must use application/json.");
+  const href = publicArtifactHref(artifact.relative_path, artifact.sha256);
+  if (!href) throw new Error("GeoAI proof receipt does not have a public-safe artifact path.");
+  const response = await fetcher(href, { cache: "no-store", signal });
+  if (!response.ok) throw new Error(`GeoAI proof receipt returned ${response.status}.`);
+  const bytes = await response.arrayBuffer();
+  const actualSha256 = await sha256Hex(bytes);
+  if (actualSha256 !== artifact.sha256.toLowerCase()) {
+    throw new Error("GeoAI proof receipt file checksum does not match the evidence manifest.");
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  } catch {
+    throw new Error("GeoAI proof receipt is not valid UTF-8 JSON.");
+  }
+  return validateGeoAiProofReceipt(value, manifest);
+}
+
+async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
+  if (!globalThis.crypto?.subtle) throw new Error("SHA-256 verification is unavailable in this browser.");
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
 export function publicArtifactHref(relativePath: string, sha256?: string | null): string | null {

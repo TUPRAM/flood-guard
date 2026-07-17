@@ -113,7 +113,9 @@ function materializeEvidenceArtifact(artifact, href) {
     ? artifact.relative_path.replaceAll("\\", "/")
     : "";
   if (!relativePath.startsWith("services/geoai-runner/evidence/")) return;
-  if (typeof artifact.media_type !== "string" || !artifact.media_type.startsWith("image/")) return;
+  const isPublicImage = typeof artifact.media_type === "string" && artifact.media_type.startsWith("image/");
+  const isProofReceipt = artifact.kind === "geoai_proof_receipt" && artifact.media_type === "application/json";
+  if (!isPublicImage && !isProofReceipt) return;
   const repositoryRoot = resolve(process.cwd(), "..", "..");
   const allowedRoot = resolve(repositoryRoot, "services", "geoai-runner", "evidence");
   const source = resolve(repositoryRoot, relativePath);

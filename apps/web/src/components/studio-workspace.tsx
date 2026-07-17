@@ -42,7 +42,6 @@ export function StudioWorkspace() {
   const selectedRun = data.model_runs.find((run) => run.run_id === selectedRunId) ?? data.model_runs[0];
   const decisionEligible = data.model_runs.some((run) => run.can_feed_decision_layer);
   const hasGeoAiRun = data.model_runs.some((run) => run.model_family === "geoai");
-  const geoAiRun = data.model_runs.find((run) => run.model_family === "geoai");
 
   return (
     <main className="studio-page" lang={language}>
@@ -62,7 +61,7 @@ export function StudioWorkspace() {
           <div className={`studio-verdict ${decisionEligible ? "ready" : "blocked"}`}><span>{th ? "ชั้นการตัดสินใจ" : "Decision layer"}</span><b>{decisionEligible ? (th ? "ผ่านเกณฑ์ตาม manifest" : "Manifest eligible") : (th ? "ยังไม่อนุญาต" : "Blocked")}</b><small>can_feed_decision_layer = {String(decisionEligible)}</small></div>
         </section>
 
-        <StudioProofPanel geoAiRun={geoAiRun} language={language} />
+        <StudioProofPanel language={language} />
 
         <section className="studio-section" aria-labelledby="readiness-title">
           <div className="section-heading"><div><p className="eyebrow">02 · DATA GATES</p><h2 id="readiness-title">{th ? "ความพร้อมของข้อมูล" : "Data readiness"}</h2></div><span className="section-count">{data.readiness.filter((row) => row.status === "blocked").length} {th ? "รายการบล็อก" : "blocked"}</span></div>

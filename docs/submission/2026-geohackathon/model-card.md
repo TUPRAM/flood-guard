@@ -145,5 +145,6 @@ receipt. Candidate/fixture sources and any substitution fail closed.
   `services/geoai-runner/evidence/geoai-probability-thumbnail.png`.
 - Runner documentation: `services/geoai-runner/README.md`.
 
-Exact pass counts belong in the final proposal evidence manifest after the
-last clean verification run.
+Exact pass counts and checksum-bound commands are recorded in the canonical
+proposal evidence manifest and `evidence/test-results.json`. The overall
+submission remains blocked independently of this passed synthetic proof.

@@ -81,11 +81,12 @@ A source-derived final PDF is allowed only when all of these conditions hold:
 Microsoft Word is available on the development machine, while LibreOffice is
 not installed. The supplied PDF was used as the visual reference for this
 source-template distillation and all 12 pages were inspected. A newly edited
-release DOCX has intentionally not been created or approved because owner team
-metadata, the final demo URL, portal constraints, final test receipts, pinned
-commit, and proposal tag are still unavailable. Once those release inputs are
-complete, Microsoft Word can render the source-derived release copy for the
-required page-by-page comparison.
+release DOCX has intentionally not been created or approved. The tested-source
+commit and suite receipts now exist, but owner team metadata, the final demo
+URL, portal constraints, packaging commit, and immutable tag are still
+unavailable. Once those owner/release inputs are complete, Microsoft Word can
+render the source-derived release copy for the required page-by-page comparison
+and checksum-bound inspection receipt.
 
 The HTML renderer in `tools/build_submission.py` is a preliminary, visibly
 watermarked layout preview only. It cannot produce the final submission PDF.

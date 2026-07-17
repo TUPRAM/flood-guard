@@ -40,7 +40,8 @@ final-verification evidence is missing.
   reference matching the editable source.
 - `source/artifact.md` - measured page/style contract and final-fidelity gates.
 - `evidence/proposal-evidence.json` - proposal-facing evidence manifest.
-- `evidence/test-results.json` - final-verification receipt, initially pending.
+- `evidence/test-results.json` - passed tested-source verification receipt;
+  overall submission release remains separately blocked on owner inputs.
 - `tools/build_submission.py` - metadata validation, placeholder scan,
   preliminary draft preview, and evidence checksum validation.
 
@@ -53,10 +54,12 @@ uv run python docs/submission/2026-geohackathon/tools/build_submission.py --chec
 ```
 
 `--check` is expected to fail until the owner fills every blocking field and
-the final test receipt is recorded. A strict check does not render the final
-PDF. The final editable document must be created from a copy of the retained
-polished DOCX and rendered with Microsoft Word or LibreOffice after the source
-fidelity gates in `source/artifact.md` pass.
+the final source-derived DOCX, PDF, and page-inspection receipt are checksummed
+in the evidence manifest. A strict check does not render the final PDF. The
+final editable document must be created from a copy of the retained polished
+DOCX and rendered with Microsoft Word or LibreOffice after the source-fidelity
+gates in `source/artifact.md` pass. The post-tag check also requires a clean
+worktree.
 
 For layout review before team metadata is available, build an explicitly
 watermarked draft into a temporary directory:
@@ -73,19 +76,21 @@ the supplied polished DOCX.
 ## Release checklist
 
 1. Fill `submission-metadata.json` with real owner-supplied values.
-2. Rerun every final verification command and record exact results in
-   `evidence/test-results.json`.
-3. Regenerate and review all required route screenshots.
-4. Commit the tested application source and record that full hash as
+2. Commit the tested application source and record that full hash as
    `submission.repository_commit`; every test and GeoAI receipt must name that
    same tested source commit.
-5. Run `--check --pre-tag`, copy the retained DOCX, and apply the reviewed
-   proposal text without changing the source file.
+3. Rerun every final verification command on that clean commit and record exact
+   results in `evidence/test-results.json`.
+4. Regenerate and review all required route screenshots.
+5. Copy the retained DOCX and apply the reviewed proposal text to the release
+   copy without changing the retained source file.
 6. Render the source-derived release DOCX to PDF, render every PDF page to PNG,
    and visually inspect every page.
-7. Verify the deployed demo and offline ZIP from a clean browser with the API
+7. Add the final DOCX, PDF, and inspection receipt to the evidence template,
+   regenerate their checksums, and run `--check --pre-tag`.
+8. Verify the deployed demo and offline ZIP from a clean browser with the API
    unavailable and external networking disabled.
-8. Commit the proposal/evidence package, create `proposal-2026-submission-v1`
+9. Commit the proposal/evidence package, create `proposal-2026-submission-v1`
    on that packaging commit, then run `--check` again. The post-tag pass is the
    only check that declares the package release-ready.
 

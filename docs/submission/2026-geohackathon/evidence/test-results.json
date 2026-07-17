@@ -1,58 +1,72 @@
 {
   "schema_version": "1.0",
-  "release_status": "pending_final_verification",
-  "generated_at": null,
-  "git_commit": null,
+  "verification_status": "passed",
+  "generated_at": "2026-07-17T10:08:05.5246904Z",
+  "git_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
   "suites": [
     {
       "name": "root-python",
-      "command": "uv run pytest --junitxml=.artifacts/junit/root-python.xml",
-      "result": "not_run",
-      "passed": 0,
-      "skipped": 0
+      "command": ".venv/Scripts/python.exe -m pytest --junitxml=.tmp/proposal-evidence/root-python.xml",
+      "result": "passed",
+      "passed": 1212,
+      "skipped": 1,
+      "source_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+      "junit_sha256": "1c7468c9147b4d5de728af87ae868c82ec7147595206d3a8a93ec8b77b17e442"
     },
     {
       "name": "api",
-      "command": "uv run --project services/api pytest services/api/tests --junitxml=.artifacts/junit/api.xml",
-      "result": "not_run",
-      "passed": 0,
-      "skipped": 0
+      "command": "services/api/.venv/Scripts/python.exe -m pytest services/api/tests --junitxml=.tmp/proposal-evidence/api.xml",
+      "result": "passed",
+      "passed": 86,
+      "skipped": 0,
+      "source_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+      "junit_sha256": "28dcf6540cc263a1976148c2f53f4ddf2900e2c904e6cc6a9d4f27ea2492e663"
     },
     {
       "name": "contracts",
-      "command": "pnpm --filter @floodguard/contracts test",
-      "result": "not_run",
-      "passed": 0,
-      "skipped": 0
+      "command": "pnpm --dir packages/contracts test --reporter=junit --outputFile=../../.tmp/proposal-evidence/contracts.xml",
+      "result": "passed",
+      "passed": 5,
+      "skipped": 0,
+      "source_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+      "junit_sha256": "695f287610651b160e29bd78fd3ce3c516b65c5f6f4df7a1353aec53387defda"
     },
     {
       "name": "web-unit",
-      "command": "pnpm --filter @floodguard/web test",
-      "result": "not_run",
-      "passed": 0,
-      "skipped": 0
+      "command": "pnpm --dir apps/web test --reporter=junit --outputFile=../../.tmp/proposal-evidence/web-unit.xml",
+      "result": "passed",
+      "passed": 36,
+      "skipped": 0,
+      "source_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+      "junit_sha256": "fb814c0dede2f0c271a11e859eb47ffd46b7657ae18a32cbbaa2a517f9870f32"
     },
     {
       "name": "frontend-quality-and-offline",
-      "command": "pnpm verify:frontend",
-      "result": "not_run",
-      "passed": 0,
-      "skipped": 0
+      "command": ".venv/Scripts/python.exe scripts/run_check_with_junit.py --suite frontend-quality-and-offline --output .tmp/proposal-evidence/frontend.xml -- pnpm verify:frontend",
+      "result": "passed",
+      "passed": 1,
+      "skipped": 0,
+      "source_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+      "junit_sha256": "f93d00c0227cdcdb4ace05210792867c5d5de337f53c367121d5b7d6b969d522"
     },
     {
       "name": "geoai-normal",
-      "command": "uv run --project services/geoai-runner pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.artifacts/junit/geoai-normal.xml",
-      "result": "not_run",
-      "passed": 0,
-      "skipped": 0
+      "command": "services/geoai-runner/.venv/Scripts/python.exe -m pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.tmp/proposal-evidence/geoai-normal.xml",
+      "result": "passed",
+      "passed": 84,
+      "skipped": 0,
+      "source_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+      "junit_sha256": "0c76c023c1d83c5a74370ba09c52282fc6d0266c43968b869e9f67472664846d"
     },
     {
       "name": "geoai-real-smoke",
-      "command": "powershell -NoProfile -Command \"$env:RUN_GEOAI_SMOKE='1'; uv run --project services/geoai-runner --extra geoai pytest services/geoai-runner/tests/test_geoai_smoke.py -m 'geoai_smoke' --junitxml=.artifacts/junit/geoai-real-smoke.xml\"",
-      "result": "not_run",
-      "passed": 0,
-      "skipped": 0
+      "command": "powershell -NoProfile -Command \"$env:RUN_GEOAI_SMOKE='1'; $env:FLOODGUARD_PROOF_COMMIT='61d2e96a605a5c13cc3ac5d6db6d145517cb02f5'; $env:GEOAI_PROOF_OUTPUT_DIR='.tmp/proposal-geoai-evidence-61d2e96'; & 'services/geoai-runner/.venv/Scripts/python.exe' -m pytest services/geoai-runner/tests/test_geoai_smoke.py -m geoai_smoke --junitxml=.tmp/proposal-evidence/geoai-real-smoke.xml\"",
+      "result": "passed",
+      "passed": 1,
+      "skipped": 0,
+      "source_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+      "junit_sha256": "ab64ed8dbb4475873cb643babd3f2a01b88d4e94eb123df363a1a038104daca9"
     }
   ],
-  "reason_blocked": "Final test commands must be rerun on the release candidate and recorded from machine-readable receipts."
+  "reason_blocked": "Submission release remains blocked by owner metadata, public demo URL, portal constraints, final source-derived PDF, and proposal tag; the tested-source verification itself is complete."
 }

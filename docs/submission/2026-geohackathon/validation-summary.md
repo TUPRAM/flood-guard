@@ -10,10 +10,10 @@ operational status.
 
 | Evidence lane | Current status | What it proves | What it does not prove |
 |---|---|---|---|
-| Decision engine | Implemented; final suite receipt pending | Deterministic FPPS, A-E class, road risk, nearest-facility access, equity, exports and dashboard logic | Accuracy of an upstream real flood product |
-| Static web/PWA | Implemented; final visual/offline receipts pending | Three role-specific fixture routes and offline fallback | Live data, operational navigation or public warning |
-| FastAPI | Implemented; final suite receipt pending | Pydantic artifact/scenario contracts, explicit data states and path safety | Production hosting or agency acceptance |
-| GeoAI synthetic proof | Implemented; final opt-in smoke receipt pending | Actual tile export, model construction, tiled prediction, explicit class-1 probability, grid validation and report-only aggregation | Training convergence or real flood accuracy |
+| Decision engine | Passed: 1,212 tests; 1 skipped | Deterministic FPPS, A-E class, road risk, nearest-facility access, equity, exports and dashboard logic | Accuracy of an upstream real flood product |
+| Static web/PWA | Passed: lint, typecheck, 5 contract tests, 36 web-unit tests, static build, offline route/browser checks and six visual-QA viewports | Three role-specific fixture routes and offline fallback | Live data, operational navigation or public warning |
+| FastAPI | Passed: 86 tests | Pydantic artifact/scenario contracts, explicit data states and path safety | Production hosting or agency acceptance |
+| GeoAI synthetic proof | Passed: 84 normal tests plus 1 opt-in real-GeoAI smoke | Actual tile export, model construction, tiled prediction, explicit class-1 probability, grid validation and report-only aggregation | Training convergence or real flood accuracy |
 | Trusted zonal adapter | Implemented and substitution-tested | Fail-closed official-input raster/geometry/checksum/statistics/receipt boundary | Acceptance of any current candidate raster |
 | Mae Sai weak-reference analysis | Candidate screening evidence | A real-data engineering orientation and known failure modes | Official, field or qualified reference validation |
 | Controlled three-model experiment | Blocked | Gate evaluation is functioning and honest | Comparative real-data metrics or model promotion |
@@ -91,10 +91,19 @@ spatial holdout and report:
 The zero-division convention and cell-area calculation remain the controlled
 experiment contract, not a presentation-layer choice.
 
-## Final proposal verification still required
+## Verification receipt and remaining release blockers
 
-Exact suite counts are intentionally absent here. Before release, the team
-must generate JUnit receipts for root, API, contract, frontend and normal GeoAI
-tests; run the opt-in real GeoAI smoke; run offline browser smoke; build the
-static web app; inspect all required screenshots; and update the checksummed
-proposal evidence manifest. A stale historical count is not acceptable.
+The machine-readable test receipt is bound to tested source commit
+`61d2e96a605a5c13cc3ac5d6db6d145517cb02f5`. It records 1,212 root Python
+passes with one explicit skip, 86 API passes, 5 contract passes, 36 web-unit
+passes, a passed full frontend/offline gate, 84 normal isolated-runner passes,
+and one passed opt-in real-GeoAI smoke. The static build and browser smoke made
+zero external runtime requests, and all six required viewports passed the
+automated overflow, map-control, Thai, focus, disclosure and private-path
+checks.
+
+Submission release remains blocked until owner-supplied team/contact facts,
+the deployed demo URL, verified portal constraints, the final source-derived
+proposal PDF, and the release tag are present. These blockers do not invalidate
+the tested proposal-stage software candidate, but they prevent a truthful final
+submission build.

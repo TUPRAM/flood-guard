@@ -34,8 +34,8 @@
     "preprocessing_sidecar_sha256": "377eb50712d9f96fa5daf29b21e575e451faca4995071118039affef784ce581",
     "value_domain": "uint8_0_255"
   },
-  "floodguard_commit": "f424b52e6b2769416a15f8c481bca4e6bcb10168",
-  "generated_at": "2026-07-17T05:59:44.220515Z",
+  "floodguard_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+  "generated_at": "2026-07-17T10:01:06.786848Z",
   "geoai_commit": "6833c8b71fb18f5b8ea17d5d9f8e0745157643c2",
   "geoai_version": "0.41.1",
   "model": {
@@ -44,7 +44,7 @@
     "encoder_weights": null,
     "model_id": "floodguard/synthetic-unet",
     "model_revision": "contract-proof-1",
-    "model_sha256": "e59874382b37817cd0313efe0a5ed20b104a61eb81a39014868eb6591aad685d"
+    "model_sha256": "46ccdbe7fbaf89199e5a9509116ee53f3f1d55fcb95d907dd1d0c05ac1dc73eb"
   },
   "official_warning": false,
   "operational_status": "non_operational",
@@ -108,13 +108,13 @@
     "mean": 0.4375015173718566,
     "minimum": 0.21587321162223816,
     "nodata": -9999.0,
-    "sha256": "d0ca1fca0d7c2b622eca5800804b7af420e42260c415c481b438c8b3ecdfaa85",
+    "sha256": "bd8fbdaf288e8dc696ee594536f510bfb8df5071d4a82b7826c3acc91c0347cd",
     "valid_pixel_count": 1024
   },
   "processing_allowed": true,
   "proof_scope": "synthetic_integration_only",
   "reason_blocked": "Synthetic candidate proof cannot feed the decision layer.",
-  "receipt_payload_sha256": "f65ff4144dbca38f4245907b5e62c21be1a33e7f81aebbd4dc76f9720902f119",
+  "receipt_payload_sha256": "98616adcf2f0932d25c14f3f523972a2b34dce6c6839f62eea9e7efb0786ac92",
   "run_id": "geoai-synthetic-proof-001",
   "schema_version": "1.0",
   "source_timestamp": "2024-09-15T23:16:01Z",

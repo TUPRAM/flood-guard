@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-17T05:59:44.220515Z",
-  "git_commit": "f424b52e6b2769416a15f8c481bca4e6bcb10168",
+  "generated_at": "2026-07-17T10:01:06.786848Z",
+  "git_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
   "dataset_mode": "candidate",
   "operational_status": "non_operational",
   "artifacts": [
@@ -9,7 +9,7 @@
       "kind": "geoai_proof_receipt",
       "relative_path": "services/geoai-runner/evidence/geoai-proof-receipt.json",
       "media_type": "application/json",
-      "sha256": "fb10acb7cf11b5150585e6ae2892ae9896c85bf179c81946311d800a4074d58f"
+      "sha256": "83be9b7be31c12bc48d1e63d7041ec07fe31cba65a753d9a2243c1d654791320"
     },
     {
       "kind": "geoai_probability_thumbnail",
@@ -53,11 +53,11 @@
     "feature_stack_id": "clip_linear_uint8_v1-8-band",
     "preprocessing_id": "clip_linear_uint8_v1",
     "input_manifest_sha256": "c401c3d618f6bcba14fcd692af94416712ca8d227580112e67ecf87860dfeb11",
-    "output_probability_sha256": "d0ca1fca0d7c2b622eca5800804b7af420e42260c415c481b438c8b3ecdfaa85",
+    "output_probability_sha256": "bd8fbdaf288e8dc696ee594536f510bfb8df5071d4a82b7826c3acc91c0347cd",
     "validation_status": "passed",
     "aggregation_status": "report_only",
     "processing_allowed": true,
     "can_feed_decision_layer": false,
-    "reason_blocked": "Synthetic candidate proof validates integration wiring only and cannot feed the decision layer."
+    "reason_blocked": "Synthetic candidate proof cannot feed the decision layer."
   }
 }

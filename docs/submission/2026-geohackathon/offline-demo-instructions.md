@@ -17,38 +17,48 @@ pnpm verify:frontend
 pnpm --filter @floodguard/web build
 ```
 
-Package the generated static export using the repository release script once
-that script is present. Do not hand-edit the built bundle. Include this file,
-the pinned Git commit, and SHA-256 checksums in the ZIP.
+Package the generated static export with the repository-owned deterministic
+builder. Do not hand-edit the built bundle:
+
+```powershell
+.venv\Scripts\python.exe scripts\build_offline_demo_bundle.py `
+  --site-root apps/web/out `
+  --template-root packaging/offline-demo `
+  --output dist/FloodGuard_Proposal_Offline_Demo.zip `
+  --git-commit 61d2e96a605a5c13cc3ac5d6db6d145517cb02f5
+```
+
+The ZIP embeds a manifest with the pinned Git commit and SHA-256 checksum of
+every packaged file.
 
 ## Launch on Windows / เปิดใช้งานบน Windows
 
-Open PowerShell in the extracted bundle and run a local static server. One
-portable option is:
+Extract the complete ZIP, open PowerShell in the extracted bundle, and run:
 
 ```powershell
-python -m http.server 4173
+./serve-demo.ps1
 ```
 
 Then open:
 
 ```text
-http://127.0.0.1:4173/public/
+http://127.0.0.1:8000/public/
 ```
 
 หากมี Python ให้เปิด PowerShell ในโฟลเดอร์ที่แตกไฟล์ รันคำสั่งด้านบน และเปิด
 ที่อยู่ `/public/` ในเบราว์เซอร์
 
-If Python is not available, use any reviewed local static-file server that
-preserves directory index files. Opening generated HTML directly with
-`file://` is not the supported judging path because browser service-worker and
-route behavior varies.
+The platform-neutral equivalent is `python serve-demo.py`. If Python is not
+available, use a reviewed local static-file server with the extracted `site`
+directory as its root. Opening generated HTML directly with `file://` is not
+the supported judging path because browser service-worker and route behavior
+varies.
 
 ## Required routes
 
-- `http://127.0.0.1:4173/public/`
-- `http://127.0.0.1:4173/command/`
-- `http://127.0.0.1:4173/studio/`
+- `http://127.0.0.1:8000/public/`
+- `http://127.0.0.1:8000/command/`
+- `http://127.0.0.1:8000/studio/`
 
 The root route redirects or links to `/public/`.
 

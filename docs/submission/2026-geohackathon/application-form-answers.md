@@ -1,8 +1,13 @@
 # FloodGuard Thailand - application-form answers
 
-These answers are deliberately free of team-name, contact, demo-link, and
-final test-count placeholders. The release build obtains those values only
-from `submission-metadata.json` after strict validation.
+These answers are deliberately free of team-name, contact, and demo-link
+placeholders. The release build obtains those owner-supplied values only from
+`submission-metadata.json` after strict validation. Current verification is
+bound to tested source commit `61d2e96a605a5c13cc3ac5d6db6d145517cb02f5`:
+1,212 root Python tests passed with one skip, 86 API tests passed, 5 contract
+tests passed, 36 web-unit tests passed, the complete frontend/offline gate
+passed, 84 normal GeoAI-runner tests passed, and the opt-in real-GeoAI smoke
+passed.
 
 ## Project title
 
@@ -84,8 +89,8 @@ validated submission metadata.
 FloodGuard starts from an implemented decision engine, role-specific Next.js
 application, typed contract package, FastAPI artifact/scenario service,
 isolated GeoAI runner, static dashboard fallback, and extensive automated-test
-coverage. The final proposal cites the exact fresh test receipt rather than an
-older count. The static demo uses committed fixtures and does not depend on a
+coverage. The exact fresh, commit-bound test receipt is listed at the top of
+this file. The static demo uses committed fixtures and does not depend on a
 hosted API, GeoAI environment, GPU, or network.
 
 ## One-paragraph pitch

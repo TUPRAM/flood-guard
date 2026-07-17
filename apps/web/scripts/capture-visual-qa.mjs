@@ -136,11 +136,43 @@ try {
           const rect = element.getBoundingClientRect();
           return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
         });
+      const touchTargets = [...document.querySelectorAll(
+        ".language-toggle button, .leaflet-control-zoom a, .map-text-alternative summary",
+      )]
+        .filter((element) => element instanceof HTMLElement && element.offsetParent !== null)
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            selector: element.matches(".language-toggle button")
+              ? "language-toggle"
+              : element.matches(".leaflet-control-zoom a")
+                ? "map-zoom"
+                : "map-text-alternative",
+            width: rect.width,
+            height: rect.height,
+          };
+        });
+      const publicContent = document.querySelector(".public-content")?.getBoundingClientRect();
+      const publicNavigation = document.querySelector(".public-bottom-nav")?.getBoundingClientRect();
+      const commandWorkspace = document.querySelector(".command-workspace");
+      const commandColumnCount = commandWorkspace
+        ? getComputedStyle(commandWorkspace).gridTemplateColumns.split(" ").filter(Boolean).length
+        : null;
+      const proofImages = document.querySelector(".proof-images")?.getBoundingClientRect();
+      const proofFigure = document.querySelector(".proof-images figure:only-child")?.getBoundingClientRect();
       return {
         bodyText,
         viewportWidth: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,
         mapControls,
+        touchTargets,
+        publicNavigationOverlap:
+          publicContent && publicNavigation
+            ? Math.max(0, publicContent.bottom - publicNavigation.top)
+            : 0,
+        commandColumnCount,
+        proofSingleFigureCoverage:
+          proofImages && proofFigure ? proofFigure.width / proofImages.width : null,
       };
     });
     if (pageAudit.documentWidth > pageAudit.viewportWidth + 1) {
@@ -157,6 +189,34 @@ try {
       ) {
         throw new Error(`${capture.file} has a clipped map control: ${JSON.stringify(control)}.`);
       }
+    }
+    for (const target of pageAudit.touchTargets) {
+      if (target.width < 43.5 || target.height < 43.5) {
+        throw new Error(
+          `${capture.file} has a touch target below 44px: ${JSON.stringify(target)}.`,
+        );
+      }
+    }
+    if (pageAudit.publicNavigationOverlap > 1) {
+      throw new Error(
+        `${capture.file} bottom navigation overlaps public content by ${pageAudit.publicNavigationOverlap}px.`,
+      );
+    }
+    if (
+      capture.route === "/command/"
+      && capture.width === 1024
+      && pageAudit.commandColumnCount !== 2
+    ) {
+      throw new Error(
+        `${capture.file} must use the two-column tablet command layout.`,
+      );
+    }
+    if (
+      capture.route === "/studio/"
+      && pageAudit.proofSingleFigureCoverage !== null
+      && pageAudit.proofSingleFigureCoverage < 0.95
+    ) {
+      throw new Error(`${capture.file} leaves the single proof image in a half-width grid cell.`);
     }
     if (/[A-Za-z]:[\\/](?:Users|Documents)|file:\/\//u.test(pageAudit.bodyText)) {
       throw new Error(`${capture.file} exposes a private local path.`);

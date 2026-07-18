@@ -8,7 +8,7 @@
     "postbuild": "node scripts/write-offline-assets.mjs",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --configLoader runner",
     "test:offline": "node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs",
     "qa:visual": "node scripts/capture-visual-qa.mjs"
   },

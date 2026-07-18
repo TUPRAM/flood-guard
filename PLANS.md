@@ -24,6 +24,10 @@ Deliver the competition-ready role-specific platform without weakening the teste
 - isolated, optional GeoAI 0.41.1 runner with fail-closed promotion gates
 - full Python, frontend, API, schema, offline, and visual verification
 
+The proposal role-surface UX pass is implemented. Its durable interaction,
+safety, verification, and next-milestone decisions are recorded in
+`docs/role-surface-development-plan.md`.
+
 ## Near-Term Decision
 
 The decision engine remains the source of truth. The next evidence milestone is not broader UI scope: it is clearing real-input provenance and reference-mask gates, running a spatial-holdout baseline/weak-label/GeoAI comparison, and independently reviewing calibration and geographic transfer before any candidate can feed the decision layer.

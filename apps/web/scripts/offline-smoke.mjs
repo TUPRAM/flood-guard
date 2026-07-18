@@ -10,6 +10,7 @@ const requiredPublicAssets = [
   "offline-demo/bundle.json",
   "offline-demo/areas.geojson",
   "offline-demo/roads.geojson",
+  "offline-demo/context.geojson",
   "proposal-evidence-status.json",
   "offline-assets.json",
 ];

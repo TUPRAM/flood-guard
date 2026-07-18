@@ -96,6 +96,7 @@ export interface FloodGuardData extends OfflineBundle {
   snapshotCachedAt?: string;
   areaFeatures: FeatureCollection;
   roadFeatures: FeatureCollection;
+  contextFeatures: FeatureCollection;
   fallbackReason?: string;
   degradedReason?: string;
 }

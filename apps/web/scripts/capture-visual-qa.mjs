@@ -102,6 +102,7 @@ try {
     if (capture.publicTab) {
       await page.locator(`.public-bottom-nav button:nth-child(${capture.publicTab})`).click();
       await page.locator(".public-map-view .leaflet-container").waitFor({ state: "visible" });
+      await page.locator(".map-selection-sheet.open").waitFor({ state: "visible" });
     } else if (capture.route === "/command/") {
       await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
     }
@@ -119,6 +120,14 @@ try {
         throw new Error(`${capture.file} did not render Thai text after switching language.`);
       }
       await page.locator('.language-toggle button[lang="en"]').click();
+    }
+
+    if (capture.route === "/command/") {
+      await page.locator('select[aria-label="Select scenario"]').selectOption("add_temporary_shelter");
+      await page.waitForFunction(() => (
+        document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-scenario-id") === "add_temporary_shelter"
+        && document.querySelector(".decision-panel")?.getAttribute("data-scenario-id") === "add_temporary_shelter"
+      ));
     }
 
     if (capture.route === "/command/" && await page.locator(".ranked-areas button").count() === 0) {
@@ -180,6 +189,10 @@ try {
         : null;
       const proofImages = document.querySelector(".proof-images")?.getBoundingClientRect();
       const proofFigure = document.querySelector(".proof-images figure:only-child")?.getBoundingClientRect();
+      const publicPlanAction = document.querySelector('[data-action="build-household-plan"]')?.getBoundingClientRect();
+      const publicOfficialHelp = document.querySelector('[data-testid="public-official-help"]')?.getBoundingClientRect();
+      const selectedAreaSheet = document.querySelector(".map-selection-sheet")?.getBoundingClientRect();
+      const tabletEvidenceDrawer = document.querySelector(".tablet-evidence-drawer")?.getBoundingClientRect();
       return {
         bodyText,
         viewportWidth: window.innerWidth,
@@ -193,6 +206,17 @@ try {
         commandColumnCount,
         proofSingleFigureCoverage:
           proofImages && proofFigure ? proofFigure.width / proofImages.width : null,
+        publicPlanActionBottom: publicPlanAction?.bottom ?? null,
+        publicOfficialHelpTop: publicOfficialHelp?.top ?? null,
+        selectedAreaSheetVisible: Boolean(selectedAreaSheet && selectedAreaSheet.width > 0 && selectedAreaSheet.height > 0),
+        tabletEvidenceDrawer: tabletEvidenceDrawer
+          ? {
+              left: tabletEvidenceDrawer.left,
+              right: tabletEvidenceDrawer.right,
+              top: tabletEvidenceDrawer.top,
+              bottom: tabletEvidenceDrawer.bottom,
+            }
+          : null,
       };
     });
     if (pageAudit.documentWidth > pageAudit.viewportWidth + 1) {
@@ -230,6 +254,42 @@ try {
       throw new Error(
         `${capture.file} must use the two-column tablet command layout.`,
       );
+    }
+    if (capture.route === "/public/" && !capture.publicTab) {
+      if (pageAudit.publicPlanActionBottom === null || pageAudit.publicPlanActionBottom > capture.height) {
+        throw new Error(`${capture.file} does not keep the household-plan action in the first viewport.`);
+      }
+      if (pageAudit.publicOfficialHelpTop === null || pageAudit.publicOfficialHelpTop >= capture.height) {
+        throw new Error(`${capture.file} does not introduce official help in the first viewport.`);
+      }
+    }
+    if (capture.route === "/public/" && capture.publicTab && !pageAudit.selectedAreaSheetVisible) {
+      throw new Error(`${capture.file} is missing the selected-area bottom sheet.`);
+    }
+    if (capture.route === "/command/" && capture.width === 1024) {
+      const drawer = pageAudit.tabletEvidenceDrawer;
+      if (!drawer || drawer.left < 0 || drawer.right > capture.width || drawer.top < 0 || drawer.bottom > capture.height) {
+        throw new Error(`${capture.file} has a missing or clipped persistent evidence drawer: ${JSON.stringify(drawer)}.`);
+      }
+    }
+    if (capture.route === "/command/") {
+      const mapScenario = await page.locator(".map-workspace .geo-map-shell").getAttribute("data-scenario-id");
+      const panelScenario = await page.locator(".decision-panel").getAttribute("data-scenario-id");
+      if (mapScenario !== "add_temporary_shelter" || panelScenario !== mapScenario) {
+        throw new Error(`${capture.file} did not synchronize server scenario state across map and evidence.`);
+      }
+      if (await page.locator('.map-workspace path[fill="#0f8a7b"]').count() === 0) {
+        throw new Error(`${capture.file} does not visibly encode the server-produced improvement delta.`);
+      }
+    }
+    if (capture.route === "/studio/") {
+      const body = pageAudit.bodyText;
+      const normalizedBody = body.toLocaleLowerCase("en-US");
+      for (const scope of ["Integration smoke", "Qualified real-data evaluation", "Decision eligibility"]) {
+        if (!normalizedBody.includes(scope.toLocaleLowerCase("en-US"))) {
+          throw new Error(`${capture.file} is missing the ${scope} scope.`);
+        }
+      }
     }
     if (
       capture.route === "/studio/"

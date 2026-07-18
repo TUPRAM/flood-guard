@@ -1,5 +1,6 @@
 import bundleJson from "../../public/offline-demo/bundle.json";
 import areasGeoJson from "../data/areas.json";
+import contextGeoJson from "../data/context.json";
 import roadsGeoJson from "../data/roads.json";
 
 import {
@@ -27,6 +28,7 @@ export interface SnapshotStorage {
 
 export const areaFeatures = areasGeoJson as unknown as FeatureCollection;
 export const roadFeatures = roadsGeoJson as unknown as FeatureCollection;
+export const contextFeatures = contextGeoJson as unknown as FeatureCollection;
 
 export function getOfflineData(reason?: string): FloodGuardData {
   return {
@@ -36,6 +38,7 @@ export function getOfflineData(reason?: string): FloodGuardData {
     scenarioState: "ready",
     areaFeatures,
     roadFeatures,
+    contextFeatures,
     fallbackReason: reason,
   };
 }
@@ -171,6 +174,9 @@ export async function loadFloodGuardData(
       apiBase: base,
       areaFeatures: apiAreaFeatures,
       roadFeatures: apiRoadFeatures,
+      contextFeatures: fixtureCompatible
+        ? contextFeatures
+        : emptyFeatureCollection("context_unavailable_for_current_dataset"),
       degradedReason: degradationReasons.length > 0 ? degradationReasons.join(" ") : undefined,
     } as FloodGuardData;
     assertNoPrivatePaths(candidate);
@@ -290,7 +296,11 @@ function isSnapshotEnvelope(
   if (!isRecord(data.pilot_readiness)) return false;
   if (typeof data.pilot_readiness.agency_operational_allowed !== "boolean") return false;
   if (!Array.isArray(data.hotlines) || !Array.isArray(data.shelters)) return false;
-  if (!isFeatureCollection(data.areaFeatures) || !isFeatureCollection(data.roadFeatures)) return false;
+  if (
+    !isFeatureCollection(data.areaFeatures)
+    || !isFeatureCollection(data.roadFeatures)
+    || !isFeatureCollection(data.contextFeatures)
+  ) return false;
   return true;
 }
 

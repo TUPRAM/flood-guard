@@ -1,8 +1,15 @@
 import Image from "next/image";
 
+import type { ModelRun } from "@floodguard/contracts";
+
 import { EvidenceNotice } from "@/components/evidence-notice";
 import { StatePill } from "@/components/state-pill";
 import { publicArtifactHref } from "@/lib/proposal-evidence";
+import {
+  classifyStudioEvidenceScope,
+  type StudioEvidenceScopeItem,
+  type StudioModelEvidence,
+} from "@/lib/studio-evidence-scope";
 import type { Language } from "@/lib/types";
 import { useProposalEvidence } from "@/lib/use-proposal-evidence";
 
@@ -29,7 +36,17 @@ const VALIDATION_LABELS = {
   provenance_tags: "Provenance tags",
 } as const;
 
-export function StudioProofPanel({ language }: { language: Language }) {
+const QUALIFIED_METRICS = [
+  "iou",
+  "f1_dice",
+  "precision",
+  "recall",
+  "area_error_ratio",
+  "brier_score",
+  "expected_calibration_error",
+] as const;
+
+export function StudioProofPanel({ language, modelRuns }: { language: Language; modelRuns: ModelRun[] }) {
   const evidence = useProposalEvidence();
   const th = language === "th";
   const manifest = evidence.state === "ready" ? evidence.manifest : undefined;
@@ -46,6 +63,13 @@ export function StudioProofPanel({ language }: { language: Language }) {
   const receiptUnavailableReason = evidence.state === "unavailable"
     ? evidence.reason
     : manifest?.geoai_proof.reason_blocked ?? (th ? "ยังไม่มีใบรับรอง GeoAI ที่ตรวจสอบได้" : "No validated GeoAI proof receipt is available.");
+  const evidenceScope = classifyStudioEvidenceScope({
+    evidenceState: evidence.state,
+    proofReceiptVerified: Boolean(receipt),
+    proofReasonBlocked: receipt?.reason_blocked ?? manifest?.geoai_proof.reason_blocked ?? "",
+    evidenceUnavailableReason: evidence.state === "unavailable" ? evidence.reason : undefined,
+    models: modelRuns.map(toStudioModelEvidence),
+  });
 
   return (
     <section className="studio-section geoai-proof" aria-labelledby="geoai-proof-title">
@@ -64,6 +88,24 @@ export function StudioProofPanel({ language }: { language: Language }) {
                 : (th ? "คงสถานะบล็อก" : "Evidence fail-closed")}
           </StatePill>
         </div>
+      </div>
+
+      <div className={styles.scopeGrid} aria-label={th ? "ขอบเขตหลักฐานและสิทธิ์การใช้งาน" : "Evidence scope and decision eligibility"}>
+        <EvidenceScopeCard
+          title={th ? "การทดสอบการเชื่อมต่อ" : "Integration smoke"}
+          item={evidenceScope.integration}
+          language={language}
+        />
+        <EvidenceScopeCard
+          title={th ? "การประเมินข้อมูลจริงที่ผ่านเกณฑ์" : "Qualified real-data evaluation"}
+          item={evidenceScope.qualifiedEvaluation}
+          language={language}
+        />
+        <EvidenceScopeCard
+          title={th ? "สิทธิ์ส่งต่อชั้นการตัดสินใจ" : "Decision eligibility"}
+          item={evidenceScope.decisionEligibility}
+          language={language}
+        />
       </div>
 
       <EvidenceNotice
@@ -158,8 +200,10 @@ export function StudioProofPanel({ language }: { language: Language }) {
         )}
       </div>
 
-      <div className="proof-layout">
-        <div className="proof-flow" aria-label={th ? "ลำดับงาน GeoAI" : "GeoAI workflow"}>
+      <details className={styles.technicalDetails}>
+        <summary>{th ? "ตรวจสอบขั้นตอน แบนด์ การแปลงค่า และเกณฑ์ทั้งหมด" : "Inspect the full workflow, band order, transforms, and gates"}</summary>
+        <div className="proof-layout">
+          <div className="proof-flow" aria-label={th ? "ลำดับงาน GeoAI" : "GeoAI workflow"}>
           <ProofStep index="01" label={th ? "สแต็กคุณลักษณะ" : "Feature stack"} value={receipt?.feature_stack.feature_stack_id ?? (th ? "เป้าหมายสัญญา 8 แบนด์" : "Eight-band contract target")} />
           <ProofStep index="02" label={th ? "การแปลงค่า" : "Explicit transform"} value={receipt?.feature_stack.preprocessing_id ?? (th ? "ไม่ส่งค่า dB/ภูมิประเทศดิบผ่าน /255" : "No raw dB/terrain through implicit /255")} />
           <ProofStep index="03" label={th ? "การเตรียมไทล์" : "Tile preparation"} value={receipt ? shortDigest(receipt.tile_export.prepared_tile_manifest_sha256) : (th ? "รอใบรับรองที่ตรวจสอบได้" : "Awaiting validated receipt")} />
@@ -169,9 +213,9 @@ export function StudioProofPanel({ language }: { language: Language }) {
           <ProofStep index="07" label={th ? "ความน่าจะเป็นชั้น 1" : "Class-1 probability"} value={receipt ? shortDigest(receipt.probability.sha256) : (th ? "ยังไม่มี checksum ที่ตรวจแล้ว" : "No verified checksum")} />
           <ProofStep index="08" label={th ? "CRS และกริด" : "CRS + grid validation"} value={receipt ? `${validationEntries.length}/${validationEntries.length} ${th ? "ผ่าน" : "checks passed"}` : (th ? "คงสถานะบล็อก" : "Fail-closed")} />
           <ProofStep index="09" label={th ? "การรวมผล FloodGuard" : "FloodGuard aggregation"} value={receipt ? `${formatPercent(receipt.aggregation.mean_flood_probability_0_1)} mean · ${receipt.aggregation.status}` : (th ? "ไม่มีผลที่ตรวจสอบแล้ว" : "No validated result")} />
-        </div>
+          </div>
 
-        <aside className="proof-contract" aria-label={th ? "สัญญาแบนด์และเกณฑ์" : "Band and gate contract"}>
+          <aside className="proof-contract" aria-label={th ? "สัญญาแบนด์และเกณฑ์" : "Band and gate contract"}>
           <div className="proof-contract-heading">
             <div><p className="eyebrow">{th ? "ลำดับแบนด์" : "Band order"}</p><h3>{channels.length} {th ? "ช่องข้อมูล" : "channels"}</h3></div>
             <StatePill tone={receipt ? "ready" : "info"}>{receipt ? (th ? "จากใบรับรอง" : "From receipt") : (th ? "เป้าหมายสัญญา" : "Contract target")}</StatePill>
@@ -185,8 +229,9 @@ export function StudioProofPanel({ language }: { language: Language }) {
             <div><dt>{th ? "ใบรับรองไฟล์" : "Receipt file"}</dt><dd>{receiptArtifact && receipt ? shortDigest(receiptArtifact.sha256) : (th ? "ยังไม่ตรวจสอบ" : "Unverified")}</dd></div>
           </dl>
           <p className="proof-blocked-reason">{receipt?.reason_blocked ?? receiptUnavailableReason}</p>
-        </aside>
-      </div>
+          </aside>
+        </div>
+      </details>
 
       {imageArtifacts.length > 0 && (
         <div className="proof-images">
@@ -212,6 +257,46 @@ export function StudioProofPanel({ language }: { language: Language }) {
 
 function ProofStep({ index, label, value }: { index: string; label: string; value: string }) {
   return <article><span>{index}</span><div><b>{label}</b><small>{value}</small></div></article>;
+}
+
+function EvidenceScopeCard({ title, item, language }: { title: string; item: StudioEvidenceScopeItem; language: Language }) {
+  const th = language === "th";
+  return (
+    <article className={`${styles.scopeCard} ${styles[item.state]}`}>
+      <span>{title}</span>
+      <b>{evidenceStateLabel(item.state, th)}</b>
+      <p>{item.reason}</p>
+    </article>
+  );
+}
+
+function evidenceStateLabel(state: StudioEvidenceScopeItem["state"], th: boolean): string {
+  if (state === "checking") return th ? "กำลังตรวจสอบ" : "Checking";
+  if (state === "executed") return th ? "ดำเนินการแล้ว" : "Executed";
+  if (state === "not_run") return th ? "ยังไม่รัน" : "Not run";
+  if (state === "eligible") return th ? "ผ่านเกณฑ์" : "Eligible";
+  return th ? "บล็อก" : "Blocked";
+}
+
+function toStudioModelEvidence(run: ModelRun): StudioModelEvidence {
+  const referenceMaskStatus = run.reference_mask_status.toLowerCase();
+  const hasHoldoutReceipt = run.input_manifest_rows.some(
+    (row) => /spatial[_-]?holdout/i.test(row.role) && /^[a-f0-9]{64}$/i.test(row.sha256) && row.processing_allowed,
+  );
+  return {
+    datasetMode: run.dataset_mode,
+    modelFamily: run.model_family,
+    runStatus: run.run_status,
+    processingAllowed: run.processing_allowed,
+    canFeedDecisionLayer: run.can_feed_decision_layer,
+    reasonBlocked: run.reason_blocked,
+    hasQualifiedReferenceMask: Boolean(run.reference_mask_sha256)
+      && /^(qualified|authoritative|accepted)(?:_|$)/.test(referenceMaskStatus),
+    hasImmutableSpatialHoldout: hasHoldoutReceipt
+      && run.spatial_holdout_ids.length > 0
+      && run.spatial_partitions.some((partition) => partition.split === "holdout"),
+    hasCompleteValidationMetrics: QUALIFIED_METRICS.every((metric) => typeof run.validation_metrics[metric] === "number"),
+  };
 }
 
 function shortDigest(value: string): string {

@@ -23,6 +23,8 @@ REQUIRED_SITE_FILES = (
     "sw.js",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
+    "offline-demo/roads.geojson",
+    "offline-demo/context.geojson",
 )
 TEXT_SUFFIXES = {".css", ".html", ".js", ".json", ".md", ".mjs", ".svg", ".txt"}
 PRIVATE_PATH_PATTERNS = (

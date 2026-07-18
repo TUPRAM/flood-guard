@@ -33,10 +33,20 @@ The responsive application has three deliberately different routes:
 Run the offline judging application:
 
 ```powershell
+# One-time setup when `pnpm` is not recognized on Windows:
+corepack enable
+corepack prepare pnpm@11.9.0 --activate
+
 pnpm install --frozen-lockfile
 pnpm verify:frontend
 pnpm --filter @floodguard/web dev
 ```
+
+Then open `http://localhost:3000/public`,
+`http://localhost:3000/command`, or `http://localhost:3000/studio`. If the
+PowerShell execution policy blocks a generated script wrapper, use `pnpm.cmd`
+in the same commands. The role-surface product plan and privacy/safety boundary
+are documented in `docs/role-surface-development-plan.md`.
 
 `pnpm verify:frontend` includes a real-browser offline navigation smoke. On
 machines without installed Chrome, install the pinned Playwright browser once

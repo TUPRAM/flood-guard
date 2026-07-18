@@ -9,6 +9,7 @@ const CORE_ASSETS = [
   "/offline-demo/bundle.json",
   "/offline-demo/areas.geojson",
   "/offline-demo/roads.geojson",
+  "/offline-demo/context.geojson",
   ...PROPOSAL_EVIDENCE_ASSETS
 ];
 

@@ -13,6 +13,7 @@ import { rankVisibleAreas, toggleCommandClass } from "@/lib/command-filter";
 import { downloadText } from "@/lib/download";
 import { formatConfidence, formatNumber, formatTopReason } from "@/lib/format";
 import { loadApiBrief } from "@/lib/data-provider";
+import { formatServerDelta, scenarioMapPresentation } from "@/lib/scenario-presentation";
 import type { AreaRecord, ScenarioId } from "@/lib/types";
 import { useFloodGuardData } from "@/lib/use-floodguard-data";
 import { useLanguage } from "@/lib/use-language";
@@ -73,6 +74,7 @@ export function CommandWorkspace() {
   const [scenario, setScenario] = useState<ScenarioId>("baseline");
   const [activeClasses, setActiveClasses] = useState<Set<string>>(() => new Set(ACTION_CLASSES));
   const [showRoads, setShowRoads] = useState(true);
+  const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState(true);
   const [briefError, setBriefError] = useState<string>();
   const th = language === "th";
   const selected = data.areas.find((area) => area.area_id === selectedId) ?? data.areas[0];
@@ -80,6 +82,8 @@ export function CommandWorkspace() {
   const roadLayerAvailable = data.layers.some((layer) => layer.layer_id === "road_risk" && layer.data_state === "ready") && data.roadFeatures.features.length > 0;
   const activeScenario: ScenarioId = supportsScenarios ? scenario : "baseline";
   const scenarioResult = selected.scenario_results[activeScenario];
+  const baselineScenarioResult = selected.scenario_results.baseline;
+  const scenarioPresentation = scenarioMapPresentation(selected.action_class, activeScenario, scenarioResult);
   const rankedAreas = rankVisibleAreas(data.areas, activeClasses);
   const selectedRank = rankedAreas.findIndex((area) => area.area_id === selected.area_id) + 1;
   const selectArea = useCallback((areaId: string) => setSelectedId(areaId), []);
@@ -133,8 +137,8 @@ export function CommandWorkspace() {
       <div className="command-workspace">
         <aside className="control-rail" aria-label={th ? "ตัวควบคุม" : "Controls"}>
           <div className="rail-section">
-            <p className="rail-label">{th ? "พื้นที่ศึกษา" : "Study area"}</p>
-            <select value={selected.area_id} onChange={(event) => setSelectedId(event.target.value)} aria-label={th ? "เลือกพื้นที่" : "Select area"}>
+            <p className="rail-label">{th ? "พื้นที่รายงาน" : "Reporting area"}</p>
+            <select value={selected.area_id} onChange={(event) => setSelectedId(event.target.value)} aria-label={th ? "เลือกพื้นที่รายงาน" : "Select reporting area"}>
               {data.areas.map((area) => <option value={area.area_id} key={area.area_id}>{area.area_id} · {th ? "ชั้น" : "Class"} {area.action_class}</option>)}
             </select>
           </div>
@@ -146,7 +150,15 @@ export function CommandWorkspace() {
                   <button type="button" className={area.area_id === selected.area_id ? "selected" : ""} aria-current={area.area_id === selected.area_id ? "true" : undefined} onClick={() => selectArea(area.area_id)}>
                     <span className="rank-number">{String(index + 1).padStart(2, "0")}</span>
                     <span className="rank-name"><b>{th ? area.area_name_th : area.area_name_en}</b><small>{area.area_id}</small></span>
-                    <span className={`rank-score class-${area.action_class.toLowerCase()}`}><b>{area.fpps_0_100.toFixed(1)}</b><small>{th ? "ชั้น" : "Class"} {area.action_class}</small></span>
+                    <span className={`rank-score class-${area.action_class.toLowerCase()}`}>
+                      <b>{area.fpps_0_100.toFixed(1)}</b>
+                      <small>{th ? "ชั้น" : "Class"} {area.action_class}</small>
+                      {activeScenario !== "baseline" && (
+                        <small className={`rank-scenario-delta scenario-${scenarioMapPresentation(area.action_class, activeScenario, area.scenario_results[activeScenario]).tone}`}>
+                          {formatServerDelta(area.scenario_results[activeScenario].delta)} {th ? "การเข้าถึง" : "access"}
+                        </small>
+                      )}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -169,15 +181,42 @@ export function CommandWorkspace() {
 
         <section className="map-workspace" aria-label={th ? "พื้นที่ทำงานแผนที่" : "Map workspace"}>
           <div className="map-workspace-heading"><div><p className="eyebrow">{th ? "พื้นที่ทำงานหลัก" : "Primary workspace"}</p><h1>{th ? selected.area_name_th : selected.area_name_en}</h1></div><span>{selectedRank > 0 ? `#${selectedRank} FPPS` : "—"} · {th ? "เลือกพื้นที่เพื่อซิงค์หลักฐาน" : "select an area to synchronize evidence"}</span></div>
-          <GeoMap areas={data.areas} selectedId={selected.area_id} onSelect={selectArea} language={language} showRoads={roadLayerAvailable && showRoads} classFilter={activeClasses} height="100%" areaFeatures={data.areaFeatures} roadFeatures={data.roadFeatures} datasetMode={data.status.dataset_mode} />
-          <div className="scenario-delta-strip" aria-live="polite"><span>{activeScenario === "baseline" ? (th ? "ค่าฐาน" : "Baseline") : activeScenario === "add_temporary_shelter" ? (th ? "ที่พักพิงชั่วคราว" : "Temporary shelter") : (th ? "ทดสอบถนนปิด" : "Road-closure stress")}</span><b>{formatNumber(scenarioResult.people_losing_30_min_access, language)} {th ? "คนสูญเสียการเข้าถึง 30 นาที" : "people lose 30-min access"}</b><strong className={scenarioResult.delta < 0 ? "improves" : scenarioResult.delta > 0 ? "worsens" : "neutral"}>{scenarioResult.delta > 0 ? "+" : ""}{scenarioResult.delta} {th ? "เทียบค่าฐาน" : "vs baseline"}</strong></div>
+          <GeoMap areas={data.areas} selectedId={selected.area_id} onSelect={selectArea} language={language} showRoads={roadLayerAvailable && showRoads} classFilter={activeClasses} height="100%" areaFeatures={data.areaFeatures} roadFeatures={data.roadFeatures} contextFeatures={data.contextFeatures} datasetMode={data.status.dataset_mode} scenarioId={activeScenario} showSelectionSheet={false} />
+          <div className="scenario-delta-strip" aria-live="polite" data-scenario-tone={scenarioPresentation.tone}><span>{activeScenario === "baseline" ? (th ? "ค่าฐาน" : "Baseline") : activeScenario === "add_temporary_shelter" ? (th ? "ที่พักพิงชั่วคราว" : "Temporary shelter") : (th ? "ทดสอบถนนปิด" : "Road-closure stress")}</span><b>{formatNumber(scenarioResult.people_losing_30_min_access, language)} {th ? "คนสูญเสียการเข้าถึง 30 นาที" : "people lose 30-min access"}</b><strong className={scenarioPresentation.tone}>{formatServerDelta(scenarioResult.delta)} {th ? "เทียบค่าฐาน · ค่าจากเซิร์ฟเวอร์" : "vs baseline · server-produced"}</strong></div>
+          <aside className={`tablet-evidence-drawer ${evidenceDrawerOpen ? "open" : "closed"}`} aria-label={th ? "ลิ้นชักหลักฐานพื้นที่" : "Area evidence drawer"}>
+            <button type="button" className="tablet-evidence-toggle" aria-expanded={evidenceDrawerOpen} aria-controls="command-tablet-evidence" onClick={() => setEvidenceDrawerOpen((open) => !open)}>
+              <span><small>{th ? "หลักฐานพื้นที่" : "Area evidence"} · {selected.area_id}</small><b>{th ? selected.area_name_th : selected.area_name_en}</b></span>
+              <strong>FPPS {selected.fpps_0_100.toFixed(1)} · {th ? "ชั้น" : "Class"} {selected.action_class}</strong>
+              <span aria-hidden="true">{evidenceDrawerOpen ? "−" : "+"}</span>
+            </button>
+            <div id="command-tablet-evidence" className="tablet-evidence-body" hidden={!evidenceDrawerOpen} aria-live="polite">
+              <p>{formatTopReason(selected.action_class, selected.top_reason, language)}</p>
+              <dl>
+                <div><dt>{th ? "ค่าฐาน: สูญเสียการเข้าถึง" : "Baseline access loss"}</dt><dd>{formatNumber(baselineScenarioResult.people_losing_30_min_access, language)}</dd></div>
+                <div><dt>{th ? "สถานการณ์ที่เลือก" : "Selected scenario"}</dt><dd>{formatNumber(scenarioResult.people_losing_30_min_access, language)}</dd></div>
+                <div><dt>{th ? "ผลต่างจากเซิร์ฟเวอร์" : "Server-produced delta"}</dt><dd className={`scenario-${scenarioPresentation.tone}`}>{formatServerDelta(scenarioResult.delta)}</dd></div>
+                <div><dt>{th ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{formatConfidence(selected.confidence_class, language)}</dd></div>
+              </dl>
+              <small>{th ? "FPPS และชั้น A–E ยังคงเป็นค่าจากอาร์ติแฟกต์ที่เผยแพร่ สถานการณ์เปรียบเทียบเฉพาะผลลัพธ์การเข้าถึง" : "FPPS and A–E class remain published artifact values; the scenario compares access outputs only."}</small>
+            </div>
+          </aside>
         </section>
 
-        <aside className="decision-panel" aria-label={th ? "หลักฐานการตัดสินใจ" : "Decision evidence"}>
+        <aside className="decision-panel" aria-label={th ? "หลักฐานการตัดสินใจ" : "Decision evidence"} data-scenario-id={activeScenario} data-scenario-tone={scenarioPresentation.tone}>
           <div className="decision-title" aria-live="polite"><div><p className="eyebrow">{th ? "หลักฐานพื้นที่" : "Area evidence"} · {selected.area_id}</p><h2>{th ? selected.area_name_th : selected.area_name_en}</h2><StatePill tone="caution">{formatConfidence(selected.confidence_class, language)} {th ? "ความเชื่อมั่น" : "confidence"}</StatePill></div><span className={`decision-class class-${selected.action_class.toLowerCase()}`} aria-label={`${th ? "ชั้น" : "Class"} ${selected.action_class}`}>{selected.action_class}</span></div>
           <div className="fpps-block"><span>FPPS</span><b>{selected.fpps_0_100.toFixed(1)}</b><small>/ 100</small></div>
           <p className="top-reason">{formatTopReason(selected.action_class, selected.top_reason, language)}</p>
-          <dl className="evidence-grid"><div><dt>{th ? "สูญเสียการเข้าถึง 30 นาที" : "30-min access loss"}</dt><dd>{formatNumber(selected.people_losing_30_min_access, language)}</dd></div><div><dt>{th ? "อัตราช่องว่างความเสมอภาค" : "Equity-gap ratio"}</dt><dd>{formatNumber(selected.equity_gap_ratio, language, 2)}</dd></div><div><dt>{th ? "หลักฐานถนน" : "Road evidence"}</dt><dd>{roadLayerAvailable ? `${data.roadFeatures.features.filter((feature) => feature.properties.area_id === selected.area_id).length} ${th ? "ช่วง (แบบจำลอง)" : "modelled segment(s)"}` : (th ? "ไม่มีข้อมูล" : "Unavailable")}</dd></div><div><dt>{th ? "สถานะสถานที่" : "Facility evidence"}</dt><dd>{th ? "ไม่ได้ยืนยัน" : "Unconfirmed"}</dd></div></dl>
+          <dl className="evidence-grid"><div><dt>{th ? "สูญเสียการเข้าถึง 30 นาที · สถานการณ์" : "30-min access loss · scenario"}</dt><dd>{formatNumber(scenarioResult.people_losing_30_min_access, language)}</dd></div><div><dt>{th ? "อัตราช่องว่างความเสมอภาค · สถานการณ์" : "Equity-gap ratio · scenario"}</dt><dd>{formatNumber(scenarioResult.equity_gap_ratio, language, 2)}</dd></div><div><dt>{th ? "หลักฐานถนน" : "Road evidence"}</dt><dd>{roadLayerAvailable ? `${data.roadFeatures.features.filter((feature) => feature.properties.area_id === selected.area_id).length} ${th ? "ช่วง (แบบจำลอง)" : "modelled segment(s)"}` : (th ? "ไม่มีข้อมูล" : "Unavailable")}</dd></div><div><dt>{th ? "สถานะสถานที่" : "Facility evidence"}</dt><dd>{th ? "ไม่ได้ยืนยัน" : "Unconfirmed"}</dd></div></dl>
+          <section className="scenario-evidence-comparison" aria-labelledby="scenario-evidence-title" aria-live="polite">
+            <div className="scenario-evidence-heading"><div><p className="eyebrow">{th ? "การเปรียบเทียบจากเอนจิน" : "Engine-produced comparison"}</p><h3 id="scenario-evidence-title">{activeScenario === "baseline" ? (th ? "ค่าฐาน" : "Baseline") : activeScenario === "add_temporary_shelter" ? (th ? "เพิ่มที่พักพิงชั่วคราว" : "Temporary shelter") : (th ? "ทดสอบถนนปิด" : "Road-closure stress")}</h3></div><StatePill tone={scenarioPresentation.tone === "improves" ? "ready" : scenarioPresentation.tone === "worsens" ? "blocked" : "info"}>{formatServerDelta(scenarioResult.delta)} {th ? "การเข้าถึง" : "access"}</StatePill></div>
+            <dl>
+              <div><dt>{th ? "ค่าฐาน: สูญเสียการเข้าถึง" : "Baseline access loss"}</dt><dd>{formatNumber(baselineScenarioResult.people_losing_30_min_access, language)}</dd></div>
+              <div><dt>{th ? "สถานการณ์: สูญเสียการเข้าถึง" : "Scenario access loss"}</dt><dd>{formatNumber(scenarioResult.people_losing_30_min_access, language)}</dd></div>
+              <div><dt>{th ? "ผลต่างการเข้าถึงจากเซิร์ฟเวอร์" : "Server-produced access delta"}</dt><dd className={`scenario-${scenarioPresentation.tone}`}>{formatServerDelta(scenarioResult.delta)}</dd></div>
+              <div><dt>{th ? "ความเสมอภาคค่าฐาน / สถานการณ์" : "Baseline / scenario equity"}</dt><dd>{formatNumber(baselineScenarioResult.equity_gap_ratio, language, 2)} / {formatNumber(scenarioResult.equity_gap_ratio, language, 2)}</dd></div>
+            </dl>
+            <p>{th ? "ค่าทั้งหมดมาจากเอาต์พุตสถานการณ์ของเซิร์ฟเวอร์หรือชุดข้อมูลสาธิตที่ตรวจสอบแล้ว เบราว์เซอร์ไม่คำนวณผลลัพธ์การตัดสินใจ" : "All values come from server scenario output or its validated fixture equivalent. The browser does not calculate decision results."}</p>
+          </section>
           <p className="decision-section-label">{th ? "องค์ประกอบคะแนนที่เอนจินคำนวณ" : "Engine-computed score components"}</p>
           <div className="decision-scores">
             <ScoreBar label={th ? "โอกาสน้ำท่วม" : "Flood likelihood"} value={selected.flood_likelihood_0_100} />

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   LAST_KNOWN_API_SNAPSHOT_KEY,
   areaFeatures,
+  contextFeatures,
   assertNoPrivatePaths,
   getOfflineData,
   loadFloodGuardData,
@@ -29,6 +30,7 @@ describe("offline judging bundle", () => {
     expect(areaFeatures.type).toBe("FeatureCollection");
     expect(areaFeatures.features).toHaveLength(5);
     expect(roadFeatures.features).toHaveLength(3);
+    expect(contextFeatures.features).toHaveLength(8);
     expect(areaFeatures.features.every((feature) => feature.geometry.type === "Polygon")).toBe(true);
   });
 
@@ -79,6 +81,7 @@ describe("partial API availability", () => {
     expect(data.areas).toHaveLength(fixture.areas.length);
     expect(data.areaFeatures.features).toHaveLength(areaFeatures.features.length);
     expect(data.roadFeatures.features).toHaveLength(0);
+    expect(data.contextFeatures.features).toHaveLength(contextFeatures.features.length);
     expect(data.model_runs).toHaveLength(0);
     expect(data.readiness).toEqual(expect.arrayContaining([expect.objectContaining({ status: "unavailable" })]));
     expect(data.scenarioState).toBe("unavailable");

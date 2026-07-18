@@ -32,6 +32,7 @@ const versionedFiles = [
   resolve(out, "offline-demo", "bundle.json"),
   resolve(out, "offline-demo", "areas.geojson"),
   resolve(out, "offline-demo", "roads.geojson"),
+  resolve(out, "offline-demo", "context.geojson"),
   ...proposalEvidenceAssets.map((url) => resolve(out, url.slice(1))),
 ];
 const buildHash = createHash("sha256");

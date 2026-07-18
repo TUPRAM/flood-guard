@@ -1,4 +1,6 @@
 import bundleJson from "../../public/offline-demo/bundle.json";
+import maeSaiBundleJson from "../../public/offline-demo/mae-sai/bundle.json";
+import maeSaiManifestJson from "../../public/offline-demo/mae-sai/manifest.json";
 import areasGeoJson from "../data/areas.json";
 import contextGeoJson from "../data/context.json";
 import roadsGeoJson from "../data/roads.json";
@@ -14,9 +16,13 @@ import {
   type StatusResponse,
 } from "@floodguard/contracts";
 
-import type { AreaRecord, FeatureCollection, FloodGuardData, OfflineBundle, ReadinessRow, ScenarioId, ScenarioResult } from "./types";
+import type { AreaRecord, FeatureCollection, FloodGuardData, OfflineBundle, ReadinessRow, ScenarioId, ScenarioResult, StudyAreaId } from "./types";
 
 const offlineBundle = bundleJson as unknown as OfflineBundle;
+const maeSaiOfflineBundle = maeSaiBundleJson as unknown as OfflineBundle;
+const maeSaiManifest = maeSaiManifestJson as unknown as {
+  layers: Array<{ layer_id: string; source_sha256: string; feature_count: number }>;
+};
 
 export const LAST_KNOWN_API_SNAPSHOT_KEY = "floodguard:last-known-api-snapshot:v2";
 const SNAPSHOT_SCHEMA_VERSION = "1.0";
@@ -36,28 +42,83 @@ export function getOfflineData(reason?: string): FloodGuardData {
     dataState: reason ? "stale_offline" : "ready",
     dataOrigin: "offline_bundle",
     scenarioState: "ready",
+    availableScenarios: ["baseline", "add_temporary_shelter", "close_road"],
     areaFeatures,
     roadFeatures,
     contextFeatures,
+    facilityFeatures: emptyFeatureCollection("fixture_facilities_unavailable"),
+    accessFeatures: emptyFeatureCollection("fixture_access_hotspots_unavailable"),
     fallbackReason: reason,
   };
+}
+
+export function getMaeSaiOfflineData(reason?: string): FloodGuardData {
+  return {
+    ...maeSaiOfflineBundle,
+    dataState: reason ? "stale_offline" : "loading",
+    dataOrigin: "offline_bundle",
+    scenarioState: "unavailable",
+    availableScenarios: ["baseline"],
+    areaFeatures: emptyFeatureCollection("mae_sai_priority_areas_loading"),
+    roadFeatures: emptyFeatureCollection("mae_sai_roads_loading"),
+    contextFeatures: emptyFeatureCollection("mae_sai_context_loading"),
+    facilityFeatures: emptyFeatureCollection("mae_sai_facilities_loading"),
+    accessFeatures: emptyFeatureCollection("mae_sai_access_hotspots_loading"),
+    fallbackReason: reason,
+  };
+}
+
+export async function loadMaeSaiOfflineData(reason?: string): Promise<FloodGuardData> {
+  const base = getMaeSaiOfflineData(reason);
+  try {
+    const [areas, roads, facilities, access] = await Promise.all([
+      loadFeatureCollection("/offline-demo/mae-sai/areas.json"),
+      loadFeatureCollection("/offline-demo/mae-sai/roads.json"),
+      loadFeatureCollection("/offline-demo/mae-sai/facilities.json"),
+      loadFeatureCollection("/offline-demo/mae-sai/access-hotspots.json"),
+    ]);
+    assertMaeSaiCollections(areas, roads, facilities, access, "complete");
+    return {
+      ...base,
+      dataState: reason ? "stale_offline" : "ready",
+      areaFeatures: areas,
+      roadFeatures: roads,
+      facilityFeatures: facilities,
+      accessFeatures: access,
+    };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Mae Sai offline bundle unavailable.";
+    return {
+      ...base,
+      dataState: "unavailable",
+      fallbackReason: reason ? `${reason} ${detail}` : detail,
+    };
+  }
 }
 
 export async function loadFloodGuardData(
   apiBase = process.env.NEXT_PUBLIC_FLOODGUARD_API_URL,
   snapshotStorage?: SnapshotStorage | null,
+  preferredStudyArea: StudyAreaId = "fixture_thailand_demo",
 ): Promise<FloodGuardData> {
   const storage = resolveSnapshotStorage(snapshotStorage);
+  const snapshotKey = snapshotKeyFor(preferredStudyArea);
   if (!apiBase) {
-    return readLastKnownApiSnapshot(storage, "API endpoint is not configured.") ?? getOfflineData();
+    const cached = preferredStudyArea === "mae_sai_candidate_v1"
+      ? null
+      : readLastKnownApiSnapshot(storage, "API endpoint is not configured.", snapshotKey);
+    if (cached) return cached;
+    return preferredStudyArea === "mae_sai_candidate_v1"
+      ? loadMaeSaiOfflineData()
+      : getOfflineData();
   }
 
   try {
     const base = apiBase.replace(/\/$/, "");
     const [statusResponse, areasResponse, layersResponse] = await Promise.all([
-        fetch(`${base}/api/v1/status`, { cache: "no-store" }),
-        fetch(`${base}/api/v1/areas`, { cache: "no-store" }),
-        fetch(`${base}/api/v1/layers`, { cache: "no-store" }),
+        fetch(withStudyArea(`${base}/api/v1/status`, preferredStudyArea), { cache: "no-store" }),
+        fetch(withStudyArea(`${base}/api/v1/areas`, preferredStudyArea), { cache: "no-store" }),
+        fetch(withStudyArea(`${base}/api/v1/layers`, preferredStudyArea), { cache: "no-store" }),
       ]);
 
     const responses = [statusResponse, areasResponse, layersResponse];
@@ -71,16 +132,26 @@ export async function loadFloodGuardData(
     const status = statusRaw as StatusResponse;
     const areas = asItems<AreaDecision>(areasRaw);
     const layers = asItems<LayerCatalogItem>(layersRaw);
+    assertRequestedStudyArea(status, areas, preferredStudyArea);
     const degradationReasons: string[] = [];
+    const candidateProfile = status.study_area === "mae_sai_candidate_v1";
     const [runsResult, readinessResult, pilotResult] = await Promise.allSettled([
-      loadCollection<ModelRun>(`${base}/api/v1/model-runs`),
-      loadCollection<Record<string, unknown>>(`${base}/api/v1/data-readiness`),
-      loadPilotReadiness(`${base}/api/v1/pilot/readiness`),
+      candidateProfile
+        ? Promise.resolve([] as ModelRun[])
+        : loadCollection<ModelRun>(`${base}/api/v1/model-runs`),
+      candidateProfile
+        ? Promise.resolve(maeSaiOfflineBundle.readiness as ReadinessRow[])
+        : loadCollection<Record<string, unknown>>(`${base}/api/v1/data-readiness`),
+      candidateProfile
+        ? Promise.resolve(maeSaiOfflineBundle.pilot_readiness)
+        : loadPilotReadiness(`${base}/api/v1/pilot/readiness`),
     ]);
     const modelRuns = runsResult.status === "fulfilled" ? runsResult.value : [];
     if (runsResult.status === "rejected") degradationReasons.push("Model-run catalog unavailable.");
     const readiness = readinessResult.status === "fulfilled"
-      ? readinessResult.value.map(adaptReadiness)
+      ? readinessResult.value.map((row) => candidateProfile
+          ? row as ReadinessRow
+          : adaptReadiness(row as unknown as Record<string, unknown>))
       : [{
           check_id: "api_data_readiness",
           source: "API readiness artifact",
@@ -140,11 +211,18 @@ export async function loadFloodGuardData(
           status: "not_evaluated" as const,
           note: "Model validation categories are unavailable from the current API.",
         }];
-    const scenarioEligible = fixtureCompatible && status.data_state === "ready";
-    const [areaLayerResult, roadLayerResult, scenarioResult] = await Promise.allSettled([
+    const scenarioEligible = (
+      status.data_state === "ready"
+      || (status.study_area === "mae_sai_candidate_v1" && status.data_state === "stale")
+    ) && (fixtureCompatible || status.study_area === "mae_sai_candidate_v1");
+    const [areaLayerResult, roadLayerResult, facilityLayerResult, accessLayerResult, scenarioResult] = await Promise.allSettled([
       loadLayerData(base, layers, "priority_areas"),
       loadLayerData(base, layers, "road_risk"),
-      scenarioEligible ? loadScenarioResults(base, status) : Promise.resolve(new Map()),
+      loadOptionalLayerData(base, layers, "facilities"),
+      loadOptionalLayerData(base, layers, "access_hotspots"),
+      scenarioEligible
+        ? loadScenarioResults(base, status, boundedAreas)
+        : Promise.resolve(emptyScenarioLoadResult()),
     ]);
     if (areaLayerResult.status === "rejected") throw areaLayerResult.reason;
     const apiAreaFeatures = areaLayerResult.value;
@@ -152,14 +230,37 @@ export async function loadFloodGuardData(
       ? roadLayerResult.value
       : emptyFeatureCollection("road_risk_unavailable");
     if (roadLayerResult.status === "rejected") degradationReasons.push("Road-risk layer unavailable.");
-    const scenarioResults = scenarioResult.status === "fulfilled" ? scenarioResult.value : new Map();
-    const scenarioState = scenarioEligible && scenarioResult.status === "fulfilled" ? "ready" : "unavailable";
+    const apiFacilityFeatures = facilityLayerResult.status === "fulfilled"
+      ? facilityLayerResult.value
+      : emptyFeatureCollection("facilities_unavailable");
+    if (facilityLayerResult.status === "rejected") degradationReasons.push("Facility-candidate layer unavailable.");
+    const apiAccessFeatures = accessLayerResult.status === "fulfilled"
+      ? accessLayerResult.value
+      : emptyFeatureCollection("access_hotspots_unavailable");
+    if (accessLayerResult.status === "rejected") degradationReasons.push("Access-hotspot layer unavailable.");
+    const loadedScenarios = scenarioResult.status === "fulfilled"
+      ? scenarioResult.value
+      : emptyScenarioLoadResult();
+    const scenarioResults = loadedScenarios.results;
+    const scenarioState = scenarioEligible
+      && scenarioResult.status === "fulfilled"
+      && loadedScenarios.availableScenarios.length > 1
+      ? "ready"
+      : "unavailable";
     if (scenarioEligible && scenarioResult.status === "rejected") degradationReasons.push("Scenario artifacts unavailable.");
+    if (loadedScenarios.failedScenarioCount > 0) {
+      degradationReasons.push(
+        `${loadedScenarios.failedScenarioCount} server-defined scenario artifact${loadedScenarios.failedScenarioCount === 1 ? " is" : "s are"} unavailable.`,
+      );
+    }
     const publicLayers = roadLayerResult.status === "fulfilled"
       ? boundedLayers
       : boundedLayers.map((layer) => layer.layer_id === "road_risk" ? { ...layer, data_state: "unavailable" as const } : layer);
+    const compatibleBundle = status.study_area === "mae_sai_candidate_v1"
+      ? maeSaiOfflineBundle
+      : offlineBundle;
     const candidate = {
-      ...offlineBundle,
+      ...compatibleBundle,
       status: boundedStatus,
       areas: boundedAreas.map((area) => adaptArea(area, scenarioResults)),
       layers: publicLayers,
@@ -171,20 +272,40 @@ export async function loadFloodGuardData(
       dataState: boundedStatus.data_state,
       dataOrigin: "api",
       scenarioState,
+      availableScenarios: scenarioState === "ready"
+        ? loadedScenarios.availableScenarios
+        : ["baseline"],
       apiBase: base,
       areaFeatures: apiAreaFeatures,
       roadFeatures: apiRoadFeatures,
       contextFeatures: fixtureCompatible
         ? contextFeatures
         : emptyFeatureCollection("context_unavailable_for_current_dataset"),
+      facilityFeatures: apiFacilityFeatures,
+      accessFeatures: apiAccessFeatures,
       degradedReason: degradationReasons.length > 0 ? degradationReasons.join(" ") : undefined,
     } as FloodGuardData;
+    if (status.study_area === "mae_sai_candidate_v1") {
+      assertMaeSaiCollections(
+        candidate.areaFeatures,
+        candidate.roadFeatures,
+        candidate.facilityFeatures,
+        candidate.accessFeatures,
+        "regional",
+      );
+    }
     assertNoPrivatePaths(candidate);
-    writeLastKnownApiSnapshot(storage, candidate);
+    writeLastKnownApiSnapshot(storage, candidate, snapshotKey);
     return candidate;
   } catch (error) {
     const reason = error instanceof Error ? error.message : "API unavailable";
-    return readLastKnownApiSnapshot(storage, reason) ?? getOfflineData(reason);
+    const cached = preferredStudyArea === "mae_sai_candidate_v1"
+      ? null
+      : readLastKnownApiSnapshot(storage, reason, snapshotKey);
+    if (cached) return cached;
+    return preferredStudyArea === "mae_sai_candidate_v1"
+      ? loadMaeSaiOfflineData(reason)
+      : getOfflineData(reason);
   }
 }
 
@@ -200,11 +321,29 @@ function resolveSnapshotStorage(
   }
 }
 
+function snapshotKeyFor(studyArea: StudyAreaId): string {
+  return studyArea === "fixture_thailand_demo"
+    ? LAST_KNOWN_API_SNAPSHOT_KEY
+    : `${LAST_KNOWN_API_SNAPSHOT_KEY}:${studyArea}`;
+}
+
+function withStudyArea(url: string, studyArea: StudyAreaId): string {
+  if (studyArea === "fixture_thailand_demo") return url;
+  const parsed = new URL(url);
+  parsed.searchParams.set("study_area", studyArea);
+  return parsed.toString();
+}
+
 function writeLastKnownApiSnapshot(
   storage: SnapshotStorage | null,
   data: FloodGuardData,
+  snapshotKey = LAST_KNOWN_API_SNAPSHOT_KEY,
 ): void {
-  if (!storage || data.dataOrigin !== "api") return;
+  if (
+    !storage
+    || data.dataOrigin !== "api"
+    || data.status.study_area === "mae_sai_candidate_v1"
+  ) return;
   const publicData: FloodGuardData = {
     ...data,
     apiBase: undefined,
@@ -218,7 +357,7 @@ function writeLastKnownApiSnapshot(
   };
   try {
     assertNoPrivatePaths(envelope);
-    storage.setItem(LAST_KNOWN_API_SNAPSHOT_KEY, JSON.stringify(envelope));
+    storage.setItem(snapshotKey, JSON.stringify(envelope));
   } catch {
     // Browser storage is optional; quota or privacy-mode failures must not
     // replace a valid current API response.
@@ -228,10 +367,11 @@ function writeLastKnownApiSnapshot(
 function readLastKnownApiSnapshot(
   storage: SnapshotStorage | null,
   reason: string,
+  snapshotKey = LAST_KNOWN_API_SNAPSHOT_KEY,
 ): FloodGuardData | null {
   if (!storage) return null;
   try {
-    const raw = storage.getItem(LAST_KNOWN_API_SNAPSHOT_KEY);
+    const raw = storage.getItem(snapshotKey);
     if (!raw) return null;
     const envelope = JSON.parse(raw) as unknown;
     if (!isSnapshotEnvelope(envelope)) return null;
@@ -273,6 +413,7 @@ function readLastKnownApiSnapshot(
       dataState: "stale_offline",
       dataOrigin: "cached_api",
       scenarioState: "unavailable",
+      availableScenarios: ["baseline"],
       apiBase: undefined,
       snapshotCachedAt: envelope.cached_at,
       fallbackReason: reason,
@@ -292,6 +433,11 @@ function isSnapshotEnvelope(
   if (!isRecord(data.status) || typeof data.status.source_timestamp !== "string") return false;
   if (typeof data.status.source_name !== "string" || typeof data.status.official_warning !== "boolean") return false;
   if (!Array.isArray(data.areas) || !Array.isArray(data.layers)) return false;
+  if (
+    !Array.isArray(data.availableScenarios)
+    || !data.availableScenarios.includes("baseline")
+    || data.availableScenarios.some((scenario) => !isScenarioId(scenario))
+  ) return false;
   if (!Array.isArray(data.readiness) || !Array.isArray(data.model_runs)) return false;
   if (!isRecord(data.pilot_readiness)) return false;
   if (typeof data.pilot_readiness.agency_operational_allowed !== "boolean") return false;
@@ -300,6 +446,8 @@ function isSnapshotEnvelope(
     !isFeatureCollection(data.areaFeatures)
     || !isFeatureCollection(data.roadFeatures)
     || !isFeatureCollection(data.contextFeatures)
+    || !isFeatureCollection(data.facilityFeatures)
+    || !isFeatureCollection(data.accessFeatures)
   ) return false;
   return true;
 }
@@ -391,6 +539,129 @@ async function loadCollection<T>(url: string): Promise<T[]> {
   return asItems<T>(await response.json());
 }
 
+async function loadFeatureCollection(url: string): Promise<FeatureCollection> {
+  const response = await fetch(url, { cache: "force-cache" });
+  if (!response.ok) throw new Error(`Offline geospatial asset returned ${response.status} for ${url}.`);
+  const value = await response.json() as unknown;
+  if (!isFeatureCollection(value)) throw new Error(`Offline geospatial asset is not a FeatureCollection: ${url}.`);
+  assertNoPrivatePaths(value);
+  return value;
+}
+
+function assertRequestedStudyArea(
+  status: StatusResponse,
+  areas: AreaDecision[],
+  preferredStudyArea: StudyAreaId,
+): void {
+  if (preferredStudyArea !== "mae_sai_candidate_v1") return;
+  const expectedIds = new Set(maeSaiOfflineBundle.areas.map((area) => area.area_id));
+  const receivedIds = new Set(areas.map((area) => area.area_id));
+  const expectedCommit = maeSaiOfflineBundle.status.git_commit;
+  const expectedSourceTimestamp = maeSaiOfflineBundle.status.source_timestamp;
+  const expectedDataVersion = maeSaiOfflineBundle.status.data_version;
+  if (
+    status.study_area !== preferredStudyArea
+    || status.dataset_mode !== "candidate"
+    || status.operational_status !== "non_operational"
+    || status.official_warning
+    || status.data_version !== expectedDataVersion
+    || status.git_commit !== expectedCommit
+    || status.source_timestamp !== expectedSourceTimestamp
+    || areas.length !== expectedIds.size
+    || receivedIds.size !== expectedIds.size
+    || [...expectedIds].some((areaId) => !receivedIds.has(areaId))
+    || areas.some((area) => (
+      area.dataset_mode !== "candidate"
+      || area.operational_status !== "non_operational"
+      || area.official_warning
+      || area.data_version !== expectedDataVersion
+      || area.git_commit !== expectedCommit
+      || area.source_timestamp !== expectedSourceTimestamp
+    ))
+  ) {
+    throw new Error("Mae Sai API study-area identity or safety contract failed.");
+  }
+}
+
+function assertMaeSaiCollections(
+  areas: FeatureCollection,
+  roads: FeatureCollection,
+  facilities: FeatureCollection,
+  access: FeatureCollection,
+  roadScope: "complete" | "regional",
+): void {
+  const expectedIds = new Set(maeSaiOfflineBundle.areas.map((area) => area.area_id));
+  if (
+    areas.features.length !== 8
+    || roads.features.length !== (roadScope === "complete" ? 4_458 : 750)
+    || facilities.features.length !== 42
+    || access.features.length !== 8
+  ) throw new Error("Mae Sai geospatial feature-count contract failed.");
+  if (roadScope === "regional") {
+    assertMaeSaiLayerMetadata(areas, "priority_areas");
+    assertMaeSaiLayerMetadata(roads, "road_risk");
+    assertMaeSaiLayerMetadata(facilities, "facilities");
+    assertMaeSaiLayerMetadata(access, "access_hotspots");
+    const query = (roads as unknown as { floodguard_query?: Record<string, unknown> }).floodguard_query;
+    if (
+      !query
+      || query.detail !== "regional"
+      || query.area_id !== null
+      || query.returned_feature_count !== roads.features.length
+      || roads.features.some((feature) => (
+        feature.properties.dataset_mode !== "candidate"
+        || feature.properties.official_warning !== false
+        || feature.properties.observation_status !== "modelled_candidate_not_observed"
+      ))
+    ) throw new Error("Mae Sai regional road-layer query contract failed.");
+  }
+  const collections = [areas, roads, facilities, access];
+  for (const collection of collections) {
+    for (const feature of collection.features) {
+      const areaId = String(feature.properties.area_id ?? "");
+      if (!expectedIds.has(areaId)) throw new Error("Mae Sai feature references an unknown reporting area.");
+      for (const [longitude, latitude] of coordinatePairs(feature.geometry.coordinates)) {
+        if (longitude < 99.8 || longitude > 100.05 || latitude < 20.24 || latitude > 20.48) {
+          throw new Error("Mae Sai feature escaped the declared geographic bounds.");
+        }
+      }
+    }
+  }
+  if (facilities.features.some((feature) => (
+    feature.properties.verification_status !== "open_context_candidate"
+    || feature.properties.emergency_role !== "no_confirmed_emergency_role"
+    || feature.properties.candidate_status !== "unverified_osm_candidate"
+  ))) throw new Error("Mae Sai facility candidate was substituted or promoted without authority.");
+}
+
+function assertMaeSaiLayerMetadata(collection: FeatureCollection, layerId: string): void {
+  const metadata = (collection as unknown as { floodguard_metadata?: Record<string, unknown> }).floodguard_metadata;
+  const expectedLayer = maeSaiManifest.layers.find((layer) => layer.layer_id === layerId);
+  if (
+    !metadata
+    || !expectedLayer
+    || metadata.schema_version !== "1.0"
+    || metadata.study_area_id !== "mae_sai_candidate_v1"
+    || metadata.dataset_mode !== "candidate"
+    || metadata.operational_status !== "non_operational"
+    || metadata.official_warning !== false
+    || metadata.data_version !== maeSaiOfflineBundle.status.data_version
+    || metadata.artifact_sha256 !== expectedLayer.source_sha256
+    || metadata.processing_allowed !== true
+    || metadata.can_feed_decision_layer !== false
+    || typeof metadata.reason_blocked !== "string"
+    || !metadata.reason_blocked
+  ) throw new Error(`Mae Sai ${layerId} lineage metadata contract failed.`);
+}
+
+function coordinatePairs(value: unknown): Array<[number, number]> {
+  if (!Array.isArray(value)) return [];
+  if (value.length >= 2 && typeof value[0] === "number" && typeof value[1] === "number") {
+    return [[value[0], value[1]]];
+  }
+  return value.flatMap(coordinatePairs);
+}
+
 function emptyFeatureCollection(name: string): FeatureCollection {
   return { type: "FeatureCollection", name, features: [] };
 }
@@ -415,29 +686,118 @@ function adaptReadiness(row: Record<string, unknown>): ReadinessRow {
 
 type ApiScenarioArea = {
   area_id: string;
+  baseline_people_losing_30_min_access: number;
   scenario_people_losing_30_min_access: number;
+  baseline_equity_gap_ratio: number | null;
   scenario_equity_gap_ratio: number | null;
   change_people_losing_30_min_access: number;
 };
 
-async function loadScenarioResults(base: string, status: StatusResponse): Promise<Map<string, Partial<Record<ScenarioId, ScenarioResult>>>> {
+type ApiScenarioParameterDefinition = {
+  name: string;
+  value_type: "integer" | "string";
+  required: boolean;
+  default: string | number;
+  minimum: number | null;
+  maximum: number | null;
+  allowed_values: string[] | null;
+};
+
+type ApiScenarioDefinition = {
+  scenario_id: Exclude<ScenarioId, "baseline">;
+  parameters: ApiScenarioParameterDefinition[];
+  backend_config_version: "fixture-access-scenarios-v1" | "mae-sai-candidate-access-scenarios-v1";
+  access_method: "nearest_facility_shortest_path_threshold";
+};
+
+type ApiScenarioRun = {
+  schema_version: string;
+  run_id: string;
+  scenario_id: Exclude<ScenarioId, "baseline">;
+  study_area: string;
+  parameters: Record<string, string | number>;
+  run_status: "completed";
+  result_state: "ready" | "stale";
+  backend_config_version: ApiScenarioDefinition["backend_config_version"];
+  access_method: ApiScenarioDefinition["access_method"];
+  fpps_recalculated: false;
+  dataset_mode: StatusResponse["dataset_mode"];
+  operational_status: StatusResponse["operational_status"];
+  official_warning: boolean;
+  source_timestamp: string;
+  generated_at: string;
+  confidence_class: string;
+  source_name: string;
+  assumptions: string[];
+  data_version: string;
+  git_commit: string;
+  input_manifest_sha256: string | null;
+  input_receipt_sha256: string | null;
+  areas: ApiScenarioArea[];
+};
+
+type ScenarioLoadResult = {
+  results: Map<string, Partial<Record<ScenarioId, ScenarioResult>>>;
+  availableScenarios: ScenarioId[];
+  failedScenarioCount: number;
+};
+
+function emptyScenarioLoadResult(): ScenarioLoadResult {
+  return {
+    results: new Map(),
+    availableScenarios: ["baseline"],
+    failedScenarioCount: 0,
+  };
+}
+
+async function loadScenarioResults(
+  base: string,
+  status: StatusResponse,
+  areas: AreaDecision[],
+): Promise<ScenarioLoadResult> {
   const results = new Map<string, Partial<Record<ScenarioId, ScenarioResult>>>();
-  if (status.dataset_mode !== "fixture_demo" || status.study_area !== "fixture_thailand_demo" || status.data_state !== "ready") return results;
-  const requests = [
-    { scenario_id: "add_temporary_shelter" as const, parameters: { node_id: "P2A", capacity: 500 } },
-    { scenario_id: "close_road" as const, parameters: { road_id: "FG-RD-002" } },
-  ];
-  const payloads = await Promise.all(requests.map(async (request) => {
+  if (
+    status.data_state !== "ready"
+    && !(status.study_area === "mae_sai_candidate_v1" && status.data_state === "stale")
+  ) return emptyScenarioLoadResult();
+
+  const catalogUrl = new URL(`${base}/api/v1/scenarios`);
+  catalogUrl.searchParams.set("study_area", status.study_area);
+  const catalogResponse = await fetch(catalogUrl.toString(), { cache: "no-store" });
+  if (!catalogResponse.ok) throw new Error(`Scenario catalog returned ${catalogResponse.status}.`);
+  const definitions = validateScenarioDefinitions(
+    asItems<ApiScenarioDefinition>(await catalogResponse.json()),
+    status.study_area,
+  );
+  if (definitions.length === 0) return emptyScenarioLoadResult();
+
+  const baselineByArea = new Map(areas.map((area) => [area.area_id, area]));
+  const payloads = await Promise.allSettled(definitions.map(async (definition) => {
+    const parameters = Object.fromEntries(
+      definition.parameters.map((parameter) => [parameter.name, parameter.default]),
+    );
     const response = await fetch(`${base}/api/v1/scenario-runs`, {
       method: "POST",
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...request, study_area: "fixture_thailand_demo" }),
+      body: JSON.stringify({
+        scenario_id: definition.scenario_id,
+        study_area: status.study_area,
+        parameters,
+      }),
     });
     if (!response.ok) throw new Error(`Scenario API returned ${response.status}.`);
-    return { id: request.scenario_id, payload: await response.json() as { areas: ApiScenarioArea[] } };
+    const payload = await response.json() as ApiScenarioRun;
+    assertNoPrivatePaths(payload);
+    validateScenarioRun(payload, definition, status, parameters, baselineByArea);
+    return { id: definition.scenario_id, payload };
   }));
-  for (const { id, payload } of payloads) {
+
+  const availableScenarios: ScenarioId[] = ["baseline"];
+  for (const settled of payloads) {
+    if (settled.status === "rejected") continue;
+    const { id, payload } = settled.value;
+    availableScenarios.push(id);
     for (const area of payload.areas) {
       const current = results.get(area.area_id) ?? {};
       current[id] = {
@@ -448,11 +808,177 @@ async function loadScenarioResults(base: string, status: StatusResponse): Promis
       results.set(area.area_id, current);
     }
   }
-  return results;
+  return {
+    results,
+    availableScenarios,
+    failedScenarioCount: payloads.filter((payload) => payload.status === "rejected").length,
+  };
+}
+
+function validateScenarioDefinitions(
+  definitions: ApiScenarioDefinition[],
+  studyArea: string,
+): ApiScenarioDefinition[] {
+  const expectedConfig = studyArea === "mae_sai_candidate_v1"
+    ? "mae-sai-candidate-access-scenarios-v1"
+    : "fixture-access-scenarios-v1";
+  const scenarioIds = new Set<string>();
+  for (const definition of definitions) {
+    if (!isServerScenarioId(definition.scenario_id) || scenarioIds.has(definition.scenario_id)) {
+      throw new Error("Scenario catalog contains an unknown or duplicate scenario ID.");
+    }
+    scenarioIds.add(definition.scenario_id);
+    if (
+      definition.backend_config_version !== expectedConfig
+      || definition.access_method !== "nearest_facility_shortest_path_threshold"
+      || !Array.isArray(definition.parameters)
+    ) throw new Error("Scenario catalog is not bound to the selected dataset contract.");
+    const parameterNames = new Set<string>();
+    for (const parameter of definition.parameters) {
+      if (
+        !parameter
+        || typeof parameter.name !== "string"
+        || !parameter.name
+        || parameterNames.has(parameter.name)
+        || typeof parameter.required !== "boolean"
+      ) throw new Error("Scenario catalog parameter contract failed.");
+      parameterNames.add(parameter.name);
+      if (parameter.value_type === "integer") {
+        if (
+          typeof parameter.default !== "number"
+          ||
+          !Number.isInteger(parameter.default)
+          || (typeof parameter.minimum === "number" && parameter.default < parameter.minimum)
+          || (typeof parameter.maximum === "number" && parameter.default > parameter.maximum)
+        ) throw new Error("Scenario integer default is outside its server-defined range.");
+      } else if (parameter.value_type === "string") {
+        if (
+          typeof parameter.default !== "string"
+          || (Array.isArray(parameter.allowed_values) && !parameter.allowed_values.includes(parameter.default))
+        ) throw new Error("Scenario string default is not server-defined.");
+      } else {
+        throw new Error("Scenario catalog contains an unsupported parameter type.");
+      }
+    }
+  }
+  return definitions;
+}
+
+function validateScenarioRun(
+  payload: ApiScenarioRun,
+  definition: ApiScenarioDefinition,
+  status: StatusResponse,
+  parameters: Record<string, string | number>,
+  baselineByArea: Map<string, AreaDecision>,
+): void {
+  if (
+    payload.scenario_id !== definition.scenario_id
+    || payload.schema_version !== "1.0"
+    || typeof payload.run_id !== "string"
+    || !payload.run_id
+    || payload.study_area !== status.study_area
+    || payload.run_status !== "completed"
+    || !["ready", "stale"].includes(payload.result_state)
+    || payload.backend_config_version !== definition.backend_config_version
+    || payload.access_method !== definition.access_method
+    || payload.fpps_recalculated !== false
+    || payload.dataset_mode !== status.dataset_mode
+    || payload.operational_status !== status.operational_status
+    || payload.official_warning !== false
+    || !isRfc3339WithTimezone(payload.source_timestamp)
+    || !isRfc3339WithTimezone(payload.generated_at)
+    || payload.confidence_class !== "low"
+    || typeof payload.source_name !== "string"
+    || !payload.source_name
+    || !Array.isArray(payload.assumptions)
+    || payload.assumptions.length === 0
+    || payload.assumptions.some((assumption) => typeof assumption !== "string" || !assumption)
+    || payload.data_version !== status.data_version
+    || payload.git_commit !== status.git_commit
+    || (
+      status.study_area === "mae_sai_candidate_v1"
+      && (!isSha256(payload.input_manifest_sha256) || !isSha256(payload.input_receipt_sha256))
+    )
+    || !sameServerParameters(payload.parameters, parameters)
+    || !Array.isArray(payload.areas)
+    || payload.areas.length !== baselineByArea.size
+  ) throw new Error("Scenario result is not bound to the requested dataset and server definition.");
+
+  const receivedAreaIds = new Set<string>();
+  for (const area of payload.areas) {
+    const baseline = baselineByArea.get(area.area_id);
+    if (
+      !baseline
+      || receivedAreaIds.has(area.area_id)
+      || !Number.isInteger(area.baseline_people_losing_30_min_access)
+      || !Number.isInteger(area.scenario_people_losing_30_min_access)
+      || !Number.isInteger(area.change_people_losing_30_min_access)
+      || area.baseline_people_losing_30_min_access < 0
+      || area.scenario_people_losing_30_min_access < 0
+      || area.baseline_people_losing_30_min_access !== baseline.people_losing_30_min_access
+      || area.scenario_people_losing_30_min_access - area.baseline_people_losing_30_min_access
+        !== area.change_people_losing_30_min_access
+      || !isNullableFiniteNumber(area.baseline_equity_gap_ratio)
+      || !isNullableFiniteNumber(area.scenario_equity_gap_ratio)
+      || (area.baseline_equity_gap_ratio !== null && area.baseline_equity_gap_ratio < 0)
+      || (area.scenario_equity_gap_ratio !== null && area.scenario_equity_gap_ratio < 0)
+      || !sameNullableNumber(area.baseline_equity_gap_ratio, baseline.equity_gap_ratio)
+    ) throw new Error("Scenario result area evidence failed its baseline or delta contract.");
+    receivedAreaIds.add(area.area_id);
+  }
+}
+
+function sameServerParameters(
+  received: Record<string, string | number>,
+  expected: Record<string, string | number>,
+): boolean {
+  if (!isRecord(received)) return false;
+  const receivedKeys = Object.keys(received).sort();
+  const expectedKeys = Object.keys(expected).sort();
+  return receivedKeys.length === expectedKeys.length
+    && receivedKeys.every((key, index) => key === expectedKeys[index] && received[key] === expected[key]);
+}
+
+function isNullableFiniteNumber(value: unknown): value is number | null {
+  return value === null || (typeof value === "number" && Number.isFinite(value));
+}
+
+function sameNullableNumber(left: number | null, right: number | null): boolean {
+  if (left === null || right === null) return left === right;
+  return Math.abs(left - right) < 1e-9;
+}
+
+function isSha256(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+}
+
+function isRfc3339WithTimezone(value: unknown): value is string {
+  return typeof value === "string"
+    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+    && Number.isFinite(Date.parse(value));
+}
+
+function isServerScenarioId(value: unknown): value is Exclude<ScenarioId, "baseline"> {
+  return value === "add_temporary_shelter" || value === "close_road";
+}
+
+function isScenarioId(value: unknown): value is ScenarioId {
+  return value === "baseline" || isServerScenarioId(value);
 }
 
 function adaptArea(area: AreaDecision, scenarios: Map<string, Partial<Record<ScenarioId, ScenarioResult>>>): AreaRecord {
-  const offlineMatch = offlineBundle.areas.find((item) => item.area_id === area.area_id && item.data_version === area.data_version);
+  const fixtureMatch = offlineBundle.areas.find(
+    (item) => item.area_id === area.area_id && item.data_version === area.data_version,
+  );
+  const candidateMatch = area.dataset_mode === "candidate"
+    ? maeSaiOfflineBundle.areas.find((item) => (
+        item.area_id === area.area_id
+        && item.data_version === area.data_version
+        && item.git_commit === area.git_commit
+        && item.source_timestamp === area.source_timestamp
+      ))
+    : undefined;
+  const offlineMatch = fixtureMatch ?? candidateMatch;
   const baseline: ScenarioResult = {
     people_losing_30_min_access: area.people_losing_30_min_access,
     equity_gap_ratio: area.equity_gap_ratio,
@@ -462,6 +988,7 @@ function adaptArea(area: AreaDecision, scenarios: Map<string, Partial<Record<Sce
   return {
     ...area,
     total_population: offlineMatch?.total_population ?? 0,
+    candidate_evidence: candidateMatch?.candidate_evidence,
     scenario_results: {
       baseline,
       add_temporary_shelter: server.add_temporary_shelter ?? baseline,
@@ -470,24 +997,88 @@ function adaptArea(area: AreaDecision, scenarios: Map<string, Partial<Record<Sce
   };
 }
 
+async function loadOptionalLayerData(base: string, layers: LayerCatalogItem[], layerId: string): Promise<FeatureCollection> {
+  const layer = layers.find((item) => item.layer_id === layerId);
+  if (!layer || !["ready", "stale"].includes(layer.data_state)) return emptyFeatureCollection(`${layerId}_unavailable`);
+  return loadLayerData(base, layers, layerId);
+}
+
 async function loadLayerData(base: string, layers: LayerCatalogItem[], layerId: string): Promise<FeatureCollection> {
   const layer = layers.find((item) => item.layer_id === layerId);
-  if (!layer || layer.data_state !== "ready") throw new Error(`Required API layer ${layerId} is unavailable.`);
+  if (!layer || !["ready", "stale"].includes(layer.data_state)) throw new Error(`Required API layer ${layerId} is unavailable.`);
   const url = new URL(layer.url, `${base}/`).toString();
   if (new URL(url).origin !== new URL(base).origin) throw new Error("Cross-origin layer URL rejected.");
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(url, { cache: "no-cache" });
   if (!response.ok) throw new Error(`Layer ${layerId} returned ${response.status}.`);
   const collection = await response.json() as FeatureCollection;
   if (collection.type !== "FeatureCollection" || !Array.isArray(collection.features)) throw new Error(`Layer ${layerId} is not GeoJSON.`);
   return collection;
 }
 
+export async function loadMaeSaiRoadDetail(
+  apiBase: string,
+  areaId: string,
+  expectedFeatureCount: number,
+): Promise<FeatureCollection> {
+  const validAreaIds = new Set(maeSaiOfflineBundle.areas.map((area) => area.area_id));
+  if (!validAreaIds.has(areaId) || !Number.isInteger(expectedFeatureCount) || expectedFeatureCount < 0) {
+    throw new Error("Mae Sai selected-area road request failed its area contract.");
+  }
+  const base = apiBase.replace(/\/$/, "");
+  const url = new URL(`${base}/api/v1/layer-data/road_risk`);
+  url.searchParams.set("study_area", "mae_sai_candidate_v1");
+  url.searchParams.set("detail", "selected_area");
+  url.searchParams.set("area_id", areaId);
+  const response = await fetch(url.toString(), { cache: "no-cache" });
+  if (!response.ok) throw new Error(`Mae Sai selected-area road layer returned ${response.status}.`);
+  const collection = await response.json() as FeatureCollection;
+  assertNoPrivatePaths(collection);
+  if (!isFeatureCollection(collection) || collection.features.length !== expectedFeatureCount) {
+    throw new Error("Mae Sai selected-area road feature-count contract failed.");
+  }
+  assertMaeSaiLayerMetadata(collection, "road_risk");
+  const query = (collection as unknown as { floodguard_query?: Record<string, unknown> }).floodguard_query;
+  if (
+    !query
+    || query.detail !== "selected_area"
+    || query.area_id !== areaId
+    || query.returned_feature_count !== expectedFeatureCount
+  ) throw new Error("Mae Sai selected-area road lineage contract failed.");
+
+  const roadIds = new Set<string>();
+  for (const feature of collection.features) {
+    const roadId = String(feature.properties.road_id ?? "");
+    if (
+      feature.geometry.type !== "LineString"
+      && feature.geometry.type !== "MultiLineString"
+    ) throw new Error("Mae Sai selected-area road geometry contract failed.");
+    if (
+      !roadId
+      || roadIds.has(roadId)
+      || feature.properties.area_id !== areaId
+      || feature.properties.dataset_mode !== "candidate"
+      || feature.properties.official_warning !== false
+      || feature.properties.observation_status !== "modelled_candidate_not_observed"
+    ) throw new Error("Mae Sai selected-area road identity or safety contract failed.");
+    roadIds.add(roadId);
+    for (const [longitude, latitude] of coordinatePairs(feature.geometry.coordinates)) {
+      if (longitude < 99.8 || longitude > 100.05 || latitude < 20.24 || latitude > 20.48) {
+        throw new Error("Mae Sai selected-area road escaped the declared geographic bounds.");
+      }
+    }
+  }
+  return collection;
+}
+
 export async function loadApiBrief(
   apiBase: string,
   areaId: string,
+  studyArea: StudyAreaId = "fixture_thailand_demo",
 ): Promise<{ fileName: string; contentMarkdown: string }> {
   const base = apiBase.replace(/\/$/, "");
-  const response = await fetch(`${base}/api/v1/briefs/${encodeURIComponent(areaId)}`, {
+  const url = new URL(`${base}/api/v1/briefs/${encodeURIComponent(areaId)}`);
+  url.searchParams.set("study_area", studyArea);
+  const response = await fetch(url.toString(), {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(`Brief API returned ${response.status}.`);
@@ -513,3 +1104,4 @@ export function assertNoPrivatePaths(value: unknown): void {
 }
 
 assertNoPrivatePaths(offlineBundle);
+assertNoPrivatePaths(maeSaiOfflineBundle);

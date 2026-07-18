@@ -53,14 +53,27 @@ machines without installed Chrome, install the pinned Playwright browser once
 with `pnpm exec playwright install chromium`; the application itself makes no
 external requests during the smoke.
 
-Run the API in its separate environment:
+Run the API in its separate environment from the repository root:
 
 ```powershell
 uv sync --project services/api --group dev
-uv run --project services/api uvicorn floodguard_api.app:app --reload
+uv run --project services/api uvicorn floodguard_api.app:app --app-dir services/api/src --host 127.0.0.1 --port 8000
 ```
 
-The web app defaults to its committed fixture bundle and needs no API or external network. To exercise API mode, set `NEXT_PUBLIC_FLOODGUARD_API_URL=http://127.0.0.1:8000` before starting the web app. A successful, path-sanitized API payload is cached locally as a last-known snapshot; if that API later becomes unavailable, the snapshot is visibly labelled `Stale / offline`. With no valid cached API snapshot, the app falls back to the separately labelled `Fixture demo` / `Non-operational` bundle. The existing `outputs/dashboard.html` remains the legacy reproducible fallback: it embeds pinned Leaflet 1.9.4 assets and decision vectors, while OpenStreetMap tiles are optional online context.
+In a second PowerShell window, connect the web application to that API:
+
+```powershell
+$env:NEXT_PUBLIC_FLOODGUARD_API_URL="http://127.0.0.1:8000"
+pnpm.cmd --filter @floodguard/web dev
+```
+
+The `/command` route requests `mae_sai_candidate_v1`: eight candidate reporting areas, real-coordinate road and facility context, access evidence, and server-owned scenario outputs. When the API is absent it uses the committed, checksummed Mae Sai offline bundle and keeps scenarios disabled. The much smaller fixture API snapshot may be cached locally as a visibly stale last-known snapshot; the multi-megabyte Mae Sai geospatial response is not written to `localStorage`. `/public` and `/studio` continue to use the deliberately labelled `Fixture demo` / `Non-operational` bundle until their safety-filtered candidate views are separately approved. The existing `outputs/dashboard.html` remains the legacy reproducible fallback: it embeds pinned Leaflet 1.9.4 assets and decision vectors, while OpenStreetMap tiles are optional online context.
+
+With both development servers running, verify the real API-to-browser path:
+
+```powershell
+pnpm.cmd --filter @floodguard/web test:live-api
+```
 
 The API validates CSV, GeoJSON, and Markdown artifact structure before advertising data as ready. Missing or malformed artifacts return explicit unavailable/blocked states while `/api/v1/health` continues to report service-process health independently.
 

@@ -10,3 +10,13 @@ docs/visual-qa/proposal-stage/*.png binary
 services/geoai-runner/evidence/*.png binary
 docs/submission/2026-geohackathon/source/*.docx binary
 docs/submission/2026-geohackathon/source/*.pdf binary
+
+# Candidate dataset manifests and routing/browser artifacts are verified by
+# exact SHA-256 bytes. Keep Git from rewriting their line endings on another OS.
+outputs/mae_sai_priority_subdistricts.geojson -text
+outputs/mae_sai_facility_context.csv -text
+outputs/mae_sai_population_nodes.csv -text
+outputs/mae_sai_access_edges.csv -text
+outputs/mae_sai_scenario_inputs_manifest.json -text
+services/api/data/study_area_bundles/*.json -text
+apps/web/public/offline-demo/mae-sai/*.json -text

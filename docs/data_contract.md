@@ -1238,7 +1238,7 @@ Source Sentinel-1 ZIPs, SAFE packages, TIFFs, and manual GeoPackages must remain
 
 ## Mae Sai Weak-Reference Decision Input Output
 
-`outputs/mae_sai_subdistrict_flood_inputs.csv` turns candidate Sentinel-1 flood probability and checksum-tracked open context into the FPPS input contract at HDX COD-AB ADM3 grain. The current output contains eight official Mae Sai reporting polygons. It remains a weak-reference, non-operational candidate analysis.
+`outputs/mae_sai_subdistrict_flood_inputs.csv` turns candidate Sentinel-1 flood probability and checksum-tracked open context into the FPPS input contract at HDX COD-AB ADM3 grain. The current output contains eight Mae Sai reporting polygons from the HDX COD-AB candidate boundary context; they are not represented as current agency-confirmed geometry. The output remains a weak-reference, non-operational candidate analysis.
 
 Required columns:
 
@@ -1578,3 +1578,68 @@ Based on weak-reference candidate flood analysis. Non-operational. Not official 
 ```
 
 The current brief geometry is HDX COD-AB ADM3 `TH570906 / Wiang Phang Kham`. Weak-label metrics may be included as a cross-border calibration cross-check, but the brief must state that the current FPPS uses the non-ML ADM3 flood-probability proxy.
+
+## Mae Sai Study-Area Bundle
+
+`services/api/data/study_area_bundles/mae_sai_candidate_v1.json` is the
+fail-closed API binding for the committed Mae Sai open-context candidate. It
+pins the study-area identity, data mode, operational state, expected CRS and
+bounds, exact eight area IDs, assumptions, and every served layer.
+
+Each layer entry binds:
+
+- a repository-relative path and SHA-256;
+- source commit and timestamp;
+- exact feature count and allowed geometry types;
+- the area join key and required properties;
+- source, licence, and attribution;
+- confidence, processing permission, decision eligibility, and blocked reason.
+
+The adapter rejects missing or duplicate areas, unknown area joins, invalid or
+out-of-bounds coordinates, substituted bytes, missing attribution, unsupported
+geometry, and any candidate property that claims `official_warning=true`.
+Failure is returned as unavailable/blocked Mae Sai data; the fixture profile is
+never substituted.
+
+## Mae Sai Scenario Inputs
+
+The server-owned nearest-facility scenario foundation uses three compact
+committed artifacts:
+
+- `outputs/mae_sai_population_nodes.csv`;
+- `outputs/mae_sai_access_edges.csv`;
+- `outputs/mae_sai_facility_context.csv`.
+
+`outputs/mae_sai_scenario_inputs_manifest.json` binds all three to exact role,
+columns, row count, SHA-256, study-area identity, candidate/non-operational
+state, shared data version, generating commit, source/generated timestamps,
+licences, confidence, processing/decision eligibility, exact blocker,
+assumptions, and a canonical self-hash.
+These are the minimum persisted analysis inputs, not a replacement or
+redistribution package for the original source datasets.
+
+The closed server registry may select only explicitly pinned graph nodes or
+edges. It recomputes baseline/scenario nearest-facility shortest-path access and
+equity using the existing domain functions. Facility capacity in a scenario is
+planning metadata because the current access contract is not capacity-aware
+2SFCA. FPPS and A-E class are not recalculated unless a future separately tested
+scenario contract supplies every required score component.
+
+Scenario responses must include a deterministic run ID, backend-config version,
+access-method identifier, exact accepted parameters, baseline/scenario area
+values, overall values, input-manifest lineage, candidate warnings, and
+`fpps_recalculated=false`. The browser only presents those values.
+
+## Probability-Raster Road and Facility Consequences
+
+`src/floodguard/probability_consequences.py` is the separate trusted bridge from
+one immutable class-1 probability raster to road-corridor, bridge, and facility
+evidence. Its signed receipt binds the model manifest, raster receipt and bytes,
+probability grid, road/facility geometry receipts and bytes, buffer method,
+statistics, eligibility, and safety semantics.
+
+Candidate model or geometry evidence requires explicit report-only mode and
+must retain `can_feed_decision_layer=false`. Probability never establishes an
+observed road closure, safe route, facility operation, or facility suitability.
+The complete field and substitution contract is defined in
+`docs/probability_consequence_contract.md`.

@@ -39,6 +39,35 @@ shelter capacity is preserved as planning metadata because the tested access
 engine is nearest-facility shortest-path threshold analysis and does not model
 capacity. No scenario response is an evacuation route or live condition.
 
+## Study-area profiles
+
+The default profile remains `fixture_thailand_demo`. The real-coordinate,
+provenance-tracked Mae Sai context is selected explicitly:
+
+```text
+GET /api/v1/status?study_area=mae_sai_candidate_v1
+GET /api/v1/areas?study_area=mae_sai_candidate_v1
+GET /api/v1/layers?study_area=mae_sai_candidate_v1
+GET /api/v1/layer-data/road_risk?study_area=mae_sai_candidate_v1&detail=regional
+GET /api/v1/layer-data/facilities?study_area=mae_sai_candidate_v1&area_id=TH570901
+GET /api/v1/scenarios?study_area=mae_sai_candidate_v1
+```
+
+The Mae Sai profile validates the study-area manifest and exact layer bytes
+before serving them. It contains eight ADM3 reporting areas, modeled road-risk
+candidates, open-context facility candidates, and modeled access evidence. It
+is historic candidate context, not current road-closure, shelter-availability,
+field-validation, or official-warning data.
+
+Mae Sai scenario requests also include
+`"study_area":"mae_sai_candidate_v1"` and may use only the parameter defaults
+or allowed values returned by its scenario catalog. Their compact graph,
+population, and facility inputs are bound by an immutable self-hashed manifest.
+Responses expose that manifest hash and receipt hash, retain
+`fpps_recalculated=false`, and contain access/equity deltas only. A missing or
+substituted candidate artifact blocks the selected profile or scenario; the API
+does not silently replace it with fixture data.
+
 ## Bounded agency pilot
 
 The `/api/v1/pilot/*` routes add server-enforced identity, role capabilities,

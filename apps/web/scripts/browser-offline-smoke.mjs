@@ -145,11 +145,26 @@ try {
     throw new Error("Selected-area bottom sheet did not update with map selection.");
   }
 
-  // Command: at tablet size the evidence drawer remains visible, while the
-  // exact server-produced scenario artifact changes map tone and evidence.
+  // Command: the real-coordinate Mae Sai candidate bundle renders at tablet
+  // size with its evidence drawer visible and scenarios fail-closed.
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
   await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
+  await page.waitForFunction(() => (
+    document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-road-feature-count") === "4458"
+    && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-facility-feature-count") === "42"
+    && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-access-feature-count") === "8"
+  ));
+  const offlineAttribution = page.getByLabel("Map data attribution");
+  const offlineAttributionText = await offlineAttribution.innerText();
+  for (const requiredAttribution of ["HDX COD-AB", "FloodGuard", "© OpenStreetMap contributors", "Geofabrik"]) {
+    if (!offlineAttributionText.includes(requiredAttribution)) {
+      throw new Error(`Offline Command map is missing attribution: ${requiredAttribution}.`);
+    }
+  }
+  if (await offlineAttribution.locator('a[href="https://www.openstreetmap.org/copyright"]').count() !== 1) {
+    throw new Error("Offline Command map does not link the canonical OpenStreetMap copyright notice.");
+  }
   const evidenceDrawer = page.locator(".tablet-evidence-drawer");
   if (!(await evidenceDrawer.isVisible()) || await evidenceDrawer.locator(".tablet-evidence-body").isHidden()) {
     throw new Error("The 1024x768 command workspace does not keep its evidence drawer open.");
@@ -159,22 +174,17 @@ try {
     throw new Error(`The tablet evidence drawer is clipped: ${JSON.stringify(drawerBox)}.`);
   }
   const scenarioSelect = page.locator('select[aria-label="Select scenario"]');
-  await scenarioSelect.selectOption("add_temporary_shelter");
-  await page.waitForFunction(() => (
-    document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-scenario-id") === "add_temporary_shelter"
-    && document.querySelector(".decision-panel")?.getAttribute("data-scenario-tone") === "improves"
-  ));
-  if (await page.locator('.map-workspace path[fill="#0f8a7b"]').count() === 0) {
-    throw new Error("Server-produced scenario delta did not visibly change the map presentation.");
+  if (!(await scenarioSelect.isDisabled())) {
+    throw new Error("Mae Sai candidate scenarios were enabled without the validated FastAPI connection.");
   }
-  const scenarioEvidence = await page.locator(".scenario-evidence-comparison").innerText();
-  if (!scenarioEvidence.includes("-30") || !scenarioEvidence.includes("Server-produced access delta")) {
-    throw new Error("Scenario evidence panel did not expose the exact server-produced delta.");
+  const scenarioEvidence = await page.locator(".candidate-evidence-limitations").innerText();
+  if (!scenarioEvidence.includes("Static bundle does not run scenarios") || !scenarioEvidence.includes("no browser formula")) {
+    throw new Error("Mae Sai candidate scenario blocker is not explicit in the evidence panel.");
   }
-  await page.locator(".ranked-areas button").filter({ hasText: "FG-TB-001" }).click();
+  await page.locator(".ranked-areas button").filter({ hasText: "TH570901" }).click();
   await page.waitForFunction(() => (
-    document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "FG-TB-001"
-    && document.querySelector(".tablet-evidence-drawer")?.textContent?.includes("FG-TB-001")
+    document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "TH570901"
+    && document.querySelector(".tablet-evidence-drawer")?.textContent?.includes("TH570901")
   ));
 
   // Studio: evidence scopes must remain visibly separate and selecting a run
@@ -232,9 +242,12 @@ try {
         dataState: "ready",
         dataOrigin: "api",
         scenarioState: "ready",
+        availableScenarios: ["baseline", "add_temporary_shelter", "close_road"],
         areaFeatures,
         roadFeatures,
         contextFeatures,
+        facilityFeatures: { type: "FeatureCollection", name: "facilities_unavailable", features: [] },
+        accessFeatures: { type: "FeatureCollection", name: "access_unavailable", features: [] },
       },
     }));
   });
@@ -284,9 +297,12 @@ try {
     await page.locator(route.selector).waitFor({ state: "visible" });
     const body = await page.locator("body").innerText();
     const normalizedBody = body.toLocaleLowerCase("en-US");
-    if (!normalizedBody.includes("fixture demo") && !body.includes("ข้อมูลสาธิต")) {
+    const hasExpectedDatasetDisclosure = route.path === "/command/"
+      ? normalizedBody.includes("candidate data") || body.includes("ข้อมูลผู้สมัคร")
+      : normalizedBody.includes("fixture demo") || body.includes("ข้อมูลสาธิต");
+    if (!hasExpectedDatasetDisclosure) {
       throw new Error(
-        `${route.path} lost its fixture disclosure while offline: ${body.slice(0, 240)}`,
+        `${route.path} lost its dataset disclosure while offline: ${body.slice(0, 240)}`,
       );
     }
     if (!normalizedBody.includes("non-operational") && !body.includes("ไม่ใช่ระบบปฏิบัติการ")) {

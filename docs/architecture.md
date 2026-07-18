@@ -13,6 +13,48 @@ flood extent or probability
   -> dashboard-ready exports and action brief
 ```
 
+## Study-area delivery boundary
+
+The API resolves each request through a study-area dataset adapter rather than
+scattering study-area conditionals across endpoints. The fixture profile and
+`mae_sai_candidate_v1` are separate immutable identities. Each adapter binds
+its layer paths, checksums, expected feature counts and geometry types, bounds,
+join keys, attribution, confidence, assumptions, and decision-eligibility
+state before returning data.
+
+Bundle failure is fail-closed. A corrupt or substituted Mae Sai bundle returns
+blocked/unavailable state; it never silently falls back to a visually plausible
+fixture.
+
+```text
+study-area manifest
+  -> adapter identity and checksum validation
+  -> typed area/layer/scenario repository interface
+  -> FastAPI response contracts
+  -> API-backed provider or same-version offline bundle
+  -> Public / Command / Studio safety filters
+```
+
+The Command map uses the eight Mae Sai ADM3 polygons as reporting units and
+uses raster cells, road segments, bridges, facilities, access hotspots, and
+routing nodes only as analysis/evidence units. This preserves administrative
+meaning and the tested scoring contract.
+
+## Model-to-decision boundary
+
+An isolated model runner may produce a class-1 flood-probability raster and an
+immutable run receipt. The trusted zonal adapter aggregates accepted raster
+evidence to reporting areas. A separate probability-consequence adapter
+computes road-corridor, bridge, and facility exposure evidence. Neither adapter
+may establish an observed closure, safe route, facility operating state, or
+official warning.
+
+Candidate models or candidate geometry may be evaluated only in explicit
+report-only mode. Decision eligibility is derived from the full evidence chain
+(product identity, licenses, checksums, qualified reference, spatial
+evaluation, calibration, reviewer status, CRS/grid validation, and signatures),
+never from a frontend control or a mutable deployment flag.
+
 ## Access-method boundary
 
 The implemented access engine is a nearest-facility shortest-path threshold

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from collections.abc import Sequence
 from typing import Annotated, Any, Literal
@@ -10,7 +11,15 @@ from urllib.parse import urlsplit
 from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+from starlette.middleware.gzip import GZipMiddleware
 
+from floodguard_api.dataset_registry import (
+    MAE_SAI_STUDY_AREA,
+    DatasetRegistry,
+    LayerFilterError,
+    filter_geojson_payload,
+    parse_bbox,
+)
 from floodguard_api.models import (
     ActionClass,
     ApiError,
@@ -54,13 +63,13 @@ DEFAULT_CORS_ORIGINS = ("http://localhost:3000", "http://127.0.0.1:3000")
 
 
 def create_app(
-    repository: ArtifactRepository | None = None,
+    repository: ArtifactRepository | DatasetRegistry | None = None,
     allowed_origins: Sequence[str] | None = None,
     pilot_control: PilotControl | None = None,
 ) -> FastAPI:
     """Build an injectable application for production and no-network tests."""
 
-    artifact_repository = repository or ArtifactRepository()
+    artifact_repository = repository or DatasetRegistry()
     pilot = pilot_control or PilotControl.from_environment()
     application = FastAPI(
         title="FloodGuard Thailand artifact API",
@@ -83,6 +92,7 @@ def create_app(
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type", "Authorization"],
     )
+    application.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
 
     @application.exception_handler(ArtifactNotFound)
     async def artifact_not_found(_: Request, exc: ArtifactNotFound) -> JSONResponse:
@@ -102,6 +112,11 @@ def create_app(
     async def private_path_rejected(_: Request, exc: PrivatePathError) -> JSONResponse:
         error = ApiError(error="unsafe_response_rejected", detail=str(exc))
         return JSONResponse(status_code=500, content=error.model_dump(mode="json"))
+
+    @application.exception_handler(LayerFilterError)
+    async def invalid_layer_filter(_: Request, exc: LayerFilterError) -> JSONResponse:
+        error = ApiError(error="invalid_layer_filter", detail=str(exc))
+        return JSONResponse(status_code=422, content=error.model_dump(mode="json"))
 
     @application.exception_handler(PilotError)
     async def pilot_error(_: Request, exc: PilotError) -> JSONResponse:
@@ -247,8 +262,18 @@ def create_app(
         responses={503: {"model": ApiError}},
         tags=["data"],
     )
-    def status() -> StatusResponse:
-        return _public(artifact_repository.status(), pilot)
+    def status(
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+    ) -> StatusResponse:
+        if isinstance(artifact_repository, ArtifactRepository) and study_area == (
+            "fixture_thailand_demo"
+        ):
+            result = artifact_repository.status()
+        else:
+            result = artifact_repository.status(study_area)
+        return _public(result, pilot)
 
     @application.get(
         "/api/v1/study-areas",
@@ -266,14 +291,15 @@ def create_app(
         tags=["decisions"],
     )
     def areas(
-        study_area: Literal["fixture_thailand_demo"] = "fixture_thailand_demo",
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
         action_class: Annotated[list[ActionClass] | None, Query()] = None,
         confidence_class: Annotated[list[ConfidenceClass] | None, Query()] = None,
         min_fpps: Annotated[float, Query(ge=0, le=100)] = 0,
         _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
     ) -> list[AreaDecision]:
-        del study_area
-        result = artifact_repository.areas()
+        result = artifact_repository.areas(study_area)
         if action_class:
             allowed_actions = set(action_class)
             result = [area for area in result if area.action_class in allowed_actions]
@@ -292,9 +318,12 @@ def create_app(
     )
     def area(
         area_id: str,
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
         _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
     ) -> AreaDecision:
-        return _public(artifact_repository.area(area_id), pilot)
+        return _public(artifact_repository.area(area_id, study_area), pilot)
 
     @application.get(
         "/api/v1/layers",
@@ -302,9 +331,12 @@ def create_app(
         tags=["data"],
     )
     def layers(
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
         _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
     ) -> list[LayerCatalogItem]:
-        return _public(artifact_repository.layers(), pilot)
+        return _public(artifact_repository.layers(study_area), pilot)
 
     @application.get(
         "/api/v1/layer-data/{layer_id}",
@@ -315,19 +347,55 @@ def create_app(
     )
     def layer_data(
         layer_id: str,
+        request: Request,
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+        area_id: Annotated[str | None, Query(min_length=1, max_length=64)] = None,
+        bbox: Annotated[str | None, Query(min_length=1, max_length=128)] = None,
+        facility_type: Annotated[str | None, Query(min_length=1, max_length=64)] = None,
+        verification_status: Annotated[
+            Literal["open_context_candidate"] | None,
+            Query(),
+        ] = None,
+        minimum_risk: Annotated[float, Query(ge=0, le=1)] = 0,
+        detail: Literal["regional", "selected_area"] = "regional",
         _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
-    ) -> JSONResponse:
-        payload = artifact_repository.layer_data(layer_id)
+    ) -> Response:
+        payload = artifact_repository.layer_data(layer_id, study_area)
+        payload = filter_geojson_payload(
+            payload,
+            layer_id=layer_id,
+            area_id=area_id,
+            bbox=parse_bbox(bbox),
+            facility_type=facility_type,
+            verification_status=verification_status,
+            minimum_risk=minimum_risk,
+            detail=detail,
+        )
         pilot.assert_operational_boundary(payload)
         assert_public_payload(payload)
-        return JSONResponse(
+        response = JSONResponse(
             content=payload,
             headers={
-                "Cache-Control": "public, max-age=300",
-                "X-FloodGuard-Dataset-Mode": "fixture_demo",
+                "Cache-Control": "public, max-age=3600",
+                "X-FloodGuard-Dataset-Mode": (
+                    "candidate" if study_area == MAE_SAI_STUDY_AREA else "fixture_demo"
+                ),
                 "X-FloodGuard-Official-Warning": "false",
+                "X-FloodGuard-Artifact-SHA256": artifact_repository.layer_artifact_sha256(
+                    layer_id,
+                    study_area,
+                ),
             },
         )
+        content_sha256 = hashlib.sha256(response.body).hexdigest()
+        etag = f'"sha256-{content_sha256}"'
+        response.headers["ETag"] = etag
+        response.headers["X-FloodGuard-Content-SHA256"] = content_sha256
+        if request.headers.get("if-none-match") == etag:
+            return Response(status_code=304, headers=dict(response.headers))
+        return response
 
     @application.get(
         "/api/v1/briefs/{area_id}",
@@ -337,10 +405,13 @@ def create_app(
     )
     def brief(
         area_id: str,
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
         download: bool = False,
         _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
     ) -> Any:
-        result = artifact_repository.brief(area_id)
+        result = artifact_repository.brief(area_id, study_area)
         pilot.assert_operational_boundary(result)
         assert_public_payload(result)
         if download:
@@ -361,9 +432,17 @@ def create_app(
         tags=["scenarios"],
     )
     def scenarios(
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
         _: PilotCredential | None = Depends(require_official_scenario),  # noqa: B008
     ) -> list[ScenarioDefinition]:
-        return _public(definitions(), pilot)
+        if isinstance(artifact_repository, DatasetRegistry):
+            result = artifact_repository.scenarios(study_area)
+        else:
+            artifact_repository._require_fixture_study_area(study_area)
+            result = definitions()
+        return _public(result, pilot)
 
     @application.post(
         "/api/v1/scenario-runs",

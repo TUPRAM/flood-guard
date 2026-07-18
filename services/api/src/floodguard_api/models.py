@@ -185,7 +185,10 @@ class ScenarioDefinition(StrictModel):
     description_th: str = Field(min_length=1)
     description_en: str = Field(min_length=1)
     parameters: list[ScenarioParameterDefinition]
-    backend_config_version: Literal["fixture-access-scenarios-v1"]
+    backend_config_version: Literal[
+        "fixture-access-scenarios-v1",
+        "mae-sai-candidate-access-scenarios-v1",
+    ]
     access_method: Literal["nearest_facility_shortest_path_threshold"]
 
 
@@ -198,14 +201,32 @@ class CloseRoadParameters(StrictModel):
     road_id: Literal["FG-RD-002"] = "FG-RD-002"
 
 
+class MaeSaiTemporaryShelterParameters(StrictModel):
+    node_id: Literal["N-99.9742609-20.4457677"] = "N-99.9742609-20.4457677"
+    capacity: int = Field(default=500, ge=1, le=5000)
+
+
+class MaeSaiCloseRoadParameters(StrictModel):
+    edge_id: Literal["MS-EDGE-0009210"] = "MS-EDGE-0009210"
+
+
 class ScenarioRunRequest(StrictModel):
     scenario_id: Literal["add_temporary_shelter", "close_road"]
-    study_area: Literal["fixture_thailand_demo"] = "fixture_thailand_demo"
+    study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+        "fixture_thailand_demo"
+    )
     parameters: dict[str, str | int] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_server_owned_parameters(self) -> ScenarioRunRequest:
-        if self.scenario_id == "add_temporary_shelter":
+        if (
+            self.study_area == "mae_sai_candidate_v1"
+            and self.scenario_id == "add_temporary_shelter"
+        ):
+            validated = MaeSaiTemporaryShelterParameters.model_validate(self.parameters)
+        elif self.study_area == "mae_sai_candidate_v1":
+            validated = MaeSaiCloseRoadParameters.model_validate(self.parameters)
+        elif self.scenario_id == "add_temporary_shelter":
             validated = TemporaryShelterParameters.model_validate(self.parameters)
         else:
             validated = CloseRoadParameters.model_validate(self.parameters)
@@ -235,15 +256,34 @@ class ScenarioOverallResult(StrictModel):
 class ScenarioRunResponse(CommonMetadata):
     run_id: str = Field(min_length=1)
     scenario_id: Literal["add_temporary_shelter", "close_road"]
-    study_area: Literal["fixture_thailand_demo"]
+    study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"]
     parameters: dict[str, str | int]
     run_status: Literal["completed"]
     result_state: DataState
-    backend_config_version: Literal["fixture-access-scenarios-v1"]
+    backend_config_version: Literal[
+        "fixture-access-scenarios-v1",
+        "mae-sai-candidate-access-scenarios-v1",
+    ]
     access_method: Literal["nearest_facility_shortest_path_threshold"]
     fpps_recalculated: Literal[False]
+    input_manifest_sha256: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{64}$",
+    )
+    input_receipt_sha256: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{64}$",
+    )
     overall: ScenarioOverallResult
     areas: list[ScenarioAreaResult]
+
+    @model_validator(mode="after")
+    def preserve_candidate_scenario_lineage(self) -> ScenarioRunResponse:
+        if self.study_area == "mae_sai_candidate_v1" and (
+            self.input_manifest_sha256 is None or self.input_receipt_sha256 is None
+        ):
+            raise ValueError("Mae Sai candidate scenarios require immutable input lineage")
+        return self
 
 
 class ModelInputManifestRow(StrictModel):

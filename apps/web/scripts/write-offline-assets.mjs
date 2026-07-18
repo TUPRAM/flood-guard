@@ -33,6 +33,12 @@ const versionedFiles = [
   resolve(out, "offline-demo", "areas.geojson"),
   resolve(out, "offline-demo", "roads.geojson"),
   resolve(out, "offline-demo", "context.geojson"),
+  resolve(out, "offline-demo", "mae-sai", "bundle.json"),
+  resolve(out, "offline-demo", "mae-sai", "manifest.json"),
+  resolve(out, "offline-demo", "mae-sai", "areas.json"),
+  resolve(out, "offline-demo", "mae-sai", "roads.json"),
+  resolve(out, "offline-demo", "mae-sai", "facilities.json"),
+  resolve(out, "offline-demo", "mae-sai", "access-hotspots.json"),
   ...proposalEvidenceAssets.map((url) => resolve(out, url.slice(1))),
 ];
 const buildHash = createHash("sha256");

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -348,3 +349,55 @@ def test_committed_mae_sai_context_outputs_keep_real_grain_and_redacted_paths() 
     assert "C:\\Users\\" not in derived_text
     assert "C:/Users/" not in derived_text
     assert "FloodGuard_external_data" not in derived_text
+
+
+def test_committed_mae_sai_scenario_inputs_are_checksum_bound_and_path_safe() -> None:
+    output_dir = REPO_ROOT / "outputs"
+    manifest_path = output_dir / "mae_sai_scenario_inputs_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    receipt_sha256 = manifest.pop("receipt_sha256")
+    canonical = json.dumps(
+        manifest,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    assert hashlib.sha256(canonical.encode("utf-8")).hexdigest() == receipt_sha256
+    assert manifest["study_area_id"] == "mae_sai_candidate_v1"
+    assert manifest["dataset_mode"] == "candidate"
+    assert manifest["operational_status"] == "non_operational"
+    assert manifest["official_warning"] is False
+    assert manifest["data_version"] == "mae-sai-candidate-2024-09-15-v1"
+    assert manifest["git_commit"] == "7e42882efb7cb7dc40b7c1cdd4c3fa960569b95f"
+    assert manifest["processing_allowed"] is True
+    assert manifest["can_feed_decision_layer"] is False
+    assert manifest["reason_blocked"]
+    assert manifest["source_licenses"] == [
+        "WorldPop CC BY 4.0",
+        "OpenStreetMap ODbL 1.0",
+    ]
+    assert b"\r\n" not in manifest_path.read_bytes()
+
+    rows_by_role = {
+        "population_nodes": 13_620,
+        "access_edges": 30_443,
+        "facility_candidates": 42,
+    }
+    for artifact in manifest["artifacts"]:
+        path = output_dir / artifact["relative_path"]
+        assert path.parent == output_dir
+        assert path.is_file()
+        assert b"\r\n" not in path.read_bytes()
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == artifact["sha256"]
+        frame = pd.read_csv(path)
+        assert len(frame) == rows_by_role[artifact["role"]]
+        assert list(frame.columns) == artifact["columns"]
+
+    serialized = "\n".join(
+        (output_dir / artifact["relative_path"]).read_text(encoding="utf-8")
+        for artifact in manifest["artifacts"]
+    )
+    assert "C:\\Users\\" not in serialized
+    assert "C:/Users/" not in serialized
+    assert "FloodGuard_external_data" not in serialized

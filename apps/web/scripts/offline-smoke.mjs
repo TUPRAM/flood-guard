@@ -11,6 +11,12 @@ const requiredPublicAssets = [
   "offline-demo/areas.geojson",
   "offline-demo/roads.geojson",
   "offline-demo/context.geojson",
+  "offline-demo/mae-sai/bundle.json",
+  "offline-demo/mae-sai/manifest.json",
+  "offline-demo/mae-sai/areas.json",
+  "offline-demo/mae-sai/roads.json",
+  "offline-demo/mae-sai/facilities.json",
+  "offline-demo/mae-sai/access-hotspots.json",
   "proposal-evidence-status.json",
   "offline-assets.json",
 ];
@@ -22,8 +28,12 @@ for (const relative of [...routeFiles, ...requiredPublicAssets]) {
 
 for (const relative of routeFiles) {
   const html = readFileSync(resolve(out, relative), "utf8");
-  if (!/Fixture demo|ข้อมูลสาธิต/.test(html)) {
-    throw new Error(`${relative} lacks a fixture-mode disclosure`);
+  const expectsCandidate = relative === "command/index.html";
+  const datasetDisclosure = expectsCandidate
+    ? /Candidate data|ข้อมูลผู้สมัคร/
+    : /Fixture demo|ข้อมูลสาธิต/;
+  if (!datasetDisclosure.test(html)) {
+    throw new Error(`${relative} lacks its expected dataset-mode disclosure`);
   }
   if (!/Non-operational|ไม่ใช่ระบบปฏิบัติการ/.test(html)) {
     throw new Error(`${relative} lacks a non-operational disclosure`);
@@ -57,6 +67,18 @@ for (const url of generatedAssets) {
 const bundle = JSON.parse(readFileSync(resolve(out, "offline-demo/bundle.json"), "utf8"));
 if (bundle.status.dataset_mode !== "fixture_demo" || bundle.status.operational_status !== "non_operational" || bundle.status.official_warning !== false) {
   throw new Error("Offline bundle safety status is invalid");
+}
+
+const maeSaiBundle = JSON.parse(readFileSync(resolve(out, "offline-demo/mae-sai/bundle.json"), "utf8"));
+const maeSaiManifest = JSON.parse(readFileSync(resolve(out, "offline-demo/mae-sai/manifest.json"), "utf8"));
+if (maeSaiBundle.status.dataset_mode !== "candidate" || maeSaiBundle.status.study_area !== "mae_sai_candidate_v1" || maeSaiBundle.status.operational_status !== "non_operational" || maeSaiBundle.status.official_warning !== false) {
+  throw new Error("Mae Sai offline bundle safety status is invalid");
+}
+if (maeSaiBundle.areas.length !== 8 || maeSaiManifest.layers.find((layer) => layer.layer_id === "road_risk")?.feature_count !== 4458 || maeSaiManifest.layers.find((layer) => layer.layer_id === "facilities")?.feature_count !== 42) {
+  throw new Error("Mae Sai offline bundle feature contract is invalid");
+}
+if (maeSaiManifest.can_feed_decision_layer !== false || maeSaiManifest.official_warning !== false) {
+  throw new Error("Mae Sai offline manifest does not fail closed");
 }
 if (JSON.stringify(bundle).match(/(?:[A-Za-z]:[\\/](?:Users|home|private)[\\/]|\/(?:Users|home|private)\/)/i)) {
   throw new Error("Offline bundle contains a private absolute path");

@@ -123,11 +123,14 @@ try {
     }
 
     if (capture.route === "/command/") {
-      await page.locator('select[aria-label="Select scenario"]').selectOption("add_temporary_shelter");
       await page.waitForFunction(() => (
-        document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-scenario-id") === "add_temporary_shelter"
-        && document.querySelector(".decision-panel")?.getAttribute("data-scenario-id") === "add_temporary_shelter"
+        document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-road-feature-count") === "4458"
+        && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-facility-feature-count") === "42"
+        && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-access-feature-count") === "8"
       ));
+      if (!(await page.locator('select[aria-label="Select scenario"]').isDisabled())) {
+        throw new Error(`${capture.file} enabled a Mae Sai scenario without a server-produced scenario foundation.`);
+      }
     }
 
     if (capture.route === "/command/" && await page.locator(".ranked-areas button").count() === 0) {
@@ -275,11 +278,11 @@ try {
     if (capture.route === "/command/") {
       const mapScenario = await page.locator(".map-workspace .geo-map-shell").getAttribute("data-scenario-id");
       const panelScenario = await page.locator(".decision-panel").getAttribute("data-scenario-id");
-      if (mapScenario !== "add_temporary_shelter" || panelScenario !== mapScenario) {
-        throw new Error(`${capture.file} did not synchronize server scenario state across map and evidence.`);
+      if (mapScenario !== "baseline" || panelScenario !== mapScenario) {
+        throw new Error(`${capture.file} did not keep the blocked Mae Sai scenario state at baseline.`);
       }
-      if (await page.locator('.map-workspace path[fill="#0f8a7b"]').count() === 0) {
-        throw new Error(`${capture.file} does not visibly encode the server-produced improvement delta.`);
+      if (await page.locator(".candidate-evidence-limitations").count() !== 1) {
+        throw new Error(`${capture.file} does not expose the candidate scenario blocker.`);
       }
     }
     if (capture.route === "/studio/") {
@@ -304,8 +307,11 @@ try {
     if (/updated every 2 minutes|critical now|rescue count/iu.test(pageAudit.bodyText)) {
       throw new Error(`${capture.file} contains an unsupported live-state claim.`);
     }
-    if (!/fixture demo|ชุดข้อมูลสาธิต/iu.test(pageAudit.bodyText)) {
-      throw new Error(`${capture.file} is missing the fixture-demo disclosure.`);
+    const datasetDisclosure = capture.route === "/command/"
+      ? /candidate data|ข้อมูลผู้สมัคร/iu
+      : /fixture demo|ชุดข้อมูลสาธิต/iu;
+    if (!datasetDisclosure.test(pageAudit.bodyText)) {
+      throw new Error(`${capture.file} is missing its expected dataset-mode disclosure.`);
     }
     if (!/non-operational|ไม่ใช่ระบบปฏิบัติการ/iu.test(pageAudit.bodyText)) {
       throw new Error(`${capture.file} is missing the non-operational disclosure.`);

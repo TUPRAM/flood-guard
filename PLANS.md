@@ -13,21 +13,33 @@
 9. One-page action brief generator.
 10. Sentinel-1/GISTDA flood ingestion and validation path.
 
-## Current Milestone
+## Current capability sequence
 
-Deliver the competition-ready role-specific platform without weakening the tested policy engine:
+Develop FloodGuard as a real geospatial decision-support system. Proposal and
+competition packaging may consume core evidence, but they do not define the
+runtime architecture or product roadmap.
 
-- versioned shared schemas and drift tests
-- `/public`, `/command`, and `/studio` responsive PWA surfaces
-- offline judging bundle with explicit fixture/non-operational status
-- FastAPI artifact and server-owned deterministic scenario boundary
-- isolated, optional GeoAI 0.41.1 runner with fail-closed promotion gates
-- full Python, frontend, API, schema, offline, and visual verification
+1. Connect the committed real-coordinate Mae Sai candidate context to a
+   fail-closed study-area registry, typed FastAPI layers, the modern Command
+   map, and the offline bundle.
+2. Persist checksum-bound routing/population inputs and expose bounded,
+   deterministic server-side Mae Sai scenarios without browser formulas.
+3. Bind immutable probability rasters to road and facility consequences through
+   signed, substitution-resistant receipts.
+4. Clear the qualified-label gates using real authority, reviewer calibration,
+   and immutable spatial holdouts; code alone cannot self-approve these gates.
+5. Compare deterministic SAR, calibrated logistic, and isolated GeoAI U-Net/FPN
+   candidates on identical qualified evidence before promoting any result.
 
-The proposal role-surface UX pass is implemented. Its durable interaction,
-safety, verification, and next-milestone decisions are recorded in
-`docs/role-surface-development-plan.md`.
+The full capability, safety, and acceptance contracts are recorded in
+`docs/mae_sai_capability_milestones.md`. The existing role-surface interaction
+decisions remain in `docs/role-surface-development-plan.md`.
 
-## Near-Term Decision
+## Near-term decision
 
-The decision engine remains the source of truth. The next evidence milestone is not broader UI scope: it is clearing real-input provenance and reference-mask gates, running a spatial-holdout baseline/weak-label/GeoAI comparison, and independently reviewing calibration and geographic transfer before any candidate can feed the decision layer.
+The decision engine remains the source of truth. Real open context and
+provenance-tracked candidate analysis may be displayed with explicit warnings;
+they must not be presented as authoritative operational truth. GeoAI is used
+deeply for the flood-probability workflow, but it does not own administrative
+geometry, facility verification, routing, equity, FPPS weighting, or A-E
+assignment.

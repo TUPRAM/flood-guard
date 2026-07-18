@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 from pathlib import Path
 import sys
 
@@ -149,7 +151,15 @@ def main() -> None:
             outputs.population_context,
             output_dir / "mae_sai_population_context.csv",
         ),
+        "population_nodes": _write_csv(
+            _scenario_population_nodes(outputs.population_nodes),
+            output_dir / "mae_sai_population_nodes.csv",
+        ),
         "roads": _write_csv(outputs.road_risk, output_dir / "mae_sai_road_risk.csv"),
+        "access_edges": _write_csv(
+            _scenario_access_edges(outputs.road_edges),
+            output_dir / "mae_sai_access_edges.csv",
+        ),
         "road_geometry": write_geojson(
             road_risk_geojson,
             output_dir / "mae_sai_road_risk.geojson",
@@ -187,6 +197,12 @@ def main() -> None:
             output_dir / "mae_sai_context_quality_summary.csv",
         ),
     }
+    paths["scenario_manifest"] = _write_scenario_input_manifest(
+        population_path=paths["population_nodes"],
+        edge_path=paths["access_edges"],
+        facility_path=paths["facilities"],
+        output_path=output_dir / "mae_sai_scenario_inputs_manifest.json",
+    )
     priority_path = write_priority_geojson(
         paths["admin"],
         scored,
@@ -211,8 +227,109 @@ def _read_csv(path: Path) -> pd.DataFrame:
 
 
 def _write_csv(frame: pd.DataFrame, path: Path) -> Path:
-    frame.to_csv(path, index=False)
+    frame.to_csv(path, index=False, lineterminator="\n")
     return path
+
+
+def _scenario_population_nodes(frame: pd.DataFrame) -> pd.DataFrame:
+    """Return the path-safe population-node artifact used by server scenarios."""
+
+    return frame.loc[
+        :,
+        [
+            "node_id",
+            "subdistrict_id",
+            "total_population",
+            "vulnerable_population",
+            "non_vulnerable_population",
+        ],
+    ].copy()
+
+
+def _scenario_access_edges(frame: pd.DataFrame) -> pd.DataFrame:
+    """Return the path-safe graph-edge artifact used by server scenarios."""
+
+    return frame.loc[
+        :,
+        [
+            "edge_id",
+            "road_id",
+            "from_node",
+            "to_node",
+            "normal_minutes",
+            "disrupted_minutes",
+            "road_disruption_probability_0_1",
+            "candidate_closure_status",
+            "subdistrict_id",
+            "bridge_flag",
+        ],
+    ].copy()
+
+
+def _write_scenario_input_manifest(
+    *,
+    population_path: Path,
+    edge_path: Path,
+    facility_path: Path,
+    output_path: Path,
+) -> Path:
+    """Bind compact server-scenario inputs to checksums and candidate provenance."""
+
+    artifacts = []
+    for role, path in (
+        ("population_nodes", population_path),
+        ("access_edges", edge_path),
+        ("facility_candidates", facility_path),
+    ):
+        frame = pd.read_csv(path)
+        artifacts.append(
+            {
+                "role": role,
+                "relative_path": path.name,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                "row_count": int(len(frame)),
+                "columns": list(frame.columns),
+            }
+        )
+    payload = {
+        "schema_version": "1.0",
+        "study_area_id": "mae_sai_candidate_v1",
+        "dataset_mode": "candidate",
+        "operational_status": "non_operational",
+        "official_warning": False,
+        "data_version": "mae-sai-candidate-2024-09-15-v1",
+        "git_commit": "7e42882efb7cb7dc40b7c1cdd4c3fa960569b95f",
+        "source_timestamp": "2026-07-09T14:53:08Z",
+        "generated_at": "2026-07-18T00:00:00Z",
+        "confidence_class": "low",
+        "source_name": "WorldPop Thailand 100m 2020; OpenStreetMap Thailand via Geofabrik",
+        "source_licenses": [
+            "WorldPop CC BY 4.0",
+            "OpenStreetMap ODbL 1.0",
+        ],
+        "processing_allowed": True,
+        "can_feed_decision_layer": False,
+        "reason_blocked": (
+            "Scenario inputs use modeled population, unverified facility candidates, "
+            "and heuristic road disruption; outputs remain candidate planning evidence."
+        ),
+        "processing_scope": "mae_sai_candidate_access_scenario_inputs",
+        "artifacts": artifacts,
+        "assumptions": [
+            "Population is modeled WorldPop context snapped to a candidate OSM graph.",
+            "Vulnerability is a terrain/remoteness proxy, not demographic truth.",
+            "Disrupted edge times are heuristic candidates, not observed closures.",
+            "Scenario outputs are planning evidence and not evacuation instructions.",
+        ],
+    }
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    payload["receipt_sha256"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    output_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return output_path
 
 
 if __name__ == "__main__":

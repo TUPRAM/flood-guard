@@ -338,7 +338,12 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "Manual QGIS Weak-Reference Manifest" in contract_text
     assert "Mae Sai Weak-Reference Decision Input Output" in contract_text
     assert "real open context is joined" in contract_text
-    assert "eight official Mae Sai reporting polygons" in contract_text
+    assert (
+        "eight Mae Sai reporting polygons from the HDX COD-AB candidate boundary "
+        "context"
+        in contract_text
+    )
+    assert "not represented as current agency-confirmed geometry" in contract_text
     assert "CEMS Product Candidate Manifest" in contract_text
     assert "CDSE Mae Sai Acquisition Manifest" in contract_text
     assert "Open Context Data File Manifest" in contract_text

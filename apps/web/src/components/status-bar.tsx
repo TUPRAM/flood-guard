@@ -24,7 +24,7 @@ const DATA_STATE_LABELS = {
 
 export function StatusBar({ data, language, compact = false }: { data: FloodGuardData; language: Language; compact?: boolean }) {
   const th = language === "th";
-  const bundledFixture = data.dataOrigin === "offline_bundle";
+  const bundledOffline = data.dataOrigin === "offline_bundle";
   const cachedApi = data.dataOrigin === "cached_api";
   const dataset = DATASET_LABELS[data.status.dataset_mode][language];
   const operational = OPERATIONAL_LABELS[data.status.operational_status][language];
@@ -38,7 +38,7 @@ export function StatusBar({ data, language, compact = false }: { data: FloodGuar
         <span className={`chip ${data.status.operational_status.replaceAll("_", "-")}`}>{operational}</span>
         <span className={`chip warning-${data.status.official_warning}`}>{warning}</span>
         {data.dataState !== "ready" && <span className={`chip data-${data.dataState}`}>{DATA_STATE_LABELS[data.dataState][language]}</span>}
-        {bundledFixture && <span className="chip offline">{th ? "\u0e0a\u0e38\u0e14\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e2a\u0e32\u0e18\u0e34\u0e15\u0e2d\u0e2d\u0e1f\u0e44\u0e25\u0e19\u0e4c" : "Bundled offline fixture"}</span>}
+        {bundledOffline && <span className="chip offline">{data.status.dataset_mode === "candidate" ? (th ? "ชุดข้อมูลผู้สมัครแม่สายออฟไลน์" : "Bundled offline Mae Sai candidate") : (th ? "\u0e0a\u0e38\u0e14\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e2a\u0e32\u0e18\u0e34\u0e15\u0e2d\u0e2d\u0e1f\u0e44\u0e25\u0e19\u0e4c" : "Bundled offline fixture")}</span>}
         {cachedApi && <span className="chip offline">{th ? "\u0e2a\u0e33\u0e40\u0e19\u0e32 API \u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14\u0e17\u0e35\u0e48\u0e41\u0e04\u0e0a\u0e44\u0e27\u0e49 (\u0e2d\u0e2d\u0e1f\u0e44\u0e25\u0e19\u0e4c)" : "Cached API snapshot (stale/offline)"}</span>}
       </div>
       <div className="status-meta">
@@ -50,7 +50,9 @@ export function StatusBar({ data, language, compact = false }: { data: FloodGuar
         <p className="fallback-reason" role="status">
           {cachedApi
             ? (th ? "API \u0e44\u0e21\u0e48\u0e1e\u0e23\u0e49\u0e2d\u0e21; \u0e41\u0e2a\u0e14\u0e07\u0e2a\u0e33\u0e40\u0e19\u0e32 API \u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14\u0e17\u0e35\u0e48\u0e41\u0e04\u0e0a\u0e44\u0e27\u0e49: " : "API unavailable; showing the cached API snapshot: ")
-            : (th ? "API \u0e44\u0e21\u0e48\u0e1e\u0e23\u0e49\u0e2d\u0e21; \u0e41\u0e2a\u0e14\u0e07\u0e0a\u0e38\u0e14\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e2a\u0e32\u0e18\u0e34\u0e15\u0e17\u0e35\u0e48\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e27\u0e49: " : "API unavailable; showing the bundled fixture snapshot: ")}
+            : data.status.dataset_mode === "candidate"
+              ? (th ? "API ไม่พร้อม; แสดงชุดข้อมูลผู้สมัครแม่สายที่บันทึกไว้: " : "API unavailable; showing the bundled Mae Sai candidate: ")
+              : (th ? "API \u0e44\u0e21\u0e48\u0e1e\u0e23\u0e49\u0e2d\u0e21; \u0e41\u0e2a\u0e14\u0e07\u0e0a\u0e38\u0e14\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e2a\u0e32\u0e18\u0e34\u0e15\u0e17\u0e35\u0e48\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e27\u0e49: " : "API unavailable; showing the bundled fixture snapshot: ")}
           {data.fallbackReason}
         </p>
       )}

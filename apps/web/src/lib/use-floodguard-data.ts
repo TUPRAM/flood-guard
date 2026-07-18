@@ -2,21 +2,27 @@
 
 import { useEffect, useState } from "react";
 
-import { getOfflineData, loadFloodGuardData } from "./data-provider";
-import type { FloodGuardData } from "./types";
+import { getMaeSaiOfflineData, getOfflineData, loadFloodGuardData } from "./data-provider";
+import type { FloodGuardData, StudyAreaId } from "./types";
 
-export function useFloodGuardData(): FloodGuardData {
-  const [data, setData] = useState<FloodGuardData>(() => getOfflineData());
+export function useFloodGuardData(
+  preferredStudyArea: StudyAreaId = "fixture_thailand_demo",
+): FloodGuardData {
+  const [data, setData] = useState<FloodGuardData>(() => (
+    preferredStudyArea === "mae_sai_candidate_v1"
+      ? getMaeSaiOfflineData()
+      : getOfflineData()
+  ));
 
   useEffect(() => {
     let active = true;
-    loadFloodGuardData().then((next) => {
+    loadFloodGuardData(undefined, undefined, preferredStudyArea).then((next) => {
       if (active) setData(next);
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [preferredStudyArea]);
 
   return data;
 }

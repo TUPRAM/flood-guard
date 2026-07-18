@@ -10,6 +10,12 @@ const CORE_ASSETS = [
   "/offline-demo/areas.geojson",
   "/offline-demo/roads.geojson",
   "/offline-demo/context.geojson",
+  "/offline-demo/mae-sai/bundle.json",
+  "/offline-demo/mae-sai/manifest.json",
+  "/offline-demo/mae-sai/areas.json",
+  "/offline-demo/mae-sai/roads.json",
+  "/offline-demo/mae-sai/facilities.json",
+  "/offline-demo/mae-sai/access-hotspots.json",
   ...PROPOSAL_EVIDENCE_ASSETS
 ];
 

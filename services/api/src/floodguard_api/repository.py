@@ -168,6 +168,13 @@ class ArtifactRepository:
         self.paths = paths or RepositoryPaths.discover()
         self.generated_at = datetime.now(UTC)
 
+    @staticmethod
+    def _require_fixture_study_area(study_area: str) -> None:
+        """Reject cross-dataset substitution when this fixture adapter is used directly."""
+
+        if study_area != "fixture_thailand_demo":
+            raise ArtifactNotFound(f"Unknown study_area: {study_area}")
+
     @property
     def required_decision_artifacts(self) -> tuple[Path, ...]:
         return (
@@ -188,7 +195,8 @@ class ArtifactRepository:
             self.paths.fixtures / "sample_facilities.csv",
         )
 
-    def status(self) -> StatusResponse:
+    def status(self, study_area: str = "fixture_thailand_demo") -> StatusResponse:
+        self._require_fixture_study_area(study_area)
         decision_blocker = self._decision_artifact_blocker()
         scenario_blocker = self._scenario_artifact_blocker()
         if decision_blocker:
@@ -248,7 +256,8 @@ class ArtifactRepository:
             )
         ]
 
-    def areas(self) -> list[AreaDecision]:
+    def areas(self, study_area: str = "fixture_thailand_demo") -> list[AreaDecision]:
+        self._require_fixture_study_area(study_area)
         self._require_decision_artifacts()
         priority = self._priority()
         inputs = self._population_inputs()
@@ -326,13 +335,19 @@ class ArtifactRepository:
             )
         return records
 
-    def area(self, area_id: str) -> AreaDecision:
-        for area in self.areas():
+    def area(
+        self,
+        area_id: str,
+        study_area: str = "fixture_thailand_demo",
+    ) -> AreaDecision:
+        self._require_fixture_study_area(study_area)
+        for area in self.areas(study_area):
             if area.area_id == area_id:
                 return area
         raise ArtifactNotFound(f"Unknown area_id: {area_id}")
 
-    def layers(self) -> list[LayerCatalogItem]:
+    def layers(self, study_area: str = "fixture_thailand_demo") -> list[LayerCatalogItem]:
+        self._require_fixture_study_area(study_area)
         layer_specs = (
             {
                 "layer_id": "priority_areas",
@@ -387,7 +402,12 @@ class ArtifactRepository:
             )
         return result
 
-    def layer_data(self, layer_id: str) -> dict[str, Any]:
+    def layer_data(
+        self,
+        layer_id: str,
+        study_area: str = "fixture_thailand_demo",
+    ) -> dict[str, Any]:
+        self._require_fixture_study_area(study_area)
         files = {
             "priority_areas": self.paths.outputs / "priority_subdistricts.geojson",
             "road_risk": self.paths.outputs / "road_risk.geojson",
@@ -409,8 +429,32 @@ class ArtifactRepository:
                 properties["area_id"] = str(subdistrict_id)
         return payload
 
-    def brief(self, area_id: str) -> BriefResponse:
-        area = self.area(area_id)
+    def layer_artifact_sha256(
+        self,
+        layer_id: str,
+        study_area: str = "fixture_thailand_demo",
+    ) -> str:
+        """Return the immutable source-artifact checksum for an advertised layer."""
+
+        self._require_fixture_study_area(study_area)
+        files = {
+            "priority_areas": self.paths.outputs / "priority_subdistricts.geojson",
+            "road_risk": self.paths.outputs / "road_risk.geojson",
+        }
+        path = files.get(layer_id)
+        if path is None:
+            raise ArtifactNotFound("Unknown layer_id.")
+        if not path.is_file():
+            raise ArtifactUnavailable(f"GeoJSON artifact unavailable: {path.name}.")
+        return _sha256(path)
+
+    def brief(
+        self,
+        area_id: str,
+        study_area: str = "fixture_thailand_demo",
+    ) -> BriefResponse:
+        self._require_fixture_study_area(study_area)
+        area = self.area(area_id, study_area)
         path = self.paths.outputs / f"action_brief_{area_id}.md"
         if path.is_file():
             content = _read_markdown_artifact(path)
@@ -441,6 +485,7 @@ class ArtifactRepository:
         )
 
     def run_scenario(self, request: ScenarioRunRequest) -> ScenarioRunResponse:
+        self._require_fixture_study_area(request.study_area)
         scenario_blocker = self._scenario_artifact_blocker()
         if scenario_blocker:
             raise ArtifactUnavailable(scenario_blocker)

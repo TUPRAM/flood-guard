@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --configLoader runner",
     "test:offline": "node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs",
+    "test:live-api": "node scripts/live-api-smoke.mjs",
     "qa:visual": "node scripts/capture-visual-qa.mjs"
   },
   "dependencies": {

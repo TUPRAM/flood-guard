@@ -28,7 +28,7 @@
       "kind": "application_form_answers",
       "media_type": "text/markdown",
       "relative_path": "docs/submission/2026-geohackathon/application-form-answers.md",
-      "sha256": "4ec375343e6372b209f61829f8e604bead07421f74be565b0edecbf2d890c3d5"
+      "sha256": "35b77665038ef27ad269f8778160a7870cd326ff758749ffd69132395b78db01"
     },
     {
       "kind": "claim_to_evidence_matrix",
@@ -46,7 +46,7 @@
       "kind": "validation_summary",
       "media_type": "text/markdown",
       "relative_path": "docs/submission/2026-geohackathon/validation-summary.md",
-      "sha256": "9383431c42feef37d9a05ab30d7f17f8f459d53e6354be2018069e2617fba24b"
+      "sha256": "65baa9acc74487019be982098875e6b00aaa8dd9d9227eadf43ae1125111d434"
     },
     {
       "kind": "bilingual_action_brief",
@@ -64,49 +64,49 @@
       "kind": "offline_demo_instructions",
       "media_type": "text/markdown",
       "relative_path": "docs/submission/2026-geohackathon/offline-demo-instructions.md",
-      "sha256": "c04b808acba873ec7038a1d200b3c8da94b3c51561910b07788d3467f92435a6"
+      "sha256": "df62e2a190d2ac20ba203eabed79a9977f3b7a86e16d14b90e32f7ecc2f107d2"
     },
     {
       "kind": "test_results_receipt",
       "media_type": "application/json",
       "relative_path": "docs/submission/2026-geohackathon/evidence/test-results.json",
-      "sha256": "0bb8a69ff613b16a3cc9faeb1d6aaeea69bcdd6eb9dfb0539eec6e0ae2352834"
+      "sha256": "a54f5b79e1805264c2cf6f60b52eeb1a0c56db7798ab284742ebe7f5688ba374"
     },
     {
       "kind": "visual_public_390x844",
       "media_type": "image/png",
       "relative_path": "docs/visual-qa/proposal-stage/public-390x844.png",
-      "sha256": "4f4242a8573f0f0a112be94fccbc0cf1fd1362561e67bc18f6e82eb075226799"
+      "sha256": "a4eaec7101f5d38fc3aa1a99287e736bfbc5822a9c71c770dc0a9a8e016b15e8"
     },
     {
       "kind": "visual_public_map_430x932",
       "media_type": "image/png",
       "relative_path": "docs/visual-qa/proposal-stage/public-map-430x932.png",
-      "sha256": "1ac62b9d3931e86bcac746b22bf635f6ec3817ff75a5adf3463f44cd2a7b85d8"
+      "sha256": "505d082ed30ff447ce52d80e2600111906eabd43334c4a9b03b09e5fa71d579c"
     },
     {
       "kind": "visual_command_1024x768",
       "media_type": "image/png",
       "relative_path": "docs/visual-qa/proposal-stage/command-1024x768.png",
-      "sha256": "a9a01161a64e656d60c6bd42fb972ed1d9742bd78dea2bd1cdcff0b3de687802"
+      "sha256": "b7e10b08aa434d00fe63420254fd4b2c4d5c996411df70d2760f7eeda3df0c6e"
     },
     {
       "kind": "visual_command_1440x900",
       "media_type": "image/png",
       "relative_path": "docs/visual-qa/proposal-stage/command-1440x900.png",
-      "sha256": "a1f57869ce50edd062e0ad791e30829d3ffddacaea9470266bd9af271d005309"
+      "sha256": "e360b733d752b7d43d0b270a905be4ba9406669d005dba0d7d4b59f6c810be26"
     },
     {
       "kind": "visual_command_1536x1024",
       "media_type": "image/png",
       "relative_path": "docs/visual-qa/proposal-stage/command-1536x1024.png",
-      "sha256": "629aa6937afc315030dc18463731c88072a145340e253ab0c14ffc953b53e335"
+      "sha256": "d7f3b03beae36a222e6f097e1d0903a0f1f8eadd2ca6a7d3174d06618ee57cd3"
     },
     {
       "kind": "visual_studio_2048x1152",
       "media_type": "image/png",
       "relative_path": "docs/visual-qa/proposal-stage/studio-2048x1152.png",
-      "sha256": "48fcc7eb7622bad17e121870d3c8c84f754d13eb59d8c2b08dabd3cda5097563"
+      "sha256": "f0271322ade238d7cc93217e16a2e52a24b0b524603c4df839f2de3280173a9b"
     },
     {
       "kind": "three_model_gate_receipt",
@@ -118,7 +118,7 @@
       "kind": "geoai_proof_receipt",
       "media_type": "application/json",
       "relative_path": "services/geoai-runner/evidence/geoai-proof-receipt.json",
-      "sha256": "83be9b7be31c12bc48d1e63d7041ec07fe31cba65a753d9a2243c1d654791320"
+      "sha256": "4bb7885130b1c9a5320d41a1990ba2e63c4f4cc4de15c5b7e3f2f8fdccc2aeb2"
     },
     {
       "kind": "geoai_probability_thumbnail",
@@ -128,67 +128,67 @@
     }
   ],
   "dataset_mode": "candidate",
-  "generated_at": "2026-07-17T10:17:16.148362Z",
+  "generated_at": "2026-07-18T07:42:41.971416Z",
   "geoai_proof": {
     "aggregation_status": "report_only",
     "can_feed_decision_layer": false,
     "feature_stack_id": "clip_linear_uint8_v1-8-band",
     "geoai_version": "0.41.1",
     "input_manifest_sha256": "c401c3d618f6bcba14fcd692af94416712ca8d227580112e67ecf87860dfeb11",
-    "output_probability_sha256": "bd8fbdaf288e8dc696ee594536f510bfb8df5071d4a82b7826c3acc91c0347cd",
+    "output_probability_sha256": "17178cae008584035d7feab14f9eaf922e16242c3d68d686d61580780359909d",
     "preprocessing_id": "clip_linear_uint8_v1",
     "processing_allowed": true,
     "reason_blocked": "Synthetic candidate proof cannot feed the decision layer.",
     "validation_status": "passed"
   },
-  "git_commit": "61d2e96a605a5c13cc3ac5d6db6d145517cb02f5",
+  "git_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
   "operational_status": "non_operational",
   "schema_version": "1.0",
   "test_suites": [
     {
-      "command": ".venv/Scripts/python.exe -m pytest --junitxml=.tmp/proposal-evidence/root-python.xml",
+      "command": ".venv/Scripts/python.exe -m pytest --junitxml=.tmp/proposal-evidence-role-ui/root-python.xml",
       "name": "root-python",
       "passed": 1212,
       "result": "passed",
       "skipped": 1
     },
     {
-      "command": "services/api/.venv/Scripts/python.exe -m pytest services/api/tests --junitxml=.tmp/proposal-evidence/api.xml",
+      "command": "services/api/.venv/Scripts/python.exe -m pytest services/api/tests --junitxml=.tmp/proposal-evidence-role-ui/api.xml",
       "name": "api",
       "passed": 86,
       "result": "passed",
       "skipped": 0
     },
     {
-      "command": "pnpm --dir packages/contracts test --reporter=junit --outputFile=../../.tmp/proposal-evidence/contracts.xml",
+      "command": "pnpm --dir packages/contracts test --reporter=junit --outputFile=../../.tmp/proposal-evidence-role-ui/contracts.xml",
       "name": "contracts",
       "passed": 5,
       "result": "passed",
       "skipped": 0
     },
     {
-      "command": "pnpm --dir apps/web test --reporter=junit --outputFile=../../.tmp/proposal-evidence/web-unit.xml",
+      "command": "pnpm --dir apps/web test --reporter=junit --outputFile=../../.tmp/proposal-evidence-role-ui/web-unit.xml",
       "name": "web-unit",
-      "passed": 36,
+      "passed": 58,
       "result": "passed",
       "skipped": 0
     },
     {
-      "command": ".venv/Scripts/python.exe scripts/run_check_with_junit.py --suite frontend-quality-and-offline --output .tmp/proposal-evidence/frontend.xml -- pnpm verify:frontend",
+      "command": ".venv/Scripts/python.exe scripts/run_check_with_junit.py --suite frontend-quality-and-offline --output .tmp/proposal-evidence-role-ui/frontend.xml -- pnpm verify:frontend",
       "name": "frontend-quality-and-offline",
       "passed": 1,
       "result": "passed",
       "skipped": 0
     },
     {
-      "command": "services/geoai-runner/.venv/Scripts/python.exe -m pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.tmp/proposal-evidence/geoai-normal.xml",
+      "command": "services/geoai-runner/.venv/Scripts/python.exe -m pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.tmp/proposal-evidence-role-ui/geoai-normal.xml",
       "name": "geoai-normal",
       "passed": 84,
       "result": "passed",
       "skipped": 0
     },
     {
-      "command": "powershell -NoProfile -Command \"$env:RUN_GEOAI_SMOKE='1'; $env:FLOODGUARD_PROOF_COMMIT='61d2e96a605a5c13cc3ac5d6db6d145517cb02f5'; $env:GEOAI_PROOF_OUTPUT_DIR='.tmp/proposal-geoai-evidence-61d2e96'; & 'services/geoai-runner/.venv/Scripts/python.exe' -m pytest services/geoai-runner/tests/test_geoai_smoke.py -m geoai_smoke --junitxml=.tmp/proposal-evidence/geoai-real-smoke.xml\"",
+      "command": "powershell -NoProfile -Command \"$env:RUN_GEOAI_SMOKE='1'; $env:FLOODGUARD_PROOF_COMMIT='62a4336759de55116b1bd238a5afd60ca7496895'; $env:GEOAI_PROOF_OUTPUT_DIR='.tmp/proposal-geoai-evidence-62a4336'; & 'services/geoai-runner/.venv/Scripts/python.exe' -m pytest services/geoai-runner/tests/test_geoai_smoke.py -m geoai_smoke --junitxml=.tmp/proposal-evidence-role-ui/geoai-real-smoke.xml\"",
       "name": "geoai-real-smoke",
       "passed": 1,
       "result": "passed",

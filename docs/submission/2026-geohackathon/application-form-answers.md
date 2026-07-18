@@ -3,9 +3,9 @@
 These answers are deliberately free of team-name, contact, and demo-link
 placeholders. The release build obtains those owner-supplied values only from
 `submission-metadata.json` after strict validation. Current verification is
-bound to tested source commit `61d2e96a605a5c13cc3ac5d6db6d145517cb02f5`:
+bound to tested source commit `62a4336759de55116b1bd238a5afd60ca7496895`:
 1,212 root Python tests passed with one skip, 86 API tests passed, 5 contract
-tests passed, 36 web-unit tests passed, the complete frontend/offline gate
+tests passed, 58 web-unit tests passed, the complete frontend/offline gate
 passed, 84 normal GeoAI-runner tests passed, and the opt-in real-GeoAI smoke
 passed.
 

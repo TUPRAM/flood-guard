@@ -11,7 +11,7 @@ operational status.
 | Evidence lane | Current status | What it proves | What it does not prove |
 |---|---|---|---|
 | Decision engine | Passed: 1,212 tests; 1 skipped | Deterministic FPPS, A-E class, road risk, nearest-facility access, equity, exports and dashboard logic | Accuracy of an upstream real flood product |
-| Static web/PWA | Passed: lint, typecheck, 5 contract tests, 36 web-unit tests, static build, offline route/browser checks and six visual-QA viewports | Three role-specific fixture routes and offline fallback | Live data, operational navigation or public warning |
+| Static web/PWA | Passed: lint, typecheck, 5 contract tests, 58 web-unit tests, static build, offline route/browser checks and six visual-QA viewports | Three role-specific fixture routes and offline fallback | Live data, operational navigation or public warning |
 | FastAPI | Passed: 86 tests | Pydantic artifact/scenario contracts, explicit data states and path safety | Production hosting or agency acceptance |
 | GeoAI synthetic proof | Passed: 84 normal tests plus 1 opt-in real-GeoAI smoke | Actual tile export, model construction, tiled prediction, explicit class-1 probability, grid validation and report-only aggregation | Training convergence or real flood accuracy |
 | Trusted zonal adapter | Implemented and substitution-tested | Fail-closed official-input raster/geometry/checksum/statistics/receipt boundary | Acceptance of any current candidate raster |
@@ -94,8 +94,8 @@ experiment contract, not a presentation-layer choice.
 ## Verification receipt and remaining release blockers
 
 The machine-readable test receipt is bound to tested source commit
-`61d2e96a605a5c13cc3ac5d6db6d145517cb02f5`. It records 1,212 root Python
-passes with one explicit skip, 86 API passes, 5 contract passes, 36 web-unit
+`62a4336759de55116b1bd238a5afd60ca7496895`. It records 1,212 root Python
+passes with one explicit skip, 86 API passes, 5 contract passes, 58 web-unit
 passes, a passed full frontend/offline gate, 84 normal isolated-runner passes,
 and one passed opt-in real-GeoAI smoke. The static build and browser smoke made
 zero external runtime requests, and all six required viewports passed the

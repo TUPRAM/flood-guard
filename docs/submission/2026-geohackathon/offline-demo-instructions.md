@@ -25,7 +25,7 @@ builder. Do not hand-edit the built bundle:
   --site-root apps/web/out `
   --template-root packaging/offline-demo `
   --output dist/FloodGuard_Proposal_Offline_Demo.zip `
-  --git-commit 61d2e96a605a5c13cc3ac5d6db6d145517cb02f5
+  --git-commit 62a4336759de55116b1bd238a5afd60ca7496895
 ```
 
 The ZIP embeds a manifest with the pinned Git commit and SHA-256 checksum of

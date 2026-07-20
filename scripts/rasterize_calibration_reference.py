@@ -75,8 +75,8 @@ def main() -> None:
     ) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
-    print(f"Wrote calibration reference-cell input: {outputs.cells}")
-    print(f"Wrote self-hashed confidential lineage manifest: {outputs.manifest}")
+    print(f"Wrote calibration reference-cell input: {outputs.cells.name}")
+    print(f"Wrote self-hashed confidential lineage manifest: {outputs.manifest.name}")
     print("Reference frozen: false")
     print("Training/decision/FPPS/warning eligibility: false")
 

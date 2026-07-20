@@ -165,9 +165,7 @@ class CalibrationReferenceManifest:
             "query_region_ids": list(self.query_region_ids),
             "query_count": len(self.query_region_ids),
             "cell_count": self.cell_count,
-            "grid_contract_sha256_by_query": dict(
-                self.grid_contract_sha256_by_query
-            ),
+            "grid_contract_sha256_by_query": dict(self.grid_contract_sha256_by_query),
             "source_registry_sha256_by_query": dict(
                 self.source_registry_sha256_by_query
             ),
@@ -216,12 +214,8 @@ class ReviewerCalibrationReceipt:
             "reviewer_ids": list(self.reviewer_ids),
             "protocol_version": self.protocol_version,
             "taxonomy_version": self.taxonomy_version,
-            "calibration_completed_at_utc": _iso_utc(
-                self.calibration_completed_at_utc
-            ),
-            "formal_review_not_before_utc": _iso_utc(
-                self.formal_review_not_before_utc
-            ),
+            "calibration_completed_at_utc": _iso_utc(self.calibration_completed_at_utc),
+            "formal_review_not_before_utc": _iso_utc(self.formal_review_not_before_utc),
             "query_manifest_sha256": self.query_manifest_sha256,
             "query_region_ids": list(self.query_region_ids),
             "query_count": len(self.query_region_ids),
@@ -242,9 +236,7 @@ class ReviewerCalibrationReceipt:
             "calibration_reference_cells_sha256": (
                 self.calibration_reference_cells_sha256
             ),
-            "grid_contract_sha256_by_query": dict(
-                self.grid_contract_sha256_by_query
-            ),
+            "grid_contract_sha256_by_query": dict(self.grid_contract_sha256_by_query),
             "source_registry_sha256_by_query": dict(
                 self.source_registry_sha256_by_query
             ),
@@ -308,9 +300,7 @@ class ReviewerCalibrationFailureDiagnostic:
             "failed_reviewer_ids": list(self.failed_reviewer_ids),
             "protocol_version": self.protocol_version,
             "taxonomy_version": self.taxonomy_version,
-            "calibration_completed_at_utc": _iso_utc(
-                self.calibration_completed_at_utc
-            ),
+            "calibration_completed_at_utc": _iso_utc(self.calibration_completed_at_utc),
             "diagnostic_created_at_utc": _iso_utc(self.diagnostic_created_at_utc),
             "query_manifest_sha256": self.query_manifest_sha256,
             "query_region_ids": list(self.query_region_ids),
@@ -332,9 +322,7 @@ class ReviewerCalibrationFailureDiagnostic:
             "calibration_reference_cells_sha256": (
                 self.calibration_reference_cells_sha256
             ),
-            "grid_contract_sha256_by_query": dict(
-                self.grid_contract_sha256_by_query
-            ),
+            "grid_contract_sha256_by_query": dict(self.grid_contract_sha256_by_query),
             "source_registry_sha256_by_query": dict(
                 self.source_registry_sha256_by_query
             ),
@@ -528,7 +516,9 @@ def load_calibration_reference_manifest(
             taxonomy_version=_required_text(
                 payload["taxonomy_version"], "taxonomy_version"
             ),
-            created_at_utc=_parse_timestamp(payload["created_at_utc"], "created_at_utc"),
+            created_at_utc=_parse_timestamp(
+                payload["created_at_utc"], "created_at_utc"
+            ),
             query_manifest_sha256=_require_sha256(
                 payload["query_manifest_sha256"], "query_manifest_sha256"
             ),
@@ -538,7 +528,9 @@ def load_calibration_reference_manifest(
             reference_cells_file=_safe_file_name(
                 payload["reference_cells_file"], "reference_cells_file"
             ),
-            query_region_ids=_string_tuple(payload["query_region_ids"], "query_region_ids"),
+            query_region_ids=_string_tuple(
+                payload["query_region_ids"], "query_region_ids"
+            ),
             cell_count=_positive_integer(payload["cell_count"], "cell_count"),
             grid_contract_sha256_by_query=_sha_mapping_tuple(
                 payload["grid_contract_sha256_by_query"],
@@ -605,8 +597,7 @@ def _evaluate_reviewer_calibration_evidence(
     )
     manifest_reviewer_ids = tuple(
         sorted(
-            _required_text(key, "reviewer_id")
-            for key in reviewer_cell_manifest_paths
+            _required_text(key, "reviewer_id") for key in reviewer_cell_manifest_paths
         )
     )
     if reviewer_ids != manifest_reviewer_ids or len(reviewer_ids) < 2:
@@ -780,9 +771,7 @@ def build_reviewer_calibration_receipt(
         "query_region_ids": values["query_region_ids"],
         "annotation_sha256_by_id": values["annotation_sha256_by_id"],
         "annotation_ids_by_reviewer": values["annotation_ids_by_reviewer"],
-        "reviewer_cell_sha256_by_reviewer": values[
-            "reviewer_cell_sha256_by_reviewer"
-        ],
+        "reviewer_cell_sha256_by_reviewer": values["reviewer_cell_sha256_by_reviewer"],
         "reviewer_cell_manifest_sha256_by_reviewer": values[
             "reviewer_cell_manifest_sha256_by_reviewer"
         ],
@@ -792,12 +781,8 @@ def build_reviewer_calibration_receipt(
         "calibration_reference_cells_sha256": values[
             "calibration_reference_cells_sha256"
         ],
-        "grid_contract_sha256_by_query": values[
-            "grid_contract_sha256_by_query"
-        ],
-        "source_registry_sha256_by_query": values[
-            "source_registry_sha256_by_query"
-        ],
+        "grid_contract_sha256_by_query": values["grid_contract_sha256_by_query"],
+        "source_registry_sha256_by_query": values["source_registry_sha256_by_query"],
         "source_timestamp_by_query": values["source_timestamp_by_query"],
         "metrics_by_reviewer": values["metrics_by_reviewer"],
         "thresholds": values["thresholds"],
@@ -898,9 +883,7 @@ def build_reviewer_calibration_failure_diagnostic(
         "failed_reviewer_ids": failed_ids,
         "protocol_version": evaluation["protocol_version"],
         "taxonomy_version": evaluation["taxonomy_version"],
-        "calibration_completed_at_utc": evaluation[
-            "calibration_completed_at_utc"
-        ],
+        "calibration_completed_at_utc": evaluation["calibration_completed_at_utc"],
         "diagnostic_created_at_utc": created,
         "query_manifest_sha256": evaluation["query_manifest_sha256"],
         "query_region_ids": query_ids,
@@ -918,9 +901,7 @@ def build_reviewer_calibration_failure_diagnostic(
         "calibration_reference_cells_sha256": evaluation[
             "calibration_reference_cells_sha256"
         ],
-        "grid_contract_sha256_by_query": evaluation[
-            "grid_contract_sha256_by_query"
-        ],
+        "grid_contract_sha256_by_query": evaluation["grid_contract_sha256_by_query"],
         "source_registry_sha256_by_query": evaluation[
             "source_registry_sha256_by_query"
         ],
@@ -931,9 +912,7 @@ def build_reviewer_calibration_failure_diagnostic(
         "query_strata_sha256": evaluation["query_strata_sha256"],
         "assumptions": evaluation["assumptions"],
     }
-    provisional = ReviewerCalibrationFailureDiagnostic(
-        **values, diagnostic_sha256=""
-    )
+    provisional = ReviewerCalibrationFailureDiagnostic(**values, diagnostic_sha256="")
     diagnostic = ReviewerCalibrationFailureDiagnostic(
         **values,
         diagnostic_sha256=_canonical_json_sha256(
@@ -950,10 +929,7 @@ def verify_reviewer_calibration_failure_diagnostic(
     """Reject tampering, fake failure claims, and unsafe eligibility fields."""
 
     reviewer_ids = tuple(diagnostic.reviewer_ids)
-    if (
-        len(reviewer_ids) < 2
-        or reviewer_ids != tuple(sorted(set(reviewer_ids)))
-    ):
+    if len(reviewer_ids) < 2 or reviewer_ids != tuple(sorted(set(reviewer_ids))):
         raise ReviewerCalibrationError(
             "Failure diagnostic requires two or more unique sorted reviewers."
         )
@@ -982,13 +958,10 @@ def verify_reviewer_calibration_failure_diagnostic(
             "Failure diagnostic predates calibration completion."
         )
     query_ids = tuple(diagnostic.query_region_ids)
-    if (
-        len(query_ids) < MINIMUM_CALIBRATION_QUERY_COUNT
-        or query_ids != tuple(sorted(set(query_ids)))
+    if len(query_ids) < MINIMUM_CALIBRATION_QUERY_COUNT or query_ids != tuple(
+        sorted(set(query_ids))
     ):
-        raise ReviewerCalibrationError(
-            "Failure diagnostic query coverage is invalid."
-        )
+        raise ReviewerCalibrationError("Failure diagnostic query coverage is invalid.")
     for field in (
         "query_manifest_sha256",
         "calibration_reference_manifest_sha256",
@@ -1001,9 +974,7 @@ def verify_reviewer_calibration_failure_diagnostic(
     annotation_ids = dict(diagnostic.annotation_ids_by_reviewer)
     annotation_hashes = dict(diagnostic.annotation_sha256_by_id)
     cell_hashes = dict(diagnostic.reviewer_cell_sha256_by_reviewer)
-    cell_manifest_hashes = dict(
-        diagnostic.reviewer_cell_manifest_sha256_by_reviewer
-    )
+    cell_manifest_hashes = dict(diagnostic.reviewer_cell_manifest_sha256_by_reviewer)
     metrics = dict(diagnostic.metrics_by_reviewer)
     failures = dict(diagnostic.failure_reasons_by_reviewer)
     for name, mapping in (
@@ -1073,7 +1044,10 @@ def verify_reviewer_calibration_failure_diagnostic(
         raise ReviewerCalibrationError(
             "Failure diagnostic reasons do not match the measured metrics."
         )
-    if tuple(reviewer for reviewer in reviewer_ids if recomputed[reviewer]) != failed_ids:
+    if (
+        tuple(reviewer for reviewer in reviewer_ids if recomputed[reviewer])
+        != failed_ids
+    ):
         raise ReviewerCalibrationError(
             "Failure diagnostic reviewer status does not match measured metrics."
         )
@@ -1090,16 +1064,12 @@ def verify_reviewer_calibration_failure_diagnostic(
     }
     for field, expected in expected_safety.items():
         if payload.get(field) != expected:
-            raise ReviewerCalibrationError(
-                f"Failure diagnostic has unsafe {field}."
-            )
+            raise ReviewerCalibrationError(f"Failure diagnostic has unsafe {field}.")
     expected_self_hash = _canonical_json_sha256(
         diagnostic.to_dict(include_self_hash=False)
     )
     if diagnostic.diagnostic_sha256 != expected_self_hash:
-        raise ReviewerCalibrationError(
-            "Failure diagnostic self-hash does not match."
-        )
+        raise ReviewerCalibrationError("Failure diagnostic self-hash does not match.")
 
 
 def write_reviewer_calibration_failure_diagnostic(
@@ -1161,26 +1131,40 @@ def load_reviewer_calibration_receipt(
     _require_exact_keys(payload, expected, "reviewer calibration receipt")
     _require_receipt_safety(payload)
     try:
-        annotation_ids = _mapping(payload["annotation_ids_by_reviewer"], "annotation_ids_by_reviewer")
+        annotation_ids = _mapping(
+            payload["annotation_ids_by_reviewer"], "annotation_ids_by_reviewer"
+        )
         metrics = _mapping(payload["metrics_by_reviewer"], "metrics_by_reviewer")
         receipt = ReviewerCalibrationReceipt(
             reviewer_ids=_string_tuple(payload["reviewer_ids"], "reviewer_ids"),
-            protocol_version=_required_text(payload["protocol_version"], "protocol_version"),
-            taxonomy_version=_required_text(payload["taxonomy_version"], "taxonomy_version"),
+            protocol_version=_required_text(
+                payload["protocol_version"], "protocol_version"
+            ),
+            taxonomy_version=_required_text(
+                payload["taxonomy_version"], "taxonomy_version"
+            ),
             calibration_completed_at_utc=_parse_timestamp(
                 payload["calibration_completed_at_utc"], "calibration_completed_at_utc"
             ),
             formal_review_not_before_utc=_parse_timestamp(
                 payload["formal_review_not_before_utc"], "formal_review_not_before_utc"
             ),
-            query_manifest_sha256=_require_sha256(payload["query_manifest_sha256"], "query_manifest_sha256"),
-            query_region_ids=_string_tuple(payload["query_region_ids"], "query_region_ids"),
-            annotation_sha256_by_id=_sha_mapping_tuple(payload["annotation_sha256_by_id"], "annotation_sha256_by_id"),
+            query_manifest_sha256=_require_sha256(
+                payload["query_manifest_sha256"], "query_manifest_sha256"
+            ),
+            query_region_ids=_string_tuple(
+                payload["query_region_ids"], "query_region_ids"
+            ),
+            annotation_sha256_by_id=_sha_mapping_tuple(
+                payload["annotation_sha256_by_id"], "annotation_sha256_by_id"
+            ),
             annotation_ids_by_reviewer=tuple(
                 sorted(
                     (
                         _required_text(reviewer_id, "reviewer_id"),
-                        _string_tuple(ids, f"annotation_ids_by_reviewer[{reviewer_id}]"),
+                        _string_tuple(
+                            ids, f"annotation_ids_by_reviewer[{reviewer_id}]"
+                        ),
                     )
                     for reviewer_id, ids in annotation_ids.items()
                 )
@@ -1222,16 +1206,24 @@ def load_reviewer_calibration_receipt(
                 )
             ),
             thresholds=tuple(
-                sorted(_validate_thresholds(_mapping(payload["thresholds"], "thresholds")).items())
+                sorted(
+                    _validate_thresholds(
+                        _mapping(payload["thresholds"], "thresholds")
+                    ).items()
+                )
             ),
-            query_strata_sha256=_require_sha256(payload["query_strata_sha256"], "query_strata_sha256"),
+            query_strata_sha256=_require_sha256(
+                payload["query_strata_sha256"], "query_strata_sha256"
+            ),
             assumptions=_required_text(payload["assumptions"], "assumptions"),
             receipt_sha256=_require_sha256(payload["receipt_sha256"], "receipt_sha256"),
         )
     except (KeyError, TypeError, ValueError) as exc:
         if isinstance(exc, ReviewerCalibrationError):
             raise
-        raise ReviewerCalibrationError(f"Invalid reviewer calibration receipt: {exc}") from exc
+        raise ReviewerCalibrationError(
+            f"Invalid reviewer calibration receipt: {exc}"
+        ) from exc
     if int(payload["query_count"]) != len(receipt.query_region_ids):
         raise ReviewerCalibrationError(
             "Calibration receipt query_count does not match query_region_ids."
@@ -1246,9 +1238,7 @@ def verify_reviewer_calibration_receipt(
     """Fail closed on receipt schema, safety, thresholds, lineage, or self-hash."""
 
     if not isinstance(receipt, ReviewerCalibrationReceipt):
-        raise ReviewerCalibrationError(
-            "receipt must be a ReviewerCalibrationReceipt."
-        )
+        raise ReviewerCalibrationError("receipt must be a ReviewerCalibrationReceipt.")
     _required_text(receipt.protocol_version, "protocol_version")
     _required_text(receipt.taxonomy_version, "taxonomy_version")
     _required_text(receipt.assumptions, "assumptions")
@@ -1356,9 +1346,7 @@ def verify_reviewer_calibration_receipt(
             thresholds,
             expected_query_ids=set(receipt.query_region_ids),
         )
-    expected_hash = _canonical_json_sha256(
-        receipt.to_dict(include_self_hash=False)
-    )
+    expected_hash = _canonical_json_sha256(receipt.to_dict(include_self_hash=False))
     if receipt.receipt_sha256 != expected_hash:
         raise ReviewerCalibrationError(
             "Reviewer calibration receipt self-hash does not match its content."
@@ -1382,7 +1370,10 @@ def require_formal_review_calibration(
         raise ReviewerCalibrationError(
             "Formal reviewer identities do not exactly match the calibration receipt."
         )
-    if not isinstance(semantics, Mapping) or semantics.get("taxonomy") != receipt.taxonomy_version:
+    if (
+        not isinstance(semantics, Mapping)
+        or semantics.get("taxonomy") != receipt.taxonomy_version
+    ):
         raise ReviewerCalibrationError(
             "Formal labelset taxonomy does not match the calibration receipt."
         )
@@ -1494,9 +1485,11 @@ def _normalize_reference_cells(
                 "assumptions": str(query["assumptions"]).strip(),
             }
         )
-    normalized = pd.DataFrame(rows, columns=REFERENCE_CELL_COLUMNS).sort_values(
-        ["query_region_id", "row_index", "column_index"], kind="stable"
-    ).reset_index(drop=True)
+    normalized = (
+        pd.DataFrame(rows, columns=REFERENCE_CELL_COLUMNS)
+        .sort_values(["query_region_id", "row_index", "column_index"], kind="stable")
+        .reset_index(drop=True)
+    )
     _validate_cell_grid(normalized, query_rows=query_rows, label="reference cells")
     _require_not_255_only(normalized, label="reference cells")
     return normalized
@@ -1543,7 +1536,10 @@ def _verify_reference_artifacts(
         raise ReviewerCalibrationError(
             "Calibration reference is bound to a different query manifest."
         )
-    if manifest.protocol_version != protocol_version or manifest.taxonomy_version != taxonomy_version:
+    if (
+        manifest.protocol_version != protocol_version
+        or manifest.taxonomy_version != taxonomy_version
+    ):
         raise ReviewerCalibrationError(
             "Calibration reference protocol or taxonomy does not match the run."
         )
@@ -1569,7 +1565,9 @@ def _verify_reference_artifacts(
     if dict(manifest.source_registry_sha256_by_query) != expected_source:
         raise ReviewerCalibrationError("Reference source hashes do not match queries.")
     if dict(manifest.source_timestamp_by_query) != expected_time:
-        raise ReviewerCalibrationError("Reference source timestamps do not match queries.")
+        raise ReviewerCalibrationError(
+            "Reference source timestamps do not match queries."
+        )
 
 
 def _latest_calibration_annotations(
@@ -1583,13 +1581,20 @@ def _latest_calibration_annotations(
     query_set = set(query_rows)
     latest: dict[tuple[str, str], AnnotationRecord] = {}
     for record in records:
-        if record.reviewer_id not in reviewer_set or record.query_region_id not in query_set:
+        if (
+            record.reviewer_id not in reviewer_set
+            or record.query_region_id not in query_set
+        ):
             continue
         key = (record.reviewer_id, record.query_region_id)
         previous = latest.get(key)
         if previous is None or record.reviewer_revision > previous.reviewer_revision:
             latest[key] = record
-    expected = {(reviewer_id, query_id) for reviewer_id in reviewer_ids for query_id in query_rows}
+    expected = {
+        (reviewer_id, query_id)
+        for reviewer_id in reviewer_ids
+        for query_id in query_rows
+    }
     missing = sorted(expected - set(latest))
     if missing:
         raise ReviewerCalibrationError(
@@ -1606,7 +1611,10 @@ def _latest_calibration_annotations(
             raise ReviewerCalibrationError(
                 f"Calibration annotation {record.annotation_id} is not locked and complete."
             )
-        if record.model_predictions_visible or record.other_reviewer_annotations_visible:
+        if (
+            record.model_predictions_visible
+            or record.other_reviewer_annotations_visible
+        ):
             raise ReviewerCalibrationError(
                 f"Calibration annotation {record.annotation_id} was not independently blinded."
             )
@@ -1614,7 +1622,9 @@ def _latest_calibration_annotations(
             raise ReviewerCalibrationError(
                 f"Calibration annotation {record.annotation_id} uses a different protocol."
             )
-        if record.event_id != str(query["event_id"]) or record.tile_id != str(query["tile_id"]):
+        if record.event_id != str(query["event_id"]) or record.tile_id != str(
+            query["tile_id"]
+        ):
             raise ReviewerCalibrationError(
                 f"Calibration annotation {record.annotation_id} has wrong event/tile lineage."
             )
@@ -1630,11 +1640,16 @@ def _latest_calibration_annotations(
             raise ReviewerCalibrationError(
                 f"Calibration annotation {record.annotation_id} has wrong grid hash."
             )
-        if record.source_registry_sha256 != str(query["source_registry_sha256"]).lower():
+        if (
+            record.source_registry_sha256
+            != str(query["source_registry_sha256"]).lower()
+        ):
             raise ReviewerCalibrationError(
                 f"Calibration annotation {record.annotation_id} has wrong source hash."
             )
-        if record.source_timestamp is None or _iso_utc(record.source_timestamp) != _normalized_timestamp_text(query["source_timestamp"]):
+        if record.source_timestamp is None or _iso_utc(
+            record.source_timestamp
+        ) != _normalized_timestamp_text(query["source_timestamp"]):
             raise ReviewerCalibrationError(
                 f"Calibration annotation {record.annotation_id} has wrong source timestamp."
             )
@@ -1669,7 +1684,10 @@ def _validate_reviewer_artifact(
             f"Reviewer {reviewer_id} cells failed checksum validation."
         )
     expected_ids = {record.annotation_id for record in records}
-    if set(_string_tuple(manifest.get("annotation_ids"), "annotation_ids")) != expected_ids:
+    if (
+        set(_string_tuple(manifest.get("annotation_ids"), "annotation_ids"))
+        != expected_ids
+    ):
         raise ReviewerCalibrationError(
             f"Reviewer {reviewer_id} manifest annotation coverage is not exact."
         )
@@ -1692,11 +1710,17 @@ def _validate_reviewer_artifact(
         query_id: str(row["source_registry_sha256"]).lower()
         for query_id, row in query_rows.items()
     }
-    if _sha_mapping(manifest.get("grid_contract_sha256_by_query"), "grid hashes") != expected_grid:
+    if (
+        _sha_mapping(manifest.get("grid_contract_sha256_by_query"), "grid hashes")
+        != expected_grid
+    ):
         raise ReviewerCalibrationError(
             f"Reviewer {reviewer_id} manifest grid hashes do not match."
         )
-    if _sha_mapping(manifest.get("source_registry_sha256_by_query"), "source hashes") != expected_source:
+    if (
+        _sha_mapping(manifest.get("source_registry_sha256_by_query"), "source hashes")
+        != expected_source
+    ):
         raise ReviewerCalibrationError(
             f"Reviewer {reviewer_id} manifest source hashes do not match."
         )
@@ -1728,13 +1752,19 @@ def _validate_reviewer_artifact(
         raise ReviewerCalibrationError(
             f"Reviewer {reviewer_id} cells do not exactly cover annotation ids."
         )
-    annotation_by_query = {record.query_region_id: record.annotation_id for record in records}
+    annotation_by_query = {
+        record.query_region_id: record.annotation_id for record in records
+    }
     for query_id, rows in cells.groupby(cells["query_region_id"].astype(str)):
-        if query_id not in annotation_by_query or set(rows["annotation_id"].astype(str)) != {annotation_by_query[query_id]}:
+        if query_id not in annotation_by_query or set(
+            rows["annotation_id"].astype(str)
+        ) != {annotation_by_query[query_id]}:
             raise ReviewerCalibrationError(
                 f"Reviewer {reviewer_id} cell/annotation query lineage is invalid."
             )
-    _validate_cell_grid(cells, query_rows=query_rows, label=f"reviewer {reviewer_id} cells")
+    _validate_cell_grid(
+        cells, query_rows=query_rows, label=f"reviewer {reviewer_id} cells"
+    )
     _validate_cell_lineage_and_safety(cells, query_rows=query_rows, reference=False)
     _require_not_255_only(cells, label=f"reviewer {reviewer_id} cells")
     return cells
@@ -1777,8 +1807,12 @@ def _score_reviewer(
             reference_row: list[int] = []
             for column_index in range(size):
                 cell_id = f"{query_id}_R{row_index:04d}_C{column_index:04d}"
-                reviewer_value = int(_coerce_label(reviewer_by_cell.at[cell_id, "label_code"]))
-                reference_value = int(_coerce_label(reference_by_cell.at[cell_id, "label_code"]))
+                reviewer_value = int(
+                    _coerce_label(reviewer_by_cell.at[cell_id, "label_code"])
+                )
+                reference_value = int(
+                    _coerce_label(reference_by_cell.at[cell_id, "label_code"])
+                )
                 reviewer_row.append(reviewer_value)
                 reference_row.append(reference_value)
                 flat_reviewer.append(reviewer_value)
@@ -1866,9 +1900,7 @@ def _calibration_metric_failures(
         iou = float(metrics["temporary_flood_iou"])
         kappa = float(metrics["cohen_kappa"])
         boundary = float(metrics["mean_boundary_f1"])
-        critical = _mapping(
-            metrics["critical_strata_dice"], "critical_strata_dice"
-        )
+        critical = _mapping(metrics["critical_strata_dice"], "critical_strata_dice")
         query_count = int(metrics["query_count"])
         comparable = int(metrics["comparable_cell_count"])
         per_query = metrics["per_query"]
@@ -1880,7 +1912,11 @@ def _calibration_metric_failures(
         raise ReviewerCalibrationError(
             f"Calibration metrics lack required coverage for reviewer {reviewer_id}."
         )
-    if not isinstance(per_query, Sequence) or isinstance(per_query, (str, bytes)) or len(per_query) != query_count:
+    if (
+        not isinstance(per_query, Sequence)
+        or isinstance(per_query, (str, bytes))
+        or len(per_query) != query_count
+    ):
         raise ReviewerCalibrationError(
             f"Per-query calibration metrics are incomplete for reviewer {reviewer_id}."
         )
@@ -1904,7 +1940,13 @@ def _calibration_metric_failures(
             raise ReviewerCalibrationError(
                 f"Per-query calibration metrics do not exactly cover receipt queries for {reviewer_id}."
             )
-    values = (dice, iou, kappa, boundary, *(float(value) for value in critical.values()))
+    values = (
+        dice,
+        iou,
+        kappa,
+        boundary,
+        *(float(value) for value in critical.values()),
+    )
     if not all(math.isfinite(value) for value in values):
         raise ReviewerCalibrationError("Calibration metrics must be finite.")
     failures: list[str] = []
@@ -1975,7 +2017,9 @@ def _validate_cell_grid(
     if frame.duplicated(subset=["query_region_id", "row_index", "column_index"]).any():
         raise ReviewerCalibrationError(f"{label} contain duplicate grid positions.")
     if set(frame["query_region_id"].astype(str)) != set(query_rows):
-        raise ReviewerCalibrationError(f"{label} do not exactly cover calibration queries.")
+        raise ReviewerCalibrationError(
+            f"{label} do not exactly cover calibration queries."
+        )
     for query_id, query in query_rows.items():
         rows = frame[frame["query_region_id"].astype(str).eq(query_id)]
         size = _positive_integer(query["query_size_pixels"], "query_size_pixels")
@@ -1984,7 +2028,11 @@ def _validate_cell_grid(
                 f"{label} do not contain the complete canonical grid for {query_id}."
             )
         expected = {
-            (row_index, column_index, f"{query_id}_R{row_index:04d}_C{column_index:04d}")
+            (
+                row_index,
+                column_index,
+                f"{query_id}_R{row_index:04d}_C{column_index:04d}",
+            )
             for row_index in range(size)
             for column_index in range(size)
         }
@@ -2083,13 +2131,17 @@ def _verify_reference_manifest(manifest: CalibrationReferenceManifest) -> None:
     ):
         _require_sha256(getattr(manifest, field_name), field_name)
     if manifest.cell_count <= 0:
-        raise ReviewerCalibrationError("Calibration reference cell_count must be positive.")
+        raise ReviewerCalibrationError(
+            "Calibration reference cell_count must be positive."
+        )
     if len(manifest.query_region_ids) < MINIMUM_CALIBRATION_QUERY_COUNT:
         raise ReviewerCalibrationError(
             "Calibration reference does not have the minimum query count."
         )
     if manifest.authority_type not in {"expert_consensus", "adjudicated"}:
-        raise ReviewerCalibrationError("Calibration reference authority_type is invalid.")
+        raise ReviewerCalibrationError(
+            "Calibration reference authority_type is invalid."
+        )
     if manifest.taxonomy_version != DEFAULT_TAXONOMY_VERSION:
         raise ReviewerCalibrationError("Calibration reference taxonomy is unsupported.")
     expected_queries = set(manifest.query_region_ids)
@@ -2111,9 +2163,7 @@ def _verify_reference_manifest(manifest: CalibrationReferenceManifest) -> None:
         _require_sha256(digest, "source_registry_sha256_by_query")
     for _query_id, timestamp in manifest.source_timestamp_by_query:
         _parse_timestamp(timestamp, "source_timestamp_by_query")
-    expected_hash = _canonical_json_sha256(
-        manifest.to_dict(include_self_hash=False)
-    )
+    expected_hash = _canonical_json_sha256(manifest.to_dict(include_self_hash=False))
     if manifest.manifest_sha256 != expected_hash:
         raise ReviewerCalibrationError(
             "Calibration reference manifest self-hash does not match."
@@ -2199,8 +2249,21 @@ def _require_columns(frame: pd.DataFrame, required: Sequence[str], label: str) -
 
 
 def _load_json_object(path: Path, label: str) -> Mapping[str, Any]:
+    def reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in payload:
+                raise ReviewerCalibrationError(
+                    f"{label} contains duplicate JSON key: {key}."
+                )
+            payload[key] = value
+        return payload
+
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(
+            path.read_text(encoding="utf-8"),
+            object_pairs_hook=reject_duplicates,
+        )
     except (OSError, json.JSONDecodeError) as exc:
         raise ReviewerCalibrationError(f"Could not load {label}: {path}") from exc
     if not isinstance(payload, Mapping):
@@ -2218,9 +2281,9 @@ def _file_sha256(path: Path) -> str:
 
 def _canonical_json_sha256(value: Any) -> str:
     return hashlib.sha256(
-        json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode(
-            "utf-8"
-        )
+        json.dumps(
+            value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+        ).encode("utf-8")
     ).hexdigest()
 
 
@@ -2232,7 +2295,9 @@ def _required_text(value: Any, field_name: str) -> str:
 
 def _require_sha256(value: Any, field_name: str) -> str:
     normalized = str(value).strip().lower()
-    if len(normalized) != 64 or any(character not in "0123456789abcdef" for character in normalized):
+    if len(normalized) != 64 or any(
+        character not in "0123456789abcdef" for character in normalized
+    ):
         raise ReviewerCalibrationError(f"{field_name} must be a complete SHA-256.")
     return normalized
 
@@ -2280,7 +2345,11 @@ def _coerce_label(value: Any) -> FloodLabel:
 
 
 def _as_utc(value: datetime, field_name: str) -> datetime:
-    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+    if (
+        not isinstance(value, datetime)
+        or value.tzinfo is None
+        or value.utcoffset() is None
+    ):
         raise ReviewerCalibrationError(f"{field_name} must be timezone-aware.")
     return value.astimezone(timezone.utc).replace(microsecond=0)
 
@@ -2291,7 +2360,9 @@ def _parse_timestamp(value: Any, field_name: str) -> datetime:
     try:
         parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
     except ValueError as exc:
-        raise ReviewerCalibrationError(f"{field_name} must be an ISO timestamp.") from exc
+        raise ReviewerCalibrationError(
+            f"{field_name} must be an ISO timestamp."
+        ) from exc
     return _as_utc(parsed, field_name)
 
 

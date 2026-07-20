@@ -68,6 +68,24 @@ def test_receipt_tamper_is_rejected(tmp_path: Path) -> None:
         load_reviewer_calibration_receipt(path)
 
 
+def test_receipt_duplicate_safety_key_is_rejected(tmp_path: Path) -> None:
+    fixture = _fixture(tmp_path)
+    receipt = _build(fixture)
+    path = tmp_path / "duplicate-receipt.json"
+    write_reviewer_calibration_receipt(receipt, path)
+    raw = path.read_text(encoding="utf-8")
+    path.write_text(
+        raw.replace("{\n", '{\n  "eligible_for_warning": true,\n', 1),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ReviewerCalibrationError,
+        match="duplicate JSON key: eligible_for_warning",
+    ):
+        load_reviewer_calibration_receipt(path)
+
+
 def test_reference_cell_tamper_is_rejected(tmp_path: Path) -> None:
     fixture = _fixture(tmp_path)
     reference_path = fixture["reference_cells"]
@@ -286,9 +304,7 @@ def _build_failure_diagnostic(fixture: dict[str, object]):
     )
 
 
-def _fixture(
-    tmp_path: Path, *, bad_reviewer: str | None = None
-) -> dict[str, object]:
+def _fixture(tmp_path: Path, *, bad_reviewer: str | None = None) -> dict[str, object]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     query = _query_manifest()
     query_path = tmp_path / "calibration-queries.csv"

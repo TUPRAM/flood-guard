@@ -1,61 +1,75 @@
 {
   "acquisition": {
+    "authority_expires_at_utc": null,
+    "authority_issued_at_utc": null,
     "authority_receipt_sha256": null,
+    "authority_signing_key_id": null,
     "blockers": [
-      "acquisition_authority: signed catalog/license allowlist receipt is missing",
+      "acquisition_authority: externally signed product-specific authority decision and internal integrity receipt are missing",
       "reference_mask: ML-label/model use permission is not confirmed",
+      "reference_mask: checksum status is not verified",
       "reference_mask: derived metrics permission is not confirmed",
       "reference_mask: license is not confirmed for this experiment",
       "reference_mask: local analysis permission is not confirmed",
+      "reference_mask: local artifact is missing",
       "reference_mask: processing_allowed is false",
       "reference_mask: redistribution/reference-only status is unresolved",
       "reference_mask: reference mask is not qualified expert/adjudicated truth",
       "reference_mask: temporal alignment is not confirmed"
     ],
     "experiment_id": "mae_sai_2024_controlled_three_model_v1",
-    "manifest_file_sha256": "bc49e98432d255e08bff9a71abde98477bd0c62fc3a813d4a363ac392b2e5265",
-    "manifest_sha256": "cc1bff54b5ca52e3fc6c029778d2f9c0c338f34f9aa64d5694bc094d08476e0e",
+    "external_authority_decision_sha256": null,
+    "external_authority_signing_key_id": null,
+    "manifest_file_sha256": "96c84149e79d117e2f0646c1f3cede13424e8bad8973bfeceb8a15bdb91186dd",
+    "manifest_sha256": "8176ec3b3273ffbf7a2081dc4953da0961696d3776b643a922ee0534a2b791d0",
     "ready": false,
     "sha256_by_role": {
       "post_event_sar": "ff4a604f57c9eb88421904659c7201d07b54b35a3bff6f3447ee548c40f6755b",
       "pre_event_sar": "42433d6cfb55118abe21e6faabef56343cefc9f28817cd31eb9386d32f56543d",
-      "reference_mask": "6cb146e92306611be433b52b63832b4721040a399b50c4c3d217c50798b642b7"
+      "reference_mask": ""
     },
     "study_area": "Chiang Rai / Mae Sai 2024"
   },
-  "artifact_schema": "floodguard.controlled_experiment_gate_receipt.v2",
+  "artifact_schema": "floodguard.controlled_experiment_gate_receipt.v4",
   "assumptions": [
-    "A gate receipt is evidence of readiness only; it does not run a model.",
+    "A ready gate is pre-execution authorization evidence only; it does not prove a model ran.",
+    "Completed model evidence is intentionally absent from readiness criteria.",
     "The three-model comparison remains non-operational and report-only."
   ],
   "blockers": [
-    "acquisition_authority: signed catalog/license allowlist receipt is missing",
-    "model_evidence: no completed baseline, weak-label, and GeoAI evidence manifest exists",
-    "reference_cells: externally signed qualified-mask cell evidence is missing",
+    "acquisition_authority: externally signed product-specific authority decision and internal integrity receipt are missing",
+    "promotion_policy: signed predeclared policy is missing",
+    "reference_cells: signed mask-derived cells, calibration projection, or error-strata evidence is missing",
     "reference_mask: ML-label/model use permission is not confirmed",
+    "reference_mask: checksum status is not verified",
     "reference_mask: derived metrics permission is not confirmed",
     "reference_mask: license is not confirmed for this experiment",
     "reference_mask: local analysis permission is not confirmed",
+    "reference_mask: local artifact is missing",
     "reference_mask: processing_allowed is false",
     "reference_mask: redistribution/reference-only status is unresolved",
     "reference_mask: reference mask is not qualified expert/adjudicated truth",
     "reference_mask: temporal alignment is not confirmed",
-    "reviewer_calibration: passing receipt is missing",
+    "reviewer_calibration: dual-signed qualification is missing",
     "spatial_holdout: signed polygon and frozen cell-membership receipt is missing"
   ],
   "can_feed_decision_layer": false,
   "experiment_executed": false,
   "experiment_id": "mae_sai_2024_controlled_three_model_v1",
+  "gate_kind": "pre_execution_readiness",
   "gate_status": "blocked",
-  "generated_at": "2026-07-16T14:51:13Z",
+  "generated_at": "2026-07-20T05:21:09Z",
   "model_evidence": {
-    "status": "missing"
+    "status": "not_expected_before_execution"
   },
   "official_warning": false,
   "operational_status": "non_operational",
   "processing_allowed": false,
-  "reason_blocked": "acquisition_authority: signed catalog/license allowlist receipt is missing; model_evidence: no completed baseline, weak-label, and GeoAI evidence manifest exists; reference_cells: externally signed qualified-mask cell evidence is missing; reference_mask: ML-label/model use permission is not confirmed; reference_mask: derived metrics permission is not confirmed; reference_mask: license is not confirmed for this experiment; reference_mask: local analysis permission is not confirmed; reference_mask: processing_allowed is false; reference_mask: redistribution/reference-only status is unresolved; reference_mask: reference mask is not qualified expert/adjudicated truth; reference_mask: temporal alignment is not confirmed; reviewer_calibration: passing receipt is missing; spatial_holdout: signed polygon and frozen cell-membership receipt is missing",
-  "receipt_sha256": "55c2861fd21f1ed6fa9e033922e5e714ffd37b10832c2f23fed2b4333f4b95c3",
+  "promotion_policy": {
+    "status": "missing"
+  },
+  "reason_blocked": "acquisition_authority: externally signed product-specific authority decision and internal integrity receipt are missing; promotion_policy: signed predeclared policy is missing; reference_cells: signed mask-derived cells, calibration projection, or error-strata evidence is missing; reference_mask: ML-label/model use permission is not confirmed; reference_mask: checksum status is not verified; reference_mask: derived metrics permission is not confirmed; reference_mask: license is not confirmed for this experiment; reference_mask: local analysis permission is not confirmed; reference_mask: local artifact is missing; reference_mask: processing_allowed is false; reference_mask: redistribution/reference-only status is unresolved; reference_mask: reference mask is not qualified expert/adjudicated truth; reference_mask: temporal alignment is not confirmed; reviewer_calibration: dual-signed qualification is missing; spatial_holdout: signed polygon and frozen cell-membership receipt is missing",
+  "receipt_sha256": "0a1a164c0bf90d5ffd1087da9dc9c1dad954506eb5b0d15b0234b57866e11e61",
   "reference_cells": {
     "status": "missing"
   },

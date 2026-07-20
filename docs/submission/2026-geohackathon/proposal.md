@@ -151,11 +151,13 @@ shadow/layover, urban double-bounce, mixed pixels, and timing mismatch.
 
 The controlled real-data experiment is currently blocked. The repository has
 verified Sentinel-1 product bytes, but still lacks an externally signed
-catalog/license authority receipt, a qualified reference mask authorized for
-the model purpose, passing reviewer-calibration evidence, signed immutable
-spatial holdout membership, signed qualified reference cells, and complete
-three-model evidence. Therefore no real three-model result or performance
-claim appears in this proposal.
+product-specific authority decision plus matching internal integrity receipt,
+a qualified reference mask authorized for the model purpose, passing
+reviewer-calibration evidence, signed immutable spatial holdout membership,
+an internal integrity receipt for qualified reference cells, and a signed
+predeclared promotion policy. Complete three-model evidence is deferred until
+those pre-execution gates authorize the bounded run. Therefore no real
+three-model result or performance claim appears in this proposal.
 
 Existing weak-reference candidate metrics are screening evidence only and are
 not substituted for the controlled experiment, official validation, field

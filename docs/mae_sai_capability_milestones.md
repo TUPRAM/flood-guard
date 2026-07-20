@@ -157,6 +157,15 @@ The detailed contract is in `docs/probability_consequence_contract.md`.
 
 ## Milestone 4 - Qualified label foundation
 
+Implementation status (2026-07-20): the repository now contains a fail-closed
+external-authority request, acquisition-authority receipt issuer, a validated
+Reference Authority approval boundary, a deterministic whole-parent-tile
+calibration release (12 blind calibration queries plus 12 disjoint fresh-retest
+queries), the existing blinded review/adjudication pipeline, a signed three-way
+spatial partition freezer, and a qualified-reference-cell signer. These tools
+prepare and verify evidence; they have not created the missing human or external
+evidence.
+
 ### Software capability
 
 - Immutable acquisition and product-identity manifests.
@@ -184,6 +193,19 @@ No placeholder, self-generated approval, weak cross-border mask, or synthetic
 mask may clear these gates.
 
 ## Milestone 5 - Controlled model comparison
+
+Implementation status (2026-07-20): the controlled runner verifies the full
+signed lineage for all three lanes, evaluates only untouched `final_holdout`
+membership, publishes the required metrics, reliability bins and SVG, error
+strata, runtime/resource table, summary, and a signed expiry-bound report-only
+receipt. A separate signed promotion-policy evaluator can recommend either one
+qualified candidate or no candidate, but always leaves
+`can_feed_decision_layer=false`. Publication is atomic: a failed write, render,
+signature, or checksum validation cannot expose a partial final result bundle.
+Promotion re-derives physical-area metrics, binds each decision threshold to its
+signed model run, and requires one identical calibration-bin grid across all
+three candidates. The real-data gate is currently blocked, so no qualified
+metrics or promotion recommendation have been generated.
 
 ### Required candidates
 

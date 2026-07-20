@@ -120,17 +120,23 @@ The production build emitted offline cache version `112bbc3b16ae`.
 
 The current gate audit lists these independent blockers:
 
-1. no externally signed catalog/licensing allowlist receipt;
+1. no externally signed product-specific authority decision and matching
+   internal integrity receipt;
 2. the candidate reference-mask licence, permitted ML/metric uses,
    redistribution status, qualification, and temporal alignment are unresolved;
 3. no accepted blind reviewer-calibration and adjudication receipt;
 4. no signed immutable holdout polygons and frozen cell-membership receipt;
-5. no externally signed qualified reference-cell evidence; and
-6. no completed, evidence-bound three-model result manifest.
+5. no HMAC-signed internal integrity receipt for qualified reference-cell
+   evidence; and
+6. no signed predeclared promotion policy freezing experiment-specific metric,
+   calibration, error-coverage, and selection criteria.
 
-Until all six classes of evidence pass, FloodGuard must not run or publish the
-qualified comparison, select a champion, promote a probability raster into the
-decision layer, or change its non-operational defaults.
+Completed three-model evidence is a post-execution output and is correctly
+`Deferred`, not a pre-execution blocker. Until the six prerequisite evidence
+groups pass, FloodGuard must not start the qualified comparison. After they
+pass, a completed signed result is still required before any candidate can be
+selected; separate decision-layer acceptance is required before a probability
+raster can be promoted. Non-operational defaults remain unchanged throughout.
 
 ## Visual evidence
 

@@ -79,9 +79,7 @@ def main() -> None:
         receipt = build_reviewer_calibration_receipt(
             load_annotation_log(args.annotation_log),
             args.calibration_query_manifest,
-            reviewer_cell_paths=_parse_name_path(
-                args.reviewer_cells, "reviewer cells"
-            ),
+            reviewer_cell_paths=_parse_name_path(args.reviewer_cells, "reviewer cells"),
             reviewer_cell_manifest_paths=_parse_name_path(
                 args.reviewer_cell_manifest, "reviewer cell manifest"
             ),
@@ -115,7 +113,7 @@ def main() -> None:
         "Formal review not before: "
         + receipt.formal_review_not_before_utc.isoformat().replace("+00:00", "Z")
     )
-    print(f"Wrote self-hashed receipt: {args.output}")
+    print(f"Wrote self-hashed receipt: {args.output.name}")
 
 
 def _parse_name_path(values: list[str], label: str) -> dict[str, Path]:

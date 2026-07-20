@@ -79,9 +79,7 @@ def main() -> None:
         diagnostic = build_reviewer_calibration_failure_diagnostic(
             load_annotation_log(args.annotation_log),
             args.calibration_query_manifest,
-            reviewer_cell_paths=_parse_name_path(
-                args.reviewer_cells, "reviewer cells"
-            ),
+            reviewer_cell_paths=_parse_name_path(args.reviewer_cells, "reviewer cells"),
             reviewer_cell_manifest_paths=_parse_name_path(
                 args.reviewer_cell_manifest, "reviewer cell manifest"
             ),
@@ -110,7 +108,7 @@ def main() -> None:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
     print(f"Calibration not passed for: {', '.join(diagnostic.failed_reviewer_ids)}")
-    print(f"Wrote confidential failure diagnostic: {args.output}")
+    print(f"Wrote confidential failure diagnostic: {args.output.name}")
     print("Formal review authorized: false")
     print("Training/decision/FPPS/warning eligibility: false")
 

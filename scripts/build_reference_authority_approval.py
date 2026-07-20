@@ -28,9 +28,7 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--request-json", type=Path, required=True)
     build.add_argument("--evidence-root", type=Path, required=True)
     build.add_argument("--human-role-package", type=Path, required=True)
-    build.add_argument(
-        "--calibration-reserve-design-package", type=Path, required=True
-    )
+    build.add_argument("--calibration-reserve-design-package", type=Path, required=True)
     build.add_argument("--reference-procedure", type=Path, required=True)
     build.add_argument("--review-derivative-lineage-receipt", type=Path)
     build.add_argument("--output", type=Path, required=True)
@@ -62,10 +60,12 @@ def main() -> None:
                 output_directory=args.output,
             )
             manifest = validate_reference_authority_approval_package(package)
-            print(f"Wrote immutable Reference Authority package: {package}")
+            print(f"Wrote immutable Reference Authority package: {package.name}")
         else:
             manifest = validate_reference_authority_approval_package(args.package)
-            print(f"Validated immutable Reference Authority package: {args.package}")
+            print(
+                f"Validated immutable Reference Authority package: {args.package.name}"
+            )
     except (ReferenceAuthorityApprovalError, OSError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
@@ -76,9 +76,7 @@ def main() -> None:
     print(f"Manifest SHA-256: {manifest['manifest_sha256']}")
     print(
         "Separate reserve/reference construction: "
-        + str(
-            scope["may_start_separate_canonical_reserve_construction"]
-        ).lower()
+        + str(scope["may_start_separate_canonical_reserve_construction"]).lower()
     )
     print(
         "Safety: bundle=false; calibration=false; formal-review=false; "

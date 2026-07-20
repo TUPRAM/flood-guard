@@ -5,7 +5,7 @@
     "surface": "report",
     "title": "FloodGuard Controlled Three-Model Experiment - Gate Evidence Report",
     "description": "Fail-closed evidence review for the Mae Sai controlled experiment.",
-    "generatedAt": "2026-07-16T14:51:13Z",
+    "generatedAt": "2026-07-20T05:21:09Z",
     "sources": [
       {
         "id": "gate-receipt",
@@ -15,10 +15,10 @@
           "id": "gate-status-inline-v1",
           "language": "sql",
           "engine": "SQLite",
-          "description": "Deterministic projection of the audited gate receipt used by the chart and table.",
-          "sql": "WITH gate_status(gate,status,status_score,evidence,impact,stage) AS (VALUES ('Pre-event Sentinel-1 identity','Verified',1,'Official Copernicus UUID aaaef3af-fa49-4115-bf0f-f54175e7aedf','Pre-event source identity is bound','source'),('Post-event Sentinel-1 identity','Verified',1,'Official Copernicus UUID 5251b74b-0bbd-4365-9eb4-fa33292e175a','Post-event source identity is bound','source'),('Sentinel-1 SAFE checksums','Verified',1,'Pre 42433d6c...6543d; post ff4a604f...6755b','No SAFE source substitution detected','source'),('Signed acquisition authority receipt','Blocked',0,'No externally keyed catalog and licence allowlist receipt exists','Editable manifest claims cannot authorize processing','authority'),('Qualified reference authority and terms','Blocked',0,'Candidate mask terms and qualification are unresolved','No validation, labels, or real metric claims','reference'),('Independent reviewer calibration','Blocked',0,'Reviewer A/B and adjudicator C not accepted; no passing receipt','No formal labels or training','review'),('Immutable spatial holdout','Blocked',0,'No accepted fixed holdout polygons and digest','No controlled model comparison','evaluation'),('Signed qualified reference cells','Blocked',0,'No externally signed cell labels and error strata exist','Truth cannot be sourced from model prediction files','reference_cells'),('Completed three-model evidence','Blocked',0,'No completed bound evidence manifest exists','No comparison metrics may be reported','model_evidence')) SELECT gate,status,status_score,evidence,impact,stage FROM gate_status ORDER BY status_score ASC, gate ASC;",
+          "description": "Deterministic three-row aggregation of the audited gate receipt used by the gate-summary chart.",
+          "sql": "WITH gate_summary(status,control_count) AS (VALUES ('Verified',3),('Blocked',6),('Deferred',1)) SELECT status,control_count FROM gate_summary;",
           "metric_definitions": [
-            "status_score is 1 only when a required control is verified; blocked controls are 0."
+            "control_count is the exact number of audited control groups in each status."
           ],
           "tables_used": []
         }
@@ -43,12 +43,12 @@
       {
         "id": "title",
         "type": "markdown",
-        "body": "# FloodGuard Controlled Three-Model Experiment - Gate Evidence Report\n\nThe experiment remains fail-closed. The two Sentinel-1 product identities and SAFE checksums are verified, but a signed acquisition-authority receipt, qualified reference authority and terms, independent reviewer calibration, immutable holdout evidence, signed qualified reference-cell evidence, and completed three-model evidence are absent. No model-comparison metrics are reported as real evidence."
+        "body": "# FloodGuard Controlled Three-Model Experiment - Gate Evidence Report\n\nThe experiment remains fail-closed. The two Sentinel-1 product identities and SAFE checksums are verified, but a signed acquisition-authority receipt, qualified binary reference raster, dual-signed reviewer qualification, immutable holdout evidence, signed mask-derived reference cells, and a predeclared promotion policy are absent. Completed model evidence is deliberately deferred until execution is authorized; it is not a circular readiness prerequisite. No model-comparison metrics are reported as real evidence."
       },
       {
         "id": "summary",
         "type": "markdown",
-        "body": "## Technical summary\n\nThe governed Sentinel-1 pre/post pair re-hashes exactly to the acquisition registry. No externally keyed catalog and licence allowlist receipt authorizes the editable acquisition manifest. The reference-mask candidate is not qualified and its product-specific permissions remain unresolved. Reviewer calibration, frozen holdout, signed qualified reference-cell evidence, and completed three-model evidence are missing; therefore model comparison, decision-layer use, FPPS use, and warning claims remain prohibited.",
+        "body": "## Technical summary\n\nThe governed Sentinel-1 pre/post pair re-hashes exactly to the acquisition registry. No externally signed product-specific authority decision and matching internal integrity receipt authorize the editable acquisition manifest. The available MBRSC ZIP is a provider vector candidate, not the required qualified single-band binary reference raster; derivative permissions and scientific qualification remain unresolved. Reviewer qualification, frozen holdout, mask-derived reference cells, and the signed promotion policy are missing. The final comparison therefore cannot start, and decision-layer use, FPPS use, and warning claims remain prohibited.",
         "sourceId": "gate-receipt"
       },
       {
@@ -59,34 +59,29 @@
       {
         "id": "findings",
         "type": "markdown",
-        "body": "## Key findings\n\nThree machine-verifiable Sentinel-1 source controls pass. Six authority, reference, review, holdout, reference-cell, and model-evidence control groups remain blocked. A metric value of zero would falsely imply measured performance, so IoU, Dice/F1, precision, recall, area error, Brier score, and calibration are intentionally absent rather than zero-filled.",
+        "body": "## Key findings\n\nThree machine-verifiable Sentinel-1 source controls pass. Six pre-execution control groups remain blocked: acquisition authority, qualified reference raster, reviewer qualification, immutable spatial holdout, signed reference cells, and predeclared promotion policy. Completed three-model evidence is deferred until those gates authorize execution. A metric value of zero would falsely imply measured performance, so IoU, Dice/F1, precision, recall, area error, Brier score, and calibration are intentionally absent rather than zero-filled.",
         "sourceId": "gate-receipt"
-      },
-      {
-        "id": "gate-table-block",
-        "type": "table",
-        "tableId": "gate-table"
       },
       {
         "id": "scope",
         "type": "markdown",
-        "body": "## Scope, data, and metric definitions\n\nScope is the governed Mae Sai event package. A real comparison requires a deterministic SAR baseline, the weak-label logistic model, and an isolated GeoAI U-Net/FPN candidate evaluated on the same valid pixels inside immutable spatial holdout polygons against one qualified binary reference mask. IoU is TP/(TP+FP+FN); Dice/F1 is 2TP/(2TP+FP+FN); precision is TP/(TP+FP); recall is TP/(TP+FN). Area error is predicted flood area minus reference flood area and is also reported as a percentage of reference area. Brier score is the mean squared difference between class-1 probability and the binary reference. Calibration is reported with fixed probability-bin predicted-versus-observed rates plus expected calibration error. Error review categories are false-wet, false-dry, permanent-water confusion, radar shadow or layover, terrain effects, temporal mismatch, and reference-boundary ambiguity."
+        "body": "## Scope, data, and metric definitions\n\nScope is the governed Mae Sai event package. A real comparison requires a deterministic SAR baseline, the weak-label logistic model, and an isolated GeoAI U-Net/FPN candidate evaluated only on the same untouched `final_holdout` cells against one qualified binary reference mask. The immutable spatial release has disjoint `train`, `calibration`, and `final_holdout` polygons; thresholds are frozen from calibration evidence before the final holdout is opened. IoU is TP/(TP+FP+FN); Dice/F1 is 2TP/(2TP+FP+FN); precision is TP/(TP+FP); recall is TP/(TP+FN). Area error is predicted flood area minus reference flood area and is also reported as a finite ratio of reference area. Brier score is the mean squared difference between class-1 probability and the binary reference. Calibration is reported with fixed probability-bin predicted-versus-observed rates plus expected calibration error. Required error strata are permanent water, wet soil/agriculture, radar shadow, layover/double-bounce, steep terrain, urban surface, speckle, narrow channels, flood-boundary disagreement, temporal land-cover change, missing/noisy inputs, reference-label uncertainty, and geometry mismatch."
       },
       {
         "id": "method",
         "type": "markdown",
-        "body": "## Methodology\n\nThe audit checks immutable product IDs, source identity, acquisition timestamps, assumptions, SHA-256 digests, explicit use permissions and timing, reference authority, and reviewer roles and calibration. Spatial holdout membership must be re-derived from descriptor-bound geometry, membership, and signed equal-area grid-contract bytes; physical cell area comes from the affine determinant, and cell IDs, indices, and centers must match exactly. Each signed model-run receipt must bind one strict lane-specific contract for the deterministic SAR baseline, weak-label logistic model, or pinned GeoAI candidate. Any missing or substituted required control blocks downstream execution and promotion."
+        "body": "## Methodology\n\nThe audit checks immutable product IDs, source identity, acquisition timestamps, assumptions, SHA-256 digests, explicit use permissions and timing, reference authority, and reviewer roles and calibration. Spatial membership is re-derived from descriptor-bound geometry and a signed projected-metre equal-area grid contract; physical cell area comes from the affine determinant, and cell IDs, indices, centers, and all three partition hashes must match exactly. Each signed model-run receipt binds one strict lane-specific contract, the same acquisition and reference lineage, a calibration-only threshold, a portable runtime profile, and the untouched final-holdout hash. The comparison emits signed report-only metrics, reliability bins and SVG, error-stratum counts, runtime evidence, and a separately reviewed promotion recommendation. Any missing, expired, malformed, or substituted required control blocks execution and promotion."
       },
       {
         "id": "limitations",
         "type": "markdown",
-        "body": "## Limitations and robustness\n\nUNOSAT product 3991 is preliminary and not field validated; the discovered public artifact is a map product, not an accepted project reference mask. The local manual reference package has no accepted authority or calibrated independent review. These are evidence gaps, not model-performance results.",
+        "body": "## Limitations and robustness\n\nThe MBRSC provider ZIP contains vector geometry and cannot satisfy the executable single-band binary-raster contract without a separately identified, checksummed, licensed, reviewed, and qualified derived artifact. UNOSAT product 3991 is preliminary and not field validated; its public artifact is supplementary context, not an accepted project reference mask. The local manual reference package has no accepted authority or calibrated independent review. These are evidence gaps, not model-performance results.",
         "sourceId": "unosat-3991"
       },
       {
         "id": "next",
         "type": "markdown",
-        "body": "## Next steps\n\n1. Obtain the product-specific permissions and externally signed catalog/licence allowlist receipt, then name the reference authority, reviewer A, distinct reviewer B, and adjudicator C.\n2. Freeze a qualified reference mask plus immutable spatial holdout polygons, the exact projected-metre equal-area grid contract, affine-derived cell membership, signed reference-cell labels and error strata, checksums, and trusted signatures.\n3. Complete blinded reviewer calibration and issue a passing receipt before producing the three strict lane contracts and signed model-run manifests with pre-holdout thresholds."
+        "body": "## Next steps\n\n1. Obtain product-specific permissions for local analysis, ML/label use, validation, derived reporting, display, and redistribution or reference-only handling; qualify the exact binary reference-raster bytes and issue the acquisition-authority receipt.\n2. Complete the blind reviewer-calibration release with two independent reviewers and a distinct adjudicator; issue the dual-signed qualification, then freeze non-overlapping train/calibration/final-holdout polygons and mask-derived membership receipts.\n3. Sign the promotion policy and obtain a ready pre-execution receipt. Only then select thresholds from calibration-only evidence, run the three identical-holdout model lanes, publish signed metrics and error analysis, and issue a separate report-only promotion recommendation."
       },
       {
         "id": "questions",
@@ -97,65 +92,46 @@
     "charts": [
       {
         "id": "gate-chart",
-        "title": "Controlled experiment gate status",
-        "description": "Binary audit status by required control; 1 means verified and 0 means blocked.",
+        "title": "Controlled experiment gate summary",
+        "description": "Count of verified, blocked, and post-execution deferred control groups. Detail remains in the evidence table.",
         "type": "bar",
-        "dataset": "gate_status",
+        "dataset": "gate_summary",
         "encodings": {
           "x": {
-            "field": "gate",
+            "field": "status",
             "type": "nominal",
-            "title": "Required control"
+            "title": "Audit status"
           },
           "y": {
-            "field": "status_score",
+            "field": "control_count",
             "type": "quantitative",
-            "title": "Verified status"
+            "title": "Control groups"
           }
         },
         "sourceId": "gate-receipt"
       }
     ],
-    "tables": [
-      {
-        "id": "gate-table",
-        "title": "Gate evidence and blocking impact",
-        "dataset": "gate_status",
-        "columns": [
-          {
-            "field": "gate",
-            "label": "Required control",
-            "type": "text"
-          },
-          {
-            "field": "status",
-            "label": "Status",
-            "type": "text"
-          },
-          {
-            "field": "evidence",
-            "label": "Evidence",
-            "type": "text"
-          },
-          {
-            "field": "impact",
-            "label": "Downstream impact",
-            "type": "text"
-          }
-        ],
-        "defaultSort": {
-          "field": "status",
-          "direction": "asc"
-        },
-        "sourceId": "gate-receipt"
-      }
-    ]
+    "tables": []
   },
   "snapshot": {
     "version": 1,
     "status": "blocked",
-    "generatedAt": "2026-07-16T14:51:13Z",
+    "generatedAt": "2026-07-20T05:21:09Z",
     "datasets": {
+      "gate_summary": [
+        {
+          "status": "Verified",
+          "control_count": 3
+        },
+        {
+          "status": "Blocked",
+          "control_count": 6
+        },
+        {
+          "status": "Deferred",
+          "control_count": 1
+        }
+      ],
       "gate_status": [
         {
           "gate": "Pre-event Sentinel-1 identity",
@@ -185,7 +161,7 @@
           "gate": "Signed acquisition authority receipt",
           "status": "Blocked",
           "status_score": 0,
-          "evidence": "No externally keyed catalog and licence allowlist receipt exists",
+          "evidence": "No externally signed product-specific authority decision and matching internal integrity receipt exist",
           "impact": "Editable manifest claims cannot authorize processing",
           "stage": "authority"
         },
@@ -193,7 +169,7 @@
           "gate": "Qualified reference authority and terms",
           "status": "Blocked",
           "status_score": 0,
-          "evidence": "Candidate mask terms and qualification are unresolved",
+          "evidence": "Required binary raster is absent; provider vector candidate terms and qualification are unresolved",
           "impact": "No validation, labels, or real metric claims",
           "stage": "reference"
         },
@@ -217,28 +193,36 @@
           "gate": "Signed qualified reference cells",
           "status": "Blocked",
           "status_score": 0,
-          "evidence": "No externally signed cell labels and error strata exist",
+          "evidence": "No HMAC-signed internal integrity receipt binds qualified cell labels and error strata",
           "impact": "Truth cannot be sourced from model prediction files",
           "stage": "reference_cells"
         },
         {
-          "gate": "Completed three-model evidence",
+          "gate": "Predeclared promotion policy",
           "status": "Blocked",
           "status_score": 0,
-          "evidence": "No completed bound evidence manifest exists",
-          "impact": "No comparison metrics may be reported",
-          "stage": "model_evidence"
+          "evidence": "No signed policy freezes thresholds and promotion criteria before execution",
+          "impact": "No comparison or promotion decision may begin",
+          "stage": "promotion_policy"
+        },
+        {
+          "gate": "Completed three-model evidence",
+          "status": "Deferred",
+          "status_score": null,
+          "evidence": "Not expected before a ready gate and bounded execution",
+          "impact": "Verified only after authorized model runs complete",
+          "stage": "post_execution_model_evidence"
         }
       ]
     },
     "accessIssues": [
       {
         "id": "acquisition-authority",
-        "message": "An externally keyed catalog and licence allowlist receipt must bind the exact product IDs, rights, and artifact hashes."
+        "message": "An externally signed product-specific authority decision plus a matching internal integrity receipt must bind the exact product IDs, rights, evidence bytes, and artifact hashes."
       },
       {
         "id": "reference-authority",
-        "message": "A qualified reference-mask authority and accepted reference mask are required."
+        "message": "A qualified reference authority and an exact accepted single-band binary reference raster are required; the provider vector candidate is not sufficient."
       },
       {
         "id": "reviewer-calibration",
@@ -250,11 +234,11 @@
       },
       {
         "id": "reference-cells",
-        "message": "Externally signed qualified reference-cell labels and documented error strata must be bound to the accepted mask and holdout."
+        "message": "A reference-authority HMAC-signed internal integrity receipt must bind qualified reference-cell labels and documented error strata to the accepted mask and holdout."
       },
       {
-        "id": "model-evidence",
-        "message": "Completed baseline, weak-label, and GeoAI evidence must be bound to the same cleared inputs and holdout."
+        "id": "promotion-policy",
+        "message": "A signed predeclared policy must freeze calibration, metric, and promotion criteria before execution."
       }
     ]
   },
@@ -267,10 +251,10 @@
         "id": "gate-status-inline-v1",
         "language": "sql",
         "engine": "SQLite",
-        "description": "Deterministic projection of the audited gate receipt used by the chart and table.",
-        "sql": "WITH gate_status(gate,status,status_score,evidence,impact,stage) AS (VALUES ('Pre-event Sentinel-1 identity','Verified',1,'Official Copernicus UUID aaaef3af-fa49-4115-bf0f-f54175e7aedf','Pre-event source identity is bound','source'),('Post-event Sentinel-1 identity','Verified',1,'Official Copernicus UUID 5251b74b-0bbd-4365-9eb4-fa33292e175a','Post-event source identity is bound','source'),('Sentinel-1 SAFE checksums','Verified',1,'Pre 42433d6c...6543d; post ff4a604f...6755b','No SAFE source substitution detected','source'),('Signed acquisition authority receipt','Blocked',0,'No externally keyed catalog and licence allowlist receipt exists','Editable manifest claims cannot authorize processing','authority'),('Qualified reference authority and terms','Blocked',0,'Candidate mask terms and qualification are unresolved','No validation, labels, or real metric claims','reference'),('Independent reviewer calibration','Blocked',0,'Reviewer A/B and adjudicator C not accepted; no passing receipt','No formal labels or training','review'),('Immutable spatial holdout','Blocked',0,'No accepted fixed holdout polygons and digest','No controlled model comparison','evaluation'),('Signed qualified reference cells','Blocked',0,'No externally signed cell labels and error strata exist','Truth cannot be sourced from model prediction files','reference_cells'),('Completed three-model evidence','Blocked',0,'No completed bound evidence manifest exists','No comparison metrics may be reported','model_evidence')) SELECT gate,status,status_score,evidence,impact,stage FROM gate_status ORDER BY status_score ASC, gate ASC;",
+        "description": "Deterministic three-row aggregation of the audited gate receipt used by the gate-summary chart.",
+        "sql": "WITH gate_summary(status,control_count) AS (VALUES ('Verified',3),('Blocked',6),('Deferred',1)) SELECT status,control_count FROM gate_summary;",
         "metric_definitions": [
-          "status_score is 1 only when a required control is verified; blocked controls are 0."
+          "control_count is the exact number of audited control groups in each status."
         ],
         "tables_used": []
       }

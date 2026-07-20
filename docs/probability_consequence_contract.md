@@ -20,7 +20,7 @@ The caller supplies:
 - road and facility GeoJSON plus separate geometry receipts;
 - projected metre-based CRS/grid metadata;
 - explicit road and facility buffer distances;
-- an external HMAC-SHA256 signing key and public key ID.
+- an external HMAC-SHA256 signing key and non-secret signing key ID.
 
 The adapter reads each source from one stable descriptor, checks SHA-256 bytes,
 validates the raster CRS, transform, bounds, dimensions, nodata, band name,

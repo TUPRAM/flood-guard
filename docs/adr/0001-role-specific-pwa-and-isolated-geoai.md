@@ -116,7 +116,7 @@ hex-encoded key of at least 32 bytes from
 `FLOODGUARD_ZONAL_SIGNING_KEY_HEX` (or an explicitly named environment
 variable), writes only outside the repository, and uses exclusive creation so
 an existing receipt is never overwritten. Its stdout receipt evidence contains
-only the canonical output hash, public key ID, and area count; no input or
+only the canonical output hash, non-secret signing key ID, and area count; no input or
 output path is emitted. Model-run, probability-raster, and authoritative-
 geometry receipt JSON is read from one regular non-symlink descriptor per
 file; parsing consumes the exact in-memory bytes captured from that descriptor.

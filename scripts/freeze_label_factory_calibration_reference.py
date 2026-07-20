@@ -39,9 +39,7 @@ def main() -> None:
     parser.add_argument("--manifest-output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        created_at = datetime.fromisoformat(
-            args.created_at_utc.replace("Z", "+00:00")
-        )
+        created_at = datetime.fromisoformat(args.created_at_utc.replace("Z", "+00:00"))
         outputs = write_calibration_reference_artifacts(
             args.reference_cells_input,
             args.calibration_query_manifest,
@@ -58,8 +56,8 @@ def main() -> None:
     except (ReviewerCalibrationError, OSError, ValueError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
-    print(f"Wrote immutable calibration reference cells: {outputs.cells}")
-    print(f"Wrote self-hashed calibration reference manifest: {outputs.manifest}")
+    print(f"Wrote immutable calibration reference cells: {outputs.cells.name}")
+    print(f"Wrote self-hashed calibration reference manifest: {outputs.manifest.name}")
     print("Training/decision/FPPS/warning eligibility: false")
 
 

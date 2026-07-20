@@ -1,10 +1,10 @@
 # Flood-label factory implementation status
 
-Status date: 2026-07-12. This inventory describes repository capability and the current governed Mae Sai engineering evidence, not completion of a real annotation campaign.
+Status date: 2026-07-20. This inventory describes repository capability and the current governed Mae Sai engineering evidence, not completion of a real annotation campaign.
 
 ## Outcome
 
-FloodGuard now has a tested active-learning and flood-label-factory engineering foundation with fail-closed contracts inside its declared, content-addressed artifact chain. The repository can hash and validate processed/common-grid evidence, validate source/grid contracts, materialize real aligned `sar_change_v2` pool features, preserve the weak polygon as positive-unlabeled per-query evidence, build an internal-only operator queue, build model-blinded review packages, import immutable reviews, rasterize reviewer and calibration-authority geometry, freeze and score a fixed reviewer-calibration set, preserve confidential non-pass diagnostics without issuing a receipt, measure agreement, construct and import an adjudication queue, deterministically build canonical consensus cells, freeze an immutable JSON labelset, derive a release-bound training table, train a query-only logistic/HGB committee, select Round 0 and 60/20/20 later batches, and compare active review with random review at equal cost.
+FloodGuard now has a tested active-learning and flood-label-factory engineering foundation with fail-closed contracts inside its declared, content-addressed artifact chain. The repository can hash and validate processed/common-grid evidence, validate source/grid contracts, materialize real aligned `sar_change_v2` pool features, preserve the weak polygon as positive-unlabeled per-query evidence, freeze an authority-approved whole-parent-tile calibration reserve into 12 blind calibration and 12 disjoint fresh-retest queries, build an internal-only operator queue, build model-blinded review packages, import immutable reviews, rasterize reviewer and calibration-authority geometry, freeze and score a fixed reviewer-calibration set, preserve confidential non-pass diagnostics without issuing a receipt, measure agreement, construct and import an adjudication queue, deterministically build canonical consensus cells, freeze an immutable JSON labelset, derive a release-bound training table, train a query-only logistic/HGB committee, select Round 0 and 60/20/20 later batches, and compare active review with random review at equal cost.
 
 The real Mae Sai source pair, processing/alignment receipt, governed context, and canonical 32 x 32 query grid now exist in the controlled external workspace. FloodGuard still cannot honestly claim a real training labelset, a trained real-data committee, active-learning efficiency, geographic generalization, or decision-layer eligibility because the independent reference, reviewer, release, and multi-event evidence do not yet exist.
 
@@ -20,6 +20,7 @@ The real Mae Sai source pair, processing/alignment receipt, governed context, an
 | Weak seed | Deterministic polygon rasterization with exterior 255 and optional uncertain boundary; batch GPKG-to-query summaries reproject and checksum-bind the source while retaining exterior as unreviewed | Seed is never promoted to reviewed truth; invalid source geometry requires an explicit, recorded `make_valid` repair |
 | Reviewer derivatives | Immutable `floodguard.review_derivative_lineage_receipt.v1` re-hashes exact pre/event processed rasters plus VV/VH/fixed-RGB outputs; the generator independently recomputes every output cell/mask and binds canonical pre-minus-event transformations, fixed display parameters, governance, processing, source, and grid lineage | Proves declared byte/parameter lineage, not scientific correctness or flood truth; the real Mae Sai candidate remains `authority_approval_pending` and must not enter a bundle |
 | Authority design approval | Immutable `floodguard.reference_authority_design_approval.v1` revalidates/copies the pre-calibration role package, one reserve candidate, optional derivative decision, fixed reference-procedure version/hash, and attributable local evidence | Code verifies bytes, hashes, UTC ordering, and declared attribution only; no real authority decision exists, and approval permits only a later separate reserve/reference construction step |
+| Calibration membership release | Immutable whole-parent-tile role isolation; deterministic domain-separated selection of exactly 12 blind calibration and 12 disjoint fresh-retest queries; complete copied authority/parent-release bindings; coordinated substitution re-derivation checks | No real approved authority package exists; the release explicitly verifies no digital signature or opaque evidence semantics and keeps calibration execution, formal review, training, evaluation, decision, FPPS, and warning gates false |
 | Reviewer A practice workbench | Offline local interface over 20 checksum-verified synthetic 32 x 32 cases; pre/event VV/VH comparison, eight evidence layers, multiclass cell painting, undo/redo, active timing, draft recovery, completeness lock, post-lock feedback, and practice JSON/CSV export | Synthetic practice only; its schema cannot enter the formal importer, agreement, consensus, training, decision layer, FPPS, or warnings; formal calibration and all real Mae Sai cores remain locked |
 | Reviewer bundles | Write-once primary/secondary directories, reviewer-visible allow-list, context validation and hashes; derivative displays require an exact copied/self-hashed receipt and are revalidated again at formal import | Generates templates, not completed human work |
 | Annotation import | Explicit lock/blinding/completeness/timestamp validation, WKT/query containment, append-only hash chain | Does not invent missing reviewer fields |
@@ -101,7 +102,9 @@ These facts complete the current engineering grid gate only. They do not create 
 
 ### Human review
 
-- Approximately 8-12 genuine calibration regions.
+- The generic calibration scorer supports at least eight genuine regions; the
+  controlled Mae Sai release freezes exactly 12 initial calibration queries
+  plus 12 disjoint fresh-retest queries.
 - A real expert/adjudicated calibration reference and a code-generated passing receipt for the exact formal reviewers before their formal start times.
 - Formal-role allocation for the 854-core Mae Sai pool, with the first 20 strict-conflict queries independently double-reviewed before deciding whether full-pool review is feasible.
 - Independent reviewer A/B identities, geometries, times, evidence usage, confidence, and ambiguity tags.
@@ -152,7 +155,7 @@ Allowed current claim:
 The next milestone is not another classifier. The real aligned Mae Sai engineering grid is complete; the next milestone is the human-evidence phase of that pilot:
 
 1. assign a qualified reference authority, Reviewer B, and Adjudicator C;
-2. train the project operator and complete 8-12 unseen calibration queries against a real expert/adjudicated reference;
+2. train the project operator and complete the frozen 12 unseen calibration queries against a real expert/adjudicated reference;
 3. issue the first 20 primary/secondary model-blinded bundles from the governed canonical pool;
 4. independently double-review those queries and measure real reviewer time;
 5. rasterize and measure agreement;

@@ -54,7 +54,7 @@ def main() -> None:
         raise SystemExit(2) from exc
 
     for role, path in paths.as_dict().items():
-        print(f"Wrote {role}: {path}")
+        print(f"Wrote {role}: {path.name}")
     print("Status: PROVISIONAL - Reference Authority approval pending")
     print("No calibration/retest query IDs selected; no review bundle created")
     print(

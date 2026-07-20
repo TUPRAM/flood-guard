@@ -314,6 +314,29 @@ only permits a later, separately validated canonical reserve/reference
 construction step and keeps query selection, calibration execution, formal
 review, training, decision, FPPS, and warning flags false.
 
+Once a real approved package exists, freeze the exact whole-parent-tile role
+assignment and blind membership before any reviewer sees the cases:
+
+```powershell
+uv run python scripts/build_label_factory_calibration_release.py build `
+  --reference-authority-approval-package <external_data_workspace>/label_factory/reference_authority/approved_v1 `
+  --canonical-grid-directory <external_data_workspace>/label_factory/grids/canonical_grid_v3 `
+  --output <external_data_workspace>/label_factory/calibration/membership_release_v1 `
+  --release-id mae_sai_calibration_release_v1 `
+  --created-at-utc <YYYY-MM-DDTHH:MM:SSZ>
+
+uv run python scripts/build_label_factory_calibration_release.py validate `
+  --package <external_data_workspace>/label_factory/calibration/membership_release_v1
+```
+
+The validator requires exactly 12 initial calibration queries plus 12 disjoint
+fresh-retest queries, assigns every child of each approved parent tile to
+`reviewer_calibration`, and rejects even a coherently re-hashed membership
+substitution. This release still sets calibration execution, bundle creation,
+formal review, training, evaluation, decision, FPPS, and warning eligibility to
+false. The later Reference Authority and human-calibration steps clear those
+separate gates; the release cannot clear them itself.
+
 An authority design decision is still not a reviewer-delivery release. The
 production bundle writer currently has no canonical derivative-context release
 artifact to consume, so it deliberately fails closed whenever
@@ -430,8 +453,11 @@ Before delivery, inspect `bundle_manifest.csv` and confirm that no weak-label, s
 
 ### Mandatory reviewer calibration before formal review
 
-Pre-assign at least eight unique queries to `dataset_role=reviewer_calibration`.
-They must remain inactive for selection and ineligible for query-model training.
+Use the exact 12-query `calibration_queries.csv` from the validated calibration
+membership release. Keep the separate 12-query `fresh_retest_queries.csv`
+unseen unless the first calibration attempt fails and the governed retest is
+authorized. Both sets must remain inactive for selection and ineligible for
+query-model training.
 An expert panel or real adjudicator first completes and locks one annotation per
 calibration query using the same canonical multipart geometry contract as a
 reviewer. Bind an attributable role/qualification evidence file, rasterize the
@@ -989,6 +1015,7 @@ standalone production readiness, even if its own self-hash is valid.
 | `build_review_derivative_candidates.py` | Generate write-once pre-minus-event VV/VH and fixed RGB candidates with independent cell/mask recomputation and authority-pending status |
 | `build_review_derivative_lineage_receipt.py` | Re-hash exact dual-date SAR inputs and fixed VV/VH/composite outputs; bind transformation/display/governance/grid lineage in an immutable receipt |
 | `build_reference_authority_approval.py` | Freeze/revalidate attributable pre-calibration authority decisions binding one reserve candidate, optional derivative receipt decision, fixed reference procedure, and a next-construction-only safety scope |
+| `build_label_factory_calibration_release.py` | Revalidate the approved authority package and exact parent grid, isolate whole reserve tiles, and freeze 12 blind calibration plus 12 disjoint fresh-retest queries while keeping all execution and promotion gates closed |
 | `import_reviewer_annotations.py` | Revalidate the governance-bearing bundle and append locked records to annotation JSONL |
 | `rasterize_reviewer_annotations.py` | Produce agreement-only canonical reviewer cells |
 | `freeze_label_factory_calibration_reference.py` | Freeze expert/adjudicated calibration-reference cells and a self-hashed manifest |
@@ -1016,14 +1043,15 @@ context, and positive-unlabeled query-summary steps now exist. A real
 active-learning run remains blocked until all of these exist:
 
 1. attributable accepted human roles and Reference-Authority approval of the reserve/reference procedure and any reviewer display;
-2. a real fixed calibration reference, genuine independently blinded A/B calibration work, and a passing code-generated receipt;
-3. real formal annotations from two independent blinded reviewers;
-4. real adjudication records and zero unresolved queue items;
-5. real code-generated final cells, raster lineage, label content, and consensus receipt from that evidence;
-6. complete raw QA inputs plus the code-generated finding CSV and self-hashed receipt;
-7. a frozen and revalidated authoritative labelset JSON;
-8. a real release-bound training join, committee run, active selection, and operator queue using the already aligned features;
-9. measured reviewer time and matched random-control evidence; and
-10. additional Thailand development events plus one untouched geographic test.
+2. the validated whole-parent-tile calibration membership release containing the exact 12 blind calibration and 12 fresh-retest queries;
+3. a real fixed calibration reference, genuine independently blinded A/B calibration work, and a passing code-generated receipt;
+4. real formal annotations from two independent blinded reviewers;
+5. real adjudication records and zero unresolved queue items;
+6. real code-generated final cells, raster lineage, label content, and consensus receipt from that evidence;
+7. complete raw QA inputs plus the code-generated finding CSV and self-hashed receipt;
+8. a frozen and revalidated authoritative labelset JSON;
+9. a real release-bound training join, committee run, active selection, and operator queue using the already aligned features;
+10. measured reviewer time and matched random-control evidence; and
+11. additional Thailand development events plus one untouched geographic test.
 
 None of these blockers is evidence that the design failed. They are the evidence-producing work that the code intentionally refuses to fabricate.

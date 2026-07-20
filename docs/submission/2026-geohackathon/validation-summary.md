@@ -63,15 +63,21 @@ The current signed/checksummed gate receipt sets:
 
 Blocking evidence includes:
 
-1. missing externally signed catalog/license authority receipt;
+1. missing externally signed product-specific authority decision and matching
+   internal integrity receipt;
 2. reference-mask permissions and qualification not confirmed;
 3. reference temporal alignment not confirmed;
 4. missing reviewer-calibration receipt;
 5. missing signed spatial holdout and cell membership;
-6. missing externally signed qualified reference cells; and
-7. missing complete three-model evidence manifest.
+6. missing HMAC-signed internal integrity receipt for qualified reference
+   cells; and
+7. missing signed predeclared promotion policy.
 
-No code or editable CSV may override these blockers.
+The complete three-model evidence manifest is correctly deferred until the
+pre-execution gates authorize a bounded run; it is not a circular prerequisite
+for starting that run. It becomes mandatory before a report-only candidate
+selection. No code or editable CSV may override either the prerequisites or
+the post-execution evidence requirement.
 
 ## Required future metrics
 

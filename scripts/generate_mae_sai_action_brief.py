@@ -47,7 +47,11 @@ def main() -> None:
     parser.add_argument(
         "--weak-label-ml-metrics",
         type=Path,
-        default=REPO_ROOT / "outputs" / "mae_sai_weak_label_ml_metrics.csv",
+        default=None,
+        help=(
+            "Optional historical weak-label metric CSV. Omitted by default because "
+            "the committed experiment used the retired COG source pair."
+        ),
     )
     parser.add_argument(
         "--adm3-sar-context",
@@ -84,7 +88,8 @@ def main() -> None:
         manual = _read_csv(args.manual_reference_manifest)
         ml_metrics = (
             _read_csv(args.weak_label_ml_metrics)
-            if args.weak_label_ml_metrics.exists()
+            if args.weak_label_ml_metrics is not None
+            and args.weak_label_ml_metrics.exists()
             else None
         )
         adm3_sar = _read_csv(args.adm3_sar_context) if args.adm3_sar_context.exists() else None

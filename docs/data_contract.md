@@ -389,7 +389,7 @@ Required columns:
 - `reason_blocked`
 - `retrieved_at_utc`
 
-Current selected pre/post COG rows are `download_status=downloaded_outside_git` with `sha256_status=recorded`. `processing_allowed` remains `False` until a reference-mask source is cleared and the Mae Sai file manifest validates. When `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD` are unavailable, regenerated rows may instead show `download_status=blocked_missing_cdse_credentials`.
+The active same-track pair is the original-SAFE pre-event product `aaaef3af-fa49-4115-bf0f-f54175e7aedf` and post-event product `5251b74b-0bbd-4365-9eb4-fa33292e175a`. Both archives are registered outside Git with current SHA-256 values. The earlier September 6 / September 15 COG pair is retained only as retired provenance and must not occupy an active baseline role. The official/qualified `processing_allowed` gate remains `False` until an eligible reference source clears the file manifest; the separate manual weak-reference lane supports only the explicitly labelled cross-border candidate baseline.
 
 ## Public Reference Candidate Manifest
 
@@ -738,7 +738,7 @@ Reporting grain is one HDX COD-AB ADM3 feature. Current Mae Sai coverage contain
 
 WorldPop population is a 2020 modeled surface. `exposure_0_100` is a relative expected-exposure proxy normalized across the eight units, not an exposed-person count. OSM roads, bridges, shelters, and facilities are candidate context and are not verified emergency infrastructure. Road disruption and access loss are heuristic candidate outputs, not observed closures. Vulnerability uses a pre-disruption terrain/remoteness proxy and is not demographic vulnerability.
 
-The manual weak-reference geometry does not overlap official Thailand ADM3 geometry. Its candidate validation/ML metrics remain nearby cross-border calibration evidence only and must not be described as direct validation of the ADM3 summaries.
+The manual weak-reference geometry does not overlap the HDX COD-AB Thailand ADM3 candidate geometry. Its candidate validation/ML metrics remain nearby cross-border calibration evidence only and must not be described as direct validation of the ADM3 summaries. Boundary authority and vintage still require agency confirmation.
 
 ## Mae Sai Reference Candidate Decision
 
@@ -1315,7 +1315,7 @@ All three derivatives are WGS84 GeoJSON, contain no source file paths, and are s
 
 ## Mae Sai Weak-Label ML Experiment Output
 
-`outputs/mae_sai_weak_label_ml_metrics.csv`, `outputs/mae_sai_weak_label_ml_prediction_manifest.csv`, and `outputs/mae_sai_weak_label_ml_summary.md` record the first small auditable ML experiment against the manual QGIS weak-reference mask.
+`outputs/mae_sai_weak_label_ml_metrics.csv`, `outputs/mae_sai_weak_label_ml_prediction_manifest.csv`, and `outputs/mae_sai_weak_label_ml_summary.md` preserve the first small auditable ML screening experiment against the manual QGIS weak-reference mask. That historical experiment used the now-retired September 6 / September 15 COG pair. It is not comparable to the active same-track original-SAFE baseline and must not be regenerated as current evidence.
 
 This lane is explicitly a weak-label experiment. It is not official labels, not field validation, not official flood validation, not a real-time product, and not an emergency warning.
 
@@ -1387,7 +1387,7 @@ Required wording:
 - `Not official labels.`
 - `Not field validation.`
 
-The historical weak-label ML output must remain report-only and records `can_feed_decision_layer=False`. Improvement or complementarity against the same weak-reference mask is screening evidence, not permission to enter the decision layer. Any future promotion requires an independently reviewed immutable labelset, untouched geographic evaluation, explicit calibration, and a separate safety decision.
+The historical weak-label ML output must remain report-only and records `can_feed_decision_layer=False`. Improvement or complementarity against the same weak-reference mask is screening evidence, not permission to enter the decision layer. `scripts/run_mae_sai_weak_label_ml.py` now fails before raster access for the current cross-border reference. Its legacy writer also rejects a structurally complete summary row because status literals and hash-shaped strings are not signed evidence. Any new real-data model lane must go through `floodguard.controlled_experiment`, which loads and verifies the signed acquisition, reviewer, holdout, reference-cell, policy, and bounded-execution receipts; reconciles their identities and bytes; and keeps final-holdout truth isolated until evaluation. The current cross-border manual mask does not meet that contract. Any future promotion requires an independently reviewed immutable labelset, untouched geographic evaluation, explicit calibration, and a separate safety decision.
 
 Source Sentinel-1 ZIPs, SAFE packages, TIFFs, manual GeoPackages, and full per-pixel ML prediction tables must remain outside Git unless a later task defines a bounded derived-output format.
 
@@ -1546,7 +1546,7 @@ GeoJSON fixtures should use WGS84 coordinates (`EPSG:4326`) and small synthetic 
 
 ## Mae Sai Weak-Reference Action Brief
 
-`outputs/mae_sai_action_brief_TH570906.md` is the current highest-priority bilingual real-study-area candidate action brief. It is generated only from committed derived outputs; the generator does not read or copy raw Sentinel-1 rasters or the manual GeoPackage.
+`outputs/mae_sai_action_brief_TH570903.md` is the current highest-priority bilingual real-study-area candidate action brief. It is generated only from committed derived outputs; the generator does not read or copy raw Sentinel-1 rasters or the manual GeoPackage.
 
 Required derived inputs:
 
@@ -1577,7 +1577,7 @@ The brief must include this wording exactly:
 Based on weak-reference candidate flood analysis. Non-operational. Not official warning. Use only for planning/demo.
 ```
 
-The current brief geometry is HDX COD-AB ADM3 `TH570906 / Wiang Phang Kham`. Weak-label metrics may be included as a cross-border calibration cross-check, but the brief must state that the current FPPS uses the non-ML ADM3 flood-probability proxy.
+The current brief geometry is HDX COD-AB ADM3 candidate `TH570903 / Ko Chang`. Historical weak-label ML metrics are excluded because they were produced from the retired COG pair and are not comparable to the active same-track original-SAFE baseline. The brief states that the current FPPS uses the non-ML ADM3 flood-probability proxy.
 
 ## Mae Sai Study-Area Bundle
 

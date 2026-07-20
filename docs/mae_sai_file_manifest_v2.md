@@ -10,10 +10,10 @@ Reasons:
 
 - UNOSAT/UNITAR and GISTDA provider responses are still pending.
 - The Sentinel Asia / MBRSC public shapefile ZIP is acquired outside Git and checksum-tracked as a reference candidate, but its product-level validation/derived-reporting/redistribution/ML-label terms remain unresolved.
-- The manual QGIS weak-reference lane is implemented. It remains missing until `mae_sai_manual_flood_reference.gpkg` is digitized outside Git and inspected with `scripts/inspect_manual_reference_mask.py`.
-- The selected CDSE Sentinel-1 September 6 pre-event COG and September 15 post-event COG are downloaded outside Git with SHA-256 checksums recorded.
+- The manual QGIS weak-reference file exists outside Git and is checksum-tracked, but its polygon is a nearby cross-border calibration feature with no overlap against the Thailand ADM3 candidate geometry. It is not qualified validation truth and does not authorize unqualified ML-label use.
+- The active CDSE Sentinel-1 pair is the same-track original-SAFE pre-event product `aaaef3af-fa49-4115-bf0f-f54175e7aedf` and post-event product `5251b74b-0bbd-4365-9eb4-fa33292e175a`. Both archives are registered outside Git with current SHA-256 values.
 - No cleared Mae Sai flood reference-mask file exists yet.
-- The September 18 fallback post-event COG is not acquired.
+- The earlier September 6 / September 15 COG pair and September 18 COG fallback are retired inventory records, not active baseline alternatives.
 - The standalone local Sentinel-1 TIFF now has a selected-file checksum in `outputs/sentinel1_selected_file_manifest.csv`.
 - The provenance resolver output in `outputs/sentinel1_provenance_resolved_manifest.csv` and `docs/sentinel1_local_provenance.md` labels that file `candidate_role=unresolved` and `event_timing_status=timing_unresolved`, so it is not yet a real baseline input.
 - `processing_allowed=True` is not allowed yet for the Mae Sai real-data baseline.

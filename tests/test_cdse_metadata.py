@@ -22,7 +22,7 @@ def test_build_cdse_products_url_encodes_profile_filters() -> None:
     assert "https://catalogue.dataspace.copernicus.eu/odata/v1/Products?" in url
     assert "Collection/Name+eq+'SENTINEL-1'" in url
     assert "contains(Name,'IW_GRDH_1SDV')" in url
-    assert "2025-11-17T00:00:00.000Z" in url
+    assert "2025-11-01T00:00:00.000Z" in url
     assert "2025-12-05T23:59:59.999Z" in url
     assert "POINT(100.47+7.01)" in url
     assert "$orderby=ContentDate/Start+asc" in url
@@ -60,12 +60,36 @@ def test_parse_cdse_products_handles_cog_and_safe_rows() -> None:
 
     assert list(rows[0]) == list(CDSE_OUTPUT_COLUMNS)
     assert rows[0]["product_storage_type"] == "COG"
-    assert rows[0]["candidate_role"] == "event-window COG candidate"
+    assert rows[0]["candidate_role"] == "post-event COG candidate"
     assert rows[0]["mission_platform_prefix"] == "S1A"
     assert rows[1]["product_storage_type"] == "SAFE"
-    assert rows[1]["candidate_role"] == "event-window SAFE alternative"
+    assert rows[1]["candidate_role"] == "post-event SAFE alternative"
     assert rows[1]["online_status"] is True
     assert rows[0]["source_url"] == "https://example.test/products"
+
+
+def test_hat_yai_profile_classifies_same_track_pre_event_safe() -> None:
+    profile = get_cdse_profile("hat_yai_2025")
+
+    rows = parse_cdse_products(
+        {
+            "value": [
+                {
+                    "ContentDate": {"Start": "2025-11-11T23:03:09.801147Z"},
+                    "Name": (
+                        "S1A_IW_GRDH_1SDV_20251111T230309_20251111T230334_"
+                        "061836_07BB06_E216.SAFE"
+                    ),
+                    "Id": "4e473302-943c-4798-8bfc-8287167792ed",
+                    "Online": True,
+                }
+            ]
+        },
+        profile,
+        source_url="https://example.test/products",
+    )
+
+    assert rows[0]["candidate_role"] == "pre-event SAFE alternative"
 
 
 def test_cdse_cli_dry_run_prints_url_without_network() -> None:

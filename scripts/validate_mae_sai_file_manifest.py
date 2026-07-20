@@ -45,12 +45,19 @@ def main() -> None:
     try:
         ready = validate_mae_sai_file_manifest_ready(manifest)
     except IngestionPlanError as exc:
-        print("BLOCKED: Mae Sai real non-ML baseline cannot start.")
+        print(
+            "BLOCKED: qualified, official, or decision-eligible Mae Sai processing "
+            "cannot start."
+        )
+        print(
+            "The non-operational cross-border calibration baseline is governed "
+            "separately and does not clear this gate."
+        )
         print(str(exc))
         _print_row_summary(manifest)
         raise SystemExit(0 if args.allow_blocked else 1) from exc
 
-    print("READY: Mae Sai real non-ML baseline gates passed.")
+    print("READY: qualified Mae Sai processing gates passed.")
     print(ready.loc[:, ["source_name", "candidate_use", "product_id", "local_path"]].to_string(index=False))
 
 

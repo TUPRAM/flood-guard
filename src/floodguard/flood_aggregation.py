@@ -51,6 +51,9 @@ MANUAL_REFERENCE_REQUIRED_COLUMNS: tuple[str, ...] = (
     "reference_id",
     "reference_mask_status",
     "candidate_readiness_status",
+    "spatial_relation",
+    "spatial_relation_status",
+    "in_study_area_overlap",
     "bbox_lon_min",
     "bbox_lat_min",
     "bbox_lon_max",
@@ -207,6 +210,23 @@ def _validate_manual_reference_ready(row: pd.Series) -> None:
         raise FloodAggregationError(
             "manual reference must be ready_for_candidate_metrics."
         )
+    if str(row["spatial_relation_status"]) != "verified_geometry_intersection":
+        raise FloodAggregationError(
+            "manual reference spatial relation must be verified before aggregation."
+        )
+    relation = str(row["spatial_relation"])
+    if relation not in {
+        "in_study_area_weak_reference",
+        "cross_border_calibration_only",
+    }:
+        raise FloodAggregationError(
+            "manual reference has an unsupported spatial relation."
+        )
+    overlap = _strict_bool(row["in_study_area_overlap"], "in_study_area_overlap")
+    if relation == "cross_border_calibration_only" and overlap:
+        raise FloodAggregationError(
+            "cross-border manual reference cannot claim in-study-area overlap."
+        )
 
 
 def _bounded_number(value: object, lower: float, upper: float, column: str) -> float:
@@ -233,6 +253,17 @@ def _number(value: object, column: str) -> float:
     if pd.isna(numeric):
         raise FloodAggregationError(f"{column} must be numeric.")
     return numeric
+
+
+def _strict_bool(value: object, column: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise FloodAggregationError(f"{column} must be explicit true or false.")
 
 
 def _require_columns(

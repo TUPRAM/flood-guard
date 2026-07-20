@@ -13,7 +13,14 @@ from floodguard.validation import (
     write_real_data_validation_summary,
     write_validation_summary,
 )
+from floodguard.sar_raster_extract import (
+    SAR_LOG_TRANSFORM,
+    SAR_MEASUREMENT_DOMAIN,
+    SAR_RADIOMETRIC_CALIBRATION_STATUS,
+)
 from floodguard.ingestion import (
+    MAE_SAI_BASELINE_POST_PRODUCT_ID,
+    MAE_SAI_BASELINE_PRE_PRODUCT_ID,
     build_ingestion_manifest,
     default_mae_sai_file_manifest_sources,
 )
@@ -136,6 +143,7 @@ def test_real_data_validation_summary_reports_blocked_manifest() -> None:
     assert "# Mae Sai Real-Data Validation Summary" in report
     assert "## Data Status" in report
     assert "## Sentinel-1 Product IDs" in report
+    assert "## Integrity And Spatial Scope" in report
     assert "## Manual Reference Mask Metadata" in report
     assert "## Method Assumptions" in report
     assert "## Candidate Metrics" in report
@@ -148,8 +156,124 @@ def test_real_data_validation_summary_reports_blocked_manifest() -> None:
 
 
 def test_real_data_validation_summary_reports_weak_reference_metrics_while_blocked() -> None:
+    (
+        manifest,
+        weak_metrics,
+        weak_feature_manifest,
+        manual_manifest,
+    ) = _bound_weak_reference_evidence()
+    context_quality_manifest = pd.DataFrame(
+        [
+            {
+                "manual_reference_overlaps_thailand_adm3_candidate": False,
+                "assumptions": (
+                    "Manual weak-reference bbox is north of the COD-AB Thailand "
+                    "boundary and is retained only as nearby cross-border evidence."
+                ),
+            }
+        ]
+    )
+
+    report = build_real_data_validation_summary(
+        manifest,
+        weak_reference_metrics=weak_metrics,
+        weak_reference_feature_manifest=weak_feature_manifest,
+        manual_reference_manifest=manual_manifest,
+        context_quality_manifest=context_quality_manifest,
+    )
+
+    assert "Processing allowed: false" in report
+    assert "cross-border calibration metrics generated against a manually digitized weak-reference mask" in report
+    assert "## Sentinel-1 Product IDs" in report
+    assert "## Integrity And Spatial Scope" in report
+    assert "## Manual Reference Mask Metadata" in report
+    assert "## Method Assumptions" in report
+    assert "## Candidate Metrics" in report
+    assert "## Failure Modes" in report
+    assert "## Safety Note" in report
+    assert "IoU: 0.500000" in report
+    assert "F1/Dice: 0.666667" in report
+    assert (
+        f"Pre-event Sentinel-1 product id: `{MAE_SAI_BASELINE_PRE_PRODUCT_ID}`"
+        in report
+    )
+    assert "Not-official status: confirmed_true" in report
+    assert "Confidence: medium" in report
+    assert "Source basis: Sentinel-1 visual interpretation" in report
+    assert "Digitized by: [blank]" in report
+    assert "Digitized at: 2026-07-09" in report
+    assert "Notes: uncertain areas excluded" in report
+    assert "it is not reviewer qualification" in report
+    assert "Weak-reference source integrity verified: true" in report
+    assert "Source integrity status: verified_sha256_before_raster_read" in report
+    assert "Manual-mask attribute integrity: valid" in report
+    assert "Thailand ADM3 candidate overlap: false" in report
+    assert "nearby cross-border calibration evidence only" in report
+    assert "do not validate flood extent inside Mae Sai Thailand ADM3" in report
+    assert "Not an emergency warning" in report
+
+
+def test_real_data_validation_summary_rejects_unbound_metrics() -> None:
     manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
-    weak_metrics = pd.DataFrame(
+    metrics = pd.DataFrame(
+        [
+            {
+                "true_positive": 1,
+                "false_positive": 0,
+                "false_negative": 0,
+                "true_negative": 1,
+                "iou": 1.0,
+                "f1_dice": 1.0,
+                "precision": 1.0,
+                "recall": 1.0,
+                "area_error_ratio": 0.0,
+            }
+        ]
+    )
+
+    with pytest.raises(ValidationReportError, match="require exactly one"):
+        build_real_data_validation_summary(
+            manifest,
+            weak_reference_metrics=metrics,
+            weak_reference_feature_manifest=pd.DataFrame([{"pre_product_id": "pre"}]),
+        )
+
+
+def test_real_data_validation_summary_rejects_fabricated_metric_values() -> None:
+    manifest, metrics, feature, manual = _bound_weak_reference_evidence()
+    metrics.loc[0, "iou"] = 1.0
+
+    with pytest.raises(
+        ValidationReportError,
+        match="iou does not match its confusion-matrix counts",
+    ):
+        build_real_data_validation_summary(
+            manifest,
+            weak_reference_metrics=metrics,
+            weak_reference_feature_manifest=feature,
+            manual_reference_manifest=manual,
+        )
+
+
+def test_real_data_validation_summary_rejects_substituted_source_checksum() -> None:
+    manifest, metrics, feature, manual = _bound_weak_reference_evidence()
+    manifest.loc[
+        manifest["product_id"] == MAE_SAI_BASELINE_PRE_PRODUCT_ID,
+        "sha256",
+    ] = "f" * 64
+
+    with pytest.raises(ValidationReportError, match="checksum or study area was substituted"):
+        build_real_data_validation_summary(
+            manifest,
+            weak_reference_metrics=metrics,
+            weak_reference_feature_manifest=feature,
+            manual_reference_manifest=manual,
+        )
+
+
+def test_real_data_validation_summary_rejects_official_metrics_when_gate_blocked() -> None:
+    manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
+    metrics = pd.DataFrame(
         [
             {
                 "true_positive": 2,
@@ -161,50 +285,12 @@ def test_real_data_validation_summary_reports_weak_reference_metrics_while_block
                 "precision": 0.666667,
                 "recall": 0.666667,
                 "area_error_ratio": 0.0,
-                "sample_pixel_count": 5,
-                "reference_positive_pixel_count": 3,
-            }
-        ]
-    )
-    weak_feature_manifest = pd.DataFrame(
-        [
-            {
-                "pre_product_id": "pre-product",
-                "post_product_id": "post-product",
-                "reference_product_id": "manual-reference",
-                "georeferencing_method": "sentinel1_safe_gcps_affine_fit",
-            }
-        ]
-    )
-    manual_manifest = pd.DataFrame(
-        [
-            {
-                "not_official_status": "confirmed_true",
-                "candidate_readiness_status": "ready_for_candidate_metrics",
             }
         ]
     )
 
-    report = build_real_data_validation_summary(
-        manifest,
-        weak_reference_metrics=weak_metrics,
-        weak_reference_feature_manifest=weak_feature_manifest,
-        manual_reference_manifest=manual_manifest,
-    )
-
-    assert "Processing allowed: false" in report
-    assert "candidate metrics generated against a manually digitized weak-reference mask" in report
-    assert "## Sentinel-1 Product IDs" in report
-    assert "## Manual Reference Mask Metadata" in report
-    assert "## Method Assumptions" in report
-    assert "## Candidate Metrics" in report
-    assert "## Failure Modes" in report
-    assert "## Safety Note" in report
-    assert "IoU: 0.500000" in report
-    assert "F1/Dice: 0.666667" in report
-    assert "Pre-event Sentinel-1 product id: `pre-product`" in report
-    assert "Not-official status: confirmed_true" in report
-    assert "Not an emergency warning" in report
+    with pytest.raises(ValidationReportError, match="official ingestion gate is blocked"):
+        build_real_data_validation_summary(manifest, sar_metrics=metrics)
 
 
 def test_real_data_validation_summary_reports_metrics_when_ready() -> None:
@@ -255,3 +341,130 @@ def test_write_real_data_validation_summary_writes_markdown(tmp_path: Path) -> N
     assert output_path.read_text(encoding="utf-8").startswith(
         "# Mae Sai Real-Data Validation Summary"
     )
+
+
+def _bound_weak_reference_evidence(
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    study_area = "Chiang Rai / Mae Sai 2024"
+    reference_id = "MS-MANUAL-CROSSBORDER-001"
+    pre_sha = "a" * 64
+    post_sha = "b" * 64
+    reference_sha = "c" * 64
+    manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
+    manifest.loc[
+        manifest["product_id"] == MAE_SAI_BASELINE_PRE_PRODUCT_ID,
+        "sha256",
+    ] = pre_sha
+    manifest.loc[
+        manifest["product_id"] == MAE_SAI_BASELINE_POST_PRODUCT_ID,
+        "sha256",
+    ] = post_sha
+    reference_row = {column: "" for column in manifest.columns}
+    reference_row.update(
+        {
+            "source_name": "Manual cross-border weak-reference candidate",
+            "study_area": study_area,
+            "product_id": reference_id,
+            "sha256": reference_sha,
+            "processing_allowed": False,
+        }
+    )
+    manifest = pd.concat([manifest, pd.DataFrame([reference_row])], ignore_index=True)
+
+    metrics = pd.DataFrame(
+        [
+            {
+                "study_area": study_area,
+                "processing_scope": "weak_reference_real_sentinel1_non_ml_candidate",
+                "reference_status": "weak_reference_candidate",
+                "metric_status": "candidate_cross_border_calibration_metrics",
+                "pre_source_sha256": pre_sha,
+                "post_source_sha256": post_sha,
+                "reference_sha256": reference_sha,
+                "source_integrity_status": "verified_sha256_before_raster_read",
+                "measurement_domain": SAR_MEASUREMENT_DOMAIN,
+                "log_transform": SAR_LOG_TRANSFORM,
+                "radiometric_calibration_status": SAR_RADIOMETRIC_CALIBRATION_STATUS,
+                "reference_spatial_relation": "cross_border_calibration_only",
+                "reference_in_study_area_overlap": False,
+                "reference_distance_to_study_area_km": 5.965378,
+                "true_positive": 2,
+                "false_positive": 1,
+                "false_negative": 1,
+                "true_negative": 1,
+                "iou": 0.5,
+                "f1_dice": 0.666667,
+                "precision": 0.666667,
+                "recall": 0.666667,
+                "area_error_ratio": 0.0,
+                "sample_pixel_count": 5,
+                "reference_positive_pixel_count": 3,
+                "predicted_positive_pixel_count": 3,
+                "probability_threshold": 0.5,
+                "source_timestamp": "2024-09-15T23:16:01Z",
+                "confidence_class": "low",
+                "warning_text": (
+                    "Cross-border calibration metrics. Non-operational. "
+                    "Not official validation. Not field validated."
+                ),
+                "assumptions": "Synthetic bound test evidence.",
+            }
+        ]
+    )
+    feature = pd.DataFrame(
+        [
+            {
+                "study_area": study_area,
+                "processing_scope": "weak_reference_real_sentinel1_non_ml_candidate",
+                "pre_product_id": MAE_SAI_BASELINE_PRE_PRODUCT_ID,
+                "post_product_id": MAE_SAI_BASELINE_POST_PRODUCT_ID,
+                "reference_product_id": reference_id,
+                "reference_status": "weak_reference_candidate",
+                "pre_source_sha256": pre_sha,
+                "post_source_sha256": post_sha,
+                "reference_sha256": reference_sha,
+                "source_integrity_status": "verified_sha256_before_raster_read",
+                "measurement_domain": SAR_MEASUREMENT_DOMAIN,
+                "log_transform": SAR_LOG_TRANSFORM,
+                "radiometric_calibration_status": SAR_RADIOMETRIC_CALIBRATION_STATUS,
+                "reference_spatial_relation": "cross_border_calibration_only",
+                "reference_in_study_area_overlap": False,
+                "reference_distance_to_study_area_km": 5.965378,
+                "sample_pixel_count": 5,
+                "reference_positive_pixel_count": 3,
+                "predicted_positive_pixel_count": 3,
+                "sample_width": 5,
+                "sample_height": 1,
+                "georeferencing_method": "sentinel1_safe_gcps_affine_fit",
+                "probability_threshold": 0.5,
+                "source_timestamp": "2024-09-15T23:16:01Z",
+                "confidence_class": "low",
+            }
+        ]
+    )
+    manual = pd.DataFrame(
+        [
+            {
+                "study_area": study_area,
+                "reference_id": reference_id,
+                "confidence": "medium",
+                "source_basis": "Sentinel-1 visual interpretation",
+                "digitized_by": "[blank]",
+                "digitized_at": "2026-07-09",
+                "notes": "uncertain areas excluded",
+                "sha256": reference_sha,
+                "sha256_status": "recorded",
+                "reference_mask_status": "weak_reference_candidate",
+                "candidate_readiness_status": "ready_for_candidate_metrics",
+                "candidate_validation_metrics_allowed": True,
+                "not_official_status": "confirmed_true",
+                "attribute_values_status": "valid",
+                "attribute_value_blockers": "",
+                "spatial_relation": "cross_border_calibration_only",
+                "in_study_area_overlap": False,
+                "distance_to_study_area_km": 5.965378,
+                "spatial_relation_status": "verified_geometry_intersection",
+            }
+        ]
+    )
+    return manifest, metrics, feature, manual

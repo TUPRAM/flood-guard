@@ -36,13 +36,12 @@ def load_evidence() -> tuple[pd.DataFrame, ...]:
 
 
 def build_current_brief() -> str:
-    priority, features, baseline, manual, ml, adm3, roads, access, equity = load_evidence()
+    priority, features, baseline, manual, _ml, adm3, roads, access, equity = load_evidence()
     return build_mae_sai_action_brief(
         priority,
         features,
         baseline,
         manual,
-        weak_label_ml_metrics=ml,
         adm3_sar_context=adm3,
         road_risk=roads,
         access_loss=access,
@@ -54,22 +53,22 @@ def test_build_mae_sai_action_brief_contains_real_evidence_and_warnings() -> Non
     brief = build_current_brief()
 
     assert "# Mae Sai Weak-Reference Action Brief" in brief
-    assert "TH570906" in brief
-    assert "Wiang Phang Kham" in brief
+    assert "TH570903" in brief
+    assert "Ko Chang" in brief
     assert MAE_SAI_WEAK_REFERENCE_WARNING in brief
     assert "Executive Summary / บทสรุปสำหรับผู้ตัดสินใจ" in brief
-    assert "FPPS: 31.74/100" in brief
+    assert "FPPS: 31.17/100" in brief
     assert "Action class: E" in brief
-    assert "mean non-ML flood-probability proxy of 7.1%" in brief
+    assert "mean non-ML flood-probability proxy of 9.6%" in brief
     assert "WorldPop 2020" in brief
-    assert "b09f96ca-4a60-43e7-9b8d-158022f0e5bf" in brief
-    assert "20a9c3b8-37df-46d5-81d8-d63c7e460225" in brief
-    assert "IoU 0.006" in brief
-    assert "| IoU | 0.005 | 0.223 |" in brief
-    assert "severe overprediction" in brief
-    assert "does not overlap the official Thailand ADM3 geometry" in brief
+    assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in brief
+    assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in brief
+    assert "IoU 0.019" in brief
+    assert "Current-pair spatial-holdout ML comparison: unavailable" in brief
+    assert "retired COG pair" in brief
+    assert "does not overlap the Thailand ADM3 candidate geometry" in brief
     assert "not field validated" in brief.lower()
-    assert "Ko Chang has the highest modeled 30-minute access loss" in brief
+    assert "People losing 30-minute access: 36" in brief
     assert "bridge-tagged" in brief
     assert "terrain/remoteness proxy" in brief
 
@@ -105,11 +104,24 @@ def test_brief_includes_bilingual_recommended_actions() -> None:
     assert "ห้ามใช้เอกสารฉบับนี้เพียงอย่างเดียว" in brief
 
 
-def test_ml_candidate_is_not_misrepresented_as_current_fpps_input() -> None:
-    brief = build_current_brief()
+def test_legacy_ml_candidate_is_not_misrepresented_as_current_fpps_input() -> None:
+    priority, features, baseline, manual, ml, adm3, roads, access, equity = load_evidence()
+    brief = build_mae_sai_action_brief(
+        priority,
+        features,
+        baseline,
+        manual,
+        weak_label_ml_metrics=ml,
+        adm3_sar_context=adm3,
+        road_risk=roads,
+        access_loss=access,
+        equity_gap=equity,
+    )
 
     assert "Decision-layer eligibility flag: false" in brief
-    assert "current FPPS still uses the non-ML mean probability proxy" in brief
+    assert "current FPPS uses the active original-SAFE" in brief
+    assert "Historical retired-source experiment only" in brief
+    assert "not comparable to the active original-SAFE baseline" in brief
     assert "Not official labels. Not field validation." in brief
 
 
@@ -167,6 +179,97 @@ def test_brief_rejects_mismatched_evidence_counts() -> None:
         )
 
 
+def test_brief_rejects_substituted_source_checksum_lineage() -> None:
+    priority, features, baseline, manual, _ml, adm3, roads, access, equity = load_evidence()
+    baseline.loc[0, "post_source_sha256"] = "0" * 64
+
+    with pytest.raises(MaeSaiActionBriefError, match="lineage do not match"):
+        build_mae_sai_action_brief(
+            priority,
+            features,
+            baseline,
+            manual,
+            adm3_sar_context=adm3,
+            road_risk=roads,
+            access_loss=access,
+            equity_gap=equity,
+        )
+
+
+def test_brief_rejects_promoted_cross_border_reference_scope() -> None:
+    priority, features, baseline, manual, _ml, adm3, roads, access, equity = load_evidence()
+    manual.loc[0, "in_study_area_overlap"] = "True"
+
+    with pytest.raises(MaeSaiActionBriefError, match="cross-border non-overlap"):
+        build_mae_sai_action_brief(
+            priority,
+            features,
+            baseline,
+            manual,
+            adm3_sar_context=adm3,
+            road_risk=roads,
+            access_loss=access,
+            equity_gap=equity,
+        )
+
+
+@pytest.mark.parametrize(
+    ("target", "column", "value"),
+    [
+        ("feature", "reference_in_study_area_overlap", "unknown"),
+        ("baseline", "reference_in_study_area_overlap", ""),
+        ("manual", "in_study_area_overlap", "not-verified"),
+        ("ml", "can_feed_decision_layer", "corrupt"),
+    ],
+)
+def test_brief_rejects_malformed_evidence_booleans(
+    target: str,
+    column: str,
+    value: str,
+) -> None:
+    priority, features, baseline, manual, ml, adm3, roads, access, equity = load_evidence()
+    frames = {
+        "feature": features,
+        "baseline": baseline,
+        "manual": manual,
+        "ml": ml,
+    }
+    frames[target].loc[0, column] = value
+
+    with pytest.raises(MaeSaiActionBriefError, match="must be explicit true or false"):
+        build_mae_sai_action_brief(
+            priority,
+            features,
+            baseline,
+            manual,
+            weak_label_ml_metrics=ml,
+            adm3_sar_context=adm3,
+            road_risk=roads,
+            access_loss=access,
+            equity_gap=equity,
+        )
+
+
+@pytest.mark.parametrize("value", ["g" * 64, "A" * 64, "0" * 63, ""])
+def test_brief_rejects_malformed_source_hashes(value: str) -> None:
+    priority, features, baseline, manual, ml, adm3, roads, access, equity = load_evidence()
+    features.loc[0, "pre_source_sha256"] = value
+    baseline.loc[0, "pre_source_sha256"] = value
+
+    with pytest.raises(MaeSaiActionBriefError, match="lowercase SHA-256"):
+        build_mae_sai_action_brief(
+            priority,
+            features,
+            baseline,
+            manual,
+            weak_label_ml_metrics=ml,
+            adm3_sar_context=adm3,
+            road_risk=roads,
+            access_loss=access,
+            equity_gap=equity,
+        )
+
+
 def test_write_mae_sai_action_brief_uses_expected_name(tmp_path: Path) -> None:
     priority, features, baseline, manual, ml, adm3, roads, access, equity = load_evidence()
 
@@ -183,7 +286,7 @@ def test_write_mae_sai_action_brief_uses_expected_name(tmp_path: Path) -> None:
         equity_gap=equity,
     )
 
-    assert target.name == "mae_sai_action_brief_TH570906.md"
+    assert target.name == "mae_sai_action_brief_TH570903.md"
     assert target.read_text(encoding="utf-8").startswith(
         "# Mae Sai Weak-Reference Action Brief"
     )

@@ -24,6 +24,8 @@ from urllib.request import Request, urlopen
 
 import pandas as pd
 
+from floodguard.ingestion import MAE_SAI_BASELINE_PRODUCT_IDS
+
 CDSE_TOKEN_URL = (
     "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/"
     "protocol/openid-connect/token"
@@ -32,13 +34,22 @@ CDSE_PRODUCT_VALUE_URL = (
     "https://catalogue.dataspace.copernicus.eu/odata/v1/Products({product_id})/$value"
 )
 DEFAULT_EXTERNAL_DATA_DIR = Path.home() / "Documents" / "FloodGuard_external_data" / "cdse" / "mae_sai_2024"
-MAE_SAI_SELECTED_PRODUCT_IDS: tuple[str, ...] = (
-    # Original SAFE editions are required for SNAP calibration. SNAP 13 can
-    # read the CDSE COG_SAFE editions but warns that their calibration LUT may
-    # be unreliable, so COG products remain provenance/inspection candidates
-    # only for this label-factory processing lane.
-    "aaaef3af-fa49-4115-bf0f-f54175e7aedf",
-    "5251b74b-0bbd-4365-9eb4-fa33292e175a",
+# Original SAFE product identities approved for the Mae Sai baseline.
+MAE_SAI_SELECTED_PRODUCT_IDS: tuple[str, ...] = MAE_SAI_BASELINE_PRODUCT_IDS
+MAE_SAI_QUALIFIED_PROCESSING_BLOCKER = (
+    "qualified, official, or decision-eligible processing remains blocked because "
+    "reference mask status is unresolved; the non-operational cross-border calibration "
+    "baseline is governed separately"
+)
+
+# Original SAFE editions are required for SNAP calibration. SNAP 13 can read
+# the CDSE COG_SAFE editions but warns that their calibration LUT may be
+# unreliable. The legacy September 6 / September 15 COG pair also mixes
+# acquisition tracks and its local archives were mutated by GDAL PAM access.
+# Those COG products therefore remain provenance/inspection records only.
+MAE_SAI_RETIRED_COG_PRODUCT_IDS: tuple[str, ...] = (
+    "b09f96ca-4a60-43e7-9b8d-158022f0e5bf",
+    "20a9c3b8-37df-46d5-81d8-d63c7e460225",
 )
 
 CDSE_ACQUISITION_COLUMNS: tuple[str, ...] = (
@@ -96,7 +107,7 @@ def write_cdse_mae_sai_acquisition_manifest(
     if target.suffix.lower() != ".csv":
         raise CDSEDownloadError("CDSE acquisition manifest output must be CSV.")
     target.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(target, index=False)
+    frame.to_csv(target, index=False, lineterminator="\n")
     return target
 
 
@@ -180,7 +191,7 @@ def build_cdse_mae_sai_acquisition_manifest(
                 {
                     "product_id": product_id,
                     "product_name": product_name,
-                    "candidate_role": row["candidate_role"],
+                    "candidate_role": _selected_candidate_role(product_id),
                     "acquisition_date": row["acquisition_date"],
                     "download_url": download_url,
                     "local_path_hint": local_path_hint,
@@ -192,9 +203,7 @@ def build_cdse_mae_sai_acquisition_manifest(
                     "source_license_status": "confirmed_copernicus_sentinel_legal_notice",
                     "reference_mask_status": "unresolved",
                     "processing_allowed": False,
-                    "reason_blocked": (
-                        "reference mask status remains unresolved; do not run baseline yet"
-                    ),
+                    "reason_blocked": MAE_SAI_QUALIFIED_PROCESSING_BLOCKER,
                     "retrieved_at_utc": timestamp,
                 }
             )
@@ -232,7 +241,7 @@ def build_cdse_mae_sai_acquisition_manifest(
             {
                 "product_id": product_id,
                 "product_name": product_name,
-                "candidate_role": row["candidate_role"],
+                "candidate_role": _selected_candidate_role(product_id),
                 "acquisition_date": row["acquisition_date"],
                 "download_url": download_url,
                 "local_path_hint": local_path_hint,
@@ -244,11 +253,26 @@ def build_cdse_mae_sai_acquisition_manifest(
                 "source_license_status": "confirmed_copernicus_sentinel_legal_notice",
                 "reference_mask_status": "unresolved",
                 "processing_allowed": False,
-                "reason_blocked": "reference mask status remains unresolved; do not run baseline yet",
+                "reason_blocked": MAE_SAI_QUALIFIED_PROCESSING_BLOCKER,
                 "retrieved_at_utc": timestamp,
             }
         )
     return pd.DataFrame(rows, columns=CDSE_ACQUISITION_COLUMNS)
+
+
+def _selected_candidate_role(product_id: str) -> str:
+    """Return the active same-track role for a selected original SAFE product."""
+
+    roles = {
+        MAE_SAI_SELECTED_PRODUCT_IDS[0]: "selected pre-event original SAFE",
+        MAE_SAI_SELECTED_PRODUCT_IDS[1]: "selected post-event original SAFE",
+    }
+    try:
+        return roles[str(product_id)]
+    except KeyError as exc:
+        raise CDSEDownloadError(
+            f"Selected Mae Sai product has no active source role: {product_id}"
+        ) from exc
 
 
 def build_cdse_product_download_url(product_id: str) -> str:

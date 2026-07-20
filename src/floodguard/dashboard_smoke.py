@@ -261,6 +261,12 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
         ),
         _contains(
             html,
+            "hat_yai_fail_closed_readiness",
+            "Dashboard story: blocked and not enabled.",
+            "Hat Yai is exposed only as a blocked metadata-readiness record.",
+        ),
+        _contains(
+            html,
             "priority_polygon_renderer",
             "priorityLayer.addData({ type: 'FeatureCollection', features: visibleFeatures })",
             "Priority polygons are rendered from filtered embedded data.",

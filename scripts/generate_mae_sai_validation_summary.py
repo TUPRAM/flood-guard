@@ -52,18 +52,26 @@ def main() -> None:
         default=REPO_ROOT / "outputs" / "manual_reference_mask_manifest.csv",
         help="Optional manual weak-reference manifest CSV.",
     )
+    parser.add_argument(
+        "--context-quality-manifest",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_context_quality_summary.csv",
+        help="Optional real-context quality manifest with ADM3 overlap status.",
+    )
     args = parser.parse_args()
 
     manifest = pd.read_csv(args.manifest, dtype=str).fillna("")
     weak_metrics = _read_optional_csv(args.weak_metrics)
     weak_feature_manifest = _read_optional_csv(args.weak_feature_manifest)
     manual_reference_manifest = _read_optional_csv(args.manual_reference_manifest)
+    context_quality_manifest = _read_optional_csv(args.context_quality_manifest)
     written = write_real_data_validation_summary(
         manifest,
         args.output,
         weak_reference_metrics=weak_metrics,
         weak_reference_feature_manifest=weak_feature_manifest,
         manual_reference_manifest=manual_reference_manifest,
+        context_quality_manifest=context_quality_manifest,
     )
     print(f"Wrote {written}")
 

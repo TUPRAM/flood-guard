@@ -9,6 +9,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+from floodguard.hat_yai_readiness import (
+    HatYaiReadinessError,
+    load_hat_yai_readiness_receipt,
+)
 from floodguard.theos2_readiness import read_theos2_preview_rows
 
 
@@ -69,6 +73,7 @@ def write_static_dashboard(
         theos2_selected_manifest_path=theos2_selected_manifest_path,
         theos2_thumbnail_manifest_path=theos2_thumbnail_manifest_path,
     )
+    local_data_summary["hat_yai_readiness"] = _read_hat_yai_readiness(output_dir)
     validation_metric_cards = _read_validation_metric_cards(output_dir)
     mae_sai_weak_summary = _read_mae_sai_weak_priority_summary(output_dir)
     mae_sai_validation_path = output_dir / "mae_sai_validation_summary.md"
@@ -172,6 +177,24 @@ def _read_mae_sai_action_briefs(output_dir: Path) -> dict[str, str]:
         if subdistrict_id:
             briefs[subdistrict_id] = path.read_text(encoding="utf-8")
     return briefs
+
+
+def _read_hat_yai_readiness(output_dir: Path) -> dict[str, Any]:
+    """Load the optional Hat Yai receipt and verify it against pinned sources."""
+
+    receipt_path = output_dir / "hat_yai_readiness.json"
+    if not receipt_path.exists():
+        return {}
+    try:
+        return load_hat_yai_readiness_receipt(
+            receipt_path,
+            cdse_metadata_path=output_dir / "cdse_hat_yai_2025_metadata.csv",
+            ingestion_manifest_path=output_dir / "real_data_ingestion_manifest.csv",
+        )
+    except HatYaiReadinessError as exc:
+        raise DashboardError(
+            "Hat Yai readiness evidence is invalid or substituted; dashboard build blocked."
+        ) from exc
 
 
 def _csv_rows_by_key(path: Path, key: str) -> dict[str, dict[str, str]]:
@@ -3461,7 +3484,7 @@ __LEAFLET_JS__
       setText('map-subtitle', fixture
         ? thai ? 'รูปหลายเหลี่ยมลำดับความสำคัญและความเสี่ยงถนนสังเคราะห์จาก GeoJSON ที่ฝังในไฟล์' : 'Synthetic priority polygons and road-risk segments from embedded GeoJSON.'
         : metadata
-          ? thai ? 'แสดงขอบเขตรายงาน COD-AB โดยไม่แสดงชั้นการตัดสินใจ' : 'Official COD-AB reporting boundaries shown without decision-layer overlays.'
+          ? thai ? 'แสดงขอบเขตรายงาน COD-AB แบบผู้สมัคร โดยไม่แสดงชั้นการตัดสินใจ' : 'Candidate COD-AB reporting boundaries shown without decision-layer overlays.'
           : thai ? 'แปดหน่วย ADM3 พร้อมความเสี่ยงถนนผู้สมัคร สถานที่จาก OSM และจุดสูญเสียการเข้าถึงจากแบบจำลอง' : 'Eight COD-AB ADM3 units with candidate road risk, OSM facilities, and modeled access hotspots.');
       setText('map-status-text', thai
         ? fixture ? 'ขั้นตอนการตัดสินใจจากข้อมูลตัวอย่าง' : metadata ? 'เมทาดาทาและขอบเขตรายงานเท่านั้น' : 'หลักฐานผู้สมัครจากข้อมูลอ้างอิงแบบอ่อน'
@@ -4262,6 +4285,7 @@ def _local_data_library_html(summary: dict[str, Any]) -> str:
     sentinel = summary.get("sentinel1", {})
     dem = summary.get("dem", {})
     theos2 = summary.get("theos2", {})
+    hat_yai = summary.get("hat_yai_readiness", {})
     links = summary.get("links", [])
     return "\n".join(
         [
@@ -4301,8 +4325,49 @@ def _local_data_library_html(summary: dict[str, Any]) -> str:
             f"<span>Checksum: {html.escape(str(theos2.get('sha256_status', 'unavailable')))}</span>",
             f"<span>Reference mask status: {html.escape(str(theos2.get('reference_mask_status', 'unavailable')))}</span>",
             "</div>",
+            _hat_yai_readiness_card_html(hat_yai),
             f'<p class="note">{html.escape(str(summary.get("status_note", "")))}</p>',
             _manifest_links_html(links),
+        ]
+    )
+
+
+def _hat_yai_readiness_card_html(receipt: object) -> str:
+    """Render only fail-closed Hat Yai readiness facts, never decision values."""
+
+    if not isinstance(receipt, dict) or not receipt:
+        return (
+            '<div class="readiness-card" data-study-area="hat_yai_2025">'
+            "<strong>Hat Yai story-tile readiness</strong>"
+            "<span>Status: unavailable; no validated readiness receipt.</span>"
+            "<span>Dashboard story: blocked and not enabled.</span>"
+            "</div>"
+        )
+    selected = receipt.get("selected_metadata_pair", {})
+    pre = selected.get("pre_event", {}) if isinstance(selected, dict) else {}
+    post = selected.get("post_event", {}) if isinstance(selected, dict) else {}
+    blocker_count = len(receipt.get("blockers", [])) if isinstance(
+        receipt.get("blockers"), list
+    ) else 0
+    return "".join(
+        [
+            '<div class="readiness-card" data-study-area="hat_yai_2025">',
+            "<strong>Hat Yai story-tile readiness</strong>",
+            (
+                "<span>Status: BLOCKED — metadata pair only; non-operational; "
+                "official_warning=false.</span>"
+            ),
+            f"<span>Pair state: {html.escape(str(receipt.get('pre_post_pair_status', 'unavailable')))}</span>",
+            f"<span>Pre-event product: {html.escape(str(pre.get('product_id', 'unavailable')))}</span>",
+            f"<span>Post-event product: {html.escape(str(post.get('product_id', 'unavailable')))}</span>",
+            (
+                "<span>Assets/checksums/reference/processing/metrics/decisions: "
+                "blocked.</span>"
+            ),
+            f"<span>Exact blocker count: {blocker_count}</span>",
+            "<span>Dashboard story: blocked and not enabled.</span>",
+            '<a href="hat_yai_readiness.md">Open checksummed readiness details</a>',
+            "</div>",
         ]
     )
 

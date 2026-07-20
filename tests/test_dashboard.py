@@ -151,6 +151,13 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "terrain context only" in html
     assert "THEOS-2 optical context readiness" in html
     assert "optical context only" in html
+    assert 'data-study-area="hat_yai_2025"' in html
+    assert "Hat Yai story-tile readiness" in html
+    assert "locked_metadata_only" in html
+    assert "4e473302-943c-4798-8bfc-8287167792ed" in html
+    assert "d80b81cb-c4aa-4dbb-a7de-8a1d01fca2dc" in html
+    assert "Dashboard story: blocked and not enabled." in html
+    assert "hat_yai_readiness.md" in html
     assert "Source files are outside Git and processing remains gated." in html
     assert "local_data_library_manifest.csv" in html
     assert "sentinel1_selected_file_manifest.csv" in html
@@ -171,21 +178,21 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Mae Sai weak-reference candidate: this mode is separated from the fixture demo" in html
     assert "The weak-reference decision bridge is available" in html
     assert 'id="mae-sai-weak-reference-card"' in html
-    assert "b09f96ca-4a60-43e7-9b8d-158022f0e5bf" in html
-    assert "20a9c3b8-37df-46d5-81d8-d63c7e460225" in html
-    assert "MANUAL-QGIS-MAE-SAI-2024" in html
+    assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in html
+    assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in html
+    assert "MS-MANUAL-CROSSBORDER-001" in html
     assert "ready_for_candidate_metrics" in html
     assert "confirmed_true" in html
     assert "TH570906" in html
     assert "weak_reference_candidate" in html
     assert "real_open_context_joined_with_proxy_vulnerability" in html
     assert "8 ADM3 reporting units" in html
-    assert "IoU 0.006079" in html
-    assert "F1/Dice 0.012085" in html
-    assert "precision 0.038494" in html
-    assert "recall 0.007167" in html
-    assert "area error -0.813809" in html
-    assert "Candidate metrics against manually digitized weak-reference mask" in html
+    assert "IoU 0.018632" in html
+    assert "F1/Dice 0.036583" in html
+    assert "precision 0.206557" in html
+    assert "recall 0.020068" in html
+    assert "area error -0.902843" in html
+    assert "Cross-border calibration metrics against a manually digitized weak-reference mask" in html
     assert "Not official validation" in html
     assert "Metadata/blocker view: source inventory and file readiness are visible" in html
     assert "dataset-mode-note" in html

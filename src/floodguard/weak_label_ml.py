@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
+import re
 
 import pandas as pd
 
@@ -20,6 +21,11 @@ WEAK_LABEL_ML_WARNING = (
     "Weak-label experiment against manually digitized weak-reference mask. "
     "Non-operational. Not official labels. Not field validation. Ineligible "
     "for the decision layer, FPPS, action classes, or warnings."
+)
+
+RETIRED_WEAK_LABEL_SOURCE_PAIR: tuple[str, str] = (
+    "b09f96ca-4a60-43e7-9b8d-158022f0e5bf",
+    "20a9c3b8-37df-46d5-81d8-d63c7e460225",
 )
 
 WEAK_LABEL_FEATURE_COLUMNS: tuple[str, ...] = (
@@ -105,6 +111,168 @@ WEAK_LABEL_ML_PREDICTION_MANIFEST_COLUMNS: tuple[str, ...] = (
 
 class WeakLabelMLError(ValueError):
     """Raised when the weak-label ML experiment cannot run."""
+
+
+_SHA256_RE = re.compile(r"[0-9a-f]{64}")
+
+ML_LABEL_AUTHORIZATION_COLUMNS: tuple[str, ...] = (
+    "experiment_id",
+    "study_area",
+    "reference_id",
+    "reference_mask_status",
+    "sha256",
+    "sha256_status",
+    "license_status",
+    "local_analysis_allowed",
+    "derived_metrics_allowed",
+    "ml_label_use_allowed",
+    "validation_metrics_allowed",
+    "processing_allowed",
+    "not_official_status",
+    "official_warning_allowed",
+    "acquisition_manifest_sha256",
+    "acquisition_authority_receipt_sha256",
+    "reviewer_qualification_status",
+    "reviewer_qualification_manifest_sha256",
+    "reviewer_calibration_receipt_sha256",
+    "unresolved_disagreement_count",
+    "spatial_holdout_status",
+    "spatial_holdout_manifest_sha256",
+    "spatial_holdout_membership_sha256",
+    "training_partition_sha256",
+    "calibration_partition_sha256",
+    "final_holdout_partition_sha256",
+    "execution_authorization_status",
+    "execution_authorization_manifest_sha256",
+)
+
+
+def require_ml_label_authorization(reference_manifest: pd.DataFrame) -> None:
+    """Reject weak-label execution unless governed by the controlled runner.
+
+    The legacy estimator remains useful as a dependency-light challenger, but
+    this summary-table validator cannot authenticate the receipts named by its
+    hash fields. Even a structurally complete row therefore cannot authorize an
+    output-producing run. Qualified execution belongs to
+    :mod:`floodguard.controlled_experiment`, whose loaders verify signatures,
+    source bytes, identities, chronology, and frozen membership.
+    """
+
+    _require_columns(
+        reference_manifest,
+        ("reference_id", "reference_mask_status", "not_official_status"),
+        "ML-label authorization manifest",
+    )
+    if len(reference_manifest) != 1:
+        raise WeakLabelMLError(
+            "ML-label authorization manifest must contain exactly one reference row."
+        )
+    row = reference_manifest.iloc[0]
+    if str(row["reference_mask_status"]).strip() != "qualified_expert_or_adjudicated":
+        raise WeakLabelMLError(
+            "ML experiment blocked: reference_mask_status is not "
+            "qualified_expert_or_adjudicated. Weak-reference, candidate-metric, "
+            "or visual-QA permission cannot authorize training."
+        )
+    _require_columns(
+        reference_manifest,
+        ML_LABEL_AUTHORIZATION_COLUMNS,
+        "ML-label authorization manifest",
+    )
+    if str(row["not_official_status"]) != "confirmed_true":
+        raise WeakLabelMLError(
+            "ML experiment blocked: reference not_official status is not confirmed."
+        )
+    if str(row["sha256_status"]).strip() != "verified":
+        raise WeakLabelMLError(
+            "ML experiment blocked: reference checksum status is not verified."
+        )
+    if str(row["license_status"]).strip() != "confirmed_for_experiment":
+        raise WeakLabelMLError(
+            "ML experiment blocked: reference license is not confirmed for the experiment."
+        )
+    for field in (
+        "local_analysis_allowed",
+        "derived_metrics_allowed",
+        "ml_label_use_allowed",
+        "validation_metrics_allowed",
+        "processing_allowed",
+    ):
+        if not _strict_bool(row[field], field):
+            raise WeakLabelMLError(
+                f"ML experiment blocked: {field} must be explicit true."
+            )
+    if _strict_bool(row["official_warning_allowed"], "official_warning_allowed"):
+        raise WeakLabelMLError(
+            "ML experiment blocked: authorization cannot permit official warnings."
+        )
+    if (
+        str(row["reviewer_qualification_status"]).strip()
+        != "qualified_for_controlled_reference_derivation"
+    ):
+        raise WeakLabelMLError(
+            "ML experiment blocked: reviewer calibration is not qualified."
+        )
+    try:
+        unresolved = int(str(row["unresolved_disagreement_count"]).strip())
+    except ValueError as exc:
+        raise WeakLabelMLError(
+            "ML experiment blocked: unresolved_disagreement_count must be an integer."
+        ) from exc
+    if unresolved != 0:
+        raise WeakLabelMLError(
+            "ML experiment blocked: reviewer disagreements remain unresolved."
+        )
+    if str(row["spatial_holdout_status"]).strip() != "verified_frozen_non_overlapping":
+        raise WeakLabelMLError(
+            "ML experiment blocked: train/calibration/final-holdout membership is not "
+            "verified, frozen, and non-overlapping."
+        )
+    if (
+        str(row["execution_authorization_status"]).strip()
+        != "authorized_for_bounded_model_lane_execution"
+    ):
+        raise WeakLabelMLError(
+            "ML experiment blocked: signed bounded execution authorization is missing."
+        )
+
+    hash_fields = (
+        "sha256",
+        "acquisition_manifest_sha256",
+        "acquisition_authority_receipt_sha256",
+        "reviewer_qualification_manifest_sha256",
+        "reviewer_calibration_receipt_sha256",
+        "spatial_holdout_manifest_sha256",
+        "spatial_holdout_membership_sha256",
+        "training_partition_sha256",
+        "calibration_partition_sha256",
+        "final_holdout_partition_sha256",
+        "execution_authorization_manifest_sha256",
+    )
+    for field in hash_fields:
+        value = str(row[field]).strip()
+        if not _SHA256_RE.fullmatch(value):
+            raise WeakLabelMLError(
+                f"ML experiment blocked: {field} must be a lowercase SHA-256 digest."
+            )
+    partition_hashes = {
+        str(row["training_partition_sha256"]),
+        str(row["calibration_partition_sha256"]),
+        str(row["final_holdout_partition_sha256"]),
+    }
+    if len(partition_hashes) != 3:
+        raise WeakLabelMLError(
+            "ML experiment blocked: train, calibration, and final-holdout "
+            "partition receipts must be distinct."
+        )
+    for field in ("experiment_id", "study_area", "reference_id"):
+        if not str(row[field]).strip():
+            raise WeakLabelMLError(f"ML experiment blocked: {field} is blank.")
+    raise WeakLabelMLError(
+        "ML experiment blocked: a summary authorization row is not signed evidence. "
+        "Use the controlled_experiment signed-receipt runner; the legacy weak-label "
+        "writer cannot execute a qualified real-data model lane."
+    )
 
 
 def run_weak_label_ml_experiment(
@@ -216,12 +384,15 @@ def write_weak_label_ml_outputs(
     features: pd.DataFrame,
     feature_manifest: pd.DataFrame | None = None,
     *,
+    authorization_manifest: pd.DataFrame,
     metrics_output_path: str | Path,
     prediction_manifest_output_path: str | Path,
     summary_output_path: str | Path,
     feature_columns: Sequence[str] = WEAK_LABEL_FEATURE_COLUMNS,
 ) -> dict[str, Path]:
-    """Run the weak-label ML experiment and write compact derived outputs."""
+    """Retain the legacy entry point while failing closed on summary-only evidence."""
+
+    require_ml_label_authorization(authorization_manifest)
 
     _assert_csv(metrics_output_path, "Weak-label ML metrics")
     _assert_csv(prediction_manifest_output_path, "Weak-label ML prediction manifest")
@@ -271,6 +442,10 @@ def build_weak_label_ml_summary(
 
     metric = metrics.iloc[0]
     manifest = prediction_manifest.iloc[0]
+    retired_source_pair = (
+        str(manifest["pre_product_id"]),
+        str(manifest["post_product_id"]),
+    ) == RETIRED_WEAK_LABEL_SOURCE_PAIR
     can_feed = bool(metric["can_feed_decision_layer"])
     if can_feed:
         raise WeakLabelMLError(
@@ -282,14 +457,28 @@ def build_weak_label_ml_summary(
         "action classes, or warnings. Baseline improvement does not override "
         "weak-label provenance."
     )
+    report_title = (
+        "Mae Sai Historical Weak-Label ML Experiment (Retired Source Pair)"
+        if retired_source_pair and title == "Mae Sai Weak-Label ML Experiment"
+        else title
+    )
+    source_status_lines = (
+        [
+            "- Artifact status: historical retired-source screening evidence only.",
+            "- The experiment used the retired September 6 / September 15 COG pair.",
+            "- It is not comparable to the active same-track original-SAFE baseline and must not be regenerated as current evidence.",
+        ]
+        if retired_source_pair
+        else ["- Sentinel-1 features come from the supplied weak-reference SAR experiment."]
+    )
     lines = [
-        f"# {title}",
+        f"# {report_title}",
         "",
         WEAK_LABEL_ML_WARNING,
         "",
         "## Data Status",
         "",
-        "- Sentinel-1 features come from the weak-reference real-data SAR baseline.",
+        *source_status_lines,
         "- Labels come from the manual weak-reference mask, not official labels.",
         "- This is not field validation and not an emergency warning.",
         "",
@@ -651,3 +840,18 @@ def _require_columns(
         raise WeakLabelMLError(
             f"{label} is missing required columns: {', '.join(missing)}"
         )
+
+
+def _strict_bool(value: object, field: str) -> bool:
+    """Parse an explicit boolean without accepting truthy arbitrary strings."""
+
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise WeakLabelMLError(
+        f"ML experiment blocked: {field} must be explicit true or false."
+    )

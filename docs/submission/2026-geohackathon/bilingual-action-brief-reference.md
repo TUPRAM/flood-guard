@@ -7,8 +7,8 @@
 
 ## Area / พื้นที่
 
-- Wiang Phang Kham, Mae Sai / เวียงพางคำ อำเภอแม่สาย
-- Area ID: `TH570906`
+- Ko Chang, Mae Sai / เกาะช้าง อำเภอแม่สาย
+- Area ID: `TH570903`
 - Source timestamp / เวลาข้อมูลต้นทาง: `2024-09-15T23:16:01Z`
 - Confidence / ระดับความเชื่อมั่น: low / ต่ำ
 - Dataset mode / โหมดข้อมูล: candidate / ข้อมูลผู้สมัคร
@@ -16,23 +16,24 @@
 
 ## Decision summary / สรุปสำหรับการตัดสินใจ
 
-- FPPS: `31.74/100`.
+- FPPS: `31.17/100`.
 - Recommended class / ระดับคำแนะนำ: **E - Monitor and Verify / ติดตามและตรวจสอบ**.
 - Top reason / เหตุผลหลัก: confidence is low; verify source and field
   conditions before escalation. / ความเชื่อมั่นยังต่ำ ควรตรวจสอบแหล่งข้อมูลและ
   สภาพพื้นที่ก่อนยกระดับการดำเนินการ
 - Candidate mean flood-probability proxy / ค่าตัวแทนความน่าจะเป็นน้ำท่วมเฉลี่ย:
-  `7.1%` within the selected ADM3 aggregation unit. This is not an observed
+  `9.6%` within the selected ADM3 aggregation unit. This is not an observed
   inundation percentage. / ภายในหน่วยพื้นที่ ADM3 ที่เลือก ค่านี้ไม่ใช่สัดส่วน
   น้ำท่วมที่ตรวจยืนยันแล้ว
 
 ## Access and equity evidence / หลักฐานการเข้าถึงและความเสมอภาค
 
 - Modeled people losing 30-minute access / จำนวนประชากรที่แบบจำลองระบุว่า
-  สูญเสียการเข้าถึงภายใน 30 นาที: `0` in this selected area.
-- Equity-gap ratio / อัตราส่วนช่องว่างการเข้าถึง: `1.000` because both modeled
-  groups have zero measured loss in this area. / เนื่องจากทั้งสองกลุ่มไม่มี
-  การสูญเสียการเข้าถึงตามแบบจำลองในพื้นที่นี้
+  สูญเสียการเข้าถึงภายใน 30 นาที: `36` in this selected area.
+- Equity-gap ratio / อัตราส่วนช่องว่างการเข้าถึง: `0.000` under the current
+  terrain/remoteness proxy grouping. This is not a demographic equity
+  measurement. / ตามการจัดกลุ่มตัวแทนด้านภูมิประเทศและความห่างไกลในปัจจุบัน
+  ค่านี้ไม่ใช่การวัดความเสมอภาคเชิงประชากรศาสตร์
 - Vulnerability is currently a terrain/remoteness proxy, not current
   demographic vulnerability. / ความเปราะบางในปัจจุบันเป็นตัวแทนจากภูมิประเทศ
   และความห่างไกล ไม่ใช่ข้อมูลประชากรเปราะบางปัจจุบัน
@@ -57,7 +58,7 @@
 ## Evidence and limitations / หลักฐานและข้อจำกัด
 
 The brief is derived from the committed candidate output
-`outputs/mae_sai_action_brief_TH570906.md`. Sentinel-1 flood calibration uses a
+`outputs/mae_sai_action_brief_TH570903.md`. Sentinel-1 flood calibration uses a
 nearby cross-border manual weak reference; road, access, population and terrain
 context are derived/modelled and not observed impacts. SAR shadow/layover,
 permanent water, urban double-bounce, reference uncertainty and event timing

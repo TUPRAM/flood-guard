@@ -1,10 +1,12 @@
-# Dashboard Visual QA Notes
+# Historical Dashboard Visual QA Notes
 
 Date: 2026-07-10
 
 Scope: Dashboard v11 served from `outputs/dashboard.html` through a local static server.
 
-Status: pass for fixture, Mae Sai weak-reference candidate, metadata/blocker, English/Thai, selected-area detail, and judge-presentation states. Screenshot evidence was saved outside Git; no screenshot files were committed.
+Evidence status: historical snapshot for the dashboard build inspected on 2026-07-10. These screenshots were not regenerated after the active source lineage changed to the same-track original-SAFE pair and the current brief changed to `TH570903 / Ko Chang`; this file is therefore not current-release visual evidence.
+
+Historical result: pass for fixture, Mae Sai weak-reference candidate, metadata/blocker, English/Thai, selected-area detail, and judge-presentation states in that inspected build. Screenshot evidence was saved outside Git; no screenshot files were committed.
 
 ## Environment
 
@@ -12,7 +14,7 @@ Status: pass for fixture, Mae Sai weak-reference candidate, metadata/blocker, En
 - Functional browser: Codex in-app browser
 - Pixel captures: local headless Chrome
 - Dataset used for viewport captures: `Mae Sai weak-reference candidate`
-- Selected ADM3: `TH570906 / Wiang Phang Kham`
+- Historical selected ADM3: `TH570906 / Wiang Phang Kham`
 - Presentation state: judge mode with selected-area detail
 - External evidence folder: `<external_data_workspace>/dashboard_qa/`
 - Safety boundary checked: weak-reference, non-operational, not official validation, not field validated, and not an official warning
@@ -68,6 +70,7 @@ Metadata/blocker view:
 
 ## Remaining Evidence Limits
 
+- The measurements and selected-area counts above apply only to the 2026-07-10 build. Run the current visual-QA matrix again before citing them for the active `TH570903 / Ko Chang` brief or current original-SAFE lineage.
 - Mae Sai values are candidate outputs against a manually digitized cross-border weak reference, not official validation.
 - OSM facilities are candidates and are not field verified.
 - Road disruption and access hotspots are modeled, not observed incidents or closures.

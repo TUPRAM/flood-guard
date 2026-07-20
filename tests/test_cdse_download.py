@@ -66,10 +66,10 @@ def test_default_mae_sai_product_ids_are_approved_same_track_pair() -> None:
 
 
 def test_cdse_download_url_targets_odata_value_endpoint() -> None:
-    url = build_cdse_product_download_url("b09f96ca-4a60-43e7-9b8d-158022f0e5bf")
+    url = build_cdse_product_download_url(APPROVED_PRE_PRODUCT_ID)
 
     assert url.endswith(
-        "Products(b09f96ca-4a60-43e7-9b8d-158022f0e5bf)/$value"
+        f"Products({APPROVED_PRE_PRODUCT_ID})/$value"
     )
 
 
@@ -77,16 +77,19 @@ def test_cdse_acquisition_manifest_blocks_without_credentials() -> None:
     metadata = pd.DataFrame(
         [
             {
-                "acquisition_date": "2024-09-06T11:31:06Z",
-                "product_name": "S1A_PRE_COG.SAFE",
+                "acquisition_date": "2024-09-03T23:16:00Z",
+                "product_name": APPROVED_PRE_PRODUCT_NAME,
                 "cdse_product_id": MAE_SAI_SELECTED_PRODUCT_IDS[0],
-                "candidate_role": "pre-event COG candidate",
+                "candidate_role": "pre-event original SAFE",
             },
             {
                 "acquisition_date": "2024-09-15T23:16:01Z",
-                "product_name": "S1A_POST_COG.SAFE",
+                "product_name": (
+                    "S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_"
+                    "055682_06CCBA_08DA.SAFE"
+                ),
                 "cdse_product_id": MAE_SAI_SELECTED_PRODUCT_IDS[1],
-                "candidate_role": "post-event COG candidate",
+                "candidate_role": "post-event original SAFE",
             },
         ]
     )
@@ -342,6 +345,9 @@ def test_cdse_acquisition_cli_registers_existing_without_credentials(
     ]
     assert manifest["download_attempted"].tolist() == ["False"]
     assert manifest["processing_allowed"].tolist() == ["False"]
+    output_bytes = output_path.read_bytes()
+    assert b"\r\n" not in output_bytes
+    assert output_bytes.endswith(b"\n")
 
 
 @pytest.mark.parametrize("product_ids", [(), ("",), ("duplicate", "duplicate")])

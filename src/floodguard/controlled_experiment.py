@@ -4422,11 +4422,11 @@ def build_gate_report_markdown(
             "",
             "## Integrity finding",
             "",
-            "The controlled manifest uses the independently re-hashed original SAFE pair. "
-            "It does not reuse the older COG acquisition receipt: the current external COG "
-            "archive bytes do not match the hashes recorded in "
-            "`outputs/cdse_mae_sai_acquisition_manifest.csv`. Those COG files require "
-            "controlled re-registration before any future use.",
+            "The controlled manifest and the current acquisition receipt use the same "
+            "independently re-hashed, same-track original SAFE pair. The older mixed-track "
+            "COG pair remains retired historical provenance because its local archive bytes "
+            "were mutated after registration and its calibration path was not accepted. It "
+            "cannot be substituted into this experiment.",
             "",
             "Spatial evaluation membership is re-derived from descriptor-bound bytes, "
             "immutable train/calibration/final-holdout polygons, and a signed grid contract on a projected "

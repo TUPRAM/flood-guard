@@ -18,5 +18,7 @@ outputs/mae_sai_facility_context.csv -text
 outputs/mae_sai_population_nodes.csv -text
 outputs/mae_sai_access_edges.csv -text
 outputs/mae_sai_scenario_inputs_manifest.json -text
+outputs/cdse_hat_yai_2025_metadata.csv text eol=lf
+outputs/real_data_ingestion_manifest.csv text eol=lf
 services/api/data/study_area_bundles/*.json -text
 apps/web/public/offline-demo/mae-sai/*.json -text

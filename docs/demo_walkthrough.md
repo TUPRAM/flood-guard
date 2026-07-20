@@ -52,7 +52,7 @@ http://localhost:8000/dashboard.html
 
 7. Switch to `Mae Sai weak-reference candidate`.
    - At regional zoom, point out that only priority road candidates and ADM3 facility clusters are shown.
-   - Select `TH570906 / Wiang Phang Kham`; the map zooms to selected-area detail, dims surrounding ADM3 units, and reveals typed candidate facilities and detailed roads.
+   - Select `TH570903 / Ko Chang`; the map zooms to selected-area detail, dims surrounding ADM3 units, and reveals typed candidate facilities and detailed roads.
 
 8. Open `Sentinel-1 evidence`, then enter `Judge mode`.
    - Show the pre/post acquisition pair, selected-unit SAR change, flood-probability summaries, source quality, and compact provenance.

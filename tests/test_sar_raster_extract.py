@@ -22,6 +22,7 @@ from floodguard.sar_raster_extract import (
     build_sentinel1_inputs_from_manifests,
     extract_sar_change_features,
     resolve_external_path_hint,
+    _validated_polygon_geometries,
 )
 
 rasterio = pytest.importorskip("rasterio")
@@ -322,6 +323,55 @@ def test_extract_sar_change_features_rejects_invalid_geometry_before_raster_open
             output_shape=(4, 4),
             buffer_degrees=0.0,
         )
+
+
+@pytest.mark.parametrize(
+    "second_polygon",
+    [
+        [[(1, 1), (2, 1), (2, 2), (1, 2), (1, 1)]],
+        [[(1, 0.5), (2, 0), (2, 1), (1, 0.5)]],
+    ],
+)
+def test_validated_multipolygon_allows_isolated_boundary_point_contacts(
+    second_polygon: list[list[tuple[float, float]]],
+) -> None:
+    geometry = {
+        "type": "MultiPolygon",
+        "coordinates": [
+            [[(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]],
+            second_polygon,
+        ],
+    }
+
+    assert _validated_polygon_geometries((geometry,), label="reference geometry") == (
+        geometry,
+    )
+
+
+def test_validated_multipolygon_rejects_shared_boundary_segment() -> None:
+    geometry = {
+        "type": "MultiPolygon",
+        "coordinates": [
+            [[(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]],
+            [[(1, 0), (2, 0), (2, 1), (1, 1), (1, 0)]],
+        ],
+    }
+
+    with pytest.raises(SARRasterExtractError, match="share a boundary segment"):
+        _validated_polygon_geometries((geometry,), label="reference geometry")
+
+
+def test_validated_multipolygon_rejects_crossing_interior_without_inner_vertices() -> None:
+    geometry = {
+        "type": "MultiPolygon",
+        "coordinates": [
+            [[(-2, -0.5), (2, -0.5), (2, 0.5), (-2, 0.5), (-2, -0.5)]],
+            [[(-0.5, -2), (0.5, -2), (0.5, 2), (-0.5, 2), (-0.5, -2)]],
+        ],
+    }
+
+    with pytest.raises(SARRasterExtractError, match="overlap"):
+        _validated_polygon_geometries((geometry,), label="reference geometry")
 
 
 def test_build_sar_feature_manifest_records_weak_scope() -> None:

@@ -1044,12 +1044,84 @@ def _require_disjoint_polygons(
     *,
     label: str,
 ) -> None:
-    if any(_rings_intersect(left, right) for left in first for right in second):
-        raise SARRasterExtractError(f"{label} overlap or touch.")
-    if _point_in_polygon(first[0][0], second) or _point_in_polygon(
-        second[0][0], first
+    if any(
+        _rings_cross_or_share_segment(left, right)
+        for left in first
+        for right in second
+    ):
+        raise SARRasterExtractError(f"{label} overlap or share a boundary segment.")
+    if any(_point_in_polygon(point, second) for point in first[0][:-1]) or any(
+        _point_in_polygon(point, first) for point in second[0][:-1]
     ):
         raise SARRasterExtractError(f"{label} overlap.")
+
+
+def _rings_cross_or_share_segment(
+    first: tuple[tuple[float, float], ...],
+    second: tuple[tuple[float, float], ...],
+) -> bool:
+    """Return true for interior crossings or positive-length boundary overlap.
+
+    OGC-valid MultiPolygon members may meet at isolated boundary points. Such
+    point contacts do not create shared interior area and must not be rejected
+    as overlap. Proper segment crossings and collinear shared segments remain
+    fail-closed because they make the multipart geometry invalid or ambiguous.
+    """
+
+    return any(
+        _segments_properly_intersect(first_start, first_end, second_start, second_end)
+        or _collinear_segments_overlap(first_start, first_end, second_start, second_end)
+        for first_start, first_end in zip(first[:-1], first[1:], strict=True)
+        for second_start, second_end in zip(second[:-1], second[1:], strict=True)
+    )
+
+
+def _segments_properly_intersect(
+    first_start: tuple[float, float],
+    first_end: tuple[float, float],
+    second_start: tuple[float, float],
+    second_end: tuple[float, float],
+) -> bool:
+    orientations = (
+        _orientation(first_start, first_end, second_start),
+        _orientation(first_start, first_end, second_end),
+        _orientation(second_start, second_end, first_start),
+        _orientation(second_start, second_end, first_end),
+    )
+    return (
+        orientations[0] * orientations[1] < 0
+        and orientations[2] * orientations[3] < 0
+    )
+
+
+def _collinear_segments_overlap(
+    first_start: tuple[float, float],
+    first_end: tuple[float, float],
+    second_start: tuple[float, float],
+    second_end: tuple[float, float],
+) -> bool:
+    if any(
+        orientation != 0
+        for orientation in (
+            _orientation(first_start, first_end, second_start),
+            _orientation(first_start, first_end, second_end),
+            _orientation(second_start, second_end, first_start),
+            _orientation(second_start, second_end, first_end),
+        )
+    ):
+        return False
+
+    axis = 0 if abs(first_end[0] - first_start[0]) >= abs(
+        first_end[1] - first_start[1]
+    ) else 1
+    overlap = min(
+        max(first_start[axis], first_end[axis]),
+        max(second_start[axis], second_end[axis]),
+    ) - max(
+        min(first_start[axis], first_end[axis]),
+        min(second_start[axis], second_end[axis]),
+    )
+    return overlap > 1e-12
 
 
 def _point_in_polygon(

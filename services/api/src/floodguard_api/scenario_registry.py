@@ -10,7 +10,8 @@ BACKEND_CONFIG_VERSION = "fixture-access-scenarios-v1"
 MAE_SAI_BACKEND_CONFIG_VERSION = "mae-sai-candidate-access-scenarios-v1"
 ACCESS_METHOD = "nearest_facility_shortest_path_threshold"
 MAE_SAI_TEMPORARY_SHELTER_NODE = "N-99.9742609-20.4457677"
-MAE_SAI_CLOSE_EDGE_ID = "MS-EDGE-0009210"
+MAE_SAI_CLOSE_EDGE_ID = "MS-EDGE-0008687"
+MAE_SAI_CLOSE_RUN_ID = "mae-sai-candidate-close-edge-ms-edge-0008687-v1"
 
 
 def definitions(study_area: str = "fixture_thailand_demo") -> list[ScenarioDefinition]:
@@ -87,7 +88,7 @@ def run_id_for(request: ScenarioRunRequest) -> str:
                 "mae-sai-candidate-add-temporary-shelter-"
                 f"n-99-9742609-20-4457677-capacity-{request.parameters['capacity']}-v1"
             )
-        return "mae-sai-candidate-close-edge-ms-edge-0009210-v1"
+        return MAE_SAI_CLOSE_RUN_ID
     if request.scenario_id == "add_temporary_shelter":
         return f"fixture-add-temporary-shelter-p2a-capacity-{request.parameters['capacity']}-v1"
     return "fixture-close-road-fg-rd-002-v1"
@@ -113,7 +114,7 @@ def request_from_run_id(run_id: str) -> ScenarioRunRequest | None:
             )
         except ValueError:
             return None
-    if run_id == "mae-sai-candidate-close-edge-ms-edge-0009210-v1":
+    if run_id == MAE_SAI_CLOSE_RUN_ID:
         return ScenarioRunRequest(
             scenario_id="close_road",
             study_area="mae_sai_candidate_v1",

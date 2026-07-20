@@ -29,7 +29,7 @@
       "relative_path": "mae_sai_access_edges.csv",
       "role": "access_edges",
       "row_count": 30443,
-      "sha256": "153e58cc95394a39e61cad350b5437584e5d6e5916eeee9b212cd1d6afdfd4b7"
+      "sha256": "266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454"
     },
     {
       "columns": [
@@ -64,20 +64,21 @@
   "confidence_class": "low",
   "data_version": "mae-sai-candidate-2024-09-15-v1",
   "dataset_mode": "candidate",
-  "generated_at": "2026-07-18T00:00:00Z",
-  "git_commit": "7e42882efb7cb7dc40b7c1cdd4c3fa960569b95f",
+  "generated_at": "2026-07-20T08:15:08Z",
+  "git_commit": "22fc172aca78937bb7d1f8675d08527a8517da68",
   "official_warning": false,
   "operational_status": "non_operational",
   "processing_allowed": true,
   "processing_scope": "mae_sai_candidate_access_scenario_inputs",
   "reason_blocked": "Scenario inputs use modeled population, unverified facility candidates, and heuristic road disruption; outputs remain candidate planning evidence.",
-  "receipt_sha256": "75db44b90bef0fa8f561555ecf6a90ffb3342a4e6537125256abf81129c4a661",
+  "receipt_sha256": "b25fd06ab5f20f553acf252b63531d5355a63c1806e5bd647782bf2908dcc7a0",
   "schema_version": "1.0",
   "source_licenses": [
+    "Copernicus Sentinel data legal notice",
     "WorldPop CC BY 4.0",
     "OpenStreetMap ODbL 1.0"
   ],
-  "source_name": "WorldPop Thailand 100m 2020; OpenStreetMap Thailand via Geofabrik",
-  "source_timestamp": "2026-07-09T14:53:08Z",
+  "source_name": "CDSE Sentinel-1 candidate change context; WorldPop Thailand 100m 2020; OpenStreetMap Thailand via Geofabrik",
+  "source_timestamp": "2024-09-15T23:16:01Z",
   "study_area_id": "mae_sai_candidate_v1"
 }

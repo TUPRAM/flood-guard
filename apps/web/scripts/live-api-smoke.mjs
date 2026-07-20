@@ -72,18 +72,23 @@ try {
   await waitForScenario(page, "add_temporary_shelter");
   const shelterStrip = await page.locator(".scenario-delta-strip").innerText();
   const shelterPanel = await page.locator(".scenario-evidence-comparison").innerText();
-  assertIncludes(shelterStrip, "13 people lose 30-min access", "temporary-facility result");
-  assertSignedDelta(shelterStrip, -177, "temporary-facility delta");
-  assertSignedDelta(shelterPanel, -177, "temporary-facility evidence panel");
+  assertIncludes(shelterStrip, "4,877 people lose 30-min access", "temporary-facility result");
+  assertSignedDelta(shelterStrip, -917, "temporary-facility delta");
+  assertSignedDelta(shelterPanel, -917, "temporary-facility evidence panel");
   assertEqual(await map.getAttribute("data-scenario-tone"), "improves", "temporary-facility map tone");
 
+  await page.getByLabel("Select reporting area").selectOption("TH570901");
+  await page.waitForFunction(() => (
+    document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "TH570901"
+    && document.querySelector(".geo-map-shell")?.getAttribute("data-road-detail-state") === "ready"
+  ));
   await page.getByLabel("Select scenario").selectOption("close_road");
   await waitForScenario(page, "close_road");
   const roadStrip = await page.locator(".scenario-delta-strip").innerText();
   const roadPanel = await page.locator(".scenario-evidence-comparison").innerText();
-  assertIncludes(roadStrip, "219 people lose 30-min access", "road-stress result");
-  assertSignedDelta(roadStrip, 29, "road-stress delta");
-  assertSignedDelta(roadPanel, 29, "road-stress evidence panel");
+  assertIncludes(roadStrip, "172 people lose 30-min access", "road-stress result");
+  assertSignedDelta(roadStrip, 98, "road-stress delta");
+  assertSignedDelta(roadPanel, 98, "road-stress evidence panel");
   assertEqual(await map.getAttribute("data-scenario-tone"), "worsens", "road-stress map tone");
 
   if (unexpectedRequests.length > 0) {
@@ -93,7 +98,7 @@ try {
     throw new Error(`Browser errors: ${[...new Set(browserErrors)].join(" | ")}`);
   }
   console.log("Live API smoke passed: 8 areas, 750 bounded regional roads / 4,458 total, selected-area detail, 42 facilities, 8 access points.");
-  console.log("Server scenarios passed: temporary facility -177; road stress +29; map and evidence panel synchronized.");
+  console.log("Server scenarios passed: TH570903 temporary facility -917; TH570901 road stress +98; map and evidence panel synchronized.");
 } finally {
   await browser.close();
 }

@@ -749,7 +749,7 @@ The manual weak-reference geometry does not overlap the HDX COD-AB Thailand ADM3
 - UNOSAT/UN Thailand public report evidence
 - NASA coarse flood products
 
-The current decision selects Sentinel Asia / MBRSC as the first practical public reference-candidate lane, not a cleared validation mask and not ML labels. Real non-ML SAR baseline processing remains blocked until file-level and reference-mask gates pass.
+The current decision selects Sentinel Asia / MBRSC as the first practical public reference-candidate lane, not a cleared validation mask and not ML labels. The separate checksum-bound cross-border weak-reference non-ML SAR baseline has run in non-operational candidate scope. Qualified Mae Sai validation, ML-label use, decision eligibility, and official processing remain blocked until the reference authority and permitted-use gates pass.
 
 ## Dashboard v9 Dataset Mode Switch
 
@@ -853,7 +853,7 @@ The ingestion skeleton may only write metadata outputs with explicit metadata su
 
 ML-label use is a separate gate. It may only be marked allowed when `ml_label_use_allowed=yes`.
 
-`scripts/validate_mae_sai_file_manifest.py` provides a no-download dry-run file-manifest validator. It must explain which reference-mask, pre-event SAR, or post-event SAR row blocks the real Mae Sai non-ML baseline. It may exit successfully in the current blocked state only when run with `--allow-blocked`.
+`scripts/validate_mae_sai_file_manifest.py` provides a no-download dry-run file-manifest validator. It explains which reference-mask, pre-event SAR, or post-event SAR row blocks qualified processing. The current checksum-bound original-SAFE pair and manual cross-border mask support only the separate weak-reference candidate calibration lane; `--allow-blocked` reports that qualified validation, ML-label use, and decision promotion remain blocked without treating the candidate run as official evidence.
 
 ## Local Data Library Manifest
 

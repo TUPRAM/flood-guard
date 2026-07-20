@@ -207,7 +207,7 @@ class MaeSaiTemporaryShelterParameters(StrictModel):
 
 
 class MaeSaiCloseRoadParameters(StrictModel):
-    edge_id: Literal["MS-EDGE-0009210"] = "MS-EDGE-0009210"
+    edge_id: Literal["MS-EDGE-0008687"] = "MS-EDGE-0008687"
 
 
 class ScenarioRunRequest(StrictModel):

@@ -169,6 +169,8 @@ def test_mae_sai_manifest_absorbs_cdse_acquisition_rows(tmp_path: Path, monkeypa
     assert row["source_license_status"] == "confirmed"
     assert bool(row["processing_allowed"]) is False
     assert "reference mask not confirmed" in row["reason_blocked"]
+    assert "metadata-only skeleton does not permit downloads" not in row["reason_blocked"]
+    assert "qualified or official processing gate remains closed" in row["reason_blocked"]
 
 
 def test_mae_sai_manifest_does_not_activate_retired_cog_acquisition(

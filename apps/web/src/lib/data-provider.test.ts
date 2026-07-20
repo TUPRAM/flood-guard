@@ -220,13 +220,13 @@ describe("partial API availability", () => {
       {
         scenario_id: "close_road",
         study_area: "mae_sai_candidate_v1",
-        parameters: { edge_id: "MS-EDGE-0009210" },
+        parameters: { edge_id: "MS-EDGE-0008687" },
       },
     ]);
     expect(data.areas.find((area) => area.area_id === "TH570903")?.scenario_results.add_temporary_shelter).toEqual({
       people_losing_30_min_access: 90,
       equity_gap_ratio: 1.5,
-      delta: -100,
+      delta: -5_704,
     });
     expect(data.areas.find((area) => area.area_id === "TH570903")?.total_population).toBe(6_708);
     expect(data.areas.find((area) => area.area_id === "TH570903")?.candidate_evidence?.road_count).toBe(451);
@@ -645,10 +645,10 @@ function maeSaiScenarioDefinitions() {
           name: "edge_id",
           value_type: "string",
           required: false,
-          default: "MS-EDGE-0009210",
+          default: "MS-EDGE-0008687",
           minimum: null,
           maximum: null,
-          allowed_values: ["MS-EDGE-0009210"],
+          allowed_values: ["MS-EDGE-0008687"],
         },
       ],
       backend_config_version: "mae-sai-candidate-access-scenarios-v1",

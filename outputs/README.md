@@ -74,7 +74,7 @@ Current expected MVP output:
 - `mae_sai_context_quality_report.md`
 - `mae_sai_subdistrict_flood_inputs.csv`
 - `mae_sai_priority_subdistricts.geojson`
-- `mae_sai_action_brief_TH570906.md`
+- `mae_sai_action_brief_TH570903.md`
 - `public_reference_candidate_manifest.csv`
 - `sentinel_asia_public_product_links.csv`
 - `public_reference_file_inspection_manifest.csv`
@@ -90,6 +90,8 @@ Current expected MVP output:
 - `cdse_hat_yai_2025_metadata.csv`
 - `cdse_mae_sai_2024_sentinel2_metadata.csv`
 - `cdse_hat_yai_2025_sentinel2_metadata.csv`
+- `hat_yai_readiness.json`
+- `hat_yai_readiness.md`
 
 Optional live metadata snapshots, generated only when intentionally run and reviewed:
 
@@ -122,9 +124,11 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `open_context_data_file_manifest.csv` records file-level context-source rows for WorldPop Thailand 100m, HDX Thailand COD-AB, Geofabrik Thailand OSM, and the public Copernicus DEM GLO-30 N20/E099 tile. The selected files are stored outside Git with SHA-256 checksums and redacted path hints committed here. These rows are context only: population exposure, admin aggregation, road/facility extraction, and terrain review. They are not flood labels, reference masks, official warnings, or real validation outputs.
 
-`cdse_mae_sai_acquisition_manifest.csv` records the selected Mae Sai pre/post Sentinel-1 CDSE acquisition attempt. The selected pre/post COG products are now downloaded outside Git with SHA-256 checksums recorded. Product downloads require `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD`; source products must never be committed into Git, and processing remains blocked until reference-mask status clears.
+`cdse_mae_sai_acquisition_manifest.csv` records the active same-track Mae Sai Sentinel-1 source pair: original-SAFE pre-event product `aaaef3af-fa49-4115-bf0f-f54175e7aedf` and post-event product `5251b74b-0bbd-4365-9eb4-fa33292e175a`. Both archives are registered outside Git with SHA-256 checksums. The former September 6 / September 15 COG pair is historical retired-source evidence only. Qualified validation and new ML processing remain blocked by reference authority and label-use gates; source products must never be committed into Git.
 
 `manual_reference_mask_manifest.csv` records the manual QGIS weak-reference fallback from `docs/manual_reference_mask_protocol.md`. The manual GeoPackage remains outside Git. Current rows are either a blocked skeleton when the file is missing or checksum/layer metadata when the file exists. Even when ready, this lane is only for candidate validation metrics, visual QA, and non-operational demo reporting; it is not official validation truth, not an official warning, and not unqualified ML labels.
+
+`hat_yai_readiness.json` is a self-hashed, input-checksum-bound Plan 9 readiness receipt. It consumes the pinned Hat Yai CDSE Sentinel-1 candidate snapshot and the relevant ingestion/reference candidate rows without making network calls. `hat_yai_readiness.md` is its human-readable view. A same-platform 12-day original-SAFE pre/post pair is locked at metadata level, but the files are not acquired or checksum/grid verified. Both artifacts remain fail-closed: there is no checksum-bound external source asset, qualified or manual reference mask, candidate metric, decision output, or dashboard story. The selected IDs do not establish acquisition, scene suitability, flood accuracy, or operational readiness.
 
 `dashboard.html` includes static export buttons for downloading the currently selected action brief and the currently filtered priority GeoJSON. These browser downloads are generated from whichever embedded decision dataset is active; they never read source files or call a backend.
 
@@ -162,12 +166,12 @@ Before committing optional live metadata snapshots, complete `docs/live_metadata
 
 `mae_sai_weak_sar_feature_manifest.csv`, `mae_sai_weak_baseline_metrics.csv`, and `mae_sai_weak_baseline_summary.md` record the first real Sentinel-1 non-ML candidate baseline against the manual QGIS weak-reference mask. These outputs read the CDSE Sentinel-1 ZIPs and manual GeoPackage from outside Git and commit only derived CSV/Markdown artifacts. They are candidate metrics only: non-operational, not official validation, not field validated, and not ML labels.
 
-`mae_sai_weak_label_ml_metrics.csv`, `mae_sai_weak_label_ml_prediction_manifest.csv`, and `mae_sai_weak_label_ml_summary.md` record the first small auditable weak-label ML experiment. The experiment trains a repo-local logistic model on SAR change features, evaluates it on a spatial holdout, and compares it against the non-ML threshold baseline. These outputs are weak-label experiment artifacts only: non-operational, not official labels, not field validation, and not an official warning. ML probability may feed a candidate decision-layer run only when `can_feed_decision_layer=True`; otherwise it remains report-only.
+`mae_sai_weak_label_ml_metrics.csv`, `mae_sai_weak_label_ml_prediction_manifest.csv`, and `mae_sai_weak_label_ml_summary.md` record a historical, small weak-label screening experiment. The experiment trained a repo-local logistic model on SAR change features, evaluated it on a spatial holdout, and compared it against the non-ML threshold baseline. These outputs are permanently report-only: non-operational, not official labels, not field validation, not an official warning, and never eligible to feed the decision layer. Any future candidate promotion must use the separate qualified-label, immutable-holdout, calibration, and signed model-promotion workflow.
 
-`mae_sai_admin_context.geojson`, the real-context CSVs, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson` bridge candidate Sentinel-1 flood probability into the FloodGuard decision layer for eight official HDX COD-AB Mae Sai ADM3 reporting polygons. `mae_sai_road_risk.geojson`, `mae_sai_facilities.geojson`, and `mae_sai_access_hotspots.geojson` add compact candidate map layers without source paths. WorldPop supplies modeled population, OSM supplies candidate roads/bridges/facilities and a routing graph, and Copernicus DEM supplies terrain context where the selected tile covers population points. Road disruption, access loss, and equity are modeled candidates; vulnerability is a terrain/remoteness proxy, not demographic vulnerability. The nearby manual weak-reference geometry does not overlap the official Thailand ADM3 polygons and remains cross-border calibration evidence only.
+`mae_sai_admin_context.geojson`, the real-context CSVs, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson` bridge candidate Sentinel-1 flood probability into the FloodGuard decision layer for eight HDX COD-AB Mae Sai ADM3 candidate reporting polygons. `mae_sai_road_risk.geojson`, `mae_sai_facilities.geojson`, and `mae_sai_access_hotspots.geojson` add compact candidate map layers without source paths. WorldPop supplies modeled population, OSM supplies candidate roads/bridges/facilities and a routing graph, and Copernicus DEM supplies terrain context where the selected tile covers population points. Road disruption, access loss, and equity are modeled candidates; vulnerability is a terrain/remoteness proxy, not demographic vulnerability. Boundary authority and vintage still require agency confirmation. The nearby manual weak-reference geometry does not overlap the Thailand ADM3 candidate polygons and remains cross-border calibration evidence only.
 
 `mae_sai_context_quality_summary.csv` and `mae_sai_context_quality_report.md` expose join quality, including reporting-unit counts, population/road/facility coverage, DEM coverage, and the manual-reference/admin mismatch. Missing context is not silently converted into confirmed zero impact.
 
-`mae_sai_action_brief_TH570906.md` is the current highest-priority bilingual Mae Sai candidate action brief. It combines FPPS with ADM3 Sentinel-1 evidence, modeled road risk, access loss, proxy equity, source-quality caveats, and local verification actions. It is based on weak-reference candidate flood analysis, non-operational, not an official warning, and for planning/demo use only.
+`mae_sai_action_brief_TH570903.md` is the current highest-priority bilingual Mae Sai candidate action brief for Ko Chang. It combines FPPS with active original-SAFE Sentinel-1 evidence, modeled road risk, access loss, proxy equity, source-quality caveats, and local verification actions. The historical weak-label ML result from the retired COG pair is excluded. The brief is based on weak-reference candidate flood analysis, non-operational, not an official warning, and for planning/demo use only.
 
-`mae_sai_validation_summary.md` remains officially blocked until provider responses, local paths, checksums, and reference-mask gates pass. When weak-reference candidate metrics exist, it includes those metrics in a separate weak-reference section without promoting them to official validation.
+`mae_sai_validation_summary.md` remains blocked for qualified or official validation until provider authority, permitted-use, and qualified-reference gates pass. The active original-SAFE pair and cross-border manual reference already have outside-Git paths and SHA-256 checksums; a future qualified reference artifact must receive the same immutable binding. The report includes the existing weak-reference candidate metrics in a separate section without promoting them to official validation.

@@ -1,12 +1,12 @@
 # SAR Baseline Contract
 
-This contract defines the first non-ML Sentinel-1 flood-mapping baseline that must exist before any real-data ML experiment. The current implementation is synthetic and fixture-backed only.
+This contract defines the non-ML Sentinel-1 flood-mapping baseline that must remain available before any qualified real-data ML experiment. FloodGuard now has both a synthetic fixture lane and a checksum-bound, non-operational weak-reference candidate lane.
 
 ## Status
 
-Current status: synthetic baseline implemented; gated real-data entry point added; local Sentinel-1 provenance resolver implemented; direct real Sentinel-1 raster extraction remains blocked until file-level and provenance gates pass and a raster extraction implementation is approved.
+Current status: the synthetic baseline, gated qualified-data entry point, local Sentinel-1 provenance resolver, direct raster extractor, and weak-reference candidate baseline are implemented. The active candidate run reads the selected original-SAFE pre/post pair and manual reference GeoPackage outside Git, verifies their recorded identities and SHA-256 checksums before raster access, and publishes only derived CSV/Markdown evidence.
 
-The repository must not download Sentinel-1 products, read raster imagery, or generate real flood masks until licensing, reference-mask, local-path, checksum, provenance, and event-timing gates pass.
+That candidate lane is calibration evidence only. Its manual geometry is cross-border and does not overlap the Thailand ADM3 reporting polygons; its metrics are not qualified Mae Sai accuracy, field validation, ML labels, or permission to feed a decision layer. Qualified/official processing remains blocked until acquisition authority, reference permitted uses, reviewer qualification, immutable spatial holdouts, and promotion-policy gates pass.
 
 The gated entry point is `run_gated_real_sar_change_baseline`. It accepts a pre-extracted pixel/object table only after `outputs/mae_sai_real_data_file_manifest.csv` has ready rows for:
 
@@ -14,7 +14,7 @@ The gated entry point is `run_gated_real_sar_change_baseline`. It accepts a pre-
 - pre-event SAR source for non-ML baseline
 - post-event SAR source for non-ML baseline
 
-This does not bypass raster/file gates and does not train ML.
+This does not bypass raster/file gates and does not train ML. The separate `weak_reference_baseline` path accepts only the explicit weak-reference status and still requires source identity, checksums, timing, geometry, and candidate-use disclosures.
 
 When real-data provenance is supplied, the same entry point also validates `outputs/sentinel1_provenance_resolved_manifest.csv`. Unresolved rows with `candidate_role=unresolved`, `event_timing_status=timing_unresolved`, or `processing_allowed=False` must be rejected before the baseline can run.
 
@@ -30,7 +30,7 @@ The SAR baseline is the bridge between real flood evidence and the existing Floo
 - FPPS scoring
 - dashboard and action briefs
 
-## Future Real-Data Inputs
+## Qualified Real-Data Inputs
 
 One row or pixel/object record should ultimately include:
 
@@ -47,7 +47,17 @@ One row or pixel/object record should ultimately include:
 - source timestamp
 - assumptions
 
-The first real implementation should use one locked pre/post Sentinel-1 pair and one legally usable flood reference mask.
+A qualified implementation must use one locked pre/post Sentinel-1 pair and one legally usable, reviewer-qualified flood reference mask with immutable spatial partitions. The current candidate pair is locked, but the manual cross-border reference does not meet the qualified-mask contract.
+
+## Current Weak-Reference Candidate
+
+The candidate implementation lives in `src/floodguard/sar_raster_extract.py` and `src/floodguard/weak_reference_baseline.py`. It writes:
+
+- `outputs/mae_sai_weak_sar_feature_manifest.csv`;
+- `outputs/mae_sai_weak_baseline_metrics.csv`; and
+- `outputs/mae_sai_weak_baseline_summary.md`.
+
+The inspected GDAL SAFE view supplies uncalibrated Sentinel-1 amplitude. FloodGuard applies the explicit `20 * log10(amplitude)` transform and records `sentinel1_uncalibrated_amplitude`, `20_log10_amplitude`, and `not_sigma0_beta0_or_gamma0_calibrated` in the output contract. The result must not be described as calibrated backscatter in dB.
 
 ## Synthetic Fixture Inputs
 
@@ -120,12 +130,12 @@ The baseline must report:
 - recall
 - area error ratio
 
-These metrics are computed on synthetic masks now. Real validation remains blocked until the reference-mask licensing and ingestion gates are cleared.
+The same metric definitions are used for synthetic tests and the completed weak-reference candidate calibration. The published candidate metrics remain non-operational and non-qualified. Real Mae Sai validation remains blocked until the reference-mask authority, permitted-use, reviewer, spatial-holdout, and promotion gates are cleared.
 
 ## Non-Goals
 
-- No real Sentinel-1 downloads.
-- No raster IO.
+- No source raster, SAFE, ZIP, GeoPackage, or model-weight files committed to Git.
+- No claim that the weak-reference calibration measures qualified Mae Sai accuracy.
 - No deep learning model.
 - No operational warning claim.
 - No replacement for official flood products or local agency judgment.

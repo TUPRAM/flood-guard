@@ -1588,13 +1588,15 @@ def test_signed_run_rejects_wrong_contract_and_editable_threshold_column(
 
 def test_committed_blocked_report_and_no_root_geoai_import() -> None:
     root = Path(__file__).resolve().parents[1]
+    receipt_path = root / "docs/validation/controlled_three_model_gate_receipt.json"
+    manifest_path = root / "docs/validation/controlled_three_model_acquisition_manifest.csv"
     receipt = json.loads(
-        (root / "docs/validation/controlled_three_model_gate_receipt.json").read_text(
-            encoding="utf-8"
-        )
+        receipt_path.read_text(encoding="utf-8")
     )
-    manifest = pd.read_csv(
-        root / "docs/validation/controlled_three_model_acquisition_manifest.csv"
+    manifest = pd.read_csv(manifest_path)
+    assert receipt["acquisition"]["manifest_file_sha256"] == _sha(manifest_path)
+    assert receipt["receipt_sha256"] == controlled._canonical_sha256(
+        {key: value for key, value in receipt.items() if key != "receipt_sha256"}
     )
     report = build_gate_report_markdown(receipt, manifest)
     assert receipt["gate_status"] == "blocked"

@@ -30,9 +30,9 @@ Real Mae Sai validation remains blocked until:
 - screenshots/demo reuse is allowed
 - redistribution or reference-only status is known
 - citation requirements are locked
-- local files are tracked outside Git with SHA-256 checksums
+- any future qualified reference artifact is acquired outside Git and bound to an immutable SHA-256 checksum (the active original-SAFE pair and cross-border manual reference are already checksum-bound)
 
-Official-label ML remains blocked until those gates pass. The repository's small weak-label experiment is explicitly evaluated against a manually digitized reference candidate; it is not official labels or field validation.
+Official-label ML remains blocked until those gates pass. The repository preserves one historical weak-label logistic screening result from the retired COG pair. It is report-only, not comparable to the active original-SAFE baseline, not official labels, and not field validation.
 
 ## What The Mae Sai Candidate Adds
 
@@ -62,7 +62,7 @@ Use the Context Assets panel only as situational context:
 - DEM terrain preview: terrain context only; not flood observation or flood label.
 - THEOS-2 optical thumbnails: optical context only; not flood validation.
 
-Then switch to `Mae Sai weak-reference candidate`, select `TH570906 / Wiang Phang Kham`, open the Sentinel-1 evidence drawer, and enter judge mode. Point out that judge mode removes secondary controls but retains the warning, source quality, SAR evidence, and provenance. Use the English/Thai toggle once to demonstrate bilingual operation.
+Then switch to `Mae Sai weak-reference candidate`, select `TH570903 / Ko Chang`, open the Sentinel-1 evidence drawer, and enter judge mode. Point out that judge mode removes secondary controls but retains the warning, source quality, active original-SAFE SAR evidence, and provenance. Use the English/Thai toggle once to demonstrate bilingual operation.
 
 End with Data Readiness. The honest boundary is that official validation and official-label ML still require a cleared reference source; current candidate metrics use a manual weak reference and are not field validated.
 

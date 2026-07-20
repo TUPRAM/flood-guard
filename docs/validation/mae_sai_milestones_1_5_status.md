@@ -72,8 +72,8 @@ graph manifest:
 
 | Scenario | Baseline modeled 30-minute access loss | Scenario loss | Delta | FPPS recalculated |
 |---|---:|---:|---:|---|
-| Temporary facility candidate | 190 | 13 | -177 | No |
-| Candidate edge disruption | 190 | 219 | +29 | No |
+| Temporary facility candidate | 11,114 | 10,197 | -917 | No |
+| Candidate edge disruption (`MS-EDGE-0008687`) | 11,114 | 11,212 | +98 | No |
 
 The client displays the paired server result and returned map effects. It does
 not contain an access, equity, road-risk, or FPPS formula.
@@ -94,15 +94,15 @@ not contain an access, equity, road-risk, or FPPS formula.
 ## Final verification record
 
 The following commands or repository-equivalent jobs were run against the
-integrated tree on 18 July 2026:
+integrated tree on 20 July 2026:
 
 | Verification | Exact result |
 |---|---|
-| `uv run pytest` | `1227 passed, 1 skipped in 197.93s` |
-| `uv run --project services/api pytest services/api/tests -q` | `96 passed in 53.93s` |
+| `uv run pytest -q` | `1454 passed, 1 skipped in 222.71s` |
+| `uv run --project services/api pytest services/api/tests -q` | `96 passed in 79.87s` |
 | API/root Ruff scope | `All checks passed!` |
-| GeoAI normal tests, smoke excluded | `84 passed, 1 deselected in 5.86s` |
-| Opt-in real GeoAI smoke | `1 passed in 30.67s` |
+| GeoAI normal tests, smoke excluded | `84 passed, 1 deselected in 9.99s` |
+| Opt-in real GeoAI smoke | `1 passed in 153.53s` |
 | Root import isolation | `root_import=passed`, `geoai_imported=false`, `torch_imported=false` |
 | Frontend ESLint | exit `0` |
 | Frontend TypeScript check | exit `0` |
@@ -110,11 +110,11 @@ integrated tree on 18 July 2026:
 | Next.js 16.2.6 production build | compiled; `6/6` static pages generated |
 | Static offline smoke | `4` routes, `15` assets, zero external requests |
 | Offline browser smoke | Public, Command, and Studio plus versioned service-worker cache; zero external requests |
-| Live API browser smoke | 8 areas; 750 regional / 4,458 total roads; selected-area detail; 42 facilities; 8 access points; scenario deltas `-177` and `+29` synchronized |
+| Live API browser smoke | 8 areas; 750 regional / 4,458 total roads; selected-area detail; 42 facilities; 8 access points; scenario deltas `-917` and `+98` synchronized |
 | Six-viewport visual QA | `390x844`, `430x932`, `1024x768`, `1440x900`, `1536x1024`, and `2048x1152` passed with zero external requests |
 | Controlled real-data gate audit | `gate_status=blocked`; `experiment_executed=false`; `can_feed_decision_layer=false` |
 
-The production build emitted offline cache version `112bbc3b16ae`.
+The production build emitted offline cache version `09436efbdf63`.
 
 ## External blockers retained by design
 

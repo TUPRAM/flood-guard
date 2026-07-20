@@ -16,21 +16,21 @@
 
 ## Decision summary / สรุปสำหรับการตัดสินใจ
 
-- FPPS: `31.17/100`.
+- FPPS: `53.65/100`.
 - Recommended class / ระดับคำแนะนำ: **E - Monitor and Verify / ติดตามและตรวจสอบ**.
 - Top reason / เหตุผลหลัก: confidence is low; verify source and field
   conditions before escalation. / ความเชื่อมั่นยังต่ำ ควรตรวจสอบแหล่งข้อมูลและ
   สภาพพื้นที่ก่อนยกระดับการดำเนินการ
 - Candidate mean flood-probability proxy / ค่าตัวแทนความน่าจะเป็นน้ำท่วมเฉลี่ย:
-  `9.6%` within the selected ADM3 aggregation unit. This is not an observed
+  `19.4%` within the selected ADM3 aggregation unit. This is not an observed
   inundation percentage. / ภายในหน่วยพื้นที่ ADM3 ที่เลือก ค่านี้ไม่ใช่สัดส่วน
   น้ำท่วมที่ตรวจยืนยันแล้ว
 
 ## Access and equity evidence / หลักฐานการเข้าถึงและความเสมอภาค
 
 - Modeled people losing 30-minute access / จำนวนประชากรที่แบบจำลองระบุว่า
-  สูญเสียการเข้าถึงภายใน 30 นาที: `36` in this selected area.
-- Equity-gap ratio / อัตราส่วนช่องว่างการเข้าถึง: `0.000` under the current
+  สูญเสียการเข้าถึงภายใน 30 นาที: `5,794` in this selected area.
+- Equity-gap ratio / อัตราส่วนช่องว่างการเข้าถึง: `1.090` under the current
   terrain/remoteness proxy grouping. This is not a demographic equity
   measurement. / ตามการจัดกลุ่มตัวแทนด้านภูมิประเทศและความห่างไกลในปัจจุบัน
   ค่านี้ไม่ใช่การวัดความเสมอภาคเชิงประชากรศาสตร์

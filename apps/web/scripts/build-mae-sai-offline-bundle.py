@@ -17,9 +17,9 @@ from shapely.geometry import mapping, shape
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 OUTPUTS = REPOSITORY_ROOT / "outputs"
 TARGET = REPOSITORY_ROOT / "apps" / "web" / "public" / "offline-demo" / "mae-sai"
-SOURCE_COMMIT = "7e42882efb7cb7dc40b7c1cdd4c3fa960569b95f"
+SOURCE_COMMIT = "22fc172aca78937bb7d1f8675d08527a8517da68"
 DATA_VERSION = "mae-sai-candidate-2024-09-15-v1"
-GENERATED_AT = "2026-07-18T00:00:00Z"
+GENERATED_AT = "2026-07-20T08:15:08Z"
 SOURCE_TIMESTAMP = "2024-09-15T23:16:01Z"
 EXPECTED_BOUNDS = [99.80, 20.24, 100.05, 20.48]
 

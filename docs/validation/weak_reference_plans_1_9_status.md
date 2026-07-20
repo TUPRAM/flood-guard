@@ -29,7 +29,7 @@ accuracy.
 
 | Plan | Implemented result | Evidence boundary | Status |
 |---|---|---|---|
-| 1. Manual weak-reference mask | GeoPackage attributes, layer, geometry, checksum, required values, `not_official`, and spatial relation are validated | One polygon is 5.965378 km from the Thailand ADM3 candidate geometry and has no overlap | **Candidate calibration ready; in-area Mae Sai reference still missing** |
+| 1. Manual weak-reference mask | GeoPackage attributes, layer, geometry, checksum, required values, `not_official`, and spatial relation are validated | One valid MultiPolygon feature with four components is 5.965378 km from the Thailand ADM3 candidate geometry and has no overlap | **Candidate calibration ready; in-area Mae Sai reference still missing** |
 | 2. Real Sentinel-1 deterministic baseline | Active source selection uses the checksum-bound same-track original SAFE pair; hashes are verified before GDAL access and PAM writes are disabled | Metrics are cross-border calibration only; original archives remain outside Git | **Implemented and reproducible in candidate scope** |
 | 3. Validation report V3 | Product IDs, hashes, mask metadata, assumptions, metrics, failure modes, spatial scope, and safety boundaries are rendered | Official metrics remain blocked | **Implemented** |
 | 4. Flood-to-decision bridge | Sentinel-1 candidate probabilities aggregate to eight HDX COD-AB ADM3 candidate units and feed the unchanged FPPS engine with open context | Calibration reference does not validate the Thailand-area probabilities; all outputs remain low-confidence candidates | **Implemented as non-operational candidate evidence** |
@@ -58,7 +58,13 @@ processing accepts only:
 - post-event original SAFE `5251b74b-0bbd-4365-9eb4-fa33292e175a`, SHA-256
   `ff4a604f57c9eb88421904659c7201d07b54b35a3bff6f3447ee548c40f6755b`; and
 - manual reference `MS-MANUAL-CROSSBORDER-001`, SHA-256
-  `835c0b34af75262fce26aafc418ddeff5bd78caa74a176638bea2cdf18a1c8f5`.
+  `d64e8441dd08ce42323ae283398e5dc1a7225282caa040d0f5981b3a9c8637ce`.
+
+The active GDAL view exposes Sentinel-1 uncalibrated amplitude. FloodGuard
+therefore records `sentinel1_uncalibrated_amplitude`, applies
+`20_log10_amplitude` explicitly, and marks the result
+`not_sigma0_beta0_or_gamma0_calibrated`; it does not present these values as
+calibrated backscatter.
 
 The unit tests mutate the bytes of each checksum-bound pre-event archive,
 post-event archive, and reference file in turn and verify rejection before a
@@ -75,14 +81,14 @@ The deterministic threshold baseline currently records:
 
 | Metric | Value |
 |---|---:|
-| IoU | 0.018632 |
-| F1 / Dice | 0.036583 |
-| Precision | 0.206557 |
-| Recall | 0.020068 |
-| Area error ratio | -0.902843 |
+| IoU | 0.086835 |
+| F1 / Dice | 0.159795 |
+| Precision | 0.188113 |
+| Recall | 0.138887 |
+| Area error ratio | -0.261687 |
 | Sample pixels | 65,536 |
 | Reference-positive pixels | 12,557 |
-| Predicted-positive pixels | 1,220 |
+| Predicted-positive pixels | 9,271 |
 
 These low values are useful engineering evidence: they show that the current
 threshold method substantially under-detects this manual polygon. They are not

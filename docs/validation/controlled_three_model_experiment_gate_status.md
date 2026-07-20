@@ -59,4 +59,4 @@ Zero-division convention: `finite: 0/0=0.0; nonzero/0=1.0; otherwise numerator/d
 
 No real training or three-model result was produced. Existing weak-reference metrics remain candidate screening evidence and are not substituted for this controlled experiment.
 
-Receipt SHA-256: `0a1a164c0bf90d5ffd1087da9dc9c1dad954506eb5b0d15b0234b57866e11e61`
+Receipt SHA-256: `66293a71622d2d9d6378cca0c6879680b72878a0eceb1cb63c25e7b4e6aaae19`

@@ -57,18 +57,18 @@ def test_build_mae_sai_action_brief_contains_real_evidence_and_warnings() -> Non
     assert "Ko Chang" in brief
     assert MAE_SAI_WEAK_REFERENCE_WARNING in brief
     assert "Executive Summary / บทสรุปสำหรับผู้ตัดสินใจ" in brief
-    assert "FPPS: 31.17/100" in brief
+    assert "FPPS: 53.65/100" in brief
     assert "Action class: E" in brief
-    assert "mean non-ML flood-probability proxy of 9.6%" in brief
+    assert "mean non-ML flood-probability proxy of 19.4%" in brief
     assert "WorldPop 2020" in brief
     assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in brief
     assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in brief
-    assert "IoU 0.019" in brief
+    assert "IoU 0.087" in brief
     assert "Current-pair spatial-holdout ML comparison: unavailable" in brief
     assert "retired COG pair" in brief
     assert "does not overlap the Thailand ADM3 candidate geometry" in brief
     assert "not field validated" in brief.lower()
-    assert "People losing 30-minute access: 36" in brief
+    assert "People losing 30-minute access: 5,794" in brief
     assert "bridge-tagged" in brief
     assert "terrain/remoteness proxy" in brief
 

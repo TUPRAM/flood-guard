@@ -20,7 +20,7 @@
     "experiment_id": "mae_sai_2024_controlled_three_model_v1",
     "external_authority_decision_sha256": null,
     "external_authority_signing_key_id": null,
-    "manifest_file_sha256": "96c84149e79d117e2f0646c1f3cede13424e8bad8973bfeceb8a15bdb91186dd",
+    "manifest_file_sha256": "dff3641d329d9dc2d47587b5135647b375558ab5265d3e7bdf3c0cba7ee995df",
     "manifest_sha256": "8176ec3b3273ffbf7a2081dc4953da0961696d3776b643a922ee0534a2b791d0",
     "ready": false,
     "sha256_by_role": {
@@ -69,7 +69,7 @@
     "status": "missing"
   },
   "reason_blocked": "acquisition_authority: externally signed product-specific authority decision and internal integrity receipt are missing; promotion_policy: signed predeclared policy is missing; reference_cells: signed mask-derived cells, calibration projection, or error-strata evidence is missing; reference_mask: ML-label/model use permission is not confirmed; reference_mask: checksum status is not verified; reference_mask: derived metrics permission is not confirmed; reference_mask: license is not confirmed for this experiment; reference_mask: local analysis permission is not confirmed; reference_mask: local artifact is missing; reference_mask: processing_allowed is false; reference_mask: redistribution/reference-only status is unresolved; reference_mask: reference mask is not qualified expert/adjudicated truth; reference_mask: temporal alignment is not confirmed; reviewer_calibration: dual-signed qualification is missing; spatial_holdout: signed polygon and frozen cell-membership receipt is missing",
-  "receipt_sha256": "0a1a164c0bf90d5ffd1087da9dc9c1dad954506eb5b0d15b0234b57866e11e61",
+  "receipt_sha256": "66293a71622d2d9d6378cca0c6879680b72878a0eceb1cb63c25e7b4e6aaae19",
   "reference_cells": {
     "status": "missing"
   },

@@ -70,7 +70,7 @@ def test_mae_sai_candidate_area_decisions_are_joined_without_formula_changes() -
     item = detail.json()
     assert item["area_name_en"] == "Mae Sai"
     assert item["area_name_th"] == "แม่สาย"
-    assert item["fpps_0_100"] == 28.9
+    assert item["fpps_0_100"] == 18.01
     assert item["action_class"] == "E"
     assert item["road_evidence"]["bridge_count"] == 55
     assert "unverified" in item["facility_evidence"]["summary"].lower()
@@ -241,7 +241,7 @@ def test_mae_sai_scenarios_use_only_pinned_graph_inputs_and_return_real_deltas()
             json={
                 "scenario_id": "close_road",
                 "study_area": MAE_SAI,
-                "parameters": {"edge_id": "MS-EDGE-0009210"},
+                "parameters": {"edge_id": "MS-EDGE-0008687"},
             },
         )
         invalid_node = client.post(
@@ -274,7 +274,7 @@ def test_mae_sai_scenarios_use_only_pinned_graph_inputs_and_return_real_deltas()
         "N-99.9742609-20.4457677"
     ]
     assert definitions[1]["parameters"][0]["allowed_values"] == [
-        "MS-EDGE-0009210"
+        "MS-EDGE-0008687"
     ]
     assert all(
         item["backend_config_version"] == "mae-sai-candidate-access-scenarios-v1"
@@ -289,25 +289,28 @@ def test_mae_sai_scenarios_use_only_pinned_graph_inputs_and_return_real_deltas()
     assert shelter_result["fpps_recalculated"] is False
     assert shelter_result["result_state"] == "stale"
     assert shelter_result["input_manifest_sha256"] == (
-        "f0f66ad92fbded9ef8a202c0c08e16af0e60890c63bb5e6a0d1ee46f6a22da37"
+        "20ce7a6d7007daeccbb64afcbabc00e447bb96de8c66eb44776a827be6c61a04"
     )
     assert shelter_result["input_receipt_sha256"] == (
-        "75db44b90bef0fa8f561555ecf6a90ffb3342a4e6537125256abf81129c4a661"
+        "b25fd06ab5f20f553acf252b63531d5355a63c1806e5bd647782bf2908dcc7a0"
     )
-    assert shelter_result["overall"]["baseline_people_losing_30_min_access"] == 190
-    assert shelter_result["overall"]["scenario_people_losing_30_min_access"] == 13
-    assert shelter_result["overall"]["change_people_losing_30_min_access"] == -177
-    assert shelter_result["overall"]["change_max_equity_gap_ratio"] == -1.018
+    assert shelter_result["overall"]["baseline_people_losing_30_min_access"] == 11114
+    assert shelter_result["overall"]["scenario_people_losing_30_min_access"] == 10197
+    assert shelter_result["overall"]["change_people_losing_30_min_access"] == -917
+    assert shelter_result["overall"]["change_max_equity_gap_ratio"] == 0.0
     assert "capacity" in " ".join(shelter_result["assumptions"]).lower()
     assert fetched.status_code == 200
     assert fetched.json()["overall"] == shelter_result["overall"]
 
     assert closure.status_code == 201
     closure_result = closure.json()
-    assert closure_result["overall"]["baseline_people_losing_30_min_access"] == 190
-    assert closure_result["overall"]["scenario_people_losing_30_min_access"] == 219
-    assert closure_result["overall"]["change_people_losing_30_min_access"] == 29
-    assert closure_result["overall"]["change_max_equity_gap_ratio"] == -0.267
+    assert closure_result["run_id"] == (
+        "mae-sai-candidate-close-edge-ms-edge-0008687-v1"
+    )
+    assert closure_result["overall"]["baseline_people_losing_30_min_access"] == 11114
+    assert closure_result["overall"]["scenario_people_losing_30_min_access"] == 11212
+    assert closure_result["overall"]["change_people_losing_30_min_access"] == 98
+    assert closure_result["overall"]["change_max_equity_gap_ratio"] == 0.0
     assert "not an observed closure" in " ".join(closure_result["assumptions"])
 
     assert invalid_node.status_code == 422
@@ -375,7 +378,7 @@ def test_candidate_scenario_input_substitution_removes_catalog_and_blocks_run(
     edge_path = paths.outputs / "mae_sai_access_edges.csv"
     edge_path.write_text(
         edge_path.read_text(encoding="utf-8").replace(
-            "MS-EDGE-0009210",
+            "MS-EDGE-0008687",
             "MS-EDGE-SUBSTITUTED",
             1,
         ),
@@ -390,7 +393,7 @@ def test_candidate_scenario_input_substitution_removes_catalog_and_blocks_run(
             json={
                 "scenario_id": "close_road",
                 "study_area": MAE_SAI,
-                "parameters": {"edge_id": "MS-EDGE-0009210"},
+                "parameters": {"edge_id": "MS-EDGE-0008687"},
             },
         )
 

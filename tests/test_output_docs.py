@@ -500,14 +500,16 @@ def test_sar_baseline_contract_defines_non_ml_outputs_and_metrics() -> None:
         encoding="utf-8"
     )
 
-    assert "synthetic baseline implemented; gated real-data entry point added" in text
+    assert "weak-reference candidate baseline are implemented" in text
+    assert "verifies their recorded identities and SHA-256 checksums before raster access" in text
     assert "run_gated_real_sar_change_baseline" in text
     assert "flood_probability_0_1" in text
     assert "binary_flood_extent" in text
     assert "sample_sar_validation_metrics.csv" in text
     for metric in ("IoU", "F1/Dice", "precision", "recall", "area error ratio"):
         assert metric in text
-    assert "No real Sentinel-1 downloads" in text
+    assert "No source raster, SAFE, ZIP, GeoPackage, or model-weight files committed" in text
+    assert "not_sigma0_beta0_or_gamma0_calibrated" in text
 
 
 def test_first_ml_experiment_plan_keeps_ml_blocked_until_gates_pass() -> None:
@@ -790,7 +792,10 @@ def test_manual_reference_mask_protocol_and_manifest_are_documented() -> None:
     assert "official validation truth" in manifest_text
     assert "unqualified ML labels" in manifest_text
     assert "FloodGuard manual QGIS Mae Sai weak-reference candidate" in mae_sai_manifest_text
-    assert "manual weak-reference candidate for candidate validation metrics" in mae_sai_manifest_text
+    assert (
+        "manual weak-reference candidate for cross-border calibration metrics"
+        in mae_sai_manifest_text
+    )
     assert "candidate_validation_metrics_allowed" in dictionary_text
     assert "official_validation_truth_allowed" in dictionary_text
 

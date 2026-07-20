@@ -1,10 +1,12 @@
-# Mae Sai Weak-Label ML Experiment
+# Mae Sai Historical Weak-Label ML Experiment (Retired Source Pair)
 
 Weak-label experiment against manually digitized weak-reference mask. Non-operational. Not official labels. Not field validation. Ineligible for the decision layer, FPPS, action classes, or warnings.
 
 ## Data Status
 
-- Sentinel-1 features come from the weak-reference real-data SAR baseline.
+- Artifact status: historical retired-source screening evidence only.
+- The experiment used the retired September 6 / September 15 COG pair.
+- It is not comparable to the active same-track original-SAFE baseline and must not be regenerated as current evidence.
 - Labels come from the manual weak-reference mask, not official labels.
 - This is not field validation and not an emergency warning.
 

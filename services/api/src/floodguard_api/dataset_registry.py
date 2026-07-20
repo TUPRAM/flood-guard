@@ -50,16 +50,16 @@ from floodguard_api.scenario_registry import (
 FIXTURE_STUDY_AREA = "fixture_thailand_demo"
 MAE_SAI_STUDY_AREA = "mae_sai_candidate_v1"
 MAE_SAI_DATA_VERSION = "mae-sai-candidate-2024-09-15-v1"
-MAE_SAI_DATA_GIT_COMMIT = "7e42882efb7cb7dc40b7c1cdd4c3fa960569b95f"
+MAE_SAI_DATA_GIT_COMMIT = "22fc172aca78937bb7d1f8675d08527a8517da68"
 MAE_SAI_SOURCE_TIMESTAMP = datetime(2024, 9, 15, 23, 16, 1, tzinfo=UTC)
 MAE_SAI_MANIFEST_RELATIVE_PATH = (
     "services/api/data/study_area_bundles/mae_sai_candidate_v1.json"
 )
 # This digest is filled from the reviewed manifest and deliberately lives outside it.
-MAE_SAI_MANIFEST_SHA256 = "07e5e211c970e76304fa3aaedfcdf24be60ef30d826ecb9240481719d6c9e93b"
+MAE_SAI_MANIFEST_SHA256 = "c25f8d1b5c18b4706facf669f065018f37478086a88eb9fb77cf83c9c22c9786"
 MAE_SAI_SCENARIO_MANIFEST_RELATIVE_PATH = "outputs/mae_sai_scenario_inputs_manifest.json"
 MAE_SAI_SCENARIO_MANIFEST_SHA256 = (
-    "f0f66ad92fbded9ef8a202c0c08e16af0e60890c63bb5e6a0d1ee46f6a22da37"
+    "20ce7a6d7007daeccbb64afcbabc00e447bb96de8c66eb44776a827be6c61a04"
 )
 
 

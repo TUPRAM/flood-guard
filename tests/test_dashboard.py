@@ -112,7 +112,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Data Readiness" in html
     assert "Read This First" in html
     assert "Synthetic inputs demonstrate prioritization and scenarios" in html
-    assert "Real Mae Sai validation is blocked" in html
+    assert "Qualified Mae Sai validation is blocked" in html
     assert "provider response pending" in html
     assert "Context layers are not flood labels" in html
     assert "Real-data ML remains blocked" in html
@@ -187,11 +187,11 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "weak_reference_candidate" in html
     assert "real_open_context_joined_with_proxy_vulnerability" in html
     assert "8 ADM3 reporting units" in html
-    assert "IoU 0.018632" in html
-    assert "F1/Dice 0.036583" in html
-    assert "precision 0.206557" in html
-    assert "recall 0.020068" in html
-    assert "area error -0.902843" in html
+    assert "IoU 0.086835" in html
+    assert "F1/Dice 0.159795" in html
+    assert "precision 0.188113" in html
+    assert "recall 0.138887" in html
+    assert "area error -0.261687" in html
     assert "Cross-border calibration metrics against a manually digitized weak-reference mask" in html
     assert "Not official validation" in html
     assert "Metadata/blocker view: source inventory and file readiness are visible" in html

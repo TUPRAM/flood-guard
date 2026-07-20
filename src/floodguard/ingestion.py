@@ -385,7 +385,19 @@ def _blocked_reason(row: pd.Series) -> str:
         blockers.append("source license not confirmed")
     if row["reference_mask_status"] != "confirmed":
         blockers.append("reference mask not confirmed")
-    blockers.append("metadata-only skeleton does not permit downloads")
+    has_local_artifact = (
+        row["local_path"] not in {"not_acquired", "not_selected", "unknown"}
+        and _is_valid_sha256(row["sha256"])
+    )
+    if not has_local_artifact:
+        blockers.append("metadata-only skeleton does not permit downloads")
+    elif row["reference_mask_status"] == "weak_reference_candidate":
+        blockers.append(
+            "weak reference is limited to candidate calibration and is not "
+            "qualified validation truth or an ML label"
+        )
+    else:
+        blockers.append("qualified or official processing gate remains closed")
     return "; ".join(blockers)
 
 

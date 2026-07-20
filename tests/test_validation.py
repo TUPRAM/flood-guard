@@ -61,7 +61,7 @@ def test_build_validation_summary_includes_fixture_metrics() -> None:
     assert "not agency flood products" in report
     assert "provider response pending" in report
     assert "## What Remains Blocked" in report
-    assert "Real-data ML remains blocked" in report
+    assert "Current-pair real-data ML remains blocked" in report
     assert "## Real Mae Sai Gate Update" in report
     assert "geometry access" in report
     assert "ML-label use status" in report

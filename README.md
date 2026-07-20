@@ -25,7 +25,6 @@ This scaffold implements the first testable decision-layer component:
 Use this path when you want to regenerate the fixture-backed FloodGuard system and open the dashboard yourself.
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
 uv sync --extra dev --extra theos2
 uv run pytest
 uv run python scripts/generate_sample_priority.py

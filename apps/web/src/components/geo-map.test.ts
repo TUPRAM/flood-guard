@@ -6,7 +6,7 @@ import bundleJson from "../../public/offline-demo/mae-sai/bundle.json";
 
 import type { AreaRecord, FeatureCollection, GeoFeature } from "@/lib/types";
 
-import { facilityClusters, GeoMap } from "./geo-map";
+import { displayAttribution, facilityClusters, facilityDisplayCategory, facilityIconMarkup, GeoMap } from "./geo-map";
 
 describe("facilityClusters", () => {
   it("positions a regional cluster at the centroid of actual facility points", () => {
@@ -36,7 +36,7 @@ describe("facilityClusters", () => {
     ]);
   });
 
-  it("announces when selected-area road detail is unavailable without hiding regional candidates", () => {
+  it("announces when selected-area road detail is unavailable without hiding the regional overview", () => {
     const areas = (bundleJson as unknown as { areas: AreaRecord[] }).areas;
     const html = renderToStaticMarkup(createElement(GeoMap, {
       areas,
@@ -51,7 +51,47 @@ describe("facilityClusters", () => {
 
     expect(html).toContain('class="map-detail-notice unavailable"');
     expect(html).toContain('role="status"');
-    expect(html).toContain("Selected-area road detail unavailable; showing bounded regional candidates.");
+    expect(html).toContain("Selected-area road detail is unavailable; showing the regional road overview.");
+  });
+});
+
+describe("facility presentation", () => {
+  it("maps every Mae Sai facility type to a distinct user-facing icon category", () => {
+    expect(facilityDisplayCategory("healthcare")).toBe("healthcare");
+    expect(facilityDisplayCategory("school")).toBe("school");
+    expect(facilityDisplayCategory("emergency_service")).toBe("emergency");
+    expect(facilityDisplayCategory("shelter_candidate")).toBe("shelter");
+    expect(facilityDisplayCategory("community_facility")).toBe("community");
+    expect(facilityDisplayCategory("unknown")).toBe("community");
+
+    const icons = ["healthcare", "school", "emergency", "shelter", "community"]
+      .map((category) => facilityIconMarkup(category as Parameters<typeof facilityIconMarkup>[0]));
+    expect(new Set(icons).size).toBe(icons.length);
+    expect(icons.every((icon) => icon.includes("<svg") && !icon.includes("unknown"))).toBe(true);
+  });
+
+  it("renders accessible Street, Satellite, and Terrain controls with Street selected", () => {
+    const areas = (bundleJson as unknown as { areas: AreaRecord[] }).areas;
+    const html = renderToStaticMarkup(createElement(GeoMap, {
+      areas,
+      selectedId: areas[0].area_id,
+      onSelect: () => undefined,
+      language: "en",
+      areaFeatures: collection("areas", []),
+      roadFeatures: collection("roads", []),
+      datasetMode: "candidate",
+      enableBasemaps: true,
+    }));
+
+    expect(html).toContain('aria-label="Choose map background"');
+    expect(html).toContain('data-basemap="street"');
+    expect(html).toContain('aria-pressed="true"');
+    for (const label of ["Street", "Satellite", "Terrain"]) expect(html).toContain(`>${label}</button>`);
+  });
+
+  it("presents internal attribution labels as publication-ready copy", () => {
+    expect(displayAttribution("FloodGuard candidate analysis")).toBe("FloodGuard planning analysis");
+    expect(displayAttribution("Synthetic fixture context")).toBe("modelled reference context");
   });
 });
 

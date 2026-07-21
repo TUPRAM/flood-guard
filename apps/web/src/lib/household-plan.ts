@@ -18,8 +18,8 @@ export const HOUSEHOLD_PLAN_ITEMS = [
   },
   {
     id: "rehearsal_options",
-    th: "ฝึกทางเลือกมากกว่าหนึ่งทางและยืนยันกับหน่วยงานท้องถิ่น",
-    en: "Rehearse more than one option and confirm each one with local authorities",
+    th: "เตรียมทางเลือกมากกว่าหนึ่งทางและยืนยันแต่ละทางกับหน่วยงานท้องถิ่น",
+    en: "Plan more than one option and confirm each one with local authorities",
   },
   {
     id: "official_updates",
@@ -150,11 +150,11 @@ export function buildHouseholdPlanText(
 
   return [
     "FloodGuard household preparedness plan / แผนเตรียมพร้อมของครัวเรือน",
-    "NOT AN OFFICIAL WARNING / ไม่ใช่ประกาศทางการ",
+    "CHECK CURRENT INSTRUCTIONS WITH DDPM / ตรวจสอบคำแนะนำล่าสุดกับ ปภ.",
     "",
     `Planning area / พื้นที่วางแผน: ${areaNameTh || "ไม่พร้อมใช้งาน"} / ${areaNameEn || "Unavailable"}`,
-    "This is a broad fixture planning area, not an exact household location.",
-    "นี่เป็นพื้นที่วางแผนจากชุดข้อมูลสาธิต ไม่ใช่ตำแหน่งที่อยู่ที่แน่นอน",
+    "This broad planning area does not identify an exact household location.",
+    "พื้นที่วางแผนแบบกว้างนี้ไม่ได้ระบุตำแหน่งที่อยู่ของครัวเรือนอย่างแน่นอน",
     `Last reviewed / ทบทวนล่าสุด: ${reviewed}`,
     "",
     "Household planning needs / สิ่งที่ต้องคำนึงถึงในครัวเรือน",

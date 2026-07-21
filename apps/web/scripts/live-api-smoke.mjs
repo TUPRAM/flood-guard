@@ -2,7 +2,13 @@ import { chromium } from "@playwright/test";
 
 const webBase = process.env.FLOODGUARD_WEB_URL ?? "http://127.0.0.1:3000";
 const apiBase = process.env.FLOODGUARD_API_URL ?? "http://127.0.0.1:8000";
-const allowedOrigins = new Set([new URL(webBase).origin, new URL(apiBase).origin]);
+const basemapOrigins = new Set([
+  "https://tile.openstreetmap.org",
+  "https://services.arcgisonline.com",
+  "https://a.tile.opentopomap.org",
+]);
+const allowedOrigins = new Set([new URL(webBase).origin, new URL(apiBase).origin, ...basemapOrigins]);
+const basemapOriginsSeen = new Set();
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 page.setDefaultTimeout(180_000);
@@ -16,10 +22,18 @@ page.on("console", (message) => {
 page.on("pageerror", (error) => browserErrors.push(error.message));
 page.on("request", (request) => {
   const url = new URL(request.url());
+  if (basemapOrigins.has(url.origin)) basemapOriginsSeen.add(url.origin);
   if (!allowedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
 });
 page.on("requestfailed", (request) => {
-  browserErrors.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText ?? "failed"}`);
+  const errorText = request.failure()?.errorText ?? "failed";
+  const origin = new URL(request.url()).origin;
+  // Leaflet cancels tiles that leave the viewport or belong to the previous
+  // basemap while a layer switch is in progress. A loaded tile is asserted for
+  // every provider below, so these expected cancellations are not availability
+  // failures.
+  if (basemapOrigins.has(origin) && errorText === "net::ERR_ABORTED") return;
+  browserErrors.push(`${request.method()} ${request.url()}: ${errorText}`);
 });
 
 try {
@@ -36,8 +50,11 @@ try {
   assertEqual(await map.getAttribute("data-road-dataset-total"), "4458", "road dataset total");
   assertEqual(await map.getAttribute("data-facility-feature-count"), "42", "facility feature count");
   assertEqual(await map.getAttribute("data-access-feature-count"), "8", "access evidence count");
-  assertIncludesIgnoreCase(await page.getByLabel("Data status").innerText(), "Candidate data", "candidate disclosure");
-  assertIncludesIgnoreCase(await page.getByLabel("Data status").innerText(), "Stale data", "stale disclosure");
+  const commandContext = await page.locator(".command-context-bar").innerText();
+  assertIncludesIgnoreCase(commandContext, "Planning intelligence", "planning context");
+  assertIncludesIgnoreCase(commandContext, "Source time", "source timestamp label");
+  assertIncludesIgnoreCase(commandContext, "Confidence", "confidence label");
+  assertIncludesIgnoreCase(commandContext, "DDPM", "official verification boundary");
   const liveAttribution = page.getByLabel("Map data attribution");
   const liveAttributionText = await liveAttribution.innerText();
   for (const requiredAttribution of ["HDX", "FloodGuard", "© OpenStreetMap contributors", "Geofabrik"]) {
@@ -48,6 +65,7 @@ try {
     1,
     "OpenStreetMap copyright link",
   );
+  await exerciseOnlineBasemaps(page, ".map-workspace");
 
   await page.waitForFunction(() => (
     document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "TH570906"
@@ -67,7 +85,7 @@ try {
   if (!Number.isInteger(selectedRoadFeatureCount) || selectedRoadFeatureCount < 750) {
     throw new Error(`Selected-area road detail produced an invalid merged count: ${selectedRoadFeatureCount}`);
   }
-  assertIncludes(await page.getByLabel("Select scenario").locator("option").nth(1).innerText(), "Temporary facility candidate", "candidate scenario label");
+  assertIncludes(await page.getByLabel("Select scenario").locator("option").nth(1).innerText(), "Temporary facility option", "temporary-facility scenario label");
   await page.getByLabel("Select scenario").selectOption("add_temporary_shelter");
   await waitForScenario(page, "add_temporary_shelter");
   const shelterStrip = await page.locator(".scenario-delta-strip").innerText();
@@ -91,16 +109,78 @@ try {
   assertSignedDelta(roadPanel, 98, "road-stress evidence panel");
   assertEqual(await map.getAttribute("data-scenario-tone"), "worsens", "road-stress map tone");
 
+  const bodyText = await page.locator("body").innerText();
+  const forbidden = /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
+  const forbiddenMatch = bodyText.match(forbidden);
+  if (forbiddenMatch) {
+    throw new Error(`Command surface exposes forbidden internal copy: ${forbiddenMatch[0]}.`);
+  }
+  for (const origin of basemapOrigins) {
+    if (!basemapOriginsSeen.has(origin)) {
+      throw new Error(`Command basemap selector never requested approved provider ${origin}.`);
+    }
+  }
+
   if (unexpectedRequests.length > 0) {
     throw new Error(`Unexpected external requests: ${[...new Set(unexpectedRequests)].join(", ")}`);
   }
   if (browserErrors.length > 0) {
     throw new Error(`Browser errors: ${[...new Set(browserErrors)].join(" | ")}`);
   }
-  console.log("Live API smoke passed: 8 areas, 750 bounded regional roads / 4,458 total, selected-area detail, 42 facilities, 8 access points.");
+  console.log("Live API smoke passed: 8 areas, 750 bounded regional roads / 4,458 total, selected-area detail, 42 categorized facilities, 8 access points, and three basemap providers.");
   console.log("Server scenarios passed: TH570903 temporary facility -917; TH570901 road stress +98; map and evidence panel synchronized.");
 } finally {
   await browser.close();
+}
+
+async function exerciseOnlineBasemaps(page, scopeSelector) {
+  const buttons = page.locator(`${scopeSelector} .map-basemap-switcher button`);
+  if (await buttons.count() !== 3) {
+    throw new Error("Command map must expose Street, Satellite, and Terrain backgrounds.");
+  }
+  const labels = await buttons.allTextContents();
+  if (labels.map((label) => label.trim()).join("|") !== "Street|Satellite|Terrain") {
+    throw new Error(`Command map backgrounds are mislabeled: ${labels.join(", ")}.`);
+  }
+  for (const [index, basemap] of ["street", "satellite", "terrain"].entries()) {
+    await buttons.nth(index).click();
+    await page.waitForFunction(
+      ({ scope, expectedBasemap }) => {
+        const element = document.querySelector(`${scope} .geo-map-shell`);
+        const tiles = [...document.querySelectorAll(`${scope} .leaflet-tile-pane img.leaflet-tile-loaded`)];
+        return element?.getAttribute("data-basemap") === expectedBasemap
+          && element?.getAttribute("data-basemap-state") === "ready"
+          && tiles.some((tile) => tile instanceof HTMLImageElement
+            && tile.complete
+            && tile.naturalWidth > 0);
+      },
+      { scope: scopeSelector, expectedBasemap: basemap },
+      { timeout: 30_000 },
+    );
+    await page.waitForTimeout(750);
+    if (await buttons.nth(index).getAttribute("aria-pressed") !== "true") {
+      throw new Error(`Command map did not expose ${basemap} as selected.`);
+    }
+    const attribution = await page.locator(`${scopeSelector} .map-attribution`).innerText();
+    const expectedAttribution = basemap === "street"
+      ? "OpenStreetMap contributors"
+      : basemap === "satellite"
+        ? "Esri World Imagery"
+        : "OpenTopoMap";
+    if (!attribution.includes(expectedAttribution)) {
+      throw new Error(`Command ${basemap} background is missing ${expectedAttribution} attribution.`);
+    }
+  }
+  await buttons.first().click();
+  await page.waitForFunction(
+    (scope) => {
+      const element = document.querySelector(`${scope} .geo-map-shell`);
+      return element?.getAttribute("data-basemap") === "street"
+        && element?.getAttribute("data-basemap-state") === "ready";
+    },
+    scopeSelector,
+    { timeout: 30_000 },
+  );
 }
 
 async function waitForScenario(page, scenarioId) {

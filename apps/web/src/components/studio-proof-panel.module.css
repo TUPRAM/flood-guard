@@ -100,7 +100,7 @@
   padding: 15px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: #f8faf9;
+  background: #f8fbff;
   box-shadow: var(--shadow);
 }
 
@@ -161,7 +161,7 @@
 
 .futureRun {
   border-style: dashed;
-  background: #f2f5f4;
+  background: #f3f7fb;
 }
 
 .railGate {
@@ -222,13 +222,13 @@
 
 .executed,
 .eligible {
-  border-top-color: #17765e;
-  background: #eff9f6;
+  border-top-color: #3182bd;
+  background: #eef6fd;
 }
 
 .executed > b,
 .eligible > b {
-  color: #0b5d52;
+  color: #08519c;
 }
 
 .not_run,
@@ -291,7 +291,7 @@
   padding: 15px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: linear-gradient(145deg, #fff, #f4faf8);
+  background: linear-gradient(145deg, #fff, #f4f8fd);
 }
 
 .receiptCard h3 {
@@ -355,8 +355,8 @@
   min-width: 0;
   padding: 7px 8px;
   border-radius: 8px;
-  background: #e3f5ef;
-  color: #0c5d4c;
+  background: #e7f2fb;
+  color: #08519c;
   font-size: .64rem;
   font-weight: 800;
 }
@@ -369,7 +369,7 @@
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  background: #17765e;
+  background: #3182bd;
   color: #fff;
   font-size: .58rem;
 }
@@ -396,7 +396,7 @@
   width: 100%;
   min-height: 2px;
   border-radius: 3px 3px 0 0;
-  background: linear-gradient(180deg, #44c8b1, #0a6d75);
+  background: linear-gradient(180deg, #6baed6, #08519c);
 }
 
 .histogramAxis {
@@ -419,7 +419,7 @@
   min-width: 0;
   padding: 7px;
   border-radius: 8px;
-  background: #edf5f3;
+  background: #edf5fc;
   text-align: center;
 }
 

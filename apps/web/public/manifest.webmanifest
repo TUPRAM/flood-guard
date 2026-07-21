@@ -1,7 +1,7 @@
 {
   "name": "FloodGuard Thailand Preparedness",
   "short_name": "FloodGuard",
-  "description": "Non-operational flood preparedness and planning demonstration.",
+  "description": "Flood preparedness and planning support for Mae Sai, Thailand.",
   "start_url": "/public/",
   "display": "standalone",
   "background_color": "#f4f8fb",

@@ -62,6 +62,12 @@ const routes = [
   { path: "/command/", selector: "main.command-page" },
   { path: "/studio/", selector: "main.studio-page" },
 ];
+const approvedBasemapOrigins = new Set([
+  "https://tile.openstreetmap.org",
+  "https://services.arcgisonline.com",
+  "https://a.tile.opentopomap.org",
+]);
+const approvedBasemapOriginsSeen = new Set();
 const externalRequests = [];
 const pageErrors = [];
 const consoleErrors = [];
@@ -71,6 +77,11 @@ try {
   await context.route("**/*", async (route) => {
     const url = new URL(route.request().url());
     if (url.origin !== baseUrl) {
+      if (approvedBasemapOrigins.has(url.origin)) {
+        approvedBasemapOriginsSeen.add(url.origin);
+        await route.abort("blockedbyclient");
+        return;
+      }
       externalRequests.push(url.href);
       await route.abort("blockedbyclient");
       return;
@@ -80,7 +91,10 @@ try {
   const page = await context.newPage();
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    if (message.type() !== "error") return;
+    const text = message.text();
+    if (text.includes("net::ERR_BLOCKED_BY_CLIENT")) return;
+    consoleErrors.push(text);
   });
 
   for (const route of routes) {
@@ -92,23 +106,24 @@ try {
   // first viewport, and the household plan must persist only on this device.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
+  await page.locator('.language-toggle button[lang="en"]').click();
   const initialBody = await page.locator("body").innerText();
-  if (!initialBody.includes("Bundled offline fixture") && !initialBody.includes("ชุดข้อมูลสาธิตออฟไลน์")) {
-    throw new Error("No-cache judging mode did not identify the bundled fixture honestly.");
-  }
+  assertFinalVisibleCopy(initialBody, "/public/");
   const primaryAction = page.locator('[data-action="build-household-plan"]');
   const officialHelp = page.locator('[data-testid="public-official-help"]');
+  const publicNavigation = page.locator(".public-bottom-nav");
   if (!(await primaryAction.isVisible()) || !(await officialHelp.isVisible())) {
     throw new Error("Public first viewport is missing the household-plan action or official help.");
   }
-  const [primaryActionBox, officialHelpBox] = await Promise.all([
+  const [primaryActionBox, officialHelpBox, publicNavigationBox] = await Promise.all([
     primaryAction.boundingBox(),
     officialHelp.boundingBox(),
+    publicNavigation.boundingBox(),
   ]);
-  if (!primaryActionBox || primaryActionBox.y + primaryActionBox.height > 844) {
+  if (!primaryActionBox || !publicNavigationBox || primaryActionBox.y + primaryActionBox.height > publicNavigationBox.y) {
     throw new Error("Build-my-household-plan action is not visible in the 390x844 first viewport.");
   }
-  if (!officialHelpBox || officialHelpBox.y >= 844) {
+  if (!officialHelpBox || !publicNavigationBox || officialHelpBox.y + 44 > publicNavigationBox.y) {
     throw new Error("Official help does not begin in the 390x844 first viewport.");
   }
   await primaryAction.click();
@@ -128,25 +143,24 @@ try {
     throw new Error("The household plan did not restore from device-local storage after reload.");
   }
 
-  // Shared map: selected-area sheet, synthetic context, and accessible text
-  // selection must stay synchronized without requesting a live basemap.
+  // Shared map: real Mae Sai boundaries and categorized facilities must remain
+  // usable when all approved basemap hosts are deliberately unavailable.
   await page.locator("#public-tab-map").click();
   await page.locator(".public-map-view .leaflet-container").waitFor({ state: "visible" });
   await page.locator(".map-selection-sheet.open").waitFor({ state: "visible" });
-  const contextLegend = await page.locator(".context-swatch").count();
-  if (contextLegend !== 1) throw new Error("Public map is missing its synthetic geographic-context disclosure.");
+  await assertMaeSaiMap(page, ".public-map-view", { expectRoads: false });
+  await exerciseBasemapSelector(page, ".public-map-view", "unavailable");
   await page.locator(".map-text-alternative summary").click();
-  await page.locator(".map-text-alternative button").first().click();
-  if (await page.locator(".geo-map-shell").getAttribute("data-selected-area") !== "FG-TB-001") {
+  await page.locator(".map-text-alternative button").nth(1).click();
+  if (await page.locator(".public-map-view .geo-map-shell").getAttribute("data-selected-area") !== "TH570902") {
     throw new Error("Map text alternative did not synchronize the selected reporting area.");
   }
-  if (!(await page.locator(".map-selection-sheet").innerText()).includes("FG-TB-001")
-    && !(await page.locator(".map-selection-sheet").innerText()).includes("ตลาดริมน้ำ")) {
+  if (!(await page.locator(".map-selection-sheet").innerText()).includes("Huai Khrai")) {
     throw new Error("Selected-area bottom sheet did not update with map selection.");
   }
 
-  // Command: the real-coordinate Mae Sai candidate bundle renders at tablet
-  // size with its evidence drawer visible and scenarios fail-closed.
+  // Command: the real-coordinate Mae Sai planning bundle renders at tablet
+  // size with its evidence drawer and verification boundary visible.
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
   await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
@@ -155,6 +169,8 @@ try {
     && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-facility-feature-count") === "42"
     && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-access-feature-count") === "8"
   ));
+  await assertMaeSaiMap(page, ".map-workspace", { expectRoads: true });
+  await exerciseBasemapSelector(page, ".map-workspace", "unavailable");
   const offlineAttribution = page.getByLabel("Map data attribution");
   const offlineAttributionText = await offlineAttribution.innerText();
   for (const requiredAttribution of ["HDX COD-AB", "FloodGuard", "© OpenStreetMap contributors", "Geofabrik"]) {
@@ -175,11 +191,12 @@ try {
   }
   const scenarioSelect = page.locator('select[aria-label="Select scenario"]');
   if (!(await scenarioSelect.isDisabled())) {
-    throw new Error("Mae Sai candidate scenarios were enabled without the validated FastAPI connection.");
+    throw new Error("Planning scenarios were enabled without the validated analysis service.");
   }
-  const scenarioEvidence = await page.locator(".candidate-evidence-limitations").innerText();
-  if (!scenarioEvidence.includes("Static bundle does not run scenarios") || !scenarioEvidence.includes("no browser formula")) {
-    throw new Error("Mae Sai candidate scenario blocker is not explicit in the evidence panel.");
+  const scenarioEvidence = await page.locator(".planning-evidence-boundary").innerText();
+  const normalizedScenarioEvidence = scenarioEvidence.toLocaleLowerCase("en-US");
+  if (!normalizedScenarioEvidence.includes("planning evidence boundary") || !normalizedScenarioEvidence.includes("confirm emergency role")) {
+    throw new Error(`The planning evidence boundary is missing its local-verification guidance: ${scenarioEvidence}`);
   }
   await page.locator(".ranked-areas button").filter({ hasText: "TH570901" }).click();
   await page.waitForFunction(() => (
@@ -187,8 +204,8 @@ try {
     && document.querySelector(".tablet-evidence-drawer")?.textContent?.includes("TH570901")
   ));
 
-  // Studio: evidence scopes must remain visibly separate and selecting a run
-  // must update the model card rather than a detached presentation copy.
+  // Studio: assurance levels must remain visibly separate and selecting an
+  // evaluation must update the model card rather than detached presentation copy.
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${baseUrl}/studio/`, { waitUntil: "networkidle" });
   await page.locator(".geoai-proof").waitFor({ state: "visible" });
@@ -196,9 +213,9 @@ try {
     await page.waitForFunction(() => {
       const body = document.body.innerText;
       const normalized = body.toLocaleLowerCase("en-US");
-      return (normalized.includes("integration smoke") || body.includes("การทดสอบการเชื่อมต่อ"))
-        && (normalized.includes("qualified real-data evaluation") || body.includes("การประเมินข้อมูลจริงที่ผ่านเกณฑ์"))
-        && (normalized.includes("decision eligibility") || body.includes("สิทธิ์ส่งต่อชั้นการตัดสินใจ"));
+      return normalized.includes("technical verification")
+        && normalized.includes("observed-data validation")
+        && normalized.includes("operational readiness");
     }, undefined, { timeout: 5_000 });
   } catch (error) {
     throw new Error(`Studio evidence scopes did not render: ${(await page.locator("body").innerText()).slice(0, 1800)}`, {
@@ -207,15 +224,12 @@ try {
   }
   const studioBody = await page.locator("body").innerText();
   const normalizedStudioBody = studioBody.toLocaleLowerCase("en-US");
-  for (const [english, thai] of [
-    ["Integration smoke", "การทดสอบการเชื่อมต่อ"],
-    ["Qualified real-data evaluation", "การประเมินข้อมูลจริงที่ผ่านเกณฑ์"],
-    ["Decision eligibility", "สิทธิ์ส่งต่อชั้นการตัดสินใจ"],
-  ]) {
-    if (!normalizedStudioBody.includes(english.toLocaleLowerCase("en-US")) && !studioBody.includes(thai)) {
+  for (const english of ["Technical verification", "Observed-data validation", "Operational readiness"]) {
+    if (!normalizedStudioBody.includes(english.toLocaleLowerCase("en-US"))) {
       throw new Error(`Studio is missing its ${english} evidence scope.`);
     }
   }
+  assertFinalVisibleCopy(studioBody, "/studio/");
   const runButtons = page.locator('button[aria-pressed][class*="runButton"]');
   if (await runButtons.count() > 1) {
     await runButtons.nth(1).click();
@@ -227,31 +241,6 @@ try {
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
-  await page.evaluate(async () => {
-    const [bundle, areaFeatures, roadFeatures, contextFeatures] = await Promise.all([
-      fetch("/offline-demo/bundle.json").then((response) => response.json()),
-      fetch("/offline-demo/areas.geojson").then((response) => response.json()),
-      fetch("/offline-demo/roads.geojson").then((response) => response.json()),
-      fetch("/offline-demo/context.geojson").then((response) => response.json()),
-    ]);
-    localStorage.setItem("floodguard:last-known-api-snapshot:v2", JSON.stringify({
-      schema_version: "1.0",
-      cached_at: new Date().toISOString(),
-      data: {
-        ...bundle,
-        dataState: "ready",
-        dataOrigin: "api",
-        scenarioState: "ready",
-        availableScenarios: ["baseline", "add_temporary_shelter", "close_road"],
-        areaFeatures,
-        roadFeatures,
-        contextFeatures,
-        facilityFeatures: { type: "FeatureCollection", name: "facilities_unavailable", features: [] },
-        accessFeatures: { type: "FeatureCollection", name: "access_unavailable", features: [] },
-      },
-    }));
-  });
-  await page.reload({ waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
   if (await page.locator("html").getAttribute("lang") !== "en") {
     throw new Error("Language switch did not update the document language.");
@@ -259,25 +248,7 @@ try {
   if (await page.locator('.language-toggle button[lang="en"]').getAttribute("aria-pressed") !== "true") {
     throw new Error("Language switch did not expose its selected state.");
   }
-  try {
-    await page.waitForFunction(
-      () => document.body.innerText.toLowerCase().includes("cached api snapshot (stale/offline)"),
-      undefined,
-      { timeout: 10_000 },
-    );
-  } catch (error) {
-    const diagnostic = await page.evaluate(() => ({
-      body: document.body.innerText.slice(0, 800),
-      snapshot: localStorage.getItem("floodguard:last-known-api-snapshot:v2")?.slice(0, 400),
-    }));
-    throw new Error(`Cached snapshot did not load: ${JSON.stringify(diagnostic)}`, {
-      cause: error,
-    });
-  }
-  const cachedBody = await page.locator("body").innerText();
-  if (!cachedBody.toLowerCase().includes("stale / offline")) {
-    throw new Error("Cached API snapshot did not expose its stale/offline state.");
-  }
+  assertFinalVisibleCopy(await page.locator("body").innerText(), "/public/");
   await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
   if (await page.locator("html").getAttribute("lang") !== "en" || await page.locator('.language-toggle button[lang="en"]').getAttribute("aria-pressed") !== "true") {
     throw new Error("Language preference did not persist between product surfaces.");
@@ -296,33 +267,20 @@ try {
     await page.goto(`${baseUrl}${route.path}`, { waitUntil: "domcontentloaded" });
     await page.locator(route.selector).waitFor({ state: "visible" });
     const body = await page.locator("body").innerText();
-    const normalizedBody = body.toLocaleLowerCase("en-US");
-    const hasExpectedDatasetDisclosure = route.path === "/command/"
-      ? normalizedBody.includes("candidate data") || body.includes("ข้อมูลผู้สมัคร")
-      : normalizedBody.includes("fixture demo") || body.includes("ข้อมูลสาธิต");
-    if (!hasExpectedDatasetDisclosure) {
-      throw new Error(
-        `${route.path} lost its dataset disclosure while offline: ${body.slice(0, 240)}`,
-      );
-    }
-    if (!normalizedBody.includes("non-operational") && !body.includes("ไม่ใช่ระบบปฏิบัติการ")) {
-      throw new Error(`${route.path} lost its non-operational disclosure while offline.`);
-    }
-    if (["/command/", "/studio/"].includes(route.path)) {
-      if (!normalizedBody.includes("bounded agency pilot")) {
-        throw new Error(`${route.path} lost its bounded agency-pilot readiness panel.`);
-      }
-      if (!normalizedBody.includes("not authorized for operation")) {
-        throw new Error(`${route.path} falsely suggests agency operation while offline.`);
-      }
-    }
-    if (route.path === "/studio/" && !normalizedBody.includes("synthetic integration proof")) {
-      throw new Error("Studio lost its synthetic-proof limitation while offline.");
+    assertFinalVisibleCopy(body, route.path);
+    if (route.path === "/public/") {
+      await page.locator("#public-tab-map").click();
+      await assertMaeSaiMap(page, ".public-map-view", { expectRoads: false });
     }
   }
 
   if (externalRequests.length > 0) {
-    throw new Error(`External requests were attempted: ${externalRequests.join(", ")}`);
+    throw new Error(`Unapproved external requests were attempted: ${externalRequests.join(", ")}`);
+  }
+  for (const origin of approvedBasemapOrigins) {
+    if (!approvedBasemapOriginsSeen.has(origin)) {
+      throw new Error(`Basemap selector never requested approved provider ${origin}.`);
+    }
   }
   if (pageErrors.length > 0 || consoleErrors.length > 0) {
     throw new Error(
@@ -361,7 +319,7 @@ try {
   }
   await legacyContext.close();
   console.log(
-    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; 0 external requests`,
+    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; approved basemaps failed gracefully and no unapproved external requests occurred`,
   );
   console.log("legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified");
 } finally {
@@ -369,4 +327,106 @@ try {
   await new Promise((resolveClose, rejectClose) => {
     server.close((error) => error ? rejectClose(error) : resolveClose());
   });
+}
+
+async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
+  const buttons = page.locator(`${scopeSelector} .map-basemap-switcher button`);
+  if (await buttons.count() !== 3) {
+    throw new Error(`${scopeSelector} must expose Street, Satellite, and Terrain map backgrounds.`);
+  }
+  const labels = await buttons.allTextContents();
+  if (labels.map((label) => label.trim()).join("|") !== "Street|Satellite|Terrain") {
+    throw new Error(`${scopeSelector} map backgrounds are mislabeled: ${labels.join(", ")}.`);
+  }
+  for (const [index, basemap] of ["street", "satellite", "terrain"].entries()) {
+    await buttons.nth(index).click();
+    await page.waitForFunction(
+      ({ scope, expectedBasemap, state }) => {
+        const element = document.querySelector(`${scope} .geo-map-shell`);
+        return element?.getAttribute("data-basemap") === expectedBasemap
+          && element?.getAttribute("data-basemap-state") === state;
+      },
+      { scope: scopeSelector, expectedBasemap: basemap, state: expectedState },
+    );
+    if (await buttons.nth(index).getAttribute("aria-pressed") !== "true") {
+      throw new Error(`${scopeSelector} did not expose ${basemap} as the selected map background.`);
+    }
+    const attribution = await page.locator(`${scopeSelector} .map-attribution`).innerText();
+    const expectedAttribution = basemap === "street"
+      ? "OpenStreetMap contributors"
+      : basemap === "satellite"
+        ? "Esri World Imagery"
+        : "OpenTopoMap";
+    if (!attribution.includes(expectedAttribution)) {
+      throw new Error(`${scopeSelector} ${basemap} background is missing ${expectedAttribution} attribution.`);
+    }
+  }
+  await buttons.first().click();
+  await page.waitForFunction(
+    ({ scope, state }) => {
+      const element = document.querySelector(`${scope} .geo-map-shell`);
+      return element?.getAttribute("data-basemap") === "street"
+        && element?.getAttribute("data-basemap-state") === state;
+    },
+    { scope: scopeSelector, state: expectedState },
+  );
+}
+
+async function assertMaeSaiMap(page, scopeSelector, { expectRoads }) {
+  await page.waitForFunction(
+    ({ scope, requireRoads }) => {
+      const shell = document.querySelector(`${scope} .geo-map-shell`);
+      const facilityCount = document.querySelectorAll(`${scope} .facility-type-marker`).length;
+      const rendererCount = document.querySelectorAll(`${scope} .leaflet-overlay-pane canvas, ${scope} .leaflet-overlay-pane path`).length;
+      const roads = Number(shell?.getAttribute("data-road-feature-count") ?? 0);
+      return shell?.getAttribute("data-facility-feature-count") === "42"
+        && facilityCount === 42
+        && rendererCount > 0
+        && (!requireRoads || roads >= 4_458);
+    },
+    { scope: scopeSelector, requireRoads: expectRoads },
+  );
+  const shell = page.locator(`${scopeSelector} .geo-map-shell`);
+  if (await shell.getAttribute("data-facility-feature-count") !== "42") {
+    throw new Error(`${scopeSelector} did not load all 42 Mae Sai facilities.`);
+  }
+  const alternativeText = await page.locator(`${scopeSelector} .map-text-alternative`).textContent();
+  if (!alternativeText?.includes("8 areas") || !alternativeText.includes("42 important facilities")) {
+    throw new Error(`${scopeSelector} map text alternative does not describe the eight-area, 42-facility AOI.`);
+  }
+  const boundaryRendererCount = await page.locator(`${scopeSelector} .leaflet-overlay-pane canvas, ${scopeSelector} .leaflet-overlay-pane path`).count();
+  if (boundaryRendererCount === 0 || !await shell.getAttribute("data-selected-area")) {
+    throw new Error(`${scopeSelector} did not render its highlighted AOI boundary overlay.`);
+  }
+  if (await page.locator(`${scopeSelector} .facility-type-marker`).count() !== 42) {
+    throw new Error(`${scopeSelector} did not render one categorized icon for each important facility.`);
+  }
+  for (const category of ["healthcare", "school", "emergency", "shelter", "community"]) {
+    if (await page.locator(`${scopeSelector} .facility-type-marker.facility-${category}`).count() === 0) {
+      throw new Error(`${scopeSelector} is missing its ${category} facility symbol.`);
+    }
+  }
+  const roads = Number(await shell.getAttribute("data-road-feature-count"));
+  if (expectRoads && roads < 4_458) {
+    throw new Error(`${scopeSelector} did not retain the full Mae Sai road evidence layer.`);
+  }
+}
+
+function assertFinalVisibleCopy(body, routePath) {
+  const normalized = body.toLocaleLowerCase("en-US");
+  const required = routePath === "/public/"
+    ? ["mae sai planning data", "source time", "confidence", "ddpm", "local authorities"]
+    : routePath === "/command/"
+      ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
+      : ["research validation data", "source time", "confidence", "technical verification", "observed-data validation", "operational readiness", "agency verification"];
+  for (const phrase of required) {
+    if (!normalized.includes(phrase)) {
+      throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);
+    }
+  }
+  const forbidden = /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
+  const match = body.match(forbidden);
+  if (match) {
+    throw new Error(`${routePath} exposes forbidden internal copy: ${match[0]}.`);
+  }
 }

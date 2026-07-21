@@ -66,13 +66,22 @@ const browser = await chromium.launch(
 );
 
 const captures = [
-  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-390x844.png" },
-  { route: "/public/", selector: "main.public-page", width: 430, height: 932, file: "public-map-430x932.png", publicTab: 2 },
-  { route: "/command/", selector: "main.command-page", width: 1024, height: 768, file: "command-1024x768.png" },
-  { route: "/command/", selector: "main.command-page", width: 1440, height: 900, file: "command-1440x900.png" },
-  { route: "/command/", selector: "main.command-page", width: 1536, height: 1024, file: "command-1536x1024.png" },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-390x844.png", publicTab: "home", readySelector: '[data-testid="public-official-help"]' },
+  { route: "/public/", selector: "main.public-page", width: 430, height: 932, file: "public-map-430x932.png", publicTab: "map", readySelector: ".public-map-view .leaflet-container", basemap: "satellite", cycleBasemaps: true },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-shelters-390x844.png", publicTab: "shelters", readySelector: ".neutral-note" },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-prepare-390x844.png", publicTab: "prepare", readySelector: "#household-plan-builder" },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-data-390x844.png", publicTab: "data", readySelector: ".about-grid" },
+  { route: "/command/", selector: "main.command-page", width: 1024, height: 768, file: "command-1024x768.png", basemap: "street", cycleBasemaps: true },
+  { route: "/command/", selector: "main.command-page", width: 1440, height: 900, file: "command-1440x900.png", basemap: "street" },
+  { route: "/command/", selector: "main.command-page", width: 1536, height: 1024, file: "command-1536x1024.png", basemap: "satellite" },
   { route: "/studio/", selector: "main.studio-page", width: 2048, height: 1152, file: "studio-2048x1152.png" },
 ];
+const approvedBasemapOrigins = new Set([
+  "https://tile.openstreetmap.org",
+  "https://services.arcgisonline.com",
+  "https://a.tile.opentopomap.org",
+]);
+const approvedBasemapOriginsSeen = new Set();
 const externalRequests = new Set();
 const browserErrors = [];
 
@@ -85,6 +94,11 @@ try {
     await context.route("**/*", async (route) => {
       const url = new URL(route.request().url());
       if (url.origin !== baseUrl) {
+        if (approvedBasemapOrigins.has(url.origin)) {
+          approvedBasemapOriginsSeen.add(url.origin);
+          await route.continue();
+          return;
+        }
         externalRequests.add(url.href);
         await route.abort("blockedbyclient");
         return;
@@ -100,9 +114,21 @@ try {
     await page.goto(`${baseUrl}${capture.route}`, { waitUntil: "networkidle" });
     await page.locator(capture.selector).waitFor({ state: "visible" });
     if (capture.publicTab) {
-      await page.locator(`.public-bottom-nav button:nth-child(${capture.publicTab})`).click();
-      await page.locator(".public-map-view .leaflet-container").waitFor({ state: "visible" });
-      await page.locator(".map-selection-sheet.open").waitFor({ state: "visible" });
+      const tabButton = page.locator(`#public-tab-${capture.publicTab}`);
+      if (capture.publicTab !== "home") {
+        await page.locator(".public-content").evaluate((element) => {
+          element.scrollTop = element.scrollHeight;
+        });
+      }
+      await tabButton.click();
+      if (await tabButton.getAttribute("aria-pressed") !== "true") {
+        throw new Error(`${capture.file} did not activate the ${capture.publicTab} public tab.`);
+      }
+      await page.locator(capture.readySelector).waitFor({ state: "visible" });
+      await page.waitForFunction(() => document.querySelector(".public-content")?.scrollTop === 0);
+      if (capture.publicTab === "map") {
+        await page.locator(".map-selection-sheet.open").waitFor({ state: "visible" });
+      }
     } else if (capture.route === "/command/") {
       await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
     }
@@ -129,8 +155,21 @@ try {
         && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-access-feature-count") === "8"
       ));
       if (!(await page.locator('select[aria-label="Select scenario"]').isDisabled())) {
-        throw new Error(`${capture.file} enabled a Mae Sai scenario without a server-produced scenario foundation.`);
+        throw new Error(`${capture.file} enabled a planning scenario without the validated analysis service.`);
       }
+    }
+
+    const mapScope = capture.route === "/command/"
+      ? ".map-workspace"
+      : capture.route === "/public/" && capture.publicTab === "map"
+        ? ".public-map-view"
+        : null;
+    if (mapScope) {
+      await assertMaeSaiMap(page, mapScope, capture.file, capture.route === "/command/");
+      if (capture.cycleBasemaps) {
+        await exerciseOnlineBasemaps(page, mapScope, capture.file);
+      }
+      await selectOnlineBasemap(page, mapScope, capture.basemap ?? "street", capture.file, true);
     }
 
     if (capture.route === "/command/" && await page.locator(".ranked-areas button").count() === 0) {
@@ -142,7 +181,7 @@ try {
 
     const pageAudit = await page.evaluate(() => {
       const bodyText = document.body.innerText;
-      const mapControls = [...document.querySelectorAll(".leaflet-control-container .leaflet-control")]
+      const mapControls = [...document.querySelectorAll(".leaflet-control-container .leaflet-control, .map-basemap-switcher, .map-text-alternative")]
         .filter((element) => element instanceof HTMLElement && element.offsetParent !== null)
         .map((element) => {
           const rect = element.getBoundingClientRect();
@@ -211,6 +250,7 @@ try {
           proofImages && proofFigure ? proofFigure.width / proofImages.width : null,
         publicPlanActionBottom: publicPlanAction?.bottom ?? null,
         publicOfficialHelpTop: publicOfficialHelp?.top ?? null,
+        publicNavigationTop: publicNavigation?.top ?? null,
         selectedAreaSheetVisible: Boolean(selectedAreaSheet && selectedAreaSheet.width > 0 && selectedAreaSheet.height > 0),
         tabletEvidenceDrawer: tabletEvidenceDrawer
           ? {
@@ -258,15 +298,19 @@ try {
         `${capture.file} must use the two-column tablet command layout.`,
       );
     }
-    if (capture.route === "/public/" && !capture.publicTab) {
+    if (capture.route === "/public/" && capture.publicTab === "home") {
       if (pageAudit.publicPlanActionBottom === null || pageAudit.publicPlanActionBottom > capture.height) {
         throw new Error(`${capture.file} does not keep the household-plan action in the first viewport.`);
       }
-      if (pageAudit.publicOfficialHelpTop === null || pageAudit.publicOfficialHelpTop >= capture.height) {
+      if (
+        pageAudit.publicOfficialHelpTop === null
+        || pageAudit.publicNavigationTop === null
+        || pageAudit.publicOfficialHelpTop + 44 > pageAudit.publicNavigationTop
+      ) {
         throw new Error(`${capture.file} does not introduce official help in the first viewport.`);
       }
     }
-    if (capture.route === "/public/" && capture.publicTab && !pageAudit.selectedAreaSheetVisible) {
+    if (capture.route === "/public/" && capture.publicTab === "map" && !pageAudit.selectedAreaSheetVisible) {
       throw new Error(`${capture.file} is missing the selected-area bottom sheet.`);
     }
     if (capture.route === "/command/" && capture.width === 1024) {
@@ -279,16 +323,16 @@ try {
       const mapScenario = await page.locator(".map-workspace .geo-map-shell").getAttribute("data-scenario-id");
       const panelScenario = await page.locator(".decision-panel").getAttribute("data-scenario-id");
       if (mapScenario !== "baseline" || panelScenario !== mapScenario) {
-        throw new Error(`${capture.file} did not keep the blocked Mae Sai scenario state at baseline.`);
+        throw new Error(`${capture.file} did not keep the unavailable planning scenario at baseline.`);
       }
-      if (await page.locator(".candidate-evidence-limitations").count() !== 1) {
-        throw new Error(`${capture.file} does not expose the candidate scenario blocker.`);
+      if (await page.locator(".planning-evidence-boundary").count() !== 1) {
+        throw new Error(`${capture.file} does not expose the planning evidence boundary.`);
       }
     }
     if (capture.route === "/studio/") {
       const body = pageAudit.bodyText;
       const normalizedBody = body.toLocaleLowerCase("en-US");
-      for (const scope of ["Integration smoke", "Qualified real-data evaluation", "Decision eligibility"]) {
+      for (const scope of ["Technical verification", "Observed-data validation", "Operational readiness"]) {
         if (!normalizedBody.includes(scope.toLocaleLowerCase("en-US"))) {
           throw new Error(`${capture.file} is missing the ${scope} scope.`);
         }
@@ -307,22 +351,11 @@ try {
     if (/updated every 2 minutes|critical now|rescue count/iu.test(pageAudit.bodyText)) {
       throw new Error(`${capture.file} contains an unsupported live-state claim.`);
     }
-    const datasetDisclosure = capture.route === "/command/"
-      ? /candidate data|ข้อมูลผู้สมัคร/iu
-      : /fixture demo|ชุดข้อมูลสาธิต/iu;
-    if (!datasetDisclosure.test(pageAudit.bodyText)) {
-      throw new Error(`${capture.file} is missing its expected dataset-mode disclosure.`);
-    }
-    if (!/non-operational|ไม่ใช่ระบบปฏิบัติการ/iu.test(pageAudit.bodyText)) {
-      throw new Error(`${capture.file} is missing the non-operational disclosure.`);
-    }
-    if (!/source time|เวลาข้อมูล/iu.test(pageAudit.bodyText)) {
-      throw new Error(`${capture.file} is missing the source timestamp label.`);
-    }
-    if (!/confidence|ความเชื่อมั่น/iu.test(pageAudit.bodyText)) {
-      throw new Error(`${capture.file} is missing the confidence label.`);
-    }
+    assertPolishedRouteCopy(pageAudit.bodyText, capture.route, capture.file);
 
+    await page.screenshot({ path: resolve(evidenceDir, capture.file), fullPage: false });
+
+    await page.locator(".skip-link").focus();
     await page.keyboard.press("Tab");
     const focusAudit = await page.evaluate(() => {
       const element = document.activeElement;
@@ -343,21 +376,179 @@ try {
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     });
 
-    await page.screenshot({ path: resolve(evidenceDir, capture.file), fullPage: false });
     await context.close();
     console.log(`visual QA: ${capture.file} ${capture.width}x${capture.height} PASS`);
   }
 
   if (externalRequests.size > 0) {
-    throw new Error(`External requests were attempted: ${[...externalRequests].join(", ")}`);
+    throw new Error(`Unapproved external requests were attempted: ${[...externalRequests].join(", ")}`);
+  }
+  for (const origin of approvedBasemapOrigins) {
+    if (!approvedBasemapOriginsSeen.has(origin)) {
+      throw new Error(`Visual QA never loaded approved basemap provider ${origin}.`);
+    }
   }
   if (browserErrors.length > 0) {
     throw new Error(`Browser errors: ${browserErrors.join(" | ")}`);
   }
-  console.log(`visual QA: ${captures.length} captures, 0 external requests, all checks PASS`);
+  console.log(`visual QA: ${captures.length} captures, three approved basemap providers, no unapproved external requests, all checks PASS`);
 } finally {
   await browser.close();
   await new Promise((resolveClose, rejectClose) => {
     server.close((error) => error ? rejectClose(error) : resolveClose());
   });
+}
+
+async function exerciseOnlineBasemaps(page, scopeSelector, file) {
+  for (const basemap of ["street", "satellite", "terrain"]) {
+    await selectOnlineBasemap(page, scopeSelector, basemap, file, false);
+  }
+}
+
+async function selectOnlineBasemap(page, scopeSelector, basemap, file, requireFullCoverage) {
+  const basemaps = ["street", "satellite", "terrain"];
+  const index = basemaps.indexOf(basemap);
+  if (index === -1) throw new Error(`${file} requested an unsupported map background: ${basemap}.`);
+  const buttons = page.locator(`${scopeSelector} .map-basemap-switcher button`);
+  if (await buttons.count() !== 3) {
+    throw new Error(`${file} must expose Street, Satellite, and Terrain map backgrounds.`);
+  }
+  const labels = (await buttons.allTextContents()).map((label) => label.trim()).join("|");
+  if (labels !== "Street|Satellite|Terrain" && labels !== "ถนน|ดาวเทียม|ภูมิประเทศ") {
+    throw new Error(`${file} map backgrounds are mislabeled: ${labels}.`);
+  }
+  await buttons.nth(index).click();
+  try {
+    await page.waitForFunction(
+      ({ scope, expectedBasemap, requireComplete }) => {
+        const element = document.querySelector(`${scope} .geo-map-shell`);
+        const allTiles = [...document.querySelectorAll(`${scope} .leaflet-tile-pane img.leaflet-tile`)];
+        const loadedTiles = allTiles.filter((tile) => tile.classList.contains("leaflet-tile-loaded"));
+        return element?.getAttribute("data-basemap") === expectedBasemap
+          && element?.getAttribute("data-basemap-state") === "ready"
+          && loadedTiles.some((tile) => tile instanceof HTMLImageElement
+            && tile.complete
+            && tile.naturalWidth > 0)
+          && (!requireComplete || (allTiles.length > 0 && allTiles.every((tile) => (
+            tile instanceof HTMLImageElement
+            && tile.complete
+            && tile.naturalWidth > 0
+            && tile.classList.contains("leaflet-tile-loaded")
+          ))));
+      },
+      { scope: scopeSelector, expectedBasemap: basemap, requireComplete: requireFullCoverage },
+      { timeout: 30_000 },
+    );
+  } catch (error) {
+    const diagnostic = await page.evaluate(({ scope }) => {
+      const shell = document.querySelector(`${scope} .geo-map-shell`);
+      const tiles = [...document.querySelectorAll(`${scope} .leaflet-tile-pane img.leaflet-tile`)]
+        .filter((tile) => tile instanceof HTMLImageElement)
+        .map((tile) => ({
+          complete: tile.complete,
+          loaded: tile.classList.contains("leaflet-tile-loaded"),
+          naturalWidth: tile.naturalWidth,
+          opacity: getComputedStyle(tile).opacity,
+          src: tile.src,
+        }));
+      return {
+        basemap: shell?.getAttribute("data-basemap"),
+        state: shell?.getAttribute("data-basemap-state"),
+        tiles,
+      };
+    }, { scope: scopeSelector });
+    throw new Error(`${file} ${basemap} background did not settle: ${JSON.stringify(diagnostic)}`, { cause: error });
+  }
+  await page.waitForTimeout(750);
+  if (await buttons.nth(index).getAttribute("aria-pressed") !== "true") {
+    throw new Error(`${file} did not expose ${basemap} as the selected map background.`);
+  }
+  const attribution = await page.locator(`${scopeSelector} .map-attribution`).innerText();
+  const expectedAttribution = basemap === "street"
+    ? "OpenStreetMap contributors"
+    : basemap === "satellite"
+      ? "Esri World Imagery"
+      : "OpenTopoMap";
+  if (!attribution.includes(expectedAttribution)) {
+    throw new Error(`${file} ${basemap} background is missing ${expectedAttribution} attribution.`);
+  }
+}
+
+async function assertMaeSaiMap(page, scopeSelector, file, expectRoads) {
+  await page.waitForFunction(
+    ({ scope, requireRoads }) => {
+      const shell = document.querySelector(`${scope} .geo-map-shell`);
+      const facilityCount = document.querySelectorAll(`${scope} .facility-type-marker`).length;
+      const rendererCount = document.querySelectorAll(`${scope} .leaflet-overlay-pane canvas, ${scope} .leaflet-overlay-pane path`).length;
+      const roads = Number(shell?.getAttribute("data-road-feature-count") ?? 0);
+      return shell?.getAttribute("data-facility-feature-count") === "42"
+        && facilityCount === 42
+        && rendererCount > 0
+        && (!requireRoads || roads >= 4_458);
+    },
+    { scope: scopeSelector, requireRoads: expectRoads },
+    { timeout: 30_000 },
+  );
+  const shell = page.locator(`${scopeSelector} .geo-map-shell`);
+  if (await shell.getAttribute("data-facility-feature-count") !== "42") {
+    throw new Error(`${file} did not load all 42 Mae Sai facilities.`);
+  }
+  const alternativeText = await page.locator(`${scopeSelector} .map-text-alternative`).textContent();
+  if (!/8\s*(?:areas|พื้นที่)/iu.test(alternativeText ?? "") || !/42\s*(?:important facilities|สถานที่สำคัญ)/iu.test(alternativeText ?? "")) {
+    throw new Error(`${file} map text alternative does not describe the eight-area, 42-facility AOI.`);
+  }
+  const boundaryRendererCount = await page.locator(`${scopeSelector} .leaflet-overlay-pane canvas, ${scopeSelector} .leaflet-overlay-pane path`).count();
+  if (boundaryRendererCount === 0 || !await shell.getAttribute("data-selected-area")) {
+    throw new Error(`${file} did not render its highlighted AOI boundary overlay.`);
+  }
+  if (await page.locator(`${scopeSelector} .facility-type-marker`).count() !== 42) {
+    throw new Error(`${file} did not render one categorized icon for each important facility.`);
+  }
+  for (const category of ["healthcare", "school", "emergency", "shelter", "community"]) {
+    if (await page.locator(`${scopeSelector} .facility-type-marker.facility-${category}`).count() === 0) {
+      throw new Error(`${file} is missing its ${category} facility symbol.`);
+    }
+  }
+  const roads = Number(await shell.getAttribute("data-road-feature-count"));
+  if (expectRoads && roads < 4_458) {
+    throw new Error(`${file} did not retain the full Mae Sai road evidence layer.`);
+  }
+}
+
+function assertPolishedRouteCopy(body, route, file) {
+  const requirements = route === "/public/"
+    ? [
+        /Mae Sai planning data|ข้อมูลการวางแผนแม่สาย/iu,
+        /Source time|เวลาข้อมูล/iu,
+        /Confidence|ความเชื่อมั่น/iu,
+        /DDPM|ปภ\./iu,
+        /local authorities|หน่วยงานท้องถิ่น/iu,
+      ]
+    : route === "/command/"
+      ? [
+          /Planning intelligence|ข้อมูลเพื่อการวางแผน/iu,
+          /Source time|เวลาข้อมูล/iu,
+          /Confidence|ความเชื่อมั่น/iu,
+          /DDPM|ปภ\./iu,
+          /local-authority|หน่วยงานท้องถิ่น/iu,
+        ]
+      : [
+          /Research validation data/iu,
+          /Source time/iu,
+          /Confidence/iu,
+          /Technical verification/iu,
+          /Observed-data validation/iu,
+          /Operational readiness/iu,
+          /agency verification/iu,
+        ];
+  for (const requirement of requirements) {
+    if (!requirement.test(body)) {
+      throw new Error(`${file} is missing polished final copy matching ${requirement}.`);
+    }
+  }
+  const forbidden = /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer|ฝึกซ้อม|สาธิต|ผู้สมัคร/iu;
+  const match = body.match(forbidden);
+  if (match) {
+    throw new Error(`${file} exposes forbidden internal copy: ${match[0]}.`);
+  }
 }

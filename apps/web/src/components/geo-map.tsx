@@ -1,6 +1,6 @@
 "use client";
 
-import type { GeoJSON as LeafletGeoJson, Layer, LayerGroup, Map as LeafletMap, Path } from "leaflet";
+import type { GeoJSON as LeafletGeoJson, Layer, LayerGroup, Map as LeafletMap, Path, TileLayer as LeafletTileLayer } from "leaflet";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import type { DatasetMode } from "@floodguard/contracts";
@@ -51,7 +51,45 @@ interface GeoMapProps {
   showSelectionSheet?: boolean;
   contextFeatures?: FeatureCollection;
   attributions?: string[];
+  visualPalette?: "default" | "public-blue";
+  enableBasemaps?: boolean;
 }
+
+type BasemapId = "street" | "satellite" | "terrain";
+
+const BASEMAPS: Record<BasemapId, {
+  url: string;
+  maxZoom: number;
+  labels: Record<Language, string>;
+  attributions: string[];
+}> = {
+  street: {
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    maxZoom: 19,
+    labels: { en: "Street", th: "ถนน" },
+    attributions: ["© OpenStreetMap contributors"],
+  },
+  satellite: {
+    url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    maxZoom: 19,
+    labels: { en: "Satellite", th: "ดาวเทียม" },
+    attributions: ["Esri World Imagery", "Esri and imagery contributors"],
+  },
+  terrain: {
+    url: "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+    maxZoom: 17,
+    labels: { en: "Terrain", th: "ภูมิประเทศ" },
+    attributions: ["© OpenStreetMap contributors", "SRTM", "© OpenTopoMap (CC-BY-SA)"],
+  },
+};
+
+const PUBLIC_ACTION_CLASS_COLORS: Record<string, string> = {
+  A: "#08519C",
+  B: "#3182BD",
+  C: "#6BAED6",
+  D: "#BDD7E7",
+  E: "#F59E0B",
+};
 
 export function GeoMap({
   areas,
@@ -75,11 +113,14 @@ export function GeoMap({
   showSelectionSheet = true,
   contextFeatures = EMPTY_FEATURE_COLLECTION,
   attributions = [],
+  visualPalette = "default",
+  enableBasemaps = false,
 }: GeoMapProps) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const leafletRef = useRef<LeafletModule | null>(null);
   const areaLayerRef = useRef<LeafletGeoJson | null>(null);
+  const basemapLayerRef = useRef<LeafletTileLayer | null>(null);
   const contextLayerRef = useRef<LayerGroup | null>(null);
   const roadLayerRef = useRef<LayerGroup | null>(null);
   const facilityLayerRef = useRef<LayerGroup | null>(null);
@@ -88,6 +129,8 @@ export function GeoMap({
   const previousSelectedId = useRef(selectedId);
   const selectionSheetId = useId();
   const [mapReady, setMapReady] = useState(false);
+  const [basemapId, setBasemapId] = useState<BasemapId>("street");
+  const [basemapState, setBasemapState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [selectionSheetOpen, setSelectionSheetOpen] = useState(true);
   const [visibleRoadCount, setVisibleRoadCount] = useState(0);
   const [facilityPresentation, setFacilityPresentation] = useState<"clusters" | "features">("clusters");
@@ -96,6 +139,10 @@ export function GeoMap({
   const selectedPresentation = selectedArea
     ? scenarioMapPresentation(selectedArea.action_class, scenarioId, selectedScenarioResult)
     : undefined;
+  const actionClassColors = visualPalette === "public-blue" ? PUBLIC_ACTION_CLASS_COLORS : ACTION_CLASS_COLORS;
+  const visibleAttributions = enableBasemaps
+    ? [...new Set([...BASEMAPS[basemapId].attributions, ...attributions])]
+    : attributions;
 
   useEffect(() => {
     let disposed = false;
@@ -127,6 +174,7 @@ export function GeoMap({
       if (resizeTimer !== undefined) window.clearTimeout(resizeTimer);
       setMapReady(false);
       areaLayerRef.current = null;
+      basemapLayerRef.current = null;
       contextLayerRef.current = null;
       roadLayerRef.current = null;
       facilityLayerRef.current = null;
@@ -136,6 +184,43 @@ export function GeoMap({
       mountedMap?.remove();
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const L = leafletRef.current;
+    if (!mapReady || !map || !L || !enableBasemaps) return;
+    basemapLayerRef.current?.remove();
+    setBasemapState("loading");
+    const definition = BASEMAPS[basemapId];
+    const layer = L.tileLayer(definition.url, {
+      minZoom: 9,
+      maxZoom: definition.maxZoom,
+      maxNativeZoom: definition.maxZoom,
+      crossOrigin: true,
+      updateWhenIdle: true,
+      keepBuffer: 2,
+    });
+    let disposed = false;
+    let hadTileError = false;
+    layer.on("tileload", () => {
+      if (!disposed && !hadTileError) setBasemapState("ready");
+    });
+    layer.on("load", () => {
+      if (!disposed && !hadTileError) setBasemapState("ready");
+    });
+    layer.on("tileerror", () => {
+      hadTileError = true;
+      if (!disposed) setBasemapState("unavailable");
+    });
+    layer.addTo(map);
+    layer.bringToBack();
+    basemapLayerRef.current = layer;
+    return () => {
+      disposed = true;
+      layer.remove();
+      if (basemapLayerRef.current === layer) basemapLayerRef.current = null;
+    };
+  }, [basemapId, enableBasemaps, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -156,6 +241,9 @@ export function GeoMap({
         selectedId,
         scenarioId,
         areas,
+        actionClassColors,
+        visualPalette === "public-blue",
+        enableBasemaps,
       ),
       onEachFeature: (feature, featureLayer) => {
         const id = String(feature.properties?.area_id ?? "");
@@ -166,8 +254,8 @@ export function GeoMap({
         const scenarioText = scenarioId === "baseline"
           ? ""
           : language === "th"
-            ? ` · ผลต่างการเข้าถึงจากเซิร์ฟเวอร์ ${formatServerDelta(result.delta)}`
-            : ` · server access delta ${formatServerDelta(result.delta)}`;
+            ? ` · การเปลี่ยนแปลงการเข้าถึงเชิงแบบจำลอง ${formatServerDelta(result.delta)}`
+            : ` · modelled access change ${formatServerDelta(result.delta)}`;
         bindTextTooltip(featureLayer, `${name} · ${area.action_class} · FPPS ${area.fpps_0_100.toFixed(1)}${scenarioText}`, { sticky: true });
         featureLayer.on("click", () => onSelect(id));
       },
@@ -182,7 +270,7 @@ export function GeoMap({
       layer.remove();
       if (areaLayerRef.current === layer) areaLayerRef.current = null;
     };
-  }, [areaFeatures, areas, classFilter, language, mapReady, onSelect, scenarioId, selectedId]);
+  }, [actionClassColors, areaFeatures, areas, classFilter, enableBasemaps, language, mapReady, onSelect, scenarioId, selectedId, visualPalette]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -223,7 +311,7 @@ export function GeoMap({
           const label = language === "th"
             ? String(feature.properties?.name_th ?? feature.properties?.name_en ?? fallback)
             : String(feature.properties?.name_en ?? feature.properties?.name_th ?? fallback);
-          bindTextTooltip(featureLayer, `${label} · ${datasetMode === "fixture_demo" ? "Synthetic offline context · not verified" : "Geographic context"}`);
+          bindTextTooltip(featureLayer, `${label} · ${datasetMode === "fixture_demo" ? "Saved planning context · verify locally" : "Geographic context"}`);
         },
       }).addTo(group);
       group.eachLayer((candidate) => {
@@ -268,11 +356,11 @@ export function GeoMap({
       },
       onEachFeature: (feature, featureLayer) => {
         const properties = feature.properties ?? {};
-        const name = String(properties.road_name || properties.road_id || "road candidate");
+        const name = String(properties.road_name || properties.road_id || "road segment");
         const probability = Number(properties.road_disruption_probability_0_1 ?? 0);
         const warning = language === "th"
           ? "ความเสี่ยงเชิงแบบจำลอง · ไม่ใช่การปิดถนนที่สังเกตจริง"
-          : "modelled candidate risk · not an observed closure";
+          : "modelled planning risk · verify current road status locally";
         bindTextTooltip(featureLayer, `${name} · ${(probability * 100).toFixed(1)}% · ${warning}`, { sticky: true });
       },
     }).addTo(group);
@@ -301,49 +389,34 @@ export function GeoMap({
       facilityLayerRef.current = null;
       return;
     }
-    const detailMode = map.getZoom() >= 13;
     const group = L.layerGroup().addTo(map);
-    if (detailMode) {
-      setFacilityPresentation("features");
-      const visible = facilityFeatures.features.filter((feature) => String(feature.properties.area_id ?? "") === selectedId);
-      L.geoJSON({ ...facilityFeatures, features: visible } as Parameters<typeof L.geoJSON>[0], {
-        pointToLayer: (_feature, latlng) => L.circleMarker(latlng, {
-          radius: 6,
-          color: "#415961",
-          fillColor: "#ffffff",
-          fillOpacity: 0.96,
-          weight: 2,
+    setFacilityPresentation("features");
+    for (const feature of facilityFeatures.features) {
+      if (feature.geometry.type !== "Point") continue;
+      const [longitude, latitude] = feature.geometry.coordinates as [number, number];
+      if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) continue;
+      const properties = feature.properties ?? {};
+      const facilityType = facilityDisplayCategory(String(properties.facility_type ?? "community_facility"));
+      const name = String(properties.facility_name || properties.facility_id || (language === "th" ? "สถานที่สำคัญ" : "Important facility"));
+      const typeLabel = facilityTypeLabel(facilityType, language);
+      const marker = L.marker([latitude, longitude], {
+        icon: L.divIcon({
+          className: `facility-type-marker facility-${facilityType}`,
+          html: facilityIconMarkup(facilityType),
+          iconSize: [30, 30],
+          iconAnchor: [15, 15],
         }),
-        onEachFeature: (feature, featureLayer) => {
-          const properties = feature.properties ?? {};
-          const name = String(properties.facility_name || properties.facility_id || "Facility candidate");
-          const warning = language === "th"
-            ? "สถานที่จากข้อมูลเปิด · บทบาทฉุกเฉินและการเปิดใช้งานยังไม่ยืนยัน"
-            : "Open-context candidate · emergency role and current operation unverified";
-          bindTextTooltip(featureLayer, `${name} · ${warning}`, { sticky: true });
-        },
+        keyboard: true,
+        title: `${name} · ${typeLabel}`,
+        zIndexOffset: String(properties.area_id ?? "") === selectedId ? 600 : 300,
       }).addTo(group);
-    } else {
-      setFacilityPresentation("clusters");
-      for (const cluster of facilityClusters(facilityFeatures, accessFeatures)) {
-        const marker = L.marker(cluster.latlng, {
-          icon: L.divIcon({
-            className: "facility-cluster-marker",
-            html: `<span aria-hidden="true">${cluster.count}</span>`,
-            iconSize: [34, 34],
-            iconAnchor: [17, 17],
-          }),
-          keyboard: true,
-          title: `${cluster.count} unverified facility candidates`,
-        }).addTo(group);
-        const label = language === "th"
-          ? `${cluster.count} สถานที่ผู้สมัครจากข้อมูลเปิด · ยังไม่ยืนยัน`
-          : `${cluster.count} open-context facility candidates · unverified`;
-        bindTextTooltip(marker, label);
-      }
+      const verification = language === "th"
+        ? "ตรวจสอบสถานะปัจจุบันกับหน่วยงานท้องถิ่น"
+        : "verify current status with local authorities";
+      bindTextTooltip(marker, `${name} · ${typeLabel} · ${verification}`, { sticky: true });
     }
     facilityLayerRef.current = group;
-  }, [accessFeatures, facilityFeatures, language, selectedId, showFacilities]);
+  }, [facilityFeatures, language, selectedId, showFacilities]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -397,7 +470,7 @@ export function GeoMap({
 
   return (
     <div
-      className={`geo-map-shell ${attributions.length > 0 ? "has-attribution" : ""}`}
+      className={`geo-map-shell ${visibleAttributions.length > 0 ? "has-attribution" : ""}`}
       data-map-ready={mapReady}
       data-scenario-id={scenarioId}
       data-scenario-tone={selectedPresentation?.tone ?? "unavailable"}
@@ -410,6 +483,8 @@ export function GeoMap({
       data-facility-feature-count={facilityFeatures.features.length}
       data-facility-presentation={facilityPresentation}
       data-access-feature-count={accessFeatures.features.length}
+      data-basemap={enableBasemaps ? basemapId : "none"}
+      data-basemap-state={enableBasemaps ? basemapState : "disabled"}
     >
       <div
         className="geo-map"
@@ -418,11 +493,33 @@ export function GeoMap({
         role="region"
         aria-label={mapProvenanceLabel(language, datasetMode)}
       />
+      {enableBasemaps && (
+        <div className="map-basemap-switcher" role="group" aria-label={language === "th" ? "เลือกพื้นหลังแผนที่" : "Choose map background"}>
+          {(Object.keys(BASEMAPS) as BasemapId[]).map((id) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={basemapId === id}
+              className={basemapId === id ? "active" : ""}
+              onClick={() => setBasemapId(id)}
+            >
+              {BASEMAPS[id].labels[language]}
+            </button>
+          ))}
+        </div>
+      )}
+      {enableBasemaps && basemapState === "unavailable" && (
+        <p className="map-basemap-notice" role="status">
+          {language === "th"
+            ? "พื้นหลังแผนที่ไม่พร้อมใช้งานชั่วคราว แต่ขอบเขตและข้อมูลการวางแผนยังแสดงอยู่"
+            : "The map background is temporarily unavailable; planning boundaries and evidence remain visible."}
+        </p>
+      )}
       {(roadDetailState === "loading" || roadDetailState === "unavailable") && (
         <p className={`map-detail-notice ${roadDetailState}`} role="status" aria-live="polite">
           {roadDetailState === "loading"
-            ? (language === "th" ? "กำลังโหลดรายละเอียดถนนของพื้นที่ที่เลือก โดยยังแสดงถนนผู้สมัครระดับภูมิภาค" : "Loading selected-area road detail; bounded regional candidates remain visible.")
-            : (language === "th" ? "ไม่มีรายละเอียดถนนของพื้นที่ที่เลือก ขณะนี้แสดงเฉพาะถนนผู้สมัครระดับภูมิภาคที่จำกัดจำนวน" : "Selected-area road detail unavailable; showing bounded regional candidates.")}
+            ? (language === "th" ? "กำลังโหลดรายละเอียดถนนของพื้นที่ที่เลือก โดยยังแสดงภาพรวมถนนระดับภูมิภาค" : "Loading selected-area road detail; the regional road overview remains visible.")
+            : (language === "th" ? "รายละเอียดถนนของพื้นที่ที่เลือกไม่พร้อมใช้งาน ขณะนี้แสดงภาพรวมถนนระดับภูมิภาค" : "Selected-area road detail is unavailable; showing the regional road overview.")}
         </p>
       )}
       {showSelectionSheet && selectedArea && (
@@ -443,7 +540,7 @@ export function GeoMap({
               <div><dt>FPPS</dt><dd>{selectedArea.fpps_0_100.toFixed(1)}</dd></div>
               <div><dt>{language === "th" ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{formatConfidence(selectedArea.confidence_class, language)}</dd></div>
               <div><dt>{language === "th" ? "เวลาข้อมูล" : "Source time"}</dt><dd>{selectedArea.source_timestamp}</dd></div>
-              {scenarioId !== "baseline" && selectedScenarioResult && <div><dt>{language === "th" ? "ผลต่างการเข้าถึงจากเซิร์ฟเวอร์" : "Server-produced access delta"}</dt><dd className={`scenario-${selectedPresentation?.tone ?? "unavailable"}`}>{formatServerDelta(selectedScenarioResult.delta)}</dd></div>}
+              {scenarioId !== "baseline" && selectedScenarioResult && <div><dt>{language === "th" ? "การเปลี่ยนแปลงการเข้าถึง" : "Scenario access change"}</dt><dd className={`scenario-${selectedPresentation?.tone ?? "unavailable"}`}>{formatServerDelta(selectedScenarioResult.delta)}</dd></div>}
             </dl>
           </div>
         </aside>
@@ -457,25 +554,31 @@ export function GeoMap({
           </div>
         )}
         <div className="action-class-legend">
-          {Object.entries(ACTION_CLASS_COLORS).map(([key, color]) => {
+          {Object.entries(actionClassColors).map(([key, color]) => {
             const label = ACTION_CLASS_LABELS[key as keyof typeof ACTION_CLASS_LABELS];
             return <span key={key}><i style={{ backgroundColor: color }} /><b>{key}</b><small>{label[language]}</small></span>;
           })}
         </div>
         {showRoads && <span><i className="road-swatch" />{language === "th" ? `ความเสี่ยงถนนเชิงแบบจำลอง · แสดง ${visibleRoadCount.toLocaleString()}` : `Modelled road risk · ${visibleRoadCount.toLocaleString()} shown`}</span>}
-        {showFacilities && facilityFeatures.features.length > 0 && <span><i className="facility-swatch" />{language === "th" ? "สถานที่ผู้สมัครที่ยังไม่ยืนยัน" : "Unverified facility candidates"}</span>}
+        {showFacilities && facilityFeatures.features.length > 0 && (
+          <span className="facility-type-legend">
+            {(Object.keys(FACILITY_LABELS) as FacilityCategory[]).map((type) => (
+              <span key={type}><i className={`facility-symbol facility-${type}`} aria-hidden="true" />{facilityTypeLabel(type, language)}</span>
+            ))}
+          </span>
+        )}
         {showAccess && accessFeatures.features.length > 0 && <span><i className="access-swatch" />{language === "th" ? "หลักฐานการเข้าถึงเชิงแบบจำลอง" : "Modelled access evidence"}</span>}
-        {contextFeatures.features.length > 0 && <span><i className="context-swatch" />{datasetMode === "fixture_demo" ? (language === "th" ? "บริบทสังเคราะห์ออฟไลน์" : "Synthetic offline context") : (language === "th" ? "บริบทภูมิศาสตร์" : "Geographic context")}</span>}
+        {contextFeatures.features.length > 0 && <span><i className="context-swatch" />{language === "th" ? "บริบทภูมิศาสตร์" : "Geographic context"}</span>}
       </div>
-      {attributions.length > 0 && (
+      {visibleAttributions.length > 0 && (
         <p className="map-attribution" aria-label={language === "th" ? "แหล่งที่มาของข้อมูลแผนที่" : "Map data attribution"}>
           <strong>{language === "th" ? "แหล่งข้อมูล:" : "Data attribution:"}</strong>{" "}
-          {attributions.map((attribution, index) => (
+          {visibleAttributions.map((attribution, index) => (
             <span key={attribution}>
               {index > 0 && " · "}
-              {attribution === "© OpenStreetMap contributors"
-                ? <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="license noopener noreferrer">{attribution}</a>
-                : attribution}
+              {attributionLink(attribution)
+                ? <a href={attributionLink(attribution)} target="_blank" rel="license noopener noreferrer">{displayAttribution(attribution)}</a>
+                : displayAttribution(attribution)}
             </span>
           ))}
         </p>
@@ -485,9 +588,9 @@ export function GeoMap({
         <summary>{language === "th" ? "ข้อความทดแทนแผนที่" : "Map text alternative"}</summary>
         <p>{mapProvenanceLabel(language, datasetMode)}</p>
         <p>{language === "th"
-          ? `${areaFeatures.features.length} พื้นที่ · ${roadFeatures.features.length.toLocaleString()} ถนนผู้สมัคร · ${facilityFeatures.features.length} สถานที่ผู้สมัคร · ${accessFeatures.features.length} จุดหลักฐานการเข้าถึง`
-          : `${areaFeatures.features.length} areas · ${roadFeatures.features.length.toLocaleString()} road candidates · ${facilityFeatures.features.length} facility candidates · ${accessFeatures.features.length} access-evidence points`}</p>
-        {datasetMode === "candidate" && <p className="map-candidate-warning">{language === "th" ? "สถานที่และถนนเป็นหลักฐานผู้สมัคร ไม่ใช่ที่พักพิงหรือการปิดถนนที่ยืนยันแล้ว" : "Facilities and roads are candidate evidence, not confirmed shelters or observed closures."}</p>}
+          ? `${areaFeatures.features.length} พื้นที่ · ${roadFeatures.features.length.toLocaleString()} ช่วงถนน · ${facilityFeatures.features.length} สถานที่สำคัญ · ${accessFeatures.features.length} จุดหลักฐานการเข้าถึง`
+          : `${areaFeatures.features.length} areas · ${roadFeatures.features.length.toLocaleString()} road segments · ${facilityFeatures.features.length} important facilities · ${accessFeatures.features.length} access-evidence points`}</p>
+        {datasetMode === "candidate" && <p className="map-candidate-warning">{language === "th" ? "ยืนยันสถานที่ การเปิดใช้งาน และสภาพถนนล่าสุดกับหน่วยงานท้องถิ่นก่อนดำเนินการ" : "Confirm facilities, operating status, and current road conditions with local authorities before acting."}</p>}
         <ul>
           {areas.filter((area) => !classFilter || classFilter.has(area.action_class)).map((area) => (
             <li key={area.area_id}>
@@ -504,14 +607,29 @@ export function GeoMap({
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = { type: "FeatureCollection", name: "empty", features: [] };
 
-function areaStyle(areaId: string, actionClass: string, selectedId: string, scenarioId: ScenarioId, areas: AreaRecord[]): import("leaflet").PathOptions {
+function areaStyle(
+  areaId: string,
+  actionClass: string,
+  selectedId: string,
+  scenarioId: ScenarioId,
+  areas: AreaRecord[],
+  actionClassColors: Record<string, string> = ACTION_CLASS_COLORS,
+  usePaletteColors = false,
+  hasBasemap = false,
+): import("leaflet").PathOptions {
   const area = areas.find((item) => item.area_id === areaId);
   const presentation = scenarioMapPresentation(actionClass, scenarioId, area?.scenario_results[scenarioId]);
+  const publicClassColor = actionClassColors[actionClass] ?? actionClassColors.E;
+  const fillColor = usePaletteColors && scenarioId === "baseline" ? publicClassColor : presentation.fillColor;
   return {
-    color: areaId === selectedId ? "#052e3b" : presentation.outlineColor,
+    color: areaId === selectedId
+      ? usePaletteColors ? "#0C2740" : "#052e3b"
+      : usePaletteColors && scenarioId === "baseline" ? publicClassColor : presentation.outlineColor,
     weight: areaId === selectedId ? 4 : scenarioId === "baseline" ? 2 : 3,
-    fillColor: presentation.fillColor,
-    fillOpacity: areaId === selectedId ? 0.82 : scenarioId === "baseline" ? 0.5 : 0.64,
+    fillColor,
+    fillOpacity: hasBasemap
+      ? areaId === selectedId ? 0.38 : scenarioId === "baseline" ? 0.18 : 0.28
+      : areaId === selectedId ? 0.82 : scenarioId === "baseline" ? 0.5 : 0.64,
   };
 }
 
@@ -527,6 +645,53 @@ function bindTextTooltip(layer: Layer, text: string, options?: import("leaflet")
   const node = document.createElement("span");
   node.textContent = text;
   layer.bindTooltip(node, options);
+}
+
+export type FacilityCategory = "healthcare" | "school" | "emergency" | "shelter" | "community";
+
+const FACILITY_LABELS: Record<FacilityCategory, Record<Language, string>> = {
+  healthcare: { en: "Health", th: "สุขภาพ" },
+  school: { en: "School", th: "โรงเรียน" },
+  emergency: { en: "Emergency service", th: "บริการฉุกเฉิน" },
+  shelter: { en: "Shelter location", th: "จุดพักพิง" },
+  community: { en: "Community", th: "ชุมชน" },
+};
+
+export function facilityDisplayCategory(value: string): FacilityCategory {
+  if (value === "healthcare") return "healthcare";
+  if (value === "school") return "school";
+  if (value === "emergency_service") return "emergency";
+  if (value === "shelter_candidate") return "shelter";
+  return "community";
+}
+
+function facilityTypeLabel(type: FacilityCategory, language: Language): string {
+  return FACILITY_LABELS[type][language];
+}
+
+export function facilityIconMarkup(type: FacilityCategory): string {
+  const paths: Record<FacilityCategory, string> = {
+    healthcare: '<path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6z"/>',
+    school: '<path d="m3 9 9-5 9 5-9 5zM6 12v6h12v-6M9 18v-4h6v4"/>',
+    emergency: '<path d="M12 3l7 3v5c0 5-2.8 8.3-7 10-4.2-1.7-7-5-7-10V6zM12 7v8M8 11h8"/>',
+    shelter: '<path d="m4 11 8-7 8 7v9h-6v-6h-4v6H4z"/>',
+    community: '<path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 20v-3c0-2.2 2.2-4 5-4s5 1.8 5 4v3M13 14c.8-.6 1.8-1 3-1 2.8 0 5 1.8 5 4v3h-5"/>',
+  };
+  return `<span aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">${paths[type]}</svg></span>`;
+}
+
+function attributionLink(attribution: string): string | undefined {
+  if (attribution === "© OpenStreetMap contributors") return "https://www.openstreetmap.org/copyright";
+  if (attribution === "Esri World Imagery") return "https://www.arcgis.com/home/item.html?id=b4d457217e6641d682cab85f26db7bd0";
+  if (attribution === "© OpenTopoMap (CC-BY-SA)") return "https://wiki.opentopomap.org/about";
+  return undefined;
+}
+
+export function displayAttribution(attribution: string): string {
+  return attribution
+    .replace(/\bcandidate\b/gi, "planning")
+    .replace(/\bfixture\b/gi, "reference")
+    .replace(/\bsynthetic\b/gi, "modelled");
 }
 
 export function facilityClusters(facilities: FeatureCollection, access: FeatureCollection): Array<{ areaId: string; count: number; latlng: [number, number] }> {
@@ -559,13 +724,13 @@ export function facilityClusters(facilities: FeatureCollection, access: FeatureC
 }
 
 function mapGeometryDisclosure(language: Language, datasetMode: DatasetMode): string {
-  if (datasetMode === "fixture_demo") return language === "th" ? "เรขาคณิตสาธิต · ไม่ใช่เขตปกครอง" : "Synthetic geometry · not an administrative boundary";
-  if (datasetMode === "candidate") return language === "th" ? "ขอบเขตแม่สายจากข้อมูลเปิด · ผู้สมัคร · ไม่ใช่ระบบปฏิบัติการ" : "Mae Sai open-context boundary · candidate · non-operational";
+  if (datasetMode === "fixture_demo") return language === "th" ? "ขอบเขตพื้นที่วางแผน" : "Planning-area boundary";
+  if (datasetMode === "candidate") return language === "th" ? "ขอบเขตพื้นที่แม่สาย · ตรวจสอบกับท้องถิ่น" : "Mae Sai planning boundary · verify locally";
   return language === "th" ? "เรขาคณิตจากข้อมูลนำเข้าทางการ" : "Official-input geometry";
 }
 
 function mapProvenanceLabel(language: Language, datasetMode: DatasetMode): string {
-  if (datasetMode === "fixture_demo") return language === "th" ? "แผนที่ GeoJSON สาธิตแบบออฟไลน์" : "Offline map from fixture-demo GeoJSON";
-  if (datasetMode === "candidate") return language === "th" ? "แผนที่แม่สายจากข้อมูลเปิดที่ติดตามแหล่งที่มา สถานะผู้สมัครและไม่ใช่ระบบปฏิบัติการ" : "Mae Sai map from provenance-tracked open context; candidate and non-operational";
+  if (datasetMode === "fixture_demo") return language === "th" ? "แผนที่พื้นที่วางแผนจากข้อมูลที่จัดเก็บในอุปกรณ์" : "Planning-area map from device-stored GeoJSON";
+  if (datasetMode === "candidate") return language === "th" ? "แผนที่แม่สายจากข้อมูลเปิดที่ติดตามแหล่งที่มา โปรดยืนยันสถานที่และสภาพถนนกับหน่วยงานท้องถิ่น" : "Mae Sai planning map from provenance-tracked open data; verify facilities and road conditions locally";
   return language === "th" ? "แผนที่จากข้อมูลนำเข้าทางการ" : "Map from official-input GeoJSON";
 }

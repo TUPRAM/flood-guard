@@ -100,11 +100,6 @@ export function HouseholdPlanBuilder({
         <div>
           <p className="eyebrow">{th ? "เก็บไว้ในอุปกรณ์นี้เท่านั้น" : "Stored only on this device"}</p>
           <h2 id="household-plan-title">{th ? "แผนเตรียมพร้อมของครัวเรือน" : "My household preparedness plan"}</h2>
-          <p>
-            {th
-              ? `พื้นที่วางแผน: ${areaNameTh || "ยังไม่มีพื้นที่"} · ไม่ใช่ตำแหน่งที่อยู่ที่แน่นอน`
-              : `Planning area: ${areaNameEn || "No area available"} · not an exact household location`}
-          </p>
         </div>
         <div className="plan-progress" aria-label={th ? `ทำเสร็จ ${completed} จาก ${total} รายการ` : `${completed} of ${total} items complete`}>
           <b>{completed}/{total}</b>
@@ -115,7 +110,7 @@ export function HouseholdPlanBuilder({
 
       <section className="card household-needs" aria-labelledby="household-needs-title">
         <p className="eyebrow">{th ? "ขั้นที่ 1" : "Step 1"}</p>
-        <h2 id="household-needs-title">{th ? "สิ่งที่แผนครัวเรือนต้องคำนึงถึง" : "What should this household plan account for?"}</h2>
+        <h2 id="household-needs-title">{th ? "สิ่งที่แผนครัวเรือนต้องคำนึงถึง" : "What should this plan account for?"}</h2>
         <p className="plan-privacy-note">
           {th
             ? "เลือกได้เท่าที่จำเป็น ระบบไม่ขอที่อยู่ บัญชีผู้ใช้ ชื่อบุคคล หรือการวินิจฉัยทางการแพทย์"
@@ -144,7 +139,7 @@ export function HouseholdPlanBuilder({
             <h2 id="household-checklist-title">{th ? "ทำรายการเตรียมพร้อมร่วมกัน" : "Complete the plan together"}</h2>
           </div>
           <button type="button" className="text-action" onClick={onResetChecklist} disabled={completed === 0}>
-            {th ? "รีเซ็ตรายการ" : "Reset checklist"}
+            {th ? "รีเซ็ต" : "Reset"}
           </button>
         </div>
         <div className="checklist-grid">
@@ -164,7 +159,7 @@ export function HouseholdPlanBuilder({
       <section className="card plan-review-card" aria-labelledby="plan-review-title">
         <div>
           <p className="eyebrow">{th ? "ขั้นที่ 3" : "Step 3"}</p>
-          <h2 id="plan-review-title">{th ? "ทบทวน พิมพ์ และยืนยันกับท้องถิ่น" : "Review, keep a copy, and confirm locally"}</h2>
+          <h2 id="plan-review-title">{th ? "ทบทวน เก็บสำเนา และยืนยันกับท้องถิ่น" : "Review, keep a copy, confirm locally"}</h2>
           <p>{th ? `ทบทวนล่าสุด: ${reviewedLabel}` : `Last reviewed: ${reviewedLabel}`}</p>
         </div>
         <div className="plan-review-actions">

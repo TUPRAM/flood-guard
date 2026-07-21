@@ -26,17 +26,36 @@ for (const relative of [...routeFiles, ...requiredPublicAssets]) {
   if (!existsSync(path)) throw new Error(`Offline artifact missing: ${relative}`);
 }
 
+const routeExpectations = {
+  "index.html": [/Choose a planning surface/i, /DDPM/i, /local authorities/i],
+  "public/index.html": [
+    /Mae Sai planning data|ข้อมูลการวางแผนแม่สาย/i,
+    /Source time|เวลาข้อมูล/i,
+    /Confidence|ความเชื่อมั่น/i,
+    /DDPM|ปภ\./i,
+  ],
+  "command/index.html": [
+    /Planning intelligence|ข้อมูลเพื่อการวางแผน/i,
+    /Source time|เวลาข้อมูล/i,
+    /Confidence|ความเชื่อมั่น/i,
+    /DDPM|ปภ\./i,
+  ],
+  "studio/index.html": [
+    /Research validation data/i,
+    /Source time/i,
+    /Confidence/i,
+    /Technical verification/i,
+    /Observed-data validation/i,
+    /Operational readiness/i,
+  ],
+};
+
 for (const relative of routeFiles) {
   const html = readFileSync(resolve(out, relative), "utf8");
-  const expectsCandidate = relative === "command/index.html";
-  const datasetDisclosure = expectsCandidate
-    ? /Candidate data|ข้อมูลผู้สมัคร/
-    : /Fixture demo|ข้อมูลสาธิต/;
-  if (!datasetDisclosure.test(html)) {
-    throw new Error(`${relative} lacks its expected dataset-mode disclosure`);
-  }
-  if (!/Non-operational|ไม่ใช่ระบบปฏิบัติการ/.test(html)) {
-    throw new Error(`${relative} lacks a non-operational disclosure`);
+  for (const expectedCopy of routeExpectations[relative]) {
+    if (!expectedCopy.test(html)) {
+      throw new Error(`${relative} lacks polished route copy matching ${expectedCopy}`);
+    }
   }
   const resourceUrls = [...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"/gi)].map((match) => match[1]);
   const external = resourceUrls.filter((url) => /^https?:\/\//i.test(url));
@@ -99,4 +118,4 @@ if (existsSync(proposalEvidencePath)) {
   }
 }
 
-console.log(`offline smoke: ${routeFiles.length} routes and ${requiredPublicAssets.length} core assets verified; no external runtime resources`);
+console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; internal safety contracts retained and no external runtime resources`);

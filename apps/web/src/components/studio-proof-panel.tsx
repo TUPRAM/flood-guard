@@ -46,6 +46,27 @@ const QUALIFIED_METRICS = [
   "expected_calibration_error",
 ] as const;
 
+type EvidenceScopeKind = "technical" | "observed" | "operational";
+
+function evidenceScopeReason(kind: EvidenceScopeKind, state: StudioEvidenceScopeItem["state"], th: boolean): string {
+  if (kind === "technical") {
+    if (state === "checking") return th ? "กำลังตรวจสอบความสมบูรณ์ของบันทึกหลักฐาน" : "Evidence-record integrity checks are in progress.";
+    if (state === "executed") return th ? "เส้นทางประมวลผลผ่านการตรวจสอบความสมบูรณ์แล้ว ผลนี้ไม่ใช่การวัดความแม่นยำจากเหตุการณ์ที่สังเกตจริง" : "The end-to-end model path passed its integrity checks. This is a systems check, not observed-event accuracy.";
+    return th ? "ยังไม่มีบันทึกการประมวลผลที่ตรวจสอบความสมบูรณ์ได้" : "A verified end-to-end processing record is not currently available.";
+  }
+  if (kind === "observed") {
+    if (state === "executed") return th ? "โมเดลที่เปรียบเทียบใช้ข้อมูลสังเกตการณ์ ข้อมูลอ้างอิง พื้นที่ทดสอบอิสระ และชุดเมตริกที่ตรวจสอบแล้วร่วมกัน" : "All comparison models share validated observations, reference data, held-out geography, and the required metrics.";
+    if (state === "not_run") return th ? "ยังไม่มีการเปรียบเทียบด้วยข้อมูลสังเกตการณ์ที่ครบถ้วน" : "No complete observed-data comparison is currently published.";
+    return th ? "การประเมินที่เผยแพร่ยังขาดข้อกำหนดการยืนยันด้วยข้อมูลสังเกตการณ์อย่างน้อยหนึ่งรายการ" : "The published evaluation is missing one or more observed-data validation requirements.";
+  }
+  if (state === "eligible") return th ? "มีอย่างน้อยหนึ่งการประเมินที่ผ่านข้อกำหนดด้านหลักฐานสำหรับการตรวจรับ" : "At least one evaluation meets every evidence requirement for operational acceptance.";
+  return th ? "ยังไม่มีการประเมินที่ผ่านข้อกำหนดด้านหลักฐานและธรรมาภิบาลครบถ้วน" : "No evaluation currently meets every operational evidence and governance requirement.";
+}
+
+function reviewStateLabel(value: boolean, th: boolean): string {
+  return value ? (th ? "ตรวจสอบแล้ว" : "Verified") : (th ? "อยู่ระหว่างตรวจสอบ" : "In review");
+}
+
 export function StudioProofPanel({ language, modelRuns }: { language: Language; modelRuns: ModelRun[] }) {
   const evidence = useProposalEvidence();
   const th = language === "th";
@@ -60,9 +81,9 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
     .filter((artifact): artifact is typeof artifact & { href: string } => Boolean(artifact.href))
     .slice(0, 2) ?? [] : [];
   const validationEntries = receipt ? Object.entries(receipt.validation_checks) : [];
-  const receiptUnavailableReason = evidence.state === "unavailable"
-    ? evidence.reason
-    : manifest?.geoai_proof.reason_blocked ?? (th ? "ยังไม่มีใบรับรอง GeoAI ที่ตรวจสอบได้" : "No validated GeoAI proof receipt is available.");
+  const receiptUnavailableReason = th
+    ? "ยังไม่มีบันทึกหลักฐาน GeoAI ที่ตรวจสอบความสมบูรณ์ได้"
+    : "A verified GeoAI evidence record is not currently available.";
   const evidenceScope = classifyStudioEvidenceScope({
     evidenceState: evidence.state,
     proofReceiptVerified: Boolean(receipt),
@@ -72,37 +93,40 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
   });
 
   return (
-    <section className="studio-section geoai-proof" aria-labelledby="geoai-proof-title">
+    <section className="studio-section geoai-proof studio-evidence-assurance" aria-labelledby="geoai-proof-title">
       <div className="section-heading proof-heading">
         <div>
-          <p className="eyebrow">01 · GEOAI PROOF PATH</p>
-          <h2 id="geoai-proof-title">{th ? "หลักฐานการเชื่อมต่อแบบจำลอง" : "GeoAI integration evidence"}</h2>
+          <p className="eyebrow">{th ? "01 · การรับรองหลักฐาน" : "01 · EVIDENCE ASSURANCE"}</p>
+          <h2 id="geoai-proof-title">{th ? "การตรวจสอบหลักฐาน GeoAI" : "GeoAI evidence assurance"}</h2>
         </div>
         <div className="proof-status-pills">
-          {manifest && <StatePill tone="caution">{manifest.dataset_mode.replaceAll("_", " ")} · {manifest.operational_status.replaceAll("_", " ")}</StatePill>}
+          {manifest && <StatePill tone="info">{th ? "บันทึกงานวิจัย" : "Research record"}</StatePill>}
           <StatePill tone={receipt ? "ready" : evidence.state === "loading" ? "info" : "caution"}>
             {receipt
-              ? (th ? "ตรวจ manifest และใบรับรองแล้ว" : "Manifest + receipt verified")
+              ? (th ? "ตรวจสอบบันทึกหลักฐานแล้ว" : "Evidence record verified")
               : evidence.state === "loading"
-                ? (th ? "กำลังตรวจ manifest และ checksum" : "Checking manifest + checksum")
-                : (th ? "คงสถานะบล็อก" : "Evidence fail-closed")}
+                ? (th ? "กำลังตรวจสอบความสมบูรณ์" : "Checking record integrity")
+                : (th ? "ต้องตรวจสอบเพิ่มเติม" : "Further review required")}
           </StatePill>
         </div>
       </div>
 
-      <div className={styles.scopeGrid} aria-label={th ? "ขอบเขตหลักฐานและสิทธิ์การใช้งาน" : "Evidence scope and decision eligibility"}>
+      <div className={styles.scopeGrid} aria-label={th ? "ระดับการตรวจสอบหลักฐาน" : "Evidence assurance levels"}>
         <EvidenceScopeCard
-          title={th ? "การทดสอบการเชื่อมต่อ" : "Integration smoke"}
+          kind="technical"
+          title={th ? "การตรวจสอบระบบ" : "Technical verification"}
           item={evidenceScope.integration}
           language={language}
         />
         <EvidenceScopeCard
-          title={th ? "การประเมินข้อมูลจริงที่ผ่านเกณฑ์" : "Qualified real-data evaluation"}
+          kind="observed"
+          title={th ? "การยืนยันด้วยข้อมูลสังเกตการณ์" : "Observed-data validation"}
           item={evidenceScope.qualifiedEvaluation}
           language={language}
         />
         <EvidenceScopeCard
-          title={th ? "สิทธิ์ส่งต่อชั้นการตัดสินใจ" : "Decision eligibility"}
+          kind="operational"
+          title={th ? "ความพร้อมใช้งาน" : "Operational readiness"}
           item={evidenceScope.decisionEligibility}
           language={language}
         />
@@ -110,11 +134,11 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
 
       <EvidenceNotice
         tone="caution"
-        title={th ? "หลักฐานสังเคราะห์ ไม่ใช่ความแม่นยำจากเหตุการณ์จริง" : "Synthetic integration proof; not evidence of real flood-detection accuracy."}
+        title={th ? "ขอบเขตของการประเมินนี้" : "Scope of this evaluation"}
       >
         {th
-          ? "เอาต์พุตนี้ไม่ใช่คำเตือนภัย และยังไม่ผ่านเกณฑ์เพื่อส่งต่อชั้นการตัดสินใจ"
-          : "This output is not a warning and remains blocked from the decision layer until qualified real-data gates pass."}
+          ? "ผลนี้ยืนยันขั้นตอนทางเทคนิคเท่านั้น ไม่ใช่การวัดความแม่นยำจากเหตุการณ์ที่สังเกตจริง คำเตือนภัยอย่างเป็นทางการ หรือการอนุญาตใช้งาน"
+          : "This result verifies the technical workflow only. It is not observed-event accuracy, an official warning, or operational authorization."}
       </EvidenceNotice>
 
       <div className={styles.receiptGrid} aria-label={th ? "รายละเอียดใบรับรอง GeoAI" : "Validated GeoAI receipt details"}>
@@ -122,8 +146,8 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
           <>
             <article className={styles.receiptCard}>
               <div className={styles.receiptCardHeader}>
-                <div><p className="eyebrow">MODEL CONTRACT</p><h3>{th ? "โมเดลที่รันจริง" : "Executed model"}</h3></div>
-                <StatePill tone="ready">{receipt.training_execution.replaceAll("_", " ")}</StatePill>
+                <div><p className="eyebrow">{th ? "บันทึกโมเดล" : "MODEL RECORD"}</p><h3>{th ? "โมเดลที่ประเมิน" : "Evaluated model"}</h3></div>
+                <StatePill tone="ready">{th ? "ตรวจสอบแล้ว" : "Verified execution"}</StatePill>
               </div>
               <dl className={styles.receiptList}>
                 <div><dt>{th ? "สถาปัตยกรรม" : "Architecture"}</dt><dd>{receipt.model.architecture}</dd></div>
@@ -143,8 +167,8 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
 
             <article className={styles.receiptCard}>
               <div className={styles.receiptCardHeader}>
-                <div><p className="eyebrow">GRID + OUTPUT</p><h3>{th ? "การตรวจสอบแบบ fail-closed" : "Fail-closed validation"}</h3></div>
-                <StatePill tone="ready">{validationEntries.length}/{validationEntries.length} passed</StatePill>
+                <div><p className="eyebrow">{th ? "กริดและผลลัพธ์" : "GRID & OUTPUT"}</p><h3>{th ? "การตรวจสอบความสมบูรณ์" : "Integrity validation"}</h3></div>
+                <StatePill tone="ready">{validationEntries.length}/{validationEntries.length} {th ? "ผ่าน" : "checks passed"}</StatePill>
               </div>
               <ul className={styles.validationList}>
                 {validationEntries.map(([name]) => (
@@ -161,8 +185,8 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
 
             <figure className={styles.receiptCard}>
               <div className={styles.receiptCardHeader}>
-                <div><p className="eyebrow">PROBABILITY</p><h3>{th ? "ฮิสโตแกรมและการรวมผล" : "Histogram + aggregation"}</h3></div>
-                <StatePill tone="caution">report only</StatePill>
+                <div><p className="eyebrow">{th ? "ความน่าจะเป็น" : "PROBABILITY"}</p><h3>{th ? "การกระจายและค่าสรุป" : "Distribution & summary"}</h3></div>
+                <StatePill tone="caution">{th ? "ผลการวิจัย" : "Research summary"}</StatePill>
               </div>
               <ol className={styles.histogram} aria-hidden="true">
                 {receipt.probability.histogram_counts.map((count, index) => (
@@ -189,46 +213,48 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
                 <div><span>P90</span><strong>{formatPercent(receipt.aggregation.p90_flood_probability_0_1)}</strong></div>
                 <div><span>{th ? "พิกเซล" : "Pixels"}</span><strong>{receipt.aggregation.sample_pixel_count.toLocaleString("en-US")}</strong></div>
               </div>
-              <figcaption className={styles.visuallyHidden}>{th ? "ผลรวม FloodGuard ใช้เพื่อรายงานเท่านั้น และส่งต่อ FPPS ไม่ได้" : "FloodGuard aggregation is report-only and cannot feed FPPS or the decision layer."}</figcaption>
+              <figcaption className={styles.visuallyHidden}>{th ? "ค่าสรุปงานวิจัยนี้จะไม่ใช้ในการจัดลำดับเชิงปฏิบัติการหากยังไม่ผ่านการยืนยันด้วยข้อมูลสังเกตการณ์" : "This research summary is not used for operational prioritization without observed-data validation."}</figcaption>
             </figure>
           </>
         ) : (
           <p className={styles.blockedReceipt} role="status">
-            <b>{th ? "ไม่แสดงรายละเอียดหลักฐานทดแทน" : "No substitute proof details displayed."}</b>{" "}
+            <b>{th ? "รายละเอียดการตรวจสอบยังไม่พร้อม" : "Verification details are not yet available."}</b>{" "}
             {receiptUnavailableReason}
           </p>
         )}
       </div>
 
       <details className={styles.technicalDetails}>
-        <summary>{th ? "ตรวจสอบขั้นตอน แบนด์ การแปลงค่า และเกณฑ์ทั้งหมด" : "Inspect the full workflow, band order, transforms, and gates"}</summary>
+        <summary>{th ? "ดูขั้นตอน แบนด์ การแปลงค่า และเกณฑ์การตรวจสอบ" : "View workflow, band order, transforms, and review criteria"}</summary>
         <div className="proof-layout">
           <div className="proof-flow" aria-label={th ? "ลำดับงาน GeoAI" : "GeoAI workflow"}>
           <ProofStep index="01" label={th ? "สแต็กคุณลักษณะ" : "Feature stack"} value={receipt?.feature_stack.feature_stack_id ?? (th ? "เป้าหมายสัญญา 8 แบนด์" : "Eight-band contract target")} />
           <ProofStep index="02" label={th ? "การแปลงค่า" : "Explicit transform"} value={receipt?.feature_stack.preprocessing_id ?? (th ? "ไม่ส่งค่า dB/ภูมิประเทศดิบผ่าน /255" : "No raw dB/terrain through implicit /255")} />
-          <ProofStep index="03" label={th ? "การเตรียมไทล์" : "Tile preparation"} value={receipt ? shortDigest(receipt.tile_export.prepared_tile_manifest_sha256) : (th ? "รอใบรับรองที่ตรวจสอบได้" : "Awaiting validated receipt")} />
-          <ProofStep index="04" label={th ? "สถาปัตยกรรมโมเดล" : "Model architecture"} value={receipt ? `${receipt.model.architecture} · ${receipt.model.encoder} · weights ${receipt.model.encoder_weights ?? "none"}` : (th ? "ไม่แสดงเมื่อไม่มีใบรับรอง" : "Hidden without verified receipt")} />
-          <ProofStep index="05" label={th ? "การอนุมาน" : "GeoAI inference"} value={receipt ? `geoai-py ${receipt.geoai_version} · ${receipt.execution_mode.replaceAll("_", " ")}` : (th ? "รอ checksum" : "Awaiting checksum verification")} />
+          <ProofStep index="03" label={th ? "การเตรียมไทล์" : "Tile preparation"} value={receipt ? shortDigest(receipt.tile_export.prepared_tile_manifest_sha256) : (th ? "รอบันทึกที่ตรวจสอบได้" : "Awaiting verified record")} />
+          <ProofStep index="04" label={th ? "สถาปัตยกรรมโมเดล" : "Model architecture"} value={receipt ? `${receipt.model.architecture} · ${receipt.model.encoder} · weights ${receipt.model.encoder_weights ?? "none"}` : (th ? "แสดงเมื่อมีบันทึกที่ตรวจสอบแล้ว" : "Available with a verified record")} />
+          <ProofStep index="05" label={th ? "การอนุมาน" : "GeoAI inference"} value={receipt ? `geoai-py ${receipt.geoai_version} · ${receipt.execution_mode.replaceAll("_", " ")}` : (th ? "รอตรวจสอบความสมบูรณ์" : "Awaiting integrity verification")} />
           <ProofStep index="06" label="Input manifest" value={receipt ? shortDigest(receipt.feature_stack.input_manifest_sha256) : (th ? "ยังไม่ตรวจสอบ" : "Not verified")} />
           <ProofStep index="07" label={th ? "ความน่าจะเป็นชั้น 1" : "Class-1 probability"} value={receipt ? shortDigest(receipt.probability.sha256) : (th ? "ยังไม่มี checksum ที่ตรวจแล้ว" : "No verified checksum")} />
-          <ProofStep index="08" label={th ? "CRS และกริด" : "CRS + grid validation"} value={receipt ? `${validationEntries.length}/${validationEntries.length} ${th ? "ผ่าน" : "checks passed"}` : (th ? "คงสถานะบล็อก" : "Fail-closed")} />
+          <ProofStep index="08" label={th ? "CRS และกริด" : "CRS + grid validation"} value={receipt ? `${validationEntries.length}/${validationEntries.length} ${th ? "ผ่าน" : "checks passed"}` : (th ? "อยู่ระหว่างตรวจสอบ" : "In review")} />
           <ProofStep index="09" label={th ? "การรวมผล FloodGuard" : "FloodGuard aggregation"} value={receipt ? `${formatPercent(receipt.aggregation.mean_flood_probability_0_1)} mean · ${receipt.aggregation.status}` : (th ? "ไม่มีผลที่ตรวจสอบแล้ว" : "No validated result")} />
           </div>
 
-          <aside className="proof-contract" aria-label={th ? "สัญญาแบนด์และเกณฑ์" : "Band and gate contract"}>
+          <aside className="proof-contract" aria-label={th ? "แบนด์และเกณฑ์การตรวจสอบ" : "Band and review criteria"}>
           <div className="proof-contract-heading">
             <div><p className="eyebrow">{th ? "ลำดับแบนด์" : "Band order"}</p><h3>{channels.length} {th ? "ช่องข้อมูล" : "channels"}</h3></div>
-            <StatePill tone={receipt ? "ready" : "info"}>{receipt ? (th ? "จากใบรับรอง" : "From receipt") : (th ? "เป้าหมายสัญญา" : "Contract target")}</StatePill>
+            <StatePill tone={receipt ? "ready" : "info"}>{receipt ? (th ? "บันทึกที่ตรวจสอบแล้ว" : "Verified record") : (th ? "ข้อกำหนดอ้างอิง" : "Reference specification")}</StatePill>
           </div>
           <ol className="band-list">{channels.map((channel) => <li key={channel}><span>{channel}</span></li>)}</ol>
           <dl className="proof-gates">
-            <div><dt>processing_allowed</dt><dd>{String(receipt?.processing_allowed ?? false)}</dd></div>
-            <div><dt>can_feed_decision_layer</dt><dd>{String(receipt?.can_feed_decision_layer ?? false)}</dd></div>
-            <div><dt>{th ? "สถานะตรวจสอบ" : "Validation"}</dt><dd>{receipt ? proof?.validation_status : (th ? "ไม่มีหลักฐาน" : "Unavailable")}</dd></div>
-            <div><dt>eligible_for_fpps</dt><dd>{String(receipt?.aggregation.eligible_for_fpps ?? false)}</dd></div>
-            <div><dt>{th ? "ใบรับรองไฟล์" : "Receipt file"}</dt><dd>{receiptArtifact && receipt ? shortDigest(receiptArtifact.sha256) : (th ? "ยังไม่ตรวจสอบ" : "Unverified")}</dd></div>
+            <div><dt>{th ? "การอนุมัติข้อมูลนำเข้า" : "Input-use approval"}</dt><dd>{reviewStateLabel(Boolean(receipt?.processing_allowed), th)}</dd></div>
+            <div><dt>{th ? "ความพร้อมใช้งาน" : "Operational readiness"}</dt><dd>{reviewStateLabel(Boolean(receipt?.can_feed_decision_layer), th)}</dd></div>
+            <div><dt>{th ? "สถานะตรวจสอบ" : "Validation status"}</dt><dd>{receipt && proof?.validation_status === "passed" ? (th ? "ตรวจสอบแล้ว" : "Verified") : (th ? "อยู่ระหว่างตรวจสอบ" : "In review")}</dd></div>
+            <div><dt>{th ? "การรวมใน FPPS" : "FPPS inclusion"}</dt><dd>{reviewStateLabel(Boolean(receipt?.aggregation.eligible_for_fpps), th)}</dd></div>
+            <div><dt>{th ? "ความสมบูรณ์ของไฟล์" : "File integrity"}</dt><dd>{receiptArtifact && receipt ? shortDigest(receiptArtifact.sha256) : (th ? "อยู่ระหว่างตรวจสอบ" : "In review")}</dd></div>
           </dl>
-          <p className="proof-blocked-reason">{receipt?.reason_blocked ?? receiptUnavailableReason}</p>
+          <p className="proof-blocked-reason">{receipt?.can_feed_decision_layer
+            ? (th ? "หลักฐานผ่านข้อกำหนดสำหรับการตรวจรับแล้ว" : "The evidence meets the requirements for operational acceptance.")
+            : (th ? "การใช้งานยังอยู่ระหว่างตรวจสอบจนกว่าการยืนยันด้วยข้อมูลสังเกตการณ์และธรรมาภิบาลจะเสร็จสมบูรณ์" : "Operational review remains held until observed-data validation and governance requirements are complete.")}</p>
           </aside>
         </div>
       </details>
@@ -237,8 +263,8 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
         <div className="proof-images">
           {imageArtifacts.map((artifact) => (
             <figure key={artifact.sha256}>
-              <Image src={artifact.href} width={640} height={320} unoptimized alt={artifact.kind.replaceAll("_", " ")} />
-              <figcaption>{artifact.kind.replaceAll("_", " ")} · SHA-256 {shortDigest(artifact.sha256)}</figcaption>
+              <Image src={artifact.href} width={640} height={320} unoptimized alt={th ? "ภาพสรุปผลการวิจัย" : "Research result figure"} />
+              <figcaption>{th ? "ภาพสรุปผลการวิจัย" : "Research result figure"} · SHA-256 {shortDigest(artifact.sha256)}</figcaption>
             </figure>
           ))}
         </div>
@@ -246,10 +272,10 @@ export function StudioProofPanel({ language, modelRuns }: { language: Language; 
 
       <p className="proof-manifest-state" role="status">
         {manifest
-          ? `${manifest.artifacts.length} ${th ? "อาร์ติแฟกต์" : "artifacts"} · ${manifest.test_suites.length} ${th ? "ชุดทดสอบ" : "test suites"} · ${th ? "สร้างเมื่อ" : "generated"} ${manifest.generated_at}`
+          ? `${manifest.artifacts.length} ${th ? "ไฟล์หลักฐาน" : "evidence files"} · ${manifest.test_suites.length} ${th ? "ชุดการตรวจสอบ" : "validation suites"} · ${th ? "ปรับปรุงเมื่อ" : "updated"} ${manifest.generated_at}`
           : evidence.state === "unavailable"
-            ? (th ? "ไม่ใช้ข้อมูลทดแทน: " : "No substitute evidence used: ") + evidence.reason
-            : (th ? "กำลังตรวจสอบ manifest โดยไม่เลื่อนสถานะ" : "Validating the manifest without promoting its state")}
+            ? (th ? "ยังไม่มีบันทึกหลักฐานที่ตรวจสอบได้" : "A verified evidence record is not currently available.")
+            : (th ? "กำลังตรวจสอบความสมบูรณ์ของบันทึกหลักฐาน" : "Validating evidence-record integrity")}
       </p>
     </section>
   );
@@ -259,23 +285,23 @@ function ProofStep({ index, label, value }: { index: string; label: string; valu
   return <article><span>{index}</span><div><b>{label}</b><small>{value}</small></div></article>;
 }
 
-function EvidenceScopeCard({ title, item, language }: { title: string; item: StudioEvidenceScopeItem; language: Language }) {
+function EvidenceScopeCard({ kind, title, item, language }: { kind: EvidenceScopeKind; title: string; item: StudioEvidenceScopeItem; language: Language }) {
   const th = language === "th";
   return (
-    <article className={`${styles.scopeCard} ${styles[item.state]}`}>
+    <article className={`${styles.scopeCard} ${styles[item.state]} studio-scope-${kind}`}>
       <span>{title}</span>
       <b>{evidenceStateLabel(item.state, th)}</b>
-      <p>{item.reason}</p>
+      <p>{evidenceScopeReason(kind, item.state, th)}</p>
     </article>
   );
 }
 
 function evidenceStateLabel(state: StudioEvidenceScopeItem["state"], th: boolean): string {
   if (state === "checking") return th ? "กำลังตรวจสอบ" : "Checking";
-  if (state === "executed") return th ? "ดำเนินการแล้ว" : "Executed";
-  if (state === "not_run") return th ? "ยังไม่รัน" : "Not run";
-  if (state === "eligible") return th ? "ผ่านเกณฑ์" : "Eligible";
-  return th ? "บล็อก" : "Blocked";
+  if (state === "executed") return th ? "ตรวจสอบแล้ว" : "Verified";
+  if (state === "not_run") return th ? "ยังไม่พร้อม" : "Unavailable";
+  if (state === "eligible") return th ? "พร้อมตรวจรับ" : "Ready for acceptance";
+  return th ? "อยู่ระหว่างตรวจสอบ" : "Review held";
 }
 
 function toStudioModelEvidence(run: ModelRun): StudioModelEvidence {

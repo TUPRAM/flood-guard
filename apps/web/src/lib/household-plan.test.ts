@@ -57,17 +57,17 @@ describe("household preparedness plan", () => {
     expect(() => removeStoredHouseholdPlan({ removeItem: () => { throw new Error("blocked"); } })).not.toThrow();
   });
 
-  it("exports a bilingual, non-operational plan without an exact-location claim", () => {
+  it("exports a bilingual, publication-safe plan without an exact-location claim", () => {
     const plan = createEmptyHouseholdPlan("FG-TB-002");
     plan.checklist[HOUSEHOLD_PLAN_ITEMS[0].id] = true;
     plan.last_reviewed_at = "2026-07-18T03:00:00.000Z";
 
-    const text = buildHouseholdPlanText(plan, "พื้นที่สาธิต 2", "Fixture area 2");
+    const text = buildHouseholdPlanText(plan, "พื้นที่วางแผน 2", "Planning area 2");
 
     expect(text).toContain("แผนเตรียมพร้อมของครัวเรือน");
     expect(text).toContain("household preparedness plan");
-    expect(text).toContain("NOT AN OFFICIAL WARNING");
-    expect(text).toContain("not an exact household location");
+    expect(text).toContain("CHECK CURRENT INSTRUCTIONS WITH DDPM");
+    expect(text).toContain("does not identify an exact household location");
     expect(text).toContain("does not calculate a safe route");
     expect(text).toContain("[x] บันทึกหมายเลข ปภ. 1784");
   });

@@ -1,7 +1,8 @@
-import { chromium } from "@playwright/test";
+import { launchFloodGuardBrowser } from "./browser-launch.mjs";
 
 const webBase = process.env.FLOODGUARD_WEB_URL ?? "http://127.0.0.1:3000";
 const apiBase = process.env.FLOODGUARD_API_URL ?? "http://127.0.0.1:8000";
+const timeoutMs = Number(process.env.FLOODGUARD_SMOKE_TIMEOUT_MS ?? 180_000);
 const basemapOrigins = new Set([
   "https://tile.openstreetmap.org",
   "https://services.arcgisonline.com",
@@ -9,12 +10,18 @@ const basemapOrigins = new Set([
 ]);
 const allowedOrigins = new Set([new URL(webBase).origin, new URL(apiBase).origin, ...basemapOrigins]);
 const basemapOriginsSeen = new Set();
-const browser = await chromium.launch({ headless: true });
+const browser = await launchFloodGuardBrowser();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-page.setDefaultTimeout(180_000);
-page.setDefaultNavigationTimeout(180_000);
+page.setDefaultTimeout(timeoutMs);
+page.setDefaultNavigationTimeout(timeoutMs);
 const browserErrors = [];
 const unexpectedRequests = [];
+const apiRequestsBySurface = new Map([
+  ["public", []],
+  ["command", []],
+  ["studio", []],
+]);
+let activeSurface = "startup";
 
 page.on("console", (message) => {
   if (message.type() === "error") browserErrors.push(message.text());
@@ -23,6 +30,9 @@ page.on("pageerror", (error) => browserErrors.push(error.message));
 page.on("request", (request) => {
   const url = new URL(request.url());
   if (basemapOrigins.has(url.origin)) basemapOriginsSeen.add(url.origin);
+  if (url.origin === new URL(apiBase).origin && apiRequestsBySurface.has(activeSurface)) {
+    apiRequestsBySurface.get(activeSurface).push(url);
+  }
   if (!allowedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
 });
 page.on("requestfailed", (request) => {
@@ -37,7 +47,24 @@ page.on("requestfailed", (request) => {
 });
 
 try {
-  await page.goto(`${webBase}/command/`, { waitUntil: "domcontentloaded" });
+  const publicLayerResponsePromise = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.origin === new URL(apiBase).origin
+      && url.pathname.endsWith("/api/v1/layer-data/public_preparedness_areas")
+      && url.searchParams.get("role") === "public";
+  });
+  const publicContext = await openSurfaceWithContext(page, "public", "/public/", "main.public-page");
+  const publicLayerResponse = await publicLayerResponsePromise;
+  if (!publicLayerResponse.ok()) {
+    throw new Error(`Public preparedness layer returned ${publicLayerResponse.status()}.`);
+  }
+  await page.waitForFunction(() => (
+    document.querySelectorAll("#public-area-select option").length === 9
+    && document.querySelector(".public-boundary-detail") === null
+  ));
+  assertRoleProjectionRequests("public", apiRequestsBySurface.get("public"));
+
+  const commandContextTuple = await openSurfaceWithContext(page, "command", "/command/", "main.command-page");
   await page.waitForFunction(() => {
     const scenario = document.querySelector('select[aria-label="Select scenario"]');
     return scenario instanceof HTMLSelectElement
@@ -68,42 +95,41 @@ try {
   await exerciseOnlineBasemaps(page, ".map-workspace");
 
   await page.waitForFunction(() => (
-    document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "TH570906"
-    && document.querySelector(".geo-map-shell")?.getAttribute("data-road-detail-state") === "ready"
-  ));
-  const defaultDetailFeatureCount = Number(await map.getAttribute("data-road-feature-count"));
-  if (!Number.isInteger(defaultDetailFeatureCount) || defaultDetailFeatureCount <= 750) {
-    throw new Error(`Default selected-area road detail was not merged: ${defaultDetailFeatureCount}`);
-  }
-
-  await page.getByLabel("Select reporting area").selectOption("TH570903");
-  await page.waitForFunction(() => (
     document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "TH570903"
     && document.querySelector(".geo-map-shell")?.getAttribute("data-road-detail-state") === "ready"
   ));
-  const selectedRoadFeatureCount = Number(await map.getAttribute("data-road-feature-count"));
-  if (!Number.isInteger(selectedRoadFeatureCount) || selectedRoadFeatureCount < 750) {
-    throw new Error(`Selected-area road detail produced an invalid merged count: ${selectedRoadFeatureCount}`);
+  const defaultDetailFeatureCount = Number(await map.getAttribute("data-road-feature-count"));
+  // The default Ko Chang area already contributes all 451 of its roads to the
+  // 750-road regional overview. Replacing that subset with the selected-area
+  // response therefore preserves the total rather than increasing it.
+  if (!Number.isInteger(defaultDetailFeatureCount) || defaultDetailFeatureCount < 750) {
+    throw new Error(`Default selected-area road detail was not merged: ${defaultDetailFeatureCount}`);
   }
+
   assertIncludes(await page.getByLabel("Select scenario").locator("option").nth(1).innerText(), "Temporary facility option", "temporary-facility scenario label");
   await page.getByLabel("Select scenario").selectOption("add_temporary_shelter");
   await waitForScenario(page, "add_temporary_shelter");
+  await page.getByRole("tab", { name: "Scenario" }).click();
   const shelterStrip = await page.locator(".scenario-delta-strip").innerText();
-  const shelterPanel = await page.locator(".scenario-evidence-comparison").innerText();
+  const shelterPanel = await page.locator(".command-release-panel .scenario-evidence-comparison").innerText();
   assertIncludes(shelterStrip, "4,877 people lose 30-min access", "temporary-facility result");
   assertSignedDelta(shelterStrip, -917, "temporary-facility delta");
   assertSignedDelta(shelterPanel, -917, "temporary-facility evidence panel");
   assertEqual(await map.getAttribute("data-scenario-tone"), "improves", "temporary-facility map tone");
 
-  await page.getByLabel("Select reporting area").selectOption("TH570901");
+  await page.locator(".ranked-areas button").filter({ hasText: "Mae Sai" }).first().click();
   await page.waitForFunction(() => (
     document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "TH570901"
     && document.querySelector(".geo-map-shell")?.getAttribute("data-road-detail-state") === "ready"
   ));
+  const maeSaiDetailFeatureCount = Number(await map.getAttribute("data-road-feature-count"));
+  if (!Number.isInteger(maeSaiDetailFeatureCount) || maeSaiDetailFeatureCount <= 750) {
+    throw new Error(`Mae Sai selected-area road detail was not merged: ${maeSaiDetailFeatureCount}`);
+  }
   await page.getByLabel("Select scenario").selectOption("close_road");
   await waitForScenario(page, "close_road");
   const roadStrip = await page.locator(".scenario-delta-strip").innerText();
-  const roadPanel = await page.locator(".scenario-evidence-comparison").innerText();
+  const roadPanel = await page.locator(".command-release-panel .scenario-evidence-comparison").innerText();
   assertIncludes(roadStrip, "172 people lose 30-min access", "road-stress result");
   assertSignedDelta(roadStrip, 98, "road-stress delta");
   assertSignedDelta(roadPanel, 98, "road-stress evidence panel");
@@ -115,6 +141,17 @@ try {
   if (forbiddenMatch) {
     throw new Error(`Command surface exposes forbidden internal copy: ${forbiddenMatch[0]}.`);
   }
+  assertRoleProjectionRequests("command", apiRequestsBySurface.get("command"));
+
+  const studioContext = await openSurfaceWithContext(page, "studio", "/studio/", "main.studio-page");
+  await page.locator("#evidence-context-title").waitFor({ state: "visible" });
+  await page.waitForFunction((contextId) => (
+    document.querySelector("main.studio-page")?.textContent?.includes(contextId)
+    && document.querySelector(".fallback-reason") === null
+  ), studioContext.evidence_context_id);
+  assertRoleProjectionRequests("studio", apiRequestsBySurface.get("studio"));
+  assertContextTupleEqual(publicContext, commandContextTuple, "Public and Command");
+  assertContextTupleEqual(publicContext, studioContext, "Public and Studio");
   for (const origin of basemapOrigins) {
     if (!basemapOriginsSeen.has(origin)) {
       throw new Error(`Command basemap selector never requested approved provider ${origin}.`);
@@ -127,10 +164,98 @@ try {
   if (browserErrors.length > 0) {
     throw new Error(`Browser errors: ${[...new Set(browserErrors)].join(" | ")}`);
   }
-  console.log("Live API smoke passed: 8 areas, 750 bounded regional roads / 4,458 total, selected-area detail, 42 categorized facilities, 8 access points, and three basemap providers.");
+  console.log("Live API smoke passed: Public, Command, and Studio share one immutable Mae Sai evidence context; Public uses only its reduced role projection.");
+  console.log("Command API smoke passed: 8 areas, 750 bounded regional roads / 4,458 total, selected-area detail, 42 categorized facilities, 8 access points, and three basemap providers.");
   console.log("Server scenarios passed: TH570903 temporary facility -917; TH570901 road stress +98; map and evidence panel synchronized.");
 } finally {
   await browser.close();
+}
+
+async function openSurfaceWithContext(page, surface, route, selector) {
+  activeSurface = surface;
+  const contextResponsePromise = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.origin === new URL(apiBase).origin
+      && url.pathname.endsWith("/api/v1/evidence-context")
+      && url.searchParams.get("study_area") === "mae_sai_candidate_v1";
+  });
+  await page.goto(`${webBase}${route}`, { waitUntil: "domcontentloaded" });
+  await page.locator(selector).waitFor({ state: "visible" });
+  let contextResponse;
+  try {
+    contextResponse = await contextResponsePromise;
+  } catch (error) {
+    const requests = (apiRequestsBySurface.get(surface) ?? []).map((url) => url.href);
+    throw new Error(
+      `${surface} did not receive its evidence-context response. `
+      + `API requests: ${requests.length > 0 ? requests.join(", ") : "none"}. `
+      + `Browser errors: ${browserErrors.length > 0 ? browserErrors.join(" | ") : "none"}.`,
+      { cause: error },
+    );
+  }
+  if (!contextResponse.ok()) {
+    throw new Error(`${surface} evidence-context request returned ${contextResponse.status()}.`);
+  }
+  const context = await contextResponse.json();
+  if (
+    context?.study_area_id !== "mae_sai_candidate_v1"
+    || typeof context?.evidence_context_id !== "string"
+    || typeof context?.data_version !== "string"
+    || typeof context?.evidence_package_id !== "string"
+    || typeof context?.evidence_package_sha256 !== "string"
+  ) {
+    throw new Error(`${surface} returned an incomplete or incorrect evidence context: ${JSON.stringify(context)}`);
+  }
+  return context;
+}
+
+function assertRoleProjectionRequests(surface, requests = []) {
+  const apiRequests = requests.filter((url) => url.pathname.includes("/api/v1/"));
+  const requiredPaths = [
+    "/api/v1/status",
+    "/api/v1/evidence-context",
+    "/api/v1/public-areas",
+    "/api/v1/layers",
+  ];
+  if (surface !== "public") requiredPaths.push("/api/v1/areas");
+  for (const required of requiredPaths) {
+    if (!apiRequests.some((url) => url.pathname.endsWith(required))) {
+      throw new Error(`${surface} did not request required context artifact ${required}.`);
+    }
+  }
+  const layerCatalogRequest = apiRequests.find((url) => url.pathname.endsWith("/api/v1/layers"));
+  if (layerCatalogRequest?.searchParams.get("role") !== surface) {
+    throw new Error(`${surface} layer catalog request did not enforce role=${surface}.`);
+  }
+  if (!apiRequests.some((url) => url.pathname.includes("/api/v1/evidence-records/"))) {
+    throw new Error(`${surface} did not request its context-bound evidence record.`);
+  }
+  if (surface === "public") {
+    const forbidden = apiRequests.find((url) => (
+      url.pathname.endsWith("/api/v1/areas")
+      || /\/(?:road_risk|facilities|access_hotspots)(?:\/|$)/u.test(url.pathname)
+      || url.pathname.includes("/api/v1/scenario")
+    ));
+    if (forbidden) throw new Error(`Public requested staff-only API data: ${forbidden.href}`);
+  }
+}
+
+function assertContextTupleEqual(left, right, label) {
+  const tupleKeys = [
+    "evidence_context_id",
+    "study_area_id",
+    "data_version",
+    "evidence_package_id",
+    "evidence_package_sha256",
+    "model_run_id",
+    "dataset_mode",
+    "operational_status",
+  ];
+  const leftTuple = Object.fromEntries(tupleKeys.map((key) => [key, left[key] ?? null]));
+  const rightTuple = Object.fromEntries(tupleKeys.map((key) => [key, right[key] ?? null]));
+  if (JSON.stringify(leftTuple) !== JSON.stringify(rightTuple)) {
+    throw new Error(`${label} evidence-context tuple mismatch: ${JSON.stringify({ left: leftTuple, right: rightTuple })}`);
+  }
 }
 
 async function exerciseOnlineBasemaps(page, scopeSelector) {
@@ -185,7 +310,7 @@ async function exerciseOnlineBasemaps(page, scopeSelector) {
 
 async function waitForScenario(page, scenarioId) {
   await page.waitForFunction((expected) => (
-    document.querySelector('aside[aria-label="Decision evidence"]')?.getAttribute("data-scenario-id") === expected
+    document.querySelector(".command-release-panel")?.getAttribute("data-scenario-id") === expected
     && document.querySelector(".geo-map-shell")?.getAttribute("data-scenario-id") === expected
   ), scenarioId);
 }

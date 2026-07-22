@@ -3,13 +3,14 @@
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "scripts": {
-    "build:web": "pnpm --filter @floodguard/web build",
+    "build:web": "pnpm --filter @floodguard/web build:competition",
+    "build:public": "pnpm --filter @floodguard/web build:public",
     "lint": "pnpm --filter @floodguard/web lint",
     "typecheck": "pnpm --filter @floodguard/contracts typecheck && pnpm --filter @floodguard/web typecheck",
     "test:contracts": "pnpm --filter @floodguard/contracts test",
     "test:web": "pnpm --filter @floodguard/web test",
     "test:offline": "pnpm --filter @floodguard/web test:offline",
     "qa:visual": "pnpm --filter @floodguard/web qa:visual",
-    "verify:frontend": "pnpm lint && pnpm typecheck && pnpm test:contracts && pnpm test:web && pnpm build:web && pnpm test:offline"
+    "verify:frontend": "pnpm lint && pnpm typecheck && pnpm test:contracts && pnpm test:web && pnpm --filter @floodguard/web verify:profiles && pnpm test:offline"
   }
 }

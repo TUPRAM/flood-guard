@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/evidence-record.schema.json",
+  "title": "FloodGuard evidence record",
+  "description": "Audit-ready decision record bound to one immutable evidence context.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_record_id",
+    "evidence_context",
+    "evidence_scope",
+    "model_id",
+    "model_version",
+    "model_sha256",
+    "evaluation_sha256",
+    "decision",
+    "decision_authority",
+    "decision_at",
+    "operational_authorized",
+    "blockers",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "evidence_record_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "evidence_context": {
+      "$ref": "evidence-context.schema.json"
+    },
+    "evidence_scope": { "type": "string", "minLength": 1 },
+    "model_id": { "type": ["string", "null"], "minLength": 1 },
+    "model_version": { "type": ["string", "null"], "minLength": 1 },
+    "model_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "evaluation_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["not_evaluated", "passed", "failed", "blocked"]
+    },
+    "decision_authority": { "type": ["string", "null"], "minLength": 1 },
+    "decision_at": { "type": ["string", "null"], "format": "date-time" },
+    "operational_authorized": { "type": "boolean" },
+    "blockers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "generated_at": { "type": "string", "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {
+          "properties": {
+            "decision_authority": { "type": "null" },
+            "decision_at": { "type": "null" }
+          }
+        },
+        {
+          "properties": {
+            "decision_authority": { "type": "string", "minLength": 1 },
+            "decision_at": { "type": "string", "format": "date-time" }
+          }
+        }
+      ]
+    },
+    {
+      "if": {
+        "properties": { "decision": { "const": "passed" } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "decision_authority": { "type": "string", "minLength": 1 },
+          "decision_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operational_authorized": { "const": true } },
+        "required": ["operational_authorized"]
+      },
+      "then": {
+        "properties": {
+          "decision": { "const": "passed" },
+          "decision_authority": { "type": "string", "minLength": 1 },
+          "decision_at": { "type": "string", "format": "date-time" },
+          "model_id": { "type": "string", "minLength": 1 },
+          "model_version": { "type": "string", "minLength": 1 },
+          "model_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "evaluation_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "blockers": { "maxItems": 0 },
+          "evidence_context": {
+            "properties": {
+              "dataset_mode": { "const": "official_input" },
+              "operational_status": { "const": "agency_operational" },
+              "model_run_id": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operational_authorized": { "const": false } },
+        "required": ["operational_authorized"]
+      },
+      "then": {
+        "properties": { "blockers": { "minItems": 1 } }
+      }
+    }
+  ]
+}

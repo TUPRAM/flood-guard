@@ -39,6 +39,16 @@ export type DataState = (typeof DATA_STATES)[number];
 export const ACTION_CLASSES = ["A", "B", "C", "D", "E"] as const;
 export type ActionClass = (typeof ACTION_CLASSES)[number];
 
+export const ACTION_REASON_CODES = [
+  "low_confidence",
+  "low_priority_score",
+  "life_safety_exposure",
+  "critical_route_access",
+  "essential_service_access",
+  "resilience",
+] as const;
+export type ActionReasonCode = (typeof ACTION_REASON_CODES)[number];
+
 export const PILOT_ROLES = [
   "public_viewer",
   "command_viewer",
@@ -59,6 +69,44 @@ export type AcceptanceReceiptState =
 
 export const ROLE_VISIBILITIES = ["public", "command", "studio"] as const;
 export type RoleVisibility = (typeof ROLE_VISIBILITIES)[number];
+
+export const EVIDENCE_TYPES = ["modelled", "observed", "locally_confirmed"] as const;
+export type EvidenceType = (typeof EVIDENCE_TYPES)[number];
+
+export const EVIDENCE_GRANULARITIES = [
+  "area_summary",
+  "road_segment",
+  "facility",
+] as const;
+export type EvidenceGranularity = (typeof EVIDENCE_GRANULARITIES)[number];
+
+export const PERMITTED_USES = [
+  "public_preparedness",
+  "planning_only",
+  "operational_authorized",
+] as const;
+export type PermittedUse = (typeof PERMITTED_USES)[number];
+
+export const EVIDENCE_GATE_STATES = ["ready", "blocked", "not_applicable"] as const;
+export type EvidenceGateState = (typeof EVIDENCE_GATE_STATES)[number];
+
+export const FRESHNESS_STATES = ["current", "aging", "historical", "unknown"] as const;
+export type FreshnessState = (typeof FRESHNESS_STATES)[number];
+
+export const FRESHNESS_POLICY_VERSION = "source-freshness-v1" as const;
+
+export const SOURCE_TEMPORAL_MEANINGS = [
+  "observation_time",
+  "valid_from",
+  "publication_year",
+  "extract_time",
+  "generation_time",
+  "unknown",
+] as const;
+export type SourceTemporalMeaning = (typeof SOURCE_TEMPORAL_MEANINGS)[number];
+
+export const EVIDENCE_DECISIONS = ["not_evaluated", "passed", "failed", "blocked"] as const;
+export type EvidenceDecision = (typeof EVIDENCE_DECISIONS)[number];
 
 export const LAYER_FORMATS = ["geojson", "cog", "pmtiles"] as const;
 export type LayerFormat = (typeof LAYER_FORMATS)[number];
@@ -127,6 +175,8 @@ export interface CommonMetadata {
 }
 
 export interface StatusResponse extends CommonMetadata {
+  evidence_context_id: string;
+  evidence_package_id: string;
   study_area: string;
   data_state: DataState;
   message_th: string;
@@ -151,11 +201,13 @@ export interface ScenarioDelta {
 }
 
 export interface AreaDecision extends CommonMetadata {
+  evidence_context_id: string;
   area_id: string;
   area_name_th: string;
   area_name_en: string;
   fpps_0_100: number;
   action_class: ActionClass;
+  action_reason_code: ActionReasonCode;
   top_reason: string;
   flood_likelihood_0_100: number;
   exposure_0_100: number;
@@ -170,6 +222,8 @@ export interface AreaDecision extends CommonMetadata {
 }
 
 export interface LayerCatalogItem extends CommonMetadata {
+  evidence_context_id: string;
+  evidence_package_id: string;
   layer_id: string;
   title_th: string;
   title_en: string;
@@ -178,7 +232,79 @@ export interface LayerCatalogItem extends CommonMetadata {
   url: string;
   data_state: DataState;
   model_run_id: string | null;
+  evidence_state: EvidenceState;
+  source_components: SourceComponent[];
   attribution: string[];
+}
+
+export interface EvidenceState {
+  evidence_type: EvidenceType;
+  granularity: EvidenceGranularity;
+  confidence_class: ConfidenceClass;
+  confidence_reason: string;
+  permitted_use: PermittedUse;
+  required_gate: string | null;
+  gate_state: EvidenceGateState;
+}
+
+export interface SourceComponent {
+  source_component_id: string;
+  role: string;
+  source_name: string;
+  source_version: string | null;
+  source_timestamp: string | null;
+  last_checked_at: string | null;
+  temporal_meaning: SourceTemporalMeaning;
+  freshness: FreshnessState;
+  freshness_policy_version: typeof FRESHNESS_POLICY_VERSION;
+  freshness_as_of: string;
+  attribution: string[];
+}
+
+export interface EvidenceContext {
+  schema_version: typeof SCHEMA_VERSION;
+  evidence_context_id: string;
+  study_area_id: string;
+  data_version: string;
+  evidence_package_id: string;
+  evidence_package_sha256: string;
+  model_run_id: string | null;
+  dataset_mode: DatasetMode;
+  operational_status: OperationalStatus;
+  official_warning: boolean;
+  generated_at: string;
+  source_components: SourceComponent[];
+}
+
+export interface PublicPreparednessArea {
+  schema_version: typeof SCHEMA_VERSION;
+  evidence_context_id: string;
+  area_id: string;
+  area_name_th: string;
+  area_name_en: string;
+  planning_priority_0_100: number;
+  evidence_sufficiency: ConfidenceClass;
+  recommendation_code: ActionReasonCode;
+  source_timestamp: string;
+  freshness: FreshnessState;
+  current_conditions_confirmed: boolean;
+}
+
+export interface EvidenceRecord {
+  schema_version: typeof SCHEMA_VERSION;
+  evidence_record_id: string;
+  evidence_context: EvidenceContext;
+  evidence_scope: string;
+  model_id: string | null;
+  model_version: string | null;
+  model_sha256: string | null;
+  evaluation_sha256: string | null;
+  decision: EvidenceDecision;
+  decision_authority: string | null;
+  decision_at: string | null;
+  operational_authorized: boolean;
+  blockers: string[];
+  generated_at: string;
 }
 
 export interface ModelInputManifestRow {

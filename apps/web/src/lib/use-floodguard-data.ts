@@ -1,28 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { getMaeSaiOfflineData, getOfflineData, loadFloodGuardData } from "./data-provider";
-import type { FloodGuardData, StudyAreaId } from "./types";
+import {
+  getMaeSaiOfflineData,
+  getOfflineData,
+  loadFloodGuardData,
+  normalizeDataOptions,
+} from "./data-provider";
+import type { FloodGuardData, FloodGuardDataOptions, StudyAreaId } from "./types";
+
+function dataOptionsKey(options: FloodGuardDataOptions): string {
+  return JSON.stringify([
+    options.studyArea,
+    options.role,
+    options.evidenceContextId ?? null,
+  ]);
+}
+
+function dataOptionsFromKey(key: string): FloodGuardDataOptions {
+  const [studyArea, role, evidenceContextId] = JSON.parse(key) as [
+    FloodGuardDataOptions["studyArea"],
+    FloodGuardDataOptions["role"],
+    string | null,
+  ];
+  return {
+    studyArea,
+    role,
+    evidenceContextId: evidenceContextId ?? undefined,
+  };
+}
 
 export function useFloodGuardData(
-  preferredStudyArea: StudyAreaId = "fixture_thailand_demo",
+  requested: FloodGuardDataOptions | StudyAreaId = "fixture_thailand_demo",
 ): FloodGuardData {
-  const [data, setData] = useState<FloodGuardData>(() => (
-    preferredStudyArea === "mae_sai_candidate_v1"
-      ? getMaeSaiOfflineData()
-      : getOfflineData()
-  ));
+  const options = normalizeDataOptions(requested);
+  const contextKey = dataOptionsKey(options);
+  const offlineFallback = useMemo(() => {
+    const fallbackOptions = dataOptionsFromKey(contextKey);
+    return fallbackOptions.studyArea === "mae_sai_candidate_v1"
+      ? getMaeSaiOfflineData(undefined, fallbackOptions)
+      : getOfflineData(undefined, fallbackOptions);
+  }, [contextKey]);
+  const [resolved, setResolved] = useState<{ key: string; data: FloodGuardData }>(() => ({
+    key: contextKey,
+    data: offlineFallback,
+  }));
 
   useEffect(() => {
     let active = true;
-    loadFloodGuardData(undefined, undefined, preferredStudyArea).then((next) => {
-      if (active) setData(next);
+    const activeOptions = dataOptionsFromKey(contextKey);
+    loadFloodGuardData(undefined, undefined, activeOptions).then((next) => {
+      if (active) setResolved({ key: contextKey, data: next });
     });
     return () => {
       active = false;
     };
-  }, [preferredStudyArea]);
+  }, [contextKey]);
 
-  return data;
+  return resolved.key === contextKey ? resolved.data : offlineFallback;
 }

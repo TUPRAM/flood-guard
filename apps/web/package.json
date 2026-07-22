@@ -5,6 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:competition": "node scripts/build-profile.mjs competition",
+    "build:public": "node scripts/build-profile.mjs public-production",
+    "test:profile": "node scripts/profile-artifact-smoke.mjs competition",
+    "test:public-profile": "node scripts/browser-public-profile-smoke.mjs",
+    "verify:profiles": "node scripts/verify-deployment-profiles.mjs",
     "postbuild": "node scripts/write-offline-assets.mjs",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",

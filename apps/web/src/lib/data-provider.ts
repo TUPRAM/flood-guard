@@ -1,6 +1,7 @@
 import bundleJson from "../../public/offline-demo/bundle.json";
 import maeSaiBundleJson from "../../public/offline-demo/mae-sai/bundle.json";
 import maeSaiManifestJson from "../../public/offline-demo/mae-sai/manifest.json";
+import maeSaiPublicBundleJson from "../../public/offline-demo/mae-sai/public-bundle.json";
 import areasGeoJson from "../data/areas.json";
 import contextGeoJson from "../data/context.json";
 import roadsGeoJson from "../data/roads.json";
@@ -10,22 +11,110 @@ import {
   OPERATIONAL_STATUSES,
   PILOT_ROLES,
   type AreaDecision,
+  type EvidenceContext,
+  type EvidenceRecord,
   type LayerCatalogItem,
   type ModelRun,
   type PilotReadiness,
+  type PublicPreparednessArea,
+  type RoleVisibility,
   type StatusResponse,
 } from "@floodguard/contracts";
 
-import type { AreaRecord, FeatureCollection, FloodGuardData, OfflineBundle, ReadinessRow, ScenarioId, ScenarioResult, StudyAreaId } from "./types";
+import { assertArtifactsMatchEvidenceContext, assertEvidenceContextMatches, evidenceRecordMatchesContext } from "./evidence-context";
+import { assertLayerVisibleForRole, visibleLayersForRole } from "./layer-visibility";
+import type { AreaRecord, FeatureCollection, FloodGuardData, FloodGuardDataOptions, OfflineBundle, ReadinessRow, ScenarioId, ScenarioResult, StudyAreaId } from "./types";
 
 const offlineBundle = bundleJson as unknown as OfflineBundle;
 const maeSaiOfflineBundle = maeSaiBundleJson as unknown as OfflineBundle;
+const maeSaiPublicBundle = maeSaiPublicBundleJson as unknown as {
+  evidence_context: EvidenceContext;
+  evidence_record: EvidenceRecord;
+  public_areas: PublicPreparednessArea[];
+  status: OfflineBundle["status"];
+  layers: LayerCatalogItem[];
+  hotlines: OfflineBundle["hotlines"];
+  shelters: OfflineBundle["shelters"];
+};
 const maeSaiManifest = maeSaiManifestJson as unknown as {
-  layers: Array<{ layer_id: string; source_sha256: string; feature_count: number }>;
+  evidence_context: EvidenceContext;
+  layers: Array<{
+    layer_id: string;
+    source_sha256: string;
+    feature_count: number;
+    role_visibility: RoleVisibility[];
+  }>;
 };
 
 export const LAST_KNOWN_API_SNAPSHOT_KEY = "floodguard:last-known-api-snapshot:v2";
-const SNAPSHOT_SCHEMA_VERSION = "1.0";
+const SNAPSHOT_SCHEMA_VERSION = "2.0";
+
+const DEFAULT_DATA_OPTIONS: FloodGuardDataOptions = {
+  studyArea: "fixture_thailand_demo",
+  role: "command",
+};
+
+export function normalizeDataOptions(
+  requested: FloodGuardDataOptions | StudyAreaId = DEFAULT_DATA_OPTIONS,
+): FloodGuardDataOptions {
+  if (typeof requested === "string") {
+    return {
+      studyArea: requested,
+      role: "command",
+    };
+  }
+  return {
+    studyArea: requested.studyArea,
+    role: requested.role,
+    evidenceContextId: requested.evidenceContextId,
+  };
+}
+
+const fixtureSourceComponent = {
+  source_component_id: "fixture-decision-inputs",
+  role: "synthetic_decision_fixture",
+  source_name: "FloodGuard committed fixture bundle",
+  source_version: offlineBundle.status.data_version,
+  source_timestamp: offlineBundle.status.source_timestamp,
+  last_checked_at: offlineBundle.status.generated_at,
+  temporal_meaning: "generation_time" as const,
+  freshness: "historical" as const,
+  freshness_policy_version: "source-freshness-v1" as const,
+  freshness_as_of: offlineBundle.status.generated_at,
+  attribution: ["FloodGuard synthetic fixtures"],
+};
+
+const fixtureEvidenceContext: EvidenceContext = {
+  schema_version: "1.0",
+  evidence_context_id: "fixture-thailand-demo:fixture-2026-06-29-v1",
+  study_area_id: "fixture_thailand_demo",
+  data_version: offlineBundle.status.data_version,
+  evidence_package_id: "floodguard-fixture:fixture-2026-06-29-v1",
+  evidence_package_sha256: "d49770def1e3b8648aa4093e1e2f72f2fcb95164086725bdb1f72c7717a07c28",
+  model_run_id: null,
+  dataset_mode: "fixture_demo",
+  operational_status: "non_operational",
+  official_warning: false,
+  generated_at: offlineBundle.status.generated_at,
+  source_components: [fixtureSourceComponent],
+};
+
+const fixtureEvidenceRecord: EvidenceRecord = {
+  schema_version: "1.0",
+  evidence_record_id: `${fixtureEvidenceContext.evidence_context_id}:blocked`,
+  evidence_context: fixtureEvidenceContext,
+  evidence_scope: "Synthetic integration evidence only",
+  model_id: null,
+  model_version: null,
+  model_sha256: null,
+  evaluation_sha256: null,
+  decision: "blocked",
+  decision_authority: null,
+  decision_at: null,
+  operational_authorized: false,
+  blockers: ["Fixture evidence is not real-event validation or operational authorization."],
+  generated_at: offlineBundle.status.generated_at,
+};
 
 export interface SnapshotStorage {
   getItem(key: string): string | null;
@@ -36,15 +125,48 @@ export const areaFeatures = areasGeoJson as unknown as FeatureCollection;
 export const roadFeatures = roadsGeoJson as unknown as FeatureCollection;
 export const contextFeatures = contextGeoJson as unknown as FeatureCollection;
 
-export function getOfflineData(reason?: string): FloodGuardData {
+export function getOfflineData(
+  reason?: string,
+  requested: FloodGuardDataOptions | StudyAreaId = DEFAULT_DATA_OPTIONS,
+): FloodGuardData {
+  const options = normalizeDataOptions(requested);
+  const layers = visibleLayersForRole(offlineBundle.layers, options.role);
+  const publicAreas = offlineBundle.areas.map((area) => ({
+    schema_version: "1.0" as const,
+    evidence_context_id: fixtureEvidenceContext.evidence_context_id,
+    area_id: area.area_id,
+    area_name_th: area.area_name_th,
+    area_name_en: area.area_name_en,
+    planning_priority_0_100: area.fpps_0_100,
+    evidence_sufficiency: area.confidence_class,
+    recommendation_code: area.action_reason_code,
+    source_timestamp: area.source_timestamp,
+    freshness: "historical" as const,
+    current_conditions_confirmed: false,
+  }));
   return {
     ...offlineBundle,
+    status: {
+      ...offlineBundle.status,
+      evidence_context_id: fixtureEvidenceContext.evidence_context_id,
+    },
+    areas: offlineBundle.areas.map((area) => ({
+      ...area,
+      evidence_context_id: fixtureEvidenceContext.evidence_context_id,
+    })),
+    layers,
+    role: options.role,
+    evidenceContext: fixtureEvidenceContext,
+    evidenceRecord: fixtureEvidenceRecord,
+    publicAreas,
     dataState: reason ? "stale_offline" : "ready",
     dataOrigin: "offline_bundle",
     scenarioState: "ready",
     availableScenarios: ["baseline", "add_temporary_shelter", "close_road"],
     areaFeatures,
-    roadFeatures,
+    roadFeatures: layers.some((layer) => layer.layer_id === "road_risk")
+      ? roadFeatures
+      : emptyFeatureCollection("fixture_road_layer_not_visible"),
     contextFeatures,
     facilityFeatures: emptyFeatureCollection("fixture_facilities_unavailable"),
     accessFeatures: emptyFeatureCollection("fixture_access_hotspots_unavailable"),
@@ -52,10 +174,36 @@ export function getOfflineData(reason?: string): FloodGuardData {
   };
 }
 
-export function getMaeSaiOfflineData(reason?: string): FloodGuardData {
+export function getMaeSaiOfflineData(
+  reason?: string,
+  requested: FloodGuardDataOptions | StudyAreaId = {
+    studyArea: "mae_sai_candidate_v1",
+    role: "command",
+  },
+): FloodGuardData {
+  const options = normalizeDataOptions(requested);
+  const context = maeSaiPublicBundle.evidence_context;
+  const recordMatches = evidenceRecordMatchesContext(
+    maeSaiPublicBundle.evidence_record,
+    context,
+  );
+  const mismatch = options.studyArea !== "mae_sai_candidate_v1"
+    || (options.evidenceContextId !== undefined
+      && options.evidenceContextId !== context.evidence_context_id)
+    || !recordMatches;
+  const layers = mismatch
+    ? []
+    : visibleLayersForRole(maeSaiOfflineBundle.layers, options.role);
   return {
     ...maeSaiOfflineBundle,
-    dataState: reason ? "stale_offline" : "loading",
+    status: maeSaiPublicBundle.status,
+    areas: mismatch || options.role === "public" ? [] : maeSaiOfflineBundle.areas,
+    layers,
+    role: options.role,
+    evidenceContext: context,
+    evidenceRecord: recordMatches ? maeSaiPublicBundle.evidence_record : null,
+    publicAreas: mismatch ? [] : maeSaiPublicBundle.public_areas,
+    dataState: mismatch ? "unavailable" : reason ? "stale_offline" : "loading",
     dataOrigin: "offline_bundle",
     scenarioState: "unavailable",
     availableScenarios: ["baseline"],
@@ -64,20 +212,41 @@ export function getMaeSaiOfflineData(reason?: string): FloodGuardData {
     contextFeatures: emptyFeatureCollection("mae_sai_context_loading"),
     facilityFeatures: emptyFeatureCollection("mae_sai_facilities_loading"),
     accessFeatures: emptyFeatureCollection("mae_sai_access_hotspots_loading"),
-    fallbackReason: reason,
+    fallbackReason: mismatch
+      ? "The requested evidence context is not available in the Mae Sai offline package."
+      : reason,
   };
 }
 
-export async function loadMaeSaiOfflineData(reason?: string): Promise<FloodGuardData> {
-  const base = getMaeSaiOfflineData(reason);
+export async function loadMaeSaiOfflineData(
+  reason?: string,
+  requested: FloodGuardDataOptions | StudyAreaId = {
+    studyArea: "mae_sai_candidate_v1",
+    role: "command",
+  },
+): Promise<FloodGuardData> {
+  const options = normalizeDataOptions(requested);
+  const base = getMaeSaiOfflineData(reason, options);
+  if (base.dataState === "unavailable") return base;
   try {
+    if (options.role === "public") {
+      const publicAreas = await loadFeatureCollection(
+        "/offline-demo/mae-sai/public-areas.json",
+      );
+      assertMaeSaiPublicCollection(publicAreas);
+      return {
+        ...base,
+        dataState: reason ? "stale_offline" : "ready",
+        areaFeatures: publicAreas,
+      };
+    }
     const [areas, roads, facilities, access] = await Promise.all([
       loadFeatureCollection("/offline-demo/mae-sai/areas.json"),
       loadFeatureCollection("/offline-demo/mae-sai/roads.json"),
       loadFeatureCollection("/offline-demo/mae-sai/facilities.json"),
       loadFeatureCollection("/offline-demo/mae-sai/access-hotspots.json"),
     ]);
-    assertMaeSaiCollections(areas, roads, facilities, access, "complete");
+    assertMaeSaiCollections(areas, roads, facilities, access, "complete", options.role);
     return {
       ...base,
       dataState: reason ? "stale_offline" : "ready",
@@ -99,40 +268,86 @@ export async function loadMaeSaiOfflineData(reason?: string): Promise<FloodGuard
 export async function loadFloodGuardData(
   apiBase = process.env.NEXT_PUBLIC_FLOODGUARD_API_URL,
   snapshotStorage?: SnapshotStorage | null,
-  preferredStudyArea: StudyAreaId = "fixture_thailand_demo",
+  requested: FloodGuardDataOptions | StudyAreaId = DEFAULT_DATA_OPTIONS,
 ): Promise<FloodGuardData> {
+  const options = normalizeDataOptions(requested);
+  const preferredStudyArea = options.studyArea;
   const storage = resolveSnapshotStorage(snapshotStorage);
-  const snapshotKey = snapshotKeyFor(preferredStudyArea);
+  const snapshotKey = snapshotKeyFor(options);
   if (!apiBase) {
     const cached = preferredStudyArea === "mae_sai_candidate_v1"
       ? null
       : readLastKnownApiSnapshot(storage, "API endpoint is not configured.", snapshotKey);
     if (cached) return cached;
     return preferredStudyArea === "mae_sai_candidate_v1"
-      ? loadMaeSaiOfflineData()
-      : getOfflineData();
+      ? loadMaeSaiOfflineData(undefined, options)
+      : getOfflineData(undefined, options);
   }
 
   try {
     const base = apiBase.replace(/\/$/, "");
-    const [statusResponse, areasResponse, layersResponse] = await Promise.all([
-        fetch(withStudyArea(`${base}/api/v1/status`, preferredStudyArea), { cache: "no-store" }),
-        fetch(withStudyArea(`${base}/api/v1/areas`, preferredStudyArea), { cache: "no-store" }),
-        fetch(withStudyArea(`${base}/api/v1/layers`, preferredStudyArea), { cache: "no-store" }),
-      ]);
-
-    const responses = [statusResponse, areasResponse, layersResponse];
-    if (responses.some((response) => !response.ok)) {
-      throw new Error(`Core API returned ${responses.map((response) => response.status).join(", ")}`);
+    const [statusResponse, contextResponse] = await Promise.all([
+      fetch(withStudyArea(`${base}/api/v1/status`, preferredStudyArea), { cache: "no-store" }),
+      fetch(withStudyArea(`${base}/api/v1/evidence-context`, preferredStudyArea), { cache: "no-store" }),
+    ]);
+    if (!statusResponse.ok || !contextResponse.ok) {
+      throw new Error(
+        `Evidence API returned ${statusResponse.status}, ${contextResponse.status}`,
+      );
     }
-
-    const [statusRaw, areasRaw, layersRaw] = await Promise.all(
-      responses.map((response) => response.json()),
+    const [status, evidenceContext] = await Promise.all([
+      statusResponse.json() as Promise<StatusResponse>,
+      contextResponse.json() as Promise<EvidenceContext>,
+    ]);
+    assertEvidenceContextMatches(
+      evidenceContext,
+      status,
+      preferredStudyArea,
+      options.evidenceContextId,
     );
-    const status = statusRaw as StatusResponse;
-    const areas = asItems<AreaDecision>(areasRaw);
-    const layers = asItems<LayerCatalogItem>(layersRaw);
-    assertRequestedStudyArea(status, areas, preferredStudyArea);
+    const [areasResponse, publicAreasResponse, layersResponse, evidenceRecordResponse] = await Promise.all([
+      options.role === "public"
+        ? Promise.resolve(null)
+        : fetch(withStudyArea(`${base}/api/v1/areas`, preferredStudyArea), { cache: "no-store" }),
+      fetch(withStudyArea(`${base}/api/v1/public-areas`, preferredStudyArea), { cache: "no-store" }),
+      fetch(withRole(
+        withStudyArea(`${base}/api/v1/layers`, preferredStudyArea),
+        options.role,
+      ), { cache: "no-store" }),
+      fetch(`${base}/api/v1/evidence-records/${encodeURIComponent(evidenceContext.evidence_context_id)}`, { cache: "no-store" }),
+    ]);
+    const coreResponses = [publicAreasResponse, layersResponse, evidenceRecordResponse];
+    if (areasResponse) coreResponses.push(areasResponse);
+    if (coreResponses.some((response) => !response.ok)) {
+      throw new Error(
+        `Context-bound API returned ${coreResponses.map((response) => response.status).join(", ")}`,
+      );
+    }
+    const [publicAreasRaw, layersRaw, evidenceRecord] = await Promise.all([
+      publicAreasResponse.json(),
+      layersResponse.json(),
+      evidenceRecordResponse.json() as Promise<EvidenceRecord>,
+    ]);
+    const areas = areasResponse
+      ? asItems<AreaDecision>(await areasResponse.json())
+      : [];
+    const publicAreas = asItems<PublicPreparednessArea>(publicAreasRaw);
+    const layers = visibleLayersForRole(
+      asItems<LayerCatalogItem>(layersRaw),
+      options.role,
+    );
+    if (!evidenceRecordMatchesContext(evidenceRecord, evidenceContext)) {
+      throw new Error("Evidence record does not match the active evidence context.");
+    }
+    assertRequestedStudyArea(
+      status,
+      areas,
+      publicAreas,
+      evidenceContext,
+      preferredStudyArea,
+      options.role,
+    );
+    assertArtifactsMatchEvidenceContext(evidenceContext, areas, layers);
     const degradationReasons: string[] = [];
     const candidateProfile = status.study_area === "mae_sai_candidate_v1";
     const [runsResult, readinessResult, pilotResult] = await Promise.allSettled([
@@ -211,15 +426,24 @@ export async function loadFloodGuardData(
           status: "not_evaluated" as const,
           note: "Model validation categories are unavailable from the current API.",
         }];
-    const scenarioEligible = (
+    const scenarioEligible = options.role !== "public" && (
       status.data_state === "ready"
       || (status.study_area === "mae_sai_candidate_v1" && status.data_state === "stale")
     ) && (fixtureCompatible || status.study_area === "mae_sai_candidate_v1");
+    const areaLayerId = options.role === "public"
+      ? "public_preparedness_areas"
+      : "priority_areas";
     const [areaLayerResult, roadLayerResult, facilityLayerResult, accessLayerResult, scenarioResult] = await Promise.allSettled([
-      loadLayerData(base, layers, "priority_areas"),
-      loadLayerData(base, layers, "road_risk"),
-      loadOptionalLayerData(base, layers, "facilities"),
-      loadOptionalLayerData(base, layers, "access_hotspots"),
+      loadLayerData(base, layers, areaLayerId, options.role),
+      options.role === "public"
+        ? Promise.resolve(emptyFeatureCollection("road_risk_not_public"))
+        : loadLayerData(base, layers, "road_risk", options.role),
+      options.role === "public"
+        ? Promise.resolve(emptyFeatureCollection("facilities_not_public"))
+        : loadOptionalLayerData(base, layers, "facilities", options.role),
+      options.role === "public"
+        ? Promise.resolve(emptyFeatureCollection("access_hotspots_not_public"))
+        : loadOptionalLayerData(base, layers, "access_hotspots", options.role),
       scenarioEligible
         ? loadScenarioResults(base, status, boundedAreas)
         : Promise.resolve(emptyScenarioLoadResult()),
@@ -229,15 +453,15 @@ export async function loadFloodGuardData(
     const apiRoadFeatures = roadLayerResult.status === "fulfilled"
       ? roadLayerResult.value
       : emptyFeatureCollection("road_risk_unavailable");
-    if (roadLayerResult.status === "rejected") degradationReasons.push("Road-risk layer unavailable.");
+    if (options.role !== "public" && roadLayerResult.status === "rejected") degradationReasons.push("Road-risk layer unavailable.");
     const apiFacilityFeatures = facilityLayerResult.status === "fulfilled"
       ? facilityLayerResult.value
       : emptyFeatureCollection("facilities_unavailable");
-    if (facilityLayerResult.status === "rejected") degradationReasons.push("Facility-candidate layer unavailable.");
+    if (options.role !== "public" && facilityLayerResult.status === "rejected") degradationReasons.push("Facility layer unavailable.");
     const apiAccessFeatures = accessLayerResult.status === "fulfilled"
       ? accessLayerResult.value
       : emptyFeatureCollection("access_hotspots_unavailable");
-    if (accessLayerResult.status === "rejected") degradationReasons.push("Access-hotspot layer unavailable.");
+    if (options.role !== "public" && accessLayerResult.status === "rejected") degradationReasons.push("Access-hotspot layer unavailable.");
     const loadedScenarios = scenarioResult.status === "fulfilled"
       ? scenarioResult.value
       : emptyScenarioLoadResult();
@@ -253,7 +477,7 @@ export async function loadFloodGuardData(
         `${loadedScenarios.failedScenarioCount} server-defined scenario artifact${loadedScenarios.failedScenarioCount === 1 ? " is" : "s are"} unavailable.`,
       );
     }
-    const publicLayers = roadLayerResult.status === "fulfilled"
+    const availableLayers = roadLayerResult.status === "fulfilled"
       ? boundedLayers
       : boundedLayers.map((layer) => layer.layer_id === "road_risk" ? { ...layer, data_state: "unavailable" as const } : layer);
     const compatibleBundle = status.study_area === "mae_sai_candidate_v1"
@@ -262,13 +486,19 @@ export async function loadFloodGuardData(
     const candidate = {
       ...compatibleBundle,
       status: boundedStatus,
-      areas: boundedAreas.map((area) => adaptArea(area, scenarioResults)),
-      layers: publicLayers,
-      model_runs: boundedModelRuns,
+      areas: options.role === "public"
+        ? []
+        : boundedAreas.map((area) => adaptArea(area, scenarioResults)),
+      layers: availableLayers,
+      model_runs: options.role === "public" ? [] : boundedModelRuns,
       readiness,
       pilot_readiness: pilotReadiness,
       shelters: fixtureCompatible ? offlineBundle.shelters : [],
       error_categories: fixtureCompatible ? offlineBundle.error_categories : errorCategories,
+      role: options.role,
+      evidenceContext,
+      evidenceRecord,
+      publicAreas,
       dataState: boundedStatus.data_state,
       dataOrigin: "api",
       scenarioState,
@@ -286,13 +516,18 @@ export async function loadFloodGuardData(
       degradedReason: degradationReasons.length > 0 ? degradationReasons.join(" ") : undefined,
     } as FloodGuardData;
     if (status.study_area === "mae_sai_candidate_v1") {
-      assertMaeSaiCollections(
-        candidate.areaFeatures,
-        candidate.roadFeatures,
-        candidate.facilityFeatures,
-        candidate.accessFeatures,
-        "regional",
-      );
+      if (options.role === "public") {
+        assertMaeSaiPublicCollection(candidate.areaFeatures);
+      } else {
+        assertMaeSaiCollections(
+          candidate.areaFeatures,
+          candidate.roadFeatures,
+          candidate.facilityFeatures,
+          candidate.accessFeatures,
+          "regional",
+          options.role,
+        );
+      }
     }
     assertNoPrivatePaths(candidate);
     writeLastKnownApiSnapshot(storage, candidate, snapshotKey);
@@ -304,8 +539,8 @@ export async function loadFloodGuardData(
       : readLastKnownApiSnapshot(storage, reason, snapshotKey);
     if (cached) return cached;
     return preferredStudyArea === "mae_sai_candidate_v1"
-      ? loadMaeSaiOfflineData(reason)
-      : getOfflineData(reason);
+      ? loadMaeSaiOfflineData(reason, options)
+      : getOfflineData(reason, options);
   }
 }
 
@@ -321,10 +556,16 @@ function resolveSnapshotStorage(
   }
 }
 
-function snapshotKeyFor(studyArea: StudyAreaId): string {
-  return studyArea === "fixture_thailand_demo"
-    ? LAST_KNOWN_API_SNAPSHOT_KEY
-    : `${LAST_KNOWN_API_SNAPSHOT_KEY}:${studyArea}`;
+function snapshotKeyFor(options: FloodGuardDataOptions): string {
+  if (
+    options.studyArea === "fixture_thailand_demo"
+    && options.role === "command"
+    && options.evidenceContextId === undefined
+  ) return LAST_KNOWN_API_SNAPSHOT_KEY;
+  const contextSuffix = options.evidenceContextId
+    ? `:${encodeURIComponent(options.evidenceContextId)}`
+    : "";
+  return `${LAST_KNOWN_API_SNAPSHOT_KEY}:${options.studyArea}:${options.role}${contextSuffix}`;
 }
 
 function withStudyArea(url: string, studyArea: StudyAreaId): string {
@@ -425,7 +666,7 @@ function readLastKnownApiSnapshot(
 
 function isSnapshotEnvelope(
   value: unknown,
-): value is { schema_version: "1.0"; cached_at: string; data: FloodGuardData } {
+): value is { schema_version: "2.0"; cached_at: string; data: FloodGuardData } {
   if (!isRecord(value) || value.schema_version !== SNAPSHOT_SCHEMA_VERSION) return false;
   if (typeof value.cached_at !== "string" || !Number.isFinite(Date.parse(value.cached_at))) return false;
   const data = value.data;
@@ -442,6 +683,17 @@ function isSnapshotEnvelope(
   if (!isRecord(data.pilot_readiness)) return false;
   if (typeof data.pilot_readiness.agency_operational_allowed !== "boolean") return false;
   if (!Array.isArray(data.hotlines) || !Array.isArray(data.shelters)) return false;
+  if (!["public", "command", "studio"].includes(String(data.role))) return false;
+  if (!isRecord(data.evidenceContext) || !isRecord(data.status)) return false;
+  const snapshotContextId = data.evidenceContext.evidence_context_id;
+  if (snapshotContextId !== data.status.evidence_context_id) return false;
+  if (!Array.isArray(data.publicAreas)) return false;
+  if (
+    data.publicAreas.some((area) => (
+      !isRecord(area)
+      || area.evidence_context_id !== snapshotContextId
+    ))
+  ) return false;
   if (
     !isFeatureCollection(data.areaFeatures)
     || !isFeatureCollection(data.roadFeatures)
@@ -551,11 +803,24 @@ async function loadFeatureCollection(url: string): Promise<FeatureCollection> {
 function assertRequestedStudyArea(
   status: StatusResponse,
   areas: AreaDecision[],
+  publicAreas: PublicPreparednessArea[],
+  context: EvidenceContext,
   preferredStudyArea: StudyAreaId,
+  role: RoleVisibility,
 ): void {
+  if (
+    status.study_area !== preferredStudyArea
+    || context.study_area_id !== preferredStudyArea
+    || status.evidence_context_id !== context.evidence_context_id
+    || publicAreas.some((area) => area.evidence_context_id !== context.evidence_context_id)
+  ) {
+    throw new Error("API study-area or evidence-context identity failed.");
+  }
   if (preferredStudyArea !== "mae_sai_candidate_v1") return;
   const expectedIds = new Set(maeSaiOfflineBundle.areas.map((area) => area.area_id));
-  const receivedIds = new Set(areas.map((area) => area.area_id));
+  const receivedIds = new Set(
+    (role === "public" ? publicAreas : areas).map((area) => area.area_id),
+  );
   const expectedCommit = maeSaiOfflineBundle.status.git_commit;
   const expectedSourceTimestamp = maeSaiOfflineBundle.status.source_timestamp;
   const expectedDataVersion = maeSaiOfflineBundle.status.data_version;
@@ -567,7 +832,7 @@ function assertRequestedStudyArea(
     || status.data_version !== expectedDataVersion
     || status.git_commit !== expectedCommit
     || status.source_timestamp !== expectedSourceTimestamp
-    || areas.length !== expectedIds.size
+    || (role === "public" ? publicAreas.length : areas.length) !== expectedIds.size
     || receivedIds.size !== expectedIds.size
     || [...expectedIds].some((areaId) => !receivedIds.has(areaId))
     || areas.some((area) => (
@@ -589,7 +854,11 @@ function assertMaeSaiCollections(
   facilities: FeatureCollection,
   access: FeatureCollection,
   roadScope: "complete" | "regional",
+  role: Exclude<RoleVisibility, "public">,
 ): void {
+  if (role !== "command" && role !== "studio") {
+    throw new Error("Staff Mae Sai collections require a staff role.");
+  }
   const expectedIds = new Set(maeSaiOfflineBundle.areas.map((area) => area.area_id));
   if (
     areas.features.length !== 8
@@ -632,6 +901,50 @@ function assertMaeSaiCollections(
     || feature.properties.emergency_role !== "no_confirmed_emergency_role"
     || feature.properties.candidate_status !== "unverified_osm_candidate"
   ))) throw new Error("Mae Sai facility candidate was substituted or promoted without authority.");
+}
+
+function withRole(url: string, role: RoleVisibility): string {
+  const parsed = new URL(url);
+  parsed.searchParams.set("role", role);
+  return parsed.toString();
+}
+
+function assertMaeSaiPublicCollection(collection: FeatureCollection): void {
+  if (collection.features.length !== 8) {
+    throw new Error("Mae Sai public preparedness feature-count contract failed.");
+  }
+  const metadata = (collection as unknown as { floodguard_metadata?: Record<string, unknown> }).floodguard_metadata;
+  if (
+    !metadata
+    || metadata.study_area_id !== "mae_sai_candidate_v1"
+    || metadata.evidence_context_id !== maeSaiPublicBundle.evidence_context.evidence_context_id
+    || metadata.official_warning !== false
+    || !Array.isArray(metadata.role_visibility)
+    || metadata.role_visibility.length !== 1
+    || metadata.role_visibility[0] !== "public"
+  ) {
+    throw new Error("Mae Sai public preparedness lineage contract failed.");
+  }
+  const forbidden = new Set([
+    "action_class",
+    "fpps_component_flood_0_100",
+    "fpps_component_exposure_0_100",
+    "fpps_component_access_0_100",
+    "fpps_component_road_0_100",
+    "fpps_component_vulnerability_0_100",
+    "people_losing_30_min_access",
+    "equity_gap_ratio",
+    "candidate_evidence",
+  ]);
+  for (const feature of collection.features) {
+    if (
+      feature.properties.evidence_context_id !== maeSaiPublicBundle.evidence_context.evidence_context_id
+      || feature.properties.current_conditions_confirmed !== false
+      || Object.keys(feature.properties).some((key) => forbidden.has(key))
+    ) {
+      throw new Error("Mae Sai public preparedness projection contains staff-only fields.");
+    }
+  }
 }
 
 function assertMaeSaiLayerMetadata(collection: FeatureCollection, layerId: string): void {
@@ -997,19 +1310,36 @@ function adaptArea(area: AreaDecision, scenarios: Map<string, Partial<Record<Sce
   };
 }
 
-async function loadOptionalLayerData(base: string, layers: LayerCatalogItem[], layerId: string): Promise<FeatureCollection> {
+async function loadOptionalLayerData(
+  base: string,
+  layers: LayerCatalogItem[],
+  layerId: string,
+  role: RoleVisibility,
+): Promise<FeatureCollection> {
   const layer = layers.find((item) => item.layer_id === layerId);
   if (!layer || !["ready", "stale"].includes(layer.data_state)) return emptyFeatureCollection(`${layerId}_unavailable`);
-  return loadLayerData(base, layers, layerId);
+  return loadLayerData(base, layers, layerId, role);
 }
 
-async function loadLayerData(base: string, layers: LayerCatalogItem[], layerId: string): Promise<FeatureCollection> {
+async function loadLayerData(
+  base: string,
+  layers: LayerCatalogItem[],
+  layerId: string,
+  role: RoleVisibility,
+): Promise<FeatureCollection> {
   const layer = layers.find((item) => item.layer_id === layerId);
   if (!layer || !["ready", "stale"].includes(layer.data_state)) throw new Error(`Required API layer ${layerId} is unavailable.`);
-  const url = new URL(layer.url, `${base}/`).toString();
+  assertLayerVisibleForRole(layer, role);
+  const parsed = new URL(layer.url, `${base}/`);
+  parsed.searchParams.set("role", role);
+  const url = parsed.toString();
   if (new URL(url).origin !== new URL(base).origin) throw new Error("Cross-origin layer URL rejected.");
   const response = await fetch(url, { cache: "no-cache" });
   if (!response.ok) throw new Error(`Layer ${layerId} returned ${response.status}.`);
+  const responseContextId = response.headers.get("X-FloodGuard-Evidence-Context-Id");
+  if (responseContextId && responseContextId !== layer.evidence_context_id) {
+    throw new Error(`Layer ${layerId} response does not match its evidence context.`);
+  }
   const collection = await response.json() as FeatureCollection;
   if (collection.type !== "FeatureCollection" || !Array.isArray(collection.features)) throw new Error(`Layer ${layerId} is not GeoJSON.`);
   return collection;
@@ -1029,6 +1359,7 @@ export async function loadMaeSaiRoadDetail(
   url.searchParams.set("study_area", "mae_sai_candidate_v1");
   url.searchParams.set("detail", "selected_area");
   url.searchParams.set("area_id", areaId);
+  url.searchParams.set("role", "command");
   const response = await fetch(url.toString(), { cache: "no-cache" });
   if (!response.ok) throw new Error(`Mae Sai selected-area road layer returned ${response.status}.`);
   const collection = await response.json() as FeatureCollection;

@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import SurfaceChooser from "./page";
+import { SurfaceChooser } from "./page";
 
 describe("SurfaceChooser", () => {
   it("renders the final-product platform entry with all three role workspaces", () => {

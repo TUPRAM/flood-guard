@@ -2,7 +2,7 @@ import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 
-import { chromium } from "@playwright/test";
+import { launchFloodGuardBrowser } from "./browser-launch.mjs";
 
 const out = resolve(process.cwd(), "out");
 if (!existsSync(resolve(out, "public", "index.html"))) {
@@ -49,13 +49,7 @@ await new Promise((resolveListen, rejectListen) => {
 const address = server.address();
 if (!address || typeof address === "string") throw new Error("Static server did not bind.");
 const baseUrl = `http://127.0.0.1:${address.port}`;
-const browser = await chromium.launch(
-  process.env.FLOODGUARD_BROWSER_EXECUTABLE
-    ? { executablePath: process.env.FLOODGUARD_BROWSER_EXECUTABLE, headless: true }
-    : process.platform === "win32"
-      ? { channel: "chrome", headless: true }
-      : { headless: true },
-);
+const browser = await launchFloodGuardBrowser();
 
 const routes = [
   { path: "/", selector: "main.surface-chooser" },
@@ -72,6 +66,8 @@ const approvedBasemapOriginsSeen = new Set();
 const externalRequests = [];
 const pageErrors = [];
 const consoleErrors = [];
+const unexpectedRequestFailures = [];
+let offlineMode = false;
 
 try {
   const context = await browser.newContext({ serviceWorkers: "allow" });
@@ -91,10 +87,28 @@ try {
   });
   const page = await context.newPage();
   page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => {
+    const url = new URL(request.url());
+    if (approvedBasemapOrigins.has(url.origin)) return;
+    const errorText = request.failure()?.errorText ?? "failed";
+    // Next cancels speculative RSC/data requests during route changes. Once
+    // offline, uncached speculative RSC requests may fail while the tested HTML
+    // routes and core assets are served successfully by the service worker.
+    if (errorText === "net::ERR_ABORTED" || (offlineMode && errorText === "net::ERR_FAILED")) return;
+    unexpectedRequestFailures.push(
+      `${request.method()} ${url.href}: ${errorText}`,
+    );
+  });
   page.on("console", (message) => {
     if (message.type() !== "error") return;
     const text = message.text();
-    if (text.includes("net::ERR_BLOCKED_BY_CLIENT")) return;
+    // Chromium can report an explicitly blocked image tile as ERR_FAILED even
+    // when Playwright aborted it with `blockedbyclient`. URL-aware
+    // `requestfailed` handling above still rejects every non-basemap failure.
+    if (
+      text.includes("net::ERR_BLOCKED_BY_CLIENT")
+      || text === "Failed to load resource: net::ERR_FAILED"
+    ) return;
     consoleErrors.push(text);
   });
 
@@ -126,35 +140,51 @@ try {
     throw new Error(`Root chooser does not declare its English content language: ${JSON.stringify(rootAudit)}.`);
   }
 
-  // Public: the citizen action and official-help block must own the mobile
-  // first viewport, and the household plan must persist only on this device.
+  // Public: the current-official-information action and household-plan action
+  // must own the mobile first viewport. Emergency contacts follow the selected
+  // area/context flow and must remain present and keyboard reachable.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
   const initialBody = await page.locator("body").innerText();
   assertFinalVisibleCopy(initialBody, "/public/");
   const primaryAction = page.locator('[data-action="build-household-plan"]');
+  const officialUpdate = page.locator(".public-official-update");
+  const officialUpdateLink = officialUpdate.locator('a[href*="disaster.go.th"]');
   const officialHelp = page.locator('[data-testid="public-official-help"]');
   const publicNavigation = page.locator(".public-bottom-nav");
-  if (!(await primaryAction.isVisible()) || !(await officialHelp.isVisible())) {
-    throw new Error("Public first viewport is missing the household-plan action or official help.");
+  if (!(await primaryAction.isVisible()) || !(await officialUpdateLink.isVisible()) || !(await officialHelp.isVisible())) {
+    throw new Error("Public Home is missing its household-plan action, official DDPM action, or emergency contacts.");
   }
-  const [primaryActionBox, officialHelpBox, publicNavigationBox] = await Promise.all([
+  const [primaryActionBox, officialUpdateLinkBox, publicNavigationBox] = await Promise.all([
     primaryAction.boundingBox(),
-    officialHelp.boundingBox(),
+    officialUpdateLink.boundingBox(),
     publicNavigation.boundingBox(),
   ]);
   if (!primaryActionBox || !publicNavigationBox || primaryActionBox.y + primaryActionBox.height > publicNavigationBox.y) {
     throw new Error("Build-my-household-plan action is not visible in the 390x844 first viewport.");
   }
-  if (!officialHelpBox || !publicNavigationBox || officialHelpBox.y + 44 > publicNavigationBox.y) {
-    throw new Error("Official help does not begin in the 390x844 first viewport.");
+  if (!officialUpdateLinkBox || !publicNavigationBox || officialUpdateLinkBox.y + officialUpdateLinkBox.height > publicNavigationBox.y) {
+    throw new Error("Official DDPM action is not visible in the 390x844 first viewport.");
   }
+  const hotlineLinks = officialHelp.locator('a[href^="tel:"]');
+  if (await hotlineLinks.count() !== 3) throw new Error("Public Home does not expose all three official emergency contacts.");
+  await officialHelp.scrollIntoViewIfNeeded();
+  await hotlineLinks.first().focus();
+  if (!await hotlineLinks.first().evaluate((link) => document.activeElement === link)) {
+    throw new Error("Public emergency contacts are not keyboard reachable.");
+  }
+  const publicAreaSelect = page.locator("#public-area-select");
+  if (await publicAreaSelect.inputValue() !== "") {
+    throw new Error("A fresh Public session selected a planning area without user choice.");
+  }
+  await publicAreaSelect.selectOption("TH570901");
+  await page.waitForFunction(() => document.querySelector("#public-area-select")?.value === "TH570901");
   await primaryAction.click();
   await page.locator("#household-plan-builder").waitFor({ state: "visible" });
   await page.locator(".household-need-options button").first().click();
   await page.locator(".checklist-grid input").first().check();
-  const storedPlan = await page.evaluate(() => localStorage.getItem("floodguard:household-plan:v1"));
+  const storedPlan = await page.evaluate(() => localStorage.getItem("floodguard:household-plan:v2"));
   if (!storedPlan || !storedPlan.includes('"children":true') || !storedPlan.includes('"official_contacts":true')) {
     throw new Error("The device-local household plan did not persist selected needs and checklist state.");
   }
@@ -167,7 +197,7 @@ try {
     throw new Error("The household plan did not restore from device-local storage after reload.");
   }
 
-  // Shared map: real Mae Sai boundaries and categorized facilities must remain
+  // Shared map: real Mae Sai boundaries and defensively approved public facilities must remain
   // usable when all approved basemap hosts are deliberately unavailable.
   await page.locator("#public-tab-map").click();
   await page.locator(".public-map-view .leaflet-container").waitFor({ state: "visible" });
@@ -177,7 +207,7 @@ try {
   await page.locator(".map-text-alternative summary").click();
   await page.locator(".map-text-alternative button").nth(1).click();
   if (await page.locator(".public-map-view .geo-map-shell").getAttribute("data-selected-area") !== "TH570902") {
-    throw new Error("Map text alternative did not synchronize the selected reporting area.");
+    throw new Error("Map results list did not synchronize the selected reporting area.");
   }
   if (!(await page.locator(".map-selection-sheet").innerText()).includes("Huai Khrai")) {
     throw new Error("Selected-area bottom sheet did not update with map selection.");
@@ -191,13 +221,29 @@ try {
   await page.waitForFunction(() => (
     document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-road-feature-count") === "4458"
     && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-facility-feature-count") === "42"
+    && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-facility-presentation") === "clusters"
     && document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-access-feature-count") === "8"
   ));
   await assertMaeSaiMap(page, ".map-workspace", { expectRoads: true });
+  await page.locator(".ranked-areas button").filter({ hasText: "Mae Sai" }).first().click();
+  await page.waitForFunction(() => document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-selected-area") === "TH570901");
+  for (let index = 0; index < 6 && await page.locator(".map-workspace .geo-map-shell").getAttribute("data-facility-presentation") !== "features"; index += 1) {
+    await page.locator(".map-workspace .leaflet-control-zoom-in").click();
+  }
+  await page.waitForFunction(() => document.querySelector(".map-workspace .geo-map-shell")?.getAttribute("data-facility-presentation") === "features");
+  if (await page.locator(".map-workspace .facility-type-marker").count() !== 42) {
+    throw new Error("Command map did not expand facility clusters into individual staff markers at detail zoom.");
+  }
+  if (await page.locator(".map-workspace .facility-type-marker.facility-possible_shelter").count() === 0) {
+    throw new Error("Command map is missing the neutral possible-shelter marker category.");
+  }
+  if (await page.locator(".map-workspace .facility-type-marker.facility-muted").count() === 0) {
+    throw new Error("Command map did not mute facilities outside the selected area at detail zoom.");
+  }
   await exerciseBasemapSelector(page, ".map-workspace", "unavailable");
   const offlineAttribution = page.getByLabel("Map data attribution");
   const offlineAttributionText = await offlineAttribution.innerText();
-  for (const requiredAttribution of ["HDX COD-AB", "FloodGuard", "© OpenStreetMap contributors", "Geofabrik"]) {
+  for (const requiredAttribution of ["HDX Thailand COD-AB", "FloodGuard", "© OpenStreetMap contributors", "Geofabrik"]) {
     if (!offlineAttributionText.includes(requiredAttribution)) {
       throw new Error(`Offline Command map is missing attribution: ${requiredAttribution}.`);
     }
@@ -217,10 +263,11 @@ try {
   if (!(await scenarioSelect.isDisabled())) {
     throw new Error("Planning scenarios were enabled without the validated analysis service.");
   }
-  const scenarioEvidence = await page.locator(".planning-evidence-boundary").innerText();
-  const normalizedScenarioEvidence = scenarioEvidence.toLocaleLowerCase("en-US");
-  if (!normalizedScenarioEvidence.includes("planning evidence boundary") || !normalizedScenarioEvidence.includes("confirm emergency role")) {
-    throw new Error(`The planning evidence boundary is missing its local-verification guidance: ${scenarioEvidence}`);
+  if (await page.getByRole("tab", { name: "Scenario" }).count() !== 0) {
+    throw new Error("Command exposed the Scenario tab without a deliberate non-baseline scenario.");
+  }
+  if (await page.locator(".command-release-panel .scenario-evidence-comparison, .scenario-delta-strip").count() !== 0) {
+    throw new Error("Command rendered a baseline comparison without a reviewed non-baseline scenario.");
   }
   await page.locator(".ranked-areas button").filter({ hasText: "TH570901" }).click();
   await page.waitForFunction(() => (
@@ -232,14 +279,14 @@ try {
   // evaluation must update the model card rather than detached presentation copy.
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${baseUrl}/studio/`, { waitUntil: "networkidle" });
-  await page.locator(".geoai-proof").waitFor({ state: "visible" });
+  await page.locator("#evidence-context-title").waitFor({ state: "visible" });
   try {
     await page.waitForFunction(() => {
       const body = document.body.innerText;
       const normalized = body.toLocaleLowerCase("en-US");
       return normalized.includes("technical verification")
         && normalized.includes("observed-data validation")
-        && normalized.includes("operational readiness");
+        && normalized.includes("operational authorization");
     }, undefined, { timeout: 5_000 });
   } catch (error) {
     throw new Error(`Studio evidence scopes did not render: ${(await page.locator("body").innerText()).slice(0, 1800)}`, {
@@ -248,7 +295,7 @@ try {
   }
   const studioBody = await page.locator("body").innerText();
   const normalizedStudioBody = studioBody.toLocaleLowerCase("en-US");
-  for (const english of ["Technical verification", "Observed-data validation", "Operational readiness"]) {
+  for (const english of ["Technical verification", "Observed-data validation", "Operational authorization"]) {
     if (!normalizedStudioBody.includes(english.toLocaleLowerCase("en-US"))) {
       throw new Error(`Studio is missing its ${english} evidence scope.`);
     }
@@ -286,6 +333,7 @@ try {
     throw new Error(`Content-versioned offline cache was not installed: ${cacheKeys.join(", ")}`);
   }
 
+  offlineMode = true;
   await context.setOffline(true);
   for (const route of routes) {
     await page.goto(`${baseUrl}${route.path}`, { waitUntil: "domcontentloaded" });
@@ -306,9 +354,13 @@ try {
       throw new Error(`Basemap selector never requested approved provider ${origin}.`);
     }
   }
-  if (pageErrors.length > 0 || consoleErrors.length > 0) {
+  if (pageErrors.length > 0 || consoleErrors.length > 0 || unexpectedRequestFailures.length > 0) {
     throw new Error(
-      `Offline browser errors: ${[...pageErrors, ...consoleErrors].join(" | ")}`,
+      `Offline browser errors: ${[
+        ...pageErrors,
+        ...consoleErrors,
+        ...unexpectedRequestFailures,
+      ].join(" | ")}`,
     );
   }
   await context.close();
@@ -400,35 +452,41 @@ async function assertMaeSaiMap(page, scopeSelector, { expectRoads }) {
   await page.waitForFunction(
     ({ scope, requireRoads }) => {
       const shell = document.querySelector(`${scope} .geo-map-shell`);
-      const facilityCount = document.querySelectorAll(`${scope} .facility-type-marker`).length;
+      const audience = shell?.getAttribute("data-map-audience");
+      const visibleFacilityCount = shell?.getAttribute("data-facility-feature-count");
+      const facilityDatasetCount = shell?.getAttribute("data-facility-dataset-count");
+      const clusterCount = document.querySelectorAll(`${scope} .facility-cluster-marker`).length;
       const rendererCount = document.querySelectorAll(`${scope} .leaflet-overlay-pane canvas, ${scope} .leaflet-overlay-pane path`).length;
       const roads = Number(shell?.getAttribute("data-road-feature-count") ?? 0);
-      return shell?.getAttribute("data-facility-feature-count") === "42"
-        && facilityCount === 42
+      const facilitiesReady = audience === "public"
+        ? facilityDatasetCount === "0" && visibleFacilityCount === "0" && clusterCount === 0
+        : visibleFacilityCount === "42" && clusterCount > 0 && shell?.getAttribute("data-facility-presentation") === "clusters";
+      return facilitiesReady
         && rendererCount > 0
         && (!requireRoads || roads >= 4_458);
     },
     { scope: scopeSelector, requireRoads: expectRoads },
   );
   const shell = page.locator(`${scopeSelector} .geo-map-shell`);
-  if (await shell.getAttribute("data-facility-feature-count") !== "42") {
-    throw new Error(`${scopeSelector} did not load all 42 Mae Sai facilities.`);
+  const audience = await shell.getAttribute("data-map-audience");
+  const expectedFacilityCount = audience === "public" ? "0" : "42";
+  if (await shell.getAttribute("data-facility-dataset-count") !== expectedFacilityCount) {
+    throw new Error(`${scopeSelector} did not retain its role-approved facility projection.`);
   }
   const alternativeText = await page.locator(`${scopeSelector} .map-text-alternative`).textContent();
-  if (!alternativeText?.includes("8 areas") || !alternativeText.includes("42 important facilities")) {
-    throw new Error(`${scopeSelector} map text alternative does not describe the eight-area, 42-facility AOI.`);
+  if (!alternativeText?.includes("Selected area") || !alternativeText.includes("Road network context") || !alternativeText.includes("Assumptions")) {
+    throw new Error(`${scopeSelector} list view does not describe its selected area, roads, and access assumptions.`);
   }
   const boundaryRendererCount = await page.locator(`${scopeSelector} .leaflet-overlay-pane canvas, ${scopeSelector} .leaflet-overlay-pane path`).count();
   if (boundaryRendererCount === 0 || !await shell.getAttribute("data-selected-area")) {
     throw new Error(`${scopeSelector} did not render its highlighted AOI boundary overlay.`);
   }
-  if (await page.locator(`${scopeSelector} .facility-type-marker`).count() !== 42) {
-    throw new Error(`${scopeSelector} did not render one categorized icon for each important facility.`);
-  }
-  for (const category of ["healthcare", "school", "emergency", "shelter", "community"]) {
-    if (await page.locator(`${scopeSelector} .facility-type-marker.facility-${category}`).count() === 0) {
-      throw new Error(`${scopeSelector} is missing its ${category} facility symbol.`);
+  if (audience === "public") {
+    if (await page.locator(`${scopeSelector} .facility-type-marker, ${scopeSelector} .facility-cluster-marker`).count() !== 0) {
+      throw new Error(`${scopeSelector} exposed unverified facilities on the public map.`);
     }
+  } else if (await page.locator(`${scopeSelector} .facility-cluster-marker`).count() === 0) {
+    throw new Error(`${scopeSelector} did not cluster staff facility records at regional zoom.`);
   }
   const roads = Number(await shell.getAttribute("data-road-feature-count"));
   if (expectRoads && roads < 4_458) {
@@ -441,16 +499,18 @@ function assertFinalVisibleCopy(body, routePath) {
   const required = routePath === "/"
     ? ["one platform. three planning views.", "continue by role", "ddpm", "local-authority"]
     : routePath === "/public/"
-      ? ["mae sai planning data", "source time", "confidence", "ddpm", "local authorities"]
+      ? ["mae sai flood context", "evidence date", "model confidence", "ddpm", "local authorities"]
       : routePath === "/command/"
         ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
-        : ["research validation data", "source time", "confidence", "technical verification", "observed-data validation", "operational readiness", "agency verification"];
+        : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
   for (const phrase of required) {
     if (!normalized.includes(phrase)) {
       throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);
     }
   }
-  const forbidden = /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
+  const forbidden = routePath === "/studio/"
+    ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
+    : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
   const match = body.match(forbidden);
   if (match) {
     throw new Error(`${routePath} exposes forbidden internal copy: ${match[0]}.`);

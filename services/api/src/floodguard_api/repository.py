@@ -15,21 +15,27 @@ from floodguard.access import calculate_access_loss
 from floodguard.briefs import build_action_brief
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss
 from floodguard.scenarios import run_access_scenario
+from floodguard.scoring import assign_action_reason_code
 
 from floodguard_api.config import RepositoryPaths
 from floodguard_api.models import (
     AreaDecision,
     BriefResponse,
     DataState,
+    EvidenceContext,
+    EvidenceRecord,
+    EvidenceState,
     FacilityEvidence,
     LayerCatalogItem,
     ModelRun,
+    PublicPreparednessArea,
     ReadinessItem,
     RoadEvidence,
     ScenarioAreaResult,
     ScenarioOverallResult,
     ScenarioRunRequest,
     ScenarioRunResponse,
+    SourceComponent,
     StatusResponse,
     StudyArea,
 )
@@ -42,6 +48,12 @@ from floodguard_api.scenario_registry import (
 DATA_GIT_COMMIT = "58cb508acbfac43a21cf347259cf6d12beef533c"
 FIXTURE_DATA_VERSION = "fixture-2026-06-29-v1"
 FIXTURE_SOURCE_TIMESTAMP = datetime(2026, 6, 29, tzinfo=UTC)
+FIXTURE_EVIDENCE_GENERATED_AT = datetime(2026, 7, 16, tzinfo=UTC)
+FIXTURE_EVIDENCE_CONTEXT_ID = f"fixture-thailand-demo:{FIXTURE_DATA_VERSION}"
+FIXTURE_EVIDENCE_PACKAGE_ID = f"floodguard-fixture:{FIXTURE_DATA_VERSION}"
+FIXTURE_EVIDENCE_PACKAGE_SHA256 = hashlib.sha256(
+    f"{FIXTURE_EVIDENCE_PACKAGE_ID}:{DATA_GIT_COMMIT}".encode()
+).hexdigest()
 WEAK_SOURCE_TIMESTAMP = datetime(2024, 9, 15, 23, 16, 1, tzinfo=UTC)
 
 _THAI_AREA_NAMES = {
@@ -229,6 +241,8 @@ class ArtifactRepository:
                 assumptions=assumptions,
                 confidence_class="medium" if not decision_blocker else "low",
             ),
+            evidence_context_id=FIXTURE_EVIDENCE_CONTEXT_ID,
+            evidence_package_id=FIXTURE_EVIDENCE_PACKAGE_ID,
             study_area="fixture_thailand_demo",
             data_state=data_state,
             message_th=message_th,
@@ -303,10 +317,12 @@ class ArtifactRepository:
                         confidence_class=str(row["confidence_class"]),
                     ),
                     area_id=area_id,
+                    evidence_context_id=FIXTURE_EVIDENCE_CONTEXT_ID,
                     area_name_th=_THAI_AREA_NAMES.get(area_id, str(row["subdistrict_name"])),
                     area_name_en=str(row["subdistrict_name"]),
                     fpps_0_100=float(row["fpps_0_100"]),
                     action_class=str(row["action_class"]),
+                    action_reason_code=assign_action_reason_code(row),
                     top_reason=str(row["top_reason"]),
                     flood_likelihood_0_100=float(row["flood_likelihood_0_100"]),
                     exposure_0_100=float(row["exposure_0_100"]),
@@ -390,6 +406,8 @@ class ArtifactRepository:
                         confidence_class="medium" if ready else "low",
                     ),
                     layer_id=spec["layer_id"],
+                    evidence_context_id=FIXTURE_EVIDENCE_CONTEXT_ID,
+                    evidence_package_id=FIXTURE_EVIDENCE_PACKAGE_ID,
                     title_th=spec["title_th"],
                     title_en=spec["title_en"],
                     role_visibility=spec["roles"],
@@ -397,10 +415,93 @@ class ArtifactRepository:
                     url=f"/api/v1/layer-data/{spec['layer_id']}",
                     data_state="ready" if ready else "unavailable",
                     model_run_id=None,
+                    evidence_state=EvidenceState(
+                        evidence_type="modelled",
+                        granularity="area_summary",
+                        confidence_class="medium" if ready else "low",
+                        confidence_reason=(
+                            "Synthetic fixture evidence exercises deterministic contracts; "
+                            "it is not real-event accuracy evidence."
+                        ),
+                        permitted_use=(
+                            "public_preparedness"
+                            if "public" in spec["roles"]
+                            else "planning_only"
+                        ),
+                        required_gate=(
+                            "segment_raster_intersection"
+                            if spec["layer_id"] == "road_risk"
+                            else None
+                        ),
+                        gate_state=(
+                            "blocked"
+                            if spec["layer_id"] == "road_risk"
+                            else "not_applicable"
+                        ),
+                    ),
+                    source_components=[self._fixture_source_component()],
                     attribution=["FloodGuard synthetic fixtures"],
                 )
             )
         return result
+
+    def evidence_context(self) -> EvidenceContext:
+        """Return the immutable identity shared by all fixture artifacts."""
+
+        return EvidenceContext(
+            evidence_context_id=FIXTURE_EVIDENCE_CONTEXT_ID,
+            study_area_id="fixture_thailand_demo",
+            data_version=FIXTURE_DATA_VERSION,
+            evidence_package_id=FIXTURE_EVIDENCE_PACKAGE_ID,
+            evidence_package_sha256=FIXTURE_EVIDENCE_PACKAGE_SHA256,
+            model_run_id=None,
+            dataset_mode="fixture_demo",
+            operational_status="non_operational",
+            official_warning=False,
+            generated_at=FIXTURE_EVIDENCE_GENERATED_AT,
+            source_components=[self._fixture_source_component()],
+        )
+
+    def public_areas(self) -> list[PublicPreparednessArea]:
+        """Return a reduced public projection without A-E or component detail."""
+
+        return [
+            PublicPreparednessArea(
+                evidence_context_id=area.evidence_context_id,
+                area_id=area.area_id,
+                area_name_th=area.area_name_th,
+                area_name_en=area.area_name_en,
+                planning_priority_0_100=area.fpps_0_100,
+                evidence_sufficiency=area.confidence_class,
+                recommendation_code=area.action_reason_code,
+                source_timestamp=area.source_timestamp,
+                freshness="historical",
+                current_conditions_confirmed=False,
+            )
+            for area in self.areas()
+        ]
+
+    def evidence_record(self) -> EvidenceRecord:
+        """Return the fail-closed audit record for the synthetic fixture package."""
+
+        context = self.evidence_context()
+        return EvidenceRecord(
+            evidence_record_id=f"{context.evidence_context_id}:blocked",
+            evidence_context=context,
+            evidence_scope="Synthetic integration evidence only",
+            model_id=None,
+            model_version=None,
+            model_sha256=None,
+            evaluation_sha256=None,
+            decision="blocked",
+            decision_authority=None,
+            decision_at=None,
+            operational_authorized=False,
+            blockers=[
+                "Fixture evidence is not real-event validation or operational authorization."
+            ],
+            generated_at=context.generated_at,
+        )
 
     def layer_data(
         self,
@@ -897,6 +998,21 @@ class ArtifactRepository:
             "data_version": FIXTURE_DATA_VERSION,
             "git_commit": DATA_GIT_COMMIT,
         }
+
+    def _fixture_source_component(self) -> SourceComponent:
+        return SourceComponent(
+            source_component_id="fixture-decision-inputs",
+            role="synthetic_decision_fixture",
+            source_name="FloodGuard committed fixture bundle",
+            source_version=FIXTURE_DATA_VERSION,
+            source_timestamp=FIXTURE_SOURCE_TIMESTAMP,
+            last_checked_at=FIXTURE_EVIDENCE_GENERATED_AT,
+            temporal_meaning="generation_time",
+            freshness="historical",
+            freshness_policy_version="source-freshness-v1",
+            freshness_as_of=FIXTURE_EVIDENCE_GENERATED_AT,
+            attribution=["FloodGuard synthetic fixtures"],
+        )
 
     def _decision_artifact_blocker(self) -> str | None:
         """Return a sanitized blocker if core decision artifacts are not coherent."""

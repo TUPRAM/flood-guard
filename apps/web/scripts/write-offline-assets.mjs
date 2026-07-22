@@ -1,9 +1,12 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
 
 const out = resolve(process.cwd(), "out");
 const nextStatic = resolve(out, "_next", "static");
+const appProfile = resolveAppProfile(process.env.FLOODGUARD_APP_PROFILE ?? process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE);
+
+if (appProfile === "public-production") prunePublicProductionOutput();
 
 function walk(directory) {
   return readdirSync(directory).flatMap((name) => {
@@ -18,52 +21,130 @@ const assets = walk(nextStatic)
 
 writeFileSync(resolve(out, "offline-assets.json"), `${JSON.stringify(assets, null, 2)}\n`, "utf8");
 
-copyCanonicalProposalEvidence();
-const proposalEvidenceAssets = collectProposalEvidenceAssets();
+if (appProfile === "competition") copyCanonicalProposalEvidence();
+const proposalEvidenceAssets = appProfile === "competition" ? collectProposalEvidenceAssets() : [];
+const publicCoreAssets = [
+  "/",
+  "/public/",
+  "/manifest.webmanifest",
+  "/icon.svg",
+  "/deployment-profile.json",
+  "/offline-demo/mae-sai/public-bundle.json",
+  "/offline-demo/mae-sai/public-areas.json",
+];
+const coreAssets = appProfile === "public-production"
+  ? publicCoreAssets
+  : [
+      ...publicCoreAssets,
+      "/command/",
+      "/studio/",
+      "/offline-demo/bundle.json",
+      "/offline-demo/areas.geojson",
+      "/offline-demo/roads.geojson",
+      "/offline-demo/context.geojson",
+      "/offline-demo/mae-sai/bundle.json",
+      "/offline-demo/mae-sai/manifest.json",
+      "/offline-demo/mae-sai/areas.json",
+      "/offline-demo/mae-sai/roads.json",
+      "/offline-demo/mae-sai/facilities.json",
+      "/offline-demo/mae-sai/access-hotspots.json",
+      ...proposalEvidenceAssets,
+    ];
+const deploymentProfile = {
+  profile: appProfile,
+  entry: "/",
+  included_surfaces: appProfile === "competition" ? ["public", "command", "studio"] : ["public"],
+  staff_access: appProfile === "competition" ? "presentation_boundary_only" : "not_deployed",
+  cache_policy: appProfile === "competition" ? "competition_open_evidence" : "public_projection_only",
+};
+writeFileSync(resolve(out, "deployment-profile.json"), `${JSON.stringify(deploymentProfile, null, 2)}\n`, "utf8");
 
 const versionedFiles = [
   ...assets.map((path) => resolve(out, path.slice(1))),
   resolve(out, "index.html"),
   resolve(out, "public", "index.html"),
-  resolve(out, "command", "index.html"),
-  resolve(out, "studio", "index.html"),
   resolve(out, "manifest.webmanifest"),
   resolve(out, "icon.svg"),
-  resolve(out, "offline-demo", "bundle.json"),
-  resolve(out, "offline-demo", "areas.geojson"),
-  resolve(out, "offline-demo", "roads.geojson"),
-  resolve(out, "offline-demo", "context.geojson"),
-  resolve(out, "offline-demo", "mae-sai", "bundle.json"),
-  resolve(out, "offline-demo", "mae-sai", "manifest.json"),
-  resolve(out, "offline-demo", "mae-sai", "areas.json"),
-  resolve(out, "offline-demo", "mae-sai", "roads.json"),
-  resolve(out, "offline-demo", "mae-sai", "facilities.json"),
-  resolve(out, "offline-demo", "mae-sai", "access-hotspots.json"),
+  resolve(out, "deployment-profile.json"),
+  resolve(out, "offline-demo", "mae-sai", "public-bundle.json"),
+  resolve(out, "offline-demo", "mae-sai", "public-areas.json"),
+  ...(appProfile === "competition" ? [
+    resolve(out, "command", "index.html"),
+    resolve(out, "studio", "index.html"),
+    resolve(out, "offline-demo", "bundle.json"),
+    resolve(out, "offline-demo", "areas.geojson"),
+    resolve(out, "offline-demo", "roads.geojson"),
+    resolve(out, "offline-demo", "context.geojson"),
+    resolve(out, "offline-demo", "mae-sai", "bundle.json"),
+    resolve(out, "offline-demo", "mae-sai", "manifest.json"),
+    resolve(out, "offline-demo", "mae-sai", "areas.json"),
+    resolve(out, "offline-demo", "mae-sai", "roads.json"),
+    resolve(out, "offline-demo", "mae-sai", "facilities.json"),
+    resolve(out, "offline-demo", "mae-sai", "access-hotspots.json"),
+  ] : []),
   ...proposalEvidenceAssets.map((url) => resolve(out, url.slice(1))),
 ];
+const serviceWorkerPath = resolve(out, "sw.js");
+const serviceWorker = readFileSync(serviceWorkerPath, "utf8");
 const buildHash = createHash("sha256");
 for (const path of versionedFiles) {
   buildHash.update(relative(out, path).split(sep).join("/"));
   buildHash.update(readFileSync(path));
 }
+buildHash.update("service-worker-policy");
+buildHash.update(serviceWorker);
+buildHash.update(JSON.stringify(deploymentProfile));
+buildHash.update(JSON.stringify(coreAssets));
 const cacheVersion = buildHash.digest("hex").slice(0, 12);
-const serviceWorkerPath = resolve(out, "sw.js");
-const serviceWorker = readFileSync(serviceWorkerPath, "utf8");
-if (!serviceWorker.includes("__BUILD__") || !serviceWorker.includes("__PROPOSAL_EVIDENCE_ASSETS__")) {
+const cacheCreatedAt = new Date().toISOString();
+if (!serviceWorker.includes("__BUILD__") || !serviceWorker.includes("__APP_PROFILE__") || !serviceWorker.includes("__CACHE_CREATED_AT__") || !serviceWorker.includes("__PROFILE_CORE_ASSETS__")) {
   throw new Error("Service-worker build tokens are missing.");
 }
 writeFileSync(
   serviceWorkerPath,
   serviceWorker
     .replaceAll("__BUILD__", cacheVersion)
+    .replaceAll("__APP_PROFILE__", appProfile)
+    .replaceAll("__CACHE_CREATED_AT__", cacheCreatedAt)
     .replace(
-      "const PROPOSAL_EVIDENCE_ASSETS = []; /* __PROPOSAL_EVIDENCE_ASSETS__ */",
-      `const PROPOSAL_EVIDENCE_ASSETS = ${JSON.stringify(proposalEvidenceAssets)};`,
+      "const CORE_ASSETS = []; /* __PROFILE_CORE_ASSETS__ */",
+      `const CORE_ASSETS = ${JSON.stringify(coreAssets)};`,
     ),
   "utf8",
 );
 
-console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets; cache ${cacheVersion}`);
+console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets; profile ${appProfile}; cache ${cacheVersion}`);
+
+function resolveAppProfile(value) {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || normalized === "competition") return "competition";
+  if (normalized === "public" || normalized === "public-production") return "public-production";
+  throw new Error(`Unsupported FloodGuard deployment profile: ${value}`);
+}
+
+function prunePublicProductionOutput() {
+  const excluded = [
+    "command",
+    "studio",
+    "offline-demo/bundle.json",
+    "offline-demo/areas.geojson",
+    "offline-demo/roads.geojson",
+    "offline-demo/context.geojson",
+    "offline-demo/mae-sai/bundle.json",
+    "offline-demo/mae-sai/manifest.json",
+    "offline-demo/mae-sai/areas.json",
+    "offline-demo/mae-sai/roads.json",
+    "offline-demo/mae-sai/facilities.json",
+    "offline-demo/mae-sai/access-hotspots.json",
+    "proposal-evidence.json",
+    "proposal-evidence-assets",
+  ];
+  for (const relativePath of excluded) {
+    const target = resolve(out, relativePath);
+    if (!target.startsWith(`${out}${sep}`)) throw new Error(`Refusing to prune outside build output: ${relativePath}`);
+    if (existsSync(target)) rmSync(target, { recursive: true, force: true });
+  }
+}
 
 function collectProposalEvidenceAssets() {
   const manifestPath = resolve(out, "proposal-evidence.json");

@@ -4,9 +4,12 @@ import { useState } from "react";
 
 import {
   HOUSEHOLD_NEEDS,
+  HOUSEHOLD_NEED_ACTIONS,
   HOUSEHOLD_PLAN_ITEMS,
   buildHouseholdPlanText,
+  canReviewHouseholdPlan,
   countCompletedPlanItems,
+  selectedHouseholdNeeds,
   type HouseholdNeedId,
   type HouseholdPlan,
   type HouseholdPlanItemId,
@@ -20,9 +23,19 @@ interface HouseholdPlanBuilderProps {
   areaNameEn: string;
   onToggleItem: (itemId: HouseholdPlanItemId) => void;
   onToggleNeed: (needId: HouseholdNeedId) => void;
+  onSelectNoNeedsApply: () => void;
   onMarkReviewed: () => void;
   onResetChecklist: () => void;
   onClearPlan: () => void;
+}
+
+function formatPlanTimestamp(timestamp: string | null, language: Language, fallback: string): string {
+  if (!timestamp) return fallback;
+  return new Intl.DateTimeFormat(language === "th" ? "th-TH" : "en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Bangkok",
+  }).format(new Date(timestamp));
 }
 
 export function HouseholdPlanBuilder({
@@ -32,6 +45,7 @@ export function HouseholdPlanBuilder({
   areaNameEn,
   onToggleItem,
   onToggleNeed,
+  onSelectNoNeedsApply,
   onMarkReviewed,
   onResetChecklist,
   onClearPlan,
@@ -41,6 +55,8 @@ export function HouseholdPlanBuilder({
   const completed = countCompletedPlanItems(plan);
   const total = HOUSEHOLD_PLAN_ITEMS.length;
   const progress = Math.round((completed / total) * 100);
+  const selectedNeedIds = selectedHouseholdNeeds(plan);
+  const canReview = canReviewHouseholdPlan(plan);
   const bilingualPlanText = () => buildHouseholdPlanText(plan, areaNameTh, areaNameEn);
 
   const downloadPlan = () => {
@@ -86,37 +102,65 @@ export function HouseholdPlanBuilder({
     printWindow.print();
   };
 
-  const reviewedLabel = plan.last_reviewed_at
-    ? new Intl.DateTimeFormat(th ? "th-TH" : "en-GB", {
-      dateStyle: "medium",
-      timeStyle: "short",
-      timeZone: "Asia/Bangkok",
-    }).format(new Date(plan.last_reviewed_at))
-    : (th ? "ยังไม่ได้ทบทวน" : "Not reviewed yet");
+  const reviewedLabel = formatPlanTimestamp(
+    plan.last_reviewed_at,
+    language,
+    th ? "ยังไม่ได้ทบทวน" : "Not reviewed yet",
+  );
+  const savedLabel = formatPlanTimestamp(
+    plan.last_saved_at,
+    language,
+    th ? "ยังไม่มีการเปลี่ยนแปลงที่บันทึก" : "No saved changes yet",
+  );
+  const needsStatus = plan.needs_review_state === "selected"
+    ? (th ? `เลือกแล้ว ${selectedNeedIds.length} ข้อ` : `${selectedNeedIds.length} selected`)
+    : plan.needs_review_state === "none_apply"
+      ? (th ? "ยืนยันว่าไม่มีข้อใดใช้กับครัวเรือน" : "Confirmed: none apply")
+      : (th ? "ยังไม่ได้ทบทวน" : "Not reviewed");
 
   return (
-    <div className="household-plan-builder" id="household-plan-builder" data-plan-completed={completed}>
+    <div className="household-plan-builder" id="household-plan-builder" data-plan-completed={completed} data-needs-review-state={plan.needs_review_state}>
       <section className="card household-plan-summary" aria-labelledby="household-plan-title">
         <div>
           <p className="eyebrow">{th ? "เก็บไว้ในอุปกรณ์นี้เท่านั้น" : "Stored only on this device"}</p>
           <h2 id="household-plan-title">{th ? "แผนเตรียมพร้อมของครัวเรือน" : "My household preparedness plan"}</h2>
+          <p>{th
+            ? `พื้นที่วางแผน: ${areaNameTh || "ยังไม่ได้เลือกพื้นที่"} · ไม่ใช่ตำแหน่งบ้านที่แน่นอน`
+            : `Planning area: ${areaNameEn || "No area selected"} · not an exact household location`}</p>
         </div>
-        <div className="plan-progress" aria-label={th ? `ทำเสร็จ ${completed} จาก ${total} รายการ` : `${completed} of ${total} items complete`}>
-          <b>{completed}/{total}</b>
-          <progress value={completed} max={total}>{progress}%</progress>
-          <small>{th ? "รายการเสร็จแล้ว" : "items complete"}</small>
+        <div className="plan-status-grid" aria-label={th ? "สถานะแผนแยกตามส่วน" : "Plan status by section"}>
+          <article>
+            <span>{th ? "รายการพื้นฐาน" : "Core actions"}</span>
+            <b>{completed}/{total}</b>
+            <progress value={completed} max={total}>{progress}%</progress>
+          </article>
+          <article>
+            <span>{th ? "ความต้องการครัวเรือน" : "Household needs"}</span>
+            <b>{needsStatus}</b>
+          </article>
+          <article>
+            <span>{th ? "การทบทวนแผน" : "Plan review"}</span>
+            <b>{plan.last_reviewed_at ? (th ? "บันทึกแล้ว" : "Recorded") : (th ? "ยังไม่ได้บันทึก" : "Not recorded")}</b>
+          </article>
+          <article>
+            <span>{th ? "บันทึกล่าสุด" : "Last saved"}</span>
+            <b>{savedLabel}</b>
+          </article>
         </div>
+        <p className="plan-status-boundary">{th
+          ? "สถานะเหล่านี้บอกเฉพาะสิ่งที่คุณบันทึกไว้ ไม่ได้ประเมินว่าครัวเรือนปลอดภัย"
+          : "These statuses describe only what you recorded; they do not assess whether your household is safe."}</p>
       </section>
 
       <section className="card household-needs" aria-labelledby="household-needs-title">
         <p className="eyebrow">{th ? "ขั้นที่ 1" : "Step 1"}</p>
-        <h2 id="household-needs-title">{th ? "สิ่งที่แผนครัวเรือนต้องคำนึงถึง" : "What should this plan account for?"}</h2>
+        <h2 id="household-needs-title">{th ? "ทบทวนความต้องการของครัวเรือน" : "Review household needs"}</h2>
         <p className="plan-privacy-note">
           {th
-            ? "เลือกได้เท่าที่จำเป็น ระบบไม่ขอที่อยู่ บัญชีผู้ใช้ ชื่อบุคคล หรือการวินิจฉัยทางการแพทย์"
-            : "Select only what is useful. The app does not ask for an address, account, names, or a medical diagnosis."}
+            ? "เลือกเฉพาะสิ่งที่ใช้กับครัวเรือน หรือยืนยันว่าไม่มีข้อใดใช้ ระบบไม่ขอที่อยู่ บัญชี ชื่อบุคคล หรือการวินิจฉัยทางการแพทย์"
+            : "Select what applies, or explicitly confirm that none apply. The app does not ask for an address, account, names, or a medical diagnosis."}
         </p>
-        <div className="household-need-options">
+        <div className="household-need-options" role="group" aria-label={th ? "ความต้องการที่ต้องนำมาวางแผน" : "Needs to account for"}>
           {HOUSEHOLD_NEEDS.map((need) => (
             <button
               key={need.id}
@@ -129,17 +173,41 @@ export function HouseholdPlanBuilder({
               {need[language]}
             </button>
           ))}
+          <button
+            type="button"
+            aria-pressed={plan.needs_review_state === "none_apply"}
+            className={`household-none-apply${plan.needs_review_state === "none_apply" ? " selected" : ""}`}
+            onClick={onSelectNoNeedsApply}
+          >
+            <span aria-hidden="true">{plan.needs_review_state === "none_apply" ? "✓" : "—"}</span>
+            {th ? "ไม่มีข้อใดในรายการนี้ที่ใช้กับครัวเรือน" : "None of these apply to my household"}
+          </button>
         </div>
+        <p className="needs-review-result" role="status">{th ? `สถานะ: ${needsStatus}` : `Status: ${needsStatus}`}</p>
+      </section>
+
+      <section className="card tailored-plan-actions" aria-labelledby="tailored-plan-actions-title">
+        <p className="eyebrow">{th ? "ขั้นที่ 2" : "Step 2"}</p>
+        <h2 id="tailored-plan-actions-title">{th ? "การดำเนินการตามความต้องการที่เลือก" : "Actions for the needs you selected"}</h2>
+        {selectedNeedIds.length > 0 ? (
+          <ul>
+            {selectedNeedIds.map((needId) => <li key={needId}>{HOUSEHOLD_NEED_ACTIONS[needId][language]}</li>)}
+          </ul>
+        ) : (
+          <p>{plan.needs_review_state === "none_apply"
+            ? (th ? "คุณยืนยันว่าไม่มีความต้องการเพิ่มเติมจากรายการนี้ ดำเนินการรายการพื้นฐานต่อไป" : "You confirmed that none of these additional needs apply. Continue with the core actions.")
+            : (th ? "ทบทวนความต้องการด้านบนเพื่อสร้างรายการดำเนินการที่เหมาะกับครัวเรือน" : "Review the needs above to create actions tailored to your household.")}</p>
+        )}
       </section>
 
       <section aria-labelledby="household-checklist-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">{th ? "ขั้นที่ 2" : "Step 2"}</p>
-            <h2 id="household-checklist-title">{th ? "ทำรายการเตรียมพร้อมร่วมกัน" : "Complete the plan together"}</h2>
+            <p className="eyebrow">{th ? "ขั้นที่ 3" : "Step 3"}</p>
+            <h2 id="household-checklist-title">{th ? "ทำรายการพื้นฐานร่วมกัน" : "Complete the core actions together"}</h2>
           </div>
           <button type="button" className="text-action" onClick={onResetChecklist} disabled={completed === 0}>
-            {th ? "รีเซ็ต" : "Reset"}
+            {th ? "รีเซ็ตรายการ" : "Reset actions"}
           </button>
         </div>
         <div className="checklist-grid">
@@ -158,15 +226,27 @@ export function HouseholdPlanBuilder({
 
       <section className="card plan-review-card" aria-labelledby="plan-review-title">
         <div>
-          <p className="eyebrow">{th ? "ขั้นที่ 3" : "Step 3"}</p>
-          <h2 id="plan-review-title">{th ? "ทบทวน เก็บสำเนา และยืนยันกับท้องถิ่น" : "Review, keep a copy, confirm locally"}</h2>
+          <p className="eyebrow">{th ? "ขั้นที่ 4" : "Step 4"}</p>
+          <h2 id="plan-review-title">{th ? "ทบทวน เก็บสำเนา และยืนยันกับท้องถิ่น" : "Review, keep a copy, and confirm locally"}</h2>
           <p>{th ? `ทบทวนล่าสุด: ${reviewedLabel}` : `Last reviewed: ${reviewedLabel}`}</p>
+          <p className="seasonal-review-reminder">{th
+            ? "ทบทวนก่อนฤดูฝน และเมื่อสมาชิก ยา การเดินทาง หรือจุดนัดพบเปลี่ยนแปลง"
+            : "Review before the rainy season and whenever household members, medicine, transport, or meeting places change."}</p>
+          {!canReview && <p id="plan-review-requirement" className="plan-review-requirement">{th
+            ? "เลือกความต้องการอย่างน้อยหนึ่งข้อ หรือยืนยันว่าไม่มีข้อใดใช้ ก่อนบันทึกการทบทวน"
+            : "Select at least one household need or confirm that none apply before recording a review."}</p>}
         </div>
         <div className="plan-review-actions">
-          <button type="button" className="primary-link" onClick={onMarkReviewed}>
-            {th ? "ทำเครื่องหมายว่าทบทวนแล้ว" : "Mark as reviewed"}
+          <button
+            type="button"
+            className="primary-link"
+            onClick={onMarkReviewed}
+            disabled={!canReview}
+            aria-describedby={!canReview ? "plan-review-requirement" : undefined}
+          >
+            {th ? "บันทึกว่าทบทวนแล้ว" : "Record plan review"}
           </button>
-          <button type="button" onClick={downloadPlan}>{th ? "ดาวน์โหลดสองภาษา" : "Download bilingual plan"}</button>
+          <button type="button" onClick={downloadPlan}>{th ? "ดาวน์โหลดแผนสองภาษา" : "Download bilingual plan"}</button>
           <button type="button" onClick={printPlan}>{th ? "พิมพ์แผนสองภาษา" : "Print bilingual plan"}</button>
           <button type="button" className="danger-text-action" onClick={() => setConfirmingClear(true)}>
             {th ? "ล้างแผนจากอุปกรณ์นี้" : "Clear plan from this device"}
@@ -174,7 +254,7 @@ export function HouseholdPlanBuilder({
         </div>
         {confirmingClear && (
           <div className="clear-plan-confirmation" role="alert">
-            <p>{th ? "ล้างพื้นที่ การเลือก และรายการทั้งหมดจากอุปกรณ์นี้หรือไม่?" : "Clear the area, selections, and checklist from this device?"}</p>
+            <p>{th ? "ล้างพื้นที่ การเลือก และรายการทั้งหมดจากอุปกรณ์นี้หรือไม่?" : "Clear the area, selections, and actions from this device?"}</p>
             <div>
               <button type="button" onClick={() => setConfirmingClear(false)}>{th ? "ยกเลิก" : "Cancel"}</button>
               <button

@@ -19,6 +19,7 @@ from floodguard_api.dataset_registry import (
     LayerFilterError,
     filter_geojson_payload,
     parse_bbox,
+    visible_layers_for_role,
 )
 from floodguard_api.models import (
     ActionClass,
@@ -26,9 +27,12 @@ from floodguard_api.models import (
     AreaDecision,
     BriefResponse,
     ConfidenceClass,
+    EvidenceContext,
+    EvidenceRecord,
     HealthResponse,
     LayerCatalogItem,
     ModelRun,
+    PublicPreparednessArea,
     ReadinessItem,
     ScenarioDefinition,
     ScenarioRunRequest,
@@ -284,6 +288,56 @@ def create_app(
         return _public(artifact_repository.study_areas(), pilot)
 
     @application.get(
+        "/api/v1/evidence-context",
+        response_model=EvidenceContext,
+        tags=["evidence"],
+    )
+    def evidence_context(
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+    ) -> EvidenceContext:
+        if isinstance(artifact_repository, ArtifactRepository):
+            artifact_repository._require_fixture_study_area(study_area)
+            result = artifact_repository.evidence_context()
+        else:
+            result = artifact_repository.evidence_context(study_area)
+        return _public(result, pilot)
+
+    @application.get(
+        "/api/v1/public-areas",
+        response_model=list[PublicPreparednessArea],
+        tags=["decisions"],
+    )
+    def public_areas(
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+    ) -> list[PublicPreparednessArea]:
+        if isinstance(artifact_repository, ArtifactRepository):
+            artifact_repository._require_fixture_study_area(study_area)
+            result = artifact_repository.public_areas()
+        else:
+            result = artifact_repository.public_areas(study_area)
+        return _public(result, pilot)
+
+    @application.get(
+        "/api/v1/evidence-records/{evidence_context_id}",
+        response_model=EvidenceRecord,
+        tags=["evidence"],
+    )
+    def evidence_record(evidence_context_id: str) -> EvidenceRecord:
+        if isinstance(artifact_repository, ArtifactRepository):
+            result = artifact_repository.evidence_record()
+            if result.evidence_context.evidence_context_id != evidence_context_id:
+                raise ArtifactNotFound(
+                    f"Unknown evidence_context_id: {evidence_context_id}"
+                )
+        else:
+            result = artifact_repository.evidence_record(evidence_context_id)
+        return _public(result, pilot)
+
+    @application.get(
         "/api/v1/areas",
         response_model=list[AreaDecision],
         response_model_exclude={"__all__": {"scenario_delta"}},
@@ -334,9 +388,16 @@ def create_app(
         study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
             "fixture_thailand_demo"
         ),
+        role: Literal["public", "command", "studio"] = "command",
         _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
     ) -> list[LayerCatalogItem]:
-        return _public(artifact_repository.layers(study_area), pilot)
+        if isinstance(artifact_repository, ArtifactRepository):
+            result = visible_layers_for_role(
+                artifact_repository.layers(study_area), role
+            )
+        else:
+            result = artifact_repository.layers(study_area, role)
+        return _public(result, pilot)
 
     @application.get(
         "/api/v1/layer-data/{layer_id}",
@@ -360,9 +421,23 @@ def create_app(
         ] = None,
         minimum_risk: Annotated[float, Query(ge=0, le=1)] = 0,
         detail: Literal["regional", "selected_area"] = "regional",
+        role: Literal["public", "command", "studio"] = "command",
         _: PilotCredential | None = Depends(require_official_command_data),  # noqa: B008
     ) -> Response:
-        payload = artifact_repository.layer_data(layer_id, study_area)
+        if isinstance(artifact_repository, ArtifactRepository):
+            visible_ids = {
+                item.layer_id
+                for item in visible_layers_for_role(
+                    artifact_repository.layers(study_area), role
+                )
+            }
+            if layer_id not in visible_ids:
+                raise ArtifactNotFound(
+                    f"Layer {layer_id} is not available for role {role} in {study_area}."
+                )
+            payload = artifact_repository.layer_data(layer_id, study_area)
+        else:
+            payload = artifact_repository.layer_data(layer_id, study_area, role)
         payload = filter_geojson_payload(
             payload,
             layer_id=layer_id,
@@ -383,6 +458,13 @@ def create_app(
                     "candidate" if study_area == MAE_SAI_STUDY_AREA else "fixture_demo"
                 ),
                 "X-FloodGuard-Official-Warning": "false",
+                "X-FloodGuard-Evidence-Context-Id": (
+                    artifact_repository.evidence_context().evidence_context_id
+                    if isinstance(artifact_repository, ArtifactRepository)
+                    else artifact_repository.evidence_context(
+                        study_area
+                    ).evidence_context_id
+                ),
                 "X-FloodGuard-Artifact-SHA256": artifact_repository.layer_artifact_sha256(
                     layer_id,
                     study_area,

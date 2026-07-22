@@ -1,8 +1,12 @@
 import type {
   AreaDecision,
+  EvidenceContext,
+  EvidenceRecord,
   LayerCatalogItem,
   ModelRun,
   PilotReadiness,
+  PublicPreparednessArea,
+  RoleVisibility,
   StatusResponse,
 } from "@floodguard/contracts";
 
@@ -10,6 +14,13 @@ export type Language = "th" | "en";
 export type DataState = "loading" | "ready" | "stale" | "blocked" | "stale_offline" | "unavailable";
 export type ScenarioId = "baseline" | "add_temporary_shelter" | "close_road";
 export type StudyAreaId = "fixture_thailand_demo" | "mae_sai_candidate_v1";
+
+export interface FloodGuardDataOptions {
+  studyArea: StudyAreaId;
+  role: RoleVisibility;
+  /** Exact context requested by a deep link; mismatch must fail closed. */
+  evidenceContextId?: string;
+}
 
 export interface ScenarioResult {
   people_losing_30_min_access: number;
@@ -89,6 +100,9 @@ export interface FeatureCollection {
 }
 
 export interface OfflineBundle {
+  evidence_context?: EvidenceContext;
+  evidence_record?: EvidenceRecord;
+  public_areas?: PublicPreparednessArea[];
   status: StatusResponse & {
     study_area: string;
     message_th: string;
@@ -105,6 +119,10 @@ export interface OfflineBundle {
 }
 
 export interface FloodGuardData extends OfflineBundle {
+  role: RoleVisibility;
+  evidenceContext: EvidenceContext;
+  evidenceRecord: EvidenceRecord | null;
+  publicAreas: PublicPreparednessArea[];
   dataState: DataState;
   dataOrigin: "api" | "cached_api" | "offline_bundle";
   scenarioState: "ready" | "unavailable";
@@ -116,6 +134,24 @@ export interface FloodGuardData extends OfflineBundle {
   contextFeatures: FeatureCollection;
   facilityFeatures: FeatureCollection;
   accessFeatures: FeatureCollection;
+  fallbackReason?: string;
+  degradedReason?: string;
+}
+
+/** Deliberately reduced public-surface contract; staff records cannot enter this graph. */
+export interface PublicFloodGuardData {
+  role: "public";
+  status: OfflineBundle["status"];
+  evidenceContext: EvidenceContext;
+  evidenceRecord: EvidenceRecord | null;
+  publicAreas: PublicPreparednessArea[];
+  layers: LayerCatalogItem[];
+  hotlines: Hotline[];
+  shelters: ShelterRecord[];
+  areaFeatures: FeatureCollection;
+  dataState: DataState;
+  dataOrigin: "api" | "offline_bundle";
+  apiBase?: string;
   fallbackReason?: string;
   degradedReason?: string;
 }

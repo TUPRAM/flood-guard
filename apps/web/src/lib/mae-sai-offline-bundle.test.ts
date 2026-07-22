@@ -9,6 +9,8 @@ import areasJson from "../../public/offline-demo/mae-sai/areas.json";
 import bundleJson from "../../public/offline-demo/mae-sai/bundle.json";
 import facilitiesJson from "../../public/offline-demo/mae-sai/facilities.json";
 import manifestJson from "../../public/offline-demo/mae-sai/manifest.json";
+import publicAreasJson from "../../public/offline-demo/mae-sai/public-areas.json";
+import publicBundleJson from "../../public/offline-demo/mae-sai/public-bundle.json";
 import roadsJson from "../../public/offline-demo/mae-sai/roads.json";
 
 describe("Mae Sai offline command bundle", () => {
@@ -26,6 +28,43 @@ describe("Mae Sai offline command bundle", () => {
     expect(facilitiesJson.features).toHaveLength(42);
     expect(accessJson.features).toHaveLength(8);
     expect(bundleJson.areas.every((area) => area.official_warning === false && area.operational_status === "non_operational")).toBe(true);
+    expect(bundleJson.evidence_context.evidence_context_id).toBe(
+      bundleJson.status.evidence_context_id,
+    );
+    expect(bundleJson.evidence_record.evidence_context.evidence_package_sha256).toBe(
+      bundleJson.evidence_context.evidence_package_sha256,
+    );
+    expect(bundleJson.evidence_record.evidence_context.model_run_id).toBeNull();
+  });
+
+  it("ships a separately generated public-safe projection", () => {
+    expect(publicBundleJson.evidence_context.evidence_context_id).toBe(
+      bundleJson.evidence_context.evidence_context_id,
+    );
+    expect(publicBundleJson.public_areas).toHaveLength(8);
+    expect(publicAreasJson.features).toHaveLength(8);
+    expect(publicBundleJson.layers.map((layer) => layer.layer_id)).toEqual([
+      "public_preparedness_areas",
+    ]);
+    expect(publicBundleJson.layers[0].role_visibility).toEqual(["public"]);
+    expect(publicBundleJson.shelters).toEqual([]);
+    const publicKeys = new Set([
+      "schema_version",
+      "evidence_context_id",
+      "area_id",
+      "area_name_th",
+      "area_name_en",
+      "planning_priority_0_100",
+      "evidence_sufficiency",
+      "recommendation_code",
+      "source_timestamp",
+      "freshness",
+      "current_conditions_confirmed",
+    ]);
+    expect(publicAreasJson.features.every((feature) => (
+      Object.keys(feature.properties).every((key) => publicKeys.has(key))
+      && feature.properties.current_conditions_confirmed === false
+    ))).toBe(true);
   });
 
   it("never promotes an open-context facility or candidate road to observed truth", () => {
@@ -54,6 +93,12 @@ describe("Mae Sai offline command bundle", () => {
       processing_allowed: true,
       can_feed_decision_layer: false,
     });
+    expect(manifestJson.evidence_context.evidence_context_id).toBe(
+      bundleJson.evidence_context.evidence_context_id,
+    );
+    expect(manifestJson.public_bundle.sha256).toBe(
+      sha256(resolve(process.cwd(), "public", "offline-demo", "mae-sai", "public-bundle.json")),
+    );
     for (const layer of manifestJson.layers) {
       const browserPath = resolve(process.cwd(), "public", layer.relative_url.replace(/^\/offline-demo\//, "offline-demo/"));
       const sourcePath = resolve(process.cwd(), "..", "..", layer.source_relative_path);

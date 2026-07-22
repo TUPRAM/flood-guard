@@ -2,7 +2,7 @@ import { createReadStream, existsSync, mkdirSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 
-import { chromium } from "@playwright/test";
+import { launchFloodGuardBrowser } from "./browser-launch.mjs";
 
 const out = resolve(process.cwd(), "out");
 const positionalArgs = process.argv.slice(2).filter((argument) => argument !== "--");
@@ -57,18 +57,12 @@ const address = server.address();
 if (!address || typeof address === "string") throw new Error("Static server did not bind.");
 const baseUrl = `http://127.0.0.1:${address.port}`;
 
-const browser = await chromium.launch(
-  process.env.FLOODGUARD_BROWSER_EXECUTABLE
-    ? { executablePath: process.env.FLOODGUARD_BROWSER_EXECUTABLE, headless: true }
-    : process.platform === "win32"
-      ? { channel: "chrome", headless: true }
-      : { headless: true },
-);
+const browser = await launchFloodGuardBrowser();
 
 const captures = [
   { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-390x844.png", publicTab: "home", readySelector: '[data-testid="public-official-help"]' },
   { route: "/public/", selector: "main.public-page", width: 430, height: 932, file: "public-map-430x932.png", publicTab: "map", readySelector: ".public-map-view .leaflet-container", basemap: "satellite", cycleBasemaps: true },
-  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-shelters-390x844.png", publicTab: "shelters", readySelector: ".neutral-note" },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-shelters-390x844.png", publicTab: "shelters", readySelector: ".shelter-guidance-status" },
   { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-prepare-390x844.png", publicTab: "prepare", readySelector: "#household-plan-builder" },
   { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-data-390x844.png", publicTab: "data", readySelector: ".about-grid" },
   { route: "/command/", selector: "main.command-page", width: 1024, height: 768, file: "command-1024x768.png", basemap: "street", cycleBasemaps: true },
@@ -114,6 +108,10 @@ try {
     await page.goto(`${baseUrl}${capture.route}`, { waitUntil: "networkidle" });
     await page.locator(capture.selector).waitFor({ state: "visible" });
     if (capture.publicTab) {
+      if (capture.publicTab === "map" || capture.publicTab === "prepare") {
+        await page.locator("#public-area-select").selectOption("TH570901");
+        await page.waitForFunction(() => document.querySelector("#public-area-select")?.value === "TH570901");
+      }
       const tabButton = page.locator(`#public-tab-${capture.publicTab}`);
       if (capture.publicTab !== "home") {
         await page.locator(".public-content").evaluate((element) => {
@@ -175,8 +173,8 @@ try {
     if (capture.route === "/command/" && await page.locator(".ranked-areas button").count() === 0) {
       throw new Error(`${capture.file} is missing the FPPS ranked list.`);
     }
-    if (capture.route === "/studio/" && await page.locator(".geoai-proof").count() !== 1) {
-      throw new Error(`${capture.file} is missing the above-fold GeoAI proof panel.`);
+    if (capture.route === "/studio/" && await page.locator("#evidence-context-title").count() !== 1) {
+      throw new Error(`${capture.file} is missing the active evidence-context panel.`);
     }
 
     const pageAudit = await page.evaluate(() => {
@@ -232,7 +230,8 @@ try {
       const proofImages = document.querySelector(".proof-images")?.getBoundingClientRect();
       const proofFigure = document.querySelector(".proof-images figure:only-child")?.getBoundingClientRect();
       const publicPlanAction = document.querySelector('[data-action="build-household-plan"]')?.getBoundingClientRect();
-      const publicOfficialHelp = document.querySelector('[data-testid="public-official-help"]')?.getBoundingClientRect();
+      const publicOfficialUpdateLink = document.querySelector('.public-official-update a[href*="disaster.go.th"]')?.getBoundingClientRect();
+      const publicOfficialHelp = document.querySelector('[data-testid="public-official-help"]');
       const selectedAreaSheet = document.querySelector(".map-selection-sheet")?.getBoundingClientRect();
       const tabletEvidenceDrawer = document.querySelector(".tablet-evidence-drawer")?.getBoundingClientRect();
       return {
@@ -249,7 +248,9 @@ try {
         proofSingleFigureCoverage:
           proofImages && proofFigure ? proofFigure.width / proofImages.width : null,
         publicPlanActionBottom: publicPlanAction?.bottom ?? null,
-        publicOfficialHelpTop: publicOfficialHelp?.top ?? null,
+        publicOfficialUpdateLinkBottom: publicOfficialUpdateLink?.bottom ?? null,
+        publicOfficialHelpPresent: Boolean(publicOfficialHelp),
+        publicHotlineCount: publicOfficialHelp?.querySelectorAll('a[href^="tel:"]').length ?? 0,
         publicNavigationTop: publicNavigation?.top ?? null,
         selectedAreaSheetVisible: Boolean(selectedAreaSheet && selectedAreaSheet.width > 0 && selectedAreaSheet.height > 0),
         tabletEvidenceDrawer: tabletEvidenceDrawer
@@ -303,11 +304,14 @@ try {
         throw new Error(`${capture.file} does not keep the household-plan action in the first viewport.`);
       }
       if (
-        pageAudit.publicOfficialHelpTop === null
+        pageAudit.publicOfficialUpdateLinkBottom === null
         || pageAudit.publicNavigationTop === null
-        || pageAudit.publicOfficialHelpTop + 44 > pageAudit.publicNavigationTop
+        || pageAudit.publicOfficialUpdateLinkBottom > pageAudit.publicNavigationTop
       ) {
-        throw new Error(`${capture.file} does not introduce official help in the first viewport.`);
+        throw new Error(`${capture.file} does not keep the official DDPM action in the first viewport.`);
+      }
+      if (!pageAudit.publicOfficialHelpPresent || pageAudit.publicHotlineCount !== 3) {
+        throw new Error(`${capture.file} does not retain the three official emergency contacts after the area/context flow.`);
       }
     }
     if (capture.route === "/public/" && capture.publicTab === "map" && !pageAudit.selectedAreaSheetVisible) {
@@ -325,14 +329,17 @@ try {
       if (mapScenario !== "baseline" || panelScenario !== mapScenario) {
         throw new Error(`${capture.file} did not keep the unavailable planning scenario at baseline.`);
       }
-      if (await page.locator(".planning-evidence-boundary").count() !== 1) {
-        throw new Error(`${capture.file} does not expose the planning evidence boundary.`);
+      if (!await page.locator('select[aria-label="Select scenario"]').isDisabled()) {
+        throw new Error(`${capture.file} enabled an unavailable planning scenario.`);
+      }
+      if (await page.locator(".command-release-panel .scenario-evidence-comparison, .scenario-delta-strip").count() !== 0) {
+        throw new Error(`${capture.file} renders a baseline comparison without a reviewed non-baseline scenario.`);
       }
     }
     if (capture.route === "/studio/") {
       const body = pageAudit.bodyText;
       const normalizedBody = body.toLocaleLowerCase("en-US");
-      for (const scope of ["Technical verification", "Observed-data validation", "Operational readiness"]) {
+      for (const scope of ["Technical verification", "Observed-data validation", "Operational authorization"]) {
         if (!normalizedBody.includes(scope.toLocaleLowerCase("en-US"))) {
           throw new Error(`${capture.file} is missing the ${scope} scope.`);
         }
@@ -478,11 +485,16 @@ async function assertMaeSaiMap(page, scopeSelector, file, expectRoads) {
   await page.waitForFunction(
     ({ scope, requireRoads }) => {
       const shell = document.querySelector(`${scope} .geo-map-shell`);
-      const facilityCount = document.querySelectorAll(`${scope} .facility-type-marker`).length;
+      const audience = shell?.getAttribute("data-map-audience");
+      const visibleFacilityCount = shell?.getAttribute("data-facility-feature-count");
+      const facilityDatasetCount = shell?.getAttribute("data-facility-dataset-count");
+      const clusterCount = document.querySelectorAll(`${scope} .facility-cluster-marker`).length;
       const rendererCount = document.querySelectorAll(`${scope} .leaflet-overlay-pane canvas, ${scope} .leaflet-overlay-pane path`).length;
       const roads = Number(shell?.getAttribute("data-road-feature-count") ?? 0);
-      return shell?.getAttribute("data-facility-feature-count") === "42"
-        && facilityCount === 42
+      const facilitiesReady = audience === "public"
+        ? facilityDatasetCount === "0" && visibleFacilityCount === "0" && clusterCount === 0
+        : visibleFacilityCount === "42" && clusterCount > 0 && shell?.getAttribute("data-facility-presentation") === "clusters";
+      return facilitiesReady
         && rendererCount > 0
         && (!requireRoads || roads >= 4_458);
     },
@@ -490,24 +502,24 @@ async function assertMaeSaiMap(page, scopeSelector, file, expectRoads) {
     { timeout: 30_000 },
   );
   const shell = page.locator(`${scopeSelector} .geo-map-shell`);
-  if (await shell.getAttribute("data-facility-feature-count") !== "42") {
-    throw new Error(`${file} did not load all 42 Mae Sai facilities.`);
+  const audience = await shell.getAttribute("data-map-audience");
+  const expectedFacilityCount = audience === "public" ? "0" : "42";
+  if (await shell.getAttribute("data-facility-dataset-count") !== expectedFacilityCount) {
+    throw new Error(`${file} did not retain its role-approved facility projection.`);
   }
   const alternativeText = await page.locator(`${scopeSelector} .map-text-alternative`).textContent();
-  if (!/8\s*(?:areas|พื้นที่)/iu.test(alternativeText ?? "") || !/42\s*(?:important facilities|สถานที่สำคัญ)/iu.test(alternativeText ?? "")) {
-    throw new Error(`${file} map text alternative does not describe the eight-area, 42-facility AOI.`);
+  if (!/(?:Selected area|พื้นที่ที่เลือก)/iu.test(alternativeText ?? "") || !/(?:Road network context|โครงข่ายถนน)/iu.test(alternativeText ?? "") || !/(?:Assumptions|สมมติฐาน)/iu.test(alternativeText ?? "")) {
+    throw new Error(`${file} map results list does not describe its selected area, roads, and access assumptions.`);
   }
   const boundaryRendererCount = await page.locator(`${scopeSelector} .leaflet-overlay-pane canvas, ${scopeSelector} .leaflet-overlay-pane path`).count();
   if (boundaryRendererCount === 0 || !await shell.getAttribute("data-selected-area")) {
     throw new Error(`${file} did not render its highlighted AOI boundary overlay.`);
   }
-  if (await page.locator(`${scopeSelector} .facility-type-marker`).count() !== 42) {
-    throw new Error(`${file} did not render one categorized icon for each important facility.`);
+  if (audience === "public" && await page.locator(`${scopeSelector} .facility-type-marker, ${scopeSelector} .facility-cluster-marker`).count() !== 0) {
+    throw new Error(`${file} exposed unverified facilities on the public map.`);
   }
-  for (const category of ["healthcare", "school", "emergency", "shelter", "community"]) {
-    if (await page.locator(`${scopeSelector} .facility-type-marker.facility-${category}`).count() === 0) {
-      throw new Error(`${file} is missing its ${category} facility symbol.`);
-    }
+  if (audience === "staff" && await page.locator(`${scopeSelector} .facility-cluster-marker`).count() === 0) {
+    throw new Error(`${file} did not cluster staff facilities at regional zoom.`);
   }
   const roads = Number(await shell.getAttribute("data-road-feature-count"));
   if (expectRoads && roads < 4_458) {
@@ -518,9 +530,9 @@ async function assertMaeSaiMap(page, scopeSelector, file, expectRoads) {
 function assertPolishedRouteCopy(body, route, file) {
   const requirements = route === "/public/"
     ? [
-        /Mae Sai planning data|ข้อมูลการวางแผนแม่สาย/iu,
-        /Source time|เวลาข้อมูล/iu,
-        /Confidence|ความเชื่อมั่น/iu,
+        /Mae Sai flood context|บริบทอุทกภัยแม่สาย/iu,
+        /Evidence date|วันที่หลักฐาน/iu,
+        /Model confidence|ความเชื่อมั่นของแบบจำลอง/iu,
         /DDPM|ปภ\./iu,
         /local authorities|หน่วยงานท้องถิ่น/iu,
       ]
@@ -533,20 +545,22 @@ function assertPolishedRouteCopy(body, route, file) {
           /local-authority|หน่วยงานท้องถิ่น/iu,
         ]
       : [
-          /Research validation data/iu,
+          /Validation & evidence report/iu,
           /Source time/iu,
           /Confidence/iu,
           /Technical verification/iu,
           /Observed-data validation/iu,
-          /Operational readiness/iu,
-          /agency verification/iu,
+          /Operational authorization/iu,
+          /immutable evidence context/iu,
         ];
   for (const requirement of requirements) {
     if (!requirement.test(body)) {
       throw new Error(`${file} is missing polished final copy matching ${requirement}.`);
     }
   }
-  const forbidden = /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer|ฝึกซ้อม|สาธิต|ผู้สมัคร/iu;
+  const forbidden = route === "/studio/"
+    ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|ฝึกซ้อม/iu
+    : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer|ฝึกซ้อม|สาธิต|ผู้สมัคร/iu;
   const match = body.match(forbidden);
   if (match) {
     throw new Error(`${file} exposes forbidden internal copy: ${match[0]}.`);

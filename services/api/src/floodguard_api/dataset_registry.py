@@ -14,15 +14,20 @@ import pandas as pd
 from floodguard.access import calculate_access_loss
 from floodguard.equity import compute_equity_gap, equity_input_from_access_loss
 from floodguard.scenarios import run_access_scenario
+from floodguard.scoring import assign_action_reason_code
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from floodguard_api.config import RepositoryPaths
 from floodguard_api.models import (
     AreaDecision,
     BriefResponse,
+    EvidenceContext,
+    EvidenceRecord,
+    EvidenceState,
     FacilityEvidence,
     LayerCatalogItem,
     ModelRun,
+    PublicPreparednessArea,
     ReadinessItem,
     RoadEvidence,
     ScenarioAreaResult,
@@ -30,6 +35,7 @@ from floodguard_api.models import (
     ScenarioOverallResult,
     ScenarioRunRequest,
     ScenarioRunResponse,
+    SourceComponent,
     StatusResponse,
     StudyArea,
 )
@@ -52,11 +58,22 @@ MAE_SAI_STUDY_AREA = "mae_sai_candidate_v1"
 MAE_SAI_DATA_VERSION = "mae-sai-candidate-2024-09-15-v1"
 MAE_SAI_DATA_GIT_COMMIT = "22fc172aca78937bb7d1f8675d08527a8517da68"
 MAE_SAI_SOURCE_TIMESTAMP = datetime(2024, 9, 15, 23, 16, 1, tzinfo=UTC)
+MAE_SAI_EVIDENCE_CONTEXT_ID = (
+    "mae-sai:2024-09:mae-sai-candidate-2024-09-15-v1"
+)
+MAE_SAI_EVIDENCE_PACKAGE_ID = "mae-sai-historic-planning-2024-09-v1"
 MAE_SAI_MANIFEST_RELATIVE_PATH = (
     "services/api/data/study_area_bundles/mae_sai_candidate_v1.json"
 )
 # This digest is filled from the reviewed manifest and deliberately lives outside it.
-MAE_SAI_MANIFEST_SHA256 = "c25f8d1b5c18b4706facf669f065018f37478086a88eb9fb77cf83c9c22c9786"
+MAE_SAI_MANIFEST_SHA256 = "0bb7feff4b84d7a202b006856352d619d66607155bdf41430d5a5ea0f9d52026"
+MAE_SAI_PUBLIC_PROJECTION_RELATIVE_PATH = (
+    "apps/web/public/offline-demo/mae-sai/public-areas.json"
+)
+# Updated only after the deterministic browser projection has been regenerated and reviewed.
+MAE_SAI_PUBLIC_PROJECTION_SHA256 = (
+    "6e60cb3e505c5dde309005b41b547b6126623537b34a8e2d44b4e856852707de"
+)
 MAE_SAI_SCENARIO_MANIFEST_RELATIVE_PATH = "outputs/mae_sai_scenario_inputs_manifest.json"
 MAE_SAI_SCENARIO_MANIFEST_SHA256 = (
     "20ce7a6d7007daeccbb64afcbabc00e447bb96de8c66eb44776a827be6c61a04"
@@ -78,6 +95,11 @@ class BundleLayerSpec(_ManifestModel):
         "access_hotspots",
     ]
     semantic_role: str = Field(min_length=1)
+    role_visibility: tuple[Literal["public", "command", "studio"], ...] = Field(
+        min_length=1
+    )
+    evidence_state: EvidenceState
+    source_component_ids: tuple[str, ...] = Field(min_length=1)
     relative_path: str = Field(min_length=1)
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
@@ -117,10 +139,16 @@ class StudyAreaBundleManifest(_ManifestModel):
     data_version: str = Field(min_length=1)
     git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     source_timestamp: datetime
+    generated_at: datetime
+    evidence_context_id: str = Field(
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    )
+    evidence_package_id: str = Field(min_length=1)
     expected_crs: Literal["EPSG:4326"]
     expected_bounds: tuple[float, float, float, float]
     expected_area_ids: tuple[str, ...] = Field(min_length=1)
     assumptions: tuple[str, ...] = Field(min_length=1)
+    source_components: tuple[SourceComponent, ...] = Field(min_length=1)
     layers: tuple[BundleLayerSpec, ...] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -129,6 +157,10 @@ class StudyAreaBundleManifest(_ManifestModel):
             raise ValueError("Mae Sai data_version does not match the pinned registry identity")
         if self.git_commit != MAE_SAI_DATA_GIT_COMMIT:
             raise ValueError("Mae Sai git_commit does not match the pinned registry identity")
+        if self.evidence_context_id != MAE_SAI_EVIDENCE_CONTEXT_ID:
+            raise ValueError("Mae Sai evidence_context_id does not match the registry identity")
+        if self.evidence_package_id != MAE_SAI_EVIDENCE_PACKAGE_ID:
+            raise ValueError("Mae Sai evidence_package_id does not match the registry identity")
         min_x, min_y, max_x, max_y = self.expected_bounds
         if max_x <= min_x or max_y <= min_y:
             raise ValueError("expected_bounds must have positive area")
@@ -136,6 +168,11 @@ class StudyAreaBundleManifest(_ManifestModel):
             raise ValueError("expected_bounds must be valid WGS84 coordinates")
         if len(set(self.expected_area_ids)) != len(self.expected_area_ids):
             raise ValueError("expected_area_ids must be unique")
+        component_ids = {
+            component.source_component_id for component in self.source_components
+        }
+        if len(component_ids) != len(self.source_components):
+            raise ValueError("source component IDs must be unique")
         layer_ids = [layer.layer_id for layer in self.layers]
         if len(set(layer_ids)) != len(layer_ids):
             raise ValueError("layer IDs must be unique")
@@ -147,6 +184,13 @@ class StudyAreaBundleManifest(_ManifestModel):
             "access_hotspots",
         }:
             raise ValueError("Mae Sai bundle must contain the complete contracted layer set")
+        for layer in self.layers:
+            if not set(layer.source_component_ids).issubset(component_ids):
+                raise ValueError("layer references an unknown source component")
+            if "public" in layer.role_visibility:
+                raise ValueError(
+                    "source layers remain staff-only; public access uses a redacted projection"
+                )
         return self
 
 
@@ -216,9 +260,14 @@ class MaeSaiCandidateAdapter:
     def manifest_path(self) -> Path:
         return self.paths.root / Path(MAE_SAI_MANIFEST_RELATIVE_PATH)
 
+    @property
+    def public_projection_path(self) -> Path:
+        return self.paths.root / Path(MAE_SAI_PUBLIC_PROJECTION_RELATIVE_PATH)
+
     def status(self) -> StatusResponse:
         try:
-            self._validated_layers()
+            self._manifest()
+            self._validated_public_projection()
         except ArtifactUnavailable as exc:
             state = "unavailable"
             confidence = "low"
@@ -246,6 +295,8 @@ class MaeSaiCandidateAdapter:
                 assumptions=assumptions,
                 confidence_class=confidence,
             ),
+            evidence_context_id=MAE_SAI_EVIDENCE_CONTEXT_ID,
+            evidence_package_id=MAE_SAI_EVIDENCE_PACKAGE_ID,
             study_area=MAE_SAI_STUDY_AREA,
             data_state=state,
             message_th=message_th,
@@ -311,11 +362,13 @@ class MaeSaiCandidateAdapter:
                         confidence_class="low",
                         source_timestamp=_parse_datetime(row["source_timestamp"]),
                     ),
+                    evidence_context_id=MAE_SAI_EVIDENCE_CONTEXT_ID,
                     area_id=area_id,
                     area_name_th=_required_text(row.get("subdistrict_name_th"), area_id),
                     area_name_en=_required_text(row.get("subdistrict_name"), area_id),
                     fpps_0_100=float(row["fpps_0_100"]),
                     action_class=str(row["action_class"]),
+                    action_reason_code=assign_action_reason_code(row),
                     top_reason=_required_text(row.get("top_reason"), "Candidate evidence only."),
                     flood_likelihood_0_100=float(row["flood_likelihood_0_100"]),
                     exposure_0_100=float(row["exposure_0_100"]),
@@ -351,14 +404,79 @@ class MaeSaiCandidateAdapter:
                 return item
         raise ArtifactNotFound(f"Unknown area_id for {MAE_SAI_STUDY_AREA}: {area_id}")
 
-    def layers(self) -> list[LayerCatalogItem]:
+    def evidence_context(self) -> EvidenceContext:
+        """Return the immutable Mae Sai package identity with no model substitution."""
+
         manifest = self._manifest()
-        try:
-            self._validated_layers()
-        except ArtifactUnavailable as exc:
-            bundle_error = str(exc)
-        else:
-            bundle_error = ""
+        return EvidenceContext(
+            evidence_context_id=manifest.evidence_context_id,
+            study_area_id=manifest.study_area_id,
+            data_version=manifest.data_version,
+            evidence_package_id=manifest.evidence_package_id,
+            evidence_package_sha256=MAE_SAI_MANIFEST_SHA256,
+            model_run_id=None,
+            dataset_mode=manifest.dataset_mode,
+            operational_status=manifest.operational_status,
+            official_warning=manifest.official_warning,
+            generated_at=manifest.generated_at,
+            source_components=list(manifest.source_components),
+        )
+
+    def public_areas(self) -> list[PublicPreparednessArea]:
+        """Return reduced public records without A-E or score-component details."""
+
+        return [
+            PublicPreparednessArea.model_validate(feature["properties"])
+            for feature in self._validated_public_projection()["features"]
+        ]
+
+    def evidence_record(self) -> EvidenceRecord:
+        """Return the package-level audit record; qualified evaluation is absent."""
+
+        context = self.evidence_context()
+        return EvidenceRecord(
+            evidence_record_id=f"{context.evidence_context_id}:blocked",
+            evidence_context=context,
+            evidence_scope="Historic Mae Sai planning candidate; no qualified evaluation",
+            model_id=None,
+            model_version=None,
+            model_sha256=None,
+            evaluation_sha256=None,
+            decision="blocked",
+            decision_authority=None,
+            decision_at=None,
+            operational_authorized=False,
+            blockers=[
+                "No qualified Thailand event-flood reference evaluation is published.",
+                "Facility roles and current operation are not agency verified.",
+                "Road evidence is area-summary context, not segment-raster intersection.",
+                "No agency operational acceptance is recorded.",
+            ],
+            generated_at=context.generated_at,
+        )
+
+    def layers(
+        self,
+        role: Literal["public", "command", "studio"] | None = None,
+    ) -> list[LayerCatalogItem]:
+        manifest = self._manifest()
+        selected_specs = [
+            spec
+            for spec in manifest.layers
+            if role is None or role in spec.role_visibility
+        ]
+        staff_errors: dict[str, str] = {}
+        for spec in selected_specs:
+            try:
+                self._validated_layer(manifest, spec)
+            except ArtifactUnavailable as exc:
+                staff_errors[spec.layer_id] = str(exc)
+        public_error = ""
+        if role in {None, "public"}:
+            try:
+                self._validated_public_projection()
+            except ArtifactUnavailable as exc:
+                public_error = str(exc)
 
         titles = {
             "administrative_boundaries": ("ขอบเขตพื้นที่รายงาน", "Reporting boundaries"),
@@ -367,16 +485,10 @@ class MaeSaiCandidateAdapter:
             "facilities": ("สถานที่ผู้สมัครที่ยังไม่ยืนยัน", "Unverified facility candidates"),
             "access_hotspots": ("จุดสูญเสียการเข้าถึงแบบจำลอง", "Modelled access hotspots"),
         }
-        roles = {
-            "administrative_boundaries": ["command", "studio"],
-            "priority_areas": ["command", "studio"],
-            "road_risk": ["command", "studio"],
-            "facilities": ["command", "studio"],
-            "access_hotspots": ["command", "studio"],
-        }
         result: list[LayerCatalogItem] = []
-        for spec in manifest.layers:
+        for spec in selected_specs:
             title_th, title_en = titles[spec.layer_id]
+            bundle_error = staff_errors.get(spec.layer_id, "")
             assumptions = [
                 spec.reason_blocked,
                 "Historic candidate layer; not an official warning or live condition.",
@@ -392,10 +504,12 @@ class MaeSaiCandidateAdapter:
                         source_timestamp=spec.source_timestamp,
                         git_commit=spec.git_commit,
                     ),
+                    evidence_context_id=manifest.evidence_context_id,
+                    evidence_package_id=manifest.evidence_package_id,
                     layer_id=spec.layer_id,
                     title_th=title_th,
                     title_en=title_en,
-                    role_visibility=roles[spec.layer_id],
+                    role_visibility=list(spec.role_visibility),
                     format="geojson",
                     url=(
                         f"/api/v1/layer-data/{spec.layer_id}"
@@ -403,20 +517,80 @@ class MaeSaiCandidateAdapter:
                     ),
                     data_state="unavailable" if bundle_error else "stale",
                     model_run_id=None,
+                    evidence_state=spec.evidence_state,
+                    source_components=self._source_components(
+                        manifest, spec.source_component_ids
+                    ),
                     attribution=list(spec.attribution),
                 )
             )
+        public_source_ids = (
+            "sentinel1-flood-context",
+            "hdx-cod-ab-boundaries",
+            "worldpop-2020",
+            "osm-geofabrik-2026-07-09",
+            "copernicus-dem-glo30",
+        )
+        result.append(
+            LayerCatalogItem(
+                **self._common(
+                    source_name="FloodGuard reduced public preparedness projection",
+                    assumptions=[
+                        "Historic area-level planning context only; current conditions "
+                        "are not confirmed.",
+                        "Staff-only road, facility, access, and scoring-component "
+                        "details are omitted.",
+                    ],
+                    confidence_class="low",
+                    source_timestamp=manifest.source_timestamp,
+                    git_commit=manifest.git_commit,
+                ),
+                evidence_context_id=manifest.evidence_context_id,
+                evidence_package_id=manifest.evidence_package_id,
+                layer_id="public_preparedness_areas",
+                title_th="พื้นที่เตรียมพร้อมสาธารณะ",
+                title_en="Public preparedness areas",
+                role_visibility=["public"],
+                format="geojson",
+                url=(
+                    "/api/v1/layer-data/public_preparedness_areas"
+                    f"?study_area={MAE_SAI_STUDY_AREA}&role=public"
+                ),
+                data_state="unavailable" if public_error else "stale",
+                model_run_id=None,
+                evidence_state=EvidenceState(
+                    evidence_type="modelled",
+                    granularity="area_summary",
+                    confidence_class="low",
+                    confidence_reason=(
+                        "Historic candidate evidence has not passed qualified "
+                        "real-event validation."
+                    ),
+                    permitted_use="public_preparedness",
+                    required_gate="local_current_condition_confirmation",
+                    gate_state="blocked",
+                ),
+                source_components=self._source_components(manifest, public_source_ids),
+                attribution=[
+                    "Copernicus Data Space Ecosystem",
+                    "Copernicus Sentinel-1",
+                    "HDX Thailand COD-AB",
+                    "WorldPop 2020",
+                    "OpenStreetMap contributors",
+                    "Geofabrik",
+                    "Copernicus DEM GLO-30",
+                    "FloodGuard",
+                ],
+            )
+        )
         return result
 
     def layer_data(self, layer_id: str) -> dict[str, Any]:
-        layers = self._validated_layers()
-        if layer_id not in layers:
-            raise ArtifactNotFound(
-                f"Unknown layer_id for {MAE_SAI_STUDY_AREA}: {layer_id}"
-            )
-        payload = deepcopy(layers[layer_id])
+        if layer_id == "public_preparedness_areas":
+            return self._public_preparedness_layer()
         manifest = self._manifest()
         spec = self._layer_spec(manifest, layer_id)
+        payload = deepcopy(self._validated_layer(manifest, spec))
         for feature in payload["features"]:
             properties = feature["properties"]
             properties["area_id"] = str(properties[spec.join_key])
@@ -437,6 +611,7 @@ class MaeSaiCandidateAdapter:
         payload["floodguard_metadata"] = {
             "schema_version": "1.0",
             "study_area_id": manifest.study_area_id,
+            "evidence_context_id": manifest.evidence_context_id,
             "dataset_mode": manifest.dataset_mode,
             "operational_status": manifest.operational_status,
             "official_warning": manifest.official_warning,
@@ -447,13 +622,40 @@ class MaeSaiCandidateAdapter:
             "processing_allowed": spec.processing_allowed,
             "can_feed_decision_layer": spec.can_feed_decision_layer,
             "reason_blocked": spec.reason_blocked,
+            "evidence_state": spec.evidence_state.model_dump(mode="json"),
+            "source_components": [
+                item.model_dump(mode="json")
+                for item in self._source_components(manifest, spec.source_component_ids)
+            ],
             "attribution": list(spec.attribution),
         }
         return payload
 
     def layer_artifact_sha256(self, layer_id: str) -> str:
-        self._validated_layers()
-        return self._layer_spec(self._manifest(), layer_id).sha256
+        if layer_id == "public_preparedness_areas":
+            self._validated_public_projection()
+            return MAE_SAI_PUBLIC_PROJECTION_SHA256
+        manifest = self._manifest()
+        spec = self._layer_spec(manifest, layer_id)
+        self._validated_layer(manifest, spec)
+        return spec.sha256
+
+    def _public_preparedness_layer(self) -> dict[str, Any]:
+        """Read the dedicated Public projection without opening a staff artifact."""
+
+        return deepcopy(self._validated_public_projection())
+
+    @staticmethod
+    def _source_components(
+        manifest: StudyAreaBundleManifest,
+        component_ids: tuple[str, ...],
+    ) -> list[SourceComponent]:
+        requested = set(component_ids)
+        return [
+            component
+            for component in manifest.source_components
+            if component.source_component_id in requested
+        ]
 
     def brief(self, area_id: str) -> BriefResponse:
         area = self.area(area_id)
@@ -884,6 +1086,141 @@ class MaeSaiCandidateAdapter:
         except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
             raise ArtifactUnavailable("Mae Sai bundle manifest validation failed.") from exc
 
+    def _validated_public_projection(self) -> dict[str, Any]:
+        """Validate the dedicated Public artifact without loading staff GeoJSON bytes."""
+
+        manifest = self._manifest()
+        path = self.public_projection_path.resolve()
+        try:
+            path.relative_to(self.paths.root.resolve())
+        except ValueError as exc:
+            raise ArtifactUnavailable(
+                "Mae Sai Public projection resolves outside the repository."
+            ) from exc
+        if not path.is_file():
+            raise ArtifactUnavailable("Mae Sai Public projection is unavailable.")
+        if _sha256(path) != MAE_SAI_PUBLIC_PROJECTION_SHA256:
+            raise ArtifactUnavailable(
+                "Mae Sai Public projection checksum validation failed."
+            )
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise ArtifactUnavailable("Mae Sai Public projection is unreadable.") from exc
+        if not isinstance(payload, dict) or payload.get("type") != "FeatureCollection":
+            raise ArtifactUnavailable("Mae Sai Public projection is not a FeatureCollection.")
+        features = payload.get("features")
+        if not isinstance(features, list) or len(features) != len(manifest.expected_area_ids):
+            raise ArtifactUnavailable(
+                "Mae Sai Public projection feature-count validation failed."
+            )
+        allowed_properties = {
+            "schema_version",
+            "evidence_context_id",
+            "area_id",
+            "area_name_th",
+            "area_name_en",
+            "planning_priority_0_100",
+            "evidence_sufficiency",
+            "recommendation_code",
+            "source_timestamp",
+            "freshness",
+            "current_conditions_confirmed",
+        }
+        observed_area_ids: set[str] = set()
+        min_x, min_y, max_x, max_y = manifest.expected_bounds
+        for index, feature in enumerate(features):
+            if not isinstance(feature, dict) or feature.get("type") != "Feature":
+                raise ArtifactUnavailable(
+                    f"Mae Sai Public projection feature {index} is invalid."
+                )
+            properties = feature.get("properties")
+            geometry = feature.get("geometry")
+            if (
+                not isinstance(properties, dict)
+                or set(properties) != allowed_properties
+                or not isinstance(geometry, dict)
+            ):
+                raise ArtifactUnavailable(
+                    "Mae Sai Public projection contains non-public fields."
+                )
+            try:
+                record = PublicPreparednessArea.model_validate(properties)
+            except ValueError as exc:
+                raise ArtifactUnavailable(
+                    "Mae Sai Public projection record validation failed."
+                ) from exc
+            if (
+                record.evidence_context_id != manifest.evidence_context_id
+                or record.current_conditions_confirmed
+                or record.area_id in observed_area_ids
+            ):
+                raise ArtifactUnavailable(
+                    "Mae Sai Public projection evidence identity is invalid."
+                )
+            observed_area_ids.add(record.area_id)
+            positions = list(_iter_positions(geometry.get("coordinates")))
+            if geometry.get("type") != "MultiPolygon" or not positions:
+                raise ArtifactUnavailable(
+                    "Mae Sai Public projection geometry type is invalid."
+                )
+            for longitude, latitude in positions:
+                if (
+                    not math.isfinite(longitude)
+                    or not math.isfinite(latitude)
+                    or not (min_x <= longitude <= max_x)
+                    or not (min_y <= latitude <= max_y)
+                ):
+                    raise ArtifactUnavailable(
+                        "Mae Sai Public projection geometry is outside declared bounds."
+                    )
+        if observed_area_ids != set(manifest.expected_area_ids):
+            raise ArtifactUnavailable("Mae Sai Public projection area coverage is incomplete.")
+
+        metadata = payload.get("floodguard_metadata")
+        priority_spec = self._layer_spec(manifest, "priority_areas")
+        if not isinstance(metadata, dict):
+            raise ArtifactUnavailable("Mae Sai Public projection metadata is missing.")
+        source_components = metadata.get("source_components")
+        evidence_state = metadata.get("evidence_state")
+        component_ids = {
+            str(component.get("source_component_id"))
+            for component in source_components
+            if isinstance(component, dict)
+        } if isinstance(source_components, list) else set()
+        if (
+            metadata.get("study_area_id") != manifest.study_area_id
+            or metadata.get("evidence_context_id") != manifest.evidence_context_id
+            or metadata.get("evidence_package_id") != manifest.evidence_package_id
+            or metadata.get("dataset_mode") != manifest.dataset_mode
+            or metadata.get("operational_status") != manifest.operational_status
+            or metadata.get("official_warning") is not False
+            or metadata.get("data_version") != manifest.data_version
+            or metadata.get("artifact_sha256") != priority_spec.sha256
+            or metadata.get("role_visibility") != ["public"]
+            or component_ids != set(priority_spec.source_component_ids)
+            or not isinstance(evidence_state, dict)
+            or evidence_state.get("permitted_use")
+            != "public_preparedness"
+        ):
+            raise ArtifactUnavailable(
+                "Mae Sai Public projection lineage metadata validation failed."
+            )
+        required_attribution = {
+            attribution
+            for component in manifest.source_components
+            if component.source_component_id in priority_spec.source_component_ids
+            for attribution in component.attribution
+        }
+        attribution = metadata.get("attribution")
+        if not isinstance(attribution, list) or not required_attribution.issubset(
+            set(attribution)
+        ):
+            raise ArtifactUnavailable(
+                "Mae Sai Public projection attribution is incomplete."
+            )
+        return payload
+
     def _validated_layers(self) -> dict[str, dict[str, Any]]:
         manifest = self._manifest()
         result: dict[str, dict[str, Any]] = {}
@@ -1057,24 +1394,58 @@ class DatasetRegistry:
             return adapter.areas(study_area)
         return adapter.areas()
 
+    def public_areas(
+        self,
+        study_area: str = FIXTURE_STUDY_AREA,
+    ) -> list[PublicPreparednessArea]:
+        adapter = self._adapter(study_area)
+        return adapter.public_areas()
+
+    def evidence_context(
+        self,
+        study_area: str = FIXTURE_STUDY_AREA,
+    ) -> EvidenceContext:
+        adapter = self._adapter(study_area)
+        return adapter.evidence_context()
+
+    def evidence_record(self, evidence_context_id: str) -> EvidenceRecord:
+        for study_area in (FIXTURE_STUDY_AREA, MAE_SAI_STUDY_AREA):
+            adapter = self._adapter(study_area)
+            context = adapter.evidence_context()
+            if context.evidence_context_id == evidence_context_id:
+                return adapter.evidence_record()
+        raise ArtifactNotFound(f"Unknown evidence_context_id: {evidence_context_id}")
+
     def area(self, area_id: str, study_area: str = FIXTURE_STUDY_AREA) -> AreaDecision:
         adapter = self._adapter(study_area)
         if isinstance(adapter, ArtifactRepository):
             return adapter.area(area_id, study_area)
         return adapter.area(area_id)
 
-    def layers(self, study_area: str = FIXTURE_STUDY_AREA) -> list[LayerCatalogItem]:
+    def layers(
+        self,
+        study_area: str = FIXTURE_STUDY_AREA,
+        role: Literal["public", "command", "studio"] = "command",
+    ) -> list[LayerCatalogItem]:
         adapter = self._adapter(study_area)
         if isinstance(adapter, ArtifactRepository):
-            return adapter.layers(study_area)
-        return adapter.layers()
+            layers = adapter.layers(study_area)
+        else:
+            layers = adapter.layers(role)
+        return visible_layers_for_role(layers, role)
 
     def layer_data(
         self,
         layer_id: str,
         study_area: str = FIXTURE_STUDY_AREA,
+        role: Literal["public", "command", "studio"] = "command",
     ) -> dict[str, Any]:
         adapter = self._adapter(study_area)
+        visible_ids = {item.layer_id for item in self.layers(study_area, role)}
+        if layer_id not in visible_ids:
+            raise ArtifactNotFound(
+                f"Layer {layer_id} is not available for role {role} in {study_area}."
+            )
         if isinstance(adapter, ArtifactRepository):
             return adapter.layer_data(layer_id, study_area)
         return adapter.layer_data(layer_id)
@@ -1115,6 +1486,15 @@ class DatasetRegistry:
 
     def readiness(self) -> list[ReadinessItem]:
         return self.fixture.readiness()
+
+
+def visible_layers_for_role(
+    layers: list[LayerCatalogItem],
+    role: Literal["public", "command", "studio"],
+) -> list[LayerCatalogItem]:
+    """Return only layers whose immutable catalog explicitly permits the role."""
+
+    return [item for item in layers if role in item.role_visibility]
 
 
 def filter_geojson_payload(

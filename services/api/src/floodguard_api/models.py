@@ -6,7 +6,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Literal
 
-from floodguard.scoring import DEFAULT_WEIGHTS, assign_action_class
+from floodguard.scoring import (
+    DEFAULT_WEIGHTS,
+    assign_action_class,
+    assign_action_reason_code,
+)
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -49,6 +53,127 @@ class ActionClass(str, Enum):
     E = "E"
 
 
+class ActionReasonCode(str, Enum):
+    LOW_CONFIDENCE = "low_confidence"
+    LOW_PRIORITY_SCORE = "low_priority_score"
+    LIFE_SAFETY_EXPOSURE = "life_safety_exposure"
+    CRITICAL_ROUTE_ACCESS = "critical_route_access"
+    ESSENTIAL_SERVICE_ACCESS = "essential_service_access"
+    RESILIENCE = "resilience"
+
+
+class FreshnessState(str, Enum):
+    CURRENT = "current"
+    AGING = "aging"
+    HISTORICAL = "historical"
+    UNKNOWN = "unknown"
+
+
+FRESHNESS_POLICY_VERSION = "source-freshness-v1"
+
+
+class SourceComponent(StrictModel):
+    source_component_id: str = Field(min_length=1)
+    role: str = Field(min_length=1)
+    source_name: str = Field(min_length=1)
+    source_version: str | None = Field(default=None, min_length=1)
+    source_timestamp: datetime | None = None
+    last_checked_at: datetime | None = None
+    temporal_meaning: Literal[
+        "observation_time",
+        "valid_from",
+        "publication_year",
+        "extract_time",
+        "generation_time",
+        "unknown",
+    ]
+    freshness: FreshnessState
+    freshness_policy_version: Literal["source-freshness-v1"]
+    freshness_as_of: datetime
+    attribution: list[str] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def preserve_freshness_semantics(self) -> SourceComponent:
+        if self.freshness_as_of.tzinfo is None:
+            raise ValueError("freshness_as_of must include a timezone")
+        if self.source_timestamp is not None and self.source_timestamp.tzinfo is None:
+            raise ValueError("source_timestamp must include a timezone")
+        if self.last_checked_at is not None and self.last_checked_at.tzinfo is None:
+            raise ValueError("last_checked_at must include a timezone")
+        if self.source_timestamp is None and (
+            self.temporal_meaning != "unknown"
+            or self.freshness != FreshnessState.UNKNOWN
+        ):
+            raise ValueError(
+                "sources without a timestamp require unknown temporal meaning and freshness"
+            )
+        if self.temporal_meaning == "unknown" and (
+            self.source_timestamp is not None
+            or self.freshness != FreshnessState.UNKNOWN
+        ):
+            raise ValueError(
+                "unknown temporal meaning requires a missing timestamp and unknown freshness"
+            )
+        if self.freshness == FreshnessState.CURRENT and (
+            self.source_timestamp is None or self.last_checked_at is None
+        ):
+            raise ValueError("current sources require source and last-checked timestamps")
+        return self
+
+
+class EvidenceState(StrictModel):
+    evidence_type: Literal["modelled", "observed", "locally_confirmed"]
+    granularity: Literal["area_summary", "road_segment", "facility"]
+    confidence_class: ConfidenceClass
+    confidence_reason: str = Field(min_length=1)
+    permitted_use: Literal[
+        "public_preparedness",
+        "planning_only",
+        "operational_authorized",
+    ]
+    required_gate: str | None = Field(default=None, min_length=1)
+    gate_state: Literal["ready", "blocked", "not_applicable"]
+
+    @model_validator(mode="after")
+    def preserve_operational_gate(self) -> EvidenceState:
+        if self.permitted_use == "operational_authorized" and (
+            self.gate_state != "ready" or self.confidence_class != ConfidenceClass.HIGH
+        ):
+            raise ValueError("operational evidence requires a ready gate and high confidence")
+        if self.gate_state == "blocked" and not self.required_gate:
+            raise ValueError("blocked evidence requires the blocked gate identifier")
+        if self.gate_state == "not_applicable" and self.required_gate is not None:
+            raise ValueError("not-applicable evidence cannot declare a required gate")
+        return self
+
+
+class EvidenceContext(StrictModel):
+    schema_version: Literal["1.0"] = "1.0"
+    evidence_context_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
+    study_area_id: str = Field(min_length=1)
+    data_version: str = Field(min_length=1)
+    evidence_package_id: str = Field(min_length=1)
+    evidence_package_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    model_run_id: str | None = Field(default=None, min_length=1)
+    dataset_mode: DatasetMode
+    operational_status: OperationalStatus
+    official_warning: bool
+    generated_at: datetime
+    source_components: list[SourceComponent] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def preserve_context_boundary(self) -> EvidenceContext:
+        if self.dataset_mode in {DatasetMode.FIXTURE_DEMO, DatasetMode.CANDIDATE}:
+            if self.official_warning:
+                raise ValueError("fixture and candidate contexts cannot be official warnings")
+            if self.operational_status == OperationalStatus.AGENCY_OPERATIONAL:
+                raise ValueError("fixture and candidate contexts cannot be agency operational")
+        component_ids = [item.source_component_id for item in self.source_components]
+        if len(component_ids) != len(set(component_ids)):
+            raise ValueError("source component IDs must be unique")
+        return self
+
+
 class CommonMetadata(StrictModel):
     """Fields shared by decision, layer, model, and scenario artifacts."""
 
@@ -75,10 +200,19 @@ class CommonMetadata(StrictModel):
             and self.official_warning
         ):
             raise ValueError("fixture and candidate artifacts cannot be official warnings")
+        if (
+            self.operational_status == OperationalStatus.AGENCY_OPERATIONAL
+            and self.dataset_mode != DatasetMode.OFFICIAL_INPUT
+        ):
+            raise ValueError("agency-operational artifacts require official input")
         return self
 
 
 class StatusResponse(CommonMetadata):
+    evidence_context_id: str = Field(
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    )
+    evidence_package_id: str = Field(min_length=1)
     study_area: str = Field(min_length=1)
     data_state: DataState
     message_th: str = Field(min_length=1)
@@ -103,11 +237,15 @@ class ScenarioDelta(StrictModel):
 
 
 class AreaDecision(CommonMetadata):
+    evidence_context_id: str = Field(
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    )
     area_id: str = Field(min_length=1)
     area_name_th: str = Field(min_length=1)
     area_name_en: str = Field(min_length=1)
     fpps_0_100: float = Field(ge=0, le=100)
     action_class: ActionClass
+    action_reason_code: ActionReasonCode
     top_reason: str = Field(min_length=1)
     flood_likelihood_0_100: float = Field(ge=0, le=100)
     exposure_0_100: float = Field(ge=0, le=100)
@@ -144,10 +282,24 @@ class AreaDecision(CommonMetadata):
         )
         if self.action_class.value != expected_class:
             raise ValueError("action_class is inconsistent with the locked A-E rules")
+        expected_reason = assign_action_reason_code(
+            {
+                **components,
+                "fpps_0_100": self.fpps_0_100,
+                "confidence_class": self.confidence_class.value,
+                "action_class": self.action_class.value,
+            }
+        )
+        if self.action_reason_code.value != expected_reason:
+            raise ValueError("action_reason_code is inconsistent with the locked A-E rules")
         return self
 
 
 class LayerCatalogItem(CommonMetadata):
+    evidence_context_id: str = Field(
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    )
+    evidence_package_id: str = Field(min_length=1)
     layer_id: str = Field(min_length=1)
     title_th: str = Field(min_length=1)
     title_en: str = Field(min_length=1)
@@ -156,7 +308,89 @@ class LayerCatalogItem(CommonMetadata):
     url: str = Field(min_length=1)
     data_state: DataState
     model_run_id: str | None = None
+    evidence_state: EvidenceState
+    source_components: list[SourceComponent] = Field(min_length=1)
     attribution: list[str] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def preserve_role_and_use_boundary(self) -> LayerCatalogItem:
+        if "public" in self.role_visibility and self.evidence_state.permitted_use not in {
+            "public_preparedness",
+            "operational_authorized",
+        }:
+            raise ValueError("public layers require public-preparedness permission")
+        if self.evidence_state.permitted_use == "operational_authorized" and (
+            self.dataset_mode != DatasetMode.OFFICIAL_INPUT
+            or self.operational_status != OperationalStatus.AGENCY_OPERATIONAL
+            or not self.model_run_id
+        ):
+            raise ValueError(
+                "operational layers require official agency context and a bound model run"
+            )
+        return self
+
+
+class PublicPreparednessArea(StrictModel):
+    schema_version: Literal["1.0"] = "1.0"
+    evidence_context_id: str = Field(
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    )
+    area_id: str = Field(min_length=1)
+    area_name_th: str = Field(min_length=1)
+    area_name_en: str = Field(min_length=1)
+    planning_priority_0_100: float = Field(ge=0, le=100)
+    evidence_sufficiency: ConfidenceClass
+    recommendation_code: ActionReasonCode
+    source_timestamp: datetime
+    freshness: FreshnessState
+    current_conditions_confirmed: bool
+
+
+class EvidenceRecord(StrictModel):
+    schema_version: Literal["1.0"] = "1.0"
+    evidence_record_id: str = Field(
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    )
+    evidence_context: EvidenceContext
+    evidence_scope: str = Field(min_length=1)
+    model_id: str | None = Field(default=None, min_length=1)
+    model_version: str | None = Field(default=None, min_length=1)
+    model_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    evaluation_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    decision: Literal["not_evaluated", "passed", "failed", "blocked"]
+    decision_authority: str | None = Field(default=None, min_length=1)
+    decision_at: datetime | None = None
+    operational_authorized: bool
+    blockers: list[str]
+    generated_at: datetime
+
+    @model_validator(mode="after")
+    def preserve_audit_boundary(self) -> EvidenceRecord:
+        if self.decision == "passed" and (
+            not self.decision_authority or self.decision_at is None
+        ):
+            raise ValueError("passed evidence requires decision authority and time")
+        if (self.decision_authority is None) != (self.decision_at is None):
+            raise ValueError("decision authority and time must be recorded together")
+        if self.operational_authorized:
+            if (
+                self.evidence_context.dataset_mode != DatasetMode.OFFICIAL_INPUT
+                or self.evidence_context.operational_status
+                != OperationalStatus.AGENCY_OPERATIONAL
+                or not self.evidence_context.model_run_id
+                or self.decision != "passed"
+                or not self.decision_authority
+                or self.decision_at is None
+                or not self.model_id
+                or not self.model_version
+                or not self.model_sha256
+                or not self.evaluation_sha256
+                or self.blockers
+            ):
+                raise ValueError("operational evidence requires complete accepted authority")
+        elif not self.blockers:
+            raise ValueError("non-authorized evidence records must expose blockers")
+        return self
 
 
 class StudyArea(CommonMetadata):

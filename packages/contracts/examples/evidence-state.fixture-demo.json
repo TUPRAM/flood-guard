@@ -1,0 +1,9 @@
+{
+  "evidence_type": "modelled",
+  "granularity": "area_summary",
+  "confidence_class": "low",
+  "confidence_reason": "Synthetic fixture values do not establish real-event accuracy.",
+  "permitted_use": "public_preparedness",
+  "required_gate": "qualified_real_event_evaluation",
+  "gate_state": "blocked"
+}

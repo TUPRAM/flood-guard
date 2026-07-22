@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/public-preparedness-area.schema.json",
+  "title": "FloodGuard public preparedness area",
+  "description": "Reduced public projection that separates planning priority from evidence sufficiency and omits staff-only evidence detail.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_context_id",
+    "area_id",
+    "area_name_th",
+    "area_name_en",
+    "planning_priority_0_100",
+    "evidence_sufficiency",
+    "recommendation_code",
+    "source_timestamp",
+    "freshness",
+    "current_conditions_confirmed"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "evidence_context_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "area_id": { "type": "string", "minLength": 1 },
+    "area_name_th": { "type": "string", "minLength": 1 },
+    "area_name_en": { "type": "string", "minLength": 1 },
+    "planning_priority_0_100": { "type": "number", "minimum": 0, "maximum": 100 },
+    "evidence_sufficiency": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "recommendation_code": {
+      "type": "string",
+      "enum": [
+        "low_confidence",
+        "low_priority_score",
+        "life_safety_exposure",
+        "critical_route_access",
+        "essential_service_access",
+        "resilience"
+      ]
+    },
+    "source_timestamp": { "type": "string", "format": "date-time" },
+    "freshness": {
+      "type": "string",
+      "enum": ["current", "aging", "historical", "unknown"]
+    },
+    "current_conditions_confirmed": { "type": "boolean" }
+  }
+}

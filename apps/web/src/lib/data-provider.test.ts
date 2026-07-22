@@ -12,6 +12,7 @@ import {
   areaFeatures,
   contextFeatures,
   assertNoPrivatePaths,
+  getMaeSaiOfflineData,
   getOfflineData,
   loadApiBrief,
   loadFloodGuardData,
@@ -71,6 +72,20 @@ describe("offline judging bundle", () => {
     expect(data.areas.reduce((total, area) => total + (area.candidate_evidence?.road_count ?? 0), 0)).toBe(4_458);
     expect(data.facilityFeatures.features).toHaveLength(42);
     expect(data.accessFeatures.features).toHaveLength(8);
+  });
+
+  it("fails the Mae Sai package closed before exposing records on a context mismatch", () => {
+    const data = getMaeSaiOfflineData(undefined, {
+      studyArea: "mae_sai_candidate_v1",
+      role: "command",
+      evidenceContextId: "mae-sai:substituted-context",
+    });
+
+    expect(data.dataState).toBe("unavailable");
+    expect(data.areas).toEqual([]);
+    expect(data.publicAreas).toEqual([]);
+    expect(data.layers).toEqual([]);
+    expect(data.areaFeatures.features).toEqual([]);
   });
 });
 
@@ -140,6 +155,8 @@ describe("partial API availability", () => {
   it("rejects a substituted Mae Sai data version instead of merging local evidence", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = new URL(String(input), "https://api.example");
+      const evidenceResponse = maeSaiEvidenceApiResponse(url);
+      if (evidenceResponse) return evidenceResponse;
       if (url.pathname === "/api/v1/status") {
         return Response.json({ ...maeSaiApiStatus(), data_version: "substituted-mae-sai-v2" });
       }
@@ -156,7 +173,7 @@ describe("partial API availability", () => {
 
     expect(data.dataOrigin).toBe("offline_bundle");
     expect(data.status.data_version).toBe(maeSaiBundle.status.data_version);
-    expect(data.fallbackReason).toMatch(/study-area identity or safety contract failed/i);
+    expect(data.fallbackReason).toMatch(/evidence context does not match/i);
   });
 
   it("rejects substituted non-road layer lineage and uses the pinned offline bundle", async () => {
@@ -182,6 +199,8 @@ describe("partial API availability", () => {
     const postedBodies: Array<Record<string, unknown>> = [];
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input), "https://api.example");
+      const evidenceResponse = maeSaiEvidenceApiResponse(url);
+      if (evidenceResponse) return evidenceResponse;
       if (url.pathname === "/api/v1/status") return Response.json(maeSaiApiStatus());
       if (url.pathname === "/api/v1/areas") return Response.json({ items: maeSaiApiAreas() });
       if (url.pathname === "/api/v1/layers") return Response.json({ items: maeSaiApiLayers() });
@@ -207,7 +226,7 @@ describe("partial API availability", () => {
 
     const data = await loadFloodGuardData("https://api.example", null, "mae_sai_candidate_v1");
 
-    expect(data.dataOrigin).toBe("api");
+    expect(data.dataOrigin, data.fallbackReason).toBe("api");
     expect(data.dataState).toBe("stale");
     expect(data.scenarioState).toBe("ready");
     expect(data.availableScenarios).toEqual(["baseline", "add_temporary_shelter", "close_road"]);
@@ -236,6 +255,8 @@ describe("partial API availability", () => {
     const post = vi.fn();
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input), "https://api.example");
+      const evidenceResponse = maeSaiEvidenceApiResponse(url);
+      if (evidenceResponse) return evidenceResponse;
       if (url.pathname === "/api/v1/status") return Response.json(maeSaiApiStatus());
       if (url.pathname === "/api/v1/areas") return Response.json({ items: maeSaiApiAreas() });
       if (url.pathname === "/api/v1/layers") return Response.json({ items: maeSaiApiLayers() });
@@ -271,6 +292,8 @@ describe("partial API availability", () => {
   it("enables only the Mae Sai scenario whose server run completed and validated", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input), "https://api.example");
+      const evidenceResponse = maeSaiEvidenceApiResponse(url);
+      if (evidenceResponse) return evidenceResponse;
       if (url.pathname === "/api/v1/status") return Response.json(maeSaiApiStatus());
       if (url.pathname === "/api/v1/areas") return Response.json({ items: maeSaiApiAreas() });
       if (url.pathname === "/api/v1/layers") return Response.json({ items: maeSaiApiLayers() });
@@ -304,16 +327,22 @@ describe("partial API availability", () => {
     const fixture = getOfflineData();
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
+      const evidenceResponse = fixtureEvidenceApiResponse(
+        new URL(url, "https://api.example"),
+        fixture,
+        fixture.status,
+      );
+      if (evidenceResponse) return evidenceResponse;
       if (url.endsWith("/api/v1/status")) return Response.json(fixture.status);
       if (url.endsWith("/api/v1/areas")) return Response.json({ items: fixture.areas });
-      if (url.endsWith("/api/v1/layers")) return Response.json({ items: fixture.layers });
-      if (url.endsWith("/offline-demo/areas.geojson")) return Response.json(areaFeatures);
+      if (url.includes("/api/v1/layers")) return Response.json({ items: fixture.layers });
+      if (url.includes("/offline-demo/areas.geojson")) return Response.json(areaFeatures);
       return new Response(null, { status: 503 });
     }));
 
     const data = await loadFloodGuardData("https://api.example");
 
-    expect(data.dataOrigin).toBe("api");
+    expect(data.dataOrigin, data.fallbackReason).toBe("api");
     expect(data.fallbackReason).toBeUndefined();
     expect(data.areas).toHaveLength(fixture.areas.length);
     expect(data.areaFeatures.features).toHaveLength(areaFeatures.features.length);
@@ -332,8 +361,7 @@ describe("partial API availability", () => {
       dataset_mode: "official_input" as const,
       operational_status: "agency_operational" as const,
       official_warning: true,
-      study_area: "example_study_area",
-      data_version: "example-official-v1",
+      study_area: "fixture_thailand_demo",
     };
     const apiAreas = fixture.areas.map((area) => ({
       ...area,
@@ -357,14 +385,20 @@ describe("partial API availability", () => {
     }));
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
+      const evidenceResponse = fixtureEvidenceApiResponse(
+        new URL(url, "https://api.example"),
+        fixture,
+        apiStatus,
+      );
+      if (evidenceResponse) return evidenceResponse;
       if (url.endsWith("/api/v1/status")) return Response.json(apiStatus);
       if (url.endsWith("/api/v1/areas")) return Response.json({ items: apiAreas });
-      if (url.endsWith("/api/v1/layers")) return Response.json({ items: apiLayers });
+      if (url.includes("/api/v1/layers")) return Response.json({ items: apiLayers });
       if (url.endsWith("/api/v1/model-runs")) return Response.json({ items: apiRuns });
       if (url.endsWith("/api/v1/data-readiness")) return Response.json({ items: fixture.readiness });
       if (url.endsWith("/api/v1/pilot/readiness")) return new Response(null, { status: 503 });
-      if (url.endsWith("/offline-demo/areas.geojson")) return Response.json(areaFeatures);
-      if (url.endsWith("/offline-demo/roads.geojson")) return Response.json(roadFeatures);
+      if (url.includes("/offline-demo/areas.geojson")) return Response.json(areaFeatures);
+      if (url.includes("/offline-demo/roads.geojson")) return Response.json(roadFeatures);
       return new Response(null, { status: 404 });
     }));
 
@@ -387,7 +421,7 @@ describe("partial API availability", () => {
 
     expect(data.dataOrigin).toBe("offline_bundle");
     expect(data.dataState).toBe("stale_offline");
-    expect(data.fallbackReason).toMatch(/Core API returned 503/);
+    expect(data.fallbackReason).toMatch(/Evidence API returned 503/);
   });
 });
 
@@ -413,17 +447,21 @@ describe("last-known API snapshot", () => {
     const storage = memoryStorage();
     const apiStatus = {
       ...fixture.status,
-      dataset_mode: "official_input" as const,
-      operational_status: "agency_operational" as const,
-      study_area: "candidate_api_area",
+      study_area: "fixture_thailand_demo",
       source_name: "Current contract API",
       data_state: "ready" as const,
     };
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
+      const evidenceResponse = fixtureEvidenceApiResponse(
+        new URL(url, "https://api.example"),
+        fixture,
+        apiStatus,
+      );
+      if (evidenceResponse) return evidenceResponse;
       if (url.endsWith("/api/v1/status")) return Response.json(apiStatus);
       if (url.endsWith("/api/v1/areas")) return Response.json({ items: fixture.areas });
-      if (url.endsWith("/api/v1/layers")) return Response.json({ items: fixture.layers });
+      if (url.includes("/api/v1/layers")) return Response.json({ items: fixture.layers });
       if (url.endsWith("/api/v1/model-runs")) return Response.json({ items: [] });
       if (url.endsWith("/api/v1/data-readiness")) return Response.json({ items: fixture.readiness });
       if (url.endsWith("/api/v1/pilot/readiness")) return Response.json({
@@ -442,13 +480,13 @@ describe("last-known API snapshot", () => {
         reason_blocked_th: "",
         reason_blocked_en: "",
       });
-      if (url.endsWith("/offline-demo/areas.geojson")) return Response.json(areaFeatures);
-      if (url.endsWith("/offline-demo/roads.geojson")) return Response.json(roadFeatures);
+      if (url.includes("/offline-demo/areas.geojson")) return Response.json(areaFeatures);
+      if (url.includes("/offline-demo/roads.geojson")) return Response.json(roadFeatures);
       return new Response(null, { status: 404 });
     }));
 
     const current = await loadFloodGuardData("https://api.example", storage);
-    expect(current.dataOrigin).toBe("api");
+    expect(current.dataOrigin, current.fallbackReason).toBe("api");
     expect(current.status.source_name).toBe("Current contract API");
     expect(current.pilot_readiness.agency_operational_allowed).toBe(true);
     expect(storage.getItem(LAST_KNOWN_API_SNAPSHOT_KEY)).not.toBeNull();
@@ -469,7 +507,7 @@ describe("last-known API snapshot", () => {
     expect(cached.pilot_readiness.deployment_state).toBe("degraded");
     expect(cached.status.source_timestamp).toBe(current.status.source_timestamp);
     expect(cached.snapshotCachedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(cached.fallbackReason).toMatch(/Core API returned 503/);
+    expect(cached.fallbackReason).toMatch(/Evidence API returned 503/);
     expect(cached.apiBase).toBeUndefined();
   });
 
@@ -704,6 +742,8 @@ function maeSaiScenarioResponse(request: Record<string, unknown>) {
 
 async function maeSaiApiFetchWithoutScenarios(input: RequestInfo | URL): Promise<Response> {
   const url = new URL(String(input), "https://api.example");
+  const evidenceResponse = maeSaiEvidenceApiResponse(url);
+  if (evidenceResponse) return evidenceResponse;
   if (url.pathname === "/api/v1/status") return Response.json(maeSaiApiStatus());
   if (url.pathname === "/api/v1/areas") return Response.json({ items: maeSaiApiAreas() });
   if (url.pathname === "/api/v1/layers") return Response.json({ items: maeSaiApiLayers() });
@@ -717,6 +757,55 @@ async function maeSaiApiFetchWithoutScenarios(input: RequestInfo | URL): Promise
   if (url.pathname === "/offline-demo/mae-sai/facilities.json") return Response.json(maeSaiFacilities);
   if (url.pathname === "/offline-demo/mae-sai/access-hotspots.json") return Response.json(maeSaiAccess);
   return new Response(null, { status: 503 });
+}
+
+function maeSaiEvidenceApiResponse(url: URL): Response | null {
+  if (url.pathname === "/api/v1/evidence-context") {
+    return Response.json(maeSaiBundle.evidence_context);
+  }
+  if (url.pathname === "/api/v1/public-areas") {
+    return Response.json({ items: maeSaiBundle.public_areas });
+  }
+  if (url.pathname.startsWith("/api/v1/evidence-records/")) {
+    return Response.json(maeSaiBundle.evidence_record);
+  }
+  return null;
+}
+
+function fixtureEvidenceApiResponse(
+  url: URL,
+  fixture: ReturnType<typeof getOfflineData>,
+  status: ReturnType<typeof getOfflineData>["status"],
+): Response | null {
+  const context = {
+    ...fixture.evidenceContext,
+    evidence_context_id: status.evidence_context_id,
+    study_area_id: "fixture_thailand_demo",
+    data_version: status.data_version,
+    dataset_mode: status.dataset_mode,
+    operational_status: status.operational_status,
+    official_warning: status.official_warning,
+    generated_at: status.generated_at,
+  };
+  if (url.pathname === "/api/v1/evidence-context") {
+    return Response.json(context);
+  }
+  if (url.pathname === "/api/v1/public-areas") {
+    return Response.json({
+      items: fixture.publicAreas.map((area) => ({
+        ...area,
+        evidence_context_id: context.evidence_context_id,
+      })),
+    });
+  }
+  if (url.pathname.startsWith("/api/v1/evidence-records/")) {
+    if (!fixture.evidenceRecord) return new Response(null, { status: 404 });
+    return Response.json({
+      ...fixture.evidenceRecord,
+      evidence_context: context,
+    });
+  }
+  return null;
 }
 
 function memoryStorage(): SnapshotStorage {

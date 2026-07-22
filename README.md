@@ -24,11 +24,13 @@ packages/contracts      JSON Schema and TypeScript contracts
 src/floodguard          preserved, tested decision engine
 ```
 
-The responsive application has three deliberately different routes:
+The responsive competition application has three deliberately different routes:
 
-- `/public` is Thai-first, mobile-first preparedness guidance with verified official contact links, fixture GeoJSON, and no evacuation commands.
-- `/command` is a map-first planning workspace with fixed A-E/FPPS policy, evidence panels, server-owned scenarios, and downloads.
-- `/studio` exposes data gates, model cards, validation metrics, and `can_feed_decision_layer`; it does not expose public emergency actions.
+- `/public` is Thai-first, mobile-first preparedness guidance using a reduced Mae Sai public projection, verified official contact links, and no evacuation commands or unverified facility locations.
+- `/command` is a map-first planning workspace with fixed A-E/FPPS policy, evidence panels, verification tasks, and canonical planning exports.
+- `/studio` is a read-only validation and evidence report. It preserves exact evidence identities, blockers, and authorization state without implying an approval workflow.
+
+The competition release is scoped to Mae Sai district, Chiang Rai, using historical September 2024 flood context. It does not claim current conditions or nationwide coverage. `role_visibility` is enforced as an evidence-presentation and safety-governance boundary in the unauthenticated competition build; it is not an authentication or confidentiality boundary.
 
 Run the offline judging application:
 
@@ -42,16 +44,29 @@ pnpm verify:frontend
 pnpm --filter @floodguard/web dev
 ```
 
+Two static deployment profiles keep entry behavior and offline caching explicit:
+
+```powershell
+# Competition: / is the three-role chooser and all open competition surfaces are packaged.
+pnpm --filter @floodguard/web build:competition
+
+# Public production: / is the Public experience; staff routes and staff geospatial payloads are removed.
+pnpm --filter @floodguard/web build:public
+```
+
+The public-production profile is the deployable public boundary. A future staff deployment must add authenticated authorization and a separate cache policy before it can carry operational or confidential data.
+
 Then open `http://localhost:3000/public`,
 `http://localhost:3000/command`, or `http://localhost:3000/studio`. If the
 PowerShell execution policy blocks a generated script wrapper, use `pnpm.cmd`
 in the same commands. The role-surface product plan and privacy/safety boundary
 are documented in `docs/role-surface-development-plan.md`.
 
-`pnpm verify:frontend` includes a real-browser offline navigation smoke. On
-machines without installed Chrome, install the pinned Playwright browser once
-with `pnpm exec playwright install chromium`; the application itself makes no
-external requests during the smoke.
+`pnpm verify:frontend` includes a real-browser offline navigation smoke. The
+verification scripts prefer the pinned Playwright Chromium build and fall back
+to an installed Chrome channel. Install the pinned browser once with
+`pnpm exec playwright install chromium`; the smoke blocks every external
+request except the three explicitly approved map-background providers.
 
 Run the API in its separate environment from the repository root:
 
@@ -64,10 +79,10 @@ In a second PowerShell window, connect the web application to that API:
 
 ```powershell
 $env:NEXT_PUBLIC_FLOODGUARD_API_URL="http://127.0.0.1:8000"
-pnpm.cmd --filter @floodguard/web dev
+pnpm.cmd --filter @floodguard/web exec next dev --hostname 127.0.0.1
 ```
 
-The `/command` route requests `mae_sai_candidate_v1`: eight candidate reporting areas, real-coordinate road and facility context, access evidence, and server-owned scenario outputs. When the API is absent it uses the committed, checksummed Mae Sai offline bundle and keeps scenarios disabled. The much smaller fixture API snapshot may be cached locally as a visibly stale last-known snapshot; the multi-megabyte Mae Sai geospatial response is not written to `localStorage`. `/public` and `/studio` continue to use the deliberately labelled `Fixture demo` / `Non-operational` bundle until their safety-filtered candidate views are separately approved. The existing `outputs/dashboard.html` remains the legacy reproducible fallback: it embeds pinned Leaflet 1.9.4 assets and decision vectors, while OpenStreetMap tiles are optional online context.
+The three role surfaces request one immutable Mae Sai evidence context. Public receives only the approved reporting-area projection and never requests, caches, attributes, or exports the staff road, facility-candidate, or access layers. Command may inspect those open-data layers with neutral, verification-first semantics. Studio shows the same evidence package and explicitly reports that no model evaluation is bound when a matching evaluation record does not exist. When the API is absent, each surface uses its role-filtered, checksummed offline projection; multi-megabyte geospatial responses are not written to `localStorage`. `outputs/dashboard.html` remains a reproducible internal fallback used by the decision-engine test lane and is not part of the public-production deployment.
 
 With both development servers running, verify the real API-to-browser path:
 

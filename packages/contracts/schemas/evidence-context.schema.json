@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/evidence-context.schema.json",
+  "title": "FloodGuard evidence context",
+  "description": "Immutable identity binding every artifact shown together in one role surface.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_context_id",
+    "study_area_id",
+    "data_version",
+    "evidence_package_id",
+    "evidence_package_sha256",
+    "model_run_id",
+    "dataset_mode",
+    "operational_status",
+    "official_warning",
+    "generated_at",
+    "source_components"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "evidence_context_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "study_area_id": { "type": "string", "minLength": 1 },
+    "data_version": { "type": "string", "minLength": 1 },
+    "evidence_package_id": { "type": "string", "minLength": 1 },
+    "evidence_package_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "model_run_id": { "type": ["string", "null"], "minLength": 1 },
+    "dataset_mode": {
+      "type": "string",
+      "enum": ["fixture_demo", "candidate", "official_input"]
+    },
+    "operational_status": {
+      "type": "string",
+      "enum": ["non_operational", "planning_only", "agency_operational"]
+    },
+    "official_warning": { "type": "boolean" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "source_components": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "source-component.schema.json" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "dataset_mode": { "enum": ["fixture_demo", "candidate"] }
+        },
+        "required": ["dataset_mode"]
+      },
+      "then": {
+        "properties": {
+          "official_warning": { "const": false },
+          "operational_status": {
+            "enum": ["non_operational", "planning_only"]
+          }
+        }
+      }
+    }
+  ]
+}

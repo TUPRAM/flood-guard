@@ -29,9 +29,9 @@ for (const relative of [...routeFiles, ...requiredPublicAssets]) {
 const routeExpectations = {
   "index.html": [/One platform\. Three planning views\./i, /Continue by role/i, /DDPM/i, /local-authority/i],
   "public/index.html": [
-    /Mae Sai planning data|ข้อมูลการวางแผนแม่สาย/i,
-    /Source time|เวลาข้อมูล/i,
-    /Confidence|ความเชื่อมั่น/i,
+    /Mae Sai household flood preparedness/i,
+    /Evidence date|วันที่หลักฐาน/i,
+    /Model confidence|ความเชื่อมั่นของแบบจำลอง/i,
     /DDPM|ปภ\./i,
   ],
   "command/index.html": [
@@ -41,12 +41,12 @@ const routeExpectations = {
     /DDPM|ปภ\./i,
   ],
   "studio/index.html": [
-    /Research validation data/i,
+    /Validation &amp; evidence report|Validation & evidence report/i,
     /Source time/i,
     /Confidence/i,
     /Technical verification/i,
     /Observed-data validation/i,
-    /Operational readiness/i,
+    /Operational authorization/i,
   ],
 };
 
@@ -63,7 +63,13 @@ for (const relative of routeFiles) {
 }
 
 const serviceWorker = readFileSync(resolve(out, "sw.js"), "utf8");
-if (serviceWorker.includes("__BUILD__") || serviceWorker.includes("__PROPOSAL_EVIDENCE_ASSETS__") || !/floodguard-offline-[0-9a-f]{12}/.test(serviceWorker)) {
+if (
+  serviceWorker.includes("__BUILD__") ||
+  serviceWorker.includes("__APP_PROFILE__") ||
+  serviceWorker.includes("__CACHE_CREATED_AT__") ||
+  serviceWorker.includes("__PROFILE_CORE_ASSETS__") ||
+  !/floodguard-offline-[0-9a-f]{12}/.test(serviceWorker)
+) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
 for (const route of ["/", "/public/", "/command/", "/studio/"]) {
@@ -74,6 +80,12 @@ if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {
 }
 if (!serviceWorker.includes('event.request.mode === "navigate"') || !serviceWorker.includes("isMutableRequest")) {
   throw new Error("Service worker does not refresh mutable route documents network-first");
+}
+if (!serviceWorker.includes('fetch("/offline-assets.json", { cache: "no-store" })')) {
+  throw new Error("Service worker can install from a stale offline asset manifest");
+}
+if (!serviceWorker.includes('fetch("/deployment-profile.json", { cache: "no-store" })')) {
+  throw new Error("Service worker does not verify the deployed profile before populating its cache");
 }
 const generatedAssets = JSON.parse(readFileSync(resolve(out, "offline-assets.json"), "utf8"));
 if (!Array.isArray(generatedAssets) || generatedAssets.length === 0) throw new Error("Production chunk manifest is empty");

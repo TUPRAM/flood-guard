@@ -8,6 +8,7 @@ import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  applicationName: "FloodGuard Thailand",
   title: { default: "FloodGuard Thailand", template: "%s · FloodGuard Thailand" },
   description: "Flood preparedness and planning decision support for Mae Sai, Thailand.",
   manifest: "/manifest.webmanifest",

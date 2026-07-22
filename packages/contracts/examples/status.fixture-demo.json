@@ -12,6 +12,8 @@
   "official_warning": false,
   "data_version": "fixture-demo-1",
   "git_commit": "58cb508acbfac43a21cf347259cf6d12beef533c",
+  "evidence_context_id": "fixture-thailand-demo:fixture-demo-1",
+  "evidence_package_id": "floodguard-fixture:fixture-demo-1",
   "study_area": "sample_thailand_fixture",
   "data_state": "ready",
   "message_th": "ข้อมูลสาธิตเพื่อการวางแผน ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ",

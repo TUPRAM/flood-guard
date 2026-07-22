@@ -1,4 +1,4 @@
-import type { LayerCatalogItem } from "@floodguard/contracts";
+import type { LayerCatalogItem, RoleVisibility } from "@floodguard/contracts";
 
 const OPENSTREETMAP_ATTRIBUTION = "© OpenStreetMap contributors";
 
@@ -6,12 +6,14 @@ const OPENSTREETMAP_ATTRIBUTION = "© OpenStreetMap contributors";
 export function visibleLayerAttributions(
   layers: LayerCatalogItem[],
   visibleLayerIds: ReadonlySet<string>,
+  role?: RoleVisibility,
 ): string[] {
   const attributions: string[] = [];
   const seen = new Set<string>();
 
   for (const layer of layers) {
     if (!visibleLayerIds.has(layer.layer_id)) continue;
+    if (role !== undefined && !layer.role_visibility.includes(role)) continue;
     const layerAttributions = [...layer.attribution];
     if (/geofabrik/i.test(layer.source_name) && !layerAttributions.some((value) => /geofabrik/i.test(value))) {
       layerAttributions.push("Geofabrik");

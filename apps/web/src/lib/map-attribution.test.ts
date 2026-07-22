@@ -16,6 +16,7 @@ describe("visibleLayerAttributions", () => {
     expect(visibleLayerAttributions(
       layers,
       new Set(["priority_areas", "road_risk", "facilities"]),
+      "command",
     )).toEqual([
       "HDX COD-AB",
       "FloodGuard",
@@ -38,6 +39,8 @@ function layer(layerId: string, attribution: string[], sourceName = "Test source
     official_warning: false,
     data_version: "mae-sai-candidate-2024-09-15-v1",
     git_commit: "7e42882efb7cb7dc40b7c1cdd4c3fa960569b95f",
+    evidence_context_id: "mae-sai:2024-09:test-v1",
+    evidence_package_id: "test-package-v1",
     layer_id: layerId,
     title_th: "ชั้นข้อมูลทดสอบ",
     title_en: "Test layer",
@@ -46,6 +49,28 @@ function layer(layerId: string, attribution: string[], sourceName = "Test source
     url: `/layers/${layerId}`,
     data_state: "ready",
     model_run_id: null,
+    evidence_state: {
+      evidence_type: "modelled",
+      granularity: "area_summary",
+      confidence_class: "low",
+      confidence_reason: "Test evidence only.",
+      permitted_use: "planning_only",
+      required_gate: "qualified_real_event_evaluation",
+      gate_state: "blocked",
+    },
+    source_components: [{
+      source_component_id: "test-source",
+      role: "test",
+      source_name: sourceName,
+      source_version: "v1",
+      source_timestamp: "2024-09-15T23:16:01Z",
+      last_checked_at: "2026-07-18T00:00:00Z",
+      temporal_meaning: "observation_time",
+      freshness: "historical",
+      freshness_policy_version: "source-freshness-v1",
+      freshness_as_of: "2026-07-18T00:00:00Z",
+      attribution,
+    }],
     attribution,
   };
 }

@@ -17,11 +17,13 @@
     "official_warning",
     "data_version",
     "git_commit",
+    "evidence_context_id",
     "area_id",
     "area_name_th",
     "area_name_en",
     "fpps_0_100",
     "action_class",
+    "action_reason_code",
     "top_reason",
     "flood_likelihood_0_100",
     "exposure_0_100",
@@ -60,6 +62,10 @@
       "type": "string",
       "pattern": "^[0-9a-fA-F]{7,40}$"
     },
+    "evidence_context_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
     "area_id": { "type": "string", "minLength": 1 },
     "area_name_th": { "type": "string", "minLength": 1 },
     "area_name_en": { "type": "string", "minLength": 1 },
@@ -67,6 +73,17 @@
     "action_class": {
       "type": "string",
       "enum": ["A", "B", "C", "D", "E"]
+    },
+    "action_reason_code": {
+      "type": "string",
+      "enum": [
+        "low_confidence",
+        "low_priority_score",
+        "life_safety_exposure",
+        "critical_route_access",
+        "essential_service_access",
+        "resilience"
+      ]
     },
     "top_reason": { "type": "string", "minLength": 1 },
     "flood_likelihood_0_100": {

@@ -1,9 +1,9 @@
 "use client";
 
 import type { GeoJSON as LeafletGeoJson, Layer, LayerGroup, Map as LeafletMap, Path, TileLayer as LeafletTileLayer } from "leaflet";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
-import type { DatasetMode } from "@floodguard/contracts";
+import type { ActionReasonCode, DatasetMode, PublicPreparednessArea } from "@floodguard/contracts";
 
 import { formatConfidence } from "@/lib/format";
 import {
@@ -30,7 +30,7 @@ type FeatureLayer = Layer & {
 };
 
 interface GeoMapProps {
-  areas: AreaRecord[];
+  areas: Array<AreaRecord | PublicPreparednessArea>;
   selectedId: string;
   onSelect: (areaId: string) => void;
   language: Language;
@@ -53,7 +53,11 @@ interface GeoMapProps {
   attributions?: string[];
   visualPalette?: "default" | "public-blue";
   enableBasemaps?: boolean;
+  audience?: "public" | "staff";
+  roadSegmentEvidenceReady?: boolean;
 }
+
+type MapArea = AreaRecord | PublicPreparednessArea;
 
 type BasemapId = "street" | "satellite" | "terrain";
 
@@ -115,6 +119,8 @@ export function GeoMap({
   attributions = [],
   visualPalette = "default",
   enableBasemaps = false,
+  audience = "public",
+  roadSegmentEvidenceReady = false,
 }: GeoMapProps) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -133,16 +139,35 @@ export function GeoMap({
   const [basemapState, setBasemapState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [selectionSheetOpen, setSelectionSheetOpen] = useState(true);
   const [visibleRoadCount, setVisibleRoadCount] = useState(0);
+  const [visibleRoadRiskCount, setVisibleRoadRiskCount] = useState(0);
   const [facilityPresentation, setFacilityPresentation] = useState<"clusters" | "features">("clusters");
   const selectedArea = areas.find((area) => area.area_id === selectedId);
-  const selectedScenarioResult = selectedArea?.scenario_results[scenarioId];
-  const selectedPresentation = selectedArea
-    ? scenarioMapPresentation(selectedArea.action_class, scenarioId, selectedScenarioResult)
+  const selectedStaffArea = selectedArea && isStaffMapArea(selectedArea) ? selectedArea : undefined;
+  const selectedScenarioResult = selectedStaffArea?.scenario_results[scenarioId];
+  const selectedPresentation = selectedStaffArea
+    ? scenarioMapPresentation(selectedStaffArea.action_class, scenarioId, selectedScenarioResult)
     : undefined;
   const actionClassColors = visualPalette === "public-blue" ? PUBLIC_ACTION_CLASS_COLORS : ACTION_CLASS_COLORS;
   const visibleAttributions = enableBasemaps
     ? [...new Set([...BASEMAPS[basemapId].attributions, ...attributions])]
     : attributions;
+  const visibleFacilityFeatures = useMemo<FeatureCollection>(() => ({
+    ...facilityFeatures,
+    features: facilityFeatures.features.filter((feature) => facilityVisibleForAudience(feature, audience)),
+  }), [audience, facilityFeatures]);
+  const visibleFacilityCategories = useMemo<FacilityCategory[]>(() => (
+    [...new Set(visibleFacilityFeatures.features.map((feature) => (
+      facilityDisplayCategory(String(feature.properties.facility_type ?? "community_facility"))
+    )))]
+  ), [visibleFacilityFeatures]);
+  const selectedVisibleFacilities = visibleFacilityFeatures.features.filter(
+    (feature) => String(feature.properties.area_id ?? "") === selectedId,
+  );
+  const selectedAccessFeature = accessFeatures.features.find(
+    (feature) => String(feature.properties.area_id ?? "") === selectedId,
+  );
+  const hasAnyVisibleRoadRisk = visibleRoadRiskCount > 0;
+  const allVisibleRoadsHaveRisk = visibleRoadCount > 0 && visibleRoadRiskCount === visibleRoadCount;
 
   useEffect(() => {
     let disposed = false;
@@ -230,14 +255,13 @@ export function GeoMap({
     const visible: FeatureCollection = {
       ...areaFeatures,
       features: areaFeatures.features.filter((feature) => {
-        const actionClass = String(feature.properties.action_class ?? "E");
-        return !classFilter || classFilter.has(actionClass);
+        const area = areas.find((item) => item.area_id === String(feature.properties.area_id ?? ""));
+        return !classFilter || !area || !isStaffMapArea(area) || classFilter.has(area.action_class);
       }),
     };
     const layer = L.geoJSON(visible as Parameters<typeof L.geoJSON>[0], {
       style: (feature) => areaStyle(
         String(feature?.properties?.area_id ?? ""),
-        String(feature?.properties?.action_class ?? "E"),
         selectedId,
         scenarioId,
         areas,
@@ -250,13 +274,17 @@ export function GeoMap({
         const area = areas.find((item) => item.area_id === id);
         if (!area) return;
         const name = language === "th" ? area.area_name_th : area.area_name_en;
-        const result = area.scenario_results[scenarioId];
-        const scenarioText = scenarioId === "baseline"
-          ? ""
-          : language === "th"
-            ? ` · การเปลี่ยนแปลงการเข้าถึงเชิงแบบจำลอง ${formatServerDelta(result.delta)}`
-            : ` · modelled access change ${formatServerDelta(result.delta)}`;
-        bindTextTooltip(featureLayer, `${name} · ${area.action_class} · FPPS ${area.fpps_0_100.toFixed(1)}${scenarioText}`, { sticky: true });
+        if (isStaffMapArea(area)) {
+          const result = area.scenario_results[scenarioId];
+          const scenarioText = scenarioId === "baseline"
+            ? ""
+            : language === "th"
+              ? ` · การเปลี่ยนแปลงการเข้าถึงเชิงแบบจำลอง ${formatServerDelta(result.delta)}`
+              : ` · modelled access change ${formatServerDelta(result.delta)}`;
+          bindTextTooltip(featureLayer, `${name} · ${area.action_class} · FPPS ${area.fpps_0_100.toFixed(1)}${scenarioText}`, { sticky: true });
+        } else {
+          bindTextTooltip(featureLayer, `${name} · ${language === "th" ? "ลำดับความสำคัญการวางแผน" : "planning priority"} ${area.planning_priority_0_100.toFixed(1)} · ${formatConfidence(area.evidence_sufficiency, language)}`, { sticky: true });
+        }
         featureLayer.on("click", () => onSelect(id));
       },
     }).addTo(map);
@@ -332,6 +360,7 @@ export function GeoMap({
     if (!showRoads) {
       roadLayerRef.current = null;
       setVisibleRoadCount(0);
+      setVisibleRoadRiskCount(0);
       return;
     }
     const detailMode = map.getZoom() >= 13;
@@ -342,31 +371,43 @@ export function GeoMap({
       return Boolean(properties.bridge_flag)
         || ["trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary"].includes(highway);
     });
+    const riskFeatureCount = visibleFeatures.filter((feature) => (
+      hasDisplayableRoadSegmentRisk(feature, roadSegmentEvidenceReady)
+    )).length;
     const group = L.layerGroup().addTo(map);
     L.geoJSON({ ...roadFeatures, features: visibleFeatures } as Parameters<typeof L.geoJSON>[0], {
       style: (feature) => {
-        const probability = Number(feature?.properties?.road_disruption_probability_0_1 ?? 0);
+        const probability = feature ? roadRiskProbability(feature as GeoFeature) : undefined;
         const bridge = Boolean(feature?.properties?.bridge_flag);
+        const showSegmentRisk = Boolean(feature && hasDisplayableRoadSegmentRisk(feature as GeoFeature, roadSegmentEvidenceReady));
         return {
-          color: probability >= 0.45 ? "#9b2c20" : probability >= 0.25 ? "#b75d24" : "#31586b",
+          color: showSegmentRisk
+            ? probability! >= 0.45 ? "#9b2c20" : probability! >= 0.25 ? "#b75d24" : "#31586b"
+            : "#607887",
           weight: bridge ? 4 : detailMode ? 2.4 : 2.8,
           dashArray: bridge ? undefined : detailMode ? undefined : "7 5",
-          opacity: bridge ? 0.95 : detailMode ? 0.76 : 0.82,
+          opacity: bridge ? 0.9 : detailMode ? 0.72 : 0.76,
         };
       },
       onEachFeature: (feature, featureLayer) => {
         const properties = feature.properties ?? {};
         const name = String(properties.road_name || properties.road_id || "road segment");
-        const probability = Number(properties.road_disruption_probability_0_1 ?? 0);
-        const warning = language === "th"
-          ? "ความเสี่ยงเชิงแบบจำลอง · ไม่ใช่การปิดถนนที่สังเกตจริง"
-          : "modelled planning risk · verify current road status locally";
-        bindTextTooltip(featureLayer, `${name} · ${(probability * 100).toFixed(1)}% · ${warning}`, { sticky: true });
+        const probability = roadRiskProbability(feature as GeoFeature);
+        const showSegmentRisk = hasDisplayableRoadSegmentRisk(feature as GeoFeature, roadSegmentEvidenceReady);
+        const description = showSegmentRisk
+          ? language === "th"
+            ? `ความเสี่ยงเชิงแบบจำลอง ${(probability! * 100).toFixed(1)}% · ตรวจสอบสภาพปัจจุบัน`
+            : `modelled segment risk ${(probability! * 100).toFixed(1)}% · verify current conditions`
+          : language === "th"
+            ? "โครงข่ายถนนเพื่อบริบท · ไม่มีสถานะรายช่วงปัจจุบัน"
+            : "Road network context · current per-segment status unavailable";
+        bindTextTooltip(featureLayer, `${name} · ${description}`, { sticky: true });
       },
     }).addTo(group);
     roadLayerRef.current = group;
     setVisibleRoadCount(visibleFeatures.length);
-  }, [language, roadFeatures, selectedId, showRoads]);
+    setVisibleRoadRiskCount(riskFeatureCount);
+  }, [language, roadFeatures, roadSegmentEvidenceReady, selectedId, showRoads]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -390,8 +431,32 @@ export function GeoMap({
       return;
     }
     const group = L.layerGroup().addTo(map);
-    setFacilityPresentation("features");
-    for (const feature of facilityFeatures.features) {
+    const detailMode = map.getZoom() >= 13;
+    setFacilityPresentation(detailMode ? "features" : "clusters");
+    if (!detailMode) {
+      for (const cluster of facilityClusters(visibleFacilityFeatures, accessFeatures)) {
+        const area = areas.find((item) => item.area_id === cluster.areaId);
+        const areaName = area ? (language === "th" ? area.area_name_th : area.area_name_en) : cluster.areaId;
+        const selected = cluster.areaId === selectedId;
+        const marker = L.marker(cluster.latlng, {
+          icon: L.divIcon({
+            className: `facility-cluster-marker${selected ? " selected" : ""}`,
+            html: `<span aria-hidden="true">${cluster.count}</span>`,
+            iconSize: selected ? [40, 40] : [34, 34],
+            iconAnchor: selected ? [20, 20] : [17, 17],
+          }),
+          keyboard: true,
+          title: language === "th"
+            ? `${cluster.count} สถานที่ใน ${areaName}`
+            : `${cluster.count} facilities in ${areaName}; select the area and zoom in for details`,
+          zIndexOffset: selected ? 600 : 250,
+        }).addTo(group);
+        marker.on("click", () => onSelect(cluster.areaId));
+      }
+      facilityLayerRef.current = group;
+      return;
+    }
+    for (const feature of visibleFacilityFeatures.features) {
       if (feature.geometry.type !== "Point") continue;
       const [longitude, latitude] = feature.geometry.coordinates as [number, number];
       if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) continue;
@@ -399,24 +464,23 @@ export function GeoMap({
       const facilityType = facilityDisplayCategory(String(properties.facility_type ?? "community_facility"));
       const name = String(properties.facility_name || properties.facility_id || (language === "th" ? "สถานที่สำคัญ" : "Important facility"));
       const typeLabel = facilityTypeLabel(facilityType, language);
+      const selected = String(properties.area_id ?? "") === selectedId;
       const marker = L.marker([latitude, longitude], {
         icon: L.divIcon({
-          className: `facility-type-marker facility-${facilityType}`,
+          className: `facility-type-marker facility-${facilityType}${selected ? "" : " facility-muted"}`,
           html: facilityIconMarkup(facilityType),
           iconSize: [30, 30],
           iconAnchor: [15, 15],
         }),
         keyboard: true,
         title: `${name} · ${typeLabel}`,
-        zIndexOffset: String(properties.area_id ?? "") === selectedId ? 600 : 300,
+        opacity: selected ? 1 : 0.36,
+        zIndexOffset: selected ? 600 : 120,
       }).addTo(group);
-      const verification = language === "th"
-        ? "ตรวจสอบสถานะปัจจุบันกับหน่วยงานท้องถิ่น"
-        : "verify current status with local authorities";
-      bindTextTooltip(marker, `${name} · ${typeLabel} · ${verification}`, { sticky: true });
+      bindTextTooltip(marker, `${name} · ${typeLabel} · ${facilityVerificationLabel(properties, language)}`, { sticky: true });
     }
     facilityLayerRef.current = group;
-  }, [facilityFeatures, language, selectedId, showFacilities]);
+  }, [accessFeatures, areas, language, onSelect, selectedId, showFacilities, visibleFacilityFeatures]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -480,8 +544,11 @@ export function GeoMap({
       data-road-dataset-total={roadDatasetTotal}
       data-road-detail-state={roadDetailState}
       data-visible-road-count={visibleRoadCount}
-      data-facility-feature-count={facilityFeatures.features.length}
+      data-facility-feature-count={visibleFacilityFeatures.features.length}
+      data-facility-dataset-count={facilityFeatures.features.length}
       data-facility-presentation={facilityPresentation}
+      data-map-audience={audience}
+      data-road-evidence={allVisibleRoadsHaveRisk ? "road_segment" : hasAnyVisibleRoadRisk ? "mixed" : "network_context"}
       data-access-feature-count={accessFeatures.features.length}
       data-basemap={enableBasemaps ? basemapId : "none"}
       data-basemap-state={enableBasemaps ? basemapState : "disabled"}
@@ -532,13 +599,16 @@ export function GeoMap({
             onClick={() => setSelectionSheetOpen((open) => !open)}
           >
             <span><small>{language === "th" ? "พื้นที่รายงานที่เลือก" : "Selected reporting area"}</small><b>{language === "th" ? selectedArea.area_name_th : selectedArea.area_name_en}</b></span>
-            <strong className={`class-${selectedArea.action_class.toLowerCase()}`}>{language === "th" ? "ชั้น" : "Class"} {selectedArea.action_class}</strong>
+            {isStaffMapArea(selectedArea)
+              ? <strong className={`class-${selectedArea.action_class.toLowerCase()}`}>{language === "th" ? "ชั้น" : "Class"} {selectedArea.action_class}</strong>
+              : <strong>{language === "th" ? "ข้อมูลเพื่อการวางแผน" : "Planning information"}</strong>}
             <span aria-hidden="true">{selectionSheetOpen ? "−" : "+"}</span>
           </button>
           <div id={selectionSheetId} className="map-selection-sheet-body" hidden={!selectionSheetOpen} aria-live="polite">
             <dl>
-              <div><dt>FPPS</dt><dd>{selectedArea.fpps_0_100.toFixed(1)}</dd></div>
-              <div><dt>{language === "th" ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{formatConfidence(selectedArea.confidence_class, language)}</dd></div>
+              {isStaffMapArea(selectedArea)
+                ? <><div><dt>FPPS</dt><dd>{selectedArea.fpps_0_100.toFixed(1)}</dd></div><div><dt>{language === "th" ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{formatConfidence(selectedArea.confidence_class, language)}</dd></div></>
+                : <><div><dt>{language === "th" ? "ลำดับความสำคัญการวางแผน" : "Planning priority"}</dt><dd>{selectedArea.planning_priority_0_100.toFixed(1)}</dd></div><div><dt>{language === "th" ? "ความเพียงพอของหลักฐาน" : "Evidence sufficiency"}</dt><dd>{formatConfidence(selectedArea.evidence_sufficiency, language)}</dd></div><div><dt>{language === "th" ? "คำแนะนำ" : "Recommendation"}</dt><dd>{publicRecommendationLabel(selectedArea.recommendation_code, language)}</dd></div></>}
               <div><dt>{language === "th" ? "เวลาข้อมูล" : "Source time"}</dt><dd>{selectedArea.source_timestamp}</dd></div>
               {scenarioId !== "baseline" && selectedScenarioResult && <div><dt>{language === "th" ? "การเปลี่ยนแปลงการเข้าถึง" : "Scenario access change"}</dt><dd className={`scenario-${selectedPresentation?.tone ?? "unavailable"}`}>{formatServerDelta(selectedScenarioResult.delta)}</dd></div>}
             </dl>
@@ -546,23 +616,27 @@ export function GeoMap({
         </aside>
       )}
       <div className="map-legend" aria-label={language === "th" ? "คำอธิบายแผนที่" : "Map legend"}>
-        {scenarioId !== "baseline" && (
+        {selectedStaffArea && scenarioId !== "baseline" && (
           <div className="scenario-map-legend">
             <span><i style={{ backgroundColor: SCENARIO_TONE_COLORS.improves }} />{language === "th" ? "การสูญเสียการเข้าถึงลดลง" : "Access loss improves"}</span>
             <span><i style={{ backgroundColor: SCENARIO_TONE_COLORS.neutral }} />{language === "th" ? "ไม่เปลี่ยนแปลง" : "No change"}</span>
             <span><i style={{ backgroundColor: SCENARIO_TONE_COLORS.worsens }} />{language === "th" ? "การสูญเสียการเข้าถึงเพิ่มขึ้น" : "Access loss worsens"}</span>
           </div>
         )}
-        <div className="action-class-legend">
+        {audience === "staff" ? <div className="action-class-legend">
           {Object.entries(actionClassColors).map(([key, color]) => {
             const label = ACTION_CLASS_LABELS[key as keyof typeof ACTION_CLASS_LABELS];
             return <span key={key}><i style={{ backgroundColor: color }} /><b>{key}</b><small>{label[language]}</small></span>;
           })}
-        </div>
-        {showRoads && <span><i className="road-swatch" />{language === "th" ? `ความเสี่ยงถนนเชิงแบบจำลอง · แสดง ${visibleRoadCount.toLocaleString()}` : `Modelled road risk · ${visibleRoadCount.toLocaleString()} shown`}</span>}
-        {showFacilities && facilityFeatures.features.length > 0 && (
+        </div> : <div className="public-priority-legend"><span><i /><small>{language === "th" ? "ลำดับความสำคัญการวางแผนจากต่ำไปสูง" : "Planning priority, lower to higher"}</small></span></div>}
+        {showRoads && <span><i className={`road-swatch ${allVisibleRoadsHaveRisk ? "risk" : hasAnyVisibleRoadRisk ? "mixed" : "context"}`} />{allVisibleRoadsHaveRisk
+          ? (language === "th" ? `ความเสี่ยงถนนรายช่วง · แสดง ${visibleRoadCount.toLocaleString()}` : `Road-segment risk · ${visibleRoadCount.toLocaleString()} shown`)
+          : hasAnyVisibleRoadRisk
+            ? (language === "th" ? `โครงข่ายถนน ${visibleRoadCount.toLocaleString()} ช่วง · ${visibleRoadRiskCount.toLocaleString()} ช่วงมีหลักฐานความเสี่ยง` : `Road network context · ${visibleRoadCount.toLocaleString()} shown · ${visibleRoadRiskCount.toLocaleString()} with structured risk evidence`)
+            : (language === "th" ? `โครงข่ายถนนเพื่อบริบท · แสดง ${visibleRoadCount.toLocaleString()}` : `Road network context · ${visibleRoadCount.toLocaleString()} shown`)}</span>}
+        {showFacilities && visibleFacilityFeatures.features.length > 0 && (
           <span className="facility-type-legend">
-            {(Object.keys(FACILITY_LABELS) as FacilityCategory[]).map((type) => (
+            {visibleFacilityCategories.map((type) => (
               <span key={type}><i className={`facility-symbol facility-${type}`} aria-hidden="true" />{facilityTypeLabel(type, language)}</span>
             ))}
           </span>
@@ -585,21 +659,78 @@ export function GeoMap({
       )}
       <span className={`map-provenance-badge ${datasetMode}`}>{mapGeometryDisclosure(language, datasetMode)}</span>
       <details className="map-text-alternative">
-        <summary>{language === "th" ? "ข้อความทดแทนแผนที่" : "Map text alternative"}</summary>
-        <p>{mapProvenanceLabel(language, datasetMode)}</p>
-        <p>{language === "th"
-          ? `${areaFeatures.features.length} พื้นที่ · ${roadFeatures.features.length.toLocaleString()} ช่วงถนน · ${facilityFeatures.features.length} สถานที่สำคัญ · ${accessFeatures.features.length} จุดหลักฐานการเข้าถึง`
-          : `${areaFeatures.features.length} areas · ${roadFeatures.features.length.toLocaleString()} road segments · ${facilityFeatures.features.length} important facilities · ${accessFeatures.features.length} access-evidence points`}</p>
-        {datasetMode === "candidate" && <p className="map-candidate-warning">{language === "th" ? "ยืนยันสถานที่ การเปิดใช้งาน และสภาพถนนล่าสุดกับหน่วยงานท้องถิ่นก่อนดำเนินการ" : "Confirm facilities, operating status, and current road conditions with local authorities before acting."}</p>}
-        <ul>
-          {areas.filter((area) => !classFilter || classFilter.has(area.action_class)).map((area) => (
-            <li key={area.area_id}>
-              <button type="button" onClick={() => onSelect(area.area_id)}>
-                {language === "th" ? area.area_name_th : area.area_name_en}: {language === "th" ? "ชั้น" : "class"} {area.action_class}, FPPS {area.fpps_0_100.toFixed(1)}, {formatConfidence(area.confidence_class, language)}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <summary>{language === "th" ? "ดูผลลัพธ์แผนที่เป็นรายการ" : "View map results as a list"}</summary>
+        <div className="map-results-list" aria-live="polite">
+          <section>
+            <h3>{language === "th" ? "พื้นที่ที่เลือก" : "Selected area"}</h3>
+            {selectedArea ? (
+              <dl>
+                <div><dt>{language === "th" ? "พื้นที่" : "Area"}</dt><dd>{language === "th" ? selectedArea.area_name_th : selectedArea.area_name_en}</dd></div>
+                <div><dt>{language === "th" ? "คำแนะนำ" : "Recommendation"}</dt><dd>{isStaffMapArea(selectedArea) ? (ACTION_CLASS_LABELS[selectedArea.action_class]?.[language] ?? ACTION_CLASS_LABELS.E[language]) : publicRecommendationLabel(selectedArea.recommendation_code, language)}</dd></div>
+                <div><dt>{language === "th" ? "หลักฐาน" : "Evidence"}</dt><dd>{formatConfidence(isStaffMapArea(selectedArea) ? selectedArea.confidence_class : selectedArea.evidence_sufficiency, language)} · {selectedArea.source_timestamp}</dd></div>
+                <div><dt>{language === "th" ? "สถานะข้อมูล" : "Data status"}</dt><dd>{mapDataStatusLabel(language, datasetMode)}</dd></div>
+              </dl>
+            ) : <p>{language === "th" ? "ไม่มีพื้นที่ที่เลือก" : "No area selected."}</p>}
+          </section>
+          <section>
+            <h3>{language === "th" ? "สถานที่ที่มองเห็น" : "Visible facilities"}</h3>
+            {selectedVisibleFacilities.length > 0 ? (
+              <ul className="map-facility-results">
+                {selectedVisibleFacilities.map((feature, index) => {
+                  const properties = feature.properties ?? {};
+                  const category = facilityDisplayCategory(String(properties.facility_type ?? "community_facility"));
+                  const name = String(properties.facility_name || properties.facility_id || (language === "th" ? "สถานที่สำคัญ" : "Important facility"));
+                  const source = displayAttribution(String(properties.source_name || properties.source || (language === "th" ? "ไม่ระบุแหล่งที่มา" : "Source not supplied")));
+                  const sourceDate = String(properties.source_timestamp || (language === "th" ? "ไม่ระบุ" : "Not supplied"));
+                  const operation = facilityOperationLabel(properties, language);
+                  return (
+                    <li key={String(properties.facility_id ?? `${selectedId}-${index}`)}>
+                      <b>{name}</b>
+                      <dl>
+                        <div><dt>{language === "th" ? "ประเภท" : "Type"}</dt><dd>{facilityTypeLabel(category, language)}</dd></div>
+                        <div><dt>{language === "th" ? "การยืนยัน" : "Verification"}</dt><dd>{facilityVerificationLabel(properties, language)}</dd></div>
+                        <div><dt>{language === "th" ? "แหล่งที่มา" : "Source"}</dt><dd>{source}</dd></div>
+                        <div><dt>{language === "th" ? "วันที่ของแหล่งข้อมูล" : "Source date"}</dt><dd>{sourceDate}</dd></div>
+                        <div><dt>{language === "th" ? "การเปิดใช้งาน" : "Operation"}</dt><dd>{operation}</dd></div>
+                      </dl>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : <p>{audience === "public"
+              ? (language === "th" ? "ไม่มีสถานที่ที่ยืนยันสำหรับสาธารณะในพื้นที่ที่เลือก" : "No public-verified facilities are available for the selected area.")
+              : (language === "th" ? "ไม่มีสถานที่ในพื้นที่ที่เลือก" : "No facilities are mapped in the selected area.")}</p>}
+          </section>
+          <section>
+            <h3>{language === "th" ? "ถนน" : "Roads"}</h3>
+            <p>{allVisibleRoadsHaveRisk
+              ? (language === "th" ? `มีหลักฐานความเสี่ยงรายช่วง ${visibleRoadCount.toLocaleString()} ช่วง · ตรวจสอบสภาพปัจจุบัน` : `${visibleRoadCount.toLocaleString()} visible road segments have structured risk evidence · verify current conditions.`)
+              : hasAnyVisibleRoadRisk
+                ? (language === "th" ? `${visibleRoadRiskCount.toLocaleString()} จาก ${visibleRoadCount.toLocaleString()} ช่วงที่มองเห็นมีหลักฐานความเสี่ยง ส่วนที่เหลือเป็นบริบทโครงข่ายถนน และไม่มีสถานะปัจจุบัน` : `${visibleRoadRiskCount.toLocaleString()} of ${visibleRoadCount.toLocaleString()} visible segments have structured risk evidence. The remainder is road-network context; current operating status is unavailable.`)
+                : (language === "th" ? `โครงข่ายถนนเพื่อบริบท ${visibleRoadCount.toLocaleString()} ช่วง · ไม่มีความเสี่ยงหรือสถานะรายช่วงปัจจุบัน` : `Road network context: ${visibleRoadCount.toLocaleString()} segments shown. Current per-segment risk and operating status are unavailable.`)}</p>
+          </section>
+          <section>
+            <h3>{language === "th" ? "การเข้าถึง" : "Access"}</h3>
+            <p>{selectedAccessFeature
+              ? `${Number(selectedAccessFeature.properties.people_losing_30_min_access ?? (selectedArea && isStaffMapArea(selectedArea) ? selectedArea.people_losing_30_min_access : 0)).toLocaleString()} ${language === "th" ? "คนอาจสูญเสียการเข้าถึงภายใน 30 นาทีตามแบบจำลอง" : "people may lose 30-minute access in the modelled estimate"}`
+              : (language === "th" ? "ไม่มีจุดหลักฐานการเข้าถึงในพื้นที่ที่เลือก" : "No access-evidence point is available for the selected area.")}</p>
+            <p>{language === "th" ? "สมมติฐาน: การวิเคราะห์เส้นทางสั้นที่สุดไปยังสถานที่ที่เลือก ไม่ได้ยืนยันความจุ การเปิดใช้งาน หรือสภาพถนนปัจจุบัน" : "Assumptions: shortest-path access to selected facilities; capacity, current operation, and current road conditions are not confirmed."}</p>
+          </section>
+          <section>
+            <h3>{language === "th" ? "พื้นที่ทั้งหมด" : "All areas"}</h3>
+            <ul className="map-area-results">
+              {areas.filter((area) => !classFilter || !isStaffMapArea(area) || classFilter.has(area.action_class)).map((area) => (
+                <li key={area.area_id}>
+                  <button type="button" onClick={() => onSelect(area.area_id)} aria-current={area.area_id === selectedId ? "true" : undefined}>
+                    {language === "th" ? area.area_name_th : area.area_name_en}: {isStaffMapArea(area)
+                      ? `${language === "th" ? "ชั้น" : "class"} ${area.action_class}, FPPS ${area.fpps_0_100.toFixed(1)}, ${formatConfidence(area.confidence_class, language)}`
+                      : `${language === "th" ? "ลำดับความสำคัญการวางแผน" : "planning priority"} ${area.planning_priority_0_100.toFixed(1)}, ${formatConfidence(area.evidence_sufficiency, language)}, ${publicRecommendationLabel(area.recommendation_code, language)}`}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
       </details>
     </div>
   );
@@ -609,15 +740,24 @@ const EMPTY_FEATURE_COLLECTION: FeatureCollection = { type: "FeatureCollection",
 
 function areaStyle(
   areaId: string,
-  actionClass: string,
   selectedId: string,
   scenarioId: ScenarioId,
-  areas: AreaRecord[],
+  areas: MapArea[],
   actionClassColors: Record<string, string> = ACTION_CLASS_COLORS,
   usePaletteColors = false,
   hasBasemap = false,
 ): import("leaflet").PathOptions {
   const area = areas.find((item) => item.area_id === areaId);
+  if (area && !isStaffMapArea(area)) {
+    const fillColor = publicPriorityColor(area.planning_priority_0_100);
+    return {
+      color: areaId === selectedId ? "#0C2740" : fillColor,
+      weight: areaId === selectedId ? 4 : 2,
+      fillColor,
+      fillOpacity: hasBasemap ? areaId === selectedId ? 0.38 : 0.18 : areaId === selectedId ? 0.82 : 0.5,
+    };
+  }
+  const actionClass = area?.action_class ?? "E";
   const presentation = scenarioMapPresentation(actionClass, scenarioId, area?.scenario_results[scenarioId]);
   const publicClassColor = actionClassColors[actionClass] ?? actionClassColors.E;
   const fillColor = usePaletteColors && scenarioId === "baseline" ? publicClassColor : presentation.fillColor;
@@ -631,6 +771,29 @@ function areaStyle(
       ? areaId === selectedId ? 0.38 : scenarioId === "baseline" ? 0.18 : 0.28
       : areaId === selectedId ? 0.82 : scenarioId === "baseline" ? 0.5 : 0.64,
   };
+}
+
+function isStaffMapArea(area: MapArea): area is AreaRecord {
+  return "action_class" in area && "fpps_0_100" in area && "scenario_results" in area;
+}
+
+function publicPriorityColor(value: number): string {
+  if (value >= 75) return "#08519c";
+  if (value >= 50) return "#3182bd";
+  if (value >= 25) return "#6baed6";
+  return "#bdd7e7";
+}
+
+function publicRecommendationLabel(code: ActionReasonCode, language: Language): string {
+  const labels: Record<ActionReasonCode, Record<Language, string>> = {
+    low_confidence: { en: "Review official updates and verify current conditions", th: "ติดตามประกาศทางการและตรวจสอบสภาพปัจจุบัน" },
+    low_priority_score: { en: "Review local preparedness information", th: "ทบทวนข้อมูลการเตรียมพร้อมในพื้นที่" },
+    life_safety_exposure: { en: "Prepare life-safety resources", th: "เตรียมทรัพยากรเพื่อความปลอดภัยของชีวิต" },
+    critical_route_access: { en: "Check official route guidance", th: "ตรวจสอบคำแนะนำเส้นทางอย่างเป็นทางการ" },
+    essential_service_access: { en: "Confirm access to essential services", th: "ยืนยันการเข้าถึงบริการจำเป็น" },
+    resilience: { en: "Review longer-term preparedness measures", th: "ทบทวนมาตรการเตรียมพร้อมระยะยาว" },
+  };
+  return labels[code][language];
 }
 
 function contextStyle(contextType: string): import("leaflet").PathOptions {
@@ -647,21 +810,33 @@ function bindTextTooltip(layer: Layer, text: string, options?: import("leaflet")
   layer.bindTooltip(node, options);
 }
 
-export type FacilityCategory = "healthcare" | "school" | "emergency" | "shelter" | "community";
+export type FacilityCategory = "healthcare" | "school" | "emergency" | "shelter" | "possible_shelter" | "community";
 
 const FACILITY_LABELS: Record<FacilityCategory, Record<Language, string>> = {
   healthcare: { en: "Health", th: "สุขภาพ" },
   school: { en: "School", th: "โรงเรียน" },
   emergency: { en: "Emergency service", th: "บริการฉุกเฉิน" },
-  shelter: { en: "Shelter location", th: "จุดพักพิง" },
+  shelter: { en: "Verified shelter", th: "ศูนย์พักพิงที่ยืนยันแล้ว" },
+  possible_shelter: { en: "Possible shelter site - unverified", th: "พื้นที่พักพิงที่เป็นไปได้ - ยังไม่ยืนยัน" },
   community: { en: "Community", th: "ชุมชน" },
 };
+
+const VERIFIED_FACILITY_STATUSES = new Set([
+  "agency_verified",
+  "authoritative",
+  "verified",
+  "confirmed",
+  "locally_confirmed",
+  "official_confirmed",
+]);
+const VERIFIED_SHELTER_ROLES = new Set(["designated_evacuation"]);
 
 export function facilityDisplayCategory(value: string): FacilityCategory {
   if (value === "healthcare") return "healthcare";
   if (value === "school") return "school";
   if (value === "emergency_service") return "emergency";
-  if (value === "shelter_candidate") return "shelter";
+  if (value === "shelter") return "shelter";
+  if (value === "shelter_candidate") return "possible_shelter";
   return "community";
 }
 
@@ -675,9 +850,77 @@ export function facilityIconMarkup(type: FacilityCategory): string {
     school: '<path d="m3 9 9-5 9 5-9 5zM6 12v6h12v-6M9 18v-4h6v4"/>',
     emergency: '<path d="M12 3l7 3v5c0 5-2.8 8.3-7 10-4.2-1.7-7-5-7-10V6zM12 7v8M8 11h8"/>',
     shelter: '<path d="m4 11 8-7 8 7v9h-6v-6h-4v6H4z"/>',
+    possible_shelter: '<path d="m4 11 8-7 8 7v9h-6v-6h-4v6H4zM18.5 4.5v4M18.5 11v.1"/>',
     community: '<path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 20v-3c0-2.2 2.2-4 5-4s5 1.8 5 4v3M13 14c.8-.6 1.8-1 3-1 2.8 0 5 1.8 5 4v3h-5"/>',
   };
   return `<span aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">${paths[type]}</svg></span>`;
+}
+
+/** Public maps fail closed to confirmed records and always honor an explicit visibility denial. */
+export function facilityVisibleForAudience(feature: GeoFeature, audience: "public" | "staff"): boolean {
+  if (audience === "staff") return true;
+  const properties = feature.properties ?? {};
+  const facilityType = String(properties.facility_type ?? "").toLowerCase();
+  if (facilityType === "shelter_candidate") return false;
+  if (properties.public_visibility === false) return false;
+  const verification = String(properties.verification_status ?? "").toLowerCase();
+  const candidateStatus = String(properties.candidate_status ?? "").toLowerCase();
+  const emergencyRole = String(properties.emergency_role ?? "").toLowerCase();
+  const operation = String(properties.operating_status ?? "").toLowerCase();
+  const confirmed = VERIFIED_FACILITY_STATUSES.has(verification);
+  const shelterRoleConfirmed = !facilityType.includes("shelter")
+    || VERIFIED_SHELTER_ROLES.has(emergencyRole);
+  const shelterOperationConfirmed = !facilityType.includes("shelter")
+    || ["open", "operating", "active"].includes(operation);
+  return confirmed
+    && !candidateStatus.includes("candidate")
+    && shelterRoleConfirmed
+    && shelterOperationConfirmed
+    && !["closed", "inactive", "unverified", "unknown"].includes(operation);
+}
+
+function facilityVerificationLabel(properties: Record<string, unknown>, language: Language): string {
+  if (String(properties.facility_type ?? "") === "shelter_candidate") {
+    return language === "th" ? "ยังไม่ยืนยัน · ตรวจสอบกับหน่วยงานท้องถิ่น" : "Unverified · confirm with local authorities";
+  }
+  const verification = String(properties.verification_status ?? properties.candidate_status ?? "").toLowerCase();
+  if (VERIFIED_FACILITY_STATUSES.has(verification)) {
+    return language === "th" ? "ยืนยันแล้ว" : "Verified";
+  }
+  return language === "th" ? "ยังไม่ยืนยัน · ตรวจสอบกับหน่วยงานท้องถิ่น" : "Unverified · confirm with local authorities";
+}
+
+function facilityOperationLabel(properties: Record<string, unknown>, language: Language): string {
+  const operation = String(properties.operating_status ?? "").toLowerCase();
+  if (["open", "operating", "active"].includes(operation)) return language === "th" ? "เปิดใช้งาน" : "Operating";
+  if (["closed", "inactive"].includes(operation)) return language === "th" ? "ปิด" : "Closed";
+  return language === "th" ? "ยังไม่ยืนยันการเปิดใช้งาน" : "Current operation not verified";
+}
+
+export function isStructuredRoadSegmentEvidence(feature: GeoFeature): boolean {
+  const properties = feature.properties ?? {};
+  return [properties.evidence_granularity, properties.data_granularity, properties.evidence_type]
+    .some((value) => String(value ?? "").toLowerCase() === "road_segment");
+}
+
+export function roadRiskProbability(feature: GeoFeature): number | undefined {
+  const raw = feature.properties?.road_disruption_probability_0_1;
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  const probability = Number(raw);
+  return Number.isFinite(probability) && probability >= 0 && probability <= 1
+    ? probability
+    : undefined;
+}
+
+export function hasDisplayableRoadSegmentRisk(feature: GeoFeature, gateReady: boolean): boolean {
+  return gateReady
+    && isStructuredRoadSegmentEvidence(feature)
+    && roadRiskProbability(feature) !== undefined;
+}
+
+function mapDataStatusLabel(language: Language, datasetMode: DatasetMode): string {
+  if (datasetMode === "official_input") return language === "th" ? "ข้อมูลนำเข้าทางการ" : "Official-input data";
+  return language === "th" ? "หลักฐานการวางแผน · ต้องยืนยันในพื้นที่" : "Planning evidence · local verification required";
 }
 
 function attributionLink(attribution: string): string | undefined {
@@ -691,7 +934,9 @@ export function displayAttribution(attribution: string): string {
   return attribution
     .replace(/\bcandidate\b/gi, "planning")
     .replace(/\bfixture\b/gi, "reference")
-    .replace(/\bsynthetic\b/gi, "modelled");
+    .replace(/\bdemo\b/gi, "planning")
+    .replace(/\bsynthetic\b/gi, "modelled")
+    .replace(/\bnon[-_ ]operational\b/gi, "planning-only");
 }
 
 export function facilityClusters(facilities: FeatureCollection, access: FeatureCollection): Array<{ areaId: string; count: number; latlng: [number, number] }> {

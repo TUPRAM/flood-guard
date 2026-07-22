@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import ValidationError
+from referencing import Registry, Resource
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,6 +18,15 @@ SCHEMAS = CONTRACTS / "schemas"
 EXAMPLES = CONTRACTS / "examples"
 TYPESCRIPT = CONTRACTS / "src" / "index.ts"
 OFFLINE_BUNDLE = ROOT / "apps" / "web" / "public" / "offline-demo" / "bundle.json"
+MAE_SAI_PUBLIC_BUNDLE = (
+    ROOT
+    / "apps"
+    / "web"
+    / "public"
+    / "offline-demo"
+    / "mae-sai"
+    / "public-bundle.json"
+)
 
 SCHEMA_NAMES = ("status", "area-decision", "layer", "model-run")
 PILOT_SCHEMA_NAMES = (
@@ -24,7 +34,14 @@ PILOT_SCHEMA_NAMES = (
     "agency-acceptance-receipt",
     "field-validation-receipt",
 )
-EVIDENCE_SCHEMA_NAMES = ("proposal-evidence",)
+EVIDENCE_SCHEMA_NAMES = (
+    "proposal-evidence",
+    "evidence-state",
+    "source-component",
+    "evidence-context",
+    "evidence-record",
+    "public-preparedness-area",
+)
 COMMON_FIELDS = {
     "schema_version",
     "dataset_mode",
@@ -49,9 +66,14 @@ def _schema(name: str) -> dict[str, Any]:
 
 
 def _validate(schema_name: str, payload: dict[str, Any]) -> None:
+    registry = Registry()
+    for schema_path in SCHEMAS.glob("*.schema.json"):
+        schema = _load_json(schema_path)
+        registry = registry.with_resource(schema["$id"], Resource.from_contents(schema))
     Draft202012Validator(
         _schema(schema_name),
         format_checker=FormatChecker(),
+        registry=registry,
     ).validate(payload)
 
 
@@ -90,16 +112,121 @@ def test_every_contract_example_validates_against_its_schema() -> None:
     example_paths = sorted(EXAMPLES.glob("*.json"))
     assert {path.name for path in example_paths} == {
         "area-decision.fixture-demo.json",
+        "evidence-context.fixture-demo.json",
+        "evidence-record.fixture-demo.json",
+        "evidence-state.fixture-demo.json",
         "field-validation-receipt.fixture-demo.json",
         "layer.fixture-demo.json",
         "model-run.candidate.json",
         "pilot-readiness.fixture-demo.json",
         "proposal-evidence.fixture-demo.json",
+        "public-preparedness-area.fixture-demo.json",
+        "source-component.fixture-demo.json",
         "status.candidate.json",
         "status.fixture-demo.json",
     }
     for path in example_paths:
         _validate(_schema_name_for_example(path), _load_json(path))
+
+
+def test_passed_evidence_requires_recorded_authority_and_decision_time() -> None:
+    payload = _load_json(EXAMPLES / "evidence-record.fixture-demo.json")
+    payload["decision"] = "passed"
+    with pytest.raises(ValidationError):
+        _validate("evidence-record", payload)
+
+    payload["decision_authority"] = "test-review-board"
+    payload["decision_at"] = "2026-07-20T00:00:00Z"
+    _validate("evidence-record", payload)
+
+
+@pytest.mark.parametrize(
+    ("authority", "decision_at"),
+    [
+        ("test-review-board", None),
+        (None, "2026-07-20T00:00:00Z"),
+    ],
+)
+def test_evidence_decision_authority_and_time_require_a_complete_pair(
+    authority: str | None,
+    decision_at: str | None,
+) -> None:
+    payload = _load_json(EXAMPLES / "evidence-record.fixture-demo.json")
+    payload["decision_authority"] = authority
+    payload["decision_at"] = decision_at
+    with pytest.raises(ValidationError):
+        _validate("evidence-record", payload)
+
+
+def test_operational_evidence_requires_official_agency_context() -> None:
+    payload = _load_json(EXAMPLES / "evidence-record.fixture-demo.json")
+    payload.update(
+        {
+            "decision": "passed",
+            "decision_authority": "test-review-board",
+            "decision_at": "2026-07-20T00:00:00Z",
+            "operational_authorized": True,
+            "model_id": "qualified-flood-model",
+            "model_version": "1.0.0",
+            "model_sha256": "a" * 64,
+            "evaluation_sha256": "b" * 64,
+            "blockers": [],
+        }
+    )
+    with pytest.raises(ValidationError):
+        _validate("evidence-record", payload)
+
+    payload["evidence_context"]["dataset_mode"] = "official_input"
+    payload["evidence_context"]["operational_status"] = "agency_operational"
+    payload["evidence_context"]["model_run_id"] = "qualified-model-run-v1"
+    _validate("evidence-record", payload)
+
+    payload["evidence_context"]["model_run_id"] = None
+    with pytest.raises(ValidationError):
+        _validate("evidence-record", payload)
+
+
+def test_layer_evidence_gate_combinations_fail_closed() -> None:
+    payload = _load_json(EXAMPLES / "layer.fixture-demo.json")
+    payload["evidence_state"].update(
+        {
+            "permitted_use": "operational_authorized",
+            "confidence_class": "low",
+            "gate_state": "ready",
+        }
+    )
+    with pytest.raises(ValidationError):
+        _validate("layer", payload)
+
+    payload = _load_json(EXAMPLES / "layer.fixture-demo.json")
+    payload["evidence_state"].update(
+        {
+            "permitted_use": "operational_authorized",
+            "confidence_class": "high",
+            "gate_state": "ready",
+        }
+    )
+    with pytest.raises(ValidationError):
+        _validate("layer", payload)
+
+    payload = _load_json(EXAMPLES / "layer.fixture-demo.json")
+    payload["evidence_state"].update(
+        {"gate_state": "blocked", "required_gate": None}
+    )
+    with pytest.raises(ValidationError):
+        _validate("layer", payload)
+
+
+def test_source_freshness_policy_is_explicit_and_structurally_coherent() -> None:
+    payload = _load_json(EXAMPLES / "source-component.fixture-demo.json")
+    payload.pop("freshness_as_of")
+    with pytest.raises(ValidationError):
+        _validate("source-component", payload)
+
+    payload = _load_json(EXAMPLES / "source-component.fixture-demo.json")
+    payload.update({"temporal_meaning": "unknown", "freshness": "historical"})
+    with pytest.raises(ValidationError):
+        _validate("source-component", payload)
 
 
 def test_offline_judging_bundle_validates_against_shared_contracts() -> None:
@@ -134,8 +261,23 @@ def test_offline_judging_bundle_validates_against_shared_contracts() -> None:
     )
 
 
+def test_mae_sai_public_bundle_validates_against_shared_contracts() -> None:
+    bundle = _load_json(MAE_SAI_PUBLIC_BUNDLE)
+    _validate("evidence-context", bundle["evidence_context"])
+    _validate("evidence-record", bundle["evidence_record"])
+    _validate("status", bundle["status"])
+    for area in bundle["public_areas"]:
+        _validate("public-preparedness-area", area)
+    for layer in bundle["layers"]:
+        _validate("layer", layer)
+
+
 def test_offline_area_decisions_match_locked_score_and_class_contract() -> None:
-    from floodguard.scoring import DEFAULT_WEIGHTS, assign_action_class
+    from floodguard.scoring import (
+        DEFAULT_WEIGHTS,
+        assign_action_class,
+        assign_action_reason_code,
+    )
 
     bundle = _load_json(OFFLINE_BUNDLE)
     for area in bundle["areas"]:
@@ -145,6 +287,7 @@ def test_offline_area_decisions_match_locked_score_and_class_contract() -> None:
         )
         assert area["fpps_0_100"] == pytest.approx(expected_score, abs=0.011)
         assert area["action_class"] == assign_action_class(area)
+        assert area["action_reason_code"] == assign_action_reason_code(area)
 
 
 @pytest.mark.parametrize("schema_name", SCHEMA_NAMES)
@@ -449,10 +592,34 @@ def test_typescript_runtime_constants_match_schema_enums() -> None:
         "ACTION_CLASSES": _schema("area-decision")["properties"]["action_class"][
             "enum"
         ],
+        "ACTION_REASON_CODES": _schema("area-decision")["properties"][
+            "action_reason_code"
+        ]["enum"],
         "ROLE_VISIBILITIES": _schema("layer")["properties"]["role_visibility"]["items"][
             "enum"
         ],
         "LAYER_FORMATS": _schema("layer")["properties"]["format"]["enum"],
+        "EVIDENCE_TYPES": _schema("evidence-state")["properties"][
+            "evidence_type"
+        ]["enum"],
+        "EVIDENCE_GRANULARITIES": _schema("evidence-state")["properties"][
+            "granularity"
+        ]["enum"],
+        "PERMITTED_USES": _schema("evidence-state")["properties"][
+            "permitted_use"
+        ]["enum"],
+        "EVIDENCE_GATE_STATES": _schema("evidence-state")["properties"][
+            "gate_state"
+        ]["enum"],
+        "FRESHNESS_STATES": _schema("source-component")["properties"]["freshness"][
+            "enum"
+        ],
+        "SOURCE_TEMPORAL_MEANINGS": _schema("source-component")["properties"][
+            "temporal_meaning"
+        ]["enum"],
+        "EVIDENCE_DECISIONS": _schema("evidence-record")["properties"]["decision"][
+            "enum"
+        ],
         "MODEL_FAMILIES": _schema("model-run")["properties"]["model_family"]["enum"],
         "MODEL_RUN_STATUSES": _schema("model-run")["properties"]["run_status"]["enum"],
         "PREPROCESSING_VALUE_DOMAINS": _schema("model-run")["properties"][
@@ -476,6 +643,10 @@ def test_typescript_runtime_constants_match_schema_enums() -> None:
     }
     for constant, enum_values in expected.items():
         assert _typescript_array(source, constant) == enum_values
+    assert 'export const FRESHNESS_POLICY_VERSION = "source-freshness-v1"' in source
+    assert _schema("source-component")["properties"][
+        "freshness_policy_version"
+    ]["const"] == "source-freshness-v1"
 
 
 def test_typescript_common_metadata_fields_match_all_schemas() -> None:
@@ -502,7 +673,13 @@ def test_required_public_types_are_exported() -> None:
         "ConfidenceClass",
         "StatusResponse",
         "AreaDecision",
+        "ActionReasonCode",
         "LayerCatalogItem",
+        "EvidenceContext",
+        "EvidenceState",
+        "SourceComponent",
+        "PublicPreparednessArea",
+        "EvidenceRecord",
         "ModelRun",
         "PilotRole",
         "PilotReadiness",

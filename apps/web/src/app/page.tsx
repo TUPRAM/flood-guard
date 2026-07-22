@@ -1,6 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { PublicExperience } from "@/components/public-experience";
+import { resolveDeploymentProfile } from "@/lib/deployment-profile";
+
 type SurfaceIconName = "public" | "command" | "studio";
 
 function SurfaceIcon({ name }: { name: SurfaceIconName }) {
@@ -28,7 +31,7 @@ function SurfaceIcon({ name }: { name: SurfaceIconName }) {
   );
 }
 
-export default function SurfaceChooser() {
+export function SurfaceChooser() {
   return (
     <main className="surface-chooser" id="main-content" lang="en">
       <header className="chooser-header">
@@ -131,4 +134,14 @@ export default function SurfaceChooser() {
       </footer>
     </main>
   );
+}
+
+export default function RootEntry() {
+  const profile = resolveDeploymentProfile(
+    process.env.FLOODGUARD_APP_PROFILE ?? process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE,
+  );
+  if (profile === "public-production") {
+    return <div id="main-content"><PublicExperience /></div>;
+  }
+  return <SurfaceChooser />;
 }

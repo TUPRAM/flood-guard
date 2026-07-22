@@ -1,15 +1,16 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { EvidenceNotice } from "@/components/evidence-notice";
 import { GeoMap } from "@/components/geo-map";
 import { HouseholdPlanBuilder } from "@/components/household-plan-builder";
 import { LanguageToggle } from "@/components/language-toggle";
-import { formatConfidence, formatNumber, formatSourceTime, formatTopReason } from "@/lib/format";
+import { formatConfidence, formatNumber, formatSourceTime } from "@/lib/format";
+import { countCompletedPlanItems } from "@/lib/household-plan";
 import { visibleLayerAttributions } from "@/lib/map-attribution";
-import { useFloodGuardData } from "@/lib/use-floodguard-data";
+import type { FeatureCollection } from "@/lib/types";
+import { usePublicFloodGuardData } from "@/lib/use-public-floodguard-data";
 import { useHouseholdPlan } from "@/lib/use-household-plan";
 import { useLanguage } from "@/lib/use-language";
 
@@ -18,23 +19,88 @@ type PublicTab = "home" | "map" | "shelters" | "prepare" | "data";
 const TAB_LABELS: Record<PublicTab, { th: string; en: string; icon: string }> = {
   home: { th: "หน้าแรก", en: "Home", icon: "home" },
   map: { th: "แผนที่", en: "Map", icon: "map" },
-  shelters: { th: "ที่พักพิง", en: "Shelters", icon: "shelters" },
+  shelters: { th: "คำแนะนำที่พักพิง", en: "Shelter guidance", icon: "shelters" },
   prepare: { th: "เตรียมพร้อม", en: "Prepare", icon: "prepare" },
   data: { th: "ข้อมูล", en: "Data", icon: "data" },
 };
 
 const PUBLIC_DATA_STATE_LABELS = {
-  loading: { th: "กำลังตรวจสอบข้อมูลล่าสุด", en: "Checking for updates" },
-  ready: { th: "ข้อมูลการวางแผนพร้อม", en: "Planning data available" },
-  stale: { th: "โปรดยืนยันข้อมูลล่าสุด", en: "Confirm latest conditions" },
-  stale_offline: { th: "ใช้ข้อมูลที่บันทึกล่าสุด", en: "Using latest saved data" },
-  blocked: { th: "การอัปเดตยังไม่พร้อม", en: "Updates not yet available" },
-  unavailable: { th: "การอัปเดตไม่พร้อมใช้", en: "Updates unavailable" },
+  loading: { th: "กำลังตรวจสอบชุดข้อมูล", en: "Checking the data package" },
+  ready: { th: "ข้อมูลประวัติศาสตร์พร้อมใช้งาน", en: "Historical information available" },
+  stale: { th: "ข้อมูลปัจจุบันต้องได้รับการยืนยัน", en: "Current conditions need confirmation" },
+  stale_offline: { th: "ใช้สำเนาประวัติศาสตร์ในอุปกรณ์", en: "Using the historical copy on this device" },
+  blocked: { th: "ไม่สามารถยืนยันสภาพปัจจุบันได้", en: "Current conditions cannot be confirmed" },
+  unavailable: { th: "ข้อมูลการวางแผนไม่พร้อมใช้", en: "Planning information unavailable" },
 } as const;
 
-const PUBLIC_VISIBLE_LAYER_IDS = new Set(["priority_areas", "facilities"]);
+const CONFIRMED_PUBLIC_FACILITY_STATES = new Set([
+  "authoritative",
+  "confirmed",
+  "locally_confirmed",
+  "official_confirmed",
+  "verified",
+]);
+const CONFIRMED_PUBLIC_EMERGENCY_ROLES = new Set([
+  "agency_verified",
+  "confirmed_shelter",
+  "designated_shelter",
+  "official_shelter",
+]);
+
+const EMPTY_PUBLIC_ROADS: FeatureCollection = { type: "FeatureCollection", name: "public_roads_withheld", features: [] };
+const EMPTY_PUBLIC_FACILITIES: FeatureCollection = { type: "FeatureCollection", name: "public_facilities_withheld", features: [] };
+const EMPTY_PUBLIC_ACCESS: FeatureCollection = { type: "FeatureCollection", name: "public_access_withheld", features: [] };
+const EMPTY_PUBLIC_CONTEXT: FeatureCollection = { type: "FeatureCollection", name: "public_context_withheld", features: [] };
 
 type PublicIconName = PublicTab | "change";
+
+export function projectPublicFacilityFeatures(features: FeatureCollection): FeatureCollection {
+  return {
+    ...features,
+    name: `${features.name}_public_confirmed`,
+    features: features.features.filter((feature) => {
+      const verification = String(feature.properties.verification_status ?? "").toLowerCase();
+      const candidateStatus = String(feature.properties.candidate_status ?? "").toLowerCase();
+      const emergencyRole = String(feature.properties.emergency_role ?? "").toLowerCase();
+      const isShelter = String(feature.properties.facility_type ?? "").toLowerCase().includes("shelter");
+      const hasConfirmedEmergencyRole = CONFIRMED_PUBLIC_EMERGENCY_ROLES.has(emergencyRole);
+      return CONFIRMED_PUBLIC_FACILITY_STATES.has(verification)
+        && !candidateStatus.includes("candidate")
+        && (!isShelter || hasConfirmedEmergencyRole);
+    }),
+  };
+}
+
+function publicRecommendationLabel(code: string, language: "th" | "en"): string {
+  const labels: Record<string, { th: string; en: string }> = {
+    low_confidence: {
+      th: "ตรวจสอบข้อมูลกับหน่วยงานท้องถิ่นก่อนนำไปใช้วางแผน",
+      en: "Verify the evidence with local authorities before using it for planning.",
+    },
+    low_priority_score: {
+      th: "ติดตามข้อมูลและทบทวนแผนเตรียมพร้อมตามประกาศทางการ",
+      en: "Monitor official information and keep the preparedness plan under review.",
+    },
+    life_safety_exposure: {
+      th: "ให้ความสำคัญกับการตรวจสอบความต้องการด้านความปลอดภัยของชีวิต",
+      en: "Prioritize local checks for life-safety needs.",
+    },
+    critical_route_access: {
+      th: "ตรวจสอบเส้นทางสำคัญและทางเลือกกับหน่วยงานท้องถิ่น",
+      en: "Confirm critical routes and alternatives with local authorities.",
+    },
+    essential_service_access: {
+      th: "ตรวจสอบการเข้าถึงบริการจำเป็นและแผนสำรองในพื้นที่",
+      en: "Confirm access to essential services and local backup plans.",
+    },
+    resilience: {
+      th: "ทบทวนมาตรการเตรียมพร้อมและความยืดหยุ่นระยะยาว",
+      en: "Review longer-term preparedness and resilience measures.",
+    },
+  };
+  return labels[code]?.[language]
+    ?? (language === "th" ? "ตรวจสอบข้อมูลกับหน่วยงานท้องถิ่น" : "Verify the evidence with local authorities.");
+}
 
 function PublicBrandMark() {
   return (
@@ -67,57 +133,62 @@ function PublicIcon({ name }: { name: PublicIconName }) {
 }
 
 export function PublicExperience() {
-  const data = useFloodGuardData("mae_sai_candidate_v1");
+  const data = usePublicFloodGuardData();
   const [language, setLanguage] = useLanguage("th");
   const [tab, setTab] = useState<PublicTab>("home");
-  const areaPickerRef = useRef<HTMLElement>(null);
+  const areaSelectRef = useRef<HTMLSelectElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const th = language === "th";
-  const defaultAreaId = data.areas.find((area) => area.area_id === "TH570901")?.area_id
-    ?? data.areas[0]?.area_id
-    ?? "";
-  const householdPlan = useHouseholdPlan(defaultAreaId);
-  const persistedArea = data.areas.find((area) => area.area_id === householdPlan.plan.planning_area_id);
-  const selected = persistedArea
-    ?? data.areas.find((area) => area.area_id === defaultAreaId);
+  const householdPlan = useHouseholdPlan("");
+  const selected = data.publicAreas.find((area) => area.area_id === householdPlan.plan.planning_area_id);
+  const selectedAreaId = selected?.area_id ?? "";
   const selectArea = householdPlan.selectPlanningArea;
-  const datasetLabel = th ? "ข้อมูลการวางแผนแม่สาย" : "Mae Sai planning data";
-  const hasDecisionEligibleModel = data.model_runs.some((run) => run.can_feed_decision_layer);
-  const areaNameTh = selected?.area_name_th ?? "พื้นที่วางแผนไม่พร้อมใช้งาน";
-  const areaNameEn = selected?.area_name_en ?? "Planning area unavailable";
-  const completedItems = Object.values(householdPlan.plan.checklist).filter(Boolean).length;
-  const totalItems = Object.keys(householdPlan.plan.checklist).length;
-  const remainingItems = Math.max(0, totalItems - completedItems);
-  const readinessProgress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
-  const originLabel = data.dataOrigin === "offline_bundle"
-    ? (th ? "ข้อมูลแม่สายที่บันทึกไว้ในอุปกรณ์" : "Mae Sai data available on this device")
-    : data.dataOrigin === "cached_api"
-      ? (th ? "ข้อมูลล่าสุดที่บันทึกไว้" : "Latest saved planning data")
-      : data.degradedReason
-        ? (th ? "ข้อมูลล่าสุดที่พร้อมใช้งาน" : "Latest available planning data")
-        : (th ? "ข้อมูลการวางแผนที่ตรวจสอบแหล่งที่มาและโครงสร้างแล้ว" : "Planning data checked for source and structure");
+  const publicFacilityFeatures = useMemo(
+    () => projectPublicFacilityFeatures(EMPTY_PUBLIC_FACILITIES),
+    [],
+  );
+  const publicLayerIds = useMemo(
+    () => new Set(["public_preparedness_areas"]),
+    [],
+  );
+  const publicAttributions = visibleLayerAttributions(data.layers, publicLayerIds, "public");
+  const hasDecisionEligibleModel = data.evidenceRecord?.operational_authorized === true;
+  const completedItems = countCompletedPlanItems(householdPlan.plan);
+  const selectedNeeds = Object.values(householdPlan.plan.needs).filter(Boolean).length;
+  const needsSummary = householdPlan.plan.needs_review_state === "selected"
+    ? (th ? `เลือกแล้ว ${selectedNeeds} ข้อ` : `${selectedNeeds} selected`)
+    : householdPlan.plan.needs_review_state === "none_apply"
+      ? (th ? "ยืนยันว่าไม่มีข้อใดใช้" : "None apply")
+      : (th ? "ยังไม่ได้ทบทวน" : "Not reviewed");
   const dataStateLabel = PUBLIC_DATA_STATE_LABELS[data.dataState][language];
   const fallbackDetail = data.fallbackReason
     ? (th
-      ? "ไม่สามารถตรวจสอบการอัปเดตได้ในขณะนี้ ข้อมูลการวางแผนล่าสุดที่บันทึกไว้ยังพร้อมใช้งาน"
-      : "Updates cannot be checked right now. The latest saved planning data remains available.")
+      ? "ไม่สามารถตรวจสอบชุดข้อมูลจากเครือข่ายได้ ขณะนี้กำลังใช้สำเนาประวัติศาสตร์ที่บันทึกไว้ในอุปกรณ์"
+      : "The network data package cannot be checked. The historical copy saved on this device is being used.")
     : undefined;
   const degradedDetail = data.degradedReason
     ? (th
-      ? "บริการข้อมูลบางส่วนกำลังอัปเดต หน้าจอนี้ใช้ข้อมูลการวางแผนล่าสุดที่พร้อมใช้งาน"
-      : "Some data services are updating. This view uses the latest available planning data.")
+      ? "บริการข้อมูลบางส่วนไม่พร้อมใช้งาน ข้อมูลนี้ยังคงเป็นหลักฐานประวัติศาสตร์และไม่ยืนยันสภาพปัจจุบัน"
+      : "Some data services are unavailable. This remains historical evidence and does not confirm current conditions.")
     : undefined;
-  const publicAttributions = visibleLayerAttributions(data.layers, PUBLIC_VISIBLE_LAYER_IDS);
 
   useEffect(() => {
-    if (!persistedArea && defaultAreaId && householdPlan.plan.planning_area_id !== defaultAreaId) {
-      selectArea(defaultAreaId);
+    if (data.publicAreas.length > 0 && householdPlan.plan.planning_area_id && !selected) {
+      selectArea("");
     }
-  }, [defaultAreaId, householdPlan.plan.planning_area_id, persistedArea, selectArea]);
+  }, [data.publicAreas.length, householdPlan.plan.planning_area_id, selectArea, selected]);
 
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [tab]);
+
+  const openPlan = () => {
+    if (!selected && data.publicAreas.length > 0) {
+      areaSelectRef.current?.focus();
+      return;
+    }
+    setTab("prepare");
+  };
 
   return (
     <main className="public-page" lang={language}>
@@ -132,10 +203,10 @@ export function PublicExperience() {
       <section className="public-boundary-banner" aria-label={th ? "ขอบเขตการใช้งานและสถานะข้อมูล" : "Use boundary and data status"}>
         <span className="public-boundary-mark" aria-hidden="true">!</span>
         <div className="public-boundary-copy">
-          <strong>{th ? "ข้อมูลเพื่อการเตรียมพร้อม — ตรวจสอบประกาศล่าสุดจาก ปภ. และหน่วยงานท้องถิ่น" : "Preparedness guidance — check current alerts with DDPM and local authorities."}</strong>
+          <strong>{th ? "ข้อมูลประวัติศาสตร์เพื่อการเตรียมพร้อม — ตรวจสอบประกาศปัจจุบันจาก ปภ. และหน่วยงานท้องถิ่น" : "Historical preparedness information — check current alerts with DDPM and local authorities."}</strong>
           <small>
-            <span>{datasetLabel} · {dataStateLabel}</span>
-            <span>{originLabel} · {th ? "เวลาข้อมูล" : "Source time"} {formatSourceTime(data.status.source_timestamp, language)} ICT · {th ? "ความเชื่อมั่น" : "Confidence"} {formatConfidence(data.status.confidence_class, language)}</span>
+            <span>{th ? "บริบทอุทกภัยแม่สาย เดือนกันยายน 2567" : "Mae Sai flood context · September 2024"} · {dataStateLabel}</span>
+            <span>{th ? "วันที่หลักฐาน" : "Evidence date"} {formatSourceTime(data.status.source_timestamp, language)} ICT · {th ? "ความเชื่อมั่นของแบบจำลอง" : "Model confidence"} {formatConfidence(data.status.confidence_class, language)}</span>
           </small>
           {fallbackDetail && <p className="public-boundary-detail" role="status">{fallbackDetail}</p>}
           {degradedDetail && <p className="public-boundary-detail" role="status">{degradedDetail}</p>}
@@ -145,81 +216,91 @@ export function PublicExperience() {
       <section ref={contentRef} className="public-content" id="public-active-panel" aria-live="polite">
         {tab === "home" && (
           <>
-            <section className="card public-readiness-card" aria-labelledby="public-home-title">
-              <div className="public-readiness-heading">
+            <section className="card public-official-update" aria-labelledby="public-official-update-title">
+              <div>
+                <p className="eyebrow">{th ? "ข้อมูลปัจจุบันจากหน่วยงานทางการ" : "Current official information"}</p>
+                <h1 id="public-official-update-title">{th ? "ตรวจสอบประกาศก่อนตัดสินใจ" : "Check official updates before deciding"}</h1>
+                <p>{th ? "FloodGuard ไม่ออกคำเตือนหรือคำสั่งอพยพ" : "FloodGuard does not issue warnings or evacuation orders."}</p>
+              </div>
+              <a className="primary-link" href="https://www.disaster.go.th/home" target="_blank" rel="noreferrer">
+                {th ? "เปิดประกาศของ ปภ. ↗" : "Open DDPM updates ↗"}
+              </a>
+            </section>
+
+            <section className="card public-plan-overview" aria-labelledby="public-home-title">
+              <div className="public-plan-overview-heading">
                 <div>
-                  <p className="eyebrow">{th ? "พื้นที่วางแผนของฉัน" : "My planning area"}</p>
-                  <h1 id="public-home-title">{th ? areaNameTh : areaNameEn}</h1>
+                  <p className="eyebrow">{th ? "แผนที่เก็บในอุปกรณ์นี้" : "Plan stored on this device"}</p>
+                  <h2 id="public-home-title">{th ? "แผนเตรียมพร้อมของครัวเรือน" : "Household preparedness plan"}</h2>
                 </div>
-                <button type="button" className="public-change-area" onClick={() => areaPickerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>
-                  {th ? "เปลี่ยน" : "Change"}
-                </button>
+                <PublicIcon name="prepare" />
               </div>
-
-              <div className="public-readiness-overview">
-                <div
-                  className="public-readiness-ring"
-                  style={{ "--readiness-progress": `${readinessProgress}%` } as CSSProperties}
-                  role="img"
-                  aria-label={th ? `ทำเสร็จ ${completedItems} จาก ${totalItems} รายการ` : `${completedItems} of ${totalItems} readiness items complete`}
-                >
-                  <span><b>{completedItems}/{totalItems}</b><small>{th ? "พร้อม" : "ready"}</small></span>
-                </div>
-                <div className="public-readiness-copy">
-                  <h2>{completedItems === totalItems && totalItems > 0
-                    ? (th ? "แผนครัวเรือนพร้อมให้ทบทวน" : "Your household plan is ready to review")
-                    : completedItems > 0
-                      ? (th ? "แผนครัวเรือนกำลังดำเนินการ" : "Your household plan is in progress")
-                      : (th ? "เริ่มแผนเตรียมพร้อมของครัวเรือน" : "Start your household preparedness plan")}</h2>
-                  <p>{remainingItems === 0
-                    ? (th ? "ทบทวนแผนและยืนยันข้อมูลกับหน่วยงานท้องถิ่น" : "Review it and confirm local information before relying on it.")
-                    : (th ? `ทำอีก ${remainingItems} ขั้นตอนเพื่อให้รายการพื้นฐานครบ` : `Finish ${remainingItems} more ${remainingItems === 1 ? "step" : "steps"} to complete the basics.`)}</p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="primary-link public-plan-action"
-                data-action="build-household-plan"
-                aria-controls="public-active-panel"
-                onClick={() => setTab("prepare")}
-              >
-                {completedItems > 0
-                  ? (th ? "ทำแผนของฉันต่อ →" : "Continue my plan →")
-                  : (th ? "สร้างแผนครัวเรือนของฉัน →" : "Build my household plan →")}
-              </button>
-
-              <dl className="public-source-summary" aria-label={th ? "ที่มาโดยย่อ" : "Provenance summary"}>
-                <div><dt>{th ? "เวลาข้อมูล" : "Source time"}</dt><dd>{formatSourceTime(data.status.source_timestamp, language)} ICT</dd></div>
-                <div><dt>{th ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{formatConfidence(data.status.confidence_class, language)}</dd></div>
-                <div><dt>{th ? "แหล่งข้อมูล" : "Source"}</dt><dd>HDX COD-AB · OpenStreetMap · WorldPop · Copernicus DEM · Sentinel-1</dd></div>
+              <dl className="public-plan-segments">
+                <div><dt>{th ? "รายการพื้นฐาน" : "Core actions"}</dt><dd>{completedItems}/{Object.keys(householdPlan.plan.checklist).length}</dd></div>
+                <div><dt>{th ? "ความต้องการ" : "Needs"}</dt><dd>{needsSummary}</dd></div>
+                <div><dt>{th ? "การทบทวน" : "Review"}</dt><dd>{householdPlan.plan.last_reviewed_at ? (th ? "บันทึกแล้ว" : "Recorded") : (th ? "ยังไม่บันทึก" : "Not recorded")}</dd></div>
               </dl>
+              <p className="public-plan-boundary">{th ? "สถานะนี้บอกเฉพาะสิ่งที่บันทึกไว้ ไม่ใช่คะแนนความปลอดภัย" : "This reports only what is recorded; it is not a household safety score."}</p>
+              <button type="button" className="primary-link public-plan-action" data-action="build-household-plan" onClick={openPlan}>
+                {!selected && data.publicAreas.length > 0
+                  ? (th ? "เลือกพื้นที่เพื่อดำเนินการต่อ" : "Choose an area to continue")
+                  : completedItems > 0 || householdPlan.plan.needs_review_state !== "not_reviewed"
+                    ? (th ? "ทำแผนของฉันต่อ →" : "Continue my plan →")
+                    : (th ? "เริ่มแผนครัวเรือน →" : "Start my household plan →")}
+              </button>
             </section>
 
-            <section className="public-quick-action-section" aria-labelledby="public-quick-actions-title">
-              <p className="eyebrow" id="public-quick-actions-title">{th ? "ทางลัด" : "Quick actions"}</p>
-              <div className="public-quick-actions">
-                <button type="button" onClick={() => setTab("map")}>
-                  <span><PublicIcon name="map" /></span><b>{th ? "แผนที่พื้นที่" : "Area map"}</b><small>{th ? "ภาพรวมการวางแผน" : "Planning overview"}</small>
-                </button>
-                <button type="button" onClick={() => setTab("shelters")}>
-                  <span><PublicIcon name="shelters" /></span><b>{th ? "ที่พักพิง" : "Shelters"}</b><small>{th ? "ยืนยันกับท้องถิ่น" : "Confirm locally"}</small>
-                </button>
-                <button type="button" onClick={() => setTab("data")}>
-                  <span><PublicIcon name="data" /></span><b>{th ? "เกี่ยวกับข้อมูล" : "The data"}</b><small>{th ? "ทำอะไรได้บ้าง" : "What it can do"}</small>
-                </button>
-                <button type="button" className="public-quick-action-primary" onClick={() => areaPickerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>
-                  <span><PublicIcon name="change" /></span><b>{th ? "เปลี่ยนพื้นที่" : "Change area"}</b><small>{th ? areaNameTh : areaNameEn}</small>
-                </button>
+            <section className="card public-area-selection" aria-labelledby="area-picker-title">
+              <div>
+                <p className="eyebrow">{th ? "พื้นที่วางแผนแบบกว้าง" : "Broad planning area"}</p>
+                <h2 id="area-picker-title">{th ? "เลือกพื้นที่โดยไม่เปิดเผยตำแหน่งที่แน่นอน" : "Choose an area without sharing your exact location"}</h2>
               </div>
+              <label htmlFor="public-area-select">{th ? "พื้นที่ของฉัน" : "My planning area"}</label>
+              <select
+                ref={areaSelectRef}
+                id="public-area-select"
+                value={selectedAreaId}
+                onChange={(event) => selectArea(event.target.value)}
+                disabled={data.publicAreas.length === 0}
+              >
+                <option value="">{data.publicAreas.length === 0
+                  ? (th ? "กำลังโหลดพื้นที่…" : "Loading areas…")
+                  : (th ? "เลือกพื้นที่" : "Choose an area")}</option>
+                {data.publicAreas.map((area) => <option key={area.area_id} value={area.area_id}>{th ? area.area_name_th : area.area_name_en}</option>)}
+              </select>
+              <small>{th ? "การเลือกนี้เก็บในอุปกรณ์ ระบบไม่ขอพิกัดหรือที่อยู่บ้าน" : "This selection stays on your device. No coordinates or home address are requested."}</small>
             </section>
+
+            {selected ? (
+              <section className="card public-planning-focus" aria-labelledby="public-planning-focus-title">
+                <p className="eyebrow">{th ? "จุดเน้นจากแบบจำลองประวัติศาสตร์" : "Historical modelled planning focus"}</p>
+                <h2 id="public-planning-focus-title">{th ? selected.area_name_th : selected.area_name_en}</h2>
+                <p>{publicRecommendationLabel(selected.recommendation_code, language)}</p>
+                <dl>
+                  <div><dt>{th ? "ลำดับความสำคัญในการวางแผน" : "Planning priority"}</dt><dd>{formatNumber(selected.planning_priority_0_100, language, 1)} / 100</dd></div>
+                  <div><dt>{th ? "ความเพียงพอของหลักฐาน" : "Evidence sufficiency"}</dt><dd>{formatConfidence(selected.evidence_sufficiency, language)}</dd></div>
+                  <div><dt>{th ? "สภาพปัจจุบัน" : "Current conditions"}</dt><dd>{selected.current_conditions_confirmed ? (th ? "ยืนยันแล้ว" : "Confirmed") : (th ? "ยังไม่ได้รับการยืนยัน" : "Not confirmed")}</dd></div>
+                </dl>
+                <div className="public-confirm-list">
+                  <b>{th ? "สิ่งที่ต้องยืนยันก่อนดำเนินการ" : "What to confirm before acting"}</b>
+                  <ul>
+                    <li>{th ? "ประกาศและคำแนะนำปัจจุบันจาก ปภ. หรือหน่วยงานท้องถิ่น" : "Current alerts and instructions from DDPM or local authorities"}</li>
+                    <li>{th ? "สภาพถนน สะพาน และทางเข้าถึงในขณะนี้" : "Current road, bridge, and access conditions"}</li>
+                    <li>{th ? "การเปิดให้บริการ บทบาท ความจุ และการเข้าถึงของสถานที่" : "Facility operation, role, capacity, and accessibility"}</li>
+                  </ul>
+                </div>
+              </section>
+            ) : (
+              <section className="card public-no-area" aria-labelledby="public-no-area-title">
+                <h2 id="public-no-area-title">{th ? "ยังไม่ได้เลือกพื้นที่" : "No planning area selected"}</h2>
+                <p>{th ? "เลือกพื้นที่แบบกว้างด้านบนเพื่อดูจุดเน้นการวางแผน โดยไม่ต้องเปิดเผยตำแหน่งบ้าน" : "Choose a broad area above to see its planning focus without sharing your home location."}</p>
+              </section>
+            )}
 
             <section className="card public-official-help" data-testid="public-official-help" aria-labelledby="official-help-title">
               <div className="public-official-help-heading">
-                <h2 id="official-help-title">{th ? "ความช่วยเหลือและประกาศทางการ" : "Official emergency numbers"}</h2>
-                <a href="https://www.disaster.go.th/home" target="_blank" rel="noreferrer">
-                  {th ? "ประกาศ ปภ. ↗" : "DDPM updates ↗"}
-                </a>
+                <h2 id="official-help-title">{th ? "หมายเลขฉุกเฉินทางการ" : "Official emergency numbers"}</h2>
+                <a href="https://www.disaster.go.th/home" target="_blank" rel="noreferrer">{th ? "ประกาศ ปภ. ↗" : "DDPM updates ↗"}</a>
               </div>
               <div className="public-hotline-actions">
                 {data.hotlines.length > 0 ? data.hotlines.map((hotline) => (
@@ -227,90 +308,75 @@ export function PublicExperience() {
                     <b>{hotline.number}</b><span>{th ? hotline.label_th : hotline.label_en}</span>
                   </a>
                 )) : (
-                  <p role="status">{th ? "ขณะนี้ไม่มีหมายเลขฉุกเฉินในหน้านี้ โปรดใช้ช่องทางทางการของหน่วยงานท้องถิ่น" : "No emergency numbers are available here right now; use official local-authority channels."}</p>
+                  <>
+                    <a href="tel:1784" aria-label={th ? "โทร 1784 สายด่วนนิรภัย ปภ." : "Call 1784 DDPM disaster hotline"}><b>1784</b><span>{th ? "สายด่วนนิรภัย ปภ." : "DDPM disaster hotline"}</span></a>
+                    <a href="tel:1669" aria-label={th ? "โทร 1669 การแพทย์ฉุกเฉิน" : "Call 1669 emergency medical service"}><b>1669</b><span>{th ? "การแพทย์ฉุกเฉิน" : "Emergency medical service"}</span></a>
+                  </>
                 )}
               </div>
             </section>
-
-            <section ref={areaPickerRef} className="area-picker card" aria-labelledby="area-picker-title">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">{th ? "พื้นที่วางแผนแบบกว้าง" : "Broad planning area"}</p>
-                  <h2 id="area-picker-title">{th ? "เลือกพื้นที่โดยไม่ใช้ตำแหน่งที่อยู่" : "Choose an area without sharing your exact location"}</h2>
-                </div>
-              </div>
-              {data.areas.length > 0 ? (
-                <div className="area-chip-row">
-                  {data.areas.map((area) => (
-                    <button
-                      key={area.area_id}
-                      type="button"
-                      aria-pressed={area.area_id === selected?.area_id}
-                      className={area.area_id === selected?.area_id ? "selected" : ""}
-                      onClick={() => selectArea(area.area_id)}
-                    >
-                      <b aria-hidden="true">{area.action_class}</b><span>{th ? area.area_name_th : area.area_name_en}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p role="status">{th ? "ข้อมูลพื้นที่ไม่พร้อมใช้งานชั่วคราว แต่รายการเตรียมพร้อมทั่วไปยังใช้งานได้" : "Area information is temporarily unavailable. The general household checklist remains available."}</p>
-              )}
-            </section>
-
-            {selected && (
-              <details className="card public-evidence-details">
-                <summary>
-                  <span>{th ? "ดูหลักฐานการวางแผนโดยละเอียด" : "View detailed planning evidence"}</span>
-                  <small>{th ? "คะแนนและชั้นการดำเนินการ" : "Preparedness score and action class"}</small>
-                </summary>
-                <div className="public-grid">
-                  <article className="priority-card">
-                    <p className="eyebrow">{th ? "เหตุผลจากแบบจำลอง" : "Modelled reason"}</p>
-                    <h2>{th ? "ควรตรวจสอบข้อมูลในพื้นที่" : "Evidence to verify"}</h2>
-                    <p>{formatTopReason(selected.action_class, selected.top_reason, language)}</p>
-                    <dl className="mini-metrics">
-                      <div><dt>FPPS</dt><dd>{selected.fpps_0_100.toFixed(1)}</dd></div>
-                      <div><dt>{th ? "ชั้นการดำเนินการ" : "Action class"}</dt><dd>{selected.action_class}</dd></div>
-                      <div><dt>{th ? "การเข้าถึง 30 นาที" : "30-min access loss"}</dt><dd>{formatNumber(selected.people_losing_30_min_access, language)} <small>{th ? `คน · ${datasetLabel}` : `people · ${datasetLabel}`}</small></dd></div>
-                    </dl>
-                  </article>
-                  <article className="official-guidance-card">
-                    <p className="eyebrow">{th ? "ข้อจำกัด" : "Evidence boundary"}</p>
-                    <h2>{th ? "หลักฐานสนับสนุนการวางแผน" : "Planning evidence"}</h2>
-                    <p>{th ? "ชั้นและคะแนนนี้ไม่ใช่ระดับเตือนภัยและไม่ใช่คำสั่งให้เดินทาง" : "This class and score are neither a warning level nor an instruction to travel."}</p>
-                    <p>{th ? "โอกาสน้ำท่วมใช้บริบท Sentinel-1 และข้อมูลอ้างอิงข้ามพรมแดนใกล้เคียง ส่วนผลกระทบต่อถนนและการเข้าถึงเป็นค่าประมาณเชิงแบบจำลอง โปรดยืนยันสภาพปัจจุบันในพื้นที่" : "Flood likelihood uses Sentinel-1 context and a nearby cross-border reference; road and access impacts are modelled estimates. Confirm current conditions locally."}</p>
-                  </article>
-                </div>
-              </details>
-            )}
           </>
         )}
 
         {tab === "map" && (
           <section className="public-map-view">
-            <div className="section-heading"><div><p className="eyebrow">{th ? "ขอบเขตพื้นที่และสถานที่สำคัญ" : "Area boundary & important facilities"}</p><h1>{th ? "แผนที่วางแผนแม่สาย" : "Mae Sai planning map"}</h1></div></div>
-            <GeoMap areas={data.areas} selectedId={selected?.area_id ?? ""} onSelect={selectArea} language={language} showRoads={false} showFacilities showAccess={false} height="360px" areaFeatures={data.areaFeatures} roadFeatures={data.roadFeatures} facilityFeatures={data.facilityFeatures} accessFeatures={data.accessFeatures} contextFeatures={data.contextFeatures} datasetMode={data.status.dataset_mode} attributions={publicAttributions} visualPalette="public-blue" enableBasemaps />
-            <EvidenceNotice tone="caution" title={th ? "ยืนยันสภาพเส้นทางก่อนเดินทาง" : "Confirm route conditions before travel"}>
-              {th ? "ชุดข้อมูลนี้ไม่คำนวณเส้นทางปลอดภัยและไม่แสดงการปิดถนนแบบสด" : "This dataset does not calculate a safe route or show live road closures."}
+            <div className="section-heading"><div><p className="eyebrow">{th ? "ขอบเขตพื้นที่ประวัติศาสตร์" : "Historical area context"}</p><h1>{th ? "แผนที่วางแผนแม่สาย" : "Mae Sai planning map"}</h1></div></div>
+            <GeoMap
+              areas={data.publicAreas}
+              selectedId={selectedAreaId}
+              onSelect={selectArea}
+              language={language}
+              showRoads={false}
+              showFacilities={publicFacilityFeatures.features.length > 0}
+              showAccess={false}
+              height="360px"
+              areaFeatures={data.areaFeatures}
+              roadFeatures={EMPTY_PUBLIC_ROADS}
+              facilityFeatures={publicFacilityFeatures}
+              accessFeatures={EMPTY_PUBLIC_ACCESS}
+              contextFeatures={EMPTY_PUBLIC_CONTEXT}
+              datasetMode={data.status.dataset_mode}
+              attributions={publicAttributions}
+              visualPalette="public-blue"
+              enableBasemaps
+            />
+            <EvidenceNotice tone="caution" title={th ? "ตรวจสอบสภาพปัจจุบันก่อนเดินทาง" : "Check current conditions before travel"}>
+              {th ? "แผนที่นี้ใช้หลักฐานประวัติศาสตร์ ไม่คำนวณเส้นทางปลอดภัย และไม่แสดงการปิดถนนหรือสถานะสถานที่แบบปัจจุบัน" : "This map uses historical evidence. It does not calculate a safe route or show current road closures or facility status."}
             </EvidenceNotice>
           </section>
         )}
 
         {tab === "shelters" && (
           <section className="public-shelter-view">
-            <div className="section-heading"><div><p className="eyebrow">{th ? "จุดพักพิง" : "Shelters"}</p><h1>{th ? "ตรวจสอบกับหน่วยงานท้องถิ่นก่อนเดินทาง" : "Confirm locally before travelling"}</h1></div></div>
-            {data.shelters.map((shelter) => (
-              <article className="card shelter-card" key={shelter.facility_id}>
-                <div className="shelter-icon" aria-hidden="true"><PublicIcon name="shelters" /></div>
-                <div><p className="eyebrow">{shelter.facility_id}</p><h2>{th ? shelter.name_th : shelter.name_en}</h2><p>{th ? "ความจุและสถานะยังไม่ได้รับการยืนยัน" : "Capacity and current status are not confirmed."}</p><span className="unconfirmed">{th ? "ไม่ยืนยัน" : "Unconfirmed"}</span></div>
-              </article>
-            ))}
-            <article className="card neutral-note">
-              <h2>{th ? "เหตุใดจึงไม่มีจำนวนที่ว่าง?" : "Why no availability count?"}</h2>
-              <p>{data.shelters.length > 0 ? (th ? "ไม่มีข้อมูลความจุปัจจุบันที่มีเวลาอ้างอิง จึงไม่ประมาณจำนวนที่ว่าง" : "No current, time-stamped capacity information is available, so availability is not estimated.") : (th ? "ขณะนี้ไม่มีข้อมูลที่พักพิงในมุมมองนี้ โปรดยืนยันทางเลือกกับหน่วยงานท้องถิ่น" : "No current shelter information is available in this view. Confirm options with local authorities.")}</p>
-              <aside className="public-before-travel"><b>{th ? "ก่อนออกเดินทาง" : "Before you travel"}</b><span>{th ? "โทรยืนยันกับที่พักพิงหรือหน่วยงานท้องถิ่นว่ายังเปิดและเดินทางถึงได้" : "Call the shelter or a local authority to confirm it is open and reachable."}</span></aside>
+            <div className="section-heading"><div><p className="eyebrow">{th ? "คำแนะนำที่พักพิง" : "Shelter guidance"}</p><h1>{th ? "ยืนยันจุดหมายก่อนออกเดินทาง" : "Confirm a destination before travelling"}</h1></div></div>
+            <article className="card shelter-guidance-status">
+              <div className="shelter-icon" aria-hidden="true"><PublicIcon name="shelters" /></div>
+              <div>
+                <h2>{th ? "ยังไม่มีจุดพักพิงที่ยืนยันแล้วในมุมมองนี้" : "No confirmed shelters are published in this view"}</h2>
+                <p>{th ? "ข้อมูลเปิดเกี่ยวกับสถานที่ไม่ได้ยืนยันการกำหนดเป็นที่พักพิง การเปิดให้บริการ ความจุ หรือการเดินทางถึงในขณะนี้" : "Open facility data does not confirm shelter designation, current operation, capacity, or reachability."}</p>
+              </div>
             </article>
+            <article className="card shelter-official-action">
+              <p className="eyebrow">{th ? "ยืนยันกับหน่วยงานทางการ" : "Confirm with an official source"}</p>
+              <h2>{th ? "โทร 1784 หรือดูประกาศของ ปภ." : "Call DDPM 1784 or check official updates"}</h2>
+              <div>
+                <a className="primary-link" href="tel:1784">{th ? "โทร 1784" : "Call 1784"}</a>
+                <a href="https://www.disaster.go.th/home" target="_blank" rel="noreferrer">{th ? "เปิดประกาศของ ปภ. ↗" : "Open DDPM updates ↗"}</a>
+              </div>
+            </article>
+            <article className="card shelter-before-leaving" aria-labelledby="before-leaving-title">
+              <h2 id="before-leaving-title">{th ? "ตรวจสอบก่อนออกเดินทาง" : "Before leaving, confirm"}</h2>
+              <ol>
+                <li>{th ? "สถานที่ได้รับการกำหนดให้ใช้เป็นที่พักพิงและเปิดอยู่" : "The destination is designated for shelter use and is open"}</li>
+                <li>{th ? "มีพื้นที่หรือความจุสำหรับสมาชิกในครัวเรือน" : "Space or capacity is available for your household"}</li>
+                <li>{th ? "เส้นทางยังเดินทางถึงได้ตามคำแนะนำปัจจุบัน" : "The route is reachable under current official guidance"}</li>
+                <li>{th ? "รองรับการเคลื่อนไหว สุขภาพ เด็ก ผู้สูงอายุ และสัตว์เลี้ยงตามที่ต้องการ" : "Accessibility, health, child, older-adult, and pet needs can be supported"}</li>
+                <li>{th ? "ทราบว่าต้องนำเอกสาร ยา น้ำ อาหาร และของใช้ใดไป" : "You know which documents, medicine, water, food, and supplies to bring"}</li>
+              </ol>
+            </article>
+            <EvidenceNotice tone="caution" title={th ? "อย่าเดินทางตามหมุดจากข้อมูลเปิดเพียงอย่างเดียว" : "Do not travel based only on an open-data map marker"}>
+              {th ? "ปฏิบัติตามคำแนะนำของ ปภ. และหน่วยงานท้องถิ่น และยืนยันจุดหมายก่อนออกเดินทาง" : "Follow DDPM and local-authority guidance, and confirm the destination before leaving."}
+            </EvidenceNotice>
           </section>
         )}
 
@@ -329,6 +395,7 @@ export function PublicExperience() {
               areaNameEn={selected?.area_name_en ?? ""}
               onToggleItem={householdPlan.toggleChecklistItem}
               onToggleNeed={householdPlan.toggleNeed}
+              onSelectNoNeedsApply={householdPlan.selectNoNeedsApply}
               onMarkReviewed={householdPlan.markReviewed}
               onResetChecklist={householdPlan.resetChecklist}
               onClearPlan={householdPlan.clearPlan}
@@ -340,11 +407,10 @@ export function PublicExperience() {
           <section className="public-data-view">
             <div className="section-heading"><div><p className="eyebrow">{th ? "เกี่ยวกับข้อมูล" : "About the data"}</p><h1>{th ? "สิ่งที่หน้าจอนี้ทำได้และทำไม่ได้" : "What this screen can and cannot do"}</h1></div></div>
             <div className="about-grid">
-              <article className="card public-about-card public-about-capabilities"><h2><span aria-hidden="true">✓</span>{th ? "สิ่งที่มีให้" : "What this provides"}</h2><ul><li>{th ? "แสดงขอบเขตพื้นที่แม่สายและสถานที่สำคัญจากข้อมูลเปิดที่ติดตามแหล่งที่มา" : "Shows Mae Sai area boundaries and important facilities from provenance-tracked open data"}</li><li>{th ? "แสดงคะแนน FPPS และปัจจัยที่อยู่เบื้องหลังลำดับความสำคัญของแต่ละพื้นที่" : "Shows FPPS and the factors behind each area’s planning priority"}</li><li>{th ? "เก็บข้อมูลการวางแผนล่าสุดไว้ใช้งานเมื่อการเชื่อมต่อขัดข้อง" : "Keeps the latest planning data available when connectivity drops"}</li></ul></article>
-              <article className="card blocked-card public-about-card"><h2><span aria-hidden="true">×</span>{th ? "สิ่งที่ต้องยืนยันเพิ่มเติม" : "What still needs confirmation"}</h2><ul><li>{th ? "คำเตือนภัยและเส้นทางอพยพปัจจุบันจากหน่วยงานที่รับผิดชอบ" : "Current warnings and evacuation routes from responsible authorities"}</li><li>{th ? "สถานะถนน การเปิดให้บริการ และความจุของที่พักพิงในขณะนี้" : "Current road conditions, facility operation, and shelter capacity"}</li><li>{hasDecisionEligibleModel ? (th ? "ผลแบบจำลองไม่ใช่คำสั่งฉุกเฉิน โปรดติดตามประกาศทางการ" : "Model results are not emergency directions; follow official alerts") : (th ? "ใช้ผลลัพธ์เพื่อจัดลำดับการตรวจสอบและยืนยันกับหน่วยงานท้องถิ่น" : "Use the results to prioritize checks and confirm locally")}</li></ul></article>
+              <article className="card public-about-card public-about-capabilities"><h2><span aria-hidden="true">✓</span>{th ? "สิ่งที่มีให้" : "What this provides"}</h2><ul><li>{th ? "แสดงขอบเขตพื้นที่แม่สายและบริบทอุทกภัยเดือนกันยายน 2567" : "Shows Mae Sai area boundaries and September 2024 flood context"}</li><li>{th ? "แสดงจุดเน้นจากแบบจำลองเพื่อช่วยจัดลำดับการตรวจสอบในพื้นที่" : "Shows modelled planning priorities to organize local checks"}</li><li>{th ? "เก็บแผนครัวเรือนและสำเนาข้อมูลประวัติศาสตร์ไว้ในอุปกรณ์" : "Keeps the household plan and a historical information copy on the device"}</li></ul></article>
+              <article className="card blocked-card public-about-card"><h2><span aria-hidden="true">×</span>{th ? "สิ่งที่ต้องยืนยัน" : "What must be confirmed"}</h2><ul><li>{th ? "คำเตือนและคำแนะนำอพยพปัจจุบันจากหน่วยงานที่รับผิดชอบ" : "Current warnings and evacuation guidance from responsible authorities"}</li><li>{th ? "สภาพถนน การเปิดให้บริการ บทบาท และความจุของสถานที่" : "Current road conditions, facility operation, role, and capacity"}</li><li>{hasDecisionEligibleModel ? (th ? "ผลแบบจำลองไม่ใช่คำสั่งฉุกเฉิน โปรดติดตามประกาศทางการ" : "Model results are not emergency directions; follow official alerts") : (th ? "ผลลัพธ์ใช้จัดลำดับการตรวจสอบ ไม่ใช่การยืนยันอันตรายปัจจุบัน" : "Results prioritize checks; they do not confirm current danger")}</li></ul></article>
             </div>
-            <article className="card method-card"><h2>{th ? "วิธีวิเคราะห์การเข้าถึง" : "Access method"}</h2><p>{th ? "เอนจินปัจจุบันเปรียบเทียบเวลาเดินทางสั้นที่สุดไปยังสถานที่ที่ใกล้ที่สุดภายใต้เครือข่ายปกติและเครือข่ายที่ถูกรบกวน ที่เกณฑ์ 15/30/60 นาที ไม่ใช่ 2SFCA ที่คำนึงถึงความจุ" : "The current engine compares shortest travel time to the nearest selected facility under normal and disrupted networks at 15/30/60-minute thresholds. It is not capacity-aware 2SFCA."}</p></article>
-            <p className="technical-link"><a href="/studio/">{th ? "เปิดพื้นที่วิจัยและแบบจำลอง →" : "Open the research and model studio →"}</a></p>
+            <article className="card method-card"><h2>{th ? "วิธีวิเคราะห์การเข้าถึง" : "Access method"}</h2><p>{th ? "เอนจินเปรียบเทียบเวลาเดินทางสั้นที่สุดไปยังสถานที่ที่เลือกภายใต้เครือข่ายปกติและเครือข่ายที่ถูกรบกวน ที่เกณฑ์ 15/30/60 นาที ผลลัพธ์เป็นแบบจำลองประวัติศาสตร์และไม่ได้คำนวณความจุของสถานที่" : "The engine compares shortest travel time to selected facilities under normal and disrupted networks at 15/30/60-minute thresholds. Results are historical model outputs and are not facility-capacity aware."}</p></article>
           </section>
         )}
       </section>

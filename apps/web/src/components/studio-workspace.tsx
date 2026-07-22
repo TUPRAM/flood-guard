@@ -7,13 +7,36 @@ import type { ModelRun } from "@floodguard/contracts";
 
 import { LanguageToggle } from "@/components/language-toggle";
 import { StatusBar } from "@/components/status-bar";
-import { StudioProofPanel } from "@/components/studio-proof-panel";
 import { downloadText } from "@/lib/download";
 import { formatConfidence, formatNumber, formatSourceTime } from "@/lib/format";
+import {
+  buildEvidenceDecisionMatrix,
+  evidenceContextMatches,
+  evidenceRecordFileName,
+  evidenceRecordJson,
+  type EvidenceDecisionStage,
+} from "@/lib/studio-evidence";
+import type { Language, ReadinessRow, StudyAreaId } from "@/lib/types";
 import { useFloodGuardData } from "@/lib/use-floodguard-data";
 import { useLanguage } from "@/lib/use-language";
 
-import styles from "./studio-proof-panel.module.css";
+import {
+  blockerPresentation,
+  decisionReasonPresentation,
+  readinessReasonPresentation,
+} from "./studio-presentation";
+import styles from "./studio-workspace.module.css";
+
+type StudioTab = "technical" | "observed" | "quality" | "metrics" | "governance" | "files";
+
+const TABS: Array<{ id: StudioTab; en: string; th: string }> = [
+  { id: "technical", en: "Technical verification", th: "การตรวจสอบทางเทคนิค" },
+  { id: "observed", en: "Observed-data validation", th: "การยืนยันด้วยข้อมูลสังเกตการณ์" },
+  { id: "quality", en: "Data quality", th: "คุณภาพข้อมูล" },
+  { id: "metrics", en: "Metrics", th: "ตัวชี้วัด" },
+  { id: "governance", en: "Governance", th: "ธรรมาภิบาล" },
+  { id: "files", en: "Files & history", th: "ไฟล์และประวัติ" },
+];
 
 const METRICS = [
   ["iou", "IoU"],
@@ -21,402 +44,363 @@ const METRICS = [
   ["precision", "Precision"],
   ["recall", "Recall"],
   ["area_error_ratio", "Area error"],
-  ["brier_score", "Brier"],
+  ["brier_score", "Brier score"],
   ["expected_calibration_error", "Calibration ECE"],
 ] as const;
 
-function familyLabel(value: string): string {
-  if (value === "deterministic_sar_baseline") return "SAR reference model";
-  if (value === "weak_label_logistic") return "Logistic benchmark";
+const STAGE_LABELS: Record<EvidenceDecisionStage, { en: string; th: string }> = {
+  processing_execution: { en: "Processing execution", th: "การประมวลผล" },
+  technical_verification: { en: "Technical verification", th: "การตรวจสอบทางเทคนิค" },
+  observed_event_validation: { en: "Observed-event validation", th: "การยืนยันเหตุการณ์ที่สังเกต" },
+  governance_decision: { en: "Governance decision", th: "การตัดสินใจด้านธรรมาภิบาล" },
+  operational_authorization: { en: "Operational authorization", th: "การอนุญาตใช้งาน" },
+};
+
+const GATE_LABELS: Record<string, { en: string; th: string; requiredEn: string; requiredTh: string }> = {
+  real_open_context: {
+    en: "Open-context source integrity",
+    th: "ความสมบูรณ์ของแหล่งข้อมูลเปิด",
+    requiredEn: "A checksummed source and provenance manifest.",
+    requiredTh: "รายการแหล่งข้อมูลและ provenance พร้อม checksum",
+  },
+  facility_verification: {
+    en: "Facility verification",
+    th: "การตรวจสอบสถานที่",
+    requiredEn: "Agency verification of role, operating state, capacity, and accessibility.",
+    requiredTh: "การยืนยันจากหน่วยงานเรื่องบทบาท สถานะเปิดให้บริการ ความจุ และการเข้าถึง",
+  },
+  segment_raster_intersection: {
+    en: "Road-segment evidence",
+    th: "หลักฐานระดับช่วงถนน",
+    requiredEn: "A validated segment-to-raster intersection receipt.",
+    requiredTh: "ใบรับรองการเชื่อมโยงช่วงถนนกับราสเตอร์ที่ผ่านการตรวจสอบ",
+  },
+  reference_mask: {
+    en: "Event reference validation",
+    th: "การยืนยันข้อมูลอ้างอิงเหตุการณ์",
+    requiredEn: "A qualified Thailand event-flood reference with provenance and permission.",
+    requiredTh: "ข้อมูลอ้างอิงน้ำท่วมเหตุการณ์ในไทยที่ผ่านเกณฑ์พร้อม provenance และสิทธิ์ใช้งาน",
+  },
+  reviewer_calibration: {
+    en: "Independent reviewer calibration",
+    th: "การปรับเทียบผู้ตรวจสอบอิสระ",
+    requiredEn: "A passing blind reviewer-calibration and adjudication receipt.",
+    requiredTh: "ใบรับรองการปรับเทียบและการตัดสินโดยผู้ตรวจสอบอิสระที่ผ่านเกณฑ์",
+  },
+  weak_reference_seed_scope: {
+    en: "Reference-data scope",
+    th: "ขอบเขตข้อมูลอ้างอิง",
+    requiredEn: "A qualified in-area event reference and its permission record.",
+    requiredTh: "ข้อมูลอ้างอิงเหตุการณ์ในพื้นที่ที่ผ่านการรับรองพร้อมบันทึกสิทธิ์",
+  },
+  cleared_training_labels: {
+    en: "Training-label clearance",
+    th: "การรับรองป้ายกำกับฝึกสอน",
+    requiredEn: "A verified label-clearance receipt.",
+    requiredTh: "ใบรับรองการอนุมัติป้ายกำกับที่ตรวจสอบได้",
+  },
+  canonical_projected_grid: {
+    en: "Spatial alignment",
+    th: "การจัดแนวเชิงพื้นที่",
+    requiredEn: "A reproducible projected-grid check.",
+    requiredTh: "การตรวจสอบกริดฉายภาพที่ทำซ้ำได้",
+  },
+  reviewer_calibration_complete: {
+    en: "Reviewer calibration",
+    th: "การปรับเทียบผู้ตรวจสอบ",
+    requiredEn: "A passing independent reviewer-calibration receipt.",
+    requiredTh: "ใบรับรองการปรับเทียบผู้ตรวจสอบอิสระที่ผ่านเกณฑ์",
+  },
+  blind_double_review: {
+    en: "Independent double review",
+    th: "การตรวจสอบซ้ำโดยอิสระ",
+    requiredEn: "A complete, independently paired review record.",
+    requiredTh: "บันทึกการตรวจสอบซ้ำที่จับคู่โดยอิสระและครบถ้วน",
+  },
+  immutable_training_labelset: {
+    en: "Label-set integrity",
+    th: "ความสมบูรณ์ของชุดป้ายกำกับ",
+    requiredEn: "An immutable, checksummed label-set receipt.",
+    requiredTh: "ใบรับรองชุดป้ายกำกับแบบคงที่พร้อม checksum",
+  },
+  query_model_safety_boundary: {
+    en: "Training/evaluation separation",
+    th: "การแยกข้อมูลฝึกสอนและประเมิน",
+    requiredEn: "An independently verified separation receipt.",
+    requiredTh: "ใบรับรองการแยกข้อมูลที่ตรวจสอบโดยอิสระ",
+  },
+  geographic_generalization: {
+    en: "Geographic generalization",
+    th: "การใช้กับพื้นที่อื่น",
+    requiredEn: "Qualified validation across additional events and basins.",
+    requiredTh: "การตรวจสอบที่ผ่านเกณฑ์ในเหตุการณ์และลุ่มน้ำเพิ่มเติม",
+  },
+};
+
+function requestedStudyArea(evidenceContextId?: string): StudyAreaId {
+  return evidenceContextId?.startsWith("fixture-thailand-demo:")
+    ? "fixture_thailand_demo"
+    : "mae_sai_candidate_v1";
+}
+
+function studyAreaLabel(studyArea: string, th: boolean): string {
+  if (studyArea === "mae_sai_candidate_v1") return th ? "อำเภอแม่สาย จังหวัดเชียงราย" : "Mae Sai district, Chiang Rai";
+  return th ? "พื้นที่อ้างอิงการตรวจสอบทางเทคนิค" : "Technical verification reference area";
+}
+
+function friendlyMode(mode: string, th: boolean): string {
+  if (mode === "official_input") return th ? "ข้อมูลหน่วยงาน" : "Agency-provided evidence";
+  if (mode === "candidate") return th ? "หลักฐานการวางแผนทางประวัติศาสตร์" : "Historical planning evidence";
+  return th ? "หลักฐานการตรวจสอบทางเทคนิค" : "Technical verification evidence";
+}
+
+function friendlyOperationalState(value: string, th: boolean): string {
+  if (value === "agency_operational") return th ? "ได้รับอนุญาตจากหน่วยงาน" : "Agency-authorized";
+  if (value === "planning_only") return th ? "ใช้เพื่อการวางแผนเท่านั้น" : "Planning only";
+  return th ? "ไม่ได้รับอนุญาตให้ใช้เชิงปฏิบัติการ" : "Not operationally authorized";
+}
+
+function familyLabel(run: ModelRun): string {
+  if (run.model_family === "deterministic_sar_baseline") return "SAR reference model";
+  if (run.model_family === "weak_label_logistic") return "Logistic benchmark";
   return "GeoAI model";
 }
 
-function publicationText(value: string): string {
-  return value
-    .replace(/legacy[_ -]?synthetic[_ -]?sar[_ -]?v1/gi, "versioned radar-change")
-    .replace(/fixture[_ -]?demo/gi, "technical reference")
-    .replace(/synthetic/gi, "technical")
-    .replace(/candidate/gi, "context")
-    .replace(/non[_ -]?operational/gi, "review only");
+function shortDigest(value: string | null): string {
+  if (!value) return "Not recorded";
+  return `${value.slice(0, 12)}…${value.slice(-10)}`;
 }
 
-function architectureLabel(value: string | null): string {
-  if (!value) return "Unavailable";
-  const label = publicationText(value).replaceAll("_", " ");
-  return `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
-}
-
-function preprocessingLabel(value: string, th: boolean): string {
-  if (/legacy[_ -]?synthetic[_ -]?sar[_ -]?v1/i.test(value)) {
-    return th
-      ? "สูตรการเปลี่ยนแปลงเรดาร์แบบกำหนดเวอร์ชันพร้อมหน่วยทางกายภาพ"
-      : "Versioned radar-change formula with explicit physical units";
-  }
-  return publicationText(value);
-}
-
-function evidenceScopeLabel(mode: ModelRun["dataset_mode"], th: boolean): string {
-  if (mode === "official_input") return th ? "การประเมินข้อมูลสังเกตการณ์" : "Observed-data evaluation";
-  if (mode === "candidate") return th ? "หลักฐานบริบท" : "Context evidence";
-  return th ? "การตรวจสอบระบบ" : "Technical verification";
-}
-
-function runStatusLabel(status: string, th: boolean): string {
-  if (status === "completed") return th ? "ตรวจสอบเสร็จสิ้น" : "Review complete";
-  if (status === "failed") return th ? "ต้องตรวจสอบอีกครั้ง" : "Review required";
-  return th ? "อยู่ระหว่างตรวจสอบ" : "In review";
-}
-
-function readinessCopy(checkId: string, ready: boolean, th: boolean): {
-  label: string;
-  source: string;
-  state: string;
-  reason: string;
-} {
-  const copy: Record<string, { label: [string, string]; source: [string, string]; reason: [string, string] }> = {
-    reference_mask: {
-      label: ["Reference validation", "การตรวจสอบข้อมูลอ้างอิง"],
-      source: ["Reference data record", "บันทึกข้อมูลอ้างอิง"],
-      reason: ["An independently validated reference is required.", "ต้องมีข้อมูลอ้างอิงที่ผ่านการตรวจสอบโดยอิสระ"],
-    },
-    weak_reference_seed_scope: {
-      label: ["Reference selection", "การเลือกข้อมูลอ้างอิง"],
-      source: ["Reference data record", "บันทึกข้อมูลอ้างอิง"],
-      reason: ["An independently validated reference is required.", "ต้องมีข้อมูลอ้างอิงที่ผ่านการตรวจสอบโดยอิสระ"],
-    },
-    sentinel1_provenance: {
-      label: ["Radar source verification", "การตรวจสอบแหล่งข้อมูลเรดาร์"],
-      source: ["Earth observation record", "บันทึกข้อมูลสำรวจโลก"],
-      reason: ["Product identity and acquisition time need verification.", "ต้องตรวจสอบรหัสผลิตภัณฑ์และเวลาที่บันทึกข้อมูล"],
-    },
-    canonical_projected_grid: {
-      label: ["Spatial alignment", "การจัดแนวเชิงพื้นที่"],
-      source: ["Spatial quality record", "บันทึกคุณภาพเชิงพื้นที่"],
-      reason: ["Spatial alignment checks are complete.", "การตรวจสอบการจัดแนวเชิงพื้นที่เสร็จสมบูรณ์"],
-    },
-    reviewer_calibration: {
-      label: ["Independent reviewer calibration", "การปรับเทียบผู้ตรวจสอบอิสระ"],
-      source: ["Independent review record", "บันทึกการตรวจสอบอิสระ"],
-      reason: ["Independent reviewer calibration has not yet been verified.", "ยังไม่ได้ยืนยันการปรับเทียบผู้ตรวจสอบอิสระ"],
-    },
-    reviewer_calibration_complete: {
-      label: ["Independent reviewer calibration", "การปรับเทียบผู้ตรวจสอบอิสระ"],
-      source: ["Independent review record", "บันทึกการตรวจสอบอิสระ"],
-      reason: ["Independent reviewer calibration has not yet been verified.", "ยังไม่ได้ยืนยันการปรับเทียบผู้ตรวจสอบอิสระ"],
-    },
-    blind_double_review: {
-      label: ["Independent double review", "การตรวจสอบซ้ำโดยอิสระ"],
-      source: ["Independent review record", "บันทึกการตรวจสอบอิสระ"],
-      reason: ["A complete independent double review is still required.", "ยังต้องมีการตรวจสอบซ้ำโดยอิสระให้ครบถ้วน"],
-    },
-    cleared_training_labels: {
-      label: ["Training-label approval", "การรับรองป้ายกำกับฝึกสอน"],
-      source: ["Label quality record", "บันทึกคุณภาพป้ายกำกับ"],
-      reason: ["Independent label approval is still required.", "ยังต้องมีการรับรองป้ายกำกับโดยอิสระ"],
-    },
-    immutable_training_labelset: {
-      label: ["Training-label integrity", "ความสมบูรณ์ของป้ายกำกับฝึกสอน"],
-      source: ["Label quality record", "บันทึกคุณภาพป้ายกำกับ"],
-      reason: ["A verified, versioned label record is still required.", "ยังต้องมีบันทึกป้ายกำกับที่ยืนยันและกำหนดเวอร์ชันแล้ว"],
-    },
-    query_model_safety_boundary: {
-      label: ["Evaluation separation", "การแยกข้อมูลประเมิน"],
-      source: ["Model governance record", "บันทึกธรรมาภิบาลโมเดล"],
-      reason: ["Training and evaluation data must remain independently reviewed.", "ข้อมูลฝึกสอนและข้อมูลประเมินต้องได้รับการตรวจสอบแยกจากกัน"],
-    },
-    geographic_generalization: {
-      label: ["Geographic coverage", "ความครอบคลุมเชิงพื้นที่"],
-      source: ["Regional validation record", "บันทึกการตรวจสอบระดับภูมิภาค"],
-      reason: ["Additional events and basins are required before broader use.", "ต้องมีเหตุการณ์และลุ่มน้ำเพิ่มเติมก่อนขยายการใช้งาน"],
-    },
-  };
-  const item = copy[checkId];
+function gateCopy(row: ReadinessRow, th: boolean) {
+  const known = GATE_LABELS[row.check_id];
   return {
-    label: item?.label[th ? 1 : 0] ?? (th ? "การตรวจสอบหลักฐาน" : "Evidence review"),
-    source: item?.source[th ? 1 : 0] ?? (th ? "บันทึกหลักฐาน" : "Evidence record"),
-    state: ready ? (th ? "พร้อม" : "Ready") : (th ? "ต้องตรวจสอบ" : "Open"),
-    reason: ready
-      ? (th ? "การตรวจสอบที่จำเป็นเสร็จสมบูรณ์" : "Required checks are complete.")
-      : item?.reason[th ? 1 : 0] ?? (th ? "ต้องมีการตรวจสอบเพิ่มเติม" : "Additional validation is required."),
+    label: known?.[th ? "th" : "en"] ?? (th ? "ข้อกำหนดหลักฐาน" : "Evidence requirement"),
+    required: known?.[th ? "requiredTh" : "requiredEn"] ?? (th ? "ต้องมีหลักฐานที่ตรวจสอบได้สำหรับข้อกำหนดนี้" : "A verifiable record satisfying this requirement."),
   };
 }
 
-function inputRoleLabel(role: string): string {
-  if (/pre[_-]?event/i.test(role)) return "Pre-event radar";
-  if (/post[_-]?event/i.test(role)) return "Post-event radar";
-  if (/reference[_-]?mask/i.test(role)) return "Reference mask";
-  if (/holdout/i.test(role)) return "Held-out evaluation area";
-  return "Reference input";
+function nextTab(current: StudioTab, key: string): StudioTab | null {
+  const index = TABS.findIndex((tab) => tab.id === current);
+  if (key === "Home") return TABS[0].id;
+  if (key === "End") return TABS[TABS.length - 1].id;
+  if (key === "ArrowRight") return TABS[(index + 1) % TABS.length].id;
+  if (key === "ArrowLeft") return TABS[(index - 1 + TABS.length) % TABS.length].id;
+  return null;
 }
 
-function referenceStatusLabel(status: string, th: boolean): string {
-  if (/qualified|authoritative|accepted/i.test(status)) return th ? "ตรวจสอบแล้ว" : "Validated";
-  return th ? "ต้องตรวจสอบโดยอิสระ" : "Independent validation required";
+export interface StudioWorkspaceProps {
+  evidenceContextId?: string;
 }
 
-function validationStatusLabel(status: string, th: boolean): string {
-  if (/complete|evaluated|ready|passed/i.test(status) && !/not[_-]?evaluated/i.test(status)) {
-    return th ? "ตรวจสอบแล้ว" : "Reviewed";
-  }
-  return th ? "รอตรวจสอบ" : "Pending review";
-}
-
-function errorCategoryCopy(category: string, th: boolean): { title: string; note: string } {
-  const copy: Record<string, { title: [string, string]; note: [string, string] }> = {
-    permanent_water: {
-      title: ["Permanent water", "แหล่งน้ำถาวร"],
-      note: ["Separate permanent-water review required.", "ต้องตรวจสอบแหล่งน้ำถาวรแยกต่างหาก"],
-    },
-    steep_terrain: {
-      title: ["Steep terrain", "พื้นที่ลาดชัน"],
-      note: ["Slope and terrain effects require independent review.", "ต้องตรวจสอบผลกระทบจากความลาดชันและภูมิประเทศโดยอิสระ"],
-    },
-    radar_shadow: {
-      title: ["Radar shadow", "เงาเรดาร์"],
-      note: ["Radar visibility effects require independent review.", "ต้องตรวจสอบผลกระทบจากการมองเห็นของเรดาร์โดยอิสระ"],
-    },
-    urban_double_bounce: {
-      title: ["Urban signal reflection", "การสะท้อนสัญญาณในเมือง"],
-      note: ["Urban reflection effects require independent review.", "ต้องตรวจสอบผลกระทบจากการสะท้อนสัญญาณในเมืองโดยอิสระ"],
-    },
-  };
-  const item = copy[category.toLowerCase()];
-  return item
-    ? { title: item.title[th ? 1 : 0], note: item.note[th ? 1 : 0] }
-    : { title: th ? "หมวดคุณภาพเพิ่มเติม" : "Additional quality category", note: th ? "ต้องมีการตรวจสอบเพิ่มเติม" : "Additional review is required." };
-}
-
-export function publicationManifest(run: ModelRun): string {
-  const readiness = run.can_feed_decision_layer ? "Ready for acceptance" : "Review held";
-  const record = {
-    record_type: "FloodGuard model evidence record",
-    model: {
-      family: familyLabel(run.model_family),
-      architecture: architectureLabel(run.architecture),
-      channels: run.channel_names,
-      model_sha256: run.model_sha256,
-    },
-    evidence: {
-      scope: evidenceScopeLabel(run.dataset_mode, false),
-      review_status: runStatusLabel(run.run_status, false),
-      source_timestamp: run.source_timestamp,
-      confidence: run.confidence_class,
-      source: run.dataset_mode === "official_input"
-        ? publicationText(run.source_name)
-        : "FloodGuard research evaluation record",
-      assumptions: run.dataset_mode === "official_input"
-        ? run.assumptions.map(publicationText)
-        : ["Technical verification and context evidence remain separate from observed-data validation."],
-    },
-    preprocessing: {
-      method: preprocessingLabel(run.preprocessing.method, false),
-      transforms: run.preprocessing.transforms.map((transform) => ({
-        name: publicationText(transform.name),
-        physical_min: transform.physical_min,
-        physical_max: transform.physical_max,
-        units: transform.units,
-      })),
-    },
-    integrity_records: {
-      preprocessing_sha256: run.preprocessing.sidecar_sha256,
-      encoded_features_sha256: run.encoded_feature_sha256,
-      reference_data_sha256: run.reference_mask_sha256,
-      prepared_tiles_sha256: run.prepared_tile_manifest_sha256,
-    },
-    evaluation: {
-      held_out_geography: run.spatial_holdout_ids.map(publicationText),
-      metrics: run.validation_metrics,
-      quality_categories: run.error_categories.map((category) => errorCategoryCopy(category, false).title),
-    },
-    operational_readiness: {
-      state: readiness,
-      note: run.can_feed_decision_layer
-        ? "Published data, validation, and governance requirements are complete."
-        : "Observed-data validation and governance review must be complete before operational acceptance.",
-    },
-  };
-  return JSON.stringify(record, null, 2);
-}
-
-function publicationManifestFileName(run: ModelRun): string {
-  const family = familyLabel(run.model_family).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  return `floodguard-${family}-evidence.json`;
-}
-
-export function StudioWorkspace() {
-  const data = useFloodGuardData();
+export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}) {
+  const data = useFloodGuardData({
+    studyArea: requestedStudyArea(evidenceContextId),
+    role: "studio",
+    evidenceContextId,
+  });
   const [language, setLanguage] = useLanguage("en");
-  const [selectedRunId, setSelectedRunId] = useState(data.model_runs[0]?.run_id ?? "");
+  const [activeTab, setActiveTab] = useState<StudioTab>("technical");
   const th = language === "th";
-  const selectedRun = data.model_runs.find((run) => run.run_id === selectedRunId) ?? data.model_runs[0];
-  const decisionEligible = data.model_runs.some(
-    (run) => run.dataset_mode === "official_input" && run.processing_allowed && run.can_feed_decision_layer,
-  );
-  const hasGeoAiRun = data.model_runs.some((run) => run.model_family === "geoai");
-  const blockedGateCount = data.readiness.filter((row) => row.status === "blocked").length;
-  const governanceReady = data.pilot_readiness.identity_state === "configured"
-    && data.pilot_readiness.audit_state === "valid"
-    && data.pilot_readiness.retention_state === "configured";
-  const acceptanceReady = data.pilot_readiness.acceptance_receipt_state === "accepted";
-  const fieldReviewReady = data.pilot_readiness.acceptance_criteria
-    .filter((criterion) => criterion.required)
-    .every((criterion) => criterion.status === "accepted");
+  const context = data.evidenceContext;
+  const record = data.evidenceRecord;
+  const exactContext = evidenceContextMatches(context, record, evidenceContextId);
+  const contextRun = context.model_run_id
+    ? data.model_runs.find((run) => run.run_id === context.model_run_id)
+    : undefined;
+  const decisionRows = buildEvidenceDecisionMatrix(context, record);
+  const blockedGateCount = data.readiness.filter((row) => row.status !== "ready").length;
+  const unavailable = data.dataState === "unavailable" || !exactContext;
 
   return (
     <main className="studio-page studio-final-surface" lang={language}>
       <header className="studio-header studio-final-header">
         <a href="/studio/" className="brand brand-light">
           <Image src="/icon.svg" alt="" width={40} height={40} priority />
-          <span><b>FloodGuard</b><small>{th ? "พื้นที่วิจัยและตรวจสอบ" : "Research & validation studio"}</small></span>
+          <span><b>FloodGuard</b><small>{th ? "รายงานการตรวจสอบหลักฐาน" : "Validation & evidence report"}</small></span>
         </a>
-        <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a href="/command/">{th ? "บัญชาการ" : "Command"}</a><a className="active" href="/studio/">Studio</a></nav>
+        <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a href="/command/">{th ? "การวางแผน" : "Planning"}</a><a className="active" href="/studio/">Studio</a></nav>
         <LanguageToggle language={language} onChange={setLanguage} />
       </header>
       <StatusBar data={data} language={language} compact />
 
-      <div className="studio-shell studio-final-shell">
-        <section className={`${styles.consoleHeader} studio-console-hero`} aria-labelledby="research-console-title">
+      <div className={`studio-shell studio-final-shell ${styles.shell}`}>
+        <section className={styles.hero} aria-labelledby="research-console-title">
           <div>
-            <p className="eyebrow">{th ? "ความเชื่อมั่นจากหลักฐาน" : "Evidence-led assurance"}</p>
-            <h1 id="research-console-title">{th ? "สตูดิโอวิจัยและตรวจสอบ" : "Research & validation studio"}</h1>
-            <p>{th ? "ตรวจสอบคุณภาพข้อมูล ผลการประเมินโมเดล และความพร้อมใช้งานจากมุมมองเดียว โดยแยกการตรวจสอบระบบออกจากการยืนยันด้วยข้อมูลสังเกตการณ์อย่างชัดเจน" : "Review data quality, model performance, and operational readiness in one workspace, with technical verification clearly separated from observed-data validation."}</p>
-            <p className="studio-source-meta">
-              <span>{th ? "เวลาข้อมูล" : "Source time"}: <b>{formatSourceTime(data.status.source_timestamp, language)}</b></span>
+            <p className="eyebrow">{th ? "รายงานแบบอ่านอย่างเดียว" : "Read-only evidence report"}</p>
+            <h1 id="research-console-title">{th ? "การตรวจสอบและหลักฐาน" : "Validation & evidence report"}</h1>
+            <p>{th ? "ตรวจสอบแหล่งข้อมูล คุณภาพ การประเมิน และข้อจำกัดของหลักฐานชุดเดียวกัน โดยไม่เปลี่ยนสถานะหรืออนุมัติการใช้งาน" : "Inspect provenance, quality, evaluation, and authorization for one immutable evidence context. This report does not change state or grant approval."}</p>
+            <div className={styles.heroMeta}>
+              <span>{th ? "เวลาบริบทน้ำท่วม" : "Flood-context time"}: <b>{formatSourceTime(data.status.source_timestamp, language)}</b></span>
               <span>{th ? "ความเชื่อมั่น" : "Confidence"}: <b>{formatConfidence(data.status.confidence_class, language)}</b></span>
-              <span>{th ? "ใช้ร่วมกับการตรวจสอบของหน่วยงาน" : "Use with agency verification"}</span>
-            </p>
+            </div>
           </div>
-          <div className={styles.consoleSummary} aria-label={th ? "สรุปสถานะสตูดิโอ" : "Studio status summary"}>
-            <div><span>{th ? "การประเมินที่เผยแพร่" : "Published evaluations"}</span><b>{data.model_runs.length}</b></div>
-            <div><span>{th ? "รายการที่ต้องตรวจสอบ" : "Open reviews"}</span><b>{blockedGateCount}</b></div>
-            <div><span>{th ? "ความพร้อมใช้งาน" : "Operational readiness"}</span><b>{decisionEligible ? (th ? "พร้อมตรวจรับ" : "Ready for acceptance") : (th ? "อยู่ระหว่างตรวจสอบ" : "Review held")}</b></div>
-          </div>
+          <dl className={styles.heroSummary}>
+            <div><dt>{th ? "บริบทหลักฐาน" : "Evidence context"}</dt><dd>{exactContext ? (th ? "ตรงกัน" : "Exact match") : (th ? "ไม่ตรงกัน" : "Mismatch")}</dd></div>
+            <div><dt>{th ? "ข้อกำหนดที่ยังไม่ผ่าน" : "Blocking evidence gates"}</dt><dd>{blockedGateCount}</dd></div>
+            <div><dt>{th ? "การอนุญาตใช้งาน" : "Authorization"}</dt><dd>{record?.operational_authorized ? (th ? "อนุญาต" : "Authorized") : (th ? "ไม่อนุญาต" : "Not authorized")}</dd></div>
+          </dl>
         </section>
 
-        <nav className={styles.consoleNav} aria-label={th ? "ส่วนของคอนโซลวิจัย" : "Research console sections"}>
-          <a href="#integration-proof">{th ? "การตรวจสอบระบบ" : "Technical verification"}</a>
-          <a href="#data-gates">{th ? "ความพร้อมของหลักฐาน" : "Evidence readiness"}</a>
-          <a href="#model-matrix">{th ? "เปรียบเทียบโมเดล" : "Model comparison"}</a>
-          <a href="#model-card">{th ? "รายละเอียดโมเดล" : "Model details"}</a>
-          <a href="#validation">{th ? "การตรวจสอบ" : "Validation"}</a>
-          <a href="#pilot-readiness">{th ? "ความพร้อมใช้งาน" : "Operational readiness"}</a>
-        </nav>
+        <section className={styles.contextHeader} aria-labelledby="evidence-context-title">
+          <div className={styles.contextHeading}>
+            <div><p className="eyebrow">{th ? "บริบทหลักฐานที่กำลังดู" : "ACTIVE EVIDENCE CONTEXT"}</p><h2 id="evidence-context-title">{studyAreaLabel(context.study_area_id, th)}</h2></div>
+            <span className={record?.operational_authorized ? styles.authorized : styles.blocked}>{friendlyOperationalState(context.operational_status, th)}</span>
+          </div>
+          <dl className={styles.contextGrid}>
+            <div><dt>{th ? "รหัสบริบท" : "Evidence-context ID"}</dt><dd><code>{context.evidence_context_id}</code></dd></div>
+            <div><dt>{th ? "แพ็กเกจหลักฐาน" : "Evidence package"}</dt><dd><code>{context.evidence_package_id}</code></dd></div>
+            <div><dt>{th ? "การประเมิน" : "Evaluation"}</dt><dd><code>{context.model_run_id ?? "not_recorded"}</code></dd></div>
+            <div><dt>{th ? "โมเดลและเวอร์ชัน" : "Model & version"}</dt><dd><code>{record?.model_id ?? "not_recorded"} · {record?.model_version ?? "not_recorded"}</code></dd></div>
+            <div><dt>{th ? "เวอร์ชันข้อมูล" : "Data version"}</dt><dd><code>{context.data_version}</code></dd></div>
+            <div><dt>{th ? "ขอบเขตหลักฐาน" : "Evidence scope"}</dt><dd>{record?.evidence_scope ?? (th ? "ยังไม่มีบันทึก" : "Not recorded")}</dd></div>
+            <div><dt>{th ? "โหมดข้อมูล" : "Canonical mode"}</dt><dd>{friendlyMode(context.dataset_mode, th)} <code>{context.dataset_mode}</code></dd></div>
+            <div><dt>{th ? "สถานะการอนุญาต" : "Canonical authorization"}</dt><dd><code>{record?.operational_authorized ? "operational_authorized" : "not_authorized"}</code></dd></div>
+          </dl>
+        </section>
 
-        <div className={styles.consoleGrid}>
-          <aside className={styles.runRail} aria-labelledby="published-runs-title">
-            <div><p className="eyebrow">{th ? "รายการประเมิน" : "EVALUATION CATALOG"}</p><h2 id="published-runs-title">{th ? "การประเมินที่เผยแพร่" : "Published evaluations"}</h2></div>
-            <div className={styles.runList}>
-              {data.model_runs.map((run) => (
+        {unavailable ? (
+          <section className={styles.unavailable} role="status" aria-live="polite">
+            <span aria-hidden="true">!</span>
+            <div>
+              <h2>{th ? "ไม่มีการประเมินสำหรับแพ็กเกจหลักฐานนี้" : "Evaluation unavailable for this evidence package."}</h2>
+              <p>{th ? "ระบบจะไม่เปลี่ยนไปใช้พื้นที่ เวอร์ชันข้อมูล หรือการประเมินอื่นโดยอัตโนมัติ โปรดเปิดลิงก์จากรายการหลักฐานที่เผยแพร่แล้ว" : "FloodGuard will not substitute another study area, data version, or evaluation. Open a context from the published evidence catalog."}</p>
+            </div>
+          </section>
+        ) : (
+          <>
+            <div className={styles.tabs} role="tablist" aria-label={th ? "ส่วนรายงานทางเทคนิค" : "Technical report sections"}>
+              {TABS.map((tab) => (
                 <button
                   type="button"
-                  key={run.run_id}
-                  className={`${styles.runButton} ${selectedRun?.run_id === run.run_id ? styles.selectedRun : ""}`}
-                  aria-pressed={selectedRun?.run_id === run.run_id}
-                  onClick={() => setSelectedRunId(run.run_id)}
+                  role="tab"
+                  id={`studio-tab-${tab.id}`}
+                  aria-controls="studio-tab-panel"
+                  aria-selected={activeTab === tab.id}
+                  tabIndex={activeTab === tab.id ? 0 : -1}
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(event) => {
+                    const target = nextTab(tab.id, event.key);
+                    if (!target) return;
+                    event.preventDefault();
+                    setActiveTab(target);
+                    document.getElementById(`studio-tab-${target}`)?.focus();
+                  }}
                 >
-                  <span>{familyLabel(run.model_family)}</span>
-                  <b>{evidenceScopeLabel(run.dataset_mode, th)}</b>
-                  <small>{runStatusLabel(run.run_status, th)}</small>
+                  {th ? tab.th : tab.en}
                 </button>
               ))}
-              {!hasGeoAiRun && (
-                <article className={styles.futureRun}>
-                  <span>GeoAI U-Net / FPN</span>
-                  <b>{th ? "ยังไม่มีการประเมินด้วยข้อมูลสังเกตการณ์" : "Observed-data evaluation unavailable"}</b>
-                  <small>{th ? "ยังต้องยืนยันสิทธิ์ข้อมูล ข้อมูลอ้างอิง และชุดประเมินอิสระ" : "Source permissions, reference data, and an independent evaluation set still require verification."}</small>
-                </article>
+            </div>
+
+            <div id="studio-tab-panel" role="tabpanel" aria-labelledby={`studio-tab-${activeTab}`} className={styles.tabPanel}>
+              {activeTab === "technical" && (
+                <section aria-labelledby="decision-matrix-title">
+                  <div className={styles.sectionHeading}><div><p className="eyebrow">01 · {th ? "ขอบเขตการตัดสินใจ" : "DECISION BOUNDARY"}</p><h2 id="decision-matrix-title">{th ? "เมทริกซ์สถานะหลักฐาน" : "Evidence decision matrix"}</h2></div><p>{th ? "แต่ละแถวแสดงหลักฐานที่บันทึกจริง ไม่ได้อนุมานสถานะจากหน้าจออื่น" : "Each row reflects an explicit record; no decision or authority is inferred from another readiness flag."}</p></div>
+                  <div className={styles.tableScroll}>
+                    <table className={styles.reportTable}>
+                      <thead><tr><th>{th ? "ขั้นตอน" : "Stage"}</th><th>{th ? "สถานะ" : "Canonical state"}</th><th>{th ? "ความหมาย" : "Meaning"}</th></tr></thead>
+                      <tbody>{decisionRows.map((row) => <tr key={row.stage}><td><b>{STAGE_LABELS[row.stage][language]}</b><code>{row.stage}</code></td><td><span className={`${styles.state} ${styles[row.state]}`}>{row.state}</span></td><td>{decisionReasonPresentation(row, language)}</td></tr>)}</tbody>
+                    </table>
+                  </div>
+                  {!contextRun && <article className={styles.notice}><b>{th ? "ไม่มีการประเมินโมเดลที่ผูกกับบริบทนี้" : "No model evaluation is bound to this context."}</b><p>{th ? "เมตริกหรือผลการตรวจสอบจากแพ็กเกจอื่นจะไม่ถูกนำมาแสดงแทน" : "Metrics and technical results from another evidence package are intentionally not substituted."}</p></article>}
+                </section>
+              )}
+
+              {activeTab === "observed" && (
+                <section aria-labelledby="observed-title">
+                  <div className={styles.sectionHeading}><div><p className="eyebrow">02 · {th ? "ขอบเขตข้อมูลสังเกตการณ์" : "OBSERVED-DATA SCOPE"}</p><h2 id="observed-title">{th ? "สถานะการยืนยันเหตุการณ์" : "Observed-event validation"}</h2></div></div>
+                  <article className={styles.notice}>
+                    <b>{th ? "ยังไม่มีการยืนยันด้วยข้อมูลสังเกตการณ์" : "Observed-event validation is not recorded"}</b>
+                    <p>{th ? "บริบทน้ำท่วมเดือนกันยายน 2024 เป็นหลักฐานการวางแผนทางประวัติศาสตร์ สภาพปัจจุบันยังไม่ทราบและต้องยืนยันกับหน่วยงานท้องถิ่น" : "The September 2024 flood context is historical planning evidence. Current conditions are unknown and require local-authority confirmation."}</p>
+                  </article>
+                  <SourceHistory language={language} data={data} roles={["historic_flood_context", "reporting_boundaries"]} />
+                </section>
+              )}
+
+              {activeTab === "quality" && (
+                <section aria-labelledby="quality-title">
+                  <div className={styles.sectionHeading}><div><p className="eyebrow">03 · {th ? "คุณภาพข้อมูล" : "DATA QUALITY"}</p><h2 id="quality-title">{th ? "ตารางหลักฐานที่ยังขาด" : "Blocking evidence table"}</h2></div><span>{blockedGateCount} {th ? "ข้อกำหนด" : "gates"}</span></div>
+                  <div className={styles.tableScroll}>
+                    <table className={styles.reportTable}>
+                      <thead><tr><th>{th ? "ข้อกำหนด" : "Gate"}</th><th>{th ? "สถานะ" : "State"}</th><th>{th ? "เหตุผล" : "Reason"}</th><th>{th ? "หลักฐานที่ต้องมี" : "Required evidence"}</th><th>{th ? "ลิงก์" : "Evidence link"}</th><th>{th ? "อัปเดตล่าสุด" : "Last update"}</th></tr></thead>
+                      <tbody>{data.readiness.map((row) => {
+                        const copy = gateCopy(row, th);
+                        return <tr key={row.check_id}><td><b>{copy.label}</b><code>{row.check_id}</code></td><td><span className={`${styles.state} ${styles[row.status === "ready" ? "recorded" : "blocked"]}`}>{row.status}</span></td><td>{readinessReasonPresentation(row, language)}</td><td>{copy.required}</td><td>{th ? "ยังไม่เผยแพร่" : "Not published"}</td><td>{formatSourceTime(context.generated_at, language)}</td></tr>;
+                      })}</tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
+
+              {activeTab === "metrics" && (
+                <section aria-labelledby="metrics-title">
+                  <div className={styles.sectionHeading}><div><p className="eyebrow">04 · {th ? "ตัวชี้วัด" : "METRICS"}</p><h2 id="metrics-title">{th ? "ตัวชี้วัดตามขอบเขตหลักฐาน" : "Evidence-scoped metrics"}</h2></div></div>
+                  {contextRun ? <ModelMetrics run={contextRun} language={language} /> : <article className={styles.notice}><b>{th ? "ไม่มีตัวชี้วัดสำหรับบริบทนี้" : "No metrics are published for this context."}</b><p>{th ? "ไม่มีรหัสการประเมินที่ผูกกับแพ็กเกจนี้ จึงไม่แสดงผลจากการทดสอบทางเทคนิคหรือบริบทอื่น" : "No evaluation ID is bound to this package, so technical or contextual results from other scopes are not shown."}</p></article>}
+                </section>
+              )}
+
+              {activeTab === "governance" && (
+                <section aria-labelledby="governance-title">
+                  <div className={styles.sectionHeading}><div><p className="eyebrow">05 · {th ? "ธรรมาภิบาล" : "GOVERNANCE"}</p><h2 id="governance-title">{th ? "การตัดสินใจและอำนาจที่บันทึก" : "Recorded decision and authority"}</h2></div></div>
+                  <dl className={styles.governanceGrid}>
+                    <div><dt>{th ? "การตัดสินใจ" : "Decision"}</dt><dd><code>{record?.decision ?? "not_recorded"}</code></dd></div>
+                    <div><dt>{th ? "ผู้มีอำนาจตัดสินใจ" : "Decision authority"}</dt><dd><code>{record?.decision_authority ?? "not_recorded"}</code></dd></div>
+                    <div><dt>{th ? "เวลาตัดสินใจ" : "Decision time"}</dt><dd><code>{record?.decision_at ?? "not_recorded"}</code></dd></div>
+                    <div><dt>{th ? "การอนุญาตใช้งาน" : "Operational authorization"}</dt><dd><code>{record?.operational_authorized ? "true" : "false"}</code></dd></div>
+                  </dl>
+                  <article className={styles.blockers}><h3>{th ? "เหตุผลที่ไม่อนุญาต" : "Authorization blockers"}</h3>{record?.blockers.length ? <ul>{record.blockers.map((blocker) => <li key={blocker}>{blockerPresentation(blocker, language)}</li>)}</ul> : <p>{th ? "ไม่มีเหตุผลที่บันทึก" : "No blockers are recorded."}</p>}</article>
+                </section>
+              )}
+
+              {activeTab === "files" && (
+                <section aria-labelledby="files-title">
+                  <div className={styles.sectionHeading}><div><p className="eyebrow">06 · {th ? "ไฟล์และประวัติ" : "FILES & HISTORY"}</p><h2 id="files-title">{th ? "บันทึกหลักฐานและแหล่งข้อมูล" : "Evidence record and source history"}</h2></div>{record && <button type="button" className={styles.download} onClick={() => downloadText(evidenceRecordFileName(record), evidenceRecordJson(record), "application/json")}>{th ? "ดาวน์โหลดบันทึก JSON" : "Download canonical JSON"}</button>}</div>
+                  <dl className={styles.fileGrid}>
+                    <div><dt>{th ? "รหัสบันทึก" : "Evidence-record ID"}</dt><dd><code>{record?.evidence_record_id ?? "not_recorded"}</code></dd></div>
+                    <div><dt>{th ? "Checksum แพ็กเกจ" : "Package checksum"}</dt><dd title={context.evidence_package_sha256}><code>{shortDigest(context.evidence_package_sha256)}</code></dd></div>
+                    <div><dt>{th ? "Checksum การประเมิน" : "Evaluation checksum"}</dt><dd title={record?.evaluation_sha256 ?? undefined}><code>{shortDigest(record?.evaluation_sha256 ?? null)}</code></dd></div>
+                    <div><dt>{th ? "Checksum โมเดล" : "Model checksum"}</dt><dd title={record?.model_sha256 ?? undefined}><code>{shortDigest(record?.model_sha256 ?? null)}</code></dd></div>
+                    <div><dt>{th ? "สร้างบริบทเมื่อ" : "Context generated"}</dt><dd>{formatSourceTime(context.generated_at, language)}</dd></div>
+                    <div><dt>{th ? "สร้างบันทึกเมื่อ" : "Record generated"}</dt><dd>{record ? formatSourceTime(record.generated_at, language) : (th ? "ยังไม่บันทึก" : "Not recorded")}</dd></div>
+                  </dl>
+                  <SourceHistory language={language} data={data} />
+                </section>
               )}
             </div>
-            <p className={styles.railGate}>
-              <b>{th ? "สถานะความพร้อม" : "Readiness status"}: {decisionEligible ? (th ? "พร้อมตรวจรับ" : "Ready for acceptance") : (th ? "อยู่ระหว่างตรวจสอบ" : "Review held")}</b><br />
-              {decisionEligible
-                ? (th ? "มีการประเมินด้วยข้อมูลสังเกตการณ์ที่ผ่านข้อกำหนดด้านหลักฐานทั้งหมด" : "An observed-data evaluation meets every published evidence requirement.")
-                : (th ? "ยังไม่มีการประเมินที่ผ่านข้อกำหนดด้านข้อมูล การตรวจสอบ และธรรมาภิบาลครบถ้วน" : "No evaluation currently meets every data, validation, and governance requirement.")}
-            </p>
-          </aside>
+          </>
+        )}
 
-          <div className={styles.consoleMain}>
-            <div id="integration-proof">
-              <StudioProofPanel language={language} modelRuns={data.model_runs} />
-            </div>
-
-            <section id="data-gates" className="studio-section" aria-labelledby="readiness-title">
-              <div className="section-heading"><div><p className="eyebrow">{th ? "02 · ความพร้อมของหลักฐาน" : "02 · EVIDENCE READINESS"}</p><h2 id="readiness-title">{th ? "การตรวจสอบคุณภาพข้อมูล" : "Data quality review"}</h2></div><span className="section-count">{blockedGateCount} {th ? "รายการที่ต้องตรวจสอบ" : "open reviews"}</span></div>
-              <div className="table-scroll">
-                <table className="readiness-table">
-                  <thead><tr><th>{th ? "การตรวจสอบ" : "Review"}</th><th>{th ? "แหล่งหลักฐาน" : "Evidence source"}</th><th>{th ? "สถานะ" : "Status"}</th><th>{th ? "รายละเอียด" : "Details"}</th></tr></thead>
-                  <tbody>
-                    {data.readiness.map((row) => {
-                      const copy = readinessCopy(row.check_id, row.status === "ready", th);
-                      return <tr key={row.check_id}><td>{copy.label}</td><td>{copy.source}</td><td><span className={`readiness-state ${row.status}`}>{copy.state}</span></td><td>{copy.reason}</td></tr>;
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section id="model-matrix" className="studio-section" aria-labelledby="model-matrix-title">
-              <div className="section-heading"><div><p className="eyebrow">{th ? "03 · เปรียบเทียบโมเดล" : "03 · MODEL COMPARISON"}</p><h2 id="model-matrix-title">{th ? "เปรียบเทียบตามขอบเขตหลักฐาน" : "Evidence-scoped comparison"}</h2></div><p>{th ? "ผลจากการตรวจสอบระบบ หลักฐานบริบท และการยืนยันด้วยข้อมูลสังเกตการณ์เป็นคนละระดับหลักฐาน จึงไม่ควรอ่านเป็นตารางจัดอันดับความแม่นยำเดียวกัน" : "Technical verification, context evidence, and observed-data validation represent different evidence levels and should not be read as one accuracy leaderboard."}</p></div>
-              <div className="table-scroll">
-                <table className="readiness-table">
-                  <thead><tr><th>Run</th><th>{th ? "ขอบเขต" : "Scope"}</th><th>IoU</th><th>F1 / Dice</th><th>{th ? "การตัดสินใจ" : "Decision"}</th></tr></thead>
-                  <tbody>
-                    {data.model_runs.map((run) => (
-                      <tr key={run.run_id}>
-                        <td><button type="button" className="download-manifest" onClick={() => setSelectedRunId(run.run_id)}>{familyLabel(run.model_family)}</button></td>
-                        <td>{evidenceScopeLabel(run.dataset_mode, th)}</td>
-                        <td>{formatNumber(run.validation_metrics.iou, language, 3)}</td>
-                        <td>{formatNumber(run.validation_metrics.f1_dice, language, 3)}</td>
-                        <td><span className={`feed-decision ${run.can_feed_decision_layer ? "yes" : "no"}`}>{run.can_feed_decision_layer ? (th ? "พร้อมตรวจรับ" : "Ready") : (th ? "อยู่ระหว่างตรวจสอบ" : "Review held")}</span></td>
-                      </tr>
-                    ))}
-                    {!hasGeoAiRun && <tr><td>GeoAI U-Net / FPN</td><td>{th ? "ยังไม่มีการประเมินด้วยข้อมูลสังเกตการณ์" : "Observed-data evaluation unavailable"}</td><td>—</td><td>—</td><td><span className="feed-decision no">{th ? "อยู่ระหว่างตรวจสอบ" : "Review held"}</span></td></tr>}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            {selectedRun && <section id="model-card" className="studio-section model-detail" aria-labelledby="model-card-title">
-              <div className="section-heading"><div><p className="eyebrow">{th ? "04 · รายละเอียดโมเดล" : "04 · MODEL DETAILS"}</p><h2 id="model-card-title">{familyLabel(selectedRun.model_family)}</h2><p>{evidenceScopeLabel(selectedRun.dataset_mode, th)} · {runStatusLabel(selectedRun.run_status, th)}</p></div><button type="button" className="download-manifest" onClick={() => downloadText(publicationManifestFileName(selectedRun), publicationManifest(selectedRun), "application/json")}>{th ? "ดาวน์โหลดบันทึกหลักฐาน" : "Download evidence record"}</button></div>
-              <div className="model-detail-grid">
-                <dl className="contract-list"><div><dt>{th ? "ตระกูลโมเดล" : "Model family"}</dt><dd>{familyLabel(selectedRun.model_family)}</dd></div><div><dt>{th ? "สถาปัตยกรรม" : "Architecture"}</dt><dd>{architectureLabel(selectedRun.architecture)}</dd></div><div><dt>{th ? "ช่องข้อมูล" : "Channels"}</dt><dd>{selectedRun.num_channels ?? "—"} · {selectedRun.channel_names.join(", ")}</dd></div><div><dt>{th ? "การเตรียมข้อมูล" : "Preprocessing"}</dt><dd>{preprocessingLabel(selectedRun.preprocessing.method, th)}</dd></div><div><dt>{th ? "การแปลงข้อมูล" : "Band transforms"}</dt><dd>{selectedRun.preprocessing.transforms.length > 0 ? selectedRun.preprocessing.transforms.map((item) => `${publicationText(item.name)}: ${item.physical_min}…${item.physical_max} ${item.units}`).join("; ") : (th ? "ยังไม่เผยแพร่สำหรับการประเมินนี้" : "Not published for this evaluation")}</dd></div><div><dt>{th ? "บันทึกการแปลง" : "Transform record"}</dt><dd>{selectedRun.preprocessing.sidecar_sha256 ?? (th ? "ไม่มีข้อมูล" : "Unavailable")}</dd></div><div><dt>{th ? "ข้อมูลนำเข้า" : "Input coverage"}</dt><dd>{Array.from(new Set(selectedRun.input_manifest_rows.map((row) => inputRoleLabel(row.role)))).join(", ")}</dd></div><div><dt>{th ? "บันทึกคุณลักษณะ" : "Feature record"}</dt><dd>{selectedRun.encoded_feature_sha256 ?? (th ? "ไม่มีข้อมูล" : "Unavailable")}</dd></div><div><dt>{th ? "ข้อมูลอ้างอิง" : "Reference data"}</dt><dd>{referenceStatusLabel(selectedRun.reference_mask_status, th)}</dd></div><div><dt>{th ? "บันทึกข้อมูลอ้างอิง" : "Reference record"}</dt><dd>{selectedRun.reference_mask_sha256 ?? (th ? "ไม่มีข้อมูล" : "Unavailable")}</dd></div><div><dt>{th ? "บันทึกชุดข้อมูล" : "Data record"}</dt><dd>{selectedRun.prepared_tile_manifest_sha256 ?? (th ? "ยังไม่จัดเตรียม" : "Not prepared")}</dd></div><div><dt>{th ? "พื้นที่ประเมินอิสระ" : "Held-out geography"}</dt><dd>{selectedRun.spatial_holdout_ids.length > 0 ? selectedRun.spatial_holdout_ids.map(publicationText).join(", ") : (th ? "ยังไม่ระบุ" : "Not declared")}</dd></div><div><dt>{th ? "การแบ่งพื้นที่" : "Spatial partitions"}</dt><dd>{selectedRun.spatial_partitions.length > 0 ? selectedRun.spatial_partitions.map((item) => `${publicationText(item.spatial_group_id)} (${item.split})`).join(", ") : (th ? "ยังไม่เผยแพร่" : "Not published")}</dd></div><div><dt>{th ? "ขอบเขตการเข้าถึง" : "Evidence access"}</dt><dd>{th ? "บันทึกสำหรับการตรวจสอบ" : "Publication record"}</dd></div></dl>
-                <div className="metric-panel"><h3>{th ? "เมตริกตามขอบเขตหลักฐาน" : "Evidence-scoped metrics"}</h3>{METRICS.map(([key, label]) => <div className="metric-row" key={key}><span>{label}</span><b>{formatNumber(selectedRun.validation_metrics[key], language, 3)}</b></div>)}<article className={selectedRun.can_feed_decision_layer ? "eligible-reason" : "blocked-reason"}><b>{th ? "ความพร้อมใช้งาน" : "Operational readiness"}</b><p>{selectedRun.can_feed_decision_layer ? (th ? "การประเมินนี้ผ่านข้อกำหนดด้านข้อมูล การตรวจสอบ และธรรมาภิบาลที่เผยแพร่ทั้งหมด" : "This evaluation meets every published data, validation, and governance requirement.") : (th ? "การใช้งานยังอยู่ระหว่างตรวจสอบจนกว่าการยืนยันด้วยข้อมูลสังเกตการณ์และธรรมาภิบาลจะเสร็จสมบูรณ์" : "Operational review remains held until observed-data validation and governance requirements are complete.")}</p></article></div>
-              </div>
-            </section>}
-
-            <section id="validation" className="studio-section" aria-labelledby="errors-title">
-              <div className="section-heading"><div><p className="eyebrow">{th ? "05 · การตรวจสอบ" : "05 · VALIDATION"}</p><h2 id="errors-title">{th ? "หมวดการตรวจสอบคุณภาพ" : "Quality review categories"}</h2></div></div>
-              <div className="error-grid">{data.error_categories.map((item) => {
-                const copy = errorCategoryCopy(item.category, th);
-                return <article key={item.category}><span>{validationStatusLabel(item.status, th)}</span><h3>{copy.title}</h3><p>{copy.note}</p></article>;
-              })}</div>
-            </section>
-
-            <section id="pilot-readiness" className="studio-section studio-operational-readiness" aria-labelledby="operational-readiness-title">
-              <div className="section-heading">
-                <div><p className="eyebrow">{th ? "06 · ความพร้อมใช้งาน" : "06 · OPERATIONAL READINESS"}</p><h2 id="operational-readiness-title">{th ? "การตรวจรับและธรรมาภิบาล" : "Acceptance & governance"}</h2></div>
-                <span className={`feed-decision ${data.pilot_readiness.agency_operational_allowed ? "yes" : "no"}`}>{data.pilot_readiness.agency_operational_allowed ? (th ? "พร้อมตรวจรับ" : "Ready for acceptance") : (th ? "อยู่ระหว่างตรวจสอบ" : "Review held")}</span>
-              </div>
-              <div className="model-detail-grid">
-                <dl className="contract-list">
-                  <div><dt>{th ? "ธรรมาภิบาล" : "Governance record"}</dt><dd>{governanceReady ? (th ? "ตรวจสอบแล้ว" : "Verified") : (th ? "อยู่ระหว่างตรวจสอบ" : "In review")}</dd></div>
-                  <div><dt>{th ? "การตรวจรับของหน่วยงาน" : "Agency acceptance"}</dt><dd>{acceptanceReady ? (th ? "ได้รับการรับรอง" : "Accepted") : (th ? "อยู่ระหว่างตรวจสอบ" : "In review")}</dd></div>
-                  <div><dt>{th ? "การตรวจสอบภาคสนาม" : "Field validation"}</dt><dd>{fieldReviewReady ? (th ? "ตรวจสอบแล้ว" : "Verified") : (th ? "อยู่ระหว่างตรวจสอบ" : "In review")}</dd></div>
-                  <div><dt>{th ? "ความโปร่งใสของข้อมูล" : "Data transparency"}</dt><dd>{th ? "แสดงเวลา แหล่งที่มา ความเชื่อมั่น และสมมติฐาน" : "Source time, provenance, confidence, and assumptions retained"}</dd></div>
-                </dl>
-                <article className={data.pilot_readiness.agency_operational_allowed ? "eligible-reason" : "blocked-reason"}>
-                  <b>{th ? "สถานะปัจจุบัน" : "Current position"}</b>
-                  <p>{data.pilot_readiness.agency_operational_allowed
-                    ? (th ? "การตรวจรับของหน่วยงานและข้อกำหนดการตรวจสอบครบถ้วนแล้ว" : "Agency acceptance and validation requirements are complete.")
-                    : (th ? "ผลการวิจัยใช้เพื่อสนับสนุนการทบทวนเท่านั้น จนกว่าการตรวจรับของหน่วยงานและหลักฐานภาคสนามจะเสร็จสมบูรณ์" : "Research findings support review only until agency acceptance and field evidence are complete.")}</p>
-                </article>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <footer className="studio-footer"><p>{th ? "บันทึกหลักฐานที่เผยแพร่คงข้อมูลแหล่งที่มา สถานะการตรวจสอบ ความเชื่อมั่น และขอบเขตการทบทวน" : "Published evidence records retain provenance, validation status, confidence, and review boundaries."}</p><a href="/command/">{th ? "เปิดศูนย์บัญชาการวางแผน →" : "Open planning command center →"}</a></footer>
+        <footer className="studio-footer"><span>{th ? "รายงานนี้ไม่ใช่คำเตือนภัยหรือการอนุญาตใช้งาน" : "This report is not a warning or operational authorization."}</span><a href="/command/">{th ? "เปิดพื้นที่วางแผน →" : "Open planning workspace →"}</a></footer>
       </div>
     </main>
+  );
+}
+
+function ModelMetrics({ run, language }: { run: ModelRun; language: Language }) {
+  const th = language === "th";
+  return (
+    <div className={styles.metricLayout}>
+      <article>
+        <p className="eyebrow">{run.dataset_mode}</p>
+        <h3>{familyLabel(run)}</h3>
+        <dl><div><dt>run_id</dt><dd><code>{run.run_id}</code></dd></div><div><dt>{th ? "เวอร์ชันโมเดล" : "Model version"}</dt><dd><code>{run.model_revision ?? run.geoai_version ?? "not_recorded"}</code></dd></div><div><dt>{th ? "สถานะ" : "Status"}</dt><dd><code>{run.run_status}</code></dd></div></dl>
+      </article>
+      <dl className={styles.metrics}>{METRICS.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{formatNumber(run.validation_metrics[key], language, 3)}</dd></div>)}</dl>
+    </div>
+  );
+}
+
+function SourceHistory({ language, data, roles }: { language: Language; data: ReturnType<typeof useFloodGuardData>; roles?: string[] }) {
+  const th = language === "th";
+  const components = roles
+    ? data.evidenceContext.source_components.filter((component) => roles.includes(component.role))
+    : data.evidenceContext.source_components;
+  return (
+    <div className={styles.tableScroll}>
+      <table className={styles.reportTable}>
+        <thead><tr><th>{th ? "องค์ประกอบ" : "Source component"}</th><th>{th ? "บทบาท" : "Role"}</th><th>{th ? "เวลาของแหล่งข้อมูล" : "Source time"}</th><th>{th ? "ความหมายของเวลา" : "Temporal meaning"}</th><th>{th ? "ความใหม่" : "Freshness"}</th><th>{th ? "ตรวจสอบล่าสุด" : "Last checked"}</th></tr></thead>
+        <tbody>{components.map((component) => <tr key={component.source_component_id}><td><b>{component.source_name}</b><code>{component.source_component_id}</code></td><td><code>{component.role}</code></td><td>{component.source_timestamp ? formatSourceTime(component.source_timestamp, language) : (th ? "ไม่ทราบ" : "Unknown")}</td><td><code>{component.temporal_meaning}</code></td><td><span className={`${styles.state} ${component.freshness === "current" ? styles.recorded : styles.not_recorded}`}>{component.freshness}</span></td><td>{component.last_checked_at ? formatSourceTime(component.last_checked_at, language) : (th ? "ยังไม่บันทึก" : "Not recorded")}</td></tr>)}</tbody>
+      </table>
+    </div>
   );
 }

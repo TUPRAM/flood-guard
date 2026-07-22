@@ -11,10 +11,17 @@ import pytest
 from fastapi.testclient import TestClient
 from jsonschema import FormatChecker
 from pydantic import ValidationError as PydanticValidationError
+from referencing import Registry, Resource
 
 from floodguard_api.app import create_app
 from floodguard_api.config import RepositoryPaths
-from floodguard_api.models import AreaDecision, ModelRun
+from floodguard_api.models import (
+    AreaDecision,
+    EvidenceRecord,
+    EvidenceState,
+    LayerCatalogItem,
+    ModelRun,
+)
 from floodguard_api.repository import ArtifactRepository
 from floodguard_api.safety import PrivatePathError, assert_public_payload
 
@@ -25,6 +32,9 @@ def test_all_required_routes_are_registered(client: TestClient) -> None:
     paths = set(openapi.json()["paths"])
     assert {
         "/api/v1/status",
+        "/api/v1/evidence-context",
+        "/api/v1/public-areas",
+        "/api/v1/evidence-records/{evidence_context_id}",
         "/api/v1/study-areas",
         "/api/v1/areas",
         "/api/v1/areas/{area_id}",
@@ -38,6 +48,47 @@ def test_all_required_routes_are_registered(client: TestClient) -> None:
         "/api/v1/data-readiness",
         "/api/v1/health",
     }.issubset(paths)
+
+
+def test_fixture_evidence_context_public_projection_and_record_are_bound(
+    client: TestClient,
+) -> None:
+    status = client.get("/api/v1/status").json()
+    context_response = client.get("/api/v1/evidence-context")
+    public_areas_response = client.get("/api/v1/public-areas")
+    assert context_response.status_code == 200
+    assert public_areas_response.status_code == 200
+    context = context_response.json()
+    public_areas = public_areas_response.json()
+    record_response = client.get(
+        f"/api/v1/evidence-records/{context['evidence_context_id']}"
+    )
+
+    assert status["evidence_context_id"] == context["evidence_context_id"]
+    assert context["dataset_mode"] == "fixture_demo"
+    assert context["model_run_id"] is None
+    assert len(public_areas) == 5
+    assert all(
+        item["evidence_context_id"] == context["evidence_context_id"]
+        and item["current_conditions_confirmed"] is False
+        for item in public_areas
+    )
+    assert all("action_class" not in item for item in public_areas)
+    assert record_response.status_code == 200
+    record = record_response.json()
+    assert record["evidence_context"] == context
+    assert record["decision"] == "blocked"
+    assert record["operational_authorized"] is False
+    assert client.get("/api/v1/evidence-records/unknown-context").status_code == 404
+
+
+def test_fixture_evidence_record_is_stable_across_repository_restarts() -> None:
+    paths = RepositoryPaths.discover()
+    first = ArtifactRepository(paths).evidence_record().model_dump(mode="json")
+    second = ArtifactRepository(paths).evidence_record().model_dump(mode="json")
+
+    assert first == second
+    assert first["generated_at"] == first["evidence_context"]["generated_at"]
 
 
 def test_configured_judging_origin_passes_cors_preflight(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -247,6 +298,80 @@ def test_area_contract_rejects_score_or_class_drift(client: TestClient) -> None:
     class_drift["action_class"] = "A" if payload["action_class"] != "A" else "E"
     with pytest.raises(PydanticValidationError, match="locked A-E"):
         AreaDecision.model_validate(class_drift)
+
+
+def test_evidence_models_reject_unowned_passes_and_invalid_gate_combinations() -> None:
+    root = Path(__file__).resolve().parents[3]
+    record = json.loads(
+        (root / "packages" / "contracts" / "examples" / "evidence-record.fixture-demo.json")
+        .read_text(encoding="utf-8")
+    )
+    record["decision"] = "passed"
+    with pytest.raises(PydanticValidationError, match="decision authority and time"):
+        EvidenceRecord.model_validate(record)
+
+    with pytest.raises(PydanticValidationError, match="blocked gate identifier"):
+        EvidenceState.model_validate(
+            {
+                "evidence_type": "modelled",
+                "granularity": "area_summary",
+                "confidence_class": "low",
+                "confidence_reason": "Test only.",
+                "permitted_use": "planning_only",
+                "required_gate": None,
+                "gate_state": "blocked",
+            }
+        )
+
+    authorized = json.loads(
+        (root / "packages" / "contracts" / "examples" / "evidence-record.fixture-demo.json")
+        .read_text(encoding="utf-8")
+    )
+    authorized.update(
+        {
+            "model_id": "qualified-model",
+            "model_version": "1.0.0",
+            "model_sha256": "a" * 64,
+            "evaluation_sha256": "b" * 64,
+            "decision": "passed",
+            "decision_authority": "agency-review-board",
+            "decision_at": "2026-07-20T00:00:00Z",
+            "operational_authorized": True,
+            "blockers": [],
+        }
+    )
+    authorized["evidence_context"].update(
+        {
+            "dataset_mode": "official_input",
+            "operational_status": "agency_operational",
+        }
+    )
+    with pytest.raises(PydanticValidationError, match="complete accepted authority"):
+        EvidenceRecord.model_validate(authorized)
+    authorized["evidence_context"]["model_run_id"] = "qualified-run-v1"
+    EvidenceRecord.model_validate(authorized)
+
+    layer = json.loads(
+        (root / "packages" / "contracts" / "examples" / "layer.fixture-demo.json")
+        .read_text(encoding="utf-8")
+    )
+    layer["evidence_state"].update(
+        {
+            "permitted_use": "operational_authorized",
+            "confidence_class": "high",
+            "gate_state": "ready",
+        }
+    )
+    with pytest.raises(PydanticValidationError, match="operational layers require"):
+        LayerCatalogItem.model_validate(layer)
+    layer.update(
+        {
+            "dataset_mode": "official_input",
+            "operational_status": "agency_operational",
+            "model_run_id": "qualified-run-v1",
+        }
+    )
+    LayerCatalogItem.model_validate(layer)
 
 
 def test_safety_guard_rejects_windows_unc_and_private_posix_paths() -> None:
@@ -482,12 +607,19 @@ def test_present_but_invalid_markdown_brief_returns_structured_unavailable(
 
 def _validate_shared_schema(name: str, payload: Any) -> None:
     root = Path(__file__).resolve().parents[3]
-    schema = json.loads(
-        (root / "packages" / "contracts" / "schemas" / name).read_text(encoding="utf-8")
-    )
+    schema_directory = root / "packages" / "contracts" / "schemas"
+    schema = json.loads((schema_directory / name).read_text(encoding="utf-8"))
+    registry = Registry()
+    for schema_path in schema_directory.glob("*.schema.json"):
+        dependency = json.loads(schema_path.read_text(encoding="utf-8"))
+        registry = registry.with_resource(
+            dependency["$id"],
+            Resource.from_contents(dependency),
+        )
     jsonschema.Draft202012Validator(
         schema,
         format_checker=FormatChecker(),
+        registry=registry,
     ).validate(payload)
 
 

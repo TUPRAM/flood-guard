@@ -4,8 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   createEmptyHouseholdPlan,
+  markNoHouseholdNeedsApply,
   readStoredHouseholdPlan,
+  recordHouseholdPlanReview,
   removeStoredHouseholdPlan,
+  toggleHouseholdNeed,
   writeStoredHouseholdPlan,
   type HouseholdNeedId,
   type HouseholdPlan,
@@ -30,9 +33,10 @@ export function useHouseholdPlan(defaultAreaId: string) {
     setPlan(readStoredHouseholdPlan(browserStorage(), defaultAreaId));
   }, [defaultAreaId]);
 
-  const updatePlan = useCallback((update: (current: HouseholdPlan) => HouseholdPlan) => {
+  const updatePlan = useCallback((update: (current: HouseholdPlan, timestamp: string) => HouseholdPlan) => {
     setPlan((current) => {
-      const next = update(current);
+      const timestamp = new Date().toISOString();
+      const next = { ...update(current, timestamp), last_saved_at: timestamp };
       writeStoredHouseholdPlan(browserStorage(), next);
       return next;
     });
@@ -53,15 +57,15 @@ export function useHouseholdPlan(defaultAreaId: string) {
   }, [updatePlan]);
 
   const toggleNeed = useCallback((needId: HouseholdNeedId) => {
-    updatePlan((current) => ({
-      ...current,
-      needs: { ...current.needs, [needId]: !current.needs[needId] },
-      last_reviewed_at: null,
-    }));
+    updatePlan((current, timestamp) => toggleHouseholdNeed(current, needId, timestamp));
+  }, [updatePlan]);
+
+  const selectNoNeedsApply = useCallback(() => {
+    updatePlan((current, timestamp) => markNoHouseholdNeedsApply(current, timestamp));
   }, [updatePlan]);
 
   const markReviewed = useCallback(() => {
-    updatePlan((current) => ({ ...current, last_reviewed_at: new Date().toISOString() }));
+    updatePlan((current, timestamp) => recordHouseholdPlanReview(current, timestamp));
   }, [updatePlan]);
 
   const resetChecklist = useCallback(() => {
@@ -82,6 +86,7 @@ export function useHouseholdPlan(defaultAreaId: string) {
     selectPlanningArea,
     toggleChecklistItem,
     toggleNeed,
+    selectNoNeedsApply,
     markReviewed,
     resetChecklist,
     clearPlan,

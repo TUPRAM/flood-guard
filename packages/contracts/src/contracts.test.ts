@@ -1,20 +1,30 @@
 import { describe, expect, it } from "vitest";
 
 import areaDecisionSchema from "../schemas/area-decision.schema.json";
+import evidenceContextSchema from "../schemas/evidence-context.schema.json";
+import evidenceRecordSchema from "../schemas/evidence-record.schema.json";
+import evidenceStateSchema from "../schemas/evidence-state.schema.json";
 import acceptanceReceiptSchema from "../schemas/agency-acceptance-receipt.schema.json";
 import fieldValidationReceiptSchema from "../schemas/field-validation-receipt.schema.json";
 import layerSchema from "../schemas/layer.schema.json";
 import modelRunSchema from "../schemas/model-run.schema.json";
 import pilotReadinessSchema from "../schemas/pilot-readiness.schema.json";
 import proposalEvidenceSchema from "../schemas/proposal-evidence.schema.json";
+import publicPreparednessAreaSchema from "../schemas/public-preparedness-area.schema.json";
+import sourceComponentSchema from "../schemas/source-component.schema.json";
 import statusSchema from "../schemas/status.schema.json";
 import {
   ACCEPTANCE_RECEIPT_STATES,
   ACTION_CLASSES,
+  ACTION_REASON_CODES,
   COMMON_METADATA_FIELDS,
   CONFIDENCE_CLASSES,
   DATASET_MODES,
   DATA_STATES,
+  EVIDENCE_DECISIONS,
+  EVIDENCE_GATE_STATES,
+  EVIDENCE_GRANULARITIES,
+  EVIDENCE_TYPES,
   EVIDENCE_RESULTS,
   GEOAI_AGGREGATION_STATUSES,
   GEOAI_VALIDATION_STATUSES,
@@ -22,10 +32,14 @@ import {
   MODEL_FAMILIES,
   MODEL_RUN_STATUSES,
   OPERATIONAL_STATUSES,
+  PERMITTED_USES,
   PILOT_ROLES,
   PREPROCESSING_VALUE_DOMAINS,
   ROLE_VISIBILITIES,
   SCHEMA_VERSION,
+  SOURCE_TEMPORAL_MEANINGS,
+  FRESHNESS_STATES,
+  FRESHNESS_POLICY_VERSION,
 } from "./index";
 
 const schemas = [
@@ -48,10 +62,27 @@ describe("contract drift", () => {
     expect(ACTION_CLASSES).toEqual(
       areaDecisionSchema.properties.action_class.enum,
     );
+    expect(ACTION_REASON_CODES).toEqual(
+      areaDecisionSchema.properties.action_reason_code.enum,
+    );
     expect(ROLE_VISIBILITIES).toEqual(
       layerSchema.properties.role_visibility.items.enum,
     );
     expect(LAYER_FORMATS).toEqual(layerSchema.properties.format.enum);
+    const layerEvidence = evidenceStateSchema.properties;
+    const layerSource = sourceComponentSchema.properties;
+    expect(EVIDENCE_TYPES).toEqual(layerEvidence.evidence_type.enum);
+    expect(EVIDENCE_GRANULARITIES).toEqual(layerEvidence.granularity.enum);
+    expect(PERMITTED_USES).toEqual(layerEvidence.permitted_use.enum);
+    expect(EVIDENCE_GATE_STATES).toEqual(layerEvidence.gate_state.enum);
+    expect(FRESHNESS_STATES).toEqual(layerSource.freshness.enum);
+    expect(SOURCE_TEMPORAL_MEANINGS).toEqual(layerSource.temporal_meaning.enum);
+    expect(FRESHNESS_POLICY_VERSION).toBe(
+      sourceComponentSchema.properties.freshness_policy_version.const,
+    );
+    expect(EVIDENCE_DECISIONS).toEqual(
+      evidenceRecordSchema.properties.decision.enum,
+    );
     expect(MODEL_FAMILIES).toEqual(
       modelRunSchema.properties.model_family.enum,
     );
@@ -60,6 +91,31 @@ describe("contract drift", () => {
     );
     expect(PREPROCESSING_VALUE_DOMAINS).toEqual(
       modelRunSchema.properties.preprocessing.properties.value_domain.enum,
+    );
+  });
+
+  it("keeps context-bound public and evidence records explicit", () => {
+    expect(evidenceStateSchema["x-contract-version"]).toBe("1.0");
+    expect(sourceComponentSchema["x-contract-version"]).toBe("1.0");
+    expect(evidenceContextSchema.properties.model_run_id.type).toEqual([
+      "string",
+      "null",
+    ]);
+    expect(publicPreparednessAreaSchema.properties).not.toHaveProperty(
+      "action_class",
+    );
+    expect(publicPreparednessAreaSchema.properties).not.toHaveProperty(
+      "road_evidence",
+    );
+    expect(evidenceRecordSchema.required).toEqual(
+      expect.arrayContaining([
+        "evidence_record_id",
+        "evidence_context",
+        "decision_authority",
+        "decision_at",
+        "operational_authorized",
+        "blockers",
+      ]),
     );
   });
 

@@ -17,6 +17,8 @@
     "official_warning",
     "data_version",
     "git_commit",
+    "evidence_context_id",
+    "evidence_package_id",
     "study_area",
     "data_state",
     "message_th",
@@ -51,6 +53,11 @@
       "type": "string",
       "pattern": "^[0-9a-fA-F]{7,40}$"
     },
+    "evidence_context_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "evidence_package_id": { "type": "string", "minLength": 1 },
     "study_area": { "type": "string", "minLength": 1 },
     "data_state": {
       "type": "string",

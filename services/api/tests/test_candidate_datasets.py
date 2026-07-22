@@ -5,12 +5,14 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from floodguard_api.app import create_app
 from floodguard_api.config import RepositoryPaths
 from floodguard_api.dataset_registry import (
     MAE_SAI_MANIFEST_RELATIVE_PATH,
+    MAE_SAI_PUBLIC_PROJECTION_RELATIVE_PATH,
     MAE_SAI_SCENARIO_MANIFEST_RELATIVE_PATH,
     DatasetRegistry,
 )
@@ -146,6 +148,105 @@ def test_candidate_layer_catalog_and_filters_preserve_safety_semantics() -> None
         feature["properties"]["area_id"] == "TH570901"
         for feature in selected_roads.json()["features"]
     )
+
+
+def test_mae_sai_public_surface_is_reduced_and_role_enforced() -> None:
+    with TestClient(create_app(DatasetRegistry())) as client:
+        context_response = client.get(
+            "/api/v1/evidence-context", params={"study_area": MAE_SAI}
+        )
+        public_areas_response = client.get(
+            "/api/v1/public-areas", params={"study_area": MAE_SAI}
+        )
+        public_layers_response = client.get(
+            "/api/v1/layers", params={"study_area": MAE_SAI, "role": "public"}
+        )
+        public_layer_response = client.get(
+            "/api/v1/layer-data/public_preparedness_areas",
+            params={"study_area": MAE_SAI, "role": "public"},
+        )
+        denied_road = client.get(
+            "/api/v1/layer-data/road_risk",
+            params={"study_area": MAE_SAI, "role": "public"},
+        )
+
+    assert context_response.status_code == 200
+    context = context_response.json()
+    assert context["model_run_id"] is None
+    assert context["source_components"]
+
+    assert public_areas_response.status_code == 200
+    public_areas = public_areas_response.json()
+    assert len(public_areas) == 8
+    assert all(
+        set(item) == {
+            "schema_version",
+            "evidence_context_id",
+            "area_id",
+            "area_name_th",
+            "area_name_en",
+            "planning_priority_0_100",
+            "evidence_sufficiency",
+            "recommendation_code",
+            "source_timestamp",
+            "freshness",
+            "current_conditions_confirmed",
+        }
+        for item in public_areas
+    )
+    assert all(
+        item["evidence_context_id"] == context["evidence_context_id"]
+        and item["current_conditions_confirmed"] is False
+        for item in public_areas
+    )
+
+    assert public_layers_response.status_code == 200
+    public_layers = public_layers_response.json()
+    assert [item["layer_id"] for item in public_layers] == [
+        "public_preparedness_areas"
+    ]
+    assert public_layers[0]["role_visibility"] == ["public"]
+    assert {
+        item["source_component_id"]
+        for item in public_layers[0]["source_components"]
+    } == {
+        "sentinel1-flood-context",
+        "hdx-cod-ab-boundaries",
+        "worldpop-2020",
+        "osm-geofabrik-2026-07-09",
+        "copernicus-dem-glo30",
+    }
+    assert {
+        "WorldPop 2020",
+        "OpenStreetMap contributors",
+        "Geofabrik",
+        "Copernicus DEM GLO-30",
+    }.issubset(set(public_layers[0]["attribution"]))
+
+    assert public_layer_response.status_code == 200
+    assert public_layer_response.headers[
+        "x-floodguard-evidence-context-id"
+    ] == context["evidence_context_id"]
+    public_features = public_layer_response.json()["features"]
+    public_metadata = public_layer_response.json()["floodguard_metadata"]
+    assert len(public_features) == 8
+    assert all(
+        "action_class" not in feature["properties"]
+        and "people_losing_30_min_access" not in feature["properties"]
+        and "candidate_evidence" not in feature["properties"]
+        for feature in public_features
+    )
+    assert {
+        item["source_component_id"]
+        for item in public_metadata["source_components"]
+    } == {
+        "sentinel1-flood-context",
+        "hdx-cod-ab-boundaries",
+        "worldpop-2020",
+        "osm-geofabrik-2026-07-09",
+        "copernicus-dem-glo30",
+    }
+    assert denied_road.status_code == 404
 
 
 def test_candidate_layer_response_has_content_identity_and_conditional_cache() -> None:
@@ -317,7 +418,7 @@ def test_mae_sai_scenarios_use_only_pinned_graph_inputs_and_return_real_deltas()
     assert invalid_edge.status_code == 422
 
 
-def test_candidate_artifact_substitution_blocks_status_decisions_and_layers(
+def test_staff_artifact_substitution_does_not_block_public_projection(
     tmp_path: Path,
 ) -> None:
     paths = _copy_candidate_bundle(tmp_path)
@@ -336,17 +437,75 @@ def test_candidate_artifact_substitution_blocks_status_decisions_and_layers(
         status = client.get("/api/v1/status", params={"study_area": MAE_SAI})
         decisions = client.get("/api/v1/areas", params={"study_area": MAE_SAI})
         layer = client.get(
-            "/api/v1/layer-data/priority_areas",
+            "/api/v1/layer-data/facilities",
             params={"study_area": MAE_SAI},
+        )
+        public_areas = client.get(
+            "/api/v1/public-areas",
+            params={"study_area": MAE_SAI},
+        )
+        public_layer = client.get(
+            "/api/v1/layer-data/public_preparedness_areas",
+            params={"study_area": MAE_SAI, "role": "public"},
         )
 
     assert status.status_code == 200
-    assert status.json()["data_state"] == "unavailable"
+    assert status.json()["data_state"] == "stale"
     assert status.json()["official_warning"] is False
     assert decisions.status_code == 503
     assert "checksum validation failed" in decisions.json()["detail"]
     assert layer.status_code == 503
     assert "checksum validation failed" in layer.json()["detail"]
+    assert public_areas.status_code == 200
+    assert len(public_areas.json()) == 8
+    assert public_layer.status_code == 200
+    assert len(public_layer.json()["features"]) == 8
+
+
+def test_public_requests_never_open_staff_layers(monkeypatch: pytest.MonkeyPatch) -> None:
+    registry = DatasetRegistry()
+
+    def reject_staff_read(*_args: object, **_kwargs: object) -> dict:
+        raise AssertionError("Public request attempted to open a staff artifact")
+
+    monkeypatch.setattr(registry.mae_sai, "_validated_layer", reject_staff_read)
+    context_id = registry.mae_sai.evidence_context().evidence_context_id
+    with TestClient(create_app(registry)) as client:
+        responses = [
+            client.get("/api/v1/status", params={"study_area": MAE_SAI}),
+            client.get("/api/v1/evidence-context", params={"study_area": MAE_SAI}),
+            client.get("/api/v1/public-areas", params={"study_area": MAE_SAI}),
+            client.get(
+                "/api/v1/layers",
+                params={"study_area": MAE_SAI, "role": "public"},
+            ),
+            client.get(
+                "/api/v1/layer-data/public_preparedness_areas",
+                params={"study_area": MAE_SAI, "role": "public"},
+            ),
+            client.get(f"/api/v1/evidence-records/{context_id}"),
+        ]
+
+    assert all(response.status_code == 200 for response in responses)
+
+
+def test_mae_sai_evidence_record_is_stable_and_matches_offline_bundle() -> None:
+    root = RepositoryPaths.discover().root
+    offline = json.loads(
+        (
+            root
+            / "apps"
+            / "web"
+            / "public"
+            / "offline-demo"
+            / "mae-sai"
+            / "public-bundle.json"
+        ).read_text(encoding="utf-8")
+    )["evidence_record"]
+    first = DatasetRegistry().mae_sai.evidence_record().model_dump(mode="json")
+    second = DatasetRegistry().mae_sai.evidence_record().model_dump(mode="json")
+
+    assert first == second == offline
 
 
 def test_candidate_manifest_substitution_is_rejected_without_breaking_fixture(
@@ -411,6 +570,7 @@ def _copy_candidate_bundle(tmp_path: Path) -> RepositoryPaths:
     scenario_payload = json.loads(scenario_manifest_source.read_text(encoding="utf-8"))
     relative_paths = [
         MAE_SAI_MANIFEST_RELATIVE_PATH,
+        MAE_SAI_PUBLIC_PROJECTION_RELATIVE_PATH,
         *(layer["relative_path"] for layer in manifest_payload["layers"]),
         MAE_SAI_SCENARIO_MANIFEST_RELATIVE_PATH,
         *(f"outputs/{artifact['relative_path']}" for artifact in scenario_payload["artifacts"]),

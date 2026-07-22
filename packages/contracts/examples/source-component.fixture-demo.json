@@ -1,0 +1,13 @@
+{
+  "source_component_id": "fixture-decision-inputs",
+  "role": "synthetic_decision_fixture",
+  "source_name": "FloodGuard committed fixture bundle",
+  "source_version": "fixture-demo-1",
+  "source_timestamp": "2024-09-12T00:00:00Z",
+  "last_checked_at": "2026-07-16T00:00:00Z",
+  "temporal_meaning": "generation_time",
+  "freshness": "historical",
+  "freshness_policy_version": "source-freshness-v1",
+  "freshness_as_of": "2026-07-16T00:00:00Z",
+  "attribution": ["FloodGuard synthetic fixtures"]
+}

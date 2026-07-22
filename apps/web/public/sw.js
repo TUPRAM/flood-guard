@@ -1,6 +1,7 @@
 const CACHE_NAME = "floodguard-offline-__BUILD__";
 const PROPOSAL_EVIDENCE_ASSETS = []; /* __PROPOSAL_EVIDENCE_ASSETS__ */
 const CORE_ASSETS = [
+  "/",
   "/public/",
   "/command/",
   "/studio/",

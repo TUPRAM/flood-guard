@@ -58,6 +58,7 @@ const browser = await chromium.launch(
 );
 
 const routes = [
+  { path: "/", selector: "main.surface-chooser" },
   { path: "/public/", selector: "main.public-page" },
   { path: "/command/", selector: "main.command-page" },
   { path: "/studio/", selector: "main.studio-page" },
@@ -100,6 +101,29 @@ try {
   for (const route of routes) {
     await page.goto(`${baseUrl}${route.path}`, { waitUntil: "networkidle" });
     await page.locator(route.selector).waitFor({ state: "visible" });
+  }
+
+  // Root: the platform entry must use the final blue product system, expose
+  // all three role workspaces, and remain free of mobile overflow.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+  const rootBody = await page.locator("body").innerText();
+  assertFinalVisibleCopy(rootBody, "/");
+  const rootAudit = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    language: document.querySelector("main.surface-chooser")?.getAttribute("lang"),
+    links: [...document.querySelectorAll(".surface-grid a")].map((link) => link.getAttribute("href")),
+    cards: document.querySelectorAll(".surface-card").length,
+  }));
+  if (rootAudit.documentWidth > rootAudit.viewportWidth + 1) {
+    throw new Error(`Root chooser has mobile overflow: ${rootAudit.documentWidth}px > ${rootAudit.viewportWidth}px.`);
+  }
+  if (rootAudit.cards !== 3 || rootAudit.links.join("|") !== "/public/|/command/|/studio/") {
+    throw new Error(`Root chooser workspaces are incomplete: ${JSON.stringify(rootAudit)}.`);
+  }
+  if (rootAudit.language !== "en") {
+    throw new Error(`Root chooser does not declare its English content language: ${JSON.stringify(rootAudit)}.`);
   }
 
   // Public: the citizen action and official-help block must own the mobile
@@ -414,11 +438,13 @@ async function assertMaeSaiMap(page, scopeSelector, { expectRoads }) {
 
 function assertFinalVisibleCopy(body, routePath) {
   const normalized = body.toLocaleLowerCase("en-US");
-  const required = routePath === "/public/"
-    ? ["mae sai planning data", "source time", "confidence", "ddpm", "local authorities"]
-    : routePath === "/command/"
-      ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
-      : ["research validation data", "source time", "confidence", "technical verification", "observed-data validation", "operational readiness", "agency verification"];
+  const required = routePath === "/"
+    ? ["one platform. three planning views.", "continue by role", "ddpm", "local-authority"]
+    : routePath === "/public/"
+      ? ["mae sai planning data", "source time", "confidence", "ddpm", "local authorities"]
+      : routePath === "/command/"
+        ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
+        : ["research validation data", "source time", "confidence", "technical verification", "observed-data validation", "operational readiness", "agency verification"];
   for (const phrase of required) {
     if (!normalized.includes(phrase)) {
       throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);

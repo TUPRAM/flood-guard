@@ -27,7 +27,7 @@ for (const relative of [...routeFiles, ...requiredPublicAssets]) {
 }
 
 const routeExpectations = {
-  "index.html": [/Choose a planning surface/i, /DDPM/i, /local authorities/i],
+  "index.html": [/One platform\. Three planning views\./i, /Continue by role/i, /DDPM/i, /local-authority/i],
   "public/index.html": [
     /Mae Sai planning data|ข้อมูลการวางแผนแม่สาย/i,
     /Source time|เวลาข้อมูล/i,
@@ -66,7 +66,7 @@ const serviceWorker = readFileSync(resolve(out, "sw.js"), "utf8");
 if (serviceWorker.includes("__BUILD__") || serviceWorker.includes("__PROPOSAL_EVIDENCE_ASSETS__") || !/floodguard-offline-[0-9a-f]{12}/.test(serviceWorker)) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
-for (const route of ["/public/", "/command/", "/studio/"]) {
+for (const route of ["/", "/public/", "/command/", "/studio/"]) {
   if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Service worker does not precache ${route}`);
 }
 if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {

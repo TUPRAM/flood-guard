@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   poweredByHeader: false,
+  devIndicators: false,
   turbopack: { root: fileURLToPath(new URL("../..", import.meta.url)) },
 };
 

@@ -111,6 +111,36 @@ if (maeSaiBundle.areas.length !== 8 || maeSaiManifest.layers.find((layer) => lay
 if (maeSaiManifest.can_feed_decision_layer !== false || maeSaiManifest.official_warning !== false) {
   throw new Error("Mae Sai offline manifest does not fail closed");
 }
+const registryEntry = maeSaiBundle.model_registry?.[0]?.payload;
+const modelRunV2 = maeSaiBundle.model_runs_v2?.[0];
+const modelEvaluation = maeSaiBundle.model_evaluations?.[0];
+const observationProduct = maeSaiBundle.observation_products?.[0];
+if (
+  registryEntry?.source_bundle_sha256 !== maeSaiBundle.evidence_context.evidence_package_sha256
+  || registryEntry?.evidence_kind !== "external_algorithmic_baseline"
+  || registryEntry?.registry_status !== "blocked"
+  || registryEntry?.permitted_use !== "report_only"
+  || registryEntry?.can_feed_decision_layer !== false
+  || modelRunV2?.run_id !== registryEntry?.model_run_id
+  || modelRunV2?.run_status !== "blocked"
+  || modelRunV2?.processing_allowed !== false
+  || modelEvaluation?.evaluation_scope !== "not_evaluated"
+  || observationProduct?.valid_coverage_fraction !== 0
+  || observationProduct?.abstained_fraction !== 1
+  || observationProduct?.counts_as_observed_evidence !== false
+  || observationProduct?.can_feed_decision_layer !== false
+) {
+  throw new Error("Mae Sai offline Studio model evidence does not fail closed");
+}
+if (
+  !Array.isArray(maeSaiManifest.model_evidence_descriptors)
+  || maeSaiManifest.model_evidence_descriptors.length !== 5
+  || maeSaiManifest.model_evidence_descriptors.some(
+    (item) => !existsSync(resolve(out, item.relative_url.replace(/^\//, ""))),
+  )
+) {
+  throw new Error("Mae Sai model-evidence descriptors are not materialized.");
+}
 if (JSON.stringify(bundle).match(/(?:[A-Za-z]:[\\/](?:Users|home|private)[\\/]|\/(?:Users|home|private)\/)/i)) {
   throw new Error("Offline bundle contains a private absolute path");
 }

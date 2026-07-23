@@ -13,7 +13,10 @@ import {
   type AreaDecision,
   type EvidenceContext,
   type EvidenceRecord,
+  type FloodObservationProductV2,
   type LayerCatalogItem,
+  type ModelEvaluationV2,
+  type ModelRegistryEntryV1,
   type ModelRun,
   type PilotReadiness,
   type PublicPreparednessArea,
@@ -23,6 +26,7 @@ import {
 
 import { assertArtifactsMatchEvidenceContext, assertEvidenceContextMatches, evidenceRecordMatchesContext } from "./evidence-context";
 import { assertLayerVisibleForRole, visibleLayersForRole } from "./layer-visibility";
+import { validateModelEvidenceProjection } from "./model-registry";
 import type { AreaRecord, FeatureCollection, FloodGuardData, FloodGuardDataOptions, OfflineBundle, ReadinessRow, ScenarioId, ScenarioResult, StudyAreaId } from "./types";
 
 const offlineBundle = bundleJson as unknown as OfflineBundle;
@@ -144,8 +148,14 @@ export function getOfflineData(
     freshness: "historical" as const,
     current_conditions_confirmed: false,
   }));
+  const modelEvidence = modelEvidenceFor(
+    fixtureEvidenceContext,
+    offlineBundle,
+    options.role,
+  );
   return {
     ...offlineBundle,
+    ...modelEvidence,
     status: {
       ...offlineBundle.status,
       evidence_context_id: fixtureEvidenceContext.evidence_context_id,
@@ -194,8 +204,14 @@ export function getMaeSaiOfflineData(
   const layers = mismatch
     ? []
     : visibleLayersForRole(maeSaiOfflineBundle.layers, options.role);
+  const modelEvidence = mismatch
+    ? unavailableModelEvidence(
+        "The requested evidence context is not available in the Mae Sai offline package.",
+      )
+    : modelEvidenceFor(context, maeSaiOfflineBundle, options.role);
   return {
     ...maeSaiOfflineBundle,
+    ...modelEvidence,
     status: maeSaiPublicBundle.status,
     areas: mismatch || options.role === "public" ? [] : maeSaiOfflineBundle.areas,
     layers,
@@ -350,7 +366,14 @@ export async function loadFloodGuardData(
     assertArtifactsMatchEvidenceContext(evidenceContext, areas, layers);
     const degradationReasons: string[] = [];
     const candidateProfile = status.study_area === "mae_sai_candidate_v1";
-    const [runsResult, readinessResult, pilotResult] = await Promise.allSettled([
+    const [
+      runsResult,
+      readinessResult,
+      pilotResult,
+      registryResult,
+      evaluationsResult,
+      productsResult,
+    ] = await Promise.allSettled([
       candidateProfile
         ? Promise.resolve([] as ModelRun[])
         : loadCollection<ModelRun>(`${base}/api/v1/model-runs`),
@@ -360,6 +383,21 @@ export async function loadFloodGuardData(
       candidateProfile
         ? Promise.resolve(maeSaiOfflineBundle.pilot_readiness)
         : loadPilotReadiness(`${base}/api/v1/pilot/readiness`),
+      options.role === "studio"
+        ? loadCollection<ModelRegistryEntryV1>(
+            withStudyArea(`${base}/api/v1/model-registry`, preferredStudyArea),
+          )
+        : Promise.resolve([] as ModelRegistryEntryV1[]),
+      options.role === "studio"
+        ? loadCollection<ModelEvaluationV2>(
+            withStudyArea(`${base}/api/v1/model-evaluations`, preferredStudyArea),
+          )
+        : Promise.resolve([] as ModelEvaluationV2[]),
+      options.role === "studio"
+        ? loadCollection<FloodObservationProductV2>(
+            withStudyArea(`${base}/api/v1/observation-products`, preferredStudyArea),
+          )
+        : Promise.resolve([] as FloodObservationProductV2[]),
     ]);
     const modelRuns = runsResult.status === "fulfilled" ? runsResult.value : [];
     if (runsResult.status === "rejected") degradationReasons.push("Model-run catalog unavailable.");
@@ -379,6 +417,18 @@ export async function loadFloodGuardData(
       ? pilotResult.value
       : offlineBundle.pilot_readiness;
     if (pilotResult.status === "rejected") degradationReasons.push("Pilot-readiness control unavailable.");
+    if (
+      options.role === "studio"
+      && (
+        registryResult.status === "rejected"
+        || evaluationsResult.status === "rejected"
+        || productsResult.status === "rejected"
+      )
+    ) {
+      degradationReasons.push(
+        "The complete live model registry, evaluation, and observation-product chain is unavailable.",
+      );
+    }
     const agencyOperationVerified = (
       pilotResult.status === "fulfilled"
       && status.dataset_mode === "official_input"
@@ -483,8 +533,29 @@ export async function loadFloodGuardData(
     const compatibleBundle = status.study_area === "mae_sai_candidate_v1"
       ? maeSaiOfflineBundle
       : offlineBundle;
+    const liveRegistry = options.role === "studio"
+      && registryResult.status === "fulfilled"
+      ? registryResult.value
+      : [];
+    const liveEvaluations = options.role === "studio"
+      && evaluationsResult.status === "fulfilled"
+      ? evaluationsResult.value
+      : [];
+    const liveProducts = options.role === "studio"
+      && productsResult.status === "fulfilled"
+      ? productsResult.value
+      : [];
+    const modelEvidence = modelEvidenceFor(
+      evidenceContext,
+      compatibleBundle,
+      options.role,
+      liveRegistry,
+      liveEvaluations,
+      liveProducts,
+    );
     const candidate = {
       ...compatibleBundle,
+      ...modelEvidence,
       status: boundedStatus,
       areas: options.role === "public"
         ? []
@@ -542,6 +613,52 @@ export async function loadFloodGuardData(
       ? loadMaeSaiOfflineData(reason, options)
       : getOfflineData(reason, options);
   }
+}
+
+type ModelEvidenceFields = {
+  model_registry: NonNullable<OfflineBundle["model_registry"]>;
+  model_evaluations: NonNullable<OfflineBundle["model_evaluations"]>;
+  observation_products: NonNullable<OfflineBundle["observation_products"]>;
+  modelEvidenceState: FloodGuardData["modelEvidenceState"];
+  modelEvidenceReason: string;
+};
+
+function modelEvidenceFor(
+  context: EvidenceContext,
+  bundle: OfflineBundle,
+  role: RoleVisibility,
+  registryValue: unknown = bundle.model_registry,
+  evaluationValue: unknown = bundle.model_evaluations,
+  productValue: unknown = bundle.observation_products,
+): ModelEvidenceFields {
+  if (role !== "studio") {
+    return unavailableModelEvidence(
+      "Model registry evidence is restricted to the Studio technical-review surface.",
+    );
+  }
+  const projection = validateModelEvidenceProjection(
+    context,
+    registryValue,
+    evaluationValue,
+    productValue,
+  );
+  return {
+    model_registry: projection.entries,
+    model_evaluations: projection.evaluations,
+    observation_products: projection.products,
+    modelEvidenceState: projection.state,
+    modelEvidenceReason: projection.reason,
+  };
+}
+
+function unavailableModelEvidence(reason: string): ModelEvidenceFields {
+  return {
+    model_registry: [],
+    model_evaluations: [],
+    observation_products: [],
+    modelEvidenceState: "unavailable",
+    modelEvidenceReason: reason,
+  };
 }
 
 function resolveSnapshotStorage(
@@ -617,8 +734,14 @@ function readLastKnownApiSnapshot(
     const envelope = JSON.parse(raw) as unknown;
     if (!isSnapshotEnvelope(envelope)) return null;
     assertNoPrivatePaths(envelope);
+    const cachedModelEvidence = modelEvidenceFor(
+      envelope.data.evidenceContext,
+      envelope.data,
+      envelope.data.role,
+    );
     return {
       ...envelope.data,
+      ...cachedModelEvidence,
       status: {
         ...envelope.data.status,
         operational_status: "non_operational",

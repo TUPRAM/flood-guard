@@ -836,6 +836,7 @@ def write_area_geojson(
 def geometry_lineage(path: Path, **overrides: object) -> dict[str, object]:
     receipt: dict[str, object] = {
         "dataset_id": "TH-ADMIN-AUTH-001",
+        "study_area": "synthetic_contract_grid",
         "data_version": "2024-09-reviewed",
         "sha256": file_sha256(path),
         "source_name": "Qualified authoritative administrative geometry",
@@ -942,6 +943,11 @@ def test_trusted_zonal_adapter_derives_signs_and_verifies_area_statistics(
     receipt = create_zonal(contract)
 
     assert receipt["receipt_type"] == "floodguard.trusted_probability_zonal"
+    assert receipt["schema_version"] == "2.0"
+    assert (
+        receipt["authoritative_geometry"]["study_area"]
+        == contract["metadata"]["study_area"]
+    )
     assert receipt["can_feed_decision_layer"] is True
     assert receipt["eligible_for_decision_layer"] is True
     assert receipt["eligible_for_fpps"] is True
@@ -1358,6 +1364,50 @@ def test_trusted_zonal_adapter_validates_authoritative_geometry_lineage(
 
     with pytest.raises(ProbabilityAggregationError, match=message):
         create_zonal(contract)
+
+
+def test_trusted_zonal_adapter_rejects_cross_study_area_geometry(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(
+        tmp_path,
+        geometry_overrides={"study_area": "different_study_area"},
+    )
+
+    with pytest.raises(ProbabilityAggregationError, match="study_area does not match"):
+        create_zonal(contract)
+
+
+def test_signed_zonal_verification_rejects_cross_study_area_substitution(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+    substituted_lineage = deepcopy(contract["geometry_receipt"])
+    substituted_lineage["study_area"] = "different_study_area"
+
+    with pytest.raises(ProbabilityAggregationError, match="study_area does not match"):
+        verify_zonal(
+            receipt,
+            contract,
+            authoritative_geometry_receipt=substituted_lineage,
+        )
+
+
+def test_signed_zonal_verification_rejects_legacy_unbound_v1_receipt(
+    tmp_path: Path,
+) -> None:
+    contract = zonal_contract(tmp_path)
+    receipt = create_zonal(contract)
+    receipt["schema_version"] = "1.0"
+    receipt["authoritative_geometry"].pop("study_area")
+    resign_zonal(receipt)
+
+    with pytest.raises(
+        ProbabilityAggregationError,
+        match="legacy 1.0 receipts are not study-area bound",
+    ):
+        verify_zonal(receipt, contract)
 
 
 def test_trusted_zonal_adapter_rejects_receipt_timestamp_before_lineage(

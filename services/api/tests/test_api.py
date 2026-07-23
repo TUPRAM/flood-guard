@@ -45,6 +45,11 @@ def test_all_required_routes_are_registered(client: TestClient) -> None:
         "/api/v1/scenario-runs/{run_id}",
         "/api/v1/model-runs",
         "/api/v1/model-runs/{run_id}",
+        "/api/v1/model-registry",
+        "/api/v1/model-registry/{registry_entry_id}",
+        "/api/v1/model-registry/{registry_entry_id}/evidence",
+        "/api/v1/model-evaluations",
+        "/api/v1/observation-products",
         "/api/v1/data-readiness",
         "/api/v1/health",
     }.issubset(paths)
@@ -223,7 +228,6 @@ def test_model_runs_validate_and_remain_blocked_from_promotion(
     runs = response.json()
     assert {run["model_family"] for run in runs} == {
         "deterministic_sar_baseline",
-        "weak_label_logistic",
     }
     for run in runs:
         _validate_shared_schema("model-run.schema.json", run)
@@ -231,10 +235,7 @@ def test_model_runs_validate_and_remain_blocked_from_promotion(
         assert run["can_feed_decision_layer"] is False
         assert run["reason_blocked"]
         assert not _contains_private_path(run)
-    weak = next(run for run in runs if run["model_family"] == "weak_label_logistic")
-    assert weak["processing_allowed"] is False
-    assert all(row["processing_allowed"] is False for row in weak["input_manifest_rows"])
-    assert weak["validation_metrics"]["brier_score"] is None
+    assert runs[0]["model_sha256"]
 
 
 def test_model_run_detail_and_unknown_id(client: TestClient) -> None:
@@ -242,6 +243,7 @@ def test_model_run_detail_and_unknown_id(client: TestClient) -> None:
     assert run.status_code == 200
     assert run.json()["validation_metrics"]["brier_score"] == pytest.approx(0.3475396)
     assert client.get("/api/v1/model-runs/nope").status_code == 404
+    assert client.get("/api/v1/model-runs/mae-sai-weak-label-logistic-v1").status_code == 404
 
 
 @pytest.mark.parametrize("layer_id", ["priority_areas", "road_risk"])
@@ -279,6 +281,9 @@ def test_no_api_json_response_exposes_private_paths(client: TestClient) -> None:
         "/api/v1/areas",
         "/api/v1/layers",
         "/api/v1/model-runs",
+        "/api/v1/model-registry",
+        "/api/v1/model-evaluations",
+        "/api/v1/observation-products",
         "/api/v1/data-readiness",
     ]
     for path in paths:

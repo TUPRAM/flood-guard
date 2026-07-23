@@ -116,5 +116,10 @@ describe("public-only data provider", () => {
     ));
     expect(new URL(String(catalogUrl)).searchParams.get("role")).toBe("public");
     expect(new URL(String(layerUrl)).searchParams.get("role")).toBe("public");
+    expect(requestedUrls.some((value) => (
+      /\/api\/v1\/(?:model-registry|model-evaluations|observation-products)/.test(
+        new URL(value).pathname,
+      )
+    ))).toBe(false);
   });
 });

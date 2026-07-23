@@ -82,7 +82,7 @@ $env:NEXT_PUBLIC_FLOODGUARD_API_URL="http://127.0.0.1:8000"
 pnpm.cmd --filter @floodguard/web exec next dev --hostname 127.0.0.1
 ```
 
-The three role surfaces request one immutable Mae Sai evidence context. Public receives only the approved reporting-area projection and never requests, caches, attributes, or exports the staff road, facility-candidate, or access layers. Command may inspect those open-data layers with neutral, verification-first semantics. Studio shows the same evidence package and explicitly reports that no model evaluation is bound when a matching evaluation record does not exist. When the API is absent, each surface uses its role-filtered, checksummed offline projection; multi-megabyte geospatial responses are not written to `localStorage`. `outputs/dashboard.html` remains a reproducible internal fallback used by the decision-engine test lane and is not part of the public-production deployment.
+The three role surfaces request one immutable Mae Sai evidence context. Public receives only the approved reporting-area projection and never requests, caches, attributes, or exports the staff road, facility-candidate, access, model-registry, evaluation, or observation-product records. Command may inspect the open-data planning layers with neutral, verification-first semantics. Studio shows the same evidence package, reports that no model evaluation is bound when a matching evaluation record does not exist, and may separately display redacted report-only registry records with their exact blocker and lineage. When the API is absent, each surface uses its role-filtered, checksummed offline projection; multi-megabyte geospatial responses are not written to `localStorage`. `outputs/dashboard.html` remains a reproducible internal fallback used by the decision-engine test lane and is not part of the public-production deployment.
 
 With both development servers running, verify the real API-to-browser path:
 
@@ -92,7 +92,13 @@ pnpm.cmd --filter @floodguard/web test:live-api
 
 The API validates CSV, GeoJSON, and Markdown artifact structure before advertising data as ready. Missing or malformed artifacts return explicit unavailable/blocked states while `/api/v1/health` continues to report service-process health independently.
 
-GeoAI is optional and isolated. Normal root tests, API tests, and web tests do not install or import it. See `services/geoai-runner/README.md`; no real-data training is allowed until the repository's provenance, licensing, timing, checksum, reference-mask, and spatial-validation gates pass.
+GeoAI is optional and isolated. Normal root tests, API tests, and web tests do not install or import the heavy GeoAI runner. See `services/geoai-runner/README.md` and `docs/geoai-system-design-v1.md`; no real-data training is allowed until the repository's provenance, licensing, timing, checksum, reference-mask, reviewer, partition, and spatial-validation gates pass. The additive v2 model-run, observation-product, evaluation, and study-area registry contracts are deliberately report-only until those gates and a separately signed promotion chain pass. The Mae Sai Studio fallback is generated from the same API registry builder, includes its exact ModelRun v2 document, and uses materialized checksum-bound JSON descriptors—not pretend rasters—for the all-abstain product:
+
+```powershell
+uv run --project services/api --with shapely==2.1.2 python apps/web/scripts/build-mae-sai-offline-bundle.py
+```
+
+Studio performs structural/cross-record checks but explicitly reports that browser cryptographic status is not verified. Canonical digest, public test-HMAC, and safety-gate verification belongs to the API/core resolver. Trusted zonal receipts are schema 2.0 and bind authoritative geometry to the exact model-run study area; unbound legacy 1.0 receipts are rejected.
 
 ## Preserved Decision Engine
 

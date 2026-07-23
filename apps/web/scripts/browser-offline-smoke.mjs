@@ -301,6 +301,33 @@ try {
     }
   }
   assertFinalVisibleCopy(studioBody, "/studio/");
+  await page.getByRole("tab", { name: "Models & evaluation" }).click();
+  await page.locator("#model-registry-title").waitFor({ state: "visible" });
+  const registryBody = await page.locator("#studio-tab-panel").innerText();
+  for (const required of [
+    "No model evaluation is bound to this evidence context",
+    "External algorithmic baseline",
+    "No real-event evaluation",
+    "Report only",
+    "not eligible for FPPS or the decision layer",
+    "Remain unknown; never treated as dry",
+    "Browser cryptographic status: not verified",
+    "The API and repository are the authority for cryptographic verification.",
+  ]) {
+    if (!registryBody.includes(required)) {
+      throw new Error(`Studio model registry is missing its fail-closed copy: ${required}.`);
+    }
+  }
+  const registryButtons = page.locator('#studio-tab-panel button[aria-pressed]');
+  if (await registryButtons.count() !== 1 || await registryButtons.first().getAttribute("aria-pressed") !== "true") {
+    throw new Error("Studio model registry selection is missing or not keyboard-state visible.");
+  }
+  if (!registryBody.includes("0%") || !registryBody.includes("100%")) {
+    throw new Error("Studio does not show the all-unknown coverage and abstention state.");
+  }
+  if (registryBody.includes("Signature authority")) {
+    throw new Error("Studio overstates the browser trust boundary as signature authority.");
+  }
   const runButtons = page.locator('button[aria-pressed][class*="runButton"]');
   if (await runButtons.count() > 1) {
     await runButtons.nth(1).click();

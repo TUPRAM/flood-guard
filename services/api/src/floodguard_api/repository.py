@@ -54,6 +54,11 @@ FIXTURE_EVIDENCE_PACKAGE_ID = f"floodguard-fixture:{FIXTURE_DATA_VERSION}"
 FIXTURE_EVIDENCE_PACKAGE_SHA256 = hashlib.sha256(
     f"{FIXTURE_EVIDENCE_PACKAGE_ID}:{DATA_GIT_COMMIT}".encode()
 ).hexdigest()
+# Synthetic configuration identity only. It is deterministic for fixture joins
+# but is not a digest of trained weights and cannot authorize decision use.
+SYNTHETIC_MODEL_SHA256 = hashlib.sha256(
+    b"FloodGuard deterministic SAR threshold model contract v1"
+).hexdigest()
 WEAK_SOURCE_TIMESTAMP = datetime(2024, 9, 15, 23, 16, 1, tzinfo=UTC)
 
 _THAI_AREA_NAMES = {
@@ -445,9 +450,13 @@ class ArtifactRepository:
             )
         return result
 
-    def evidence_context(self) -> EvidenceContext:
+    def evidence_context(
+        self,
+        study_area: str = "fixture_thailand_demo",
+    ) -> EvidenceContext:
         """Return the immutable identity shared by all fixture artifacts."""
 
+        self._require_fixture_study_area(study_area)
         return EvidenceContext(
             evidence_context_id=FIXTURE_EVIDENCE_CONTEXT_ID,
             study_area_id="fixture_thailand_demo",
@@ -710,14 +719,32 @@ class ArtifactRepository:
             areas=results,
         )
 
-    def model_runs(self) -> list[ModelRun]:
-        return [self._synthetic_baseline_run(), self._weak_label_run()]
+    def model_runs(
+        self,
+        study_area: str = "fixture_thailand_demo",
+    ) -> list[ModelRun]:
+        """Return only model evidence scoped to the requested fixture dataset.
 
-    def model_run(self, run_id: str) -> ModelRun:
-        for run in self.model_runs():
+        The historical Mae Sai weak-label experiment remains available to
+        repository-owned audit code, but it is not part of the fixture study
+        area's public model catalog and must not leak through the default API
+        profile.
+        """
+
+        self._require_fixture_study_area(study_area)
+        return [self._synthetic_baseline_run()]
+
+    def model_run(
+        self,
+        run_id: str,
+        study_area: str = "fixture_thailand_demo",
+    ) -> ModelRun:
+        for run in self.model_runs(study_area):
             if run.run_id == run_id:
                 return run
-        raise ArtifactNotFound(f"Unknown model run_id: {run_id}")
+        raise ArtifactNotFound(
+            f"Unknown model run_id for {study_area}: {run_id}"
+        )
 
     def readiness(self) -> list[ReadinessItem]:
         path = self.paths.outputs / "label_factory_readiness.csv"
@@ -793,14 +820,18 @@ class ArtifactRepository:
                 ** 2
             ).mean()
         )
+        common = self._common_fixture(
+            source_name=metrics_path.name,
+            assumptions=[
+                "Tiny synthetic threshold fixture only; no real Sentinel-1 accuracy claim."
+            ],
+            confidence_class="low",
+        )
+        # Registry hashes must be stable across process restarts. This timestamp
+        # is the reviewed fixture generation time, not API process start time.
+        common["generated_at"] = FIXTURE_EVIDENCE_GENERATED_AT
         return ModelRun(
-            **self._common_fixture(
-                source_name=metrics_path.name,
-                assumptions=[
-                    "Tiny synthetic threshold fixture only; no real Sentinel-1 accuracy claim."
-                ],
-                confidence_class="low",
-            ),
+            **common,
             run_id="synthetic-sar-baseline-v1",
             study_area="fixture_thailand_demo",
             model_family="deterministic_sar_baseline",
@@ -809,7 +840,7 @@ class ArtifactRepository:
             geoai_commit=None,
             model_id="legacy_synthetic_sar_v1",
             model_revision="1",
-            model_sha256=None,
+            model_sha256=SYNTHETIC_MODEL_SHA256,
             architecture="deterministic_threshold",
             encoder=None,
             encoder_weights=None,

@@ -136,6 +136,7 @@ function prunePublicProductionOutput() {
     "offline-demo/mae-sai/roads.json",
     "offline-demo/mae-sai/facilities.json",
     "offline-demo/mae-sai/access-hotspots.json",
+    "offline-demo/mae-sai/model-evidence",
     "proposal-evidence.json",
     "proposal-evidence-assets",
   ];

@@ -21,6 +21,12 @@ from floodguard_api.dataset_registry import (
     parse_bbox,
     visible_layers_for_role,
 )
+from floodguard_api.model_registry import (
+    build_model_registry,
+    build_model_registry_bundles,
+    model_registry_entry,
+    model_registry_evidence,
+)
 from floodguard_api.models import (
     ActionClass,
     ApiError,
@@ -62,6 +68,12 @@ from floodguard_api.repository import (
 )
 from floodguard_api.safety import PrivatePathError, assert_public_payload
 from floodguard_api.scenario_registry import definitions, request_from_run_id
+from floodguard_api.v2_models import (
+    FloodObservationProductV2,
+    ModelEvaluationV2,
+    ModelRegistryEvidenceBundleV1,
+    SignedModelRegistryEntryV1,
+)
 
 DEFAULT_CORS_ORIGINS = ("http://localhost:3000", "http://127.0.0.1:3000")
 
@@ -222,11 +234,50 @@ def create_app(
         "api:scenario:operate",
         official_input_only=True,
     )
-    require_official_model = require_capability(
-        "assessment:run",
-        "api:model-evidence:read",
-        official_input_only=True,
-    )
+
+    def require_study_area_model(
+        study_area: Literal[
+            "fixture_thailand_demo",
+            "mae_sai_candidate_v1",
+        ] = "fixture_thailand_demo",
+        authorization: Annotated[str | None, Header()] = None,
+    ) -> PilotCredential | None:
+        """Authorize model evidence against the explicitly requested dataset.
+
+        A mixed registry may expose an anonymous fixture as its default while
+        another study area contains official input. Looking only at the
+        default status would therefore fail open for the secondary area.
+        """
+
+        dataset_mode = artifact_repository.status(study_area).dataset_mode.value
+        if dataset_mode != "official_input":
+            return None
+        identity: PilotCredential | None = None
+        try:
+            identity = pilot.authenticate(authorization)
+            pilot.require(identity, "assessment:run")
+        except PilotError as exc:
+            audit_protected_request(
+                identity=identity,
+                action="api:model-evidence:read",
+                capability="assessment:run",
+                outcome="denied",
+                dataset_mode=dataset_mode,
+                reason=exc.error_code,
+                required=False,
+            )
+            raise
+        audit_protected_request(
+            identity=identity,
+            action="api:model-evidence:read",
+            capability="assessment:run",
+            outcome="allowed",
+            dataset_mode=dataset_mode,
+            reason="role_matrix",
+            required=True,
+        )
+        return identity
+
     require_official_readiness = require_capability(
         "assessment:run",
         "api:data-readiness:read",
@@ -561,9 +612,12 @@ def create_app(
         tags=["models"],
     )
     def model_runs(
-        _: PilotCredential | None = Depends(require_official_model),  # noqa: B008
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+        _: PilotCredential | None = Depends(require_study_area_model),  # noqa: B008
     ) -> list[ModelRun]:
-        return _public(artifact_repository.model_runs(), pilot)
+        return _public(artifact_repository.model_runs(study_area), pilot)
 
     @application.get(
         "/api/v1/model-runs/{run_id}",
@@ -573,9 +627,119 @@ def create_app(
     )
     def model_run(
         run_id: str,
-        _: PilotCredential | None = Depends(require_official_model),  # noqa: B008
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+        _: PilotCredential | None = Depends(require_study_area_model),  # noqa: B008
     ) -> ModelRun:
-        return _public(artifact_repository.model_run(run_id), pilot)
+        return _public(artifact_repository.model_run(run_id, study_area), pilot)
+
+    @application.get(
+        "/api/v1/model-registry",
+        response_model=list[SignedModelRegistryEntryV1],
+        response_model_exclude_none=False,
+        tags=["models"],
+    )
+    def model_registry(
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+        _: PilotCredential | None = Depends(require_study_area_model),  # noqa: B008
+    ) -> list[SignedModelRegistryEntryV1]:
+        return _public(
+            build_model_registry(artifact_repository, study_area),
+            pilot,
+        )
+
+    @application.get(
+        "/api/v1/model-registry/{registry_entry_id}",
+        response_model=SignedModelRegistryEntryV1,
+        response_model_exclude_none=False,
+        tags=["models"],
+    )
+    def model_registry_detail(
+        registry_entry_id: str,
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+        _: PilotCredential | None = Depends(require_study_area_model),  # noqa: B008
+    ) -> SignedModelRegistryEntryV1:
+        return _public(
+            model_registry_entry(
+                artifact_repository,
+                registry_entry_id,
+                study_area,
+            ),
+            pilot,
+        )
+
+    @application.get(
+        "/api/v1/model-registry/{registry_entry_id}/evidence",
+        response_model=ModelRegistryEvidenceBundleV1,
+        response_model_exclude_none=False,
+        tags=["models"],
+    )
+    def model_registry_evidence_bundle(
+        registry_entry_id: str,
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+        _: PilotCredential | None = Depends(require_study_area_model),  # noqa: B008
+    ) -> ModelRegistryEvidenceBundleV1:
+        return _public(
+            model_registry_evidence(
+                artifact_repository,
+                registry_entry_id,
+                study_area,
+            ),
+            pilot,
+        )
+
+    @application.get(
+        "/api/v1/model-evaluations",
+        response_model=list[ModelEvaluationV2],
+        response_model_exclude_none=False,
+        tags=["models"],
+    )
+    def model_evaluations(
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+        _: PilotCredential | None = Depends(require_study_area_model),  # noqa: B008
+    ) -> list[ModelEvaluationV2]:
+        return _public(
+            [
+                bundle.evaluation
+                for bundle in build_model_registry_bundles(
+                    artifact_repository,
+                    study_area,
+                )
+            ],
+            pilot,
+        )
+
+    @application.get(
+        "/api/v1/observation-products",
+        response_model=list[FloodObservationProductV2],
+        response_model_exclude_none=False,
+        tags=["models"],
+    )
+    def observation_products(
+        study_area: Literal["fixture_thailand_demo", "mae_sai_candidate_v1"] = (
+            "fixture_thailand_demo"
+        ),
+        _: PilotCredential | None = Depends(require_study_area_model),  # noqa: B008
+    ) -> list[FloodObservationProductV2]:
+        return _public(
+            [
+                bundle.product
+                for bundle in build_model_registry_bundles(
+                    artifact_repository,
+                    study_area,
+                )
+            ],
+            pilot,
+        )
 
     @application.get(
         "/api/v1/data-readiness",

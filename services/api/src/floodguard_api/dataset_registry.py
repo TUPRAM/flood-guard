@@ -1478,11 +1478,29 @@ class DatasetRegistry:
             return self.mae_sai.run_scenario(request)
         return self.fixture.run_scenario(request)
 
-    def model_runs(self) -> list[ModelRun]:
-        return self.fixture.model_runs()
+    def model_runs(
+        self,
+        study_area: str = FIXTURE_STUDY_AREA,
+    ) -> list[ModelRun]:
+        adapter = self._adapter(study_area)
+        if isinstance(adapter, ArtifactRepository):
+            return adapter.model_runs(study_area)
+        # The active Mae Sai evidence package deliberately has no bound model
+        # evaluation. Historical weak-label metrics are not substituted into
+        # this context.
+        return []
 
-    def model_run(self, run_id: str) -> ModelRun:
-        return self.fixture.model_run(run_id)
+    def model_run(
+        self,
+        run_id: str,
+        study_area: str = FIXTURE_STUDY_AREA,
+    ) -> ModelRun:
+        for run in self.model_runs(study_area):
+            if run.run_id == run_id:
+                return run
+        raise ArtifactNotFound(
+            f"Unknown model run_id for {study_area}: {run_id}"
+        )
 
     def readiness(self) -> list[ReadinessItem]:
         return self.fixture.readiness()

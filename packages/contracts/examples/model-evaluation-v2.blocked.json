@@ -1,0 +1,101 @@
+{
+  "schema_version": "2.0",
+  "dataset_mode": "candidate",
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "generated_at": "2026-07-23T08:05:00Z",
+  "confidence_class": "low",
+  "source_name": "Synthetic blocked evaluation projection",
+  "assumptions": [
+    "No qualified reference, calibrated reviewer release, or untouched real-event holdout is represented."
+  ],
+  "official_warning": false,
+  "data_version": "geoai-v2-contract-proof",
+  "git_commit": "1111111111111111111111111111111111111111",
+  "evaluation_id": "geoai-v2-synthetic-evaluation",
+  "experiment_id": "geoai-v2-synthetic-experiment",
+  "study_area_id": "synthetic_contract_grid",
+  "event_ids": ["synthetic_event_001"],
+  "model_run_id": "geoai-v2-synthetic-run",
+  "model_id": "floodguard.synthetic.unet",
+  "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model_run_manifest_sha256": "ecbb9021b6758172261baf485669f1c372f1913ef84894fd504f2065036e52bc",
+  "controlled_result_receipt_sha256": null,
+  "evaluation_status": "blocked",
+  "evaluation_scope": "not_evaluated",
+  "reference_evidence": {
+    "reference_mask_status": "synthetic_fixture_only",
+    "reference_mask_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "label_release_sha256": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "reviewer_qualification_receipt_sha256": null
+  },
+  "partition_evidence": {
+    "partition_manifest_sha256": "567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234",
+    "training_partition_sha256": "67890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345",
+    "calibration_partition_sha256": "7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456",
+    "final_holdout_partition_sha256": "890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567"
+  },
+  "threshold_evidence": {
+    "threshold": null,
+    "threshold_selection_receipt_sha256": null,
+    "selection_scope": "not_selected",
+    "final_holdout_evaluated_during_selection": false
+  },
+  "overall_metrics": {
+    "sample_count": null,
+    "true_positive": null,
+    "false_positive": null,
+    "false_negative": null,
+    "true_negative": null,
+    "iou": null,
+    "f1_dice": null,
+    "precision": null,
+    "recall": null,
+    "boundary_f1": null,
+    "signed_area_error_ratio": null,
+    "absolute_area_error_ratio": null,
+    "brier_score": null,
+    "negative_log_likelihood": null,
+    "expected_calibration_error": null
+  },
+  "event_metrics": [],
+  "error_strata": [],
+  "calibration": {
+    "status": "not_evaluated",
+    "method": null,
+    "reliability_asset_sha256": null
+  },
+  "selective_prediction": {
+    "status": "not_evaluated",
+    "risk_coverage_asset_sha256": null
+  },
+  "ood_evaluation": {
+    "status": "not_evaluated",
+    "method": null,
+    "threshold": null,
+    "score_asset_sha256": null
+  },
+  "downstream_impact": {
+    "status": "not_evaluated",
+    "population_absolute_error": null,
+    "critical_road_false_negative_count": null,
+    "access_classification_flip_count": null,
+    "equity_gap_absolute_error": null,
+    "fpps_mean_absolute_error": null,
+    "fpps_rank_correlation": null,
+    "action_class_flip_count": null,
+    "artifact_sha256": null
+  },
+  "runtime": {
+    "training_seconds": null,
+    "calibration_seconds": null,
+    "inference_seconds": null,
+    "total_seconds": null,
+    "peak_memory_mb": null,
+    "device": null,
+    "hardware_class": null
+  },
+  "processing_allowed": false,
+  "can_feed_decision_layer": false,
+  "reason_blocked": "Qualified real-event evaluation prerequisites are absent."
+}

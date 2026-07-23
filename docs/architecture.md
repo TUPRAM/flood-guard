@@ -49,11 +49,31 @@ computes road-corridor, bridge, and facility exposure evidence. Neither adapter
 may establish an observed closure, safe route, facility operating state, or
 official warning.
 
+Trusted zonal receipts use schema 2.0. Version 2 binds the authoritative
+geometry receipt to the exact model-run `study_area`; legacy 1.0 receipts are
+not accepted at the decision boundary because they lack that anti-replay
+binding.
+
 Candidate models or candidate geometry may be evaluated only in explicit
 report-only mode. Decision eligibility is derived from the full evidence chain
 (product identity, licenses, checksums, qualified reference, spatial
 evaluation, calibration, reviewer status, CRS/grid validation, and signatures),
 never from a frontend control or a mutable deployment flag.
+
+The additive v2 GeoAI contract separates the immutable model run, evaluation,
+observation product, and study-area registry entry. Registry validation requires
+exact study-area, event, source-bundle, model, evaluation, product, validity,
+and acceptance bindings; a candidate or expired entry remains report-only.
+Authoritative geometry is also bound to the model run's study area before zonal
+aggregation. See `docs/geoai-system-design-v1.md` for the complete evidence
+lanes, abstention semantics, failure model, and release gates.
+
+The competition-mode Mae Sai offline projection is generated from the same API
+builder and carries the exact referenced ModelRun v2 manifest. Its required
+observation bands are checksum-bound non-raster descriptors because no
+qualified Mae Sai observation product has been materialized. Studio labels
+browser cryptographic status as unverified; authoritative digest and HMAC
+validation remains in the repository/API resolver.
 
 ## Access-method boundary
 
@@ -71,6 +91,10 @@ until trustworthy facility-capacity inputs and separate contract tests exist.
 - `equity.py`: vulnerable versus non-vulnerable access-loss ratios.
 - `road_risk.py`: segment-level road-disruption probability.
 - `access.py`: network access comparison under normal and disrupted conditions.
+- `model_registry.py`: dependency-light v2 model/evaluation/product binding and
+  fail-closed registry resolution.
+- `trusted_zonal_adapter.py`: signed, study-area-bound raster-to-reporting-area
+  aggregation for separately eligible evidence.
 - `validation.py`: metric and validation report helpers.
 
 ## Data Boundaries

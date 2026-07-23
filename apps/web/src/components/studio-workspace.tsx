@@ -3,12 +3,11 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import type { ModelRun } from "@floodguard/contracts";
-
 import { LanguageToggle } from "@/components/language-toggle";
+import { ModelRegistryPanel } from "@/components/model-registry-panel";
 import { StatusBar } from "@/components/status-bar";
 import { downloadText } from "@/lib/download";
-import { formatConfidence, formatNumber, formatSourceTime } from "@/lib/format";
+import { formatConfidence, formatSourceTime } from "@/lib/format";
 import {
   buildEvidenceDecisionMatrix,
   evidenceContextMatches,
@@ -33,20 +32,10 @@ const TABS: Array<{ id: StudioTab; en: string; th: string }> = [
   { id: "technical", en: "Technical verification", th: "การตรวจสอบทางเทคนิค" },
   { id: "observed", en: "Observed-data validation", th: "การยืนยันด้วยข้อมูลสังเกตการณ์" },
   { id: "quality", en: "Data quality", th: "คุณภาพข้อมูล" },
-  { id: "metrics", en: "Metrics", th: "ตัวชี้วัด" },
+  { id: "metrics", en: "Models & evaluation", th: "โมเดลและการประเมิน" },
   { id: "governance", en: "Governance", th: "ธรรมาภิบาล" },
   { id: "files", en: "Files & history", th: "ไฟล์และประวัติ" },
 ];
-
-const METRICS = [
-  ["iou", "IoU"],
-  ["f1_dice", "F1 / Dice"],
-  ["precision", "Precision"],
-  ["recall", "Recall"],
-  ["area_error_ratio", "Area error"],
-  ["brier_score", "Brier score"],
-  ["expected_calibration_error", "Calibration ECE"],
-] as const;
 
 const STAGE_LABELS: Record<EvidenceDecisionStage, { en: string; th: string }> = {
   processing_execution: { en: "Processing execution", th: "การประมวลผล" },
@@ -158,12 +147,6 @@ function friendlyOperationalState(value: string, th: boolean): string {
   if (value === "agency_operational") return th ? "ได้รับอนุญาตจากหน่วยงาน" : "Agency-authorized";
   if (value === "planning_only") return th ? "ใช้เพื่อการวางแผนเท่านั้น" : "Planning only";
   return th ? "ไม่ได้รับอนุญาตให้ใช้เชิงปฏิบัติการ" : "Not operationally authorized";
-}
-
-function familyLabel(run: ModelRun): string {
-  if (run.model_family === "deterministic_sar_baseline") return "SAR reference model";
-  if (run.model_family === "weak_label_logistic") return "Logistic benchmark";
-  return "GeoAI model";
 }
 
 function shortDigest(value: string | null): string {
@@ -303,6 +286,12 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
                     </table>
                   </div>
                   {!contextRun && <article className={styles.notice}><b>{th ? "ไม่มีการประเมินโมเดลที่ผูกกับบริบทนี้" : "No model evaluation is bound to this context."}</b><p>{th ? "เมตริกหรือผลการตรวจสอบจากแพ็กเกจอื่นจะไม่ถูกนำมาแสดงแทน" : "Metrics and technical results from another evidence package are intentionally not substituted."}</p></article>}
+                  {!contextRun && (data.model_registry?.length ?? 0) > 0 && (
+                    <article className={styles.notice}>
+                      <b>{th ? "มีบันทึกโมเดลที่ถูกบล็อกสำหรับการตรวจสอบทางเทคนิค" : "A blocked model record is available for technical inspection."}</b>
+                      <p>{th ? "เปิดแท็บโมเดลและการประเมินเพื่อดูสายข้อมูลและเหตุผลที่ถูกบล็อก บันทึกนี้ไม่ได้ผูกกับบริบทหลักฐานและไม่มีสิทธิ์เข้าสู่ชั้นการตัดสินใจ" : "Open Models & evaluation to inspect its lineage and blocker. The record is not bound to this evidence context and cannot enter the decision layer."}</p>
+                    </article>
+                  )}
                 </section>
               )}
 
@@ -333,10 +322,15 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
               )}
 
               {activeTab === "metrics" && (
-                <section aria-labelledby="metrics-title">
-                  <div className={styles.sectionHeading}><div><p className="eyebrow">04 · {th ? "ตัวชี้วัด" : "METRICS"}</p><h2 id="metrics-title">{th ? "ตัวชี้วัดตามขอบเขตหลักฐาน" : "Evidence-scoped metrics"}</h2></div></div>
-                  {contextRun ? <ModelMetrics run={contextRun} language={language} /> : <article className={styles.notice}><b>{th ? "ไม่มีตัวชี้วัดสำหรับบริบทนี้" : "No metrics are published for this context."}</b><p>{th ? "ไม่มีรหัสการประเมินที่ผูกกับแพ็กเกจนี้ จึงไม่แสดงผลจากการทดสอบทางเทคนิคหรือบริบทอื่น" : "No evaluation ID is bound to this package, so technical or contextual results from other scopes are not shown."}</p></article>}
-                </section>
+                <ModelRegistryPanel
+                  context={context}
+                  entries={data.model_registry ?? []}
+                  evaluations={data.model_evaluations ?? []}
+                  products={data.observation_products ?? []}
+                  evidenceState={data.modelEvidenceState}
+                  evidenceReason={data.modelEvidenceReason}
+                  language={language}
+                />
               )}
 
               {activeTab === "governance" && (
@@ -373,20 +367,6 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
         <footer className="studio-footer"><span>{th ? "รายงานนี้ไม่ใช่คำเตือนภัยหรือการอนุญาตใช้งาน" : "This report is not a warning or operational authorization."}</span><a href="/command/">{th ? "เปิดพื้นที่วางแผน →" : "Open planning workspace →"}</a></footer>
       </div>
     </main>
-  );
-}
-
-function ModelMetrics({ run, language }: { run: ModelRun; language: Language }) {
-  const th = language === "th";
-  return (
-    <div className={styles.metricLayout}>
-      <article>
-        <p className="eyebrow">{run.dataset_mode}</p>
-        <h3>{familyLabel(run)}</h3>
-        <dl><div><dt>run_id</dt><dd><code>{run.run_id}</code></dd></div><div><dt>{th ? "เวอร์ชันโมเดล" : "Model version"}</dt><dd><code>{run.model_revision ?? run.geoai_version ?? "not_recorded"}</code></dd></div><div><dt>{th ? "สถานะ" : "Status"}</dt><dd><code>{run.run_status}</code></dd></div></dl>
-      </article>
-      <dl className={styles.metrics}>{METRICS.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{formatNumber(run.validation_metrics[key], language, 3)}</dd></div>)}</dl>
-    </div>
   );
 }
 

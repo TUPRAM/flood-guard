@@ -2,8 +2,12 @@ import type {
   AreaDecision,
   EvidenceContext,
   EvidenceRecord,
+  FloodObservationProductV2,
   LayerCatalogItem,
+  ModelEvaluationV2,
+  ModelRegistryEntryV1,
   ModelRun,
+  ModelRunV2,
   PilotReadiness,
   PublicPreparednessArea,
   RoleVisibility,
@@ -14,6 +18,16 @@ export type Language = "th" | "en";
 export type DataState = "loading" | "ready" | "stale" | "blocked" | "stale_offline" | "unavailable";
 export type ScenarioId = "baseline" | "add_temporary_shelter" | "close_road";
 export type StudyAreaId = "fixture_thailand_demo" | "mae_sai_candidate_v1";
+export type ModelEvidenceState = "ready" | "blocked" | "unavailable";
+
+/**
+ * Studio consumes the canonical signed registry envelope and v2 evidence
+ * records. The competition bundle includes only a browser-safe, blocked
+ * candidate; public-production removes these arrays entirely.
+ */
+export type StudioModelRegistryEntry = ModelRegistryEntryV1;
+export type StudioModelEvaluationRecord = ModelEvaluationV2;
+export type StudioFloodObservationProductRecord = FloodObservationProductV2;
 
 export interface FloodGuardDataOptions {
   studyArea: StudyAreaId;
@@ -112,6 +126,11 @@ export interface OfflineBundle {
   layers: LayerCatalogItem[];
   readiness: ReadinessRow[];
   model_runs: ModelRun[];
+  /** Exact v2 manifests referenced by the Studio-only model registry chain. */
+  model_runs_v2?: ModelRunV2[];
+  model_registry?: StudioModelRegistryEntry[];
+  model_evaluations?: StudioModelEvaluationRecord[];
+  observation_products?: StudioFloodObservationProductRecord[];
   hotlines: Hotline[];
   shelters: ShelterRecord[];
   error_categories: ErrorCategory[];
@@ -119,6 +138,9 @@ export interface OfflineBundle {
 }
 
 export interface FloodGuardData extends OfflineBundle {
+  model_registry: StudioModelRegistryEntry[];
+  model_evaluations: StudioModelEvaluationRecord[];
+  observation_products: StudioFloodObservationProductRecord[];
   role: RoleVisibility;
   evidenceContext: EvidenceContext;
   evidenceRecord: EvidenceRecord | null;
@@ -134,6 +156,8 @@ export interface FloodGuardData extends OfflineBundle {
   contextFeatures: FeatureCollection;
   facilityFeatures: FeatureCollection;
   accessFeatures: FeatureCollection;
+  modelEvidenceState: ModelEvidenceState;
+  modelEvidenceReason: string;
   fallbackReason?: string;
   degradedReason?: string;
 }

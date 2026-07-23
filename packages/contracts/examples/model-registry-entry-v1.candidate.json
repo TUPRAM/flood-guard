@@ -1,0 +1,38 @@
+{
+  "payload": {
+    "schema_version": "1.0",
+    "registry_entry_id": "synthetic-registry-entry-001",
+    "study_area_id": "synthetic_contract_grid",
+    "event_id": "synthetic_event_001",
+    "evidence_kind": "satellite_observed_extent",
+    "source_bundle_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "model_run_id": "geoai-v2-synthetic-run",
+    "model_id": "floodguard.synthetic.unet",
+    "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "model_run_manifest_sha256": "ecbb9021b6758172261baf485669f1c372f1913ef84894fd504f2065036e52bc",
+    "evaluation_id": "geoai-v2-synthetic-evaluation",
+    "evaluation_manifest_sha256": "5eea04ee87beb6080e8328238cd6156bb75a55c5b18a2e91d7d90d6693019594",
+    "controlled_result_receipt_sha256": null,
+    "product_id": "geoai-v2-synthetic-product",
+    "product_manifest_sha256": "52af4c13548b7d4d495350283530093f6bd6c8c3e28d46d6364f19c726ae3b65",
+    "promotion_acceptance_receipt_sha256": null,
+    "field_validation_receipt_sha256": null,
+    "agency_acceptance_receipt_sha256": null,
+    "dataset_mode": "candidate",
+    "operational_status": "non_operational",
+    "registry_status": "candidate",
+    "permitted_use": "report_only",
+    "issued_at": "2026-07-23T08:15:00Z",
+    "valid_from": "2026-07-23T08:15:00Z",
+    "expires_at": "2027-07-23T08:15:00Z",
+    "official_warning": false,
+    "can_feed_decision_layer": false,
+    "reason_blocked": "Candidate registry entry is accepted for report-only inspection, not decision use."
+  },
+  "signature": {
+    "algorithm": "HMAC-SHA256",
+    "key_id": "synthetic-registry-authority",
+    "payload_sha256": "3812e53d7ee619b09911692eb6548659a169b3590c31c0f3ef38d068fbc63065",
+    "value": "857da915e9f2669d8f2e3f7162b58d0b7cf912b7d6bcd8660d24e01dade50206"
+  }
+}

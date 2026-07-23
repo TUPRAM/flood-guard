@@ -73,6 +73,7 @@ function validatePublicProduction() {
     "offline-demo/mae-sai/roads.json",
     "offline-demo/mae-sai/facilities.json",
     "offline-demo/mae-sai/access-hotspots.json",
+    "offline-demo/mae-sai/model-evidence",
     "proposal-evidence.json",
     "proposal-evidence-assets",
   ]) {
@@ -92,6 +93,8 @@ function validatePublicProduction() {
     "/api/v1/scenario-runs",
     "OSM-11566575669",
     "synthetic-sar-baseline-v1",
+    "mae-sai-2024-model-evaluation-blocked",
+    "geoai-synthetic-proof-001-report-only-product",
   ]) {
     const hit = scanTextArtifacts(forbidden);
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
@@ -120,6 +123,45 @@ function validateCompetition() {
   for (const route of ["/", "/public/", "/command/", "/studio/"]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }
+  const bundle = readJson("offline-demo/mae-sai/bundle.json");
+  if (
+    !Array.isArray(bundle.model_registry)
+    || bundle.model_registry.length !== 1
+    || !Array.isArray(bundle.model_runs_v2)
+    || bundle.model_runs_v2.length !== 1
+    || !Array.isArray(bundle.model_evaluations)
+    || bundle.model_evaluations.length !== 1
+    || !Array.isArray(bundle.observation_products)
+    || bundle.observation_products.length !== 1
+  ) {
+    throw new Error("Competition profile is missing the complete Studio model-evidence chain.");
+  }
+  const entry = bundle.model_registry[0]?.payload;
+  const modelRun = bundle.model_runs_v2[0];
+  const evaluation = bundle.model_evaluations[0];
+  const product = bundle.observation_products[0];
+  if (
+    entry?.source_bundle_sha256 !== bundle.evidence_context.evidence_package_sha256
+    || entry?.evidence_kind !== "external_algorithmic_baseline"
+    || entry?.registry_status !== "blocked"
+    || entry?.permitted_use !== "report_only"
+    || entry?.can_feed_decision_layer !== false
+    || entry?.official_warning !== false
+    || modelRun?.run_id !== entry?.model_run_id
+    || modelRun?.run_status !== "blocked"
+    || evaluation?.evaluation_scope !== "not_evaluated"
+    || product?.valid_coverage_fraction !== 0
+    || product?.abstained_fraction !== 1
+    || product?.counts_as_observed_evidence !== false
+    || product?.can_feed_decision_layer !== false
+  ) {
+    throw new Error("Competition Studio model evidence does not preserve its fail-closed boundary.");
+  }
+  const descriptorPaths = Object.keys(bundle.model_asset_descriptors ?? {});
+  if (descriptorPaths.length !== 5) {
+    throw new Error("Competition Studio model descriptors are incomplete.");
+  }
+  for (const relativePath of descriptorPaths) requirePath(relativePath);
 }
 
 function validatePublicProjection() {

@@ -6,8 +6,12 @@ import evidenceRecordSchema from "../schemas/evidence-record.schema.json";
 import evidenceStateSchema from "../schemas/evidence-state.schema.json";
 import acceptanceReceiptSchema from "../schemas/agency-acceptance-receipt.schema.json";
 import fieldValidationReceiptSchema from "../schemas/field-validation-receipt.schema.json";
+import floodObservationProductV2Schema from "../schemas/flood-observation-product-v2.schema.json";
 import layerSchema from "../schemas/layer.schema.json";
+import modelEvaluationV2Schema from "../schemas/model-evaluation-v2.schema.json";
+import modelRegistryEntryV1Schema from "../schemas/model-registry-entry-v1.schema.json";
 import modelRunSchema from "../schemas/model-run.schema.json";
+import modelRunV2Schema from "../schemas/model-run-v2.schema.json";
 import pilotReadinessSchema from "../schemas/pilot-readiness.schema.json";
 import proposalEvidenceSchema from "../schemas/proposal-evidence.schema.json";
 import publicPreparednessAreaSchema from "../schemas/public-preparedness-area.schema.json";
@@ -25,12 +29,21 @@ import {
   EVIDENCE_GATE_STATES,
   EVIDENCE_GRANULARITIES,
   EVIDENCE_TYPES,
+  EVIDENCE_KINDS,
   EVIDENCE_RESULTS,
   GEOAI_AGGREGATION_STATUSES,
   GEOAI_VALIDATION_STATUSES,
   LAYER_FORMATS,
   MODEL_FAMILIES,
+  MODEL_BACKENDS,
+  MODEL_EVALUATION_STATUSES,
+  MODEL_PERMITTED_USES,
+  MODEL_REGISTRY_ENTRY_SCHEMA_VERSION,
+  MODEL_REGISTRY_STATUSES,
   MODEL_RUN_STATUSES,
+  MODEL_RUN_V2_FAMILIES,
+  MODEL_RUN_V2_SCHEMA_VERSION,
+  OBSERVATION_ASSET_ROLES,
   OPERATIONAL_STATUSES,
   PERMITTED_USES,
   PILOT_ROLES,
@@ -171,6 +184,42 @@ describe("contract drift", () => {
     );
     expect(proposalEvidenceSchema.properties.schema_version.const).toBe(
       SCHEMA_VERSION,
+    );
+  });
+
+  it("keeps additive GeoAI v2 and registry enums aligned", () => {
+    expect(MODEL_RUN_V2_SCHEMA_VERSION).toBe(
+      modelRunV2Schema.properties.schema_version.const,
+    );
+    expect(MODEL_REGISTRY_ENTRY_SCHEMA_VERSION).toBe(
+      modelRegistryEntryV1Schema.properties.payload.properties.schema_version
+        .const,
+    );
+    expect(EVIDENCE_KINDS).toEqual(
+      modelRunV2Schema.$defs.evidenceKind.enum,
+    );
+    expect(EVIDENCE_KINDS).toEqual(
+      floodObservationProductV2Schema.properties.evidence_kind.enum,
+    );
+    expect(MODEL_BACKENDS).toEqual(
+      modelRunV2Schema.properties.model.properties.backend.enum,
+    );
+    expect(MODEL_RUN_V2_FAMILIES).toEqual(
+      modelRunV2Schema.properties.model.properties.model_family.enum,
+    );
+    expect(MODEL_EVALUATION_STATUSES).toEqual(
+      modelEvaluationV2Schema.properties.evaluation_status.enum,
+    );
+    expect(OBSERVATION_ASSET_ROLES).toEqual(
+      floodObservationProductV2Schema.$defs.asset.properties.role.enum,
+    );
+    expect(MODEL_REGISTRY_STATUSES).toEqual(
+      modelRegistryEntryV1Schema.properties.payload.properties.registry_status
+        .enum,
+    );
+    expect(MODEL_PERMITTED_USES).toEqual(
+      modelRegistryEntryV1Schema.properties.payload.properties.permitted_use
+        .enum,
     );
   });
 });

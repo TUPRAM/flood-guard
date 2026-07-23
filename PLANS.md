@@ -26,14 +26,25 @@ runtime architecture or product roadmap.
    deterministic server-side Mae Sai scenarios without browser formulas.
 3. Bind immutable probability rasters to road and facility consequences through
    signed, substitution-resistant receipts.
-4. Clear the qualified-label gates using real authority, reviewer calibration,
+4. Govern backend-neutral model runs, evaluations, uncertainty-aware
+   observation products, and study-area model selection through additive,
+   receipt-bound contracts.
+5. Clear the qualified-label gates using real authority, reviewer calibration,
    and immutable spatial holdouts; code alone cannot self-approve these gates.
-5. Compare deterministic SAR, calibrated logistic, and isolated GeoAI U-Net/FPN
+6. Compare deterministic SAR, calibrated logistic, and isolated GeoAI U-Net/FPN
    candidates on identical qualified evidence before promoting any result.
+7. Predeclare and evaluate temporal U-Net, SegFormer, and Earth-observation
+   foundation-model challengers on the same immutable event folds.
+8. Run a report-only shadow integration that measures access, equity, FPPS,
+   rank, and A-E sensitivity while preserving abstention and rollback.
+9. Build the separately typed rainfall/hydrology forecast branch only after
+   the observed-evidence path and multi-event evaluation are stable.
 
 The full capability, safety, and acceptance contracts are recorded in
 `docs/mae_sai_capability_milestones.md`. The existing role-surface interaction
-decisions remain in `docs/role-surface-development-plan.md`.
+decisions remain in `docs/role-surface-development-plan.md`. The GeoAI evidence
+lanes, v2 contracts, registry binding, and downstream release gates are recorded
+in `docs/geoai-system-design-v1.md`.
 
 ## Near-term decision
 

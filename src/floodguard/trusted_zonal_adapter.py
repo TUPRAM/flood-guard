@@ -45,7 +45,10 @@ from floodguard.probability_aggregation import (
 
 
 RECEIPT_TYPE = "floodguard.trusted_probability_zonal"
-RECEIPT_SCHEMA_VERSION = "1.0"
+# Version 2 binds the authoritative geometry to the exact model-run study area.
+# Version 1 receipts predate that field and are intentionally not accepted for
+# decision use because their geometry can be replayed across study areas.
+RECEIPT_SCHEMA_VERSION = "2.0"
 SIGNATURE_ALGORITHM = "HMAC-SHA256"
 AREA_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
 KEY_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@/-]{0,127}$")
@@ -53,6 +56,7 @@ KEY_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@/-]{0,127}$")
 AUTHORITATIVE_GEOMETRY_FIELDS = frozenset(
     {
         "dataset_id",
+        "study_area",
         "data_version",
         "sha256",
         "source_name",
@@ -102,6 +106,7 @@ SIGNED_RECEIPT_FIELDS = frozenset(
 PUBLIC_GEOMETRY_FIELDS = frozenset(
     {
         "dataset_id",
+        "study_area",
         "data_version",
         "source_name",
         "source_timestamp",
@@ -197,6 +202,7 @@ def create_signed_zonal_receipt(
     geometry_lineage = _validate_authoritative_geometry_receipt(
         authoritative_geometry_receipt
     )
+    _require_matching_study_area(source_metadata, geometry_lineage)
     source_time = _parsed_timestamp(
         source_metadata["source_timestamp"], "source_metadata.source_timestamp"
     )
@@ -275,6 +281,7 @@ def create_signed_zonal_receipt(
         key: deepcopy(geometry_lineage[key])
         for key in (
             "dataset_id",
+            "study_area",
             "data_version",
             "source_name",
             "source_timestamp",
@@ -392,7 +399,10 @@ def verify_signed_zonal_receipt(
         raise ProbabilityAggregationError("Zonal receipt signature is invalid.")
 
     if signed["schema_version"] != RECEIPT_SCHEMA_VERSION:
-        raise ProbabilityAggregationError("zonal receipt schema_version must be 1.0.")
+        raise ProbabilityAggregationError(
+            "zonal receipt schema_version must be "
+            f"{RECEIPT_SCHEMA_VERSION}; legacy 1.0 receipts are not study-area bound."
+        )
     if signed["receipt_type"] != RECEIPT_TYPE:
         raise ProbabilityAggregationError("zonal receipt receipt_type is invalid.")
     generated_time = _parsed_timestamp(
@@ -437,6 +447,7 @@ def verify_signed_zonal_receipt(
     geometry_lineage = _validate_authoritative_geometry_receipt(
         authoritative_geometry_receipt
     )
+    _require_matching_study_area(source_metadata, geometry_lineage)
     geometry_source_time = _parsed_timestamp(
         geometry_lineage["source_timestamp"],
         "authoritative_geometry_receipt.source_timestamp",
@@ -557,7 +568,7 @@ def _validate_authoritative_geometry_receipt(
         value, AUTHORITATIVE_GEOMETRY_FIELDS, "authoritative_geometry_receipt"
     )
     result: dict[str, Any] = {}
-    for field in ("dataset_id", "data_version", "source_name"):
+    for field in ("dataset_id", "study_area", "data_version", "source_name"):
         result[field] = _public_text(receipt[field], f"authoritative geometry {field}")
     result["source_timestamp"] = _timestamp_text(
         receipt["source_timestamp"], "authoritative geometry source_timestamp"
@@ -595,6 +606,22 @@ def _validate_authoritative_geometry_receipt(
         )
     result["processing_allowed"] = True
     return result
+
+
+def _require_matching_study_area(
+    source_metadata: Mapping[str, object],
+    geometry_lineage: Mapping[str, Any],
+) -> None:
+    """Reject authoritative geometry from a different model study area."""
+
+    model_study_area = _public_text(
+        source_metadata.get("study_area"),
+        "model run study_area",
+    )
+    if geometry_lineage["study_area"] != model_study_area:
+        raise ProbabilityAggregationError(
+            "Authoritative geometry study_area does not match the model run."
+        )
 
 
 def _read_probability_raster(

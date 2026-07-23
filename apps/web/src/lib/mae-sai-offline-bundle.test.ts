@@ -35,6 +35,29 @@ describe("Mae Sai offline command bundle", () => {
       bundleJson.evidence_context.evidence_package_sha256,
     );
     expect(bundleJson.evidence_record.evidence_context.model_run_id).toBeNull();
+    expect(bundleJson.model_runs_v2).toHaveLength(1);
+    expect(bundleJson.model_registry).toHaveLength(1);
+    expect(bundleJson.model_registry[0].payload).toMatchObject({
+      evidence_kind: "external_algorithmic_baseline",
+      registry_status: "blocked",
+      permitted_use: "report_only",
+      can_feed_decision_layer: false,
+      official_warning: false,
+    });
+    expect(bundleJson.model_runs_v2[0]).toMatchObject({
+      run_id: bundleJson.model_registry[0].payload.model_run_id,
+      study_area_id: "mae_sai_candidate_v1",
+      run_status: "blocked",
+      processing_allowed: false,
+      can_feed_decision_layer: false,
+    });
+    expect(bundleJson.model_evaluations[0].evaluation_scope).toBe("not_evaluated");
+    expect(bundleJson.observation_products[0]).toMatchObject({
+      valid_coverage_fraction: 0,
+      abstained_fraction: 1,
+      counts_as_observed_evidence: false,
+      can_feed_decision_layer: false,
+    });
   });
 
   it("ships a separately generated public-safe projection", () => {
@@ -48,6 +71,11 @@ describe("Mae Sai offline command bundle", () => {
     ]);
     expect(publicBundleJson.layers[0].role_visibility).toEqual(["public"]);
     expect(publicBundleJson.shelters).toEqual([]);
+    expect(publicBundleJson).not.toHaveProperty("model_registry");
+    expect(publicBundleJson).not.toHaveProperty("model_runs_v2");
+    expect(publicBundleJson).not.toHaveProperty("model_evaluations");
+    expect(publicBundleJson).not.toHaveProperty("observation_products");
+    expect(publicBundleJson).not.toHaveProperty("model_asset_descriptors");
     const publicKeys = new Set([
       "schema_version",
       "evidence_context_id",
@@ -107,6 +135,23 @@ describe("Mae Sai offline command bundle", () => {
     }
     const bundlePath = resolve(process.cwd(), "public", manifestJson.bundle.relative_url.replace(/^\/offline-demo\//, "offline-demo/"));
     expect(sha256(bundlePath)).toBe(manifestJson.bundle.sha256);
+    expect(manifestJson.model_evidence_descriptors).toHaveLength(5);
+    for (const descriptor of manifestJson.model_evidence_descriptors) {
+      const descriptorPath = resolve(
+        process.cwd(),
+        "public",
+        descriptor.relative_url.replace(/^\//, ""),
+      );
+      expect(sha256(descriptorPath), descriptor.relative_url).toBe(
+        descriptor.sha256,
+      );
+      expect(JSON.parse(readFileSync(descriptorPath, "utf8"))).toMatchObject({
+        descriptor_type: "floodguard.blocked_observation_asset",
+        materialization_status: "descriptor_only_no_raster",
+        counts_as_observed_evidence: false,
+        can_feed_decision_layer: false,
+      });
+    }
   });
 
   it("keeps all coordinates inside the declared Mae Sai bounds", () => {

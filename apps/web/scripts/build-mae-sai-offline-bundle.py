@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from shapely.geometry import mapping, shape
@@ -17,7 +17,8 @@ from shapely.geometry import mapping, shape
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 OUTPUTS = REPOSITORY_ROOT / "outputs"
-TARGET = REPOSITORY_ROOT / "apps" / "web" / "public" / "offline-demo" / "mae-sai"
+WEB_PUBLIC_ROOT = REPOSITORY_ROOT / "apps" / "web" / "public"
+TARGET = WEB_PUBLIC_ROOT / "offline-demo" / "mae-sai"
 SOURCE_COMMIT = "22fc172aca78937bb7d1f8675d08527a8517da68"
 DATA_VERSION = "mae-sai-candidate-2024-09-15-v1"
 GENERATED_AT = "2026-07-20T08:15:08Z"
@@ -604,6 +605,75 @@ def _layer(
         "attribution": attribution,
     }
 
+def _model_evidence_projection(
+    evidence_context: dict[str, Any],
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    dict[str, dict[str, Any]],
+]:
+    """Build the exact API-owned, fail-closed GeoAI v2 projection.
+
+    Run the generator with the API environment so this static fallback and the
+    live API serialize one canonical ModelRunV2/evaluation/product/registry
+    chain. The active evidence context remains deliberately unbound.
+    """
+
+    import sys
+
+    api_source = REPOSITORY_ROOT / "services" / "api" / "src"
+    api_source_text = str(api_source)
+    if api_source_text not in sys.path:
+        sys.path.insert(0, api_source_text)
+    try:
+        from floodguard_api.dataset_registry import (
+            MAE_SAI_STUDY_AREA,
+            DatasetRegistry,
+        )
+        from floodguard_api.model_registry import (
+            build_model_registry_bundles,
+            observation_asset_descriptors,
+        )
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "Mae Sai model evidence requires the API environment; run "
+            "`uv run --project services/api python "
+            "apps/web/scripts/build-mae-sai-offline-bundle.py`."
+        ) from exc
+
+    repository = DatasetRegistry()
+    api_context = repository.evidence_context(MAE_SAI_STUDY_AREA)
+    expected_context = {
+        "evidence_context_id": api_context.evidence_context_id,
+        "study_area_id": api_context.study_area_id,
+        "data_version": api_context.data_version,
+        "evidence_package_sha256": api_context.evidence_package_sha256,
+        "model_run_id": api_context.model_run_id,
+        "dataset_mode": api_context.dataset_mode.value,
+        "operational_status": api_context.operational_status.value,
+        "official_warning": api_context.official_warning,
+        "generated_at": api_context.generated_at.isoformat().replace("+00:00", "Z"),
+    }
+    actual_context = {key: evidence_context.get(key) for key in expected_context}
+    if actual_context != expected_context:
+        raise ValueError(
+            "Mae Sai browser evidence context diverged from the API registry context."
+        )
+
+    projection = build_model_registry_bundles(
+        repository,
+        MAE_SAI_STUDY_AREA,
+    )[0]
+    return (
+        [projection.entry.model_dump(mode="json")],
+        [projection.model_run.model_dump(mode="json")],
+        [projection.evaluation.model_dump(mode="json")],
+        [projection.product.model_dump(mode="json")],
+        observation_asset_descriptors(projection.product),
+    )
+
 
 def _build_bundle(
     records: list[dict[str, Any]],
@@ -732,6 +802,13 @@ def _build_bundle(
         "generated_at": GENERATED_AT,
         "source_components": source_manifest["source_components"],
     }
+    (
+        model_registry,
+        model_runs_v2,
+        model_evaluations,
+        observation_products,
+        model_asset_descriptors,
+    ) = _model_evidence_projection(evidence_context)
     return {
         "evidence_context": evidence_context,
         "evidence_record": {
@@ -782,6 +859,11 @@ def _build_bundle(
             {"check_id": "reviewer_calibration", "source": "Governed label factory", "status": "blocked", "severity": "critical", "reason_blocked": "No passing blind reviewer-calibration and adjudication receipt exists."},
         ],
         "model_runs": [],
+        "model_runs_v2": model_runs_v2,
+        "model_registry": model_registry,
+        "model_evaluations": model_evaluations,
+        "observation_products": observation_products,
+        "model_asset_descriptors": model_asset_descriptors,
         "hotlines": fixture["hotlines"],
         "shelters": [],
         "error_categories": [
@@ -861,6 +943,49 @@ def _write(name: str, value: dict[str, Any]) -> Path:
     return destination
 
 
+def _write_model_asset_descriptors(
+    bundle: dict[str, Any],
+) -> list[dict[str, str]]:
+    """Materialize each declared descriptor and prove its exact content hash."""
+
+    descriptors = bundle["model_asset_descriptors"]
+    expected_hashes = {
+        asset["relative_path"]: asset["sha256"]
+        for product in bundle["observation_products"]
+        for asset in product["assets"]
+    }
+    if set(descriptors) != set(expected_hashes):
+        raise ValueError("Model asset descriptor paths diverged from the product manifest.")
+
+    written: list[dict[str, str]] = []
+    for relative_path, descriptor in sorted(descriptors.items()):
+        relative = PurePosixPath(relative_path)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError("Model asset descriptor path must remain repository-relative.")
+        destination = WEB_PUBLIC_ROOT.joinpath(*relative.parts)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(
+            descriptor,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+        actual_sha256 = hashlib.sha256(payload).hexdigest()
+        if actual_sha256 != expected_hashes[relative_path]:
+            raise ValueError(
+                f"Model asset descriptor hash mismatch for {relative_path}."
+            )
+        destination.write_bytes(payload)
+        written.append(
+            {
+                "relative_url": f"/{relative.as_posix()}",
+                "sha256": actual_sha256,
+            }
+        )
+    return written
+
+
 def main() -> None:
     sources = {key: _load(path) for key, path in INPUTS.items()}
     source_manifest = _load(SOURCE_MANIFEST_PATH)
@@ -895,6 +1020,7 @@ def main() -> None:
             _sha256(INPUTS[source_layer_id]),
         )
     written = {layer_id: _write(file_name, collection) for layer_id, (file_name, collection) in collections.items()}
+    model_descriptor_manifest = _write_model_asset_descriptors(bundle)
     bundle_path = _write("bundle.json", bundle)
     public_bundle_path = _write("public-bundle.json", _public_bundle(bundle))
     actual_bounds = _bounds([areas, roads, facilities, access])
@@ -936,6 +1062,7 @@ def main() -> None:
             for layer_id, path in written.items()
         ],
         "bundle": {"relative_url": "/offline-demo/mae-sai/bundle.json", "sha256": _sha256(bundle_path)},
+        "model_evidence_descriptors": model_descriptor_manifest,
         "public_bundle": {
             "relative_url": "/offline-demo/mae-sai/public-bundle.json",
             "sha256": _sha256(public_bundle_path),

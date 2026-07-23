@@ -1,0 +1,103 @@
+{
+  "schema_version": "2.0",
+  "dataset_mode": "candidate",
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "generated_at": "2026-07-23T08:10:00Z",
+  "confidence_class": "low",
+  "source_name": "Synthetic flood observation product contract proof",
+  "assumptions": [
+    "Synthetic raster assets demonstrate package semantics only and do not establish flood accuracy."
+  ],
+  "official_warning": false,
+  "data_version": "geoai-v2-contract-proof",
+  "git_commit": "1111111111111111111111111111111111111111",
+  "product_id": "geoai-v2-synthetic-product",
+  "run_id": "geoai-v2-synthetic-run",
+  "study_area_id": "synthetic_contract_grid",
+  "event_id": "synthetic_event_001",
+  "evidence_kind": "satellite_observed_extent",
+  "source_manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model_run_manifest_sha256": "ecbb9021b6758172261baf485669f1c372f1913ef84894fd504f2065036e52bc",
+  "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "evaluation_manifest_sha256": "5eea04ee87beb6080e8328238cd6156bb75a55c5b18a2e91d7d90d6693019594",
+  "grid": {
+    "crs": "EPSG:32647",
+    "resolution": [10.0, 10.0],
+    "bounds": [600000.0, 2200000.0, 600640.0, 2200640.0],
+    "width": 64,
+    "height": 64,
+    "transform": [10.0, 0.0, 600000.0, 0.0, -10.0, 2200640.0],
+    "nodata": -9999.0,
+    "grid_sha256": "bcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789a"
+  },
+  "assets": [
+    {
+      "role": "flood_probability",
+      "relative_path": "artifacts/synthetic/flood-probability.tif",
+      "media_type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "sha256": "cdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789ab",
+      "dtype": "float32",
+      "band_name": "flood_probability_0_1",
+      "nodata": -9999.0,
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    {
+      "role": "validity_mask",
+      "relative_path": "artifacts/synthetic/validity-mask.tif",
+      "media_type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "sha256": "def0123456789abcdef0123456789abcdef0123456789abcdef0123456789abc",
+      "dtype": "uint8",
+      "band_name": "valid_observation_mask",
+      "nodata": 255,
+      "minimum": 0,
+      "maximum": 1
+    },
+    {
+      "role": "sensor_quality_mask",
+      "relative_path": "artifacts/synthetic/sensor-quality-mask.tif",
+      "media_type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "sha256": "ef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd",
+      "dtype": "uint8",
+      "band_name": "sensor_quality_class",
+      "nodata": 255,
+      "minimum": 0,
+      "maximum": 4
+    },
+    {
+      "role": "model_uncertainty",
+      "relative_path": "artifacts/synthetic/model-uncertainty.tif",
+      "media_type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "sha256": "f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde",
+      "dtype": "float32",
+      "band_name": "predictive_uncertainty_0_1",
+      "nodata": -9999.0,
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    {
+      "role": "abstention_mask",
+      "relative_path": "artifacts/synthetic/abstention-mask.tif",
+      "media_type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "dtype": "uint8",
+      "band_name": "abstention_mask",
+      "nodata": 255,
+      "minimum": 0,
+      "maximum": 1
+    }
+  ],
+  "valid_coverage_fraction": 0.75,
+  "abstained_fraction": 0.25,
+  "sensor_quality_status": "degraded",
+  "ood_status": "not_evaluated",
+  "review_required_reasons": [
+    "Synthetic fixture has no qualified real-event validation."
+  ],
+  "unknown_cell_policy": "preserve_nodata_and_abstention_never_fill_as_dry",
+  "counts_as_observed_evidence": false,
+  "processing_allowed": true,
+  "can_feed_decision_layer": false,
+  "reason_blocked": "Synthetic product contract proof only; unknown cells remain nodata or abstained."
+}

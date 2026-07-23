@@ -87,6 +87,30 @@ describe("offline judging bundle", () => {
     expect(data.layers).toEqual([]);
     expect(data.areaFeatures.features).toEqual([]);
   });
+
+  it("exposes the validated blocked registry only on the Studio surface", () => {
+    const studio = getMaeSaiOfflineData(undefined, {
+      studyArea: "mae_sai_candidate_v1",
+      role: "studio",
+    });
+    const command = getMaeSaiOfflineData(undefined, {
+      studyArea: "mae_sai_candidate_v1",
+      role: "command",
+    });
+
+    expect(studio.modelEvidenceState).toBe("blocked");
+    expect(studio.model_registry).toHaveLength(1);
+    expect(studio.model_evaluations).toHaveLength(1);
+    expect(studio.observation_products[0]).toMatchObject({
+      valid_coverage_fraction: 0,
+      abstained_fraction: 1,
+      can_feed_decision_layer: false,
+    });
+    expect(command.modelEvidenceState).toBe("unavailable");
+    expect(command.model_registry).toEqual([]);
+    expect(command.model_evaluations).toEqual([]);
+    expect(command.observation_products).toEqual([]);
+  });
 });
 
 describe("private path safety", () => {
@@ -111,6 +135,97 @@ describe("private path safety", () => {
 });
 
 describe("study-area-scoped API artifacts", () => {
+  it("loads the complete live model-evidence chain only for Studio", async () => {
+    const requested = new Set<string>();
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), "https://api.example");
+      if (
+        [
+          "/api/v1/model-registry",
+          "/api/v1/model-evaluations",
+          "/api/v1/observation-products",
+        ].includes(url.pathname)
+      ) {
+        requested.add(`${url.pathname}?${url.searchParams.toString()}`);
+        if (url.pathname === "/api/v1/model-registry") {
+          return Response.json(maeSaiBundle.model_registry);
+        }
+        if (url.pathname === "/api/v1/model-evaluations") {
+          return Response.json(maeSaiBundle.model_evaluations);
+        }
+        return Response.json(maeSaiBundle.observation_products);
+      }
+      return maeSaiApiFetchWithoutScenarios(input);
+    }));
+
+    const data = await loadFloodGuardData("https://api.example", null, {
+      studyArea: "mae_sai_candidate_v1",
+      role: "studio",
+    });
+
+    expect(data.dataOrigin, data.fallbackReason).toBe("api");
+    expect(data.modelEvidenceState).toBe("blocked");
+    expect(data.model_registry).toHaveLength(1);
+    expect(data.model_evaluations).toHaveLength(1);
+    expect(data.observation_products).toHaveLength(1);
+    expect(data.observation_products[0].abstained_fraction).toBe(1);
+    expect(requested).toEqual(new Set([
+      "/api/v1/model-registry?study_area=mae_sai_candidate_v1",
+      "/api/v1/model-evaluations?study_area=mae_sai_candidate_v1",
+      "/api/v1/observation-products?study_area=mae_sai_candidate_v1",
+    ]));
+  });
+
+  it("does not request model-evidence endpoints for Command", async () => {
+    const requestedPaths: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), "https://api.example");
+      requestedPaths.push(url.pathname);
+      return maeSaiApiFetchWithoutScenarios(input);
+    }));
+
+    const data = await loadFloodGuardData("https://api.example", null, {
+      studyArea: "mae_sai_candidate_v1",
+      role: "command",
+    });
+
+    expect(data.dataOrigin, data.fallbackReason).toBe("api");
+    expect(data.model_registry).toEqual([]);
+    expect(data.model_evaluations).toEqual([]);
+    expect(data.observation_products).toEqual([]);
+    expect(requestedPaths).not.toContain("/api/v1/model-registry");
+    expect(requestedPaths).not.toContain("/api/v1/model-evaluations");
+    expect(requestedPaths).not.toContain("/api/v1/observation-products");
+  });
+
+  it("keeps live Studio model evidence unavailable when one registry hash is substituted", async () => {
+    const substitutedRegistry = structuredClone(maeSaiBundle.model_registry);
+    substitutedRegistry[0].payload.source_bundle_sha256 = "0".repeat(64);
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), "https://api.example");
+      if (url.pathname === "/api/v1/model-registry") {
+        return Response.json(substitutedRegistry);
+      }
+      if (url.pathname === "/api/v1/model-evaluations") {
+        return Response.json(maeSaiBundle.model_evaluations);
+      }
+      if (url.pathname === "/api/v1/observation-products") {
+        return Response.json(maeSaiBundle.observation_products);
+      }
+      return maeSaiApiFetchWithoutScenarios(input);
+    }));
+
+    const data = await loadFloodGuardData("https://api.example", null, {
+      studyArea: "mae_sai_candidate_v1",
+      role: "studio",
+    });
+
+    expect(data.dataOrigin).toBe("api");
+    expect(data.modelEvidenceState).toBe("unavailable");
+    expect(data.model_registry).toEqual([]);
+    expect(data.modelEvidenceReason).toMatch(/active evidence context/i);
+  });
+
   it("requests a Mae Sai brief from the selected dataset adapter", async () => {
     let requestedUrl = "";
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {

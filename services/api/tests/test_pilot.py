@@ -12,7 +12,12 @@ from fastapi.testclient import TestClient
 
 from floodguard_api.app import create_app
 from floodguard_api.config import RepositoryPaths
-from floodguard_api.models import DatasetMode, OperationalStatus
+from floodguard_api.dataset_registry import (
+    FIXTURE_STUDY_AREA,
+    MAE_SAI_STUDY_AREA,
+    DatasetRegistry,
+)
+from floodguard_api.models import DatasetMode, OperationalStatus, StatusResponse
 from floodguard_api.pilot import (
     NO_ACCEPTANCE_RECEIPT_BYTES,
     REQUIRED_ACCEPTANCE_CRITERIA,
@@ -391,7 +396,9 @@ def _use_official_input(repository: ArtifactRepository) -> None:
             "data_version": "example-official-v1",
         }
     )
-    repository.status = lambda: official_status  # type: ignore[method-assign]
+    repository.status = (  # type: ignore[method-assign]
+        lambda study_area=FIXTURE_STUDY_AREA: official_status
+    )
 
 
 def _acceptance_request(dataset_mode: str = "official_input") -> dict[str, object]:
@@ -526,12 +533,75 @@ def test_fixture_data_and_offline_readiness_remain_anonymous(
             "/api/v1/layers",
             "/api/v1/scenarios",
             "/api/v1/model-runs",
+            "/api/v1/model-registry",
+            "/api/v1/model-registry/fixture-sar-accepted-candidate-v1",
+            "/api/v1/model-registry/fixture-sar-accepted-candidate-v1/evidence",
+            "/api/v1/model-evaluations",
+            "/api/v1/observation-products",
             "/api/v1/data-readiness",
             "/api/v1/pilot/readiness",
         ):
             assert client.get(route).status_code == 200, route
 
     assert control.audit.read().entry_count == 0
+
+
+def test_model_authorization_uses_the_requested_study_area_in_a_mixed_registry(
+    tmp_path: Path,
+) -> None:
+    class MixedModeRegistry(DatasetRegistry):
+        def status(
+            self,
+            study_area: str = FIXTURE_STUDY_AREA,
+        ) -> StatusResponse:
+            current = super().status(study_area)
+            if study_area == MAE_SAI_STUDY_AREA:
+                return current.model_copy(
+                    update={
+                        "dataset_mode": DatasetMode.OFFICIAL_INPUT,
+                        "operational_status": OperationalStatus.PLANNING_ONLY,
+                    }
+                )
+            return current
+
+    repository = MixedModeRegistry()
+    control = _control(tmp_path)
+    official_routes = (
+        "/api/v1/model-runs",
+        "/api/v1/model-runs/mae-sai-geoai-evaluation-blocked-v2",
+        "/api/v1/model-registry",
+        "/api/v1/model-registry/mae-sai-model-evaluation-blocked-v1",
+        "/api/v1/model-registry/mae-sai-model-evaluation-blocked-v1/evidence",
+        "/api/v1/model-evaluations",
+        "/api/v1/observation-products",
+    )
+
+    with TestClient(create_app(repository, pilot_control=control)) as client:
+        # The default fixture remains intentionally anonymous.
+        assert client.get("/api/v1/model-runs").status_code == 200
+        assert client.get("/api/v1/model-registry").status_code == 200
+
+        for route in official_routes:
+            response = client.get(
+                route,
+                params={"study_area": MAE_SAI_STUDY_AREA},
+            )
+            assert response.status_code == 401, route
+            assert response.json()["error"] == "invalid_pilot_credential"
+
+    entries = control.audit.read().entries
+    assert len(entries) == len(official_routes)
+    assert all(entry.action == "api:model-evidence:read" for entry in entries)
+    assert all(entry.outcome == "denied" for entry in entries)
+    assert all(
+        entry.details
+        == {
+            "capability": "assessment:run",
+            "dataset_mode": "official_input",
+            "reason": "invalid_pilot_credential",
+        }
+        for entry in entries
+    )
 
 
 @pytest.mark.parametrize(
@@ -541,6 +611,9 @@ def test_fixture_data_and_offline_readiness_remain_anonymous(
         ("/api/v1/layers", "monitoring:read", "api:command-data:read"),
         ("/api/v1/scenarios", "assessment:run", "api:scenario:operate"),
         ("/api/v1/model-runs", "assessment:run", "api:model-evidence:read"),
+        ("/api/v1/model-registry", "assessment:run", "api:model-evidence:read"),
+        ("/api/v1/model-evaluations", "assessment:run", "api:model-evidence:read"),
+        ("/api/v1/observation-products", "assessment:run", "api:model-evidence:read"),
         ("/api/v1/data-readiness", "assessment:run", "api:data-readiness:read"),
         ("/api/v1/pilot/readiness", "monitoring:read", "api:pilot-readiness:read"),
     ],
@@ -594,6 +667,12 @@ def test_official_input_data_operations_enforce_role_capabilities(
     with TestClient(create_app(repository, pilot_control=control)) as client:
         assert client.get("/api/v1/areas", headers=headers).status_code == command_status
         assert client.get("/api/v1/model-runs", headers=headers).status_code == studio_status
+        assert client.get("/api/v1/model-registry", headers=headers).status_code == studio_status
+        assert client.get("/api/v1/model-evaluations", headers=headers).status_code == studio_status
+        assert (
+            client.get("/api/v1/observation-products", headers=headers).status_code
+            == studio_status
+        )
         assert client.get("/api/v1/data-readiness", headers=headers).status_code == studio_status
 
 

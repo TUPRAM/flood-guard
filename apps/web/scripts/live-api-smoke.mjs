@@ -143,13 +143,49 @@ try {
   }
   assertRoleProjectionRequests("command", apiRequestsBySurface.get("command"));
 
+  const studioModelResponsesPromise = Promise.all([
+    "/api/v1/model-registry",
+    "/api/v1/model-evaluations",
+    "/api/v1/observation-products",
+  ].map((path) => page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.origin === new URL(apiBase).origin
+      && url.pathname === path
+      && url.searchParams.get("study_area") === "mae_sai_candidate_v1";
+  })));
   const studioContext = await openSurfaceWithContext(page, "studio", "/studio/", "main.studio-page");
+  const studioModelResponses = await studioModelResponsesPromise;
+  for (const response of studioModelResponses) {
+    if (!response.ok()) {
+      throw new Error(`Studio model evidence request returned ${response.status()}: ${response.url()}`);
+    }
+  }
   await page.locator("#evidence-context-title").waitFor({ state: "visible" });
   await page.waitForFunction((contextId) => (
     document.querySelector("main.studio-page")?.textContent?.includes(contextId)
     && document.querySelector(".fallback-reason") === null
   ), studioContext.evidence_context_id);
   assertRoleProjectionRequests("studio", apiRequestsBySurface.get("studio"));
+  await page.getByRole("tab", { name: "Models & evaluation" }).click();
+  await page.locator("#model-registry-title").waitFor({ state: "visible" });
+  const registryText = await page.locator("#studio-tab-panel").innerText();
+  for (const required of [
+    "No model evaluation is bound to this evidence context",
+    "External algorithmic baseline",
+    "No real-event evaluation",
+    "Report only",
+    "No controlled evaluation was executed",
+    "Remain unknown; never treated as dry",
+    "Browser cryptographic status: not verified",
+    "The API and repository are the authority for cryptographic verification.",
+    "0%",
+    "100%",
+  ]) {
+    assertIncludes(registryText, required, `Studio live model registry ${required}`);
+  }
+  if (registryText.includes("Signature authority")) {
+    throw new Error("Studio live model registry overstates browser signature authority.");
+  }
   assertContextTupleEqual(publicContext, commandContextTuple, "Public and Command");
   assertContextTupleEqual(publicContext, studioContext, "Public and Studio");
   for (const origin of basemapOrigins) {
@@ -211,6 +247,11 @@ async function openSurfaceWithContext(page, surface, route, selector) {
 
 function assertRoleProjectionRequests(surface, requests = []) {
   const apiRequests = requests.filter((url) => url.pathname.includes("/api/v1/"));
+  const modelEvidencePaths = [
+    "/api/v1/model-registry",
+    "/api/v1/model-evaluations",
+    "/api/v1/observation-products",
+  ];
   const requiredPaths = [
     "/api/v1/status",
     "/api/v1/evidence-context",
@@ -229,6 +270,26 @@ function assertRoleProjectionRequests(surface, requests = []) {
   }
   if (!apiRequests.some((url) => url.pathname.includes("/api/v1/evidence-records/"))) {
     throw new Error(`${surface} did not request its context-bound evidence record.`);
+  }
+  if (surface === "studio") {
+    for (const required of modelEvidencePaths) {
+      const request = apiRequests.find((url) => url.pathname === required);
+      if (!request) {
+        throw new Error(`Studio did not request required model evidence ${required}.`);
+      }
+      if (request.searchParams.get("study_area") !== "mae_sai_candidate_v1") {
+        throw new Error(`Studio model evidence request was not study-area scoped: ${request.href}`);
+      }
+    }
+  } else {
+    const forbiddenModelRequest = apiRequests.find((url) => (
+      modelEvidencePaths.includes(url.pathname)
+    ));
+    if (forbiddenModelRequest) {
+      throw new Error(
+        `${surface} requested Studio-only model evidence: ${forbiddenModelRequest.href}`,
+      );
+    }
   }
   if (surface === "public") {
     const forbidden = apiRequests.find((url) => (

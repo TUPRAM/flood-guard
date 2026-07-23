@@ -628,7 +628,7 @@ export function GeoMap({
             const label = ACTION_CLASS_LABELS[key as keyof typeof ACTION_CLASS_LABELS];
             return <span key={key}><i style={{ backgroundColor: color }} /><b>{key}</b><small>{label[language]}</small></span>;
           })}
-        </div> : <div className="public-priority-legend"><span><i /><small>{language === "th" ? "ลำดับความสำคัญการวางแผนจากต่ำไปสูง" : "Planning priority, lower to higher"}</small></span></div>}
+        </div> : <div className="public-priority-legend"><span><i /><small>{language === "th" ? "ลำดับความสำคัญการวางแผนจากต่ำไปสูง" : "Planning priority from lower to higher"}</small></span></div>}
         {showRoads && <span><i className={`road-swatch ${allVisibleRoadsHaveRisk ? "risk" : hasAnyVisibleRoadRisk ? "mixed" : "context"}`} />{allVisibleRoadsHaveRisk
           ? (language === "th" ? `ความเสี่ยงถนนรายช่วง · แสดง ${visibleRoadCount.toLocaleString()}` : `Road-segment risk · ${visibleRoadCount.toLocaleString()} shown`)
           : hasAnyVisibleRoadRisk

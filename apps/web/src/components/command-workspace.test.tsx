@@ -17,6 +17,8 @@ describe("CommandWorkspace", () => {
     expect(html).toContain('aria-label="Planning data context"');
     expect(html).toContain("Planning intelligence");
     expect(html).toContain("Planning workspace");
+    expect(html).toContain('<a class="active" href="/command/">Planning</a>');
+    expect(html).not.toContain('<a class="active" href="/command/">Command</a>');
     expect(html).toContain("Source time");
     expect(html).toContain("Confidence");
     expect(html).toContain("follow DDPM and local-authority instructions before action");

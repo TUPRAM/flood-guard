@@ -1,0 +1,586 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/reference-candidate-manifest-v1.schema.json",
+  "title": "FloodGuard immutable reference candidate manifest v1",
+  "description": "Records checksum-backed source facts without granting qualification, model use, decision use, or warning authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "reference_id",
+    "reference_version",
+    "event_id",
+    "study_area_id",
+    "study_area_geometry_sha256",
+    "target_definition_id",
+    "reference_evidence_class",
+    "authority_basis",
+    "production_method",
+    "provider",
+    "temporal_identity",
+    "asset_inventory",
+    "native_spatial_contract",
+    "study_area_relationship",
+    "provenance",
+    "permission_status",
+    "qualification_status",
+    "processing_allowed",
+    "blockers",
+    "safety",
+    "inspected_at_utc",
+    "canonical_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "floodguard.reference_candidate_manifest.v1"
+    },
+    "reference_id": {
+      "$ref": "#/$defs/id"
+    },
+    "reference_version": {
+      "$ref": "#/$defs/id"
+    },
+    "event_id": {
+      "$ref": "#/$defs/id"
+    },
+    "study_area_id": {
+      "$ref": "#/$defs/id"
+    },
+    "study_area_geometry_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "target_definition_id": {
+      "$ref": "#/$defs/id"
+    },
+    "reference_evidence_class": {
+      "enum": [
+        "observed_measurement",
+        "expert_interpretation",
+        "weak_reference",
+        "context_only"
+      ]
+    },
+    "authority_basis": {
+      "enum": [
+        "provider_issued",
+        "independent_expert",
+        "adjudicated_consensus",
+        "project_weak_candidate",
+        "provider_product_without_project_acceptance"
+      ]
+    },
+    "production_method": {
+      "enum": [
+        "field_observation",
+        "human_remote_sensing_interpretation",
+        "agency_algorithmic_product",
+        "reviewer_consensus"
+      ]
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "organization",
+        "dataset_id",
+        "product_id",
+        "source_url",
+        "terms_url",
+        "catalog_evidence",
+        "terms_evidence"
+      ],
+      "properties": {
+        "organization": {
+          "$ref": "#/$defs/nonempty"
+        },
+        "dataset_id": {
+          "$ref": "#/$defs/id"
+        },
+        "product_id": {
+          "$ref": "#/$defs/id"
+        },
+        "source_url": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "terms_url": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "catalog_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_name",
+            "byte_size",
+            "sha256",
+            "exact_product_and_observation_date_present"
+          ],
+          "properties": {
+            "file_name": {
+              "$ref": "#/$defs/fileName"
+            },
+            "byte_size": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "exact_product_and_observation_date_present": {
+              "const": true
+            }
+          }
+        },
+        "terms_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_name",
+            "byte_size",
+            "sha256",
+            "scientific_use_clause_present",
+            "no_modification_clause_present",
+            "accessed_at_utc"
+          ],
+          "properties": {
+            "file_name": {
+              "$ref": "#/$defs/fileName"
+            },
+            "byte_size": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "scientific_use_clause_present": {
+              "const": true
+            },
+            "no_modification_clause_present": {
+              "const": true
+            },
+            "accessed_at_utc": {
+              "$ref": "#/$defs/timestamp"
+            }
+          }
+        }
+      }
+    },
+    "temporal_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_start_utc",
+        "observation_end_utc",
+        "provider_source_timestamp",
+        "accessed_at_utc",
+        "event_target_timestamp",
+        "allowable_temporal_delta_hours",
+        "temporal_qualification_status"
+      ],
+      "properties": {
+        "observation_start_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "observation_end_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "provider_source_timestamp": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "accessed_at_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "event_target_timestamp": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "allowable_temporal_delta_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "temporal_qualification_status": {
+          "type": "string",
+          "pattern": "^blocked_",
+          "minLength": 9
+        }
+      }
+    },
+    "asset_inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive",
+        "members",
+        "complete_shapefile_component_set"
+      ],
+      "properties": {
+        "archive": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_name",
+            "byte_size",
+            "sha256",
+            "local_path_hint"
+          ],
+          "properties": {
+            "file_name": {
+              "$ref": "#/$defs/fileName"
+            },
+            "byte_size": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "local_path_hint": {
+              "type": "string",
+              "pattern": "^<external_data_workspace>/[A-Za-z0-9._/() -]+$",
+              "not": {
+                "pattern": "(?:\\.\\.|\\\\|[A-Za-z]:)"
+              }
+            }
+          }
+        },
+        "members": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "relative_path",
+              "byte_size",
+              "sha256"
+            ],
+            "properties": {
+              "relative_path": {
+                "type": "string",
+                "minLength": 1,
+                "not": {
+                  "pattern": "(?:^/|\\.\\.|\\\\|[A-Za-z]:)"
+                }
+              },
+              "byte_size": {
+                "$ref": "#/$defs/nonnegativeInteger"
+              },
+              "sha256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          }
+        },
+        "complete_shapefile_component_set": {
+          "const": true
+        }
+      }
+    },
+    "native_spatial_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "crs",
+        "bounds_wgs84",
+        "geometry_types",
+        "feature_count",
+        "valid_feature_count",
+        "invalid_feature_count",
+        "gridcode_values",
+        "feature_id_unique",
+        "class_mapping"
+      ],
+      "properties": {
+        "crs": {
+          "$ref": "#/$defs/nonempty"
+        },
+        "bounds_wgs84": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            }
+          ],
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "geometry_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty"
+          }
+        },
+        "feature_count": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "valid_feature_count": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "invalid_feature_count": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "gridcode_values": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty"
+          }
+        },
+        "feature_id_unique": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "class_mapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "1",
+            "dry",
+            "permanent_water",
+            "unknown",
+            "nodata"
+          ],
+          "properties": {
+            "1": {
+              "const": "detected_flood_water"
+            },
+            "dry": {
+              "const": "not_provided"
+            },
+            "permanent_water": {
+              "const": "removed_during_provider_processing"
+            },
+            "unknown": {
+              "const": "not_encoded"
+            },
+            "nodata": {
+              "const": "not_encoded"
+            }
+          }
+        }
+      }
+    },
+    "study_area_relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "study_area_feature_count",
+        "study_area_area_km2",
+        "intersecting_feature_count",
+        "invalid_intersecting_feature_count",
+        "diagnostic_repair_applied",
+        "diagnostic_intersection_area_km2",
+        "diagnostic_intersection_fraction",
+        "complete_study_area_coverage_claimed"
+      ],
+      "properties": {
+        "study_area_feature_count": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "study_area_area_km2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "intersecting_feature_count": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "invalid_intersecting_feature_count": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "diagnostic_repair_applied": {
+          "const": true
+        },
+        "diagnostic_intersection_area_km2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "diagnostic_intersection_fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "complete_study_area_coverage_claimed": {
+          "const": false
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_lineage_present",
+        "metadata_contains_private_provider_paths",
+        "private_provider_paths_published",
+        "known_uncertainty",
+        "assumptions"
+      ],
+      "properties": {
+        "provider_lineage_present": {
+          "type": "boolean"
+        },
+        "metadata_contains_private_provider_paths": {
+          "type": "boolean"
+        },
+        "private_provider_paths_published": {
+          "const": false
+        },
+        "known_uncertainty": {
+          "$ref": "#/$defs/nonemptyTextArray"
+        },
+        "assumptions": {
+          "$ref": "#/$defs/nonemptyTextArray"
+        }
+      }
+    },
+    "permission_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "general_scientific_use_described",
+        "general_terms_prohibit_modification",
+        "product_specific_rasterization_permission_confirmed",
+        "ml_label_use_allowed",
+        "model_evaluation_use_allowed",
+        "redistribution_status",
+        "reference_authority_accepted"
+      ],
+      "properties": {
+        "general_scientific_use_described": {
+          "const": true
+        },
+        "general_terms_prohibit_modification": {
+          "const": true
+        },
+        "product_specific_rasterization_permission_confirmed": {
+          "const": false
+        },
+        "ml_label_use_allowed": {
+          "const": false
+        },
+        "model_evaluation_use_allowed": {
+          "const": false
+        },
+        "redistribution_status": {
+          "const": "unresolved_product_specific"
+        },
+        "reference_authority_accepted": {
+          "const": false
+        }
+      }
+    },
+    "qualification_status": {
+      "const": "blocked_external_permission_and_scientific_review"
+    },
+    "processing_allowed": {
+      "const": false
+    },
+    "blockers": {
+      "$ref": "#/$defs/nonemptyTextArray"
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eligible_for_decision_layer",
+        "eligible_for_access_analysis",
+        "eligible_for_equity_analysis",
+        "eligible_for_fpps",
+        "eligible_for_action_class",
+        "official_warning"
+      ],
+      "properties": {
+        "eligible_for_decision_layer": {
+          "const": false
+        },
+        "eligible_for_access_analysis": {
+          "const": false
+        },
+        "eligible_for_equity_analysis": {
+          "const": false
+        },
+        "eligible_for_fpps": {
+          "const": false
+        },
+        "eligible_for_action_class": {
+          "const": false
+        },
+        "official_warning": {
+          "const": false
+        }
+      }
+    },
+    "inspected_at_utc": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "canonical_sha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "httpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "nonempty": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fileName": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "(?:/|\\\\|\\.\\.|[A-Za-z]:)"
+      }
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "nonnegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "nonemptyTextArray": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonempty"
+      }
+    }
+  }
+}

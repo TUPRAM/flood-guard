@@ -115,6 +115,7 @@ const registryEntry = maeSaiBundle.model_registry?.[0]?.payload;
 const modelRunV2 = maeSaiBundle.model_runs_v2?.[0];
 const modelEvaluation = maeSaiBundle.model_evaluations?.[0];
 const observationProduct = maeSaiBundle.observation_products?.[0];
+const qualifiedFoundation = maeSaiBundle.qualified_evidence_foundation;
 if (
   registryEntry?.source_bundle_sha256 !== maeSaiBundle.evidence_context.evidence_package_sha256
   || registryEntry?.evidence_kind !== "external_algorithmic_baseline"
@@ -131,6 +132,24 @@ if (
   || observationProduct?.can_feed_decision_layer !== false
 ) {
   throw new Error("Mae Sai offline Studio model evidence does not fail closed");
+}
+if (
+  qualifiedFoundation?.schema_version !== "floodguard.qualified-evidence-foundation.v1"
+  || qualifiedFoundation?.status !== "blocked"
+  || qualifiedFoundation?.authoritative_receipt !== false
+  || qualifiedFoundation?.source_timestamp !== "2026-07-23T12:24:48Z"
+  || qualifiedFoundation?.reference_candidate_binding?.product_id !== "AIT-VAP001-TH"
+  || qualifiedFoundation?.reference_candidate_binding?.qualification_status !== "blocked_external_permission_and_scientific_review"
+  || qualifiedFoundation?.reference_candidate_binding?.processing_allowed !== false
+  || qualifiedFoundation?.stages?.length !== 5
+  || qualifiedFoundation?.permissions?.source_processing_allowed !== true
+  || qualifiedFoundation?.permissions?.experiment_processing_allowed !== false
+  || qualifiedFoundation?.permissions?.decision_layer_allowed !== false
+  || qualifiedFoundation?.permissions?.operational_use_allowed !== false
+  || qualifiedFoundation?.safety?.official_warning !== false
+  || qualifiedFoundation?.safety?.can_feed_fpps !== false
+) {
+  throw new Error("Mae Sai qualified-evidence foundation does not fail closed");
 }
 if (
   !Array.isArray(maeSaiManifest.model_evidence_descriptors)

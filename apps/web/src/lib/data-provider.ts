@@ -212,6 +212,10 @@ export function getMaeSaiOfflineData(
   return {
     ...maeSaiOfflineBundle,
     ...modelEvidence,
+    qualified_evidence_foundation:
+      options.role === "studio" && !mismatch
+        ? maeSaiOfflineBundle.qualified_evidence_foundation
+        : undefined,
     status: maeSaiPublicBundle.status,
     areas: mismatch || options.role === "public" ? [] : maeSaiOfflineBundle.areas,
     layers,

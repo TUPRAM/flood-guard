@@ -12,6 +12,13 @@ import math
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from floodguard.ait_reference_candidate import (
+    AIT_REVIEWED_ARCHIVE_SHA256,
+    AIT_REVIEWED_MANIFEST_CANONICAL_SHA256,
+    AIT_REVIEWED_MANIFEST_FILE_SHA256,
+    AitReferenceCandidateError,
+    validate_ait_reference_candidate,
+)
 from shapely.geometry import mapping, shape
 
 
@@ -23,6 +30,8 @@ SOURCE_COMMIT = "22fc172aca78937bb7d1f8675d08527a8517da68"
 DATA_VERSION = "mae-sai-candidate-2024-09-15-v1"
 GENERATED_AT = "2026-07-20T08:15:08Z"
 SOURCE_TIMESTAMP = "2024-09-15T23:16:01Z"
+QUALIFIED_EVIDENCE_SOURCE_TIMESTAMP = "2026-07-23T12:24:48Z"
+QUALIFIED_EVIDENCE_GENERATED_AT = "2026-07-23T12:24:48Z"
 EVIDENCE_CONTEXT_ID = "mae-sai:2024-09:mae-sai-candidate-2024-09-15-v1"
 EVIDENCE_PACKAGE_ID = "mae-sai-historic-planning-2024-09-v1"
 SOURCE_MANIFEST_PATH = (
@@ -33,7 +42,10 @@ SOURCE_MANIFEST_PATH = (
     / "study_area_bundles"
     / "mae_sai_candidate_v1.json"
 )
-SOURCE_MANIFEST_SHA256 = "0bb7feff4b84d7a202b006856352d619d66607155bdf41430d5a5ea0f9d52026"
+AIT_REFERENCE_CANDIDATE_PATH = OUTPUTS / "ait_vap001_reference_candidate.json"
+SOURCE_MANIFEST_SHA256 = (
+    "0bb7feff4b84d7a202b006856352d619d66607155bdf41430d5a5ea0f9d52026"
+)
 EXPECTED_BOUNDS = [99.80, 20.24, 100.05, 20.48]
 
 INPUTS = {
@@ -57,6 +69,390 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _canonical_payload_sha256(value: dict[str, Any]) -> str:
+    """Hash canonical UTF-8 JSON without relying on filesystem serialization."""
+
+    payload = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _reference_candidate_binding() -> dict[str, Any]:
+    """Bind the Studio status to the committed, still-blocked AIT candidate."""
+
+    candidate = _load(AIT_REFERENCE_CANDIDATE_PATH)
+    if not isinstance(candidate, dict):
+        raise ValueError(
+            "AIT reference-candidate manifest must be a JSON object; "
+            "P0 projection blocked."
+        )
+    declared_candidate_sha = candidate.get("canonical_sha256")
+    unsigned_candidate = dict(candidate)
+    unsigned_candidate.pop("canonical_sha256", None)
+    if (
+        not isinstance(declared_candidate_sha, str)
+        or _canonical_payload_sha256(unsigned_candidate) != declared_candidate_sha
+    ):
+        raise ValueError(
+            "AIT reference-candidate canonical SHA-256 is invalid; "
+            "P0 projection blocked."
+        )
+    try:
+        validate_ait_reference_candidate(candidate)
+    except AitReferenceCandidateError as exc:
+        raise ValueError(
+            "AIT reference-candidate semantic validation failed; P0 projection blocked."
+        ) from exc
+    if declared_candidate_sha != AIT_REVIEWED_MANIFEST_CANONICAL_SHA256:
+        raise ValueError(
+            "AIT reference-candidate reviewed canonical SHA-256 changed; "
+            "P0 projection requires explicit review."
+        )
+    candidate_file_sha256 = _sha256(AIT_REFERENCE_CANDIDATE_PATH)
+    if candidate_file_sha256 != AIT_REVIEWED_MANIFEST_FILE_SHA256:
+        raise ValueError(
+            "AIT reference-candidate reviewed file SHA-256 changed; "
+            "P0 projection requires byte-stable regeneration and explicit review."
+        )
+    try:
+        provider = candidate["provider"]
+        temporal = candidate["temporal_identity"]
+        archive = candidate["asset_inventory"]["archive"]
+        binding = {
+            "manifest_schema": candidate["schema_version"],
+            "product_id": provider["product_id"],
+            "provider": provider["organization"],
+            "observation_start_utc": temporal["observation_start_utc"],
+            "observation_end_utc": temporal["observation_end_utc"],
+            "manifest_canonical_sha256": candidate["canonical_sha256"],
+            "manifest_file_sha256": candidate_file_sha256,
+            "source_archive_sha256": archive["sha256"],
+            "qualification_status": candidate["qualification_status"],
+            "processing_allowed": candidate["processing_allowed"],
+        }
+    except (KeyError, TypeError) as exc:
+        raise ValueError(
+            "AIT reference-candidate manifest is incomplete; P0 projection blocked."
+        ) from exc
+
+    expected = {
+        "manifest_schema": "floodguard.reference_candidate_manifest.v1",
+        "product_id": "AIT-VAP001-TH",
+        "provider": "Asian Institute of Technology via Sentinel Asia",
+        "observation_start_utc": "2024-09-14T00:00:00Z",
+        "observation_end_utc": "2024-09-14T23:59:59Z",
+        "qualification_status": ("blocked_external_permission_and_scientific_review"),
+        "processing_allowed": False,
+        "manifest_canonical_sha256": AIT_REVIEWED_MANIFEST_CANONICAL_SHA256,
+        "manifest_file_sha256": AIT_REVIEWED_MANIFEST_FILE_SHA256,
+        "source_archive_sha256": AIT_REVIEWED_ARCHIVE_SHA256,
+    }
+    for field, value in expected.items():
+        if binding[field] != value:
+            raise ValueError(
+                f"AIT reference-candidate {field} changed; "
+                "P0 projection requires explicit review."
+            )
+    for field in (
+        "manifest_canonical_sha256",
+        "manifest_file_sha256",
+        "source_archive_sha256",
+    ):
+        value = binding[field]
+        if (
+            not isinstance(value, str)
+            or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError(
+                f"AIT reference-candidate {field} is not a lowercase SHA-256."
+            )
+    return binding
+
+
+def _qualified_evidence_foundation() -> dict[str, Any]:
+    """Return the Studio-only, fail-closed P0 evidence-status projection."""
+
+    foundation: dict[str, Any] = {
+        "schema_version": "floodguard.qualified-evidence-foundation.v1",
+        "foundation_id": "qualified-thai-reference-frozen-label-release-v1",
+        "study_area_id": "mae_sai_candidate_v1",
+        "source_timestamp": QUALIFIED_EVIDENCE_SOURCE_TIMESTAMP,
+        "generated_at": QUALIFIED_EVIDENCE_GENERATED_AT,
+        "confidence_class": "low",
+        "status": "blocked",
+        "authoritative_receipt": False,
+        "reference_candidate_binding": _reference_candidate_binding(),
+        "stages": [
+            {
+                "stage_id": "engineering_foundation",
+                "state": "ready",
+                "label_en": "Engineering foundation",
+                "label_th": "โครงสร้างพื้นฐานทางวิศวกรรม",
+                "detail_en": (
+                    "Reference-candidate inspection, qualified-reference release "
+                    "tooling, and fixture-only review and partition validators "
+                    "are implemented."
+                ),
+                "detail_th": (
+                    "เครื่องมือตรวจผู้สมัครอ้างอิง เครื่องมือออกรุ่นข้อมูลอ้างอิง "
+                    "และตัวตรวจสอบการทบทวน/การแบ่งชุดแบบข้อมูลสังเคราะห์พร้อมแล้ว"
+                ),
+            },
+            {
+                "stage_id": "qualified_thai_reference",
+                "state": "blocked",
+                "label_en": "Qualified Thai event reference",
+                "label_th": "ข้อมูลอ้างอิงเหตุการณ์น้ำท่วมในไทยที่ผ่านเกณฑ์",
+                "detail_en": (
+                    "Sentinel Asia AIT-VAP001-TH is a real in-area event "
+                    "candidate, but it has not passed product-specific "
+                    "permission, geometry repair, independent authority, grid, "
+                    "no-data, and permitted-use qualification."
+                ),
+                "detail_th": (
+                    "Sentinel Asia AIT-VAP001-TH เป็นข้อมูลเหตุการณ์จริงในพื้นที่ "
+                    "แต่ยังไม่ผ่านการรับรองด้านสิทธิ์เฉพาะผลิตภัณฑ์ การซ่อมเรขาคณิต "
+                    "อำนาจอ้างอิงอิสระ กริด ค่าไม่มีข้อมูล และขอบเขตการใช้"
+                ),
+            },
+            {
+                "stage_id": "reviewer_calibration",
+                "state": "blocked",
+                "label_en": "Reviewer assignment and calibration",
+                "label_th": "การแต่งตั้งและปรับเทียบผู้ทบทวน",
+                "detail_en": (
+                    "Two independent reviewers and a separate adjudicator are "
+                    "not assigned, and no calibration receipt passes a "
+                    "predeclared threshold."
+                ),
+                "detail_th": (
+                    "ยังไม่ได้แต่งตั้งผู้ทบทวนอิสระสองคนและผู้ชี้ขาดแยกต่างหาก "
+                    "และยังไม่มีใบรับรองการปรับเทียบที่ผ่านเกณฑ์ซึ่งประกาศไว้ล่วงหน้า"
+                ),
+            },
+            {
+                "stage_id": "blind_review_adjudication",
+                "state": "blocked",
+                "label_en": "Blind double review and adjudication",
+                "label_th": "การทบทวนแบบปกปิดสองคนและการชี้ขาด",
+                "detail_en": (
+                    "Formal blind annotations, disagreement tracking, and "
+                    "independent adjudication have not been completed."
+                ),
+                "detail_th": (
+                    "ยังไม่เสร็จสิ้นการทำป้ายกำกับแบบปกปิด "
+                    "การติดตามความเห็นต่าง และการชี้ขาดอย่างอิสระ"
+                ),
+            },
+            {
+                "stage_id": "frozen_label_release",
+                "state": "absent",
+                "label_en": "Frozen label release",
+                "label_th": "ชุดป้ายกำกับฉบับตรึง",
+                "detail_en": (
+                    "No immutable label-release manifest or release checksum "
+                    "exists for qualified training or evaluation."
+                ),
+                "detail_th": (
+                    "ยังไม่มีรายการชุดป้ายกำกับแบบเปลี่ยนแปลงไม่ได้หรือ checksum "
+                    "สำหรับการฝึกหรือประเมินที่ผ่านเกณฑ์"
+                ),
+            },
+        ],
+        "permissions": {
+            "source_processing_allowed": True,
+            "source_processing_scope_en": (
+                "Approved source and context engineering only; this does not "
+                "authorize reference validation, model training, or evaluation."
+            ),
+            "source_processing_scope_th": (
+                "อนุญาตเฉพาะการเตรียมแหล่งข้อมูลและบริบทที่ผ่านเงื่อนไข "
+                "ไม่ใช่การอนุญาตให้ตรวจสอบข้อมูลอ้างอิง ฝึกโมเดล หรือประเมินโมเดล"
+            ),
+            "experiment_processing_allowed": False,
+            "qualified_reference_use_allowed": False,
+            "training_allowed": False,
+            "evaluation_allowed": False,
+            "decision_layer_allowed": False,
+            "operational_use_allowed": False,
+        },
+        "blockers": [
+            {
+                "code": "in_area_candidate_not_qualified",
+                "detail_en": (
+                    "AIT-VAP001-TH intersects Mae Sai, but product-specific "
+                    "rasterization and ML-label permission, invalid-geometry "
+                    "treatment, and reference authority are unresolved."
+                ),
+                "detail_th": (
+                    "AIT-VAP001-TH ตัดผ่านแม่สาย แต่สิทธิ์เฉพาะผลิตภัณฑ์สำหรับ "
+                    "การทำราสเตอร์และป้ายกำกับ ML การจัดการเรขาคณิตที่ไม่ถูกต้อง "
+                    "และอำนาจอ้างอิงยังไม่ชัดเจน"
+                ),
+            },
+            {
+                "code": "reference_rights_and_authority_unresolved",
+                "detail_en": (
+                    "Reference-specific permission, provenance, timing, and "
+                    "authority classification are unresolved."
+                ),
+                "detail_th": (
+                    "สิทธิ์เฉพาะของข้อมูลอ้างอิง ที่มา เวลา และประเภทอำนาจอ้างอิงยังไม่ชัดเจน"
+                ),
+            },
+            {
+                "code": "qualified_human_roles_unassigned",
+                "detail_en": (
+                    "The required independent reviewers and separate adjudicator "
+                    "are not assigned."
+                ),
+                "detail_th": ("ยังไม่ได้แต่งตั้งผู้ทบทวนอิสระและผู้ชี้ขาดแยกต่างหากตามที่กำหนด"),
+            },
+            {
+                "code": "reviewer_calibration_not_passed",
+                "detail_en": (
+                    "No reviewer-calibration result passes a predeclared threshold."
+                ),
+                "detail_th": ("ยังไม่มีผลการปรับเทียบผู้ทบทวนที่ผ่านเกณฑ์ซึ่งประกาศไว้ล่วงหน้า"),
+            },
+            {
+                "code": "formal_review_and_release_absent",
+                "detail_en": (
+                    "Blind double review, adjudication, and an immutable label "
+                    "release are absent."
+                ),
+                "detail_th": ("ยังไม่มีการทบทวนแบบปกปิดสองคน การชี้ขาด และชุดป้ายกำกับฉบับตรึง"),
+            },
+        ],
+        "next_actions": [
+            {
+                "sequence": 1,
+                "action_en": (
+                    "Resolve product-specific local-analysis, rasterization, "
+                    "derived-metric, ML-label, and retention permission for "
+                    "Sentinel Asia AIT-VAP001-TH."
+                ),
+                "action_th": (
+                    "ยืนยันสิทธิ์เฉพาะผลิตภัณฑ์ Sentinel Asia AIT-VAP001-TH "
+                    "สำหรับการวิเคราะห์ในเครื่อง การทำราสเตอร์ เมตริกที่อนุมาน "
+                    "ป้ายกำกับ ML และการเก็บรักษา"
+                ),
+            },
+            {
+                "sequence": 2,
+                "action_en": (
+                    "Independently classify its authority; quarantine or repair "
+                    "invalid geometries; then validate identity, checksum, "
+                    "timing, geometry, grid, CRS, and no-data handling."
+                ),
+                "action_th": (
+                    "จัดประเภทอำนาจอ้างอิงอย่างอิสระ แยกหรือซ่อมเรขาคณิตที่ไม่ถูกต้อง "
+                    "แล้วตรวจตัวตน checksum เวลา เรขาคณิต กริด CRS และค่าไม่มีข้อมูล"
+                ),
+            },
+            {
+                "sequence": 3,
+                "action_en": (
+                    "Assign at least two independent reviewers and one separate "
+                    "adjudicator under recorded conflict-of-interest controls."
+                ),
+                "action_th": (
+                    "แต่งตั้งผู้ทบทวนอิสระอย่างน้อยสองคนและผู้ชี้ขาดแยกหนึ่งคน "
+                    "ภายใต้การควบคุมผลประโยชน์ทับซ้อนที่บันทึกไว้"
+                ),
+            },
+            {
+                "sequence": 4,
+                "action_en": (
+                    "Run reviewer calibration against the frozen qualification "
+                    "set and require the predeclared threshold."
+                ),
+                "action_th": (
+                    "ปรับเทียบผู้ทบทวนกับชุดคุณสมบัติที่ตรึงไว้ และบังคับใช้เกณฑ์ที่ประกาศล่วงหน้า"
+                ),
+            },
+            {
+                "sequence": 5,
+                "action_en": (
+                    "Complete blind double review, disagreement tracking, and "
+                    "independent adjudication."
+                ),
+                "action_th": (
+                    "ดำเนินการทบทวนแบบปกปิดสองคน ติดตามความเห็นต่าง และชี้ขาดอย่างอิสระให้เสร็จ"
+                ),
+            },
+            {
+                "sequence": 6,
+                "action_en": (
+                    "Freeze the immutable label-release manifest and checksum; "
+                    "only then reconsider experiment processing."
+                ),
+                "action_th": (
+                    "ตรึงรายการชุดป้ายกำกับและ checksum แบบเปลี่ยนแปลงไม่ได้ "
+                    "จากนั้นจึงพิจารณาการประมวลผลการทดลองใหม่"
+                ),
+            },
+        ],
+        "assumptions": [
+            {
+                "assumption_en": (
+                    "source_timestamp is the candidate-inspection/status-evidence "
+                    "time, not a flood-observation or label-creation time."
+                ),
+                "assumption_th": (
+                    "source_timestamp คือเวลาตรวจสอบผู้สมัคร/หลักฐานสถานะ "
+                    "ไม่ใช่เวลาสังเกตน้ำท่วมหรือเวลาสร้างป้ายกำกับ"
+                ),
+            },
+            {
+                "assumption_en": (
+                    "The existing manual geometry is cross-border weak-reference "
+                    "calibration evidence and cannot qualify this Thai event lane."
+                ),
+                "assumption_th": (
+                    "เรขาคณิตแบบทำด้วยมือที่มีอยู่เป็นหลักฐานอ้างอิงอ่อนสำหรับ "
+                    "การปรับเทียบข้ามพรมแดน และไม่ทำให้ช่องทางเหตุการณ์ไทยนี้ผ่านเกณฑ์"
+                ),
+            },
+            {
+                "assumption_en": (
+                    "Any additional product, including AIT-VAP003, needs an "
+                    "independently validated lineage receipt before it can count "
+                    "as corroboration."
+                ),
+                "assumption_th": (
+                    "ผลิตภัณฑ์เพิ่มเติมใด ๆ รวมถึง AIT-VAP003 ต้องมีใบรับรอง "
+                    "สายที่มาที่ผ่านการตรวจสอบอย่างอิสระ ก่อนนับเป็นหลักฐานยืนยัน"
+                ),
+            },
+            {
+                "assumption_en": (
+                    "This projection summarizes recorded state and is not an "
+                    "approval, authority decision, or release receipt."
+                ),
+                "assumption_th": (
+                    "ข้อมูลฉายสถานะนี้สรุปสถานะที่บันทึกไว้ "
+                    "ไม่ใช่การอนุมัติ คำตัดสินของผู้มีอำนาจ หรือใบรับรองการออกรุ่น"
+                ),
+            },
+        ],
+        "safety": {
+            "official_warning": False,
+            "operational_authorized": False,
+            "can_feed_decision_layer": False,
+            "can_feed_fpps": False,
+            "can_assign_action_class": False,
+        },
+    }
+    foundation["canonical_sha256"] = _canonical_payload_sha256(foundation)
+    return foundation
+
+
 def _round_coordinates(value: Any, digits: int) -> Any:
     if isinstance(value, list):
         return [_round_coordinates(item, digits) for item in value]
@@ -67,7 +463,9 @@ def _round_coordinates(value: Any, digits: int) -> Any:
     return value
 
 
-def _compact_geometry(geometry: dict[str, Any], tolerance: float, digits: int) -> dict[str, Any]:
+def _compact_geometry(
+    geometry: dict[str, Any], tolerance: float, digits: int
+) -> dict[str, Any]:
     candidate = shape(geometry)
     if tolerance:
         candidate = candidate.simplify(tolerance, preserve_topology=True)
@@ -240,7 +638,10 @@ def _validate_pinned_inputs(
     if (
         not isinstance(bounds, list)
         or len(bounds) != 4
-        or any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in bounds)
+        or any(
+            isinstance(value, bool) or not isinstance(value, (int, float))
+            for value in bounds
+        )
     ):
         raise ValueError("Mae Sai source manifest bounds are invalid.")
     min_x, min_y, max_x, max_y = (float(value) for value in bounds)
@@ -289,9 +690,8 @@ def _validate_pinned_inputs(
         if source.get("type") != "FeatureCollection":
             raise ValueError(f"Mae Sai input {layer_id} is not a FeatureCollection.")
         features = source.get("features")
-        if (
-            not isinstance(features, list)
-            or len(features) != spec.get("expected_feature_count")
+        if not isinstance(features, list) or len(features) != spec.get(
+            "expected_feature_count"
         ):
             raise ValueError(f"Mae Sai input {layer_id} feature count changed.")
         geometry_types = spec.get("geometry_types")
@@ -307,12 +707,18 @@ def _validate_pinned_inputs(
         observed_area_ids: set[str] = set()
         for index, feature in enumerate(features):
             if not isinstance(feature, dict) or feature.get("type") != "Feature":
-                raise ValueError(f"Mae Sai input {layer_id} feature {index} is invalid.")
+                raise ValueError(
+                    f"Mae Sai input {layer_id} feature {index} is invalid."
+                )
             properties = feature.get("properties")
             geometry = feature.get("geometry")
             if not isinstance(properties, dict) or not isinstance(geometry, dict):
-                raise ValueError(f"Mae Sai input {layer_id} feature {index} is incomplete.")
-            missing = [field for field in required_properties if field not in properties]
+                raise ValueError(
+                    f"Mae Sai input {layer_id} feature {index} is incomplete."
+                )
+            missing = [
+                field for field in required_properties if field not in properties
+            ]
             if missing:
                 raise ValueError(
                     f"Mae Sai input {layer_id} is missing required properties: {missing}."
@@ -323,8 +729,12 @@ def _validate_pinned_inputs(
             if candidate.is_empty or not candidate.is_valid:
                 raise ValueError(f"Mae Sai input {layer_id} contains invalid geometry.")
             if any(not math.isfinite(value) for value in candidate.bounds):
-                raise ValueError(f"Mae Sai input {layer_id} contains non-finite geometry.")
-            feature_min_x, feature_min_y, feature_max_x, feature_max_y = candidate.bounds
+                raise ValueError(
+                    f"Mae Sai input {layer_id} contains non-finite geometry."
+                )
+            feature_min_x, feature_min_y, feature_max_x, feature_max_y = (
+                candidate.bounds
+            )
             if not (
                 min_x <= feature_min_x <= max_x
                 and min_y <= feature_min_y <= max_y
@@ -334,11 +744,15 @@ def _validate_pinned_inputs(
                 raise ValueError(f"Mae Sai input {layer_id} escaped declared bounds.")
             area_id = str(properties.get(join_key, ""))
             if area_id not in expected_area_ids:
-                raise ValueError(f"Mae Sai input {layer_id} has an unknown area join key.")
+                raise ValueError(
+                    f"Mae Sai input {layer_id} has an unknown area join key."
+                )
             observed_area_ids.add(area_id)
             primary_id = str(properties.get(primary_keys[layer_id], ""))
             if not primary_id or primary_id in primary_ids:
-                raise ValueError(f"Mae Sai input {layer_id} has duplicate feature identity.")
+                raise ValueError(
+                    f"Mae Sai input {layer_id} has duplicate feature identity."
+                )
             primary_ids.add(primary_id)
             _validate_feature_numbers(layer_id, properties)
         if layer_id in {"priority_areas", "access_hotspots"} and (
@@ -389,7 +803,9 @@ def _build_areas(source: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
             }
         )
         baseline = {
-            "people_losing_30_min_access": _integer(properties.get("people_losing_30_min_access")),
+            "people_losing_30_min_access": _integer(
+                properties.get("people_losing_30_min_access")
+            ),
             "equity_gap_ratio": None
             if properties.get("equity_gap_ratio") in (None, "")
             else _number(properties.get("equity_gap_ratio")),
@@ -413,7 +829,9 @@ def _build_areas(source: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
             "exposure_0_100": _number(properties["exposure_0_100"]),
             "access_gap_0_100": _number(properties["access_gap_0_100"]),
             "road_criticality_0_100": _number(properties["road_criticality_0_100"]),
-            "vulnerability_context_0_100": _number(properties["vulnerability_context_0_100"]),
+            "vulnerability_context_0_100": _number(
+                properties["vulnerability_context_0_100"]
+            ),
             "total_population": _integer(properties["total_population"]),
             "people_losing_30_min_access": baseline["people_losing_30_min_access"],
             "equity_gap_ratio": baseline["equity_gap_ratio"],
@@ -423,25 +841,52 @@ def _build_areas(source: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
                 "close_road": baseline,
             },
             "candidate_evidence": {
-                "mean_flood_probability_0_1": _number(properties.get("mean_flood_probability_0_1")),
-                "p90_flood_probability_0_1": _number(properties.get("p90_flood_probability_0_1")),
-                "binary_flood_share_0_1": _number(properties.get("binary_flood_share_0_1")),
+                "mean_flood_probability_0_1": _number(
+                    properties.get("mean_flood_probability_0_1")
+                ),
+                "p90_flood_probability_0_1": _number(
+                    properties.get("p90_flood_probability_0_1")
+                ),
+                "binary_flood_share_0_1": _number(
+                    properties.get("binary_flood_share_0_1")
+                ),
                 "facility_count": _integer(properties.get("facility_count")),
                 "road_count": _integer(properties.get("road_count")),
                 "bridge_count": _integer(properties.get("bridge_count")),
-                "worldpop_bbox_coverage_rate": _number(properties.get("worldpop_bbox_coverage_rate")),
-                "road_snap_population_coverage_rate": _number(properties.get("road_snap_population_coverage_rate")),
-                "dem_population_coverage_rate": _number(properties.get("dem_population_coverage_rate")),
+                "worldpop_bbox_coverage_rate": _number(
+                    properties.get("worldpop_bbox_coverage_rate")
+                ),
+                "road_snap_population_coverage_rate": _number(
+                    properties.get("road_snap_population_coverage_rate")
+                ),
+                "dem_population_coverage_rate": _number(
+                    properties.get("dem_population_coverage_rate")
+                ),
                 "boundary_version": str(properties.get("boundary_version", "unknown")),
-                "boundary_valid_on": str(properties.get("boundary_valid_on", "unknown")),
-                "reference_status": str(properties.get("reference_status", "unqualified")),
-                "processing_scope": str(properties.get("processing_scope", "candidate_analysis")),
+                "boundary_valid_on": str(
+                    properties.get("boundary_valid_on", "unknown")
+                ),
+                "reference_status": str(
+                    properties.get("reference_status", "unqualified")
+                ),
+                "processing_scope": str(
+                    properties.get("processing_scope", "candidate_analysis")
+                ),
             },
         }
         records.append(record)
-    if len(features) != 8 or len({item["properties"]["area_id"] for item in features}) != 8:
-        raise ValueError("Mae Sai browser bundle requires exactly eight unique reporting areas.")
-    return {"type": "FeatureCollection", "name": "mae_sai_candidate_priority_areas", "features": features}, records
+    if (
+        len(features) != 8
+        or len({item["properties"]["area_id"] for item in features}) != 8
+    ):
+        raise ValueError(
+            "Mae Sai browser bundle requires exactly eight unique reporting areas."
+        )
+    return {
+        "type": "FeatureCollection",
+        "name": "mae_sai_candidate_priority_areas",
+        "features": features,
+    }, records
 
 
 def _build_public_areas(areas: dict[str, Any]) -> dict[str, Any]:
@@ -493,20 +938,35 @@ def _build_roads(source: dict[str, Any], valid_area_ids: set[str]) -> dict[str, 
                     "road_class": str(properties.get("road_class") or "unknown"),
                     "osm_highway": str(properties.get("osm_highway") or "unknown"),
                     "bridge_flag": bool(properties.get("bridge_flag")),
-                    "road_disruption_probability_0_1": _number(properties.get("road_disruption_probability_0_1")),
-                    "candidate_status": str(properties.get("candidate_status") or "candidate"),
-                    "confidence_class": str(properties.get("confidence_class") or "low"),
-                    "warning_text": str(properties.get("warning_text") or "Modelled candidate risk; not an observed closure."),
+                    "road_disruption_probability_0_1": _number(
+                        properties.get("road_disruption_probability_0_1")
+                    ),
+                    "candidate_status": str(
+                        properties.get("candidate_status") or "candidate"
+                    ),
+                    "confidence_class": str(
+                        properties.get("confidence_class") or "low"
+                    ),
+                    "warning_text": str(
+                        properties.get("warning_text")
+                        or "Modelled candidate risk; not an observed closure."
+                    ),
                 },
                 "geometry": _compact_geometry(source_feature["geometry"], 0.000015, 5),
             }
         )
     if len(features) != 4458:
         raise ValueError(f"Expected 4,458 Mae Sai roads, found {len(features)}.")
-    return {"type": "FeatureCollection", "name": "mae_sai_candidate_road_risk", "features": features}
+    return {
+        "type": "FeatureCollection",
+        "name": "mae_sai_candidate_road_risk",
+        "features": features,
+    }
 
 
-def _build_facilities(source: dict[str, Any], valid_area_ids: set[str]) -> dict[str, Any]:
+def _build_facilities(
+    source: dict[str, Any], valid_area_ids: set[str]
+) -> dict[str, Any]:
     features: list[dict[str, Any]] = []
     for source_feature in source["features"]:
         properties = source_feature["properties"]
@@ -514,30 +974,47 @@ def _build_facilities(source: dict[str, Any], valid_area_ids: set[str]) -> dict[
         if area_id not in valid_area_ids:
             raise ValueError(f"Facility references unknown reporting area {area_id}.")
         if properties.get("candidate_status") != "unverified_osm_candidate":
-            raise ValueError("Candidate facility was unexpectedly promoted during browser-bundle generation.")
+            raise ValueError(
+                "Candidate facility was unexpectedly promoted during browser-bundle generation."
+            )
         features.append(
             {
                 "type": "Feature",
                 "properties": {
                     "facility_id": str(properties["facility_id"]),
                     "area_id": area_id,
-                    "facility_name": str(properties.get("facility_name") or "Unnamed OSM feature"),
-                    "facility_type": str(properties.get("facility_type") or "facility_candidate"),
+                    "facility_name": str(
+                        properties.get("facility_name") or "Unnamed OSM feature"
+                    ),
+                    "facility_type": str(
+                        properties.get("facility_type") or "facility_candidate"
+                    ),
                     "amenity": str(properties.get("amenity") or "unknown"),
                     "verification_status": "open_context_candidate",
                     "emergency_role": "no_confirmed_emergency_role",
                     "candidate_status": "unverified_osm_candidate",
                     "confidence_class": "low",
-                    "source_name": str(properties.get("source_name") or "OpenStreetMap Thailand via Geofabrik"),
-                    "source_timestamp": str(properties.get("source_timestamp") or "unknown"),
+                    "source_name": str(
+                        properties.get("source_name")
+                        or "OpenStreetMap Thailand via Geofabrik"
+                    ),
+                    "source_timestamp": str(
+                        properties.get("source_timestamp") or "unknown"
+                    ),
                     "warning_text": "Open-context facility candidate — emergency role and current operation unverified.",
                 },
                 "geometry": _compact_geometry(source_feature["geometry"], 0, 6),
             }
         )
     if len(features) != 42:
-        raise ValueError(f"Expected 42 Mae Sai facility candidates, found {len(features)}.")
-    return {"type": "FeatureCollection", "name": "mae_sai_open_context_facilities", "features": features}
+        raise ValueError(
+            f"Expected 42 Mae Sai facility candidates, found {len(features)}."
+        )
+    return {
+        "type": "FeatureCollection",
+        "name": "mae_sai_open_context_facilities",
+        "features": features,
+    }
 
 
 def _build_access(source: dict[str, Any], valid_area_ids: set[str]) -> dict[str, Any]:
@@ -546,18 +1023,30 @@ def _build_access(source: dict[str, Any], valid_area_ids: set[str]) -> dict[str,
         properties = source_feature["properties"]
         area_id = str(properties["subdistrict_id"])
         if area_id not in valid_area_ids:
-            raise ValueError(f"Access hotspot references unknown reporting area {area_id}.")
+            raise ValueError(
+                f"Access hotspot references unknown reporting area {area_id}."
+            )
         features.append(
             {
                 "type": "Feature",
                 "properties": {
                     "area_id": area_id,
                     "area_name_en": str(properties["subdistrict_name"]),
-                    "people_losing_15_min_access": _integer(properties.get("people_losing_15_min_access")),
-                    "people_losing_30_min_access": _integer(properties.get("people_losing_30_min_access")),
-                    "people_losing_60_min_access": _integer(properties.get("people_losing_60_min_access")),
-                    "equity_gap_ratio": None if properties.get("equity_gap_ratio") is None else _number(properties.get("equity_gap_ratio")),
-                    "candidate_status": str(properties.get("candidate_status") or "candidate"),
+                    "people_losing_15_min_access": _integer(
+                        properties.get("people_losing_15_min_access")
+                    ),
+                    "people_losing_30_min_access": _integer(
+                        properties.get("people_losing_30_min_access")
+                    ),
+                    "people_losing_60_min_access": _integer(
+                        properties.get("people_losing_60_min_access")
+                    ),
+                    "equity_gap_ratio": None
+                    if properties.get("equity_gap_ratio") is None
+                    else _number(properties.get("equity_gap_ratio")),
+                    "candidate_status": str(
+                        properties.get("candidate_status") or "candidate"
+                    ),
                     "confidence_class": "low",
                     "warning_text": "Modeled access-loss candidate only. Not an observed service outage.",
                 },
@@ -565,8 +1054,14 @@ def _build_access(source: dict[str, Any], valid_area_ids: set[str]) -> dict[str,
             }
         )
     if len(features) != 8:
-        raise ValueError(f"Expected eight Mae Sai access hotspots, found {len(features)}.")
-    return {"type": "FeatureCollection", "name": "mae_sai_modeled_access_hotspots", "features": features}
+        raise ValueError(
+            f"Expected eight Mae Sai access hotspots, found {len(features)}."
+        )
+    return {
+        "type": "FeatureCollection",
+        "name": "mae_sai_modeled_access_hotspots",
+        "features": features,
+    }
 
 
 def _layer(
@@ -604,6 +1099,7 @@ def _layer(
         "source_components": source_components,
         "attribution": attribution,
     }
+
 
 def _model_evidence_projection(
     evidence_context: dict[str, Any],
@@ -679,7 +1175,9 @@ def _build_bundle(
     records: list[dict[str, Any]],
     source_manifest: dict[str, Any],
 ) -> dict[str, Any]:
-    fixture = _load(REPOSITORY_ROOT / "apps" / "web" / "public" / "offline-demo" / "bundle.json")
+    fixture = _load(
+        REPOSITORY_ROOT / "apps" / "web" / "public" / "offline-demo" / "bundle.json"
+    )
     status = {
         **_common(
             confidence="low",
@@ -811,6 +1309,7 @@ def _build_bundle(
     ) = _model_evidence_projection(evidence_context)
     return {
         "evidence_context": evidence_context,
+        "qualified_evidence_foundation": _qualified_evidence_foundation(),
         "evidence_record": {
             "schema_version": "1.0",
             "evidence_record_id": f"{EVIDENCE_CONTEXT_ID}:blocked",
@@ -852,11 +1351,41 @@ def _build_bundle(
         "areas": records,
         "layers": layers,
         "readiness": [
-            {"check_id": "real_open_context", "source": "Mae Sai derived context manifest", "status": "ready", "severity": "high", "reason_blocked": ""},
-            {"check_id": "facility_verification", "source": "OSM facility candidates", "status": "blocked", "severity": "critical", "reason_blocked": "Emergency role, operation, capacity, and accessibility are not agency verified."},
-            {"check_id": "segment_raster_intersection", "source": "Mae Sai candidate road risk", "status": "blocked", "severity": "high", "reason_blocked": "Current road risk inherits an ADM3 candidate summary; segment-level probability intersection is not yet accepted."},
-            {"check_id": "reference_mask", "source": "Mae Sai weak reference", "status": "blocked", "severity": "critical", "reason_blocked": "The available weak reference is not qualified Thailand event-flood validation truth."},
-            {"check_id": "reviewer_calibration", "source": "Governed label factory", "status": "blocked", "severity": "critical", "reason_blocked": "No passing blind reviewer-calibration and adjudication receipt exists."},
+            {
+                "check_id": "real_open_context",
+                "source": "Mae Sai derived context manifest",
+                "status": "ready",
+                "severity": "high",
+                "reason_blocked": "",
+            },
+            {
+                "check_id": "facility_verification",
+                "source": "OSM facility candidates",
+                "status": "blocked",
+                "severity": "critical",
+                "reason_blocked": "Emergency role, operation, capacity, and accessibility are not agency verified.",
+            },
+            {
+                "check_id": "segment_raster_intersection",
+                "source": "Mae Sai candidate road risk",
+                "status": "blocked",
+                "severity": "high",
+                "reason_blocked": "Current road risk inherits an ADM3 candidate summary; segment-level probability intersection is not yet accepted.",
+            },
+            {
+                "check_id": "reference_mask",
+                "source": "Mae Sai weak reference",
+                "status": "blocked",
+                "severity": "critical",
+                "reason_blocked": "The available weak reference is not qualified Thailand event-flood validation truth.",
+            },
+            {
+                "check_id": "reviewer_calibration",
+                "source": "Governed label factory",
+                "status": "blocked",
+                "severity": "critical",
+                "reason_blocked": "No passing blind reviewer-calibration and adjudication receipt exists.",
+            },
         ],
         "model_runs": [],
         "model_runs_v2": model_runs_v2,
@@ -867,9 +1396,21 @@ def _build_bundle(
         "hotlines": fixture["hotlines"],
         "shelters": [],
         "error_categories": [
-            {"category": "facility_role_unverified", "status": "not_evaluated", "note": "OSM facility tags are discovery context, not emergency designation."},
-            {"category": "segment_raster_intersection_missing", "status": "not_evaluated", "note": "Current road risk is a candidate area-summary heuristic."},
-            {"category": "reference_mask_unqualified", "status": "not_evaluated", "note": "Qualified spatial evaluation remains blocked."},
+            {
+                "category": "facility_role_unverified",
+                "status": "not_evaluated",
+                "note": "OSM facility tags are discovery context, not emergency designation.",
+            },
+            {
+                "category": "segment_raster_intersection_missing",
+                "status": "not_evaluated",
+                "note": "Current road risk is a candidate area-summary heuristic.",
+            },
+            {
+                "category": "reference_mask_unqualified",
+                "status": "not_evaluated",
+                "note": "Qualified spatial evaluation remains blocked.",
+            },
         ],
         "pilot_readiness": {
             **fixture["pilot_readiness"],
@@ -880,7 +1421,11 @@ def _build_bundle(
 
 
 def _bounds(collections: list[dict[str, Any]]) -> list[float]:
-    geometries = [shape(feature["geometry"]) for collection in collections for feature in collection["features"]]
+    geometries = [
+        shape(feature["geometry"])
+        for collection in collections
+        for feature in collection["features"]
+    ]
     return [
         round(min(geometry.bounds[0] for geometry in geometries), 6),
         round(min(geometry.bounds[1] for geometry in geometries), 6),
@@ -955,13 +1500,17 @@ def _write_model_asset_descriptors(
         for asset in product["assets"]
     }
     if set(descriptors) != set(expected_hashes):
-        raise ValueError("Model asset descriptor paths diverged from the product manifest.")
+        raise ValueError(
+            "Model asset descriptor paths diverged from the product manifest."
+        )
 
     written: list[dict[str, str]] = []
     for relative_path, descriptor in sorted(descriptors.items()):
         relative = PurePosixPath(relative_path)
         if relative.is_absolute() or ".." in relative.parts:
-            raise ValueError("Model asset descriptor path must remain repository-relative.")
+            raise ValueError(
+                "Model asset descriptor path must remain repository-relative."
+            )
         destination = WEB_PUBLIC_ROOT.joinpath(*relative.parts)
         destination.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(
@@ -992,7 +1541,9 @@ def main() -> None:
     _validate_pinned_inputs(source_manifest, sources)
     areas, records = _build_areas(sources["priority_areas"])
     public_areas = _build_public_areas(areas)
-    valid_area_ids = {str(feature["properties"]["area_id"]) for feature in areas["features"]}
+    valid_area_ids = {
+        str(feature["properties"]["area_id"]) for feature in areas["features"]
+    }
     roads = _build_roads(sources["road_risk"], valid_area_ids)
     facilities = _build_facilities(sources["facilities"], valid_area_ids)
     access = _build_access(sources["access_hotspots"], valid_area_ids)
@@ -1019,7 +1570,10 @@ def main() -> None:
             layer_catalog[layer_id],
             _sha256(INPUTS[source_layer_id]),
         )
-    written = {layer_id: _write(file_name, collection) for layer_id, (file_name, collection) in collections.items()}
+    written = {
+        layer_id: _write(file_name, collection)
+        for layer_id, (file_name, collection) in collections.items()
+    }
     model_descriptor_manifest = _write_model_asset_descriptors(bundle)
     bundle_path = _write("bundle.json", bundle)
     public_bundle_path = _write("public-bundle.json", _public_bundle(bundle))
@@ -1030,7 +1584,9 @@ def main() -> None:
         and EXPECTED_BOUNDS[0] <= actual_bounds[2] <= EXPECTED_BOUNDS[2]
         and EXPECTED_BOUNDS[1] <= actual_bounds[3] <= EXPECTED_BOUNDS[3]
     ):
-        raise ValueError(f"Mae Sai browser geometry escaped expected bounds: {actual_bounds}.")
+        raise ValueError(
+            f"Mae Sai browser geometry escaped expected bounds: {actual_bounds}."
+        )
     manifest = {
         "schema_version": "1.0",
         "study_area_id": "mae_sai_candidate_v1",
@@ -1053,7 +1609,9 @@ def main() -> None:
                 "relative_url": f"/offline-demo/mae-sai/{path.name}",
                 "sha256": _sha256(path),
                 "feature_count": len(collections[layer_id][1]["features"]),
-                "source_relative_path": str(INPUTS[source_layer_ids[layer_id]].relative_to(REPOSITORY_ROOT)).replace("\\", "/"),
+                "source_relative_path": str(
+                    INPUTS[source_layer_ids[layer_id]].relative_to(REPOSITORY_ROOT)
+                ).replace("\\", "/"),
                 "source_sha256": _sha256(INPUTS[source_layer_ids[layer_id]]),
                 "role_visibility": layer_catalog[layer_id]["role_visibility"],
                 "evidence_state": layer_catalog[layer_id]["evidence_state"],
@@ -1061,7 +1619,10 @@ def main() -> None:
             }
             for layer_id, path in written.items()
         ],
-        "bundle": {"relative_url": "/offline-demo/mae-sai/bundle.json", "sha256": _sha256(bundle_path)},
+        "bundle": {
+            "relative_url": "/offline-demo/mae-sai/bundle.json",
+            "sha256": _sha256(bundle_path),
+        },
         "model_evidence_descriptors": model_descriptor_manifest,
         "public_bundle": {
             "relative_url": "/offline-demo/mae-sai/public-bundle.json",

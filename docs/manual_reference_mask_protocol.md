@@ -1,6 +1,9 @@
 # Manual QGIS Reference Mask Protocol
 
-Status: manual weak-reference lane implemented; source geometry not yet created.
+Status: manual weak-reference lane implemented; a checksum-bound cross-border
+geometry exists for candidate calibration only. No in-area qualified Thailand
+event reference exists, and the current geometry cannot clear validation or
+ML-label gates.
 
 This protocol defines how FloodGuard may use a project-owned manual QGIS flood mask when official/reference-mask provider clearance is too slow for the hackathon timeline.
 

@@ -286,6 +286,33 @@ The first ML-readiness bridge is documented in `docs/sar_baseline_contract.md` a
 
 The active-learning label-factory foundation is documented in `docs/label_factory_protocol.md`, `docs/label_factory_data_contract.md`, `docs/label_factory_runbook.md`, and `docs/label_factory_implementation_status.md`. It treats the existing manual polygon as weak positive-unlabeled evidence, keeps uncertain, unobservable, and unreviewed states out of binary training, generates an internal-only operator queue plus model-blinded reviewer packages, and permanently marks query-model artifacts as ineligible for the decision layer, FPPS, and warnings. Canonical grids require an immutable `floodguard.processing_alignment_receipt.v1` that re-hashes the processed raster plus coverage, valid-data, and registration evidence and binds them to the exact source registry/common affine; source metadata alone cannot clear the grid. Known label-factory/query artifacts are rejected at current decision ingresses; a future operational flood-input contract must additionally require positive approved-model provenance. The repository now contains tested fail-closed contracts, immutable artifact writers, reviewer-agreement gates, a logistic-plus-boosted query committee, Round 0 and 60/20/20 selection logic, and an equal-cost evaluation scaffold. The controlled Mae Sai workspace now also contains the real processing/alignment receipt, a 20-tile/854-core canonical grid, 874,496 aligned `sar_change_v2` pool cells, governed static strata, and a batch positive-unlabeled weak-query summary. It does **not** contain completed human reviews, an adjudicated training release, a trained real-data query committee, a real selected operator queue, additional processed Thailand development events, or evidence that active learning is more efficient than random review. Those remain external evidence gates and are never fabricated.
 
+The stricter P0 bridge is specified in
+`docs/qualified-thai-reference-label-release-v1.md`, with the current Mae Sai
+status recorded in
+`docs/validation/qualified_thai_reference_frozen_label_release_v1_status.md`.
+The next split boundary is specified separately in
+`docs/immutable-multi-event-partitions-v1.md`; its current implementation is a
+synthetic-fixture engineering contract, not a sealed real-event partition.
+The bridge now includes:
+
+- a checksum-backed reference-candidate inspector that records source facts
+  without granting reference, label, model, decision, or warning authority;
+- a qualified-reference release contract that can represent blocked,
+  synthetic-fixture-only, and qualified controlled-development states without
+  conflating them;
+- fixture-only four-person formal-review, blind review-pair, purpose-bound
+  label-release, and multi-event partition validators that deliberately block
+  candidate/production sealing until signed authority and custody exist; and
+- a Studio-only, browser-hash-verified P0 status projection that distinguishes
+  bounded source engineering from still-blocked experiment processing.
+
+Sentinel Asia `AIT-VAP001-TH` is presently recorded only as a serious in-area
+candidate. Product-specific derived-use permission, invalid-geometry handling,
+independent reference authority, reviewer calibration, blind double review,
+adjudication, and a frozen label release are unresolved. Accordingly,
+qualified-reference use, model training, evaluation, FPPS, the decision layer,
+operational use, and official-warning authority all remain false.
+
 ### Reviewer A practice workbench
 
 The local Reviewer A Workbench provides a real painting-and-review interface for the 20 synthetic 32 x 32 teaching cases. It includes evidence-layer switching, multiclass cell painting, undo/redo, timing, confidence and ambiguity recording, local draft recovery, irreversible first-attempt locking, post-lock feedback, and practice-only export. It does not open the formal 12-query calibration or any of the 854 real Mae Sai cores, and its output cannot enter the canonical annotation log, model training, the decision layer, FPPS, or warnings.

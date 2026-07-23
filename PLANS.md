@@ -44,7 +44,37 @@ The full capability, safety, and acceptance contracts are recorded in
 `docs/mae_sai_capability_milestones.md`. The existing role-surface interaction
 decisions remain in `docs/role-surface-development-plan.md`. The GeoAI evidence
 lanes, v2 contracts, registry binding, and downstream release gates are recorded
-in `docs/geoai-system-design-v1.md`.
+in `docs/geoai-system-design-v1.md`. The immediate P0 qualification, human
+review, and immutable release contract is recorded in
+`docs/qualified-thai-reference-label-release-v1.md`; its current evidence state
+is projected separately in
+`docs/validation/qualified_thai_reference_frozen_label_release_v1_status.md`.
+The four-role event/geographic split and its deliberately fixture-only current
+boundary are specified in `docs/immutable-multi-event-partitions-v1.md`.
+
+### Immediate P0 execution order
+
+1. Resolve product-specific permission and independent reference-authority
+   classification for the checksum-bound `AIT-VAP001-TH` candidate.
+2. Freeze the geometry repair/quarantine rule, raster grid, CRS, temporal
+   window, no-data semantics, and exact reference checksum.
+3. Appoint two independent reviewers and a separate adjudicator, then pass the
+   frozen qualification-set calibration threshold.
+4. Complete blind double review, immutable disagreement capture, and
+   independent adjudication.
+5. Freeze a purpose-specific label release. Training and final evaluation
+   releases remain distinct.
+6. Only after the P0 receipts validate, seal event-level and geographic
+   training, probability-calibration, development, and final-holdout
+   partitions. Threshold selection must never see the final holdout.
+7. Run deterministic SAR, shallow/logistic, and U-Net/FPN candidates under the
+   same target, unknown/no-data, partition, and downstream-consequence
+   contracts.
+
+The engineering mechanisms may be ready while this sequence remains
+scientifically blocked. Code, a public download, a checksum, or a Studio card
+cannot substitute for external permission, qualified human decisions, or a
+release authority.
 
 ## Near-term decision
 

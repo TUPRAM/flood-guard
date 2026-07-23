@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { LanguageToggle } from "@/components/language-toggle";
 import { ModelRegistryPanel } from "@/components/model-registry-panel";
+import { QualifiedEvidenceFoundationPanel } from "@/components/qualified-evidence-foundation-panel";
 import { StatusBar } from "@/components/status-bar";
 import { downloadText } from "@/lib/download";
 import { formatConfidence, formatSourceTime } from "@/lib/format";
@@ -322,15 +323,21 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
               )}
 
               {activeTab === "metrics" && (
-                <ModelRegistryPanel
-                  context={context}
-                  entries={data.model_registry ?? []}
-                  evaluations={data.model_evaluations ?? []}
-                  products={data.observation_products ?? []}
-                  evidenceState={data.modelEvidenceState}
-                  evidenceReason={data.modelEvidenceReason}
-                  language={language}
-                />
+                <>
+                  <QualifiedEvidenceFoundationPanel
+                    foundation={data.qualified_evidence_foundation}
+                    language={language}
+                  />
+                  <ModelRegistryPanel
+                    context={context}
+                    entries={data.model_registry ?? []}
+                    evaluations={data.model_evaluations ?? []}
+                    products={data.observation_products ?? []}
+                    evidenceState={data.modelEvidenceState}
+                    evidenceReason={data.modelEvidenceReason}
+                    language={language}
+                  />
+                </>
               )}
 
               {activeTab === "governance" && (

@@ -27,6 +27,18 @@ MAE_SAI_PUBLIC_BUNDLE = (
     / "mae-sai"
     / "public-bundle.json"
 )
+MAE_SAI_STUDIO_BUNDLE = (
+    ROOT
+    / "apps"
+    / "web"
+    / "public"
+    / "offline-demo"
+    / "mae-sai"
+    / "bundle.json"
+)
+AIT_REFERENCE_CANDIDATE = (
+    ROOT / "outputs" / "ait_vap001_reference_candidate.json"
+)
 
 SCHEMA_NAMES = ("status", "area-decision", "layer", "model-run")
 GEOAI_V2_SCHEMA_NAMES = (
@@ -47,6 +59,11 @@ EVIDENCE_SCHEMA_NAMES = (
     "evidence-context",
     "evidence-record",
     "public-preparedness-area",
+)
+P0_EVIDENCE_SCHEMA_NAMES = (
+    "reference-candidate-manifest-v1",
+    "qualified-reference-release-v1",
+    "qualified-evidence-foundation-v1",
 )
 COMMON_FIELDS = {
     "schema_version",
@@ -112,12 +129,61 @@ def _typescript_array(source: str, constant: str) -> list[str]:
     SCHEMA_NAMES
     + PILOT_SCHEMA_NAMES
     + EVIDENCE_SCHEMA_NAMES
-    + GEOAI_V2_SCHEMA_NAMES,
+    + GEOAI_V2_SCHEMA_NAMES
+    + P0_EVIDENCE_SCHEMA_NAMES,
 )
 def test_contract_schemas_are_valid_draft_2020_12(schema_name: str) -> None:
     schema = _schema(schema_name)
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
     Draft202012Validator.check_schema(schema)
+
+
+def test_ait_reference_candidate_validates_without_granting_authority() -> None:
+    payload = _load_json(AIT_REFERENCE_CANDIDATE)
+    _validate("reference-candidate-manifest-v1", payload)
+
+    assert payload["qualification_status"].startswith("blocked_")
+    assert payload["processing_allowed"] is False
+    assert payload["permission_status"]["ml_label_use_allowed"] is False
+    assert payload["permission_status"]["model_evaluation_use_allowed"] is False
+    assert payload["safety"] == {
+        "eligible_for_decision_layer": False,
+        "eligible_for_access_analysis": False,
+        "eligible_for_equity_analysis": False,
+        "eligible_for_fpps": False,
+        "eligible_for_action_class": False,
+        "official_warning": False,
+    }
+
+
+def test_mae_sai_studio_p0_projection_validates_and_fails_closed() -> None:
+    payload = _load_json(MAE_SAI_STUDIO_BUNDLE)[
+        "qualified_evidence_foundation"
+    ]
+    _validate("qualified-evidence-foundation-v1", payload)
+
+    assert payload["authoritative_receipt"] is False
+    permissions = payload["permissions"]
+    assert permissions["source_processing_allowed"] is True
+    assert permissions["source_processing_scope_en"].strip()
+    assert permissions["source_processing_scope_th"].strip()
+    assert all(
+        permissions[field] is False
+        for field in (
+            "experiment_processing_allowed",
+            "qualified_reference_use_allowed",
+            "training_allowed",
+            "evaluation_allowed",
+            "decision_layer_allowed",
+            "operational_use_allowed",
+        )
+    )
+    assert all(value is False for value in payload["safety"].values())
+
+
+def test_public_bundle_omits_staff_only_p0_projection() -> None:
+    payload = _load_json(MAE_SAI_PUBLIC_BUNDLE)
+    assert "qualified_evidence_foundation" not in payload
 
 
 def test_every_contract_example_validates_against_its_schema() -> None:

@@ -302,9 +302,31 @@ try {
   }
   assertFinalVisibleCopy(studioBody, "/studio/");
   await page.getByRole("tab", { name: "Models & evaluation" }).click();
+  await page.locator("#qualified-evidence-foundation-title").waitFor({ state: "visible" });
   await page.locator("#model-registry-title").waitFor({ state: "visible" });
+  await page.waitForFunction(() => (
+    document.querySelector("#studio-tab-panel")?.textContent?.includes(
+      "Checksum matches the canonical status payload",
+    )
+  ));
   const registryBody = await page.locator("#studio-tab-panel").innerText();
+  const normalizedRegistryBody = registryBody.toLocaleLowerCase("en-US");
   for (const required of [
+    "Qualified Thai Reference & Frozen Label Release v1",
+    "authoritative_receipt=false",
+    "CANDIDATE EVIDENCE BINDING",
+    "AIT-VAP001-TH",
+    "Manifest checksum",
+    "Source archive checksum",
+    "Source processing",
+    "processing_allowed=true",
+    "Experiment processing",
+    "processing_allowed=false",
+    "Qualified Thai event reference",
+    "Reviewer assignment and calibration",
+    "Blind double review and adjudication",
+    "Frozen label release",
+    "Checksum matches the canonical status payload",
     "No model evaluation is bound to this evidence context",
     "External algorithmic baseline",
     "No real-event evaluation",
@@ -314,9 +336,19 @@ try {
     "Browser cryptographic status: not verified",
     "The API and repository are the authority for cryptographic verification.",
   ]) {
-    if (!registryBody.includes(required)) {
+    if (!normalizedRegistryBody.includes(required.toLocaleLowerCase("en-US"))) {
       throw new Error(`Studio model registry is missing its fail-closed copy: ${required}.`);
     }
+  }
+  const foundationBody = await page
+    .locator("#qualified-evidence-foundation-title")
+    .locator("xpath=ancestor::section[1]")
+    .innerText();
+  if (
+    /[A-Za-z]:[\\/]|\\\\|file:\/\/|\/(?:Users|home|root|tmp)\//i.test(foundationBody)
+    || /\.(?:gpkg|tif|zip|json|csv)\b/i.test(foundationBody)
+  ) {
+    throw new Error("Studio P0 status exposes a private path or technical artifact name.");
   }
   const registryButtons = page.locator('#studio-tab-panel button[aria-pressed]');
   if (await registryButtons.count() !== 1 || await registryButtons.first().getAttribute("aria-pressed") !== "true") {

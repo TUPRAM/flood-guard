@@ -42,7 +42,7 @@ Current generated row counts:
 | `mae_sai_reference_candidate_decision.md` | 1 note | Current public reference-candidate comparison and gate decision. |
 | `open_context_data_file_manifest.csv` | 4 | File-level WorldPop, HDX COD-AB, Geofabrik OSM, and current DEM context rows with outside-Git path hints and SHA-256 checksums. |
 | `cdse_mae_sai_acquisition_manifest.csv` | 2 | Selected pre/post Sentinel-1 acquisition rows downloaded outside Git with SHA-256 checksums recorded; still blocked for processing until reference-mask status clears. |
-| `manual_reference_mask_manifest.csv` | 1 | Manual QGIS weak-reference lane; current row is a blocked skeleton until the GeoPackage is digitized outside Git. |
+| `manual_reference_mask_manifest.csv` | 1 | Manual QGIS weak-reference lane; the outside-Git GeoPackage is checksum-bound and ready only for cross-border candidate calibration. It has no overlap with the Thailand reporting geometry and is not a qualified event reference or ML label. |
 | `cdse_mae_sai_2024_metadata.csv` | 8 | Sentinel-1 Mae Sai event-window product metadata. |
 | `cdse_hat_yai_2025_metadata.csv` | 10 | Sentinel-1 Hat Yai event-window product metadata. |
 | `cdse_mae_sai_2024_sentinel2_metadata.csv` | 5 | Sentinel-2 L2A Mae Sai optical-context metadata. |
@@ -114,7 +114,11 @@ uv run python scripts/query_cdse_metadata.py --profile mae_sai_2024_sentinel2 --
 2. Use `outputs/public_reference_file_inspection_manifest.csv`, `outputs/sentinel_asia_geometry_quality_review.csv`, and `outputs/sentinel_asia_mbrsc_visual_qa_review.csv` as the first public Mae Sai reference-candidate evidence. The geometry is useful because it is WGS84 polygon data, intersects the Mae Sai review bbox, has area-field metadata, and visually aligns with the east/southeast floodplain/waterway context. It remains blocked for validation until product terms are clear and the QA is repeated with any required approved basemap/source context.
 3. Use Sentinel-2 metadata only for optical context and cloud-screened visual support. It is not a flood label.
 4. WorldPop, OSM, Copernicus DEM, and HDX COD-AB now feed the derived Mae Sai context integration. Source files and bounded extraction intermediates remain outside Git; only compact aggregate context, scoring, and quality outputs are committed.
-5. If provider clearance remains blocked, digitize `mae_sai_manual_flood_reference.gpkg` outside Git using `docs/manual_reference_mask_protocol.md`, then rerun `scripts/inspect_manual_reference_mask.py`.
+5. Keep the existing checksum-bound manual GeoPackage limited to cross-border
+   candidate calibration. If a new in-area manual candidate is created, give it
+   a distinct identity, rerun `scripts/inspect_manual_reference_mask.py`, and
+   retain the qualified-reference and ML-label blocks until rights, authority,
+   reviewer, and release gates independently pass.
 
 ## Current Boundaries
 

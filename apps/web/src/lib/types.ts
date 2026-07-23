@@ -19,6 +19,81 @@ export type DataState = "loading" | "ready" | "stale" | "blocked" | "stale_offli
 export type ScenarioId = "baseline" | "add_temporary_shelter" | "close_road";
 export type StudyAreaId = "fixture_thailand_demo" | "mae_sai_candidate_v1";
 export type ModelEvidenceState = "ready" | "blocked" | "unavailable";
+export type QualifiedEvidenceStageState = "ready" | "blocked" | "absent";
+export type QualifiedEvidenceStageId =
+  | "engineering_foundation"
+  | "qualified_thai_reference"
+  | "reviewer_calibration"
+  | "blind_review_adjudication"
+  | "frozen_label_release";
+
+export interface QualifiedEvidenceStage {
+  stage_id: QualifiedEvidenceStageId;
+  state: QualifiedEvidenceStageState;
+  label_en: string;
+  label_th: string;
+  detail_en: string;
+  detail_th: string;
+}
+
+export interface QualifiedEvidenceFoundation {
+  schema_version: "floodguard.qualified-evidence-foundation.v1";
+  foundation_id: "qualified-thai-reference-frozen-label-release-v1";
+  study_area_id: "mae_sai_candidate_v1";
+  /** Candidate-inspection/status-evidence time, not a flood-observation time. */
+  source_timestamp: string;
+  generated_at: string;
+  confidence_class: "low";
+  status: "blocked";
+  /** SHA-256 of canonical JSON after omitting this field. */
+  canonical_sha256: string;
+  authoritative_receipt: false;
+  reference_candidate_binding: {
+    manifest_schema: "floodguard.reference_candidate_manifest.v1";
+    product_id: "AIT-VAP001-TH";
+    provider: "Asian Institute of Technology via Sentinel Asia";
+    observation_start_utc: string;
+    observation_end_utc: string;
+    manifest_canonical_sha256: string;
+    manifest_file_sha256: string;
+    source_archive_sha256: string;
+    qualification_status: "blocked_external_permission_and_scientific_review";
+    processing_allowed: false;
+  };
+  stages: QualifiedEvidenceStage[];
+  permissions: {
+    source_processing_allowed: boolean;
+    source_processing_scope_en: string;
+    source_processing_scope_th: string;
+    experiment_processing_allowed: boolean;
+    qualified_reference_use_allowed: boolean;
+    training_allowed: boolean;
+    evaluation_allowed: boolean;
+    decision_layer_allowed: boolean;
+    operational_use_allowed: boolean;
+  };
+  blockers: Array<{
+    code: string;
+    detail_en: string;
+    detail_th: string;
+  }>;
+  next_actions: Array<{
+    sequence: number;
+    action_en: string;
+    action_th: string;
+  }>;
+  assumptions: Array<{
+    assumption_en: string;
+    assumption_th: string;
+  }>;
+  safety: {
+    official_warning: false;
+    operational_authorized: false;
+    can_feed_decision_layer: false;
+    can_feed_fpps: false;
+    can_assign_action_class: false;
+  };
+}
 
 /**
  * Studio consumes the canonical signed registry envelope and v2 evidence
@@ -116,6 +191,8 @@ export interface FeatureCollection {
 export interface OfflineBundle {
   evidence_context?: EvidenceContext;
   evidence_record?: EvidenceRecord;
+  /** Studio-only P0 evidence status. Public projections omit this object. */
+  qualified_evidence_foundation?: QualifiedEvidenceFoundation;
   public_areas?: PublicPreparednessArea[];
   status: StatusResponse & {
     study_area: string;

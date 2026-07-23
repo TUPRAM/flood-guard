@@ -100,6 +100,10 @@ describe("offline judging bundle", () => {
 
     expect(studio.modelEvidenceState).toBe("blocked");
     expect(studio.model_registry).toHaveLength(1);
+    expect(studio.qualified_evidence_foundation).toMatchObject({
+      status: "blocked",
+      authoritative_receipt: false,
+    });
     expect(studio.model_evaluations).toHaveLength(1);
     expect(studio.observation_products[0]).toMatchObject({
       valid_coverage_fraction: 0,
@@ -107,6 +111,7 @@ describe("offline judging bundle", () => {
       can_feed_decision_layer: false,
     });
     expect(command.modelEvidenceState).toBe("unavailable");
+    expect(command.qualified_evidence_foundation).toBeUndefined();
     expect(command.model_registry).toEqual([]);
     expect(command.model_evaluations).toEqual([]);
     expect(command.observation_products).toEqual([]);

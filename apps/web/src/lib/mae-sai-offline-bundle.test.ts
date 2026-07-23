@@ -35,6 +35,34 @@ describe("Mae Sai offline command bundle", () => {
       bundleJson.evidence_context.evidence_package_sha256,
     );
     expect(bundleJson.evidence_record.evidence_context.model_run_id).toBeNull();
+    expect(bundleJson.qualified_evidence_foundation).toMatchObject({
+      schema_version: "floodguard.qualified-evidence-foundation.v1",
+      status: "blocked",
+      authoritative_receipt: false,
+      source_timestamp: "2026-07-23T12:24:48Z",
+      reference_candidate_binding: {
+        product_id: "AIT-VAP001-TH",
+        qualification_status:
+          "blocked_external_permission_and_scientific_review",
+        processing_allowed: false,
+      },
+      permissions: {
+        source_processing_allowed: true,
+        experiment_processing_allowed: false,
+        qualified_reference_use_allowed: false,
+        training_allowed: false,
+        evaluation_allowed: false,
+        decision_layer_allowed: false,
+        operational_use_allowed: false,
+      },
+      safety: {
+        official_warning: false,
+        operational_authorized: false,
+        can_feed_decision_layer: false,
+        can_feed_fpps: false,
+        can_assign_action_class: false,
+      },
+    });
     expect(bundleJson.model_runs_v2).toHaveLength(1);
     expect(bundleJson.model_registry).toHaveLength(1);
     expect(bundleJson.model_registry[0].payload).toMatchObject({
@@ -76,6 +104,9 @@ describe("Mae Sai offline command bundle", () => {
     expect(publicBundleJson).not.toHaveProperty("model_evaluations");
     expect(publicBundleJson).not.toHaveProperty("observation_products");
     expect(publicBundleJson).not.toHaveProperty("model_asset_descriptors");
+    expect(publicBundleJson).not.toHaveProperty(
+      "qualified_evidence_foundation",
+    );
     const publicKeys = new Set([
       "schema_version",
       "evidence_context_id",

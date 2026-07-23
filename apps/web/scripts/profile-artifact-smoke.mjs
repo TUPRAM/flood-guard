@@ -140,6 +140,7 @@ function validateCompetition() {
   const modelRun = bundle.model_runs_v2[0];
   const evaluation = bundle.model_evaluations[0];
   const product = bundle.observation_products[0];
+  const qualifiedFoundation = bundle.qualified_evidence_foundation;
   if (
     entry?.source_bundle_sha256 !== bundle.evidence_context.evidence_package_sha256
     || entry?.evidence_kind !== "external_algorithmic_baseline"
@@ -157,6 +158,20 @@ function validateCompetition() {
   ) {
     throw new Error("Competition Studio model evidence does not preserve its fail-closed boundary.");
   }
+  if (
+    qualifiedFoundation?.schema_version !== "floodguard.qualified-evidence-foundation.v1"
+    || qualifiedFoundation?.status !== "blocked"
+    || qualifiedFoundation?.authoritative_receipt !== false
+    || qualifiedFoundation?.reference_candidate_binding?.product_id !== "AIT-VAP001-TH"
+    || qualifiedFoundation?.reference_candidate_binding?.processing_allowed !== false
+    || qualifiedFoundation?.stages?.length !== 5
+    || qualifiedFoundation?.permissions?.source_processing_allowed !== true
+    || qualifiedFoundation?.permissions?.experiment_processing_allowed !== false
+    || qualifiedFoundation?.safety?.official_warning !== false
+    || qualifiedFoundation?.safety?.can_feed_decision_layer !== false
+  ) {
+    throw new Error("Competition profile is missing the fail-closed P0 evidence foundation.");
+  }
   const descriptorPaths = Object.keys(bundle.model_asset_descriptors ?? {});
   if (descriptorPaths.length !== 5) {
     throw new Error("Competition Studio model descriptors are incomplete.");
@@ -168,6 +183,9 @@ function validatePublicProjection() {
   const bundle = readJson("offline-demo/mae-sai/public-bundle.json");
   const allowedBundleKeys = ["evidence_context", "evidence_record", "hotlines", "layers", "public_areas", "shelters", "status"];
   assertExactKeys(bundle, allowedBundleKeys, "public bundle");
+  if ("qualified_evidence_foundation" in bundle) {
+    throw new Error("Public bundle contains the Studio-only P0 evidence foundation.");
+  }
   if (!Array.isArray(bundle.public_areas) || bundle.public_areas.length !== 8) throw new Error("Public bundle must contain eight reduced area records.");
   if (!Array.isArray(bundle.shelters) || bundle.shelters.length !== 0) throw new Error("Public bundle must not publish an unverified shelter.");
   const featureCollection = readJson("offline-demo/mae-sai/public-areas.json");

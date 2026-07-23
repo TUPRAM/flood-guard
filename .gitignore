@@ -60,3 +60,5 @@ playwright-report/
 
 # Keep generated sample outputs reviewable for the MVP.
 !outputs/sample_priority_scores.csv
+.vercel/
+.env*.local

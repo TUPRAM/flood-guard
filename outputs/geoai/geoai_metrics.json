@@ -1,0 +1,163 @@
+{
+  "data_mode": "real_licensed_inputs",
+  "scene": {
+    "bounds": [
+      99.79900844808157,
+      20.249920253417027,
+      100.04446066183026,
+      20.475366822520876
+    ],
+    "size": 1024,
+    "crs": "EPSG:4326",
+    "flood_fraction": 0.0021,
+    "pixel_m": 24.9
+  },
+  "sources": {
+    "sentinel1": "S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc -> S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_rtc (Planetary Computer, RTC)",
+    "sentinel2": "S2B_MSIL2A_20240218T034819_R104_T47QPC_20240218T072820 (2024-02-18, 0.000% cloud)",
+    "dem": "Copernicus DEM GLO-30 (Planetary Computer)",
+    "water_reference": "JRC Global Surface Water (Pekel et al. 2016)",
+    "subdistricts": "DOPA sub-districts via NGIS ArcGIS",
+    "rivers": "DWR natural streams via NGIS ArcGIS",
+    "buildings": "OpenStreetMap (Overpass API)"
+  },
+  "timings_seconds": {
+    "sar_flood": 30.6,
+    "sentinel2": 26.1,
+    "water_unet": 1194.7,
+    "susceptibility": 36.7,
+    "infrastructure": 8.1,
+    "embeddings": 5.7
+  },
+  "metrics": {
+    "sar_flood": {
+      "data_mode": "real_licensed_inputs",
+      "source": "Sentinel-1 RTC (Microsoft Planetary Computer)",
+      "pre_id": "S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc",
+      "post_id": "S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_rtc",
+      "pre_datetime": "2024-08-22T23:16:13.221460+00:00",
+      "post_datetime": "2024-09-15T23:16:14.175289+00:00",
+      "flood_fraction": 0.0021,
+      "permanent_water_fraction": 0.0167,
+      "vh_drop_p90_db": 1.94,
+      "vh_drop_p97_db": 2.82,
+      "assumptions": "Real Sentinel-1 RTC change detection over Mae Sai. Post scene (2024-09-15) is ~4 days after the ~Sep-11 flood peak, so this maps RESIDUAL flooding and under-represents the peak (SAR 12-day revisit). Non-operational; not an official warning."
+    },
+    "water_unet": {
+      "iou": 0.3816,
+      "f1_dice": 0.5524,
+      "precision": 0.8342,
+      "recall": 0.4129,
+      "data_mode": "real_licensed_inputs",
+      "source_timestamp": "2024-09-16T05:00:00Z",
+      "assumptions": "U-Net trained on real Sentinel-2 with labels derived from the real MNDWI water index (weak supervision from a physical index, not hand annotation); scored against that same index.",
+      "n_training_tiles": 100,
+      "epochs": 30,
+      "encoder_weights": "imagenet"
+    },
+    "susceptibility": {
+      "auc": 0.7441,
+      "mean_susc_flood": 90.52,
+      "mean_susc_dry": 63.89,
+      "data_mode": "real_licensed_inputs",
+      "source_timestamp": "2024-09-16T00:00:00Z",
+      "assumptions": "Susceptibility from real Copernicus DEM GLO-30 + real DWR river network. Primary AUC is against the real Sentinel-1 flood extent; a secondary AUC against JRC Global Surface Water is also reported. Relative propensity, not flood depth.",
+      "dem_range_m": [
+        366.4230651855469,
+        1509.92138671875
+      ],
+      "river_features": 1925,
+      "auc_vs_jrc_permanent_water": 0.72
+    },
+    "infrastructure": {
+      "building_count": 463,
+      "exposed_count": 0,
+      "data_mode": "real_licensed_inputs",
+      "extraction_method": "OpenStreetMap footprints (real)",
+      "assumptions": "Real OSM building footprints; exposure = footprint within the real SAR flood extent (dilated). SAM 3 zero-shot on THEOS-2 remains the higher-resolution upgrade."
+    },
+    "embeddings": {
+      "iou": 0.5617,
+      "f1_dice": 0.7193,
+      "precision": 0.5797,
+      "recall": 0.9475,
+      "n_training_labels": 80,
+      "assumptions": "Few-shot classifier on locally-computed feature vectors (stand-in for downloaded foundation-model embeddings). Demonstrates the Ch. 16 few-shot workflow; real Clay/AlphaEarth/TESSERA embeddings require network access.",
+      "data_mode": "real_licensed_inputs"
+    }
+  },
+  "components": [
+    {
+      "letter": "A",
+      "key": "sar_flood",
+      "name": "SAR Flood-Extent Detection",
+      "tier": "MVP",
+      "status": "runnable",
+      "ai_task": "Traditional change detection (image differencing on SAR backscatter)",
+      "book_ref": "Ch. 12, Sec. 12.3-12.4"
+    },
+    {
+      "letter": "B",
+      "key": "water_unet",
+      "name": "Water-Mask Refinement",
+      "tier": "MVP",
+      "status": "runnable",
+      "ai_task": "Semantic segmentation (U-Net, ResNet encoder)",
+      "book_ref": "Ch. 9, Sec. 9.6.1-9.6.3"
+    },
+    {
+      "letter": "C",
+      "key": "susceptibility",
+      "name": "Flood Susceptibility Surface",
+      "tier": "MVP",
+      "status": "runnable",
+      "ai_task": "Pixel-level regression / physical index",
+      "book_ref": "Ch. 13 (full chapter)"
+    },
+    {
+      "letter": "D",
+      "key": "infrastructure",
+      "name": "Critical-Infrastructure Extraction",
+      "tier": "MVP",
+      "status": "runnable-fallback",
+      "ai_task": "Foundation-model / instance segmentation (SAM 3)",
+      "book_ref": "Ch. 14, Sec. 14.7"
+    },
+    {
+      "letter": "*",
+      "key": "omniwatermask",
+      "name": "Sensor-Agnostic Water Baseline (OmniWaterMask)",
+      "tier": "Baseline",
+      "status": "documented",
+      "ai_task": "Pre-trained segmentation (inference only)",
+      "book_ref": "Ch. 9, Sec. 9.6.4; Ch. 19"
+    },
+    {
+      "letter": "E",
+      "key": "encroachment",
+      "name": "Encroachment / Exposure-Growth Detection",
+      "tier": "Roadmap",
+      "status": "documented",
+      "ai_task": "Deep-learning change detection (ChangeStar)",
+      "book_ref": "Ch. 12, Sec. 12.5.2"
+    },
+    {
+      "letter": "F",
+      "key": "embeddings",
+      "name": "Label-Scarce Generalization (Satellite Embeddings)",
+      "tier": "Roadmap",
+      "status": "runnable-fallback",
+      "ai_task": "Foundation-model embeddings + lightweight classifier",
+      "book_ref": "Ch. 16 (full chapter)"
+    },
+    {
+      "letter": "G",
+      "key": "narrative",
+      "name": "Narrative Generation (Vision-Language Model)",
+      "tier": "Roadmap",
+      "status": "documented",
+      "ai_task": "Image captioning / VQA (Moondream)",
+      "book_ref": "Ch. 15, Sec. 15.7-15.8"
+    }
+  ]
+}

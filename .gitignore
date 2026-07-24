@@ -62,3 +62,6 @@ playwright-report/
 !outputs/sample_priority_scores.csv
 .vercel/
 .env*.local
+
+# GeoAI realpipeline intermediates (regenerable rasters, weights, tiles, caches)
+outputs/geoai/work/

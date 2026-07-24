@@ -17,6 +17,20 @@ geoai = [
   "torch==2.13.0",
   "torchvision==0.28.0",
 ]
+# The executable real-data pipeline (realpipeline/) fetches real Sentinel-1/2,
+# Copernicus DEM, JRC water, Thai NGIS layers and OSM buildings, then runs the
+# GeoAI components end to end. It needs these beyond the frozen geoai extra.
+realpipeline = [
+  "geoai-py==0.41.1",
+  "segmentation-models-pytorch==0.5.0",
+  "torch==2.13.0",
+  "torchvision==0.28.0",
+  "pandas>=2.2",
+  "matplotlib>=3.8",
+  "scikit-learn>=1.4",
+  "pystac-client>=0.8",
+  "planetary-computer>=1.0",
+]
 
 [dependency-groups]
 test = [
@@ -30,6 +44,7 @@ floodguard-thailand = { path = "../..", editable = true }
 
 [project.scripts]
 floodguard-geoai = "geoai_runner.cli:main"
+floodguard-geoai-real = "geoai_runner.realpipeline.run_real:main"
 
 [build-system]
 requires = ["hatchling>=1.28"]

@@ -231,3 +231,37 @@ The generated receipt says `training_execution=model_construction_only`,
 not retain the temporary raster, tiles, or checkpoint and contains no private
 workspace path. Re-run it against the final pinned commit before packaging the
 proposal evidence manifest.
+
+## Executable real-data pipeline (`realpipeline/`)
+
+The `geoai_runner.realpipeline` package is the end-to-end GeoAI implementation
+for the competition: it fetches **real** data and runs every model component,
+producing the interactive `outputs/geoai/geoai.html` showcase, per-sub-district
+priority inputs, and annotated evidence figures. It still honours the service
+boundary — all `geoai-py`, PyTorch, rasterio, and network access live here, never
+in the root decision engine, which the pipeline only *imports* (for FPPS scoring).
+
+Real inputs, all fetched live at run time:
+
+| Component | Book ch. | Real source |
+|-----------|----------|-------------|
+| A SAR flood extent | Ch. 12 | Sentinel-1 RTC pre/post (Microsoft Planetary Computer) |
+| B U-Net water mask | Ch. 9 | Sentinel-2 L2A + MNDWI labels, ImageNet-pretrained ResNet |
+| C Susceptibility | Ch. 13 | Copernicus DEM GLO-30 + DWR rivers, vs JRC Global Surface Water |
+| D Infrastructure | Ch. 14 | OpenStreetMap building footprints |
+| F Few-shot | Ch. 16 | Sentinel-2 features + real labels |
+| Decision bridge | — | DOPA sub-district boundaries (NGIS) |
+
+```powershell
+uv sync --project services/geoai-runner --extra realpipeline
+uv run --project services/geoai-runner python -m geoai_runner.realpipeline        # all-real
+uv run --project services/geoai-runner python -m geoai_runner.realpipeline --fast # fewer U-Net epochs
+```
+
+Unlike the fail-closed proposal smoke above, this path is the "actually executed
+on real imagery" evidence: it reports real metrics (SAR flood extent, U-Net IoU,
+susceptibility AUC vs JRC) with honest limitations (e.g. the nearest post-event
+same-orbit Sentinel-1 scene is ~4 days after the flood peak, so extent is
+residual). It is still non-operational and not an official warning. Network-free
+component tests live in `tests/test_realpipeline.py`. Methodology:
+`docs/geoai_methodology.md`.

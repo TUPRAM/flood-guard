@@ -1,0 +1,9 @@
+component,tier,status,ai_task,book_ref,data_mode,iou,f1_dice,auc,runtime_s
+A. SAR Flood-Extent Detection,MVP,runnable,Traditional change detection (image differencing on SAR backscatter),"Ch. 12, Sec. 12.3-12.4",real_licensed_inputs,,,,30.6
+B. Water-Mask Refinement,MVP,runnable,"Semantic segmentation (U-Net, ResNet encoder)","Ch. 9, Sec. 9.6.1-9.6.3",real_licensed_inputs,0.3816,0.5524,,1194.7
+C. Flood Susceptibility Surface,MVP,runnable,Pixel-level regression / physical index,Ch. 13 (full chapter),real_licensed_inputs,,,0.7441,36.7
+D. Critical-Infrastructure Extraction,MVP,runnable-fallback,Foundation-model / instance segmentation (SAM 3),"Ch. 14, Sec. 14.7",real_licensed_inputs,,,,8.1
+*. Sensor-Agnostic Water Baseline (OmniWaterMask),Baseline,documented,Pre-trained segmentation (inference only),"Ch. 9, Sec. 9.6.4; Ch. 19",,,,,
+E. Encroachment / Exposure-Growth Detection,Roadmap,documented,Deep-learning change detection (ChangeStar),"Ch. 12, Sec. 12.5.2",,,,,
+F. Label-Scarce Generalization (Satellite Embeddings),Roadmap,runnable-fallback,Foundation-model embeddings + lightweight classifier,Ch. 16 (full chapter),real_licensed_inputs,0.5617,0.7193,,5.7
+G. Narrative Generation (Vision-Language Model),Roadmap,documented,Image captioning / VQA (Moondream),"Ch. 15, Sec. 15.7-15.8",,,,,

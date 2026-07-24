@@ -260,9 +260,12 @@ def main() -> None:
     annotate.render_decision_bridge(prev, scored_out, prev / "annotated_decision_bridge.png",
                                     subs=subs, bbox=bbox, is_real=True)
     page = write_geoai_page(out / "geoai.html", manifest, scored_out, prev)
+    web = _write_web_bundle(manifest, scored_out, prev)
 
     print("\nALL-REAL run complete.")
     print(f"  {page}")
+    if web:
+        print(f"  {web} (role-surface bundle)")
     print("\nReal sub-district priority:")
     print(scored_out[["subdistrict_name", "flood_likelihood_0_100", "exposure_0_100",
                       "fpps_0_100", "action_class", "confidence_class"]].to_string(index=False))
@@ -337,6 +340,84 @@ def _aggregate(subs, flood, susc, buildings, transform, shape):
             "assumptions": flood.metrics["assumptions"],
         })
     return pd.DataFrame(rows)
+
+
+def _write_web_bundle(manifest, scored, prev):
+    """Emit the role-surface bundle: apps/web/public/geoai/{json,images}.
+
+    The Next.js /command and /studio surfaces read this to render the real
+    GeoAI evidence panel (no separate dashboard). Skipped if apps/web is absent.
+    """
+
+    import shutil
+
+    web = REPO_ROOT / "apps" / "web" / "public" / "geoai"
+    if not (REPO_ROOT / "apps" / "web").exists():
+        return None
+    web.mkdir(parents=True, exist_ok=True)
+    m = manifest["metrics"]
+    a, b, c, d = (m.get("sar_flood", {}), m.get("water_unet", {}),
+                  m.get("susceptibility", {}), m.get("infrastructure", {}))
+
+    def pct(x):
+        return round(float(x) * 100, 2)
+
+    bundle = {
+        "data_mode": manifest["data_mode"],
+        "study_area": "Mae Sai District, Chiang Rai",
+        "generated_at": a.get("post_datetime", ""),
+        "official_warning": False,
+        "sources": manifest.get("sources", {}),
+        "headline": {
+            "sar_flood_pct": pct(a.get("flood_fraction", 0)),
+            "sar_pre": a.get("pre_datetime", "")[:10], "sar_post": a.get("post_datetime", "")[:10],
+            "unet_iou": b.get("iou"), "unet_f1": b.get("f1_dice"),
+            "susc_auc": c.get("auc"), "susc_auc_jrc": c.get("auc_vs_jrc_permanent_water"),
+            "buildings": d.get("building_count"), "exposed": d.get("exposed_count"),
+        },
+        "components": [
+            {"letter": "A", "name": "SAR flood-extent detection", "book": "Ch. 12 · change detection",
+             "metric": f"{pct(a.get('flood_fraction', 0))}% of district flooded",
+             "detail": f"Sentinel-1 RTC · pre {a.get('pre_datetime','')[:10]} → post {a.get('post_datetime','')[:10]}",
+             "input": "/geoai/scene_sar_post_vh.png", "output": "/geoai/A_sar_flood_probability.png"},
+            {"letter": "B", "name": "U-Net water-mask refinement", "book": "Ch. 9 · semantic segmentation",
+             "metric": f"IoU {b.get('iou')} · F1 {b.get('f1_dice')}",
+             "detail": f"Sentinel-2 L2A · ImageNet-pretrained ResNet · {b.get('n_training_tiles','?')} tiles",
+             "input": "/geoai/scene_s2_rgb.png", "output": "/geoai/B_water_mask.png"},
+            {"letter": "C", "name": "Flood susceptibility surface", "book": "Ch. 13 · pixel regression",
+             "metric": f"AUC {c.get('auc')} vs JRC surface water",
+             "detail": f"Copernicus DEM GLO-30 + {c.get('river_features','?')} DWR river features",
+             "input": "/geoai/scene_dem.png", "output": "/geoai/C_susceptibility.png"},
+            {"letter": "D", "name": "Critical-infrastructure extraction", "book": "Ch. 14 · footprints",
+             "metric": f"{d.get('building_count')} buildings · {d.get('exposed_count')} flood-exposed",
+             "detail": "OpenStreetMap building footprints vs SAR flood extent",
+             "input": "/geoai/scene_s2_rgb.png", "output": "/geoai/D_buildings.png"},
+        ],
+        "subdistricts": [
+            {"id": r["subdistrict_id"], "name": r["subdistrict_name"],
+             "flood_likelihood": round(float(r["flood_likelihood_0_100"]), 1),
+             "exposure": round(float(r["exposure_0_100"]), 1),
+             "fpps": round(float(r["fpps_0_100"]), 1), "action": r["action_class"],
+             "confidence": r["confidence_class"]}
+            for r in scored.to_dict("records")
+        ],
+        "limitations": [
+            "Nearest post-event same-orbit Sentinel-1 scene (2024-09-15) is ~4 days after the "
+            "~Sep-11 flood peak, so extent is residual and under-represents the peak.",
+            "U-Net labels are the MNDWI water index (weak supervision from a physical index, not "
+            "hand annotation); metrics measure agreement with that index.",
+            "Susceptibility is relative propensity, not flood depth. Non-operational; not an "
+            "official warning.",
+        ],
+    }
+    (web / "mae-sai-real.json").write_text(json.dumps(bundle, indent=2), encoding="utf-8")
+    for name in ("scene_sar_post_vh.png", "A_sar_flood_probability.png", "scene_s2_rgb.png",
+                 "B_water_mask.png", "scene_dem.png", "C_susceptibility.png", "D_buildings.png",
+                 "annotated_decision_bridge.png", "annotated_models.png"):
+        src = prev / name
+        if src.exists():
+            shutil.copy(src, web / name)
+    return web / "mae-sai-real.json"
 
 
 def _render_buildings(path, flood, feats, transform, shape):

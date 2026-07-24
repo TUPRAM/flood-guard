@@ -1,0 +1,143 @@
+{
+  "data_mode": "real_licensed_inputs",
+  "study_area": "Mae Sai District, Chiang Rai",
+  "generated_at": "2024-09-15T23:16:14.175289+00:00",
+  "official_warning": false,
+  "sources": {
+    "sentinel1": "S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc -> S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_rtc (Planetary Computer, RTC)",
+    "sentinel2": "S2B_MSIL2A_20240218T034819_R104_T47QPC_20240218T072820 (2024-02-18, 0.000% cloud)",
+    "dem": "Copernicus DEM GLO-30 (Planetary Computer)",
+    "water_reference": "JRC Global Surface Water (Pekel et al. 2016)",
+    "subdistricts": "DOPA sub-districts via NGIS ArcGIS",
+    "rivers": "DWR natural streams via NGIS ArcGIS",
+    "buildings": "OpenStreetMap (Overpass API)"
+  },
+  "headline": {
+    "sar_flood_pct": 0.21,
+    "sar_pre": "2024-08-22",
+    "sar_post": "2024-09-15",
+    "unet_iou": 0.3816,
+    "unet_f1": 0.5524,
+    "susc_auc": 0.7441,
+    "susc_auc_jrc": 0.72,
+    "buildings": 463,
+    "exposed": 0
+  },
+  "components": [
+    {
+      "letter": "A",
+      "name": "SAR flood-extent detection",
+      "book": "Ch. 12 \u00b7 change detection",
+      "metric": "0.21% of district flooded",
+      "detail": "Sentinel-1 RTC \u00b7 pre 2024-08-22 \u2192 post 2024-09-15",
+      "input": "/geoai/scene_sar_post_vh.png",
+      "output": "/geoai/A_sar_flood_probability.png"
+    },
+    {
+      "letter": "B",
+      "name": "U-Net water-mask refinement",
+      "book": "Ch. 9 \u00b7 semantic segmentation",
+      "metric": "IoU 0.3816 \u00b7 F1 0.5524",
+      "detail": "Sentinel-2 L2A \u00b7 ImageNet-pretrained ResNet \u00b7 100 tiles",
+      "input": "/geoai/scene_s2_rgb.png",
+      "output": "/geoai/B_water_mask.png"
+    },
+    {
+      "letter": "C",
+      "name": "Flood susceptibility surface",
+      "book": "Ch. 13 \u00b7 pixel regression",
+      "metric": "AUC 0.7441 vs JRC surface water",
+      "detail": "Copernicus DEM GLO-30 + 1925 DWR river features",
+      "input": "/geoai/scene_dem.png",
+      "output": "/geoai/C_susceptibility.png"
+    },
+    {
+      "letter": "D",
+      "name": "Critical-infrastructure extraction",
+      "book": "Ch. 14 \u00b7 footprints",
+      "metric": "463 buildings \u00b7 0 flood-exposed",
+      "detail": "OpenStreetMap building footprints vs SAR flood extent",
+      "input": "/geoai/scene_s2_rgb.png",
+      "output": "/geoai/D_buildings.png"
+    }
+  ],
+  "subdistricts": [
+    {
+      "id": "570903",
+      "name": "Ko Chang",
+      "flood_likelihood": 95.8,
+      "exposure": 56.8,
+      "fpps": 70.0,
+      "action": "D",
+      "confidence": "high"
+    },
+    {
+      "id": "570901",
+      "name": "Mae Sai",
+      "flood_likelihood": 46.3,
+      "exposure": 42.0,
+      "fpps": 44.3,
+      "action": "D",
+      "confidence": "high"
+    },
+    {
+      "id": "570906",
+      "name": "Wiang Phang Kham",
+      "flood_likelihood": 24.7,
+      "exposure": 60.0,
+      "fpps": 41.2,
+      "action": "D",
+      "confidence": "medium"
+    },
+    {
+      "id": "570905",
+      "name": "Si Mueang Chum",
+      "flood_likelihood": 61.9,
+      "exposure": 15.3,
+      "fpps": 42.1,
+      "action": "D",
+      "confidence": "high"
+    },
+    {
+      "id": "570904",
+      "name": "Pong Pha",
+      "flood_likelihood": 33.0,
+      "exposure": 11.5,
+      "fpps": 28.7,
+      "action": "E",
+      "confidence": "medium"
+    },
+    {
+      "id": "570909",
+      "name": "Pong Ngam",
+      "flood_likelihood": 26.0,
+      "exposure": 40.6,
+      "fpps": 35.3,
+      "action": "D",
+      "confidence": "medium"
+    },
+    {
+      "id": "570908",
+      "name": "Ban Dai",
+      "flood_likelihood": 44.2,
+      "exposure": 2.1,
+      "fpps": 30.3,
+      "action": "E",
+      "confidence": "high"
+    },
+    {
+      "id": "570902",
+      "name": "Huai Khrai",
+      "flood_likelihood": 28.4,
+      "exposure": 9.3,
+      "fpps": 26.0,
+      "action": "E",
+      "confidence": "high"
+    }
+  ],
+  "limitations": [
+    "Nearest post-event same-orbit Sentinel-1 scene (2024-09-15) is ~4 days after the ~Sep-11 flood peak, so extent is residual and under-represents the peak.",
+    "U-Net labels are the MNDWI water index (weak supervision from a physical index, not hand annotation); metrics measure agreement with that index.",
+    "Susceptibility is relative propensity, not flood depth. Non-operational; not an official warning."
+  ]
+}

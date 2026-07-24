@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { GeoaiRealPanel } from "@/components/geoai-real-panel";
 import { GeoMap } from "@/components/geo-map";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ScoreBar } from "@/components/score-bar";
@@ -526,6 +527,10 @@ export function CommandWorkspace() {
           </section>
         </aside>
 
+      </div>
+
+      <div className="command-geoai-layer">
+        <GeoaiRealPanel language={language} variant="command" />
       </div>
     </main>
   );

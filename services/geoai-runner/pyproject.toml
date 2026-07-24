@@ -30,6 +30,10 @@ realpipeline = [
   "scikit-learn>=1.4",
   "pystac-client>=0.8",
   "planetary-computer>=1.0",
+  "omniwatermask>=0.5",
+  "torchange>=0.0.2",
+  "albumentations>=1.4",
+  "moondream>=0.0.6",
 ]
 
 [dependency-groups]

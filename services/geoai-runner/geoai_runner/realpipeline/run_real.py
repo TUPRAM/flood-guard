@@ -49,6 +49,11 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--fast", action="store_true", help="Fewer U-Net epochs.")
     ap.add_argument("--epochs", type=int, default=None)
+    ap.add_argument("--all-methods", action="store_true",
+                    help="Also run OmniWaterMask baseline, ChangeStar encroachment (E), "
+                         "and Moondream narrative (G). Downloads extra weights; slower.")
+    ap.add_argument("--no-narrative", action="store_true",
+                    help="With --all-methods, skip the slow Moondream VLM step.")
     args = ap.parse_args()
 
     out = REPO_ROOT / "outputs" / "geoai"
@@ -220,6 +225,13 @@ def main() -> None:
     array_to_png(prev / "F_fewshot_prediction.png", res_f.predicted_mask, cmap="Blues")
     array_to_png(prev / "scene_flood_reference.png", (jrc["occurrence"] > 50).astype("uint8"), cmap="Blues")
 
+    # ---------------- extra methods: baseline + E + G (opt-in) --------------
+    narrative_captions: dict[str, str] = {}
+    if args.all_methods:
+        _run_extra_methods(
+            args, bbox, work, prev, out, transform, res_c, metrics, timings, narrative_captions
+        )
+
     # ---------------- bridge: real subdistricts -> FPPS --------------------
     print("[8/9] Bridging real AI layers -> real sub-district priority ...")
     table = _aggregate(subs, flood, res_c.susceptibility_0_100, feats, transform, SHAPE)
@@ -260,7 +272,7 @@ def main() -> None:
     annotate.render_decision_bridge(prev, scored_out, prev / "annotated_decision_bridge.png",
                                     subs=subs, bbox=bbox, is_real=True)
     page = write_geoai_page(out / "geoai.html", manifest, scored_out, prev)
-    web = _write_web_bundle(manifest, scored_out, prev)
+    web = _write_web_bundle(manifest, scored_out, prev, narrative_captions)
 
     print("\nALL-REAL run complete.")
     print(f"  {page}")
@@ -342,7 +354,95 @@ def _aggregate(subs, flood, susc, buildings, transform, shape):
     return pd.DataFrame(rows)
 
 
-def _write_web_bundle(manifest, scored, prev):
+def _run_extra_methods(args, bbox, work, prev, out, transform, res_c, metrics, timings, captions):
+    """Run OmniWaterMask baseline, ChangeStar encroachment (E), Moondream (G)."""
+
+    import json
+    import time
+
+    import numpy as np
+
+    from geoai_runner.realpipeline import encroachment as en
+    from geoai_runner.realpipeline import narrative as nr
+    from geoai_runner.realpipeline import water_baseline as wb
+    from geoai_runner.realpipeline.raster_io import array_to_png, write_geotiff
+
+    # OmniWaterMask baseline (Component B sanity check)
+    print("[E1] OmniWaterMask baseline (real Sentinel-2) ...")
+    try:
+        t = time.time()
+        base = wb.run_omniwatermask_baseline(
+            work / "s2.tif", work, reference_mask_path=work / "water_label.tif"
+        )
+        timings["omniwatermask"] = round(time.time() - t, 1)
+        metrics["omniwatermask"] = base.metrics
+        array_to_png(prev / "baseline_omniwatermask.png", base.water_mask, cmap="Blues")
+        print(f"      water {base.metrics.get('water_fraction')} | "
+              f"IoU vs U-Net labels {base.metrics.get('iou_vs_unet_labels')}")
+    except Exception as exc:  # pragma: no cover
+        print(f"      OmniWaterMask unavailable: {exc}")
+
+    # Component E: ChangeStar encroachment (two real Sentinel-2 dates)
+    print("[E2] Component E - ChangeStar encroachment (real 2020 vs 2024) ...")
+    try:
+        t = time.time()
+        town = (bbox[0], max(bbox[1], 20.40), bbox[2], bbox[3])  # town-core subset
+        en.fetch_rgb_uint8("2020-01-15/2020-03-31", town, work / "enc_t1.tif")
+        en.fetch_rgb_uint8("2024-01-15/2024-03-31", town, work / "enc_t2.tif")
+        write_geotiff(work / "susc_for_enc.tif", res_c.susceptibility_0_100, transform, "EPSG:4326")
+        res_e = en.detect_encroachment(
+            work / "enc_t1.tif", work / "enc_t2.tif", work,
+            floodplain_path=work / "susc_for_enc.tif",
+        )
+        timings["encroachment"] = round(time.time() - t, 1)
+        metrics["encroachment"] = res_e.metrics
+        import rasterio
+        with rasterio.open(work / "enc_t2.tif") as s:
+            rgb = np.transpose(s.read(), (1, 2, 0)) / 255.0
+        _overlay_png(prev / "E_encroachment.png", rgb, res_e.change_mask.astype(bool))
+        print(f"      change {res_e.metrics.get('change_fraction')} | "
+              f"floodplain share {res_e.metrics.get('floodplain_encroachment_share_of_change')}")
+    except Exception as exc:  # pragma: no cover
+        print(f"      ChangeStar unavailable: {exc}")
+
+    # Component G: Moondream narrative
+    if not args.no_narrative:
+        print("[E3] Component G - Moondream narrative (real imagery) ...")
+        try:
+            t = time.time()
+            res_g = nr.generate_captions(
+                {"sar_post": prev / "scene_sar_post_vh.png",
+                 "flood_map": prev / "annotated_decision_bridge.png",
+                 "susceptibility": prev / "C_susceptibility.png"},
+                out / "narrative_captions.json",
+            )
+            timings["narrative"] = round(time.time() - t, 1)
+            metrics["narrative"] = res_g.metrics
+            captions.update(res_g.captions)
+            print(f"      captions {len(res_g.captions)} | "
+                  f"sample: {list(res_g.captions.values())[0][:80]}")
+        except Exception as exc:  # pragma: no cover
+            print(f"      Moondream unavailable: {exc}")
+
+
+def _overlay_png(path, rgb, mask):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    fig, ax = plt.subplots(figsize=(4, 4), dpi=110)
+    ax.imshow(np.clip(rgb, 0, 1))
+    ov = np.zeros((*mask.shape, 4))
+    ov[mask] = [1, 0.1, 0.1, 0.85]
+    ax.imshow(ov)
+    ax.axis("off")
+    fig.tight_layout(pad=0)
+    fig.savefig(path, bbox_inches="tight", pad_inches=0)
+    plt.close(fig)
+
+
+def _write_web_bundle(manifest, scored, prev, captions=None):
     """Emit the role-surface bundle: apps/web/public/geoai/{json,images}.
 
     The Next.js /command and /studio surfaces read this to render the real
@@ -401,6 +501,7 @@ def _write_web_bundle(manifest, scored, prev):
              "confidence": r["confidence_class"]}
             for r in scored.to_dict("records")
         ],
+        "additional_methods": _additional_methods(m, captions),
         "limitations": [
             "Nearest post-event same-orbit Sentinel-1 scene (2024-09-15) is ~4 days after the "
             "~Sep-11 flood peak, so extent is residual and under-represents the peak.",
@@ -413,11 +514,47 @@ def _write_web_bundle(manifest, scored, prev):
     (web / "mae-sai-real.json").write_text(json.dumps(bundle, indent=2), encoding="utf-8")
     for name in ("scene_sar_post_vh.png", "A_sar_flood_probability.png", "scene_s2_rgb.png",
                  "B_water_mask.png", "scene_dem.png", "C_susceptibility.png", "D_buildings.png",
-                 "annotated_decision_bridge.png", "annotated_models.png"):
+                 "annotated_decision_bridge.png", "annotated_models.png",
+                 "baseline_omniwatermask.png", "E_encroachment.png", "F_fewshot_prediction.png"):
         src = prev / name
         if src.exists():
             shutil.copy(src, web / name)
     return web / "mae-sai-real.json"
+
+
+def _additional_methods(m, captions):
+    """Roadmap/baseline methods (E, F, G, OmniWaterMask) for the role surfaces."""
+
+    items = []
+    om = m.get("omniwatermask")
+    if om:
+        items.append({
+            "letter": "*", "name": "OmniWaterMask baseline", "book": "Ch. 9 · pre-trained (zero training)",
+            "metric": f"IoU {om.get('iou_vs_unet_labels', 'n/a')} vs U-Net labels",
+            "detail": "Sensor-agnostic optical water model — a check on the trained U-Net.",
+            "image": "/geoai/baseline_omniwatermask.png"})
+    en = m.get("encroachment")
+    if en:
+        items.append({
+            "letter": "E", "name": "Encroachment detection (ChangeStar)", "book": "Ch. 12 · deep change detection",
+            "metric": f"{round(float(en.get('floodplain_encroachment_share_of_change', 0)) * 100, 1)}% of built-up change in floodplain",
+            "detail": f"{en.get('t1', '2020')} → {en.get('t2', '2024')} Sentinel-2 · new built-up inside the flood zone.",
+            "image": "/geoai/E_encroachment.png"})
+    emb = m.get("embeddings")
+    if emb:
+        items.append({
+            "letter": "F", "name": "Label-scarce embeddings (few-shot)", "book": "Ch. 16 · foundation embeddings",
+            "metric": f"IoU {emb.get('iou', 'n/a')} from a few labels",
+            "detail": "Lightweight classifier on Sentinel-2 features — retrains in seconds as labels arrive.",
+            "image": "/geoai/F_fewshot_prediction.png"})
+    ng = m.get("narrative")
+    if ng and captions:
+        items.append({
+            "letter": "G", "name": "Narrative generation (Moondream VLM)", "book": "Ch. 15 · vision-language",
+            "metric": f"{len(captions)} auto-drafted captions (team-reviewed)",
+            "detail": next(iter(captions.values()), "")[:160],
+            "image": None, "captions": captions})
+    return items
 
 
 def _render_buildings(path, flood, feats, transform, shape):

@@ -139,5 +139,39 @@
     "Nearest post-event same-orbit Sentinel-1 scene (2024-09-15) is ~4 days after the ~Sep-11 flood peak, so extent is residual and under-represents the peak.",
     "U-Net labels are the MNDWI water index (weak supervision from a physical index, not hand annotation); metrics measure agreement with that index.",
     "Susceptibility is relative propensity, not flood depth. Non-operational; not an official warning."
+  ],
+  "additional_methods": [
+    {
+      "letter": "*",
+      "name": "OmniWaterMask baseline",
+      "book": "Ch. 9 \u00b7 pre-trained (zero training)",
+      "metric": "IoU 0.0742 vs U-Net labels",
+      "detail": "Sensor-agnostic optical water model \u2014 an independent check on the trained U-Net. Low agreement reflects sparse dry-season water.",
+      "image": "/geoai/baseline_omniwatermask.png"
+    },
+    {
+      "letter": "E",
+      "name": "Encroachment detection (ChangeStar)",
+      "book": "Ch. 12 \u00b7 deep change detection",
+      "metric": "0.0% built-up change (2020-03-10\u21922024-03-09)",
+      "detail": "Real ChangeStar run on 2020 vs 2024 Sentinel-2. 10 m resolution is too coarse to resolve building-scale change (model trained on sub-metre); THEOS-2 is the upgrade.",
+      "image": "/geoai/E_encroachment.png"
+    },
+    {
+      "letter": "F",
+      "name": "Label-scarce embeddings (few-shot)",
+      "book": "Ch. 16 \u00b7 foundation embeddings",
+      "metric": "IoU 0.5617 from a few labels",
+      "detail": "Lightweight classifier on Sentinel-2 features \u2014 retrains in seconds as labels arrive.",
+      "image": "/geoai/F_fewshot_prediction.png"
+    },
+    {
+      "letter": "G",
+      "name": "Narrative generation (Moondream VLM)",
+      "book": "Ch. 15 \u00b7 vision-language",
+      "metric": "executed \u00b7 GPU-recommended",
+      "image": null,
+      "detail": "Moondream loads and runs on real imagery. On abstract SAR/analytical figures it returns degraded output and CPU inference is very slow; production captions natural RGB optical imagery on a GPU host. Assistive, human-reviewed."
+    }
   ]
 }

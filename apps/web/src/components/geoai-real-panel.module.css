@@ -110,6 +110,57 @@
   font-size: 1rem;
 }
 
+.extras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.extra {
+  border: 1px solid var(--studio-border, rgb(148 163 184 / 30%));
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--studio-surface-2, rgb(148 163 184 / 6%));
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.extraHead {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.extra h4 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.extraImg {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--studio-border, rgb(148 163 184 / 30%));
+  background: #0b1220;
+  display: block;
+}
+
+.captions {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: 0.74rem;
+  color: var(--studio-muted, rgb(100 116 139 / 95%));
+}
+
+.captions li {
+  margin-bottom: 4px;
+}
+
+.captions b {
+  text-transform: capitalize;
+  color: var(--command-accent, #2563eb);
+}
+
 .tableWrap {
   overflow-x: auto;
 }

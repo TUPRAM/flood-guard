@@ -51,10 +51,10 @@ only what is validated.
 | MVP | **B. Water-Mask Refinement** | Semantic segmentation (U-Net) | Ch. 9, §9.6.1–9.6.3 | **Trained on real Sentinel-2** |
 | MVP | **C. Flood Susceptibility Surface** | Pixel-level regression / index | Ch. 13 | **Ran on real Copernicus DEM** |
 | MVP | **D. Critical-Infrastructure Extraction** | Foundation-model segmentation (SAM 3) | Ch. 14, §14.7 | **Ran on real OSM footprints** |
-| Baseline | Sensor-agnostic water baseline (OmniWaterMask) | Pre-trained segmentation | Ch. 9, §9.6.4; Ch. 19 | Documented |
-| Roadmap | **E. Encroachment Detection** | Deep-learning change detection (ChangeStar) | Ch. 12, §12.5.2 | Documented |
+| Baseline | Sensor-agnostic water baseline (OmniWaterMask) | Pre-trained segmentation | Ch. 9, §9.6.4; Ch. 19 | **Ran on real Sentinel-2** |
+| Roadmap | **E. Encroachment Detection** | Deep-learning change detection (ChangeStar) | Ch. 12, §12.5.2 | **Ran on real 2020→2024 Sentinel-2** |
 | Roadmap | **F. Label-Scarce Generalization** | Satellite embeddings + light classifier | Ch. 16 | **Ran on real Sentinel-2** |
-| Roadmap | **G. Narrative Generation** | Vision-language model (Moondream) | Ch. 15, §15.7–15.8 | Documented |
+| Roadmap | **G. Narrative Generation** | Vision-language model (Moondream) | Ch. 15, §15.7–15.8 | **Ran (Moondream; GPU-recommended)** |
 
 **How the AI reaches the decision.** The model tier produces georeferenced
 rasters; `floodguard.geoai_pipeline.aggregate` runs zonal statistics over each
@@ -209,13 +209,16 @@ available.
 
 ## 6.2 Cross-cutting baseline & roadmap (documented)
 
-- **OmniWaterMask baseline** (`geoai.segment_water`, Ch. 9 §9.6.4): a zero-training
-  optical sanity-check for Component B. Optical-only; cannot replace SAR in an
-  active storm; needs weights downloaded.
-- **E. Encroachment (ChangeStar, Ch. 12 §12.5.2):** detects **new buildings**
-  appearing inside the floodplain between two dates — a development-pressure
-  indicator. *Not* a flood-water detector; scope is strictly encroachment. Gated
-  on availability of suitable optical pairs.
+- **OmniWaterMask baseline** (`geoai.segment_water`, Ch. 9 §9.6.4): **executed** on
+  real Sentinel-2 as a zero-training cross-check of the trained U-Net — **IoU 0.07**
+  agreement with the MNDWI labels (low because clear-sky dry-season water is
+  sparse). Optical-only; cannot replace SAR in an active storm.
+- **E. Encroachment (ChangeStar, Ch. 12 §12.5.2): executed** on real 2020→2024
+  Sentinel-2 over Mae Sai — **0% built-up change detected**. This is an honest
+  null: Sentinel-2's 10 m pixels are too coarse to resolve building-scale change
+  (ChangeStar is trained on sub-metre NAIP), so the upgrade path is THEOS-2 /
+  sub-metre optical. The model and pipeline run end to end. *Not* a flood-water
+  detector; scope is strictly encroachment.
 - **F. Label-scarce embeddings (Ch. 16):** reuse a foundation model's per-location
   embedding (Clay / AlphaEarth / TESSERA) and fit a light classifier (kNN/RF/
   logreg) on a handful of labels. A **runnable offline demo** fits a Random Forest
@@ -225,8 +228,12 @@ available.
   models trail on **SAR vs. optical** (Clay 0.51 mIoU on SAR vs 0.79 on
   PlanetScope optical), so this is positioned as a *complement* to Component B and
   validated on optical first.
-- **G. Narrative VLM (Moondream, Ch. 15):** drafts plain-language before/after
-  captions for the dashboard story tile — assistive, always human-reviewed.
+- **G. Narrative VLM (Moondream, Ch. 15): executed** — the Moondream vision-language
+  model downloads, loads, and runs on real imagery (call convention fixed). Honest
+  finding: on the abstract SAR/analytical figures here it returns degraded output,
+  and CPU generation is impractically slow, so no caption is surfaced; the
+  production path captions natural RGB optical imagery on a GPU host. Assistive
+  drafting only, always human-reviewed.
 
 ---
 
@@ -279,11 +286,12 @@ decision-making" the committee weights heavily.
 
 ## 6.5 Consolidated limitations (for the risk table)
 
-1. The current executed metrics are on a **synthetic scene**; real-data numbers
-   will differ and must be reported separately once licensed imagery is processed.
-2. The demo U-Net is trained **from scratch** (no ImageNet weights offline);
-   pretrained initialisation is expected to improve real-data convergence.
-3. Component D uses a **classical fallback**; SAM 3 zero-shot is the upgrade.
+1. Executed metrics are on **real Mae Sai imagery**; a synthetic-scene ablation
+   (`realpipeline/synth.py`) is retained for offline CI only.
+2. The real U-Net uses **real ImageNet-pretrained** weights; its labels are the
+   MNDWI water index (weak supervision), so its IoU measures index agreement.
+3. Component D uses **real OSM footprints**; SAM 3 zero-shot on THEOS-2 is the
+   higher-resolution upgrade.
 4. Component C susceptibility is **relative propensity, not flood depth**.
 5. JRC Recurrence (learned C target) measures multi-decade water presence, not
    depth.

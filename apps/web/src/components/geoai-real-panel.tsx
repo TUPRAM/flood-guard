@@ -18,6 +18,16 @@ interface GeoaiComponent {
   output: string;
 }
 
+interface GeoaiExtraMethod {
+  letter: string;
+  name: string;
+  book: string;
+  metric: string;
+  detail: string;
+  image: string | null;
+  captions?: Record<string, string>;
+}
+
 interface GeoaiSubdistrict {
   id: string;
   name: string;
@@ -45,6 +55,7 @@ interface GeoaiRealBundle {
     exposed: number;
   };
   components: GeoaiComponent[];
+  additional_methods?: GeoaiExtraMethod[];
   subdistricts: GeoaiSubdistrict[];
   limitations: string[];
 }
@@ -180,6 +191,42 @@ export function GeoaiRealPanel({
               </article>
             ))}
           </div>
+
+          {bundle.additional_methods && bundle.additional_methods.length > 0 && (
+            <>
+              <h3 className={styles.subhead}>
+                {th ? "วิธี AI เพิ่มเติม" : "Additional AI methods (baseline + roadmap, executed)"}
+              </h3>
+              <div className={styles.extras}>
+                {bundle.additional_methods.map((x) => (
+                  <article key={x.letter + x.name} className={styles.extra}>
+                    <div className={styles.extraHead}>
+                      <span className={styles.letter}>{x.letter}</span>
+                      <div>
+                        <h4>{x.name}</h4>
+                        <p className={styles.book}>{x.book}</p>
+                      </div>
+                    </div>
+                    {x.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={x.image} alt={x.name} loading="lazy" className={styles.extraImg} />
+                    )}
+                    <p className={styles.metric}>{x.metric}</p>
+                    <p className={styles.detail}>{x.detail}</p>
+                    {x.captions && (
+                      <ul className={styles.captions}>
+                        {Object.entries(x.captions).map(([k, v]) => (
+                          <li key={k}>
+                            <b>{k}:</b> {v}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
 
           <h3 className={styles.subhead}>
             {th

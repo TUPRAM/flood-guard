@@ -1,0 +1,7 @@
+{
+  "data_mode": "real_licensed_inputs",
+  "model": "Moondream (vikhyatk/moondream2)",
+  "review_status": "executed_domain_limited",
+  "captions": {},
+  "assumptions": "Moondream loads and runs on real imagery (call-convention fixed). On the abstract SAR/analytical figures used here it returns degraded output, and CPU inference is impractically slow; the production path captions natural RGB optical imagery on a GPU host. Assistive drafting only, always human-reviewed; never an autonomous claim."
+}

@@ -5,7 +5,9 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
 import type { ActionReasonCode, DatasetMode, PublicPreparednessArea } from "@floodguard/contracts";
 
+import { PublicAppIcon } from "@/components/public-app-icon";
 import { formatConfidence } from "@/lib/format";
+import type { PublicMapLocation } from "@/lib/public-location";
 import {
   ACTION_CLASS_COLORS,
   SCENARIO_TONE_COLORS,
@@ -51,10 +53,16 @@ interface GeoMapProps {
   showSelectionSheet?: boolean;
   contextFeatures?: FeatureCollection;
   attributions?: string[];
-  visualPalette?: "default" | "public-blue";
+  visualPalette?: "default" | "public-blue" | "public-risk";
   enableBasemaps?: boolean;
+  basemapControlVariant?: "segmented" | "menu";
+  showLegend?: boolean;
+  showProvenanceBadge?: boolean;
+  showTextAlternative?: boolean;
   audience?: "public" | "staff";
   roadSegmentEvidenceReady?: boolean;
+  location?: PublicMapLocation;
+  showDataAttribution?: boolean;
 }
 
 type MapArea = AreaRecord | PublicPreparednessArea;
@@ -66,24 +74,28 @@ const BASEMAPS: Record<BasemapId, {
   maxZoom: number;
   labels: Record<Language, string>;
   attributions: string[];
+  attributionHtml: string;
 }> = {
   street: {
     url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     maxZoom: 19,
     labels: { en: "Street", th: "ถนน" },
     attributions: ["© OpenStreetMap contributors"],
+    attributionHtml: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="license noopener noreferrer">OpenStreetMap</a> contributors',
   },
   satellite: {
     url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     maxZoom: 19,
     labels: { en: "Satellite", th: "ดาวเทียม" },
     attributions: ["Esri World Imagery", "Esri and imagery contributors"],
+    attributionHtml: 'Imagery &copy; <a href="https://www.esri.com/" target="_blank" rel="license noopener noreferrer">Esri</a> and contributors',
   },
   terrain: {
     url: "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
     maxZoom: 17,
     labels: { en: "Terrain", th: "ภูมิประเทศ" },
     attributions: ["© OpenStreetMap contributors", "SRTM", "© OpenTopoMap (CC-BY-SA)"],
+    attributionHtml: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="license noopener noreferrer">OpenStreetMap</a> contributors, SRTM · Style &copy; <a href="https://opentopomap.org/" target="_blank" rel="license noopener noreferrer">OpenTopoMap</a>',
   },
 };
 
@@ -119,8 +131,14 @@ export function GeoMap({
   attributions = [],
   visualPalette = "default",
   enableBasemaps = false,
+  basemapControlVariant = "segmented",
+  showLegend = true,
+  showProvenanceBadge = true,
+  showTextAlternative = true,
   audience = "public",
   roadSegmentEvidenceReady = false,
+  location,
+  showDataAttribution = true,
 }: GeoMapProps) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -131,6 +149,7 @@ export function GeoMap({
   const roadLayerRef = useRef<LayerGroup | null>(null);
   const facilityLayerRef = useRef<LayerGroup | null>(null);
   const accessLayerRef = useRef<LayerGroup | null>(null);
+  const locationLayerRef = useRef<LayerGroup | null>(null);
   const hasFitRegionalBounds = useRef(false);
   const previousSelectedId = useRef(selectedId);
   const selectionSheetId = useId();
@@ -168,6 +187,11 @@ export function GeoMap({
   );
   const hasAnyVisibleRoadRisk = visibleRoadRiskCount > 0;
   const allVisibleRoadsHaveRisk = visibleRoadCount > 0 && visibleRoadRiskCount === visibleRoadCount;
+  const selectBasemap = (nextBasemapId: BasemapId) => {
+    if (nextBasemapId === basemapId) return;
+    setBasemapState("loading");
+    setBasemapId(nextBasemapId);
+  };
 
   useEffect(() => {
     let disposed = false;
@@ -179,10 +203,10 @@ export function GeoMap({
       if (disposed || !mapElement.current) return;
       mapElement.current.replaceChildren();
       mountedMap = L.map(mapElement.current, {
-        attributionControl: false,
+        attributionControl: enableBasemaps,
         zoomControl: true,
         minZoom: 9,
-        maxZoom: 17,
+        maxZoom: 19,
         keyboard: true,
         preferCanvas: true,
       });
@@ -204,26 +228,35 @@ export function GeoMap({
       roadLayerRef.current = null;
       facilityLayerRef.current = null;
       accessLayerRef.current = null;
+      locationLayerRef.current = null;
       leafletRef.current = null;
       mapRef.current = null;
+      mountedMap?.stop();
       mountedMap?.remove();
     };
-  }, []);
+  }, [enableBasemaps]);
 
   useEffect(() => {
     const map = mapRef.current;
     const L = leafletRef.current;
     if (!mapReady || !map || !L || !enableBasemaps) return;
     basemapLayerRef.current?.remove();
-    setBasemapState("loading");
+    if (!navigator.onLine) {
+      const offlineStateTimer = window.setTimeout(
+        () => setBasemapState("unavailable"),
+        0,
+      );
+      return () => window.clearTimeout(offlineStateTimer);
+    }
     const definition = BASEMAPS[basemapId];
     const layer = L.tileLayer(definition.url, {
       minZoom: 9,
-      maxZoom: definition.maxZoom,
+      maxZoom: 19,
       maxNativeZoom: definition.maxZoom,
       crossOrigin: true,
       updateWhenIdle: true,
       keepBuffer: 2,
+      attribution: definition.attributionHtml,
     });
     let disposed = false;
     let hadTileError = false;
@@ -266,7 +299,7 @@ export function GeoMap({
         scenarioId,
         areas,
         actionClassColors,
-        visualPalette === "public-blue",
+        visualPalette,
         enableBasemaps,
       ),
       onEachFeature: (feature, featureLayer) => {
@@ -289,8 +322,8 @@ export function GeoMap({
       },
     }).addTo(map);
     areaLayerRef.current = layer;
-    if (!hasFitRegionalBounds.current && layer.getLayers().length > 0) {
-      map.fitBounds(layer.getBounds(), { padding: [28, 28] });
+    if (!location && !hasFitRegionalBounds.current && layer.getLayers().length > 0) {
+      map.fitBounds(layer.getBounds(), { animate: false, padding: [28, 28] });
       hasFitRegionalBounds.current = true;
       previousSelectedId.current = selectedId;
     }
@@ -298,12 +331,12 @@ export function GeoMap({
       layer.remove();
       if (areaLayerRef.current === layer) areaLayerRef.current = null;
     };
-  }, [actionClassColors, areaFeatures, areas, classFilter, enableBasemaps, language, mapReady, onSelect, scenarioId, selectedId, visualPalette]);
+  }, [actionClassColors, areaFeatures, areas, classFilter, enableBasemaps, language, location, mapReady, onSelect, scenarioId, selectedId, visualPalette]);
 
   useEffect(() => {
     const map = mapRef.current;
     const layer = areaLayerRef.current;
-    if (!mapReady || !map || !layer || previousSelectedId.current === selectedId) return;
+    if (!mapReady || !map || !layer || location || previousSelectedId.current === selectedId) return;
     previousSelectedId.current = selectedId;
     let selectedBounds: import("leaflet").LatLngBounds | undefined;
     layer.eachLayer((candidate) => {
@@ -315,7 +348,59 @@ export function GeoMap({
     if (selectedBounds?.isValid()) {
       map.fitBounds(selectedBounds, { animate: false, maxZoom: 13, padding: [42, 42] });
     }
-  }, [mapReady, selectedId]);
+  }, [location, mapReady, selectedId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const L = leafletRef.current;
+    locationLayerRef.current?.remove();
+    locationLayerRef.current = null;
+    if (
+      !mapReady
+      || !map
+      || !L
+      || !location
+      || !Number.isFinite(location.latitude)
+      || !Number.isFinite(location.longitude)
+    ) {
+      return;
+    }
+
+    const latlng: [number, number] = [location.latitude, location.longitude];
+    const group = L.layerGroup().addTo(map);
+    const accuracy = Number(location.accuracyMeters);
+    if (Number.isFinite(accuracy) && accuracy > 0) {
+      L.circle(latlng, {
+        radius: Math.min(accuracy, 2_000),
+        color: "#08519c",
+        weight: 1.5,
+        opacity: 0.75,
+        fillColor: "#3182bd",
+        fillOpacity: 0.12,
+        interactive: false,
+      }).addTo(group);
+    }
+    const marker = L.marker(latlng, {
+      alt: location.label,
+      title: location.label,
+      keyboard: true,
+      icon: L.divIcon({
+        className: "public-location-marker-shell",
+        html: '<span class="public-location-marker" aria-hidden="true"><i></i></span>',
+        iconSize: [42, 50],
+        iconAnchor: [21, 48],
+        tooltipAnchor: [0, -42],
+      }),
+    }).addTo(group);
+    bindTextTooltip(marker, location.label, { direction: "top", offset: [0, -34] });
+    locationLayerRef.current = group;
+    map.setView(latlng, Math.max(map.getZoom(), 17), { animate: false });
+
+    return () => {
+      group.remove();
+      if (locationLayerRef.current === group) locationLayerRef.current = null;
+    };
+  }, [location, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -534,11 +619,12 @@ export function GeoMap({
 
   return (
     <div
-      className={`geo-map-shell ${visibleAttributions.length > 0 ? "has-attribution" : ""}`}
+      className={`geo-map-shell ${showDataAttribution && visibleAttributions.length > 0 ? "has-attribution" : ""}`}
       data-map-ready={mapReady}
       data-scenario-id={scenarioId}
       data-scenario-tone={selectedPresentation?.tone ?? "unavailable"}
       data-selected-area={selectedId}
+      data-area-feature-count={areaFeatures.features.length}
       data-road-feature-count={roadFeatures.features.length}
       data-regional-road-count={regionalRoadCount}
       data-road-dataset-total={roadDatasetTotal}
@@ -552,6 +638,10 @@ export function GeoMap({
       data-access-feature-count={accessFeatures.features.length}
       data-basemap={enableBasemaps ? basemapId : "none"}
       data-basemap-state={enableBasemaps ? basemapState : "disabled"}
+      data-location-source={location?.source ?? "none"}
+      data-location-latitude={location?.latitude ?? ""}
+      data-location-longitude={location?.longitude ?? ""}
+      data-location-accuracy={location?.accuracyMeters ?? ""}
     >
       <div
         className="geo-map"
@@ -560,7 +650,7 @@ export function GeoMap({
         role="region"
         aria-label={mapProvenanceLabel(language, datasetMode)}
       />
-      {enableBasemaps && (
+      {enableBasemaps && basemapControlVariant === "segmented" && (
         <div className="map-basemap-switcher" role="group" aria-label={language === "th" ? "เลือกพื้นหลังแผนที่" : "Choose map background"}>
           {(Object.keys(BASEMAPS) as BasemapId[]).map((id) => (
             <button
@@ -568,12 +658,34 @@ export function GeoMap({
               type="button"
               aria-pressed={basemapId === id}
               className={basemapId === id ? "active" : ""}
-              onClick={() => setBasemapId(id)}
+              onClick={() => selectBasemap(id)}
             >
               {BASEMAPS[id].labels[language]}
             </button>
           ))}
         </div>
+      )}
+      {enableBasemaps && basemapControlVariant === "menu" && (
+        <details className="map-basemap-menu">
+          <summary aria-label={language === "th" ? "เปิดตัวเลือกชั้นแผนที่" : "Open map layer choices"}>
+            <PublicAppIcon name="layers" />
+            <span>{BASEMAPS[basemapId].labels[language]}</span>
+          </summary>
+          <div role="group" aria-label={language === "th" ? "เลือกพื้นหลังแผนที่" : "Choose map background"}>
+            {(Object.keys(BASEMAPS) as BasemapId[]).map((id) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={basemapId === id}
+                className={basemapId === id ? "active" : ""}
+                onClick={() => selectBasemap(id)}
+              >
+                <span aria-hidden="true" />
+                {BASEMAPS[id].labels[language]}
+              </button>
+            ))}
+          </div>
+        </details>
       )}
       {enableBasemaps && basemapState === "unavailable" && (
         <p className="map-basemap-notice" role="status">
@@ -615,7 +727,7 @@ export function GeoMap({
           </div>
         </aside>
       )}
-      <div className="map-legend" aria-label={language === "th" ? "คำอธิบายแผนที่" : "Map legend"}>
+      {showLegend && <div className="map-legend" aria-label={language === "th" ? "คำอธิบายแผนที่" : "Map legend"}>
         {selectedStaffArea && scenarioId !== "baseline" && (
           <div className="scenario-map-legend">
             <span><i style={{ backgroundColor: SCENARIO_TONE_COLORS.improves }} />{language === "th" ? "การสูญเสียการเข้าถึงลดลง" : "Access loss improves"}</span>
@@ -643,8 +755,8 @@ export function GeoMap({
         )}
         {showAccess && accessFeatures.features.length > 0 && <span><i className="access-swatch" />{language === "th" ? "หลักฐานการเข้าถึงเชิงแบบจำลอง" : "Modelled access evidence"}</span>}
         {contextFeatures.features.length > 0 && <span><i className="context-swatch" />{language === "th" ? "บริบทภูมิศาสตร์" : "Geographic context"}</span>}
-      </div>
-      {visibleAttributions.length > 0 && (
+      </div>}
+      {showDataAttribution && visibleAttributions.length > 0 && (
         <p className="map-attribution" aria-label={language === "th" ? "แหล่งที่มาของข้อมูลแผนที่" : "Map data attribution"}>
           <strong>{language === "th" ? "แหล่งข้อมูล:" : "Data attribution:"}</strong>{" "}
           {visibleAttributions.map((attribution, index) => (
@@ -657,8 +769,8 @@ export function GeoMap({
           ))}
         </p>
       )}
-      <span className={`map-provenance-badge ${datasetMode}`}>{mapGeometryDisclosure(language, datasetMode)}</span>
-      <details className="map-text-alternative">
+      {showProvenanceBadge && <span className={`map-provenance-badge ${datasetMode}`}>{mapGeometryDisclosure(language, datasetMode)}</span>}
+      {showTextAlternative && <details className="map-text-alternative">
         <summary>{language === "th" ? "ดูผลลัพธ์แผนที่เป็นรายการ" : "View map results as a list"}</summary>
         <div className="map-results-list" aria-live="polite">
           <section>
@@ -731,7 +843,7 @@ export function GeoMap({
             </ul>
           </section>
         </div>
-      </details>
+      </details>}
     </div>
   );
 }
@@ -744,12 +856,14 @@ function areaStyle(
   scenarioId: ScenarioId,
   areas: MapArea[],
   actionClassColors: Record<string, string> = ACTION_CLASS_COLORS,
-  usePaletteColors = false,
+  visualPalette: "default" | "public-blue" | "public-risk" = "default",
   hasBasemap = false,
 ): import("leaflet").PathOptions {
   const area = areas.find((item) => item.area_id === areaId);
   if (area && !isStaffMapArea(area)) {
-    const fillColor = publicPriorityColor(area.planning_priority_0_100);
+    const fillColor = visualPalette === "public-risk"
+      ? publicRiskColor(area.planning_priority_0_100)
+      : publicPriorityColor(area.planning_priority_0_100);
     return {
       color: areaId === selectedId ? "#0C2740" : fillColor,
       weight: areaId === selectedId ? 4 : 2,
@@ -760,6 +874,7 @@ function areaStyle(
   const actionClass = area?.action_class ?? "E";
   const presentation = scenarioMapPresentation(actionClass, scenarioId, area?.scenario_results[scenarioId]);
   const publicClassColor = actionClassColors[actionClass] ?? actionClassColors.E;
+  const usePaletteColors = visualPalette === "public-blue";
   const fillColor = usePaletteColors && scenarioId === "baseline" ? publicClassColor : presentation.fillColor;
   return {
     color: areaId === selectedId
@@ -782,6 +897,13 @@ function publicPriorityColor(value: number): string {
   if (value >= 50) return "#3182bd";
   if (value >= 25) return "#6baed6";
   return "#bdd7e7";
+}
+
+function publicRiskColor(value: number): string {
+  if (value >= 75) return "#dc2626";
+  if (value >= 50) return "#f97316";
+  if (value >= 25) return "#eab308";
+  return "#16a34a";
 }
 
 function publicRecommendationLabel(code: ActionReasonCode, language: Language): string {

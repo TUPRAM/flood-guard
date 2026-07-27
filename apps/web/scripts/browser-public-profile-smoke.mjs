@@ -52,22 +52,65 @@ const approvedOrigins = new Set([
   "https://services.arcgisonline.com",
   "https://a.tile.opentopomap.org",
 ]);
+const geocoderOrigin = "https://geocode.arcgis.com";
+const geocoderPath = "/arcgis/rest/services/World/GeocodeServer/findAddressCandidates";
 const configuredApi = process.env.FLOODGUARD_API_URL ?? process.env.NEXT_PUBLIC_FLOODGUARD_API_URL;
 if (configuredApi) approvedOrigins.add(new URL(configuredApi).origin);
 const browser = await launchFloodGuardBrowser();
 
 try {
-  const context = await browser.newContext({ serviceWorkers: "allow" });
+  const context = await browser.newContext({
+    serviceWorkers: "allow",
+    geolocation: {
+      latitude: 20.429799,
+      longitude: 99.884366,
+      accuracy: 12,
+    },
+    permissions: ["geolocation"],
+  });
+  const geocoderRequests = [];
+  await context.route(`${geocoderOrigin}${geocoderPath}**`, async (route) => {
+    const url = new URL(route.request().url());
+    geocoderRequests.push(url.href);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        candidates: [
+          {
+            address: "117 หมู่ 10 ตำบลเวียงพางคำ อำเภอแม่สาย จังหวัดเชียงราย 57130",
+            location: { x: 99.884365731796, y: 20.429799258909 },
+            score: 100,
+            attributes: { Addr_type: "PointAddress" },
+          },
+        ],
+      }),
+    });
+  });
   const page = await context.newPage();
+  await page.addInitScript(() => {
+    const geolocation = navigator.geolocation;
+    if (!geolocation) return;
+    const original = geolocation.getCurrentPosition.bind(geolocation);
+    try {
+      geolocation.getCurrentPosition = (success, error, options) => {
+        globalThis.__floodGuardGeolocationOptions = options;
+        return original(success, error, options);
+      };
+    } catch {
+      // Browser-level position assertions still run if the method is read-only.
+    }
+  });
   const pageErrors = [];
   const consoleErrors = [];
   const unexpectedRequests = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("pageerror", (error) => pageErrors.push(error.stack ?? error.message));
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
   page.on("request", (request) => {
     const url = new URL(request.url());
+    if (url.origin === geocoderOrigin && url.pathname === geocoderPath) return;
     if (!approvedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
   });
 
@@ -75,6 +118,10 @@ try {
   await page.locator("main.public-page").waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Use English" }).click();
   await page.waitForFunction(() => document.documentElement.lang === "en");
+  await assertInitialPreciseLocation(page);
+  await assertStreetAddressSearch(page, geocoderRequests);
+  await assertCompactPublicShell(page);
+  await exercisePublicPages(page);
   if (await page.locator('a[href^="/command"], a[href^="/studio"]').count()) {
     throw new Error("Public profile root exposes a staff-surface link.");
   }
@@ -116,6 +163,8 @@ try {
   for (const path of ["/", "/public", "/public/", "/public/?source=offline-check"]) {
     await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     await page.locator("main.public-page").waitFor({ state: "visible" });
+    await assertCompactPublicShell(page);
+    await exercisePublicPages(page);
   }
   let commandLoaded = true;
   try {
@@ -133,8 +182,192 @@ try {
   }
 
   await context.close();
-  console.log("public profile browser smoke: direct Public entry, verified cache inventory, normalized offline navigation, and absent staff routes");
+  console.log("public profile browser smoke: direct Public entry, five-page navigation, verified cache inventory, normalized offline navigation, and absent staff routes");
 } finally {
   await browser.close();
   await new Promise((resolveClose, rejectClose) => server.close((error) => error ? rejectClose(error) : resolveClose()));
+}
+
+async function assertCompactPublicShell(page) {
+  await dismissLocationChoice(page);
+  if (await page.locator(".public-app-header").count() !== 1) {
+    throw new Error("Public profile is missing the compact app header.");
+  }
+  if (await page.locator(".public-wordmark").filter({ hasText: "FloodGuard" }).count() !== 1) {
+    throw new Error("Public profile is missing its FloodGuard wordmark.");
+  }
+  if (await page.locator(".public-brand-mark, .public-boundary-banner").count() !== 0) {
+    throw new Error("Public profile retains the removed logo or historical banner.");
+  }
+  const visibleText = await page.locator("main.public-page").innerText();
+  if (/Public preparedness|Historical preparedness information/iu.test(visibleText)) {
+    throw new Error("Public profile retains removed header or historical-banner copy.");
+  }
+  const profileButton = page.getByRole("button", { name: "Open household profile" });
+  await profileButton.click();
+  await page.locator("#public-profile-drawer").waitFor({ state: "visible" });
+  await page.getByRole("button", { name: "Close profile" }).click();
+  if (await profileButton.getAttribute("aria-expanded") !== "false") {
+    throw new Error("Public profile drawer did not return to its closed state.");
+  }
+}
+
+async function exercisePublicPages(page) {
+  await dismissLocationChoice(page);
+  const publicPages = [
+    ["home", "#public-active-panel .leaflet-container"],
+    ["report", "#public-active-panel .public-report-page"],
+    ["shelter", "#public-active-panel .public-shelter-page, #public-active-panel .public-shelter-view"],
+    ["prepare", "#public-active-panel #household-plan-builder"],
+    ["sos", "#public-active-panel .public-sos-page, #public-active-panel .public-sos-view"],
+  ];
+  for (const [id, readySelector] of publicPages) {
+    const button = page.locator(`#public-tab-${id}`);
+    if (await button.count() !== 1) throw new Error(`Public navigation is missing ${id}.`);
+    await button.click();
+    await page.locator(readySelector).first().waitFor({ state: "visible" });
+    const state = await button.evaluate((element) => ({
+      current: element.getAttribute("aria-current"),
+      pressed: element.getAttribute("aria-pressed"),
+      selected: element.getAttribute("aria-selected"),
+    }));
+    if (state.current !== "page" && state.pressed !== "true" && state.selected !== "true") {
+      throw new Error(`Public navigation did not expose ${id} as active.`);
+    }
+    const visibleText = await page.locator("#public-active-panel").innerText();
+    const forbidden = visibleText.match(
+      /(?:^|[^\p{L}\p{N}])(?:demos?|prototypes?|mocks?|samples?|illustrative|placeholders?)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu,
+    );
+    if (forbidden) throw new Error(`Public ${id} exposes development-state copy: ${forbidden[0]}.`);
+  }
+  for (const retired of ["map", "shelters", "data"]) {
+    if (await page.locator(`#public-tab-${retired}`).count()) {
+      throw new Error(`Public profile retains retired navigation: ${retired}.`);
+    }
+  }
+}
+
+async function dismissLocationChoice(page) {
+  const manualButton = page.locator(".public-location-consent-actions .secondary");
+  if (await manualButton.count() && await manualButton.isVisible()) {
+    await manualButton.click();
+  }
+}
+
+async function assertInitialPreciseLocation(page) {
+  const dialog = page.getByRole("dialog", { name: "Use your precise location?" });
+  await dialog.waitFor({ state: "visible" });
+  if (await page.locator(".public-location-marker").count() !== 0) {
+    throw new Error("Public Home placed a precise pin before the user granted location access.");
+  }
+  const beforeRequest = await page.evaluate(() => globalThis.__floodGuardGeolocationOptions ?? null);
+  if (beforeRequest !== null) {
+    throw new Error("Public Home requested geolocation before the explicit consent action.");
+  }
+
+  await page.getByRole("button", { name: "Use precise location" }).click();
+  await page.waitForFunction(() => (
+    document.querySelector(".public-home-page .geo-map-shell")
+      ?.getAttribute("data-location-source") === "gps"
+  ));
+  await page.locator(".public-location-marker").waitFor({ state: "visible" });
+  const audit = await page.evaluate(() => {
+    const shell = document.querySelector(".public-home-page .geo-map-shell");
+    const mapFrame = document.querySelector(".public-home-map > .geo-map-shell");
+    const style = mapFrame ? getComputedStyle(mapFrame) : null;
+    const storedValues = Object.keys(localStorage).map((key) => localStorage.getItem(key) ?? "");
+    return {
+      latitude: shell?.getAttribute("data-location-latitude"),
+      longitude: shell?.getAttribute("data-location-longitude"),
+      accuracy: shell?.getAttribute("data-location-accuracy"),
+      areaFeatureCount: shell?.getAttribute("data-area-feature-count"),
+      options: globalThis.__floodGuardGeolocationOptions ?? null,
+      customAttributionCount: document.querySelectorAll(".public-home-page p.map-attribution").length,
+      nativeAttributionVisible: Boolean(
+        document.querySelector(".public-home-page .leaflet-control-attribution")?.getClientRects().length,
+      ),
+      borderWidth: style?.borderWidth,
+      borderRadius: style?.borderRadius,
+      leakedToStorage: storedValues.some((value) => (
+        value.includes("20.429799") || value.includes("99.884366")
+      )),
+    };
+  });
+  if (
+    Number(audit.latitude) !== 20.429799
+    || Number(audit.longitude) !== 99.884366
+    || Number(audit.accuracy) !== 12
+  ) {
+    throw new Error(`Public precise pin did not preserve the browser coordinates: ${JSON.stringify(audit)}.`);
+  }
+  if (
+    audit.options?.enableHighAccuracy !== true
+    || audit.options?.maximumAge !== 0
+    || audit.options?.timeout !== 15_000
+  ) {
+    throw new Error(`Public precise location did not request the required options: ${JSON.stringify(audit.options)}.`);
+  }
+  if (
+    audit.areaFeatureCount !== "0"
+    || audit.customAttributionCount !== 0
+    || !audit.nativeAttributionVisible
+    || audit.borderWidth !== "0px"
+    || audit.borderRadius !== "0px"
+    || audit.leakedToStorage
+  ) {
+    throw new Error(`Public precise-location map contract failed: ${JSON.stringify(audit)}.`);
+  }
+}
+
+async function assertStreetAddressSearch(page, geocoderRequests) {
+  if (geocoderRequests.length !== 0) {
+    throw new Error("Public Home requested address suggestions before the user typed an address.");
+  }
+  const input = page.locator("#public-area-search");
+  await input.fill("117 หมู่ 10 แม่สาย เชียงราย");
+  const suggestion = page.getByRole("option", {
+    name: /117 หมู่ 10 ตำบลเวียงพางคำ อำเภอแม่สาย จังหวัดเชียงราย 57130/iu,
+  });
+  await suggestion.waitFor({ state: "visible" });
+  if (geocoderRequests.length !== 1) {
+    throw new Error(`Public Home made ${geocoderRequests.length} requests for one debounced address query.`);
+  }
+  const requestUrl = new URL(geocoderRequests[0]);
+  if (
+    requestUrl.searchParams.get("countryCode") !== "THA"
+    || requestUrl.searchParams.get("searchExtent") !== "99.72,20.12,100.18,20.62"
+    || requestUrl.searchParams.get("forStorage") !== "false"
+    || requestUrl.searchParams.get("locationType") !== "rooftop"
+  ) {
+    throw new Error(`Public Home sent an unbounded address query: ${requestUrl.href}`);
+  }
+  await suggestion.click();
+  await page.waitForFunction(() => (
+    document.querySelector(".public-home-page .geo-map-shell")
+      ?.getAttribute("data-location-source") === "address"
+  ));
+  const audit = await page.evaluate(() => {
+    const shell = document.querySelector(".public-home-page .geo-map-shell");
+    const storedValues = Object.keys(localStorage).map((key) => localStorage.getItem(key) ?? "");
+    return {
+      latitude: shell?.getAttribute("data-location-latitude"),
+      longitude: shell?.getAttribute("data-location-longitude"),
+      markerCount: document.querySelectorAll(".public-location-marker").length,
+      inputValue: document.querySelector("#public-area-search")?.value,
+      leakedToStorage: storedValues.some((value) => (
+        value.includes("117 หมู่ 10")
+        || value.includes("20.429799258909")
+        || value.includes("99.884365731796")
+      )),
+    };
+  });
+  if (
+    Number(audit.latitude) !== 20.429799258909
+    || Number(audit.longitude) !== 99.884365731796
+    || audit.markerCount !== 1
+    || !audit.inputValue?.startsWith("117 หมู่ 10")
+    || audit.leakedToStorage
+  ) {
+    throw new Error(`Public exact-address selection failed: ${JSON.stringify(audit)}.`);
+  }
 }

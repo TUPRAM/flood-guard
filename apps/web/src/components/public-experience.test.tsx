@@ -6,46 +6,67 @@ import type { FeatureCollection } from "@/lib/types";
 import { PublicExperience, projectPublicFacilityFeatures } from "./public-experience";
 
 describe("PublicExperience", () => {
-  it("orders official updates, the household plan, explicit area choice, and help before technical detail", () => {
+  it("renders the compact Public shell without the removed logo, subtitle, or historical banner", () => {
     const html = renderToStaticMarkup(<PublicExperience />);
+    const visibleText = html.replace(/<[^>]*>/g, " ");
 
-    const boundaryBanner = html.indexOf("public-boundary-banner");
-    const officialUpdate = html.indexOf("public-official-update");
-    const planOverview = html.indexOf("public-plan-overview");
-    const planAction = html.indexOf('data-action="build-household-plan"');
-    const areaSelection = html.indexOf("public-area-selection");
-    const officialHelp = html.indexOf('data-testid="public-official-help"');
-
-    expect(boundaryBanner).toBeGreaterThan(-1);
-    expect(officialUpdate).toBeGreaterThan(boundaryBanner);
-    expect(planOverview).toBeGreaterThan(officialUpdate);
-    expect(planAction).toBeGreaterThan(planOverview);
-    expect(areaSelection).toBeGreaterThan(planAction);
-    expect(officialHelp).toBeGreaterThan(areaSelection);
-    expect(html).toContain("ข้อมูลประวัติศาสตร์เพื่อการเตรียมพร้อม");
-    expect(html).toContain("บริบทอุทกภัยแม่สาย เดือนกันยายน 2567");
-    expect(html).toContain("ตรวจสอบประกาศก่อนตัดสินใจ");
-    expect(html).toContain('id="public-area-select"');
-    expect(html).toContain("ระบบไม่ขอพิกัดหรือที่อยู่บ้าน");
-    expect(html).toContain("ยังไม่ได้เลือกพื้นที่");
-    expect(html).toContain("ไม่ใช่คะแนนความปลอดภัย");
-    expect(html).not.toContain("public-quick-actions");
-    expect(html).not.toContain("area-chip-row");
+    expect(html).toContain('<main class="public-page public-app-shell" lang="th">');
+    expect(html).toContain('class="public-app-header"');
+    expect(html).toContain('class="public-profile-trigger"');
+    expect(html).toContain('aria-controls="public-profile-drawer"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('class="public-wordmark"');
+    expect(visibleText).toContain("FloodGuard");
+    expect(html).toContain('class="language-toggle"');
+    expect(html).not.toContain("public-brand-mark");
+    expect(html).not.toContain("public-boundary-banner");
+    expect(visibleText).not.toMatch(/Public preparedness/iu);
+    expect(visibleText).not.toMatch(/Historical preparedness information/iu);
     expect(html).not.toContain('href="/studio/"');
-    expect(html).not.toMatch(/rehearsal|demo|fixture|candidate|synthetic|non-operational/iu);
+    expect(visibleText).not.toMatch(
+      /rehearsal|demo|prototype|mock|sample|illustrative|placeholder|coming soon|under construction|not ready|work in progress|fixture|candidate|synthetic|non-operational/iu,
+    );
   });
 
-  it("ships Thai-first navigation with Shelter guidance and persistent tab semantics", () => {
+  it("ships Thai-first navigation with exactly Home, Report, Shelter, Prepare, and SOS", () => {
     const html = renderToStaticMarkup(<PublicExperience />);
+    const navHtml = html.match(/<nav class="public-bottom-nav"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    const tabIds = [...navHtml.matchAll(/id="public-tab-([^"]+)"/g)].map((match) => match[1]);
 
-    expect(html).toContain('<main class="public-page" lang="th">');
-    expect(html).toContain("คำแนะนำที่พักพิง");
-    expect(html).toContain('aria-pressed="true"');
     expect(html).toContain('aria-controls="public-active-panel"');
-    expect(html.match(/id="public-tab-(?:home|map|shelters|prepare|data)"/g)).toHaveLength(5);
-    for (const tab of ["home", "map", "shelters", "prepare", "data"]) {
+    expect(tabIds).toEqual(["home", "report", "shelter", "prepare", "sos"]);
+    for (const tab of ["home", "report", "shelter", "prepare", "sos"]) {
       expect(html).toContain(`id="public-tab-${tab}"`);
     }
+    for (const retiredTab of ["map", "shelters", "data"]) {
+      expect(html).not.toContain(`id="public-tab-${retiredTab}"`);
+    }
+    expect((navHtml.match(/aria-(?:pressed|selected)="true"|aria-current="page"/g) ?? [])).toHaveLength(1);
+    for (const suppliedPath of [
+      "M3.75 10.15 12 3.8l8.25 6.35",
+      "M5.4 4.5h13.2A2.4 2.4",
+      "M3.5 9.55 12 3.9l8.5 5.65",
+      "M9 5.5V4.4A1.4 1.4",
+      "M7.5 15.55v-4.1a4.5 4.5",
+    ]) {
+      expect(navHtml).toContain(suppliedPath);
+    }
+  });
+
+  it("asks before precise GPS access and keeps the Public Home location in transient UI state", () => {
+    const html = renderToStaticMarkup(<PublicExperience />);
+
+    expect(html).toContain('class="public-location-consent"');
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-modal="true"');
+    expect(html).toContain('class="public-location-consent-actions"');
+    expect(html).toContain('role="combobox"');
+    expect(html).toContain('aria-autocomplete="list"');
+    expect(html).toContain("ใช้ตำแหน่งที่แม่นยำ");
+    expect(html).toContain("พิมพ์ที่อยู่แทน");
+    expect(html).toContain("จะไม่ถูกบันทึก");
+    expect(html).not.toContain("public-map-center-pin");
+    expect(html).not.toContain('class="map-attribution"');
   });
 
   it("removes unverified and candidate facilities from the Public map projection", () => {

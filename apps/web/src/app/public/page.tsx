@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { PublicExperience } from "@/components/public-experience";
 
 export const metadata: Metadata = {
-  title: "Public preparedness",
-  description: "Mae Sai household flood preparedness using a public-safe historical planning projection.",
+  title: "FloodGuard",
+  description: "Mae Sai flood planning, household preparation, official contacts, and community reporting.",
 };
 
 export default function PublicPage() {

@@ -60,11 +60,16 @@ const baseUrl = `http://127.0.0.1:${address.port}`;
 const browser = await launchFloodGuardBrowser();
 
 const captures = [
-  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-390x844.png", publicTab: "home", readySelector: '[data-testid="public-official-help"]' },
-  { route: "/public/", selector: "main.public-page", width: 430, height: 932, file: "public-map-430x932.png", publicTab: "map", readySelector: ".public-map-view .leaflet-container", basemap: "satellite", cycleBasemaps: true },
-  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-shelters-390x844.png", publicTab: "shelters", readySelector: ".shelter-guidance-status" },
-  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-prepare-390x844.png", publicTab: "prepare", readySelector: "#household-plan-builder" },
-  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-data-390x844.png", publicTab: "data", readySelector: ".about-grid" },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-home-390x844.png", publicTab: "home", readySelector: ".public-home-page .leaflet-container", selectArea: true, basemap: "satellite", cycleBasemaps: true },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-report-390x844.png", publicTab: "report", readySelector: ".public-report-page", selectArea: true },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-shelter-390x844.png", publicTab: "shelter", readySelector: ".public-shelter-page", selectArea: true },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-prepare-390x844.png", publicTab: "prepare", readySelector: "#household-plan-builder", selectArea: true },
+  { route: "/public/", selector: "main.public-page", width: 390, height: 844, file: "public-sos-390x844.png", publicTab: "sos", readySelector: ".public-sos-page", selectArea: true },
+  { route: "/public/", selector: "main.public-page", width: 1440, height: 900, file: "public-home-1440x900.png", publicTab: "home", readySelector: ".public-home-page .leaflet-container", selectArea: true, basemap: "street" },
+  { route: "/public/", selector: "main.public-page", width: 1280, height: 800, file: "public-report-1280x800.png", publicTab: "report", readySelector: ".public-report-page", selectArea: true },
+  { route: "/public/", selector: "main.public-page", width: 1280, height: 800, file: "public-shelter-1280x800.png", publicTab: "shelter", readySelector: ".public-shelter-page", selectArea: true },
+  { route: "/public/", selector: "main.public-page", width: 1280, height: 800, file: "public-prepare-1280x800.png", publicTab: "prepare", readySelector: "#household-plan-builder", selectArea: true },
+  { route: "/public/", selector: "main.public-page", width: 1280, height: 800, file: "public-sos-1280x800.png", publicTab: "sos", readySelector: ".public-sos-page", selectArea: true },
   { route: "/command/", selector: "main.command-page", width: 1024, height: 768, file: "command-1024x768.png", basemap: "street", cycleBasemaps: true },
   { route: "/command/", selector: "main.command-page", width: 1440, height: 900, file: "command-1440x900.png", basemap: "street" },
   { route: "/command/", selector: "main.command-page", width: 1536, height: 1024, file: "command-1536x1024.png", basemap: "satellite" },
@@ -108,25 +113,36 @@ try {
     await page.goto(`${baseUrl}${capture.route}`, { waitUntil: "networkidle" });
     await page.locator(capture.selector).waitFor({ state: "visible" });
     if (capture.publicTab) {
-      if (capture.publicTab === "map" || capture.publicTab === "prepare") {
-        await page.locator("#public-area-select").selectOption("TH570901");
-        await page.waitForFunction(() => document.querySelector("#public-area-select")?.value === "TH570901");
+      const manualLocationButton = page.locator(".public-location-consent-actions .secondary");
+      if (await manualLocationButton.count() && await manualLocationButton.isVisible()) {
+        await manualLocationButton.click();
+      }
+      if (capture.selectArea) {
+        const search = page.locator("#public-area-search");
+        await search.fill("TH570901");
+        await search.press("Enter");
+        await page.waitForFunction(() => (
+          document.querySelector(".public-home-page .geo-map-shell")
+            ?.getAttribute("data-selected-area") === "TH570901"
+        ));
       }
       const tabButton = page.locator(`#public-tab-${capture.publicTab}`);
       if (capture.publicTab !== "home") {
-        await page.locator(".public-content").evaluate((element) => {
+        await page.locator(".public-app-content").evaluate((element) => {
           element.scrollTop = element.scrollHeight;
         });
       }
       await tabButton.click();
-      if (await tabButton.getAttribute("aria-pressed") !== "true") {
+      const tabState = await tabButton.evaluate((element) => ({
+        current: element.getAttribute("aria-current"),
+        pressed: element.getAttribute("aria-pressed"),
+        selected: element.getAttribute("aria-selected"),
+      }));
+      if (tabState.current !== "page" && tabState.pressed !== "true" && tabState.selected !== "true") {
         throw new Error(`${capture.file} did not activate the ${capture.publicTab} public tab.`);
       }
       await page.locator(capture.readySelector).waitFor({ state: "visible" });
-      await page.waitForFunction(() => document.querySelector(".public-content")?.scrollTop === 0);
-      if (capture.publicTab === "map") {
-        await page.locator(".map-selection-sheet.open").waitFor({ state: "visible" });
-      }
+      await page.waitForFunction(() => document.querySelector(".public-app-content")?.scrollTop === 0);
     } else if (capture.route === "/command/") {
       await page.locator(".map-workspace .leaflet-container").waitFor({ state: "visible" });
     }
@@ -159,11 +175,18 @@ try {
 
     const mapScope = capture.route === "/command/"
       ? ".map-workspace"
-      : capture.route === "/public/" && capture.publicTab === "map"
-        ? ".public-map-view"
+      : capture.route === "/public/" && capture.publicTab === "home"
+        ? ".public-home-page"
         : null;
     if (mapScope) {
-      await assertMaeSaiMap(page, mapScope, capture.file, capture.route === "/command/");
+      await assertMaeSaiMap(
+        page,
+        mapScope,
+        capture.file,
+        capture.route === "/command/",
+        capture.route !== "/public/",
+        capture.route !== "/public/",
+      );
       if (capture.cycleBasemaps) {
         await exerciseOnlineBasemaps(page, mapScope, capture.file);
       }
@@ -179,7 +202,7 @@ try {
 
     const pageAudit = await page.evaluate(() => {
       const bodyText = document.body.innerText;
-      const mapControls = [...document.querySelectorAll(".leaflet-control-container .leaflet-control, .map-basemap-switcher, .map-text-alternative")]
+      const mapControls = [...document.querySelectorAll(".leaflet-control-container .leaflet-control, .map-basemap-switcher, .map-basemap-menu, .map-text-alternative")]
         .filter((element) => element instanceof HTMLElement && element.offsetParent !== null)
         .map((element) => {
           const rect = element.getBoundingClientRect();
@@ -199,6 +222,7 @@ try {
           !(compositeTarget instanceof HTMLElement)
           || compositeTarget.offsetParent === null
           || seenElements.has(compositeTarget)
+          || compositeTarget.closest(".leaflet-control-attribution")
         ) {
           continue;
         }
@@ -221,18 +245,25 @@ try {
             height: rect.height,
           };
         });
-      const publicContent = document.querySelector(".public-content")?.getBoundingClientRect();
+      const publicContent = document.querySelector(".public-app-content")?.getBoundingClientRect();
+      const publicHeader = document.querySelector(".public-app-header")?.getBoundingClientRect();
       const publicNavigation = document.querySelector(".public-bottom-nav")?.getBoundingClientRect();
+      const publicHomeMap = document.querySelector(".public-home-page .leaflet-container")?.getBoundingClientRect();
+      const publicHomeShell = document.querySelector(".public-home-page .geo-map-shell");
+      const publicHomeShellStyle = publicHomeShell ? getComputedStyle(publicHomeShell) : null;
+      const publicRiskIndicator = document.querySelector(".public-risk-indicator")?.getBoundingClientRect();
+      const publicHazardButton = document.querySelector(".public-hazard-button")?.getBoundingClientRect();
+      const publicProfileTrigger = document.querySelector(".public-profile-trigger")?.getBoundingClientRect();
+      const publicNavigationTargets = [...document.querySelectorAll(".public-bottom-nav button")]
+        .map((element) => element.getBoundingClientRect());
+      const publicTabIds = [...document.querySelectorAll('.public-bottom-nav [id^="public-tab-"]')]
+        .map((element) => element.id);
       const commandWorkspace = document.querySelector(".command-workspace");
       const commandColumnCount = commandWorkspace
         ? getComputedStyle(commandWorkspace).gridTemplateColumns.split(" ").filter(Boolean).length
         : null;
       const proofImages = document.querySelector(".proof-images")?.getBoundingClientRect();
       const proofFigure = document.querySelector(".proof-images figure:only-child")?.getBoundingClientRect();
-      const publicPlanAction = document.querySelector('[data-action="build-household-plan"]')?.getBoundingClientRect();
-      const publicOfficialUpdateLink = document.querySelector('.public-official-update a[href*="disaster.go.th"]')?.getBoundingClientRect();
-      const publicOfficialHelp = document.querySelector('[data-testid="public-official-help"]');
-      const selectedAreaSheet = document.querySelector(".map-selection-sheet")?.getBoundingClientRect();
       const tabletEvidenceDrawer = document.querySelector(".tablet-evidence-drawer")?.getBoundingClientRect();
       return {
         bodyText,
@@ -244,15 +275,54 @@ try {
           publicContent && publicNavigation
             ? Math.max(0, publicContent.bottom - publicNavigation.top)
             : 0,
+        publicHeader: publicHeader
+          ? { top: publicHeader.top, bottom: publicHeader.bottom, height: publicHeader.height }
+          : null,
+        publicNavigation: publicNavigation
+          ? { top: publicNavigation.top, bottom: publicNavigation.bottom }
+          : null,
+        publicHomeMap: publicHomeMap
+          ? {
+              top: publicHomeMap.top,
+              right: publicHomeMap.right,
+              bottom: publicHomeMap.bottom,
+              left: publicHomeMap.left,
+            }
+          : null,
+        publicHomeAreaFeatureCount: publicHomeShell?.getAttribute("data-area-feature-count") ?? null,
+        publicHomeFrame: publicHomeShellStyle
+          ? {
+              borderWidth: publicHomeShellStyle.borderWidth,
+              borderRadius: publicHomeShellStyle.borderRadius,
+            }
+          : null,
+        publicCustomAttributionCount: document.querySelectorAll(".public-home-page p.map-attribution").length,
+        publicNativeAttributionVisible: Boolean(
+          document.querySelector(".public-home-page .leaflet-control-attribution")?.getClientRects().length,
+        ),
+        publicLowerControls: publicRiskIndicator && publicHazardButton
+          ? {
+              risk: {
+                left: publicRiskIndicator.left,
+                right: publicRiskIndicator.right,
+                bottom: publicRiskIndicator.bottom,
+              },
+              hazard: {
+                left: publicHazardButton.left,
+                right: publicHazardButton.right,
+                bottom: publicHazardButton.bottom,
+              },
+            }
+          : null,
+        publicProfileTrigger: publicProfileTrigger
+          ? { width: publicProfileTrigger.width, height: publicProfileTrigger.height }
+          : null,
+        publicNavigationTargets: publicNavigationTargets.map(({ width, height }) => ({ width, height })),
+        publicTabIds,
+        publicRemovedChromeCount: document.querySelectorAll(".public-brand-mark, .public-boundary-banner").length,
         commandColumnCount,
         proofSingleFigureCoverage:
           proofImages && proofFigure ? proofFigure.width / proofImages.width : null,
-        publicPlanActionBottom: publicPlanAction?.bottom ?? null,
-        publicOfficialUpdateLinkBottom: publicOfficialUpdateLink?.bottom ?? null,
-        publicOfficialHelpPresent: Boolean(publicOfficialHelp),
-        publicHotlineCount: publicOfficialHelp?.querySelectorAll('a[href^="tel:"]').length ?? 0,
-        publicNavigationTop: publicNavigation?.top ?? null,
-        selectedAreaSheetVisible: Boolean(selectedAreaSheet && selectedAreaSheet.width > 0 && selectedAreaSheet.height > 0),
         tabletEvidenceDrawer: tabletEvidenceDrawer
           ? {
               left: tabletEvidenceDrawer.left,
@@ -299,23 +369,96 @@ try {
         `${capture.file} must use the two-column tablet command layout.`,
       );
     }
-    if (capture.route === "/public/" && capture.publicTab === "home") {
-      if (pageAudit.publicPlanActionBottom === null || pageAudit.publicPlanActionBottom > capture.height) {
-        throw new Error(`${capture.file} does not keep the household-plan action in the first viewport.`);
+    if (capture.route === "/public/") {
+      const expectedTabs = [
+        "public-tab-home",
+        "public-tab-report",
+        "public-tab-shelter",
+        "public-tab-prepare",
+        "public-tab-sos",
+      ];
+      if (pageAudit.publicTabIds.join("|") !== expectedTabs.join("|")) {
+        throw new Error(`${capture.file} has incorrect Public navigation: ${pageAudit.publicTabIds.join("|")}.`);
+      }
+      if (pageAudit.publicRemovedChromeCount !== 0) {
+        throw new Error(`${capture.file} retains the removed Public logo or historical banner.`);
+      }
+      if (!pageAudit.publicHeader || pageAudit.publicHeader.height > 58) {
+        throw new Error(`${capture.file} is missing the compact header: ${JSON.stringify(pageAudit.publicHeader)}.`);
       }
       if (
-        pageAudit.publicOfficialUpdateLinkBottom === null
-        || pageAudit.publicNavigationTop === null
-        || pageAudit.publicOfficialUpdateLinkBottom > pageAudit.publicNavigationTop
+        !pageAudit.publicProfileTrigger
+        || pageAudit.publicProfileTrigger.width < 43.5
+        || pageAudit.publicProfileTrigger.height < 43.5
       ) {
-        throw new Error(`${capture.file} does not keep the official DDPM action in the first viewport.`);
+        throw new Error(`${capture.file} has an undersized profile trigger: ${JSON.stringify(pageAudit.publicProfileTrigger)}.`);
       }
-      if (!pageAudit.publicOfficialHelpPresent || pageAudit.publicHotlineCount !== 3) {
-        throw new Error(`${capture.file} does not retain the three official emergency contacts after the area/context flow.`);
+      if (pageAudit.publicNavigationTargets.some(({ width, height }) => width < 43.5 || height < 43.5)) {
+        throw new Error(`${capture.file} has an undersized Public navigation target.`);
+      }
+      if (/Public preparedness|Historical preparedness information/iu.test(pageAudit.bodyText)) {
+        throw new Error(`${capture.file} retains removed Public chrome copy.`);
+      }
+      const developmentCopy = pageAudit.bodyText.match(
+        /(?:^|[^\p{L}\p{N}])(?:demos?|prototypes?|mocks?|samples?|illustrative|placeholders?)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu,
+      );
+      if (developmentCopy) {
+        throw new Error(`${capture.file} exposes development-state copy: ${developmentCopy[0]}.`);
       }
     }
-    if (capture.route === "/public/" && capture.publicTab === "map" && !pageAudit.selectedAreaSheetVisible) {
-      throw new Error(`${capture.file} is missing the selected-area bottom sheet.`);
+    if (capture.route === "/public/" && capture.publicTab === "home") {
+      const header = pageAudit.publicHeader;
+      const navigation = pageAudit.publicNavigation;
+      const map = pageAudit.publicHomeMap;
+      if (
+        !header
+        || !navigation
+        || !map
+        || Math.abs(map.top - header.bottom) > 2
+        || Math.abs(map.bottom - navigation.top) > 2
+        || map.left > 1
+        || map.right < capture.width - 1
+      ) {
+        throw new Error(`${capture.file} does not keep Home full-bleed between the shared navigation bars.`);
+      }
+      const lowerControls = pageAudit.publicLowerControls;
+      const lowerGap = lowerControls && map
+        ? Math.min(
+            map.bottom - lowerControls.risk.bottom,
+            map.bottom - lowerControls.hazard.bottom,
+          )
+        : -1;
+      if (
+        pageAudit.publicHomeAreaFeatureCount !== "0"
+        || pageAudit.publicHomeFrame?.borderWidth !== "0px"
+        || pageAudit.publicHomeFrame?.borderRadius !== "0px"
+        || pageAudit.publicCustomAttributionCount !== 0
+        || !pageAudit.publicNativeAttributionVisible
+        || !lowerControls
+        || Math.abs(lowerControls.risk.bottom - lowerControls.hazard.bottom) > 1
+        || lowerControls.risk.right > lowerControls.hazard.left
+        || lowerGap < 10
+        || lowerGap > 24
+      ) {
+        throw new Error(`${capture.file} failed the borderless Home map or lower-control spacing contract: ${JSON.stringify({
+          areaFeatureCount: pageAudit.publicHomeAreaFeatureCount,
+          frame: pageAudit.publicHomeFrame,
+          customAttributionCount: pageAudit.publicCustomAttributionCount,
+          nativeAttributionVisible: pageAudit.publicNativeAttributionVisible,
+          lowerControls,
+          lowerGap,
+        })}.`);
+      }
+    }
+    if (capture.route === "/public/" && capture.publicTab === "shelter") {
+      if (!/Safety disclaimer|ข้อควรระวังด้านความปลอดภัย/iu.test(pageAudit.bodyText)) {
+        throw new Error(`${capture.file} is missing the Shelter safety disclaimer.`);
+      }
+    }
+    if (capture.route === "/public/" && capture.publicTab === "sos") {
+      if (await page.locator('.public-sos-page a[href^="tel:"]').count() < 3) {
+        throw new Error(`${capture.file} is missing the three direct emergency call actions.`);
+      }
     }
     if (capture.route === "/command/" && capture.width === 1024) {
       const drawer = pageAudit.tabletEvidenceDrawer;
@@ -416,7 +559,13 @@ async function selectOnlineBasemap(page, scopeSelector, basemap, file, requireFu
   const basemaps = ["street", "satellite", "terrain"];
   const index = basemaps.indexOf(basemap);
   if (index === -1) throw new Error(`${file} requested an unsupported map background: ${basemap}.`);
-  const buttons = page.locator(`${scopeSelector} .map-basemap-switcher button`);
+  const menu = page.locator(`${scopeSelector} .map-basemap-menu`);
+  if (await menu.count() && await menu.getAttribute("open") === null) {
+    await menu.locator("summary").click();
+  }
+  const buttons = page.locator(
+    `${scopeSelector} .map-basemap-switcher button, ${scopeSelector} .map-basemap-menu button`,
+  );
   if (await buttons.count() !== 3) {
     throw new Error(`${file} must expose Street, Satellite, and Terrain map backgrounds.`);
   }
@@ -470,20 +619,24 @@ async function selectOnlineBasemap(page, scopeSelector, basemap, file, requireFu
   if (await buttons.nth(index).getAttribute("aria-pressed") !== "true") {
     throw new Error(`${file} did not expose ${basemap} as the selected map background.`);
   }
-  const attribution = await page.locator(`${scopeSelector} .map-attribution`).innerText();
+  const publicHome = scopeSelector.includes("public-home");
+  const attributionSelector = publicHome
+    ? `${scopeSelector} .leaflet-control-attribution`
+    : `${scopeSelector} .map-attribution`;
+  const attribution = await page.locator(attributionSelector).innerText();
   const expectedAttribution = basemap === "street"
-    ? "OpenStreetMap contributors"
+    ? "OpenStreetMap"
     : basemap === "satellite"
-      ? "Esri World Imagery"
+      ? "Esri"
       : "OpenTopoMap";
   if (!attribution.includes(expectedAttribution)) {
     throw new Error(`${file} ${basemap} background is missing ${expectedAttribution} attribution.`);
   }
 }
 
-async function assertMaeSaiMap(page, scopeSelector, file, expectRoads) {
+async function assertMaeSaiMap(page, scopeSelector, file, expectRoads, expectTextAlternative = true, expectBoundary = true) {
   await page.waitForFunction(
-    ({ scope, requireRoads }) => {
+    ({ scope, requireRoads, requireBoundary }) => {
       const shell = document.querySelector(`${scope} .geo-map-shell`);
       const audience = shell?.getAttribute("data-map-audience");
       const visibleFacilityCount = shell?.getAttribute("data-facility-feature-count");
@@ -495,10 +648,10 @@ async function assertMaeSaiMap(page, scopeSelector, file, expectRoads) {
         ? facilityDatasetCount === "0" && visibleFacilityCount === "0" && clusterCount === 0
         : visibleFacilityCount === "42" && clusterCount > 0 && shell?.getAttribute("data-facility-presentation") === "clusters";
       return facilitiesReady
-        && rendererCount > 0
+        && (!requireBoundary || rendererCount > 0)
         && (!requireRoads || roads >= 4_458);
     },
-    { scope: scopeSelector, requireRoads: expectRoads },
+    { scope: scopeSelector, requireRoads: expectRoads, requireBoundary: expectBoundary },
     { timeout: 30_000 },
   );
   const shell = page.locator(`${scopeSelector} .geo-map-shell`);
@@ -507,13 +660,18 @@ async function assertMaeSaiMap(page, scopeSelector, file, expectRoads) {
   if (await shell.getAttribute("data-facility-dataset-count") !== expectedFacilityCount) {
     throw new Error(`${file} did not retain its role-approved facility projection.`);
   }
-  const alternativeText = await page.locator(`${scopeSelector} .map-text-alternative`).textContent();
-  if (!/(?:Selected area|พื้นที่ที่เลือก)/iu.test(alternativeText ?? "") || !/(?:Road network context|โครงข่ายถนน)/iu.test(alternativeText ?? "") || !/(?:Assumptions|สมมติฐาน)/iu.test(alternativeText ?? "")) {
-    throw new Error(`${file} map results list does not describe its selected area, roads, and access assumptions.`);
+  if (expectTextAlternative) {
+    const alternativeText = await page.locator(`${scopeSelector} .map-text-alternative`).textContent();
+    if (!/(?:Selected area|พื้นที่ที่เลือก)/iu.test(alternativeText ?? "") || !/(?:Road network context|โครงข่ายถนน)/iu.test(alternativeText ?? "") || !/(?:Assumptions|สมมติฐาน)/iu.test(alternativeText ?? "")) {
+      throw new Error(`${file} map results list does not describe its selected area, roads, and access assumptions.`);
+    }
   }
   const boundaryRendererCount = await page.locator(`${scopeSelector} .leaflet-overlay-pane canvas, ${scopeSelector} .leaflet-overlay-pane path`).count();
-  if (boundaryRendererCount === 0 || !await shell.getAttribute("data-selected-area")) {
+  if (expectBoundary && (boundaryRendererCount === 0 || !await shell.getAttribute("data-selected-area"))) {
     throw new Error(`${file} did not render its highlighted AOI boundary overlay.`);
+  }
+  if (!expectBoundary && await shell.getAttribute("data-area-feature-count") !== "0") {
+    throw new Error(`${file} retained a Public administrative boundary layer.`);
   }
   if (audience === "public" && await page.locator(`${scopeSelector} .facility-type-marker, ${scopeSelector} .facility-cluster-marker`).count() !== 0) {
     throw new Error(`${file} exposed unverified facilities on the public map.`);
@@ -530,11 +688,8 @@ async function assertMaeSaiMap(page, scopeSelector, file, expectRoads) {
 function assertPolishedRouteCopy(body, route, file) {
   const requirements = route === "/public/"
     ? [
-        /Mae Sai flood context|บริบทอุทกภัยแม่สาย/iu,
-        /Evidence date|วันที่หลักฐาน/iu,
-        /Model confidence|ความเชื่อมั่นของแบบจำลอง/iu,
-        /DDPM|ปภ\./iu,
-        /local authorities|หน่วยงานท้องถิ่น/iu,
+        /FloodGuard/iu,
+        /SOS/iu,
       ]
     : route === "/command/"
       ? [
@@ -560,7 +715,9 @@ function assertPolishedRouteCopy(body, route, file) {
   }
   const forbidden = route === "/studio/"
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|ฝึกซ้อม/iu
-    : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer|ฝึกซ้อม|สาธิต|ผู้สมัคร/iu;
+    : route === "/public/"
+      ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer|ฝึกซ้อม|สาธิต|ผู้สมัคร/iu
+      : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer|ฝึกซ้อม|สาธิต|ผู้สมัคร/iu;
   const match = body.match(forbidden);
   if (match) {
     throw new Error(`${file} exposes forbidden internal copy: ${match[0]}.`);

@@ -47,6 +47,7 @@ for (const required of [
 }
 
 validatePublicProjection();
+validatePublicShell();
 
 if (profile === "public-production") {
   validatePublicProduction();
@@ -81,7 +82,12 @@ function validatePublicProduction() {
   }
 
   const rootHtml = readText("index.html");
-  if (!/Public preparedness|การเตรียมพร้อมรับน้ำท่วม/i.test(rootHtml)) throw new Error("Public root does not render the Public experience.");
+  if (!/class="[^"]*\bpublic-page\b[^"]*"/i.test(rootHtml)) throw new Error("Public root does not render the Public experience.");
+  for (const tab of ["home", "report", "shelter", "prepare", "sos"]) {
+    if (!rootHtml.includes(`id="public-tab-${tab}"`)) {
+      throw new Error(`Public root is missing the ${tab} navigation item.`);
+    }
+  }
   if (/One platform\. Three planning views|href="\/command\/?"|href="\/studio\/?"/i.test(rootHtml)) {
     throw new Error("Public root retains competition or staff navigation.");
   }
@@ -102,6 +108,28 @@ function validatePublicProduction() {
   }
   for (const route of ["/command/", "/studio/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
+  }
+}
+
+function validatePublicShell() {
+  const publicHtml = readText("public/index.html");
+  if (!/class="public-app-header"/i.test(publicHtml) || !/>FloodGuard</i.test(publicHtml)) {
+    throw new Error("Public route is missing its compact FloodGuard header.");
+  }
+  for (const tab of ["home", "report", "shelter", "prepare", "sos"]) {
+    if (!publicHtml.includes(`id="public-tab-${tab}"`)) {
+      throw new Error(`Public route is missing the ${tab} navigation item.`);
+    }
+  }
+  for (const retiredTab of ["map", "shelters", "data"]) {
+    if (publicHtml.includes(`id="public-tab-${retiredTab}"`)) {
+      throw new Error(`Public route retains retired navigation: ${retiredTab}.`);
+    }
+  }
+  for (const removedChrome of ["public-boundary-banner", "public-brand-mark"]) {
+    if (publicHtml.includes(removedChrome)) {
+      throw new Error(`Public route retains removed chrome: ${removedChrome}.`);
+    }
   }
 }
 

@@ -140,77 +140,89 @@ try {
     throw new Error(`Root chooser does not declare its English content language: ${JSON.stringify(rootAudit)}.`);
   }
 
-  // Public: the current-official-information action and household-plan action
-  // must own the mobile first viewport. Emergency contacts follow the selected
-  // area/context flow and must remain present and keyboard reachable.
+  // Public: the compact shell and all five pages must remain usable at the
+  // primary mobile viewport. Home owns the full middle row; the other pages
+  // retain device-local interactions and safety boundaries.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
   const initialBody = await page.locator("body").innerText();
   assertFinalVisibleCopy(initialBody, "/public/");
-  const primaryAction = page.locator('[data-action="build-household-plan"]');
-  const officialUpdate = page.locator(".public-official-update");
-  const officialUpdateLink = officialUpdate.locator('a[href*="disaster.go.th"]');
-  const officialHelp = page.locator('[data-testid="public-official-help"]');
-  const publicNavigation = page.locator(".public-bottom-nav");
-  if (!(await primaryAction.isVisible()) || !(await officialUpdateLink.isVisible()) || !(await officialHelp.isVisible())) {
-    throw new Error("Public Home is missing its household-plan action, official DDPM action, or emergency contacts.");
-  }
-  const [primaryActionBox, officialUpdateLinkBox, publicNavigationBox] = await Promise.all([
-    primaryAction.boundingBox(),
-    officialUpdateLink.boundingBox(),
-    publicNavigation.boundingBox(),
+  await assertCompactPublicShell(page);
+  await assertPublicNavigation(page);
+  await selectPublicPlanningArea(page, "TH570901", "Mae Sai");
+
+  const publicMapScope = await firstVisibleSelector(page, [
+    ".public-home-page",
+    ".public-home-view",
+    ".public-map-view",
   ]);
-  if (!primaryActionBox || !publicNavigationBox || primaryActionBox.y + primaryActionBox.height > publicNavigationBox.y) {
-    throw new Error("Build-my-household-plan action is not visible in the 390x844 first viewport.");
+  await page.locator(`${publicMapScope} .leaflet-container`).waitFor({ state: "visible" });
+  await assertMaeSaiMap(page, publicMapScope, {
+    expectRoads: false,
+    expectTextAlternative: false,
+    expectBoundary: false,
+  });
+  await exerciseBasemapSelector(page, publicMapScope, "unavailable");
+  await assertPublicHomeLayout(page, publicMapScope);
+  await page.locator(".public-hazard-button").click();
+  const hazardPanel = page.locator("#public-hazard-panel");
+  await hazardPanel.waitFor({ state: "visible" });
+  const hazardText = await hazardPanel.innerText();
+  for (const required of ["Planning indicator", "Evidence sufficiency", "Source time", "historical flood evidence", "DDPM"]) {
+    if (!hazardText.includes(required)) {
+      throw new Error(`Public Hazard Info is missing its evidence boundary: ${required}.`);
+    }
   }
-  if (!officialUpdateLinkBox || !publicNavigationBox || officialUpdateLinkBox.y + officialUpdateLinkBox.height > publicNavigationBox.y) {
-    throw new Error("Official DDPM action is not visible in the 390x844 first viewport.");
+  await page.getByRole("button", { name: "Close hazard information" }).click();
+
+  await activatePublicPage(page, "report", ".public-report-page");
+  await page.locator('input[name="public-report-water-depth"][value="knee"]').check();
+  await page.locator('input[name="public-report-category"][value="drain"]').check();
+  await page.locator("#public-report-notes").fill("Blocked drain observed from a safe position.");
+  await page.locator(".public-report-submit").click();
+  if (!(await page.locator(".public-report-form-status").innerText()).includes("saved on this device")) {
+    throw new Error("The Public report did not confirm its device-local save boundary.");
   }
-  const hotlineLinks = officialHelp.locator('a[href^="tel:"]');
-  if (await hotlineLinks.count() !== 3) throw new Error("Public Home does not expose all three official emergency contacts.");
-  await officialHelp.scrollIntoViewIfNeeded();
-  await hotlineLinks.first().focus();
-  if (!await hotlineLinks.first().evaluate((link) => document.activeElement === link)) {
-    throw new Error("Public emergency contacts are not keyboard reachable.");
+  if (await page.locator(".public-report-feed-list > li").count() !== 1) {
+    throw new Error("The Public report did not appear in the device-local area feed.");
   }
-  const publicAreaSelect = page.locator("#public-area-select");
-  if (await publicAreaSelect.inputValue() !== "") {
-    throw new Error("A fresh Public session selected a planning area without user choice.");
+
+  await activatePublicPage(
+    page,
+    "shelter",
+    ".public-shelter-page, .public-shelter-view",
+  );
+  const shelterText = await page.locator("#public-active-panel").innerText();
+  if (!/DDPM|1784|confirm/iu.test(shelterText)) {
+    throw new Error("The Shelter page lost its official-confirmation boundary.");
   }
-  await publicAreaSelect.selectOption("TH570901");
-  await page.waitForFunction(() => document.querySelector("#public-area-select")?.value === "TH570901");
-  await primaryAction.click();
-  await page.locator("#household-plan-builder").waitFor({ state: "visible" });
+
+  await activatePublicPage(page, "prepare", "#household-plan-builder");
   await page.locator(".household-need-options button").first().click();
   await page.locator(".checklist-grid input").first().check();
   const storedPlan = await page.evaluate(() => localStorage.getItem("floodguard:household-plan:v2"));
   if (!storedPlan || !storedPlan.includes('"children":true') || !storedPlan.includes('"official_contacts":true')) {
     throw new Error("The device-local household plan did not persist selected needs and checklist state.");
   }
+
+  await activatePublicPage(page, "sos", ".public-sos-page, .public-sos-view");
+  const emergencyLinks = page.locator('#public-active-panel a[href^="tel:"]');
+  if (await emergencyLinks.count() < 3) {
+    throw new Error("SOS does not expose the three official emergency phone actions.");
+  }
+  await emergencyLinks.first().focus();
+  if (!await emergencyLinks.first().evaluate((link) => document.activeElement === link)) {
+    throw new Error("SOS emergency contacts are not keyboard reachable.");
+  }
+
   await page.reload({ waitUntil: "networkidle" });
-  await page.locator("#public-tab-prepare").click();
+  await activatePublicPage(page, "prepare", "#household-plan-builder");
   if (
     await page.locator(".household-need-options button").first().getAttribute("aria-pressed") !== "true"
     || !(await page.locator(".checklist-grid input").first().isChecked())
   ) {
     throw new Error("The household plan did not restore from device-local storage after reload.");
-  }
-
-  // Shared map: real Mae Sai boundaries and defensively approved public facilities must remain
-  // usable when all approved basemap hosts are deliberately unavailable.
-  await page.locator("#public-tab-map").click();
-  await page.locator(".public-map-view .leaflet-container").waitFor({ state: "visible" });
-  await page.locator(".map-selection-sheet.open").waitFor({ state: "visible" });
-  await assertMaeSaiMap(page, ".public-map-view", { expectRoads: false });
-  await exerciseBasemapSelector(page, ".public-map-view", "unavailable");
-  await page.locator(".map-text-alternative summary").click();
-  await page.locator(".map-text-alternative button").nth(1).click();
-  if (await page.locator(".public-map-view .geo-map-shell").getAttribute("data-selected-area") !== "TH570902") {
-    throw new Error("Map results list did not synchronize the selected reporting area.");
-  }
-  if (!(await page.locator(".map-selection-sheet").innerText()).includes("Huai Khrai")) {
-    throw new Error("Selected-area bottom sheet did not update with map selection.");
   }
 
   // Command: the real-coordinate Mae Sai planning bundle renders at tablet
@@ -400,8 +412,28 @@ try {
     const body = await page.locator("body").innerText();
     assertFinalVisibleCopy(body, route.path);
     if (route.path === "/public/") {
-      await page.locator("#public-tab-map").click();
-      await assertMaeSaiMap(page, ".public-map-view", { expectRoads: false });
+      await assertCompactPublicShell(page);
+      await assertPublicNavigation(page);
+      for (const [id, selector] of [
+        ["home", "#public-active-panel .leaflet-container"],
+        ["report", "#public-active-panel .public-report-page"],
+        ["shelter", "#public-active-panel .public-shelter-page, #public-active-panel .public-shelter-view"],
+        ["prepare", "#public-active-panel #household-plan-builder"],
+        ["sos", "#public-active-panel .public-sos-page, #public-active-panel .public-sos-view"],
+      ]) {
+        await activatePublicPage(page, id, selector);
+      }
+      await activatePublicPage(page, "home", "#public-active-panel .leaflet-container");
+      const offlinePublicMapScope = await firstVisibleSelector(page, [
+        ".public-home-page",
+        ".public-home-view",
+        ".public-map-view",
+      ]);
+      await assertMaeSaiMap(page, offlinePublicMapScope, {
+        expectRoads: false,
+        expectTextAlternative: false,
+        expectBoundary: false,
+      });
     }
   }
 
@@ -464,8 +496,188 @@ try {
   });
 }
 
+async function assertCompactPublicShell(page) {
+  const manualLocationButton = page.locator(".public-location-consent-actions .secondary");
+  if (await manualLocationButton.count() && await manualLocationButton.isVisible()) {
+    await manualLocationButton.click();
+  }
+  const header = page.locator(".public-app-header");
+  if (await header.count() !== 1 || !(await header.isVisible())) {
+    throw new Error("Public is missing its compact app header.");
+  }
+  if (await page.locator(".public-wordmark").filter({ hasText: "FloodGuard" }).count() !== 1) {
+    throw new Error("Public is missing the FloodGuard wordmark.");
+  }
+  if (await page.locator(".public-brand-mark, .public-boundary-banner").count()) {
+    throw new Error("Public retains the removed logo or historical banner.");
+  }
+  const publicText = await page.locator("main.public-page").innerText();
+  if (/Public preparedness|Historical preparedness information/iu.test(publicText)) {
+    throw new Error("Public retains removed header or historical-banner copy.");
+  }
+  const trigger = page.locator(".public-profile-trigger");
+  await trigger.click();
+  await page.locator("#public-profile-drawer").waitFor({ state: "visible" });
+  await page.locator("#public-profile-drawer .public-icon-button").click();
+  if (await trigger.getAttribute("aria-expanded") !== "false") {
+    throw new Error("Public profile drawer did not close.");
+  }
+}
+
+async function assertPublicNavigation(page) {
+  const expected = ["home", "report", "shelter", "prepare", "sos"];
+  const navigation = page.locator(".public-bottom-nav");
+  if (await navigation.count() !== 1 || !(await navigation.isVisible())) {
+    throw new Error("Public bottom navigation is missing.");
+  }
+  for (const id of expected) {
+    if (await page.locator(`#public-tab-${id}`).count() !== 1) {
+      throw new Error(`Public bottom navigation is missing ${id}.`);
+    }
+  }
+  for (const retired of ["map", "shelters", "data"]) {
+    if (await page.locator(`#public-tab-${retired}`).count()) {
+      throw new Error(`Public retains retired navigation: ${retired}.`);
+    }
+  }
+  const activeCount = await navigation.locator(
+    '[aria-current="page"], [aria-pressed="true"], [aria-selected="true"]',
+  ).count();
+  if (activeCount !== 1) {
+    throw new Error(`Public navigation must expose exactly one active page; found ${activeCount}.`);
+  }
+}
+
+async function activatePublicPage(page, id, readySelector) {
+  const button = page.locator(`#public-tab-${id}`);
+  await button.click();
+  await page.locator(readySelector).first().waitFor({ state: "visible" });
+  const state = await button.evaluate((element) => ({
+    current: element.getAttribute("aria-current"),
+    pressed: element.getAttribute("aria-pressed"),
+    selected: element.getAttribute("aria-selected"),
+  }));
+  if (state.current !== "page" && state.pressed !== "true" && state.selected !== "true") {
+    throw new Error(`Public navigation did not expose ${id} as active.`);
+  }
+  const visibleText = await page.locator("#public-active-panel").innerText();
+  const forbidden = visibleText.match(
+    /(?:^|[^\p{L}\p{N}])(?:demos?|prototypes?|mocks?|samples?|illustrative|placeholders?)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu,
+  );
+  if (forbidden) throw new Error(`Public ${id} exposes development-state copy: ${forbidden[0]}.`);
+}
+
+async function selectPublicPlanningArea(page, areaId, areaName) {
+  const manualLocationButton = page.locator(".public-location-consent-actions .secondary");
+  if (await manualLocationButton.count() && await manualLocationButton.isVisible()) {
+    await manualLocationButton.click();
+  }
+  const select = page.locator("#public-area-select");
+  if (await select.count()) {
+    await select.selectOption(areaId);
+    await page.waitForFunction(
+      ({ id }) => document.querySelector("#public-area-select")?.value === id,
+      { id: areaId },
+    );
+    return;
+  }
+
+  const search = page.locator(
+    "#public-area-search, .public-home-search input, .public-map-search input, input[aria-label*=\"Search\"]",
+  ).first();
+  if (!await search.count()) throw new Error("Public Home is missing its area search control.");
+  await search.fill(areaName);
+  await search.press("Enter");
+  await page.waitForFunction(
+    ({ id }) => document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === id,
+    { id: areaId },
+  );
+}
+
+async function firstVisibleSelector(page, selectors) {
+  for (const selector of selectors) {
+    const locator = page.locator(selector).first();
+    if (await locator.count() && await locator.isVisible()) return selector;
+  }
+  throw new Error(`None of the expected Public selectors is visible: ${selectors.join(", ")}.`);
+}
+
+async function assertPublicHomeLayout(page, mapScope) {
+  const audit = await page.evaluate((scope) => {
+    const header = document.querySelector(".public-app-header")?.getBoundingClientRect();
+    const navigation = document.querySelector(".public-bottom-nav")?.getBoundingClientRect();
+    const map = document.querySelector(`${scope} .leaflet-container`)?.getBoundingClientRect();
+    const trigger = document.querySelector(".public-profile-trigger")?.getBoundingClientRect();
+    const risk = document.querySelector(".public-risk-indicator")?.getBoundingClientRect();
+    const hazard = document.querySelector(".public-hazard-button")?.getBoundingClientRect();
+    const attribution = document.querySelector(".leaflet-control-attribution")?.getBoundingClientRect();
+    const availability = document.querySelector('[data-pwa-availability="true"] > summary')?.getBoundingClientRect();
+    const navigationTargets = [...document.querySelectorAll(".public-bottom-nav button")]
+      .map((element) => element.getBoundingClientRect());
+    const overlaps = (left, right) => Boolean(left && right
+      && Math.min(left.right, right.right) > Math.max(left.left, right.left)
+      && Math.min(left.bottom, right.bottom) > Math.max(left.top, right.top));
+    return {
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+      header: header ? { top: header.top, bottom: header.bottom, height: header.height } : null,
+      navigation: navigation ? { top: navigation.top, bottom: navigation.bottom } : null,
+      map: map ? { top: map.top, right: map.right, bottom: map.bottom, left: map.left } : null,
+      trigger: trigger ? { width: trigger.width, height: trigger.height } : null,
+      navigationTargets: navigationTargets.map(({ width, height }) => ({ width, height })),
+      lowerControls: {
+        riskNavigationGap: risk && navigation ? navigation.top - risk.bottom : null,
+        hazardNavigationGap: hazard && navigation ? navigation.top - hazard.bottom : null,
+        hazardAttributionOverlap: overlaps(hazard, attribution),
+        availabilityRiskOverlap: overlaps(availability, risk),
+        availabilityHazardOverlap: overlaps(availability, hazard),
+        availabilityAttributionOverlap: overlaps(availability, attribution),
+      },
+    };
+  }, mapScope);
+  if (!audit.header || !audit.navigation || !audit.map) {
+    throw new Error(`Public Home layout landmarks are missing: ${JSON.stringify(audit)}.`);
+  }
+  if (audit.documentWidth > audit.viewportWidth + 1) {
+    throw new Error(`Public Home has horizontal overflow: ${JSON.stringify(audit)}.`);
+  }
+  if (
+    Math.abs(audit.map.top - audit.header.bottom) > 2
+    || Math.abs(audit.map.bottom - audit.navigation.top) > 2
+    || audit.map.left > 1
+    || audit.map.right < audit.viewportWidth - 1
+  ) {
+    throw new Error(`Public Home map does not fill the space between its chrome: ${JSON.stringify(audit)}.`);
+  }
+  if (audit.header.height > 58) {
+    throw new Error(`Public header is not compact: ${audit.header.height}px.`);
+  }
+  if (!audit.trigger || audit.trigger.width < 43.5 || audit.trigger.height < 43.5) {
+    throw new Error(`Public profile trigger is smaller than 44px: ${JSON.stringify(audit.trigger)}.`);
+  }
+  if (audit.navigationTargets.some(({ width, height }) => width < 43.5 || height < 43.5)) {
+    throw new Error("Public bottom navigation contains a touch target smaller than 44px.");
+  }
+  if (
+    audit.lowerControls.riskNavigationGap < 10
+    || audit.lowerControls.hazardNavigationGap < 10
+    || audit.lowerControls.hazardAttributionOverlap
+    || audit.lowerControls.availabilityRiskOverlap
+    || audit.lowerControls.availabilityHazardOverlap
+    || audit.lowerControls.availabilityAttributionOverlap
+  ) {
+    throw new Error(`Public Home lower controls overlap or crowd the navigation: ${JSON.stringify(audit.lowerControls)}.`);
+  }
+}
+
 async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
-  const buttons = page.locator(`${scopeSelector} .map-basemap-switcher button`);
+  const menu = page.locator(`${scopeSelector} .map-basemap-menu`);
+  if (await menu.count() && await menu.getAttribute("open") === null) {
+    await menu.locator("summary").click();
+  }
+  const buttons = page.locator(
+    `${scopeSelector} .map-basemap-switcher button, ${scopeSelector} .map-basemap-menu button`,
+  );
   if (await buttons.count() !== 3) {
     throw new Error(`${scopeSelector} must expose Street, Satellite, and Terrain map backgrounds.`);
   }
@@ -486,14 +698,21 @@ async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
     if (await buttons.nth(index).getAttribute("aria-pressed") !== "true") {
       throw new Error(`${scopeSelector} did not expose ${basemap} as the selected map background.`);
     }
-    const attribution = await page.locator(`${scopeSelector} .map-attribution`).innerText();
-    const expectedAttribution = basemap === "street"
-      ? "OpenStreetMap contributors"
-      : basemap === "satellite"
-        ? "Esri World Imagery"
-        : "OpenTopoMap";
-    if (!attribution.includes(expectedAttribution)) {
-      throw new Error(`${scopeSelector} ${basemap} background is missing ${expectedAttribution} attribution.`);
+    const audience = await page.locator(`${scopeSelector} .geo-map-shell`).getAttribute("data-map-audience");
+    if (audience === "public") {
+      if (await page.locator(`${scopeSelector} p.map-attribution`).count() !== 0) {
+        throw new Error(`${scopeSelector} retains the removed full attribution paragraph.`);
+      }
+    } else {
+      const attribution = await page.locator(`${scopeSelector} .map-attribution`).innerText();
+      const expectedAttribution = basemap === "street"
+        ? "OpenStreetMap contributors"
+        : basemap === "satellite"
+          ? "Esri World Imagery"
+          : "OpenTopoMap";
+      if (!attribution.includes(expectedAttribution)) {
+        throw new Error(`${scopeSelector} ${basemap} background is missing ${expectedAttribution} attribution.`);
+      }
     }
   }
   await buttons.first().click();
@@ -507,9 +726,13 @@ async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
   );
 }
 
-async function assertMaeSaiMap(page, scopeSelector, { expectRoads }) {
+async function assertMaeSaiMap(page, scopeSelector, {
+  expectRoads,
+  expectTextAlternative = true,
+  expectBoundary = true,
+}) {
   await page.waitForFunction(
-    ({ scope, requireRoads }) => {
+    ({ scope, requireRoads, requireBoundary }) => {
       const shell = document.querySelector(`${scope} .geo-map-shell`);
       const audience = shell?.getAttribute("data-map-audience");
       const visibleFacilityCount = shell?.getAttribute("data-facility-feature-count");
@@ -521,10 +744,10 @@ async function assertMaeSaiMap(page, scopeSelector, { expectRoads }) {
         ? facilityDatasetCount === "0" && visibleFacilityCount === "0" && clusterCount === 0
         : visibleFacilityCount === "42" && clusterCount > 0 && shell?.getAttribute("data-facility-presentation") === "clusters";
       return facilitiesReady
-        && rendererCount > 0
+        && (!requireBoundary || rendererCount > 0)
         && (!requireRoads || roads >= 4_458);
     },
-    { scope: scopeSelector, requireRoads: expectRoads },
+    { scope: scopeSelector, requireRoads: expectRoads, requireBoundary: expectBoundary },
   );
   const shell = page.locator(`${scopeSelector} .geo-map-shell`);
   const audience = await shell.getAttribute("data-map-audience");
@@ -532,13 +755,18 @@ async function assertMaeSaiMap(page, scopeSelector, { expectRoads }) {
   if (await shell.getAttribute("data-facility-dataset-count") !== expectedFacilityCount) {
     throw new Error(`${scopeSelector} did not retain its role-approved facility projection.`);
   }
-  const alternativeText = await page.locator(`${scopeSelector} .map-text-alternative`).textContent();
-  if (!alternativeText?.includes("Selected area") || !alternativeText.includes("Road network context") || !alternativeText.includes("Assumptions")) {
-    throw new Error(`${scopeSelector} list view does not describe its selected area, roads, and access assumptions.`);
+  if (expectTextAlternative) {
+    const alternativeText = await page.locator(`${scopeSelector} .map-text-alternative`).textContent();
+    if (!alternativeText?.includes("Selected area") || !alternativeText.includes("Road network context") || !alternativeText.includes("Assumptions")) {
+      throw new Error(`${scopeSelector} list view does not describe its selected area, roads, and access assumptions.`);
+    }
   }
   const boundaryRendererCount = await page.locator(`${scopeSelector} .leaflet-overlay-pane canvas, ${scopeSelector} .leaflet-overlay-pane path`).count();
-  if (boundaryRendererCount === 0 || !await shell.getAttribute("data-selected-area")) {
+  if (expectBoundary && (boundaryRendererCount === 0 || !await shell.getAttribute("data-selected-area"))) {
     throw new Error(`${scopeSelector} did not render its highlighted AOI boundary overlay.`);
+  }
+  if (!expectBoundary && await shell.getAttribute("data-area-feature-count") !== "0") {
+    throw new Error(`${scopeSelector} retained a Public administrative boundary layer.`);
   }
   if (audience === "public") {
     if (await page.locator(`${scopeSelector} .facility-type-marker, ${scopeSelector} .facility-cluster-marker`).count() !== 0) {
@@ -558,7 +786,7 @@ function assertFinalVisibleCopy(body, routePath) {
   const required = routePath === "/"
     ? ["one platform. three planning views.", "continue by role", "ddpm", "local-authority"]
     : routePath === "/public/"
-      ? ["mae sai flood context", "evidence date", "model confidence", "ddpm", "local authorities"]
+      ? ["floodguard", "hazard info", "report", "shelter", "prepare", "sos"]
       : routePath === "/command/"
         ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
         : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
@@ -569,7 +797,9 @@ function assertFinalVisibleCopy(body, routePath) {
   }
   const forbidden = routePath === "/studio/"
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
-    : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
+    : routePath === "/public/"
+      ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu
+      : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
   const match = body.match(forbidden);
   if (match) {
     throw new Error(`${routePath} exposes forbidden internal copy: ${match[0]}.`);

@@ -29,10 +29,13 @@ for (const relative of [...routeFiles, ...requiredPublicAssets]) {
 const routeExpectations = {
   "index.html": [/One platform\. Three planning views\./i, /Continue by role/i, /DDPM/i, /local-authority/i],
   "public/index.html": [
-    /Mae Sai household flood preparedness/i,
-    /Evidence date|วันที่หลักฐาน/i,
-    /Model confidence|ความเชื่อมั่นของแบบจำลอง/i,
-    /DDPM|ปภ\./i,
+    /public-app-header/i,
+    /FloodGuard/i,
+    /public-tab-home/i,
+    /public-tab-report/i,
+    /public-tab-shelter/i,
+    /public-tab-prepare/i,
+    /public-tab-sos/i,
   ],
   "command/index.html": [
     /Planning intelligence|ข้อมูลเพื่อการวางแผน/i,
@@ -60,6 +63,18 @@ for (const relative of routeFiles) {
   const resourceUrls = [...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"/gi)].map((match) => match[1]);
   const external = resourceUrls.filter((url) => /^https?:\/\//i.test(url));
   if (external.length) throw new Error(`${relative} has external runtime resources: ${external.join(", ")}`);
+}
+
+const publicHtml = readFileSync(resolve(out, "public", "index.html"), "utf8");
+for (const retiredTab of ["map", "shelters", "data"]) {
+  if (publicHtml.includes(`id="public-tab-${retiredTab}"`)) {
+    throw new Error(`Public artifact retains retired navigation: ${retiredTab}`);
+  }
+}
+for (const removedChrome of ["public-boundary-banner", "public-brand-mark"]) {
+  if (publicHtml.includes(removedChrome)) {
+    throw new Error(`Public artifact retains removed chrome: ${removedChrome}`);
+  }
 }
 
 const serviceWorker = readFileSync(resolve(out, "sw.js"), "utf8");

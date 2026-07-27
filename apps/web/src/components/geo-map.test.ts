@@ -189,6 +189,35 @@ describe("facility presentation", () => {
     expect(html).not.toContain("Map text alternative");
   });
 
+  it("supports a transient exact-location marker contract without the long attribution paragraph", () => {
+    const areas = (bundleJson as unknown as { areas: AreaRecord[] }).areas;
+    const html = renderToStaticMarkup(createElement(GeoMap, {
+      areas,
+      selectedId: "",
+      onSelect: () => undefined,
+      language: "en",
+      areaFeatures: collection("areas", []),
+      roadFeatures: collection("roads", []),
+      datasetMode: "candidate",
+      enableBasemaps: true,
+      showDataAttribution: false,
+      location: {
+        latitude: 20.429799,
+        longitude: 99.884366,
+        accuracyMeters: 12,
+        label: "Your precise location",
+        source: "gps",
+      },
+    }));
+
+    expect(html).toContain('data-location-source="gps"');
+    expect(html).toContain('data-location-latitude="20.429799"');
+    expect(html).toContain('data-location-longitude="99.884366"');
+    expect(html).toContain('data-location-accuracy="12"');
+    expect(html).not.toContain('class="map-attribution"');
+    expect(html).not.toContain("Data attribution:");
+  });
+
   it("renders the reduced public area contract without staff A-E or FPPS semantics", () => {
     const publicArea: PublicPreparednessArea = {
       schema_version: "1.0",

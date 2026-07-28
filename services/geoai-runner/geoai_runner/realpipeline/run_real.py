@@ -35,7 +35,9 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:  # make root floodguard importable when not installed
     sys.path.insert(0, str(SRC_ROOT))
 
-from geoai_runner.realpipeline import annotate, embeddings, real_data as rd  # noqa: E402
+from geoai_runner.realpipeline import aggregate, annotate, blocks, embeddings  # noqa: E402
+from geoai_runner.realpipeline import narrative as nr  # noqa: E402
+from geoai_runner.realpipeline import real_data as rd  # noqa: E402
 from geoai_runner.realpipeline import susceptibility, water_unet  # noqa: E402
 from geoai_runner.realpipeline.geoai_page import write_geoai_page  # noqa: E402
 from geoai_runner.realpipeline.raster_io import array_to_png, write_geotiff  # noqa: E402
@@ -44,16 +46,42 @@ from floodguard.scoring import score_subdistricts  # noqa: E402
 
 SHAPE = (1024, 1024)
 
+# Component B tiling. The 1600 m buffer is half a 128 px tile's ~3.2 km ground
+# width, so a training tile is a full tile-width away from any held-out pixel.
+# blocks.plan_block_geometry derives the block size from these two numbers.
+TILE_SIZE = 128
+TILE_STRIDE = 32
+BLOCK_BUFFER_M = 1600.0
+STUDY_LATITUDE = 20.4
+
+# The Sept-2024 Mae Sai flood peaked around Sep 11; the nearest same-orbit
+# Sentinel-1 acquisition is Sep 15.
+FLOOD_PEAK_DATE = "2024-09-11"
+PEAK_OFFSET_DAYS = 4
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--fast", action="store_true", help="Fewer U-Net epochs.")
     ap.add_argument("--epochs", type=int, default=None)
     ap.add_argument("--all-methods", action="store_true",
-                    help="Also run OmniWaterMask baseline, ChangeStar encroachment (E), "
-                         "and Moondream narrative (G). Downloads extra weights; slower.")
-    ap.add_argument("--no-narrative", action="store_true",
-                    help="With --all-methods, skip the slow Moondream VLM step.")
+                    help="Also run the OmniWaterMask baseline and Component E built-up "
+                         "encroachment. Downloads extra weights/products; slower.")
+    ap.add_argument("--encroachment-t1", type=int, default=2015,
+                    help="Earlier built-up epoch year for Component E.")
+    ap.add_argument("--encroachment-t2", type=int, default=2025,
+                    help="Later built-up epoch year for Component E.")
+    ap.add_argument("--temporal", action="store_true",
+                    help="Component A2: build a multi-year single-orbit Sentinel-1 "
+                         "baseline and detect flooding as deviation from each pixel's "
+                         "own seasonal normal. Downloads ~180 scenes on first run "
+                         "(cached thereafter).")
+    ap.add_argument("--temporal-start", default="2018-01-01",
+                    help="First acquisition date for the temporal baseline.")
+    ap.add_argument("--temporal-end", default="2024-12-31",
+                    help="Last acquisition date for the temporal baseline.")
+    ap.add_argument("--temporal-max-scenes", type=int, default=None,
+                    help="Cap the series length (smoke runs); recorded in the manifest.")
     args = ap.parse_args()
 
     out = REPO_ROOT / "outputs" / "geoai"
@@ -77,6 +105,27 @@ def main() -> None:
     )
     pixel_m = (bbox[2] - bbox[0]) / SHAPE[1] * 111000.0 * np.cos(np.radians(20.4))
     print(f"      {len(subs['features'])} tambons | bbox {tuple(round(v,3) for v in bbox)} | ~{pixel_m:.0f} m/px")
+
+    # ---------------- spatial holdout partition ----------------------------
+    # Seeded before any model runs, and chosen on a purely geometric criterion
+    # (no role collapsing into one contiguous patch) so the held-out score can
+    # never become a hyperparameter.
+    seed, contiguity = blocks.select_dispersed_seed(
+        SHAPE, transform, tile_size_px=TILE_SIZE,
+        buffer_m=BLOCK_BUFFER_M, latitude=STUDY_LATITUDE,
+    )
+    assignment = blocks.assign_spatial_blocks(
+        SHAPE, transform, seed=seed, tile_size_px=TILE_SIZE,
+        buffer_m=BLOCK_BUFFER_M, latitude=STUDY_LATITUDE,
+    )
+    single_patch = [role for role, entry in contiguity.items() if entry["single_patch"]]
+    print(f"      partition: {assignment.plan.blocks_per_axis}x{assignment.plan.blocks_per_axis} "
+          f"blocks of {assignment.plan.block_m:.0f} m, {BLOCK_BUFFER_M:.0f} m buffer "
+          f"(seed {seed}) | {assignment.role_block_counts} | "
+          f"buffer {assignment.role_pixel_share['buffer']*100:.1f}% of scene")
+    if single_patch:
+        print(f"      NOTE: role(s) {single_patch} form a single contiguous patch; "
+              "their metrics carry a geographic confound.")
 
     # ---------------- A: real Sentinel-1 flood -----------------------------
     print("[2/9] Component A - real Sentinel-1 flood extent ...")
@@ -109,32 +158,57 @@ def main() -> None:
     write_geotiff(work / "water_label.tif", water_label, transform, "EPSG:4326", dtype="uint8")
 
     # ---------------- B: real U-Net water segmentation ---------------------
-    print("[4/9] Component B - U-Net on real Sentinel-2 (ImageNet encoder) ...")
+    print("[4/9] Component B - U-Net on real Sentinel-2 (spatial-block holdout) ...")
     t = time.time()
-    epochs = args.epochs or (10 if args.fast else 30)
-    imgs, labs, ntiles = water_unet.prepare_training_tiles(
-        work / "s2.tif", work / "water_label.tif", work / "tiles", tile_size=128, stride=96
+    epochs = args.epochs or (20 if args.fast else 120)
+    # Preprocessing is fitted on training blocks only (leakage control #6 in
+    # docs/immutable-multi-event-partitions-v1.md), then applied to the whole
+    # scene so training and inference see the same transform.
+    channel_stats = water_unet.fit_channel_stats(work / "s2.tif", assignment, role="train")
+    water_unet.write_standardised_raster(work / "s2.tif", channel_stats, work / "s2_std.tif")
+    class_weights = water_unet.inverse_frequency_class_weights(
+        work / "water_label.tif", assignment, role="train"
+    )
+    partition = water_unet.prepare_role_tiles(
+        work / "s2_std.tif", work / "water_label.tif", work / "tiles", assignment,
+        tile_size=TILE_SIZE, stride=TILE_STRIDE, channel_stats=channel_stats,
     )
     model = water_unet.train_water_unet(
-        imgs, labs, work / "unet", num_channels=6, encoder_name="resnet18",
-        encoder_weights="imagenet", num_epochs=epochs, target_size=(128, 128),
-        class_weights=(1.0, 25.0), learning_rate=0.001,
+        partition, work / "unet", num_channels=6, encoder_name="resnet18",
+        encoder_weights="imagenet", num_epochs=epochs, target_size=(TILE_SIZE, TILE_SIZE),
+        class_weights=class_weights, learning_rate=3e-4,
     )
-    res_b = water_unet.infer_water_mask(
-        model, work / "s2.tif", work, num_channels=6, encoder_name="resnet18",
-        window_size=128, overlap=32, reference_mask_path=work / "water_label.tif",
+    b_mask, b_prob, b_transform, b_crs, b_artifacts = water_unet.infer_water_probability(
+        model, work / "s2_std.tif", work, num_channels=6, encoder_name="resnet18",
+        window_size=TILE_SIZE, overlap=32,
+    )
+    evaluation = water_unet.evaluate_roles(b_prob, water_label, assignment)
+    res_b = water_unet.finalise_water_result(
+        (b_prob >= evaluation["threshold_selection"]["selected_threshold"]).astype("uint8"),
+        b_prob, b_transform, b_crs, work, evaluation,
+        model_path=model, artifacts=b_artifacts,
+        data_mode="real_licensed_inputs",
     )
     timings["water_unet"] = round(time.time() - t, 1)
     metrics["water_unet"] = {
-        **res_b.metrics, "data_mode": "real_licensed_inputs", "n_training_tiles": ntiles,
-        "epochs": epochs, "encoder_weights": "imagenet",
-        "assumptions": ("U-Net trained on real Sentinel-2 with labels derived from the "
-                        "real MNDWI water index (weak supervision from a physical index, "
-                        "not hand annotation); scored against that same index."),
+        **res_b.metrics,
+        "data_mode": "real_licensed_inputs",
+        "partition": assignment.to_dict(),
+        "tiling": partition.to_dict(),
+        "epochs": epochs,
+        "encoder_weights": "imagenet",
+        "class_weights": list(class_weights),
     }
     array_to_png(prev / "B_water_mask.png", res_b.water_mask, cmap="Blues")
     array_to_png(prev / "B_water_confidence.png", res_b.confidence, cmap="viridis", vmin=0, vmax=1)
-    print(f"      tiles {ntiles} epochs {epochs} | IoU {res_b.metrics.get('iou')} F1 {res_b.metrics.get('f1_dice')}")
+    array_to_png(prev / "B_partition_roles.png", assignment.role_grid, cmap="Set1")
+    by_role = evaluation["metrics_by_role"]
+    print(f"      tiles {partition.counts} epochs {epochs} weights {class_weights}")
+    for role in ("train", "val", "test"):
+        entry = by_role.get(role, {})
+        detail = entry.get("blocked_reason") or f"IoU {entry.get('iou')} F1 {entry.get('f1_dice')}"
+        print(f"        {role:5s}: {detail}")
+    print(f"      diagnosis: {evaluation['generalisation_diagnosis']}")
 
     # ---------------- C: real susceptibility from real DEM -----------------
     print("[5/9] Component C - susceptibility from real Copernicus DEM + DWR rivers ...")
@@ -218,31 +292,88 @@ def main() -> None:
     print("[7/9] Component F - few-shot classifier on real Sentinel-2 ...")
     t = time.time()
     res_f = embeddings.few_shot_flood_classifier(
-        work / "s2.tif", work / "water_label.tif", out / "flood_classifier_embeddings.parquet",
+        work / "s2.tif", work / "water_label.tif",
+        out / "flood_classifier_embeddings.parquet", assignment,
         n_labels_per_class=40)
     timings["embeddings"] = round(time.time() - t, 1)
     metrics["embeddings"] = {**res_f.metrics, "data_mode": "real_licensed_inputs"}
+    f_by_role = res_f.metrics["metrics_by_role"]
+    f_test = f_by_role.get("test", {})
+    print(f"      labels {res_f.metrics['n_training_labels']} (train blocks only) | "
+          f"test {f_test.get('blocked_reason') or 'IoU ' + str(f_test.get('iou'))}")
     array_to_png(prev / "F_fewshot_prediction.png", res_f.predicted_mask, cmap="Blues")
     array_to_png(prev / "scene_flood_reference.png", (jrc["occurrence"] > 50).astype("uint8"), cmap="Blues")
 
-    # ---------------- extra methods: baseline + E + G (opt-in) --------------
-    narrative_captions: dict[str, str] = {}
-    if args.all_methods:
-        _run_extra_methods(
-            args, bbox, work, prev, out, transform, res_c, metrics, timings, narrative_captions
+    # ---------------- A2: temporal SAR (opt-in) -----------------------------
+    if args.temporal:
+        _run_temporal_stage(
+            args, bbox, work, prev, out, transform, subs, flood, metrics, timings
         )
+
+    # ---------------- extra methods: baseline + E (opt-in) ------------------
+    if args.all_methods:
+        _run_extra_methods(args, bbox, work, prev, out, transform, res_c, metrics, timings)
 
     # ---------------- bridge: real subdistricts -> FPPS --------------------
     print("[8/9] Bridging real AI layers -> real sub-district priority ...")
-    table = _aggregate(subs, flood, res_c.susceptibility_0_100, feats, transform, SHAPE)
+    # Real decision-layer context supplies access gap, road criticality and
+    # vulnerability. Previously these were synthesised from the AI signals,
+    # which double-counted flooding and overstated how much of FPPS was real.
+    try:
+        context = aggregate.load_subdistrict_context(
+            REPO_ROOT / "outputs" / "mae_sai_subdistrict_flood_inputs.csv",
+            REPO_ROOT / "outputs" / "mae_sai_admin_context.geojson",
+        )
+        print(f"      context: {len(context.components)} subdistricts from the decision layer")
+    except aggregate.AggregationError as exc:
+        print(f"      WARNING: real context unavailable ({exc}); "
+              "falling back to placeholders and forcing low confidence")
+        context = None
+
+    ai_inputs = aggregate.aggregate_subdistrict_ai_inputs(
+        subs["features"],
+        flood.artifacts["probability"],
+        res_c.artifacts["susceptibility"],
+        out / "critical_infrastructure_footprints.geojson",
+        context=context,
+        source_name="Sentinel-1 RTC + Sentinel-2 + Copernicus DEM + DOPA/DWR/OSM/WorldPop (all real)",
+        source_timestamp=flood.metrics["post_datetime"],
+    )
+    table = aggregate.build_fpps_input_table(ai_inputs, context=context)
     scored = score_subdistricts(table)
     cols = ["subdistrict_id", "subdistrict_name", "flood_likelihood_0_100", "exposure_0_100",
             "access_gap_0_100", "road_criticality_0_100", "vulnerability_context_0_100",
-            "fpps_0_100", "action_class", "top_reason", "confidence_class",
-            "ai_flood_pct", "ai_susceptibility_mean", "ai_building_count",
-            "ai_exposed_building_count", "source_name", "source_timestamp", "assumptions"]
+            "fpps_0_100", "action_class", "top_reason", "confidence_class", "context_source",
+            "ai_flood_share", "ai_susceptibility_mean", "ai_exposed_building_count",
+            "population", "density_per_km2", "osm_building_count", "osm_completeness_ratio",
+            "osm_completeness_flag", "flood_anchor_version", "exposure_anchor_version",
+            "source_name", "source_timestamp", "assumptions"]
     scored_out = scored.reindex(columns=[c for c in cols if c in scored.columns])
     scored_out.to_csv(out / "geoai_subdistrict_priority.csv", index=False)
+
+    # Deterministic bilingual narratives (Component G) from the scored table.
+    thai_names = {
+        aggregate.normalise_subdistrict_id(f["properties"]["subdistrict_id"]):
+            f["properties"].get("subdistrict_name_th", "")
+        for f in subs["features"]
+    }
+    res_g = nr.generate_narratives(
+        [
+            nr.narrative_inputs_from_row(
+                row,
+                acquisition_date=flood.metrics["post_datetime"][:10],
+                peak_offset_days=PEAK_OFFSET_DAYS,
+                tambon_name_th=thai_names.get(
+                    aggregate.normalise_subdistrict_id(row["subdistrict_id"]), ""
+                ),
+            )
+            for row in scored_out.to_dict("records")
+        ],
+        out / "narratives.json",
+    )
+    metrics["narrative"] = res_g.metrics
+    print(f"      narratives: {res_g.metrics['narrative_count']} tambons, "
+          f"{res_g.metrics['languages']} (deterministic, reproducible)")
 
     # ---------------- manifest, figures, page ------------------------------
     print("[9/9] Writing real metrics, annotated figures, and page ...")
@@ -259,6 +390,26 @@ def main() -> None:
             "subdistricts": "DOPA sub-districts via NGIS ArcGIS",
             "rivers": "DWR natural streams via NGIS ArcGIS",
             "buildings": "OpenStreetMap (Overpass API)",
+            "population": "WorldPop Thailand 100 m 2020 (via committed decision-layer context)",
+            "decision_context": (
+                "outputs/mae_sai_subdistrict_flood_inputs.csv"
+                if context is not None else "placeholder (real context unavailable)"
+            ),
+        },
+        "evaluation_protocol": {
+            "partition": assignment.to_dict(),
+            "scale_anchors": {
+                "flood_likelihood": aggregate.DEFAULT_FLOOD_ANCHOR.version,
+                "exposure": aggregate.DEFAULT_EXPOSURE_ANCHOR.version,
+            },
+            "headline_role": "test",
+            "notes": (
+                "Component B and F metrics are reported per partition role; the "
+                "headline is the held-out test role. Preprocessing and label sampling "
+                "use training blocks only. This is a runner-local spatial split, NOT a "
+                "sealed multi-event partition under "
+                "docs/immutable-multi-event-partitions-v1.md."
+            ),
         },
         "timings_seconds": timings,
         "metrics": _json_safe(metrics),
@@ -272,7 +423,7 @@ def main() -> None:
     annotate.render_decision_bridge(prev, scored_out, prev / "annotated_decision_bridge.png",
                                     subs=subs, bbox=bbox, is_real=True)
     page = write_geoai_page(out / "geoai.html", manifest, scored_out, prev)
-    web = _write_web_bundle(manifest, scored_out, prev, narrative_captions)
+    web = _write_web_bundle(manifest, scored_out, prev, res_g.narratives)
 
     print("\nALL-REAL run complete.")
     print(f"  {page}")
@@ -304,66 +455,151 @@ def _dilate(mask, radius=3):
     return out
 
 
-def _aggregate(subs, flood, susc, buildings, transform, shape):
+def _run_temporal_stage(args, bbox, work, prev, out, transform, subs, flood, metrics, timings):
+    """Component A2 -- flood as deviation from each pixel's own seasonal normal.
+
+    This is the answer to Component A's two structural limits: an arbitrary
+    single pre-event reference, and a post-event date fixed by the orbit rather
+    than by the flood. It also produces something a pre/post pair cannot -- a
+    multi-year per-tambon inundation history, which turns "how often does this
+    tambon flood?" into an observed quantity and gives Component C a validation
+    target with real meaning.
+    """
+
+    import time
+
+    import numpy as np
+    import pandas as pd
+
+    from geoai_runner.realpipeline import real_data as rd
+    from geoai_runner.realpipeline import sar_temporal as st
+    from geoai_runner.realpipeline.raster_io import array_to_png, write_geotiff
+
+    print("[A2] Temporal SAR - multi-year single-orbit baseline ...")
+    t = time.time()
+    try:
+        series = rd.fetch_sentinel1_rtc_series(
+            bbox=bbox, start=args.temporal_start, end=args.temporal_end,
+            out_shape=SHAPE, cache_dir=work / "s1_series",
+            max_scenes=args.temporal_max_scenes,
+        )
+    except Exception as exc:  # pragma: no cover - network dependent
+        print(f"      temporal series unavailable: {exc}")
+        metrics["temporal_sar"] = {"blocked_reason": str(exc)}
+        return
+
+    event_date = flood.metrics["post_datetime"][:10]
+    print(f"      {len(series)} scenes on relative orbit {series.relative_orbit} "
+          f"({series.orbit_direction}) | discarded {series.discarded}")
+    print(f"      scenes per year: {series.scenes_per_year()}")
+
+    try:
+        # The event must not contaminate its own reference.
+        baseline = st.build_seasonal_baseline(
+            series, polarisation="vh", exclude_dates=[event_date],
+        )
+    except st.TemporalSarError as exc:
+        print(f"      baseline not supportable: {exc}")
+        metrics["temporal_sar"] = {"blocked_reason": str(exc)}
+        return
+
+    print(f"      baseline bins {baseline.season_labels} | coverage {baseline.coverage()}")
+
+    event_scene = next((s for s in series.scenes if s.date == event_date), None)
+    if event_scene is None:
+        print(f"      event date {event_date} not in the series; skipping detection")
+        metrics["temporal_sar"] = {
+            "blocked_reason": f"event date {event_date} absent from the selected orbit",
+            "baseline": baseline.to_dict(),
+        }
+        return
+
+    result = st.detect_temporal_flood(
+        st.to_db(event_scene.read("vh")), baseline, event_scene.month,
+        permanent_water=flood.permanent_water,
+    )
+    write_geotiff(work / "temporal_flood_probability.tif", result.probability,
+                  transform, "EPSG:4326")
+    write_geotiff(work / "temporal_zscore.tif", result.zscore, transform, "EPSG:4326")
+    array_to_png(prev / "A2_temporal_probability.png", np.nan_to_num(result.probability),
+                 cmap="turbo", vmin=0, vmax=1)
+    array_to_png(prev / "A2_temporal_zscore.png", np.nan_to_num(result.zscore),
+                 cmap="RdBu", vmin=-8, vmax=8)
+
+    single_pair = float(flood.metrics["flood_fraction"])
+    temporal = float(result.metrics["open_water_fraction"])
+    print(f"      single pre/post pair: {single_pair*100:.2f}% | "
+          f"temporal deviation: {temporal*100:.2f}% of district")
+    print(f"      possible flooded vegetation: "
+          f"{result.metrics['flooded_vegetation_fraction']*100:.2f}%")
+
+    # ---- per-tambon inundation history: the genuinely new product ----------
+    unit_masks = _subdistrict_masks(subs, transform, SHAPE)
+    history = st.inundation_history(
+        series, baseline, unit_masks, permanent_water=flood.permanent_water
+    )
+    frequency = st.inundation_frequency(history)
+    pd.DataFrame(history).to_csv(out / "inundation_history.csv", index=False)
+    pd.DataFrame(
+        [{"subdistrict_id": k, **v} for k, v in sorted(frequency.items())]
+    ).to_csv(out / "inundation_frequency.csv", index=False)
+
+    timings["temporal_sar"] = round(time.time() - t, 1)
+    metrics["temporal_sar"] = {
+        **result.metrics,
+        "data_mode": "real_licensed_inputs",
+        "event_date": event_date,
+        "single_pair_flood_fraction": single_pair,
+        "temporal_open_water_fraction": temporal,
+        "inundation_frequency": frequency,
+        # Calibration is deliberately not fitted: there is no licensed reference
+        # for this event yet, and JRC permanent water cannot certify the flood end
+        # of the curve. calibration.fit_calibration is ready for the moment a
+        # qualified mask clears licensing.
+        "calibration": {
+            "status": "blocked_no_qualified_reference",
+            "candidate_reference": (
+                "UNOSAT/UNITAR satellite-detected water extent, Mae Sai District, "
+                "13-19 September 2024 - pending licensing per "
+                "docs/reference_mask_licensing_log.md"
+            ),
+            "fit_entrypoint": "geoai_runner.realpipeline.calibration.fit_calibration",
+        },
+    }
+    print(f"      wrote inundation history ({len(history)} rows) and frequency "
+          f"for {len(frequency)} tambons")
+    print("      calibration: blocked (no licensed reference for this event yet)")
+
+
+def _subdistrict_masks(subs, transform, shape):
+    """Rasterise each sub-district polygon to a boolean mask."""
+
     from rasterio.features import rasterize
 
-    inv = ~transform
-    pts = []
-    for f in buildings:
-        lon, lat = f["geometry"]["coordinates"]
-        col, row = inv * (lon, lat)
-        pts.append((int(row), int(col), bool(f["properties"]["exposed_to_flood"])))
-
-    rows, fmax, bmax = [], 0.0, 1
-    tmp = []
-    for f in subs["features"]:
-        m = rasterize([(f["geometry"], 1)], out_shape=shape, transform=transform,
-                      fill=0, all_touched=False, dtype="uint8").astype(bool)
-        if m.sum() == 0:
-            continue
-        fp = float(flood.flood_binary[m].mean())
-        sc = float(susc[m].mean()) / 100.0
-        bc = sum(1 for r, c, _ in pts if 0 <= r < shape[0] and 0 <= c < shape[1] and m[r, c])
-        ec = sum(1 for r, c, e in pts if e and 0 <= r < shape[0] and 0 <= c < shape[1] and m[r, c])
-        fmax = max(fmax, fp); bmax = max(bmax, bc)
-        tmp.append((f["properties"], fp, sc, bc, ec))
-
-    emax = max([e for *_, e in tmp] or [0]) or 1
-    for props, fp, sc, bc, ec in tmp:
-        scaled = fp / fmax if fmax > 0 else 0.0
-        likelihood = round(float(np.clip(0.55 * scaled + 0.45 * sc, 0, 1) * 100), 1)
-        exposure = round(float(np.clip(0.6 * (bc / bmax) + 0.4 * scaled, 0, 1) * 100), 1)
-        conf = "high" if (fp > 0 and sc > 0.4) or (fp == 0 and sc < 0.4) else "medium"
-        rows.append({
-            "subdistrict_id": props.get("subdistrict_id"),
-            "subdistrict_name": props.get("subdistrict_name"),
-            "flood_likelihood_0_100": likelihood,
-            "exposure_0_100": exposure,
-            "access_gap_0_100": round(min(100.0, 0.6 * likelihood + 0.4 * exposure), 1),
-            "road_criticality_0_100": round(40.0 + 60.0 * (ec / emax), 1),
-            "vulnerability_context_0_100": 50.0,
-            "ai_flood_pct": round(fp * 100, 3),
-            "ai_susceptibility_mean": round(sc, 3),
-            "ai_building_count": bc,
-            "ai_exposed_building_count": ec,
-            "confidence_class": conf,
-            "source_name": "Sentinel-1 RTC + Sentinel-2 + Copernicus DEM + DOPA/DWR/OSM (all real)",
-            "source_timestamp": flood.metrics["post_datetime"],
-            "assumptions": flood.metrics["assumptions"],
-        })
-    return pd.DataFrame(rows)
+    masks = {}
+    for feature in subs["features"]:
+        sid = str(feature["properties"]["subdistrict_id"])
+        masks[sid] = rasterize(
+            [(feature["geometry"], 1)], out_shape=shape, transform=transform,
+            fill=0, all_touched=False, dtype="uint8",
+        ).astype(bool)
+    return masks
 
 
-def _run_extra_methods(args, bbox, work, prev, out, transform, res_c, metrics, timings, captions):
-    """Run OmniWaterMask baseline, ChangeStar encroachment (E), Moondream (G)."""
+def _run_extra_methods(args, bbox, work, prev, out, transform, res_c, metrics, timings):
+    """Run the OmniWaterMask baseline and Component E (built-up encroachment).
 
-    import json
+    Component G no longer lives here: the deterministic narrative generator runs
+    unconditionally from the scored decision table in :func:`main`, because it is
+    fast, offline and reproducible -- none of which was true of the Moondream
+    path it replaced.
+    """
+
     import time
 
     import numpy as np
 
     from geoai_runner.realpipeline import encroachment as en
-    from geoai_runner.realpipeline import narrative as nr
     from geoai_runner.realpipeline import water_baseline as wb
     from geoai_runner.realpipeline.raster_io import array_to_png, write_geotiff
 
@@ -382,67 +618,39 @@ def _run_extra_methods(args, bbox, work, prev, out, transform, res_c, metrics, t
     except Exception as exc:  # pragma: no cover
         print(f"      OmniWaterMask unavailable: {exc}")
 
-    # Component E: ChangeStar encroachment (two real Sentinel-2 dates)
-    print("[E2] Component E - ChangeStar encroachment (real 2020 vs 2024) ...")
+    # Component E: built-up encroachment from a multi-temporal built-up product.
+    # ChangeStar returned a resolution-limited null on 10 m Sentinel-2; that
+    # result is preserved in encroachment.CHANGESTAR_NULL_RESULT and carried into
+    # the metrics as `superseded_method`.
+    print("[E2] Component E - built-up encroachment (GHSL epochs) ...")
     try:
         t = time.time()
-        town = (bbox[0], max(bbox[1], 20.40), bbox[2], bbox[3])  # town-core subset
-        en.fetch_rgb_uint8("2020-01-15/2020-03-31", town, work / "enc_t1.tif")
-        en.fetch_rgb_uint8("2024-01-15/2024-03-31", town, work / "enc_t2.tif")
-        write_geotiff(work / "susc_for_enc.tif", res_c.susceptibility_0_100, transform, "EPSG:4326")
-        res_e = en.detect_encroachment(
-            work / "enc_t1.tif", work / "enc_t2.tif", work,
-            floodplain_path=work / "susc_for_enc.tif",
+        # Susceptibility is written on the SAME grid the change product is read
+        # onto, and reproject_to_grid refuses to proceed if the extents disagree.
+        write_geotiff(work / "susc_for_enc.tif", res_c.susceptibility_0_100,
+                      transform, "EPSG:4326")
+        res_e = en.detect_builtup_change(
+            bbox, args.encroachment_t1, args.encroachment_t2, work,
+            susceptibility_path=work / "susc_for_enc.tif",
         )
         timings["encroachment"] = round(time.time() - t, 1)
         metrics["encroachment"] = res_e.metrics
-        import rasterio
-        with rasterio.open(work / "enc_t2.tif") as s:
-            rgb = np.transpose(s.read(), (1, 2, 0)) / 255.0
-        _overlay_png(prev / "E_encroachment.png", rgb, res_e.change_mask.astype(bool))
-        print(f"      change {res_e.metrics.get('change_fraction')} | "
-              f"floodplain share {res_e.metrics.get('floodplain_encroachment_share_of_change')}")
+        array_to_png(prev / "E_encroachment.png", res_e.change_mask, cmap="Reds")
+        share = res_e.metrics.get("floodplain_share_of_growth")
+        print(f"      built-up growth {res_e.metrics.get('growth_cell_fraction')} | "
+              f"share inside floodplain {share}")
+        print(f"      mean delta in/out floodplain: "
+              f"{res_e.metrics.get('mean_delta_in_floodplain')} / "
+              f"{res_e.metrics.get('mean_delta_outside_floodplain')}")
     except Exception as exc:  # pragma: no cover
-        print(f"      ChangeStar unavailable: {exc}")
-
-    # Component G: Moondream narrative
-    if not args.no_narrative:
-        print("[E3] Component G - Moondream narrative (real imagery) ...")
-        try:
-            t = time.time()
-            res_g = nr.generate_captions(
-                {"sar_post": prev / "scene_sar_post_vh.png",
-                 "flood_map": prev / "annotated_decision_bridge.png",
-                 "susceptibility": prev / "C_susceptibility.png"},
-                out / "narrative_captions.json",
-            )
-            timings["narrative"] = round(time.time() - t, 1)
-            metrics["narrative"] = res_g.metrics
-            captions.update(res_g.captions)
-            print(f"      captions {len(res_g.captions)} | "
-                  f"sample: {list(res_g.captions.values())[0][:80]}")
-        except Exception as exc:  # pragma: no cover
-            print(f"      Moondream unavailable: {exc}")
+        print(f"      built-up change unavailable: {exc}")
+        metrics["encroachment"] = {
+            "blocked_reason": str(exc),
+            "superseded_method": en.CHANGESTAR_NULL_RESULT,
+        }
 
 
-def _overlay_png(path, rgb, mask):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    fig, ax = plt.subplots(figsize=(4, 4), dpi=110)
-    ax.imshow(np.clip(rgb, 0, 1))
-    ov = np.zeros((*mask.shape, 4))
-    ov[mask] = [1, 0.1, 0.1, 0.85]
-    ax.imshow(ov)
-    ax.axis("off")
-    fig.tight_layout(pad=0)
-    fig.savefig(path, bbox_inches="tight", pad_inches=0)
-    plt.close(fig)
-
-
-def _write_web_bundle(manifest, scored, prev, captions=None):
+def _write_web_bundle(manifest, scored, prev, narratives=None):
     """Emit the role-surface bundle: apps/web/public/geoai/{json,images}.
 
     The Next.js /command and /studio surfaces read this to render the real
@@ -468,10 +676,13 @@ def _write_web_bundle(manifest, scored, prev, captions=None):
         "generated_at": a.get("post_datetime", ""),
         "official_warning": False,
         "sources": manifest.get("sources", {}),
+        "evaluation_protocol": manifest.get("evaluation_protocol", {}),
         "headline": {
             "sar_flood_pct": pct(a.get("flood_fraction", 0)),
             "sar_pre": a.get("pre_datetime", "")[:10], "sar_post": a.get("post_datetime", "")[:10],
-            "unet_iou": b.get("iou"), "unet_f1": b.get("f1_dice"),
+            "unet_iou": _role_metric(b, "test", "iou"),
+            "unet_f1": _role_metric(b, "test", "f1_dice"),
+            "unet_metric_role": "test",
             "susc_auc": c.get("auc"), "susc_auc_jrc": c.get("auc_vs_jrc_permanent_water"),
             "buildings": d.get("building_count"), "exposed": d.get("exposed_count"),
         },
@@ -481,16 +692,20 @@ def _write_web_bundle(manifest, scored, prev, captions=None):
              "detail": f"Sentinel-1 RTC · pre {a.get('pre_datetime','')[:10]} → post {a.get('post_datetime','')[:10]}",
              "input": "/geoai/scene_sar_post_vh.png", "output": "/geoai/A_sar_flood_probability.png"},
             {"letter": "B", "name": "U-Net water-mask refinement", "book": "Ch. 9 · semantic segmentation",
-             "metric": f"IoU {b.get('iou')} · F1 {b.get('f1_dice')}",
-             "detail": f"Sentinel-2 L2A · ImageNet-pretrained ResNet · {b.get('n_training_tiles','?')} tiles",
+             "metric": _unet_metric_text(b),
+             "detail": (
+                 "Sentinel-2 L2A · ImageNet-pretrained ResNet · "
+                 f"{_tile_count(b, 'train')} training tiles · "
+                 f"held-out spatial blocks ({_buffer_m(b):.0f} m buffer)"
+             ),
              "input": "/geoai/scene_s2_rgb.png", "output": "/geoai/B_water_mask.png"},
             {"letter": "C", "name": "Flood susceptibility surface", "book": "Ch. 13 · pixel regression",
-             "metric": f"AUC {c.get('auc')} vs JRC surface water",
+             "metric": f"AUC {c.get('auc')} vs the real Sentinel-1 flood extent",
              "detail": f"Copernicus DEM GLO-30 + {c.get('river_features','?')} DWR river features",
              "input": "/geoai/scene_dem.png", "output": "/geoai/C_susceptibility.png"},
             {"letter": "D", "name": "Critical-infrastructure extraction", "book": "Ch. 14 · footprints",
              "metric": f"{d.get('building_count')} buildings · {d.get('exposed_count')} flood-exposed",
-             "detail": "OpenStreetMap building footprints vs SAR flood extent",
+             "detail": "OpenStreetMap building footprints vs SAR flood extent (coverage-flagged)",
              "input": "/geoai/scene_s2_rgb.png", "output": "/geoai/D_buildings.png"},
         ],
         "subdistricts": [
@@ -498,17 +713,29 @@ def _write_web_bundle(manifest, scored, prev, captions=None):
              "flood_likelihood": round(float(r["flood_likelihood_0_100"]), 1),
              "exposure": round(float(r["exposure_0_100"]), 1),
              "fpps": round(float(r["fpps_0_100"]), 1), "action": r["action_class"],
-             "confidence": r["confidence_class"]}
+             "confidence": r["confidence_class"],
+             "population": r.get("population"),
+             "context_source": r.get("context_source"),
+             "narrative_en": (narratives or {}).get(r["subdistrict_name"], {}).get("en"),
+             "narrative_th": (narratives or {}).get(r["subdistrict_name"], {}).get("th")}
             for r in scored.to_dict("records")
         ],
-        "additional_methods": _additional_methods(m, captions),
+        "additional_methods": _additional_methods(m, narratives),
         "limitations": [
             "Nearest post-event same-orbit Sentinel-1 scene (2024-09-15) is ~4 days after the "
             "~Sep-11 flood peak, so extent is residual and under-represents the peak.",
             "U-Net labels are the MNDWI water index (weak supervision from a physical index, not "
-            "hand annotation); metrics measure agreement with that index.",
+            "hand annotation); metrics measure agreement with that index on held-out spatial "
+            "blocks, not against a gold human mask.",
             "Susceptibility is relative propensity, not flood depth. Non-operational; not an "
             "official warning.",
+            "flood_likelihood and exposure use fixed versioned anchors "
+            f"({manifest.get('evaluation_protocol', {}).get('scale_anchors', {})}), so values are "
+            "absolute rather than ranked within the district.",
+            "OpenStreetMap building coverage in Mae Sai is 0.9-5.1% of the population-implied "
+            "expectation, so building counts are diagnostic only and do not enter exposure.",
+            "The spatial holdout is runner-local. It is NOT a sealed multi-event partition and "
+            "does not clear the qualified-label gates.",
         ],
     }
     (web / "mae-sai-real.json").write_text(json.dumps(bundle, indent=2), encoding="utf-8")
@@ -522,38 +749,84 @@ def _write_web_bundle(manifest, scored, prev, captions=None):
     return web / "mae-sai-real.json"
 
 
-def _additional_methods(m, captions):
-    """Roadmap/baseline methods (E, F, G, OmniWaterMask) for the role surfaces."""
+def _role_metric(block, role, key):
+    """Read one metric from a role-scoped result, or None when it was blocked."""
+
+    entry = (block or {}).get("metrics_by_role", {}).get(role, {})
+    return entry.get(key)
+
+
+def _tile_count(block, role):
+    return (block or {}).get("tiling", {}).get("tiles_by_role", {}).get(role, "?")
+
+
+def _buffer_m(block):
+    geometry = (block or {}).get("partition", {}).get("geometry", {})
+    return float(geometry.get("buffer_m", 0.0))
+
+
+def _unet_metric_text(block):
+    """Render Component B's headline, naming the role or the reason it is absent."""
+
+    entry = (block or {}).get("metrics_by_role", {}).get("test", {})
+    if "blocked_reason" in entry:
+        return f"held-out metric unavailable ({entry['blocked_reason']})"
+    return f"IoU {entry.get('iou')} · F1 {entry.get('f1_dice')} (held-out test blocks)"
+
+
+def _additional_methods(m, narratives):
+    """Baseline and roadmap methods (OmniWaterMask, E, F, G) for the role surfaces."""
 
     items = []
     om = m.get("omniwatermask")
     if om:
         items.append({
             "letter": "*", "name": "OmniWaterMask baseline", "book": "Ch. 9 · pre-trained (zero training)",
-            "metric": f"IoU {om.get('iou_vs_unet_labels', 'n/a')} vs U-Net labels",
+            "metric": f"IoU {om.get('iou_vs_unet_labels', 'n/a')} vs MNDWI labels",
             "detail": "Sensor-agnostic optical water model — a check on the trained U-Net.",
             "image": "/geoai/baseline_omniwatermask.png"})
     en = m.get("encroachment")
     if en:
+        share = en.get("floodplain_share_of_growth")
+        blocked = en.get("blocked_reason")
         items.append({
-            "letter": "E", "name": "Encroachment detection (ChangeStar)", "book": "Ch. 12 · deep change detection",
-            "metric": f"{round(float(en.get('floodplain_encroachment_share_of_change', 0)) * 100, 1)}% of built-up change in floodplain",
-            "detail": f"{en.get('t1', '2020')} → {en.get('t2', '2024')} Sentinel-2 · new built-up inside the flood zone.",
+            "letter": "E", "name": "Built-up encroachment (multi-temporal built-up surface)",
+            "book": "Ch. 12 · change detection / Ch. 19 · ready-to-use products",
+            "metric": (
+                f"unavailable ({blocked})" if blocked
+                else f"{round(float(share) * 100, 1)}% of built-up growth inside the floodplain"
+                if share is not None else "no built-up growth above threshold"
+            ),
+            "detail": (
+                f"{en.get('t1_year', '?')} → {en.get('t2_year', '?')} built-up surface fraction. "
+                "Replaces ChangeStar, which returned a resolution-limited 0% on 10 m "
+                "Sentinel-2; that null is retained as `superseded_method`."
+            ),
             "image": "/geoai/E_encroachment.png"})
     emb = m.get("embeddings")
     if emb:
+        test = emb.get("metrics_by_role", {}).get("test", {})
         items.append({
             "letter": "F", "name": "Label-scarce embeddings (few-shot)", "book": "Ch. 16 · foundation embeddings",
-            "metric": f"IoU {emb.get('iou', 'n/a')} from a few labels",
-            "detail": "Lightweight classifier on Sentinel-2 features — retrains in seconds as labels arrive.",
+            "metric": (
+                f"unavailable ({test['blocked_reason']})" if "blocked_reason" in test
+                else f"IoU {test.get('iou')} on held-out blocks from "
+                     f"{emb.get('n_training_labels', '?')} labels"
+            ),
+            "detail": (
+                "Lightweight classifier on Sentinel-2 features. The feature vector contains "
+                "the bands the MNDWI target is derived from, so this demonstrates the "
+                "workflow rather than proving few-shot generalisation."
+            ),
             "image": "/geoai/F_fewshot_prediction.png"})
     ng = m.get("narrative")
-    if ng and captions:
+    if ng and narratives:
+        first = next(iter(narratives.values()), {})
         items.append({
-            "letter": "G", "name": "Narrative generation (Moondream VLM)", "book": "Ch. 15 · vision-language",
-            "metric": f"{len(captions)} auto-drafted captions (team-reviewed)",
-            "detail": next(iter(captions.values()), "")[:160],
-            "image": None, "captions": captions})
+            "letter": "G", "name": "Plain-language narrative (deterministic)", "book": "Ch. 15 · communication",
+            "metric": f"{ng.get('narrative_count', len(narratives))} bilingual narratives (EN/TH)",
+            "detail": (first.get("en", "")[:200]),
+            "image": None, "narratives": narratives})
     return items
 
 

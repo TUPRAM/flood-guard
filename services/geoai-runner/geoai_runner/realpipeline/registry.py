@@ -57,6 +57,47 @@ COMPONENTS: tuple[GeoAIComponent, ...] = (
         ),
     ),
     GeoAIComponent(
+        key="temporal_sar",
+        letter="A2",
+        name="Temporal SAR Flood Detection",
+        ai_task="Per-pixel seasonal baseline + robust deviation (unsupervised)",
+        book_ref="Ch. 12, Sec. 12.3-12.4 (temporal extension)",
+        tier="Roadmap",
+        status="runnable",
+        architecture=(
+            "Per-pixel, per-season median and MAD over a multi-year single-orbit "
+            "Sentinel-1 stack; flood = robust negative z-score; probability from a "
+            "two-component Gaussian mixture on the z histogram (reference-free) or "
+            "a calibrated logistic"
+        ),
+        inputs="~180 Sentinel-1 RTC acquisitions on one relative orbit (2018-2024)",
+        output_artifact=(
+            "temporal_flood_probability.tif + inundation_history.csv + "
+            "inundation_frequency.csv"
+        ),
+        feeds_into=(
+            "Supersedes Component A's single pre/post pair once validated; supplies "
+            "multi-year inundation frequency as a real validation target for Component C"
+        ),
+        criteria=("GeoAI Approach", "Geo Intelligence Quality"),
+        plain_language=(
+            "Instead of comparing one before-image to one after-image, compare each "
+            "pixel to what it normally looks like at this time of year across seven "
+            "years. Water shows up as an unusual darkening against the pixel's own "
+            "history, and the same machinery answers how often each tambon floods."
+        ),
+        limitations=(
+            "Requires a single relative orbit: mixing orbits mixes incidence angles "
+            "and makes the baseline bimodal. Needs ~8 observations per season bin, so "
+            "monthly binning falls back to wet/dry on short archives. Agricultural "
+            "drainage and harvest also darken a pixel; seasonal binning reduces but "
+            "does not eliminate that false positive. Under-sampled pixels return NaN "
+            "rather than 'dry'. Probability is currently uncalibrated: no licensed "
+            "reference exists for the Sept-2024 event, so calibration is reported as "
+            "blocked rather than fitted against an inadequate proxy."
+        ),
+    ),
+    GeoAIComponent(
         key="water_unet",
         letter="B",
         name="Water-Mask Refinement",
@@ -78,9 +119,14 @@ COMPONENTS: tuple[GeoAIComponent, ...] = (
             "Optical only, so cloud-limited during active storms -- the monsoon "
             "scenes over Mae Sai are heavily clouded, which is precisely why SAR "
             "is the primary all-weather detector and this is a clear-sky "
-            "refinement layer. In the real run, labels are derived from the MNDWI "
-            "water index (weak supervision from a physical index, not hand "
-            "annotation), so metrics are measured against that index."
+            "refinement layer. Labels are derived from the MNDWI water index "
+            "(weak supervision from a physical index, not hand annotation), so "
+            "metrics measure agreement with that index rather than gold-standard "
+            "accuracy. Metrics are reported per partition role on spatially "
+            "disjoint blocks with a 1600 m buffer; the headline is the held-out "
+            "test role. The conservative buffer costs ~31% of the scene and "
+            "forces a 3x3 block grid, so block-level variance is high. This is a "
+            "runner-local split, NOT a sealed multi-event partition."
         ),
     ),
     GeoAIComponent(
@@ -127,11 +173,14 @@ COMPONENTS: tuple[GeoAIComponent, ...] = (
             "footprint; each footprint is then flagged if it sits inside the flood."
         ),
         limitations=(
-            "The real run uses OpenStreetMap footprints, whose completeness varies "
-            "by area. Exposure is counted against the observed SAR flood extent, so "
+            "OpenStreetMap coverage in Mae Sai is 0.9-5.1% of the population-implied "
+            "building expectation and exactly zero in two tambons, so building counts "
+            "are a diagnostic with an explicit completeness flag and no longer enter "
+            "the exposure score -- exposure is WorldPop 2020 population density "
+            "instead. Exposure-to-flood is counted against the observed SAR extent, so "
             "a post-peak acquisition (as on 2024-09-15) can report zero exposed "
-            "structures even where buildings sit in the floodplain -- read it with "
-            "the susceptibility surface. SAM 3 on THEOS-2 is the resolution upgrade."
+            "structures even where buildings sit in the floodplain; read it with the "
+            "susceptibility surface. SAM 3 on THEOS-2 is the resolution upgrade."
         ),
     ),
     GeoAIComponent(
@@ -160,22 +209,32 @@ COMPONENTS: tuple[GeoAIComponent, ...] = (
         key="encroachment",
         letter="E",
         name="Encroachment / Exposure-Growth Detection",
-        ai_task="Deep-learning change detection (ChangeStar)",
-        book_ref="Ch. 12, Sec. 12.5.2",
+        ai_task="Change detection on a multi-temporal built-up surface product",
+        book_ref="Ch. 12, Sec. 12.5.2; Ch. 19",
         tier="Roadmap",
         status="runnable",
-        architecture="ChangeStar (Changen2 weights) building-change siamese network",
-        inputs="Pre/post high-resolution optical pairs (THEOS-2)",
-        output_artifact="encroachment_change.gpkg",
+        architecture=(
+            "Built-up surface-fraction differencing (GHSL GHS-BUILT-S class product) "
+            "intersected with the susceptibility surface. Replaces ChangeStar "
+            "(Changen2 weights), which executed but returned a resolution-limited "
+            "0% null on 10 m Sentinel-2; that result is retained as "
+            "encroachment.CHANGESTAR_NULL_RESULT."
+        ),
+        inputs="Two epochs of a multi-temporal built-up surface product (~100 m)",
+        output_artifact="builtup_growth.tif + encroachment_floodplain_growth.tif",
         feeds_into="Development-pressure indicator for policy narrative",
         criteria=("Communication", "GeoAI Approach"),
         plain_language=(
-            "Detects new buildings appearing inside the floodplain between two dates "
-            "-- a development-pressure signal for land-use policy."
+            "Measures where built-up surface grew between two dates and how much of "
+            "that growth landed inside the floodplain -- a development-pressure "
+            "signal for land-use policy."
         ),
         limitations=(
-            "ChangeStar detects building change, not floodwater; scope is strictly "
-            "encroachment. Gated on availability of suitable optical pairs."
+            "This detects built-up change, not floodwater; scope is strictly "
+            "encroachment. At ~100 m it measures neighbourhood-scale growth, not "
+            "individual buildings. ChangeStar on sub-metre THEOS-2 remains the "
+            "instance-level upgrade path; on 10 m Sentinel-2 it is below the scale "
+            "the architecture can resolve."
         ),
     ),
     GeoAIComponent(
@@ -197,32 +256,50 @@ COMPONENTS: tuple[GeoAIComponent, ...] = (
             "only a few labels."
         ),
         limitations=(
-            "Published benchmark (Kaushik et al., 2026, IEEE JSTARS) shows foundation "
-            "models trail on SAR vs optical; positioned as a complement to Component "
-            "B, validated on optical first. Real embeddings need download; offline "
-            "demo fits the classifier on locally-computed feature vectors."
+            "Two limits, both machine-readable in the metrics. (1) The local feature "
+            "vector contains green and SWIR1, the same bands the MNDWI target is "
+            "derived from, so the classifier re-derives an index it was handed rather "
+            "than generalising (`feature_contains_target_inputs=True`). (2) These are "
+            "not foundation-model embeddings; real Clay/AlphaEarth/TESSERA vectors "
+            "require download (`is_foundation_model_embedding=False`). Labels are now "
+            "drawn only from training blocks and the headline is the held-out test "
+            "role, but the Ch. 16 claim needs real embeddings evaluated on a "
+            "different district (`is_cross_district_transfer=False`). Published "
+            "benchmark (Kaushik et al., 2026, IEEE JSTARS) shows foundation models "
+            "trail on SAR vs optical."
         ),
     ),
     GeoAIComponent(
         key="narrative",
         letter="G",
-        name="Narrative Generation (Vision-Language Model)",
-        ai_task="Image captioning / VQA (Moondream)",
+        name="Plain-Language Narrative Generation",
+        ai_task="Deterministic natural-language generation from the decision table",
         book_ref="Ch. 15, Sec. 15.7-15.8",
         tier="Roadmap",
         status="runnable",
-        architecture="Compact VLM prompted on before/after image pairs",
-        inputs="Before/after flood image pairs",
-        output_artifact="Auto-drafted plain-language captions (team-reviewed)",
-        feeds_into="Dashboard story tile (Communication criterion)",
+        architecture=(
+            "Versioned template generator (narrative_bands_v1) over the scored "
+            "sub-district table, bilingual EN/TH. Replaces Moondream "
+            "(vikhyatk/moondream2), which executed but returned zero usable "
+            "captions; that result is retained as "
+            "narrative.MOONDREAM_EVALUATION_RECORD."
+        ),
+        inputs="Scored sub-district decision table (flood, exposure, FPPS, action class)",
+        output_artifact="narratives.json (EN/TH per sub-district)",
+        feeds_into="Role-surface story tiles and action briefs (Communication criterion)",
         criteria=("Communication",),
         plain_language=(
-            "Drafts a plain-language caption for each before/after pair to help "
-            "explain the map to non-technical decision-makers."
+            "Writes a plain-language paragraph per sub-district in Thai and English, "
+            "assembled from the decision numbers so every clause traces to a field."
         ),
         limitations=(
-            "Assistive drafting only, always human-reviewed; needs model weights "
-            "downloaded. Optional, lowest priority."
+            "Not a generative model: it cannot describe anything outside the "
+            "decision table, which is the point -- every number traces to a field "
+            "and every qualitative phrase is licensed by a versioned band table, so "
+            "the text cannot fabricate. The uncertainty clause is mandatory and "
+            "cannot be suppressed. A vision-language model was evaluated first and "
+            "rejected: it returned no usable caption, degrades on false-colour SAR "
+            "and analytical figures, and its output is not auditable."
         ),
     ),
 )

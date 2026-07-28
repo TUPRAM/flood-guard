@@ -25,7 +25,7 @@ interface GeoaiExtraMethod {
   metric: string;
   detail: string;
   image: string | null;
-  captions?: Record<string, string>;
+  narratives?: Record<string, Record<string, string>>;
 }
 
 interface GeoaiSubdistrict {
@@ -36,6 +36,10 @@ interface GeoaiSubdistrict {
   fpps: number;
   action: string;
   confidence: string;
+  population?: number | null;
+  context_source?: string;
+  narrative_en?: string | null;
+  narrative_th?: string | null;
 }
 
 interface GeoaiRealBundle {
@@ -47,8 +51,9 @@ interface GeoaiRealBundle {
     sar_flood_pct: number;
     sar_pre: string;
     sar_post: string;
-    unet_iou: number;
-    unet_f1: number;
+    unet_iou: number | null;
+    unet_f1: number | null;
+    unet_metric_role?: string;
     susc_auc: number;
     susc_auc_jrc: number;
     buildings: number;
@@ -151,7 +156,12 @@ export function GeoaiRealPanel({
             <b>SAR flood extent</b> {h.sar_flood_pct}%
           </span>
           <span className={styles.chip}>
-            <b>U-Net water IoU</b> {h.unet_iou}
+            <b>U-Net water IoU</b>{" "}
+            {h.unet_iou === null || h.unet_iou === undefined
+              ? th
+                ? "รอการประเมินซ้ำ"
+                : "pending re-run"
+              : `${h.unet_iou} (${h.unet_metric_role ?? "test"})`}
           </span>
           <span className={styles.chip}>
             <b>Susceptibility AUC</b> {h.susc_auc}
@@ -213,11 +223,12 @@ export function GeoaiRealPanel({
                     )}
                     <p className={styles.metric}>{x.metric}</p>
                     <p className={styles.detail}>{x.detail}</p>
-                    {x.captions && (
+                    {x.narratives && (
                       <ul className={styles.captions}>
-                        {Object.entries(x.captions).map(([k, v]) => (
-                          <li key={k}>
-                            <b>{k}:</b> {v}
+                        {Object.entries(x.narratives).map(([name, byLanguage]) => (
+                          <li key={name}>
+                            <b>{name}:</b>{" "}
+                            {byLanguage[th ? "th" : "en"] ?? byLanguage.en}
                           </li>
                         ))}
                       </ul>

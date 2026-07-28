@@ -242,6 +242,173 @@ def real_sar_flood_extent(
 
 
 # --------------------------------------------------------------------------- #
+# Sentinel-1 time series (single relative orbit, disk-cached)
+# --------------------------------------------------------------------------- #
+def _relative_orbit(item) -> int | None:
+    """Read the relative orbit from whichever STAC property carries it."""
+
+    for key in ("sat:relative_orbit", "sat:relative_orbit_number", "s1:relative_orbit"):
+        value = item.properties.get(key)
+        if value is not None:
+            try:
+                return int(value)
+            except (TypeError, ValueError):  # pragma: no cover - malformed metadata
+                continue
+    return None
+
+
+def fetch_sentinel1_rtc_series(
+    bbox=MAE_SAI_BBOX,
+    *,
+    start: str = "2018-01-01",
+    end: str = "2024-12-31",
+    relative_orbit: int | None = None,
+    orbit_direction: str | None = None,
+    out_shape: tuple[int, int] = (1024, 1024),
+    cache_dir: str | Path | None = None,
+    polarisations: tuple[str, ...] = ("vh",),
+    max_scenes: int | None = None,
+):
+    """Fetch a Sentinel-1 RTC time series over ``bbox`` on a **single** orbit.
+
+    Why one orbit only: Sentinel-1's incidence angle spans roughly 30-46 degrees
+    across the swath and backscatter varies by several dB with it, so a per-pixel
+    baseline built across orbits is bimodal and its deviations are not
+    interpretable. This selects the most-populated qualifying relative orbit and
+    records how many acquisitions it discarded, rather than silently mixing them.
+
+    Scenes are cached as windowed GeoTIFFs under ``cache_dir`` (~2 MB each at
+    1024x1024) and re-reads skip anything already present, so a run interrupted
+    part-way through ~180 network reads resumes rather than restarting. The
+    returned :class:`~geoai_runner.realpipeline.sar_temporal.S1Series` holds
+    paths, never pixels: the full cube would be ~1.5 GB in memory.
+
+    Args:
+        relative_orbit: Force a specific orbit; ``None`` picks the most populated.
+        orbit_direction: Restrict to ``"ascending"``/``"descending"`` before
+            choosing.
+        polarisations: Bands to cache. ``vh`` alone is enough for the water
+            baseline and halves the download.
+        max_scenes: Cap for smoke runs; the manifest records the truncation.
+
+    Returns:
+        An ``S1Series`` ready for :func:`sar_temporal.build_seasonal_baseline`.
+    """
+
+    from geoai_runner.realpipeline.sar_temporal import S1SceneRef, S1Series
+
+    cache_dir = Path(cache_dir) if cache_dir is not None else Path("s1_series_cache")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    catalogue = _pc_client()
+    items = list(
+        catalogue.search(
+            collections=["sentinel-1-rtc"], bbox=list(bbox), datetime=f"{start}/{end}"
+        ).items()
+    )
+    if not items:
+        raise RealDataError(f"no Sentinel-1 RTC scenes for {start}/{end} over {bbox}.")
+
+    discarded: dict[str, int] = {"total_found": len(items)}
+    if orbit_direction is not None:
+        before = len(items)
+        items = [
+            item
+            for item in items
+            if str(item.properties.get("sat:orbit_state", "")).lower() == orbit_direction.lower()
+        ]
+        discarded["other_orbit_direction"] = before - len(items)
+
+    grouped: dict[int, list] = {}
+    missing_orbit = 0
+    for item in items:
+        orbit = _relative_orbit(item)
+        if orbit is None:
+            missing_orbit += 1
+            continue
+        grouped.setdefault(orbit, []).append(item)
+    if missing_orbit:
+        discarded["missing_relative_orbit"] = missing_orbit
+    if not grouped:
+        raise RealDataError("no Sentinel-1 scene carried a usable relative-orbit property.")
+
+    chosen = relative_orbit if relative_orbit is not None else max(
+        grouped, key=lambda orbit: len(grouped[orbit])
+    )
+    if chosen not in grouped:
+        raise RealDataError(
+            f"relative orbit {chosen} has no scenes; available: "
+            f"{ {k: len(v) for k, v in sorted(grouped.items())} }."
+        )
+    selected = sorted(grouped[chosen], key=lambda item: item.datetime)
+    discarded["other_relative_orbit"] = sum(
+        len(v) for k, v in grouped.items() if k != chosen
+    )
+    if max_scenes is not None and len(selected) > max_scenes:
+        discarded["truncated_by_max_scenes"] = len(selected) - max_scenes
+        selected = selected[:max_scenes]
+
+    direction = str(selected[0].properties.get("sat:orbit_state", "unknown")).lower()
+    scenes: list[S1SceneRef] = []
+    failed = 0
+    for item in selected:
+        paths: dict[str, Path] = {}
+        try:
+            for pol in polarisations:
+                destination = cache_dir / f"{item.id}_{pol}.tif"
+                if not destination.exists():
+                    array, _ = _read_band(item, pol, bbox, out_shape)
+                    _write_cached_band(destination, array, bbox, out_shape)
+                paths[pol] = destination
+        except Exception:  # pragma: no cover - transient asset/network failure
+            failed += 1
+            continue
+        scenes.append(
+            S1SceneRef(
+                item_id=item.id,
+                datetime=item.datetime.isoformat(),
+                relative_orbit=int(chosen),
+                orbit_direction=direction,
+                paths=paths,
+            )
+        )
+    if failed:
+        discarded["unreadable_scenes"] = failed
+    if not scenes:
+        raise RealDataError("every Sentinel-1 scene in the selected orbit failed to read.")
+
+    return S1Series(
+        scenes=tuple(scenes),
+        bbox=tuple(bbox),
+        out_shape=tuple(out_shape),
+        relative_orbit=int(chosen),
+        orbit_direction=direction,
+        cache_dir=cache_dir,
+        discarded=discarded,
+    )
+
+
+def _write_cached_band(path: Path, array, bbox, out_shape) -> Path:
+    """Write one windowed band to the series cache in EPSG:4326."""
+
+    import rasterio
+    from affine import Affine
+
+    left, bottom, right, top = bbox
+    height, width = out_shape
+    transform = Affine.translation(left, top) * Affine.scale(
+        (right - left) / width, (bottom - top) / height
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with rasterio.open(
+        path, "w", driver="GTiff", height=height, width=width, count=1,
+        dtype="float32", crs="EPSG:4326", transform=transform, compress="deflate",
+    ) as dst:
+        dst.write(np.asarray(array, dtype="float32"), 1)
+    return path
+
+
+# --------------------------------------------------------------------------- #
 # Other real Planetary Computer layers (Sentinel-2, Copernicus DEM, JRC water)
 # --------------------------------------------------------------------------- #
 S2_BANDS = ("B02", "B03", "B04", "B08", "B11", "B12")  # blue,green,red,nir,swir1,swir2

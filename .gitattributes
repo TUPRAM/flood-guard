@@ -1,26 +1,72 @@
+# ---------------------------------------------------------------------------
+# Line-ending policy — D-41
+#
+# This project verifies artifacts by exact SHA-256 bytes (ingestion manifests,
+# proposal evidence, pinned readiness receipts, offline bundles). Git's
+# core.autocrlf, which defaults to `true` on Git for Windows, rewrites text
+# files to CRLF on checkout. Every affected checksum then mismatches and the
+# fail-closed provenance layer correctly rejects its own committed inputs.
+#
+# Observed on 2026-07-29: with core.autocrlf=true, 762 of 859 tracked files
+# differed from their committed blobs and 21 tests failed for this reason
+# alone. Enumerating individual files (the previous approach) does not scale
+# and had already missed most of the repository.
+#
+# The rule below makes checkout byte-identical to the committed blob on every
+# platform, independent of each developer's git config. Correctness must not
+# depend on local settings.
+#
+# After changing this file, refresh an existing checkout with:
+#     git rm --cached -r . && git reset --hard      # working tree only
+# ---------------------------------------------------------------------------
+
+# Default: detect text, store LF, and CHECK OUT LF on all platforms.
+* text=auto eol=lf
+
+# ---------------------------------------------------------------------------
+# Binary — never touched by any line-ending or diff filter.
+# ---------------------------------------------------------------------------
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.pdf     binary
+*.docx    binary
+*.xlsx    binary
+*.parquet binary
+*.zip     binary
+*.gz      binary
+*.tif     binary
+*.tiff    binary
+*.pth     binary
+*.onnx    binary
+*.woff    binary
+*.woff2   binary
+
+# ---------------------------------------------------------------------------
+# Byte-exact artifacts.
+#
+# These are already covered by the `* text=auto eol=lf` default. They are kept
+# listed explicitly because each one is bound by a SHA-256 recorded in a
+# manifest or receipt: if a future edit relaxes the default, these must still
+# never be rewritten. Treat this block as a tripwire, not as redundancy.
+# ---------------------------------------------------------------------------
+outputs/mae_sai_priority_subdistricts.geojson   -text
+outputs/mae_sai_facility_context.csv            -text
+outputs/mae_sai_population_nodes.csv            -text
+outputs/mae_sai_access_edges.csv                -text
+outputs/mae_sai_scenario_inputs_manifest.json   -text
+outputs/ait_vap001_reference_candidate.json     -text
+outputs/cdse_hat_yai_2025_metadata.csv          -text
+outputs/real_data_ingestion_manifest.csv        -text
+services/api/data/study_area_bundles/*.json     -text
+apps/web/public/offline-demo/mae-sai/*.json     -text
+
 # Proposal evidence is checksummed byte-for-byte and must survive clean checkouts.
-docs/submission/2026-geohackathon/**/*.md text eol=lf
-docs/submission/2026-geohackathon/**/*.json text eol=lf
-packages/contracts/examples/proposal-evidence.fixture-demo.json text eol=lf
-services/geoai-runner/evidence/*.json text eol=lf
-docs/validation/controlled_three_model_gate_receipt.json text eol=lf
-docs/validation/controlled_three_model_acquisition_manifest.csv text eol=lf
-
-# Keep rendered and retained source artifacts opaque to line-ending filters.
-docs/visual-qa/proposal-stage/*.png binary
-services/geoai-runner/evidence/*.png binary
-docs/submission/2026-geohackathon/source/*.docx binary
-docs/submission/2026-geohackathon/source/*.pdf binary
-
-# Candidate dataset manifests and routing/browser artifacts are verified by
-# exact SHA-256 bytes. Keep Git from rewriting their line endings on another OS.
-outputs/mae_sai_priority_subdistricts.geojson -text
-outputs/mae_sai_facility_context.csv -text
-outputs/mae_sai_population_nodes.csv -text
-outputs/mae_sai_access_edges.csv -text
-outputs/mae_sai_scenario_inputs_manifest.json -text
-outputs/ait_vap001_reference_candidate.json text eol=lf
-outputs/cdse_hat_yai_2025_metadata.csv text eol=lf
-outputs/real_data_ingestion_manifest.csv text eol=lf
-services/api/data/study_area_bundles/*.json -text
-apps/web/public/offline-demo/mae-sai/*.json -text
+docs/submission/2026-geohackathon/**/*.md                       -text
+docs/submission/2026-geohackathon/**/*.json                     -text
+packages/contracts/examples/proposal-evidence.fixture-demo.json -text
+services/geoai-runner/evidence/*.json                           -text
+docs/validation/controlled_three_model_gate_receipt.json        -text
+docs/validation/controlled_three_model_acquisition_manifest.csv -text

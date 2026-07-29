@@ -46,7 +46,7 @@ def _configured_paths() -> list[tuple[str, Path]]:
     resolved: list[tuple[str, Path]] = []
     for name in names:
         value = getattr(paths, name)
-        if isinstance(value, (str, Path)):
+        if isinstance(value, str | Path):
             resolved.append((name, Path(value)))
     return resolved
 

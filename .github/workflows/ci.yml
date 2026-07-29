@@ -154,9 +154,12 @@ jobs:
       - name: Research extra must resolve in its own environment
         # omniwatermask needs numpy<2.4 and cannot share the runner's frozen
         # numpy==2.4.2, which is why it is a separate requirements file.
+        # Writes to a real temp path: uv stages the output through a sibling
+        # temp file, so /dev/null is not a usable target.
         run: >-
           uv pip compile services/geoai-runner/requirements-research.txt
-          --python-version 3.12 --quiet --output-file /dev/null
+          --python-version 3.12 --quiet
+          --output-file "${RUNNER_TEMP}/research-resolution.txt"
 
   dependency-audit:
     name: Dependency vulnerability audit

@@ -130,3 +130,69 @@ Three findings worth carrying forward:
 Decision:    Adopted. `.venv-geoai` is the research-tier environment.
              Nothing produced here is evidence until re-run under the governed
              runner.
+
+---
+
+## 2026-07-29 · Component D · Overpass is down, and Overture corroborates the completeness flag
+
+Skill/cmd:   `/geoai-skills:inspect-geo outputs/geoai/subdistricts.geojson`
+             `/geoai-skills:overture-data building --bbox 99.83,20.33,99.97,20.49`
+Environment: `.venv-geoai`
+Output:      `research/skills/overture_buildings_mae_sai.geojson` (untracked)
+Question:    Does an independent building source agree with Component D's 463
+             OSM footprints, and is the coverage caveat quantified correctly?
+
+### Finding 1 — Component D cannot fetch data at all right now
+
+`fetch_osm_buildings` fails on **both** mirrors:
+
+| Mirror | Result |
+| --- | --- |
+| `overpass-api.de` | `CERTIFICATE_VERIFY_FAILED — certificate has expired` |
+| `overpass.kumi.systems` | certificate valid (to 2026-08-31), but `RemoteDisconnected` on the query |
+
+Not caused by the D-01 TLS change: `fetch_osm_buildings` calls `urlopen` with
+no context and always did (unchanged at `debe413`, line 539). The expired
+certificate was confirmed by an independent socket probe.
+
+The docstring promises a cached fallback "so a transient outage does not
+silently drop Component D" — but the cache lives in `outputs/geoai/work/`,
+which is gitignored (`.gitignore:67`). **On a fresh clone there is no cache, so
+Component D has no working path today.**
+
+### Finding 2 — the project's own completeness flag is accurate
+
+This is a correction to how the audit framed it. FloodGuard already measured
+this and already publishes it:
+
+```
+subdistrict        osm_building_count  completeness_ratio  flag
+Wiang Phang Kham                  136              0.0279  severely_incomplete
+Pong Ngam                          92              0.0508  severely_incomplete
+Mae Sai                            86              0.0192  severely_incomplete
+Ko Chang                           38              0.0227  severely_incomplete
+Pong Pha                           26              0.0112  severely_incomplete
+Huai Khrai                         19              0.0085  severely_incomplete
+Si Mueang Chum / Ban Dai            0              0.0000  severely_incomplete
+                            TOTAL 397
+```
+
+Overture, same bbox, spatially joined to the same 8 tambons: **54,978
+buildings**. So 397 / 54,978 ≈ **0.7 %** — the same order of magnitude as the
+0.85–5.1 % the pipeline computes for itself. The `severely_incomplete` flag was
+not hedging; it was correct, and an independent source now corroborates it.
+
+### Finding 3 — Component D contributes no signal
+
+`ai_exposed_building_count` is **0 for every one of the 8 tambons**, and
+`metrics.infrastructure.exposed_count = 0`. A layer that is ~99 % incomplete
+*and* contributes zero exposed structures is not adding information to the
+decision layer. That is an argument for replacing its source or dropping it
+from the MVP tier, not for another caveat.
+
+Result:      Overture returns 138x more buildings than OSM/Overpass over the
+             same area, works today, and is already installed via `geoai-py`.
+Decision:    **Do not promote.** Swapping Component D's source would change a
+             published figure, and per ADR-I that requires a governed re-run
+             with an evaluation behind it, not a file copy. Recorded as the
+             evidence for a follow-up decision on Component D's source.

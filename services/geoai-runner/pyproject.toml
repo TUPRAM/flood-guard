@@ -58,6 +58,10 @@ realpipeline = [
   "scikit-learn>=1.4",
   "pystac-client>=0.8",
   "planetary-computer>=1.0",
+  # Component D's building source since 2026-07-29. Declared explicitly rather
+  # than relied on transitively through geoai-py, so acquisition does not depend
+  # on the optional geoai extra.
+  "overturemaps>=0.14",
 ]
 
 # Component D zero-shot path (infrastructure.extract_buildings_sam imports

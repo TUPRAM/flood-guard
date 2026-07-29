@@ -661,6 +661,111 @@ def fetch_osm_buildings(
     raise RealDataError("Overpass building query failed on all mirrors: " + "; ".join(errors))
 
 
+def fetch_overture_buildings(
+    bbox=MAE_SAI_BBOX,
+    cache_path: str | Path | None = None,
+) -> list[dict]:
+    """Fetch building footprint centroids from Overture Maps.
+
+    Component D's primary source since 2026-07-29. Overture aggregates OSM with
+    ML-derived footprints from Microsoft and Google, so it covers areas OSM has
+    never been mapped in -- which is most of Mae Sai district.
+
+    Why the source changed, measured rather than assumed:
+
+    | source                       | buildings in the 8 tambons |
+    |------------------------------|----------------------------|
+    | OSM via Overpass             |                        397 |
+    | JRC-corroborated expectation | severely incomplete (~1 %) |
+    | Overture                     |                     54,978 |
+
+    The old path also stopped working: ``overpass-api.de`` is serving an expired
+    certificate and the kumi.systems mirror closes the connection, while the
+    documented cache fallback lives under gitignored ``outputs/geoai/work/`` and
+    so does not exist on a clean clone.
+
+    Uses ``overturemaps`` directly rather than ``geoai.download_overture_buildings``
+    so acquisition stays independent of the optional ``geoai`` extra, matching
+    the rationale on :func:`_pc_client`.
+
+    Returns the same ``{id, lon, lat, tags}`` centroid shape as
+    :func:`fetch_osm_buildings`, so downstream Component D code is unchanged.
+    """
+
+    try:
+        import overturemaps
+    except ImportError as exc:  # pragma: no cover - dependency guard
+        raise RealDataError(
+            "Component D needs the 'overturemaps' package. Install the "
+            "realpipeline extra: uv sync --project services/geoai-runner "
+            "--extra realpipeline"
+        ) from exc
+
+    try:
+        gdf = overturemaps.geodataframe("building", bbox=tuple(bbox))
+    except Exception as exc:
+        if cache_path and Path(cache_path).exists():
+            cached = json.loads(Path(cache_path).read_text(encoding="utf-8"))
+            if cached:
+                return cached
+        raise RealDataError(f"Overture building fetch failed for {bbox}: {exc}") from exc
+
+    if gdf is None or len(gdf) == 0:
+        raise RealDataError(f"Overture returned no buildings for {bbox}.")
+
+    def _clean(value: object) -> str:
+        """Overture leaves `class` null for most footprints; pandas renders that
+        as the float nan, which would otherwise reach the output as "nan"."""
+
+        if value is None:
+            return ""
+        text = str(value).strip()
+        return "" if text.lower() in {"nan", "none", "<na>"} else text
+
+    centroids = gdf.geometry.representative_point()
+    out = [
+        {
+            "id": str(row_id),
+            "lon": float(point.x),
+            "lat": float(point.y),
+            "tags": {"source": "overture", "class": _clean(cls)},
+        }
+        for row_id, point, cls in zip(
+            gdf.get("id", range(len(gdf))),
+            centroids,
+            gdf.get("class", [None] * len(gdf)),
+            strict=False,
+        )
+    ]
+    if out and cache_path:
+        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(cache_path).write_text(json.dumps(out), encoding="utf-8")
+    return out
+
+
+def fetch_buildings(
+    bbox=MAE_SAI_BBOX,
+    cache_path: str | Path | None = None,
+) -> tuple[list[dict], str]:
+    """Component D's building source, Overture first with OSM as a fallback.
+
+    Returns ``(buildings, source_name)``. The source is returned rather than
+    assumed so it can be recorded in the run metrics -- a published building
+    count means nothing without knowing which source produced it.
+    """
+
+    try:
+        return fetch_overture_buildings(bbox, cache_path=cache_path), "overture"
+    except RealDataError as overture_error:
+        try:
+            return fetch_osm_buildings(bbox, cache_path=cache_path), "openstreetmap_overpass"
+        except RealDataError as osm_error:
+            raise RealDataError(
+                f"Both building sources failed. Overture: {overture_error}; "
+                f"OSM/Overpass: {osm_error}"
+            ) from overture_error
+
+
 def rasterize_lines(features: dict, transform, shape) -> np.ndarray:
     """Rasterize a GeoJSON line layer (e.g. DWR rivers) onto a grid."""
 

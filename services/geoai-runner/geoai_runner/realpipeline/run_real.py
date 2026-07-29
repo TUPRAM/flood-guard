@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -35,7 +36,10 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:  # make root floodguard importable when not installed
     sys.path.insert(0, str(SRC_ROOT))
 
-from floodguard.scoring import score_subdistricts  # noqa: E402
+# D-02: the candidate lane reaches FPPS only through a signed, report-only
+# receipt. `floodguard.scoring.score_subdistricts` is deliberately NOT imported
+# here -- test_no_direct_scoring_import.py fails the build if it comes back.
+from floodguard.candidate_zonal_receipt import score_candidate_areas  # noqa: E402
 
 from geoai_runner.realpipeline import (  # noqa: E402  # noqa: E402
     aggregate,
@@ -65,6 +69,39 @@ STUDY_LATITUDE = 20.4
 # Sentinel-1 acquisition is Sep 15.
 FLOOD_PEAK_DATE = "2024-09-11"
 PEAK_OFFSET_DAYS = 4
+
+
+def _candidate_signing_key() -> bytes:
+    """Resolve the HMAC key that binds candidate evidence to its receipt (D-02).
+
+    Fail-closed on purpose. The figures this run produces are published to the
+    Command surface; producing them with no receipt is the exact failure the
+    candidate lane exists to prevent, so an absent key stops the run rather
+    than silently degrading to unsigned output.
+    """
+
+    raw = os.environ.get("FLOODGUARD_ZONAL_SIGNING_KEY_HEX", "").strip()
+    if not raw:
+        raise SystemExit(
+            "FLOODGUARD_ZONAL_SIGNING_KEY_HEX is not set.\n"
+            "Candidate GeoAI evidence must be bound to a signed report-only "
+            "receipt before it can be published (audit D-02).\n"
+            "  PowerShell:  $env:FLOODGUARD_ZONAL_SIGNING_KEY_HEX = "
+            '(python -c "import secrets;print(secrets.token_hex(32))")\n'
+            "See .env.example. The key never appears in the receipt."
+        )
+    try:
+        key = bytes.fromhex(raw)
+    except ValueError as exc:
+        raise SystemExit(
+            "FLOODGUARD_ZONAL_SIGNING_KEY_HEX must be hex-encoded bytes."
+        ) from exc
+    if len(key) < 32:
+        raise SystemExit(
+            f"FLOODGUARD_ZONAL_SIGNING_KEY_HEX decodes to {len(key)} bytes; "
+            "at least 32 are required."
+        )
+    return key
 
 
 def main() -> None:
@@ -350,13 +387,21 @@ def main() -> None:
         f"AUC vs real SAR flood {res_c.metrics.get('auc')} | vs JRC {res_c_jrc.metrics.get('auc')}"
     )
 
-    # ---------------- D: real OSM buildings --------------------------------
-    print("[6/9] Component D - real OpenStreetMap building footprints ...")
+    # ---------------- D: real building footprints --------------------------
+    # Overture since 2026-07-29, OSM/Overpass as fallback. OSM returned 397
+    # buildings across the 8 tambons against Overture's 54,978 -- ~0.7 %, which
+    # matched the pipeline's own severely_incomplete flag -- and Overpass has
+    # since stopped serving (expired certificate, no cache on a clean clone).
+    print("[6/9] Component D - real building footprints (Overture, OSM fallback) ...")
     t = time.time()
+    building_source = "unavailable"
     try:
-        buildings = rd.fetch_osm_buildings(bbox, cache_path=work / "osm_buildings.json")
+        buildings, building_source = rd.fetch_buildings(
+            bbox, cache_path=work / "buildings.json"
+        )
+        print(f"      source: {building_source} | {len(buildings)} footprints")
     except rd.RealDataError as exc:
-        print(f"      Overpass unavailable ({exc}); skipping")
+        print(f"      no building source available ({exc}); skipping")
         buildings = []
     flood_dil = _dilate(flood.flood_binary.astype(bool), 3)
     feats, exposed = [], 0
@@ -370,7 +415,8 @@ def main() -> None:
             {
                 "type": "Feature",
                 "properties": {
-                    "osm_id": b["id"],
+                    "building_id": b["id"],
+                    "source": building_source,
                     "exposed_to_flood": ex,
                     "amenity": b["tags"].get("amenity", ""),
                 },
@@ -385,11 +431,20 @@ def main() -> None:
         "building_count": len(feats),
         "exposed_count": exposed,
         "data_mode": "real_licensed_inputs",
-        "extraction_method": "OpenStreetMap footprints (real)",
+        "building_source": building_source,
+        "extraction_method": (
+            "Overture Maps footprints (real)"
+            if building_source == "overture"
+            else "OpenStreetMap footprints (real, fallback)"
+        ),
         "assumptions": (
-            "Real OSM building footprints; exposure = footprint within the "
-            "real SAR flood extent (dilated). SAM 3 zero-shot on THEOS-2 remains "
-            "the higher-resolution upgrade."
+            "Real building footprints; exposure = footprint within the real SAR "
+            "flood extent (dilated). Source changed from OSM/Overpass to Overture "
+            "on 2026-07-29: OSM covered ~0.7% of the district (397 vs 54,978 "
+            "footprints) and Overpass stopped serving. Overture aggregates OSM "
+            "with ML-derived footprints, so its coverage is far higher but its "
+            "per-building attribution is weaker. SAM 3 zero-shot on THEOS-2 "
+            "remains the higher-resolution upgrade."
         ),
     }
     _render_buildings(prev / "D_buildings.png", flood.flood_binary, feats, transform, SHAPE)
@@ -454,7 +509,31 @@ def main() -> None:
         source_timestamp=flood.metrics["post_datetime"],
     )
     table = aggregate.build_fpps_input_table(ai_inputs, context=context)
-    scored = score_subdistricts(table)
+
+    # D-02: candidate evidence reaches FPPS only through a signed, report-only
+    # receipt. Fail-closed -- unsigned candidate figures are exactly what this
+    # gate exists to prevent, and they are published to the Command surface.
+    signing_key = _candidate_signing_key()
+    scored, candidate_receipt = score_candidate_areas(
+        table,
+        source_metadata={
+            "study_area_id": "mae_sai",
+            "dataset_mode": "real_licensed_inputs",
+            "source_timestamp": flood.metrics["post_datetime"],
+            "generated_at": flood.metrics["post_datetime"],
+        },
+        model_run_id=f"realpipeline-mae-sai-{flood.metrics['post_datetime'][:10]}",
+        signing_key=signing_key,
+        key_id=os.environ.get("FLOODGUARD_ZONAL_SIGNING_KEY_ID", "candidate-local"),
+        generated_at=flood.metrics["post_datetime"],
+    )
+    (out / "candidate_zonal_receipt.json").write_text(
+        json.dumps(candidate_receipt, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    print(
+        f"      candidate receipt: {candidate_receipt['area_count']} areas, "
+        f"can_feed_decision_layer={candidate_receipt['can_feed_decision_layer']}"
+    )
     cols = [
         "subdistrict_id",
         "subdistrict_name",
@@ -879,6 +958,12 @@ def _write_web_bundle(manifest, scored, prev, narratives=None):
         "study_area": "Mae Sai District, Chiang Rai",
         "generated_at": a.get("post_datetime", ""),
         "official_warning": False,
+        # D-02: the payload carried fpps values with no tier marker at all, so
+        # a reader could not tell candidate figures from governed ones. These
+        # three fields make the tier machine-readable rather than editorial.
+        "evidence_tier": "candidate",
+        "can_feed_decision_layer": False,
+        "aggregation_status": "report_only",
         "sources": manifest.get("sources", {}),
         "evaluation_protocol": manifest.get("evaluation_protocol", {}),
         "headline": {

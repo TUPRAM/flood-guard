@@ -247,3 +247,126 @@ Result:      `torch 2.13.0+cu126`, CUDA 12.6, RTX 3060 Laptop active.
              the light `.venv` and root `.venv` cannot import geoai or torch.
 Decision:    Adopted for `.venv-geoai` only. Documented in the runner README,
              including the two traps.
+
+---
+
+## 2026-07-29 · Component ★ / B · T2.4 — the IoU 0.07 is not a defect; the reference is wrong
+
+Skill/cmd:   `research/skills/diagnose_owm.py`
+Environment: `.venv-research` (numpy 2.3.5 + omniwatermask 0.5.0)
+Output:      `research/skills/owm_diagnosis/` (untracked)
+Question:    Is Component ★'s IoU of 0.07 a defect, and if so which one?
+
+### Both leading hypotheses were wrong
+
+The audit ranked **wrong `band_order`** first. Dead on reading:
+`water_baseline.py` already passes `[3, 2, 1, 4]` and documents the mapping.
+
+Reading the fetch path inverted the second one. `fetch_sentinel2_composite`
+already normalises (`np.clip(mosaic / 10000.0, 0, 1)`), so OWM is handed 0-1
+reflectance while the book's Ch. 9.6.4 example feeds it raw L2A. Plausible —
+and testable by running OWM on both scalings of identical pixels:
+
+```
+reflectance 0-1     water fraction 0.00325   IoU 0.0536
+scaled 0-10000      water fraction 0.00330   IoU 0.0541
+```
+
+They agree to three decimal places. **Scaling is not the cause** — OWM
+normalises internally. H1′ rejected.
+
+### What it actually is
+
+The scene is **2024-02-18, cloud cover 0.004 %** — the pipeline deliberately
+requests the dry season (`datetime_range="2024-01-15/2024-03-15"`) because
+monsoon skies are cloudy. So there is **no flood in this scene**, and true
+water extent should sit near permanent water. An independent reference already
+in the pipeline settles it:
+
+| Source | Water fraction |
+| --- | --- |
+| OmniWaterMask (either scaling) | **0.33 %** |
+| **JRC Global Surface Water, occurrence > 50 %** | **0.37 %** |
+| MNDWI > 0 — *the reference the IoU was measured against* | **3.24 %** |
+
+OmniWaterMask lands within 12 % of JRC. **MNDWI > 0 over-detects water by
+roughly 10x** on a cloud-free dry-season scene — consistent with it being a
+permissive threshold that also flags wet soil, terrain shadow, and some
+vegetation.
+
+**H3 CONFIRMED.** The 0.07 measures disagreement between two different water
+definitions, not OmniWaterMask's accuracy. Publishing it as a suspect model
+metric is backwards: the model matches the independent reference; the label
+does not.
+
+### The consequence that matters more
+
+`water_label = (mndwi > 0.0)` is not only the ★ comparison reference — it is
+**Component B's training target and its evaluation target**:
+
+```
+run_real.py:201  water_label = (mndwi > 0.0)
+run_real.py:210  write_geotiff(work/"water_label.tif", water_label, ...)
+run_real.py:222  water_unet.fit_channel_stats(work/"water_label.tif", ..., role="train")
+run_real.py:253  water_unet.evaluate_roles(b_prob, water_label, assignment)
+```
+
+So Component B learns, and is scored against, a target that over-detects water
+by ~10x. Its metric was already withdrawn as leaky (spatial autocorrelation);
+this is a **second, independent defect** in the same component, and the leakage
+fix would not have touched it.
+
+Result:      Component ★ is behaving correctly. The reference is the problem.
+Decision:    **Do not promote.** Two follow-ups recorded, neither taken here
+             because both change published figures:
+             1. Re-frame ★'s published metric as label disagreement, not
+                model accuracy — or drop the IoU and report extent vs JRC.
+             2. Review the MNDWI threshold before Component B is re-run. A
+                threshold review is a prerequisite for that re-run, not a
+                separate nicety.
+
+---
+
+## 2026-07-29 · Component D · source swapped to Overture Maps
+
+Skill/cmd:   `overturemaps.geodataframe("building", bbox=...)` via
+             `real_data.fetch_buildings`
+Environment: `.venv-geoai`
+Output:      code change (tracked); no published artifact regenerated
+Question:    Can Component D's building source be replaced with one that works?
+
+Result:      Yes. `fetch_buildings` now tries Overture first and falls back to
+             OSM/Overpass, returning `(buildings, source_name)` so the source is
+             recorded in the run metrics rather than assumed.
+
+Live over the real study bbox (`99.799, 20.2499, 100.0445, 20.4754`):
+
+```
+source: overture
+count : 118,072      (vs OSM's 397 across the 8 tambons)
+shape : {id, lon, lat, tags} — matches the fetch_osm_buildings contract
+```
+
+`overturemaps` is now declared explicitly in the `realpipeline` extra rather
+than relied on transitively through `geoai-py`, so acquisition stays
+independent of the optional geoai extra — the same rationale recorded on
+`_pc_client`.
+
+### What has NOT changed, and why
+
+**The committed artifacts still say 463 buildings and 0 exposed.** Only the
+code path changed. `outputs/geoai/*` and `apps/web/public/geoai/mae-sai-real.json`
+are regenerated by a full `run_real` pass, which needs the whole component
+chain and roughly an hour. Publishing a new building count without re-running
+the exposure computation that depends on it would be exactly the file-copy
+promotion ADR-I forbids.
+
+So the state is honest but split: the **source is fixed**, the **published
+figures are stale**, and the next full run will move `building_count` from 463
+to ~10^5 and `exposed_count` off zero. That re-run is the promotion step, and
+it needs the D-02 receipt (now in place) plus a look at whether Overture's
+weaker per-building attribution changes what `amenity`-based logic can claim.
+
+Decision:    Code swap adopted. Published figures deliberately left stale until
+             a governed re-run. Recorded here so the gap is visible rather than
+             discovered later.

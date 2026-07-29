@@ -76,11 +76,33 @@ extra. None of these commands change the root dependencies.
 
 - `geoai-py 0.41.1`, `numpy 2.4.2` — matches the frozen contract;
   `geoai_runner.environment.inspect_environment()` issues a receipt.
-- **`torch 2.13.0+cpu` — CPU only.** PyPI's Windows wheels carry no CUDA, so an
-  NVIDIA GPU present on the machine is *not* used. Enabling it requires
-  installing torch from `download.pytorch.org/whl/cuXXX`, which conflicts with
-  the frozen pin and the environment receipt. Treat that as a deliberate
-  decision, not a silent upgrade.
+- **GPU: opt in explicitly.** PyPI's Windows wheels for torch carry no CUDA, so
+  a default install lands `2.13.0+cpu` and any NVIDIA GPU sits idle. Enabling
+  CUDA does **not** violate the frozen environment:
+  `geoai_runner/environment.py` checks Python, the geoai commit, and
+  `geoai-py` — it never checks torch; and `torch==2.13.0` is satisfied by
+  `2.13.0+cu126` under PEP 440 local-version rules. The only real cost is that
+  the resulting environment diverges from `uv.lock`, which is why it belongs in
+  `.venv-geoai` and not in `.venv`.
+
+  ```powershell
+  $env:UV_HTTP_TIMEOUT = "1800"   # the wheel is ~2.4 GB; the 30s default fails
+  uv pip install --python services/geoai-runner/.venv-geoai/Scripts/python.exe `
+    --index-url https://download.pytorch.org/whl/cu126 `
+    --reinstall-package torch --reinstall-package torchvision `
+    "torch==2.13.0" "torchvision==0.28.0"
+  ```
+
+  `--reinstall-package` is required: without it uv sees `2.13.0+cpu` as already
+  satisfying `==2.13.0` and does nothing.
+
+  Measured on an RTX 3060 Laptop (6.4 GB), Component B's real config
+  (unet/resnet18, 6 channels, 128 px tiles, batch 8):
+
+  | | per step | 20 epochs | 120 epochs | peak VRAM |
+  | --- | --- | --- | --- | --- |
+  | CPU | 913 ms | 11 min | 64 min | — |
+  | CUDA 12.6 | **33 ms** | 0.4 min | **2.3 min** | 0.85 GB |
 - The `geoai-skills` plugin invokes `python3`, which a uv venv on Windows does
   not provide. Copy `python.exe` to `python3.exe` inside
   `.venv-geoai/Scripts/`, or run the skills from an environment where `python3`

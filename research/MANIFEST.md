@@ -117,9 +117,7 @@ Three findings worth carrying forward:
    project's own frozen-environment gate passes: Python 3.12.13, geoai-py
    0.41.1, declared commit matched. That gate had never been exercised here.
 2. **CPU-only torch despite an RTX 3060 (6 GB) being present.** PyPI's Windows
-   wheels ship without CUDA. Component B training and the `detect-objects`
-   models will run, but slowly. Switching to a CUDA wheel means leaving the
-   frozen pin, so it is a decision, not a fix.
+   wheels ship without CUDA. Resolved the same day — see the CUDA entry below.
 3. **All 30 `geoai` APIs the skills call exist** on 0.41.1 — the skill contract
    holds against this pinned version.
 
@@ -196,3 +194,56 @@ Decision:    **Do not promote.** Swapping Component D's source would change a
              published figure, and per ADR-I that requires a governed re-run
              with an evaluation behind it, not a file copy. Recorded as the
              evidence for a follow-up decision on Component D's source.
+
+---
+
+## 2026-07-29 · Setup · CUDA enabled for the research environment
+
+Skill/cmd:   `uv pip install --index-url .../cu126 --reinstall-package torch ...`
+Environment: `.venv-geoai` only
+Output:      —
+Question:    Is the frozen pin actually a barrier to using the GPU, and is the
+             GPU worth using?
+
+### Correction to the audit's framing
+
+Two claims made earlier were wrong, and both were checked rather than repeated:
+
+| Claim | Reality |
+| --- | --- |
+| "a CUDA wheel invalidates the environment receipt" | `environment.py` checks Python 3.12, the geoai commit, and `geoai-py==0.41.1`. **It never checks torch.** Receipt still issues under cu126. |
+| "a CUDA wheel leaves the frozen pin" | `torch==2.13.0` is satisfied by `2.13.0+cu126` under PEP 440 local-version rules. The pin holds. |
+
+So this was an empirical question, not a governance one. The only genuine cost
+is divergence from `uv.lock` inside `.venv-geoai` — which is why it goes there
+and not into `.venv`.
+
+### Measurement
+
+Component B's real config (unet/resnet18, 6 channels, 128 px tiles, batch 8):
+
+```
+CPU        913 ms/step   20 epochs 11 min    120 epochs 64 min
+CUDA 12.6   33 ms/step   20 epochs  0.4 min  120 epochs  2.3 min   (28x)
+peak VRAM 0.85 GB of 6.4 GB
+```
+
+`calibration.py` does **not** train — it computes Brier score, log loss and
+reliability curves over probability arrays — so T2.3 needs inference only and
+would have been fine on CPU. The GPU is justified by Component B's withdrawn
+metric needing a **re-run**: a 64-minute feedback loop is where iteration dies.
+
+### Two practical traps, both hit
+
+1. `uv pip install "torch==2.13.0"` against the CUDA index **does nothing** —
+   uv sees `2.13.0+cpu` as already satisfying the specifier.
+   `--reinstall-package torch` is required.
+2. The first attempt failed after downloading 2.4 GB:
+   `UV_HTTP_TIMEOUT` defaults to 30 s. Set it to 1800. uv rolled back cleanly
+   and `.venv-geoai` was verified healthy before retrying.
+
+Result:      `torch 2.13.0+cu126`, CUDA 12.6, RTX 3060 Laptop active.
+             Environment receipt still issued. Both isolation gates still hold:
+             the light `.venv` and root `.venv` cannot import geoai or torch.
+Decision:    Adopted for `.venv-geoai` only. Documented in the runner README,
+             including the two traps.

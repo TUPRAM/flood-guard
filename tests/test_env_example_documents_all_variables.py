@@ -52,6 +52,21 @@ SUFFIXES = {".ts", ".tsx", ".mjs", ".js", ".py", ".yml", ".yaml"}
 EXEMPT: frozenset[str] = frozenset()
 
 
+#: Directories whose contents are not ours to document. Matching on an exact
+#: ".venv" name was not enough: the GeoAI stack installs into sibling
+#: environments (.venv-geoai, .venv-research) that live under services/, and
+#: geoai-py vendors a geoai-mcp-server package declaring its own GEOAI_* config
+#: variables. Those are third-party settings, not FloodGuard's.
+VENDORED_PARTS = frozenset({"site-packages", "node_modules", "__pycache__", ".git", "dist-info"})
+
+
+def _is_vendored(path: Path) -> bool:
+    return any(
+        part in VENDORED_PARTS or part.startswith(".venv") or part.endswith(".egg-info")
+        for part in path.parts
+    )
+
+
 def _names_in(text: str) -> set[str]:
     names: set[str] = set()
     for match in DIRECT_ACCESS.finditer(text):
@@ -74,7 +89,7 @@ def _referenced_variables() -> dict[str, set[str]]:
         for path in base.rglob("*"):
             if path.suffix not in SUFFIXES or not path.is_file():
                 continue
-            if "node_modules" in path.parts or ".venv" in path.parts:
+            if _is_vendored(path):
                 continue
             try:
                 text = path.read_text(encoding="utf-8")

@@ -70,3 +70,26 @@ outputs/geoai/work/
 OWM_cache/
 cache/
 .cache/
+
+# ---------------------------------------------------------------------------
+# research/ — ungoverned exploration sandbox (D-35)
+#
+# geoai-skills and other exploratory tooling write bare .tif/.gpkg/.geojson
+# with no checksum, no ModelRun, no registry entry and no official_warning
+# marker. Those files are HYPOTHESES. Committing them would erase the
+# distinction between sample, evidence and guess that the artifact lifecycle
+# exists to create.
+#
+# Only the manifest is tracked, so the repository records what was tried and
+# what was decided without carrying the outputs themselves. Promotion to
+# evidence/ requires reproduction under realpipeline with a spatial holdout and
+# a signed receipt — never a file copy. See ADR-I.
+# ---------------------------------------------------------------------------
+research/**
+!research/
+!research/MANIFEST.md
+
+# geoai-skills session state — a cache, never an input to a governed run (D-38)
+.geoai-skills/
+research/.venv-research/
+.venv-research/

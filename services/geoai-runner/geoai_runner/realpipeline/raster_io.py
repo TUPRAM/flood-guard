@@ -3,6 +3,16 @@
 These wrap rasterio so the model modules stay focused on the science. rasterio
 is an optional dependency (``pip install -e ".[geoai]"``); importing this module
 without it raises a clear message.
+
+Why not ``geoai.clip_raster_by_bbox`` / ``stack_bands`` / ``mosaic_geotiffs``
+(D-34): these helpers carry FloodGuard's own CRS, nodata and dtype conventions,
+and rasterio is a *base* dependency of the runner while ``geoai-py`` is an
+optional extra. Routing raster IO through the library would make every
+component require the full GeoAI stack, which would break the dependency
+isolation that CI job ``geoai-normal`` exists to enforce.
+
+The ``process-raster`` skill wraps the library equivalents and is the right
+tool for exploration in ``research/``; this module is the governed path.
 """
 
 from __future__ import annotations

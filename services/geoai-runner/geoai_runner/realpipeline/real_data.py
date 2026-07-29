@@ -86,6 +86,21 @@ class RealFloodResult:
 
 
 def _pc_client():
+    """Open a signed Planetary Computer STAC client.
+
+    Deliberately not ``geoai.pc_stac_search`` / ``geoai.pc_stac_download``
+    (D-34). Those helpers fetch whole assets; a Sentinel-1 RTC scene is
+    multi-gigabyte and Mae Sai is a 0.14 x 0.16 degree box. Driving
+    ``pystac_client`` directly lets :func:`_read_band` do a windowed COG read
+    through ``rasterio.windows.from_bounds``, which is the difference between
+    a few megabytes and a full scene download per band per date.
+
+    Keeping this hand-rolled also means the pipeline does not require
+    ``geoai-py`` merely to locate imagery -- acquisition stays usable in the
+    dependency-light environment. Use the ``search-stac`` skill for
+    exploration; use this for the governed run.
+    """
+
     try:
         import planetary_computer as pc
         import pystac_client
@@ -599,6 +614,15 @@ def fetch_osm_buildings(
     Overpass is a free public service and intermittently returns 429/504. We try
     each mirror, and fall back to a previously-cached real response so a
     transient outage does not silently drop Component D.
+
+    On ``geoai.download_overture_buildings`` (D-34): Overture is a genuinely
+    useful *second* source, not a replacement. Component D's 463 footprints are
+    currently published with a coverage caveat that no measurement backs.
+    Fetching the same bbox from Overture and reporting the agreement rate would
+    turn that caveat into a number. Deliberately not done here -- an
+    independent source belongs in ``research/`` first (ADR-I), and adding it to
+    the governed path would change a published figure without an evaluation to
+    justify it. Use ``/geoai-skills:overture-data building --bbox ...``.
     """
 
     query = (

@@ -1,0 +1,66 @@
+# Dependency update monitoring (D-23).
+#
+# The repository had no vulnerability scanning of any kind, so CVE exposure in
+# ~292 resolved runner packages, the FastAPI stack, and the Next.js toolchain
+# was simply unknown.
+#
+# Grouped, monthly PRs rather than per-package weekly ones: this is a small
+# project with one primary developer, and an unreviewed flood of PRs is
+# equivalent to no monitoring at all. Security updates are ungrouped and
+# immediate.
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Root decision package.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      python-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "uv"
+    directory: "/services/api"
+    schedule:
+      interval: "monthly"
+    groups:
+      api-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # The GeoAI runner is a FROZEN environment: geoai-py, torch, numpy and
+  # rasterio versions are asserted at runtime by geoai_runner/environment.py
+  # and documented in its README. Automated bumps of those would break the
+  # environment receipt, so they are ignored here and must be changed
+  # deliberately. Everything else in the runner is still monitored.
+  - package-ecosystem: "uv"
+    directory: "/services/geoai-runner"
+    schedule:
+      interval: "monthly"
+    ignore:
+      - dependency-name: "geoai-py"
+      - dependency-name: "torch"
+      - dependency-name: "torchvision"
+      - dependency-name: "segmentation-models-pytorch"
+      - dependency-name: "numpy"
+      - dependency-name: "rasterio"
+      - dependency-name: "jsonschema"
+    groups:
+      runner-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      web-minor-patch:
+        update-types: ["minor", "patch"]

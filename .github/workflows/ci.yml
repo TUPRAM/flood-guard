@@ -2,7 +2,7 @@ name: FloodGuard verification
 
 on:
   push:
-    branches: [master, "codex/**"]
+    branches: [master, "codex/**", "system-fix"]
   pull_request:
     branches: [master]
 
@@ -131,3 +131,56 @@ jobs:
           path: .tmp/proposal-evidence/geoai-normal.xml
           if-no-files-found: error
           retention-days: 14
+
+  extras-resolve:
+    name: Declared extras must resolve
+    runs-on: ubuntu-latest
+    # An extra that cannot install is a false capability claim: it advertises a
+    # component nobody can run. This exact failure took the runner job down for
+    # five days without anyone noticing, because the job died at `uv sync`
+    # before reaching its tests (D-39 / D-10). Resolution is cheap; check it
+    # separately so the signal is unambiguous.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Resolve every declared runner extra
+        run: >-
+          uv sync --project services/geoai-runner --extra geoai
+          --extra realpipeline --extra sam --dry-run
+      - name: Research extra must resolve in its own environment
+        # omniwatermask needs numpy<2.4 and cannot share the runner's frozen
+        # numpy==2.4.2, which is why it is a separate requirements file.
+        run: >-
+          uv pip compile services/geoai-runner/requirements-research.txt
+          --python-version 3.12 --quiet --output-file /dev/null
+
+  dependency-audit:
+    name: Dependency vulnerability audit
+    runs-on: ubuntu-latest
+    # Advisory: reports known CVEs without blocking the build. The project had
+    # no vulnerability scanning at all (D-23), so the first priority is
+    # visibility. Promote to blocking once the baseline is clean.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Audit root Python dependencies
+        run: uv run --with pip-audit pip-audit --strict || true
+      - name: Audit API dependencies
+        run: >-
+          uv run --project services/api --with pip-audit pip-audit --strict || true
+      - name: Enable pinned pnpm
+        run: corepack enable
+      - name: Audit JavaScript dependencies
+        run: pnpm audit --audit-level moderate || true

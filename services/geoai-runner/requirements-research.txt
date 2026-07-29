@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+# Research-tier environment — SEPARATE VIRTUALENV REQUIRED
+#
+# Why this is a requirements file and not a [project.optional-dependencies]
+# extra:
+#
+#   The runner declares a frozen numeric boundary, `numpy==2.4.2`, enforced by
+#   geoai_runner/environment.py and documented in README.md. An extra cannot
+#   override a base pin, so any extra containing omniwatermask is by
+#   construction unsatisfiable:
+#
+#       omniwatermask==0.5.0 requires numpy>=2.0,<2.4
+#       base requires          numpy==2.4.2
+#
+#   Declaring it as an extra anyway is what broke `uv sync --extra
+#   realpipeline` entirely (D-10 / D-39). Relaxing the base pin was rejected:
+#   the frozen environment is a deliberate governance contract, not an
+#   oversight.
+#
+#   Verified to resolve together at numpy==2.3.5 (uv pip compile, Python 3.12,
+#   2026-07-29). It just cannot share an environment with the frozen runner.
+#
+# What this unblocks
+#   Component * -- the sensor-agnostic water baseline
+#   (geoai.segment_water wrapping OmniWaterMask), called from
+#   realpipeline/water_baseline.py.
+#
+# GOVERNANCE
+#   Output produced in this environment is RESEARCH TIER. It does not carry
+#   the frozen-environment receipt that environment.py issues, so it cannot
+#   back a published metric or reach evidence/ without being reproduced under
+#   the governed runner. Write results to research/ and record them in
+#   research/MANIFEST.md. See audit SS8A.5 and ADR-I.
+#
+# Usage
+#   uv venv .venv-research --python 3.12
+#   uv pip install --python .venv-research -r requirements-research.txt
+# ---------------------------------------------------------------------------
+
+# Deliberately BELOW the frozen boundary. This is the whole reason for the
+# separate environment; do not "fix" it to match the runner.
+numpy>=2.3,<2.4
+
+jsonschema==4.25.1
+rasterio==1.4.4
+geoai-py==0.41.1
+omniwatermask>=0.5

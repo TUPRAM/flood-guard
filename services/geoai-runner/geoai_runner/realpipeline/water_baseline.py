@@ -17,11 +17,41 @@ import numpy as np
 from geoai_runner.realpipeline.raster_io import read_geotiff
 
 
+class OmniWaterMaskUnavailableError(RuntimeError):
+    """Raised when OmniWaterMask is not installed in the active environment."""
+
+
 @dataclass
 class BaselineResult:
     water_mask: np.ndarray
     metrics: dict
     artifacts: dict[str, Path] = field(default_factory=dict)
+
+
+def _require_omniwatermask() -> None:
+    """Fail with an actionable message instead of an opaque ImportError.
+
+    ``omniwatermask`` requires ``numpy>=2.0,<2.4`` and cannot coexist with this
+    runner's frozen ``numpy==2.4.2`` boundary, so it is deliberately absent from
+    every extra (D-39). Without this guard the failure surfaces from deep inside
+    ``geoai.segment_water`` as a bare ImportError with no indication that a
+    separate environment is required.
+    """
+
+    try:
+        import omniwatermask  # noqa: F401
+    except ImportError as exc:
+        raise OmniWaterMaskUnavailableError(
+            "Component * (OmniWaterMask) needs a separate research-tier "
+            "environment: omniwatermask requires numpy>=2.0,<2.4 and this "
+            "runner is frozen at numpy==2.4.2.\n"
+            "  uv venv .venv-research --python 3.12\n"
+            "  uv pip install --python .venv-research "
+            "-r services/geoai-runner/requirements-research.txt\n"
+            "Output from that environment is RESEARCH TIER: it carries no "
+            "frozen-environment receipt, so write it to research/ and record "
+            "it in research/MANIFEST.md. See ADR-I."
+        ) from exc
 
 
 def run_omniwatermask_baseline(
@@ -39,6 +69,8 @@ def run_omniwatermask_baseline(
     to ``max_size`` first: OmniWaterMask allocates a large tensor and a full-size
     tile OOMs on a laptop (~5 GB at 1024px).
     """
+
+    _require_omniwatermask()
 
     import geoai
 

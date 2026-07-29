@@ -39,9 +39,32 @@ MAE_SAI_BBOX = (99.83, 20.33, 99.97, 20.49)  # lon/lat
 DEFAULT_PRE = "2024-08-22"   # same descending orbit as post (clean geometry)
 DEFAULT_POST = "2024-09-15"  # nearest post-event same-orbit acquisition
 
+# TLS context for Thai NGIS/GISTDA ArcGIS fetches (D-01).
+#
+# This previously set `check_hostname = False` and `verify_mode = CERT_NONE`,
+# so authoritative administrative boundaries and river networks were fetched
+# over an unauthenticated channel. A MITM could substitute geometry and
+# silently corrupt HAND, susceptibility, and every zonal aggregate downstream —
+# which directly contradicts this project's provenance claims. Authoritative
+# sourcing cannot be asserted over a channel that was never authenticated.
+#
+# The chain was assumed broken. It is not. Probed 2026-07-29:
+#
+#     host      ngis.go.th
+#     protocol  TLSv1.3
+#     subject   *.ngis.go.th        SAN: *.ngis.go.th, ngis.go.th
+#     issuer    RapidSSL TLS RSA CA G1
+#     notAfter  Sep  4 23:59:59 2026 GMT
+#     GET /arcgis/rest/services/Hosted?f=json -> HTTP 200
+#
+# Verification succeeds against the system trust store with no pinning, so
+# CERT_NONE was development convenience rather than a workaround. Use the
+# default verifying context.
+#
+# If this ever starts failing, the certificate above expires 2026-09-04.
+# Renewal is the likely cause. Do NOT restore CERT_NONE: pin the CA explicitly
+# with `load_verify_locations` and record why in docs/source_registry.md.
 _SSL = ssl.create_default_context()
-_SSL.check_hostname = False
-_SSL.verify_mode = ssl.CERT_NONE
 
 
 class RealDataError(RuntimeError):

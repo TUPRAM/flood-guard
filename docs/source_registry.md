@@ -25,6 +25,24 @@ This registry records candidate real-data sources before FloodGuard ingests any 
 | THEOS-2 hackathon sample imagery | Local hackathon-provided files; see `docs/theos2_inventory.md` | Project owner reported on 2026-07-03 that hackathon-provided THEOS-2 and other provided local data can be used freely for this project; selected files are checksum-tracked before preview or feature outputs. | Parsed local files indicate 0.5 m optical imagery for orthorectified PMS samples. | Local sample dates span 2024 and 2025. | Optical context, land-cover/exposure support, dashboard context, optional true thumbnails, and future optical ML experiments. | Not a legal flood reference mask and not the current Mae Sai/Hat Yai validation input; selected preview scope is optical context only. |
 | Local hackathon Sentinel-1 and DEM bundles | Local provided files; see `docs/local_data_library.md`, `outputs/sentinel1_selected_file_manifest.csv`, `outputs/sentinel1_provenance_resolved_manifest.csv`, and `outputs/dem_selected_file_manifest.csv` | Project owner reported hackathon-provided local data can be used freely for the project; selected standalone Sentinel-1 and DEM packages have SHA-256 checksums, but processing still requires the relevant scope gates. | Standalone Sentinel-1 TIFF is 2-band VV/VH at `23296 x 23296`; DEM ZIP members are tiled elevation/slope TIFFs. | Filename timestamps are unresolved for Sentinel-1; TIFF tags and ZIP member names do not currently expose acquisition date or product id; DEM packages are static terrain context. | Sentinel-1 standalone TIFF overlaps the Mae Sai MVP point; DEM tiles can support terrain, slope, false-positive review, and exposure/access explanation. | Selected Sentinel-1 provenance resolver currently labels the standalone TIFF `candidate_role=unresolved` and `event_timing_status=timing_unresolved`; selected DEM readiness rows are `dem_terrain_context_readiness_only`, not flood observation, not flood label, and `processing_allowed=False`. |
 
+## Transport Integrity
+
+A source is only as authoritative as the channel it arrived over. This section records the verified transport state of each fetched source, so that "authoritative" is a claim with evidence behind it rather than an assumption.
+
+| Endpoint | Verification | Evidence | Last probed |
+| --- | --- | --- | --- |
+| `https://ngis.go.th/arcgis/rest/services/Hosted` (DOPA subdistricts, DWR rivers, highway centrelines) | **Verified.** System trust store, no pinning required. | TLSv1.3; subject `*.ngis.go.th`; SAN `*.ngis.go.th`, `ngis.go.th`; issuer `RapidSSL TLS RSA CA G1`; `notAfter` 2026-09-04. `GET /arcgis/rest/services/Hosted?f=json` returned HTTP 200. Live fetch through `fetch_arcgis_featurelayer` returned 9 Mae Sai subdistricts and 25 DWR river features. | 2026-07-29 |
+| `https://planetarycomputer.microsoft.com/api/stac/v1` | Verified (default context via `pystac_client`). | Never had verification disabled. | — |
+| `https://overpass-api.de`, `https://overpass.kumi.systems` | Verified (default context). | Never had verification disabled. | — |
+
+### Resolved: was the Thai NGIS certificate chain broken?
+
+**No.** Until 2026-07-29 `realpipeline/real_data.py` set `check_hostname = False` and `verify_mode = ssl.CERT_NONE` for every Thai NGIS request, and it was an open question whether this worked around a genuinely broken chain or was development convenience. It was convenience: the chain validates cleanly against the system trust store with no pinning.
+
+This matters beyond hygiene. Administrative boundaries and river networks feed HAND, the susceptibility surface, and every zonal aggregate. Fetching them over an unauthenticated channel meant a MITM could substitute geometry and silently corrupt the entire decision layer, while the project continued to describe those inputs as authoritative.
+
+Verification is now enabled and asserted by `services/geoai-runner/tests/test_tls_verification.py`, which fails if the flags are ever re-disabled. The certificate above expires **2026-09-04**; if fetches begin failing after that date, renewal is the likely cause. Pin the CA explicitly with `load_verify_locations` and record it here — do not restore `CERT_NONE`.
+
 ## Study-Area Data Inventory
 
 ### Chiang Rai / Mae Sai 2024

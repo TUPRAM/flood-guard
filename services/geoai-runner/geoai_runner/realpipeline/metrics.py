@@ -49,9 +49,7 @@ def binary_mask_metrics(
     predicted = np.asarray(predicted)
     reference = np.asarray(reference)
     if predicted.shape != reference.shape:
-        raise ValueError(
-            f"predicted shape {predicted.shape} != reference shape {reference.shape}."
-        )
+        raise ValueError(f"predicted shape {predicted.shape} != reference shape {reference.shape}.")
 
     if mask is None:
         p = predicted.astype(bool).ravel()

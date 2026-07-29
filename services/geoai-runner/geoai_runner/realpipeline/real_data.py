@@ -36,7 +36,7 @@ import numpy as np
 
 PC_STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
 MAE_SAI_BBOX = (99.83, 20.33, 99.97, 20.49)  # lon/lat
-DEFAULT_PRE = "2024-08-22"   # same descending orbit as post (clean geometry)
+DEFAULT_PRE = "2024-08-22"  # same descending orbit as post (clean geometry)
 DEFAULT_POST = "2024-09-15"  # nearest post-event same-orbit acquisition
 
 # TLS context for Thai NGIS/GISTDA ArcGIS fetches (D-01).
@@ -76,7 +76,7 @@ class RealDataError(RuntimeError):
 # --------------------------------------------------------------------------- #
 @dataclass
 class RealFloodResult:
-    flood_binary: np.ndarray            # EPSG:4326 grid
+    flood_binary: np.ndarray  # EPSG:4326 grid
     flood_probability: np.ndarray
     permanent_water: np.ndarray
     transform: object
@@ -123,7 +123,9 @@ def _read_band(item, pol: str, bbox, out_shape):
 
 
 def fetch_sentinel1_rtc_pair(
-    bbox=MAE_SAI_BBOX, pre_date: str = DEFAULT_PRE, post_date: str = DEFAULT_POST,
+    bbox=MAE_SAI_BBOX,
+    pre_date: str = DEFAULT_PRE,
+    post_date: str = DEFAULT_POST,
     out_shape: tuple[int, int] = (1024, 1024),
 ) -> dict:
     """Fetch a real pre/post Sentinel-1 RTC VV+VH pair over the bbox."""
@@ -159,7 +161,7 @@ def _boxcar(a, k=5):
     out = np.zeros_like(a)
     for dy in range(k):
         for dx in range(k):
-            out += ap[dy:dy + a.shape[0], dx:dx + a.shape[1]]
+            out += ap[dy : dy + a.shape[0], dx : dx + a.shape[1]]
     return out / (k * k)
 
 
@@ -169,7 +171,7 @@ def _open_close(mask, iters=1):
         o = x.copy()
         for dy in range(3):
             for dx in range(3):
-                o = o & xp[dy:dy + x.shape[0], dx:dx + x.shape[1]]
+                o = o & xp[dy : dy + x.shape[0], dx : dx + x.shape[1]]
         return o
 
     def dil(x):
@@ -177,7 +179,7 @@ def _open_close(mask, iters=1):
         o = x.copy()
         for dy in range(3):
             for dx in range(3):
-                o = o | xp[dy:dy + x.shape[0], dx:dx + x.shape[1]]
+                o = o | xp[dy : dy + x.shape[0], dx : dx + x.shape[1]]
         return o
 
     for _ in range(iters):
@@ -188,9 +190,13 @@ def _open_close(mask, iters=1):
 
 
 def real_sar_flood_extent(
-    pair: dict, output_dir: str | Path, *,
-    drop_threshold_db: float = 2.5, post_water_db: float = -15.0,
-    permanent_water_db: float = -20.0, multilook: int = 5,
+    pair: dict,
+    output_dir: str | Path,
+    *,
+    drop_threshold_db: float = 2.5,
+    post_water_db: float = -15.0,
+    permanent_water_db: float = -20.0,
+    multilook: int = 5,
 ) -> RealFloodResult:
     """Run Component A change detection on a real Sentinel-1 pair.
 
@@ -224,8 +230,15 @@ def real_sar_flood_extent(
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    profile = dict(driver="GTiff", height=h, width=w, count=1, crs="EPSG:4326",
-                   transform=transform, compress="deflate")
+    profile = dict(
+        driver="GTiff",
+        height=h,
+        width=w,
+        count=1,
+        crs="EPSG:4326",
+        transform=transform,
+        compress="deflate",
+    )
     flood_path = output_dir / "real_flood_extent.tif"
     with rasterio.open(flood_path, "w", dtype="uint8", nodata=0, **profile) as dst:
         dst.write(flood, 1)
@@ -238,13 +251,17 @@ def real_sar_flood_extent(
         if val == 1:
             feats.append({"type": "Feature", "properties": {"class": "flood"}, "geometry": geom})
     vec_path = output_dir / "real_flood_extent.geojson"
-    vec_path.write_text(json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8")
+    vec_path.write_text(
+        json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8"
+    )
 
     metrics = {
         "data_mode": "real_licensed_inputs",
         "source": "Sentinel-1 RTC (Microsoft Planetary Computer)",
-        "pre_id": pair["pre_id"], "post_id": pair["post_id"],
-        "pre_datetime": pair["pre_datetime"], "post_datetime": pair["post_datetime"],
+        "pre_id": pair["pre_id"],
+        "post_id": pair["post_id"],
+        "pre_datetime": pair["pre_datetime"],
+        "post_datetime": pair["post_datetime"],
         "flood_fraction": round(float(flood.mean()), 4),
         "permanent_water_fraction": round(float(permanent_water.mean()), 4),
         "vh_drop_p90_db": round(float(np.nanpercentile(vh_drop, 90)), 2),
@@ -257,8 +274,11 @@ def real_sar_flood_extent(
         ),
     }
     return RealFloodResult(
-        flood_binary=flood, flood_probability=prob.astype("float32"),
-        permanent_water=permanent_water, transform=transform, crs="EPSG:4326",
+        flood_binary=flood,
+        flood_probability=prob.astype("float32"),
+        permanent_water=permanent_water,
+        transform=transform,
+        crs="EPSG:4326",
         metrics=metrics,
         artifacts={"flood": flood_path, "probability": prob_path, "vector": vec_path},
     )
@@ -355,8 +375,10 @@ def fetch_sentinel1_rtc_series(
     if not grouped:
         raise RealDataError("no Sentinel-1 scene carried a usable relative-orbit property.")
 
-    chosen = relative_orbit if relative_orbit is not None else max(
-        grouped, key=lambda orbit: len(grouped[orbit])
+    chosen = (
+        relative_orbit
+        if relative_orbit is not None
+        else max(grouped, key=lambda orbit: len(grouped[orbit]))
     )
     if chosen not in grouped:
         raise RealDataError(
@@ -364,9 +386,7 @@ def fetch_sentinel1_rtc_series(
             f"{ {k: len(v) for k, v in sorted(grouped.items())} }."
         )
     selected = sorted(grouped[chosen], key=lambda item: item.datetime)
-    discarded["other_relative_orbit"] = sum(
-        len(v) for k, v in grouped.items() if k != chosen
-    )
+    discarded["other_relative_orbit"] = sum(len(v) for k, v in grouped.items() if k != chosen)
     if max_scenes is not None and len(selected) > max_scenes:
         discarded["truncated_by_max_scenes"] = len(selected) - max_scenes
         selected = selected[:max_scenes]
@@ -424,8 +444,16 @@ def _write_cached_band(path: Path, array, bbox, out_shape) -> Path:
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     with rasterio.open(
-        path, "w", driver="GTiff", height=height, width=width, count=1,
-        dtype="float32", crs="EPSG:4326", transform=transform, compress="deflate",
+        path,
+        "w",
+        driver="GTiff",
+        height=height,
+        width=width,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=transform,
+        compress="deflate",
     ) as dst:
         dst.write(np.asarray(array, dtype="float32"), 1)
     return path
@@ -450,14 +478,20 @@ def _read_asset(item, asset_key: str, bbox, out_shape, resampling="bilinear"):
         left, bottom, right, top = transform_bounds("EPSG:4326", src.crs, *bbox)
         win = from_bounds(left, bottom, right, top, transform=src.transform)
         return src.read(
-            1, window=win, out_shape=out_shape, boundless=True, fill_value=0,
+            1,
+            window=win,
+            out_shape=out_shape,
+            boundless=True,
+            fill_value=0,
             resampling=getattr(Resampling, resampling),
         ).astype("float32")
 
 
 def fetch_sentinel2_composite(
-    bbox=MAE_SAI_BBOX, datetime_range: str = "2024-01-15/2024-03-15",
-    max_cloud: float = 10.0, out_shape: tuple[int, int] = (1024, 1024),
+    bbox=MAE_SAI_BBOX,
+    datetime_range: str = "2024-01-15/2024-03-15",
+    max_cloud: float = 10.0,
+    out_shape: tuple[int, int] = (1024, 1024),
 ) -> dict:
     """Fetch the least-cloudy real Sentinel-2 L2A 6-band composite over bbox.
 
@@ -468,8 +502,12 @@ def fetch_sentinel2_composite(
 
     cat = _pc_client()
     items = sorted(
-        cat.search(collections=["sentinel-2-l2a"], bbox=list(bbox), datetime=datetime_range,
-                   query={"eo:cloud_cover": {"lt": max_cloud}}).items(),
+        cat.search(
+            collections=["sentinel-2-l2a"],
+            bbox=list(bbox),
+            datetime=datetime_range,
+            query={"eo:cloud_cover": {"lt": max_cloud}},
+        ).items(),
         key=lambda i: i.properties.get("eo:cloud_cover", 100),
     )
     if not items:
@@ -494,11 +532,15 @@ def fetch_sentinel2_composite(
     stack = np.clip(mosaic / 10000.0, 0, 1)  # L2A scale factor -> reflectance
     coverage = float((stack.sum(axis=0) > 0).mean())
     return {
-        "stack": stack.astype("float32"), "item_id": best.id,
+        "stack": stack.astype("float32"),
+        "item_id": best.id,
         "datetime": best.datetime.isoformat(),
         "cloud_cover": float(best.properties.get("eo:cloud_cover", -1)),
-        "tiles_mosaicked": len(layers), "coverage": round(coverage, 4),
-        "bands": S2_BANDS, "bbox": bbox, "out_shape": out_shape,
+        "tiles_mosaicked": len(layers),
+        "coverage": round(coverage, 4),
+        "bands": S2_BANDS,
+        "bbox": bbox,
+        "out_shape": out_shape,
     }
 
 
@@ -511,12 +553,18 @@ def fetch_copernicus_dem(bbox=MAE_SAI_BBOX, out_shape: tuple[int, int] = (1024, 
         raise RealDataError("No Copernicus DEM GLO-30 tile found for bbox.")
     tiles = [_read_asset(it, "data", bbox, out_shape) for it in items]
     dem = np.nanmax(np.stack(tiles), axis=0)  # mosaic overlapping tiles
-    return {"dem": dem.astype("float32"), "item_ids": [i.id for i in items],
-            "bbox": bbox, "out_shape": out_shape}
+    return {
+        "dem": dem.astype("float32"),
+        "item_ids": [i.id for i in items],
+        "bbox": bbox,
+        "out_shape": out_shape,
+    }
 
 
 def fetch_jrc_surface_water(
-    bbox=MAE_SAI_BBOX, out_shape: tuple[int, int] = (1024, 1024), asset: str = "occurrence",
+    bbox=MAE_SAI_BBOX,
+    out_shape: tuple[int, int] = (1024, 1024),
+    asset: str = "occurrence",
 ) -> dict:
     """Fetch real JRC Global Surface Water (Pekel et al. 2016) occurrence 0-100."""
 
@@ -527,8 +575,12 @@ def fetch_jrc_surface_water(
     tiles = [_read_asset(it, asset, bbox, out_shape, resampling="nearest") for it in items]
     occ = np.nanmax(np.stack(tiles), axis=0)
     occ = np.where(occ > 100, 0, occ)  # 255 = nodata
-    return {"occurrence": occ.astype("float32"), "item_ids": [i.id for i in items],
-            "bbox": bbox, "out_shape": out_shape}
+    return {
+        "occurrence": occ.astype("float32"),
+        "item_ids": [i.id for i in items],
+        "bbox": bbox,
+        "out_shape": out_shape,
+    }
 
 
 OVERPASS_MIRRORS = (
@@ -538,7 +590,9 @@ OVERPASS_MIRRORS = (
 
 
 def fetch_osm_buildings(
-    bbox=MAE_SAI_BBOX, max_features: int = 4000, cache_path: str | Path | None = None,
+    bbox=MAE_SAI_BBOX,
+    max_features: int = 4000,
+    cache_path: str | Path | None = None,
 ) -> list[dict]:
     """Fetch real OpenStreetMap building footprint centroids for the bbox.
 
@@ -561,9 +615,14 @@ def fetch_osm_buildings(
             )
             payload = json.loads(urllib.request.urlopen(req, timeout=180).read().decode())
             out = [
-                {"id": el.get("id"), "lon": float(el["center"]["lon"]),
-                 "lat": float(el["center"]["lat"]), "tags": el.get("tags", {})}
-                for el in payload.get("elements", []) if el.get("center")
+                {
+                    "id": el.get("id"),
+                    "lon": float(el["center"]["lon"]),
+                    "lat": float(el["center"]["lat"]),
+                    "tags": el.get("tags", {}),
+                }
+                for el in payload.get("elements", [])
+                if el.get("center")
             ]
             if out and cache_path:
                 Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
@@ -586,8 +645,9 @@ def rasterize_lines(features: dict, transform, shape) -> np.ndarray:
     geoms = [(f["geometry"], 1) for f in features.get("features", []) if f.get("geometry")]
     if not geoms:
         return np.zeros(shape, dtype="uint8")
-    return rasterize(geoms, out_shape=shape, transform=transform, fill=0,
-                     all_touched=True, dtype="uint8")
+    return rasterize(
+        geoms, out_shape=shape, transform=transform, fill=0, all_touched=True, dtype="uint8"
+    )
 
 
 def terrain_features(dem: np.ndarray, river_mask: np.ndarray, pixel_m: float) -> dict:
@@ -602,13 +662,11 @@ def terrain_features(dem: np.ndarray, river_mask: np.ndarray, pixel_m: float) ->
 
     if river_mask.sum() == 0:  # fall back to lowest-percentile cells as drainage
         river_mask = (dem <= np.percentile(dem, 2)).astype("uint8")
-    dist_px, (iy, ix) = ndimage.distance_transform_edt(
-        river_mask == 0, return_indices=True
-    )
+    dist_px, (iy, ix) = ndimage.distance_transform_edt(river_mask == 0, return_indices=True)
     distance_m = (dist_px * pixel_m).astype("float32")
     hand = np.clip(dem - dem[iy, ix], 0, None).astype("float32")
     gy, gx = np.gradient(dem, pixel_m)
-    slope = np.degrees(np.arctan(np.sqrt(gx ** 2 + gy ** 2))).astype("float32")
+    slope = np.degrees(np.arctan(np.sqrt(gx**2 + gy**2))).astype("float32")
     upslope = (distance_m.max() - distance_m) + pixel_m
     twi = np.log(upslope / (np.tan(np.radians(slope)) + 0.02)).astype("float32")
     return {"hand": hand, "slope": slope, "distance_to_river": distance_m, "twi": twi}
@@ -618,7 +676,11 @@ def terrain_features(dem: np.ndarray, river_mask: np.ndarray, pixel_m: float) ->
 # Thai authoritative vector layers (NGIS / GISTDA ArcGIS)
 # --------------------------------------------------------------------------- #
 def fetch_arcgis_featurelayer(
-    layer_url: str, bbox=MAE_SAI_BBOX, *, where: str = "1=1", out_fields: str = "*",
+    layer_url: str,
+    bbox=MAE_SAI_BBOX,
+    *,
+    where: str = "1=1",
+    out_fields: str = "*",
     max_records: int = 2000,
 ) -> dict:
     """Query an ArcGIS FeatureServer layer for features intersecting bbox.
@@ -627,12 +689,24 @@ def fetch_arcgis_featurelayer(
     filter so Thai field names are not needed.
     """
 
-    env = {"xmin": bbox[0], "ymin": bbox[1], "xmax": bbox[2], "ymax": bbox[3],
-           "spatialReference": {"wkid": 4326}}
+    env = {
+        "xmin": bbox[0],
+        "ymin": bbox[1],
+        "xmax": bbox[2],
+        "ymax": bbox[3],
+        "spatialReference": {"wkid": 4326},
+    }
     params = {
-        "where": where, "geometry": json.dumps(env), "geometryType": "esriGeometryEnvelope",
-        "inSR": 4326, "spatialRel": "esriSpatialRelIntersects", "outFields": out_fields,
-        "outSR": 4326, "returnGeometry": "true", "resultRecordCount": max_records, "f": "geojson",
+        "where": where,
+        "geometry": json.dumps(env),
+        "geometryType": "esriGeometryEnvelope",
+        "inSR": 4326,
+        "spatialRel": "esriSpatialRelIntersects",
+        "outFields": out_fields,
+        "outSR": 4326,
+        "returnGeometry": "true",
+        "resultRecordCount": max_records,
+        "f": "geojson",
     }
     url = layer_url.rstrip("/") + "/query?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 FloodGuard"})
@@ -647,10 +721,23 @@ def fetch_arcgis_featurelayer(
 
 
 NGIS = "https://ngis.go.th/arcgis/rest/services/Hosted"
+
+# NGIS publishes these two services under percent-encoded Thai names. Naming the
+# segments keeps the URLs readable and records what each one actually is; the
+# encoded bytes are unchanged.
+_SVC_SUBDISTRICTS = (  # ขอบเขตตำบล_DOPA -- DOPA sub-district (tambon) boundaries
+    "%E0%B8%82%E0%B8%AD%E0%B8%9A%E0%B9%80%E0%B8%82%E0%B8%95"
+    "%E0%B8%95%E0%B8%B3%E0%B8%9A%E0%B8%A5_DOPA"
+)
+_SVC_HIGHWAYS = (  # ทางหลวงแผ่นดิน -- national highway centrelines
+    "%E0%B8%97%E0%B8%B2%E0%B8%87%E0%B8%AB%E0%B8%A5%E0%B8%A7%E0%B8%87"
+    "%E0%B9%81%E0%B8%9C%E0%B9%88%E0%B8%99%E0%B8%94%E0%B8%B4%E0%B8%99"
+)
+
 LAYERS = {
-    "subdistricts": f"{NGIS}/%E0%B8%82%E0%B8%AD%E0%B8%9A%E0%B9%80%E0%B8%82%E0%B8%95%E0%B8%95%E0%B8%B3%E0%B8%9A%E0%B8%A5_DOPA/FeatureServer/0",
+    "subdistricts": f"{NGIS}/{_SVC_SUBDISTRICTS}/FeatureServer/0",
     "rivers": f"{NGIS}/NAT_STREAM_DWR/FeatureServer/0",
-    "highways": f"{NGIS}/%E0%B8%97%E0%B8%B2%E0%B8%87%E0%B8%AB%E0%B8%A5%E0%B8%A7%E0%B8%87%E0%B9%81%E0%B8%9C%E0%B9%88%E0%B8%99%E0%B8%94%E0%B8%B4%E0%B8%99/FeatureServer/0",
+    "highways": f"{NGIS}/{_SVC_HIGHWAYS}/FeatureServer/0",
 }
 
 
@@ -658,9 +745,14 @@ LAYERS = {
 # layer only populates Thai names, so we attach the official romanisation
 # (matching the FloodGuard dashboard's real ADM3 table).
 MAE_SAI_TAMBON_NAMES = {
-    "570901": "Mae Sai", "570902": "Huai Khrai", "570903": "Ko Chang",
-    "570904": "Pong Pha", "570905": "Si Mueang Chum", "570906": "Wiang Phang Kham",
-    "570908": "Ban Dai", "570909": "Pong Ngam",
+    "570901": "Mae Sai",
+    "570902": "Huai Khrai",
+    "570903": "Ko Chang",
+    "570904": "Pong Pha",
+    "570905": "Si Mueang Chum",
+    "570906": "Wiang Phang Kham",
+    "570908": "Ban Dai",
+    "570909": "Pong Ngam",
 }
 
 
@@ -676,7 +768,9 @@ def fetch_mae_sai_subdistricts(bbox=MAE_SAI_BBOX) -> dict:
             continue
         p["subdistrict_id"] = tid
         p["subdistrict_name_th"] = str(p.get("tambon_t") or "").strip()
-        p["subdistrict_name"] = MAE_SAI_TAMBON_NAMES.get(tid) or str(p.get("tambon_e") or tid).strip()
+        p["subdistrict_name"] = (
+            MAE_SAI_TAMBON_NAMES.get(tid) or str(p.get("tambon_e") or tid).strip()
+        )
         feats.append(f)
     if not feats:
         raise RealDataError("No Mae Sai (5709) sub-districts returned by DOPA layer.")

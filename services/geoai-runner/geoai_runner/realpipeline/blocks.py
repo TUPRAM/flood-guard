@@ -90,9 +90,7 @@ def pixel_size_metres(transform, latitude: float) -> tuple[float, float]:
     """
 
     if not math.isfinite(latitude) or abs(latitude) > 90.0:
-        raise BlockGeometryError(
-            f"latitude must be a finite value in [-90, 90]; got {latitude!r}."
-        )
+        raise BlockGeometryError(f"latitude must be a finite value in [-90, 90]; got {latitude!r}.")
     deg_x = abs(float(transform.a))
     deg_y = abs(float(transform.e))
     if deg_x <= 0.0 or deg_y <= 0.0:
@@ -451,9 +449,7 @@ def tiles_for_role(
         r1 = row + tile_size
         for col in range(0, width - tile_size + 1, stride):
             c1 = col + tile_size
-            impure = (
-                integral[r1, c1] - integral[row, c1] - integral[r1, col] + integral[row, col]
-            )
+            impure = integral[r1, c1] - integral[row, c1] - integral[r1, col] + integral[row, col]
             if impure == 0:
                 origins.append((row, col))
     return origins
@@ -479,9 +475,7 @@ def _greedy_role_assignment(
     order = sorted(
         range(len(sizes)),
         key=lambda bid: (
-            hashlib.sha256(
-                f"{seed}:{bid // n_axis}:{bid % n_axis}".encode()
-            ).hexdigest(),
+            hashlib.sha256(f"{seed}:{bid // n_axis}:{bid % n_axis}".encode()).hexdigest(),
             bid,
         ),
     )

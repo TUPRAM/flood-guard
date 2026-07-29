@@ -15,7 +15,6 @@ end to end. See :mod:`geoai_runner.realpipeline` for the honesty boundary.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import numpy as np
 
@@ -116,8 +115,12 @@ def build_scene(grid: SceneGrid | None = None, seed: int = SCENE_SEED) -> Synthe
 
     # --- HAND: height above the nearest drainage (per-row river elevation) --
     river_elev_per_row = np.array(
-        [dem[r, permanent_water[r].astype(bool)].min() if permanent_water[r].any()
-         else dem[r].min() for r in range(n)]
+        [
+            dem[r, permanent_water[r].astype(bool)].min()
+            if permanent_water[r].any()
+            else dem[r].min()
+            for r in range(n)
+        ]
     )
     hand = np.clip(dem - river_elev_per_row[:, None], 0.0, None)
 
@@ -135,8 +138,7 @@ def build_scene(grid: SceneGrid | None = None, seed: int = SCENE_SEED) -> Synthe
     flood_susceptibility_true = 1.0 / (1.0 + np.exp((hand - 13.0) / 2.4))
     flood_noise = _smoothed_noise(rng, n, scale=5)
     flood_reference = (
-        (flood_susceptibility_true + 0.12 * flood_noise > 0.5)
-        & (dist_to_river < 150)
+        (flood_susceptibility_true + 0.12 * flood_noise > 0.5) & (dist_to_river < 150)
     ).astype("uint8")
     flood_reference = np.maximum(flood_reference, permanent_water)
     water_reference = flood_reference.copy()  # water = permanent OR flood
@@ -152,9 +154,7 @@ def build_scene(grid: SceneGrid | None = None, seed: int = SCENE_SEED) -> Synthe
     buildings, boxes = _buildings(rng, grid, hand, dist_to_river)
     # Impervious rooftops brighten S2 visible/SWIR
     for b in range(3):
-        s2[b][buildings.astype(bool)] = np.clip(
-            s2[b][buildings.astype(bool)] + 0.22, 0, 1
-        )
+        s2[b][buildings.astype(bool)] = np.clip(s2[b][buildings.astype(bool)] + 0.22, 0, 1)
     s2[4][buildings.astype(bool)] = np.clip(s2[4][buildings.astype(bool)] + 0.20, 0, 1)
 
     return SyntheticScene(
@@ -197,9 +197,7 @@ def _sar_pair(
     return np.clip(vv, 1e-4, None), np.clip(vh, 1e-4, None)
 
 
-def _sentinel2_stack(
-    rng: np.random.Generator, n: int, water_mask: np.ndarray
-) -> np.ndarray:
+def _sentinel2_stack(rng: np.random.Generator, n: int, water_mask: np.ndarray) -> np.ndarray:
     """Return a (6, H, W) Sentinel-2 reflectance stack with a water signature."""
 
     water = water_mask.astype(bool)
@@ -211,9 +209,7 @@ def _sentinel2_stack(
     for b in range(6):
         layer = np.full((n, n), land[b], dtype="float32")
         layer += 0.03 * _smoothed_noise(rng, n, scale=7)
-        layer[water] = wat[b] + 0.01 * rng.standard_normal(int(water.sum())).astype(
-            "float32"
-        )
+        layer[water] = wat[b] + 0.01 * rng.standard_normal(int(water.sum())).astype("float32")
         stack[b] = np.clip(layer, 0.0, 1.0)
     return stack
 
@@ -256,9 +252,7 @@ def _buildings(
             mask[r : r + h, c : c + w] = 1
             left, top = transform * (c, r)
             right, bottom = transform * (c + w, r + h)
-            boxes.append(
-                (min(left, right), min(top, bottom), max(left, right), max(top, bottom))
-            )
+            boxes.append((min(left, right), min(top, bottom), max(left, right), max(top, bottom)))
             placed += 1
 
     _place(floodplain_cells, 26)  # riverside town (flood-exposed)
@@ -279,11 +273,7 @@ def _smoothed_noise(rng: np.random.Generator, n: int, scale: int) -> np.ndarray:
         up = pad
     for _ in range(2):
         up = (
-            up
-            + np.roll(up, 1, 0)
-            + np.roll(up, -1, 0)
-            + np.roll(up, 1, 1)
-            + np.roll(up, -1, 1)
+            up + np.roll(up, 1, 0) + np.roll(up, -1, 0) + np.roll(up, 1, 1) + np.roll(up, -1, 1)
         ) / 5.0
     std = up.std()
     return (up / std if std > 0 else up).astype("float32")

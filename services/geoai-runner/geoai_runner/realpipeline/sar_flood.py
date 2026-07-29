@@ -101,9 +101,7 @@ def detect_sar_flood_extent(
     vh_drop = _to_db(pre_vh) - _to_db(post_vh)
     combined = vh_weight * vh_drop + (1.0 - vh_weight) * vv_drop
 
-    probability = np.clip(
-        (combined - dry_change_db) / (flood_change_db - dry_change_db), 0.0, 1.0
-    )
+    probability = np.clip((combined - dry_change_db) / (flood_change_db - dry_change_db), 0.0, 1.0)
     probability = np.where(np.isfinite(probability), probability, 0.0)
     binary = (probability >= probability_threshold).astype("uint8")
 
@@ -159,8 +157,9 @@ def detect_sar_flood_extent(
     result.metrics.setdefault("data_mode", data_mode)
     result.metrics["source_timestamp"] = source_timestamp
     result.metrics["assumptions"] = (
-        SYNTHETIC_ASSUMPTION if data_mode == DATA_MODE_SYNTHETIC else
-        "Real Sentinel-1 GRD pre/post change detection; non-operational preparedness product."
+        SYNTHETIC_ASSUMPTION
+        if data_mode == DATA_MODE_SYNTHETIC
+        else "Real Sentinel-1 GRD pre/post change detection; non-operational preparedness product."
     )
     return result
 
@@ -204,9 +203,7 @@ def _mask_metrics(predicted: np.ndarray, reference: np.ndarray) -> dict[str, flo
     }
 
 
-def _vectorize_flood(
-    binary: np.ndarray, transform, crs: str, out_path: Path
-) -> Path:
+def _vectorize_flood(binary: np.ndarray, transform, crs: str, out_path: Path) -> Path:
     """Vectorize the binary flood mask to a GeoJSON polygon layer."""
 
     import json
@@ -214,11 +211,11 @@ def _vectorize_flood(
     from rasterio.features import shapes
 
     geoms = []
-    for geom, value in shapes(binary.astype("int32"), mask=binary.astype(bool), transform=transform):
+    for geom, value in shapes(
+        binary.astype("int32"), mask=binary.astype(bool), transform=transform
+    ):
         if value == 1:
-            geoms.append(
-                {"type": "Feature", "properties": {"class": "flood"}, "geometry": geom}
-            )
+            geoms.append({"type": "Feature", "properties": {"class": "flood"}, "geometry": geom})
     fc = {
         "type": "FeatureCollection",
         "name": "sar_flood_extent",

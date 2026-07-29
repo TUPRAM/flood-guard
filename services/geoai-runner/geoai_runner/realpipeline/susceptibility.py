@@ -55,10 +55,7 @@ def _normalise(array: np.ndarray, invert: bool = False, clip_pct: float = 2.0) -
 
     a = np.asarray(array, dtype="float64")
     lo, hi = np.nanpercentile(a, clip_pct), np.nanpercentile(a, 100 - clip_pct)
-    if hi <= lo:
-        norm = np.zeros_like(a)
-    else:
-        norm = np.clip((a - lo) / (hi - lo), 0.0, 1.0)
+    norm = np.zeros_like(a) if hi <= lo else np.clip((a - lo) / (hi - lo), 0.0, 1.0)
     return 1.0 - norm if invert else norm
 
 
@@ -122,12 +119,11 @@ def compute_susceptibility_index(
     metrics["source_timestamp"] = source_timestamp
     metrics["weights"] = weights
     metrics["assumptions"] = (
-        SYNTHETIC_ASSUMPTION if data_mode == DATA_MODE_SYNTHETIC else
-        "Hydrological susceptibility index from HAND/slope/distance/TWI; not flood depth."
+        SYNTHETIC_ASSUMPTION
+        if data_mode == DATA_MODE_SYNTHETIC
+        else "Hydrological susceptibility index from HAND/slope/distance/TWI; not flood depth."
     )
-    return SusceptibilityResult(
-        susceptibility_0_100=surface, metrics=metrics, artifacts=artifacts
-    )
+    return SusceptibilityResult(susceptibility_0_100=surface, metrics=metrics, artifacts=artifacts)
 
 
 def _rank_metrics(surface: np.ndarray, reference: np.ndarray) -> dict[str, float]:

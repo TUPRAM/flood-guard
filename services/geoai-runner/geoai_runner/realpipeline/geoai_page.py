@@ -51,10 +51,18 @@ def _img_data_uri(path: Path) -> str:
 
 
 def _metric_chips(metrics: dict) -> str:
-    keys = [("iou", "IoU"), ("f1_dice", "F1"), ("precision", "Precision"),
-            ("recall", "Recall"), ("auc", "AUC"), ("building_count", "Buildings"),
-            ("exposed_count", "Exposed"), ("n_training_labels", "Labels"),
-            ("n_training_tiles", "Tiles"), ("epochs", "Epochs")]
+    keys = [
+        ("iou", "IoU"),
+        ("f1_dice", "F1"),
+        ("precision", "Precision"),
+        ("recall", "Recall"),
+        ("auc", "AUC"),
+        ("building_count", "Buildings"),
+        ("exposed_count", "Exposed"),
+        ("n_training_labels", "Labels"),
+        ("n_training_tiles", "Tiles"),
+        ("epochs", "Epochs"),
+    ]
     chips = []
     for k, label in keys:
         if k in metrics and metrics[k] not in ("", None):
@@ -68,7 +76,9 @@ def _status_badge(status: str) -> str:
         "runnable-fallback": "RAN (OFFLINE FALLBACK)",
         "documented": "ROADMAP / DOCUMENTED",
     }.get(status, status.upper())
-    cls = {"runnable": "ok", "runnable-fallback": "warn", "documented": "muted"}.get(status, "muted")
+    cls = {"runnable": "ok", "runnable-fallback": "warn", "documented": "muted"}.get(
+        status, "muted"
+    )
     return f'<span class="badge {cls}">{text}</span>'
 
 
@@ -88,9 +98,11 @@ def _component_card(c: GeoAIComponent, metrics: dict, prev_dir: Path, timing) ->
         if uri:
             imgs += (
                 f'<figure><img src="{uri}" alt="{html.escape(caption)}"/>'
-                f'<figcaption>{html.escape(caption)}</figcaption></figure>'
+                f"<figcaption>{html.escape(caption)}</figcaption></figure>"
             )
-    runtime = f'<span class="chip"><b>Runtime</b> {timing}s</span>' if timing not in ("", None) else ""
+    runtime = (
+        f'<span class="chip"><b>Runtime</b> {timing}s</span>' if timing not in ("", None) else ""
+    )
     return f"""
     <article class="card" id="component-{c.letter.lower()}">
       <header class="card-head">
@@ -128,7 +140,7 @@ def _priority_table(scored: pd.DataFrame) -> str:
         ("confidence_class", "Confidence"),
         ("top_reason", "Top reason"),
     ]
-    head = "".join(f"<th>{html.escape(l)}</th>" for _, l in cols)
+    head = "".join(f"<th>{html.escape(label)}</th>" for _, label in cols)
     rows = ""
     for _, r in scored.iterrows():
         cells = ""
@@ -197,26 +209,36 @@ def write_geoai_page(
     if a.get("iou") is not None:
         a_head = f"SAR change detection IoU <b>{a.get('iou')}</b> / F1 <b>{a.get('f1_dice')}</b>"
     else:
-        a_head = f"SAR flood extent <b>{float(a.get('flood_fraction', 0)) * 100:.2f}%</b> of district"
+        a_head = (
+            f"SAR flood extent <b>{float(a.get('flood_fraction', 0)) * 100:.2f}%</b> of district"
+        )
     headline = (
         f"{a_head} &nbsp;&bull;&nbsp; U-Net water IoU <b>{b.get('iou', 'n/a')}</b>"
         f" &nbsp;&bull;&nbsp; Susceptibility AUC <b>{c.get('auc', 'n/a')}</b>"
     )
     flood_frac = manifest.get("scene", {}).get("flood_fraction", "")
     if is_real:
-        lede = ("Six GeoAI components turn <b>real satellite imagery</b> into a sub-district "
-                "Flood Preparedness Priority Score. Every model below <b>ran on real data</b> over "
-                "Mae Sai, Chiang Rai &mdash; real Sentinel-1 and Sentinel-2, real Copernicus DEM, "
-                "real DOPA/DWR boundaries and rivers, real OpenStreetMap buildings.")
-        notice = ("Real data &middot; not an official flood warning &middot; "
-                  f"SAR flood extent {flood_frac}")
+        lede = (
+            "Six GeoAI components turn <b>real satellite imagery</b> into a sub-district "
+            "Flood Preparedness Priority Score. Every model below <b>ran on real data</b> over "
+            "Mae Sai, Chiang Rai &mdash; real Sentinel-1 and Sentinel-2, real Copernicus DEM, "
+            "real DOPA/DWR boundaries and rivers, real OpenStreetMap buildings."
+        )
+        notice = (
+            "Real data &middot; not an official flood warning &middot; "
+            f"SAR flood extent {flood_frac}"
+        )
     else:
-        lede = ("Six GeoAI components turn satellite imagery into a subdistrict Flood "
-                "Preparedness Priority Score. Every model below <b>ran in this build</b> on a "
-                "coherent synthetic Mae Sai-like scene (real algorithms, real raster I/O, real "
-                "PyTorch training).")
-        notice = ("Synthetic demo scene &middot; not an official flood warning &middot; "
-                  f"flood fraction {flood_frac}")
+        lede = (
+            "Six GeoAI components turn satellite imagery into a subdistrict Flood "
+            "Preparedness Priority Score. Every model below <b>ran in this build</b> on a "
+            "coherent synthetic Mae Sai-like scene (real algorithms, real raster I/O, real "
+            "PyTorch training)."
+        )
+        notice = (
+            "Synthetic demo scene &middot; not an official flood warning &middot; "
+            f"flood fraction {flood_frac}"
+        )
 
     html_doc = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"/>

@@ -120,9 +120,7 @@ def run_omniwatermask_baseline(
         union = int((m | r).sum())
         metrics["iou_vs_unet_labels"] = round(inter / union, 4) if union else 0.0
 
-    return BaselineResult(
-        water_mask=mask, metrics=metrics, artifacts={"baseline": out_path}
-    )
+    return BaselineResult(water_mask=mask, metrics=metrics, artifacts={"baseline": out_path})
 
 
 def _downsample(stack: np.ndarray, max_size: int) -> np.ndarray:

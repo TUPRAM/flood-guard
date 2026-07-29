@@ -236,10 +236,7 @@ def render_tambon_narrative(inputs: NarrativeInputs, *, language: str = "en") ->
                 f"ค่าการเปิดรับความเสี่ยง {inputs.exposure:.1f}/100)"
             )
         else:
-            sentences.append(
-                f"ค่าการเปิดรับความเสี่ยง {inputs.exposure:.1f}/100 "
-                "แต่ไม่มีข้อมูลประชากรประกอบ"
-            )
+            sentences.append(f"ค่าการเปิดรับความเสี่ยง {inputs.exposure:.1f}/100 แต่ไม่มีข้อมูลประชากรประกอบ")
         sentences.append(
             f"คะแนนลำดับความสำคัญ {inputs.fpps:.1f}/100 อยู่ในระดับการปฏิบัติ "
             f"{inputs.action_class} - {action}"
@@ -328,8 +325,7 @@ def generate_narratives(
 
     narratives = {
         item.tambon_name_en: {
-            language: render_tambon_narrative(item, language=language)
-            for language in languages
+            language: render_tambon_narrative(item, language=language) for language in languages
         }
         for item in rows
     }

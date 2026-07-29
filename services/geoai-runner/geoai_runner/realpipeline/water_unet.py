@@ -399,10 +399,16 @@ def infer_water_probability(
         probability = prob[-1].astype("float32")  # water-class probability band
     except Exception:  # pragma: no cover - probability optional
         probability = mask.astype("float32")
-    return mask, probability, transform, crs, {
-        "water_mask": mask_path,
-        "water_probability": prob_path,
-    }
+    return (
+        mask,
+        probability,
+        transform,
+        crs,
+        {
+            "water_mask": mask_path,
+            "water_probability": prob_path,
+        },
+    )
 
 
 def evaluate_roles(
@@ -532,9 +538,7 @@ def _vectorize(binary: np.ndarray, transform, crs: str, out_path: Path) -> Path:
         binary.astype("int32"), mask=binary.astype(bool), transform=transform
     ):
         if value == 1:
-            feats.append(
-                {"type": "Feature", "properties": {"class": "water"}, "geometry": geom}
-            )
+            feats.append({"type": "Feature", "properties": {"class": "water"}, "geometry": geom})
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
         json.dumps(

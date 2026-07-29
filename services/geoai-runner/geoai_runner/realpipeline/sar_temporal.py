@@ -67,8 +67,18 @@ import numpy as np
 
 # Wet season over northern Thailand: the southwest monsoon, roughly May-October.
 SEASON_BINS_WET_DRY: dict[int, int] = {
-    1: 0, 2: 0, 3: 0, 4: 0, 11: 0, 12: 0,  # dry
-    5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1,  # wet
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    11: 0,
+    12: 0,  # dry
+    5: 1,
+    6: 1,
+    7: 1,
+    8: 1,
+    9: 1,
+    10: 1,  # wet
 }
 SEASON_LABELS_WET_DRY: tuple[str, ...] = ("dry_nov_apr", "wet_may_oct")
 
@@ -233,9 +243,7 @@ class SeasonalBaseline:
         """Return the share of pixels meeting ``min_obs_per_bin`` in each bin."""
 
         return {
-            self.season_labels[s]: round(
-                float((self.n_obs[s] >= self.min_obs_per_bin).mean()), 5
-            )
+            self.season_labels[s]: round(float((self.n_obs[s] >= self.min_obs_per_bin).mean()), 5)
             for s in range(self.n_obs.shape[0])
         }
 
@@ -322,7 +330,13 @@ def build_seasonal_baseline(
         raise TemporalSarError("season_of_month must cover all twelve months.")
 
     baseline = _compute(
-        working, polarisation, requested, labels, min_obs_per_bin, mad_floor_db, row_chunk,
+        working,
+        polarisation,
+        requested,
+        labels,
+        min_obs_per_bin,
+        mad_floor_db,
+        row_chunk,
         tuple(str(d)[:10] for d in exclude_dates),
     )
     weakest = min(baseline.coverage().values()) if baseline.season_labels else 0.0
@@ -337,8 +351,13 @@ def build_seasonal_baseline(
         return baseline
     # Requested binning is too fine for this archive: fall back and record it.
     return _compute(
-        working, polarisation, SEASON_BINS_WET_DRY, SEASON_LABELS_WET_DRY,
-        min_obs_per_bin, mad_floor_db, row_chunk,
+        working,
+        polarisation,
+        SEASON_BINS_WET_DRY,
+        SEASON_LABELS_WET_DRY,
+        min_obs_per_bin,
+        mad_floor_db,
+        row_chunk,
         tuple(str(d)[:10] for d in exclude_dates),
     )
 
@@ -489,9 +508,7 @@ def zscore_to_probability(
         probability[finite] = _dark_posterior(observed, fit).astype("float32")
         info = {"method": "gaussian_mixture", "fit_sample_size": int(sample.size), **fit}
     else:
-        raise TemporalSarError(
-            f"method must be 'logistic' or 'gaussian_mixture'; got {method!r}."
-        )
+        raise TemporalSarError(f"method must be 'logistic' or 'gaussian_mixture'; got {method!r}.")
 
     info["finite_fraction"] = round(float(finite.mean()), 5)
     # NaN z (under-sampled baseline) must not read as "certainly dry".
@@ -566,9 +583,7 @@ def _dark_posterior(values: np.ndarray, fit: dict[str, float]) -> np.ndarray:
 
     def component(mean: float, sigma: float, weight: float) -> np.ndarray:
         return (
-            weight
-            * np.exp(-0.5 * ((x - mean) / sigma) ** 2)
-            / (sigma * math.sqrt(2.0 * math.pi))
+            weight * np.exp(-0.5 * ((x - mean) / sigma) ** 2) / (sigma * math.sqrt(2.0 * math.pi))
         )
 
     dark = component(fit["dark_mean"], fit["dark_sigma"], fit["dark_weight"])
@@ -667,8 +682,11 @@ def inundation_history(
     for scene in series.scenes:
         scene_db = to_db(scene.read(baseline.polarisation))
         result = detect_temporal_flood(
-            scene_db, baseline, scene.month,
-            method=method, params=params,
+            scene_db,
+            baseline,
+            scene.month,
+            method=method,
+            params=params,
             open_water_threshold=open_water_threshold,
             permanent_water=permanent_water,
         )
@@ -687,9 +705,7 @@ def inundation_history(
                     "item_id": scene.item_id,
                     "season_bin": result.metrics["season_bin"],
                     "open_water_fraction": round(float(result.open_water[selector].mean()), 6),
-                    "valid_fraction": round(
-                        float(valid.sum() / max(1, int(selector.sum()))), 5
-                    ),
+                    "valid_fraction": round(float(valid.sum() / max(1, int(selector.sum()))), 5),
                 }
             )
     return rows

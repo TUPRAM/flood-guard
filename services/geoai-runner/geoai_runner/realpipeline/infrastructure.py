@@ -83,7 +83,9 @@ def extract_buildings_sam(
     sam.save_masks(str(output_dir / "sam_masks.tif"))
     # regularize() would clean boundaries here in the online path.
     return InfrastructureResult(
-        footprints=[], method="sam3_box_prompt", exposed_count=0,
+        footprints=[],
+        method="sam3_box_prompt",
+        exposed_count=0,
         metrics={"data_mode": "real_licensed_inputs"},
         artifacts={"footprints": vector_path},
     )
@@ -105,7 +107,6 @@ def extract_buildings_classical(
     """
 
     from rasterio.features import shapes
-    from rasterio.transform import xy
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -194,8 +195,10 @@ def _dilate(mask: np.ndarray, radius: int = 3) -> np.ndarray:
     for _ in range(radius):
         out = (
             out
-            | np.roll(out, 1, 0) | np.roll(out, -1, 0)
-            | np.roll(out, 1, 1) | np.roll(out, -1, 1)
+            | np.roll(out, 1, 0)
+            | np.roll(out, -1, 0)
+            | np.roll(out, 1, 1)
+            | np.roll(out, -1, 1)
         )
     return out
 
@@ -213,9 +216,7 @@ def _polygon_area_m2(geom: dict, pixel_area_m2: float, mask: np.ndarray, transfo
     # Shoelace in degrees, then convert.
     xs = [p[0] for p in ring]
     ys = [p[1] for p in ring]
-    area_deg2 = 0.5 * abs(
-        sum(xs[i] * ys[i + 1] - xs[i + 1] * ys[i] for i in range(len(ring) - 1))
-    )
+    area_deg2 = 0.5 * abs(sum(xs[i] * ys[i + 1] - xs[i + 1] * ys[i] for i in range(len(ring) - 1)))
     m_per_deg_lon = 111000.0 * np.cos(np.radians(20.4))
     m_per_deg_lat = 111000.0
     return area_deg2 * m_per_deg_lon * m_per_deg_lat

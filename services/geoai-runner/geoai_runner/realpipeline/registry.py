@@ -72,8 +72,7 @@ COMPONENTS: tuple[GeoAIComponent, ...] = (
         ),
         inputs="~180 Sentinel-1 RTC acquisitions on one relative orbit (2018-2024)",
         output_artifact=(
-            "temporal_flood_probability.tif + inundation_history.csv + "
-            "inundation_frequency.csv"
+            "temporal_flood_probability.tif + inundation_history.csv + inundation_frequency.csv"
         ),
         feeds_into=(
             "Supersedes Component A's single pre/post pair once validated; supplies "
@@ -162,8 +161,14 @@ COMPONENTS: tuple[GeoAIComponent, ...] = (
         book_ref="Ch. 14, Sec. 14.7",
         tier="MVP",
         status="runnable-fallback",
-        architecture="Real OSM footprints (current) | SAM 3 box-prompt zero-shot on THEOS-2 (upgrade) | impervious-threshold vectoriser (offline fallback)",
-        inputs="OpenStreetMap building footprints; high-resolution optical (THEOS-2) + OSM POI boxes for the SAM upgrade",
+        architecture=(
+            "Real OSM footprints (current) | SAM 3 box-prompt zero-shot on THEOS-2 "
+            "(upgrade) | impervious-threshold vectoriser (offline fallback)"
+        ),
+        inputs=(
+            "OpenStreetMap building footprints; high-resolution optical (THEOS-2) "
+            "+ OSM POI boxes for the SAM upgrade"
+        ),
         output_artifact="critical_infrastructure_footprints.geojson",
         feeds_into="Exposed-facility layer, shelter capacity vs demand",
         criteria=("Feasibility", "Communication"),

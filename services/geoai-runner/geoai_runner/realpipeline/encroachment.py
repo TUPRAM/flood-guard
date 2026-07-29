@@ -290,9 +290,7 @@ def builtup_change(
     t2, t2_transform, _ = read_geotiff(t2_path)
     t1, t2 = t1[0].astype("float32"), t2[0].astype("float32")
     if t1.shape != t2.shape:
-        raise GridMismatchError(
-            f"built-up epochs have different shapes: {t1.shape} vs {t2.shape}."
-        )
+        raise GridMismatchError(f"built-up epochs have different shapes: {t1.shape} vs {t2.shape}.")
     # Normalise percent-scaled products to a 0-1 fraction.
     scale = 100.0 if max(float(np.nanmax(t1)), float(np.nanmax(t2))) > 1.5 else 1.0
     t1, t2 = t1 / scale, t2 / scale
@@ -379,18 +377,27 @@ def detect_builtup_change(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     first = fetch_builtup_surface(
-        bbox, t1_year, output_dir / f"builtup_{t1_year}.tif",
-        out_shape=out_shape, collection_id=collection_id,
+        bbox,
+        t1_year,
+        output_dir / f"builtup_{t1_year}.tif",
+        out_shape=out_shape,
+        collection_id=collection_id,
     )
     second = fetch_builtup_surface(
-        bbox, t2_year, output_dir / f"builtup_{t2_year}.tif",
-        out_shape=out_shape, collection_id=first["collection_id"],
+        bbox,
+        t2_year,
+        output_dir / f"builtup_{t2_year}.tif",
+        out_shape=out_shape,
+        collection_id=first["collection_id"],
     )
     result = builtup_change(
-        first["path"], second["path"], output_dir,
+        first["path"],
+        second["path"],
+        output_dir,
         susceptibility_path=susceptibility_path,
         susceptibility_threshold=susceptibility_threshold,
-        t1_year=t1_year, t2_year=t2_year,
+        t1_year=t1_year,
+        t2_year=t2_year,
     )
     result.metrics["collection_id"] = first["collection_id"]
     result.metrics["t1_item_ids"] = first["item_ids"]

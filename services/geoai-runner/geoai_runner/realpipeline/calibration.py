@@ -405,9 +405,7 @@ def _paired(probability: np.ndarray, reference: np.ndarray) -> tuple[np.ndarray,
     p = np.asarray(probability, dtype="float64").ravel()
     r = np.asarray(reference).astype(bool).astype("float64").ravel()
     if p.shape != r.shape:
-        raise CalibrationError(
-            f"probability shape {p.shape} does not match reference {r.shape}."
-        )
+        raise CalibrationError(f"probability shape {p.shape} does not match reference {r.shape}.")
     if p.size == 0:
         raise CalibrationError("empty probability/reference pair.")
     if not np.all(np.isfinite(p)):

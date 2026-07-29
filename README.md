@@ -341,7 +341,7 @@ Read `docs/reviewer_a_workbench_guide.md` before reviewing. It explains the prac
 
 ```text
 docs/                 Project, data, model, validation, and demo contracts.
-tasks/                Codex-ready backlog and task briefs.
+docs/history/tasks/   Superseded backlog and task briefs. PLANS.md is the live roadmap.
 src/floodguard/       Production Python package code.
 tests/                Unit tests and open sample fixtures.
 notebooks/            Exploratory notebooks only.

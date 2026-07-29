@@ -26,20 +26,65 @@ does not contain `.git` metadata, so the commit above remains a declared source
 receipt rather than independently re-proven local evidence. Do not strengthen
 that claim without a commit-specific archive or Git checkout.
 
-Create the dependency-light normal-test environment:
+## Environments — one per tier
+
+Nothing here installs GeoAI by default, and that is load-bearing: CI job
+`geoai-normal` asserts the dependency-light environment **cannot** import
+`geoai` or `torch`, and `tests/test_dependency_isolation.py` asserts the
+manifest keeps it that way. Installing the extra over the top of `.venv` would
+destroy your ability to reproduce that check locally, so each tier gets its own
+environment.
+
+| Environment | Contents | Use for | Output tier |
+| --- | --- | --- | --- |
+| `.venv` | base only | dependency-light tests, reproducing CI | governed |
+| `.venv-geoai` | `+ geoai` extra | Components A/B/C/D/F, the `geoai-skills` | research → promotable |
+| `.venv-research` | `numpy<2.4 + omniwatermask` | Component ★ only | research only |
+
+Dependency-light normal-test environment (the default):
 
 ```powershell
 uv sync --project services/geoai-runner --group test
 ```
 
-Install the isolated GeoAI extra only for an explicit real smoke run:
+The isolated GeoAI stack, in its **own** environment:
 
 ```powershell
-uv sync --project services/geoai-runner --group test --extra geoai
+$env:UV_PROJECT_ENVIRONMENT = "services/geoai-runner/.venv-geoai"
+uv sync --project services/geoai-runner --extra geoai
 ```
 
-The service-local `uv.lock` resolves both the normal environment and the
-optional GeoAI environment. Neither command changes the root dependencies.
+Verify it:
+
+```
+/geoai-skills:install-geoai --check --extras
+```
+
+Component ★ (OmniWaterMask) needs a third environment because `omniwatermask`
+requires `numpy>=2.0,<2.4` and cannot share this project's frozen
+`numpy==2.4.2`:
+
+```powershell
+uv venv .venv-research --python 3.12
+uv pip install --python .venv-research -r services/geoai-runner/requirements-research.txt
+```
+
+The service-local `uv.lock` resolves the normal environment and every declared
+extra. None of these commands change the root dependencies.
+
+### Known environment facts (verified 2026-07-29)
+
+- `geoai-py 0.41.1`, `numpy 2.4.2` — matches the frozen contract;
+  `geoai_runner.environment.inspect_environment()` issues a receipt.
+- **`torch 2.13.0+cpu` — CPU only.** PyPI's Windows wheels carry no CUDA, so an
+  NVIDIA GPU present on the machine is *not* used. Enabling it requires
+  installing torch from `download.pytorch.org/whl/cuXXX`, which conflicts with
+  the frozen pin and the environment receipt. Treat that as a deliberate
+  decision, not a silent upgrade.
+- The `geoai-skills` plugin invokes `python3`, which a uv venv on Windows does
+  not provide. Copy `python.exe` to `python3.exe` inside
+  `.venv-geoai/Scripts/`, or run the skills from an environment where `python3`
+  resolves.
 
 ## Auditable feature contract
 

@@ -91,5 +91,14 @@ research/**
 
 # geoai-skills session state — a cache, never an input to a governed run (D-38)
 .geoai-skills/
-research/.venv-research/
+
+# Tier-specific virtualenvs (D-33). uv writes a self-ignoring .gitignore inside
+# each venv, but that is an implementation detail of uv; name them explicitly.
+#   .venv          dependency-light — reproduces CI's isolation assertion
+#   .venv-geoai    the geoai extra  — Components A/B/C/D/F and the skills
+#   .venv-research numpy<2.4        — Component * (OmniWaterMask) only
+.venv-geoai/
+services/**/.venv-geoai/
 .venv-research/
+research/.venv-research/
+services/**/.venv-research/

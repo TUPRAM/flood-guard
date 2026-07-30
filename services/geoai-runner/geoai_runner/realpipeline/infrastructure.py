@@ -164,6 +164,7 @@ def extract_buildings_classical(
             }
         ),
         encoding="utf-8",
+        newline="\n",
     )
 
     metrics = {

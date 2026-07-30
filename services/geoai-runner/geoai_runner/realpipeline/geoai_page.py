@@ -296,7 +296,7 @@ def write_geoai_page(
   official emergency warning system.</p>
 </footer>
 </body></html>"""
-    output_path.write_text(html_doc, encoding="utf-8")
+    output_path.write_text(html_doc, encoding="utf-8", newline="\n")
     return output_path
 
 

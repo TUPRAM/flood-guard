@@ -347,7 +347,9 @@ def generate_narratives(
     }
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8", newline="\n"
+    )
     return NarrativeResult(
         narratives=narratives,
         metrics={

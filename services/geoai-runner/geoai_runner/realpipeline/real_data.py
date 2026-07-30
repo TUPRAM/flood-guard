@@ -267,7 +267,7 @@ def real_sar_flood_extent(
             feats.append({"type": "Feature", "properties": {"class": "flood"}, "geometry": geom})
     vec_path = output_dir / "real_flood_extent.geojson"
     vec_path.write_text(
-        json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8"
+        json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8", newline="\n"
     )
 
     metrics = {
@@ -650,7 +650,7 @@ def fetch_osm_buildings(
             ]
             if out and cache_path:
                 Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
-                Path(cache_path).write_text(json.dumps(out), encoding="utf-8")
+                Path(cache_path).write_text(json.dumps(out), encoding="utf-8", newline="\n")
             return out
         except Exception as exc:
             errors.append(f"{url}: {exc}")
@@ -739,7 +739,7 @@ def fetch_overture_buildings(
     ]
     if out and cache_path:
         Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
-        Path(cache_path).write_text(json.dumps(out), encoding="utf-8")
+        Path(cache_path).write_text(json.dumps(out), encoding="utf-8", newline="\n")
     return out
 
 

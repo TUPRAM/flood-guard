@@ -533,3 +533,22 @@ produced them. The new numbers can be reproduced exactly: two consecutive
 So this is not "the new run disagrees with the old one". It is the first run
 whose numbers can be reproduced at all, and Ko Chang crossing from E to D is a
 consequence a reviewer must be told about rather than left to discover.
+
+### D-41 recurred through the writers, not through git
+
+Committing the run produced CRLF warnings on 12 tracked artifacts, and the
+frozen baseline's `CHECKSUMS` failed against the committed blobs for 5 of 8
+entries. `.gitattributes` had fixed the *repository* side of D-41; the *writer*
+side was untouched.
+
+`Path.write_text` and `DataFrame.to_csv` default to `newline=None`, which
+translates to `os.linesep` — CRLF on Windows. So every text artifact the
+pipeline wrote differed from its own committed blob the moment the run finished,
+and any checksum taken from the working tree was wrong. For a project whose
+provenance rests on exact SHA-256 that is a live hazard, not cosmetics.
+
+All 11 writers now pin `newline="\n"` / `lineterminator="\n"`, and
+`test_artifact_writers_emit_lf.py` walks the AST to enforce it. That test earned
+its place immediately: grep found 6 sites, the AST check found **11** — the rest
+were hidden by multi-line formatting. Baseline `CHECKSUMS` recomputed on the LF
+bytes and verified against the git blobs (8/8).

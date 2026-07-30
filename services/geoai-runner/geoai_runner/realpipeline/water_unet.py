@@ -550,5 +550,6 @@ def _vectorize(binary: np.ndarray, transform, crs: str, out_path: Path) -> Path:
             }
         ),
         encoding="utf-8",
+        newline="\n",
     )
     return out_path

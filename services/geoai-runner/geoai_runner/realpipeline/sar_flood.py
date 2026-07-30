@@ -222,5 +222,5 @@ def _vectorize_flood(binary: np.ndarray, transform, crs: str, out_path: Path) ->
         "crs": {"type": "name", "properties": {"name": crs}},
         "features": geoms,
     }
-    out_path.write_text(json.dumps(fc), encoding="utf-8")
+    out_path.write_text(json.dumps(fc), encoding="utf-8", newline="\n")
     return out_path

@@ -200,7 +200,9 @@ def main() -> None:
     print("[1/9] Real DOPA sub-districts (NGIS) ...")
     subs = rd.fetch_mae_sai_subdistricts()
     bbox = _union_bbox(subs, 0.01)
-    (out / "subdistricts.geojson").write_text(json.dumps(subs), encoding="utf-8")
+    (out / "subdistricts.geojson").write_text(
+        json.dumps(subs), encoding="utf-8", newline="\n"
+    )
     from affine import Affine
 
     transform = Affine.translation(bbox[0], bbox[3]) * Affine.scale(
@@ -381,7 +383,9 @@ def main() -> None:
     dem = rd.fetch_copernicus_dem(bbox=bbox, out_shape=SHAPE)["dem"]
     try:
         rivers = rd.fetch_arcgis_featurelayer(rd.LAYERS["rivers"], bbox)
-        (out / "rivers.geojson").write_text(json.dumps(rivers), encoding="utf-8")
+        (out / "rivers.geojson").write_text(
+            json.dumps(rivers), encoding="utf-8", newline="\n"
+        )
     except rd.RealDataError:
         rivers = {"features": []}
     river_mask = rd.rasterize_lines(rivers, transform, SHAPE)
@@ -479,7 +483,7 @@ def main() -> None:
             }
         )
     (out / "critical_infrastructure_footprints.geojson").write_text(
-        json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8"
+        json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8", newline="\n"
     )
     timings["infrastructure"] = round(time.time() - t, 1)
     metrics["infrastructure"] = {
@@ -594,7 +598,7 @@ def main() -> None:
         generated_at=flood.metrics["post_datetime"],
     )
     (out / "candidate_zonal_receipt.json").write_text(
-        json.dumps(candidate_receipt, indent=2, sort_keys=True), encoding="utf-8"
+        json.dumps(candidate_receipt, indent=2, sort_keys=True), encoding="utf-8", newline="\n"
     )
     print(
         f"      candidate receipt: {candidate_receipt['area_count']} areas, "
@@ -628,7 +632,12 @@ def main() -> None:
         "assumptions",
     ]
     scored_out = scored.reindex(columns=[c for c in cols if c in scored.columns])
-    scored_out.to_csv(out / "geoai_subdistrict_priority.csv", index=False)
+    # lineterminator="\n" (and newline="\n" on every write_text below): on
+    # Windows the default translates to CRLF, so a freshly written artifact
+    # differs from its own committed blob and any checksum taken from the
+    # working tree fails to verify. That is D-41 recurring through the writers
+    # instead of through git.
+    scored_out.to_csv(out / "geoai_subdistrict_priority.csv", index=False, lineterminator="\n")
 
     # Deterministic bilingual narratives (Component G) from the scored table.
     thai_names = {
@@ -713,7 +722,9 @@ def main() -> None:
             for c in COMPONENTS
         ],
     }
-    (out / "geoai_metrics.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (out / "geoai_metrics.json").write_text(
+        json.dumps(manifest, indent=2), encoding="utf-8", newline="\n"
+    )
     _component_summary(out / "geoai_component_summary.csv", metrics, timings)
     annotate.render_annotated_models(prev, manifest["metrics"], prev / "annotated_models.png")
     annotate.render_decision_bridge(
@@ -872,9 +883,11 @@ def _run_temporal_stage(args, bbox, work, prev, out, transform, subs, flood, met
         series, baseline, unit_masks, permanent_water=flood.permanent_water
     )
     frequency = st.inundation_frequency(history)
-    pd.DataFrame(history).to_csv(out / "inundation_history.csv", index=False)
+    pd.DataFrame(history).to_csv(
+        out / "inundation_history.csv", index=False, lineterminator="\n"
+    )
     pd.DataFrame([{"subdistrict_id": k, **v} for k, v in sorted(frequency.items())]).to_csv(
-        out / "inundation_frequency.csv", index=False
+        out / "inundation_frequency.csv", index=False, lineterminator="\n"
     )
 
     timings["temporal_sar"] = round(time.time() - t, 1)
@@ -1136,7 +1149,7 @@ def _write_web_bundle(manifest, scored, prev, narratives=None):
             "does not clear the qualified-label gates.",
         ],
     }
-    (web / "mae-sai-real.json").write_text(json.dumps(bundle, indent=2), encoding="utf-8")
+    (web / "mae-sai-real.json").write_text(json.dumps(bundle, indent=2), encoding="utf-8", newline="\n")
     for name in (
         "scene_sar_post_vh.png",
         "A_sar_flood_probability.png",
@@ -1306,7 +1319,7 @@ def _component_summary(path, metrics, timings):
                 "runtime_s": timings.get(c.key, ""),
             }
         )
-    pd.DataFrame(rows).to_csv(path, index=False)
+    pd.DataFrame(rows).to_csv(path, index=False, lineterminator="\n")
 
 
 def _json_safe(o):

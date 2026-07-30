@@ -370,3 +370,60 @@ weaker per-building attribution changes what `amenity`-based logic can claim.
 Decision:    Code swap adopted. Published figures deliberately left stale until
              a governed re-run. Recorded here so the gap is visible rather than
              discovered later.
+
+---
+
+## 2026-07-30 · Component B · MNDWI threshold sweep — no threshold is salvageable
+
+Skill/cmd:   threshold sweep over the cached T2.4 stack vs JRC occurrence > 50 %
+Environment: `.venv-research`
+Output:      `research/skills/owm_diagnosis/jrc_occurrence.tif` (untracked)
+Question:    Can Component B's label be fixed by moving the MNDWI threshold?
+
+Reference: JRC Global Surface Water, occurrence > 50 % = **0.373 %** of scene.
+Scene 2024-02-18, 0.004 % cloud, dry season — no flood, so truth sits near
+permanent water.
+
+| label | fraction | IoU | precision | recall |
+|---|---|---|---|---|
+| MNDWI > 0 (current) | 3.240 % | 0.055 | 0.058 | 0.502 |
+| MNDWI > 0.05 | 1.993 % | 0.076 | 0.084 | 0.451 |
+| MNDWI > 0.10 (best) | 1.042 % | 0.079 | 0.100 | 0.279 |
+| MNDWI > 0.15 | 0.408 % | 0.049 | 0.089 | 0.097 |
+| NDWI > 0 | 0.872 % | **0.154** | 0.190 | 0.446 |
+| MNDWI > Otsu (−0.213) | 23.303 % | 0.012 | 0.012 | 0.737 |
+| OmniWaterMask | **0.330 %** | — | — | — |
+
+**Answer: no.** Best MNDWI is IoU 0.079 at threshold 0.10, precision 0.100. At
+the current threshold it flags 8.7x the reference area **while missing half of
+it** (recall 0.502) — a mask that simultaneously over- and under-detects cannot
+be fixed by moving a threshold. Likely causes in mountainous terrain: shadow
+(low SWIR1 → high MNDWI) inflating, silt-laden river water (high SWIR1 → low
+MNDWI) deflating.
+
+Excluded the benign explanation. If this were sub-pixel registration between
+30 m JRC and our ~22 m grid on 1–2 px rivers, IoU would jump with matching
+tolerance. It does not: MNDWI > 0 goes 0.055 → 0.081 at 3 px, NDWI 0.154 →
+0.263, and 79 % of the reference survives 1 px erosion. The disagreement is
+real.
+
+NDWI > 0 is 2.8x better than the best MNDWI and is a one-line change, but still
+2.3x the reference extent. OmniWaterMask matches JRC extent to 12 %.
+
+Result:      Threshold tuning is closed off. Options recorded in
+             `docs/run_plan_governed_rerun_v1.md` §3, recommendation being
+             OmniWaterMask as the label — with the caveat that this makes
+             Component B a *distillation* of ★, publishable as fidelity and
+             never as accuracy.
+Decision:    Not promoted. The label change is a prerequisite for the next
+             governed run and needs an explicit call on framing first.
+
+### Correction to an earlier entry
+
+The T2.4 write-up said publishing 0.07 "as a suspect model metric is
+backwards". That was unfair. The artifact field is named
+`iou_vs_unet_labels` and its `assumptions` string already reads "Agreement
+(IoU) with the U-Net's MNDWI labels is a sanity check, not an accuracy claim."
+The project had already framed it correctly; the audit summary I was working
+from had not. The measurement work stands — the criticism of the framing does
+not.

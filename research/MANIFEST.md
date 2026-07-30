@@ -552,3 +552,25 @@ All 11 writers now pin `newline="\n"` / `lineterminator="\n"`, and
 its place immediately: grep found 6 sites, the AST check found **11** — the rest
 were hidden by multi-line formatting. Baseline `CHECKSUMS` recomputed on the LF
 bytes and verified against the git blobs (8/8).
+
+### A flaky judging-path test, found by CI disagreeing with itself
+
+The LF-writer commit failed CI on `browser-offline-smoke.mjs`:
+
+```
+/public/ is missing polished final copy: mae sai flood context
+```
+
+`apps/web` was **byte-identical** between that commit and the one before it,
+which passed — so the change could not be the cause. It passed on re-run,
+confirming a race.
+
+Cause: the smoke clicks the English language toggle and reads
+`body.innerText()` on the next line. React re-renders asynchronously, so the
+snapshot can be taken before the English copy lands. Fixed by waiting for the
+copy to become visible first. Verified stable over three consecutive local runs.
+
+Worth noting because this is the **offline judging path**. A test that fails
+roughly one run in three is worse than no test: it trains a reader to re-run
+rather than investigate, which is exactly how a real regression would slip
+through.

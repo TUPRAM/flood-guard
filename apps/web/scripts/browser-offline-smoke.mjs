@@ -146,6 +146,16 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
+  // The language switch re-renders asynchronously, so reading innerText straight
+  // after the click races the render. Observed in CI 2026-07-30: the run failed
+  // with "/public/ is missing polished final copy: mae sai flood context" while
+  // apps/web was byte-identical to a passing run, and it passed on re-run.
+  // Wait for the English copy to land before snapshotting.
+  await page
+    .locator("body")
+    .filter({ hasText: /mae sai flood context/i })
+    .first()
+    .waitFor({ state: "visible", timeout: 15_000 });
   const initialBody = await page.locator("body").innerText();
   assertFinalVisibleCopy(initialBody, "/public/");
   const primaryAction = page.locator('[data-action="build-household-plan"]');

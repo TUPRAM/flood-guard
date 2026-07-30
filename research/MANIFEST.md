@@ -427,3 +427,109 @@ backwards". That was unfair. The artifact field is named
 The project had already framed it correctly; the audit summary I was working
 from had not. The measurement work stands — the criticism of the framing does
 not.
+
+---
+
+## 2026-07-30 · Component B · the correct label is unlearnable at this partition
+
+Skill/cmd:   `research/skills/build_owm_label.py`, then
+             `run_real --water-label external --water-label-raster ...`
+Environment: `.venv-research` for the label, `.venv-geoai` for the run
+Output:      `research/skills/owm_label/` (untracked); run artifacts in `outputs/geoai/`
+Question:    Does training Component B on the OmniWaterMask label fix it?
+
+### The label itself is good
+
+```
+scene 2024-02-18, cloud 0.000%
+OWM label   0.325%   JRC occ>50   0.371%   ratio 0.876x
+```
+
+Within 12 % of the independent reference — far better than MNDWI's 8.7x
+over-detection. As a *target* it is the right choice.
+
+### But it is too sparse to train or evaluate
+
+`DEFAULT_MIN_POSITIVE = 2_000`; role pixel counts train 436,786 / val 121,115 /
+test 135,025. Positive counts per role:
+
+| label | scene % | train | val | test | all roles scoreable |
+| --- | --- | --- | --- | --- | --- |
+| MNDWI > 0 (wrong) | 3.240 % | 6,842 | 4,210 | 9,363 | **yes** |
+| NDWI > 0 | 0.872 % | 1,754 | 826 | 2,833 | no |
+| OWM | 0.325 % | **352** | **200** | 2,068 | no |
+
+**Only the demonstrably wrong label is dense enough to permit a leakage check,
+and it is dense because it over-detects.** Correctness and evaluability are in
+direct conflict at this scene size.
+
+### Training longer made it worse, which settles it
+
+| epochs | test IoU | precision | recall |
+| --- | --- | --- | --- |
+| 20 | 0.2448 | 0.279 | 0.666 |
+| 120 | **0.0023** | 0.0667 | **0.0024** |
+
+352 positive pixels against 436,786 is below any viable training signal; longer
+training drove the model to the majority class. The 20-epoch number is not
+better, it is under-fit. **Neither is a measurement.**
+
+Result:      The OWM label is the right target and Component B cannot use it as
+             configured. Not an epoch-count problem and not tunable.
+Decision:    Published with the correct label and an honest flag rather than
+             swapping back to a wrong label to manufacture a passing metric.
+             Added `DEGENERATE_RECALL_FLOOR = 0.05` in `metrics.py`: a metric
+             with recall below the floor, or no predicted positives, now carries
+             `degenerate=True` plus a reason. Numbers stay visible for diagnosis
+             and cannot be read as accuracy. Merely poor precision is NOT
+             flagged — only collapse.
+
+             Three remediation options recorded in
+             `docs/run_plan_governed_rerun_v1.md` §12.4: stratify the partition
+             on JRC (independent of the target), enlarge the scene, or demote
+             Component B from the MVP tier. That is a product decision and is
+             left open.
+
+### Separate finding — the old published evidence was not one run
+
+While diagnosing an apparent FPPS regression (`max|dFPPS| = 3.39`) I verified
+that Sentinel-1 and the Copernicus DEM are both byte-deterministic across
+repeated fetches, and that the SAR code and thresholds were unchanged across
+every commit. The cause was the reference: `outputs/geoai/` had been assembled
+from at least three executions across three commits (`b07bebd`, `095c39e`,
+`debe413`). No single run would reproduce that set. The baseline is now one
+coherent execution under `docs/baseline/2026-07-30-run1/`, enforced by
+`test_decision_layer_invariance.py`.
+
+### Published decision outputs moved — Ko Chang E -> D
+
+Committing this run changes figures that were already published. Stated plainly
+because one of them is a decision output:
+
+```
+tambon             fpps_old  fpps_new  delta   action
+Ko Chang              40.58     43.97  +3.39   E -> D   <-- CLASS CHANGED
+Mae Sai               32.24     34.04  +1.80   E
+Si Mueang Chum        35.04     36.72  +1.68   E
+Wiang Phang Kham      22.27     23.62  +1.35   E
+Pong Ngam             11.26     12.55  +1.29   E
+Pong Pha              14.23     15.22  +0.99   E
+Huai Khrai            12.08     12.92  +0.84   E
+Ban Dai               16.42     17.14  +0.72   E
+```
+
+Every value rose, driven by `ai_flood_share` rising for all eight tambons —
+three from exactly 0.00000. The cause is not a code change: Sentinel-1 is
+byte-deterministic, and `real_sar_flood_extent`, `drop_threshold_db=2.0` and the
+`sar_prob >= 0.5` aggregation threshold are unchanged at `b07bebd`, `095c39e`,
+`debe413` and HEAD.
+
+**The old numbers cannot be explained because their provenance is
+unrecoverable** — the priority CSV was committed at `debe413` while the metrics
+JSON beside it came from `b07bebd`, so there is no record of which code or inputs
+produced them. The new numbers can be reproduced exactly: two consecutive
+120-epoch passes gave `FPPS max|delta| = 0.000000`.
+
+So this is not "the new run disagrees with the old one". It is the first run
+whose numbers can be reproduced at all, and Ko Chang crossing from E to D is a
+consequence a reviewer must be told about rather than left to discover.

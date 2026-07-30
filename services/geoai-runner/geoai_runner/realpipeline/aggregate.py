@@ -111,9 +111,25 @@ class ExposureAnchor:
 DEFAULT_FLOOD_ANCHOR = FloodLikelihoodAnchor()
 DEFAULT_EXPOSURE_ANCHOR = ExposureAnchor()
 
-# Below this ratio of mapped OSM buildings to a population-implied expectation,
-# the OSM layer is treated as unusable for any quantitative claim.
+# Below this ratio of mapped buildings to a population-implied expectation, the
+# building layer is treated as unusable for any quantitative claim.
 OSM_COMPLETENESS_SEVERE_RATIO = 0.25
+
+# Above this ratio the layer is *over* the population-implied expectation, which
+# is equally disqualifying and used to be invisible.
+#
+# The check was one-sided because it was written against OSM, which only ever
+# undercounted Mae Sai (ratio 0.009-0.051). Switching Component D to Overture
+# takes the district ratio to ~2.69, and with no upper bound that would have
+# been stamped "usable" -- a STRONGER claim than before, produced by swapping a
+# data source with nothing validated. Overture mixes OSM with ML-derived
+# footprints and counts sheds and outbuildings, so a ratio far above expectation
+# is a reason to look, not a clean bill of health.
+#
+# 2.0 is deliberately loose: one building per two residents is already
+# implausible for a district of 82k people, so anything past it needs a human.
+OSM_COMPLETENESS_OVER_RATIO = 2.0
+
 _PEOPLE_PER_BUILDING = 4.0
 
 
@@ -187,12 +203,21 @@ def compute_exposure(
 
 
 def osm_completeness(building_count: int, population: float | None) -> dict[str, object]:
-    """Rate OSM building coverage against a population-implied expectation.
+    """Rate building coverage against a population-implied expectation.
 
     A crude expectation of one building per four residents is enough to separate
-    "sparsely mapped" from "essentially unmapped". Mae Sai's tambons land between
-    0.9% and 5.1% of expectation, which is why OSM counts inform confidence but
-    no longer inform the score.
+    "sparsely mapped" from "essentially unmapped". OSM's Mae Sai tambons land
+    between 0.9% and 5.1% of expectation, which is why building counts inform
+    confidence but no longer inform the score.
+
+    The rating is two-sided (see :data:`OSM_COMPLETENESS_OVER_RATIO`): a count
+    far *above* expectation is as unusable as one far below, and only the low
+    side was checked while OSM was the only source.
+
+    The ``osm_`` field prefix is historical. Component D's source moved to
+    Overture on 2026-07-29; the actual source for a run is recorded in
+    ``metrics.infrastructure.building_source``. The names are kept because they
+    are published in the priority CSV and the web payload.
     """
 
     if population is None or not math.isfinite(population) or population <= 0:
@@ -204,7 +229,12 @@ def osm_completeness(building_count: int, population: float | None) -> dict[str,
         }
     expected = float(population) / _PEOPLE_PER_BUILDING
     ratio = float(building_count) / expected if expected > 0 else 0.0
-    flag = "severely_incomplete" if ratio < OSM_COMPLETENESS_SEVERE_RATIO else "usable"
+    if ratio < OSM_COMPLETENESS_SEVERE_RATIO:
+        flag = "severely_incomplete"
+    elif ratio > OSM_COMPLETENESS_OVER_RATIO:
+        flag = "over_expectation_review_needed"
+    else:
+        flag = "usable"
     return {
         "osm_building_count": int(building_count),
         "osm_expected_buildings": round(expected, 1),

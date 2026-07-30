@@ -54,6 +54,11 @@ from geoai_runner.realpipeline import real_data as rd  # noqa: E402
 from geoai_runner.realpipeline.geoai_page import write_geoai_page  # noqa: E402
 from geoai_runner.realpipeline.raster_io import array_to_png, write_geotiff  # noqa: E402
 from geoai_runner.realpipeline.registry import COMPONENTS  # noqa: E402
+from geoai_runner.realpipeline.water_label import (  # noqa: E402
+    LABEL_METHODS,
+    build_water_label,
+    label_assumptions,
+)
 
 SHAPE = (1024, 1024)
 
@@ -108,6 +113,36 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--fast", action="store_true", help="Fewer U-Net epochs.")
     ap.add_argument("--epochs", type=int, default=None)
+    ap.add_argument(
+        "--water-label",
+        choices=LABEL_METHODS,
+        default="mndwi",
+        help=(
+            "Component B's training target. 'mndwi' is the historical default "
+            "and is KNOWN POOR (~8.7x the JRC reference extent while recovering "
+            "only half of it); it is retained to reproduce the published "
+            "baseline. 'ndwi' is ~2.8x better on IoU. 'external' takes a "
+            "precomputed raster (normally OmniWaterMask) and makes Component B "
+            "a distillation -- see --water-label-raster."
+        ),
+    )
+    ap.add_argument(
+        "--water-label-threshold",
+        type=float,
+        default=None,
+        help="Override the index threshold for --water-label mndwi|ndwi.",
+    )
+    ap.add_argument(
+        "--water-label-raster",
+        default=None,
+        help=(
+            "Path to a precomputed water mask, required by --water-label "
+            "external. OmniWaterMask cannot run in this environment (it needs "
+            "numpy<2.4); build one with research/skills/build_owm_label.py in "
+            ".venv-research. Its grid must match the Sentinel-2 stack and its "
+            "sha256 is recorded in the run metrics."
+        ),
+    )
     ap.add_argument(
         "--all-methods",
         action="store_true",
@@ -233,15 +268,30 @@ def main() -> None:
     stack = s2["stack"]
     # Band 3 (NIR) is unpacked for documentation of the stack layout even though
     # MNDWI uses only green and SWIR1: 1=B2 2=B3 3=B4 4=B8 5=B11 6=B12.
-    green, _nir, swir1 = stack[1], stack[3], stack[4]
-    mndwi = (green - swir1) / (green + swir1 + 1e-6)
-    water_label = (mndwi > 0.0).astype("uint8")  # real spectral-index water mask
+    water_label, label_provenance = build_water_label(
+        stack,
+        method=args.water_label,
+        threshold=args.water_label_threshold,
+        external_raster=args.water_label_raster,
+    )
     jrc = rd.fetch_jrc_surface_water(bbox=bbox, out_shape=SHAPE)
     timings["sentinel2"] = round(time.time() - t, 1)
+
+    # Report the label against an independent reference every run. The MNDWI
+    # label shipped for months at ~8.7x the JRC extent without this line making
+    # the gap visible at the console.
+    jrc_permanent = (jrc["occurrence"] > 50).astype("uint8")
+    label_frac = float(water_label.mean())
+    jrc_frac = float(jrc_permanent.mean())
+    ratio = round(label_frac / jrc_frac, 3) if jrc_frac > 0 else None
     print(
         f"      {s2['datetime'][:10]} cloud {s2['cloud_cover']:.3f}% | "
-        f"MNDWI water {water_label.mean() * 100:.2f}% | JRC occ>50 {(jrc['occurrence'] > 50).mean() * 100:.2f}%"
+        f"label[{label_provenance['label_method']}] {label_frac * 100:.2f}% | "
+        f"JRC occ>50 {jrc_frac * 100:.2f}% | "
+        f"ratio {'n/a' if ratio is None else f'{ratio:.2f}x'}"
     )
+    label_provenance["label_jrc_permanent_fraction"] = round(jrc_frac, 5)
+    label_provenance["label_over_jrc_ratio"] = ratio
     array_to_png(prev / "scene_s2_rgb.png", np.clip(stack[[2, 1, 0]] * 3.5, 0, 1))
     write_geotiff(work / "s2.tif", stack, transform, "EPSG:4326")
     write_geotiff(work / "water_label.tif", water_label, transform, "EPSG:4326", dtype="uint8")
@@ -308,6 +358,11 @@ def main() -> None:
         "epochs": epochs,
         "encoder_weights": "imagenet",
         "class_weights": list(class_weights),
+        # The label carries a claim, so it travels with the metric. `assumptions`
+        # is overwritten deliberately: whatever the model module wrote cannot
+        # know which target it was trained against.
+        **label_provenance,
+        "assumptions": label_assumptions(label_provenance),
     }
     array_to_png(prev / "B_water_mask.png", res_b.water_mask, cmap="Blues")
     array_to_png(prev / "B_water_confidence.png", res_b.confidence, cmap="viridis", vmin=0, vmax=1)
@@ -479,7 +534,18 @@ def main() -> None:
 
     # ---------------- extra methods: baseline + E (opt-in) ------------------
     if args.all_methods:
-        _run_extra_methods(args, bbox, work, prev, out, transform, res_c, metrics, timings)
+        _run_extra_methods(
+            args,
+            bbox,
+            work,
+            prev,
+            out,
+            transform,
+            res_c,
+            metrics,
+            timings,
+            label_provenance=label_provenance,
+        )
 
     # ---------------- bridge: real subdistricts -> FPPS --------------------
     print("[8/9] Bridging real AI layers -> real sub-district priority ...")
@@ -859,7 +925,9 @@ def _subdistrict_masks(subs, transform, shape):
     return masks
 
 
-def _run_extra_methods(args, bbox, work, prev, out, transform, res_c, metrics, timings):
+def _run_extra_methods(
+    args, bbox, work, prev, out, transform, res_c, metrics, timings, label_provenance=None
+):
     """Run the OmniWaterMask baseline and Component E (built-up encroachment).
 
     Component G no longer lives here: the deterministic narrative generator runs
@@ -878,11 +946,25 @@ def _run_extra_methods(args, bbox, work, prev, out, transform, res_c, metrics, t
     print("[E1] OmniWaterMask baseline (real Sentinel-2) ...")
     try:
         t = time.time()
+        # If Component B was trained on an EXTERNAL label -- normally OWM itself --
+        # then scoring OWM against that label is circular: it would report
+        # IoU(OWM, OWM) ~= 1.0 and read as a strong result. Drop the reference in
+        # that case so the baseline reports extent only.
+        label_is_owm_derived = bool((label_provenance or {}).get("label_is_distillation"))
+        reference = None if label_is_owm_derived else work / "water_label.tif"
+        if label_is_owm_derived:
+            print(
+                "      NOTE: Component B's label is external (OWM-derived), so the "
+                "IoU-vs-label comparison is circular and is omitted."
+            )
         base = wb.run_omniwatermask_baseline(
-            work / "s2.tif", work, reference_mask_path=work / "water_label.tif"
+            work / "s2.tif", work, reference_mask_path=reference
         )
         timings["omniwatermask"] = round(time.time() - t, 1)
-        metrics["omniwatermask"] = base.metrics
+        metrics["omniwatermask"] = {
+            **base.metrics,
+            "reference_omitted_as_circular": label_is_owm_derived,
+        }
         array_to_png(prev / "baseline_omniwatermask.png", base.water_mask, cmap="Blues")
         print(
             f"      water {base.metrics.get('water_fraction')} | "

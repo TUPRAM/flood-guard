@@ -19,15 +19,95 @@
     "water_reference": "JRC Global Surface Water (Pekel et al. 2016)",
     "subdistricts": "DOPA sub-districts via NGIS ArcGIS",
     "rivers": "DWR natural streams via NGIS ArcGIS",
-    "buildings": "OpenStreetMap (Overpass API)"
+    "buildings": "OpenStreetMap (Overpass API)",
+    "population": "WorldPop Thailand 100 m 2020 (via committed decision-layer context)",
+    "decision_context": "outputs/mae_sai_subdistrict_flood_inputs.csv"
+  },
+  "evaluation_protocol": {
+    "partition": {
+      "kind": "runner_local_spatial_blocks_v1",
+      "is_sealed_multi_event_partition": false,
+      "seed": 1,
+      "seed_declared_before_metrics": true,
+      "ratios": {
+        "train": 0.6,
+        "val": 0.2,
+        "test": 0.2
+      },
+      "geometry": {
+        "blocks_per_axis": 3,
+        "n_blocks": 9,
+        "block_m": 8307.0,
+        "buffer_m": 1600.0,
+        "tile_size_px": 128,
+        "tile_m": 3201.3,
+        "core_m": 5107.0,
+        "pixel_m_y": 24.337,
+        "pixel_m_x": 25.01,
+        "scene_m_y": 24920.9,
+        "scene_m_x": 25610.0
+      },
+      "blocks": {
+        "train": 5,
+        "val": 2,
+        "test": 2
+      },
+      "pixel_share": {
+        "train": 0.41655,
+        "val": 0.1155,
+        "test": 0.12877,
+        "buffer": 0.33917
+      },
+      "block_role_map": [
+        [
+          "train",
+          "test",
+          "val"
+        ],
+        [
+          "train",
+          "val",
+          "train"
+        ],
+        [
+          "train",
+          "train",
+          "test"
+        ]
+      ],
+      "contiguity": {
+        "train": {
+          "n_blocks": 5,
+          "n_components": 2,
+          "single_patch": false
+        },
+        "val": {
+          "n_blocks": 2,
+          "n_components": 2,
+          "single_patch": false
+        },
+        "test": {
+          "n_blocks": 2,
+          "n_components": 2,
+          "single_patch": false
+        }
+      },
+      "assignment_sha256": "b895f6b435a16a56dbb04440cd7d54954133d6f817b38743a4d00268c4b4cb36"
+    },
+    "scale_anchors": {
+      "flood_likelihood": "fpps_flood_anchor_v1",
+      "exposure": "fpps_exposure_anchor_v1"
+    },
+    "headline_role": "test",
+    "notes": "Component B and F metrics are reported per partition role; the headline is the held-out test role. Preprocessing and label sampling use training blocks only. This is a runner-local spatial split, NOT a sealed multi-event partition under docs/immutable-multi-event-partitions-v1.md."
   },
   "timings_seconds": {
-    "sar_flood": 30.6,
-    "sentinel2": 26.1,
-    "water_unet": 1194.7,
-    "susceptibility": 36.7,
-    "infrastructure": 8.1,
-    "embeddings": 5.7
+    "sar_flood": 12.0,
+    "sentinel2": 18.5,
+    "water_unet": 375.5,
+    "susceptibility": 9.8,
+    "infrastructure": 101.2,
+    "embeddings": 4.6
   },
   "metrics": {
     "sar_flood": {
@@ -44,46 +124,451 @@
       "assumptions": "Real Sentinel-1 RTC change detection over Mae Sai. Post scene (2024-09-15) is ~4 days after the ~Sep-11 flood peak, so this maps RESIDUAL flooding and under-represents the peak (SAR 12-day revisit). Non-operational; not an official warning."
     },
     "water_unet": {
-      "iou": 0.3816,
-      "f1_dice": 0.5524,
-      "precision": 0.8342,
-      "recall": 0.4129,
+      "metrics_by_role": {
+        "train": {
+          "n_pixels": 436786,
+          "n_reference_positive": 352,
+          "positive_rate": 0.000806,
+          "blocked_reason": "insufficient_positive_support",
+          "min_positive_required": 2000
+        },
+        "val": {
+          "n_pixels": 121115,
+          "n_reference_positive": 200,
+          "positive_rate": 0.001651,
+          "blocked_reason": "insufficient_positive_support",
+          "min_positive_required": 2000
+        },
+        "test": {
+          "n_pixels": 135025,
+          "n_reference_positive": 2068,
+          "positive_rate": 0.015316,
+          "iou": 0.0023,
+          "f1_dice": 0.0047,
+          "precision": 0.0667,
+          "recall": 0.0024,
+          "degenerate": true,
+          "degenerate_reason": "predictions_collapsed_to_majority_class",
+          "degenerate_recall_floor": 0.05,
+          "true_positive": 5,
+          "false_positive": 70,
+          "false_negative": 2063,
+          "true_negative": 132887
+        }
+      },
+      "headline_role": "test",
+      "threshold_selection": {
+        "selected_threshold": 0.05,
+        "selected_on_role": "val",
+        "objective": "f1_dice",
+        "objective_value": 0.0,
+        "curve": [
+          {
+            "threshold": 0.05,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.1,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.15,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.2,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.25,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.3,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.35,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.4,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.45,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.5,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.55,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.6,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.65,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.7,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.75,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.8,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.85,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.9,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          {
+            "threshold": 0.95,
+            "iou": 0.0,
+            "f1_dice": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+          }
+        ]
+      },
+      "generalisation_diagnosis": "indeterminate_insufficient_support",
       "data_mode": "real_licensed_inputs",
       "source_timestamp": "2024-09-16T05:00:00Z",
-      "assumptions": "U-Net trained on real Sentinel-2 with labels derived from the real MNDWI water index (weak supervision from a physical index, not hand annotation); scored against that same index.",
-      "n_training_tiles": 100,
-      "epochs": 30,
-      "encoder_weights": "imagenet"
+      "assumptions": "Component B was trained against an EXTERNAL water mask (water_label_owm.tif, sha256 460146757b38...), normally OmniWaterMask. Any IoU or F1 reported here is DISTILLATION FIDELITY -- how closely the U-Net reproduces that teacher -- and is NOT an accuracy claim about water in Mae Sai. The teacher itself is unvalidated in-area; it agrees with JRC permanent-water extent to within 12% on a dry-season scene, which is an extent check, not a per-pixel accuracy result. The label was produced in the research environment and carries no frozen-environment receipt.",
+      "partition": {
+        "kind": "runner_local_spatial_blocks_v1",
+        "is_sealed_multi_event_partition": false,
+        "seed": 1,
+        "seed_declared_before_metrics": true,
+        "ratios": {
+          "train": 0.6,
+          "val": 0.2,
+          "test": 0.2
+        },
+        "geometry": {
+          "blocks_per_axis": 3,
+          "n_blocks": 9,
+          "block_m": 8307.0,
+          "buffer_m": 1600.0,
+          "tile_size_px": 128,
+          "tile_m": 3201.3,
+          "core_m": 5107.0,
+          "pixel_m_y": 24.337,
+          "pixel_m_x": 25.01,
+          "scene_m_y": 24920.9,
+          "scene_m_x": 25610.0
+        },
+        "blocks": {
+          "train": 5,
+          "val": 2,
+          "test": 2
+        },
+        "pixel_share": {
+          "train": 0.41655,
+          "val": 0.1155,
+          "test": 0.12877,
+          "buffer": 0.33917
+        },
+        "block_role_map": [
+          [
+            "train",
+            "test",
+            "val"
+          ],
+          [
+            "train",
+            "val",
+            "train"
+          ],
+          [
+            "train",
+            "train",
+            "test"
+          ]
+        ],
+        "contiguity": {
+          "train": {
+            "n_blocks": 5,
+            "n_components": 2,
+            "single_patch": false
+          },
+          "val": {
+            "n_blocks": 2,
+            "n_components": 2,
+            "single_patch": false
+          },
+          "test": {
+            "n_blocks": 2,
+            "n_components": 2,
+            "single_patch": false
+          }
+        },
+        "assignment_sha256": "b895f6b435a16a56dbb04440cd7d54954133d6f817b38743a4d00268c4b4cb36"
+      },
+      "tiling": {
+        "tile_size": 128,
+        "stride": 32,
+        "tiles_by_role": {
+          "train": 216,
+          "val": 34,
+          "test": 40
+        },
+        "assignment_sha256": "b895f6b435a16a56dbb04440cd7d54954133d6f817b38743a4d00268c4b4cb36",
+        "channel_standardisation": {
+          "mean": [
+            0.139597,
+            0.161071,
+            0.155078,
+            0.36411,
+            0.298667,
+            0.216553
+          ],
+          "std": [
+            0.021362,
+            0.025894,
+            0.038139,
+            0.071806,
+            0.063938,
+            0.057128
+          ],
+          "fitted_on_role": "train",
+          "n_pixels": 436786
+        }
+      },
+      "epochs": 120,
+      "encoder_weights": "imagenet",
+      "class_weights": [
+        1.0,
+        30.0
+      ],
+      "label_method": "external",
+      "label_source_path": "water_label_owm.tif",
+      "label_source_sha256": "460146757b38d081f5e5b0de11145f00243f941a89c7fc886dc7f73ec1eb6557",
+      "label_is_distillation": true,
+      "label_water_fraction": 0.00325,
+      "label_jrc_permanent_fraction": 0.00371,
+      "label_over_jrc_ratio": 0.876
     },
     "susceptibility": {
-      "auc": 0.7441,
-      "mean_susc_flood": 90.52,
-      "mean_susc_dry": 63.89,
+      "auc": 0.7454,
+      "mean_susc_flood": 90.45,
+      "mean_susc_dry": 63.77,
       "data_mode": "real_licensed_inputs",
       "source_timestamp": "2024-09-16T00:00:00Z",
       "assumptions": "Susceptibility from real Copernicus DEM GLO-30 + real DWR river network. Primary AUC is against the real Sentinel-1 flood extent; a secondary AUC against JRC Global Surface Water is also reported. Relative propensity, not flood depth.",
       "dem_range_m": [
-        366.4230651855469,
-        1509.92138671875
+        366.3809509277344,
+        1512.780029296875
       ],
       "river_features": 1925,
-      "auc_vs_jrc_permanent_water": 0.72
+      "auc_vs_jrc_permanent_water": 0.7255
     },
     "infrastructure": {
-      "building_count": 463,
-      "exposed_count": 0,
+      "building_count": 118050,
+      "exposed_count": 232,
       "data_mode": "real_licensed_inputs",
-      "extraction_method": "OpenStreetMap footprints (real)",
-      "assumptions": "Real OSM building footprints; exposure = footprint within the real SAR flood extent (dilated). SAM 3 zero-shot on THEOS-2 remains the higher-resolution upgrade."
+      "building_source": "overture",
+      "extraction_method": "Overture Maps footprints (real)",
+      "assumptions": "Real building footprints; exposure = footprint within the real SAR flood extent (dilated). Source changed from OSM/Overpass to Overture on 2026-07-29: OSM covered ~0.7% of the district (397 vs 54,978 footprints) and Overpass stopped serving. Overture aggregates OSM with ML-derived footprints, so its coverage is far higher but its per-building attribution is weaker. SAM 3 zero-shot on THEOS-2 remains the higher-resolution upgrade."
     },
     "embeddings": {
-      "iou": 0.5617,
-      "f1_dice": 0.7193,
-      "precision": 0.5797,
-      "recall": 0.9475,
+      "metrics_by_role": {
+        "train": {
+          "n_pixels": 436786,
+          "n_reference_positive": 352,
+          "positive_rate": 0.000806,
+          "blocked_reason": "insufficient_positive_support",
+          "min_positive_required": 2000
+        },
+        "val": {
+          "n_pixels": 121115,
+          "n_reference_positive": 200,
+          "positive_rate": 0.001651,
+          "blocked_reason": "insufficient_positive_support",
+          "min_positive_required": 2000
+        },
+        "test": {
+          "n_pixels": 135025,
+          "n_reference_positive": 2068,
+          "positive_rate": 0.015316,
+          "iou": 0.0485,
+          "f1_dice": 0.0926,
+          "precision": 0.0487,
+          "recall": 0.9391,
+          "true_positive": 1942,
+          "false_positive": 37944,
+          "false_negative": 126,
+          "true_negative": 95013
+        }
+      },
+      "headline_role": "test",
       "n_training_labels": 80,
-      "assumptions": "Few-shot classifier on locally-computed feature vectors (stand-in for downloaded foundation-model embeddings). Demonstrates the Ch. 16 few-shot workflow; real Clay/AlphaEarth/TESSERA embeddings require network access.",
+      "labels_drawn_from_role": "train",
+      "partition": {
+        "kind": "runner_local_spatial_blocks_v1",
+        "is_sealed_multi_event_partition": false,
+        "seed": 1,
+        "seed_declared_before_metrics": true,
+        "ratios": {
+          "train": 0.6,
+          "val": 0.2,
+          "test": 0.2
+        },
+        "geometry": {
+          "blocks_per_axis": 3,
+          "n_blocks": 9,
+          "block_m": 8307.0,
+          "buffer_m": 1600.0,
+          "tile_size_px": 128,
+          "tile_m": 3201.3,
+          "core_m": 5107.0,
+          "pixel_m_y": 24.337,
+          "pixel_m_x": 25.01,
+          "scene_m_y": 24920.9,
+          "scene_m_x": 25610.0
+        },
+        "blocks": {
+          "train": 5,
+          "val": 2,
+          "test": 2
+        },
+        "pixel_share": {
+          "train": 0.41655,
+          "val": 0.1155,
+          "test": 0.12877,
+          "buffer": 0.33917
+        },
+        "block_role_map": [
+          [
+            "train",
+            "test",
+            "val"
+          ],
+          [
+            "train",
+            "val",
+            "train"
+          ],
+          [
+            "train",
+            "train",
+            "test"
+          ]
+        ],
+        "contiguity": {
+          "train": {
+            "n_blocks": 5,
+            "n_components": 2,
+            "single_patch": false
+          },
+          "val": {
+            "n_blocks": 2,
+            "n_components": 2,
+            "single_patch": false
+          },
+          "test": {
+            "n_blocks": 2,
+            "n_components": 2,
+            "single_patch": false
+          }
+        },
+        "assignment_sha256": "b895f6b435a16a56dbb04440cd7d54954133d6f817b38743a4d00268c4b4cb36"
+      },
+      "feature_contains_target_inputs": true,
+      "is_foundation_model_embedding": false,
+      "is_cross_district_transfer": false,
+      "assumptions": "Few-shot Random Forest on locally-computed spectral+texture features (a stand-in for downloaded Clay/AlphaEarth/TESSERA embeddings). The feature vector contains green and SWIR1, which are the same bands the MNDWI target is derived from, so this measures index re-derivation, not few-shot generalisation. Labels are drawn only from training-role blocks and the headline metric is the held-out test role. The Ch. 16 claim requires real embeddings evaluated on a different district.",
       "data_mode": "real_licensed_inputs"
+    },
+    "narrative": {
+      "data_mode": "real_licensed_inputs",
+      "method": "deterministic_template_narrative_v1",
+      "bands_version": "narrative_bands_v1",
+      "narrative_count": 8,
+      "languages": [
+        "en",
+        "th"
+      ],
+      "review_status": "machine_generated_deterministic",
+      "superseded_method": {
+        "method": "Moondream (vikhyatk/moondream2) vision-language captioning",
+        "book_ref": "Ch. 15, Sec. 15.7-15.8",
+        "executed": true,
+        "caption_count_attempted": 3,
+        "caption_count_usable": 0,
+        "observed_failure": "[caption unavailable: FileNotFoundError] on all three images",
+        "runtime_seconds": 410.0,
+        "outcome": "evaluated_rejected",
+        "interpretation": "The model loaded and ran but returned no usable caption. Independently of that failure, VLMs are trained on natural photographs and degrade on false-colour SAR and analytical figures, and CPU generation was impractically slow. A generative caption is also not auditable: for a preparedness product every sentence must trace to the numbers behind it.",
+        "superseded_by": "deterministic_template_narrative_v1"
+      }
     }
   },
   "components": [
@@ -95,6 +580,15 @@
       "status": "runnable",
       "ai_task": "Traditional change detection (image differencing on SAR backscatter)",
       "book_ref": "Ch. 12, Sec. 12.3-12.4"
+    },
+    {
+      "letter": "A2",
+      "key": "temporal_sar",
+      "name": "Temporal SAR Flood Detection",
+      "tier": "Roadmap",
+      "status": "runnable",
+      "ai_task": "Per-pixel seasonal baseline + robust deviation (unsupervised)",
+      "book_ref": "Ch. 12, Sec. 12.3-12.4 (temporal extension)"
     },
     {
       "letter": "B",
@@ -128,7 +622,7 @@
       "key": "omniwatermask",
       "name": "Sensor-Agnostic Water Baseline (OmniWaterMask)",
       "tier": "Baseline",
-      "status": "documented",
+      "status": "runnable",
       "ai_task": "Pre-trained segmentation (inference only)",
       "book_ref": "Ch. 9, Sec. 9.6.4; Ch. 19"
     },
@@ -137,9 +631,9 @@
       "key": "encroachment",
       "name": "Encroachment / Exposure-Growth Detection",
       "tier": "Roadmap",
-      "status": "documented",
-      "ai_task": "Deep-learning change detection (ChangeStar)",
-      "book_ref": "Ch. 12, Sec. 12.5.2"
+      "status": "runnable",
+      "ai_task": "Change detection on a multi-temporal built-up surface product",
+      "book_ref": "Ch. 12, Sec. 12.5.2; Ch. 19"
     },
     {
       "letter": "F",
@@ -153,10 +647,10 @@
     {
       "letter": "G",
       "key": "narrative",
-      "name": "Narrative Generation (Vision-Language Model)",
+      "name": "Plain-Language Narrative Generation",
       "tier": "Roadmap",
-      "status": "documented",
-      "ai_task": "Image captioning / VQA (Moondream)",
+      "status": "runnable",
+      "ai_task": "Deterministic natural-language generation from the decision table",
       "book_ref": "Ch. 15, Sec. 15.7-15.8"
     }
   ]

@@ -20,6 +20,20 @@ import numpy as np
 # Below this many reference-positive pixels a role's metrics are not reportable.
 DEFAULT_MIN_POSITIVE = 2_000
 
+# Recall floor below which a segmentation metric is not a measurement.
+#
+# A model that has collapsed to the majority class still produces a finite IoU,
+# and that number reads exactly like a result. Observed 2026-07-30: Component B
+# trained on a 0.33%-water label for 120 epochs returned IoU 0.0023 with recall
+# 0.0024 -- it had learned to predict almost no water at all. The 20-epoch run
+# of the same configuration returned IoU 0.2448 purely by being under-fit.
+# Publishing either as an accuracy figure would be misleading in opposite
+# directions.
+#
+# Flagging rather than suppressing: the numbers stay visible for diagnosis, but
+# they carry `degenerate=True` so no consumer can mistake them for a measurement.
+DEGENERATE_RECALL_FLOOR = 0.05
+
 
 def binary_mask_metrics(
     predicted: np.ndarray,
@@ -85,14 +99,26 @@ def binary_mask_metrics(
     def ratio(numerator: float, denominator: float) -> float:
         return round(numerator / denominator, 4) if denominator else 0.0
 
+    recall = ratio(tp, tp + fn)
     support.update(
         {
             "iou": ratio(tp, tp + fp + fn),
             "f1_dice": ratio(2 * tp, 2 * tp + fp + fn),
             "precision": ratio(tp, tp + fp),
-            "recall": ratio(tp, tp + fn),
+            "recall": recall,
         }
     )
+
+    # A metric from a collapsed model is not a measurement. See
+    # DEGENERATE_RECALL_FLOOR.
+    if tp + fp == 0:
+        support["degenerate"] = True
+        support["degenerate_reason"] = "model_predicted_no_positives"
+    elif recall < DEGENERATE_RECALL_FLOOR:
+        support["degenerate"] = True
+        support["degenerate_reason"] = "predictions_collapsed_to_majority_class"
+        support["degenerate_recall_floor"] = DEGENERATE_RECALL_FLOOR
+
     if counts:
         support.update(
             {"true_positive": tp, "false_positive": fp, "false_negative": fn, "true_negative": tn}

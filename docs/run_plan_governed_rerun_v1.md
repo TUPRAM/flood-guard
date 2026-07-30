@@ -1,7 +1,8 @@
 # Run plan — first governed GeoAI re-run
 
-**Planned:** 2026-07-30 · **Branch:** `system-fix` · **Status:** not yet executed
-**Baseline commit for comparison:** `debe413` artifacts, currently in `outputs/geoai/`
+**Planned:** 2026-07-30 · **Branch:** `system-fix` · **Status:** EXECUTED — see §12
+**Baseline for comparison:** `docs/baseline/2026-07-30-run1/` (see §12.1 for why the
+older committed artifacts could not serve)
 
 ---
 
@@ -342,3 +343,128 @@ pnpm verify:frontend
 Then write the run up in `research/MANIFEST.md` — **including any G criterion
 that failed**. A run recorded as "mostly fine" is worth less than one recorded
 with its two known problems named.
+
+---
+
+## 12. Outcome — executed 2026-07-30
+
+The run completed all nine steps. **G1, G3, G4, G6, G7 passed.** Two criteria
+were mis-specified by this plan and one is genuinely unmet; all three are
+recorded below rather than adjusted away.
+
+### 12.1 G2 was mis-specified — the old baseline was never one run
+
+The first check failed with `max|dFPPS| = 3.39` and differing action classes.
+That looked like the stop criterion firing. It was not a regression. Everything
+the plan assumed would be constant *was* constant:
+
+| Checked | Result |
+| --- | --- |
+| Sentinel-1 pair, repeated fetches | **byte-identical** (all four bands) |
+| Copernicus DEM, three fetches | **byte-identical**, same two tiles |
+| `real_sar_flood_extent` call and `drop_threshold_db` | unchanged at `b07bebd`, `095c39e`, `debe413`, HEAD |
+| Aggregation threshold `sar_prob >= 0.5` | unchanged across all commits |
+| Sub-district geometry | identical, 2,131 vertices both |
+| River features | 1,925 both |
+
+The cause was the reference. `git log` per artifact:
+
+```
+geoai_metrics.json              b07bebd  2026-07-23
+extra_methods_metrics.json      095c39e  2026-07-24
+geoai_subdistrict_priority.csv  debe413  2026-07-28
+subdistricts.geojson            b07bebd  2026-07-23
+geoai_component_summary.csv     b07bebd  2026-07-23
+```
+
+**The published evidence was assembled from at least three separate executions
+across three commits.** No single run of any version of this pipeline would
+produce that set together — which is why `dem_range_m` and `ai_flood_share`
+differed while the code and inputs were provably identical.
+
+This is a more serious finding than the regression it was mistaken for: the
+project's published GeoAI evidence was not internally consistent, and nothing
+detected it. The audit recorded that those figures were "not currently
+reproducible"; they were also not *coherent*.
+
+**Resolution.** The baseline is now `docs/baseline/2026-07-30-run1/` — one
+execution, one receipt, one commit. `test_decision_layer_invariance.py` enforces
+G2 against it from now on. G2 is not weakened; it is finally checkable.
+
+### 12.2 G5 is genuinely unmet — correctness and evaluability conflict
+
+`DEFAULT_MIN_POSITIVE = 2_000`. Measured positive counts per partition role:
+
+| label | scene % | train | val | test | all roles scoreable |
+| --- | --- | --- | --- | --- | --- |
+| MNDWI > 0 (the wrong one) | 3.240 % | 6,842 | 4,210 | 9,363 | **yes** |
+| NDWI > 0 | 0.872 % | 1,754 | 826 | 2,833 | no |
+| **OmniWaterMask (best agreement)** | 0.325 % | **352** | **200** | 2,068 | no |
+
+Role pixel counts are train 436,786 / val 121,115 / test 135,025.
+
+**Only the demonstrably wrong label is dense enough to permit a leakage check —
+and it is dense precisely because it over-detects by 8.7x.** So there is a
+direct conflict between label correctness and metric evaluability at this scene
+size and partition.
+
+The label was not swapped back to manufacture a passing check. G5 is recorded
+as **unmet**, and the artifact self-documents why: each blocked role carries
+`blocked_reason: insufficient_positive_support` with `n_reference_positive` and
+`min_positive_required`.
+
+### 12.3 Component B does not learn from the correct label
+
+Training longer made it worse, which settles the question:
+
+| epochs | test IoU | precision | recall |
+| --- | --- | --- | --- |
+| 20 (`--fast`) | 0.2448 | 0.279 | 0.666 |
+| **120 (default)** | **0.0023** | 0.0667 | **0.0024** |
+
+With 352 positive pixels against 436,786, longer training drove the model to the
+majority class. The 20-epoch figure is not better — it is under-fit. **Neither
+number is a measurement**, in opposite directions.
+
+`DEGENERATE_RECALL_FLOOR = 0.05` now flags this: a metric with recall below the
+floor, or with no predicted positives at all, carries `degenerate: True` and a
+reason. The numbers stay visible for diagnosis and cannot be read as accuracy.
+Five tests pin the behaviour, including that merely *poor* precision is not
+flagged — only collapse is.
+
+### 12.4 What this means for Component B
+
+Three options, in preference order. **This is a product decision, not a
+technical one, and it is deliberately left open:**
+
+1. **Fix evaluability, keep the correct label.** Stratify the block partition on
+   JRC permanent water — an *independent* reference, not the training target — so
+   each role receives comparable water. Defensible because it does not select
+   blocks using the label. Moderate work in `blocks.py`, real risk to the
+   holdout guarantees, needs its own verification.
+2. **Enlarge the scene.** Positives scale with pixel count. At 4096x4096 the OWM
+   label would clear the guard on all roles (~5,600 train / ~3,200 val), at 16x
+   the compute and memory.
+3. **Demote Component B from the MVP tier.** The evidence now supports this more
+   strongly than when the run plan was written: the component cannot produce a
+   defensible metric against a correct label with the current partition, and its
+   only evaluable configuration is one that trains on a target known to be wrong.
+
+Until one is chosen, Component B publishes a flagged degenerate metric with the
+distillation caveat. That is honest, and it is not a result.
+
+### 12.5 Criteria summary
+
+| Criterion | Outcome |
+| --- | --- |
+| G1 receipt verifies, report-only | **PASS** |
+| G2 FPPS invariance | **mis-specified** — baseline was incoherent; re-based, now enforced |
+| G3 A / C reproduce | **PASS** — A flood fraction 0.0021 identical, C AUC within 0.0013 |
+| G4 label documented | **PASS** — method, fraction, JRC ratio, sha256 all published |
+| G5 leakage check | **UNMET** — train/val below the positive floor; reason published |
+| G5b Component B test IoU | **FAIL, and recorded as the finding** — 0.0023, flagged `degenerate`. Not a build failure; see §12.3 |
+| G5c predicted water fraction | **UNMET** — this plan asked for a field the pipeline does not publish. The `degenerate` flag detects the same failure mode, so this is filed as a follow-up rather than blocking the run |
+| G6 Component D | **PASS** — overture, 118,050 footprints, 232 exposed, flag `over_expectation_review_needed` |
+| G7 tier markers | **PASS** |
+| G8 suites green | **PASS** |
+| G9 every delta explained | **PASS** — §12.1–12.3 |

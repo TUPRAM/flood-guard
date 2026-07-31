@@ -1,0 +1,10 @@
+component,tier,status,ai_task,book_ref,data_mode,iou,f1_dice,auc,runtime_s
+A. SAR Flood-Extent Detection,MVP,runnable,Traditional change detection (image differencing on SAR backscatter),"Ch. 12, Sec. 12.3-12.4",real_licensed_inputs,,,,12.0
+A2. Temporal SAR Flood Detection,Roadmap,runnable,Per-pixel seasonal baseline + robust deviation (unsupervised),"Ch. 12, Sec. 12.3-12.4 (temporal extension)",,,,,
+B. Water-Mask Refinement,MVP,runnable,"Semantic segmentation (U-Net, ResNet encoder)","Ch. 9, Sec. 9.6.1-9.6.3",real_licensed_inputs,,,,375.5
+C. Flood Susceptibility Surface,MVP,runnable,Pixel-level regression / physical index,Ch. 13 (full chapter),real_licensed_inputs,,,0.7454,9.8
+D. Critical-Infrastructure Extraction,MVP,runnable-fallback,Foundation-model / instance segmentation (SAM 3),"Ch. 14, Sec. 14.7",real_licensed_inputs,,,,101.2
+*. Sensor-Agnostic Water Baseline (OmniWaterMask),Baseline,runnable,Pre-trained segmentation (inference only),"Ch. 9, Sec. 9.6.4; Ch. 19",,,,,
+E. Encroachment / Exposure-Growth Detection,Roadmap,runnable,Change detection on a multi-temporal built-up surface product,"Ch. 12, Sec. 12.5.2; Ch. 19",,,,,
+F. Label-Scarce Generalization (Satellite Embeddings),Roadmap,runnable-fallback,Foundation-model embeddings + lightweight classifier,Ch. 16 (full chapter),real_licensed_inputs,,,,4.6
+G. Plain-Language Narrative Generation,Roadmap,runnable,Deterministic natural-language generation from the decision table,"Ch. 15, Sec. 15.7-15.8",real_licensed_inputs,,,,

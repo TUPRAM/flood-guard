@@ -134,9 +134,7 @@ def write_proposal_proof_artifacts(
         if execution_mode == "real_geoai_smoke"
         else []
     )
-    generated_at = tags.get("generated_at") or datetime.now(UTC).isoformat().replace(
-        "+00:00", "Z"
-    )
+    generated_at = tags.get("generated_at") or datetime.now(UTC).isoformat().replace("+00:00", "Z")
     payload: dict[str, object] = {
         "schema_version": "1.0",
         "proof_scope": "synthetic_integration_only",
@@ -215,12 +213,8 @@ def write_proposal_proof_artifacts(
         "aggregation": {
             "status": "report_only",
             "sample_pixel_count": aggregation_summary["sample_pixel_count"],
-            "mean_flood_probability_0_1": aggregation_summary[
-                "mean_flood_probability_0_1"
-            ],
-            "p90_flood_probability_0_1": aggregation_summary[
-                "p90_flood_probability_0_1"
-            ],
+            "mean_flood_probability_0_1": aggregation_summary["mean_flood_probability_0_1"],
+            "p90_flood_probability_0_1": aggregation_summary["p90_flood_probability_0_1"],
             "eligible_for_decision_layer": False,
             "eligible_for_fpps": False,
         },
@@ -235,8 +229,7 @@ def write_proposal_proof_artifacts(
     payload["receipt_payload_sha256"] = receipt_payload_sha256
     receipt_path = output / "geoai-proof-receipt.json"
     receipt_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)
-        + "\n",
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
         newline="\n",
     )
@@ -265,14 +258,12 @@ def validate_proposal_proof_receipt(path: Path) -> dict[str, object]:
     validation = payload.get("validation_checks")
     execution_mode = payload.get("execution_mode")
     if execution_mode == "real_geoai_smoke":
-        execution_is_valid = (
-            payload.get("training_execution") == "model_construction_only"
-            and payload.get("actual_geoai_calls")
-            == [
-                "geoai.utils.training.export_geotiff_tiles",
-                "geoai.inference.predict_geotiff",
-            ]
-        )
+        execution_is_valid = payload.get(
+            "training_execution"
+        ) == "model_construction_only" and payload.get("actual_geoai_calls") == [
+            "geoai.utils.training.export_geotiff_tiles",
+            "geoai.inference.predict_geotiff",
+        ]
     elif execution_mode == "mocked_unit":
         execution_is_valid = (
             payload.get("training_execution") == "mocked_wrapper_only"

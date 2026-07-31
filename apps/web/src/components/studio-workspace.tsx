@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { LanguageToggle } from "@/components/language-toggle";
+import { GeoaiRealPanel } from "@/components/geoai-real-panel";
 import { ModelRegistryPanel } from "@/components/model-registry-panel";
 import { QualifiedEvidenceFoundationPanel } from "@/components/qualified-evidence-foundation-panel";
 import { StatusBar } from "@/components/status-bar";
@@ -337,6 +338,7 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
                     evidenceReason={data.modelEvidenceReason}
                     language={language}
                   />
+                  <GeoaiRealPanel language={language} variant="studio" />
                 </>
               )}
 

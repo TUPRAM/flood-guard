@@ -1,0 +1,21 @@
+{
+  "aggregation_status": "report_only",
+  "area_count": 8,
+  "can_feed_decision_layer": false,
+  "dataset_mode": "real_licensed_inputs",
+  "evidence_tier": "candidate",
+  "generated_at": "2024-09-15T23:16:14.175289+00:00",
+  "input_table_sha256": "e2d40feb79fab782aeadc9fdc0001ca5c0c53c7845806a351635b72b87680617",
+  "model_generated_at": "2024-09-15T23:16:14.175289+00:00",
+  "model_run_id": "realpipeline-mae-sai-2024-09-15",
+  "official_warning": false,
+  "output_table_sha256": "f87d05d51f52901fa7208326df15f0f639117757e254cfb28a8e6e73e341e651",
+  "schema_version": "candidate-zonal-receipt/1.0",
+  "signature": {
+    "algorithm": "HMAC-SHA256",
+    "key_id": "candidate-rerun-2026-07-30",
+    "value": "3bb95352b8efd16ae94cb2f6c299287f85d13bf9c747c2ecbbb7eb49b94b0d38"
+  },
+  "source_timestamp": "2024-09-15T23:16:14.175289+00:00",
+  "study_area_id": "mae_sai"
+}

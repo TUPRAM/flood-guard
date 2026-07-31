@@ -1,0 +1,27 @@
+{
+  "omniwatermask": {
+    "data_mode": "real_licensed_inputs",
+    "water_fraction": 0.0033,
+    "method": "OmniWaterMask (geoai.segment_water, pre-trained, zero training)",
+    "assumptions": "Zero-training optical baseline for the trained U-Net (Component B). Optical-only; not usable under cloud during an active storm. Agreement (IoU) with the U-Net's MNDWI labels is a sanity check, not an accuracy claim.",
+    "iou_vs_unet_labels": 0.0742,
+    "seconds": 114.6
+  },
+  "encroachment": {
+    "data_mode": "real_licensed_inputs",
+    "change_fraction": 0.0,
+    "model": "ChangeStar (s1_s1c1_vitb, Changen2 pretrained)",
+    "assumptions": "ChangeStar detects BUILT-UP change between two real Sentinel-2 dates, not floodwater. 'Encroachment' = new built-up intersecting the flood susceptibility surface. Development-pressure indicator only; non-operational, not an official warning.",
+    "t1": "2020-03-10",
+    "t2": "2024-03-09",
+    "seconds": 76.2
+  },
+  "narrative": {
+    "data_mode": "real_licensed_inputs",
+    "caption_count": 3,
+    "model": "Moondream (vikhyatk/moondream2)",
+    "review_status": "draft_for_human_review",
+    "seconds": 410.0,
+    "sample": "[caption unavailable: FileNotFoundError]"
+  }
+}

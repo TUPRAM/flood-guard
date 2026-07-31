@@ -358,7 +358,7 @@ def test_source_registry_and_backlog_include_public_open_data_lane() -> None:
     source_text = (REPO_ROOT / "docs" / "source_registry.md").read_text(
         encoding="utf-8"
     )
-    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+    backlog_text = (REPO_ROOT / "docs" / "history" / "tasks" / "codex_backlog.md").read_text(
         encoding="utf-8"
     )
 
@@ -898,7 +898,7 @@ def test_dashboard_v10_real_dataset_contract_is_documented() -> None:
     dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
         encoding="utf-8"
     )
-    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+    backlog_text = (REPO_ROOT / "docs" / "history" / "tasks" / "codex_backlog.md").read_text(
         encoding="utf-8"
     )
 
@@ -935,7 +935,7 @@ def test_dashboard_v11_semantic_presentation_contract_is_documented() -> None:
     dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
         encoding="utf-8"
     )
-    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+    backlog_text = (REPO_ROOT / "docs" / "history" / "tasks" / "codex_backlog.md").read_text(
         encoding="utf-8"
     )
 
@@ -993,7 +993,7 @@ def test_sentinel1_selected_manifest_output_is_documented_and_blocked() -> None:
     contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
         encoding="utf-8"
     )
-    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+    backlog_text = (REPO_ROOT / "docs" / "history" / "tasks" / "codex_backlog.md").read_text(
         encoding="utf-8"
     )
 
@@ -1021,7 +1021,7 @@ def test_sentinel1_quicklook_output_is_documented_and_context_only() -> None:
     dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
         encoding="utf-8"
     )
-    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+    backlog_text = (REPO_ROOT / "docs" / "history" / "tasks" / "codex_backlog.md").read_text(
         encoding="utf-8"
     )
 
@@ -1083,7 +1083,7 @@ def test_dem_selected_manifest_output_is_documented_and_context_only() -> None:
     dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
         encoding="utf-8"
     )
-    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+    backlog_text = (REPO_ROOT / "docs" / "history" / "tasks" / "codex_backlog.md").read_text(
         encoding="utf-8"
     )
 
@@ -1113,7 +1113,7 @@ def test_dem_quicklook_output_is_documented_and_context_only() -> None:
     dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
         encoding="utf-8"
     )
-    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+    backlog_text = (REPO_ROOT / "docs" / "history" / "tasks" / "codex_backlog.md").read_text(
         encoding="utf-8"
     )
 

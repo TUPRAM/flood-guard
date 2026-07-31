@@ -60,6 +60,62 @@ Initial implementation rule priority:
 
 These thresholds are intentionally simple for the MVP and should be sensitivity-tested later.
 
+## 2b. GeoAI Component Scales (versioned anchors)
+
+When `flood_likelihood_0_100` and `exposure_0_100` are produced by the GeoAI
+runner they must use **fixed, versioned, event-independent anchors**. Scaling a
+component by the maximum observed within a batch is prohibited: it makes the
+value a within-batch rank rather than a level, so it cannot be compared across
+events, study areas, or time, and the top unit scores near the ceiling even when
+nothing is happening.
+
+`fpps_flood_anchor_v1`:
+
+```text
+observed_term = min(1, flooded_share / 0.05)
+prior_term    = clip(0.5 + 1.85 * (susceptibility_mean - 0.65), 0, 1)
+flood_likelihood_0_100 = 100 * (0.70 * observed_term + 0.30 * prior_term)
+```
+
+`fpps_exposure_anchor_v1`:
+
+```text
+exposure_0_100 = 100 * min(1, population_per_km2 / 1000)
+```
+
+Every row must carry `flood_anchor_version` and `exposure_anchor_version`.
+Changing an anchor requires a new version identifier; anchors must not be edited
+in place, because previously published numbers cite them.
+
+`confidence_class` for these rows is the gap between the two normalised terms
+above (`< 0.35` high, `< 0.65` medium, else low), so confidence and score are
+derived from the same quantities. A row whose population context is missing is
+`low` regardless of gap.
+
+### Exposure basis change
+
+`exposure_0_100` was previously derived from OpenStreetMap building density. It
+is now **WorldPop population density**. The reason is measurable rather than
+stylistic: across Mae Sai's eight tambons, OSM building coverage is 0.9%-5.1% of
+the population-implied expectation and exactly zero in two of them, so the old
+value substantially encoded OpenStreetMap contributor activity rather than
+exposure while carrying 25% of the FPPS weight.
+
+OSM building counts remain in the output as diagnostics only, with
+`osm_building_count`, `osm_completeness_ratio` and `osm_completeness_flag`
+(`usable` | `severely_incomplete` | `unknown_no_population`). They must not enter
+any score while flagged `severely_incomplete`.
+
+Absent population must yield a null exposure and a `low` confidence class, never
+a zero: missing data is not an absence of people.
+
+### Non-AI components
+
+`access_gap_0_100`, `road_criticality_0_100` and `vulnerability_context_0_100`
+must be joined from decision-layer outputs, not synthesised from the AI signals
+(which double-counts the flood term). When real context is unavailable the row
+records `context_source="placeholder"` and its confidence is forced to `low`.
+
 ## 3. Evacuation Equity Gap
 
 For each subdistrict:

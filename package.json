@@ -11,6 +11,7 @@
     "test:web": "pnpm --filter @floodguard/web test",
     "test:offline": "pnpm --filter @floodguard/web test:offline",
     "qa:visual": "pnpm --filter @floodguard/web qa:visual",
-    "verify:frontend": "pnpm lint && pnpm typecheck && pnpm test:contracts && pnpm test:web && pnpm --filter @floodguard/web verify:profiles && pnpm test:offline"
+    "verify:frontend": "pnpm lint && pnpm typecheck && pnpm test:contracts && pnpm test:web && pnpm --filter @floodguard/web verify:profiles && pnpm test:offline && pnpm test:csp",
+    "test:csp": "pnpm --filter @floodguard/web test:csp"
   }
 }

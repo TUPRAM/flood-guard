@@ -26,20 +26,87 @@ does not contain `.git` metadata, so the commit above remains a declared source
 receipt rather than independently re-proven local evidence. Do not strengthen
 that claim without a commit-specific archive or Git checkout.
 
-Create the dependency-light normal-test environment:
+## Environments — one per tier
+
+Nothing here installs GeoAI by default, and that is load-bearing: CI job
+`geoai-normal` asserts the dependency-light environment **cannot** import
+`geoai` or `torch`, and `tests/test_dependency_isolation.py` asserts the
+manifest keeps it that way. Installing the extra over the top of `.venv` would
+destroy your ability to reproduce that check locally, so each tier gets its own
+environment.
+
+| Environment | Contents | Use for | Output tier |
+| --- | --- | --- | --- |
+| `.venv` | base only | dependency-light tests, reproducing CI | governed |
+| `.venv-geoai` | `+ geoai` extra | Components A/B/C/D/F, the `geoai-skills` | research → promotable |
+| `.venv-research` | `numpy<2.4 + omniwatermask` | Component ★ only | research only |
+
+Dependency-light normal-test environment (the default):
 
 ```powershell
 uv sync --project services/geoai-runner --group test
 ```
 
-Install the isolated GeoAI extra only for an explicit real smoke run:
+The isolated GeoAI stack, in its **own** environment:
 
 ```powershell
-uv sync --project services/geoai-runner --group test --extra geoai
+$env:UV_PROJECT_ENVIRONMENT = "services/geoai-runner/.venv-geoai"
+uv sync --project services/geoai-runner --extra geoai
 ```
 
-The service-local `uv.lock` resolves both the normal environment and the
-optional GeoAI environment. Neither command changes the root dependencies.
+Verify it:
+
+```
+/geoai-skills:install-geoai --check --extras
+```
+
+Component ★ (OmniWaterMask) needs a third environment because `omniwatermask`
+requires `numpy>=2.0,<2.4` and cannot share this project's frozen
+`numpy==2.4.2`:
+
+```powershell
+uv venv .venv-research --python 3.12
+uv pip install --python .venv-research -r services/geoai-runner/requirements-research.txt
+```
+
+The service-local `uv.lock` resolves the normal environment and every declared
+extra. None of these commands change the root dependencies.
+
+### Known environment facts (verified 2026-07-29)
+
+- `geoai-py 0.41.1`, `numpy 2.4.2` — matches the frozen contract;
+  `geoai_runner.environment.inspect_environment()` issues a receipt.
+- **GPU: opt in explicitly.** PyPI's Windows wheels for torch carry no CUDA, so
+  a default install lands `2.13.0+cpu` and any NVIDIA GPU sits idle. Enabling
+  CUDA does **not** violate the frozen environment:
+  `geoai_runner/environment.py` checks Python, the geoai commit, and
+  `geoai-py` — it never checks torch; and `torch==2.13.0` is satisfied by
+  `2.13.0+cu126` under PEP 440 local-version rules. The only real cost is that
+  the resulting environment diverges from `uv.lock`, which is why it belongs in
+  `.venv-geoai` and not in `.venv`.
+
+  ```powershell
+  $env:UV_HTTP_TIMEOUT = "1800"   # the wheel is ~2.4 GB; the 30s default fails
+  uv pip install --python services/geoai-runner/.venv-geoai/Scripts/python.exe `
+    --index-url https://download.pytorch.org/whl/cu126 `
+    --reinstall-package torch --reinstall-package torchvision `
+    "torch==2.13.0" "torchvision==0.28.0"
+  ```
+
+  `--reinstall-package` is required: without it uv sees `2.13.0+cpu` as already
+  satisfying `==2.13.0` and does nothing.
+
+  Measured on an RTX 3060 Laptop (6.4 GB), Component B's real config
+  (unet/resnet18, 6 channels, 128 px tiles, batch 8):
+
+  | | per step | 20 epochs | 120 epochs | peak VRAM |
+  | --- | --- | --- | --- | --- |
+  | CPU | 913 ms | 11 min | 64 min | — |
+  | CUDA 12.6 | **33 ms** | 0.4 min | **2.3 min** | 0.85 GB |
+- The `geoai-skills` plugin invokes `python3`, which a uv venv on Windows does
+  not provide. Copy `python.exe` to `python3.exe` inside
+  `.venv-geoai/Scripts/`, or run the skills from an environment where `python3`
+  resolves.
 
 ## Auditable feature contract
 
@@ -231,3 +298,37 @@ The generated receipt says `training_execution=model_construction_only`,
 not retain the temporary raster, tiles, or checkpoint and contains no private
 workspace path. Re-run it against the final pinned commit before packaging the
 proposal evidence manifest.
+
+## Executable real-data pipeline (`realpipeline/`)
+
+The `geoai_runner.realpipeline` package is the end-to-end GeoAI implementation
+for the competition: it fetches **real** data and runs every model component,
+producing the interactive `outputs/geoai/geoai.html` showcase, per-sub-district
+priority inputs, and annotated evidence figures. It still honours the service
+boundary — all `geoai-py`, PyTorch, rasterio, and network access live here, never
+in the root decision engine, which the pipeline only *imports* (for FPPS scoring).
+
+Real inputs, all fetched live at run time:
+
+| Component | Book ch. | Real source |
+|-----------|----------|-------------|
+| A SAR flood extent | Ch. 12 | Sentinel-1 RTC pre/post (Microsoft Planetary Computer) |
+| B U-Net water mask | Ch. 9 | Sentinel-2 L2A + MNDWI labels, ImageNet-pretrained ResNet |
+| C Susceptibility | Ch. 13 | Copernicus DEM GLO-30 + DWR rivers, vs JRC Global Surface Water |
+| D Infrastructure | Ch. 14 | OpenStreetMap building footprints |
+| F Few-shot | Ch. 16 | Sentinel-2 features + real labels |
+| Decision bridge | — | DOPA sub-district boundaries (NGIS) |
+
+```powershell
+uv sync --project services/geoai-runner --extra realpipeline
+uv run --project services/geoai-runner python -m geoai_runner.realpipeline        # all-real
+uv run --project services/geoai-runner python -m geoai_runner.realpipeline --fast # fewer U-Net epochs
+```
+
+Unlike the fail-closed proposal smoke above, this path is the "actually executed
+on real imagery" evidence: it reports real metrics (SAR flood extent, U-Net IoU,
+susceptibility AUC vs JRC) with honest limitations (e.g. the nearest post-event
+same-orbit Sentinel-1 scene is ~4 days after the flood peak, so extent is
+residual). It is still non-operational and not an official warning. Network-free
+component tests live in `tests/test_realpipeline.py`. Methodology:
+`docs/geoai_methodology.md`.

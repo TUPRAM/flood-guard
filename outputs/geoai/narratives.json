@@ -1,0 +1,57 @@
+{
+  "data_mode": "real_licensed_inputs",
+  "method": "deterministic_template_narrative_v1",
+  "bands_version": "narrative_bands_v1",
+  "languages": [
+    "en",
+    "th"
+  ],
+  "review_status": "machine_generated_deterministic",
+  "narratives": {
+    "Ko Chang": {
+      "en": "Ko Chang shows substantial observed inundation on the 2024-09-15 acquisition (2.11% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 58.6/100. The sub-district is sparsely populated (about 6,708 residents, exposure 14.1/100). Priority score 44.0/100 places it in action class D - Build Resilience. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+      "th": "ตำบลต.เกาะช้าง พบน้ำท่วมเป็นบริเวณมากจากภาพวันที่ 2024-09-15 (คิดเป็น 2.11% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (58.6/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 6,708 คน ค่าการเปิดรับความเสี่ยง 14.1/100) คะแนนลำดับความสำคัญ 44.0/100 อยู่ในระดับการปฏิบัติ D - เสริมความยืดหยุ่น โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    "Mae Sai": {
+      "en": "Mae Sai shows localised observed inundation on the 2024-09-15 acquisition (0.56% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 36.9/100. The sub-district is densely populated (about 17,893 residents, exposure 82.9/100). Priority score 34.0/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+      "th": "ตำบลต.แม่สาย พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.56% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (36.9/100) พื้นที่นี้มีประชากรหนาแน่น (ประมาณ 17,893 คน ค่าการเปิดรับความเสี่ยง 82.9/100) คะแนนลำดับความสำคัญ 34.0/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    "Wiang Phang Kham": {
+      "en": "Wiang Phang Kham shows localised observed inundation on the 2024-09-15 acquisition (0.33% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 13.9/100. The sub-district is densely populated (about 19,532 residents, exposure 64.3/100). Priority score 23.6/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak. This is a planning estimate, not an official warning.",
+      "th": "ตำบลต.เวียงพางคำ พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.33% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (13.9/100) พื้นที่นี้มีประชากรหนาแน่น (ประมาณ 19,532 คน ค่าการเปิดรับความเสี่ยง 64.3/100) คะแนนลำดับความสำคัญ 23.6/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    "Si Mueang Chum": {
+      "en": "Si Mueang Chum shows localised observed inundation on the 2024-09-15 acquisition (0.89% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 41.8/100. The sub-district is sparsely populated (about 7,157 residents, exposure 17.1/100). Priority score 36.7/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+      "th": "ตำบลต.ศรีเมืองชุม พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.89% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (41.8/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 7,157 คน ค่าการเปิดรับความเสี่ยง 17.1/100) คะแนนลำดับความสำคัญ 36.7/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    "Pong Pha": {
+      "en": "Pong Pha shows localised observed inundation on the 2024-09-15 acquisition (0.24% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 22.9/100. The sub-district is sparsely populated (about 9,312 residents, exposure 21.3/100). Priority score 15.2/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+      "th": "ตำบลต.โป่งผา พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.24% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (22.9/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 9,312 คน ค่าการเปิดรับความเสี่ยง 21.3/100) คะแนนลำดับความสำคัญ 15.2/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    "Pong Ngam": {
+      "en": "Pong Ngam shows localised observed inundation on the 2024-09-15 acquisition (0.31% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 15.3/100. The sub-district is sparsely populated (about 7,249 residents, exposure 17.0/100). Priority score 12.6/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak. This is a planning estimate, not an official warning.",
+      "th": "ตำบลต.โป่งงาม พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.31% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (15.3/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 7,249 คน ค่าการเปิดรับความเสี่ยง 17.0/100) คะแนนลำดับความสำคัญ 12.6/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    "Ban Dai": {
+      "en": "Ban Dai shows localised observed inundation on the 2024-09-15 acquisition (0.25% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 33.2/100. The sub-district is sparsely populated (about 5,036 residents, exposure 14.9/100). Priority score 17.1/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+      "th": "ตำบลต.บ้านด้าย พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.25% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (33.2/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 5,036 คน ค่าการเปิดรับความเสี่ยง 14.9/100) คะแนนลำดับความสำคัญ 17.1/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    "Huai Khrai": {
+      "en": "Huai Khrai shows localised observed inundation on the 2024-09-15 acquisition (0.24% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 15.7/100. The sub-district is sparsely populated (about 8,912 residents, exposure 20.1/100). Priority score 12.9/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+      "th": "ตำบลต.ห้วยไคร้ พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.24% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (15.7/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 8,912 คน ค่าการเปิดรับความเสี่ยง 20.1/100) คะแนนลำดับความสำคัญ 12.9/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    }
+  },
+  "superseded_method": {
+    "method": "Moondream (vikhyatk/moondream2) vision-language captioning",
+    "book_ref": "Ch. 15, Sec. 15.7-15.8",
+    "executed": true,
+    "caption_count_attempted": 3,
+    "caption_count_usable": 0,
+    "observed_failure": "[caption unavailable: FileNotFoundError] on all three images",
+    "runtime_seconds": 410.0,
+    "outcome": "evaluated_rejected",
+    "interpretation": "The model loaded and ran but returned no usable caption. Independently of that failure, VLMs are trained on natural photographs and degrade on false-colour SAR and analytical figures, and CPU generation was impractically slow. A generative caption is also not auditable: for a preparedness product every sentence must trace to the numbers behind it.",
+    "superseded_by": "deterministic_template_narrative_v1"
+  },
+  "assumptions": "Narratives are assembled deterministically from the sub-district decision table. Every number traces to a field and every qualitative phrase is licensed by the versioned band table 'narrative_bands_v1'. No generative model is involved, so the text cannot fabricate. Planning language only; not an official warning."
+}

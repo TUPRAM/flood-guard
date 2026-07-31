@@ -8,6 +8,8 @@ import pytest
 
 from floodguard.ingestion import (
     INGESTION_OUTPUT_COLUMNS,
+    MAE_SAI_BASELINE_POST_PRODUCT_ID,
+    MAE_SAI_BASELINE_PRE_PRODUCT_ID,
     IngestionPlanError,
     assert_metadata_only_output_path,
     build_ingestion_manifest,
@@ -67,6 +69,9 @@ def test_write_ingestion_manifest_writes_csv(tmp_path: Path) -> None:
     rows = pd.read_csv(output_path)
     assert len(rows) == 5
     assert set(rows["ingestion_stage"]) == {"metadata_only"}
+    output_bytes = output_path.read_bytes()
+    assert b"\r\n" not in output_bytes
+    assert output_bytes.endswith(b"\n")
 
 
 def test_file_level_manifest_marks_ready_only_when_all_gates_pass() -> None:
@@ -101,15 +106,15 @@ def test_file_level_manifest_marks_ready_only_when_all_gates_pass() -> None:
 def test_mae_sai_file_manifest_sources_are_blocked_until_files_are_acquired() -> None:
     manifest = build_ingestion_manifest(default_mae_sai_file_manifest_sources())
 
-    assert len(manifest) == 4
+    assert len(manifest) == 3
     assert set(manifest["processing_allowed"]) == {False}
     assert set(manifest["ready_for_processing"]) == {False}
     assert {
         "UNOSAT-3991",
-        "b09f96ca-4a60-43e7-9b8d-158022f0e5bf",
-        "20a9c3b8-37df-46d5-81d8-d63c7e460225",
-        "6a02d487-68fa-4be7-9628-f312b9049967",
+        MAE_SAI_BASELINE_PRE_PRODUCT_ID,
+        MAE_SAI_BASELINE_POST_PRODUCT_ID,
     } == set(manifest["product_id"])
+    assert not manifest["source_name"].str.contains("COG", case=False).any()
     assert manifest["reason_blocked"].str.contains("local path not recorded").all()
     assert manifest["reason_blocked"].str.contains("sha256 checksum not recorded").all()
     assert manifest["reason_blocked"].str.contains("reference mask not confirmed").all()
@@ -124,11 +129,17 @@ def test_mae_sai_manifest_absorbs_cdse_acquisition_rows(tmp_path: Path, monkeypa
     pd.DataFrame(
         [
             {
-                "product_id": "b09f96ca-4a60-43e7-9b8d-158022f0e5bf",
-                "product_name": "S1A_PRE_COG.SAFE",
-                "candidate_role": "pre-event COG candidate",
-                "acquisition_date": "2024-09-06T11:31:06Z",
-                "download_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(b09)/$value",
+                "product_id": MAE_SAI_BASELINE_PRE_PRODUCT_ID,
+                "product_name": (
+                    "S1A_IW_GRDH_1SDV_20240903T231600_20240903T231625_"
+                    "055507_06C5C9_72F7.SAFE"
+                ),
+                "candidate_role": "pre-event original SAFE",
+                "acquisition_date": "2024-09-03T23:16:00.776136Z",
+                "download_url": (
+                    "https://catalogue.dataspace.copernicus.eu/odata/v1/Products("
+                    f"{MAE_SAI_BASELINE_PRE_PRODUCT_ID})/$value"
+                ),
                 "local_path_hint": "<external_data_workspace>/cdse/mae_sai_2024/pre.zip",
                 "sha256": "b" * 64,
                 "sha256_status": "recorded",
@@ -150,7 +161,7 @@ def test_mae_sai_manifest_absorbs_cdse_acquisition_rows(tmp_path: Path, monkeypa
     )
     manifest = build_ingestion_manifest(sources)
     row = manifest[
-        manifest["product_id"] == "b09f96ca-4a60-43e7-9b8d-158022f0e5bf"
+        manifest["product_id"] == MAE_SAI_BASELINE_PRE_PRODUCT_ID
     ].iloc[0]
 
     assert row["local_path"] == "<external_data_workspace>/cdse/mae_sai_2024/pre.zip"
@@ -158,6 +169,43 @@ def test_mae_sai_manifest_absorbs_cdse_acquisition_rows(tmp_path: Path, monkeypa
     assert row["source_license_status"] == "confirmed"
     assert bool(row["processing_allowed"]) is False
     assert "reference mask not confirmed" in row["reason_blocked"]
+    assert "metadata-only skeleton does not permit downloads" not in row["reason_blocked"]
+    assert "qualified or official processing gate remains closed" in row["reason_blocked"]
+
+
+def test_mae_sai_manifest_does_not_activate_retired_cog_acquisition(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    outputs_dir = tmp_path / "outputs"
+    outputs_dir.mkdir()
+    retired_cog_id = "b09f96ca-4a60-43e7-9b8d-158022f0e5bf"
+    pd.DataFrame(
+        [
+            {
+                "product_id": retired_cog_id,
+                "local_path_hint": "<external_data_workspace>/retired/pre-cog.zip",
+                "sha256": "d" * 64,
+                "sha256_status": "recorded",
+                "download_status": "downloaded_outside_git",
+                "source_license_status": "confirmed_copernicus_sentinel_legal_notice",
+                "reference_mask_status": "weak_reference_candidate",
+            }
+        ]
+    ).to_csv(outputs_dir / "cdse_mae_sai_acquisition_manifest.csv", index=False)
+    monkeypatch.setattr(build_mae_sai_file_manifest, "REPO_ROOT", tmp_path)
+
+    sources = build_mae_sai_file_manifest._with_cdse_acquisition_rows(
+        default_mae_sai_file_manifest_sources()
+    )
+
+    assert retired_cog_id not in set(sources["product_id"])
+    assert set(sources["product_id"]) == {
+        "UNOSAT-3991",
+        MAE_SAI_BASELINE_PRE_PRODUCT_ID,
+        MAE_SAI_BASELINE_POST_PRODUCT_ID,
+    }
+    assert set(sources["local_path"]) == {"not_acquired"}
 
 
 def test_mae_sai_file_manifest_ready_returns_required_rows_when_gates_pass() -> None:

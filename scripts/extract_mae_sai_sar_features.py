@@ -65,12 +65,13 @@ def main() -> None:
             features,
             file_manifest=file_manifest,
             manual_reference_manifest=manual_manifest,
+            verified_inputs=inputs,
         )
     except SARRasterExtractError as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    manifest.to_csv(args.output, index=False)
+    manifest.to_csv(args.output, index=False, lineterminator="\n")
     print(f"Wrote {args.output}")
 
 

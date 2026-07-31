@@ -7,7 +7,6 @@ Use this checklist before a judge demo or recorded walkthrough. The dashboard is
 Run from the repository root:
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
 uv run pytest
 uv run python scripts/generate_sample_priority.py
 uv run python scripts/generate_sample_decision_outputs.py
@@ -24,10 +23,14 @@ The smoke check must report pass/fail for:
 
 - page title and app identity
 - local static-server fetch
-- Leaflet and OpenStreetMap tile configuration
+- vendored Leaflet 1.9.4 markers with no external initial-load dependency
+- embedded decision vectors and map text equivalent while the browser is offline
+- optional OpenStreetMap tile status and visible tile-error/offline fallback
 - embedded priority polygons and road-risk segments
 - embedded Mae Sai ADM3 polygons, candidate facilities, and modeled access hotspots
 - full dataset switching between fixture, Mae Sai candidate, and blocker modes
+- research fusion candidate mode (`SAR only` or `SAR + optical`), fallback reason, and explicit FPPS sidecar boundary
+- `Historical susceptibility/context` with its non-current, non-forecast boundary
 - subdistrict label overlap guards
 - validation cards and action brief summary
 - export buttons
@@ -70,28 +73,46 @@ Capture or inspect these exact browser sizes:
 - Subdistrict labels are readable and do not overlap at the starting zoom.
 - The legend is inside the map area and does not float in blank space.
 - The right panel defaults to structured evidence for the selected unit and shows the active dataset's decision status.
+- The fixture selected-unit panel labels the fusion mode as a research sidecar, shows its fallback reason, source timestamp, and confidence, and explicitly says it is not used by FPPS or action class.
+- The historical card is labeled exactly `Historical susceptibility/context` and always says `Not observed current flooding. Not a forecast.`
+- Any current-SAR versus historical-context conflict is shown as a warning, not as an automatic override of current evidence.
 - The weak-reference or blocker warning remains visible directly below the KPI strip after switching modes.
 - `Context Assets` says SAR, DEM, and THEOS-2 are context only.
 - `Data Readiness` says processing remains gated.
 - The compact evidence-boundary narrative is visible in the controls panel and does not dominate the layout.
 - The `Validation Summary` cards and `Action Brief` summary are reachable immediately below the main workspace.
+- Mae Sai regional view shows only priority road candidates and one candidate-facility cluster per populated ADM3 unit; detail symbols distinguish hospital, clinic, other healthcare, school, shelter, emergency service, and community candidates where present.
+- Selecting a Mae Sai ADM3 unit switches the map status to selected-area detail and reveals typed facility symbols without resetting on layout changes.
+- The selected ADM3 remains visually emphasized while surrounding polygons are dimmed but still visible.
+- Thai mode uses a Thai-capable font and translates controls, warnings, legends, evidence labels, and Thai ADM3 names without changing identifiers or metrics.
+- The Sentinel-1 drawer shows pre/post/change evidence and retains explicit weak-reference, non-official wording.
+- Compact provenance is visible; full product ids and assumptions are available under expandable technical details.
+- Judge mode hides secondary controls and long content while keeping the warning, map, selected evidence, source quality, SAR evidence, and provenance visible.
 
 ## Interaction Checks
 
 1. Select `FG-TB-002 / Bridge Junction`.
 2. Confirm KPI cards and right-panel values update.
-3. Switch scenario mode to `temporary shelter delta`.
-4. Confirm improvement styling and the temporary-shelter delta remain visible.
-5. Switch scenario mode to `road closure delta`.
-6. Confirm worsening styling and road-closure delta remain visible.
-7. Uncheck action class `A`, then recheck it.
-8. Click `Download current brief`.
-9. Click `Download filtered GeoJSON`.
-10. Switch dataset mode to `Mae Sai weak-reference candidate`.
-11. Confirm exactly eight ADM3 choices, candidate road/facility/hotspot toggles, structured evidence, source quality, and provenance.
-12. Select a second Mae Sai subdistrict and confirm evidence, comparison, map focus, and action summary update.
-13. Switch to `Metadata/blocker view` and confirm decision values and unavailable layers are gated rather than shown as zeros.
-14. Switch back to `Fixture demo` and confirm scenario controls and fixture geometry return.
+3. Confirm the research fusion card says `SAR only` because the synthetic optical candidate exceeds the cloud limit, and confirm the SAR fallback reason and FPPS sidecar boundary are visible.
+4. Select `FG-TB-001 / River Market` and confirm the research candidate changes to `SAR + optical` without changing the established FPPS input contract.
+5. Confirm its historical card remains explicitly context-only and never changes the FPPS or action class.
+6. Switch scenario mode to `temporary shelter delta`.
+7. Confirm improvement styling and the temporary-shelter delta remain visible.
+8. Switch scenario mode to `road closure delta`.
+9. Confirm worsening styling and road-closure delta remain visible.
+10. Uncheck action class `A`, then recheck it.
+11. Click `Download current brief`.
+12. Click `Download filtered GeoJSON`.
+13. Switch dataset mode to `Mae Sai weak-reference candidate`.
+14. Confirm exactly eight ADM3 choices, candidate road/facility/hotspot toggles, structured evidence, source quality, and provenance.
+15. Confirm the regional map status reports priority roads plus facility clusters.
+16. Select a second Mae Sai subdistrict and confirm the map reaches selected-area detail, evidence/comparison/action values update, and individual facility symbols are categorized.
+17. Switch to Thai and confirm the selected-area map state is preserved; switch back to English.
+18. Toggle selected-unit focus off and on; confirm surrounding polygons remain geographic context and no layer disappears unexpectedly.
+19. Open the Sentinel-1 evidence drawer and technical provenance details; confirm product/date/change fields and safety wording are visible.
+20. Enter judge mode and confirm secondary controls hide while `mode-warning`, source quality, Sentinel-1 evidence, and provenance remain visible. Exit with the button or `Escape`.
+21. Switch to `Metadata/blocker view` and confirm fusion and historical values are gated rather than shown as zeros.
+22. Switch back to `Fixture demo` and confirm scenario controls and fixture geometry return.
 
 ## Required Wording
 
@@ -106,6 +127,8 @@ The page must still say:
 - real validation blocked
 - source files are outside Git
 - processing remains gated
+- Historical susceptibility/context
+- Not observed current flooding. Not a forecast.
 
 ## Do Not Stage Source Data
 

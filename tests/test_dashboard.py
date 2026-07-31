@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from floodguard.dashboard import write_static_dashboard
+from floodguard.dashboard import DashboardError, write_static_dashboard
 
 OUTPUTS = Path(__file__).parents[1] / "outputs"
+LEAFLET_ASSETS = Path(__file__).parents[1] / "src" / "floodguard" / "static" / "leaflet"
 
 
 def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: Path) -> None:
@@ -25,8 +26,28 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
 
     html = output_path.read_text(encoding="utf-8")
     assert written == output_path
-    assert "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" in html
-    assert "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" in html
+    assert "unpkg.com/leaflet" not in html
+    assert '<link rel="stylesheet" href="http' not in html
+    assert '<script src="http' not in html
+    assert 'id="leaflet-vendored-css" data-leaflet-version="1.9.4"' in html
+    assert 'id="leaflet-vendored-js" data-leaflet-version="1.9.4"' in html
+    assert "Leaflet 1.9.4 is vendored under BSD-2-Clause" in html
+    assert "Leaflet 1.9.4, a JS library" in html
+    assert ".leaflet-container" in html
+    assert "sourceMappingURL=leaflet.js.map" not in html
+    assert "function loadLeafletEnhancement()" not in html
+    assert "function startVendoredLeafletDashboard()" in html
+    assert "function showOfflineMapFallback()" in html
+    assert 'id="offline-map-fallback"' in html
+    assert 'id="basemap-status"' in html
+    assert "optionalBasemap.on('tileerror'" in html
+    assert "Basemap unavailable; embedded vector layers remain active" in html
+    assert "Offline mode; embedded vector layers remain active" in html
+    assert "window.addEventListener('offline'" in html
+    assert "offlineMapSummary.classList.add('enhanced-text-summary')" in html
+    assert "mapNode.insertAdjacentElement('afterend', offlineMapSummary)" in html
+    assert "Offline map text equivalent" in html
+    assert "The interactive map is an optional enhancement" in html
     assert "const priorityData =" in html
     assert "const roadRiskData =" in html
     assert "const briefsBySubdistrict =" in html
@@ -39,6 +60,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const maeSaiFacilityData =" in html
     assert "const maeSaiAccessHotspotData =" in html
     assert "const maeSaiContextQuality =" in html
+    assert "const maeSaiSarContext =" in html
     assert "const maeSaiBriefsBySubdistrict =" in html
     assert 'class="app-header"' in html
     assert 'data-dashboard-section="app-header"' in html
@@ -62,6 +84,8 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "const mapBoundsPadding = 0.12" in html
     assert "function fitPriorityMapToData" in html
     assert "function settleMapLayout" in html
+    assert "function preserveMapViewAfterLayout" in html
+    assert "new ResizeObserver(preserveMapViewAfterLayout)" in html
     assert "bounds.pad(mapBoundsPadding)" in html
     assert "ResizeObserver" in html
     assert "bounds.pad(0.18)" not in html
@@ -88,7 +112,7 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Data Readiness" in html
     assert "Read This First" in html
     assert "Synthetic inputs demonstrate prioritization and scenarios" in html
-    assert "Real Mae Sai validation is blocked" in html
+    assert "Qualified Mae Sai validation is blocked" in html
     assert "provider response pending" in html
     assert "Context layers are not flood labels" in html
     assert "Real-data ML remains blocked" in html
@@ -127,6 +151,13 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "terrain context only" in html
     assert "THEOS-2 optical context readiness" in html
     assert "optical context only" in html
+    assert 'data-study-area="hat_yai_2025"' in html
+    assert "Hat Yai story-tile readiness" in html
+    assert "locked_metadata_only" in html
+    assert "4e473302-943c-4798-8bfc-8287167792ed" in html
+    assert "d80b81cb-c4aa-4dbb-a7de-8a1d01fca2dc" in html
+    assert "Dashboard story: blocked and not enabled." in html
+    assert "hat_yai_readiness.md" in html
     assert "Source files are outside Git and processing remains gated." in html
     assert "local_data_library_manifest.csv" in html
     assert "sentinel1_selected_file_manifest.csv" in html
@@ -147,21 +178,21 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "Mae Sai weak-reference candidate: this mode is separated from the fixture demo" in html
     assert "The weak-reference decision bridge is available" in html
     assert 'id="mae-sai-weak-reference-card"' in html
-    assert "b09f96ca-4a60-43e7-9b8d-158022f0e5bf" in html
-    assert "20a9c3b8-37df-46d5-81d8-d63c7e460225" in html
-    assert "MANUAL-QGIS-MAE-SAI-2024" in html
+    assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in html
+    assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in html
+    assert "MS-MANUAL-CROSSBORDER-001" in html
     assert "ready_for_candidate_metrics" in html
     assert "confirmed_true" in html
     assert "TH570906" in html
     assert "weak_reference_candidate" in html
     assert "real_open_context_joined_with_proxy_vulnerability" in html
     assert "8 ADM3 reporting units" in html
-    assert "IoU 0.006079" in html
-    assert "F1/Dice 0.012085" in html
-    assert "precision 0.038494" in html
-    assert "recall 0.007167" in html
-    assert "area error -0.813809" in html
-    assert "Candidate metrics against manually digitized weak-reference mask" in html
+    assert "IoU 0.086835" in html
+    assert "F1/Dice 0.159795" in html
+    assert "precision 0.188113" in html
+    assert "recall 0.138887" in html
+    assert "area error -0.261687" in html
+    assert "Cross-border calibration metrics against a manually digitized weak-reference mask" in html
     assert "Not official validation" in html
     assert "Metadata/blocker view: source inventory and file readiness are visible" in html
     assert "dataset-mode-note" in html
@@ -201,8 +232,66 @@ def test_write_static_dashboard_embeds_outputs_without_backend_fetch(tmp_path: P
     assert "function updateEvidencePanel" in html
     assert "function updateComparison" in html
     assert "function updateQualityPanel" in html
+    assert "const semanticDetailZoom = 12" in html
+    assert "function visibleRoadFeatures" in html
+    assert "Fixture map detail" in html
+    assert "Reporting boundaries only" in html
+    assert "function facilityClusterMarker" in html
+    assert "function facilityMarker" in html
+    assert "candidate_open_with_delay" in html
+    assert "facility-cluster-shell" in html
+    assert "facility-marker-shell" in html
+    assert "hospital" in html
+    assert "clinic" in html
+    assert "healthcare" in html
+    assert "emergency_service" in html
+    assert "community_facility" in html
+    assert 'id="toggle-focus"' in html
+    assert "focusSelected: true" in html
+    assert "map.getZoom() >= semanticDetailZoom" in html
+    assert 'id="language-en"' in html
+    assert 'id="language-th"' in html
+    assert "function setLanguage" in html
+    assert "แดชบอร์ดการตัดสินใจ FloodGuard" in html
+    assert '--font-thai: "Noto Sans Thai"' in html
+    assert 'id="sar-evidence-drawer"' in html
+    assert "mean_combined_sar_change_score" in html
+    assert "Derived ADM3 statistics only" in html
+    assert 'class="provenance-summary-grid"' in html
+    assert 'id="technical-provenance"' in html
+    assert 'id="judge-mode-toggle"' in html
+    assert "function setJudgeMode" in html
+    assert "Dataset & Selection" in html
+    assert "if (state.judgeMode) map.closePopup()" in html
+    assert "body.judge-mode .judge-secondary" in html
     assert 'id="mode-warning"' in html
     assert 'class="evidence-grid"' in html
+    assert 'id="model-context-panel"' in html
+    assert 'data-dashboard-section="model-context-panel"' in html
+    assert 'id="panel-modality-used"' in html
+    assert "function updateModelContextPanel" in html
+    assert "hasDeclaredSarEvidence" in html
+    assert "No observation-modality decision metadata is available." in html
+    assert "Research fusion candidate" in html
+    assert 'data-i18n="model.modality"' in html
+    assert 'data-i18n="model.historical"' in html
+    assert "ผลการผสานข้อมูลเพื่อการวิจัย" in html
+    assert "ความไวต่อน้ำท่วมในอดีต/บริบท" in html
+    assert "ไม่ใช่การสังเกตน้ำท่วมปัจจุบัน และไม่ใช่การพยากรณ์" in html
+    assert "Research sidecar; not used by FPPS or action class." in html
+    assert "SAR only" in html
+    assert "SAR + optical" in html
+    assert "S2-FIXTURE-CLEAR-001" in html
+    assert "no_optical_candidate" in html
+    assert "Historical susceptibility/context" in html
+    assert "Not observed current flooding. Not a forecast." in html
+    assert '"historical_susceptibility_0_100": 87.45' in html
+    assert "current_sar_high_historical_low" in html
+    assert "uncalibrated_requires_basin_event_target_corpus" in html
+    assert "research_sidecar_not_used_by_fpps" in html
+    assert 'id="panel-historical-susceptibility"' in html
+    assert 'id="panel-historical-warning"' in html
+    assert 'id="panel-historical-meta"' in html
     assert 'class="comparison-grid"' in html
     assert 'id="source-quality-panel"' in html
     assert 'id="toggle-facilities"' in html
@@ -248,3 +337,36 @@ def test_write_static_dashboard_can_render_true_thumbnail_cards(tmp_path: Path) 
 
 def test_dashboard_output_contract_path() -> None:
     assert (OUTPUTS / "dashboard.html").as_posix().endswith("outputs/dashboard.html")
+
+
+def test_vendored_leaflet_assets_are_pinned_and_licensed() -> None:
+    leaflet_js = (LEAFLET_ASSETS / "leaflet.js").read_text(encoding="utf-8")
+    leaflet_css = (LEAFLET_ASSETS / "leaflet.css").read_text(encoding="utf-8")
+    license_text = (LEAFLET_ASSETS / "LICENSE").read_text(encoding="utf-8")
+
+    assert "Leaflet 1.9.4" in leaflet_js
+    assert ".leaflet-container" in leaflet_css
+    assert "BSD 2-Clause License" in license_text
+    assert "Copyright (c) 2010-2023, Volodymyr Agafonkin" in license_text
+
+
+def test_static_dashboard_rejects_missing_vendored_leaflet_assets(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    import floodguard.dashboard as dashboard
+
+    monkeypatch.setattr(dashboard, "LEAFLET_STATIC_DIR", tmp_path)
+
+    try:
+        write_static_dashboard(
+            OUTPUTS / "priority_subdistricts.geojson",
+            OUTPUTS / "road_risk.geojson",
+            OUTPUTS / "validation_summary.md",
+            OUTPUTS / "action_brief_FG-TB-001.md",
+            tmp_path / "dashboard.html",
+        )
+    except DashboardError as exc:
+        assert "Vendored Leaflet 1.9.4 asset is unavailable" in str(exc)
+    else:
+        raise AssertionError("Expected missing vendored Leaflet assets to fail closed.")

@@ -46,6 +46,12 @@ def main(argv: list[str] | None = None) -> int:
         default=REPO_ROOT / "outputs" / "manual_reference_mask_manifest.csv",
     )
     parser.add_argument(
+        "--study-area-geometry",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "mae_sai_admin_context.geojson",
+        help="Committed ADM3 GeoJSON used to verify overlap and distance.",
+    )
+    parser.add_argument(
         "--require-existing",
         action="store_true",
         help="Fail instead of writing a blocked skeleton row when the GeoPackage is missing.",
@@ -65,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
             local_path_hint=args.local_path_hint,
             inspected_at_utc=args.inspected_at,
             allow_missing=not args.require_existing,
+            study_area_geometry_path=args.study_area_geometry,
         )
     except ManualReferenceError as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)

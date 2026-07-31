@@ -5,6 +5,61 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).parents[1]
 
 
+def test_multimodal_and_historical_context_docs_keep_evidence_boundaries() -> None:
+    feature_doc = (
+        REPO_ROOT / "docs" / "multimodal_fusion_and_historical_susceptibility.md"
+    ).read_text(encoding="utf-8")
+    dictionary = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+    output_readme = (REPO_ROOT / "outputs" / "README.md").read_text(
+        encoding="utf-8"
+    )
+    source_registry = (REPO_ROOT / "docs" / "source_registry.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "SAR only",
+        "SAR + optical",
+        "modality dropout",
+        "WorldFloods",
+        "THEOS-2",
+        "Historical susceptibility/context",
+        "Not observed current flooding. Not a forecast.",
+        "uncalibrated_requires_basin_event_target_corpus",
+        "complete connected basin/event groups",
+        "do not claim higher precision",
+    ):
+        assert phrase.lower() in feature_doc.lower()
+    for field in (
+        "sample_sentinel2_optical_features.csv",
+        "sample_optical_fusion_candidate_assessment.csv",
+        "sample_sar_optical_fusion.csv",
+        "sample_sar_optical_fusion_validation.csv",
+        "sample_historical_susceptibility_context.csv",
+        "sample_historical_susceptibility_monotonicity.csv",
+        "sample_historical_basin_event_partitions.csv",
+        "decision_input_mode",
+        "fusion_fallback_reason",
+        "historical_conflict_status",
+        "eligible_as_current_flood",
+        "eligible_as_forecast",
+        "eligible_to_replace_event_sar",
+    ):
+        assert field in dictionary
+        if field.endswith((".csv",)):
+            assert field in output_readme
+    for source in (
+        "Copernicus Sentinel-2 via CDSE (Level-2A)",
+        "WorldFloods v2",
+        "Global Flood Database v1",
+        "JRC Global Surface Water",
+        "ESA WorldCover",
+    ):
+        assert source in source_registry
+
+
 def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
     text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(encoding="utf-8")
 
@@ -41,7 +96,7 @@ def test_data_dictionary_covers_dashboard_and_metadata_fields() -> None:
         "mae_sai_priority_subdistricts.geojson",
         "mean_flood_probability_0_1",
         "real_open_context_joined_with_proxy_vulnerability",
-        "TH570906",
+        "TH570903",
         "mae_sai_context_quality_report.md",
         "dem_population_coverage_rate",
         "local_data_library_manifest.csv",
@@ -169,7 +224,7 @@ def test_readme_documents_no_download_cdse_output_workflow() -> None:
     text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "Run The System Locally" in text
-    assert 'cd "C:\\Users\\iputu\\Documents\\Flood Guard"' in text
+    assert 'Set-Location "<repository-root>"' in text
     assert "uv sync --extra dev --extra theos2" in text
     assert "uv run python scripts/generate_sample_decision_outputs.py" in text
     assert "uv run python scripts/smoke_dashboard.py" in text
@@ -283,7 +338,12 @@ def test_public_open_data_docs_and_outputs_are_metadata_only() -> None:
     assert "Manual QGIS Weak-Reference Manifest" in contract_text
     assert "Mae Sai Weak-Reference Decision Input Output" in contract_text
     assert "real open context is joined" in contract_text
-    assert "eight official Mae Sai reporting polygons" in contract_text
+    assert (
+        "eight Mae Sai reporting polygons from the HDX COD-AB candidate boundary "
+        "context"
+        in contract_text
+    )
+    assert "not represented as current agency-confirmed geometry" in contract_text
     assert "CEMS Product Candidate Manifest" in contract_text
     assert "CDSE Mae Sai Acquisition Manifest" in contract_text
     assert "Open Context Data File Manifest" in contract_text
@@ -380,7 +440,8 @@ def test_ml_readiness_plan_states_not_ready_and_required_gates() -> None:
         encoding="utf-8"
     )
 
-    assert "not ready for real-data ML yet" in text
+    assert "not ready for a new qualified real-data ML experiment" in text
+    assert "active checksum-bound original-SAFE source pair" in text
     for phrase in (
         "reference mask",
         "Sentinel-1 pair",
@@ -439,14 +500,16 @@ def test_sar_baseline_contract_defines_non_ml_outputs_and_metrics() -> None:
         encoding="utf-8"
     )
 
-    assert "synthetic baseline implemented; gated real-data entry point added" in text
+    assert "weak-reference candidate baseline are implemented" in text
+    assert "verifies their recorded identities and SHA-256 checksums before raster access" in text
     assert "run_gated_real_sar_change_baseline" in text
     assert "flood_probability_0_1" in text
     assert "binary_flood_extent" in text
     assert "sample_sar_validation_metrics.csv" in text
     for metric in ("IoU", "F1/Dice", "precision", "recall", "area error ratio"):
         assert metric in text
-    assert "No real Sentinel-1 downloads" in text
+    assert "No source raster, SAFE, ZIP, GeoPackage, or model-weight files committed" in text
+    assert "not_sigma0_beta0_or_gamma0_calibrated" in text
 
 
 def test_first_ml_experiment_plan_keeps_ml_blocked_until_gates_pass() -> None:
@@ -454,7 +517,14 @@ def test_first_ml_experiment_plan_keeps_ml_blocked_until_gates_pass() -> None:
         encoding="utf-8"
     )
 
-    assert "Current status: not allowed yet" in text
+    assert "Current status: blocked for a new real-data ML run" in text
+    assert "retired COG pair" in text
+    assert "qualified_expert_or_adjudicated" in text
+    assert "zero unresolved disagreements" in text
+    assert "immutable non-overlapping train/calibration/final-holdout membership" in text
+    assert "bounded execution authorization" in text
+    assert "structurally complete summary row remains insufficient" in text
+    assert "floodguard.controlled_experiment" in text
     assert "If any condition fails, ML remains blocked." in text
     assert "processing_allowed=True" in text
     assert "Do not start with a deep model" in text
@@ -500,11 +570,14 @@ def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
     )
 
     for phrase in (
-        "fixture-backed decision-layer prototype",
+        "fixture decision layer and a Mae Sai weak-reference candidate lane",
         "What The Fixture Demo Proves",
         "does not prove real flood-detection accuracy",
-        "Real-data ML remains blocked",
+        "Official-label ML remains blocked",
+        "What The Mae Sai Candidate Adds",
         "FG-TB-001 / River Market",
+        "TH570903 / Ko Chang",
+        "active original-SAFE SAR evidence",
         "Sentinel-1 SAR quicklooks: context only",
     ):
         assert phrase in judge_text
@@ -514,8 +587,10 @@ def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
         "10 Minute Expanded Path",
         "temporary shelter delta",
         "road closure delta",
-        "Context Assets",
-        "Data Readiness",
+        "Sentinel-1 evidence",
+        "Judge mode",
+        "English/Thai",
+        "TH570903 / Ko Chang",
         "not an official warning",
     ):
         assert phrase in walkthrough_text
@@ -531,10 +606,13 @@ def test_judge_demo_readme_and_walkthrough_document_demo_path() -> None:
         assert phrase in qa_text
 
     for phrase in (
+        "Historical Dashboard Visual QA Notes",
+        "not current-release visual evidence",
         "Screenshot evidence was saved outside Git; no screenshot files were committed",
         "1536x1024",
         "2048x1152",
         "1440x900",
+        "Historical selected ADM3: `TH570906 / Wiang Phang Kham`",
         "eight ADM3 labels rendered with zero overlaps",
         "Action-brief and filtered-GeoJSON exports were disabled",
         "weak_reference_candidate_cross_border_calibration",
@@ -548,12 +626,36 @@ def test_mae_sai_pair_decision_note_locks_planning_pair_not_processing() -> None
         encoding="utf-8"
     )
 
-    assert "planning pair selected; final processing remains blocked" in text
+    assert "same-track original SAFE pair selected" in text
+    assert "every processing run remains" in text
+    assert "fail-closed" in text
+    assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in text
+    assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in text
     assert "b09f96ca-4a60-43e7-9b8d-158022f0e5bf" in text
     assert "20a9c3b8-37df-46d5-81d8-d63c7e460225" in text
     assert "6a02d487-68fa-4be7-9628-f312b9049967" in text
-    assert "Use the September 15 post-event COG as the first baseline target" in text
-    assert "do not download any product until the legal/reference-mask gate is cleared" in text
+    assert "retired from baseline selection" in text.lower()
+    assert "refuses to invent a" in text
+    assert "timestamp for any substituted product identity" in text
+
+
+def test_weak_reference_plans_status_is_fail_closed_and_source_bound() -> None:
+    text = (
+        REPO_ROOT / "docs" / "validation" / "weak_reference_plans_1_9_status.md"
+    ).read_text(encoding="utf-8")
+
+    assert "5.965378 km" in text
+    assert "candidate_cross_border_calibration_metrics" not in text
+    assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in text
+    assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in text
+    assert "Historical evidence retained; new run correctly blocked" in text
+    assert "locked_metadata_only" in text
+    assert "dashboard_story_available=false" in text
+    assert "can_feed_decision_layer=false" in text
+    assert "Outstanding external evidence and authority gates" in text
+    assert "verify rejection before a" in text
+    assert "does not make external storage immutable" in text
+    assert "eliminate filesystem race conditions" in text
 
 
 def test_mbrsc_reference_mask_clearance_memo_keeps_gate_blocked() -> None:
@@ -603,10 +705,58 @@ def test_data_dictionary_mentions_mae_sai_file_manifest() -> None:
     )
 
     assert "mae_sai_real_data_file_manifest.csv" in text
-    assert "September 6 pre-event Sentinel-1 COG" in text
-    assert "September 15 post-event Sentinel-1 COG" in text
+    assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in text
+    assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in text
+    assert "Retired COG identities remain historical provenance" in text
+    assert "selected September 6 pre-event Sentinel-1 COG" not in text
+    assert "selected September 15 post-event Sentinel-1 COG" not in text
     assert "processing_allowed=False" in text
     assert "manual_reference_mask_manifest.csv" in text
+
+
+def test_current_source_and_action_brief_docs_use_active_lineage() -> None:
+    active_source_paths = (
+        "docs/data_contract.md",
+        "docs/mae_sai_file_manifest_v2.md",
+        "docs/ml_readiness_plan.md",
+        "docs/public_open_data_acquisition.md",
+        "docs/source_registry.md",
+        "outputs/README.md",
+        "outputs/data_dictionary.md",
+    )
+    for relative_path in active_source_paths:
+        text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in text
+        assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in text
+        assert "original-SAFE" in text
+
+    current_brief_paths = (
+        "docs/data_contract.md",
+        "docs/demo_walkthrough.md",
+        "outputs/README.md",
+        "outputs/data_dictionary.md",
+        "outputs/judge_demo_readme.md",
+        "docs/submission/2026-geohackathon/bilingual-action-brief-reference.md",
+    )
+    for relative_path in current_brief_paths:
+        text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        assert "TH570903" in text
+        assert "Ko Chang" in text
+        assert "mae_sai_action_brief_TH570906.md" not in text
+
+
+def test_historical_weak_label_docs_cannot_be_read_as_current_evidence() -> None:
+    summary = (
+        REPO_ROOT / "outputs" / "mae_sai_weak_label_ml_summary.md"
+    ).read_text(encoding="utf-8")
+    dictionary = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in (summary, dictionary):
+        assert "retired" in text.lower()
+        assert "not comparable" in text.lower()
+    assert "Always `False` for this historical weak-label artifact" in dictionary
 
 
 def test_manual_reference_mask_protocol_and_manifest_are_documented() -> None:
@@ -642,7 +792,10 @@ def test_manual_reference_mask_protocol_and_manifest_are_documented() -> None:
     assert "official validation truth" in manifest_text
     assert "unqualified ML labels" in manifest_text
     assert "FloodGuard manual QGIS Mae Sai weak-reference candidate" in mae_sai_manifest_text
-    assert "manual weak-reference candidate for candidate validation metrics" in mae_sai_manifest_text
+    assert (
+        "manual weak-reference candidate for cross-border calibration metrics"
+        in mae_sai_manifest_text
+    )
     assert "candidate_validation_metrics_allowed" in dictionary_text
     assert "official_validation_truth_allowed" in dictionary_text
 
@@ -770,6 +923,49 @@ def test_dashboard_v10_real_dataset_contract_is_documented() -> None:
     assert "Task 66 - Dashboard V10 Real Dataset Workspace" in backlog_text
     assert "mode-warning" in dictionary_text
     assert "modeled access-loss hotspot" in dictionary_text
+
+
+def test_dashboard_v11_semantic_presentation_contract_is_documented() -> None:
+    contract_text = (REPO_ROOT / "docs" / "data_contract.md").read_text(
+        encoding="utf-8"
+    )
+    output_text = (REPO_ROOT / "outputs" / "README.md").read_text(
+        encoding="utf-8"
+    )
+    dictionary_text = (REPO_ROOT / "outputs" / "data_dictionary.md").read_text(
+        encoding="utf-8"
+    )
+    backlog_text = (REPO_ROOT / "tasks" / "codex_backlog.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "Dashboard v11 Semantic Presentation Layer",
+        "zoom level `12`",
+        "English/Thai",
+        "Sentinel-1 drawer",
+        "Judge presentation mode",
+        "preserve the selected-area map view",
+    ):
+        assert phrase in contract_text
+
+    for field in (
+        "semanticDetailZoom",
+        "map-detail-status",
+        "toggle-focus",
+        "facility-cluster-shell",
+        "facility-marker-shell",
+        "language-en",
+        "language-th",
+        "sar-evidence-drawer",
+        "mean_combined_sar_change_score",
+        "technical-provenance",
+        "judge-mode-toggle",
+    ):
+        assert field in dictionary_text
+
+    assert "`dashboard.html` v11" in output_text
+    assert "Task 67 - Dashboard V11 Semantic Presentation Layer" in backlog_text
 
 
 def test_provider_response_logging_guide_and_mae_sai_v2_docs_exist() -> None:

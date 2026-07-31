@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/source-component.schema.json",
+  "x-contract-version": "1.0",
+  "title": "FloodGuard source component",
+  "description": "Versioned source provenance with an explicit freshness policy and evaluation time.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_component_id",
+    "role",
+    "source_name",
+    "source_version",
+    "source_timestamp",
+    "last_checked_at",
+    "temporal_meaning",
+    "freshness",
+    "freshness_policy_version",
+    "freshness_as_of",
+    "attribution"
+  ],
+  "properties": {
+    "source_component_id": { "type": "string", "minLength": 1 },
+    "role": { "type": "string", "minLength": 1 },
+    "source_name": { "type": "string", "minLength": 1 },
+    "source_version": { "type": ["string", "null"], "minLength": 1 },
+    "source_timestamp": { "type": ["string", "null"], "format": "date-time" },
+    "last_checked_at": { "type": ["string", "null"], "format": "date-time" },
+    "temporal_meaning": {
+      "type": "string",
+      "enum": [
+        "observation_time",
+        "valid_from",
+        "publication_year",
+        "extract_time",
+        "generation_time",
+        "unknown"
+      ]
+    },
+    "freshness": {
+      "type": "string",
+      "enum": ["current", "aging", "historical", "unknown"]
+    },
+    "freshness_policy_version": { "const": "source-freshness-v1" },
+    "freshness_as_of": { "type": "string", "format": "date-time" },
+    "attribution": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "source_timestamp": { "type": "null" } },
+        "required": ["source_timestamp"]
+      },
+      "then": {
+        "properties": {
+          "temporal_meaning": { "const": "unknown" },
+          "freshness": { "const": "unknown" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "temporal_meaning": { "const": "unknown" } },
+        "required": ["temporal_meaning"]
+      },
+      "then": {
+        "properties": {
+          "source_timestamp": { "type": "null" },
+          "freshness": { "const": "unknown" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "freshness": { "const": "current" } },
+        "required": ["freshness"]
+      },
+      "then": {
+        "properties": {
+          "source_timestamp": { "type": "string", "format": "date-time" },
+          "last_checked_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  ]
+}

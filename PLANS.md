@@ -13,18 +13,74 @@
 9. One-page action brief generator.
 10. Sentinel-1/GISTDA flood ingestion and validation path.
 
-## Current Milestone
+## Current capability sequence
 
-Build the first testable policy-product slice:
+Develop FloodGuard as a real geospatial decision-support system. Proposal and
+competition packaging may consume core evidence, but they do not define the
+runtime architecture or product roadmap.
 
-- sample subdistrict priority fixture
-- deterministic FPPS score
-- A-E action class
-- top reason
-- confidence passthrough
-- generated sample CSV
-- passing tests
+1. Connect the committed real-coordinate Mae Sai candidate context to a
+   fail-closed study-area registry, typed FastAPI layers, the modern Command
+   map, and the offline bundle.
+2. Persist checksum-bound routing/population inputs and expose bounded,
+   deterministic server-side Mae Sai scenarios without browser formulas.
+3. Bind immutable probability rasters to road and facility consequences through
+   signed, substitution-resistant receipts.
+4. Govern backend-neutral model runs, evaluations, uncertainty-aware
+   observation products, and study-area model selection through additive,
+   receipt-bound contracts.
+5. Clear the qualified-label gates using real authority, reviewer calibration,
+   and immutable spatial holdouts; code alone cannot self-approve these gates.
+6. Compare deterministic SAR, calibrated logistic, and isolated GeoAI U-Net/FPN
+   candidates on identical qualified evidence before promoting any result.
+7. Predeclare and evaluate temporal U-Net, SegFormer, and Earth-observation
+   foundation-model challengers on the same immutable event folds.
+8. Run a report-only shadow integration that measures access, equity, FPPS,
+   rank, and A-E sensitivity while preserving abstention and rollback.
+9. Build the separately typed rainfall/hydrology forecast branch only after
+   the observed-evidence path and multi-event evaluation are stable.
 
-## Near-Term Decision
+The full capability, safety, and acceptance contracts are recorded in
+`docs/mae_sai_capability_milestones.md`. The existing role-surface interaction
+decisions remain in `docs/role-surface-development-plan.md`. The GeoAI evidence
+lanes, v2 contracts, registry binding, and downstream release gates are recorded
+in `docs/geoai-system-design-v1.md`. The immediate P0 qualification, human
+review, and immutable release contract is recorded in
+`docs/qualified-thai-reference-label-release-v1.md`; its current evidence state
+is projected separately in
+`docs/validation/qualified_thai_reference_frozen_label_release_v1_status.md`.
+The four-role event/geographic split and its deliberately fixture-only current
+boundary are specified in `docs/immutable-multi-event-partitions-v1.md`.
 
-The project should continue with equity and access modules before remote-sensing model complexity. This preserves the differentiator: converting flood extent into access, equity, prioritization, and action.
+### Immediate P0 execution order
+
+1. Resolve product-specific permission and independent reference-authority
+   classification for the checksum-bound `AIT-VAP001-TH` candidate.
+2. Freeze the geometry repair/quarantine rule, raster grid, CRS, temporal
+   window, no-data semantics, and exact reference checksum.
+3. Appoint two independent reviewers and a separate adjudicator, then pass the
+   frozen qualification-set calibration threshold.
+4. Complete blind double review, immutable disagreement capture, and
+   independent adjudication.
+5. Freeze a purpose-specific label release. Training and final evaluation
+   releases remain distinct.
+6. Only after the P0 receipts validate, seal event-level and geographic
+   training, probability-calibration, development, and final-holdout
+   partitions. Threshold selection must never see the final holdout.
+7. Run deterministic SAR, shallow/logistic, and U-Net/FPN candidates under the
+   same target, unknown/no-data, partition, and downstream-consequence
+   contracts.
+
+The engineering mechanisms may be ready while this sequence remains
+scientifically blocked. Code, a public download, a checksum, or a Studio card
+cannot substitute for external permission, qualified human decisions, or a
+release authority.
+
+## Near-term decision
+
+The decision engine remains the source of truth. Real open context and
+provenance-tracked candidate analysis may be displayed with explicit warnings;
+they must not be presented as authoritative operational truth. GeoAI is used
+deeply for the flood-probability workflow, but it does not own administrative
+geometry, facility verification, routing, equity, FPPS weighting, or A-E
+assignment.

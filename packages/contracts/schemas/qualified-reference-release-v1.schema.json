@@ -1,0 +1,1744 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/qualified-reference-release-v1.schema.json",
+  "title": "FloodGuard Qualified Reference Release v1",
+  "description": "Fail-closed compatibility release between controlled acquisition authority and non-operational model-development evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_schema",
+    "release_id",
+    "release_status",
+    "dataset_mode",
+    "operational_status",
+    "study_area_id",
+    "study_area_name",
+    "event_id",
+    "experiment_id",
+    "source_timestamp",
+    "generated_at",
+    "confidence_class",
+    "source_name",
+    "assumptions",
+    "data_version",
+    "git_commit",
+    "official_warning",
+    "evidence_classification",
+    "source_permissions",
+    "purpose",
+    "purpose_authorizations",
+    "reference_artifact",
+    "analysis_grid",
+    "acquisition_lineage",
+    "evidence_bundle_sha256",
+    "processing_allowed",
+    "eligible_for_controlled_model_development",
+    "eligible_for_controlled_model_evaluation",
+    "synthetic_fixture_processing_allowed",
+    "downstream_experiment_gate_required",
+    "can_feed_decision_layer",
+    "can_feed_fpps",
+    "can_assign_action_class",
+    "agency_operational_authorized",
+    "safety_limitations",
+    "blockers",
+    "reason_blocked",
+    "release_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "artifact_schema": {
+      "const": "floodguard.qualified_reference_release.v1"
+    },
+    "release_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "release_status": {
+      "enum": [
+        "blocked",
+        "synthetic_fixture_only",
+        "qualified_for_controlled_model_development"
+      ]
+    },
+    "dataset_mode": {
+      "enum": [
+        "candidate",
+        "fixture_demo"
+      ]
+    },
+    "operational_status": {
+      "const": "non_operational"
+    },
+    "study_area_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "study_area_name": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "event_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "experiment_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "source_timestamp": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "confidence_class": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "source_name": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "data_version": {
+      "$ref": "#/$defs/identifier"
+    },
+    "git_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{40}$"
+    },
+    "official_warning": {
+      "const": false
+    },
+    "evidence_classification": {
+      "$ref": "#/$defs/evidenceClassification"
+    },
+    "source_permissions": {
+      "$ref": "#/$defs/permissions"
+    },
+    "purpose": {
+      "$ref": "#/$defs/purpose"
+    },
+    "purpose_authorizations": {
+      "$ref": "#/$defs/purposeAuthorizations"
+    },
+    "reference_artifact": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/referenceArtifact"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "analysis_grid": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/analysisGrid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "acquisition_lineage": {
+      "$ref": "#/$defs/acquisitionLineage"
+    },
+    "evidence_bundle_sha256": {
+      "$ref": "#/$defs/nullableSha256"
+    },
+    "processing_allowed": {
+      "type": "boolean"
+    },
+    "eligible_for_controlled_model_development": {
+      "type": "boolean"
+    },
+    "eligible_for_controlled_model_evaluation": {
+      "type": "boolean"
+    },
+    "synthetic_fixture_processing_allowed": {
+      "type": "boolean"
+    },
+    "downstream_experiment_gate_required": {
+      "const": true
+    },
+    "can_feed_decision_layer": {
+      "const": false
+    },
+    "can_feed_fpps": {
+      "const": false
+    },
+    "can_assign_action_class": {
+      "const": false
+    },
+    "agency_operational_authorized": {
+      "const": false
+    },
+    "safety_limitations": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "prefixItems": [
+        {
+          "const": "This release cannot feed the decision layer."
+        },
+        {
+          "const": "This release cannot feed FPPS."
+        },
+        {
+          "const": "This release cannot assign an A-E action class."
+        },
+        {
+          "const": "This release cannot issue an official warning."
+        },
+        {
+          "const": "This release does not grant agency-operational authority."
+        },
+        {
+          "const": "A separate controlled-experiment gate remains required."
+        }
+      ],
+      "items": false
+    },
+    "blockers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "reason_blocked": {
+      "type": "string"
+    },
+    "release_sha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/blockedRelease"
+    },
+    {
+      "$ref": "#/$defs/syntheticRelease"
+    },
+    {
+      "$ref": "#/$defs/qualifiedRelease"
+    }
+  ],
+  "allOf": [
+    {
+      "$ref": "#/$defs/purposeBinding"
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,254}$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "nullableSha256": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "nullableIdentifier": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/identifier"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "transform": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "number"
+      }
+    },
+    "evidenceClassification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference_authority_class",
+        "qualification_status",
+        "rights_evidence_status",
+        "independence_status",
+        "purpose_acceptance_status",
+        "field_validation_status"
+      ],
+      "properties": {
+        "reference_authority_class": {
+          "enum": [
+            "observed_event_extent",
+            "expert_interpretation",
+            "weak_reference",
+            "contextual_evidence",
+            "synthetic_fixture"
+          ]
+        },
+        "qualification_status": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "rights_evidence_status": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "independence_status": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "purpose_acceptance_status": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "field_validation_status": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_analysis",
+        "model_input_or_feature_use",
+        "ml_label_use",
+        "validation_metrics",
+        "derived_reporting",
+        "screenshots_and_demo_display",
+        "source_redistribution",
+        "derived_geometry_redistribution",
+        "reference_only_storage_if_not_redistributable"
+      ],
+      "properties": {
+        "local_analysis": {
+          "type": "boolean"
+        },
+        "model_input_or_feature_use": {
+          "type": "boolean"
+        },
+        "ml_label_use": {
+          "type": "boolean"
+        },
+        "validation_metrics": {
+          "type": "boolean"
+        },
+        "derived_reporting": {
+          "type": "boolean"
+        },
+        "screenshots_and_demo_display": {
+          "type": "boolean"
+        },
+        "source_redistribution": {
+          "type": "boolean"
+        },
+        "derived_geometry_redistribution": {
+          "type": "boolean"
+        },
+        "reference_only_storage_if_not_redistributable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "purpose": {
+      "enum": [
+        "human_reviewer_calibration",
+        "human_annotation_reference",
+        "flood_model_training_labels",
+        "model_probability_calibration",
+        "model_final_evaluation",
+        "derived_metrics_only"
+      ]
+    },
+    "purposeBinding": {
+      "oneOf": [
+        {
+          "properties": {
+            "purpose": {
+              "const": "human_reviewer_calibration"
+            },
+            "purpose_authorizations": {
+              "prefixItems": [
+                {
+                  "properties": {
+                    "purpose": {
+                      "const": "human_reviewer_calibration"
+                    }
+                  }
+                }
+              ]
+            },
+            "acquisition_lineage": {
+              "properties": {
+                "reference_authority_purpose": {
+                  "oneOf": [
+                    {
+                      "const": "human_reviewer_calibration"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "purpose": {
+              "const": "human_annotation_reference"
+            },
+            "purpose_authorizations": {
+              "prefixItems": [
+                {
+                  "properties": {
+                    "purpose": {
+                      "const": "human_annotation_reference"
+                    }
+                  }
+                }
+              ]
+            },
+            "acquisition_lineage": {
+              "properties": {
+                "reference_authority_purpose": {
+                  "oneOf": [
+                    {
+                      "const": "human_annotation_reference"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "purpose": {
+              "const": "flood_model_training_labels"
+            },
+            "purpose_authorizations": {
+              "prefixItems": [
+                {
+                  "properties": {
+                    "purpose": {
+                      "const": "flood_model_training_labels"
+                    }
+                  }
+                }
+              ]
+            },
+            "acquisition_lineage": {
+              "properties": {
+                "reference_authority_purpose": {
+                  "oneOf": [
+                    {
+                      "const": "flood_model_training_labels"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "purpose": {
+              "const": "model_probability_calibration"
+            },
+            "purpose_authorizations": {
+              "prefixItems": [
+                {
+                  "properties": {
+                    "purpose": {
+                      "const": "model_probability_calibration"
+                    }
+                  }
+                }
+              ]
+            },
+            "acquisition_lineage": {
+              "properties": {
+                "reference_authority_purpose": {
+                  "oneOf": [
+                    {
+                      "const": "model_probability_calibration"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "purpose": {
+              "const": "model_final_evaluation"
+            },
+            "purpose_authorizations": {
+              "prefixItems": [
+                {
+                  "properties": {
+                    "purpose": {
+                      "const": "model_final_evaluation"
+                    }
+                  }
+                }
+              ]
+            },
+            "acquisition_lineage": {
+              "properties": {
+                "reference_authority_purpose": {
+                  "oneOf": [
+                    {
+                      "const": "model_final_evaluation"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "purpose": {
+              "const": "derived_metrics_only"
+            },
+            "purpose_authorizations": {
+              "prefixItems": [
+                {
+                  "properties": {
+                    "purpose": {
+                      "const": "derived_metrics_only"
+                    }
+                  }
+                }
+              ]
+            },
+            "acquisition_lineage": {
+              "properties": {
+                "reference_authority_purpose": {
+                  "oneOf": [
+                    {
+                      "const": "derived_metrics_only"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "purposeAuthorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "purpose",
+        "status",
+        "authority_basis",
+        "evidence_sha256"
+      ],
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/purpose"
+        },
+        "status": {
+          "enum": [
+            "blocked",
+            "synthetic_fixture_only",
+            "reference_gate_passed_downstream_gates_required"
+          ]
+        },
+        "authority_basis": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidence_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        }
+      }
+    },
+    "purposeAuthorizations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "$ref": "#/$defs/purposeAuthorization"
+      }
+    },
+    "noReferenceAuthorityLineage": {
+      "properties": {
+        "reference_authority_decision_id": {
+          "type": "null"
+        },
+        "reference_authority_decision_sha256": {
+          "type": "null"
+        },
+        "reference_authority_decision_file_sha256": {
+          "type": "null"
+        },
+        "reference_authority_signature_sha256": {
+          "type": "null"
+        },
+        "reference_authority_signature_file_sha256": {
+          "type": "null"
+        },
+        "reference_authority_signing_key_id": {
+          "type": "null"
+        },
+        "reference_authority_public_key_sha256": {
+          "type": "null"
+        },
+        "reference_authority_id": {
+          "type": "null"
+        },
+        "reference_authority_issued_at_utc": {
+          "type": "null"
+        },
+        "reference_authority_expires_at_utc": {
+          "type": "null"
+        },
+        "reference_authority_purpose": {
+          "type": "null"
+        },
+        "reference_authority_class": {
+          "type": "null"
+        },
+        "reference_authority_receipt_sha256": {
+          "type": "null"
+        }
+      }
+    },
+    "qualifiedReferenceAuthorityLineage": {
+      "properties": {
+        "reference_authority_decision_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "reference_authority_decision_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reference_authority_decision_file_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reference_authority_signature_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reference_authority_signature_file_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reference_authority_signing_key_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "reference_authority_public_key_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reference_authority_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reference_authority_issued_at_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "reference_authority_expires_at_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "reference_authority_purpose": {
+          "$ref": "#/$defs/purpose"
+        },
+        "reference_authority_class": {
+          "enum": [
+            "observed_event_extent",
+            "expert_interpretation"
+          ]
+        },
+        "reference_authority_receipt_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "referenceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product_id",
+        "file_name",
+        "sha256",
+        "media_type",
+        "crs",
+        "transform",
+        "width",
+        "height",
+        "band_count",
+        "dtype",
+        "nodata",
+        "valid_values",
+        "observation_start",
+        "observation_end",
+        "covers_analysis_grid",
+        "reprojection_performed"
+      ],
+      "properties": {
+        "product_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "file_name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/\\\\]+$"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "media_type": {
+          "const": "image/tiff; application=geotiff"
+        },
+        "crs": {
+          "type": "string",
+          "pattern": "^EPSG:[0-9]+$"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "band_count": {
+          "const": 1
+        },
+        "dtype": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "nodata": {
+          "type": "number",
+          "not": {
+            "enum": [
+              0,
+              1
+            ]
+          }
+        },
+        "valid_values": {
+          "const": [
+            0,
+            1
+          ]
+        },
+        "observation_start": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "observation_end": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "covers_analysis_grid": {
+          "const": true
+        },
+        "reprojection_performed": {
+          "const": false
+        }
+      }
+    },
+    "analysisGrid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file_name",
+        "sha256",
+        "crs",
+        "transform",
+        "width",
+        "height",
+        "cell_size"
+      ],
+      "properties": {
+        "file_name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/\\\\]+$"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "crs": {
+          "type": "string",
+          "pattern": "^EPSG:[0-9]+$"
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cell_size": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        }
+      }
+    },
+    "roleHashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pre_event_sar",
+        "post_event_sar",
+        "reference_mask"
+      ],
+      "properties": {
+        "pre_event_sar": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "post_event_sar": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "reference_mask": {
+          "$ref": "#/$defs/nullableSha256"
+        }
+      }
+    },
+    "acquisitionLineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assessment_status",
+        "acquisition_manifest_sha256",
+        "acquisition_manifest_file_sha256",
+        "acquisition_authority_receipt_sha256",
+        "authority_signing_key_id",
+        "authority_issued_at_utc",
+        "authority_expires_at_utc",
+        "external_authority_decision_sha256",
+        "external_authority_signing_key_id",
+        "reference_authorization_sha256",
+        "reference_product_id",
+        "reference_source_name",
+        "reference_source_timestamp",
+        "reference_observation_start",
+        "reference_observation_end",
+        "reference_permissions_sha256",
+        "reference_authority_decision_id",
+        "reference_authority_decision_sha256",
+        "reference_authority_decision_file_sha256",
+        "reference_authority_signature_sha256",
+        "reference_authority_signature_file_sha256",
+        "reference_authority_signing_key_id",
+        "reference_authority_public_key_sha256",
+        "reference_authority_id",
+        "reference_authority_issued_at_utc",
+        "reference_authority_expires_at_utc",
+        "reference_authority_purpose",
+        "reference_authority_class",
+        "reference_authority_receipt_sha256",
+        "sha256_by_role",
+        "assessment_blockers"
+      ],
+      "properties": {
+        "assessment_status": {
+          "enum": [
+            "ready",
+            "blocked",
+            "not_applicable_synthetic_fixture"
+          ]
+        },
+        "acquisition_manifest_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "acquisition_manifest_file_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "acquisition_authority_receipt_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "authority_signing_key_id": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "authority_issued_at_utc": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "authority_expires_at_utc": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "external_authority_decision_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "external_authority_signing_key_id": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "reference_authorization_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "reference_product_id": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "reference_source_name": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_source_timestamp": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_observation_start": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_observation_end": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_permissions_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "reference_authority_decision_id": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "reference_authority_decision_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "reference_authority_decision_file_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "reference_authority_signature_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "reference_authority_signature_file_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "reference_authority_signing_key_id": {
+          "$ref": "#/$defs/nullableIdentifier"
+        },
+        "reference_authority_public_key_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "reference_authority_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_authority_issued_at_utc": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_authority_expires_at_utc": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_authority_purpose": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/purpose"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_authority_class": {
+          "oneOf": [
+            {
+              "enum": [
+                "observed_event_extent",
+                "expert_interpretation"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_authority_receipt_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "sha256_by_role": {
+          "$ref": "#/$defs/roleHashes"
+        },
+        "assessment_blockers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "allFalsePermissions": {
+      "properties": {
+        "local_analysis": {
+          "const": false
+        },
+        "model_input_or_feature_use": {
+          "const": false
+        },
+        "ml_label_use": {
+          "const": false
+        },
+        "validation_metrics": {
+          "const": false
+        },
+        "derived_reporting": {
+          "const": false
+        },
+        "screenshots_and_demo_display": {
+          "const": false
+        },
+        "source_redistribution": {
+          "const": false
+        },
+        "derived_geometry_redistribution": {
+          "const": false
+        },
+        "reference_only_storage_if_not_redistributable": {
+          "const": false
+        }
+      }
+    },
+    "allTruePermissions": {
+      "properties": {
+        "local_analysis": {
+          "const": true
+        },
+        "model_input_or_feature_use": {
+          "const": true
+        },
+        "ml_label_use": {
+          "const": true
+        },
+        "validation_metrics": {
+          "const": true
+        },
+        "derived_reporting": {
+          "const": true
+        },
+        "screenshots_and_demo_display": {
+          "const": true
+        },
+        "source_redistribution": {
+          "const": true
+        },
+        "derived_geometry_redistribution": {
+          "const": true
+        },
+        "reference_only_storage_if_not_redistributable": {
+          "const": true
+        }
+      }
+    },
+    "purposeState": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "evidence_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        }
+      }
+    },
+    "blockedClassification": {
+      "properties": {
+        "qualification_status": {
+          "const": "blocked_not_qualified"
+        },
+        "rights_evidence_status": {
+          "const": "missing_or_unverified"
+        },
+        "independence_status": {
+          "const": "not_established"
+        },
+        "purpose_acceptance_status": {
+          "const": "blocked"
+        },
+        "field_validation_status": {
+          "const": "not_claimed"
+        }
+      }
+    },
+    "syntheticClassification": {
+      "properties": {
+        "reference_authority_class": {
+          "const": "synthetic_fixture"
+        },
+        "qualification_status": {
+          "const": "synthetic_fixture_only"
+        },
+        "rights_evidence_status": {
+          "const": "project_owned_synthetic_fixture"
+        },
+        "independence_status": {
+          "const": "not_applicable_synthetic_fixture"
+        },
+        "purpose_acceptance_status": {
+          "const": "synthetic_fixture_only"
+        },
+        "field_validation_status": {
+          "const": "not_claimed"
+        }
+      }
+    },
+    "qualifiedClassification": {
+      "properties": {
+        "reference_authority_class": {
+          "enum": [
+            "observed_event_extent",
+            "expert_interpretation"
+          ]
+        },
+        "qualification_status": {
+          "const": "qualified_expert_or_adjudicated"
+        },
+        "rights_evidence_status": {
+          "const": "externally_verified_product_specific"
+        },
+        "independence_status": {
+          "const": "independent_of_model_inputs"
+        },
+        "purpose_acceptance_status": {
+          "const": "exact_purpose_authority_verified"
+        },
+        "field_validation_status": {
+          "const": "not_claimed"
+        }
+      }
+    },
+    "blockedRelease": {
+      "type": "object",
+      "properties": {
+        "release_status": {
+          "const": "blocked"
+        },
+        "dataset_mode": {
+          "const": "candidate"
+        },
+        "confidence_class": {
+          "const": "low"
+        },
+        "evidence_classification": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/evidenceClassification"
+            },
+            {
+              "$ref": "#/$defs/blockedClassification"
+            }
+          ]
+        },
+        "source_permissions": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/permissions"
+            },
+            {
+              "$ref": "#/$defs/allFalsePermissions"
+            }
+          ]
+        },
+        "purpose_authorizations": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/purposeAuthorization"
+              },
+              {
+                "properties": {
+                  "status": {
+                    "const": "blocked"
+                  },
+                  "authority_basis": {
+                    "const": "none"
+                  },
+                  "evidence_sha256": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "reference_artifact": {
+          "type": "null"
+        },
+        "analysis_grid": {
+          "type": "null"
+        },
+        "acquisition_lineage": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/acquisitionLineage"
+            },
+            {
+              "properties": {
+                "assessment_status": {
+                  "const": "blocked"
+                },
+                "reference_authorization_sha256": {
+                  "type": "null"
+                },
+                "reference_product_id": {
+                  "type": "null"
+                },
+                "reference_source_name": {
+                  "type": "null"
+                },
+                "reference_source_timestamp": {
+                  "type": "null"
+                },
+                "reference_observation_start": {
+                  "type": "null"
+                },
+                "reference_observation_end": {
+                  "type": "null"
+                },
+                "reference_permissions_sha256": {
+                  "type": "null"
+                },
+                "assessment_blockers": {
+                  "type": "array",
+                  "minItems": 1
+                }
+              }
+            },
+            {
+              "$ref": "#/$defs/noReferenceAuthorityLineage"
+            }
+          ]
+        },
+        "evidence_bundle_sha256": {
+          "type": "null"
+        },
+        "processing_allowed": {
+          "const": false
+        },
+        "eligible_for_controlled_model_development": {
+          "const": false
+        },
+        "eligible_for_controlled_model_evaluation": {
+          "const": false
+        },
+        "synthetic_fixture_processing_allowed": {
+          "const": false
+        },
+        "blockers": {
+          "type": "array",
+          "minItems": 1
+        }
+      }
+    },
+    "syntheticRelease": {
+      "type": "object",
+      "properties": {
+        "release_status": {
+          "const": "synthetic_fixture_only"
+        },
+        "dataset_mode": {
+          "const": "fixture_demo"
+        },
+        "confidence_class": {
+          "const": "low"
+        },
+        "evidence_classification": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/evidenceClassification"
+            },
+            {
+              "$ref": "#/$defs/syntheticClassification"
+            }
+          ]
+        },
+        "source_permissions": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/permissions"
+            },
+            {
+              "$ref": "#/$defs/allTruePermissions"
+            }
+          ]
+        },
+        "purpose_authorizations": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/purposeAuthorization"
+              },
+              {
+                "properties": {
+                  "status": {
+                    "const": "synthetic_fixture_only"
+                  },
+                  "authority_basis": {
+                    "const": "project_owned_synthetic_fixture"
+                  },
+                  "evidence_sha256": {
+                    "$ref": "#/$defs/sha256"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "reference_artifact": {
+          "$ref": "#/$defs/referenceArtifact"
+        },
+        "analysis_grid": {
+          "$ref": "#/$defs/analysisGrid"
+        },
+        "acquisition_lineage": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/acquisitionLineage"
+            },
+            {
+              "properties": {
+                "assessment_status": {
+                  "const": "not_applicable_synthetic_fixture"
+                },
+                "acquisition_manifest_sha256": {
+                  "type": "null"
+                },
+                "acquisition_manifest_file_sha256": {
+                  "type": "null"
+                },
+                "acquisition_authority_receipt_sha256": {
+                  "type": "null"
+                },
+                "authority_signing_key_id": {
+                  "type": "null"
+                },
+                "authority_issued_at_utc": {
+                  "type": "null"
+                },
+                "authority_expires_at_utc": {
+                  "type": "null"
+                },
+                "external_authority_decision_sha256": {
+                  "type": "null"
+                },
+                "external_authority_signing_key_id": {
+                  "type": "null"
+                },
+                "reference_authorization_sha256": {
+                  "type": "null"
+                },
+                "reference_product_id": {
+                  "type": "null"
+                },
+                "reference_source_name": {
+                  "type": "null"
+                },
+                "reference_source_timestamp": {
+                  "type": "null"
+                },
+                "reference_observation_start": {
+                  "type": "null"
+                },
+                "reference_observation_end": {
+                  "type": "null"
+                },
+                "reference_permissions_sha256": {
+                  "type": "null"
+                },
+                "sha256_by_role": {
+                  "properties": {
+                    "pre_event_sar": {
+                      "type": "null"
+                    },
+                    "post_event_sar": {
+                      "type": "null"
+                    },
+                    "reference_mask": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "assessment_blockers": {
+                  "maxItems": 0
+                }
+              }
+            },
+            {
+              "$ref": "#/$defs/noReferenceAuthorityLineage"
+            }
+          ]
+        },
+        "evidence_bundle_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "processing_allowed": {
+          "const": false
+        },
+        "eligible_for_controlled_model_development": {
+          "const": false
+        },
+        "eligible_for_controlled_model_evaluation": {
+          "const": false
+        },
+        "synthetic_fixture_processing_allowed": {
+          "const": true
+        },
+        "blockers": {
+          "const": [
+            "Synthetic fixture only; it is not qualified Thai event evidence and cannot support scientific or operational claims."
+          ]
+        },
+        "reason_blocked": {
+          "const": "Synthetic fixture only; it is not qualified Thai event evidence and cannot support scientific or operational claims."
+        }
+      }
+    },
+    "qualifiedRelease": {
+      "type": "object",
+      "properties": {
+        "release_status": {
+          "const": "qualified_for_controlled_model_development"
+        },
+        "dataset_mode": {
+          "const": "candidate"
+        },
+        "confidence_class": {
+          "enum": [
+            "medium",
+            "high"
+          ]
+        },
+        "evidence_classification": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/evidenceClassification"
+            },
+            {
+              "$ref": "#/$defs/qualifiedClassification"
+            }
+          ]
+        },
+        "source_permissions": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/permissions"
+            },
+            {
+              "properties": {
+                "local_analysis": {
+                  "const": true
+                },
+                "model_input_or_feature_use": {
+                  "const": true
+                },
+                "ml_label_use": {
+                  "const": true
+                },
+                "validation_metrics": {
+                  "const": true
+                },
+                "derived_reporting": {
+                  "const": true
+                },
+                "screenshots_and_demo_display": {
+                  "const": true
+                },
+                "derived_geometry_redistribution": {
+                  "const": true
+                },
+                "reference_only_storage_if_not_redistributable": {
+                  "const": true
+                }
+              }
+            }
+          ]
+        },
+        "purpose_authorizations": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/purposeAuthorization"
+              },
+              {
+                "properties": {
+                  "status": {
+                    "const": "reference_gate_passed_downstream_gates_required"
+                  },
+                  "authority_basis": {
+                    "const": "verified_external_product_authority_and_scientific_qualification"
+                  },
+                  "evidence_sha256": {
+                    "$ref": "#/$defs/sha256"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "reference_artifact": {
+          "$ref": "#/$defs/referenceArtifact"
+        },
+        "analysis_grid": {
+          "$ref": "#/$defs/analysisGrid"
+        },
+        "acquisition_lineage": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/acquisitionLineage"
+            },
+            {
+              "properties": {
+                "assessment_status": {
+                  "const": "ready"
+                },
+                "acquisition_manifest_sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "acquisition_manifest_file_sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "acquisition_authority_receipt_sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "authority_signing_key_id": {
+                  "$ref": "#/$defs/identifier"
+                },
+                "authority_issued_at_utc": {
+                  "$ref": "#/$defs/timestamp"
+                },
+                "authority_expires_at_utc": {
+                  "$ref": "#/$defs/timestamp"
+                },
+                "external_authority_decision_sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "external_authority_signing_key_id": {
+                  "$ref": "#/$defs/identifier"
+                },
+                "reference_authorization_sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "reference_product_id": {
+                  "$ref": "#/$defs/identifier"
+                },
+                "reference_source_name": {
+                  "$ref": "#/$defs/nonEmptyString"
+                },
+                "reference_source_timestamp": {
+                  "$ref": "#/$defs/timestamp"
+                },
+                "reference_observation_start": {
+                  "$ref": "#/$defs/timestamp"
+                },
+                "reference_observation_end": {
+                  "$ref": "#/$defs/timestamp"
+                },
+                "reference_permissions_sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "sha256_by_role": {
+                  "properties": {
+                    "pre_event_sar": {
+                      "$ref": "#/$defs/sha256"
+                    },
+                    "post_event_sar": {
+                      "$ref": "#/$defs/sha256"
+                    },
+                    "reference_mask": {
+                      "$ref": "#/$defs/sha256"
+                    }
+                  }
+                },
+                "assessment_blockers": {
+                  "maxItems": 0
+                }
+              }
+            },
+            {
+              "$ref": "#/$defs/qualifiedReferenceAuthorityLineage"
+            }
+          ]
+        },
+        "evidence_bundle_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "processing_allowed": {
+          "const": true
+        },
+        "eligible_for_controlled_model_development": {
+          "type": "boolean"
+        },
+        "eligible_for_controlled_model_evaluation": {
+          "type": "boolean"
+        },
+        "synthetic_fixture_processing_allowed": {
+          "const": false
+        },
+        "blockers": {
+          "maxItems": 0
+        },
+        "reason_blocked": {
+          "const": ""
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "purpose": {
+                "enum": [
+                  "flood_model_training_labels",
+                  "model_probability_calibration"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "eligible_for_controlled_model_development": {
+                "const": true
+              },
+              "eligible_for_controlled_model_evaluation": {
+                "const": false
+              }
+            }
+          },
+          "else": {
+            "if": {
+              "properties": {
+                "purpose": {
+                  "const": "model_final_evaluation"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "eligible_for_controlled_model_development": {
+                  "const": false
+                },
+                "eligible_for_controlled_model_evaluation": {
+                  "const": true
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "eligible_for_controlled_model_development": {
+                  "const": false
+                },
+                "eligible_for_controlled_model_evaluation": {
+                  "const": false
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

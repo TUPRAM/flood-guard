@@ -1,0 +1,83 @@
+{
+  "acquisition": {
+    "authority_expires_at_utc": null,
+    "authority_issued_at_utc": null,
+    "authority_receipt_sha256": null,
+    "authority_signing_key_id": null,
+    "blockers": [
+      "acquisition_authority: externally signed product-specific authority decision and internal integrity receipt are missing",
+      "reference_mask: ML-label/model use permission is not confirmed",
+      "reference_mask: checksum status is not verified",
+      "reference_mask: derived metrics permission is not confirmed",
+      "reference_mask: license is not confirmed for this experiment",
+      "reference_mask: local analysis permission is not confirmed",
+      "reference_mask: local artifact is missing",
+      "reference_mask: processing_allowed is false",
+      "reference_mask: redistribution/reference-only status is unresolved",
+      "reference_mask: reference mask is not qualified expert/adjudicated truth",
+      "reference_mask: temporal alignment is not confirmed"
+    ],
+    "experiment_id": "mae_sai_2024_controlled_three_model_v1",
+    "external_authority_decision_sha256": null,
+    "external_authority_signing_key_id": null,
+    "manifest_file_sha256": "dff3641d329d9dc2d47587b5135647b375558ab5265d3e7bdf3c0cba7ee995df",
+    "manifest_sha256": "8176ec3b3273ffbf7a2081dc4953da0961696d3776b643a922ee0534a2b791d0",
+    "ready": false,
+    "sha256_by_role": {
+      "post_event_sar": "ff4a604f57c9eb88421904659c7201d07b54b35a3bff6f3447ee548c40f6755b",
+      "pre_event_sar": "42433d6cfb55118abe21e6faabef56343cefc9f28817cd31eb9386d32f56543d",
+      "reference_mask": ""
+    },
+    "study_area": "Chiang Rai / Mae Sai 2024"
+  },
+  "artifact_schema": "floodguard.controlled_experiment_gate_receipt.v4",
+  "assumptions": [
+    "A ready gate is pre-execution authorization evidence only; it does not prove a model ran.",
+    "Completed model evidence is intentionally absent from readiness criteria.",
+    "The three-model comparison remains non-operational and report-only."
+  ],
+  "blockers": [
+    "acquisition_authority: externally signed product-specific authority decision and internal integrity receipt are missing",
+    "promotion_policy: signed predeclared policy is missing",
+    "reference_cells: signed mask-derived cells, calibration projection, or error-strata evidence is missing",
+    "reference_mask: ML-label/model use permission is not confirmed",
+    "reference_mask: checksum status is not verified",
+    "reference_mask: derived metrics permission is not confirmed",
+    "reference_mask: license is not confirmed for this experiment",
+    "reference_mask: local analysis permission is not confirmed",
+    "reference_mask: local artifact is missing",
+    "reference_mask: processing_allowed is false",
+    "reference_mask: redistribution/reference-only status is unresolved",
+    "reference_mask: reference mask is not qualified expert/adjudicated truth",
+    "reference_mask: temporal alignment is not confirmed",
+    "reviewer_calibration: dual-signed qualification is missing",
+    "spatial_holdout: signed polygon and frozen cell-membership receipt is missing"
+  ],
+  "can_feed_decision_layer": false,
+  "experiment_executed": false,
+  "experiment_id": "mae_sai_2024_controlled_three_model_v1",
+  "gate_kind": "pre_execution_readiness",
+  "gate_status": "blocked",
+  "generated_at": "2026-07-20T05:21:09Z",
+  "model_evidence": {
+    "status": "not_expected_before_execution"
+  },
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "processing_allowed": false,
+  "promotion_policy": {
+    "status": "missing"
+  },
+  "reason_blocked": "acquisition_authority: externally signed product-specific authority decision and internal integrity receipt are missing; promotion_policy: signed predeclared policy is missing; reference_cells: signed mask-derived cells, calibration projection, or error-strata evidence is missing; reference_mask: ML-label/model use permission is not confirmed; reference_mask: checksum status is not verified; reference_mask: derived metrics permission is not confirmed; reference_mask: license is not confirmed for this experiment; reference_mask: local analysis permission is not confirmed; reference_mask: local artifact is missing; reference_mask: processing_allowed is false; reference_mask: redistribution/reference-only status is unresolved; reference_mask: reference mask is not qualified expert/adjudicated truth; reference_mask: temporal alignment is not confirmed; reviewer_calibration: dual-signed qualification is missing; spatial_holdout: signed polygon and frozen cell-membership receipt is missing",
+  "receipt_sha256": "66293a71622d2d9d6378cca0c6879680b72878a0eceb1cb63c25e7b4e6aaae19",
+  "reference_cells": {
+    "status": "missing"
+  },
+  "reviewer_calibration": {
+    "status": "missing"
+  },
+  "spatial_holdout": {
+    "status": "missing"
+  },
+  "study_area": "Chiang Rai / Mae Sai 2024"
+}

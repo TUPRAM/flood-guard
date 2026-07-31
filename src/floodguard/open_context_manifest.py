@@ -122,7 +122,7 @@ def open_context_sources() -> tuple[OpenContextSource, ...]:
             source_group="osm_geofabrik",
             study_area="Thailand",
             source_url="https://download.geofabrik.de/asia/thailand.html",
-            download_url="http://download.geofabrik.de/asia/thailand-latest.osm.pbf",
+            download_url="https://download.geofabrik.de/asia/thailand-latest.osm.pbf",
             file_name="thailand-latest.osm.pbf",
             candidate_use="roads, bridges, facilities, and routing graph candidate",
             data_type="osm_pbf_extract",
@@ -265,7 +265,7 @@ def write_open_context_manifest(
         download=download,
         dem_path=dem_path,
         retrieved_at_utc=retrieved_at_utc,
-    ).to_csv(target, index=False)
+    ).to_csv(target, index=False, lineterminator="\n")
     return target
 
 

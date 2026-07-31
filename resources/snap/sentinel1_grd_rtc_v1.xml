@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graph id="FloodGuard-Sentinel1-GRD-RTC-v1">
+  <version>1.0</version>
+
+  <node id="Read">
+    <operator>Read</operator>
+    <sources />
+    <parameters>
+      <file>${input}</file>
+    </parameters>
+  </node>
+
+  <node id="Apply-Orbit-File">
+    <operator>Apply-Orbit-File</operator>
+    <sources>
+      <source refid="Read" />
+    </sources>
+    <parameters>
+      <orbitType>Sentinel Precise (Auto Download)</orbitType>
+      <polyDegree>3</polyDegree>
+      <continueOnFail>false</continueOnFail>
+    </parameters>
+  </node>
+
+  <node id="ThermalNoiseRemoval">
+    <operator>ThermalNoiseRemoval</operator>
+    <sources>
+      <!--
+        The approved 2024 products were produced by Sentinel-1 IPF 3.80.
+        Since IPF 2.90, no-value GRD border samples are already set to zero.
+        Applying SNAP's legacy border-noise operator to CDSE COG_SAFE metadata
+        is both unnecessary and currently fails while looking for the older
+        noiseVectorList element. The explicit valid-data mask retains zeros as
+        unsupported observations downstream.
+      -->
+      <sourceProduct refid="Apply-Orbit-File" />
+    </sources>
+    <parameters>
+      <selectedPolarisations>VV,VH</selectedPolarisations>
+      <removeThermalNoise>true</removeThermalNoise>
+      <outputNoise>false</outputNoise>
+      <reIntroduceThermalNoise>false</reIntroduceThermalNoise>
+    </parameters>
+  </node>
+
+  <node id="Calibration">
+    <operator>Calibration</operator>
+    <sources>
+      <source refid="ThermalNoiseRemoval" />
+    </sources>
+    <parameters>
+      <auxFile>Latest Auxiliary File</auxFile>
+      <outputImageInComplex>false</outputImageInComplex>
+      <outputImageScaleInDb>false</outputImageScaleInDb>
+      <createGammaBand>false</createGammaBand>
+      <createBetaBand>false</createBetaBand>
+      <selectedPolarisations>VV,VH</selectedPolarisations>
+      <outputSigmaBand>false</outputSigmaBand>
+      <outputGammaBand>false</outputGammaBand>
+      <outputBetaBand>true</outputBetaBand>
+    </parameters>
+  </node>
+
+  <node id="Subset">
+    <operator>Subset</operator>
+    <sources>
+      <source refid="Calibration" />
+    </sources>
+    <parameters>
+      <sourceBands>Beta0_VV,Beta0_VH</sourceBands>
+      <geoRegion>${subsetWkt}</geoRegion>
+      <subSamplingX>1</subSamplingX>
+      <subSamplingY>1</subSamplingY>
+      <fullSwath>false</fullSwath>
+      <copyMetadata>true</copyMetadata>
+    </parameters>
+  </node>
+
+  <node id="Terrain-Flattening">
+    <operator>Terrain-Flattening</operator>
+    <sources>
+      <source refid="Subset" />
+    </sources>
+    <parameters>
+      <sourceBands>Beta0_VV,Beta0_VH</sourceBands>
+      <demName>External DEM</demName>
+      <demResamplingMethod>BILINEAR_INTERPOLATION</demResamplingMethod>
+      <externalDEMFile>${externalDem}</externalDEMFile>
+      <externalDEMNoDataValue>0</externalDEMNoDataValue>
+      <!--
+        Copernicus DEM GLO-30 is delivered in EGM2008 orthometric heights.
+        SNAP applies its bundled EGM96 correction as the documented operator
+        path; the datum approximation remains explicit in the run receipt.
+      -->
+      <externalDEMApplyEGM>true</externalDEMApplyEGM>
+      <outputSimulatedImage>false</outputSimulatedImage>
+      <outputSigma0>false</outputSigma0>
+      <nodataValueAtSea>false</nodataValueAtSea>
+      <additionalOverlap>0.1</additionalOverlap>
+      <oversamplingMultiple>1.0</oversamplingMultiple>
+    </parameters>
+  </node>
+
+  <node id="Terrain-Correction">
+    <operator>Terrain-Correction</operator>
+    <sources>
+      <source refid="Terrain-Flattening" />
+    </sources>
+    <parameters>
+      <sourceBands>Gamma0_VV,Gamma0_VH</sourceBands>
+      <demName>External DEM</demName>
+      <externalDEMFile>${externalDem}</externalDEMFile>
+      <externalDEMNoDataValue>0</externalDEMNoDataValue>
+      <!-- Convert the same orthometric DEM for Range-Doppler geometry. -->
+      <externalDEMApplyEGM>true</externalDEMApplyEGM>
+      <demResamplingMethod>BILINEAR_INTERPOLATION</demResamplingMethod>
+      <imgResamplingMethod>BILINEAR_INTERPOLATION</imgResamplingMethod>
+      <pixelSpacingInMeter>10</pixelSpacingInMeter>
+      <pixelSpacingInDegree>0</pixelSpacingInDegree>
+      <mapProjection>EPSG:32647</mapProjection>
+      <alignToStandardGrid>true</alignToStandardGrid>
+      <!--
+        SNAP interprets the standard-grid origin as a pixel-centre coordinate.
+        The approved FloodGuard grid has edges on 10 m multiples, so its pixel
+        centres are at 5 + 10n.  Using zero here would create a half-pixel
+        offset and force an avoidable interpolation during canonical clipping.
+      -->
+      <standardGridOriginX>5</standardGridOriginX>
+      <standardGridOriginY>5</standardGridOriginY>
+      <nodataValueAtSea>false</nodataValueAtSea>
+      <saveDEM>false</saveDEM>
+      <saveLatLon>false</saveLatLon>
+      <saveIncidenceAngleFromEllipsoid>false</saveIncidenceAngleFromEllipsoid>
+      <saveLocalIncidenceAngle>true</saveLocalIncidenceAngle>
+      <saveProjectedLocalIncidenceAngle>true</saveProjectedLocalIncidenceAngle>
+      <saveSelectedSourceBand>true</saveSelectedSourceBand>
+      <saveLayoverShadowMask>true</saveLayoverShadowMask>
+      <outputComplex>false</outputComplex>
+      <applyRadiometricNormalization>false</applyRadiometricNormalization>
+      <saveSigmaNought>false</saveSigmaNought>
+      <saveGammaNought>false</saveGammaNought>
+      <saveBetaNought>false</saveBetaNought>
+    </parameters>
+  </node>
+
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <source refid="Terrain-Correction" />
+    </sources>
+    <parameters>
+      <file>${output}</file>
+      <!-- BEAM-DIMAP preserves SNAP band names for deterministic extraction. -->
+      <formatName>BEAM-DIMAP</formatName>
+      <deleteOutputOnFailure>true</deleteOutputOnFailure>
+      <writeEntireTileRows>true</writeEntireTileRows>
+      <clearCacheAfterRowWrite>true</clearCacheAfterRowWrite>
+    </parameters>
+  </node>
+</graph>

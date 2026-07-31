@@ -1,0 +1,521 @@
+.consoleHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+  padding: 2px 0 14px;
+}
+
+.consoleHeader h1 {
+  max-width: 760px;
+  margin: 3px 0 7px;
+  font-size: clamp(1.65rem, 3vw, 2.8rem);
+  line-height: 1.02;
+  letter-spacing: -.04em;
+}
+
+.consoleHeader p:not(:global(.eyebrow)) {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.consoleSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(105px, 1fr));
+  gap: 8px;
+}
+
+.consoleSummary div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.consoleSummary span,
+.consoleSummary b {
+  display: block;
+}
+
+.consoleSummary span {
+  color: var(--muted);
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.consoleSummary b {
+  margin-top: 4px;
+  font-size: .8rem;
+  overflow-wrap: anywhere;
+}
+
+.consoleNav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 5px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 70%);
+}
+
+.consoleNav a {
+  min-height: 44px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: .68rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.consoleNav a:first-child {
+  color: #fff;
+  background: var(--navy);
+}
+
+.consoleGrid {
+  display: grid;
+  grid-template-columns: 245px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+}
+
+.runRail {
+  position: sticky;
+  top: 12px;
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f8fbff;
+  box-shadow: var(--shadow);
+}
+
+.runRail h2 {
+  margin: 3px 0 0;
+  font-size: 1rem;
+}
+
+.runList {
+  display: grid;
+  gap: 7px;
+}
+
+.runButton,
+.futureRun {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+}
+
+.runButton {
+  cursor: pointer;
+}
+
+.runButton:hover,
+.runButton:focus-visible,
+.selectedRun {
+  border-color: var(--teal);
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+
+.runButton span,
+.futureRun span {
+  color: var(--teal);
+  font-size: .58rem;
+  font-weight: 850;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.runButton b,
+.futureRun b {
+  overflow-wrap: anywhere;
+  font-size: .72rem;
+}
+
+.runButton small,
+.futureRun small {
+  color: var(--muted);
+  font-size: .62rem;
+  line-height: 1.4;
+}
+
+.futureRun {
+  border-style: dashed;
+  background: #f3f7fb;
+}
+
+.railGate {
+  margin: 0;
+  padding: 10px;
+  border-left: 3px solid var(--danger);
+  border-radius: 6px;
+  color: #73251e;
+  background: var(--red-soft);
+  font-size: .62rem;
+  line-height: 1.45;
+}
+
+.consoleMain {
+  min-width: 0;
+}
+
+.consoleMain > :first-child {
+  margin-top: 0;
+}
+
+.scopeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.scopeCard {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-top: 4px solid #82959b;
+  border-radius: 11px;
+  background: #f8faf9;
+}
+
+.scopeCard > span {
+  color: var(--muted);
+  font-size: .61rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.scopeCard > b {
+  font-size: 1rem;
+}
+
+.scopeCard > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .64rem;
+  line-height: 1.42;
+}
+
+.executed,
+.eligible {
+  border-top-color: #3182bd;
+  background: #eef6fd;
+}
+
+.executed > b,
+.eligible > b {
+  color: #08519c;
+}
+
+.not_run,
+.blocked {
+  border-top-color: var(--danger);
+  background: #fff7f5;
+}
+
+.not_run > b,
+.blocked > b {
+  color: var(--danger);
+}
+
+.checking {
+  border-top-color: #4f8194;
+  background: #f1f7f9;
+}
+
+.technicalDetails {
+  margin-top: 13px;
+  border-top: 1px solid var(--line);
+}
+
+.technicalDetails > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 2px 0;
+  color: var(--teal);
+  font-size: .69rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.technicalDetails > summary::before {
+  content: "+";
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--teal);
+}
+
+.technicalDetails[open] > summary::before {
+  content: "−";
+}
+
+.receiptGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.receiptCard {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, #fff, #f4f8fd);
+}
+
+.receiptCard h3 {
+  margin: 3px 0 11px;
+  font-size: .92rem;
+}
+
+.receiptCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.receiptCardHeader p {
+  margin: 0;
+}
+
+.receiptList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.receiptList div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.receiptList dt {
+  color: var(--muted);
+  font-size: .64rem;
+}
+
+.receiptList dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .66rem;
+  font-weight: 800;
+}
+
+.validationList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.validationList li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: #e7f2fb;
+  color: #08519c;
+  font-size: .64rem;
+  font-weight: 800;
+}
+
+.validationList li::before {
+  content: "✓";
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #3182bd;
+  color: #fff;
+  font-size: .58rem;
+}
+
+.histogram {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  align-items: end;
+  gap: 4px;
+  height: 78px;
+  margin: 0;
+  padding: 7px 0 0;
+  border-bottom: 1px solid var(--line);
+  list-style: none;
+}
+
+.histogram li {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.histogram span {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #6baed6, #08519c);
+}
+
+.histogramAxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .58rem;
+}
+
+.metricStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.metricStrip div {
+  min-width: 0;
+  padding: 7px;
+  border-radius: 8px;
+  background: #edf5fc;
+  text-align: center;
+}
+
+.metricStrip span,
+.metricStrip strong {
+  display: block;
+}
+
+.metricStrip span {
+  color: var(--muted);
+  font-size: .57rem;
+  text-transform: uppercase;
+}
+
+.metricStrip strong {
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .72rem;
+}
+
+.blockedReceipt {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #ead08e;
+  border-radius: var(--radius-md);
+  background: #fff9e8;
+  color: #684b00;
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.visuallyHidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (max-width: 1100px) {
+  .consoleHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .consoleSummary {
+    width: 100%;
+  }
+
+  .consoleGrid {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .scopeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receiptGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .receiptCard:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .consoleHeader {
+    gap: 12px;
+  }
+
+  .consoleSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .consoleGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .runRail {
+    position: static;
+  }
+
+  .runList {
+    grid-template-columns: 1fr;
+  }
+
+  .receiptGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receiptCard:last-child {
+    grid-column: auto;
+  }
+}

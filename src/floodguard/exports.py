@@ -91,7 +91,11 @@ def _write_joined_geojson(
 
     target = Path(output_path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(output, indent=2), encoding="utf-8")
+    target.write_text(
+        json.dumps(output, indent=2),
+        encoding="utf-8",
+        newline="\n",
+    )
     return target
 
 

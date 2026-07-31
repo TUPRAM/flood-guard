@@ -17,11 +17,11 @@
 - Minimum WorldPop bbox coverage: 97.5%
 - Minimum road-snap population coverage: 100.0%
 - Minimum DEM population coverage: 81.9%
-- Highest expected-exposure proxy: TH570906 / Wiang Phang Kham
+- Highest expected-exposure proxy: TH570905 / Si Mueang Chum
 
 ## Material Limitations
 
-- The manual weak-reference polygon does not overlap official Thailand ADM3 geometry; it is nearby cross-border calibration evidence only.
+- The manual weak-reference polygon does not overlap the HDX COD-AB Thailand ADM3 candidate geometry; it is nearby cross-border calibration evidence only.
 - WorldPop is a 2020 modeled population surface, not a current census.
 - OSM roads, bridge tags, and facilities are community-mapped and unverified for emergency operations.
 - DEM coverage can be partial along the eastern edge of Mae Sai because the selected N20/E099 tile ends at 100E.

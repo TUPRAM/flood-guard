@@ -240,7 +240,11 @@ Outputs:
 - `outputs/action_brief_<subdistrict_id>.md` files
 - `outputs/mae_sai_action_brief_<subdistrict_id>.md` files
 
-It embeds GeoJSON and Markdown directly in the file and uses Leaflet from CDN for map rendering. It has no backend or build step.
+It embeds GeoJSON, Markdown, and the pinned Leaflet 1.9.4 runtime directly in
+the file. Embedded decision vectors and a text equivalent work without a
+network; OpenStreetMap tiles are optional online context with a visible
+tile-error/offline fallback. It has no backend, runtime package install, or
+browser-side `fetch` dependency.
 
 Dashboard v2 required controls:
 
@@ -385,7 +389,7 @@ Required columns:
 - `reason_blocked`
 - `retrieved_at_utc`
 
-Current selected pre/post COG rows are `download_status=downloaded_outside_git` with `sha256_status=recorded`. `processing_allowed` remains `False` until a reference-mask source is cleared and the Mae Sai file manifest validates. When `CDSE_ACCESS_TOKEN` or `CDSE_USERNAME`/`CDSE_PASSWORD` are unavailable, regenerated rows may instead show `download_status=blocked_missing_cdse_credentials`.
+The active same-track pair is the original-SAFE pre-event product `aaaef3af-fa49-4115-bf0f-f54175e7aedf` and post-event product `5251b74b-0bbd-4365-9eb4-fa33292e175a`. Both archives are registered outside Git with current SHA-256 values. The earlier September 6 / September 15 COG pair is retained only as retired provenance and must not occupy an active baseline role. The official/qualified `processing_allowed` gate remains `False` until an eligible reference source clears the file manifest; the separate manual weak-reference lane supports only the explicitly labelled cross-border candidate baseline.
 
 ## Public Reference Candidate Manifest
 
@@ -734,7 +738,7 @@ Reporting grain is one HDX COD-AB ADM3 feature. Current Mae Sai coverage contain
 
 WorldPop population is a 2020 modeled surface. `exposure_0_100` is a relative expected-exposure proxy normalized across the eight units, not an exposed-person count. OSM roads, bridges, shelters, and facilities are candidate context and are not verified emergency infrastructure. Road disruption and access loss are heuristic candidate outputs, not observed closures. Vulnerability uses a pre-disruption terrain/remoteness proxy and is not demographic vulnerability.
 
-The manual weak-reference geometry does not overlap official Thailand ADM3 geometry. Its candidate validation/ML metrics remain nearby cross-border calibration evidence only and must not be described as direct validation of the ADM3 summaries.
+The manual weak-reference geometry does not overlap the HDX COD-AB Thailand ADM3 candidate geometry. Its candidate validation/ML metrics remain nearby cross-border calibration evidence only and must not be described as direct validation of the ADM3 summaries. Boundary authority and vintage still require agency confirmation.
 
 ## Mae Sai Reference Candidate Decision
 
@@ -745,7 +749,7 @@ The manual weak-reference geometry does not overlap official Thailand ADM3 geome
 - UNOSAT/UN Thailand public report evidence
 - NASA coarse flood products
 
-The current decision selects Sentinel Asia / MBRSC as the first practical public reference-candidate lane, not a cleared validation mask and not ML labels. Real non-ML SAR baseline processing remains blocked until file-level and reference-mask gates pass.
+The current decision selects Sentinel Asia / MBRSC as the first practical public reference-candidate lane, not a cleared validation mask and not ML labels. The separate checksum-bound cross-border weak-reference non-ML SAR baseline has run in non-operational candidate scope. Qualified Mae Sai validation, ML-label use, decision eligibility, and official processing remain blocked until the reference authority and permitted-use gates pass.
 
 ## Dashboard v9 Dataset Mode Switch
 
@@ -783,6 +787,27 @@ The v10 visual contract includes:
 - mode-specific legends, subdistrict selectors, layer toggles, reports, briefs, and browser-only exports
 
 The metadata/blocker mode must clear decision geometry from the map and show only readiness boundaries. A disabled or unavailable layer must not be silently represented as zero impact.
+
+## Dashboard v11 Semantic Presentation Layer
+
+Dashboard v11 keeps the v10 dataset contracts and adds semantic map density, bilingual operation, and a judge-presentation state. These are presentation rules only; they do not change source quality, validation status, FPPS formulas, or the weak-reference boundary.
+
+Mae Sai map density rules:
+
+- below zoom level `12`, show only `candidate_closed`, `candidate_delayed`, or road segments with `road_disruption_probability_0_1 >= 0.20`
+- at zoom level `12` or closer, show all candidate road segments in the selected ADM3 unit and suppress roads outside it
+- below zoom level `12`, aggregate candidate facilities into one cluster marker per ADM3 unit
+- at zoom level `12` or closer, show individual facility symbols for hospital, clinic, other healthcare, school, shelter, emergency service, and community facility candidates
+- selecting an ADM3 unit must zoom to at least level `12`, preserve the selected unit at full emphasis, and dim surrounding ADM3 polygons without removing geographic context
+- window resize, language changes, and judge-mode changes must preserve the selected-area map view rather than resetting to the regional extent
+
+The English/Thai toggle must translate operational controls, dataset names, evidence labels, warnings, legends, map-detail status, and ADM3 display names where Thai names exist. Thai mode uses a Thai-capable font stack headed by `Noto Sans Thai` and `Leelawadee UI`. Identifiers, numeric values, source product ids, and metric definitions remain unchanged.
+
+The selected-unit Sentinel-1 drawer embeds pre-event date/product, post-event date/product, mean flood probability, P90 flood probability, binary flood share, and `mean_combined_sar_change_score` from `outputs/mae_sai_adm3_sar_context.csv`. It must always say that these are derived ADM3 statistics from a weak-reference candidate, not official validation, not field validated, and not an official warning.
+
+Provenance is shown first as compact source-time, reference-status, and processing-scope rows. Full Sentinel-1 product ids and assumptions remain available through expandable technical details.
+
+Judge presentation mode may hide scenario controls, export controls, context thumbnails, the local data library, and long report bodies. It must retain the active dataset selector, selected ADM3 selector, KPI strip, map, selected-unit evidence, source-quality indicators, Sentinel-1 drawer, compact provenance, and the always-visible safety warning. The page remains static HTML with embedded data, no backend, and no browser-side `fetch`.
 
 ## Metadata-Only Ingestion Manifest
 
@@ -828,7 +853,7 @@ The ingestion skeleton may only write metadata outputs with explicit metadata su
 
 ML-label use is a separate gate. It may only be marked allowed when `ml_label_use_allowed=yes`.
 
-`scripts/validate_mae_sai_file_manifest.py` provides a no-download dry-run file-manifest validator. It must explain which reference-mask, pre-event SAR, or post-event SAR row blocks the real Mae Sai non-ML baseline. It may exit successfully in the current blocked state only when run with `--allow-blocked`.
+`scripts/validate_mae_sai_file_manifest.py` provides a no-download dry-run file-manifest validator. It explains which reference-mask, pre-event SAR, or post-event SAR row blocks qualified processing. The current checksum-bound original-SAFE pair and manual cross-border mask support only the separate weak-reference candidate calibration lane; `--allow-blocked` reports that qualified validation, ML-label use, and decision promotion remain blocked without treating the candidate run as official evidence.
 
 ## Local Data Library Manifest
 
@@ -1213,7 +1238,7 @@ Source Sentinel-1 ZIPs, SAFE packages, TIFFs, and manual GeoPackages must remain
 
 ## Mae Sai Weak-Reference Decision Input Output
 
-`outputs/mae_sai_subdistrict_flood_inputs.csv` turns candidate Sentinel-1 flood probability and checksum-tracked open context into the FPPS input contract at HDX COD-AB ADM3 grain. The current output contains eight official Mae Sai reporting polygons. It remains a weak-reference, non-operational candidate analysis.
+`outputs/mae_sai_subdistrict_flood_inputs.csv` turns candidate Sentinel-1 flood probability and checksum-tracked open context into the FPPS input contract at HDX COD-AB ADM3 grain. The current output contains eight Mae Sai reporting polygons from the HDX COD-AB candidate boundary context; they are not represented as current agency-confirmed geometry. The output remains a weak-reference, non-operational candidate analysis.
 
 Required columns:
 
@@ -1290,7 +1315,7 @@ All three derivatives are WGS84 GeoJSON, contain no source file paths, and are s
 
 ## Mae Sai Weak-Label ML Experiment Output
 
-`outputs/mae_sai_weak_label_ml_metrics.csv`, `outputs/mae_sai_weak_label_ml_prediction_manifest.csv`, and `outputs/mae_sai_weak_label_ml_summary.md` record the first small auditable ML experiment against the manual QGIS weak-reference mask.
+`outputs/mae_sai_weak_label_ml_metrics.csv`, `outputs/mae_sai_weak_label_ml_prediction_manifest.csv`, and `outputs/mae_sai_weak_label_ml_summary.md` preserve the first small auditable ML screening experiment against the manual QGIS weak-reference mask. That historical experiment used the now-retired September 6 / September 15 COG pair. It is not comparable to the active same-track original-SAFE baseline and must not be regenerated as current evidence.
 
 This lane is explicitly a weak-label experiment. It is not official labels, not field validation, not official flood validation, not a real-time product, and not an emergency warning.
 
@@ -1362,7 +1387,7 @@ Required wording:
 - `Not official labels.`
 - `Not field validation.`
 
-The ML output may feed a candidate `flood_probability_0_1` decision-layer run only when `can_feed_decision_layer=True`, which requires the holdout metrics to improve or complement the non-ML threshold baseline. If that flag is false, the ML probability must remain report-only.
+The historical weak-label ML output must remain report-only and records `can_feed_decision_layer=False`. Improvement or complementarity against the same weak-reference mask is screening evidence, not permission to enter the decision layer. `scripts/run_mae_sai_weak_label_ml.py` now fails before raster access for the current cross-border reference. Its legacy writer also rejects a structurally complete summary row because status literals and hash-shaped strings are not signed evidence. Any new real-data model lane must go through `floodguard.controlled_experiment`, which loads and verifies the signed acquisition, reviewer, holdout, reference-cell, policy, and bounded-execution receipts; reconciles their identities and bytes; and keeps final-holdout truth isolated until evaluation. The current cross-border manual mask does not meet that contract. Any future promotion requires an independently reviewed immutable labelset, untouched geographic evaluation, explicit calibration, and a separate safety decision.
 
 Source Sentinel-1 ZIPs, SAFE packages, TIFFs, manual GeoPackages, and full per-pixel ML prediction tables must remain outside Git unless a later task defines a bounded derived-output format.
 
@@ -1521,7 +1546,7 @@ GeoJSON fixtures should use WGS84 coordinates (`EPSG:4326`) and small synthetic 
 
 ## Mae Sai Weak-Reference Action Brief
 
-`outputs/mae_sai_action_brief_TH570906.md` is the current highest-priority bilingual real-study-area candidate action brief. It is generated only from committed derived outputs; the generator does not read or copy raw Sentinel-1 rasters or the manual GeoPackage.
+`outputs/mae_sai_action_brief_TH570903.md` is the current highest-priority bilingual real-study-area candidate action brief. It is generated only from committed derived outputs; the generator does not read or copy raw Sentinel-1 rasters or the manual GeoPackage.
 
 Required derived inputs:
 
@@ -1552,4 +1577,69 @@ The brief must include this wording exactly:
 Based on weak-reference candidate flood analysis. Non-operational. Not official warning. Use only for planning/demo.
 ```
 
-The current brief geometry is HDX COD-AB ADM3 `TH570906 / Wiang Phang Kham`. Weak-label metrics may be included as a cross-border calibration cross-check, but the brief must state that the current FPPS uses the non-ML ADM3 flood-probability proxy.
+The current brief geometry is HDX COD-AB ADM3 candidate `TH570903 / Ko Chang`. Historical weak-label ML metrics are excluded because they were produced from the retired COG pair and are not comparable to the active same-track original-SAFE baseline. The brief states that the current FPPS uses the non-ML ADM3 flood-probability proxy.
+
+## Mae Sai Study-Area Bundle
+
+`services/api/data/study_area_bundles/mae_sai_candidate_v1.json` is the
+fail-closed API binding for the committed Mae Sai open-context candidate. It
+pins the study-area identity, data mode, operational state, expected CRS and
+bounds, exact eight area IDs, assumptions, and every served layer.
+
+Each layer entry binds:
+
+- a repository-relative path and SHA-256;
+- source commit and timestamp;
+- exact feature count and allowed geometry types;
+- the area join key and required properties;
+- source, licence, and attribution;
+- confidence, processing permission, decision eligibility, and blocked reason.
+
+The adapter rejects missing or duplicate areas, unknown area joins, invalid or
+out-of-bounds coordinates, substituted bytes, missing attribution, unsupported
+geometry, and any candidate property that claims `official_warning=true`.
+Failure is returned as unavailable/blocked Mae Sai data; the fixture profile is
+never substituted.
+
+## Mae Sai Scenario Inputs
+
+The server-owned nearest-facility scenario foundation uses three compact
+committed artifacts:
+
+- `outputs/mae_sai_population_nodes.csv`;
+- `outputs/mae_sai_access_edges.csv`;
+- `outputs/mae_sai_facility_context.csv`.
+
+`outputs/mae_sai_scenario_inputs_manifest.json` binds all three to exact role,
+columns, row count, SHA-256, study-area identity, candidate/non-operational
+state, shared data version, generating commit, source/generated timestamps,
+licences, confidence, processing/decision eligibility, exact blocker,
+assumptions, and a canonical self-hash.
+These are the minimum persisted analysis inputs, not a replacement or
+redistribution package for the original source datasets.
+
+The closed server registry may select only explicitly pinned graph nodes or
+edges. It recomputes baseline/scenario nearest-facility shortest-path access and
+equity using the existing domain functions. Facility capacity in a scenario is
+planning metadata because the current access contract is not capacity-aware
+2SFCA. FPPS and A-E class are not recalculated unless a future separately tested
+scenario contract supplies every required score component.
+
+Scenario responses must include a deterministic run ID, backend-config version,
+access-method identifier, exact accepted parameters, baseline/scenario area
+values, overall values, input-manifest lineage, candidate warnings, and
+`fpps_recalculated=false`. The browser only presents those values.
+
+## Probability-Raster Road and Facility Consequences
+
+`src/floodguard/probability_consequences.py` is the separate trusted bridge from
+one immutable class-1 probability raster to road-corridor, bridge, and facility
+evidence. Its signed receipt binds the model manifest, raster receipt and bytes,
+probability grid, road/facility geometry receipts and bytes, buffer method,
+statistics, eligibility, and safety semantics.
+
+Candidate model or geometry evidence requires explicit report-only mode and
+must retain `can_feed_decision_layer=false`. Probability never establishes an
+observed road closure, safe route, facility operation, or facility suitability.
+The complete field and substitution contract is defined in
+`docs/probability_consequence_contract.md`.

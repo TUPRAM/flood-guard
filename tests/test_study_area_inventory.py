@@ -25,14 +25,16 @@ def test_chiang_rai_inventory_records_no_download_and_blockers() -> None:
     text = DOC.read_text(encoding="utf-8")
 
     assert "download not performed" in text
-    assert "exact flood peak/reference mask is not locked" in text
-    assert "validation mask licensing remains unresolved" in text
+    assert "same-track original SAFE pair selected" in text
+    assert "current archive checksum must pass each run" in text
     assert "UNOSAT/UNITAR v1 Mae Sai flood reference target" in text
     assert "redistribution license unresolved" in text
-    assert "b09f96ca-4a60-43e7-9b8d-158022f0e5bf" in text
-    assert "20a9c3b8-37df-46d5-81d8-d63c7e460225" in text
+    assert "aaaef3af-fa49-4115-bf0f-f54175e7aedf" in text
+    assert "5251b74b-0bbd-4365-9eb4-fa33292e175a" in text
+    assert "retired pre-event COG" in text
+    assert "retired post-event COG" in text
     assert "docs/mae_sai_pair_decision_note.md" in text
-    assert "planning pair selected, final processing blocked" in text
+    assert "They cannot be selected by the baseline workflow" in text
 
 
 def test_hat_yai_inventory_lists_focused_cdse_candidates_and_access_notes() -> None:

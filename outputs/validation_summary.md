@@ -18,13 +18,13 @@ Generated from fixture-backed outputs. This is not a real flood validation repor
 
 - Local THEOS-2, Sentinel-1, and DEM assets are cataloged as context/readiness lanes with checksums or blocker states where available.
 - Sentinel-1 and DEM context quicklooks are not flood labels, not reference masks, and not agency flood products.
-- Real Mae Sai validation is blocked because provider response pending items still control reference-mask use, local processing, and redistribution/reference-only terms.
+- Qualified Mae Sai validation is blocked because provider response pending items still control reference-mask use, validation, ML-label use, derived reporting, and redistribution/reference-only terms.
 
 ## What Remains Blocked
 
-- Real IoU, F1/Dice, precision, recall, and area error remain blocked until a legal reference mask exists.
-- Real Sentinel-1 baseline processing remains blocked until local paths, checksums, timing, provenance, and reference-mask gates pass.
-- Real-data ML remains blocked until the non-ML baseline and legal label gates pass.
+- Qualified Thailand event-reference IoU, F1/Dice, precision, recall, and area error remain blocked until an eligible reference mask exists.
+- A checksum-bound, non-operational cross-border weak-reference Sentinel-1 baseline exists; it is calibration evidence, not Mae Sai Thailand validation.
+- Current-pair real-data ML remains blocked until qualified labels, reviewer calibration, and immutable spatial partitions pass.
 
 ## Real Mae Sai Gate Update
 

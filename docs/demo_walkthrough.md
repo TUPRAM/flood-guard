@@ -7,7 +7,6 @@ This walkthrough is for the static fixture-backed dashboard at `outputs/dashboar
 Regenerate the dashboard:
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
 uv run python scripts/generate_sample_priority.py
 uv run python scripts/generate_sample_decision_outputs.py
 uv run python scripts/smoke_dashboard.py
@@ -51,14 +50,14 @@ http://localhost:8000/dashboard.html
    - Explain the stress case: closing the selected road increases people losing 30-minute access by `50` in the fixture.
    - This is why road-risk and access-loss are part of the decision layer.
 
-7. Open `Context Assets`.
-   - Sentinel-1 quicklooks are SAR context only.
-   - DEM is terrain context only.
-   - THEOS-2 is optical context only.
-   - None of these are legal flood labels in the current dashboard.
+7. Switch to `Mae Sai weak-reference candidate`.
+   - At regional zoom, point out that only priority road candidates and ADM3 facility clusters are shown.
+   - Select `TH570903 / Ko Chang`; the map zooms to selected-area detail, dims surrounding ADM3 units, and reveals typed candidate facilities and detailed roads.
 
-8. Open `Data Readiness`.
-   - End with the blocker: real Mae Sai validation waits for provider/legal clearance, local paths, SHA-256 checksums, and a locked pre/post Sentinel-1 pair.
+8. Open `Sentinel-1 evidence`, then enter `Judge mode`.
+   - Show the pre/post acquisition pair, selected-unit SAR change, flood-probability summaries, source quality, and compact provenance.
+   - State that this is weak-reference candidate evidence, not official validation or field validation.
+   - Use the English/Thai (`EN / TH`) toggle once to show bilingual readiness, then return to the presentation language.
 
 ## 10 Minute Expanded Path
 
@@ -96,21 +95,22 @@ http://localhost:8000/dashboard.html
    - `Download current brief`
    - `Download filtered GeoJSON`
 
-9. Scroll to the validation/report section.
-   - Explain that fixture SAR metrics prove wiring only.
-   - Real IoU, F1/Dice, precision, recall, and area error remain blocked until a legal reference mask exists.
+9. Switch to the Mae Sai weak-reference dataset and inspect a selected ADM3 unit.
+   - Regional zoom intentionally suppresses low-priority road detail and clusters facilities.
+   - Selected-area detail reveals all candidate roads and separate hospital, clinic, other healthcare, school, shelter, emergency-service, and community symbols where available.
+   - The Sentinel-1 drawer reports derived ADM3 statistics from the real pre/post pair; it does not claim official validation.
 
-10. Close with readiness:
-   - UNOSAT/UNITAR and GISTDA requests are logged as sent and waiting for response.
-   - THEOS-2, SAR quicklooks, and DEM previews support context only.
-   - The next real-data step is legal/file manifest clearance, not ML.
+10. Close in `Judge mode`:
+   - Secondary controls and long reports are hidden, but the weak-reference warning, source quality, SAR evidence, and provenance remain visible.
+   - THEOS-2, SAR quicklooks, and DEM previews remain context only.
+   - Official validation remains blocked; current Mae Sai metrics are against a manually digitized weak-reference candidate and are not field validated.
 
 ## Exact Phrases To Use
 
 - "This is a fixture-backed decision demo."
 - "This is non-operational and not an official warning."
 - "The context assets are not flood labels or reference masks."
-- "Real-data ML starts only after legal reference masks and the non-ML baseline are ready."
+- "The current real-data candidate is evaluated against a manual weak reference, not an official or field-validated mask."
 - "The differentiator is turning flood information into access, equity, road risk, scenario effects, and local action briefs."
 
 ## Avoid Saying

@@ -1025,7 +1025,7 @@ def build_context_quality_summary(
                 "minimum_dem_population_coverage_rate": round(
                     float(population_context["dem_population_coverage_rate"].min()), 4
                 ),
-                "manual_reference_overlaps_official_adm3": False,
+                "manual_reference_overlaps_thailand_adm3_candidate": False,
                 "confidence_class": "low",
                 "warning_text": CONTEXT_WARNING,
                 "assumptions": (
@@ -1075,7 +1075,7 @@ def build_context_quality_report(
             "",
             "## Material Limitations",
             "",
-            "- The manual weak-reference polygon does not overlap official Thailand ADM3 geometry; it is nearby cross-border calibration evidence only.",
+            "- The manual weak-reference polygon does not overlap the HDX COD-AB Thailand ADM3 candidate geometry; it is nearby cross-border calibration evidence only.",
             "- WorldPop is a 2020 modeled population surface, not a current census.",
             "- OSM roads, bridge tags, and facilities are community-mapped and unverified for emergency operations.",
             "- DEM coverage can be partial along the eastern edge of Mae Sai because the selected N20/E099 tile ends at 100E.",

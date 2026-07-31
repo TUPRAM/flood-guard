@@ -128,6 +128,11 @@ Blank disrupted edge times mean the edge is closed in the disrupted scenario.
 
 A population node counts as losing X-minute access only when it had normal access within X minutes and disrupted access is missing or greater than X minutes.
 
+This is nearest-facility shortest-path threshold analysis, not full 2SFCA.
+Facility capacity and competing catchment demand are not modeled. Do not label
+the current output as 2SFCA unless a later capacity-aware extension and its
+contract tests are implemented.
+
 ## 6. Scenario Mode
 
 Scenario mode reruns access loss and equity gap on fixture data only.
@@ -223,7 +228,7 @@ FloodGuard is not ready for real-data ML until these gates pass:
 4. Source files are tracked outside Git with paths, checksums, product IDs, and access terms.
 5. A deterministic non-ML baseline can report IoU, F1/Dice, precision, recall, area error, and calibration caveats.
 
-The first real-data ML step should be a small, validated experiment that feeds a flood probability or extent layer into the existing decision layer. Do not start with a deep model before label quality, licensing, and validation evidence are credible.
+The first real-data ML step is the report-only label factory: it ranks regions for human review and cannot feed flood probability, FPPS, action classes, or warnings. A later flood-model promotion programme is separate and remains blocked until label quality, licensing, calibration, and untouched geographic validation are credible.
 
 ## 12. Synthetic SAR Baseline
 
@@ -238,6 +243,10 @@ combined_drop_db = 0.60 * vv_drop_db + 0.40 * vh_drop_db
 flood_probability_0_1 = clamp((combined_drop_db - 0.5) / (4.0 - 0.5), 0, 1)
 binary_flood_extent = flood_probability_0_1 >= 0.5
 ```
+
+This formula is now explicitly versioned as `legacy_synthetic_sar_v1`. The real Mae Sai weak-reference extractor historically used `0.40 * vv_drop_db + 0.60 * vh_drop_db`; that behavior is preserved as `legacy_real_weak_sar_v1` so existing outputs remain reproducible. The two legacy schemas must not be mixed in one training or evaluation table.
+
+The flood-label factory uses `sar_change_v2`. Its trainable SAR core retains pre/post VV/VH and separate VV/VH dB drops. Ratio columns are deterministic transformations of the drops and a combined score is diagnostic only, not an additional independent signal. Every label-factory feature table, query model, and label release must record `feature_schema_version`.
 
 Validation metrics:
 

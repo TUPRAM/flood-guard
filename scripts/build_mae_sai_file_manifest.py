@@ -98,7 +98,9 @@ def _with_cdse_acquisition_rows(source_frame: pd.DataFrame) -> pd.DataFrame:
             frame.loc[matches, "local_path"] = row.get("local_path_hint", "not_acquired")
             frame.loc[matches, "sha256"] = row.get("sha256", "not_acquired")
             frame.loc[matches, "next_action"] = (
-                "reference-mask gate remains required before real non-ML SAR baseline"
+                "qualified, official, or decision-eligible processing remains blocked; "
+                "the non-operational cross-border calibration baseline is governed "
+                "separately by the manual-reference manifest"
             )
         else:
             frame.loc[matches, "local_path"] = "not_acquired"
@@ -126,7 +128,7 @@ def _with_manual_reference_candidate(source_frame: pd.DataFrame) -> pd.DataFrame
         "source_name": "FloodGuard manual QGIS Mae Sai weak-reference candidate",
         "study_area": "Chiang Rai / Mae Sai 2024",
         "source_url": "local manual QGIS weak-reference protocol",
-        "candidate_use": "manual weak-reference candidate for candidate validation metrics",
+        "candidate_use": "manual weak-reference candidate for cross-border calibration metrics",
         "geometry_access_status": "available" if file_found else "unresolved",
         "license_status": "confirmed" if candidate_metrics_allowed else "unresolved",
         "redistribution_status": "reference_only",

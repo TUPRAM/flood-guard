@@ -5,7 +5,12 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from floodguard.scoring import MissingColumnsError, score_subdistricts
+from floodguard.scoring import (
+    ACTION_REASON_CODES,
+    MissingColumnsError,
+    assign_action_reason_code,
+    score_subdistricts,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -24,6 +29,7 @@ def test_score_subdistricts_computes_expected_scores_and_columns() -> None:
         "subdistrict_name",
         "fpps_0_100",
         "action_class",
+        "action_reason_code",
         "top_reason",
         "confidence_class",
     }.issubset(result.columns)
@@ -51,6 +57,33 @@ def test_score_subdistricts_assigns_all_action_classes() -> None:
     assert "essential services" in result.loc[result["subdistrict_id"] == "FG-TB-003", "top_reason"].item()
     assert "Highest driver" in result.loc[result["subdistrict_id"] == "FG-TB-004", "top_reason"].item()
     assert "confidence is low" in result.loc[result["subdistrict_id"] == "FG-TB-005", "top_reason"].item()
+    reasons_by_id = dict(
+        zip(result["subdistrict_id"], result["action_reason_code"], strict=True)
+    )
+    assert reasons_by_id == {
+        "FG-TB-001": "life_safety_exposure",
+        "FG-TB-002": "critical_route_access",
+        "FG-TB-003": "essential_service_access",
+        "FG-TB-004": "resilience",
+        "FG-TB-005": "low_confidence",
+    }
+    assert set(reasons_by_id.values()).issubset(set(ACTION_REASON_CODES))
+
+
+def test_action_reason_code_distinguishes_the_two_class_e_paths() -> None:
+    low_confidence = {
+        "confidence_class": "low",
+        "fpps_0_100": 80,
+        "action_class": "E",
+    }
+    low_priority = {
+        "confidence_class": "high",
+        "fpps_0_100": 34.99,
+        "action_class": "E",
+    }
+
+    assert assign_action_reason_code(low_confidence) == "low_confidence"
+    assert assign_action_reason_code(low_priority) == "low_priority_score"
 
 
 def test_score_subdistricts_raises_clear_error_for_missing_columns() -> None:

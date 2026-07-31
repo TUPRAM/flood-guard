@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 import pandas as pd
 
 from floodguard.config import VALID_CONFIDENCE_CLASSES
+from floodguard.decision_safety import reject_label_factory_query_input
 
 SCORE_COMPONENTS: tuple[str, ...] = (
     "flood_likelihood_0_100",
@@ -39,6 +40,15 @@ COMPONENT_LABELS: dict[str, str] = {
     "road_criticality_0_100": "road criticality",
     "vulnerability_context_0_100": "vulnerability/context",
 }
+
+ACTION_REASON_CODES: tuple[str, ...] = (
+    "low_confidence",
+    "low_priority_score",
+    "life_safety_exposure",
+    "critical_route_access",
+    "essential_service_access",
+    "resilience",
+)
 
 
 class MissingColumnsError(ValueError):
@@ -150,9 +160,10 @@ def score_subdistricts(
 
     Returns:
         A new dataframe preserving input columns and adding:
-        `fpps_0_100`, `action_class`, and `top_reason`.
+        `fpps_0_100`, `action_class`, `action_reason_code`, and `top_reason`.
     """
 
+    reject_label_factory_query_input(frame, ingress="FPPS scoring")
     validate_required_columns(frame)
     validate_component_values(frame)
     active_weights = validate_weights(weights or DEFAULT_WEIGHTS)
@@ -167,6 +178,7 @@ def score_subdistricts(
     result["fpps_0_100"] = weighted_score.round(2)
 
     result["action_class"] = result.apply(assign_action_class, axis=1)
+    result["action_reason_code"] = result.apply(assign_action_reason_code, axis=1)
     result["top_reason"] = result.apply(generate_top_reason, axis=1)
 
     return result
@@ -192,12 +204,38 @@ def assign_action_class(row: pd.Series) -> str:
     return "D"
 
 
+def assign_action_reason_code(row: Mapping[str, object] | pd.Series) -> str:
+    """Return the canonical reason for the locked A-E action-class decision.
+
+    The code intentionally distinguishes low-confidence class E from a
+    numerically low-priority class E. It does not change FPPS weights or class
+    thresholds; it makes the existing policy machine-readable for every
+    presentation surface and export.
+    """
+
+    confidence = str(row["confidence_class"]).lower()
+    if confidence == "low":
+        return "low_confidence"
+    if float(row["fpps_0_100"]) < 35:
+        return "low_priority_score"
+
+    action_class = str(row.get("action_class") or assign_action_class(pd.Series(row)))
+    return {
+        "A": "life_safety_exposure",
+        "B": "critical_route_access",
+        "C": "essential_service_access",
+        "D": "resilience",
+        "E": "low_priority_score",
+    }[action_class]
+
+
 def generate_top_reason(row: pd.Series) -> str:
     """Generate a short human-readable reason for the action class."""
 
     action_class = str(row["action_class"])
+    reason_code = str(row.get("action_reason_code") or assign_action_reason_code(row))
     if action_class == "E":
-        if str(row["confidence_class"]).lower() == "low":
+        if reason_code == "low_confidence":
             return "Monitor and verify because confidence is low."
         return "Monitor and verify because the priority score is low."
 

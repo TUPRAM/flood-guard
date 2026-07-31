@@ -82,7 +82,7 @@ def run_dashboard_smoke_checks(
             DashboardSmokeCheck(
                 "leaflet_tile_probe",
                 True,
-                "Skipped network tile probe; Leaflet and OpenStreetMap tile configuration is present.",
+                "Skipped optional OSM tile probe; vendored Leaflet and embedded vector layers do not require network access.",
             )
         )
 
@@ -159,21 +159,81 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
         ),
         _contains(
             html,
-            "leaflet_css",
-            "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
-            "Leaflet CSS CDN reference is present.",
+            "embedded_leaflet_css",
+            'id="leaflet-vendored-css" data-leaflet-version="1.9.4"',
+            "Pinned Leaflet CSS is embedded in the dashboard artifact.",
         ),
         _contains(
             html,
-            "leaflet_js",
-            "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
-            "Leaflet JS CDN reference is present.",
+            "embedded_leaflet_js",
+            'id="leaflet-vendored-js" data-leaflet-version="1.9.4"',
+            "Pinned Leaflet JavaScript is embedded in the dashboard artifact.",
+        ),
+        _contains(
+            html,
+            "embedded_leaflet_license_notice",
+            "Leaflet 1.9.4 is vendored under BSD-2-Clause",
+            "The vendored Leaflet license notice is retained.",
+        ),
+        _absent(
+            html,
+            "no_leaflet_cdn_dependency",
+            "unpkg.com/leaflet",
+            "No Leaflet CDN dependency remains.",
         ),
         _contains(
             html,
             "osm_tile_layer",
             "tile.openstreetmap.org",
-            "OpenStreetMap tile layer is configured.",
+            "OpenStreetMap is configured only as an optional basemap.",
+        ),
+        _contains(
+            html,
+            "optional_tile_error_status",
+            "optionalBasemap.on('tileerror'",
+            "Optional tile failures expose an offline status without disabling vectors.",
+        ),
+        _contains(
+            html,
+            "offline_vector_status",
+            "Offline mode; embedded vector layers remain active",
+            "Offline mode explicitly preserves the embedded vector layers.",
+        ),
+        _contains(
+            html,
+            "offline_map_fallback",
+            'id="offline-map-fallback"',
+            "An embedded offline map text equivalent is present.",
+        ),
+        _contains(
+            html,
+            "offline_text_fallback",
+            "function showOfflineMapFallback()",
+            "A map-library failure still exposes the embedded text summary.",
+        ),
+        _contains(
+            html,
+            "vendored_leaflet_initializer",
+            "function startVendoredLeafletDashboard()",
+            "The embedded Leaflet runtime initializes without a CDN loader.",
+        ),
+        _contains(
+            html,
+            "accessible_map_text_equivalent",
+            "mapNode.insertAdjacentElement('afterend', offlineMapSummary)",
+            "The map text equivalent remains in the document after interactive enhancement.",
+        ),
+        _absent(
+            html,
+            "no_static_leaflet_css_dependency",
+            '<link rel="stylesheet" href="http',
+            "No external stylesheet is required during initial page load.",
+        ),
+        _absent(
+            html,
+            "no_static_leaflet_script_dependency",
+            '<script src="http',
+            "No external script is required during initial page load.",
         ),
         _contains(
             html,
@@ -201,6 +261,12 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
         ),
         _contains(
             html,
+            "hat_yai_fail_closed_readiness",
+            "Dashboard story: blocked and not enabled.",
+            "Hat Yai is exposed only as a blocked metadata-readiness record.",
+        ),
+        _contains(
+            html,
             "priority_polygon_renderer",
             "priorityLayer.addData({ type: 'FeatureCollection', features: visibleFeatures })",
             "Priority polygons are rendered from filtered embedded data.",
@@ -208,8 +274,32 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
         _contains(
             html,
             "road_risk_renderer",
-            "roadLayer.addData(dataset.roads",
-            "Road-risk segments are rendered from embedded data.",
+            "function visibleRoadFeatures",
+            "Road-risk segments use semantic regional/detail filtering.",
+        ),
+        _contains(
+            html,
+            "facility_cluster_renderer",
+            "function facilityClusterMarker",
+            "Facilities use regional clusters and selected-area symbols.",
+        ),
+        _contains(
+            html,
+            "bilingual_interface",
+            "function setLanguage",
+            "English/Thai interface switching is present.",
+        ),
+        _contains(
+            html,
+            "sar_evidence_drawer",
+            'id="sar-evidence-drawer"',
+            "Selected-area Sentinel-1 evidence drawer is present.",
+        ),
+        _contains(
+            html,
+            "judge_presentation_mode",
+            "function setJudgeMode",
+            "Judge presentation mode is present.",
         ),
         _contains(
             html,
@@ -240,6 +330,24 @@ def _static_checks(html: str) -> list[DashboardSmokeCheck]:
             "structured_evidence_panel",
             'class="evidence-grid"',
             "Structured selected-unit evidence is present.",
+        ),
+        _contains(
+            html,
+            "modality_context_panel",
+            'id="panel-modality-used"',
+            "Selected-unit research fusion candidate mode is present.",
+        ),
+        _contains(
+            html,
+            "historical_susceptibility_context",
+            "Historical susceptibility/context",
+            "Historical susceptibility is labeled as context.",
+        ),
+        _contains(
+            html,
+            "historical_context_boundary",
+            "Not observed current flooding. Not a forecast.",
+            "Historical context is separated from current observation and forecast claims.",
         ),
         _contains(
             html,

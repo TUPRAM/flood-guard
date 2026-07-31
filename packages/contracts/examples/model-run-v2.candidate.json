@@ -1,0 +1,142 @@
+{
+  "schema_version": "2.0",
+  "dataset_mode": "candidate",
+  "operational_status": "non_operational",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "generated_at": "2026-07-23T08:00:00Z",
+  "confidence_class": "low",
+  "source_name": "Synthetic multimodal contract proof",
+  "assumptions": [
+    "Synthetic inputs test contract wiring and do not establish Thailand flood accuracy."
+  ],
+  "official_warning": false,
+  "data_version": "geoai-v2-contract-proof",
+  "git_commit": "1111111111111111111111111111111111111111",
+  "run_id": "geoai-v2-synthetic-run",
+  "study_area_id": "synthetic_contract_grid",
+  "event_id": "synthetic_event_001",
+  "evidence_kind": "satellite_observed_extent",
+  "run_status": "completed",
+  "model": {
+    "model_id": "floodguard.synthetic.unet",
+    "model_revision": "contract-proof-1",
+    "model_family": "geoai_unet_fpn",
+    "backend": "smp",
+    "architecture": "unet",
+    "encoder": "resnet34",
+    "encoder_weights": null,
+    "framework": "segmentation-models-pytorch",
+    "framework_version": "0.5.0",
+    "framework_commit": "2222222222222222222222222222222222222222",
+    "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "input_manifest_rows": [
+    {
+      "role": "pre_event_sar",
+      "modality": "sentinel_1_sar",
+      "product_id": "SYNTHETIC-PRE-001",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "source_timestamp": "2024-09-10T00:00:00Z",
+      "processing_allowed": true
+    },
+    {
+      "role": "post_event_sar",
+      "modality": "sentinel_1_sar",
+      "product_id": "SYNTHETIC-POST-001",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "source_timestamp": "2024-09-15T23:16:01Z",
+      "processing_allowed": true
+    },
+    {
+      "role": "reference_mask",
+      "modality": "reference_mask",
+      "product_id": "SYNTHETIC-MASK-001",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "source_timestamp": "2024-09-15T23:16:01Z",
+      "processing_allowed": true
+    },
+    {
+      "role": "terrain_slope",
+      "modality": "terrain",
+      "product_id": "SYNTHETIC-SLOPE-001",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "source_timestamp": "2024-01-01T00:00:00Z",
+      "processing_allowed": true
+    }
+  ],
+  "feature_contract": {
+    "feature_schema_id": "sar_temporal_physical_v1",
+    "value_domain": "encoded_uint8",
+    "dtype": "uint8",
+    "channel_count": 8,
+    "channel_names": [
+      "pre_vv_db",
+      "post_vv_db",
+      "pre_vh_db",
+      "post_vh_db",
+      "vv_change_db",
+      "vh_change_db",
+      "slope_degrees",
+      "permanent_water_flag"
+    ],
+    "preprocessing_sidecar_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "feature_stack_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "target_contract": {
+    "task": "semantic_segmentation",
+    "class_schema_id": "temporary_flood_binary_v1",
+    "classes": [
+      {
+        "index": 0,
+        "name": "dry_or_preexisting_water",
+        "training_role": "negative"
+      },
+      {
+        "index": 1,
+        "name": "temporary_flood",
+        "training_role": "positive"
+      },
+      {
+        "index": 255,
+        "name": "ignored_or_unreviewed",
+        "training_role": "ignore"
+      }
+    ],
+    "positive_class_index": 1,
+    "ignore_index": 255,
+    "reference_mask_status": "synthetic_fixture_only",
+    "label_release_sha256": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  },
+  "training_lineage": {
+    "input_manifest_sha256": "234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1",
+    "training_dataset_manifest_sha256": "34567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12",
+    "label_release_sha256": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "prepared_tile_manifest_sha256": "4567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123",
+    "controlled_model_run_receipt_sha256": null,
+    "threshold_selection_receipt_sha256": null,
+    "calibration_receipt_sha256": null
+  },
+  "partition_contract": {
+    "partition_manifest_sha256": "567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234",
+    "training_partition_sha256": "67890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12345",
+    "calibration_partition_sha256": "7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456",
+    "final_holdout_partition_sha256": "890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567",
+    "train_ids": ["synthetic_train_01"],
+    "calibration_ids": ["synthetic_calibration_01"],
+    "final_holdout_ids": ["synthetic_final_holdout_01"]
+  },
+  "inference_contract": {
+    "target_crs": "EPSG:32647",
+    "resolution": [10.0, 10.0],
+    "bounds": [600000.0, 2200000.0, 600640.0, 2200640.0],
+    "tile_size": 32,
+    "overlap": 8,
+    "stride": 24,
+    "batch_size": 2,
+    "device": "cpu",
+    "probability_threshold": 0.5
+  },
+  "processing_allowed": true,
+  "can_feed_decision_layer": false,
+  "reason_blocked": "Synthetic contract proof only; no qualified real-event evaluation or acceptance exists."
+}

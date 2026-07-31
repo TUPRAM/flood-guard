@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/pilot-readiness.schema.json",
+  "title": "FloodGuard bounded agency-pilot readiness",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "operational_status",
+    "agency_operational_allowed",
+    "identity_state",
+    "acceptance_receipt_state",
+    "audit_state",
+    "retention_state",
+    "deployment_state",
+    "acceptance_criteria",
+    "field_validation_protocol_version",
+    "roles",
+    "reason_blocked_th",
+    "reason_blocked_en"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "operational_status": {
+      "enum": ["non_operational", "planning_only", "agency_operational"]
+    },
+    "agency_operational_allowed": { "type": "boolean" },
+    "identity_state": { "enum": ["unconfigured", "configured"] },
+    "acceptance_receipt_state": {
+      "enum": ["missing", "invalid", "expired", "accepted"]
+    },
+    "audit_state": { "enum": ["unconfigured", "valid", "invalid"] },
+    "retention_state": { "enum": ["unconfigured", "configured"] },
+    "deployment_state": {
+      "enum": [
+        "pilot_not_configured",
+        "pilot_ready_non_operational",
+        "degraded",
+        "accepted_for_agency_operation"
+      ]
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "allOf": [
+        { "contains": { "properties": { "criterion_id": { "const": "AC-SAFETY-01" } }, "required": ["criterion_id"] } },
+        { "contains": { "properties": { "criterion_id": { "const": "AC-DATA-02" } }, "required": ["criterion_id"] } },
+        { "contains": { "properties": { "criterion_id": { "const": "AC-OFFLINE-03" } }, "required": ["criterion_id"] } },
+        { "contains": { "properties": { "criterion_id": { "const": "AC-AUTH-04" } }, "required": ["criterion_id"] } },
+        { "contains": { "properties": { "criterion_id": { "const": "AC-FIELD-05" } }, "required": ["criterion_id"] } }
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion_id", "required", "status", "text_th", "text_en"],
+        "properties": {
+          "criterion_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+          },
+          "required": { "const": true },
+          "status": { "enum": ["pending", "accepted"] },
+          "text_th": { "type": "string", "minLength": 1 },
+          "text_en": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "field_validation_protocol_version": { "const": "field-validation-v1" },
+    "roles": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "public_viewer",
+          "command_viewer",
+          "analyst",
+          "data_steward",
+          "pilot_admin"
+        ]
+      }
+    },
+    "reason_blocked_th": { "type": "string" },
+    "reason_blocked_en": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operational_status": { "const": "agency_operational" } },
+        "required": ["operational_status"]
+      },
+      "then": {
+        "properties": {
+          "agency_operational_allowed": { "const": true },
+          "acceptance_receipt_state": { "const": "accepted" },
+          "identity_state": { "const": "configured" },
+          "audit_state": { "const": "valid" },
+          "retention_state": { "const": "configured" },
+          "deployment_state": { "const": "accepted_for_agency_operation" },
+          "acceptance_criteria": {
+            "items": { "properties": { "status": { "const": "accepted" } } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operational_status": { "enum": ["non_operational", "planning_only"] }
+        },
+        "required": ["operational_status"]
+      },
+      "then": {
+        "properties": {
+          "agency_operational_allowed": { "const": false },
+          "deployment_state": {
+            "enum": ["pilot_not_configured", "pilot_ready_non_operational", "degraded"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "acceptance_receipt_state": { "enum": ["missing", "invalid", "expired"] }
+        },
+        "required": ["acceptance_receipt_state"]
+      },
+      "then": {
+        "properties": { "agency_operational_allowed": { "const": false } }
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # First ML Experiment Plan
 
-Current status: not allowed yet for official or legally cleared-label ML. A bounded weak-label experiment is allowed only against the manual QGIS weak-reference mask and must be described as a weak-label experiment, not official labels and not field validation.
+Current status: blocked for a new real-data ML run. The preserved logistic experiment is historical screening evidence from the retired COG pair; the active same-track original-SAFE inputs cannot be used for training until the signed controlled-experiment loaders verify acquisition authority, qualified reviewer evidence, immutable spatial partitions, reference cells, and bounded execution authorization.
 
 ## Start Conditions
 
@@ -18,13 +18,14 @@ All conditions are required:
 
 If any condition fails, ML remains blocked.
 
-Exception for the current hackathon bridge:
+Historical exception (closed; not authorization for a new run):
 
-- `src/floodguard/weak_label_ml.py` may train a small auditable logistic model against the manual weak-reference mask.
+- The repository preserves one previously completed small logistic experiment against the manual weak-reference mask.
 - The experiment must use a spatial holdout and must compare against the non-ML threshold baseline.
 - Outputs must say `weak-label experiment`, `not official labels`, and `not field validation`.
-- The output may feed candidate `flood_probability_0_1` only when `can_feed_decision_layer=True`.
+- The historical output records `can_feed_decision_layer=False` unconditionally. Improvement against the same weak mask is screening evidence only and cannot authorize a flood input.
 - This exception does not clear the official Mae Sai validation gate, does not create official labels, and does not authorize emergency-warning use.
+- The exception is no longer executable. `scripts/run_mae_sai_weak_label_ml.py` rejects the current weak-reference row immediately. Even a structurally complete summary row remains insufficient because hash-shaped strings do not prove signed receipts or partition membership; the legacy writer directs qualified work to `floodguard.controlled_experiment` instead. That runner must verify a `qualified_expert_or_adjudicated` reference, source bytes and permitted uses, qualified reviewer calibration with zero unresolved disagreements, immutable non-overlapping train/calibration/final-holdout membership, and bounded execution authorization.
 
 The current gate implementation is:
 
@@ -46,7 +47,7 @@ Recommended first ML candidate:
 - split rule: spatial holdout by tile, polygon, or connected area; do not use random pixel splits as the only evidence
 - output: `flood_probability_0_1` and `binary_flood_extent`
 
-The non-ML threshold baseline remains the benchmark. The ML model must beat or clarify the baseline before it can feed the decision layer.
+The non-ML threshold baseline remains the benchmark for this research comparison. Beating or clarifying it does not override weak-label provenance and does not make the ML output decision-layer eligible.
 
 Current weak-label implementation:
 
@@ -72,7 +73,7 @@ Report at least:
 
 ## Promotion Rule
 
-ML output may replace fixture flood probability in the decision layer only when:
+This weak-label ML output may not replace fixture flood probability. A separate cleared-label model-promotion programme would require:
 
 - the reference mask is legally usable
 - the ingestion manifest allows processing

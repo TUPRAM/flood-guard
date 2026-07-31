@@ -15,6 +15,7 @@ if str(SRC_ROOT) not in sys.path:
 
 from floodguard.weak_label_ml import (  # noqa: E402
     WeakLabelMLError,
+    require_ml_label_authorization,
     write_weak_label_ml_outputs,
 )
 from floodguard.weak_reference_baseline import (  # noqa: E402
@@ -63,6 +64,7 @@ def main() -> None:
     file_manifest = pd.read_csv(args.file_manifest, dtype=str).fillna("")
     manual_manifest = pd.read_csv(args.manual_reference_manifest, dtype=str).fillna("")
     try:
+        require_ml_label_authorization(manual_manifest)
         features, _baseline_metrics, feature_manifest = run_weak_reference_sar_baseline(
             file_manifest,
             manual_manifest,
@@ -71,6 +73,7 @@ def main() -> None:
         written = write_weak_label_ml_outputs(
             features,
             feature_manifest,
+            authorization_manifest=manual_manifest,
             metrics_output_path=args.metrics_output,
             prediction_manifest_output_path=args.prediction_manifest_output,
             summary_output_path=args.summary_output,

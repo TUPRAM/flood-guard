@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
+import re
 
 import pandas as pd
 
@@ -45,6 +46,13 @@ FEATURE_REQUIRED_COLUMNS: tuple[str, ...] = (
     "post_product_id",
     "reference_product_id",
     "reference_status",
+    "pre_source_sha256",
+    "post_source_sha256",
+    "reference_sha256",
+    "source_integrity_status",
+    "reference_spatial_relation",
+    "reference_in_study_area_overlap",
+    "reference_distance_to_study_area_km",
     "sample_pixel_count",
     "reference_positive_pixel_count",
     "predicted_positive_pixel_count",
@@ -56,6 +64,13 @@ FEATURE_REQUIRED_COLUMNS: tuple[str, ...] = (
 
 BASELINE_REQUIRED_COLUMNS: tuple[str, ...] = (
     "metric_status",
+    "pre_source_sha256",
+    "post_source_sha256",
+    "reference_sha256",
+    "source_integrity_status",
+    "reference_spatial_relation",
+    "reference_in_study_area_overlap",
+    "reference_distance_to_study_area_km",
     "iou",
     "f1_dice",
     "precision",
@@ -75,6 +90,11 @@ MANUAL_REFERENCE_REQUIRED_COLUMNS: tuple[str, ...] = (
     "reference_mask_status",
     "candidate_readiness_status",
     "not_official_status",
+    "sha256",
+    "attribute_values_status",
+    "spatial_relation",
+    "in_study_area_overlap",
+    "distance_to_study_area_km",
     "geometry_type",
     "crs",
     "feature_count",
@@ -312,10 +332,10 @@ def build_mae_sai_action_brief(
             )
             * sample_pixel_count
         )
-        evidence_scope = "inside the official COD-AB ADM3 aggregation unit"
+        evidence_scope = "inside the HDX COD-AB ADM3 candidate aggregation unit"
         reference_status_text = (
             "manual cross-border weak-reference candidate used for calibration only; "
-            "it does not overlap the official Thailand ADM3 geometry"
+            "it does not overlap the Thailand ADM3 candidate geometry"
         )
         geometry_status_text = (
             "Current geometry is an HDX COD-AB ADM3 boundary; flood calibration still "
@@ -333,7 +353,7 @@ def build_mae_sai_action_brief(
         )
         geometry_status_text = (
             "Current geometry is a weak-reference review area, not a confirmed "
-            "official subdistrict boundary."
+            "agency-confirmed subdistrict boundary."
         )
 
     lines = [
@@ -504,13 +524,23 @@ def _candidate_metric_lines(
         ),
     ]
     if ml is None:
-        lines.append("- Spatial-holdout weak-label ML comparison: unavailable.")
+        lines.append(
+            "- Current-pair spatial-holdout ML comparison: unavailable. The legacy "
+            "weak-label experiment used the retired COG pair and is intentionally "
+            "excluded from this active-source brief."
+        )
         return lines
 
     lines.extend(
         [
             "",
-            "| Metric | Non-ML threshold (holdout) | Weak-label logistic model (holdout) |",
+            (
+                "- Historical retired-source experiment only: the following two "
+                "holdout columns were produced together from the retired COG pair. "
+                "They are not comparable to the active original-SAFE baseline above."
+            ),
+            "",
+            "| Historical metric | Retired-pair threshold (holdout) | Retired-pair weak-label logistic (holdout) |",
             "|---|---:|---:|",
             f"| IoU | {_metric(ml, 'baseline_iou'):.3f} | {_metric(ml, 'ml_iou'):.3f} |",
             f"| F1 / Dice | {_metric(ml, 'baseline_f1_dice'):.3f} | {_metric(ml, 'ml_f1_dice'):.3f} |",
@@ -523,9 +553,10 @@ def _candidate_metric_lines(
             ),
             "",
             (
-                "- The cross-border ML candidate improves overlap and recall on its spatial holdout, "
-                "but its positive area error shows severe overprediction. Treat it as a "
-                "screening signal, not confirmed flood extent."
+                "- Within that historical retired-pair experiment, the ML candidate "
+                "improved overlap and recall, but its positive area error shows severe "
+                "overprediction. It is report-only screening evidence, not a current-pair "
+                "result or confirmed flood extent."
             ),
         ]
     )
@@ -535,17 +566,20 @@ def _candidate_metric_lines(
 def _ml_summary_lines(ml: pd.Series | None) -> list[str]:
     if ml is None:
         return []
-    can_feed = _truthy(ml["can_feed_decision_layer"])
+    can_feed = _strict_bool(
+        ml["can_feed_decision_layer"], "ML can_feed_decision_layer"
+    )
     return [
-        "## Weak-Label ML Cross-Check / การตรวจสอบด้วย ML ป้ายกำกับอย่างอ่อน",
+        "## Historical Weak-Label ML Cross-Check / การตรวจสอบด้วย ML ป้ายกำกับอย่างอ่อน (ข้อมูลเดิม)",
         "",
         f"- Model: {ml['model_family']} with {ml['split_strategy']}.",
         f"- Holdout sample: {_integer(ml['holdout_sample_count'], 'holdout sample count'):,} pixels.",
         f"- Candidate decision threshold: {_metric(ml, 'decision_threshold'):.2f}.",
         (
             "- Decision-layer eligibility flag: "
-            f"{str(can_feed).lower()}; the current FPPS still uses the non-ML mean "
-            "probability proxy and has not been rescored from ML output."
+            f"{str(can_feed).lower()}; the current FPPS uses the active original-SAFE "
+            "non-ML mean probability proxy and has not been rescored from this "
+            "retired-pair ML output."
         ),
         f"- Warning: {ml['warning_text']}",
         "",
@@ -589,7 +623,11 @@ def _road_risk_lines(
             if name
             else f"OSM way `{row['road_id']}`"
         )
-        bridge = " bridge-tagged;" if _truthy(row.get("bridge_flag", False)) else ""
+        bridge = (
+            " bridge-tagged;"
+            if _strict_bool(row.get("bridge_flag", False), "road bridge_flag")
+            else ""
+        )
         lines.append(
             f"- {label}: {float(row['road_disruption_probability_0_1']):.1%} "
             f"candidate risk;{bridge} {row['top_risk_reason']}"
@@ -741,9 +779,9 @@ def _validate_weak_reference_evidence(
         raise MaeSaiActionBriefError(
             "manual reference not_official_status must be confirmed_true."
         )
-    if str(baseline["metric_status"]) != "candidate_weak_reference_metrics":
+    if str(baseline["metric_status"]) != "candidate_cross_border_calibration_metrics":
         raise MaeSaiActionBriefError(
-            "baseline metric_status must be candidate_weak_reference_metrics."
+            "baseline metric_status must be candidate_cross_border_calibration_metrics."
         )
     for column in ("pre_product_id", "post_product_id", "reference_product_id"):
         if not str(feature[column]).strip():
@@ -751,6 +789,47 @@ def _validate_weak_reference_evidence(
     if str(feature["reference_product_id"]) != str(manual["reference_id"]):
         raise MaeSaiActionBriefError(
             "SAR feature and manual-reference ids do not match."
+        )
+    if str(feature["source_integrity_status"]) != "verified_sha256_before_raster_read":
+        raise MaeSaiActionBriefError(
+            "SAR feature source integrity must be verified before raster reads."
+        )
+    if str(baseline["source_integrity_status"]) != "verified_sha256_before_raster_read":
+        raise MaeSaiActionBriefError(
+            "Baseline source integrity must be verified before raster reads."
+        )
+    for column in ("pre_source_sha256", "post_source_sha256", "reference_sha256"):
+        feature_hash = _sha256(feature[column], f"SAR feature {column}")
+        baseline_hash = _sha256(baseline[column], f"baseline {column}")
+        if feature_hash != baseline_hash:
+            raise MaeSaiActionBriefError(
+                f"Baseline and SAR feature {column} lineage do not match."
+            )
+    if _sha256(manual["sha256"], "manual reference sha256") != _sha256(
+        feature["reference_sha256"], "SAR feature reference_sha256"
+    ):
+        raise MaeSaiActionBriefError(
+            "SAR feature and manual-reference SHA-256 values do not match."
+        )
+    if str(manual["attribute_values_status"]) != "valid":
+        raise MaeSaiActionBriefError("Manual-reference attributes must be valid.")
+    for evidence in (feature, baseline):
+        if str(evidence["reference_spatial_relation"]) != "cross_border_calibration_only":
+            raise MaeSaiActionBriefError(
+                "Weak-reference evidence must retain cross-border calibration scope."
+            )
+        if _strict_bool(
+            evidence["reference_in_study_area_overlap"],
+            "reference_in_study_area_overlap",
+        ):
+            raise MaeSaiActionBriefError(
+                "Cross-border weak-reference evidence cannot claim Mae Sai overlap."
+            )
+    if str(manual["spatial_relation"]) != "cross_border_calibration_only" or _strict_bool(
+        manual["in_study_area_overlap"], "manual in_study_area_overlap"
+    ):
+        raise MaeSaiActionBriefError(
+            "Manual reference must retain verified cross-border non-overlap status."
         )
     if str(feature["source_timestamp"]) != str(selected["source_timestamp"]):
         raise MaeSaiActionBriefError(
@@ -805,6 +884,11 @@ def _validate_ml_evidence(ml: pd.Series) -> None:
     if "not official labels" not in warning or "not field validation" not in warning:
         raise MaeSaiActionBriefError(
             "ML warning_text must preserve weak-label limitations."
+        )
+    if _strict_bool(ml["can_feed_decision_layer"], "ML can_feed_decision_layer"):
+        raise MaeSaiActionBriefError(
+            "Weak-label ML can_feed_decision_layer must remain false; weak-source "
+            "metrics cannot authorize FPPS or decision-layer use."
         )
     for column in (
         "decision_threshold",
@@ -883,7 +967,19 @@ def _population_count(value: object, label: str) -> str:
     return f"{numeric:,.0f}"
 
 
-def _truthy(value: object) -> bool:
+def _strict_bool(value: object, label: str) -> bool:
     if isinstance(value, bool):
         return value
-    return str(value).strip().lower() in {"true", "1", "yes"}
+    normalized = str(value).strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise MaeSaiActionBriefError(f"{label} must be explicit true or false.")
+
+
+def _sha256(value: object, label: str) -> str:
+    normalized = str(value).strip()
+    if re.fullmatch(r"[0-9a-f]{64}", normalized) is None:
+        raise MaeSaiActionBriefError(f"{label} must be a lowercase SHA-256 digest.")
+    return normalized

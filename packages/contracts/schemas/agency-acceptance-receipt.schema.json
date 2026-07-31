@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/agency-acceptance-receipt.schema.json",
+  "title": "FloodGuard signed agency acceptance receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payload", "signature"],
+  "properties": {
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "acceptance_id",
+        "study_area",
+        "dataset_mode",
+        "data_version",
+        "artifact_manifest_sha256",
+        "source_timestamp",
+        "requested_operational_status",
+        "acceptance_status",
+        "acceptance_criteria_ids",
+        "field_validation_receipt_sha256",
+        "field_validation_protocol_version",
+        "issued_at",
+        "expires_at",
+        "issuer_subject"
+      ],
+      "properties": {
+        "schema_version": { "const": "1.0" },
+        "acceptance_id": { "$ref": "#/$defs/safe_id" },
+        "study_area": { "$ref": "#/$defs/safe_id" },
+        "dataset_mode": { "const": "official_input" },
+        "data_version": { "$ref": "#/$defs/safe_id" },
+        "artifact_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "source_timestamp": { "type": "string", "format": "date-time" },
+        "requested_operational_status": { "const": "agency_operational" },
+        "acceptance_status": { "const": "accepted" },
+        "acceptance_criteria_ids": {
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/safe_id" },
+          "allOf": [
+            { "contains": { "const": "AC-SAFETY-01" } },
+            { "contains": { "const": "AC-DATA-02" } },
+            { "contains": { "const": "AC-OFFLINE-03" } },
+            { "contains": { "const": "AC-AUTH-04" } },
+            { "contains": { "const": "AC-FIELD-05" } }
+          ]
+        },
+        "field_validation_receipt_sha256": { "$ref": "#/$defs/sha256" },
+        "field_validation_protocol_version": { "const": "field-validation-v1" },
+        "issued_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "issuer_subject": { "$ref": "#/$defs/safe_id" }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "payload_sha256", "value"],
+      "properties": {
+        "algorithm": { "const": "HMAC-SHA256" },
+        "key_id": { "$ref": "#/$defs/safe_id" },
+        "payload_sha256": { "$ref": "#/$defs/sha256" },
+        "value": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "safe_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    }
+  }
+}

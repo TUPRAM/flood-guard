@@ -1,0 +1,452 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/model-run.schema.json",
+  "title": "FloodGuard model run",
+  "description": "A redacted model-card and validation record. It contains no private absolute paths.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_mode",
+    "operational_status",
+    "source_timestamp",
+    "generated_at",
+    "confidence_class",
+    "source_name",
+    "assumptions",
+    "official_warning",
+    "data_version",
+    "git_commit",
+    "run_id",
+    "study_area",
+    "model_family",
+    "run_status",
+    "geoai_version",
+    "geoai_commit",
+    "model_id",
+    "model_revision",
+    "model_sha256",
+    "architecture",
+    "encoder",
+    "encoder_weights",
+    "num_channels",
+    "channel_names",
+    "preprocessing",
+    "input_manifest_rows",
+    "encoded_feature_sha256",
+    "reference_mask_sha256",
+    "prepared_tile_manifest_sha256",
+    "spatial_holdout_ids",
+    "spatial_partitions",
+    "reference_mask_id",
+    "reference_mask_status",
+    "target_crs",
+    "resolution",
+    "bounds",
+    "tile_size",
+    "overlap",
+    "stride",
+    "batch_size",
+    "device",
+    "flood_class_index",
+    "probability_threshold",
+    "external_output_workspace",
+    "processing_scope",
+    "processing_allowed",
+    "can_feed_decision_layer",
+    "reason_blocked",
+    "validation_metrics",
+    "error_categories"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "dataset_mode": {
+      "type": "string",
+      "enum": ["fixture_demo", "candidate", "official_input"]
+    },
+    "operational_status": {
+      "type": "string",
+      "enum": ["non_operational", "planning_only", "agency_operational"]
+    },
+    "source_timestamp": { "type": "string", "format": "date-time" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "confidence_class": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "source_name": { "type": "string", "minLength": 1 },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "official_warning": { "type": "boolean" },
+    "data_version": { "type": "string", "minLength": 1 },
+    "git_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{7,40}$"
+    },
+    "run_id": { "type": "string", "minLength": 1 },
+    "study_area": { "type": "string", "minLength": 1 },
+    "model_family": {
+      "type": "string",
+      "enum": ["deterministic_sar_baseline", "weak_label_logistic", "geoai"]
+    },
+    "run_status": {
+      "type": "string",
+      "enum": ["blocked", "prepared", "running", "completed", "failed"]
+    },
+    "geoai_version": { "type": ["string", "null"], "minLength": 1 },
+    "geoai_commit": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[0-9a-fA-F]{7,40}$" }
+      ]
+    },
+    "model_id": { "type": ["string", "null"], "minLength": 1 },
+    "model_revision": { "type": ["string", "null"], "minLength": 1 },
+    "model_sha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+      ]
+    },
+    "architecture": { "type": ["string", "null"], "minLength": 1 },
+    "encoder": { "type": ["string", "null"], "minLength": 1 },
+    "encoder_weights": { "type": ["string", "null"], "minLength": 1 },
+    "num_channels": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "integer", "minimum": 1, "maximum": 8 }
+      ]
+    },
+    "channel_names": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "preprocessing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "value_domain", "sidecar_sha256", "transforms"],
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "value_domain": {
+          "type": "string",
+          "enum": ["uint8_0_255", "float_0_1", "physical_units"]
+        },
+        "sidecar_sha256": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+          ]
+        },
+        "transforms": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "physical_min",
+              "physical_max",
+              "units",
+              "description"
+            ],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "physical_min": { "type": "number" },
+              "physical_max": { "type": "number" },
+              "units": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "input_manifest_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "product_id",
+          "role",
+          "sha256",
+          "source_timestamp",
+          "processing_allowed"
+        ],
+        "properties": {
+          "product_id": { "type": "string", "minLength": 1 },
+          "role": { "type": "string", "minLength": 1 },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{64}$"
+          },
+          "source_timestamp": { "type": "string", "format": "date-time" },
+          "processing_allowed": { "type": "boolean" }
+        }
+      }
+    },
+    "encoded_feature_sha256": { "$ref": "#/$defs/nullableSha256" },
+    "reference_mask_sha256": { "$ref": "#/$defs/nullableSha256" },
+    "prepared_tile_manifest_sha256": { "$ref": "#/$defs/nullableSha256" },
+    "spatial_holdout_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "spatial_partitions": {
+      "type": "array",
+      "description": "Auditable, non-overlapping spatial partitions. Consumers must enforce unique spatial_group_id values and holdout-ID agreement.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["spatial_group_id", "split", "bounds"],
+        "properties": {
+          "spatial_group_id": { "type": "string", "minLength": 1 },
+          "split": { "type": "string", "enum": ["train", "holdout"] },
+          "bounds": {
+            "type": "array",
+            "prefixItems": [
+              { "type": "number" },
+              { "type": "number" },
+              { "type": "number" },
+              { "type": "number" }
+            ],
+            "items": false,
+            "minItems": 4,
+            "maxItems": 4
+          }
+        }
+      }
+    },
+    "reference_mask_id": { "type": "string", "minLength": 1 },
+    "reference_mask_status": { "type": "string", "minLength": 1 },
+    "target_crs": { "type": "string", "minLength": 1 },
+    "resolution": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "exclusiveMinimum": 0 },
+        { "type": "number", "exclusiveMinimum": 0 }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "bounds": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "tile_size": { "type": "integer", "minimum": 1 },
+    "overlap": { "type": "integer", "minimum": 0 },
+    "stride": { "type": "integer", "minimum": 1 },
+    "batch_size": { "type": "integer", "minimum": 1 },
+    "device": { "type": "string", "minLength": 1 },
+    "flood_class_index": { "type": "integer", "minimum": 0 },
+    "probability_threshold": { "type": "number", "minimum": 0, "maximum": 1 },
+    "external_output_workspace": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:[\\\\/])(?!/)(?!\\\\\\\\).+"
+    },
+    "processing_scope": { "type": "string", "minLength": 1 },
+    "processing_allowed": { "type": "boolean" },
+    "can_feed_decision_layer": { "type": "boolean" },
+    "reason_blocked": { "type": "string" },
+    "validation_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "iou",
+        "f1_dice",
+        "precision",
+        "recall",
+        "area_error_ratio",
+        "brier_score",
+        "expected_calibration_error"
+      ],
+      "properties": {
+        "iou": { "$ref": "#/$defs/unitMetric" },
+        "f1_dice": { "$ref": "#/$defs/unitMetric" },
+        "precision": { "$ref": "#/$defs/unitMetric" },
+        "recall": { "$ref": "#/$defs/unitMetric" },
+        "area_error_ratio": { "type": ["number", "null"], "minimum": 0 },
+        "brier_score": { "$ref": "#/$defs/unitMetric" },
+        "expected_calibration_error": { "$ref": "#/$defs/unitMetric" }
+      }
+    },
+    "error_categories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "nullableSha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      ]
+    },
+    "unitMetric": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "dataset_mode": { "enum": ["fixture_demo", "candidate"] }
+        },
+        "required": ["dataset_mode"]
+      },
+      "then": {
+        "properties": {
+          "official_warning": { "const": false },
+          "can_feed_decision_layer": { "const": false }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "processing_allowed": { "const": false } },
+        "required": ["processing_allowed"]
+      },
+      "then": {
+        "properties": { "can_feed_decision_layer": { "const": false } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "processing_allowed": { "const": true } },
+        "required": ["processing_allowed"]
+      },
+      "then": {
+        "properties": {
+          "input_manifest_rows": {
+            "items": {
+              "properties": { "processing_allowed": { "const": true } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "can_feed_decision_layer": { "const": false } },
+        "required": ["can_feed_decision_layer"]
+      },
+      "then": {
+        "properties": { "reason_blocked": { "minLength": 1 } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "can_feed_decision_layer": { "const": true } },
+        "required": ["can_feed_decision_layer"]
+      },
+      "then": {
+        "properties": {
+          "dataset_mode": { "const": "official_input" },
+          "operational_status": {
+            "enum": ["planning_only", "agency_operational"]
+          },
+          "confidence_class": { "enum": ["medium", "high"] },
+          "run_status": { "const": "completed" },
+          "processing_allowed": { "const": true },
+          "reference_mask_status": { "const": "confirmed_for_model_purpose" },
+          "reason_blocked": { "maxLength": 0 },
+          "validation_metrics": {
+            "properties": {
+              "iou": { "type": "number" },
+              "f1_dice": { "type": "number" },
+              "precision": { "type": "number" },
+              "recall": { "type": "number" },
+              "area_error_ratio": { "type": "number" },
+              "brier_score": { "type": "number" },
+              "expected_calibration_error": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "model_family": { "const": "geoai" },
+          "run_status": { "enum": ["prepared", "running", "completed"] }
+        },
+        "required": ["model_family", "run_status"]
+      },
+      "then": {
+        "properties": {
+          "geoai_version": { "type": "string", "minLength": 1 },
+          "geoai_commit": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{7,40}$"
+          },
+          "model_id": { "type": "string", "minLength": 1 },
+          "model_revision": { "type": "string", "minLength": 1 },
+          "architecture": { "type": "string", "minLength": 1 },
+          "encoder": { "type": "string", "minLength": 1 },
+          "num_channels": { "type": "integer", "minimum": 6, "maximum": 8 },
+          "channel_names": { "minItems": 6, "maxItems": 8 },
+          "preprocessing": {
+            "properties": {
+              "sidecar_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "transforms": { "minItems": 6, "maxItems": 8 }
+            }
+          },
+          "encoded_feature_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "reference_mask_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "prepared_tile_manifest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "spatial_holdout_ids": { "minItems": 1 },
+          "spatial_partitions": { "minItems": 2 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "model_family": { "const": "geoai" },
+          "run_status": { "const": "completed" }
+        },
+        "required": ["model_family", "run_status"]
+      },
+      "then": {
+        "properties": {
+          "model_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{64}$"
+          }
+        }
+      }
+    }
+  ]
+}

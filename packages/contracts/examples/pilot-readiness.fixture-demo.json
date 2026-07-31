@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "operational_status": "non_operational",
+  "agency_operational_allowed": false,
+  "identity_state": "unconfigured",
+  "acceptance_receipt_state": "missing",
+  "audit_state": "unconfigured",
+  "retention_state": "unconfigured",
+  "deployment_state": "pilot_not_configured",
+  "acceptance_criteria": [
+    {
+      "criterion_id": "AC-SAFETY-01",
+      "required": true,
+      "status": "pending",
+      "text_th": "ข้อความสองภาษาต้องระบุว่า FloodGuard ไม่ใช่ประกาศเตือนภัยทางการ",
+      "text_en": "Bilingual wording must state that FloodGuard is not an official warning."
+    },
+    {
+      "criterion_id": "AC-DATA-02",
+      "required": true,
+      "status": "pending",
+      "text_th": "หน้าจอตัดสินใจต้องแสดงเวลา ความเชื่อมั่น สมมติฐาน และแหล่งที่มา",
+      "text_en": "Decision screens must show source time, confidence, assumptions, and provenance."
+    },
+    {
+      "criterion_id": "AC-OFFLINE-03",
+      "required": true,
+      "status": "pending",
+      "text_th": "ข้อมูลสาธิตและออฟไลน์ต้องคงสถานะ non-operational",
+      "text_en": "Fixture and offline data must remain non-operational."
+    },
+    {
+      "criterion_id": "AC-AUTH-04",
+      "required": true,
+      "status": "pending",
+      "text_th": "API ต้องตรวจสิทธิ์ตามบทบาทซ้ำในทุกคำขอที่ได้รับการป้องกัน",
+      "text_en": "The API must recheck role authorization for every protected request."
+    },
+    {
+      "criterion_id": "AC-FIELD-05",
+      "required": true,
+      "status": "pending",
+      "text_th": "ต้องมีใบรับรองการตรวจสอบภาคสนามที่ผูกกับ manifest",
+      "text_en": "A field-validation receipt must be bound to the immutable manifest."
+    }
+  ],
+  "field_validation_protocol_version": "field-validation-v1",
+  "roles": [
+    "public_viewer",
+    "command_viewer",
+    "analyst",
+    "data_steward",
+    "pilot_admin"
+  ],
+  "reason_blocked_th": "โหมดสาธิตไม่มีใบรับรองการยอมรับที่ลงนาม",
+  "reason_blocked_en": "Fixture mode has no signed acceptance receipt."
+}

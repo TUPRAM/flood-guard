@@ -35,6 +35,9 @@ def manual_reference_manifest() -> pd.DataFrame:
                 "reference_id": "MANUAL-QGIS-MAE-SAI-2024",
                 "reference_mask_status": "weak_reference_candidate",
                 "candidate_readiness_status": "ready_for_candidate_metrics",
+                "spatial_relation": "cross_border_calibration_only",
+                "spatial_relation_status": "verified_geometry_intersection",
+                "in_study_area_overlap": "False",
                 "bbox_lon_min": "99.81417084",
                 "bbox_lat_min": "20.48330307",
                 "bbox_lon_max": "99.82511139",
@@ -83,6 +86,27 @@ def test_build_mae_sai_weak_decision_inputs_rejects_unready_manual_reference() -
     manual.loc[0, "candidate_readiness_status"] = "missing_source_file"
 
     with pytest.raises(FloodAggregationError, match="ready_for_candidate_metrics"):
+        build_mae_sai_weak_decision_inputs(weak_feature_manifest(), manual)
+
+
+@pytest.mark.parametrize(
+    ("column", "value", "message"),
+    [
+        ("spatial_relation_status", "not_evaluated", "spatial relation must be verified"),
+        ("spatial_relation", "not_evaluated", "unsupported spatial relation"),
+        ("in_study_area_overlap", "unknown", "explicit true or false"),
+        ("in_study_area_overlap", "True", "cannot claim in-study-area overlap"),
+    ],
+)
+def test_weak_decision_bridge_rejects_unverified_spatial_scope(
+    column: str,
+    value: str,
+    message: str,
+) -> None:
+    manual = manual_reference_manifest()
+    manual.loc[0, column] = value
+
+    with pytest.raises(FloodAggregationError, match=message):
         build_mae_sai_weak_decision_inputs(weak_feature_manifest(), manual)
 
 

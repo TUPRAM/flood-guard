@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "evidence_context_id": "fixture-thailand-demo:fixture-demo-1",
+  "study_area_id": "fixture_thailand_demo",
+  "data_version": "fixture-demo-1",
+  "evidence_package_id": "fixture-demo-1",
+  "evidence_package_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "model_run_id": null,
+  "dataset_mode": "fixture_demo",
+  "operational_status": "non_operational",
+  "official_warning": false,
+  "generated_at": "2026-07-16T00:00:00Z",
+  "source_components": [
+    {
+      "source_component_id": "fixture-decision-inputs",
+      "role": "synthetic_decision_fixture",
+      "source_name": "FloodGuard committed fixture bundle",
+      "source_version": "fixture-demo-1",
+      "source_timestamp": "2024-09-12T00:00:00Z",
+      "last_checked_at": "2026-07-16T00:00:00Z",
+      "temporal_meaning": "generation_time",
+      "freshness": "historical",
+      "freshness_policy_version": "source-freshness-v1",
+      "freshness_as_of": "2026-07-16T00:00:00Z",
+      "attribution": ["FloodGuard synthetic fixtures"]
+    }
+  ]
+}

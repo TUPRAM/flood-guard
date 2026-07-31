@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "evidence_record_id": "fixture-thailand-demo:fixture-demo-1:blocked",
+  "evidence_context": {
+    "schema_version": "1.0",
+    "evidence_context_id": "fixture-thailand-demo:fixture-demo-1",
+    "study_area_id": "fixture_thailand_demo",
+    "data_version": "fixture-demo-1",
+    "evidence_package_id": "fixture-demo-1",
+    "evidence_package_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "model_run_id": null,
+    "dataset_mode": "fixture_demo",
+    "operational_status": "non_operational",
+    "official_warning": false,
+    "generated_at": "2026-07-16T00:00:00Z",
+    "source_components": [
+      {
+        "source_component_id": "fixture-decision-inputs",
+        "role": "synthetic_decision_fixture",
+        "source_name": "FloodGuard committed fixture bundle",
+        "source_version": "fixture-demo-1",
+        "source_timestamp": "2024-09-12T00:00:00Z",
+        "last_checked_at": "2026-07-16T00:00:00Z",
+        "temporal_meaning": "generation_time",
+        "freshness": "historical",
+        "freshness_policy_version": "source-freshness-v1",
+        "freshness_as_of": "2026-07-16T00:00:00Z",
+        "attribution": ["FloodGuard synthetic fixtures"]
+      }
+    ]
+  },
+  "evidence_scope": "Synthetic integration evidence only",
+  "model_id": null,
+  "model_version": null,
+  "model_sha256": null,
+  "evaluation_sha256": null,
+  "decision": "blocked",
+  "decision_authority": null,
+  "decision_at": null,
+  "operational_authorized": false,
+  "blockers": ["Fixture evidence is not real-event validation or operational authorization."],
+  "generated_at": "2026-07-16T00:00:00Z"
+}

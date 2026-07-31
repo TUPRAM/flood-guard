@@ -1,0 +1,433 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/model-run-v2.schema.json",
+  "title": "FloodGuard model run v2",
+  "description": "Backend-neutral, report-only model-run evidence. Decision eligibility is resolved separately by a signed registry entry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_mode",
+    "operational_status",
+    "source_timestamp",
+    "generated_at",
+    "confidence_class",
+    "source_name",
+    "assumptions",
+    "official_warning",
+    "data_version",
+    "git_commit",
+    "run_id",
+    "study_area_id",
+    "event_id",
+    "evidence_kind",
+    "run_status",
+    "model",
+    "input_manifest_rows",
+    "feature_contract",
+    "target_contract",
+    "training_lineage",
+    "partition_contract",
+    "inference_contract",
+    "processing_allowed",
+    "can_feed_decision_layer",
+    "reason_blocked"
+  ],
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "dataset_mode": {
+      "enum": ["fixture_demo", "candidate", "official_input"]
+    },
+    "operational_status": {
+      "enum": ["non_operational", "planning_only", "agency_operational"]
+    },
+    "source_timestamp": { "type": "string", "format": "date-time" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "confidence_class": { "enum": ["low", "medium", "high"] },
+    "source_name": { "type": "string", "minLength": 1 },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "official_warning": { "const": false },
+    "data_version": { "$ref": "#/$defs/safeId" },
+    "git_commit": { "$ref": "#/$defs/commit" },
+    "run_id": { "$ref": "#/$defs/safeId" },
+    "study_area_id": { "$ref": "#/$defs/safeId" },
+    "event_id": { "$ref": "#/$defs/safeId" },
+    "evidence_kind": { "$ref": "#/$defs/evidenceKind" },
+    "run_status": {
+      "enum": ["blocked", "prepared", "running", "completed", "failed"]
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_id",
+        "model_revision",
+        "model_family",
+        "backend",
+        "architecture",
+        "encoder",
+        "encoder_weights",
+        "framework",
+        "framework_version",
+        "framework_commit",
+        "model_sha256"
+      ],
+      "properties": {
+        "model_id": { "$ref": "#/$defs/nullableSafeId" },
+        "model_revision": { "type": ["string", "null"], "minLength": 1 },
+        "model_family": {
+          "enum": [
+            "deterministic_sar_baseline",
+            "weak_label_logistic",
+            "geoai_unet_fpn",
+            "segformer",
+            "terramind",
+            "prithvi_optical",
+            "ensemble"
+          ]
+        },
+        "backend": {
+          "enum": [
+            "deterministic",
+            "sklearn",
+            "smp",
+            "segformer",
+            "terramind",
+            "prithvi",
+            "ensemble"
+          ]
+        },
+        "architecture": { "type": ["string", "null"], "minLength": 1 },
+        "encoder": { "type": ["string", "null"], "minLength": 1 },
+        "encoder_weights": { "type": ["string", "null"], "minLength": 1 },
+        "framework": { "type": ["string", "null"], "minLength": 1 },
+        "framework_version": { "type": ["string", "null"], "minLength": 1 },
+        "framework_commit": {
+          "oneOf": [
+            { "$ref": "#/$defs/commit" },
+            { "type": "null" }
+          ]
+        },
+        "model_sha256": { "$ref": "#/$defs/nullableSha256" }
+      }
+    },
+    "input_manifest_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "modality",
+          "product_id",
+          "sha256",
+          "source_timestamp",
+          "processing_allowed"
+        ],
+        "properties": {
+          "role": { "$ref": "#/$defs/safeId" },
+          "modality": {
+            "enum": [
+              "sentinel_1_sar",
+              "sentinel_2_optical",
+              "terrain",
+              "hydrology",
+              "permanent_water",
+              "land_cover",
+              "rainfall",
+              "reference_mask",
+              "other_context"
+            ]
+          },
+          "product_id": { "$ref": "#/$defs/safeId" },
+          "sha256": { "$ref": "#/$defs/sha256" },
+          "source_timestamp": { "type": "string", "format": "date-time" },
+          "processing_allowed": { "type": "boolean" }
+        }
+      }
+    },
+    "feature_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_schema_id",
+        "value_domain",
+        "dtype",
+        "channel_count",
+        "channel_names",
+        "preprocessing_sidecar_sha256",
+        "feature_stack_sha256"
+      ],
+      "properties": {
+        "feature_schema_id": { "$ref": "#/$defs/safeId" },
+        "value_domain": {
+          "enum": ["encoded_uint8", "normalized_float32", "physical_float32"]
+        },
+        "dtype": { "enum": ["uint8", "float32"] },
+        "channel_count": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "channel_names": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/safeId" }
+        },
+        "preprocessing_sidecar_sha256": { "$ref": "#/$defs/sha256" },
+        "feature_stack_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "target_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task",
+        "class_schema_id",
+        "classes",
+        "positive_class_index",
+        "ignore_index",
+        "reference_mask_status",
+        "label_release_sha256"
+      ],
+      "properties": {
+        "task": { "const": "semantic_segmentation" },
+        "class_schema_id": { "$ref": "#/$defs/safeId" },
+        "classes": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["index", "name", "training_role"],
+            "properties": {
+              "index": { "type": "integer", "minimum": 0, "maximum": 255 },
+              "name": { "$ref": "#/$defs/safeId" },
+              "training_role": { "enum": ["positive", "negative", "ignore"] }
+            }
+          }
+        },
+        "positive_class_index": { "const": 1 },
+        "ignore_index": { "const": 255 },
+        "reference_mask_status": {
+          "enum": [
+            "blocked",
+            "synthetic_fixture_only",
+            "qualified_expert_or_adjudicated",
+            "confirmed_for_model_purpose"
+          ]
+        },
+        "label_release_sha256": { "$ref": "#/$defs/nullableSha256" }
+      }
+    },
+    "training_lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_manifest_sha256",
+        "training_dataset_manifest_sha256",
+        "label_release_sha256",
+        "prepared_tile_manifest_sha256",
+        "controlled_model_run_receipt_sha256",
+        "threshold_selection_receipt_sha256",
+        "calibration_receipt_sha256"
+      ],
+      "properties": {
+        "input_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "training_dataset_manifest_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "label_release_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "prepared_tile_manifest_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "controlled_model_run_receipt_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "threshold_selection_receipt_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "calibration_receipt_sha256": { "$ref": "#/$defs/nullableSha256" }
+      }
+    },
+    "partition_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "partition_manifest_sha256",
+        "training_partition_sha256",
+        "calibration_partition_sha256",
+        "final_holdout_partition_sha256",
+        "train_ids",
+        "calibration_ids",
+        "final_holdout_ids"
+      ],
+      "properties": {
+        "partition_manifest_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "training_partition_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "calibration_partition_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "final_holdout_partition_sha256": { "$ref": "#/$defs/nullableSha256" },
+        "train_ids": { "$ref": "#/$defs/idArray" },
+        "calibration_ids": { "$ref": "#/$defs/idArray" },
+        "final_holdout_ids": { "$ref": "#/$defs/idArray" }
+      }
+    },
+    "inference_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_crs",
+        "resolution",
+        "bounds",
+        "tile_size",
+        "overlap",
+        "stride",
+        "batch_size",
+        "device",
+        "probability_threshold"
+      ],
+      "properties": {
+        "target_crs": { "type": "string", "pattern": "^EPSG:\\d+$" },
+        "resolution": { "$ref": "#/$defs/positivePair" },
+        "bounds": { "$ref": "#/$defs/bounds" },
+        "tile_size": { "type": "integer", "minimum": 1 },
+        "overlap": { "type": "integer", "minimum": 0 },
+        "stride": { "type": "integer", "minimum": 1 },
+        "batch_size": { "type": "integer", "minimum": 1 },
+        "device": { "type": "string", "minLength": 1 },
+        "probability_threshold": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        }
+      }
+    },
+    "processing_allowed": { "type": "boolean" },
+    "can_feed_decision_layer": { "const": false },
+    "reason_blocked": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "dataset_mode": { "enum": ["fixture_demo", "candidate"] }
+        },
+        "required": ["dataset_mode"]
+      },
+      "then": {
+        "properties": {
+          "operational_status": { "const": "non_operational" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "processing_allowed": { "const": true } },
+        "required": ["processing_allowed"]
+      },
+      "then": {
+        "properties": {
+          "input_manifest_rows": {
+            "items": {
+              "properties": { "processing_allowed": { "const": true } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "run_status": { "const": "completed" } },
+        "required": ["run_status"]
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "properties": {
+              "model_id": { "$ref": "#/$defs/safeId" },
+              "model_revision": { "type": "string", "minLength": 1 },
+              "architecture": { "type": "string", "minLength": 1 },
+              "framework": { "type": "string", "minLength": 1 },
+              "framework_version": { "type": "string", "minLength": 1 },
+              "model_sha256": { "$ref": "#/$defs/sha256" }
+            }
+          },
+          "training_lineage": {
+            "properties": {
+              "training_dataset_manifest_sha256": { "$ref": "#/$defs/sha256" },
+              "prepared_tile_manifest_sha256": { "$ref": "#/$defs/sha256" }
+            }
+          },
+          "partition_contract": {
+            "properties": {
+              "partition_manifest_sha256": { "$ref": "#/$defs/sha256" },
+              "training_partition_sha256": { "$ref": "#/$defs/sha256" },
+              "calibration_partition_sha256": { "$ref": "#/$defs/sha256" },
+              "final_holdout_partition_sha256": { "$ref": "#/$defs/sha256" },
+              "train_ids": { "minItems": 1 },
+              "calibration_ids": { "minItems": 1 },
+              "final_holdout_ids": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "nullableSha256": {
+      "oneOf": [
+        { "$ref": "#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{7,40}$"
+    },
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "nullableSafeId": {
+      "oneOf": [
+        { "$ref": "#/$defs/safeId" },
+        { "type": "null" }
+      ]
+    },
+    "evidenceKind": {
+      "enum": [
+        "satellite_observed_extent",
+        "optical_corroboration",
+        "susceptibility_forecast",
+        "scenario_assumption",
+        "external_algorithmic_baseline",
+        "human_field_observation"
+      ]
+    },
+    "idArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/safeId" }
+    },
+    "positivePair": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "exclusiveMinimum": 0 },
+        { "type": "number", "exclusiveMinimum": 0 }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "bounds": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    }
+  }
+}

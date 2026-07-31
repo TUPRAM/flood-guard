@@ -1,0 +1,6 @@
+unit_id,global_flood_history_0_1,jrc_water_occurrence_0_1,jrc_water_seasonality_0_1,jrc_water_change_0_1,elevation_susceptibility_0_1,slope_susceptibility_0_1,worldcover_flood_proneness_0_1,river_proximity_0_1,drainage_density_0_1,catchment_wetness_0_1,soil_runoff_potential_0_1,rainfall_climatology_0_1,current_sar_probability_0_1,source_timestamp,confidence_class,assumptions
+FG-TB-001,0.92,0.88,0.85,0.76,0.90,0.91,0.82,0.95,0.78,0.88,0.72,0.86,0.88,2025-12-31T00:00:00Z,high,Synthetic normalized historical context features for demonstration only
+FG-TB-002,0.68,0.62,0.58,0.55,0.72,0.70,0.66,0.74,0.63,0.67,0.56,0.69,0.71,2025-12-31T00:00:00Z,medium,Synthetic normalized historical context features for demonstration only
+FG-TB-003,0.61,0.57,0.54,0.51,0.65,0.62,0.60,0.68,0.55,0.63,0.52,0.64,0.68,2025-12-31T00:00:00Z,medium,Synthetic normalized historical context features for demonstration only
+FG-TB-004,0.73,0.76,0.71,0.68,0.79,0.77,0.70,0.80,0.69,0.75,0.62,0.74,0.54,2025-12-31T00:00:00Z,high,Synthetic normalized historical context features for demonstration only
+FG-TB-005,0.12,0.10,0.08,0.06,0.15,0.05,0.22,0.14,,0.11,,0.18,0.92,2025-12-31T00:00:00Z,low,Synthetic steep-hillside context with missing drainage and soil inputs for conflict demonstration

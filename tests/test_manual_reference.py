@@ -11,6 +11,7 @@ from floodguard.ingestion import build_ingestion_manifest, default_mae_sai_file_
 from floodguard.manual_reference import (
     MANUAL_REFERENCE_COLUMNS,
     ManualReferenceError,
+    _classify_spatial_relation,
     inspect_manual_reference_mask,
     write_manual_reference_manifest,
 )
@@ -45,7 +46,9 @@ def test_missing_manual_reference_writes_blocked_skeleton(tmp_path: Path) -> Non
     assert "not found outside Git" in row["reason_blocked"]
 
 
-def test_valid_manual_reference_records_geopackage_metadata(tmp_path: Path) -> None:
+def test_valid_manual_reference_metadata_stays_blocked_without_spatial_check(
+    tmp_path: Path,
+) -> None:
     gpkg = tmp_path / "mae_sai_manual_flood_reference.gpkg"
     _write_minimal_manual_gpkg(gpkg)
 
@@ -57,6 +60,11 @@ def test_valid_manual_reference_records_geopackage_metadata(tmp_path: Path) -> N
 
     row = frame.iloc[0]
     assert row["reference_id"] == "MS-MANUAL-001"
+    assert row["confidence"] == "medium"
+    assert row["source_basis"] == "Sentinel-1 visual interpretation"
+    assert row["digitized_by"] == "[blank]"
+    assert row["digitized_at"] == "2026-07-09"
+    assert row["notes"] == "uncertain areas excluded"
     assert row["sha256_status"] == "recorded"
     assert len(row["sha256"]) == 64
     assert row["source_type"] == "manual_qgis_weak_reference"
@@ -66,12 +74,12 @@ def test_valid_manual_reference_records_geopackage_metadata(tmp_path: Path) -> N
     assert bool(row["required_fields_present"]) is True
     assert row["missing_fields"] == ""
     assert row["not_official_status"] == "confirmed_true"
-    assert row["candidate_readiness_status"] == "ready_for_candidate_metrics"
-    assert bool(row["candidate_validation_metrics_allowed"]) is True
+    assert row["candidate_readiness_status"] == "spatially_unqualified"
+    assert bool(row["candidate_validation_metrics_allowed"]) is False
     assert bool(row["official_validation_truth_allowed"]) is False
     assert bool(row["unqualified_ml_label_allowed"]) is False
     assert bool(row["processing_allowed"]) is False
-    assert "does not clear official reference-mask" in row["reason_blocked"]
+    assert "spatial relation is not verified" in row["reason_blocked"]
 
 
 def test_manual_reference_requires_required_fields_and_not_official_true(
@@ -89,6 +97,146 @@ def test_manual_reference_requires_required_fields_and_not_official_true(
     assert bool(row["candidate_validation_metrics_allowed"]) is False
     assert "missing required fields" in row["reason_blocked"]
     assert "not_official status is contains_false" in row["reason_blocked"]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("reference_id", ""),
+        ("reference_id", None),
+        ("confidence", " "),
+        ("source_basis", None),
+        ("digitized_by", ""),
+        ("digitized_at", None),
+        ("notes", "  "),
+    ],
+)
+def test_manual_reference_rejects_blank_required_attribute_values(
+    tmp_path: Path,
+    field: str,
+    value: object,
+) -> None:
+    gpkg = tmp_path / f"blank_{field}.gpkg"
+    _write_minimal_manual_gpkg(gpkg)
+    _update_manual_attributes(gpkg, **{field: value})
+
+    row = inspect_manual_reference_mask(gpkg).iloc[0]
+
+    assert row["attribute_values_status"] == "invalid"
+    assert f"feature_1:{field}:blank" in row["attribute_value_blockers"]
+    assert bool(row["candidate_validation_metrics_allowed"]) is False
+    assert "invalid feature attributes" in row["reason_blocked"]
+    if field == "reference_id":
+        assert row["reference_id"] == ""
+        assert row["reference_id"] != "MANUAL-QGIS-MAE-SAI-2024"
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "blocker"),
+    [
+        ("confidence", "certain", "confidence:invalid_certain"),
+        ("digitized_at", "09/07/2026", "digitized_at:invalid_iso_date"),
+    ],
+)
+def test_manual_reference_rejects_invalid_confidence_and_date(
+    tmp_path: Path,
+    field: str,
+    value: str,
+    blocker: str,
+) -> None:
+    gpkg = tmp_path / f"invalid_{field}.gpkg"
+    _write_minimal_manual_gpkg(gpkg)
+    _update_manual_attributes(gpkg, **{field: value})
+
+    row = inspect_manual_reference_mask(gpkg).iloc[0]
+
+    assert row["attribute_values_status"] == "invalid"
+    assert blocker in row["attribute_value_blockers"]
+    assert bool(row["candidate_validation_metrics_allowed"]) is False
+
+
+def test_manual_reference_accepts_explicit_blank_digitizer_placeholder(
+    tmp_path: Path,
+) -> None:
+    gpkg = tmp_path / "explicit_blank_digitizer.gpkg"
+    _write_minimal_manual_gpkg(gpkg)
+
+    row = inspect_manual_reference_mask(gpkg).iloc[0]
+
+    assert row["attribute_values_status"] == "valid"
+    assert row["attribute_value_blockers"] == ""
+    assert row["candidate_readiness_status"] == "spatially_unqualified"
+    assert bool(row["candidate_validation_metrics_allowed"]) is False
+
+
+def test_manual_reference_classifies_cross_border_non_overlap() -> None:
+    manual = {
+        "type": "Polygon",
+        "coordinates": [[(99.8, 20.5), (99.9, 20.5), (99.9, 20.6), (99.8, 20.5)]],
+    }
+    study_area = {
+        "type": "Polygon",
+        "coordinates": [[(99.8, 20.2), (99.9, 20.2), (99.9, 20.4), (99.8, 20.2)]],
+    }
+
+    spatial = _classify_spatial_relation([manual], [study_area])
+
+    assert spatial["spatial_relation"] == "cross_border_calibration_only"
+    assert spatial["in_study_area_overlap"] is False
+    assert float(spatial["distance_to_study_area_km"]) > 0
+    assert spatial["spatial_relation_status"] == "verified_geometry_intersection"
+
+
+@pytest.mark.parametrize(
+    "manual",
+    [
+        {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    (99.8, 20.5),
+                    (99.9, 20.6),
+                    (99.8, 20.6),
+                    (99.9, 20.5),
+                    (99.8, 20.5),
+                ]
+            ],
+        },
+        {
+            "type": "Polygon",
+            "coordinates": [[(99.8, 20.5), (99.9, 20.5), (99.8, 20.5)]],
+        },
+        {"type": "Point", "coordinates": (99.8, 20.5)},
+    ],
+)
+def test_manual_reference_spatial_relation_rejects_invalid_geometry(
+    manual: dict[str, object],
+) -> None:
+    study_area = {
+        "type": "Polygon",
+        "coordinates": [
+            [(99.8, 20.2), (99.9, 20.2), (99.9, 20.4), (99.8, 20.2)]
+        ],
+    }
+
+    with pytest.raises(ManualReferenceError, match="must be"):
+        _classify_spatial_relation([manual], [study_area])
+
+
+def test_manual_reference_rejects_ambiguous_digitizer_placeholder(
+    tmp_path: Path,
+) -> None:
+    gpkg = tmp_path / "ambiguous_digitizer.gpkg"
+    _write_minimal_manual_gpkg(gpkg)
+    _update_manual_attributes(gpkg, digitized_by="blank")
+
+    row = inspect_manual_reference_mask(gpkg).iloc[0]
+
+    assert row["attribute_values_status"] == "invalid"
+    assert "digitized_by:explicit_placeholder_required" in row[
+        "attribute_value_blockers"
+    ]
+    assert bool(row["candidate_validation_metrics_allowed"]) is False
 
 
 def test_manual_reference_rejects_non_geopackage(tmp_path: Path) -> None:
@@ -331,4 +479,23 @@ def _write_minimal_manual_gpkg(
                 )
                 """,
                 (not_official,),
+            )
+
+
+def _update_manual_attributes(path: Path, **values: object) -> None:
+    allowed = {
+        "reference_id",
+        "confidence",
+        "source_basis",
+        "digitized_by",
+        "digitized_at",
+        "notes",
+    }
+    if not set(values).issubset(allowed):
+        raise AssertionError("Test attempted to update an unsupported attribute.")
+    with sqlite3.connect(path) as connection:
+        for field, value in values.items():
+            connection.execute(
+                f'UPDATE manual_flood_extent SET "{field}" = ? WHERE fid = 1',
+                (value,),
             )

@@ -1,0 +1,14 @@
+{
+  "type": "FeatureCollection",
+  "name": "floodguard_fixture_geographic_context",
+  "features": [
+    {"type":"Feature","properties":{"context_id":"FG-CTX-RIVER-001","context_type":"river","name_en":"Fixture river corridor","name_th":"แนวแม่น้ำสาธิต","status":"synthetic_context_not_verified"},"geometry":{"type":"LineString","coordinates":[[100.011,17.997],[100.014,18.006],[100.012,18.015],[100.015,18.025],[100.013,18.034],[100.016,18.043]]}},
+    {"type":"Feature","properties":{"context_id":"FG-CTX-DRAIN-001","context_type":"drainage","name_en":"Fixture drainage channel","name_th":"คลองระบายน้ำสาธิต","status":"synthetic_context_not_verified"},"geometry":{"type":"LineString","coordinates":[[99.998,18.026],[100.012,18.025],[100.024,18.027],[100.041,18.025],[100.058,18.029]]}},
+    {"type":"Feature","properties":{"context_id":"FG-CTX-ROAD-001","context_type":"principal_road","name_en":"Fixture principal road","name_th":"ถนนสายหลักสาธิต","status":"synthetic_context_not_verified"},"geometry":{"type":"LineString","coordinates":[[99.997,18.007],[100.012,18.012],[100.029,18.014],[100.044,18.011],[100.062,18.016]]}},
+    {"type":"Feature","properties":{"context_id":"FG-CTX-SETTLEMENT-001","context_type":"settlement","name_en":"River Market demo settlement","name_th":"ชุมชนตลาดริมน้ำสาธิต","status":"synthetic_context_not_verified","area_id":"FG-TB-001"},"geometry":{"type":"Point","coordinates":[100.006,18.007]}},
+    {"type":"Feature","properties":{"context_id":"FG-CTX-SETTLEMENT-002","context_type":"settlement","name_en":"Bridge Junction demo settlement","name_th":"ชุมทางสะพานสาธิต","status":"synthetic_context_not_verified","area_id":"FG-TB-002"},"geometry":{"type":"Point","coordinates":[100.031,18.008]}},
+    {"type":"Feature","properties":{"context_id":"FG-CTX-SETTLEMENT-003","context_type":"settlement","name_en":"Canal Fringe demo settlement","name_th":"ชุมชนชายคลองสาธิต","status":"synthetic_context_not_verified","area_id":"FG-TB-004"},"geometry":{"type":"Point","coordinates":[100.033,18.033]}},
+    {"type":"Feature","properties":{"context_id":"FG-CTX-FACILITY-001","context_type":"facility","facility_type":"clinic_candidate","name_en":"Fixture clinic candidate","name_th":"คลินิกสาธิตที่ยังไม่ยืนยัน","status":"synthetic_context_not_verified","area_id":"FG-TB-003"},"geometry":{"type":"Point","coordinates":[100.007,18.034]}},
+    {"type":"Feature","properties":{"context_id":"FG-CTX-FACILITY-002","context_type":"facility","facility_type":"shelter_candidate","name_en":"Fixture shelter candidate","name_th":"จุดพักพิงสาธิตที่ยังไม่ยืนยัน","status":"synthetic_context_not_verified","area_id":"FG-TB-002"},"geometry":{"type":"Point","coordinates":[100.035,18.016]}}
+  ]
+}

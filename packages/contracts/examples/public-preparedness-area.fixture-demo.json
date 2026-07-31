@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "evidence_context_id": "fixture-thailand-demo:fixture-demo-1",
+  "area_id": "S1",
+  "area_name_th": "พื้นที่สาธิตหนึ่ง",
+  "area_name_en": "Fixture Area One",
+  "planning_priority_0_100": 62.4,
+  "evidence_sufficiency": "low",
+  "recommendation_code": "low_confidence",
+  "source_timestamp": "2024-09-12T00:00:00Z",
+  "freshness": "historical",
+  "current_conditions_confirmed": false
+}

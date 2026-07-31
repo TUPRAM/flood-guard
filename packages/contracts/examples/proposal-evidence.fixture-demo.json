@@ -1,0 +1,63 @@
+{
+  "artifacts": [
+    {
+      "kind": "geoai_proof_receipt",
+      "media_type": "application/json",
+      "relative_path": "services/geoai-runner/evidence/geoai-proof-receipt.json",
+      "sha256": "4bb7885130b1c9a5320d41a1990ba2e63c4f4cc4de15c5b7e3f2f8fdccc2aeb2"
+    },
+    {
+      "kind": "geoai_probability_thumbnail",
+      "media_type": "image/png",
+      "relative_path": "services/geoai-runner/evidence/geoai-probability-thumbnail.png",
+      "sha256": "b00b02cddbad969d6a91e3abd15fcfb00ebc73363c9e9f883a96a84ee4a42700"
+    }
+  ],
+  "dataset_mode": "candidate",
+  "generated_at": "2026-07-18T07:36:16.364283Z",
+  "geoai_proof": {
+    "aggregation_status": "report_only",
+    "can_feed_decision_layer": false,
+    "feature_stack_id": "clip_linear_uint8_v1-8-band",
+    "geoai_version": "0.41.1",
+    "input_manifest_sha256": "c401c3d618f6bcba14fcd692af94416712ca8d227580112e67ecf87860dfeb11",
+    "output_probability_sha256": "17178cae008584035d7feab14f9eaf922e16242c3d68d686d61580780359909d",
+    "preprocessing_id": "clip_linear_uint8_v1",
+    "processing_allowed": true,
+    "reason_blocked": "Synthetic candidate proof cannot feed the decision layer.",
+    "validation_status": "passed"
+  },
+  "git_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+  "operational_status": "non_operational",
+  "schema_version": "1.0",
+  "test_suites": [
+    {
+      "command": "uv run pytest --junitxml=.tmp/proposal-evidence/root.xml",
+      "name": "root",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "uv run --project services/api pytest services/api/tests --junitxml=.tmp/proposal-evidence/api.xml",
+      "name": "api",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "python scripts/run_check_with_junit.py --suite frontend --output .tmp/proposal-evidence/frontend.xml -- pnpm verify:frontend",
+      "name": "frontend",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    },
+    {
+      "command": "uv run --project services/geoai-runner pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.tmp/proposal-evidence/geoai-normal.xml",
+      "name": "geoai_normal",
+      "passed": 0,
+      "result": "not_run",
+      "skipped": 0
+    }
+  ]
+}

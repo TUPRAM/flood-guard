@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/flood-observation-product-v2.schema.json",
+  "title": "FloodGuard flood observation product v2",
+  "description": "An immutable probability, validity, quality, uncertainty, and abstention package. Candidate products are report-only and preserve unknown cells.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_mode",
+    "operational_status",
+    "source_timestamp",
+    "generated_at",
+    "confidence_class",
+    "source_name",
+    "assumptions",
+    "official_warning",
+    "data_version",
+    "git_commit",
+    "product_id",
+    "run_id",
+    "study_area_id",
+    "event_id",
+    "evidence_kind",
+    "source_manifest_sha256",
+    "model_run_manifest_sha256",
+    "model_sha256",
+    "evaluation_manifest_sha256",
+    "grid",
+    "assets",
+    "valid_coverage_fraction",
+    "abstained_fraction",
+    "sensor_quality_status",
+    "ood_status",
+    "review_required_reasons",
+    "unknown_cell_policy",
+    "counts_as_observed_evidence",
+    "processing_allowed",
+    "can_feed_decision_layer",
+    "reason_blocked"
+  ],
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "dataset_mode": {
+      "enum": ["fixture_demo", "candidate", "official_input"]
+    },
+    "operational_status": {
+      "enum": ["non_operational", "planning_only", "agency_operational"]
+    },
+    "source_timestamp": { "type": "string", "format": "date-time" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "confidence_class": { "enum": ["low", "medium", "high"] },
+    "source_name": { "type": "string", "minLength": 1 },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "official_warning": { "const": false },
+    "data_version": { "$ref": "#/$defs/safeId" },
+    "git_commit": { "$ref": "#/$defs/commit" },
+    "product_id": { "$ref": "#/$defs/safeId" },
+    "run_id": { "$ref": "#/$defs/safeId" },
+    "study_area_id": { "$ref": "#/$defs/safeId" },
+    "event_id": { "$ref": "#/$defs/safeId" },
+    "evidence_kind": {
+      "enum": [
+        "satellite_observed_extent",
+        "optical_corroboration",
+        "susceptibility_forecast",
+        "scenario_assumption",
+        "external_algorithmic_baseline",
+        "human_field_observation"
+      ]
+    },
+    "source_manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "model_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "model_sha256": { "$ref": "#/$defs/sha256" },
+    "evaluation_manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "crs",
+        "resolution",
+        "bounds",
+        "width",
+        "height",
+        "transform",
+        "nodata",
+        "grid_sha256"
+      ],
+      "properties": {
+        "crs": { "type": "string", "pattern": "^EPSG:\\d+$" },
+        "resolution": { "$ref": "#/$defs/positivePair" },
+        "bounds": { "$ref": "#/$defs/bounds" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "transform": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "number" },
+            { "type": "number" },
+            { "type": "number" },
+            { "type": "number" },
+            { "type": "number" },
+            { "type": "number" }
+          ],
+          "items": false,
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "nodata": { "type": "number" },
+        "grid_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/asset" },
+      "allOf": [
+        { "contains": { "properties": { "role": { "const": "flood_probability" } }, "required": ["role"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "hard_extent" } }, "required": ["role"] }, "minContains": 0, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "validity_mask" } }, "required": ["role"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "sensor_quality_mask" } }, "required": ["role"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "model_uncertainty" } }, "required": ["role"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "ood_score" } }, "required": ["role"] }, "minContains": 0, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "abstention_mask" } }, "required": ["role"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "permanent_water_context" } }, "required": ["role"] }, "minContains": 0, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "preview" } }, "required": ["role"] }, "minContains": 0, "maxContains": 1 },
+        { "contains": { "properties": { "role": { "const": "stac_item" } }, "required": ["role"] }, "minContains": 0, "maxContains": 1 }
+      ]
+    },
+    "valid_coverage_fraction": { "$ref": "#/$defs/unitMetric" },
+    "abstained_fraction": { "$ref": "#/$defs/unitMetric" },
+    "sensor_quality_status": {
+      "enum": ["not_evaluated", "passed", "degraded", "failed"]
+    },
+    "ood_status": {
+      "enum": ["not_evaluated", "in_domain", "out_of_distribution"]
+    },
+    "review_required_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "unknown_cell_policy": {
+      "const": "preserve_nodata_and_abstention_never_fill_as_dry"
+    },
+    "counts_as_observed_evidence": { "type": "boolean" },
+    "processing_allowed": { "type": "boolean" },
+    "can_feed_decision_layer": { "const": false },
+    "reason_blocked": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "dataset_mode": { "enum": ["fixture_demo", "candidate"] }
+        },
+        "required": ["dataset_mode"]
+      },
+      "then": {
+        "properties": {
+          "operational_status": { "const": "non_operational" },
+          "counts_as_observed_evidence": { "const": false }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "sensor_quality_status": { "const": "failed" } },
+        "required": ["sensor_quality_status"]
+      },
+      "then": {
+        "properties": { "counts_as_observed_evidence": { "const": false } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "ood_status": { "const": "out_of_distribution" } },
+        "required": ["ood_status"]
+      },
+      "then": {
+        "properties": { "counts_as_observed_evidence": { "const": false } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "processing_allowed": { "const": false } },
+        "required": ["processing_allowed"]
+      },
+      "then": {
+        "properties": { "counts_as_observed_evidence": { "const": false } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "valid_coverage_fraction": { "const": 0 } },
+        "required": ["valid_coverage_fraction"]
+      },
+      "then": {
+        "properties": { "counts_as_observed_evidence": { "const": false } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "abstained_fraction": { "exclusiveMinimum": 0 } },
+        "required": ["abstained_fraction"]
+      },
+      "then": {
+        "properties": {
+          "review_required_reasons": { "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{7,40}$"
+    },
+    "unitMetric": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "positivePair": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "exclusiveMinimum": 0 },
+        { "type": "number", "exclusiveMinimum": 0 }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "bounds": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "relative_path",
+        "media_type",
+        "sha256",
+        "dtype",
+        "band_name",
+        "nodata",
+        "minimum",
+        "maximum"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "flood_probability",
+            "hard_extent",
+            "validity_mask",
+            "sensor_quality_mask",
+            "model_uncertainty",
+            "ood_score",
+            "abstention_mask",
+            "permanent_water_context",
+            "preview",
+            "stac_item"
+          ]
+        },
+        "relative_path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:[\\\\/])(?!/)(?!\\\\\\\\)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$))(?!.*file://).+$"
+        },
+        "media_type": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "dtype": { "enum": ["uint8", "float32", "json", "png"] },
+        "band_name": { "type": ["string", "null"], "minLength": 1 },
+        "nodata": { "type": ["number", "null"] },
+        "minimum": { "type": ["number", "null"] },
+        "maximum": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

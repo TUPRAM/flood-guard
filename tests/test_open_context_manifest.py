@@ -44,6 +44,9 @@ def test_write_open_context_manifest_writes_csv(tmp_path: Path) -> None:
     assert "OpenStreetMap Thailand via Geofabrik" in set(frame["source_name"])
     assert "download_url" in frame.columns
     assert "sha256_status" in frame.columns
+    output_bytes = output.read_bytes()
+    assert b"\r\n" not in output_bytes
+    assert output_bytes.endswith(b"\n")
 
 
 def test_build_open_context_rows_records_existing_external_files(tmp_path: Path) -> None:

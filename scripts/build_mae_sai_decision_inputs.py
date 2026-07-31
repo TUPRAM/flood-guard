@@ -100,7 +100,7 @@ def main() -> None:
         raise SystemExit(2) from exc
 
     args.output_csv.parent.mkdir(parents=True, exist_ok=True)
-    decision_inputs.to_csv(args.output_csv, index=False)
+    decision_inputs.to_csv(args.output_csv, index=False, lineterminator="\n")
 
     with tempfile.TemporaryDirectory(prefix="floodguard_mae_sai_admin_") as tmpdir:
         admin_path = Path(tmpdir) / "mae_sai_review_area_admin.geojson"

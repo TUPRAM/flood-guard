@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+import importlib.util
 import json
 from pathlib import Path
+import re
+import subprocess
 
 import numpy as np
 import pandas as pd
+import pytest
 import rasterio
 from rasterio.transform import from_origin
 
@@ -23,6 +28,69 @@ from floodguard.sar_raster_extract import (
 
 
 REPO_ROOT = Path(__file__).parents[1]
+SCENARIO_BUILDER_PATH = REPO_ROOT / "scripts" / "build_mae_sai_real_context.py"
+SCENARIO_BUILDER_SPEC = importlib.util.spec_from_file_location(
+    "build_mae_sai_real_context_for_tests",
+    SCENARIO_BUILDER_PATH,
+)
+assert SCENARIO_BUILDER_SPEC is not None
+assert SCENARIO_BUILDER_SPEC.loader is not None
+SCENARIO_BUILDER = importlib.util.module_from_spec(SCENARIO_BUILDER_SPEC)
+SCENARIO_BUILDER_SPEC.loader.exec_module(SCENARIO_BUILDER)
+
+
+def _write_scenario_artifact_inputs(directory: Path) -> tuple[Path, Path, Path]:
+    population_path = directory / "population.csv"
+    edge_path = directory / "edges.csv"
+    facility_path = directory / "facilities.csv"
+    pd.DataFrame([{"node_id": "node-1", "population": 12.0}]).to_csv(
+        population_path,
+        index=False,
+        lineterminator="\n",
+    )
+    pd.DataFrame([{"edge_id": "edge-1", "minutes": 3.5}]).to_csv(
+        edge_path,
+        index=False,
+        lineterminator="\n",
+    )
+    pd.DataFrame([{"facility_id": "facility-1", "status": "candidate"}]).to_csv(
+        facility_path,
+        index=False,
+        lineterminator="\n",
+    )
+    return population_path, edge_path, facility_path
+
+
+def _write_scenario_receipt(
+    directory: Path,
+    *,
+    git_commit: str | None = None,
+    source_timestamp: str = "2024-09-16T06:16:01+07:00",
+    generated_at: str = "2026-07-20T08:30:00Z",
+    output_name: str = "scenario.json",
+) -> Path:
+    population_path, edge_path, facility_path = _write_scenario_artifact_inputs(
+        directory
+    )
+    return SCENARIO_BUILDER._write_scenario_input_manifest(
+        population_path=population_path,
+        edge_path=edge_path,
+        facility_path=facility_path,
+        output_path=directory / output_name,
+        git_commit=_repository_head() if git_commit is None else git_commit,
+        source_timestamp=source_timestamp,
+        generated_at=generated_at,
+    )
+
+
+def _repository_head() -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip().lower()
 
 
 def square_feature(
@@ -239,7 +307,7 @@ def test_build_mae_sai_context_outputs_joins_real_context_contracts(
     ).all()
     assert not bool(
         outputs.quality_summary.loc[
-            0, "manual_reference_overlaps_official_adm3"
+            0, "manual_reference_overlaps_thailand_adm3_candidate"
         ]
     )
 
@@ -348,3 +416,137 @@ def test_committed_mae_sai_context_outputs_keep_real_grain_and_redacted_paths() 
     assert "C:\\Users\\" not in derived_text
     assert "C:/Users/" not in derived_text
     assert "FloodGuard_external_data" not in derived_text
+
+
+def test_scenario_receipt_binds_explicit_provenance_and_is_self_hashed(
+    tmp_path: Path,
+) -> None:
+    manifest_path = _write_scenario_receipt(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    receipt_sha256 = manifest.pop("receipt_sha256")
+    canonical = json.dumps(
+        manifest,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    assert hashlib.sha256(canonical.encode("utf-8")).hexdigest() == receipt_sha256
+    assert manifest["git_commit"] == _repository_head()
+    assert manifest["source_timestamp"] == "2024-09-15T23:16:01Z"
+    assert manifest["generated_at"] == "2026-07-20T08:30:00Z"
+    assert manifest["source_name"].startswith(
+        "CDSE Sentinel-1 candidate change context"
+    )
+    assert manifest["source_licenses"] == [
+        "Copernicus Sentinel data legal notice",
+        "WorldPop CC BY 4.0",
+        "OpenStreetMap ODbL 1.0",
+    ]
+
+
+@pytest.mark.parametrize(
+    "git_commit",
+    ["", "7e42882", "g" * 40, "a" * 39, "a" * 41],
+)
+def test_scenario_receipt_rejects_nonimmutable_git_commit(
+    tmp_path: Path,
+    git_commit: str,
+) -> None:
+    with pytest.raises(ValueError, match="forty-character hexadecimal commit"):
+        _write_scenario_receipt(tmp_path, git_commit=git_commit)
+
+
+def test_scenario_receipt_rejects_nonexistent_full_commit(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="identify a commit reachable"):
+        _write_scenario_receipt(tmp_path, git_commit="f" * 40)
+
+
+@pytest.mark.parametrize(
+    ("field", "timestamp", "message"),
+    [
+        ("source_timestamp", "not-a-time", "Invalid UTC timestamp"),
+        (
+            "source_timestamp",
+            "2024-09-15T23:16:01",
+            "must include a UTC offset",
+        ),
+        ("generated_at", "not-a-time", "Invalid UTC timestamp"),
+        (
+            "generated_at",
+            "2026-07-20T08:30:00",
+            "must include a UTC offset",
+        ),
+    ],
+)
+def test_scenario_receipt_rejects_invalid_or_naive_timestamps(
+    tmp_path: Path,
+    field: str,
+    timestamp: str,
+    message: str,
+) -> None:
+    kwargs = {field: timestamp}
+    with pytest.raises(ValueError, match=message):
+        _write_scenario_receipt(tmp_path, **kwargs)
+
+
+def test_scenario_receipt_bytes_are_deterministic_lf(tmp_path: Path) -> None:
+    first = _write_scenario_receipt(tmp_path, output_name="first.json")
+    second = _write_scenario_receipt(tmp_path, output_name="second.json")
+
+    assert first.read_bytes() == second.read_bytes()
+    assert b"\r\n" not in first.read_bytes()
+    assert first.read_bytes().endswith(b"\n")
+
+
+def test_committed_mae_sai_scenario_inputs_are_checksum_bound_and_path_safe() -> None:
+    output_dir = REPO_ROOT / "outputs"
+    manifest_path = output_dir / "mae_sai_scenario_inputs_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    receipt_sha256 = manifest.pop("receipt_sha256")
+    canonical = json.dumps(
+        manifest,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    assert hashlib.sha256(canonical.encode("utf-8")).hexdigest() == receipt_sha256
+    assert manifest["study_area_id"] == "mae_sai_candidate_v1"
+    assert manifest["dataset_mode"] == "candidate"
+    assert manifest["operational_status"] == "non_operational"
+    assert manifest["official_warning"] is False
+    assert manifest["data_version"] == "mae-sai-candidate-2024-09-15-v1"
+    assert re.fullmatch(r"[0-9a-f]{40}", manifest["git_commit"])
+    assert manifest["processing_allowed"] is True
+    assert manifest["can_feed_decision_layer"] is False
+    assert manifest["reason_blocked"]
+    assert manifest["source_licenses"] == [
+        "Copernicus Sentinel data legal notice",
+        "WorldPop CC BY 4.0",
+        "OpenStreetMap ODbL 1.0",
+    ]
+    assert b"\r\n" not in manifest_path.read_bytes()
+
+    rows_by_role = {
+        "population_nodes": 13_620,
+        "access_edges": 30_443,
+        "facility_candidates": 42,
+    }
+    for artifact in manifest["artifacts"]:
+        path = output_dir / artifact["relative_path"]
+        assert path.parent == output_dir
+        assert path.is_file()
+        assert b"\r\n" not in path.read_bytes()
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == artifact["sha256"]
+        frame = pd.read_csv(path)
+        assert len(frame) == rows_by_role[artifact["role"]]
+        assert list(frame.columns) == artifact["columns"]
+
+    serialized = "\n".join(
+        (output_dir / artifact["relative_path"]).read_text(encoding="utf-8")
+        for artifact in manifest["artifacts"]
+    )
+    assert "C:\\Users\\" not in serialized
+    assert "C:/Users/" not in serialized
+    assert "FloodGuard_external_data" not in serialized

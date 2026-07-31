@@ -246,7 +246,12 @@ def build_geometry_quality_notes(review_row: pd.Series) -> str:
             "",
             "- Product-level terms for validation metrics, screenshots, derived metrics, redistribution, and ML-label use are unresolved.",
             "- Human visual QA in QGIS should inspect polygon alignment against basemap, river corridor, and known Mae Sai flood reports.",
-            "- Do not run the real non-ML SAR baseline until the Mae Sai file manifest passes without `--allow-blocked`.",
+            (
+                "- Do not use this Sentinel Asia reference candidate for qualified "
+                "validation or as a baseline reference until its own manifest row passes "
+                "without `--allow-blocked`. The separate manual cross-border weak-reference "
+                "calibration does not clear this source's gates."
+            ),
             "",
             "## How To Open In QGIS",
             "",

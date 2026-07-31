@@ -1,10 +1,12 @@
-# Mae Sai Weak-Label ML Experiment
+# Mae Sai Historical Weak-Label ML Experiment (Retired Source Pair)
 
-Weak-label experiment against manually digitized weak-reference mask. Non-operational. Not official labels. Not field validation.
+Weak-label experiment against manually digitized weak-reference mask. Non-operational. Not official labels. Not field validation. Ineligible for the decision layer, FPPS, action classes, or warnings.
 
 ## Data Status
 
-- Sentinel-1 features come from the weak-reference real-data SAR baseline.
+- Artifact status: historical retired-source screening evidence only.
+- The experiment used the retired September 6 / September 15 COG pair.
+- It is not comparable to the active same-track original-SAFE baseline and must not be regenerated as current evidence.
 - Labels come from the manual weak-reference mask, not official labels.
 - This is not field validation and not an emergency warning.
 
@@ -27,12 +29,12 @@ Weak-label experiment against manually digitized weak-reference mask. Non-operat
 | Recall | 0.005728 | 0.812332 | +0.806604 |
 | Area error ratio | -0.770553 | 2.450472 | +3.221025 |
 
-## Decision-Layer Eligibility
+## Hard Safety Boundary
 
 - ML improves baseline: True
 - ML complements baseline: True
-- Can feed candidate decision layer: True
-- The ML probability may feed a candidate decision-layer run because it improves or complements the non-ML threshold baseline.
+- Can feed candidate decision layer: False
+- The ML probability is not eligible to feed the decision layer, FPPS, action classes, or warnings. Baseline improvement does not override weak-label provenance.
 
 ## Source Products
 

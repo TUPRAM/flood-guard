@@ -2,30 +2,49 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 
+from floodguard.ingestion import MAE_SAI_BASELINE_POST_PRODUCT_ID
 from floodguard.sar_baseline import MASK_METRIC_COLUMNS, compute_mask_validation_metrics
 from floodguard.sar_raster_extract import (
+    SAR_LOG_TRANSFORM,
+    SAR_MEASUREMENT_DOMAIN,
+    SAR_RADIOMETRIC_CALIBRATION_STATUS,
     SAR_FEATURE_MANIFEST_COLUMNS,
     SARRasterExtractError,
+    SARRasterInputs,
     build_sar_feature_manifest,
     build_sentinel1_inputs_from_manifests,
     extract_sar_change_features,
 )
 
 WEAK_BASELINE_WARNING = (
-    "Candidate metrics against manually digitized weak-reference mask. "
+    "Cross-border calibration metrics against a manually digitized weak-reference mask; "
+    "not Mae Sai Thailand ADM3 validation. "
     "Non-operational. Not official validation. Not field validated."
 )
+
+MAE_SAI_POST_SOURCE_TIMESTAMPS: dict[str, str] = {
+    MAE_SAI_BASELINE_POST_PRODUCT_ID: "2024-09-15T23:16:01Z",
+}
 
 WEAK_BASELINE_METRIC_COLUMNS: tuple[str, ...] = (
     "study_area",
     "processing_scope",
     "reference_status",
     "metric_status",
+    "pre_source_sha256",
+    "post_source_sha256",
+    "reference_sha256",
+    "source_integrity_status",
+    "measurement_domain",
+    "log_transform",
+    "radiometric_calibration_status",
+    "reference_spatial_relation",
+    "reference_in_study_area_overlap",
+    "reference_distance_to_study_area_km",
     *MASK_METRIC_COLUMNS,
     "sample_pixel_count",
     "reference_positive_pixel_count",
@@ -82,6 +101,7 @@ def run_weak_reference_sar_baseline(
         metrics,
         features,
         manual_reference_manifest,
+        inputs,
         probability_threshold=probability_threshold,
         source_timestamp=source_timestamp,
     )
@@ -89,6 +109,7 @@ def run_weak_reference_sar_baseline(
         features,
         file_manifest=file_manifest,
         manual_reference_manifest=manual_reference_manifest,
+        verified_inputs=inputs,
         probability_threshold=probability_threshold,
         dry_change_db=dry_change_db,
         flood_change_db=flood_change_db,
@@ -130,11 +151,12 @@ def write_weak_reference_baseline_outputs(
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     feature_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    metrics.to_csv(metrics_path, index=False)
-    feature_manifest.to_csv(feature_path, index=False)
+    metrics.to_csv(metrics_path, index=False, lineterminator="\n")
+    feature_manifest.to_csv(feature_path, index=False, lineterminator="\n")
     summary_path.write_text(
         build_weak_reference_baseline_summary(metrics, feature_manifest),
         encoding="utf-8",
+        newline="\n",
     )
     return {
         "metrics": metrics_path,
@@ -165,7 +187,8 @@ def build_weak_reference_baseline_summary(
         "## Data Status",
         "",
         "- Sentinel-1 pre/post source files were read from local paths outside Git.",
-        "- The reference layer is a manually digitized weak-reference candidate.",
+        "- The reference layer is a manually digitized cross-border calibration candidate.",
+        "- It does not overlap Mae Sai Thailand ADM3 geometry and is not a Mae Sai validation mask.",
         "- Official Mae Sai validation and ML-label gates remain blocked.",
         "",
         "## Source Products",
@@ -174,10 +197,21 @@ def build_weak_reference_baseline_summary(
         f"- Post-event Sentinel-1 product id: `{feature['post_product_id']}`",
         f"- Reference candidate id: `{feature['reference_product_id']}`",
         f"- Source timestamp: {row['source_timestamp']}",
+        f"- Input integrity: {row['source_integrity_status']}",
+        f"- Measurement domain: {row['measurement_domain']}",
+        f"- Log transform: {row['log_transform']}",
+        f"- Radiometric calibration: {row['radiometric_calibration_status']}",
+        f"- Pre-event SHA-256: `{row['pre_source_sha256']}`",
+        f"- Post-event SHA-256: `{row['post_source_sha256']}`",
+        f"- Reference SHA-256: `{row['reference_sha256']}`",
+        f"- Reference spatial relation: {row['reference_spatial_relation']}",
+        f"- In-study-area overlap: {row['reference_in_study_area_overlap']}",
+        f"- Distance to study area: {float(row['reference_distance_to_study_area_km']):.3f} km",
         "",
         "## Method Assumptions",
         "",
-        "- VV/VH amplitude samples are converted to dB using `10 * log10(value)`.",
+        "- VV/VH samples are uncalibrated amplitude, converted using `20 * log10(amplitude)`.",
+        "- These values are not calibrated Sigma0, Beta0, or Gamma0 backscatter.",
         "- `vv_drop` and `vh_drop` are pre-event dB minus post-event dB.",
         "- Ratios are post-event amplitude divided by pre-event amplitude.",
         "- Combined change score weights VH at 0.60 and VV at 0.40.",
@@ -218,16 +252,38 @@ def _build_metric_frame(
     metrics: dict[str, float | int],
     features: pd.DataFrame,
     manual_reference_manifest: pd.DataFrame,
+    inputs: SARRasterInputs,
     *,
     probability_threshold: float,
     source_timestamp: str,
 ) -> pd.DataFrame:
     manual_row = manual_reference_manifest.iloc[0]
+    try:
+        pre_source_sha256 = str(inputs.pre_source_sha256)
+        post_source_sha256 = str(inputs.post_source_sha256)
+        reference_sha256 = str(inputs.reference_sha256)
+        source_integrity_status = str(inputs.source_integrity_status)
+    except AttributeError as exc:
+        raise WeakReferenceBaselineError(
+            "Verified SAR input lineage is required for candidate metric output."
+        ) from exc
     row = {
         "study_area": "Chiang Rai / Mae Sai 2024",
         "processing_scope": "weak_reference_real_sentinel1_non_ml_candidate",
         "reference_status": manual_row["reference_mask_status"],
-        "metric_status": "candidate_weak_reference_metrics",
+        "metric_status": "candidate_cross_border_calibration_metrics",
+        "pre_source_sha256": pre_source_sha256,
+        "post_source_sha256": post_source_sha256,
+        "reference_sha256": reference_sha256,
+        "source_integrity_status": source_integrity_status,
+        "measurement_domain": SAR_MEASUREMENT_DOMAIN,
+        "log_transform": SAR_LOG_TRANSFORM,
+        "radiometric_calibration_status": SAR_RADIOMETRIC_CALIBRATION_STATUS,
+        "reference_spatial_relation": inputs.reference_spatial_relation,
+        "reference_in_study_area_overlap": inputs.reference_in_study_area_overlap,
+        "reference_distance_to_study_area_km": (
+            inputs.reference_distance_to_study_area_km
+        ),
         **metrics,
         "sample_pixel_count": int(len(features)),
         "reference_positive_pixel_count": int(features["reference_flood_extent"].sum()),
@@ -238,7 +294,9 @@ def _build_metric_frame(
         "warning_text": WEAK_BASELINE_WARNING,
         "assumptions": (
             "Real CDSE Sentinel-1 pre/post rasters compared against a manually "
-            "digitized weak-reference candidate. Non-operational and not official."
+            "digitized weak-reference candidate. Inputs are uncalibrated amplitude "
+            "converted with 20*log10(amplitude), not Sigma0/Beta0/Gamma0. "
+            "Non-operational and not official."
         ),
     }
     return pd.DataFrame([row], columns=WEAK_BASELINE_METRIC_COLUMNS)
@@ -254,16 +312,19 @@ def _source_timestamp(file_manifest: pd.DataFrame) -> str:
         file_manifest["candidate_use"].astype(str)
         == "post-event SAR source for non-ML baseline"
     ]
-    if not post.empty:
-        name = str(post.iloc[0]["source_name"])
-        product_id = str(post.iloc[0]["product_id"])
-        if product_id == "20a9c3b8-37df-46d5-81d8-d63c7e460225":
-            return "2024-09-15T23:16:01Z"
-        if product_id == "6a02d487-68fa-4be7-9628-f312b9049967":
-            return "2024-09-18T11:31:07Z"
-        if "2024-09-15" in name:
-            return "2024-09-15T23:16:01Z"
-    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    if len(post) != 1:
+        raise WeakReferenceBaselineError(
+            "Mae Sai weak-reference metrics require exactly one active post-event "
+            "Sentinel-1 baseline row."
+        )
+    product_id = str(post.iloc[0]["product_id"])
+    try:
+        return MAE_SAI_POST_SOURCE_TIMESTAMPS[product_id]
+    except KeyError as exc:
+        raise WeakReferenceBaselineError(
+            "No immutable source timestamp is registered for the active Mae Sai "
+            f"post-event product {product_id!r}; output generation is blocked."
+        ) from exc
 
 
 def _assert_csv(output_path: str | Path, label: str) -> None:

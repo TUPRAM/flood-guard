@@ -66,6 +66,22 @@ MAE_SAI_REQUIRED_BASELINE_ROLES: tuple[str, ...] = (
     "post-event SAR source for non-ML baseline",
 )
 
+MAE_SAI_BASELINE_PRE_PRODUCT_ID = "aaaef3af-fa49-4115-bf0f-f54175e7aedf"
+MAE_SAI_BASELINE_POST_PRODUCT_ID = "5251b74b-0bbd-4365-9eb4-fa33292e175a"
+MAE_SAI_BASELINE_PRODUCT_IDS: tuple[str, str] = (
+    MAE_SAI_BASELINE_PRE_PRODUCT_ID,
+    MAE_SAI_BASELINE_POST_PRODUCT_ID,
+)
+
+MAE_SAI_BASELINE_PRE_PRODUCT_NAME = (
+    "S1A_IW_GRDH_1SDV_20240903T231600_20240903T231625_"
+    "055507_06C5C9_72F7.SAFE"
+)
+MAE_SAI_BASELINE_POST_PRODUCT_NAME = (
+    "S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_"
+    "055682_06CCBA_08DA.SAFE"
+)
+
 
 class IngestionPlanError(ValueError):
     """Raised when metadata-first ingestion planning inputs are invalid."""
@@ -159,7 +175,15 @@ def default_reference_mask_sources() -> pd.DataFrame:
 
 
 def default_mae_sai_file_manifest_sources() -> pd.DataFrame:
-    """Return blocked file-level planning rows for the Mae Sai first baseline."""
+    """Return the approved original-SAFE rows for the Mae Sai first baseline.
+
+    The previously selected September 6 COG / September 15 COG pair is not
+    returned here. Its acquisitions are retained in the study-area inventory
+    as retired exploratory metadata, but the pair mixes acquisition tracks and
+    the local COG archives no longer match their recorded checksums after GDAL
+    PAM mutation. Only the independently registered same-track original SAFE
+    pair may occupy the active baseline roles.
+    """
 
     return pd.DataFrame(
         [
@@ -179,49 +203,46 @@ def default_mae_sai_file_manifest_sources() -> pd.DataFrame:
                 "next_action": "send licensing request and acquire usable geometry terms",
             },
             {
-                "source_name": "CDSE Sentinel-1 Mae Sai pre-event COG",
+                "source_name": "CDSE Sentinel-1 Mae Sai pre-event original SAFE",
                 "study_area": "Chiang Rai / Mae Sai 2024",
-                "source_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products",
+                "source_url": (
+                    "https://catalogue.dataspace.copernicus.eu/odata/v1/Products("
+                    f"{MAE_SAI_BASELINE_PRE_PRODUCT_ID})"
+                ),
                 "candidate_use": "pre-event SAR source for non-ML baseline",
                 "geometry_access_status": "available",
                 "license_status": "confirmed",
                 "redistribution_status": "reference_only",
-                "product_id": "b09f96ca-4a60-43e7-9b8d-158022f0e5bf",
+                "product_id": MAE_SAI_BASELINE_PRE_PRODUCT_ID,
                 "local_path": "not_acquired",
                 "sha256": "not_acquired",
                 "source_license_status": "confirmed",
                 "reference_mask_status": "unresolved",
-                "next_action": "download only after reference-mask gate is cleared",
+                "next_action": (
+                    "register the approved original SAFE archive and checksum outside Git; "
+                    "reject COG or cross-track substitution"
+                ),
             },
             {
-                "source_name": "CDSE Sentinel-1 Mae Sai post-event COG primary",
+                "source_name": "CDSE Sentinel-1 Mae Sai post-event original SAFE",
                 "study_area": "Chiang Rai / Mae Sai 2024",
-                "source_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products",
+                "source_url": (
+                    "https://catalogue.dataspace.copernicus.eu/odata/v1/Products("
+                    f"{MAE_SAI_BASELINE_POST_PRODUCT_ID})"
+                ),
                 "candidate_use": "post-event SAR source for non-ML baseline",
                 "geometry_access_status": "available",
                 "license_status": "confirmed",
                 "redistribution_status": "reference_only",
-                "product_id": "20a9c3b8-37df-46d5-81d8-d63c7e460225",
+                "product_id": MAE_SAI_BASELINE_POST_PRODUCT_ID,
                 "local_path": "not_acquired",
                 "sha256": "not_acquired",
                 "source_license_status": "confirmed",
                 "reference_mask_status": "unresolved",
-                "next_action": "use as primary post-event candidate if reference date fits",
-            },
-            {
-                "source_name": "CDSE Sentinel-1 Mae Sai post-event COG fallback",
-                "study_area": "Chiang Rai / Mae Sai 2024",
-                "source_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products",
-                "candidate_use": "fallback post-event SAR source for non-ML baseline",
-                "geometry_access_status": "available",
-                "license_status": "confirmed",
-                "redistribution_status": "reference_only",
-                "product_id": "6a02d487-68fa-4be7-9628-f312b9049967",
-                "local_path": "not_acquired",
-                "sha256": "not_acquired",
-                "source_license_status": "confirmed",
-                "reference_mask_status": "unresolved",
-                "next_action": "use only if reference mask or peak date fits later extent",
+                "next_action": (
+                    "register the approved original SAFE archive and checksum outside Git; "
+                    "reject COG or cross-track substitution"
+                ),
             },
         ]
     )
@@ -267,7 +288,7 @@ def write_ingestion_manifest(
     manifest = build_ingestion_manifest(source_frame)
     target = assert_metadata_only_output_path(output_path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    manifest.to_csv(target, index=False)
+    manifest.to_csv(target, index=False, lineterminator="\n")
     return target
 
 
@@ -364,7 +385,19 @@ def _blocked_reason(row: pd.Series) -> str:
         blockers.append("source license not confirmed")
     if row["reference_mask_status"] != "confirmed":
         blockers.append("reference mask not confirmed")
-    blockers.append("metadata-only skeleton does not permit downloads")
+    has_local_artifact = (
+        row["local_path"] not in {"not_acquired", "not_selected", "unknown"}
+        and _is_valid_sha256(row["sha256"])
+    )
+    if not has_local_artifact:
+        blockers.append("metadata-only skeleton does not permit downloads")
+    elif row["reference_mask_status"] == "weak_reference_candidate":
+        blockers.append(
+            "weak reference is limited to candidate calibration and is not "
+            "qualified validation truth or an ML label"
+        )
+    else:
+        blockers.append("qualified or official processing gate remains closed")
     return "; ".join(blockers)
 
 

@@ -1,6 +1,6 @@
 # Provider Response Logging Guide
 
-UNOSAT/UNITAR and GISTDA requests were reported sent by the project owner on 2026-07-03. Until a provider response is received and logged, real flood validation, real Sentinel-1 processing, and real-data ML remain blocked.
+UNOSAT/UNITAR and GISTDA requests were reported sent by the project owner on 2026-07-03. A checksum-bound cross-border weak-reference Sentinel-1 baseline has since run in non-operational candidate scope. Until a provider response is received and logged, qualified Mae Sai flood validation, current-pair ML training, decision promotion, and official/operational use remain blocked.
 
 ## When UNOSAT/UNITAR Replies
 

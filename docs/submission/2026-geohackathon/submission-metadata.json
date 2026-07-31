@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "release_status": "blocked_missing_owner_metadata",
+  "competition": {
+    "name": "GeoHackathon 2026",
+    "theme": "Pixel to Policy - Unlocking Insights, Accelerating Impact",
+    "official_deadline": "2026-08-02",
+    "internal_deadline": "2026-07-30",
+    "proposal_pdf_required": true,
+    "demo_link_required_by_team_plan": true
+  },
+  "team": {
+    "name": null,
+    "institution": null,
+    "primary_contact": {
+      "name": null,
+      "email": null,
+      "phone": null
+    },
+    "adviser_or_mentor": null,
+    "members": [
+      {
+        "full_name": null,
+        "role": "Product, UI and frontend lead",
+        "skills": [],
+        "evidence": null,
+        "prototype_contribution": "Role-specific responsive application, bilingual UX, map experience, visual QA and static deployment.",
+        "finalist_contribution": "Product research, design system, accessible interaction and end-to-end frontend integration."
+      },
+      {
+        "full_name": null,
+        "role": "Backend, platform and evidence lead",
+        "skills": [],
+        "evidence": null,
+        "prototype_contribution": "FastAPI contracts, scenario boundaries, CI, evidence receipts, privacy review and release packaging.",
+        "finalist_contribution": "Hosted platform, identity and role controls, auditability, monitoring and deployment operations."
+      },
+      {
+        "full_name": null,
+        "role": "Geospatial, ML and data lead",
+        "skills": [],
+        "evidence": null,
+        "prototype_contribution": "GeoAI feature contract, synthetic integration proof, spatial validation design and geospatial evidence review.",
+        "finalist_contribution": "Qualified data acquisition, controlled three-model experiment, model validation and field-evidence protocol."
+      }
+    ]
+  },
+  "submission": {
+    "demo_url": null,
+    "repository_url": "https://github.com/TUPRAM/flood-guard",
+    "repository_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+    "proposal_tag": "proposal-2026-submission-v1",
+    "portal_page_limit": null,
+    "portal_file_size_limit_mb": null,
+    "portal_links_allowed": null,
+    "portal_dataset_terms_reviewed": false
+  },
+  "blocking_fields": [
+    "team.name",
+    "team.institution",
+    "team.primary_contact.name",
+    "team.primary_contact.email",
+    "team.primary_contact.phone",
+    "team.members[0].full_name",
+    "team.members[0].skills",
+    "team.members[0].evidence",
+    "team.members[1].full_name",
+    "team.members[1].skills",
+    "team.members[1].evidence",
+    "team.members[2].full_name",
+    "team.members[2].skills",
+    "team.members[2].evidence",
+    "submission.demo_url",
+    "submission.portal_page_limit",
+    "submission.portal_file_size_limit_mb",
+    "submission.portal_links_allowed",
+    "submission.portal_dataset_terms_reviewed"
+  ]
+}

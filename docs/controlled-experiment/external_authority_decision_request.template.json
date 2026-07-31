@@ -1,0 +1,173 @@
+{
+  "schema_version": "floodguard.external_authority_decision_request.v1",
+  "request_id": "<assigned-request-id>",
+  "experiment_id": "mae_sai_2024_controlled_three_model_v1",
+  "study_area": "Chiang Rai / Mae Sai 2024",
+  "prepared_from_primary_sources_on": "2026-07-20",
+  "requester": {
+    "name": "<requester-name>",
+    "organization": "<requester-organization>",
+    "email": "<requester-email>"
+  },
+  "decision_status": "not_returned_no_approval",
+  "no_implied_approval": true,
+  "no_implied_approval_notice": "This request, its public links, its checksums, and any unanswered field do not grant permission or qualify reference truth. Approval exists only after an authorized signer returns an attributable, verified decision covering every required field.",
+  "products": [
+    {
+      "role": "pre_event_sar",
+      "source_name": "Copernicus Sentinel-1A IW GRD",
+      "source_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(aaaef3af-fa49-4115-bf0f-f54175e7aedf)",
+      "product_id": "aaaef3af-fa49-4115-bf0f-f54175e7aedf",
+      "product_name": "S1A_IW_GRDH_1SDV_20240903T231600_20240903T231625_055507_06C5C9_72F7.SAFE",
+      "acquisition_start_utc": "2024-09-03T23:16:00.776136Z",
+      "acquisition_end_utc": "2024-09-03T23:16:25.773465Z",
+      "artifact_sha256": "42433d6cfb55118abe21e6faabef56343cefc9f28817cd31eb9386d32f56543d",
+      "catalog_checksum": {
+        "algorithm": "MD5",
+        "value": "4a624949ee603662a85825004aeb4491"
+      },
+      "artifact_size_bytes": 1721841197,
+      "terms_url": "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
+      "authority_decision": "unanswered",
+      "permissions": {
+        "local_analysis": "unanswered",
+        "model_input_or_feature_use": "unanswered",
+        "ml_label_use": "unanswered",
+        "validation_metrics": "unanswered",
+        "derived_reporting": "unanswered",
+        "screenshots_and_demo_display": "unanswered",
+        "source_redistribution": "unanswered",
+        "derived_geometry_redistribution": "unanswered",
+        "reference_only_storage_if_not_redistributable": "unanswered"
+      }
+    },
+    {
+      "role": "post_event_sar",
+      "source_name": "Copernicus Sentinel-1A IW GRD",
+      "source_url": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(5251b74b-0bbd-4365-9eb4-fa33292e175a)",
+      "product_id": "5251b74b-0bbd-4365-9eb4-fa33292e175a",
+      "product_name": "S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_08DA.SAFE",
+      "acquisition_start_utc": "2024-09-15T23:16:01.675690Z",
+      "acquisition_end_utc": "2024-09-15T23:16:26.674888Z",
+      "artifact_sha256": "ff4a604f57c9eb88421904659c7201d07b54b35a3bff6f3447ee548c40f6755b",
+      "catalog_checksum": {
+        "algorithm": "MD5",
+        "value": "0417e0d40dabfc8d8243ae452899ae05"
+      },
+      "artifact_size_bytes": 1722117830,
+      "terms_url": "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
+      "authority_decision": "unanswered",
+      "permissions": {
+        "local_analysis": "unanswered",
+        "model_input_or_feature_use": "unanswered",
+        "ml_label_use": "unanswered",
+        "validation_metrics": "unanswered",
+        "derived_reporting": "unanswered",
+        "screenshots_and_demo_display": "unanswered",
+        "source_redistribution": "unanswered",
+        "derived_geometry_redistribution": "unanswered",
+        "reference_only_storage_if_not_redistributable": "unanswered"
+      }
+    },
+    {
+      "role": "provider_source_candidate",
+      "source_name": "Sentinel Asia / MBRSC detected flood-water geometry candidate",
+      "source_url": "https://sentinel-asia.org/EO/2024/article20240910TH/MBRSC/MBRSC_THAILAND_FLOOD-MAP-SHP.zip",
+      "product_id": "SENTINEL-ASIA-MBRSC-THAILAND-FLOOD-MAP-SHP",
+      "product_name": "MBRSC_THAILAND_FLOOD-MAP-SHP.zip",
+      "observation_interval_utc": "unresolved_exact_time_on_2024-09-15",
+      "artifact_sha256": "6cb146e92306611be433b52b63832b4721040a399b50c4c3d217c50798b642b7",
+      "artifact_size_bytes": 2906563,
+      "terms_url": "unresolved_product_specific_terms",
+      "authority_decision": "unanswered",
+      "permissions": {
+        "local_analysis": "unanswered",
+        "model_input_or_feature_use": "unanswered",
+        "ml_label_use": "unanswered",
+        "validation_metrics": "unanswered",
+        "derived_reporting": "unanswered",
+        "screenshots_and_demo_display": "unanswered",
+        "source_redistribution": "unanswered",
+        "derived_geometry_redistribution": "unanswered",
+        "reference_only_storage_if_not_redistributable": "unanswered"
+      },
+      "reference_qualification": {
+        "qualified_expert_or_adjudicated": "no_candidate_source_only",
+        "qualification_method": "not_applicable_until_a_separate_binary_raster_is_derived_and_reviewed",
+        "known_uncertainty_and_error_categories": "provider geometry has unresolved product terms and is not executable validation truth",
+        "independent_of_model_inputs": "unanswered"
+      }
+    },
+    {
+      "role": "reference_mask",
+      "source_name": "Pending qualified Mae Sai 2024 binary event-reference raster",
+      "source_url": "<authoritative-raster-record-url>",
+      "product_id": "<immutable-qualified-reference-product-id>",
+      "product_name": "<qualified-single-band-binary-reference-mask.tif>",
+      "derived_from_product_ids": [
+        "SENTINEL-ASIA-MBRSC-THAILAND-FLOOD-MAP-SHP",
+        "<other-independent-source-id-if-used>"
+      ],
+      "observation_interval_utc": "<YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ>",
+      "artifact_sha256": "<64-lowercase-hex>",
+      "artifact_size_bytes": "<positive-integer>",
+      "raster_contract": {
+        "band_count": 1,
+        "class_mapping": {
+          "non_flood": 0,
+          "flood": 1
+        },
+        "nodata": "<finite-value-distinct-from-0-and-1>",
+        "crs": "<frozen-equal-area-EPSG-code>",
+        "covers_all_frozen_cell_centres": "unanswered"
+      },
+      "terms_url": "<product-and-derived-artifact-terms-url>",
+      "authority_decision": "unanswered",
+      "permissions": {
+        "local_analysis": "unanswered",
+        "model_input_or_feature_use": "unanswered",
+        "ml_label_use": "unanswered",
+        "validation_metrics": "unanswered",
+        "derived_reporting": "unanswered",
+        "screenshots_and_demo_display": "unanswered",
+        "source_redistribution": "unanswered",
+        "derived_geometry_redistribution": "unanswered",
+        "reference_only_storage_if_not_redistributable": "unanswered"
+      },
+      "reference_qualification": {
+        "qualified_expert_or_adjudicated": "unanswered",
+        "qualification_method": "<blind-review-and-adjudication-method-or-no>",
+        "known_uncertainty_and_error_categories": "<required-limitations-or-no>",
+        "independent_of_model_inputs": "unanswered"
+      }
+    }
+  ],
+  "required_attribution_and_conditions": {
+    "unmodified_source_notice": "<required-notice-or-not-applicable>",
+    "modified_or_derived_notice": "<required-notice-or-not-applicable>",
+    "citation": "<required-citation-or-not-applicable>",
+    "disclaimer": "<required-disclaimer-or-not-applicable>",
+    "additional_conditions": "<required-conditions-or-none>"
+  },
+  "authorized_signer": {
+    "name": "<external-signer-name>",
+    "organization": "<external-signer-organization>",
+    "title_or_role": "<external-signer-title>",
+    "authority_basis": "<why-this-person-can-bind-the-product-owner-or-data-custodian>",
+    "identity_evidence_type": "<signed-pdf-email-export-or-provider-record>",
+    "identity_evidence_sha256": "<64-lowercase-hex>",
+    "decision_issued_at_utc": "<YYYY-MM-DDTHH:MM:SSZ>",
+    "decision_expires_at_utc": "<YYYY-MM-DDTHH:MM:SSZ>",
+    "signing_key_id": "<externally-managed-key-id>",
+    "signature_algorithm": "<approved-asymmetric-algorithm>",
+    "public_key_fingerprint": "<public-key-fingerprint>",
+    "signature": "<detached-signature-over-canonical-completed-decision>"
+  },
+  "signer_attestations": {
+    "authorized_to_make_the_recorded_decisions": "unanswered",
+    "all_permissions_are_product_specific": "unanswered",
+    "unanswered_or_ambiguous_fields_remain_denied": "unanswered",
+    "scientific_qualification_is_separate_from_licensing": "unanswered",
+    "no_official_warning_or_operational_endorsement_is_granted": "unanswered"
+  }
+}

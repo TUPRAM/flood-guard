@@ -1,0 +1,6 @@
+cell_id,sar_probability_0_1,source_timestamp,confidence_class,assumptions,reference_flood_extent
+FG-TB-001,0.88,2026-06-29T00:00:00Z,high,Synthetic SAR encoder probability derived from the fixture flood-likelihood field,1
+FG-TB-002,0.71,2026-06-29T00:00:00Z,medium,Synthetic SAR encoder probability derived from the fixture flood-likelihood field,1
+FG-TB-003,0.68,2026-06-29T00:00:00Z,medium,Synthetic SAR encoder probability derived from the fixture flood-likelihood field,1
+FG-TB-004,0.54,2026-06-29T00:00:00Z,high,Synthetic SAR encoder probability derived from the fixture flood-likelihood field,0
+FG-TB-005,0.92,2026-06-29T00:00:00Z,low,Synthetic SAR encoder probability derived from the fixture flood-likelihood field,0

@@ -1,0 +1,273 @@
+{
+  "assumptions": [
+    "CDSE rows are catalogue metadata only and do not prove local product acquisition or scene suitability.",
+    "The selected original SAFE products form a same-platform 12-day repeat metadata pair, but footprint and grid compatibility still require acquired-asset inspection.",
+    "Reference-candidate metadata does not grant validation, ML-label, derived-reporting, screenshot, or redistribution permission.",
+    "No Hat Yai flood metric, decision output, or dashboard story is inferred from metadata alone."
+  ],
+  "blockers": [
+    {
+      "code": "selected_pair_assets_not_acquired",
+      "detail": "The locked metadata pair has not been downloaded to the controlled external workspace."
+    },
+    {
+      "code": "selected_pair_checksums_missing",
+      "detail": "No file-level SHA-256 checksums bind the selected Hat Yai Sentinel-1 products."
+    },
+    {
+      "code": "selected_pair_grid_not_verified",
+      "detail": "Footprint coverage, CRS, raster grid, polarization bands, and pixel alignment cannot be verified without the selected source assets."
+    },
+    {
+      "code": "reference_permissions_unresolved",
+      "detail": "Reference geometry access, validation use, derived reporting, ML-label use, and redistribution permissions are not cleared."
+    },
+    {
+      "code": "qualified_reference_mask_missing",
+      "detail": "No qualified Hat Yai event-flood reference mask exists in the committed evidence."
+    },
+    {
+      "code": "manual_weak_reference_mask_missing",
+      "detail": "No checksum-bound Hat Yai manual weak-reference mask exists."
+    }
+  ],
+  "can_feed_decision_layer": false,
+  "candidate_metrics_available": false,
+  "candidate_product_ids": [
+    "a43b3f36-6846-4554-af5d-1f757d862851",
+    "967702e5-a008-4774-9400-e28dd1e624c8",
+    "4e473302-943c-4798-8bfc-8287167792ed",
+    "00f3fc06-bcc8-4348-8b86-a4e0fbacdc13",
+    "d80b81cb-c4aa-4dbb-a7de-8a1d01fca2dc",
+    "325e23d5-9ba6-439e-bac9-8d7efac83cac",
+    "61f1bb34-e9bd-47b5-85a3-0472b50bf620",
+    "77afe9fe-ad3f-4fe1-872f-01bf801c742b",
+    "99b5426b-8464-4691-9648-72cf37dd84c2",
+    "96eb3dd0-0049-411b-919a-5091c94e4406",
+    "95537190-81cf-4b8e-aee8-eae8a1b4d3dc",
+    "443e046e-4f2b-4db6-bf3b-136f25c6f901",
+    "386ccf2d-2253-40bc-99bd-fa19bbc3c6dd",
+    "e641d58b-bc6d-4463-a49d-2ecebf2b64c2"
+  ],
+  "checksum_bound_external_assets": false,
+  "confidence_class": "low",
+  "dashboard_story_available": false,
+  "data_version": "sha256:d44329ec122b6e118e85bbecc67d2359cb6bca520fe3cda4d535899cadd045c7",
+  "dataset_mode": "candidate",
+  "decision_outputs_available": false,
+  "generated_at": "2026-07-20T08:15:08Z",
+  "input_artifacts": [
+    {
+      "artifact_id": "outputs/cdse_hat_yai_2025_metadata.csv",
+      "role": "sentinel1_product_candidate_metadata",
+      "sha256": "099cb6fa3f38261e546c09e3fc5c97dbca93055f820844e2ac9f3d5a0c22720b"
+    },
+    {
+      "artifact_id": "outputs/real_data_ingestion_manifest.csv",
+      "role": "ingestion_and_reference_candidate_gate",
+      "sha256": "c23103f626ed14fe740a66fffa52cfcf0fcd06c9971254293f49b9e7bb941871"
+    }
+  ],
+  "locked_pre_post_pair": true,
+  "manual_weak_reference_mask_available": false,
+  "next_actions": [
+    "Acquire the locked original SAFE pair outside Git (4e473302-943c-4798-8bfc-8287167792ed pre-event; d80b81cb-c4aa-4dbb-a7de-8a1d01fca2dc post-event).",
+    "Bind source terms, file sizes, SHA-256 checksums, footprint coverage, polarization bands, CRS, and grid alignment in a Hat Yai file manifest.",
+    "Obtain a qualified event reference with explicit validation, derived-reporting, ML-label, and redistribution decisions, or create a separately labeled manual weak-reference mask under the project protocol.",
+    "Run the deterministic baseline and spatial validation only after the applicable processing and reference gates pass.",
+    "Generate candidate decision inputs and enable the Hat Yai dashboard story only after traceable metrics and non-operational decision artifacts exist."
+  ],
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "pair_asset_checksums_recorded": false,
+  "pair_assets_acquired": false,
+  "pre_post_pair_status": "locked_metadata_only",
+  "processing_allowed": false,
+  "qualified_reference_mask_available": false,
+  "reason_blocked": "selected_pair_assets_not_acquired; selected_pair_checksums_missing; selected_pair_grid_not_verified; reference_permissions_unresolved; qualified_reference_mask_missing; manual_weak_reference_mask_missing",
+  "receipt_sha256": "78450083249f573fb96737a5f9bf2e97b2ed9b563dfa4df8d401c7d8f3feba7c",
+  "reference_candidates": [
+    {
+      "candidate_use": "fallback validation or manual reference candidate",
+      "geometry_access_status": "not_identified",
+      "license_status": "unresolved",
+      "next_action": "search only after official/event sources are logged",
+      "redistribution_status": "unresolved",
+      "reference_mask_status": "unresolved",
+      "source_name": "Academic or manual reference mask",
+      "source_url": "to be identified"
+    },
+    {
+      "candidate_use": "event-specific crisis mapping candidate",
+      "geometry_access_status": "unresolved",
+      "license_status": "unresolved",
+      "next_action": "confirm product geometry access and attribution terms",
+      "redistribution_status": "unresolved",
+      "reference_mask_status": "unresolved",
+      "source_name": "International Charter Activation 1004",
+      "source_url": "https://disasterscharter.org/activations/flood-in-thailand-activation-1004-"
+    },
+    {
+      "candidate_use": "event detected-water or flood-proxy context",
+      "geometry_access_status": "unresolved",
+      "license_status": "unresolved",
+      "next_action": "confirm product file access and redistribution terms",
+      "redistribution_status": "unresolved",
+      "reference_mask_status": "unresolved",
+      "source_name": "Sentinel Asia Southern Thailand 2025",
+      "source_url": "https://sentinel-asia.org/EO/2025/article20251119TH.html"
+    }
+  ],
+  "schema_version": "floodguard.hat-yai-readiness.v1",
+  "selected_metadata_pair": {
+    "asset_state": "not_acquired",
+    "checksum_state": "not_recorded",
+    "grid_compatibility_status": "not_verified_without_assets",
+    "post_event": {
+      "acquisition_date": "2025-11-23T23:03:09.290537Z",
+      "candidate_role": "post-event SAFE alternative",
+      "product_id": "d80b81cb-c4aa-4dbb-a7de-8a1d01fca2dc",
+      "product_name": "S1A_IW_GRDH_1SDV_20251123T230309_20251123T230334_062011_07C1DB_15C6.SAFE"
+    },
+    "pre_event": {
+      "acquisition_date": "2025-11-11T23:03:09.801147Z",
+      "candidate_role": "pre-event SAFE alternative",
+      "product_id": "4e473302-943c-4798-8bfc-8287167792ed",
+      "product_name": "S1A_IW_GRDH_1SDV_20251111T230309_20251111T230334_061836_07BB06_E216.SAFE"
+    },
+    "selection_basis": "same S1A platform and IW_GRDH_1SDV mode; 12-day repeat; absolute-orbit difference 175; original SAFE products selected instead of COG derivatives"
+  },
+  "sentinel1_candidates": [
+    {
+      "acquisition_date": "2025-11-05T11:35:22.737251Z",
+      "candidate_role": "pre-event COG candidate",
+      "cdse_product_id": "a43b3f36-6846-4554-af5d-1f757d862851",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251105T113522_20251105T113547_061742_07B768_2787_COG.SAFE",
+      "product_storage_type": "COG"
+    },
+    {
+      "acquisition_date": "2025-11-05T11:35:22.737251Z",
+      "candidate_role": "pre-event SAFE alternative",
+      "cdse_product_id": "967702e5-a008-4774-9400-e28dd1e624c8",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251105T113522_20251105T113547_061742_07B768_98DB.SAFE",
+      "product_storage_type": "SAFE"
+    },
+    {
+      "acquisition_date": "2025-11-11T23:03:09.801147Z",
+      "candidate_role": "pre-event SAFE alternative",
+      "cdse_product_id": "4e473302-943c-4798-8bfc-8287167792ed",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251111T230309_20251111T230334_061836_07BB06_E216.SAFE",
+      "product_storage_type": "SAFE"
+    },
+    {
+      "acquisition_date": "2025-11-11T23:03:09.801147Z",
+      "candidate_role": "pre-event COG candidate",
+      "cdse_product_id": "00f3fc06-bcc8-4348-8b86-a4e0fbacdc13",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251111T230309_20251111T230334_061836_07BB06_F6F4_COG.SAFE",
+      "product_storage_type": "COG"
+    },
+    {
+      "acquisition_date": "2025-11-23T23:03:09.290537Z",
+      "candidate_role": "post-event SAFE alternative",
+      "cdse_product_id": "d80b81cb-c4aa-4dbb-a7de-8a1d01fca2dc",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251123T230309_20251123T230334_062011_07C1DB_15C6.SAFE",
+      "product_storage_type": "SAFE"
+    },
+    {
+      "acquisition_date": "2025-11-23T23:03:09.290537Z",
+      "candidate_role": "post-event COG candidate",
+      "cdse_product_id": "325e23d5-9ba6-439e-bac9-8d7efac83cac",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251123T230309_20251123T230334_062011_07C1DB_9231_COG.SAFE",
+      "product_storage_type": "COG"
+    },
+    {
+      "acquisition_date": "2025-11-29T11:35:21.012344Z",
+      "candidate_role": "fallback post-event SAFE alternative",
+      "cdse_product_id": "61f1bb34-e9bd-47b5-85a3-0472b50bf620",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251129T113521_20251129T113546_062092_07C503_DDA0.SAFE",
+      "product_storage_type": "SAFE"
+    },
+    {
+      "acquisition_date": "2025-11-29T11:35:21.012344Z",
+      "candidate_role": "fallback post-event COG candidate",
+      "cdse_product_id": "77afe9fe-ad3f-4fe1-872f-01bf801c742b",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251129T113521_20251129T113546_062092_07C503_E655_COG.SAFE",
+      "product_storage_type": "COG"
+    },
+    {
+      "acquisition_date": "2025-11-29T23:01:52.466000Z",
+      "candidate_role": "fallback post-event SAFE alternative",
+      "cdse_product_id": "99b5426b-8464-4691-9648-72cf37dd84c2",
+      "mission_platform_prefix": "S1C",
+      "online_status_at_snapshot": true,
+      "product_name": "S1C_IW_GRDH_1SDV_20251129T230152_20251129T230221_005235_00A644_AF72.SAFE",
+      "product_storage_type": "SAFE"
+    },
+    {
+      "acquisition_date": "2025-11-29T23:01:52.466000Z",
+      "candidate_role": "fallback post-event COG candidate",
+      "cdse_product_id": "96eb3dd0-0049-411b-919a-5091c94e4406",
+      "mission_platform_prefix": "S1C",
+      "online_status_at_snapshot": true,
+      "product_name": "S1C_IW_GRDH_1SDV_20251129T230152_20251129T230221_005235_00A644_B1DA_COG.SAFE",
+      "product_storage_type": "COG"
+    },
+    {
+      "acquisition_date": "2025-12-05T11:34:26.774000Z",
+      "candidate_role": "fallback post-event SAFE alternative",
+      "cdse_product_id": "95537190-81cf-4b8e-aee8-eae8a1b4d3dc",
+      "mission_platform_prefix": "S1C",
+      "online_status_at_snapshot": true,
+      "product_name": "S1C_IW_GRDH_1SDV_20251205T113426_20251205T113453_005316_00A908_F30B.SAFE",
+      "product_storage_type": "SAFE"
+    },
+    {
+      "acquisition_date": "2025-12-05T11:34:26.774000Z",
+      "candidate_role": "fallback post-event COG candidate",
+      "cdse_product_id": "443e046e-4f2b-4db6-bf3b-136f25c6f901",
+      "mission_platform_prefix": "S1C",
+      "online_status_at_snapshot": true,
+      "product_name": "S1C_IW_GRDH_1SDV_20251205T113426_20251205T113453_005316_00A908_F357_COG.SAFE",
+      "product_storage_type": "COG"
+    },
+    {
+      "acquisition_date": "2025-12-05T23:03:07.854162Z",
+      "candidate_role": "fallback post-event COG candidate",
+      "cdse_product_id": "386ccf2d-2253-40bc-99bd-fa19bbc3c6dd",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251205T230307_20251205T230332_062186_07C8AD_13BD_COG.SAFE",
+      "product_storage_type": "COG"
+    },
+    {
+      "acquisition_date": "2025-12-05T23:03:07.854162Z",
+      "candidate_role": "fallback post-event SAFE alternative",
+      "cdse_product_id": "e641d58b-bc6d-4463-a49d-2ecebf2b64c2",
+      "mission_platform_prefix": "S1A",
+      "online_status_at_snapshot": true,
+      "product_name": "S1A_IW_GRDH_1SDV_20251205T230307_20251205T230332_062186_07C8AD_51EC.SAFE",
+      "product_storage_type": "SAFE"
+    }
+  ],
+  "source_name": "CDSE Sentinel-1 metadata and FloodGuard ingestion/reference candidate manifest",
+  "source_timestamp": "2025-12-05T23:03:07.854162Z",
+  "status": "blocked",
+  "study_area_id": "hat_yai_2025",
+  "study_area_name": "Hat Yai / Songkhla 2025"
+}

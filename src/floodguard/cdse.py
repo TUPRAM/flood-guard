@@ -59,7 +59,10 @@ CDSE_PROFILES: dict[str, CDSEQueryProfile] = {
         point_wkt="POINT(100.47 7.01)",
         collection="SENTINEL-1",
         product_name_contains="IW_GRDH_1SDV",
-        start_datetime="2025-11-17T00:00:00.000Z",
+        # Include at least one complete Sentinel-1A repeat cycle before the
+        # reported 19 November event start so a same-track pre/post pair can
+        # be selected instead of comparing two post-event scenes.
+        start_datetime="2025-11-01T00:00:00.000Z",
         end_datetime="2025-12-05T23:59:59.999Z",
         default_top=50,
         role_mode="hat_yai",
@@ -209,7 +212,11 @@ def _candidate_role(
             return f"post-event {suffix}"
         return f"fallback post-event {suffix}"
     if profile.role_mode == "hat_yai":
-        return f"event-window {suffix}"
+        if acquisition_date < "2025-11-19":
+            return f"pre-event {suffix}"
+        if acquisition_date < "2025-11-29":
+            return f"post-event {suffix}"
+        return f"fallback post-event {suffix}"
     if profile.role_mode == "mae_sai_sentinel2":
         if acquisition_date < "2024-09-10":
             return "pre-event optical context candidate"

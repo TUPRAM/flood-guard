@@ -50,7 +50,7 @@ def test_generated_geometry_review_notes_keep_reference_candidate_boundary() -> 
 
     assert "reference candidate, not validation truth and not ML labels" in notes
     assert "QGIS/GDAL Inspection" in notes
-    assert "Do not run the real non-ML SAR baseline" in notes
+    assert "Do not use this Sentinel Asia reference candidate for qualified validation" in notes
 
 
 def test_visual_qa_review_records_reference_candidate_boundary() -> None:

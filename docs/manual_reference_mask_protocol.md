@@ -1,6 +1,9 @@
 # Manual QGIS Reference Mask Protocol
 
-Status: manual weak-reference lane implemented; source geometry not yet created.
+Status: manual weak-reference lane implemented; a checksum-bound cross-border
+geometry exists for candidate calibration only. No in-area qualified Thailand
+event reference exists, and the current geometry cannot clear validation or
+ML-label gates.
 
 This protocol defines how FloodGuard may use a project-owned manual QGIS flood mask when official/reference-mask provider clearance is too slow for the hackathon timeline.
 
@@ -38,7 +41,7 @@ Real Sentinel-1 non-ML baseline evaluated against a manually digitized weak-refe
 Create one small polygon layer outside Git:
 
 ```text
-C:\Users\iputu\Documents\FloodGuard_external_data\manual_reference\mae_sai_2024\
+<external-data-workspace>/manual_reference/mae_sai_2024/
 ```
 
 Suggested file:
@@ -87,13 +90,24 @@ not_official = true
 - Do not copy, clip, or commit provider source geometry into the repo.
 - Save the manual GeoPackage outside Git.
 
+## Label-factory Import Semantics
+
+The legacy weak-reference baseline rasterizes polygon interiors as `1` and the surrounding extraction window as `0` for historical candidate-metric reproducibility. That surrounding `0` is not an explicitly reviewed dry label.
+
+When this GeoPackage enters the active-learning label factory:
+
+- polygon interior becomes `weak_positive`;
+- polygon exterior becomes `unreviewed` (`255`), never `dry_land`;
+- an optional polygon-boundary buffer becomes `weak_uncertain`; and
+- only a later explicit human review may assign dry, temporary flood, permanent water, uncertain, or unobservable classes.
+
+The legacy binary raster must not be used as an unqualified training labelset.
+
 ## Inspection Workflow
 
 After creating the GeoPackage, run:
 
 ```powershell
-cd "C:\Users\iputu\Documents\Flood Guard"
-
 uv run python scripts/inspect_manual_reference_mask.py --require-existing
 uv run python scripts/build_mae_sai_file_manifest.py
 uv run python scripts/validate_mae_sai_file_manifest.py --allow-blocked
@@ -127,4 +141,23 @@ Current intended states:
 
 ## Next Development Step
 
-After this manifest is ready, the next implementation can add a separate weak-reference non-ML SAR baseline path. That path should report metrics as candidate metrics and keep the official validation/ML-label gates blocked.
+The separate weak-reference baseline and batch query-summary paths are now
+implemented. The current GeoPackage has one polygon self-intersection near
+`99.8222022E, 20.4875101N`. The batch builder therefore fails closed unless the
+operator explicitly requests a recorded geometry repair:
+
+```powershell
+uv run python scripts/build_weak_query_summary.py `
+  --weak-vector <external_data_workspace>/manual_reference/mae_sai_2024/mae_sai_manual_flood_reference.gpkg `
+  --vector-layer manual_flood_extent `
+  --repair-invalid-geometry `
+  --weak-source-manifest outputs/manual_reference_mask_manifest.csv `
+  --query-manifest <external_data_workspace>/label_factory/mae_sai_pilot_v1/grids/canonical_supported_pool_v1/canonical_query_regions.csv `
+  --output-directory <external_data_workspace>/label_factory/mae_sai_pilot_v1/weak_seed/manual_weak_query_summary_v2
+```
+
+The manifest records the original validity reason and
+`repair_method=shapely.make_valid`. This is a reproducibility repair for weak
+context, not evidence that the repaired shape is correct flood truth. The
+current result covers 854 queries: four contain weak-positive cell centres and
+850 remain wholly unreviewed.

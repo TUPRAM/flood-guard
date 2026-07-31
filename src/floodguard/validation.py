@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import math
 from pathlib import Path
+import re
 
 import pandas as pd
 
@@ -12,6 +14,11 @@ from floodguard.ingestion import (
     validate_mae_sai_file_manifest_ready,
 )
 from floodguard.sar_baseline import MASK_METRIC_COLUMNS
+from floodguard.sar_raster_extract import (
+    SAR_LOG_TRANSFORM,
+    SAR_MEASUREMENT_DOMAIN,
+    SAR_RADIOMETRIC_CALIBRATION_STATUS,
+)
 
 ACTION_PRIORITY: dict[str, int] = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4}
 ACCESS_THRESHOLDS: tuple[int, ...] = (15, 30, 60)
@@ -71,6 +78,9 @@ FUTURE_METRIC_PLACEHOLDERS: tuple[str, ...] = (
 
 class ValidationReportError(ValueError):
     """Raised when validation-report inputs violate the report contract."""
+
+
+_SHA256_RE = re.compile(r"[0-9a-f]{64}")
 
 
 def build_validation_summary(
@@ -169,15 +179,16 @@ def build_validation_summary(
             "and not agency flood products."
         ),
         (
-            "- Real Mae Sai validation is blocked because provider response pending items still "
-            "control reference-mask use, local processing, and redistribution/reference-only terms."
+            "- Qualified Mae Sai validation is blocked because provider response pending items "
+            "still control reference-mask use, validation, ML-label use, derived reporting, and "
+            "redistribution/reference-only terms."
         ),
         "",
         "## What Remains Blocked",
         "",
-        "- Real IoU, F1/Dice, precision, recall, and area error remain blocked until a legal reference mask exists.",
-        "- Real Sentinel-1 baseline processing remains blocked until local paths, checksums, timing, provenance, and reference-mask gates pass.",
-        "- Real-data ML remains blocked until the non-ML baseline and legal label gates pass.",
+        "- Qualified Thailand event-reference IoU, F1/Dice, precision, recall, and area error remain blocked until an eligible reference mask exists.",
+        "- A checksum-bound, non-operational cross-border weak-reference Sentinel-1 baseline exists; it is calibration evidence, not Mae Sai Thailand validation.",
+        "- Current-pair real-data ML remains blocked until qualified labels, reviewer calibration, and immutable spatial partitions pass.",
         "",
         "## Real Mae Sai Gate Update",
         "",
@@ -285,6 +296,7 @@ def build_real_data_validation_summary(
     weak_reference_metrics: pd.DataFrame | None = None,
     weak_reference_feature_manifest: pd.DataFrame | None = None,
     manual_reference_manifest: pd.DataFrame | None = None,
+    context_quality_manifest: pd.DataFrame | None = None,
     title: str = "Mae Sai Real-Data Validation Summary",
 ) -> str:
     """Build a Mae Sai real-data report with official and weak-reference status."""
@@ -305,13 +317,33 @@ def build_real_data_validation_summary(
             MASK_METRIC_COLUMNS,
             "weak_reference_metrics",
         )
+        _validate_weak_reference_metric_lineage(
+            file_manifest,
+            weak_reference_metrics,
+            weak_reference_feature_manifest,
+            manual_reference_manifest,
+        )
     if sar_metrics is not None:
         _validate_columns(sar_metrics, MASK_METRIC_COLUMNS, "sar_metrics")
         if sar_metrics.empty:
             raise ValidationReportError("sar_metrics must contain at least one row.")
+        if not gate_allowed:
+            raise ValidationReportError(
+                "Official SAR metrics were supplied while the official ingestion gate "
+                "is blocked. Candidate metrics must use the weak-reference lane."
+            )
+        if len(sar_metrics) != 1:
+            raise ValidationReportError("sar_metrics must contain exactly one row.")
+        _validate_metric_arithmetic(sar_metrics.iloc[0], "sar_metrics")
 
+    integrity_verified = weak_available
     status_line = (
-        "Weak-reference candidate metrics are available; official validation remains blocked."
+        "Weak-reference candidate metrics are integrity-bound; official validation remains blocked."
+        if weak_available and integrity_verified and not gate_allowed
+        else (
+            "Weak-reference candidate metric rows are present, but their supplied manifest "
+            "does not record verified source integrity; official validation remains blocked."
+        )
         if weak_available and not gate_allowed
         else "Official validation gate is open and metric rows can be reported."
         if gate_allowed
@@ -324,9 +356,9 @@ def build_real_data_validation_summary(
         f"Report status: {status_line}",
         "",
         (
-            "Strict use statement: Candidate metrics against manually digitized "
-            "weak-reference mask. Non-operational. Not official validation. "
-            "Not field validated."
+            "Strict use statement: Cross-border calibration metrics against a "
+            "manually digitized weak-reference mask; not Mae Sai Thailand ADM3 "
+            "validation. Non-operational. Not official validation. Not field validated."
         ),
         "",
         "## Data Status",
@@ -351,6 +383,7 @@ def build_real_data_validation_summary(
     lines.extend(
         [
             f"- Weak-reference candidate metrics available: {str(weak_available).lower()}",
+            f"- Weak-reference source integrity verified: {str(integrity_verified).lower()}",
             "- Source imagery and manual GeoPackage files stay outside Git; this report stores only derived metadata and metrics.",
             "- Real-data ML remains blocked because the weak-reference mask is not an official or cleared label source.",
             "",
@@ -358,6 +391,12 @@ def build_real_data_validation_summary(
     )
 
     _append_sentinel1_product_section(lines, file_manifest, weak_reference_feature_manifest)
+    _append_integrity_and_spatial_scope_section(
+        lines,
+        weak_reference_feature_manifest,
+        manual_reference_manifest,
+        context_quality_manifest,
+    )
     _append_manual_reference_metadata_section(lines, manual_reference_manifest)
     _append_method_assumptions_section(lines, weak_reference_feature_manifest)
     _append_candidate_metrics_section(lines, weak_reference_metrics, sar_metrics)
@@ -374,6 +413,7 @@ def write_real_data_validation_summary(
     weak_reference_metrics: pd.DataFrame | None = None,
     weak_reference_feature_manifest: pd.DataFrame | None = None,
     manual_reference_manifest: pd.DataFrame | None = None,
+    context_quality_manifest: pd.DataFrame | None = None,
     title: str = "Mae Sai Real-Data Validation Summary",
 ) -> Path:
     """Write the real-data validation status/metric report."""
@@ -387,6 +427,7 @@ def write_real_data_validation_summary(
             weak_reference_metrics=weak_reference_metrics,
             weak_reference_feature_manifest=weak_reference_feature_manifest,
             manual_reference_manifest=manual_reference_manifest,
+            context_quality_manifest=context_quality_manifest,
             title=title,
         ),
         encoding="utf-8",
@@ -410,7 +451,10 @@ def _append_sentinel1_product_section(
                 f"- Post-event source timestamp: {_cell(feature, 'source_timestamp', 'unavailable')}",
                 f"- Pre-event source name: {_cell(feature, 'pre_source_name', 'unavailable')}",
                 f"- Post-event source name: {_cell(feature, 'post_source_name', 'unavailable')}",
-                "- Source rasters were read from the external data workspace, not from Git.",
+                (
+                    "- Source integrity recorded by run manifest: "
+                    f"{_cell(feature, 'source_integrity_status', 'unavailable')}"
+                ),
                 "",
             ]
         )
@@ -431,6 +475,476 @@ def _append_sentinel1_product_section(
             f"`{_cell(row, 'product_id', 'unavailable')}`"
         )
     lines.append("")
+
+
+def _validate_weak_reference_metric_lineage(
+    file_manifest: pd.DataFrame,
+    weak_reference_metrics: pd.DataFrame,
+    weak_reference_feature_manifest: pd.DataFrame | None,
+    manual_reference_manifest: pd.DataFrame | None,
+) -> None:
+    """Bind candidate metrics to one checked source/reference feature run.
+
+    A report is evidence, not a CSV viewer.  Metric rows therefore fail closed
+    unless their confusion matrix is internally coherent and their source,
+    reference, sample-count, timestamp, threshold, and spatial-scope fields all
+    reconcile with the immutable source and feature manifests.
+    """
+
+    if len(weak_reference_metrics) != 1:
+        raise ValidationReportError(
+            "weak_reference_metrics must contain exactly one evidence row."
+        )
+    if weak_reference_feature_manifest is None or len(weak_reference_feature_manifest) != 1:
+        raise ValidationReportError(
+            "Weak-reference metrics require exactly one feature-manifest row."
+        )
+    if manual_reference_manifest is None or len(manual_reference_manifest) != 1:
+        raise ValidationReportError(
+            "Weak-reference metrics require exactly one manual-reference manifest row."
+        )
+
+    metric_required = (
+        "study_area",
+        "processing_scope",
+        "reference_status",
+        "metric_status",
+        "pre_source_sha256",
+        "post_source_sha256",
+        "reference_sha256",
+        "source_integrity_status",
+        "measurement_domain",
+        "log_transform",
+        "radiometric_calibration_status",
+        "reference_spatial_relation",
+        "reference_in_study_area_overlap",
+        "reference_distance_to_study_area_km",
+        "sample_pixel_count",
+        "reference_positive_pixel_count",
+        "predicted_positive_pixel_count",
+        "probability_threshold",
+        "source_timestamp",
+        "confidence_class",
+        "warning_text",
+        "assumptions",
+    )
+    feature_required = (
+        "study_area",
+        "processing_scope",
+        "pre_product_id",
+        "post_product_id",
+        "reference_product_id",
+        "reference_status",
+        "pre_source_sha256",
+        "post_source_sha256",
+        "reference_sha256",
+        "source_integrity_status",
+        "measurement_domain",
+        "log_transform",
+        "radiometric_calibration_status",
+        "reference_spatial_relation",
+        "reference_in_study_area_overlap",
+        "reference_distance_to_study_area_km",
+        "sample_pixel_count",
+        "reference_positive_pixel_count",
+        "predicted_positive_pixel_count",
+        "sample_width",
+        "sample_height",
+        "probability_threshold",
+        "source_timestamp",
+        "confidence_class",
+    )
+    manual_required = (
+        "study_area",
+        "reference_id",
+        "confidence",
+        "source_basis",
+        "digitized_by",
+        "digitized_at",
+        "notes",
+        "sha256",
+        "sha256_status",
+        "reference_mask_status",
+        "candidate_readiness_status",
+        "candidate_validation_metrics_allowed",
+        "not_official_status",
+        "attribute_values_status",
+        "spatial_relation",
+        "in_study_area_overlap",
+        "distance_to_study_area_km",
+        "spatial_relation_status",
+    )
+    file_required = ("study_area", "product_id", "sha256")
+    _validate_columns(weak_reference_metrics, metric_required, "weak_reference_metrics")
+    _validate_columns(
+        weak_reference_feature_manifest,
+        feature_required,
+        "weak_reference_feature_manifest",
+    )
+    _validate_columns(
+        manual_reference_manifest,
+        manual_required,
+        "manual_reference_manifest",
+    )
+    _validate_columns(file_manifest, file_required, "file_manifest")
+
+    metric = weak_reference_metrics.iloc[0]
+    feature = weak_reference_feature_manifest.iloc[0]
+    manual = manual_reference_manifest.iloc[0]
+    _validate_metric_arithmetic(metric, "weak_reference_metrics")
+
+    exact_metric_feature_fields = (
+        "study_area",
+        "processing_scope",
+        "reference_status",
+        "pre_source_sha256",
+        "post_source_sha256",
+        "reference_sha256",
+        "source_integrity_status",
+        "measurement_domain",
+        "log_transform",
+        "radiometric_calibration_status",
+        "reference_spatial_relation",
+        "reference_in_study_area_overlap",
+        "reference_distance_to_study_area_km",
+        "sample_pixel_count",
+        "reference_positive_pixel_count",
+        "predicted_positive_pixel_count",
+        "probability_threshold",
+        "source_timestamp",
+        "confidence_class",
+    )
+    for field in exact_metric_feature_fields:
+        if _normalized_cell(metric, field) != _normalized_cell(feature, field):
+            raise ValidationReportError(
+                f"Weak-reference metric {field} does not match the feature manifest."
+            )
+
+    if (
+        _normalized_cell(metric, "processing_scope")
+        != "weak_reference_real_sentinel1_non_ml_candidate"
+        or _normalized_cell(metric, "reference_status")
+        != "weak_reference_candidate"
+        or _normalized_cell(metric, "metric_status")
+        != "candidate_cross_border_calibration_metrics"
+        or _normalized_cell(metric, "source_integrity_status")
+        != "verified_sha256_before_raster_read"
+        or _normalized_cell(metric, "measurement_domain") != SAR_MEASUREMENT_DOMAIN
+        or _normalized_cell(metric, "log_transform") != SAR_LOG_TRANSFORM
+        or _normalized_cell(metric, "radiometric_calibration_status")
+        != SAR_RADIOMETRIC_CALIBRATION_STATUS
+        or _normalized_cell(metric, "reference_spatial_relation")
+        != "cross_border_calibration_only"
+        or _strict_report_bool(
+            metric["reference_in_study_area_overlap"],
+            "reference_in_study_area_overlap",
+        )
+        is not False
+    ):
+        raise ValidationReportError(
+            "Weak-reference metrics do not preserve the verified cross-border "
+            "candidate scope and source-integrity status."
+        )
+
+    for field in ("pre_source_sha256", "post_source_sha256", "reference_sha256"):
+        _validated_sha256(metric[field], f"weak-reference metric {field}")
+    if not str(metric["source_timestamp"]).strip():
+        raise ValidationReportError("Weak-reference metric source_timestamp is blank.")
+    warning = str(metric["warning_text"]).lower()
+    if not all(
+        phrase in warning
+        for phrase in ("cross-border", "non-operational", "not official", "not field validated")
+    ):
+        raise ValidationReportError(
+            "Weak-reference metric warning_text is missing mandatory safety language."
+        )
+    if not str(metric["assumptions"]).strip():
+        raise ValidationReportError("Weak-reference metric assumptions are blank.")
+
+    if (
+        _normalized_cell(manual, "study_area") != _normalized_cell(feature, "study_area")
+        or _normalized_cell(manual, "reference_id")
+        != _normalized_cell(feature, "reference_product_id")
+        or _normalized_cell(manual, "reference_mask_status")
+        != _normalized_cell(feature, "reference_status")
+        or _normalized_cell(manual, "sha256")
+        != _normalized_cell(feature, "reference_sha256")
+        or _normalized_cell(manual, "spatial_relation")
+        != _normalized_cell(feature, "reference_spatial_relation")
+        or _normalized_cell(manual, "in_study_area_overlap")
+        != _normalized_cell(feature, "reference_in_study_area_overlap")
+        or _normalized_cell(manual, "distance_to_study_area_km")
+        != _normalized_cell(feature, "reference_distance_to_study_area_km")
+    ):
+        raise ValidationReportError(
+            "Manual-reference identity, checksum, or spatial scope does not match "
+            "the feature manifest."
+        )
+    if (
+        str(manual["sha256_status"]).strip() not in {"recorded", "verified"}
+        or str(manual["candidate_readiness_status"]).strip()
+        != "ready_for_candidate_metrics"
+        or not _strict_report_bool(
+            manual["candidate_validation_metrics_allowed"],
+            "candidate_validation_metrics_allowed",
+        )
+        or str(manual["not_official_status"]).strip() != "confirmed_true"
+        or str(manual["attribute_values_status"]).strip() != "valid"
+        or str(manual["spatial_relation_status"]).strip()
+        != "verified_geometry_intersection"
+    ):
+        raise ValidationReportError(
+            "Manual-reference manifest is not eligible for cross-border candidate metrics."
+        )
+    _validated_sha256(manual["sha256"], "manual-reference sha256")
+
+    source_bindings = (
+        ("pre_product_id", "pre_source_sha256"),
+        ("post_product_id", "post_source_sha256"),
+        ("reference_product_id", "reference_sha256"),
+    )
+    for product_field, hash_field in source_bindings:
+        product_id = str(feature[product_field]).strip()
+        matches = file_manifest[
+            file_manifest["product_id"].astype(str).str.strip() == product_id
+        ]
+        if len(matches) != 1:
+            raise ValidationReportError(
+                f"Feature-manifest {product_field} must match exactly one source row."
+            )
+        source = matches.iloc[0]
+        if (
+            _normalized_cell(source, "study_area")
+            != _normalized_cell(feature, "study_area")
+            or _normalized_cell(source, "sha256")
+            != _normalized_cell(feature, hash_field)
+        ):
+            raise ValidationReportError(
+                f"Feature-manifest {product_field} checksum or study area was substituted."
+            )
+        _validated_sha256(source["sha256"], f"{product_id} source sha256")
+
+    sample_count = _nonnegative_int(metric["sample_pixel_count"], "sample_pixel_count")
+    width = _positive_int(feature["sample_width"], "sample_width")
+    height = _positive_int(feature["sample_height"], "sample_height")
+    if sample_count > width * height:
+        raise ValidationReportError(
+            "Weak-reference sample count exceeds the declared feature grid."
+        )
+
+
+def _validate_metric_arithmetic(metric: pd.Series, label: str) -> None:
+    counts = {
+        field: _nonnegative_int(metric[field], f"{label} {field}")
+        for field in (
+            "true_positive",
+            "false_positive",
+            "false_negative",
+            "true_negative",
+        )
+    }
+    tp = counts["true_positive"]
+    fp = counts["false_positive"]
+    fn = counts["false_negative"]
+    tn = counts["true_negative"]
+    expected = {
+        "iou": _safe_report_ratio(tp, tp + fp + fn),
+        "f1_dice": _safe_report_ratio(2 * tp, 2 * tp + fp + fn),
+        "precision": _safe_report_ratio(tp, tp + fp),
+        "recall": _safe_report_ratio(tp, tp + fn),
+        "area_error_ratio": _safe_report_ratio((tp + fp) - (tp + fn), tp + fn),
+    }
+    for field, expected_value in expected.items():
+        try:
+            observed = float(metric[field])
+        except (TypeError, ValueError) as exc:
+            raise ValidationReportError(f"{label} {field} must be numeric.") from exc
+        if not math.isfinite(observed) or not math.isclose(
+            observed,
+            expected_value,
+            rel_tol=0.0,
+            abs_tol=1e-6,
+        ):
+            raise ValidationReportError(
+                f"{label} {field} does not match its confusion-matrix counts."
+            )
+    sample_count = tp + fp + fn + tn
+    if "sample_pixel_count" in metric.index and _nonnegative_int(
+        metric["sample_pixel_count"], "sample_pixel_count"
+    ) != sample_count:
+        raise ValidationReportError(
+            f"{label} sample_pixel_count does not match confusion-matrix counts."
+        )
+    if "reference_positive_pixel_count" in metric.index and _nonnegative_int(
+        metric["reference_positive_pixel_count"], "reference_positive_pixel_count"
+    ) != tp + fn:
+        raise ValidationReportError(
+            f"{label} reference_positive_pixel_count does not match confusion-matrix counts."
+        )
+    if "predicted_positive_pixel_count" in metric.index and _nonnegative_int(
+        metric["predicted_positive_pixel_count"], "predicted_positive_pixel_count"
+    ) != tp + fp:
+        raise ValidationReportError(
+            f"{label} predicted_positive_pixel_count does not match confusion-matrix counts."
+        )
+
+
+def _safe_report_ratio(numerator: int, denominator: int) -> float:
+    if denominator == 0:
+        return 0.0 if numerator == 0 else math.nan
+    return round(float(numerator) / float(denominator), 6)
+
+
+def _nonnegative_int(value: object, label: str) -> int:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationReportError(f"{label} must be a non-negative integer.") from exc
+    if not math.isfinite(numeric) or numeric < 0 or not numeric.is_integer():
+        raise ValidationReportError(f"{label} must be a non-negative integer.")
+    return int(numeric)
+
+
+def _positive_int(value: object, label: str) -> int:
+    parsed = _nonnegative_int(value, label)
+    if parsed <= 0:
+        raise ValidationReportError(f"{label} must be positive.")
+    return parsed
+
+
+def _validated_sha256(value: object, label: str) -> str:
+    digest = str(value).strip()
+    if not _SHA256_RE.fullmatch(digest):
+        raise ValidationReportError(f"{label} must be a lowercase SHA-256 digest.")
+    return digest
+
+
+def _strict_report_bool(value: object, label: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise ValidationReportError(f"{label} must be explicit true or false.")
+
+
+def _normalized_cell(row: pd.Series, field: str) -> str:
+    value = row[field]
+    if isinstance(value, bool):
+        return str(value).lower()
+    text = str(value).strip()
+    if text.lower() in {"true", "false"}:
+        return text.lower()
+    try:
+        numeric = float(text)
+    except ValueError:
+        return text
+    if math.isfinite(numeric):
+        return format(numeric, ".15g")
+    return text
+
+
+def _append_integrity_and_spatial_scope_section(
+    lines: list[str],
+    weak_reference_feature_manifest: pd.DataFrame | None,
+    manual_reference_manifest: pd.DataFrame | None,
+    context_quality_manifest: pd.DataFrame | None,
+) -> None:
+    lines.extend(["## Integrity And Spatial Scope", ""])
+    if weak_reference_feature_manifest is None or weak_reference_feature_manifest.empty:
+        lines.extend(
+            [
+                "- Source integrity status: unavailable; this report does not infer it.",
+                "- Pre/post/reference checksum lineage: unavailable.",
+            ]
+        )
+    else:
+        feature = weak_reference_feature_manifest.iloc[0]
+        lines.extend(
+            [
+                (
+                    "- Source integrity status: "
+                    f"{_cell(feature, 'source_integrity_status', 'unavailable')}"
+                ),
+                f"- Pre-event SHA-256: `{_cell(feature, 'pre_source_sha256', 'unavailable')}`",
+                f"- Post-event SHA-256: `{_cell(feature, 'post_source_sha256', 'unavailable')}`",
+                f"- Reference SHA-256: `{_cell(feature, 'reference_sha256', 'unavailable')}`",
+            ]
+        )
+
+    if manual_reference_manifest is None or manual_reference_manifest.empty:
+        lines.append("- Manual-mask attribute integrity: unavailable.")
+    else:
+        manual = manual_reference_manifest.iloc[0]
+        lines.extend(
+            [
+                (
+                    "- Manual-mask attribute integrity: "
+                    f"{_cell(manual, 'attribute_values_status', 'unavailable')}"
+                ),
+                (
+                    "- Manual-mask attribute blockers: "
+                    f"{_cell(manual, 'attribute_value_blockers', 'none recorded')}"
+                ),
+                (
+                    "- Manual-mask spatial relation: "
+                    f"{_cell(manual, 'spatial_relation', 'unavailable')}"
+                ),
+                (
+                    "- Manual-mask in-study-area overlap: "
+                    f"{_cell(manual, 'in_study_area_overlap', 'unavailable')}"
+                ),
+                (
+                    "- Manual-mask distance to study area: "
+                    f"{_cell(manual, 'distance_to_study_area_km', 'unavailable')} km"
+                ),
+            ]
+        )
+
+    if context_quality_manifest is None or context_quality_manifest.empty:
+        lines.extend(
+            [
+                "- Thailand ADM3 candidate overlap: unavailable; this report does not infer spatial overlap.",
+                "- Cross-border status: unavailable from the supplied context manifest.",
+                "",
+            ]
+        )
+        return
+
+    context = context_quality_manifest.iloc[0]
+    overlap = _as_bool(
+        context.get("manual_reference_overlaps_thailand_adm3_candidate", pd.NA)
+    )
+    if overlap is False:
+        lines.extend(
+            [
+                "- Thailand ADM3 candidate overlap: false.",
+                "- Cross-border status: nearby cross-border calibration evidence only.",
+                "- Interpretation: these weak-reference metrics do not validate flood extent inside Mae Sai Thailand ADM3 reporting polygons.",
+            ]
+        )
+    elif overlap is True:
+        lines.extend(
+            [
+                "- Thailand ADM3 candidate overlap: true.",
+                "- Cross-border status: no cross-border non-overlap recorded by the supplied context manifest.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "- Thailand ADM3 candidate overlap: unresolved in the supplied context manifest.",
+                "- Cross-border status: unresolved; no spatial qualification is inferred.",
+            ]
+        )
+    lines.extend(
+        [
+            f"- Context-manifest assumptions: {_cell(context, 'assumptions', 'unavailable')}",
+            "",
+        ]
+    )
 
 
 def _append_manual_reference_metadata_section(
@@ -457,6 +971,11 @@ def _append_manual_reference_metadata_section(
         [
             f"- Reference id: `{_cell(manual, 'reference_id', 'unavailable')}`",
             f"- Study area: {_cell(manual, 'study_area', 'unavailable')}",
+            f"- Confidence: {_cell(manual, 'confidence', 'unavailable')}",
+            f"- Source basis: {_cell(manual, 'source_basis', 'unavailable')}",
+            f"- Digitized by: {_cell(manual, 'digitized_by', 'unavailable')}",
+            f"- Digitized at: {_cell(manual, 'digitized_at', 'unavailable')}",
+            f"- Notes: {_cell(manual, 'notes', 'unavailable')}",
             f"- Layer name: {_cell(manual, 'layer_name', 'unavailable')}",
             f"- Geometry type: {_cell(manual, 'geometry_type', 'unavailable')}",
             f"- CRS: {_cell(manual, 'crs', 'unavailable')}",
@@ -472,6 +991,10 @@ def _append_manual_reference_metadata_section(
             ),
             f"- Allowed use: {_cell(manual, 'allowed_use', 'unavailable')}",
             f"- Not allowed use: {_cell(manual, 'not_allowed_use', 'unavailable')}",
+            (
+                "- Identity disclosure: `[blank]` means the digitizer identity was "
+                "explicitly not recorded; it is not reviewer qualification."
+            ),
             "",
         ]
     )
@@ -497,6 +1020,12 @@ def _append_method_assumptions_section(
                 f"- Window strategy: {_cell(feature, 'window_strategy', 'unavailable')}",
                 f"- Sample size: {_cell(feature, 'sample_width', '?')} x {_cell(feature, 'sample_height', '?')} pixels",
                 f"- Georeferencing method: {_cell(feature, 'georeferencing_method', 'unavailable')}",
+                f"- Measurement domain: {_cell(feature, 'measurement_domain', 'unavailable')}",
+                f"- Log transform: {_cell(feature, 'log_transform', 'unavailable')}",
+                (
+                    "- Radiometric calibration: "
+                    f"{_cell(feature, 'radiometric_calibration_status', 'unavailable')}"
+                ),
                 f"- Probability threshold: {_cell(feature, 'probability_threshold', 'unavailable')}",
                 f"- Dry-change threshold: {_cell(feature, 'dry_change_db', 'unavailable')} dB",
                 f"- Flood-change threshold: {_cell(feature, 'flood_change_db', 'unavailable')} dB",
@@ -531,8 +1060,8 @@ def _append_candidate_metrics_section(
         metrics = weak_reference_metrics.iloc[0]
         lines.extend(
             [
-                "- Status: candidate metrics generated against a manually digitized weak-reference mask.",
-                "- Metric status: candidate weak-reference metrics.",
+                "- Status: cross-border calibration metrics generated against a manually digitized weak-reference mask.",
+                "- Metric status: candidate cross-border calibration metrics, not Mae Sai Thailand ADM3 validation.",
                 f"- IoU: {float(metrics['iou']):.6f}",
                 f"- F1/Dice: {float(metrics['f1_dice']):.6f}",
                 f"- precision: {float(metrics['precision']):.6f}",
@@ -642,7 +1171,7 @@ def _append_official_gate_detail_section(
             "",
             "- Log UNOSAT/UNITAR or GISTDA provider response.",
             "- Record legal reference-mask status.",
-            "- Record local paths and SHA-256 checksums outside Git.",
+            "- Acquire and checksum-bind the future qualified reference artifact outside Git; the active SAFE pair and cross-border manual reference are already checksum-bound.",
             "- Rebuild `outputs/mae_sai_real_data_file_manifest.csv`.",
             "",
         ]

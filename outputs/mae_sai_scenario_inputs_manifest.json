@@ -1,0 +1,84 @@
+{
+  "artifacts": [
+    {
+      "columns": [
+        "node_id",
+        "subdistrict_id",
+        "total_population",
+        "vulnerable_population",
+        "non_vulnerable_population"
+      ],
+      "relative_path": "mae_sai_population_nodes.csv",
+      "role": "population_nodes",
+      "row_count": 13620,
+      "sha256": "172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac"
+    },
+    {
+      "columns": [
+        "edge_id",
+        "road_id",
+        "from_node",
+        "to_node",
+        "normal_minutes",
+        "disrupted_minutes",
+        "road_disruption_probability_0_1",
+        "candidate_closure_status",
+        "subdistrict_id",
+        "bridge_flag"
+      ],
+      "relative_path": "mae_sai_access_edges.csv",
+      "role": "access_edges",
+      "row_count": 30443,
+      "sha256": "266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454"
+    },
+    {
+      "columns": [
+        "facility_id",
+        "facility_type",
+        "amenity",
+        "facility_name",
+        "longitude",
+        "latitude",
+        "node_id",
+        "snap_distance_m",
+        "subdistrict_id",
+        "subdistrict_name",
+        "source_name",
+        "source_timestamp",
+        "confidence_class",
+        "assumptions"
+      ],
+      "relative_path": "mae_sai_facility_context.csv",
+      "role": "facility_candidates",
+      "row_count": 42,
+      "sha256": "fbfb5332a72edcea7ff05290abb883f340e0b974806e325b2b4d962b59ef6c0d"
+    }
+  ],
+  "assumptions": [
+    "Population is modeled WorldPop context snapped to a candidate OSM graph.",
+    "Vulnerability is a terrain/remoteness proxy, not demographic truth.",
+    "Disrupted edge times are heuristic candidates, not observed closures.",
+    "Scenario outputs are planning evidence and not evacuation instructions."
+  ],
+  "can_feed_decision_layer": false,
+  "confidence_class": "low",
+  "data_version": "mae-sai-candidate-2024-09-15-v1",
+  "dataset_mode": "candidate",
+  "generated_at": "2026-07-20T08:15:08Z",
+  "git_commit": "22fc172aca78937bb7d1f8675d08527a8517da68",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "processing_allowed": true,
+  "processing_scope": "mae_sai_candidate_access_scenario_inputs",
+  "reason_blocked": "Scenario inputs use modeled population, unverified facility candidates, and heuristic road disruption; outputs remain candidate planning evidence.",
+  "receipt_sha256": "b25fd06ab5f20f553acf252b63531d5355a63c1806e5bd647782bf2908dcc7a0",
+  "schema_version": "1.0",
+  "source_licenses": [
+    "Copernicus Sentinel data legal notice",
+    "WorldPop CC BY 4.0",
+    "OpenStreetMap ODbL 1.0"
+  ],
+  "source_name": "CDSE Sentinel-1 candidate change context; WorldPop Thailand 100m 2020; OpenStreetMap Thailand via Geofabrik",
+  "source_timestamp": "2024-09-15T23:16:01Z",
+  "study_area_id": "mae_sai_candidate_v1"
+}

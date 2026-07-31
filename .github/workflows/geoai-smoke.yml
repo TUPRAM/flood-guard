@@ -1,0 +1,44 @@
+name: Opt-in real GeoAI smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-geoai-smoke:
+    name: GeoAI 0.41.1 synthetic export and inference
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Sync isolated real GeoAI environment
+        run: >-
+          uv sync --project services/geoai-runner --locked
+          --group test --extra geoai
+      - name: Run actual tile export, model construction, inference, and report-only aggregation
+        env:
+          RUN_GEOAI_SMOKE: "1"
+          FLOODGUARD_PROOF_COMMIT: ${{ github.sha }}
+          GEOAI_PROOF_OUTPUT_DIR: ${{ github.workspace }}/.tmp/geoai-proposal-proof
+        run: >-
+          uv run --project services/geoai-runner --extra geoai pytest
+          services/geoai-runner/tests/test_geoai_smoke.py -m geoai_smoke
+          --junitxml=.tmp/proposal-evidence/geoai-real-smoke.xml
+      - name: Upload small public-safe proof artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: geoai-real-smoke-evidence
+          path: |
+            .tmp/geoai-proposal-proof/*.json
+            .tmp/geoai-proposal-proof/*.png
+            .tmp/proposal-evidence/geoai-real-smoke.xml
+          if-no-files-found: error
+          retention-days: 14

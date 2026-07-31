@@ -99,6 +99,65 @@ Files: `priority_subdistricts.geojson` and `road_risk.geojson`
 | `road_closure_change_people_losing_30_min_access` | Road closure scenario minus baseline. Positive means worsening. |
 | `road_closure_equity_gap_ratio` | Equity-gap ratio after the road closure stress case. |
 | `road_closure_change_equity_gap_ratio` | Road closure equity ratio minus baseline ratio. |
+| `fusion_candidate_mode` | Dashboard/GeoJSON research-sidecar mode: `SAR only` or `SAR + optical`; not the current FPPS input. |
+| `decision_input_mode` | Exact mode inside `sample_sar_optical_fusion.csv`; interpret only with `decision_layer_use_status`. |
+| `decision_layer_use_status` | `research_sidecar_not_used_by_fpps` for the current synthetic integration. |
+| `fusion_fallback_reason` | Machine-readable reason optical evidence was not used; `none` for fused rows. |
+| `fusion_flood_probability_0_1` | Separate synthetic fusion-contract probability. It does not replace the FPPS flood-likelihood field. |
+| `historical_susceptibility_0_100` | Static historical susceptibility/context score, never observed current flooding. |
+| `historical_susceptibility_class` | `low`, `moderate`, `high`, or `unavailable` historical context class. |
+| `historical_conflict_status` | Current-SAR versus historical-context plausibility comparison status. |
+| `historical_conflict_warning` | Verification warning only; it never overrides event-time SAR. |
+| `context_label` | Required dashboard label: `Historical susceptibility/context`. |
+| `context_boundary` | Required wording: `Not observed current flooding. Not a forecast.` |
+
+## Sentinel-2 Optical And SAR Fusion
+
+Files: `sample_sentinel2_optical_features.csv`, `sample_optical_fusion_candidate_assessment.csv`, `sample_sar_optical_fusion.csv`, and `sample_sar_optical_fusion_validation.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `pre_B02` through `post_B12` | Preserved synthetic raw pre/event Sentinel-2 Level-2A surface-reflectance inputs for lineage; these raw columns are not encoder-ready. |
+| `pre_B02_masked` through `post_B12_masked` | Cloud-, shadow-, SCL-, and distance-masked reflectance columns admitted to the optical encoder contract only when their phase is valid. |
+| `pre_SCL` / `post_SCL` | Scene-classification inputs used for fail-closed cloud, shadow, cirrus, snow, nodata, and defective-pixel masking. |
+| `pre_cloud_distance_m` / `post_cloud_distance_m` | Distance to the excluded cloud mask for each phase. |
+| `pre_ndwi` / `post_ndwi` / `ndwi_change` | NDWI features and event-minus-pre change. MNDWI, NDVI, and AWEIsh use the same naming pattern. |
+| `optical_valid` | True only when both phases pass SCL, cloud-distance, and safe-denominator checks. |
+| `optical_invalid_reason` | Stable reason codes for any failed optical phase. |
+| `flood_truth_status` | Always `not_flood_truth` for optical research/context features. |
+| `optical_eligible` | Candidate-level fusion eligibility after all common and THEOS-2-specific gates. |
+| `optical_eligibility_reason` | Stable candidate-level pass/fail reasons, retained even when another optical candidate is selected. |
+| `decision_input_mode` | `SAR only` or `SAR + optical`. |
+| `fallback_equivalence_status` | `passed` when the SAR-only probability is byte-equivalent to the input SAR probability. |
+| `selected_optical_source_family` | `sentinel2`, `theos2`, or blank when no optical candidate passes. |
+| `quality_policy_sha256` | Hash of the complete optical eligibility policy embedded in the row. |
+| `model_contract_sha256` | Hash of the separate-encoder, late-fusion, modality-dropout contract embedded in the row. |
+| `optical_source_family` in model contract | Exactly one encoder family, `sentinel2` or `theos2`; cross-family candidate reuse fails closed. |
+| `evaluation_slice` | `sar_all`, `sar_paired_subset`, `optical_only`, or `fused`. |
+| `improvement_claim_status` | Explicit status that fixture metrics do not establish an improvement claim. |
+
+## Historical Susceptibility Context
+
+Files: `sample_historical_susceptibility_context.csv`, `sample_historical_susceptibility_monotonicity.csv`, and `sample_historical_basin_event_partitions.csv`
+
+| Field | Meaning |
+| --- | --- |
+| `historical_susceptibility_0_100` | Monotonic additive historical-context score after available-weight renormalization; missing when coverage is below the declared floor. |
+| `historical_susceptibility_class` | `low`, `moderate`, `high`, or `unavailable`. |
+| `historical_feature_contributions_json` | Per-feature contribution points that sum to the emitted score. |
+| `historical_top_driver` | Machine-readable feature key for the largest positive contribution; the dashboard explanation uses its human-readable label. |
+| `historical_available_weight_0_1` | Fraction of configured feature weight supported by non-missing inputs. |
+| `historical_missing_features` | Pipe-separated normalized context features that were unavailable. |
+| `historical_conflict_status` | `none`, `not_evaluated`, `current_sar_high_historical_low`, or `current_sar_low_historical_high`. |
+| `eligible_as_current_flood` | Always false. Historical context is not an event-time observation. |
+| `eligible_as_forecast` | Always false. Historical context is not a forecast. |
+| `eligible_to_replace_event_sar` | Always false. Historical context cannot replace current SAR evidence. |
+| `calibration_status` | Current fixture status: `uncalibrated_requires_basin_event_target_corpus`. |
+| `monotonicity_passed` | True only when increasing one normalized susceptibility feature does not reduce the score. |
+| `partition` | `train`, `calibration`, or `test`, assigned to complete connected basin/event groups. |
+| `source_timestamp` | Source time inherited by score/monotonicity rows or declared by the split-integrity fixture. |
+| `confidence_class` | Confidence for the underlying historical context or diagnostic fixture. |
+| `assumptions` | Explicit evidence boundary and diagnostic limitations for the row. |
 
 ## Dashboard And Briefs
 
@@ -214,6 +273,36 @@ Dashboard v10 real dataset workspace:
 | `facility-layer-toggle` | Shows candidate OSM facility points in Mae Sai mode. |
 | `hotspot-layer-toggle` | Shows representative modeled access-loss hotspot points in Mae Sai mode. |
 
+Dashboard v11 semantic presentation layer:
+
+| Item | Meaning |
+| --- | --- |
+| `semanticDetailZoom` | Map zoom threshold `12`. Regional Mae Sai view uses priority roads and ADM3 facility clusters; selected-area detail uses all candidate roads and individual facilities inside the selected ADM3 unit. |
+| `map-detail-status` | Compact statement of the active semantic density, including visible road and facility/cluster counts. |
+| `toggle-focus` | Keeps the selected ADM3 polygon at full emphasis while dimming surrounding polygons; geographic context remains visible. |
+| `facility-cluster-shell` | Regional marker aggregating candidate facilities by ADM3 unit. It is a display cluster, not a verified service count. |
+| `facility-marker-shell` | Selected-area candidate facility marker. Symbols distinguish `hospital`, `clinic`, other `healthcare`, `school`, `shelter_candidate`, `emergency_service`, and `community_facility`. Hospital/clinic classification uses the embedded OSM `amenity` value and remains unverified candidate context. |
+| `language-en` / `language-th` | English/Thai interface toggle. It changes labels and Thai ADM3 display names but not identifiers, numbers, metrics, or evidence status. |
+| `sar-evidence-drawer` | Compact selected-ADM3 Sentinel-1 pre/post/change evidence from `mae_sai_adm3_sar_context.csv`. Values remain weak-reference candidate statistics, not official validation. |
+| `mean_combined_sar_change_score` | Mean combined SAR change score for the selected ADM3 unit, displayed in the evidence drawer with the source acquisition pair. |
+| `provenance-summary-grid` | Concise source timestamp, reference status, and processing scope for the active selection. |
+| `technical-provenance` | Expandable full Sentinel-1 product identifiers and assumptions. |
+| `judge-mode-toggle` | Presentation state that hides secondary controls and long context/report sections while retaining warnings, map, selected evidence, source quality, SAR evidence, and provenance. |
+| `judge-secondary` | UI element allowed to be hidden in judge mode. It must never be applied to the safety warning or compact provenance. |
+
+Dashboard v12 fusion and historical context:
+
+| Item | Meaning |
+| --- | --- |
+| `model-context-panel` | Selected-unit cards for the observation pathway and historical plausibility context. |
+| `panel-modality-used` | Displays the exact `SAR only` or `SAR + optical` research-candidate mode from the fusion contract. |
+| `panel-modality-reason` | Displays the optical fallback reason or `none`; the adjacent boundary says the sidecar never changes FPPS. |
+| `Historical susceptibility/context` | Required title separating the static susceptibility layer from event-time observations. |
+| `panel-historical-susceptibility` | Historical score and class, or unavailable when context coverage is below policy. |
+| `panel-historical-warning` | Current-SAR plausibility warning that requests verification but never overrides event evidence. |
+| `panel-historical-meta` | Historical context source timestamp, confidence class, and calibration status. |
+| `Not observed current flooding. Not a forecast.` | Permanent boundary shown on every historical-context card. |
+
 Dashboard QA support:
 
 | Artifact | Meaning |
@@ -232,7 +321,7 @@ Files: `real_data_ingestion_manifest.csv`, `mae_sai_real_data_file_manifest.csv`
 
 `sentinel_asia_product_terms_review.csv` records the conservative product-terms decision. Current status is `reference_candidate_only` because no explicit product-level terms were found for validation metrics, screenshots/demo, derived metrics, redistribution, or ML-label use. `docs/mbrsc_reference_mask_clearance_memo.md` is the controlling decision memo and says not to set `processing_allowed=True` or `blocking_decision=cleared_for_local_validation`.
 
-`cdse_mae_sai_acquisition_manifest.csv` records selected Mae Sai Sentinel-1 CDSE acquisition rows. Current rows are `downloaded_outside_git` with `sha256_status=recorded` for the selected pre/post COG products. Source assets remain outside Git; processing remains blocked until reference-mask status clears.
+`cdse_mae_sai_acquisition_manifest.csv` records the active same-track Mae Sai Sentinel-1 original-SAFE pair. The pre-event product is `aaaef3af-fa49-4115-bf0f-f54175e7aedf`; the post-event product is `5251b74b-0bbd-4365-9eb4-fa33292e175a`. Both external archives have `sha256_status=recorded`. Earlier COG rows are retired provenance only and are rejected as active baseline inputs. Qualified validation remains blocked until the reference authority and use gates clear.
 
 `manual_reference_mask_manifest.csv` records a project-owned QGIS manual weak-reference candidate. It can support candidate validation metrics only after the GeoPackage exists outside Git, has a SHA-256 checksum, contains required fields, contains features, and every feature has `not_official=true`. It must not be described as official validation truth, an official warning, redistributed provider source data, or unqualified ML labels.
 
@@ -355,7 +444,7 @@ Reference-mask legal gate fields used by `scripts/check_real_data_gates.py`:
 | `reference_validation_allowed` | Computed gate result for local validation. |
 | `ml_label_allowed` | Computed gate result for ML-label use, separate from validation. |
 
-`mae_sai_real_data_file_manifest.csv` is a blocked planning manifest for the first real non-ML SAR baseline. After the public reference inspection lane runs, it includes the Sentinel Asia MBRSC shapefile as a checksummed public reference-candidate row, plus the selected September 6 pre-event Sentinel-1 COG, the selected September 15 post-event Sentinel-1 COG, and the September 18 fallback post-event COG. The reference candidate has geometry and checksum metadata but unresolved product terms and quality gates, so all rows remain `processing_allowed=False`.
+`mae_sai_real_data_file_manifest.csv` binds the active original-SAFE pre-event product `aaaef3af-fa49-4115-bf0f-f54175e7aedf`, active original-SAFE post-event product `5251b74b-0bbd-4365-9eb4-fa33292e175a`, the Sentinel Asia MBRSC reference candidate, and the project-owned cross-border manual weak reference. Source paths are redacted and checksums are recorded. The official/qualified rows remain `processing_allowed=False`; the manual lane supports only explicitly labelled cross-border candidate metrics. Retired COG identities remain historical provenance, not active manifest roles.
 
 `public_reference_candidate_manifest.csv` is the public/open fallback source inventory. It includes CDSE Sentinel-1/Sentinel-2, CEMS EMSR754/EMSR756, Sentinel Asia public product links, UNOSAT/UN Thailand report evidence, NASA flood products, WorldPop, OSM/Geofabrik, Copernicus DEM, HDX COD-AB, and local hackathon lanes. It is metadata-only and does not make any source a legal flood label by itself.
 
@@ -612,11 +701,11 @@ These outputs are candidate metrics against a manually digitized weak-reference 
 | `area_error_ratio` | Signed predicted flood area error relative to manual weak-reference area. |
 | `warning_text` | Required safety wording: candidate metrics only, non-operational, not official validation, and not field validated. |
 
-## Mae Sai Weak-Label ML Experiment
+## Historical Mae Sai Weak-Label ML Experiment (Retired Source Pair)
 
 Files: `mae_sai_weak_label_ml_metrics.csv`, `mae_sai_weak_label_ml_prediction_manifest.csv`, and `mae_sai_weak_label_ml_summary.md`
 
-These outputs train and evaluate a small logistic model against the manual weak-reference mask. They are weak-label experiment artifacts only: non-operational, not official labels, not field validation, not official flood validation, and not an emergency warning.
+These outputs preserve one completed logistic screening experiment against the legacy manual weak-reference mask and the retired September 6 / September 15 COG pair. They are historical report-only artifacts: non-operational, not official labels, not field validation, not official flood validation, not comparable to the active original-SAFE baseline, and not an emergency warning. The current pipeline must not regenerate them as active-source evidence.
 
 | Field | Meaning |
 | --- | --- |
@@ -634,7 +723,7 @@ These outputs train and evaluate a small logistic model against the manual weak-
 | `delta_<metric>` | ML metric minus baseline metric. |
 | `ml_improves_baseline` | `True` when ML improves IoU or F1/Dice against the non-ML baseline. |
 | `ml_complements_baseline` | `True` when ML improves precision or recall without collapsing the other metric below a bounded level. |
-| `can_feed_decision_layer` | `True` only when ML improves or complements the non-ML baseline; otherwise ML probability stays report-only. |
+| `can_feed_decision_layer` | Always `False` for this historical weak-label artifact. Apparent improvement against the same weak reference cannot authorize FPPS or decision-layer use. |
 | `mean_ml_flood_probability_0_1` | Mean weak-label ML probability over the sampled feature grid. |
 | `holdout_mean_ml_flood_probability_0_1` | Mean weak-label ML probability over the spatial holdout only. |
 | `ml_predicted_positive_pixel_count` | Count of sampled pixels predicted as flood by the weak-label ML model. |
@@ -647,12 +736,12 @@ These outputs train and evaluate a small logistic model against the manual weak-
 
 Files: `mae_sai_admin_context.geojson`, `mae_sai_adm3_sar_context.csv`, `mae_sai_population_context.csv`, `mae_sai_road_risk.csv`, `mae_sai_facility_context.csv`, `mae_sai_road_risk.geojson`, `mae_sai_facilities.geojson`, `mae_sai_access_hotspots.geojson`, `mae_sai_access_loss.csv`, `mae_sai_equity_gap.csv`, `mae_sai_real_context_decision_inputs.csv`, `mae_sai_context_quality_summary.csv`, `mae_sai_context_quality_report.md`, `mae_sai_subdistrict_flood_inputs.csv`, and `mae_sai_priority_subdistricts.geojson`
 
-These outputs join real Sentinel-1 candidate change with HDX COD-AB, WorldPop, OSM/Geofabrik, and Copernicus DEM context. They remain weak-reference, non-operational, not official validation, not field validated, and not an official warning. Current rows cover eight official COD-AB ADM3 reporting polygons; the nearby manual weak-reference geometry is calibration evidence only and does not overlap those polygons.
+These outputs join real Sentinel-1 candidate change with HDX COD-AB, WorldPop, OSM/Geofabrik, and Copernicus DEM context. They remain weak-reference, non-operational, not official validation, not field validated, and not an official warning. Current rows cover eight HDX COD-AB ADM3 candidate reporting polygons whose authority and vintage still require confirmation; the nearby manual weak-reference geometry is calibration evidence only and does not overlap those polygons.
 
 | Field | Meaning |
 | --- | --- |
-| `subdistrict_id` | HDX COD-AB ADM3 code, such as `TH570906`. |
-| `subdistrict_name` | COD-AB ADM3 English name, such as `Wiang Phang Kham`. |
+| `subdistrict_id` | HDX COD-AB ADM3 code, such as current action-brief area `TH570903`. |
+| `subdistrict_name` | COD-AB ADM3 English name, such as current action-brief area `Ko Chang`. |
 | `subdistrict_name_th` | COD-AB ADM3 Thai name. |
 | `mean_flood_probability_0_1` | Mean non-ML Sentinel-1 candidate probability summarized inside the ADM3 polygon. |
 | `p90_flood_probability_0_1` | 90th-percentile Sentinel-1 candidate probability inside the ADM3 polygon. |
@@ -808,21 +897,21 @@ File: `theos2_visual_review_checklist.csv`
 
 File: `mae_sai_validation_summary.md`
 
-This report remains officially blocked until the legal reference mask, local paths, SHA-256 checksums, and file-level processing gates pass. When weak-reference candidate metrics exist, the report includes them in a separate section and keeps the warning that they are not official validation, not field validated, and not an emergency warning.
+This report remains blocked for qualified or official validation until reference authority, permitted-use, reviewer, and qualification gates pass. The active original-SAFE pair and cross-border manual reference already have outside-Git paths and SHA-256 checksums; a future qualified reference artifact must be acquired and checksum-bound separately. The report includes the current weak-reference candidate metrics in a separate section and keeps the warning that they are not official validation, not field validated, and not an emergency warning.
 
 ## Mae Sai Weak-Reference Action Brief
 
-File: `mae_sai_action_brief_TH570906.md`
+File: `mae_sai_action_brief_TH570903.md`
 
 This is a bilingual Markdown decision brief generated from derived Mae Sai outputs. It contains no raw imagery or source GeoPackage content.
 
 | Brief item | Meaning |
 | --- | --- |
-| Review area | `TH570906 / Wiang Phang Kham`, an HDX COD-AB ADM3 reporting polygon. |
+| Review area | `TH570903 / Ko Chang`, an HDX COD-AB ADM3 candidate reporting polygon. |
 | FPPS and action class | Existing deterministic score and A-E class from `scoring.py`; current low confidence forces monitor-and-verify behavior. |
 | Flood evidence | Real CDSE Sentinel-1 pre/post product ids, observation timestamp, mean non-ML flood-probability proxy, and sampled flood-positive counts. |
 | Candidate validation metrics | IoU, F1/Dice, precision, recall, and area error against the manually digitized weak-reference candidate. These are not official validation metrics. |
-| Weak-label ML cross-check | Spatial-holdout baseline-versus-logistic metrics. The brief discloses that the ML candidate overpredicts area and is not the current FPPS input. |
+| Weak-label ML cross-check | Unavailable for the current active pair. The brief excludes the historical retired-COG logistic result because it is not comparable to the active original-SAFE baseline. |
 | Road risk | Top OSM candidate roads/bridges from the Sentinel-1 heuristic risk calculation; not observed closures. |
 | Access loss | Modeled 15/30/60-minute population access loss on the candidate OSM network. |
 | Equity gap | Ratio for the terrain/remoteness proxy group versus other modeled population; not demographic equity measurement. |

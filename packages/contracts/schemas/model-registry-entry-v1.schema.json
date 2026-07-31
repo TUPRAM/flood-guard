@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/model-registry-entry-v1.schema.json",
+  "title": "FloodGuard signed model registry entry v1",
+  "description": "A study-area and event-bound association between immutable source, model, evaluation, and product evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payload", "signature"],
+  "properties": {
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "registry_entry_id",
+        "study_area_id",
+        "event_id",
+        "evidence_kind",
+        "source_bundle_sha256",
+        "model_run_id",
+        "model_id",
+        "model_sha256",
+        "model_run_manifest_sha256",
+        "evaluation_id",
+        "evaluation_manifest_sha256",
+        "controlled_result_receipt_sha256",
+        "product_id",
+        "product_manifest_sha256",
+        "promotion_acceptance_receipt_sha256",
+        "field_validation_receipt_sha256",
+        "agency_acceptance_receipt_sha256",
+        "dataset_mode",
+        "operational_status",
+        "registry_status",
+        "permitted_use",
+        "issued_at",
+        "valid_from",
+        "expires_at",
+        "official_warning",
+        "can_feed_decision_layer",
+        "reason_blocked"
+      ],
+      "properties": {
+        "schema_version": { "const": "1.0" },
+        "registry_entry_id": { "$ref": "#/$defs/safeId" },
+        "study_area_id": { "$ref": "#/$defs/safeId" },
+        "event_id": { "$ref": "#/$defs/safeId" },
+        "evidence_kind": {
+          "enum": [
+            "satellite_observed_extent",
+            "optical_corroboration",
+            "susceptibility_forecast",
+            "scenario_assumption",
+            "external_algorithmic_baseline",
+            "human_field_observation"
+          ]
+        },
+        "source_bundle_sha256": { "$ref": "#/$defs/sha256" },
+        "model_run_id": { "$ref": "#/$defs/safeId" },
+        "model_id": { "$ref": "#/$defs/safeId" },
+        "model_sha256": { "$ref": "#/$defs/sha256" },
+        "model_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "evaluation_id": { "$ref": "#/$defs/safeId" },
+        "evaluation_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "controlled_result_receipt_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "product_id": { "$ref": "#/$defs/safeId" },
+        "product_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "promotion_acceptance_receipt_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "field_validation_receipt_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "agency_acceptance_receipt_sha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "dataset_mode": {
+          "enum": ["fixture_demo", "candidate", "official_input"]
+        },
+        "operational_status": {
+          "enum": ["non_operational", "planning_only", "agency_operational"]
+        },
+        "registry_status": {
+          "enum": ["candidate", "shadow", "approved", "revoked", "expired", "blocked"]
+        },
+        "permitted_use": {
+          "enum": ["report_only", "shadow_only", "decision_input"]
+        },
+        "issued_at": { "type": "string", "format": "date-time" },
+        "valid_from": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "official_warning": { "const": false },
+        "can_feed_decision_layer": { "type": "boolean" },
+        "reason_blocked": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "registry_status": { "const": "candidate" } },
+            "required": ["registry_status"]
+          },
+          "then": {
+            "properties": {
+              "dataset_mode": { "enum": ["fixture_demo", "candidate"] },
+              "operational_status": { "const": "non_operational" },
+              "permitted_use": { "const": "report_only" },
+              "promotion_acceptance_receipt_sha256": { "type": "null" },
+              "field_validation_receipt_sha256": { "type": "null" },
+              "agency_acceptance_receipt_sha256": { "type": "null" },
+              "can_feed_decision_layer": { "const": false },
+              "reason_blocked": { "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "registry_status": { "const": "shadow" } },
+            "required": ["registry_status"]
+          },
+          "then": {
+            "properties": {
+              "permitted_use": { "const": "shadow_only" },
+              "can_feed_decision_layer": { "const": false },
+              "reason_blocked": { "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "registry_status": {
+                "enum": ["revoked", "expired", "blocked"]
+              }
+            },
+            "required": ["registry_status"]
+          },
+          "then": {
+            "properties": {
+              "can_feed_decision_layer": { "const": false },
+              "reason_blocked": { "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "can_feed_decision_layer": { "const": false } },
+            "required": ["can_feed_decision_layer"]
+          },
+          "then": {
+            "properties": { "reason_blocked": { "minLength": 1 } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "can_feed_decision_layer": { "const": true } },
+            "required": ["can_feed_decision_layer"]
+          },
+          "then": {
+            "properties": {
+              "dataset_mode": { "const": "official_input" },
+              "operational_status": {
+                "enum": ["planning_only", "agency_operational"]
+              },
+              "registry_status": { "const": "approved" },
+              "permitted_use": { "const": "decision_input" },
+              "controlled_result_receipt_sha256": { "$ref": "#/$defs/sha256" },
+              "promotion_acceptance_receipt_sha256": { "$ref": "#/$defs/sha256" },
+              "field_validation_receipt_sha256": { "$ref": "#/$defs/sha256" },
+              "agency_acceptance_receipt_sha256": { "$ref": "#/$defs/sha256" },
+              "reason_blocked": { "maxLength": 0 }
+            }
+          }
+        }
+      ]
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "payload_sha256", "value"],
+      "properties": {
+        "algorithm": { "const": "HMAC-SHA256" },
+        "key_id": { "$ref": "#/$defs/safeId" },
+        "payload_sha256": { "$ref": "#/$defs/sha256" },
+        "value": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "nullableSha256": {
+      "oneOf": [
+        { "$ref": "#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    }
+  }
+}

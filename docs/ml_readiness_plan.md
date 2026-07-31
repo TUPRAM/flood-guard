@@ -1,6 +1,6 @@
 # ML Readiness Plan
 
-Status as of 2026-07-03: not ready for real-data ML yet. FloodGuard is ready to plan, catalog, gate real data, and use THEOS-2 as optical context, but not to train or run a flood-mapping model on real imagery.
+Status as of 2026-07-20: not ready for a new qualified real-data ML experiment. FloodGuard now has an active checksum-bound original-SAFE source pair and a deterministic cross-border weak-reference baseline, but it still lacks an authorized ML-label reference, reviewer-calibration evidence, and immutable qualified holdouts. THEOS-2 remains optical context only.
 
 ## Readiness Gates
 
@@ -24,7 +24,7 @@ Required before ML:
 - product storage type and acquisition timing are documented
 - metadata snapshot review checklist is complete if a live snapshot is committed
 
-Current status: partially planned. Mae Sai has a provisional CDSE pre/post COG pair, but the final post-event choice depends on the reference-mask date. The local hackathon Sentinel-1 TIFF has checksum-backed readiness metadata, but `outputs/sentinel1_provenance_resolved_manifest.csv` currently labels it `candidate_role=unresolved` and `event_timing_status=timing_unresolved`; it cannot replace the locked CDSE pair yet.
+Current status: source pair locked, qualified-label processing still blocked. Mae Sai's active pair is the same-track original-SAFE pre-event product `aaaef3af-fa49-4115-bf0f-f54175e7aedf` and post-event product `5251b74b-0bbd-4365-9eb4-fa33292e175a`; both external archives are checksum-bound. The former September 6 / September 15 COG pair is retired provenance only. The local hackathon Sentinel-1 TIFF remains `candidate_role=unresolved` and `event_timing_status=timing_unresolved`, so it cannot replace the active pair.
 
 ## Gate 3 - Source Files Are Tracked Outside The Repo
 
@@ -35,7 +35,7 @@ Required before ML:
 - the ingestion manifest changes from `metadata_only` only after license and geometry gates pass
 - binary imagery outputs remain excluded from repository commits
 
-Current status: blocked for flood-reference processing. The current ingestion skeleton intentionally refuses imagery/product output paths. THEOS-2 selected files have checksum-backed optical-context preview scope only and remain `reference_mask_status=not_reference_mask`.
+Current status: blocked for qualified flood-reference processing. The active Sentinel-1 archives and cross-border manual reference are checksum-tracked outside Git, but the manual reference does not overlap the Thailand ADM3 candidate geometry and explicitly disallows unqualified ML-label use. THEOS-2 selected files have checksum-backed optical-context preview scope only and remain `reference_mask_status=not_reference_mask`.
 
 ## Gate 4 - Baseline Non-ML Flood Mapping Is Reproducible
 
@@ -45,7 +45,7 @@ Required before supervised ML:
 - candidate features are documented, such as VV/VH backscatter difference, ratio, texture proxy, slope, elevation, and permanent-water mask
 - baseline validation reports IoU, F1/Dice, precision, recall, area error, and calibration caveats
 
-Current status: gated entry point added. `run_gated_real_sar_change_baseline` can run the non-ML SAR formula on a pre-extracted pixel/object table only after Mae Sai file-level and Sentinel-1 provenance gates pass. Direct Sentinel-1 raster extraction remains blocked.
+Current status: a deterministic non-ML candidate baseline has run from the active checksum-bound original-SAFE pair against the nearby cross-border manual weak reference. This proves the extraction and metric pipeline only; it is not in-area Mae Sai accuracy and does not clear qualified validation or ML-label gates.
 
 The non-ML baseline remains the required benchmark before any supervised flood model is trained.
 

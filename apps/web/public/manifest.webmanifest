@@ -1,0 +1,13 @@
+{
+  "name": "FloodGuard Thailand Preparedness",
+  "short_name": "FloodGuard",
+  "description": "Flood preparedness and planning support for Mae Sai, Thailand.",
+  "start_url": "/public/",
+  "display": "standalone",
+  "background_color": "#f4f8fb",
+  "theme_color": "#073b4c",
+  "lang": "th",
+  "icons": [
+    {"src": "/floodguard-logo.png", "sizes": "481x519", "type": "image/png", "purpose": "any"}
+  ]
+}

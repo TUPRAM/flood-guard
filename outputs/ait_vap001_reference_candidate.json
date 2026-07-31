@@ -1,0 +1,172 @@
+{
+  "schema_version": "floodguard.reference_candidate_manifest.v1",
+  "reference_id": "sentinel-asia-ait-vap001-th-2024",
+  "reference_version": "source-archive-1",
+  "event_id": "mae-sai-flood-2024-09",
+  "study_area_id": "mae_sai_candidate_v1",
+  "study_area_geometry_sha256": "5cd03ca936c188d37704f5249afa87da0c687b967db8a0f9c9ebd72b27204db1",
+  "target_definition_id": "temporary-flood-extent-multiclass-v1",
+  "reference_evidence_class": "expert_interpretation",
+  "authority_basis": "provider_product_without_project_acceptance",
+  "production_method": "agency_algorithmic_product",
+  "provider": {
+    "organization": "Asian Institute of Technology via Sentinel Asia",
+    "dataset_id": "sentinel-asia-20240910-thailand-flood",
+    "product_id": "AIT-VAP001-TH",
+    "source_url": "https://sentinel-asia.org/EO/2024/article20240910TH/AIT/AIT-VAP001-TH.zip",
+    "terms_url": "https://sentinel-asia.org/sitepolicy/SitePolicy.html",
+    "catalog_evidence": {
+      "file_name": "sentinel_asia_20240910TH_event.html",
+      "byte_size": 37112,
+      "sha256": "a8728834f12b33b5bac163f8a0c46331ab57f15db77873c5cef2946710857372",
+      "exact_product_and_observation_date_present": true
+    },
+    "terms_evidence": {
+      "file_name": "sentinel_asia_site_policy_2026-07-23.html",
+      "byte_size": 20840,
+      "sha256": "ce1727cb81d8ca9311e6eeccf2981cab1cc3622ef23be4740c60bbd665519f91",
+      "scientific_use_clause_present": true,
+      "no_modification_clause_present": true,
+      "accessed_at_utc": "2026-07-23T12:24:48Z"
+    }
+  },
+  "temporal_identity": {
+    "observation_start_utc": "2024-09-14T00:00:00Z",
+    "observation_end_utc": "2024-09-14T23:59:59Z",
+    "provider_source_timestamp": "2024-09-15T00:00:00Z",
+    "accessed_at_utc": "2026-07-23T12:24:48Z",
+    "event_target_timestamp": "2024-09-15T23:16:01Z",
+    "allowable_temporal_delta_hours": null,
+    "temporal_qualification_status": "blocked_tolerance_not_approved"
+  },
+  "asset_inventory": {
+    "archive": {
+      "file_name": "AIT-VAP001-TH.zip",
+      "byte_size": 7907308,
+      "sha256": "762153fe3fd22350070bb788c22f2d4e083866b5d20b1294e8ca27b97367d5d5",
+      "local_path_hint": "<external_data_workspace>/reference_candidates/sentinel_asia_ait/AIT-VAP001-TH.zip"
+    },
+    "members": [
+      {
+        "relative_path": "AIT-VAP001-TH/AIT-VAP001-TH.cpg",
+        "byte_size": 5,
+        "sha256": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824"
+      },
+      {
+        "relative_path": "AIT-VAP001-TH/AIT-VAP001-TH.dbf",
+        "byte_size": 2589950,
+        "sha256": "97f66bde18dc96a80801955b15f34c56a80383a202651d6fb895bbb46b63c036"
+      },
+      {
+        "relative_path": "AIT-VAP001-TH/AIT-VAP001-TH.prj",
+        "byte_size": 522,
+        "sha256": "72f2d5e83461bdf4ca967efd056a7b6cce8edac5098b91ffe93034cfe1e9ec5c"
+      },
+      {
+        "relative_path": "AIT-VAP001-TH/AIT-VAP001-TH.sbn",
+        "byte_size": 345004,
+        "sha256": "67f183a3ff780ca187a6b52dd29d1cad421ad2630a56a2cb46016ba436b3bef1"
+      },
+      {
+        "relative_path": "AIT-VAP001-TH/AIT-VAP001-TH.sbx",
+        "byte_size": 14620,
+        "sha256": "e2899fb5bfd61e1fc5bc31c320755b966015ffd8806482d91bb0b024b03b14aa"
+      },
+      {
+        "relative_path": "AIT-VAP001-TH/AIT-VAP001-TH.shp",
+        "byte_size": 29725536,
+        "sha256": "8af51454716c879ba919952cfdeb6a86e84003f4c7c59f80bcd43fc2362ea6e4"
+      },
+      {
+        "relative_path": "AIT-VAP001-TH/AIT-VAP001-TH.shp.xml",
+        "byte_size": 11645,
+        "sha256": "c15961d3c12d88b33006e4b18e12c2c0aea4d48d132e7d896387479a09a85711"
+      },
+      {
+        "relative_path": "AIT-VAP001-TH/AIT-VAP001-TH.shx",
+        "byte_size": 265716,
+        "sha256": "29b9ed40df096654385c833fda38e7986939753b0910ed8d0bf33292feb55d9e"
+      }
+    ],
+    "complete_shapefile_component_set": true
+  },
+  "native_spatial_contract": {
+    "crs": "COMPD_CS[\"WGS 84 / UTM zone 47N + EGM96 height\",PROJCS[\"WGS 84 / UTM zone 47N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",99],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32647\"]],VERT_CS[\"EGM96 height\",VERT_DATUM[\"EGM96 geoid\",2005,AUTHORITY[\"EPSG\",\"5171\"]],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Gravity-related height\",UP],AUTHORITY[\"EPSG\",\"5773\"]]]",
+    "bounds_wgs84": [
+      98.26395356,
+      16.32784304,
+      101.8427795,
+      20.58551381
+    ],
+    "geometry_types": [
+      "MultiPolygon",
+      "Polygon"
+    ],
+    "feature_count": 33202,
+    "valid_feature_count": 32093,
+    "invalid_feature_count": 1109,
+    "gridcode_values": [
+      "1"
+    ],
+    "feature_id_unique": false,
+    "class_mapping": {
+      "1": "detected_flood_water",
+      "dry": "not_provided",
+      "permanent_water": "removed_during_provider_processing",
+      "unknown": "not_encoded",
+      "nodata": "not_encoded"
+    }
+  },
+  "study_area_relationship": {
+    "study_area_feature_count": 8,
+    "study_area_area_km2": 305.554,
+    "intersecting_feature_count": 371,
+    "invalid_intersecting_feature_count": 24,
+    "diagnostic_repair_applied": true,
+    "diagnostic_intersection_area_km2": 36.173,
+    "diagnostic_intersection_fraction": 0.118385,
+    "complete_study_area_coverage_claimed": false
+  },
+  "provenance": {
+    "provider_lineage_present": true,
+    "metadata_contains_private_provider_paths": true,
+    "private_provider_paths_published": false,
+    "known_uncertainty": [
+      "The package provides detected-flood polygons but no explicit dry, unknown, or nodata class.",
+      "Invalid source geometries require a separately checksummed repair receipt before any derived raster.",
+      "No second independently qualified corroborating reference is bound to this manifest."
+    ],
+    "assumptions": [
+      "Observation time is derived from the Sentinel Asia event listing.",
+      "Diagnostic make-valid geometry is used only to measure intersection and confers no qualification."
+    ]
+  },
+  "permission_status": {
+    "general_scientific_use_described": true,
+    "general_terms_prohibit_modification": true,
+    "product_specific_rasterization_permission_confirmed": false,
+    "ml_label_use_allowed": false,
+    "model_evaluation_use_allowed": false,
+    "redistribution_status": "unresolved_product_specific",
+    "reference_authority_accepted": false
+  },
+  "qualification_status": "blocked_external_permission_and_scientific_review",
+  "processing_allowed": false,
+  "blockers": [
+    "Product-specific permission for rasterization, derived metrics, ML-label use, and model evaluation is unresolved.",
+    "A Reference Authority has not accepted the product for any FloodGuard scientific purpose.",
+    "The source contains invalid geometries and has no immutable repair receipt.",
+    "Dry, permanent-water, unknown, nodata, and validity-mask semantics are incomplete.",
+    "The allowable event-time tolerance has not been predeclared and approved."
+  ],
+  "safety": {
+    "eligible_for_decision_layer": false,
+    "eligible_for_access_analysis": false,
+    "eligible_for_equity_analysis": false,
+    "eligible_for_fpps": false,
+    "eligible_for_action_class": false,
+    "official_warning": false
+  },
+  "inspected_at_utc": "2026-07-23T12:24:48Z",
+  "canonical_sha256": "be2ce989e21f4ad3d79fe8f643ab13e7a3fc19eac1a8069bb8e83ede90878079"
+}

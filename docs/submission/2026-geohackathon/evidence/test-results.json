@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "verification_status": "passed",
+  "generated_at": "2026-07-18T07:33:59.0409137Z",
+  "git_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+  "suites": [
+    {
+      "name": "root-python",
+      "command": ".venv/Scripts/python.exe -m pytest --junitxml=.tmp/proposal-evidence-role-ui/root-python.xml",
+      "result": "passed",
+      "passed": 1212,
+      "skipped": 1,
+      "source_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+      "junit_sha256": "9876560ecf24572d246e47df060234abae9f2455d20cb37b25a0b95c96c92d11"
+    },
+    {
+      "name": "api",
+      "command": "services/api/.venv/Scripts/python.exe -m pytest services/api/tests --junitxml=.tmp/proposal-evidence-role-ui/api.xml",
+      "result": "passed",
+      "passed": 86,
+      "skipped": 0,
+      "source_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+      "junit_sha256": "68e9f4ea9ab72e4ad89ff35d8acd4c7dabd84c9848171e047caa132843da8931"
+    },
+    {
+      "name": "contracts",
+      "command": "pnpm --dir packages/contracts test --reporter=junit --outputFile=../../.tmp/proposal-evidence-role-ui/contracts.xml",
+      "result": "passed",
+      "passed": 5,
+      "skipped": 0,
+      "source_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+      "junit_sha256": "f38077969372523822a854a64e63ce0ca0a0d807bde73f011728786c6730cf35"
+    },
+    {
+      "name": "web-unit",
+      "command": "pnpm --dir apps/web test --reporter=junit --outputFile=../../.tmp/proposal-evidence-role-ui/web-unit.xml",
+      "result": "passed",
+      "passed": 58,
+      "skipped": 0,
+      "source_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+      "junit_sha256": "deea9dff8420eea39bdc95d5c07f7a8274db8715c201a66c70a3ab4221398bef"
+    },
+    {
+      "name": "frontend-quality-and-offline",
+      "command": ".venv/Scripts/python.exe scripts/run_check_with_junit.py --suite frontend-quality-and-offline --output .tmp/proposal-evidence-role-ui/frontend.xml -- pnpm verify:frontend",
+      "result": "passed",
+      "passed": 1,
+      "skipped": 0,
+      "source_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+      "junit_sha256": "33964c22699be480a8cd808106e0780e47a39d91c5bb1e7f6684ab792708d8e2"
+    },
+    {
+      "name": "geoai-normal",
+      "command": "services/geoai-runner/.venv/Scripts/python.exe -m pytest services/geoai-runner/tests -m \"not geoai_smoke\" --junitxml=.tmp/proposal-evidence-role-ui/geoai-normal.xml",
+      "result": "passed",
+      "passed": 84,
+      "skipped": 0,
+      "source_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+      "junit_sha256": "01c537dfc2a8651c1f7efc260decb2f7f1b6a86ed7e265e89b6b213df2ff3e4d"
+    },
+    {
+      "name": "geoai-real-smoke",
+      "command": "powershell -NoProfile -Command \"$env:RUN_GEOAI_SMOKE='1'; $env:FLOODGUARD_PROOF_COMMIT='62a4336759de55116b1bd238a5afd60ca7496895'; $env:GEOAI_PROOF_OUTPUT_DIR='.tmp/proposal-geoai-evidence-62a4336'; & 'services/geoai-runner/.venv/Scripts/python.exe' -m pytest services/geoai-runner/tests/test_geoai_smoke.py -m geoai_smoke --junitxml=.tmp/proposal-evidence-role-ui/geoai-real-smoke.xml\"",
+      "result": "passed",
+      "passed": 1,
+      "skipped": 0,
+      "source_commit": "62a4336759de55116b1bd238a5afd60ca7496895",
+      "junit_sha256": "ea5b7b5c32cad1ff6abf738633e229da799f1b26ed17ca9a03bc958ad1e128b8"
+    }
+  ],
+  "reason_blocked": "Submission release remains blocked by owner metadata, public demo URL, portal constraints, final source-derived PDF, and proposal tag; the tested-source verification itself is complete."
+}

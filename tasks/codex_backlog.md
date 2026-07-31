@@ -407,3 +407,9 @@ Acceptance: `scripts/build_mae_sai_real_context.py` writes eight COD-AB ADM3 dec
 Make the Mae Sai candidate lane a complete map-and-evidence dataset and apply a durable visual system to the static judge dashboard.
 
 Acceptance: `outputs/dashboard.html` switches the map between fixture polygons and eight Mae Sai ADM3 polygons, embeds `outputs/mae_sai_road_risk.geojson`, `outputs/mae_sai_facilities.geojson`, and `outputs/mae_sai_access_hotspots.geojson`, and changes selectors, legends, reports, briefs, exports, evidence, comparison, source-quality, and provenance panels with the active dataset. A persistent weak-reference warning remains visible; metadata/blocker mode gates unavailable values. The dashboard uses shared design tokens, contains no `fetch`, exposes no absolute source paths, remains non-operational, and passes browser QA at `1440x900`, `1536x1024`, and `2048x1152`.
+
+## Task 67 - Dashboard V11 Semantic Presentation Layer
+
+Reduce map clutter and add a bilingual judge-facing presentation state without changing the evidence boundary.
+
+Acceptance: regional Mae Sai view renders only priority road candidates and ADM3 facility clusters; zoom level `12` or closer renders selected-ADM3 roads and typed candidate facilities; surrounding ADM3 polygons dim around the selected unit; English/Thai mode translates the interface with Thai-capable typography; the selected-unit Sentinel-1 drawer shows pre/post/change evidence with weak-reference warnings; provenance uses compact status rows plus expandable technical details; and judge mode hides only secondary controls while retaining all warnings, source quality, SAR evidence, and provenance. Browser resize and mode changes must preserve selected-area detail. The static page must contain no `fetch`, expose no absolute source paths, remain non-operational, and pass browser QA at `1440x900`, `1536x1024`, and `2048x1152`.

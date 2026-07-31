@@ -17,10 +17,15 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=8.0"
+  "pytest>=8.0",
+  "jsonschema>=4.23"
+]
+ml = [
+  "scikit-learn>=1.4"
 ]
 geo = [
   "geopandas>=0.14",
+  "pyproj>=3.6",
   "shapely>=2.0",
   "networkx>=3.0"
 ]
@@ -30,6 +35,9 @@ theos2 = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+floodguard = ["static/leaflet/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

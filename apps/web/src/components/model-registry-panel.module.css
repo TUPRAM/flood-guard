@@ -1,0 +1,56 @@
+.panel { display: grid; gap: 18px; }
+.heading, .sectionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.heading h2, .sectionHeading h3 { margin: 3px 0 0; color: #102f3a; letter-spacing: -.025em; }
+.heading h2 { font-size: 1.35rem; }
+.sectionHeading h3 { font-size: 1rem; overflow-wrap: anywhere; }
+.status, .blockedPill { display: inline-flex; padding: 7px 10px; border-radius: 999px; font-size: .64rem; font-weight: 850; white-space: nowrap; }
+.ready { color: #09685f; background: #dff3ef; }
+.blocked, .blockedPill { color: #9a3327; background: #fde8e5; }
+.unavailable { color: #745900; background: #fff3c9; }
+.boundary, .warning, .cryptoBoundary, .blocker, .unavailable { padding: 16px; border-radius: 12px; }
+.boundary { border-left: 4px solid #087f76; background: #e9f6f3; }
+.warning { border-left: 4px solid #d69b23; background: #fff8df; }
+.cryptoBoundary { border-left: 4px solid #476a82; background: #edf4f8; }
+.blocker { border: 1px solid #edc9c2; background: #fff7f5; }
+.unavailable { border-left: 4px solid #a53e2d; background: #fff6f3; }
+.boundary b, .warning b, .cryptoBoundary b, .blocker b, .unavailable b { color: #173d47; }
+.boundary p, .warning p, .cryptoBoundary p, .blocker p, .unavailable p { margin: 6px 0 0; color: #556b70; font-size: .72rem; line-height: 1.6; }
+.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #dce6e4; border-radius: 13px; overflow: hidden; }
+.summary > div { display: grid; gap: 5px; min-width: 0; padding: 13px; border-right: 1px solid #dce6e4; background: #f8fbfa; }
+.summary > div:last-child { border-right: 0; }
+.summary span { color: #63767b; font-size: .59rem; text-transform: uppercase; letter-spacing: .05em; }
+.summary b { overflow-wrap: anywhere; font-size: .7rem; }
+.summaryBlocked b { color: #922f24; }
+.summaryReady b { color: #09685f; }
+.layout { display: grid; grid-template-columns: minmax(210px, .35fr) minmax(0, 1fr); gap: 16px; }
+.registryList { display: flex; flex-direction: column; gap: 8px; }
+.registryList button { display: grid; gap: 4px; width: 100%; min-height: 76px; padding: 12px; border: 1px solid #cfddda; border-radius: 11px; color: #21434c; background: #f8fbfa; font: inherit; text-align: left; cursor: pointer; }
+.registryList button[aria-pressed="true"] { border-color: #087f76; background: #e7f5f2; box-shadow: inset 4px 0 #087f76; }
+.registryList button:focus-visible { outline: 3px solid #67c7bd; outline-offset: 2px; }
+.registryList span, .registryList small { color: #63767b; font-size: .62rem; }
+.registryList b { overflow-wrap: anywhere; font-size: .75rem; }
+.detail { display: grid; gap: 13px; min-width: 0; }
+.detail > section { padding: 16px; border: 1px solid #dce6e4; border-radius: 12px; background: #fff; }
+.identityGrid, .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin: 14px 0 0; border: 1px solid #e0e9e7; border-radius: 10px; overflow: hidden; }
+.identityGrid div, .metrics div { min-width: 0; padding: 11px; border-right: 1px solid #e0e9e7; border-bottom: 1px solid #e0e9e7; }
+.identityGrid dt, .metrics dt { color: #63767b; font-size: .58rem; text-transform: uppercase; letter-spacing: .045em; }
+.identityGrid dd, .metrics dd { margin: 5px 0 0; color: #173d47; overflow-wrap: anywhere; font-size: .68rem; font-weight: 800; }
+.identityGrid code { color: #15526a; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .64rem; }
+.scopeStatement { margin: 13px 0 0; color: #566d72; font-size: .72rem; line-height: 1.6; }
+
+@media (max-width: 980px) {
+  .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary > div:nth-child(2) { border-right: 0; }
+  .layout { grid-template-columns: 1fr; }
+  .registryList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 680px) {
+  .heading, .sectionHeading { flex-direction: column; }
+  .summary, .registryList, .identityGrid, .metrics { grid-template-columns: 1fr; }
+  .summary > div, .summary > div:nth-child(2) { border-right: 0; }
+}
+
+@media print {
+  .registryList { display: none; }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/evidence-state.schema.json",
+  "x-contract-version": "1.0",
+  "title": "FloodGuard evidence state",
+  "description": "Versioned authorization and validation-gate state for one evidence artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidence_type",
+    "granularity",
+    "confidence_class",
+    "confidence_reason",
+    "permitted_use",
+    "required_gate",
+    "gate_state"
+  ],
+  "properties": {
+    "evidence_type": {
+      "type": "string",
+      "enum": ["modelled", "observed", "locally_confirmed"]
+    },
+    "granularity": {
+      "type": "string",
+      "enum": ["area_summary", "road_segment", "facility"]
+    },
+    "confidence_class": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "confidence_reason": { "type": "string", "minLength": 1 },
+    "permitted_use": {
+      "type": "string",
+      "enum": ["public_preparedness", "planning_only", "operational_authorized"]
+    },
+    "required_gate": { "type": ["string", "null"], "minLength": 1 },
+    "gate_state": {
+      "type": "string",
+      "enum": ["ready", "blocked", "not_applicable"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "permitted_use": { "const": "operational_authorized" } },
+        "required": ["permitted_use"]
+      },
+      "then": {
+        "properties": {
+          "confidence_class": { "const": "high" },
+          "gate_state": { "const": "ready" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "gate_state": { "const": "blocked" } },
+        "required": ["gate_state"]
+      },
+      "then": {
+        "properties": { "required_gate": { "type": "string", "minLength": 1 } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "gate_state": { "const": "not_applicable" } },
+        "required": ["gate_state"]
+      },
+      "then": { "properties": { "required_gate": { "type": "null" } } }
+    }
+  ]
+}

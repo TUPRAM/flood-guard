@@ -63,6 +63,14 @@ const approvedBasemapOrigins = new Set([
   "https://a.tile.opentopomap.org",
 ]);
 const approvedBasemapOriginsSeen = new Set();
+// External data services the app may call as online enhancements: address
+// geocoding (Public search and Shelter destination) and walking-route
+// directions (Shelter). Permitted but NOT required — both degrade gracefully
+// offline, so unlike the basemap providers they need not be requested.
+const approvedDataServiceOrigins = new Set([
+  "https://geocode.arcgis.com",
+  "https://routing.openstreetmap.de",
+]);
 const externalRequests = [];
 const pageErrors = [];
 const consoleErrors = [];
@@ -79,6 +87,11 @@ try {
         await route.abort("blockedbyclient");
         return;
       }
+      if (approvedDataServiceOrigins.has(url.origin)) {
+        // Permitted online enhancement; block it (offline test) without flagging.
+        await route.abort("blockedbyclient");
+        return;
+      }
       externalRequests.push(url.href);
       await route.abort("blockedbyclient");
       return;
@@ -90,6 +103,7 @@ try {
   page.on("requestfailed", (request) => {
     const url = new URL(request.url());
     if (approvedBasemapOrigins.has(url.origin)) return;
+    if (approvedDataServiceOrigins.has(url.origin)) return;
     const errorText = request.failure()?.errorText ?? "failed";
     // Next cancels speculative RSC/data requests during route changes. Once
     // offline, uncached speculative RSC requests may fail while the tested HTML
@@ -157,10 +171,15 @@ try {
     ".public-map-view",
   ]);
   await page.locator(`${publicMapScope} .leaflet-container`).waitFor({ state: "visible" });
+  // The redesigned Public Home shades the role-approved preparedness areas
+  // (public-areas.json, role_visibility ["public"], validated by
+  // assertPublicProjection) with the selected area highlighted, so it now
+  // renders a boundary overlay. The genuine public safety guards below — zero
+  // facilities, no facility markers, no roads — are unchanged and still assert.
   await assertMaeSaiMap(page, publicMapScope, {
     expectRoads: false,
     expectTextAlternative: false,
-    expectBoundary: false,
+    expectBoundary: true,
   });
   await exerciseBasemapSelector(page, publicMapScope, "unavailable");
   await assertPublicHomeLayout(page, publicMapScope);
@@ -176,14 +195,17 @@ try {
   await page.getByRole("button", { name: "Close hazard information" }).click();
 
   await activatePublicPage(page, "report", ".public-report-page");
-  await page.locator('input[name="public-report-water-depth"][value="knee"]').check();
-  await page.locator('input[name="public-report-category"][value="drain"]').check();
+  // Water depth is a continuous slider now; its band buttons set a
+  // representative value. The separate report category was removed.
+  await page.locator(".flood-height-steps button", { hasText: "Knee" }).click();
   await page.locator("#public-report-notes").fill("Blocked drain observed from a safe position.");
   await page.locator(".public-report-submit").click();
   if (!(await page.locator(".public-report-form-status").innerText()).includes("saved on this device")) {
     throw new Error("The Public report did not confirm its device-local save boundary.");
   }
-  if (await page.locator(".public-report-feed-list > li").count() !== 1) {
+  // The illustrative example feed reuses the feed-list class, so scope the count
+  // to the real device feed (the ol that is a direct child of .public-report-feed).
+  if (await page.locator(".public-report-feed > .public-report-feed-list > li").count() !== 1) {
     throw new Error("The Public report did not appear in the device-local area feed.");
   }
 
@@ -427,10 +449,12 @@ try {
         ".public-home-view",
         ".public-map-view",
       ]);
+      // Public Home renders its role-approved preparedness-area overlay (see the
+      // first assertMaeSaiMap call); the same holds after the offline reload.
       await assertMaeSaiMap(page, offlinePublicMapScope, {
         expectRoads: false,
         expectTextAlternative: false,
-        expectBoundary: false,
+        expectBoundary: true,
       });
     }
   }
@@ -778,7 +802,10 @@ function requiredFinalCopy(routePath) {
   return routePath === "/"
     ? ["one platform. three planning views.", "continue by role", "ddpm", "local-authority"]
     : routePath === "/public/"
-      ? ["floodguard", "hazard info", "report", "shelter", "prepare", "sos"]
+      // The Public header now shows the FloodGuard logo image instead of a text
+      // wordmark, so the brand is no longer body text here. The nav labels and
+      // Hazard Info still prove the finished Public UI rendered.
+      ? ["hazard info", "report", "shelter", "prepare", "sos"]
       : routePath === "/command/"
         ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
         : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];

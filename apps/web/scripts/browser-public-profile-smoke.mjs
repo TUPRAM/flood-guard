@@ -54,6 +54,7 @@ const approvedOrigins = new Set([
 ]);
 const geocoderOrigin = "https://geocode.arcgis.com";
 const geocoderPath = "/arcgis/rest/services/World/GeocodeServer/findAddressCandidates";
+const routingOrigin = "https://routing.openstreetmap.de";
 const configuredApi = process.env.FLOODGUARD_API_URL ?? process.env.NEXT_PUBLIC_FLOODGUARD_API_URL;
 if (configuredApi) approvedOrigins.add(new URL(configuredApi).origin);
 const browser = await launchFloodGuardBrowser();
@@ -87,6 +88,32 @@ try {
       }),
     });
   });
+  // Walking-route directions are an approved online enhancement (see the
+  // Shelter page). Mock a minimal valid OSRM foot response so the profile check
+  // stays deterministic and makes no real network call.
+  await context.route(`${routingOrigin}/**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        code: "Ok",
+        routes: [{
+          distance: 800,
+          duration: 640,
+          geometry: {
+            type: "LineString",
+            coordinates: [[99.879205, 20.40842], [99.884365731796, 20.429799258909]],
+          },
+          legs: [{
+            steps: [
+              { maneuver: { type: "depart" }, name: "", distance: 800 },
+              { maneuver: { type: "arrive" }, name: "", distance: 0 },
+            ],
+          }],
+        }],
+      }),
+    });
+  });
   const page = await context.newPage();
   await page.addInitScript(() => {
     const geolocation = navigator.geolocation;
@@ -111,6 +138,7 @@ try {
   page.on("request", (request) => {
     const url = new URL(request.url());
     if (url.origin === geocoderOrigin && url.pathname === geocoderPath) return;
+    if (url.origin === routingOrigin) return;
     if (!approvedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
   });
 

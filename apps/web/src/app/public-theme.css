@@ -27,7 +27,8 @@
   color: var(--fg-neutral-900);
   box-shadow: var(--fg-shadow-sm);
 }
-.public-profile-trigger { width: 40px; height: 40px; border-radius: var(--fg-radius-md); }
+/* 44px keeps the tap target at the WCAG minimum; the avatar inside stays smaller. */
+.public-profile-trigger { width: 44px; height: 44px; border-radius: var(--fg-radius-md); }
 .public-profile-avatar-sm {
   width: 36px;
   height: 36px;
@@ -365,7 +366,7 @@
   .public-greeting-name { font-size: .82rem; }
   .public-greeting-location { font-size: .64rem; }
   .public-header-actions { gap: 2px; padding-left: 6px; }
-  .public-profile-trigger { width: 36px; height: 36px; }
+  /* Trigger stays 44px for touch; only the avatar inside shrinks on narrow screens. */
   .public-profile-avatar-sm { width: 32px; height: 32px; }
   .public-profile-avatar-sm .public-app-icon { width: 18px; height: 18px; }
   .public-header-logo { width: 34px; height: 34px; flex-basis: 34px; }

@@ -199,7 +199,7 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
     <main className="studio-page studio-final-surface" lang={language}>
       <header className="studio-header studio-final-header">
         <a href="/studio/" className="brand brand-light">
-          <Image src="/icon.svg" alt="" width={40} height={40} priority />
+          <Image src="/floodguard-logo.png" alt="" width={40} height={40} priority />
           <span><b>FloodGuard</b><small>{th ? "รายงานการตรวจสอบหลักฐาน" : "Validation & evidence report"}</small></span>
         </a>
         <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a href="/command/">{th ? "การวางแผน" : "Planning"}</a><a className="active" href="/studio/">Studio</a></nav>

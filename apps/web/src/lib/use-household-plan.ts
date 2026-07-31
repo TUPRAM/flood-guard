@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  clampNeedCount,
   createEmptyHouseholdPlan,
   markNoHouseholdNeedsApply,
   readStoredHouseholdPlan,
@@ -60,6 +61,13 @@ export function useHouseholdPlan(defaultAreaId: string) {
     updatePlan((current, timestamp) => toggleHouseholdNeed(current, needId, timestamp));
   }, [updatePlan]);
 
+  const setNeedCount = useCallback((needId: HouseholdNeedId, count: number) => {
+    updatePlan((current) => ({
+      ...current,
+      need_counts: { ...current.need_counts, [needId]: clampNeedCount(count) },
+    }));
+  }, [updatePlan]);
+
   const selectNoNeedsApply = useCallback(() => {
     updatePlan((current, timestamp) => markNoHouseholdNeedsApply(current, timestamp));
   }, [updatePlan]);
@@ -86,6 +94,7 @@ export function useHouseholdPlan(defaultAreaId: string) {
     selectPlanningArea,
     toggleChecklistItem,
     toggleNeed,
+    setNeedCount,
     selectNoNeedsApply,
     markReviewed,
     resetChecklist,

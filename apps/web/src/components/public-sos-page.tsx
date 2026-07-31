@@ -187,8 +187,7 @@ export function PublicSosPage({
   return (
     <section className="public-sos-page" aria-labelledby="public-sos-title">
       <header className="public-sos-header">
-        <p className="eyebrow">{th ? "ความช่วยเหลือฉุกเฉิน" : "EMERGENCY HELP"}</p>
-        <h1 id="public-sos-title">{th ? "ขอความช่วยเหลือ" : "Get help"}</h1>
+        <h1 id="public-sos-title">{th ? "ขอความช่วยเหลือฉุกเฉิน" : "Get emergency help"}</h1>
       </header>
 
       <section className="public-sos-calm-advice" aria-labelledby="public-sos-advice-title">
@@ -290,9 +289,8 @@ export function PublicSosPage({
       <section className="public-sos-household" aria-labelledby="public-sos-household-title">
         <div className="public-sos-household-heading">
           <div>
-            <p className="eyebrow">{th ? "ข้อมูลจากอุปกรณ์นี้" : "ON-DEVICE DETAILS"}</p>
             <h2 id="public-sos-household-title">
-              {th ? "ความต้องการของครัวเรือน" : "Household needs"}
+              {th ? "ความต้องการของครัวเรือน (ข้อมูลในอุปกรณ์นี้)" : "Household needs on this device"}
             </h2>
           </div>
           <span>{broadArea}</span>
@@ -312,9 +310,8 @@ export function PublicSosPage({
       </section>
 
       <section className="public-sos-hotlines" aria-labelledby="public-sos-hotlines-title">
-        <p className="eyebrow">{th ? "โทรฉุกเฉินโดยตรง" : "DIRECT EMERGENCY CALLS"}</p>
         <h2 id="public-sos-hotlines-title">
-          {th ? "หมายเลขหน่วยงานทางการ" : "Official hotline numbers"}
+          {th ? "หมายเลขฉุกเฉินของหน่วยงานทางการ" : "Official emergency hotlines"}
         </h2>
         <ul>
           {hotlineActions.map((hotline) => (

@@ -63,6 +63,23 @@ interface GeoMapProps {
   roadSegmentEvidenceReady?: boolean;
   location?: PublicMapLocation;
   showDataAttribution?: boolean;
+  /**
+   * Framing used for the first automatic fit. "region" fits every area;
+   * "selection" frames the selected area so Home opens on the area it is
+   * actually reporting on instead of the whole province.
+   */
+  initialFocus?: "region" | "selection";
+  /**
+   * Drops a labelled pin on the selected area. Passed as a plain string rather
+   * than an object so the effect compares by value, and so the caller keeps
+   * ownership of the wording and its translation.
+   */
+  selectionPinTitle?: string;
+  /**
+   * Straight-line path drawn between two points, as [latitude, longitude]
+   * pairs. It is a direct line, never a computed road route.
+   */
+  routePath?: ReadonlyArray<readonly [number, number]>;
 }
 
 type MapArea = AreaRecord | PublicPreparednessArea;
@@ -139,6 +156,9 @@ export function GeoMap({
   roadSegmentEvidenceReady = false,
   location,
   showDataAttribution = true,
+  initialFocus = "region",
+  selectionPinTitle,
+  routePath,
 }: GeoMapProps) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -150,6 +170,8 @@ export function GeoMap({
   const facilityLayerRef = useRef<LayerGroup | null>(null);
   const accessLayerRef = useRef<LayerGroup | null>(null);
   const locationLayerRef = useRef<LayerGroup | null>(null);
+  const routeLayerRef = useRef<LayerGroup | null>(null);
+  const selectionPinRef = useRef<import("leaflet").Marker | null>(null);
   const hasFitRegionalBounds = useRef(false);
   const previousSelectedId = useRef(selectedId);
   const selectionSheetId = useId();
@@ -229,6 +251,7 @@ export function GeoMap({
       facilityLayerRef.current = null;
       accessLayerRef.current = null;
       locationLayerRef.current = null;
+      routeLayerRef.current = null;
       leafletRef.current = null;
       mapRef.current = null;
       mountedMap?.stop();
@@ -323,15 +346,33 @@ export function GeoMap({
     }).addTo(map);
     areaLayerRef.current = layer;
     if (!location && !hasFitRegionalBounds.current && layer.getLayers().length > 0) {
-      map.fitBounds(layer.getBounds(), { animate: false, padding: [28, 28] });
-      hasFitRegionalBounds.current = true;
-      previousSelectedId.current = selectedId;
+      let selectedBounds: import("leaflet").LatLngBounds | undefined;
+      if (initialFocus === "selection" && selectedId) {
+        layer.eachLayer((candidate) => {
+          const featureLayer = candidate as FeatureLayer;
+          if (String(featureLayer.feature?.properties?.area_id ?? "") === selectedId) {
+            const bounds = featureLayer.getBounds?.();
+            if (bounds?.isValid()) selectedBounds = bounds;
+          }
+        });
+      }
+      map.fitBounds(selectedBounds ?? layer.getBounds(), {
+        animate: false,
+        padding: [28, 28],
+        maxZoom: selectedBounds ? 13 : undefined,
+      });
+      // Only lock the framing once it landed on what the caller asked for, so a
+      // selection arriving after the features still gets its own fit.
+      if (initialFocus !== "selection" || selectedBounds) {
+        hasFitRegionalBounds.current = true;
+        previousSelectedId.current = selectedId;
+      }
     }
     return () => {
       layer.remove();
       if (areaLayerRef.current === layer) areaLayerRef.current = null;
     };
-  }, [actionClassColors, areaFeatures, areas, classFilter, enableBasemaps, language, location, mapReady, onSelect, scenarioId, selectedId, visualPalette]);
+  }, [actionClassColors, areaFeatures, areas, classFilter, enableBasemaps, initialFocus, language, location, mapReady, onSelect, scenarioId, selectedId, visualPalette]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -349,6 +390,102 @@ export function GeoMap({
       map.fitBounds(selectedBounds, { animate: false, maxZoom: 13, padding: [42, 42] });
     }
   }, [location, mapReady, selectedId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const L = leafletRef.current;
+    const layer = areaLayerRef.current;
+    selectionPinRef.current?.remove();
+    selectionPinRef.current = null;
+    // The reader's own pin takes over once they locate themselves, so the two
+    // never sit on the map at the same time.
+    if (!mapReady || !map || !L || !layer || !selectionPinTitle || location) return;
+
+    let bounds: import("leaflet").LatLngBounds | undefined;
+    layer.eachLayer((candidate) => {
+      const featureLayer = candidate as FeatureLayer;
+      if (String(featureLayer.feature?.properties?.area_id ?? "") === selectedId) {
+        bounds = featureLayer.getBounds?.();
+      }
+    });
+    if (!bounds?.isValid()) return;
+
+    const marker = L.marker(bounds.getCenter(), {
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({
+        className: "public-area-pin-shell",
+        html: [
+          '<svg class="public-area-pin" viewBox="0 0 32 40" aria-hidden="true" focusable="false">',
+          '<path d="M16 38.4c0 0 11.2-15.6 11.2-22.6a11.2 11.2 0 1 0-22.4 0c0 7 11.2 22.6 11.2 22.6Z"',
+          ' fill="currentColor" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>',
+          '<circle cx="16" cy="15.6" r="4.4" fill="#fff"/>',
+          "</svg>",
+        ].join(""),
+        iconSize: [34, 42],
+        iconAnchor: [17, 41],
+      }),
+    }).addTo(map);
+
+    const label = document.createElement("span");
+    label.className = "public-area-pin-label";
+    label.textContent = selectionPinTitle;
+    marker.bindTooltip(label, {
+      permanent: true,
+      direction: "bottom",
+      offset: [0, 6],
+      className: "public-area-pin-tooltip",
+      interactive: false,
+    }).openTooltip();
+    selectionPinRef.current = marker;
+
+    return () => {
+      marker.remove();
+      if (selectionPinRef.current === marker) selectionPinRef.current = null;
+    };
+  }, [areaFeatures, location, mapReady, selectedId, selectionPinTitle]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const L = leafletRef.current;
+    routeLayerRef.current?.remove();
+    routeLayerRef.current = null;
+    if (!mapReady || !map || !L || !routePath || routePath.length < 2) return;
+
+    const points = routePath.map(([latitude, longitude]) => (
+      [latitude, longitude] as [number, number]
+    ));
+    const group = L.layerGroup().addTo(map);
+    // Dashed on purpose: this is the direct line between the area and the
+    // destination, not a road route the app has computed.
+    L.polyline(points, {
+      color: "#0f4c81",
+      weight: 4,
+      opacity: 0.9,
+      dashArray: "9 8",
+      lineCap: "round",
+      interactive: false,
+    }).addTo(group);
+    L.circleMarker(points[0], {
+      radius: 7,
+      color: "#ffffff",
+      weight: 3,
+      fillColor: "#0f4c81",
+      fillOpacity: 1,
+      interactive: false,
+    }).addTo(group);
+    routeLayerRef.current = group;
+    map.fitBounds(L.latLngBounds(points), {
+      animate: false,
+      padding: [34, 34],
+      maxZoom: 15,
+    });
+
+    return () => {
+      group.remove();
+      if (routeLayerRef.current === group) routeLayerRef.current = null;
+    };
+  }, [mapReady, routePath]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -861,14 +998,24 @@ function areaStyle(
 ): import("leaflet").PathOptions {
   const area = areas.find((item) => item.area_id === areaId);
   if (area && !isStaffMapArea(area)) {
-    const fillColor = visualPalette === "public-risk"
+    const isRisk = visualPalette === "public-risk";
+    const fillColor = isRisk
       ? publicRiskColor(area.planning_priority_0_100)
       : publicPriorityColor(area.planning_priority_0_100);
+    // On the risk palette the selected outline stays in the severity hue so the
+    // area reads as one hazard object, not an administrative boundary.
+    const selectedOutline = isRisk
+      ? publicRiskOutlineColor(area.planning_priority_0_100)
+      : "#0C2740";
     return {
-      color: areaId === selectedId ? "#0C2740" : fillColor,
-      weight: areaId === selectedId ? 4 : 2,
+      color: areaId === selectedId ? selectedOutline : fillColor,
+      weight: areaId === selectedId ? 2 : 1.25,
       fillColor,
-      fillOpacity: hasBasemap ? areaId === selectedId ? 0.38 : 0.18 : areaId === selectedId ? 0.82 : 0.5,
+      // Kept light over a basemap: the streets and labels underneath are what
+      // make the shaded area legible as a place.
+      fillOpacity: hasBasemap
+        ? areaId === selectedId ? 0.26 : 0.12
+        : areaId === selectedId ? 0.82 : 0.5,
     };
   }
   const actionClass = area?.action_class ?? "E";
@@ -904,6 +1051,13 @@ function publicRiskColor(value: number): string {
   if (value >= 50) return "#f97316";
   if (value >= 25) return "#eab308";
   return "#16a34a";
+}
+
+function publicRiskOutlineColor(value: number): string {
+  if (value >= 75) return "#991b1b";
+  if (value >= 50) return "#c2560c";
+  if (value >= 25) return "#a16207";
+  return "#15803d";
 }
 
 function publicRecommendationLabel(code: ActionReasonCode, language: Language): string {

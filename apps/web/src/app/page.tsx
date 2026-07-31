@@ -36,7 +36,7 @@ export function SurfaceChooser() {
     <main className="surface-chooser" id="main-content" lang="en">
       <header className="chooser-header">
         <Link className="chooser-logo" href="/" aria-label="FloodGuard Thailand home">
-          <Image src="/icon.svg" width={44} height={44} alt="" priority />
+          <Image src="/floodguard-logo.png" width={44} height={44} alt="" priority />
           <span>
             <b>FloodGuard</b>
             <small>Thailand planning platform</small>

@@ -4,9 +4,13 @@ export type PublicAppIconName =
   | "chevron"
   | "close"
   | "drain"
+  | "edit"
+  | "globe"
   | "hazard"
   | "home"
   | "layers"
+  | "locate"
+  | "pin"
   | "medical"
   | "menu"
   | "message"
@@ -18,6 +22,7 @@ export type PublicAppIconName =
   | "route"
   | "search"
   | "shelter"
+  | "shield"
   | "sos"
   | "water";
 
@@ -163,6 +168,38 @@ export function PublicAppIcon({ name, className = "" }: PublicAppIconProps) {
         <>
           <path {...common} d="M4 5h16v11H9l-5 4V5Z" />
           <path {...common} d="M8 9h8M8 12h5" />
+        </>
+      )}
+      {name === "shield" && (
+        <>
+          <path {...common} d="M12 3.2 19 6v5.4c0 4.3-2.8 7.6-7 9.4-4.2-1.8-7-5.1-7-9.4V6l7-2.8Z" />
+          <path {...common} d="m9 12 2.1 2.1L15.2 10" />
+        </>
+      )}
+      {name === "locate" && (
+        <>
+          <circle {...common} cx="12" cy="12" r="6.4" />
+          <circle cx="12" cy="12" r="2.4" fill="currentColor" />
+          <path {...common} d="M12 2.2v2.6M12 19.2v2.6M21.8 12h-2.6M4.8 12H2.2" />
+        </>
+      )}
+      {name === "pin" && (
+        <>
+          <path {...common} d="M12 21c4-4.4 6-7.7 6-10a6 6 0 1 0-12 0c0 2.3 2 5.6 6 10Z" />
+          <circle {...common} cx="12" cy="11" r="2.4" />
+        </>
+      )}
+      {name === "globe" && (
+        <>
+          <circle {...common} cx="12" cy="12" r="8.5" />
+          <path {...common} d="M3.5 12h17" />
+          <path {...common} d="M12 3.5c2.2 2.4 3.3 5.2 3.3 8.5S14.2 18.1 12 20.5c-2.2-2.4-3.3-5.2-3.3-8.5S9.8 5.9 12 3.5Z" />
+        </>
+      )}
+      {name === "edit" && (
+        <>
+          <path {...common} d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z" />
+          <path {...common} d="m14.5 6.5 3 3" />
         </>
       )}
       {name === "check" && <path {...common} d="m5 12 4 4L19 6" />}

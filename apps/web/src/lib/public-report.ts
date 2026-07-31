@@ -10,15 +10,38 @@ export const PUBLIC_REPORT_WATER_DEPTHS = [
   { id: "chest", en: "Chest", th: "หน้าอก" },
 ] as const;
 
-export const PUBLIC_REPORT_CATEGORIES = [
-  { id: "road", en: "Road", th: "ถนน" },
-  { id: "drain", en: "Drain", th: "ท่อระบายน้ำ" },
-  { id: "shelter", en: "Shelter", th: "ที่พักพิง" },
-  { id: "medical", en: "Medical", th: "การแพทย์" },
+export type PublicReportWaterDepth = (typeof PUBLIC_REPORT_WATER_DEPTHS)[number]["id"];
+
+export const PUBLIC_REPORT_DEPTH_MIN_CM = 0;
+export const PUBLIC_REPORT_DEPTH_MAX_CM = 150;
+
+/**
+ * Where each band ends, in centimetres, and the height it is named for. The
+ * boundaries sit midway between neighbouring reference heights, so a depth
+ * always lands in the band whose landmark it is closest to.
+ */
+export const PUBLIC_REPORT_DEPTH_BANDS = [
+  { id: "ankle", referenceCm: 15, maxCm: 32 },
+  { id: "knee", referenceCm: 50, maxCm: 75 },
+  { id: "waist", referenceCm: 100, maxCm: 115 },
+  { id: "chest", referenceCm: 130, maxCm: PUBLIC_REPORT_DEPTH_MAX_CM },
 ] as const;
 
-export type PublicReportWaterDepth = (typeof PUBLIC_REPORT_WATER_DEPTHS)[number]["id"];
-export type PublicReportCategory = (typeof PUBLIC_REPORT_CATEGORIES)[number]["id"];
+/** Names the band a reported depth falls into. */
+export function publicReportDepthBand(centimetres: number): PublicReportWaterDepth {
+  for (const band of PUBLIC_REPORT_DEPTH_BANDS) {
+    if (centimetres <= band.maxCm) return band.id;
+  }
+  return "chest";
+}
+
+function validDepthCm(value: unknown): value is number {
+  return typeof value === "number"
+    && Number.isFinite(value)
+    && Number.isInteger(value)
+    && value >= PUBLIC_REPORT_DEPTH_MIN_CM
+    && value <= PUBLIC_REPORT_DEPTH_MAX_CM;
+}
 
 export interface PublicReportArea {
   area_id: string;
@@ -33,7 +56,11 @@ export interface PublicReport {
   planning_area_name_th: string;
   planning_area_name_en: string;
   water_depth: PublicReportWaterDepth;
-  category: PublicReportCategory;
+  /**
+   * Depth the reader set on the slider. Optional so reports saved before the
+   * slider existed still load; the band above stays the required value.
+   */
+  water_depth_cm?: number;
   notes: string;
   photo_attached: boolean;
   created_at: string;
@@ -43,7 +70,7 @@ export interface PublicReport {
 export interface CreatePublicReportInput {
   area: PublicReportArea;
   waterDepth: PublicReportWaterDepth;
-  category: PublicReportCategory;
+  waterDepthCm?: number;
   notes?: string;
   photoAttached: boolean;
 }
@@ -55,9 +82,6 @@ export interface PublicReportStorage {
 
 const VALID_WATER_DEPTHS = new Set<string>(
   PUBLIC_REPORT_WATER_DEPTHS.map(({ id }) => id),
-);
-const VALID_CATEGORIES = new Set<string>(
-  PUBLIC_REPORT_CATEGORIES.map(({ id }) => id),
 );
 
 export function createPublicReport(
@@ -71,14 +95,15 @@ export function createPublicReport(
   if (!VALID_WATER_DEPTHS.has(input.waterDepth)) {
     throw new Error("A supported water depth is required.");
   }
-  if (!VALID_CATEGORIES.has(input.category)) {
-    throw new Error("A supported report category is required.");
-  }
   if (!validTimestamp(createdAt)) {
     throw new Error("A valid report timestamp is required.");
   }
   if (!validReportId(reportId)) {
     throw new Error("A valid device-local report ID is required.");
+  }
+
+  if (input.waterDepthCm !== undefined && !validDepthCm(input.waterDepthCm)) {
+    throw new Error("A reported depth must be a whole number of centimetres in range.");
   }
 
   return {
@@ -88,7 +113,7 @@ export function createPublicReport(
     planning_area_name_th: input.area.area_name_th.trim(),
     planning_area_name_en: input.area.area_name_en.trim(),
     water_depth: input.waterDepth,
-    category: input.category,
+    ...(input.waterDepthCm === undefined ? {} : { water_depth_cm: input.waterDepthCm }),
     notes: normalizeNotes(input.notes),
     photo_attached: input.photoAttached,
     created_at: createdAt,
@@ -165,13 +190,6 @@ export function publicReportWaterDepthLabel(
   return PUBLIC_REPORT_WATER_DEPTHS.find(({ id }) => id === value)?.[language] ?? value;
 }
 
-export function publicReportCategoryLabel(
-  value: PublicReportCategory,
-  language: "th" | "en",
-): string {
-  return PUBLIC_REPORT_CATEGORIES.find(({ id }) => id === value)?.[language] ?? value;
-}
-
 function normalizeNotes(value: string | undefined): string {
   return (value ?? "").trim().slice(0, PUBLIC_REPORT_NOTES_MAX_LENGTH);
 }
@@ -188,11 +206,10 @@ function sanitizePublicReport(value: unknown): PublicReport | null {
     })
     && typeof value.water_depth === "string"
     && VALID_WATER_DEPTHS.has(value.water_depth)
-    && typeof value.category === "string"
-    && VALID_CATEGORIES.has(value.category)
     && typeof value.notes === "string"
     && value.notes.length <= PUBLIC_REPORT_NOTES_MAX_LENGTH
     && typeof value.photo_attached === "boolean"
+    && (value.water_depth_cm === undefined || validDepthCm(value.water_depth_cm))
     && typeof value.created_at === "string"
     && validTimestamp(value.created_at)
     && value.storage_scope === "device_local";
@@ -205,7 +222,9 @@ function sanitizePublicReport(value: unknown): PublicReport | null {
     planning_area_name_th: value.planning_area_name_th as string,
     planning_area_name_en: value.planning_area_name_en as string,
     water_depth: value.water_depth as PublicReportWaterDepth,
-    category: value.category as PublicReportCategory,
+    ...(value.water_depth_cm === undefined
+      ? {}
+      : { water_depth_cm: value.water_depth_cm as number }),
     notes: value.notes as string,
     photo_attached: value.photo_attached as boolean,
     created_at: value.created_at as string,

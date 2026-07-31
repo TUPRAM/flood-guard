@@ -189,12 +189,14 @@ try {
 }
 
 async function assertCompactPublicShell(page) {
-  await dismissLocationChoice(page);
   if (await page.locator(".public-app-header").count() !== 1) {
     throw new Error("Public profile is missing the compact app header.");
   }
-  if (await page.locator(".public-wordmark").filter({ hasText: "FloodGuard" }).count() !== 1) {
-    throw new Error("Public profile is missing its FloodGuard wordmark.");
+  if (await page.locator(".public-header-logo[aria-label='FloodGuard home']").count() !== 1) {
+    throw new Error("Public profile is missing its FloodGuard home control.");
+  }
+  if (await page.locator(".public-greeting .public-greeting-name").count() !== 1) {
+    throw new Error("Public profile is missing the household greeting.");
   }
   if (await page.locator(".public-brand-mark, .public-boundary-banner").count() !== 0) {
     throw new Error("Public profile retains the removed logo or historical banner.");
@@ -213,7 +215,6 @@ async function assertCompactPublicShell(page) {
 }
 
 async function exercisePublicPages(page) {
-  await dismissLocationChoice(page);
   const publicPages = [
     ["home", "#public-active-panel .leaflet-container"],
     ["report", "#public-active-panel .public-report-page"],
@@ -247,25 +248,20 @@ async function exercisePublicPages(page) {
   }
 }
 
-async function dismissLocationChoice(page) {
-  const manualButton = page.locator(".public-location-consent-actions .secondary");
-  if (await manualButton.count() && await manualButton.isVisible()) {
-    await manualButton.click();
-  }
-}
-
 async function assertInitialPreciseLocation(page) {
-  const dialog = page.getByRole("dialog", { name: "Use your precise location?" });
-  await dialog.waitFor({ state: "visible" });
+  // Home opens straight into address entry. The privacy guarantee is unchanged:
+  // nothing may reach for the device position until the reader presses locate.
+  const locateButton = page.locator(".public-locate-button");
+  await locateButton.waitFor({ state: "visible" });
   if (await page.locator(".public-location-marker").count() !== 0) {
     throw new Error("Public Home placed a precise pin before the user granted location access.");
   }
   const beforeRequest = await page.evaluate(() => globalThis.__floodGuardGeolocationOptions ?? null);
   if (beforeRequest !== null) {
-    throw new Error("Public Home requested geolocation before the explicit consent action.");
+    throw new Error("Public Home requested geolocation before the explicit locate action.");
   }
 
-  await page.getByRole("button", { name: "Use precise location" }).click();
+  await locateButton.click();
   await page.waitForFunction(() => (
     document.querySelector(".public-home-page .geo-map-shell")
       ?.getAttribute("data-location-source") === "gps"
@@ -308,7 +304,7 @@ async function assertInitialPreciseLocation(page) {
     throw new Error(`Public precise location did not request the required options: ${JSON.stringify(audit.options)}.`);
   }
   if (
-    audit.areaFeatureCount !== "0"
+    audit.areaFeatureCount !== "8"
     || audit.customAttributionCount !== 0
     || !audit.nativeAttributionVisible
     || audit.borderWidth !== "0px"

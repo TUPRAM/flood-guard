@@ -9,16 +9,14 @@ import {
   type FormEvent,
 } from "react";
 
+import { PublicFloodHeightPicker } from "@/components/public-flood-height-picker";
 import {
-  PUBLIC_REPORT_CATEGORIES,
   PUBLIC_REPORT_NOTES_MAX_LENGTH,
-  PUBLIC_REPORT_WATER_DEPTHS,
-  publicReportCategoryLabel,
+  type PublicReportWaterDepth,
+  publicReportDepthBand,
   publicReportWaterDepthLabel,
   reportsForPlanningArea,
   type PublicReportArea,
-  type PublicReportCategory,
-  type PublicReportWaterDepth,
 } from "@/lib/public-report";
 import type { Language } from "@/lib/types";
 import { usePublicReports } from "@/lib/use-public-reports";
@@ -26,6 +24,8 @@ import { usePublicReports } from "@/lib/use-public-reports";
 interface PublicReportPageProps {
   language: Language;
   selectedArea?: PublicReportArea;
+  areas: PublicReportArea[];
+  onSelectArea: (areaId: string) => void;
 }
 
 const DEPTH_ICONS: Record<PublicReportWaterDepth, string> = {
@@ -35,18 +35,61 @@ const DEPTH_ICONS: Record<PublicReportWaterDepth, string> = {
   chest: "⌁",
 };
 
+/**
+ * Illustrative feed entries showing how a community feed would read once
+ * reports are shared beyond the device. Nothing here is an observation and no
+ * report on this device is ever reviewed or confirmed by an authority, so the
+ * block is fenced with data-example and labelled on screen. Never present these
+ * as real reports, and never reuse this status vocabulary for stored reports.
+ */
+/**
+ * The three stages a report moves through, shown on the placeholder "your
+ * latest report" card. "done" stages are complete, "current" is where the
+ * example report sits now, "pending" is still ahead.
+ */
+const REPORT_STATUS_STEPS = [
+  { id: "received", en: "Received", th: "ได้รับแล้ว", state: "done" },
+  { id: "verified", en: "Verified", th: "ตรวจสอบแล้ว", state: "current" },
+  { id: "resolved", en: "Resolved", th: "แก้ไขแล้ว", state: "pending" },
+] as const;
+
+const FEED_EXAMPLES = [
+  {
+    id: "example-main-st",
+    en: "Knee-deep water on Main St",
+    th: "น้ำสูงระดับเข่าบนถนนสายหลัก",
+    ageEn: "2 mins ago",
+    ageTh: "2 นาทีที่แล้ว",
+    statusEn: "Verified",
+    statusTh: "ตรวจสอบแล้ว",
+    tone: "confirmed",
+  },
+  {
+    id: "example-school-drain",
+    en: "Blocked drain near the school",
+    th: "ท่อระบายน้ำอุดตันใกล้โรงเรียน",
+    ageEn: "15 mins ago",
+    ageTh: "15 นาทีที่แล้ว",
+    statusEn: "Resolved",
+    statusTh: "แก้ไขแล้ว",
+    tone: "resolved",
+  },
+] as const;
+
 export function PublicReportPage({
   language,
   selectedArea,
+  areas,
+  onSelectArea,
 }: PublicReportPageProps) {
   const th = language === "th";
   const { reports, addReport } = usePublicReports();
-  const [waterDepth, setWaterDepth] = useState<PublicReportWaterDepth | "">("");
-  const [category, setCategory] = useState<PublicReportCategory | "">("");
+  const [waterDepthCm, setWaterDepthCm] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [formMessage, setFormMessage] = useState<string | null>(null);
+  const [areaPickerOpen, setAreaPickerOpen] = useState(false);
   const photoPreviewUrlRef = useRef<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,23 +143,20 @@ export function PublicReportPage({
         : "Choose a broad area on Home before saving a report.");
       return;
     }
-    if (!waterDepth || !category) {
-      setFormMessage(th
-        ? "เลือกระดับน้ำและประเภทของรายงาน"
-        : "Choose a water depth and report category.");
+    if (waterDepthCm === null) {
+      setFormMessage(th ? "ตั้งระดับน้ำก่อนบันทึก" : "Set the water depth before saving.");
       return;
     }
 
     addReport({
       area: selectedArea,
-      waterDepth,
-      category,
+      waterDepth: publicReportDepthBand(waterDepthCm),
+      waterDepthCm,
       notes,
       photoAttached: photo !== null,
     });
 
-    setWaterDepth("");
-    setCategory("");
+    setWaterDepthCm(null);
     setNotes("");
     clearPhotoPreview();
     setFormMessage(th
@@ -127,31 +167,69 @@ export function PublicReportPage({
   return (
     <section className="public-report-page" aria-labelledby="public-report-title">
       <div className="public-report-heading">
-        <p className="eyebrow">{th ? "รายงานจากชุมชน" : "COMMUNITY REPORT"}</p>
         <h1 id="public-report-title">{th ? "ส่งรายงานสถานการณ์" : "Submit a situation report"}</h1>
-        <p>
-          {th
-            ? "บันทึกสิ่งที่คุณพบในพื้นที่กว้างที่เลือก โดยไม่ขอพิกัดหรือที่อยู่ที่แน่นอน"
-            : "Record what you observed in the selected broad area without providing exact coordinates or a home address."}
-        </p>
       </div>
 
       <form className="public-report-form" onSubmit={submitReport}>
         <section className="public-report-area" aria-labelledby="public-report-area-title">
-          <div>
-            <p className="eyebrow">{th ? "พื้นที่รายงาน" : "REPORT AREA"}</p>
-            <h2 id="public-report-area-title">
+          <p id="public-report-area-title">
+            <span>{th ? "พื้นที่รายงาน:" : "Report area:"}</span>
+            <strong>
               {selectedArea
                 ? (th ? selectedArea.area_name_th : selectedArea.area_name_en)
-                : (th ? "ยังไม่ได้เลือกพื้นที่กว้าง" : "No broad area selected")}
-            </h2>
-          </div>
-          <p>
-            {th
-              ? "รายงานจะเก็บชื่อพื้นที่กว้างเท่านั้น และจะไม่เก็บตำแหน่งที่แน่นอน"
-              : "Only the broad area name is stored; an exact location is not recorded."}
+                : (th ? "ยังไม่ได้เลือก" : "Not selected")}
+            </strong>
           </p>
+          {areas.length > 0 && (
+            <>
+              <button
+                type="button"
+                className="public-report-area-change"
+                aria-expanded={areaPickerOpen}
+                aria-controls="public-report-area-select"
+                onClick={() => setAreaPickerOpen((open) => !open)}
+              >
+                {areaPickerOpen
+                  ? (th ? "ปิด" : "Close")
+                  : (th ? "เปลี่ยน" : "Change")}
+              </button>
+              {areaPickerOpen && (
+                <label className="public-report-area-picker" htmlFor="public-report-area-select">
+                  <span className="sr-only">
+                    {th ? "เลือกพื้นที่รายงาน" : "Choose the report area"}
+                  </span>
+                  <select
+                    id="public-report-area-select"
+                    value={selectedArea?.area_id ?? ""}
+                    onChange={(event) => {
+                      onSelectArea(event.target.value);
+                      setAreaPickerOpen(false);
+                      setFormMessage(null);
+                    }}
+                  >
+                    <option value="">
+                      {th ? "เลือกพื้นที่" : "Choose an area"}
+                    </option>
+                    {areas.map((area) => (
+                      <option key={area.area_id} value={area.area_id}>
+                        {th ? area.area_name_th : area.area_name_en}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </>
+          )}
         </section>
+
+        <PublicFloodHeightPicker
+          language={language}
+          value={waterDepthCm}
+          onChange={(depth) => {
+            setWaterDepthCm(depth);
+            setFormMessage(null);
+          }}
+        />
 
         <div className="public-report-photo">
           <label htmlFor="public-report-photo-input">
@@ -162,11 +240,6 @@ export function PublicReportPage({
               </svg>
             </span>
             <strong>{th ? "ถ่ายภาพหรือเลือกภาพ" : "Take or choose a photo"}</strong>
-            <small>
-              {th
-                ? "ภาพใช้แสดงตัวอย่างบนอุปกรณ์นี้เท่านั้น"
-                : "The image is used only for a local preview."}
-            </small>
           </label>
           <input
             ref={photoInputRef}
@@ -194,53 +267,8 @@ export function PublicReportPage({
           )}
         </div>
 
-        <fieldset className="public-report-depth">
-          <legend>{th ? "ระดับน้ำ" : "Water depth"}</legend>
-          <div className="public-report-choice-grid">
-            {PUBLIC_REPORT_WATER_DEPTHS.map((option) => (
-              <label key={option.id} className={waterDepth === option.id ? "selected" : ""}>
-                <input
-                  type="radio"
-                  name="public-report-water-depth"
-                  value={option.id}
-                  checked={waterDepth === option.id}
-                  onChange={() => {
-                    setWaterDepth(option.id);
-                    setFormMessage(null);
-                  }}
-                  required
-                />
-                <span aria-hidden="true">{DEPTH_ICONS[option.id]}</span>
-                <b>{option[language]}</b>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <fieldset className="public-report-category">
-          <legend>{th ? "ประเภท" : "Category"}</legend>
-          <div className="public-report-category-options">
-            {PUBLIC_REPORT_CATEGORIES.map((option) => (
-              <label key={option.id} className={category === option.id ? "selected" : ""}>
-                <input
-                  type="radio"
-                  name="public-report-category"
-                  value={option.id}
-                  checked={category === option.id}
-                  onChange={() => {
-                    setCategory(option.id);
-                    setFormMessage(null);
-                  }}
-                  required
-                />
-                <span>{option[language]}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
         <label className="public-report-notes" htmlFor="public-report-notes">
-          <span>{th ? "หมายเหตุเพิ่มเติม (ไม่บังคับ)" : "Optional notes"}</span>
+          <span>{th ? "หมายเหตุ" : "Notes"}</span>
           <textarea
             id="public-report-notes"
             value={notes}
@@ -267,18 +295,15 @@ export function PublicReportPage({
           role="status"
           aria-live="polite"
         >
-          {formMessage ?? (th
-            ? "รายงานนี้เก็บไว้ในอุปกรณ์ของคุณ และไม่ส่งข้อมูลไปยังหน่วยงาน"
-            : "This report stays on your device and is not sent to an authority.")}
+          {formMessage ?? ""}
         </p>
       </form>
 
       <section className="public-report-feed" aria-labelledby="public-report-feed-title">
         <div className="public-report-feed-heading">
-          <div>
-            <p className="eyebrow">{th ? "ฟีดในพื้นที่" : "AREA FEED"}</p>
-            <h2 id="public-report-feed-title">{th ? "รายงานในอุปกรณ์นี้" : "Reports on this device"}</h2>
-          </div>
+          <h2 id="public-report-feed-title">
+            {th ? "รายงานในพื้นที่" : "Community feed"}
+          </h2>
           {selectedArea && (
             <span>{th ? selectedArea.area_name_th : selectedArea.area_name_en}</span>
           )}
@@ -303,9 +328,10 @@ export function PublicReportPage({
                 </div>
                 <div className="public-report-feed-copy">
                   <h3>
-                    {publicReportWaterDepthLabel(report.water_depth, language)}
-                    {" · "}
-                    {publicReportCategoryLabel(report.category, language)}
+                    {report.water_depth_cm === undefined
+                      ? publicReportWaterDepthLabel(report.water_depth, language)
+                      : `${report.water_depth_cm} ${th ? "ซม." : "cm"} · ${
+                        publicReportWaterDepthLabel(report.water_depth, language)}`}
                   </h3>
                   {report.notes && <p>{report.notes}</p>}
                   <small>
@@ -325,6 +351,64 @@ export function PublicReportPage({
             ))}
           </ol>
         )}
+
+        {/*
+          Illustrative only, and fenced so it can never be mistaken for — or
+          matched alongside — real report content. See FEED_EXAMPLES.
+        */}
+        <div className="public-report-feed-example" data-example="true">
+          {/* Kept for assistive tech and the safety guard; visually removed. */}
+          <p className="sr-only">
+            {th
+              ? "ตัวอย่างสถานะรายงาน ไม่ใช่รายงานจริง"
+              : "Example report statuses. Not real reports."}
+          </p>
+
+          <section className="public-report-status-card">
+            <p className="public-report-status-title">
+              {th ? "สถานะรายงานล่าสุดของคุณ" : "Your latest report status"}
+            </p>
+            <ol className="public-report-status-track" aria-hidden="true">
+              {REPORT_STATUS_STEPS.map((step) => (
+                <li key={step.id} data-state={step.state}>
+                  <span className="public-report-status-dot">
+                    {step.state !== "pending" && (
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="m5 12.5 4.2 4.2L19 7"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  <span>{th ? step.th : step.en}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <ol className="public-report-feed-list">
+            {FEED_EXAMPLES.map((example) => (
+              <li key={example.id}>
+                <div className="public-report-feed-icon" aria-hidden="true">≋</div>
+                <div className="public-report-feed-copy">
+                  <h3>{th ? example.th : example.en}</h3>
+                  <small>{th ? example.ageTh : example.ageEn}</small>
+                </div>
+                <span
+                  className="public-report-feed-status"
+                  data-tone={example.tone}
+                >
+                  {th ? example.statusTh : example.statusEn}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
     </section>
   );

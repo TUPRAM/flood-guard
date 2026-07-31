@@ -12,6 +12,7 @@ import { PublicSosPage } from "@/components/public-sos-page";
 import { HOUSEHOLD_NEEDS, countCompletedPlanItems } from "@/lib/household-plan";
 import type { PublicMapLocation } from "@/lib/public-location";
 import type { FeatureCollection } from "@/lib/types";
+import { useDisplayName } from "@/lib/use-display-name";
 import { useHouseholdPlan } from "@/lib/use-household-plan";
 import { useLanguage } from "@/lib/use-language";
 import { usePublicFloodGuardData } from "@/lib/use-public-floodguard-data";
@@ -78,13 +79,14 @@ export function PublicExperience() {
   const [language, setLanguage] = useLanguage("th");
   const [page, setPage] = useState<PublicPage>("home");
   const [homeLocation, setHomeLocation] = useState<PublicMapLocation>();
-  const [locationChoiceHandled, setLocationChoiceHandled] = useState(false);
   const contentRef = useRef<HTMLElement>(null);
+  const { displayName, changeDisplayName } = useDisplayName();
   const {
     plan,
     selectPlanningArea,
     toggleChecklistItem,
     toggleNeed,
+    setNeedCount,
     selectNoNeedsApply,
     markReviewed,
     resetChecklist,
@@ -133,6 +135,7 @@ export function PublicExperience() {
     contentRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [page]);
 
+
   const navigate = (nextPage: PublicPage) => {
     setPage(nextPage);
   };
@@ -151,6 +154,9 @@ export function PublicExperience() {
         onLanguageChange={setLanguage}
         planningAreaName={selectedAreaName}
         needsSummary={needsSummary}
+        displayName={displayName}
+        onDisplayNameChange={changeDisplayName}
+        locationLabel={homeLocation?.label ?? selectedAreaName}
         onNavigatePrepare={() => navigate("prepare")}
         onNavigateSos={() => navigate("sos")}
       />
@@ -170,9 +176,7 @@ export function PublicExperience() {
             selectedAreaId={selectedArea?.area_id ?? ""}
             onSelectArea={selectPlanningArea}
             location={homeLocation}
-            locationChoiceHandled={locationChoiceHandled}
             onLocationChange={setHomeLocation}
-            onLocationChoiceHandled={() => setLocationChoiceHandled(true)}
           />
         )}
 
@@ -180,6 +184,8 @@ export function PublicExperience() {
           <PublicReportPage
             language={language}
             selectedArea={reportArea}
+            areas={data.publicAreas}
+            onSelectArea={selectPlanningArea}
           />
         )}
 
@@ -187,6 +193,10 @@ export function PublicExperience() {
           <PublicShelterPage
             language={language}
             selectedAreaName={selectedAreaName}
+            selectedAreaId={selectedArea?.area_id ?? ""}
+            areas={data.publicAreas}
+            areaFeatures={data.areaFeatures}
+            datasetMode={data.status.dataset_mode}
             plan={plan}
             onNavigatePrepare={() => navigate("prepare")}
           />
@@ -195,28 +205,16 @@ export function PublicExperience() {
         {page === "prepare" && (
           <section className="public-prepare-view" aria-labelledby="public-prepare-title">
             <header className="public-page-heading">
-              <p className="eyebrow">{th ? "แผนครัวเรือน" : "HOUSEHOLD PLAN"}</p>
               <h1 id="public-prepare-title">
                 {th ? "สร้างและทบทวนแผนเตรียมพร้อม" : "Build and review my preparedness plan"}
               </h1>
-              <p>
-                {th
-                  ? "ทำตามขั้นที่ 1–4 และเก็บสำเนาไว้ในอุปกรณ์นี้"
-                  : "Complete steps 1–4 and keep a copy on this device."}
-              </p>
             </header>
 
             <section className="public-prepare-area-selector" aria-labelledby="public-prepare-area-title">
               <div>
-                <p className="eyebrow">{th ? "พื้นที่วางแผน" : "PLANNING AREA"}</p>
                 <h2 id="public-prepare-area-title">
-                  {th ? "เลือกพื้นที่กว้าง" : "Choose a broad area"}
+                  {th ? "เลือกพื้นที่วางแผนของฉัน" : "Choose my planning area"}
                 </h2>
-                <p>
-                  {th
-                    ? "ใช้เฉพาะชื่อพื้นที่กว้าง ไม่ใช่ตำแหน่งบ้านที่แน่นอน"
-                    : "Use a broad area name, not an exact household location."}
-                </p>
               </div>
               <label htmlFor="public-prepare-area-select">
                 <span className="sr-only">
@@ -246,23 +244,13 @@ export function PublicExperience() {
               areaNameEn={prepareAreaNameEn}
               onToggleItem={toggleChecklistItem}
               onToggleNeed={toggleNeed}
+              onSetNeedCount={setNeedCount}
               onSelectNoNeedsApply={selectNoNeedsApply}
               onMarkReviewed={markReviewed}
               onResetChecklist={resetChecklist}
               onClearPlan={clearPlan}
             />
 
-            <aside className="public-prepare-safety-note">
-              <PublicAppIcon name="hazard" />
-              <div>
-                <strong>{th ? "ไม่ใช่คำสั่งฉุกเฉิน" : "Not emergency direction"}</strong>
-                <p>
-                  {th
-                    ? "แผนนี้ไม่คำนวณเส้นทางที่ปลอดภัย ไม่ติดตามตำแหน่ง และไม่แทนที่คำแนะนำจาก ปภ. กรมอุตุนิยมวิทยา หรือหน่วยงานท้องถิ่น"
-                    : "This plan does not calculate a safe route, track your location, or replace DDPM, TMD, or local-authority instructions."}
-                </p>
-              </div>
-            </aside>
           </section>
         )}
 

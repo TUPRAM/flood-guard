@@ -5,10 +5,13 @@ import { useState } from "react";
 import {
   HOUSEHOLD_NEEDS,
   HOUSEHOLD_NEED_ACTIONS,
+  HOUSEHOLD_NEED_COUNT_MAX,
   HOUSEHOLD_PLAN_ITEMS,
   buildHouseholdPlanText,
   canReviewHouseholdPlan,
   countCompletedPlanItems,
+  householdNeedCountLabel,
+  isCountableNeed,
   selectedHouseholdNeeds,
   type HouseholdNeedId,
   type HouseholdPlan,
@@ -23,10 +26,34 @@ interface HouseholdPlanBuilderProps {
   areaNameEn: string;
   onToggleItem: (itemId: HouseholdPlanItemId) => void;
   onToggleNeed: (needId: HouseholdNeedId) => void;
+  onSetNeedCount: (needId: HouseholdNeedId, count: number) => void;
   onSelectNoNeedsApply: () => void;
   onMarkReviewed: () => void;
   onResetChecklist: () => void;
   onClearPlan: () => void;
+}
+
+type PlanStepId = 1 | 2 | 3 | 4;
+
+const PLAN_STEPS: Array<{ id: PlanStepId; en: string; th: string }> = [
+  { id: 1, en: "Household needs", th: "ความต้องการครัวเรือน" },
+  { id: 2, en: "Tailored actions", th: "การดำเนินการเฉพาะ" },
+  { id: 3, en: "Core actions", th: "รายการพื้นฐาน" },
+  { id: 4, en: "Review & keep", th: "ทบทวนและเก็บสำเนา" },
+];
+
+/**
+ * "done" once the step's own record exists, "current" for the first step still
+ * outstanding, "pending" after that. It reports what the reader has recorded,
+ * never whether the household is prepared.
+ */
+function planStepState(
+  id: PlanStepId,
+  currentStep: PlanStepId,
+  done: boolean,
+): "done" | "current" | "pending" {
+  if (done) return "done";
+  return id === currentStep ? "current" : "pending";
 }
 
 function formatPlanTimestamp(timestamp: string | null, language: Language, fallback: string): string {
@@ -45,6 +72,7 @@ export function HouseholdPlanBuilder({
   areaNameEn,
   onToggleItem,
   onToggleNeed,
+  onSetNeedCount,
   onSelectNoNeedsApply,
   onMarkReviewed,
   onResetChecklist,
@@ -54,7 +82,6 @@ export function HouseholdPlanBuilder({
   const th = language === "th";
   const completed = countCompletedPlanItems(plan);
   const total = HOUSEHOLD_PLAN_ITEMS.length;
-  const progress = Math.round((completed / total) * 100);
   const selectedNeedIds = selectedHouseholdNeeds(plan);
   const canReview = canReviewHouseholdPlan(plan);
   const bilingualPlanText = () => buildHouseholdPlanText(plan, areaNameTh, areaNameEn);
@@ -118,22 +145,48 @@ export function HouseholdPlanBuilder({
       ? (th ? "ยืนยันว่าไม่มีข้อใดใช้กับครัวเรือน" : "Confirmed: none apply")
       : (th ? "ยังไม่ได้ทบทวน" : "Not reviewed");
 
+  const stepDone: Record<PlanStepId, boolean> = {
+    1: plan.needs_review_state !== "not_reviewed",
+    2: plan.needs_review_state !== "not_reviewed",
+    3: total > 0 && completed === total,
+    4: Boolean(plan.last_reviewed_at),
+  };
+  const currentStep = (PLAN_STEPS.find(({ id }) => !stepDone[id])?.id ?? 4) as PlanStepId;
+
   return (
     <div className="household-plan-builder" id="household-plan-builder" data-plan-completed={completed} data-needs-review-state={plan.needs_review_state}>
       <section className="card household-plan-summary" aria-labelledby="household-plan-title">
-        <div>
-          <p className="eyebrow">{th ? "เก็บไว้ในอุปกรณ์นี้เท่านั้น" : "Stored only on this device"}</p>
-          <h2 id="household-plan-title">{th ? "แผนเตรียมพร้อมของครัวเรือน" : "My household preparedness plan"}</h2>
-          <p>{th
-            ? `พื้นที่วางแผน: ${areaNameTh || "ยังไม่ได้เลือกพื้นที่"} · ไม่ใช่ตำแหน่งบ้านที่แน่นอน`
-            : `Planning area: ${areaNameEn || "No area selected"} · not an exact household location`}</p>
-        </div>
+        <h2 id="household-plan-title">{th ? "แผนเตรียมพร้อมของครัวเรือน" : "My household preparedness plan"}</h2>
+
+        {/* Where the plan stands across the four steps below. */}
+        <ol className="plan-step-track" aria-label={th ? "ความคืบหน้าของแผน" : "Plan progress"}>
+          {PLAN_STEPS.map((step) => {
+            const state = planStepState(step.id, currentStep, stepDone[step.id]);
+            return (
+              <li key={step.id} data-state={state}>
+                <span className="plan-step-track__dot" aria-hidden="true">
+                  {state === "done"
+                    ? (
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          d="m5 12.5 4.2 4.2L19 7"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )
+                    : step.id}
+                </span>
+                <span className="plan-step-track__label">{step[language]}</span>
+              </li>
+            );
+          })}
+        </ol>
+
         <div className="plan-status-grid" aria-label={th ? "สถานะแผนแยกตามส่วน" : "Plan status by section"}>
-          <article>
-            <span>{th ? "รายการพื้นฐาน" : "Core actions"}</span>
-            <b>{completed}/{total}</b>
-            <progress value={completed} max={total}>{progress}%</progress>
-          </article>
           <article>
             <span>{th ? "ความต้องการครัวเรือน" : "Household needs"}</span>
             <b>{needsStatus}</b>
@@ -147,32 +200,62 @@ export function HouseholdPlanBuilder({
             <b>{savedLabel}</b>
           </article>
         </div>
-        <p className="plan-status-boundary">{th
-          ? "สถานะเหล่านี้บอกเฉพาะสิ่งที่คุณบันทึกไว้ ไม่ได้ประเมินว่าครัวเรือนปลอดภัย"
-          : "These statuses describe only what you recorded; they do not assess whether your household is safe."}</p>
       </section>
 
       <section className="card household-needs" aria-labelledby="household-needs-title">
-        <p className="eyebrow">{th ? "ขั้นที่ 1" : "Step 1"}</p>
-        <h2 id="household-needs-title">{th ? "ทบทวนความต้องการของครัวเรือน" : "Review household needs"}</h2>
+        <h2 id="household-needs-title">
+          <span className="plan-step-number">{th ? "ขั้นที่ 1" : "Step 1"}</span>
+          {th ? "ทบทวนความต้องการของครัวเรือน" : "Review household needs"}
+        </h2>
         <p className="plan-privacy-note">
           {th
             ? "เลือกเฉพาะสิ่งที่ใช้กับครัวเรือน หรือยืนยันว่าไม่มีข้อใดใช้ ระบบไม่ขอที่อยู่ บัญชี ชื่อบุคคล หรือการวินิจฉัยทางการแพทย์"
             : "Select what applies, or explicitly confirm that none apply. The app does not ask for an address, account, names, or a medical diagnosis."}
         </p>
         <div className="household-need-options" role="group" aria-label={th ? "ความต้องการที่ต้องนำมาวางแผน" : "Needs to account for"}>
-          {HOUSEHOLD_NEEDS.map((need) => (
-            <button
-              key={need.id}
-              type="button"
-              aria-pressed={plan.needs[need.id]}
-              className={plan.needs[need.id] ? "selected" : ""}
-              onClick={() => onToggleNeed(need.id)}
-            >
-              <span aria-hidden="true">{plan.needs[need.id] ? "✓" : "+"}</span>
-              {need[language]}
-            </button>
-          ))}
+          {HOUSEHOLD_NEEDS.map((need) => {
+            const selected = plan.needs[need.id];
+            const count = plan.need_counts[need.id] ?? 1;
+            const countable = isCountableNeed(need.id);
+            return (
+              <div className="household-need-option" key={need.id}>
+                <button
+                  type="button"
+                  aria-pressed={selected}
+                  className={selected ? "selected" : ""}
+                  onClick={() => onToggleNeed(need.id)}
+                >
+                  <span aria-hidden="true">{selected ? "✓" : "+"}</span>
+                  {need[language]}
+                </button>
+                {/* How many people this need covers, so plans elsewhere can say
+                    "2 children" instead of just naming the need. */}
+                {selected && countable && (
+                  <div className="household-need-count">
+                    <button
+                      type="button"
+                      disabled={count <= 1}
+                      aria-label={th ? `ลดจำนวน ${need[language]}` : `Fewer: ${need[language]}`}
+                      onClick={() => onSetNeedCount(need.id, count - 1)}
+                    >
+                      −
+                    </button>
+                    <output aria-live="polite">
+                      {householdNeedCountLabel(need.id, count, language)}
+                    </output>
+                    <button
+                      type="button"
+                      disabled={count >= HOUSEHOLD_NEED_COUNT_MAX}
+                      aria-label={th ? `เพิ่มจำนวน ${need[language]}` : `More: ${need[language]}`}
+                      onClick={() => onSetNeedCount(need.id, count + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
           <button
             type="button"
             aria-pressed={plan.needs_review_state === "none_apply"}
@@ -183,12 +266,13 @@ export function HouseholdPlanBuilder({
             {th ? "ไม่มีข้อใดในรายการนี้ที่ใช้กับครัวเรือน" : "None of these apply to my household"}
           </button>
         </div>
-        <p className="needs-review-result" role="status">{th ? `สถานะ: ${needsStatus}` : `Status: ${needsStatus}`}</p>
       </section>
 
       <section className="card tailored-plan-actions" aria-labelledby="tailored-plan-actions-title">
-        <p className="eyebrow">{th ? "ขั้นที่ 2" : "Step 2"}</p>
-        <h2 id="tailored-plan-actions-title">{th ? "การดำเนินการตามความต้องการที่เลือก" : "Actions for the needs you selected"}</h2>
+        <h2 id="tailored-plan-actions-title">
+          <span className="plan-step-number">{th ? "ขั้นที่ 2" : "Step 2"}</span>
+          {th ? "การดำเนินการตามความต้องการที่เลือก" : "Actions for the needs you selected"}
+        </h2>
         {selectedNeedIds.length > 0 ? (
           <ul>
             {selectedNeedIds.map((needId) => <li key={needId}>{HOUSEHOLD_NEED_ACTIONS[needId][language]}</li>)}
@@ -203,8 +287,10 @@ export function HouseholdPlanBuilder({
       <section aria-labelledby="household-checklist-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">{th ? "ขั้นที่ 3" : "Step 3"}</p>
-            <h2 id="household-checklist-title">{th ? "ทำรายการพื้นฐานร่วมกัน" : "Complete the core actions together"}</h2>
+            <h2 id="household-checklist-title">
+              <span className="plan-step-number">{th ? "ขั้นที่ 3" : "Step 3"}</span>
+              {th ? "ทำรายการพื้นฐานร่วมกัน" : "Complete the core actions together"}
+            </h2>
           </div>
           <button type="button" className="text-action" onClick={onResetChecklist} disabled={completed === 0}>
             {th ? "รีเซ็ตรายการ" : "Reset actions"}
@@ -226,8 +312,10 @@ export function HouseholdPlanBuilder({
 
       <section className="card plan-review-card" aria-labelledby="plan-review-title">
         <div>
-          <p className="eyebrow">{th ? "ขั้นที่ 4" : "Step 4"}</p>
-          <h2 id="plan-review-title">{th ? "ทบทวน เก็บสำเนา และยืนยันกับท้องถิ่น" : "Review, keep a copy, and confirm locally"}</h2>
+          <h2 id="plan-review-title">
+            <span className="plan-step-number">{th ? "ขั้นที่ 4" : "Step 4"}</span>
+            {th ? "ทบทวน เก็บสำเนา และยืนยันกับท้องถิ่น" : "Review, keep a copy, and confirm locally"}
+          </h2>
           <p>{th ? `ทบทวนล่าสุด: ${reviewedLabel}` : `Last reviewed: ${reviewedLabel}`}</p>
           <p className="seasonal-review-reminder">{th
             ? "ทบทวนก่อนฤดูฝน และเมื่อสมาชิก ยา การเดินทาง หรือจุดนัดพบเปลี่ยนแปลง"
@@ -271,15 +359,6 @@ export function HouseholdPlanBuilder({
           </div>
         )}
       </section>
-
-      <aside className="card plan-safety-note">
-        <b>{th ? "ไม่ใช่คำสั่งฉุกเฉิน" : "Not emergency direction"}</b>
-        <p>
-          {th
-            ? "แผนนี้ไม่คำนวณเส้นทางปลอดภัย ไม่ติดตามตำแหน่ง และไม่แทนที่ประกาศของ ปภ. กรมอุตุนิยมวิทยา หรือหน่วยงานท้องถิ่น"
-            : "This plan does not calculate a safe route, track your location, or replace notices from DDPM, TMD, or local authorities."}
-        </p>
-      </aside>
     </div>
   );
 }

@@ -113,7 +113,11 @@ function validatePublicProduction() {
 
 function validatePublicShell() {
   const publicHtml = readText("public/index.html");
-  if (!/class="public-app-header"/i.test(publicHtml) || !/>FloodGuard</i.test(publicHtml)) {
+  if (
+    !/class="public-app-header"/i.test(publicHtml)
+    || !/aria-label="FloodGuard home"/i.test(publicHtml)
+    || !/class="public-greeting"/i.test(publicHtml)
+  ) {
     throw new Error("Public route is missing its compact FloodGuard header.");
   }
   for (const tab of ["home", "report", "shelter", "prepare", "sos"]) {

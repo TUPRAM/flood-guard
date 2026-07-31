@@ -1,0 +1,381 @@
+/* ---------------------------------------------------------------------------
+   Public app — themed surface.
+   Primary #0F4C81 · Secondary #F97316 · Tertiary #DC2626 · Neutral #64748B.
+   Loaded after globals.css so it retokenizes the structural rules in place.
+   --------------------------------------------------------------------------- */
+.public-app-shell { background: var(--fg-canvas); }
+.public-app-shell button:focus-visible,
+.public-app-shell a:focus-visible,
+.public-app-shell input:focus-visible,
+.public-app-shell textarea:focus-visible,
+.public-app-shell select:focus-visible,
+.public-app-shell summary:focus-visible {
+  outline: 3px solid rgb(15 76 129 / 45%);
+  outline-offset: 2px;
+}
+
+/*
+   Header: avatar · greeting + location · brand + language.
+   Three zones with a hairline before the actions, so the identity side and the
+   app-wide controls read as separate groups instead of one drifting row.
+*/
+.public-app-header {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  border-bottom: 1px solid var(--fg-neutral-200);
+  background: var(--fg-surface);
+  color: var(--fg-neutral-900);
+  box-shadow: var(--fg-shadow-sm);
+}
+.public-profile-trigger { width: 40px; height: 40px; border-radius: var(--fg-radius-md); }
+.public-profile-avatar-sm {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--fg-radius-pill);
+  background: var(--fg-primary-100);
+  color: var(--fg-primary-700);
+}
+.public-profile-avatar-sm .public-app-icon { width: 20px; height: 20px; }
+.public-profile-trigger:hover .public-profile-avatar-sm { background: var(--fg-primary-300); }
+.public-greeting { min-width: 0; display: grid; gap: 1px; }
+.public-greeting-name {
+  overflow: hidden;
+  color: var(--fg-neutral-900);
+  font-size: .9rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.public-greeting-location {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--fg-neutral);
+  font-size: .7rem;
+  line-height: 1.3;
+}
+.public-greeting-location .public-app-icon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  color: var(--fg-secondary);
+}
+.public-greeting-location > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.public-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 10px;
+  border-left: 1px solid var(--fg-neutral-200);
+}
+.public-icon-button { color: var(--fg-primary-700); border-radius: var(--fg-radius-md); }
+.public-icon-button:hover,
+.public-profile-trigger:hover { background: var(--fg-primary-50); }
+/* Sized to the 40px header controls it sits beside, not to its own scale. */
+.public-app-header .language-toggle {
+  padding: 2px;
+  border: 1px solid var(--fg-neutral-200);
+  border-radius: var(--fg-radius-pill);
+  background: var(--fg-neutral-100);
+}
+.public-app-header .language-toggle button {
+  min-width: 34px;
+  min-height: 30px;
+  padding-inline: 8px;
+  color: var(--fg-neutral-600);
+  font-family: var(--fg-font-label);
+  font-size: .62rem;
+  font-weight: 600;
+}
+.public-app-header .language-toggle button[aria-pressed="true"] {
+  background: var(--fg-primary-700);
+  color: #fff;
+  box-shadow: 0 2px 8px rgb(15 76 129 / 28%);
+}
+
+/* Greeting-name field in the profile drawer. */
+.public-profile-name-field { display: grid; gap: 6px; }
+.public-profile-name-field label {
+  color: var(--fg-neutral-700);
+  font-size: .76rem;
+  font-weight: 700;
+}
+.public-profile-name-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid var(--fg-neutral-300);
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-surface);
+  color: var(--fg-neutral-900);
+  font-size: .86rem;
+}
+.public-profile-name-field small { color: var(--fg-neutral); font-size: .68rem; line-height: 1.45; }
+
+/* ---------------------------------------------------------------------------
+   Home map overlays.
+   One floating-card recipe shared by every rail child, so the search field,
+   the location pill and the legend read as the same family of surfaces.
+   --------------------------------------------------------------------------- */
+.public-map-search,
+.public-address-suggestions,
+.public-location-status,
+.public-risk-indicator {
+  border: 1px solid var(--fg-neutral-200);
+  border-radius: var(--fg-radius-lg);
+  background: var(--fg-surface);
+  color: var(--fg-neutral-900);
+  box-shadow: var(--fg-shadow-md);
+}
+
+/* Map search. */
+.public-map-search > .public-app-icon { color: var(--fg-primary-600); }
+.public-map-search input { color: var(--fg-neutral-900); }
+.public-map-search input::placeholder { color: var(--fg-neutral-400); }
+.public-map-search button {
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-primary-700);
+  color: #fff;
+  font-family: var(--fg-font-label);
+  font-size: .7rem;
+  font-weight: 700;
+}
+.public-map-search button:hover:not(:disabled) { background: var(--fg-primary-800); }
+
+/* Address suggestions. */
+.public-address-suggestions button { border-radius: var(--fg-radius-md); color: var(--fg-neutral-900); }
+.public-address-suggestions button:hover,
+.public-address-suggestions button[aria-selected="true"] {
+  background: var(--fg-primary-50);
+  color: var(--fg-primary-800);
+}
+.public-address-suggestions small { color: var(--fg-neutral); }
+.public-address-suggestions > a { color: var(--fg-neutral); }
+
+/* Resolved-location pill. */
+.public-location-status strong { font-weight: 700; }
+.public-location-status small { color: var(--fg-neutral); }
+.public-location-status button {
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-primary-50);
+  color: var(--fg-primary-700);
+  font-weight: 700;
+}
+.public-location-status button:hover { background: var(--fg-primary-100); }
+.public-location-status.state-unavailable {
+  border-color: var(--fg-tertiary-100);
+  background: var(--fg-tertiary-50);
+}
+
+/*
+   Preparedness-signal alert.
+   A saturated full-width slab reads as panic and buries the map under it; the
+   severity is carried by a left stripe plus the warning icon instead, so the
+   alert still separates itself from the search card without shouting. Colour is
+   never the only cue — the icon carries it too.
+*/
+.public-signal-banner {
+  position: relative;
+  width: 100%;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 15px;
+  overflow: hidden;
+  border: 1px solid var(--fg-tertiary-100);
+  border-left: 0;
+  border-radius: var(--fg-radius-lg);
+  background: var(--fg-tertiary-50);
+  color: var(--fg-tertiary-700);
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 700;
+  text-align: left;
+  box-shadow: var(--fg-shadow-md);
+  cursor: pointer;
+}
+.public-signal-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: var(--fg-tertiary);
+}
+.public-signal-banner:hover { background: var(--fg-tertiary-100); }
+.public-signal-banner .public-app-icon { width: 20px; height: 20px; color: var(--fg-tertiary); }
+.public-signal-banner > span { min-width: 0; }
+.public-signal-banner > .public-app-icon:last-child { color: var(--fg-tertiary); opacity: .55; }
+
+/*
+   Flood-severity legend: place + severity, then the scale.
+   Set in the body face throughout so it matches the Hazard Info control it sits
+   beside, rather than mixing a display face and a mono face in one small card.
+*/
+.public-risk-indicator { font-family: var(--fg-font-body); }
+.public-risk-headline > strong { color: var(--fg-neutral-900); }
+.public-risk-chip { background: var(--fg-neutral-100); color: var(--fg-neutral-700); }
+.public-risk-chip[data-band="lower"] { background: #dcfce7; color: #15803d; }
+.public-risk-chip[data-band="moderate"] { background: #fef3c7; color: #a16207; }
+.public-risk-chip[data-band="high"] { background: var(--fg-secondary-100); color: var(--fg-secondary-700); }
+.public-risk-chip[data-band="very_high"] { background: var(--fg-tertiary-100); color: var(--fg-tertiary-700); }
+.public-risk-scale-labels {
+  color: var(--fg-neutral);
+  font-size: .62rem;
+  font-weight: 600;
+}
+
+/*
+   Hazard-info action. Same card surface as the legend it sits beside, so the
+   bottom of the map reads as one pair rather than two unrelated blobs; the
+   secondary hue stays on the icon where it marks the hazard, not the whole pill.
+*/
+.public-hazard-button {
+  border: 1px solid var(--fg-secondary-100);
+  border-radius: var(--fg-radius-lg);
+  background: var(--fg-secondary-50);
+  color: var(--fg-secondary-700);
+  font-weight: 700;
+  box-shadow: var(--fg-shadow-md);
+}
+.public-hazard-button .public-app-icon { color: var(--fg-secondary); }
+.public-hazard-button:hover { background: var(--fg-secondary-100); border-color: var(--fg-secondary); }
+
+/* Locate control: same card surface as the tool cells it sits beside. */
+.public-locate-button {
+  border: 1px solid var(--fg-neutral-200);
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-surface);
+  color: var(--fg-primary-700);
+  box-shadow: var(--fg-shadow-md);
+}
+.public-locate-button:hover:not(:disabled) { background: var(--fg-primary-50); }
+.public-hazard-signals { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.public-hazard-signals li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--fg-secondary-100);
+  border-radius: var(--fg-radius-sm);
+  background: var(--fg-secondary-50);
+  color: var(--fg-secondary-700);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+.public-hazard-signals .public-app-icon { width: 18px; height: 18px; margin-top: 1px; }
+
+/*
+   Map tool column. Layers and zoom were two differently-sized white boxes; they
+   now share one cell recipe so the right edge reads as a single control stack.
+*/
+.public-home-map { background: var(--fg-canvas); }
+.public-home-map .leaflet-control-zoom,
+.public-home-map .map-basemap-menu > summary,
+.public-home-map .map-basemap-menu > div {
+  border: 1px solid var(--fg-neutral-200) !important;
+  border-radius: var(--fg-radius-md);
+  background: var(--fg-surface);
+  box-shadow: var(--fg-shadow-md);
+}
+.public-home-map .leaflet-control-zoom a {
+  border-color: var(--fg-neutral-200) !important;
+  background: transparent !important;
+  color: var(--fg-primary-700) !important;
+}
+.public-home-map .leaflet-control-zoom a:hover { background: var(--fg-primary-50) !important; }
+.public-home-map .map-basemap-menu > summary { color: var(--fg-primary-700); }
+.public-home-map .map-basemap-menu > summary:hover { background: var(--fg-primary-50); }
+.public-home-map .map-basemap-menu button { border-radius: var(--fg-radius-sm); color: var(--fg-neutral-600); }
+.public-home-map .map-basemap-menu button.active { background: var(--fg-primary-50); color: var(--fg-primary-700); }
+.public-home-map .map-basemap-menu button.active > span {
+  background: var(--fg-primary-700);
+  box-shadow: 0 0 0 3px rgb(15 76 129 / 15%);
+}
+.public-location-marker { background: var(--fg-primary-700); }
+
+/* Brand mark in the header. */
+.public-header-logo {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--fg-radius-md);
+  text-decoration: none;
+}
+.public-header-logo:hover { background: var(--fg-primary-50); }
+.public-header-logo-mark {
+  width: 28px;
+  height: 28px;
+  display: block;
+  background: center / contain no-repeat url("/floodguard-logo.png");
+}
+
+/* Bottom navigation. */
+.public-app-shell > .public-bottom-nav {
+  border-top: 1px solid var(--fg-neutral-200);
+  background: var(--fg-surface);
+}
+.public-app-shell > .public-bottom-nav button {
+  color: var(--fg-neutral);
+  font-size: .62rem;
+  font-weight: 600;
+}
+.public-app-shell > .public-bottom-nav button:hover { background: var(--fg-neutral-100); }
+.public-app-shell > .public-bottom-nav button.active {
+  background: var(--fg-primary-50);
+  color: var(--fg-primary-700);
+  font-weight: 700;
+}
+.public-app-shell > .public-bottom-nav button.sos { color: var(--fg-tertiary); }
+.public-app-shell > .public-bottom-nav button.sos.active {
+  background: var(--fg-tertiary-50);
+  color: var(--fg-tertiary);
+}
+.public-app-shell > .public-bottom-nav button > small {
+  background: var(--fg-secondary);
+  color: #fff;
+  font-family: var(--fg-font-label);
+}
+
+/* Shared public surfaces across Report / Shelter / Prepare / SOS. */
+.public-app-content.is-scrollable { background: var(--fg-canvas); }
+.public-page .public-page-heading h1 { color: var(--fg-neutral-900); }
+.public-page .public-page-heading p { color: var(--fg-neutral); }
+
+/*
+   Narrow phones: the header runs out of room before anything else does, so the
+   chrome gives way first and the greeting keeps what is left.
+*/
+@media (max-width: 390px) {
+  .public-app-header { gap: 6px; }
+  .public-greeting-name { font-size: .82rem; }
+  .public-greeting-location { font-size: .64rem; }
+  .public-header-actions { gap: 2px; padding-left: 6px; }
+  .public-profile-trigger { width: 36px; height: 36px; }
+  .public-profile-avatar-sm { width: 32px; height: 32px; }
+  .public-profile-avatar-sm .public-app-icon { width: 18px; height: 18px; }
+  .public-header-logo { width: 34px; height: 34px; flex-basis: 34px; }
+  .public-header-logo-mark { width: 24px; height: 24px; }
+  .public-app-header .language-toggle button { min-width: 34px; padding-inline: 6px; font-size: .62rem; }
+  .public-signal-banner { font-size: .72rem; }
+}
+
+/* Below a real phone width the location line is the first thing to go. */
+@media (max-width: 330px) {
+  .public-greeting-location { display: none; }
+  .public-app-header .language-toggle button { min-width: 30px; padding-inline: 4px; }
+}

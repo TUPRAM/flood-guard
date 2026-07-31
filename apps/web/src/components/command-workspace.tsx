@@ -333,7 +333,7 @@ export function CommandWorkspace() {
   return (
     <main className="command-page" lang={language}>
       <header className="command-header command-product-header">
-        <a href="/command/" className="brand brand-light"><Image src="/icon.svg" alt="" width={40} height={40} priority /><span><b>FloodGuard</b><small>{th ? "พื้นที่ทำงานวางแผน" : "Planning workspace"}</small></span></a>
+        <a href="/command/" className="brand brand-light"><Image src="/floodguard-logo.png" alt="" width={40} height={40} priority /><span><b>FloodGuard</b><small>{th ? "พื้นที่ทำงานวางแผน" : "Planning workspace"}</small></span></a>
         <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a className="active" href="/command/">{th ? "การวางแผน" : "Planning"}</a><a href="/studio/">Studio</a></nav>
         <LanguageToggle language={language} onChange={setLanguage} />
       </header>

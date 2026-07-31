@@ -4,9 +4,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { PublicReportPage } from "@/components/public-report-page";
 import {
+  PUBLIC_REPORT_DEPTH_MAX_CM,
   PUBLIC_REPORT_LIMIT,
+  PUBLIC_REPORT_SCHEMA_VERSION,
   PUBLIC_REPORT_STORAGE_KEY,
   createPublicReport,
+  publicReportDepthBand,
   parseStoredPublicReports,
   readStoredPublicReports,
   reportsForPlanningArea,
@@ -29,7 +32,6 @@ function report(
     {
       area: { ...area, area_id: areaId },
       waterDepth: "knee",
-      category: "road",
       notes: "Water across one lane",
       photoAttached: true,
     },
@@ -44,7 +46,6 @@ describe("device-local public reports", () => {
       {
         area,
         waterDepth: "waist",
-        category: "drain",
         notes: `  ${"n".repeat(600)}  `,
         photoAttached: true,
       },
@@ -59,7 +60,6 @@ describe("device-local public reports", () => {
       planning_area_name_th: "แม่สาย",
       planning_area_name_en: "Mae Sai",
       water_depth: "waist",
-      category: "drain",
       photo_attached: true,
       storage_scope: "device_local",
     });
@@ -127,15 +127,86 @@ describe("device-local public reports", () => {
     const html = renderToStaticMarkup(createElement(PublicReportPage, {
       language: "en",
       selectedArea: area,
+      areas: [area],
+      onSelectArea: () => {},
     }));
 
     expect(html).toContain('class="public-report-page"');
     expect(html).toContain('type="file"');
     expect(html).toContain('capture="environment"');
-    expect(html.match(/type="radio"/gu)).toHaveLength(8);
+    // Depth is a continuous range now, and categories are gone, so the only
+    // radios left would be any future grouped choice.
+    expect(html.match(/type="radio"/gu)).toBeNull();
+    expect(html).toContain('type="range"');
+    expect(html).toContain('max="150"');
+    expect(html).toContain('class="flood-height-stage"');
     expect(html).toContain("<fieldset");
     expect(html).toContain("Mae Sai");
-    expect(html).toContain("This report stays on your device");
-    expect(html).not.toMatch(/real[- ]time|verified|authority received|responders notified/iu);
+
+    // The illustrative feed is the only place status vocabulary may appear, and
+    // it must say so on screen. Everything outside it still may not imply that
+    // a stored report was received, verified, or acted on.
+    const exampleStart = html.indexOf('class="public-report-feed-example"');
+    expect(exampleStart).toBeGreaterThan(-1);
+    const example = html.slice(exampleStart);
+    expect(example).toContain('data-example="true"');
+    expect(example).toContain("Not real reports");
+    const realContent = html.slice(0, exampleStart);
+    expect(realContent).not.toMatch(
+      /real[- ]time|verified|authority received|responders notified/iu,
+    );
+  });
+
+  it("names the band a reported depth falls into", () => {
+    expect(publicReportDepthBand(0)).toBe("ankle");
+    expect(publicReportDepthBand(32)).toBe("ankle");
+    expect(publicReportDepthBand(33)).toBe("knee");
+    expect(publicReportDepthBand(75)).toBe("knee");
+    expect(publicReportDepthBand(76)).toBe("waist");
+    expect(publicReportDepthBand(115)).toBe("waist");
+    expect(publicReportDepthBand(116)).toBe("chest");
+    expect(publicReportDepthBand(PUBLIC_REPORT_DEPTH_MAX_CM)).toBe("chest");
+    // Above the slider maximum still reads as the deepest band.
+    expect(publicReportDepthBand(400)).toBe("chest");
+  });
+
+  it("keeps the reported depth in centimetres and rejects impossible values", () => {
+    const saved = createPublicReport(
+      { area, waterDepth: "waist", waterDepthCm: 97, photoAttached: false },
+      "2026-07-28T09:00:00.000Z",
+      "public-report:depth01",
+    );
+    expect(saved.water_depth_cm).toBe(97);
+
+    for (const bad of [-1, 151, 12.5, Number.NaN]) {
+      expect(() => createPublicReport(
+        { area, waterDepth: "waist", waterDepthCm: bad, photoAttached: false },
+        "2026-07-28T09:00:00.000Z",
+        "public-report:depth02",
+      )).toThrow();
+    }
+  });
+
+  it("still loads reports saved before the depth slider existed", () => {
+    const legacy = {
+      schema_version: PUBLIC_REPORT_SCHEMA_VERSION,
+      report_id: "public-report:legacy01",
+      planning_area_id: area.area_id,
+      planning_area_name_th: area.area_name_th,
+      planning_area_name_en: area.area_name_en,
+      water_depth: "knee",
+      notes: "",
+      photo_attached: false,
+      created_at: "2026-07-01T09:00:00.000Z",
+      storage_scope: "device_local",
+    };
+    const [parsed] = parseStoredPublicReports(JSON.stringify([legacy]));
+    expect(parsed.water_depth).toBe("knee");
+    expect(parsed.water_depth_cm).toBeUndefined();
+
+    // A stored depth outside the allowed range drops the whole record.
+    expect(parseStoredPublicReports(
+      JSON.stringify([{ ...legacy, water_depth_cm: 999 }]),
+    )).toHaveLength(0);
   });
 });

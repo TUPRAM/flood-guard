@@ -113,10 +113,6 @@ try {
     await page.goto(`${baseUrl}${capture.route}`, { waitUntil: "networkidle" });
     await page.locator(capture.selector).waitFor({ state: "visible" });
     if (capture.publicTab) {
-      const manualLocationButton = page.locator(".public-location-consent-actions .secondary");
-      if (await manualLocationButton.count() && await manualLocationButton.isVisible()) {
-        await manualLocationButton.click();
-      }
       if (capture.selectArea) {
         const search = page.locator("#public-area-search");
         await search.fill("TH570901");

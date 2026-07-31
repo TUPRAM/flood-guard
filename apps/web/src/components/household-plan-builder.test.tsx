@@ -8,6 +8,7 @@ import { HouseholdPlanBuilder } from "./household-plan-builder";
 const handlers = {
   onToggleItem: () => undefined,
   onToggleNeed: () => undefined,
+  onSetNeedCount: () => undefined,
   onSelectNoNeedsApply: () => undefined,
   onMarkReviewed: () => undefined,
   onResetChecklist: () => undefined,
@@ -25,12 +26,28 @@ describe("HouseholdPlanBuilder", () => {
       <HouseholdPlanBuilder language="en" plan={plan} areaNameTh="แม่สาย" areaNameEn="Mae Sai" {...handlers} />,
     );
 
-    expect(html).toContain("Core actions");
-    expect(html).toContain("5/5");
+    // The summary keeps needs, review, and last-saved; the core-actions tile
+    // was folded into the step track above it.
     expect(html).toContain("Household needs");
     expect(html).toContain("Not reviewed");
     expect(html).toContain("Plan review");
-    expect(html).toContain("These statuses describe only what you recorded");
+    expect(html).toContain("Last saved");
+    expect(html).not.toContain("5/5");
+    expect(html).not.toContain("These statuses describe only what you recorded");
+
+    // Every checklist item is ticked but needs are unreviewed, so step 3 reads
+    // as done while step 1 is still the outstanding one.
+    const track = html.match(/<ol class="plan-step-track"[\s\S]*?<\/ol>/u)?.[0] ?? "";
+    expect(track.match(/data-state="[a-z]+"/gu)).toEqual([
+      'data-state="current"',
+      'data-state="pending"',
+      'data-state="done"',
+      'data-state="pending"',
+    ]);
+
+    // Step labels sit inline with their headings rather than above them.
+    expect(html).toContain('<span class="plan-step-number">Step 1</span>');
+    expect(html).not.toContain("Not emergency direction");
     expect(html).toContain('aria-describedby="plan-review-requirement"');
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Record plan review<\/button>/);
     expect(html).not.toContain("ready to review");

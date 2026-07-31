@@ -108,7 +108,6 @@ try {
   await page.locator("main.public-page").waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Use English" }).click();
   await page.waitForFunction(() => document.documentElement.lang === "en");
-  await page.locator(".public-location-consent-actions .secondary").click();
   await page.evaluate(async () => {
     const paths = ["/", "/public/", "/deployment-profile.json", "/offline-demo/mae-sai/public-bundle.json"];
     await Promise.all(Array.from({ length: 4 }, () => paths.map((path) => fetch(path))).flat());
@@ -169,7 +168,6 @@ try {
   await context.setOffline(false);
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   await page.locator("main.public-page").waitFor({ state: "visible" });
-  await page.locator(".public-location-consent-actions .secondary").click();
   await assertAvailabilityPanel(page, { online: true, ready: true });
 
   // Public -> competition intentionally waits for user activation. Until the

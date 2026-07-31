@@ -15,8 +15,14 @@ describe("PublicExperience", () => {
     expect(html).toContain('class="public-profile-trigger"');
     expect(html).toContain('aria-controls="public-profile-drawer"');
     expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain('class="public-wordmark"');
-    expect(visibleText).toContain("FloodGuard");
+    expect(html).toContain('class="public-greeting"');
+    expect(html).toContain('class="public-greeting-name"');
+    expect(html).toContain('class="public-greeting-location"');
+    expect(html).toContain('class="public-header-logo"');
+    expect(html).toContain('aria-label="FloodGuard home"');
+    // The brand mark is the supplied asset, not a hand-drawn shield path.
+    expect(html).toContain('class="public-header-logo-mark"');
+    expect(html).not.toContain("public-header-shield");
     expect(html).toContain('class="language-toggle"');
     expect(html).not.toContain("public-brand-mark");
     expect(html).not.toContain("public-boundary-banner");
@@ -53,20 +59,63 @@ describe("PublicExperience", () => {
     }
   });
 
-  it("asks before precise GPS access and keeps the Public Home location in transient UI state", () => {
+  it("opens on address entry and reaches for GPS only from an explicit control", () => {
     const html = renderToStaticMarkup(<PublicExperience />);
 
-    expect(html).toContain('class="public-location-consent"');
-    expect(html).toContain('role="dialog"');
-    expect(html).toContain('aria-modal="true"');
-    expect(html).toContain('class="public-location-consent-actions"');
+    // Home now starts in the address-entry state: no blocking consent card.
+    expect(html).not.toContain("public-location-consent");
+    expect(html).not.toContain('aria-modal="true"');
     expect(html).toContain('role="combobox"');
     expect(html).toContain('aria-autocomplete="list"');
-    expect(html).toContain("ใช้ตำแหน่งที่แม่นยำ");
-    expect(html).toContain("พิมพ์ที่อยู่แทน");
-    expect(html).toContain("จะไม่ถูกบันทึก");
+
+    // GPS stays reachable, and only ever from a control the reader presses, so
+    // opening the app never requests the device position on its own.
+    expect(html).toContain('class="public-locate-button"');
+    expect(html).toContain('aria-label="ใช้ตำแหน่งของฉัน"');
     expect(html).not.toContain("public-map-center-pin");
     expect(html).not.toContain('class="map-attribution"');
+  });
+
+  it("frames Home on the highest-priority area without writing it into the saved plan", () => {
+    const html = renderToStaticMarkup(<PublicExperience />);
+    const legend = html.match(
+      /<aside class="public-risk-indicator"[\s\S]*?<\/aside>/,
+    )?.[0] ?? "";
+
+    // Ko Chang carries the highest planning priority in the Mae Sai bundle, so
+    // Home opens on it and the severity chip reports its own band.
+    expect(legend).toContain("เกาะช้าง");
+    expect(legend).toContain('data-band="high"');
+    expect(legend).toContain(">สูง<");
+    expect(legend).not.toMatch(/ยังไม่พบพื้นที่วางแผน/u);
+    // The card carries place and band only; the exact score stays in the panel.
+    expect(legend).not.toContain("public-risk-value");
+    expect(legend).toContain("ความเสี่ยงต่ำ");
+    expect(legend).toContain("ความเสี่ยงสูง");
+
+    // The title is dropped from the visible card but kept as the accessible
+    // name, so the card is still identifiable to a screen reader.
+    const legendText = legend.replace(/<[^>]*>/g, "");
+    expect(legendText).not.toMatch(/ตัวชี้วัดการวางแผนน้ำท่วม/u);
+    expect(legend).toContain('aria-label="ตัวชี้วัดการวางแผนน้ำท่วม"');
+
+    expect(html).toContain('data-selected-area="TH570903"');
+
+    // Framing the map is not the reader choosing a household planning area, so
+    // the header location stays unset until they pick one.
+    const greeting = html.match(
+      /<span class="public-greeting-location">[\s\S]*?<\/span><\/span>/,
+    )?.[0] ?? "";
+    expect(greeting).toContain("ยังไม่ได้เลือกตำแหน่ง");
+    expect(greeting).not.toContain("เกาะช้าง");
+  });
+
+  it("draws the public preparedness areas on the Home map instead of hiding them", () => {
+    const html = renderToStaticMarkup(<PublicExperience />);
+
+    expect(html).not.toContain("public_home_boundaries_hidden");
+    expect(html).toContain('class="public-map-rail"');
+    expect(html).toContain('class="public-map-dock"');
   });
 
   it("removes unverified and candidate facilities from the Public map projection", () => {

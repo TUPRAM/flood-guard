@@ -6,7 +6,7 @@ const routeFiles = ["index.html", "public/index.html", "command/index.html", "st
 const requiredPublicAssets = [
   "manifest.webmanifest",
   "sw.js",
-  "icon.svg",
+  "floodguard-logo.png",
   "offline-demo/bundle.json",
   "offline-demo/areas.geojson",
   "offline-demo/roads.geojson",

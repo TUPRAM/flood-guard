@@ -15,6 +15,11 @@ import { GeoMap } from "@/components/geo-map";
 import { PublicAppIcon } from "@/components/public-app-icon";
 import { formatConfidence, formatSourceTime } from "@/lib/format";
 import {
+  derivePublicHazardSignals,
+  hazardSignalLabel,
+  hazardSignalSummary,
+} from "@/lib/public-hazard-signals";
+import {
   findAreaIdForPoint,
   PUBLIC_GEOCODER_ATTRIBUTION_URL,
   searchPublicAddresses,
@@ -29,16 +34,9 @@ interface PublicHomePageProps {
   selectedAreaId: string;
   onSelectArea: (areaId: string) => void;
   location?: PublicMapLocation;
-  locationChoiceHandled: boolean;
   onLocationChange: (location: PublicMapLocation) => void;
-  onLocationChoiceHandled: () => void;
 }
 
-const EMPTY_AREAS: FeatureCollection = {
-  type: "FeatureCollection",
-  name: "public_home_boundaries_hidden",
-  features: [],
-};
 const EMPTY_ROADS: FeatureCollection = {
   type: "FeatureCollection",
   name: "public_home_roads_withheld",
@@ -96,11 +94,34 @@ function recommendationLabel(
   return labels[area.recommendation_code][language];
 }
 
+type PriorityBand = "very_high" | "high" | "moderate" | "lower";
+
+function priorityBandCode(value: number): PriorityBand {
+  if (value >= 75) return "very_high";
+  if (value >= 50) return "high";
+  if (value >= 25) return "moderate";
+  return "lower";
+}
+
 function priorityBand(value: number, language: Language): string {
-  if (value >= 75) return language === "th" ? "สูงมาก" : "Very high";
-  if (value >= 50) return language === "th" ? "สูง" : "High";
-  if (value >= 25) return language === "th" ? "ปานกลาง" : "Moderate";
-  return language === "th" ? "ต่ำกว่า" : "Lower";
+  const labels: Record<PriorityBand, Record<Language, string>> = {
+    very_high: { en: "Very high", th: "สูงมาก" },
+    high: { en: "High", th: "สูง" },
+    moderate: { en: "Moderate", th: "ปานกลาง" },
+    lower: { en: "Lower", th: "ต่ำกว่า" },
+  };
+  return labels[priorityBandCode(value)][language];
+}
+
+/** Highest-priority area, used to frame Home before the reader picks one. */
+function highestPriorityAreaId(areas: PublicPreparednessArea[]): string {
+  let best: PublicPreparednessArea | undefined;
+  for (const area of areas) {
+    if (!best || area.planning_priority_0_100 > best.planning_priority_0_100) {
+      best = area;
+    }
+  }
+  return best?.area_id ?? "";
 }
 
 function localAreaMatch(
@@ -122,9 +143,7 @@ export function PublicHomePage({
   selectedAreaId,
   onSelectArea,
   location,
-  locationChoiceHandled,
   onLocationChange,
-  onLocationChoiceHandled,
 }: PublicHomePageProps) {
   const th = language === "th";
   const [searchDraft, setSearchDraft] = useState(
@@ -142,27 +161,18 @@ export function PublicHomePage({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
   const locationAttemptRef = useRef(0);
-  const locationDialogRef = useRef<HTMLElement>(null);
-  const locationPrimaryRef = useRef<HTMLButtonElement>(null);
   const hazardButtonRef = useRef<HTMLButtonElement>(null);
   const hazardCloseRef = useRef<HTMLButtonElement>(null);
   const hazardPanelRef = useRef<HTMLElement>(null);
-  const selectedArea = data.publicAreas.find((area) => area.area_id === selectedAreaId);
-  const locationPromptOpen = !locationChoiceHandled;
+  // Home frames the highest-priority area until the reader picks one. Keeping it
+  // local means opening the app never writes a planning area into the saved
+  // household plan — that stays an explicit choice.
+  const focusAreaId = selectedAreaId || highestPriorityAreaId(data.publicAreas);
+  const selectedArea = data.publicAreas.find((area) => area.area_id === focusAreaId);
 
   const focusAddressInput = useCallback(() => {
     window.requestAnimationFrame(() => searchInputRef.current?.focus());
   }, []);
-
-  const enterAddressInstead = useCallback(() => {
-    locationAttemptRef.current += 1;
-    setGpsState("idle");
-    onLocationChoiceHandled();
-    setSearchMessage(th
-      ? "พิมพ์บ้านเลขที่และชื่อถนน แล้วเลือกตำแหน่งที่แนะนำ"
-      : "Enter a street number and street name, then choose a suggested location.");
-    focusAddressInput();
-  }, [focusAddressInput, onLocationChoiceHandled, th]);
 
   const applyLocation = useCallback((nextLocation: PublicMapLocation) => {
     const areaId = findAreaIdForPoint(
@@ -179,7 +189,6 @@ export function PublicHomePage({
     const geolocation = navigator.geolocation;
     if (!geolocation) {
       setGpsState("unavailable");
-      onLocationChoiceHandled();
       setSearchMessage(th
         ? "อุปกรณ์นี้ไม่รองรับตำแหน่ง GPS โปรดค้นหาที่อยู่แทน"
         : "This device does not provide GPS location. Search for an address instead.");
@@ -202,8 +211,7 @@ export function PublicHomePage({
         const accuracy = Number(position.coords.accuracy);
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
           setGpsState("unavailable");
-          onLocationChoiceHandled();
-          setSearchMessage(th
+              setSearchMessage(th
             ? "ตำแหน่งที่ได้รับไม่ถูกต้อง โปรดค้นหาที่อยู่แทน"
             : "The returned position was invalid. Search for an address instead.");
           focusAddressInput();
@@ -226,8 +234,7 @@ export function PublicHomePage({
         setSearchEditing(false);
         setSuggestions([]);
         setActiveSuggestionIndex(-1);
-        onLocationChoiceHandled();
-        setSearchMessage([
+          setSearchMessage([
           th ? "วางหมุดที่ตำแหน่งอุปกรณ์แล้ว" : "Pin placed at the device position.",
           roundedAccuracy
             ? (th ? `ความแม่นยำประมาณ ±${roundedAccuracy} ม.` : `Reported accuracy ±${roundedAccuracy} m.`)
@@ -239,8 +246,7 @@ export function PublicHomePage({
       },
       (error) => {
         if (attempt !== locationAttemptRef.current) return;
-        onLocationChoiceHandled();
-        if (error.code === 1) {
+          if (error.code === 1) {
           setGpsState("denied");
           setSearchMessage(th
             ? "ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง โปรดพิมพ์ที่อยู่แทน"
@@ -264,12 +270,7 @@ export function PublicHomePage({
         timeout: 15_000,
       },
     );
-  }, [
-    applyLocation,
-    focusAddressInput,
-    onLocationChoiceHandled,
-    th,
-  ]);
+  }, [applyLocation, focusAddressInput, th]);
 
   const runAddressSearch = useCallback(async (query: string) => {
     const normalized = query.trim();
@@ -317,7 +318,6 @@ export function PublicHomePage({
   useEffect(() => {
     if (
       !searchEditing
-      || locationPromptOpen
       || searchDraft.trim().length < 4
       || localAreaMatch(data.publicAreas, searchDraft)
     ) {
@@ -327,43 +327,9 @@ export function PublicHomePage({
       void runAddressSearch(searchDraft);
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [
-    data.publicAreas,
-    locationPromptOpen,
-    runAddressSearch,
-    searchDraft,
-    searchEditing,
-  ]);
+  }, [data.publicAreas, runAddressSearch, searchDraft, searchEditing]);
 
   useEffect(() => () => searchAbortRef.current?.abort(), []);
-
-  useEffect(() => {
-    if (!locationPromptOpen) return;
-    locationPrimaryRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        enterAddressInstead();
-        return;
-      }
-      if (event.key !== "Tab" || !locationDialogRef.current) return;
-      const focusable = [...locationDialogRef.current.querySelectorAll<HTMLElement>(
-        "button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
-      )].filter((element) => !element.hasAttribute("disabled"));
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [enterAddressInstead, locationPromptOpen]);
 
   useEffect(() => {
     if (!hazardOpen) return;
@@ -402,7 +368,6 @@ export function PublicHomePage({
       label: suggestion.label,
       source: "address",
     });
-    onLocationChoiceHandled();
     setGpsState("idle");
     setSearchDraft(suggestion.label);
     setSearchEditing(false);
@@ -467,20 +432,28 @@ export function PublicHomePage({
   };
 
   const priorityValue = selectedArea?.planning_priority_0_100 ?? 0;
+  const hazardSignals = derivePublicHazardSignals(selectedArea);
+  const locationProblem = gpsState === "denied"
+    || gpsState === "unavailable"
+    || gpsState === "timeout"
+    || searchState === "empty"
+    || searchState === "unavailable";
+  const showLocationCard = suggestions.length === 0
+    && Boolean(location || locationProblem);
 
   return (
     <section className="public-home-page" aria-label={th ? "แผนที่หน้าแรก" : "Home map"}>
       <div className="public-home-map">
         <GeoMap
           areas={data.publicAreas}
-          selectedId={selectedAreaId}
+          selectedId={focusAreaId}
           onSelect={onSelectArea}
           language={language}
           showRoads={false}
           showFacilities={false}
           showAccess={false}
           height="100%"
-          areaFeatures={EMPTY_AREAS}
+          areaFeatures={data.areaFeatures}
           roadFeatures={EMPTY_ROADS}
           facilityFeatures={EMPTY_FACILITIES}
           accessFeatures={EMPTY_ACCESS}
@@ -497,8 +470,14 @@ export function PublicHomePage({
           showDataAttribution={false}
           audience="public"
           location={location}
+          initialFocus="selection"
+          selectionPinTitle={selectedArea
+            ? (th ? selectedArea.area_name_th : selectedArea.area_name_en)
+            : undefined}
         />
 
+        <div className="public-map-rail">
+        <div className="public-map-search-field">
         <form className="public-map-search" role="search" onSubmit={submitSearch}>
           <PublicAppIcon name="search" />
           <label className="sr-only" htmlFor="public-area-search">
@@ -573,8 +552,25 @@ export function PublicHomePage({
             </a>
           </div>
         )}
+        </div>
 
-        {(searchMessage || location) && !locationPromptOpen && suggestions.length === 0 && (
+        {/*
+          The card appears for a resolved location or a real problem only. A
+          plain "type an address" instruction repeats the input placeholder, so
+          it stays in the live region below instead of taking a slab of map.
+        */}
+        {!showLocationCard && (
+          <p
+            id="public-location-search-status"
+            className="sr-only"
+            role="status"
+            aria-live="polite"
+          >
+            {searchMessage}
+          </p>
+        )}
+
+        {showLocationCard && (
           <div
             id="public-location-search-status"
             className={`public-location-status state-${searchState}`}
@@ -603,95 +599,85 @@ export function PublicHomePage({
           </div>
         )}
 
-        <aside className="public-risk-indicator" aria-label={th ? "ตัวชี้วัดการวางแผนน้ำท่วม" : "Flood planning indicator"}>
-          <div className="public-risk-heading">
-            <strong>{th ? "ตัวชี้วัดการวางแผนน้ำท่วม" : "Flood planning indicator"}</strong>
-            {selectedArea && (
-              <span>{priorityBand(priorityValue, language)} · {Math.round(priorityValue)}</span>
-            )}
-          </div>
-          <div className="public-risk-scale">
-            {selectedArea && (
-              <i
-                style={{ left: `${Math.max(0, Math.min(100, priorityValue))}%` }}
-                aria-hidden="true"
-              />
-            )}
-          </div>
-          <div className="public-risk-scale-labels">
-            <span>{th ? "ต่ำกว่า" : "Lower"}</span>
-            <span>{th ? "สูงกว่า" : "Higher"}</span>
-          </div>
-          <small>
-            {selectedArea
-              ? (th ? selectedArea.area_name_th : selectedArea.area_name_en)
-              : (th ? "ยังไม่พบพื้นที่วางแผนสำหรับหมุดนี้" : "No planning area matched to this pin")}
-          </small>
-        </aside>
-
-        <button
-          ref={hazardButtonRef}
-          type="button"
-          className="public-hazard-button"
-          aria-expanded={hazardOpen}
-          aria-controls="public-hazard-panel"
-          onClick={() => setHazardOpen(true)}
-        >
-          <PublicAppIcon name="hazard" />
-          <span>{th ? "ข้อมูลอันตราย" : "Hazard Info"}</span>
-        </button>
-
-        {locationPromptOpen && (
-          <div className="public-location-consent-overlay" role="presentation">
-            <section
-              ref={locationDialogRef}
-              className="public-location-consent"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="public-location-consent-title"
-              aria-describedby="public-location-consent-description"
-            >
-              <span className="public-location-consent-icon" aria-hidden="true">
-                <i />
-              </span>
-              <p>{th ? "ตำแหน่งเริ่มต้น" : "STARTING LOCATION"}</p>
-              <h2 id="public-location-consent-title">
-                {th ? "ใช้ตำแหน่งที่แม่นยำของคุณหรือไม่" : "Use your precise location?"}
-              </h2>
-              <p id="public-location-consent-description">
-                {th
-                  ? "FloodGuard สามารถขอตำแหน่ง GPS ความแม่นยำสูงจากอุปกรณ์และวางหมุดตรงจุดนั้น ตำแหน่งจะใช้ในแผนที่หน้านี้เท่านั้นและจะไม่ถูกบันทึก"
-                  : "FloodGuard can request a high-accuracy GPS position from this device and place the pin there. The position is used only on this map and is not saved."}
-              </p>
-              <div className="public-location-consent-actions">
-                <button
-                  ref={locationPrimaryRef}
-                  type="button"
-                  className="primary"
-                  disabled={gpsState === "requesting"}
-                  onClick={requestPreciseLocation}
-                >
-                  <span aria-hidden="true">⌖</span>
-                  {gpsState === "requesting"
-                    ? (th ? "กำลังขอตำแหน่ง…" : "Requesting location…")
-                    : (th ? "ใช้ตำแหน่งที่แม่นยำ" : "Use precise location")}
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={enterAddressInstead}
-                >
-                  {th ? "พิมพ์ที่อยู่แทน" : "Enter an address instead"}
-                </button>
-              </div>
-              <small>
-                {th
-                  ? "เบราว์เซอร์หรือโทรศัพท์จะขออนุญาตอีกครั้ง ความแม่นยำสูงอาจใช้เวลานานขึ้น"
-                  : "Your browser or phone will ask for permission. High accuracy can take longer and depends on the device."}
-              </small>
-            </section>
-          </div>
+        {hazardSignals.length > 0 && (
+          <button
+            type="button"
+            className="public-signal-banner"
+            aria-controls="public-hazard-panel"
+            aria-expanded={hazardOpen}
+            onClick={() => setHazardOpen(true)}
+          >
+            <PublicAppIcon name="hazard" />
+            <span>{hazardSignalSummary(hazardSignals.length, language)}</span>
+            <PublicAppIcon name="chevron" />
+          </button>
         )}
+        </div>
+
+        <div className="public-map-dock">
+          <aside
+            className="public-risk-indicator"
+            aria-label={th ? "ตัวชี้วัดการวางแผนน้ำท่วม" : "Flood planning indicator"}
+          >
+            <div className="public-risk-headline">
+              <strong>
+                {selectedArea
+                  ? (th ? selectedArea.area_name_th : selectedArea.area_name_en)
+                  : (th ? "ยังไม่พบพื้นที่วางแผน" : "No planning area matched")}
+              </strong>
+              {selectedArea && (
+                <span
+                  className="public-risk-chip"
+                  data-band={priorityBandCode(priorityValue)}
+                >
+                  {priorityBand(priorityValue, language)}
+                </span>
+              )}
+            </div>
+            <div className="public-risk-scale">
+              {selectedArea && (
+                <i
+                  style={{ left: `${Math.max(0, Math.min(100, priorityValue))}%` }}
+                  aria-hidden="true"
+                />
+              )}
+            </div>
+            <div className="public-risk-scale-labels">
+              <span>{th ? "ความเสี่ยงต่ำ" : "Low risk"}</span>
+              <span>{th ? "ความเสี่ยงสูง" : "High risk"}</span>
+            </div>
+          </aside>
+
+          <button
+            ref={hazardButtonRef}
+            type="button"
+            className="public-hazard-button"
+            aria-expanded={hazardOpen}
+            aria-controls="public-hazard-panel"
+            onClick={() => setHazardOpen(true)}
+          >
+            <PublicAppIcon name="hazard" />
+            <span>{th ? "ข้อมูลอันตราย" : "Hazard Info"}</span>
+          </button>
+        </div>
+
+        {/*
+          Sits with zoom and layers in the map-tool column. GPS is only ever
+          requested from here, so opening the app never reaches for the device
+          position on its own.
+        */}
+        <button
+          type="button"
+          className="public-locate-button"
+          aria-label={gpsState === "requesting"
+            ? (th ? "กำลังขอตำแหน่ง" : "Requesting location")
+            : (th ? "ใช้ตำแหน่งของฉัน" : "Use my location")}
+          aria-busy={gpsState === "requesting"}
+          disabled={gpsState === "requesting"}
+          onClick={requestPreciseLocation}
+        >
+          <PublicAppIcon name="locate" />
+        </button>
 
         {hazardOpen && (
           <div
@@ -750,6 +736,17 @@ export function PublicHomePage({
                       <dd>{formatSourceTime(selectedArea.source_timestamp, language)} ICT</dd>
                     </div>
                   </dl>
+                  {hazardSignals.length > 0 && (
+                    <ul className="public-hazard-signals">
+                      {hazardSignals.map((signal) => (
+                        <li key={signal.code}>
+                          <PublicAppIcon name="hazard" />
+                          <span>{hazardSignalLabel(signal, language)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
                   <div className="public-hazard-guidance">
                     <PublicAppIcon name="hazard" />
                     <p>{recommendationLabel(selectedArea, language)}</p>

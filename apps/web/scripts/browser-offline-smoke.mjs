@@ -146,8 +146,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/public/`, { waitUntil: "networkidle" });
   await page.locator('.language-toggle button[lang="en"]').click();
-  const initialBody = await page.locator("body").innerText();
-  assertFinalVisibleCopy(initialBody, "/public/");
+  await waitForFinalVisibleCopy(page, "/public/");
   await assertCompactPublicShell(page);
   await assertPublicNavigation(page);
   await selectPublicPlanningArea(page, "TH570901", "Mae Sai");
@@ -390,7 +389,7 @@ try {
   if (await page.locator('.language-toggle button[lang="en"]').getAttribute("aria-pressed") !== "true") {
     throw new Error("Language switch did not expose its selected state.");
   }
-  assertFinalVisibleCopy(await page.locator("body").innerText(), "/public/");
+  await waitForFinalVisibleCopy(page, "/public/");
   await page.goto(`${baseUrl}/command/`, { waitUntil: "networkidle" });
   if (await page.locator("html").getAttribute("lang") !== "en" || await page.locator('.language-toggle button[lang="en"]').getAttribute("aria-pressed") !== "true") {
     throw new Error("Language preference did not persist between product surfaces.");
@@ -409,8 +408,7 @@ try {
   for (const route of routes) {
     await page.goto(`${baseUrl}${route.path}`, { waitUntil: "domcontentloaded" });
     await page.locator(route.selector).waitFor({ state: "visible" });
-    const body = await page.locator("body").innerText();
-    assertFinalVisibleCopy(body, route.path);
+    await waitForFinalVisibleCopy(page, route.path);
     if (route.path === "/public/") {
       await assertCompactPublicShell(page);
       await assertPublicNavigation(page);
@@ -497,16 +495,15 @@ try {
 }
 
 async function assertCompactPublicShell(page) {
-  const manualLocationButton = page.locator(".public-location-consent-actions .secondary");
-  if (await manualLocationButton.count() && await manualLocationButton.isVisible()) {
-    await manualLocationButton.click();
-  }
   const header = page.locator(".public-app-header");
   if (await header.count() !== 1 || !(await header.isVisible())) {
     throw new Error("Public is missing its compact app header.");
   }
-  if (await page.locator(".public-wordmark").filter({ hasText: "FloodGuard" }).count() !== 1) {
-    throw new Error("Public is missing the FloodGuard wordmark.");
+  if (await page.locator(".public-header-logo[aria-label='FloodGuard home']").count() !== 1) {
+    throw new Error("Public is missing the FloodGuard home control.");
+  }
+  if (await page.locator(".public-greeting .public-greeting-name").count() !== 1) {
+    throw new Error("Public is missing the household greeting.");
   }
   if (await page.locator(".public-brand-mark, .public-boundary-banner").count()) {
     throw new Error("Public retains the removed logo or historical banner.");
@@ -568,10 +565,6 @@ async function activatePublicPage(page, id, readySelector) {
 }
 
 async function selectPublicPlanningArea(page, areaId, areaName) {
-  const manualLocationButton = page.locator(".public-location-consent-actions .secondary");
-  if (await manualLocationButton.count() && await manualLocationButton.isVisible()) {
-    await manualLocationButton.click();
-  }
   const select = page.locator("#public-area-select");
   if (await select.count()) {
     await select.selectOption(areaId);
@@ -781,15 +774,38 @@ async function assertMaeSaiMap(page, scopeSelector, {
   }
 }
 
-function assertFinalVisibleCopy(body, routePath) {
-  const normalized = body.toLocaleLowerCase("en-US");
-  const required = routePath === "/"
+function requiredFinalCopy(routePath) {
+  return routePath === "/"
     ? ["one platform. three planning views.", "continue by role", "ddpm", "local-authority"]
     : routePath === "/public/"
       ? ["floodguard", "hazard info", "report", "shelter", "prepare", "sos"]
       : routePath === "/command/"
         ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
         : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
+}
+
+/**
+ * Restoring the saved language re-renders the tree after hydration, so the
+ * document language can already read `en` while the paint still shows Thai.
+ * Let that settle before asserting, then assert for the precise failure text.
+ */
+async function waitForFinalVisibleCopy(page, routePath) {
+  await page
+    .waitForFunction(
+      (phrases) => {
+        const text = document.body.innerText.toLocaleLowerCase("en-US");
+        return phrases.every((phrase) => text.includes(phrase));
+      },
+      requiredFinalCopy(routePath),
+      { timeout: 10_000 },
+    )
+    .catch(() => {});
+  assertFinalVisibleCopy(await page.locator("body").innerText(), routePath);
+}
+
+function assertFinalVisibleCopy(body, routePath) {
+  const normalized = body.toLocaleLowerCase("en-US");
+  const required = requiredFinalCopy(routePath);
   for (const phrase of required) {
     if (!normalized.includes(phrase)) {
       throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);

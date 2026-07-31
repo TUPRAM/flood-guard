@@ -38,6 +38,53 @@ export const HOUSEHOLD_NEEDS = [
   { id: "limited_transport", th: "ต้องประสานความช่วยเหลือด้านการเดินทาง", en: "Transport support needs coordination" },
 ] as const;
 
+/**
+ * Needs that describe a countable group of household members, and the words
+ * used for one versus several. The rest are conditions to plan for rather than
+ * people to count, so they never show a number.
+ */
+export const HOUSEHOLD_NEED_COUNTS: Partial<Record<HouseholdNeedId, {
+  one: { en: string; th: string };
+  many: { en: string; th: string };
+}>> = {
+  children: {
+    one: { en: "child", th: "เด็ก" },
+    many: { en: "children", th: "เด็ก" },
+  },
+  older_adults: {
+    one: { en: "older adult", th: "ผู้สูงอายุ" },
+    many: { en: "older adults", th: "ผู้สูงอายุ" },
+  },
+  pets: {
+    one: { en: "pet", th: "สัตว์เลี้ยง" },
+    many: { en: "pets", th: "สัตว์เลี้ยง" },
+  },
+};
+
+export const HOUSEHOLD_NEED_COUNT_MAX = 20;
+
+export function isCountableNeed(needId: HouseholdNeedId): boolean {
+  return HOUSEHOLD_NEED_COUNTS[needId] !== undefined;
+}
+
+/** Renders "2 children" / "1 older adult" for countable needs. */
+export function householdNeedCountLabel(
+  needId: HouseholdNeedId,
+  count: number,
+  language: "th" | "en",
+): string | undefined {
+  const words = HOUSEHOLD_NEED_COUNTS[needId];
+  if (!words) return undefined;
+  const safe = clampNeedCount(count);
+  const noun = safe === 1 ? words.one[language] : words.many[language];
+  return `${safe} ${noun}`;
+}
+
+export function clampNeedCount(count: number): number {
+  if (!Number.isFinite(count)) return 1;
+  return Math.min(Math.max(Math.round(count), 1), HOUSEHOLD_NEED_COUNT_MAX);
+}
+
 export type HouseholdPlanItemId = (typeof HOUSEHOLD_PLAN_ITEMS)[number]["id"];
 export type HouseholdNeedId = (typeof HOUSEHOLD_NEEDS)[number]["id"];
 export type NeedsReviewState = "not_reviewed" | "selected" | "none_apply";
@@ -74,6 +121,12 @@ export interface HouseholdPlan {
   planning_area_id: string;
   checklist: Record<HouseholdPlanItemId, boolean>;
   needs: Record<HouseholdNeedId, boolean>;
+  /**
+   * How many household members each countable need covers. Added after the 2.0
+   * schema shipped, so it is filled in with 1 when a stored plan predates it
+   * rather than invalidating that plan.
+   */
+  need_counts: Record<HouseholdNeedId, number>;
   needs_review_state: NeedsReviewState;
   needs_reviewed_at: string | null;
   last_saved_at: string | null;
@@ -92,6 +145,7 @@ export function createEmptyHouseholdPlan(planningAreaId: string): HouseholdPlan 
     planning_area_id: planningAreaId,
     checklist: Object.fromEntries(HOUSEHOLD_PLAN_ITEMS.map(({ id }) => [id, false])) as HouseholdPlan["checklist"],
     needs: Object.fromEntries(HOUSEHOLD_NEEDS.map(({ id }) => [id, false])) as HouseholdPlan["needs"],
+    need_counts: Object.fromEntries(HOUSEHOLD_NEEDS.map(({ id }) => [id, 1])) as HouseholdPlan["need_counts"],
     needs_review_state: "not_reviewed",
     needs_reviewed_at: null,
     last_saved_at: null,
@@ -137,6 +191,10 @@ export function parseHouseholdPlan(raw: string | null, fallbackAreaId: string): 
       needs: parsedNeedsState === "none_apply"
         ? fallback.needs
         : normalizedNeeds,
+      need_counts: Object.fromEntries(HOUSEHOLD_NEEDS.map(({ id }) => {
+        const stored = isRecord(value.need_counts) ? value.need_counts[id] : undefined;
+        return [id, typeof stored === "number" ? clampNeedCount(stored) : 1];
+      })) as HouseholdPlan["need_counts"],
       needs_review_state: parsedNeedsState,
       needs_reviewed_at: parsedNeedsState === "not_reviewed"
         ? null

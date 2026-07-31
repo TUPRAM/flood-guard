@@ -8,6 +8,6 @@
   "theme_color": "#073b4c",
   "lang": "th",
   "icons": [
-    {"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+    {"src": "/floodguard-logo.png", "sizes": "481x519", "type": "image/png", "purpose": "any"}
   ]
 }

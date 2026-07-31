@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LanguageToggle } from "@/components/language-toggle";
+import {
+  greetingText,
+  PUBLIC_DISPLAY_NAME_MAX_LENGTH,
+} from "@/lib/public-display-name";
 import type { Language } from "@/lib/types";
 
 import { PublicAppIcon } from "./public-app-icon";
@@ -12,6 +16,9 @@ interface PublicAppHeaderProps {
   onLanguageChange: (language: Language) => void;
   planningAreaName: string;
   needsSummary: string;
+  displayName: string;
+  onDisplayNameChange: (value: string) => void;
+  locationLabel: string;
   onNavigatePrepare: () => void;
   onNavigateSos: () => void;
 }
@@ -21,10 +28,14 @@ export function PublicAppHeader({
   onLanguageChange,
   planningAreaName,
   needsSummary,
+  displayName,
+  onDisplayNameChange,
+  locationLabel,
   onNavigatePrepare,
   onNavigateSos,
 }: PublicAppHeaderProps) {
   const [open, setOpen] = useState(false);
+  const [nameDraft, setNameDraft] = useState(displayName);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   const th = language === "th";
@@ -80,14 +91,41 @@ export function PublicAppHeader({
           aria-label={th ? "เปิดโปรไฟล์ครัวเรือน" : "Open household profile"}
           aria-expanded={open}
           aria-controls="public-profile-drawer"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setNameDraft(displayName);
+            setOpen(true);
+          }}
         >
-          <PublicAppIcon name="menu" />
+          <span className="public-profile-avatar-sm" aria-hidden="true">
+            <PublicAppIcon name="profile" />
+          </span>
         </button>
-        <a href="/public/" className="public-wordmark" aria-label="FloodGuard home">
-          FloodGuard
-        </a>
-        <LanguageToggle language={language} onChange={onLanguageChange} />
+
+        <div className="public-greeting">
+          <span className="public-greeting-name">
+            {greetingText(displayName, language)}
+          </span>
+          <span className="public-greeting-location">
+            <PublicAppIcon name="pin" />
+            <span>{locationLabel || (th ? "ยังไม่ได้เลือกตำแหน่ง" : "No location selected")}</span>
+          </span>
+        </div>
+
+        <div className="public-header-actions">
+          <a
+            href="/public/"
+            className="public-header-logo"
+            aria-label="FloodGuard home"
+          >
+            {/*
+              Painted from a file rather than inline paths so the brand mark can
+              be replaced by dropping a new export at the same path. The
+              accessible name lives on the link, so the mark itself is decorative.
+            */}
+            <span className="public-header-logo-mark" aria-hidden="true" />
+          </a>
+          <LanguageToggle language={language} onChange={onLanguageChange} />
+        </div>
       </header>
 
       {open && (
@@ -128,6 +166,31 @@ export function PublicAppHeader({
               >
                 <PublicAppIcon name="close" />
               </button>
+            </div>
+
+            <div className="public-profile-name-field">
+              <label htmlFor="public-display-name">
+                {th ? "ชื่อที่ใช้ทักทาย (ไม่บังคับ)" : "Greeting name (optional)"}
+              </label>
+              <input
+                id="public-display-name"
+                value={nameDraft}
+                maxLength={PUBLIC_DISPLAY_NAME_MAX_LENGTH}
+                autoComplete="off"
+                placeholder={th ? "เช่น ชื่อเล่น" : "e.g. a nickname"}
+                onChange={(event) => setNameDraft(event.target.value)}
+                onBlur={() => onDisplayNameChange(nameDraft)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return;
+                  event.preventDefault();
+                  onDisplayNameChange(nameDraft);
+                }}
+              />
+              <small>
+                {th
+                  ? "เก็บไว้ในอุปกรณ์นี้เท่านั้น ไม่ถูกส่งไปกับรายงาน"
+                  : "Kept on this device only. It is not sent with reports."}
+              </small>
             </div>
 
             <dl className="public-profile-summary">

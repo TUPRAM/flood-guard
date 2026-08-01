@@ -21,7 +21,7 @@ dev = [
   "jsonschema>=4.23"
 ]
 ml = [
-  "scikit-learn>=1.4"
+  "scikit-learn>=1.9.0"
 ]
 geo = [
   "geopandas>=0.14",

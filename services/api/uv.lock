@@ -127,7 +127,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "geopandas", marker = "extra == 'geo'", specifier = ">=0.14" },
+    { name = "geopandas", marker = "extra == 'geo'", specifier = ">=1.1.4" },
     { name = "jsonschema", marker = "extra == 'dev'", specifier = ">=4.23" },
     { name = "networkx", marker = "extra == 'geo'", specifier = ">=3.0" },
     { name = "pandas", specifier = ">=2.0" },

@@ -88,7 +88,7 @@ floodguard-geoai = "geoai_runner.cli:main"
 floodguard-geoai-real = "geoai_runner.realpipeline.run_real:main"
 
 [build-system]
-requires = ["hatchling>=1.28"]
+requires = ["hatchling>=1.31.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]

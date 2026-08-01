@@ -26,7 +26,7 @@ ml = [
 geo = [
   "geopandas>=0.14",
   "pyproj>=3.6",
-  "shapely>=2.0",
+  "shapely>=2.1.2",
   "networkx>=3.0"
 ]
 theos2 = [

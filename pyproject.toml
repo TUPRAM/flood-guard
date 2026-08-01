@@ -12,7 +12,7 @@ authors = [
   { name = "FloodGuard Thailand" }
 ]
 dependencies = [
-  "pandas>=2.0"
+  "pandas>=3.0.5"
 ]
 
 [project.optional-dependencies]

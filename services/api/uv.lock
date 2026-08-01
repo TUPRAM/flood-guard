@@ -133,7 +133,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.0" },
     { name = "pyproj", marker = "extra == 'geo'", specifier = ">=3.6" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "rasterio", marker = "extra == 'theos2'", specifier = ">=1.4" },
+    { name = "rasterio", marker = "extra == 'theos2'", specifier = ">=1.5.0" },
     { name = "scikit-learn", marker = "extra == 'ml'", specifier = ">=1.4" },
     { name = "shapely", marker = "extra == 'geo'", specifier = ">=2.0" },
 ]

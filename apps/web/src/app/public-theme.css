@@ -276,6 +276,10 @@
   body:has(.public-home-page) [data-pwa-availability="true"] > summary {
     max-width: 150px;
   }
+  body:has(.public-home-page) [data-pwa-availability="true"]:not([open]) {
+    width: max-content;
+    max-width: 150px;
+  }
 }
 .public-risk-headline > strong { color: var(--fg-neutral-900); }
 .public-risk-chip { background: var(--fg-neutral-100); color: var(--fg-neutral-700); }

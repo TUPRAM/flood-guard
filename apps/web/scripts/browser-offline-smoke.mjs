@@ -657,6 +657,13 @@ async function assertPublicHomeLayout(page, mapScope) {
     const hazard = document.querySelector(".public-hazard-button")?.getBoundingClientRect();
     const attribution = document.querySelector(".leaflet-control-attribution")?.getBoundingClientRect();
     const availability = document.querySelector('[data-pwa-availability="true"] > summary')?.getBoundingClientRect();
+    const closedAvailability = document.querySelector('[data-pwa-availability="true"]:not([open])')?.getBoundingClientRect();
+    const listSummary = document.querySelector(".map-text-alternative > summary");
+    const listBounds = listSummary?.getBoundingClientRect();
+    const listPointerTarget = listBounds && document.elementFromPoint(
+      listBounds.left + listBounds.width / 2,
+      listBounds.top + listBounds.height / 2,
+    );
     const mapControls = [...document.querySelectorAll(
       ".leaflet-control-zoom a, .public-locate-button, .map-basemap-menu > summary, .map-text-alternative > summary, .public-signal-banner",
     )].map((element) => element.getBoundingClientRect());
@@ -684,6 +691,8 @@ async function assertPublicHomeLayout(page, mapScope) {
         availabilityHazardOverlap: overlaps(availability, hazard),
         availabilityAttributionOverlap: overlaps(availability, attribution),
         availabilityMapControlOverlap: mapControls.some((control) => overlaps(availability, control)),
+        closedAvailabilityListOverlap: overlaps(closedAvailability, listBounds),
+        listReceivesPointer: Boolean(listSummary && listPointerTarget && listSummary.contains(listPointerTarget)),
       },
     };
   }, mapScope);
@@ -718,6 +727,8 @@ async function assertPublicHomeLayout(page, mapScope) {
     || audit.lowerControls.availabilityHazardOverlap
     || audit.lowerControls.availabilityAttributionOverlap
     || audit.lowerControls.availabilityMapControlOverlap
+    || audit.lowerControls.closedAvailabilityListOverlap
+    || !audit.lowerControls.listReceivesPointer
   ) {
     throw new Error(`Public Home lower controls overlap or crowd the navigation: ${JSON.stringify(audit.lowerControls)}.`);
   }

@@ -6,6 +6,8 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import type { ActionReasonCode, DatasetMode, PublicPreparednessArea } from "@floodguard/contracts";
 
 import { PublicAppIcon } from "@/components/public-app-icon";
+import { basemapStateForTiles, publishBasemapHealth, type BasemapState, type BasemapTileState } from "@/lib/basemap-health";
+import { BASEMAP_TILE_TIMEOUT_MS, loadBasemapTile } from "@/lib/basemap-tiles";
 import { formatConfidence } from "@/lib/format";
 import type { PublicMapLocation } from "@/lib/public-location";
 import {
@@ -15,6 +17,8 @@ import {
   scenarioMapPresentation,
 } from "@/lib/scenario-presentation";
 import type { AreaRecord, FeatureCollection, GeoFeature, Language, ScenarioId } from "@/lib/types";
+
+import styles from "./geo-map.module.css";
 
 const ACTION_CLASS_LABELS = {
   A: { en: "Protect lives now", th: "ปกป้องชีวิตทันที" },
@@ -175,9 +179,14 @@ export function GeoMap({
   const hasFitRegionalBounds = useRef(false);
   const previousSelectedId = useRef(selectedId);
   const selectionSheetId = useId();
+  const basemapHealthId = useId();
   const [mapReady, setMapReady] = useState(false);
   const [basemapId, setBasemapId] = useState<BasemapId>("street");
-  const [basemapState, setBasemapState] = useState<"loading" | "ready" | "unavailable">("loading");
+  const [basemapState, setBasemapState] = useState<BasemapState>("loading");
+  const [basemapHidden, setBasemapHidden] = useState(false);
+  const [basemapAttempt, setBasemapAttempt] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
+  const effectiveBasemapState = basemapHidden ? "hidden" : !isOnline ? "offline" : basemapState;
   const [selectionSheetOpen, setSelectionSheetOpen] = useState(true);
   const [visibleRoadCount, setVisibleRoadCount] = useState(0);
   const [visibleRoadRiskCount, setVisibleRoadRiskCount] = useState(0);
@@ -210,10 +219,37 @@ export function GeoMap({
   const hasAnyVisibleRoadRisk = visibleRoadRiskCount > 0;
   const allVisibleRoadsHaveRisk = visibleRoadCount > 0 && visibleRoadRiskCount === visibleRoadCount;
   const selectBasemap = (nextBasemapId: BasemapId) => {
-    if (nextBasemapId === basemapId) return;
+    if (nextBasemapId === basemapId && !basemapHidden) return;
     setBasemapState("loading");
+    setBasemapHidden(false);
     setBasemapId(nextBasemapId);
   };
+  const retryBasemap = () => {
+    setBasemapState("loading");
+    setBasemapHidden(false);
+    setBasemapAttempt((attempt) => attempt + 1);
+  };
+
+  useEffect(() => {
+    const updateOnline = () => {
+      setIsOnline(navigator.onLine);
+      if (navigator.onLine) setBasemapState("loading");
+    };
+    const initialCheck = window.setTimeout(updateOnline, 0);
+    window.addEventListener("online", updateOnline);
+    window.addEventListener("offline", updateOnline);
+    return () => {
+      window.clearTimeout(initialCheck);
+      window.removeEventListener("online", updateOnline);
+      window.removeEventListener("offline", updateOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (enableBasemaps) publishBasemapHealth(basemapHealthId, effectiveBasemapState);
+  }, [basemapHealthId, effectiveBasemapState, enableBasemaps]);
+
+  useEffect(() => () => publishBasemapHealth(basemapHealthId, null), [basemapHealthId, enableBasemaps]);
 
   useEffect(() => {
     let disposed = false;
@@ -264,44 +300,77 @@ export function GeoMap({
     const L = leafletRef.current;
     if (!mapReady || !map || !L || !enableBasemaps) return;
     basemapLayerRef.current?.remove();
-    if (!navigator.onLine) {
-      const offlineStateTimer = window.setTimeout(
-        () => setBasemapState("unavailable"),
-        0,
-      );
-      return () => window.clearTimeout(offlineStateTimer);
-    }
+    if (!isOnline || !navigator.onLine || basemapHidden) return;
     const definition = BASEMAPS[basemapId];
-    const layer = L.tileLayer(definition.url, {
+    class StatusTileLayer extends L.TileLayer {
+      createTile(coords: import("leaflet").Coords, done: import("leaflet").DoneCallback): HTMLElement {
+        const tile = document.createElement("img");
+        const cancel = loadBasemapTile(this.getTileUrl(coords), tile, (error, image) => {
+          if (disposed || !tiles.has(tile)) return;
+          tiles.get(tile)!.state = error ? "error" : "ready";
+          done(error, image);
+          updateHealth();
+        });
+        tiles.set(tile, { coords, state: "loading", cancel });
+        return tile;
+      }
+    }
+    const layer = new StatusTileLayer(definition.url, {
       minZoom: 9,
       maxZoom: 19,
       maxNativeZoom: definition.maxZoom,
       crossOrigin: true,
+      referrerPolicy: "strict-origin",
       updateWhenIdle: true,
       keepBuffer: 2,
       attribution: definition.attributionHtml,
     });
     let disposed = false;
-    let hadTileError = false;
-    layer.on("tileload", () => {
-      if (!disposed && !hadTileError) setBasemapState("ready");
+    let emptyViewportTimer: ReturnType<typeof setTimeout> | undefined;
+    const tiles = new Map<HTMLElement, {
+      coords: import("leaflet").Coords;
+      state: BasemapTileState;
+      cancel: () => void;
+    }>();
+    const updateHealth = () => {
+      if (disposed) return;
+      clearTimeout(emptyViewportTimer);
+      const bounds = map.getBounds();
+      const zoom = Math.min(Math.round(map.getZoom()), definition.maxZoom);
+      const size = layer.getTileSize();
+      const visible = [...tiles.values()].filter(({ coords }) => {
+        if (coords.z !== zoom) return false;
+        const northWest = L.point(coords.x * size.x, coords.y * size.y);
+        const tileBounds = L.latLngBounds(map.unproject(northWest, coords.z), map.unproject(northWest.add(size), coords.z));
+        return bounds.overlaps(tileBounds);
+      });
+      setBasemapState(basemapStateForTiles(visible.map(({ state }) => state)));
+      if (visible.length === 0) {
+        emptyViewportTimer = setTimeout(() => {
+          if (!disposed) setBasemapState("unavailable");
+        }, BASEMAP_TILE_TIMEOUT_MS);
+      }
+    };
+    layer.on("tileloadstart load", updateHealth);
+    layer.on("tileunload", (event: import("leaflet").TileEvent) => {
+      tiles.get(event.tile)?.cancel();
+      tiles.delete(event.tile);
+      updateHealth();
     });
-    layer.on("load", () => {
-      if (!disposed && !hadTileError) setBasemapState("ready");
-    });
-    layer.on("tileerror", () => {
-      hadTileError = true;
-      if (!disposed) setBasemapState("unavailable");
-    });
+    map.on("moveend zoomend resize", updateHealth);
     layer.addTo(map);
     layer.bringToBack();
     basemapLayerRef.current = layer;
     return () => {
       disposed = true;
+      clearTimeout(emptyViewportTimer);
+      map.off("moveend zoomend resize", updateHealth);
+      for (const tile of tiles.values()) tile.cancel();
+      tiles.clear();
       layer.remove();
       if (basemapLayerRef.current === layer) basemapLayerRef.current = null;
     };
-  }, [basemapId, enableBasemaps, mapReady]);
+  }, [basemapAttempt, basemapHidden, basemapId, enableBasemaps, isOnline, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -774,7 +843,7 @@ export function GeoMap({
       data-road-evidence={allVisibleRoadsHaveRisk ? "road_segment" : hasAnyVisibleRoadRisk ? "mixed" : "network_context"}
       data-access-feature-count={accessFeatures.features.length}
       data-basemap={enableBasemaps ? basemapId : "none"}
-      data-basemap-state={enableBasemaps ? basemapState : "disabled"}
+      data-basemap-state={enableBasemaps ? effectiveBasemapState : "disabled"}
       data-location-source={location?.source ?? "none"}
       data-location-latitude={location?.latitude ?? ""}
       data-location-longitude={location?.longitude ?? ""}
@@ -793,13 +862,18 @@ export function GeoMap({
             <button
               key={id}
               type="button"
-              aria-pressed={basemapId === id}
-              className={basemapId === id ? "active" : ""}
+              aria-pressed={!basemapHidden && basemapId === id}
+              className={!basemapHidden && basemapId === id ? "active" : ""}
               onClick={() => selectBasemap(id)}
             >
               {BASEMAPS[id].labels[language]}
             </button>
           ))}
+          <button type="button" onClick={() => basemapHidden ? retryBasemap() : setBasemapHidden(true)}>
+            {basemapHidden
+              ? (language === "th" ? "แสดงพื้นหลัง" : "Show background")
+              : (language === "th" ? "ซ่อนพื้นหลัง" : "Hide background")}
+          </button>
         </div>
       )}
       {enableBasemaps && basemapControlVariant === "menu" && (
@@ -813,23 +887,44 @@ export function GeoMap({
               <button
                 key={id}
                 type="button"
-                aria-pressed={basemapId === id}
-                className={basemapId === id ? "active" : ""}
+                aria-pressed={!basemapHidden && basemapId === id}
+                className={!basemapHidden && basemapId === id ? "active" : ""}
                 onClick={() => selectBasemap(id)}
               >
                 <span aria-hidden="true" />
                 {BASEMAPS[id].labels[language]}
               </button>
             ))}
+            <button type="button" onClick={() => basemapHidden ? retryBasemap() : setBasemapHidden(true)}>
+              <span aria-hidden="true" />
+              {basemapHidden
+                ? (language === "th" ? "แสดงพื้นหลัง" : "Show background")
+                : (language === "th" ? "ซ่อนพื้นหลัง" : "Hide background")}
+            </button>
           </div>
         </details>
       )}
-      {enableBasemaps && basemapState === "unavailable" && (
-        <p className="map-basemap-notice" role="status">
-          {language === "th"
-            ? "พื้นหลังแผนที่ไม่พร้อมใช้งานชั่วคราว แต่ขอบเขตและข้อมูลการวางแผนยังแสดงอยู่"
-            : "The map background is temporarily unavailable; planning boundaries and evidence remain visible."}
-        </p>
+      {enableBasemaps && effectiveBasemapState !== "ready" && (
+        <div className={`map-basemap-notice ${styles.notice}`}>
+          <p role="status" aria-live="polite">{basemapStatusLabel(effectiveBasemapState, language)}</p>
+          <div className={styles.actions}>
+            {effectiveBasemapState === "hidden" ? (
+              <button type="button" onClick={retryBasemap}>{language === "th" ? "แสดงพื้นหลัง" : "Show background"}</button>
+            ) : (
+              <>
+                {(effectiveBasemapState === "partial" || effectiveBasemapState === "unavailable") && (
+                  <button type="button" onClick={retryBasemap}>{language === "th" ? "ลองอีกครั้ง" : "Retry"}</button>
+                )}
+                {effectiveBasemapState !== "offline" && (
+                  <button type="button" onClick={() => selectBasemap(basemapId === "satellite" ? "street" : "satellite")}>
+                    {language === "th" ? "เปลี่ยนเป็น" : "Switch to"} {BASEMAPS[basemapId === "satellite" ? "street" : "satellite"].labels[language]}
+                  </button>
+                )}
+                <button type="button" onClick={() => setBasemapHidden(true)}>{language === "th" ? "ซ่อนพื้นหลัง" : "Hide background"}</button>
+              </>
+            )}
+          </div>
+        </div>
       )}
       {(roadDetailState === "loading" || roadDetailState === "unavailable") && (
         <p className={`map-detail-notice ${roadDetailState}`} role="status" aria-live="polite">
@@ -986,6 +1081,17 @@ export function GeoMap({
 }
 
 const EMPTY_FEATURE_COLLECTION: FeatureCollection = { type: "FeatureCollection", name: "empty", features: [] };
+
+export function basemapStatusLabel(state: Exclude<BasemapState, "ready">, language: Language): string {
+  const labels = {
+    loading: { en: "Loading map background… Planning boundaries remain visible.", th: "กำลังโหลดพื้นหลังแผนที่… ขอบเขตการวางแผนยังแสดงอยู่" },
+    partial: { en: "Some map background tiles are unavailable. Planning boundaries and evidence remain visible.", th: "พื้นหลังแผนที่บางส่วนไม่พร้อมใช้งาน ขอบเขตและหลักฐานการวางแผนยังแสดงอยู่" },
+    unavailable: { en: "The map background is unavailable. Planning boundaries and evidence remain visible.", th: "พื้นหลังแผนที่ไม่พร้อมใช้งาน ขอบเขตและหลักฐานการวางแผนยังแสดงอยู่" },
+    offline: { en: "Offline: map background unavailable. Saved planning boundaries remain visible.", th: "ออฟไลน์: พื้นหลังแผนที่ไม่พร้อมใช้งาน ขอบเขตการวางแผนที่บันทึกไว้ยังแสดงอยู่" },
+    hidden: { en: "Map background hidden. Planning boundaries and evidence remain visible.", th: "ซ่อนพื้นหลังแผนที่แล้ว ขอบเขตและหลักฐานการวางแผนยังแสดงอยู่" },
+  };
+  return labels[state][language];
+}
 
 function areaStyle(
   areaId: string,

@@ -530,7 +530,7 @@ export function CommandWorkspace() {
       </div>
 
       <div className="command-geoai-layer">
-        <GeoaiRealPanel language={language} variant="command" />
+        <GeoaiRealPanel language={language} variant="command" planningDataVersion={data.status.data_version} />
       </div>
     </main>
   );

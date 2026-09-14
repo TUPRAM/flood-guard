@@ -1,9 +1,16 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { PwaRegister, pwaAvailabilityCopy, requiredOfflinePaths } from "./pwa-register";
+import { PwaRegister, mapAvailabilityCopy, pwaAvailabilityCopy, requiredOfflinePaths } from "./pwa-register";
 
 describe("PwaRegister", () => {
+  it("keeps map availability distinct from online and saved-app readiness", () => {
+    expect(mapAvailabilityCopy("unavailable", "en")).toBe("Map background unavailable");
+    expect(mapAvailabilityCopy("partial", "en")).toBe("Map background incomplete");
+    expect(mapAvailabilityCopy("hidden", "en")).toBe("Map background hidden");
+    expect(mapAvailabilityCopy(null, "en")).toBe("No map background active");
+    expect(mapAvailabilityCopy("offline", "th")).not.toMatch(/[A-Za-z]/);
+  });
   it("renders a concise availability control before browser state is known", () => {
     const html = renderToStaticMarkup(<PwaRegister enabled />);
 

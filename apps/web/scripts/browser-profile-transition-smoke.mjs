@@ -47,26 +47,61 @@ await new Promise((resolveListen, rejectListen) => {
 const address = server.address();
 if (!address || typeof address === "string") throw new Error("Profile-transition server did not bind.");
 const baseUrl = `http://127.0.0.1:${address.port}`;
-const approvedOrigins = new Set([
-  new URL(baseUrl).origin,
+const basemapOrigins = new Set([
   "https://tile.openstreetmap.org",
   "https://services.arcgisonline.com",
   "https://a.tile.opentopomap.org",
 ]);
+const approvedOrigins = new Set([baseUrl, ...basemapOrigins]);
 const browser = await launchFloodGuardBrowser();
+let page;
+let phase = "initial competition page";
+let offlineMode = false;
+let expectedDeniedNavigation = false;
+const pendingRequests = new Map();
 
 try {
   const context = await browser.newContext({ serviceWorkers: "allow" });
-  const page = await context.newPage();
+  // Cache isolation must not depend on the availability or traffic of external
+  // map providers. Real tile loading and CSP are covered by csp-smoke.mjs.
+  await context.route("**/*", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.origin === baseUrl) return route.continue();
+    if (basemapOrigins.has(url.origin)) {
+      return route.fulfill({
+        status: 503,
+        contentType: "text/plain",
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: "Map unavailable in the profile-isolation test",
+      });
+    }
+    return route.abort("blockedbyclient");
+  });
+  page = await context.newPage();
   const pageErrors = [];
   const unexpectedRequests = [];
+  const resourceErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("request", (request) => {
     const url = new URL(request.url());
+    pendingRequests.set(request, request.url());
     if (!approvedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
   });
+  page.on("requestfinished", (request) => pendingRequests.delete(request));
+  page.on("requestfailed", (request) => {
+    pendingRequests.delete(request);
+    const reason = request.failure()?.errorText ?? "failed";
+    if (reason === "net::ERR_ABORTED" || expectedResourceFailure(request.url())) return;
+    resourceErrors.push(`${phase}: ${request.url()}: ${reason}`);
+  });
+  page.on("console", (message) => {
+    if (message.type() !== "error") return;
+    const url = message.location().url;
+    if (url && expectedResourceFailure(url)) return;
+    resourceErrors.push(`${phase}: ${url || "unknown resource"}: ${message.text()}`);
+  });
 
-  await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
   await page.locator("main.surface-chooser").waitFor({ state: "visible" });
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
   await waitForEvaluated(page, async () => {
@@ -81,6 +116,7 @@ try {
   });
   if (!competitionCache?.paths.includes("/command/")) throw new Error("Competition profile did not cache Command before transition.");
 
+  phase = "competition to public downgrade";
   activeOut = publicOut;
   await requestRegistrationUpdate(page);
   await waitForEvaluated(page, async () => {
@@ -104,7 +140,7 @@ try {
     if (!response) return false;
     return (await response.json()).profile === "public-production";
   }, competitionCache.key, "public cache to replace the competition cache");
-  await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
   await page.locator("main.public-page").waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Use English" }).click();
   await page.waitForFunction(() => document.documentElement.lang === "en");
@@ -151,28 +187,36 @@ try {
   await performSuccessfulUpdateCheck(page);
   await assertAvailabilityPanel(page, { online: true, ready: true });
 
+  phase = "public offline staff-route exclusion";
+  offlineMode = true;
   await context.setOffline(true);
   await page.waitForFunction(() => document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Offline"));
   let commandRecovered = false;
+  expectedDeniedNavigation = true;
   try {
     await page.goto(`${baseUrl}/command/`, { waitUntil: "domcontentloaded", timeout: 5000 });
     commandRecovered = await page.locator("main.command-page").count() > 0;
   } catch {
     commandRecovered = false;
+  } finally {
+    expectedDeniedNavigation = false;
   }
   if (commandRecovered) throw new Error("Command remained available offline after the public-profile downgrade.");
 
   // Reconnect the Public profile before switching the same origin back to the
   // broader competition build. This proves the online/offline indicator and
   // refresh check recover after a real failed navigation.
+  phase = "public reconnect after denied staff navigation";
   await context.setOffline(false);
-  await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+  offlineMode = false;
+  await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
   await page.locator("main.public-page").waitFor({ state: "visible" });
   await assertAvailabilityPanel(page, { online: true, ready: true });
 
   // Public -> competition intentionally waits for user activation. Until the
   // waiting worker is installed, the old Public cache must not be described as
   // a complete saved competition app.
+  phase = "public to competition waiting update";
   activeOut = competitionOut;
   await requestRegistrationUpdate(page);
   await waitForEvaluated(
@@ -181,7 +225,7 @@ try {
     undefined,
     "competition update to reach the waiting state",
   );
-  await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
   await page.locator("main.surface-chooser").waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Install available update")
@@ -194,6 +238,7 @@ try {
 
   const pendingPanel = page.locator('[data-pwa-availability="true"]');
   if (await pendingPanel.getAttribute("open") === null) await pendingPanel.locator("summary").click();
+  phase = "activate competition update";
   await page.getByRole("button", { name: "Install available update" }).click();
   await page.locator("main.surface-chooser").waitFor({ state: "visible" });
   await waitForEvaluated(page, async (oldKey) => {
@@ -206,18 +251,26 @@ try {
 
   // The activated competition worker must now serve both staff routes offline,
   // and the availability panel must report the cached snapshot and map limits.
+  phase = "competition offline staff-route recovery";
+  offlineMode = true;
   await context.setOffline(true);
   for (const [path, selector] of [["/command/", "main.command-page"], ["/studio/", "main.studio-page"]]) {
     await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     await page.locator(selector).waitFor({ state: "visible" });
-  }
-  await assertAvailabilityPanel(page, { online: false, ready: true });
-  const offlineRows = await readAvailabilityRows(page);
-  if (offlineRows["Map backgrounds"] !== "May be unavailable offline") {
-    throw new Error(`Offline map-background status is misleading: ${JSON.stringify(offlineRows)}`);
+    await assertAvailabilityPanel(page, { online: false, ready: true });
+    await page.waitForFunction((state) => (
+      document.querySelector("[data-map-availability]")?.getAttribute("data-map-availability") === state
+    ), path === "/command/" ? "offline" : "none");
+    const rows = await readAvailabilityRows(page);
+    const expectedBackground = path === "/command/" ? "Map background offline" : "No map background active";
+    if (rows["Map backgrounds"] !== expectedBackground) {
+      throw new Error(`${path} offline map-background status is misleading: ${JSON.stringify(rows)}`);
+    }
   }
 
+  phase = "competition reconnect";
   await context.setOffline(false);
+  offlineMode = false;
   await page.waitForFunction(() => navigator.onLine && document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Online"));
   await assertAvailabilityPanel(page, { online: true, ready: true });
 
@@ -225,9 +278,32 @@ try {
     throw new Error(`Profile transition attempted unapproved requests: ${[...new Set(unexpectedRequests)].join(", ")}`);
   }
   if (pageErrors.length) throw new Error(`Profile transition browser errors: ${[...new Set(pageErrors)].join(" | ")}`);
+  if (resourceErrors.length) throw new Error(`Profile transition resource errors: ${[...new Set(resourceErrors)].join(" | ")}`);
 
   await context.close();
   console.log("profile transition smoke: competition -> Public downgrade, Public -> competition user update, offline staff readiness, and reconnect state passed");
+} catch (error) {
+  const browserState = await page?.evaluate(async () => ({
+    url: location.href,
+    online: navigator.onLine,
+    renderedSurface: document.querySelector("main")?.className,
+    mapStates: [...document.querySelectorAll("[data-basemap-state]")].map((map) => map.getAttribute("data-basemap-state")),
+    availability: document.querySelector('[data-pwa-availability="true"]')?.textContent,
+    cacheKeys: (await caches.keys()).filter((key) => key.startsWith("floodguard-offline-")),
+    workers: await Promise.all((await navigator.serviceWorker.getRegistrations()).map((registration) => ({
+      active: registration.active?.state,
+      waiting: registration.waiting?.state,
+      installing: registration.installing?.state,
+      controller: navigator.serviceWorker.controller?.state,
+    }))),
+  })).catch((diagnosticError) => ({ diagnosticError: diagnosticError.message }));
+  console.error("profile transition diagnostics:", JSON.stringify({
+    phase,
+    servedProfile: activeOut === publicOut ? "public-production" : "competition",
+    pendingRequests: [...new Set(pendingRequests.values())],
+    browserState,
+  }));
+  throw error;
 } finally {
   await browser.close();
   await new Promise((resolveClose, rejectClose) => server.close((error) => error ? rejectClose(error) : resolveClose()));
@@ -240,7 +316,7 @@ async function assertAvailabilityPanel(page, { online, ready }) {
     ({ expectedOnline, expectedReady }) => {
       const text = document.querySelector('[data-pwa-availability="true"]')?.textContent ?? "";
       return text.includes(expectedOnline ? "Online" : "Offline")
-        && text.includes(expectedReady ? "saved app ready" : "Open once online to save");
+        && text.includes(expectedReady ? "Available offline" : "Open once online to save");
     },
     { expectedOnline: online, expectedReady: ready },
   );
@@ -252,6 +328,17 @@ async function assertAvailabilityPanel(page, { online, ready }) {
   if (ready && (rows["Cached planning snapshot"] === "Not checked yet" || rows["Last successful update check"] === "Not checked yet")) {
     throw new Error(`Availability panel omitted saved-app timestamps: ${JSON.stringify(rows)}`);
   }
+}
+
+function expectedResourceFailure(resource) {
+  const url = new URL(resource, baseUrl);
+  return basemapOrigins.has(url.origin)
+    || (offlineMode && url.origin === baseUrl && (
+      (expectedDeniedNavigation && url.pathname === "/command/")
+      || url.searchParams.has("_rsc")
+      // The optional research report is outside the planning-view cache.
+      || url.pathname === "/geoai/mae-sai-real.json"
+    ));
 }
 
 async function readAvailabilityRows(page) {

@@ -220,11 +220,74 @@
 .public-signal-banner > .public-app-icon:last-child { color: var(--fg-tertiary); opacity: .55; }
 
 /*
-   Flood-severity legend: place + severity, then the scale.
+   Historical planning priority: place, evidence context, and scale.
    Set in the body face throughout so it matches the Hazard Info control it sits
    beside, rather than mixing a display face and a mono face in one small card.
 */
-.public-risk-indicator { font-family: var(--fg-font-body); }
+.public-risk-indicator {
+  flex: 1;
+  min-width: 0;
+  max-width: 360px;
+  grid-template-columns: minmax(0, 1fr);
+  font-family: var(--fg-font-body);
+}
+.public-risk-headline { flex-wrap: wrap; }
+.public-risk-headline > strong {
+  overflow: visible;
+  white-space: normal;
+}
+.public-home-map .public-risk-scale { min-width: 0; }
+.public-priority-label {
+  margin: 0;
+  color: var(--fg-neutral-700);
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.public-priority-evidence {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  color: var(--fg-neutral-700);
+  font-size: .64rem;
+  line-height: 1.4;
+}
+.public-home-map .public-map-search-field { margin-bottom: 52px; }
+.public-home-map .map-text-alternative {
+  z-index: 720;
+  top: 76px;
+  right: auto;
+  left: calc(var(--public-map-tool-inset) + 12px);
+  max-width: min(380px, calc(100% - 24px));
+  border: 1px solid var(--fg-neutral-200);
+  color: var(--fg-neutral-900);
+}
+.public-home-map .map-results-list { max-height: min(50vh, 420px); }
+.public-home-map .map-results-list dt { overflow-wrap: anywhere; }
+.public-home-map .leaflet-control-attribution {
+  margin-bottom: 224px !important;
+  max-width: min(360px, 58%);
+}
+@media (max-width: 680px) {
+  .public-home-map .public-map-search-field { margin-bottom: 64px; }
+  .public-home-map .map-text-alternative { max-width: calc(100% - 180px); }
+  .public-home-map .map-text-alternative[open] {
+    z-index: 1900;
+    width: calc(100% - 24px);
+    max-width: none;
+  }
+  body:has(.public-home-page) [data-pwa-availability="true"] {
+    top: 128px;
+    bottom: auto;
+  }
+  body:has(.public-home-page) [data-pwa-availability="true"] > summary {
+    max-width: 150px;
+  }
+  body:has(.public-home-page) [data-pwa-availability="true"]:not([open]) {
+    width: max-content;
+    max-width: 150px;
+  }
+}
 .public-risk-headline > strong { color: var(--fg-neutral-900); }
 .public-risk-chip { background: var(--fg-neutral-100); color: var(--fg-neutral-700); }
 .public-risk-chip[data-band="lower"] { background: #dcfce7; color: #15803d; }

@@ -4,6 +4,7 @@ import type { FeatureCollection } from "@/lib/types";
 
 import {
   findAreaIdForPoint,
+  PUBLIC_ADDRESS_SEARCH_TIMEOUT_MS,
   searchPublicAddresses,
 } from "./public-location";
 
@@ -16,7 +17,7 @@ describe("searchPublicAddresses", () => {
   });
 
   it("requests bounded Thailand address suggestions and prioritizes street numbers", async () => {
-    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = new URL(String(input));
       expect(url.origin).toBe("https://geocode.arcgis.com");
       expect(url.pathname).toBe(
@@ -29,6 +30,11 @@ describe("searchPublicAddresses", () => {
       expect(url.searchParams.get("maxLocations")).toBe("6");
       expect(url.searchParams.get("forStorage")).toBe("false");
       expect(url.searchParams.get("locationType")).toBe("rooftop");
+      expect(init).toMatchObject({
+        cache: "no-store",
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+      });
       return new Response(JSON.stringify({
         candidates: [
           {
@@ -105,6 +111,42 @@ describe("searchPublicAddresses", () => {
     await expect(
       searchPublicAddresses("117 หมู่ 10 แม่สาย", "th", undefined, fetchMock),
     ).rejects.toThrow("Invalid request");
+  });
+
+  it("aborts stalled requests so address search can offer its local fallback", async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchMock = vi.fn((_input: string | URL | Request, init?: RequestInit) => (
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+        })
+      ));
+      const result = searchPublicAddresses("Mae Sai Hospital", "en", undefined, fetchMock);
+      const rejection = expect(result).rejects.toMatchObject({ name: "TimeoutError" });
+
+      await vi.advanceTimersByTimeAsync(PUBLIC_ADDRESS_SEARCH_TIMEOUT_MS);
+      await rejection;
+      expect(fetchMock.mock.calls[0][1]?.signal?.aborted).toBe(true);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("preserves cancellation of an obsolete address query", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn((_input: string | URL | Request, init?: RequestInit) => (
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+      })
+    ));
+    const result = searchPublicAddresses("Mae Sai Hospital", "en", controller.signal, fetchMock);
+    const rejection = expect(result).rejects.toMatchObject({ name: "AbortError" });
+
+    controller.abort();
+
+    await rejection;
+    expect(fetchMock.mock.calls[0][1]?.signal?.aborted).toBe(true);
   });
 });
 

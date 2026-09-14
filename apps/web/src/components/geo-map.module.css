@@ -1,0 +1,14 @@
+.notice p { margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.actions button {
+  min-height: 44px;
+  padding: 6px 9px;
+  border: 1px solid #c4b487;
+  border-radius: 7px;
+  background: #fff;
+  color: #30455a;
+  font: inherit;
+  cursor: pointer;
+}
+.actions button:disabled { opacity: .6; cursor: default; }
+.actions button:focus-visible { outline: 3px solid #08519c; outline-offset: 2px; }

@@ -8,6 +8,9 @@ const out = resolve(process.cwd(), "out");
 if (!existsSync(resolve(out, "public", "index.html"))) {
   throw new Error("Build output is missing; run the production build first.");
 }
+const planningDataVersion = JSON.parse(
+  readFileSync(resolve(out, "offline-demo", "mae-sai", "bundle.json"), "utf8"),
+).status.data_version;
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
@@ -178,11 +181,34 @@ try {
   // facilities, no facility markers, no roads — are unchanged and still assert.
   await assertMaeSaiMap(page, publicMapScope, {
     expectRoads: false,
-    expectTextAlternative: false,
+    expectTextAlternative: true,
     expectBoundary: true,
   });
   await exerciseBasemapSelector(page, publicMapScope, "unavailable");
   await assertPublicHomeLayout(page, publicMapScope);
+  await selectPublicPlanningArea(page, "TH570906", "Wiang Phang Kham");
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const language of ["th", "en"]) {
+      await page.locator(`.language-toggle button[lang="${language}"]`).click();
+      await page.waitForFunction((lang) => document.documentElement.lang === lang, language);
+      await assertPublicHomeLayout(page, publicMapScope);
+      const list = page.locator(`${publicMapScope} .map-text-alternative`);
+      await list.locator("summary").click();
+      const listLayout = await list.evaluate((element) => ({
+        open: element.open,
+        width: element.getBoundingClientRect().width,
+        viewport: window.innerWidth,
+        contentWidth: element.scrollWidth,
+        clientWidth: element.clientWidth,
+      }));
+      if (!listLayout.open || listLayout.width < listLayout.viewport - 28 || listLayout.contentWidth > listLayout.clientWidth + 1) {
+        throw new Error(`Public map list is cramped or overflows: ${JSON.stringify(listLayout)}.`);
+      }
+      await list.locator("summary").click();
+    }
+  }
+  await assertPublicPlanningFallback(page, publicMapScope);
   await page.locator(".public-hazard-button").click();
   const hazardPanel = page.locator("#public-hazard-panel");
   await hazardPanel.waitFor({ state: "visible" });
@@ -419,6 +445,12 @@ try {
   if (await page.locator(".ranked-areas button").count() === 0) {
     throw new Error("Command route did not render its synchronized FPPS ranking.");
   }
+  const researchPanel = page.locator('section[aria-labelledby="geoai-real-title"]');
+  await researchPanel.locator("table").waitFor({ state: "visible" });
+  const researchCopy = await researchPanel.innerText();
+  if (!researchCopy.includes("Report only") || !researchCopy.includes(planningDataVersion)) {
+    throw new Error("The online research report must show its report-only boundary and the exact planning data version.");
+  }
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
   const cacheKeys = await page.evaluate(() => caches.keys());
   if (!cacheKeys.some((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key))) {
@@ -453,9 +485,12 @@ try {
       // first assertMaeSaiMap call); the same holds after the offline reload.
       await assertMaeSaiMap(page, offlinePublicMapScope, {
         expectRoads: false,
-        expectTextAlternative: false,
+        expectTextAlternative: true,
         expectBoundary: true,
       });
+      await page.waitForFunction((scope) => (
+        document.querySelector(`${scope} .geo-map-shell`)?.getAttribute("data-basemap-state") === "offline"
+      ), offlinePublicMapScope);
     }
   }
 
@@ -625,10 +660,21 @@ async function assertPublicHomeLayout(page, mapScope) {
     const navigation = document.querySelector(".public-bottom-nav")?.getBoundingClientRect();
     const map = document.querySelector(`${scope} .leaflet-container`)?.getBoundingClientRect();
     const trigger = document.querySelector(".public-profile-trigger")?.getBoundingClientRect();
-    const risk = document.querySelector(".public-risk-indicator")?.getBoundingClientRect();
+    const priorityIndicator = document.querySelector(".public-risk-indicator");
+    const risk = priorityIndicator?.getBoundingClientRect();
     const hazard = document.querySelector(".public-hazard-button")?.getBoundingClientRect();
     const attribution = document.querySelector(".leaflet-control-attribution")?.getBoundingClientRect();
     const availability = document.querySelector('[data-pwa-availability="true"] > summary')?.getBoundingClientRect();
+    const closedAvailability = document.querySelector('[data-pwa-availability="true"]:not([open])')?.getBoundingClientRect();
+    const listSummary = document.querySelector(".map-text-alternative > summary");
+    const listBounds = listSummary?.getBoundingClientRect();
+    const listPointerTarget = listBounds && document.elementFromPoint(
+      listBounds.left + listBounds.width / 2,
+      listBounds.top + listBounds.height / 2,
+    );
+    const mapControls = [...document.querySelectorAll(
+      ".leaflet-control-zoom a, .public-locate-button, .map-basemap-menu > summary, .map-text-alternative > summary, .public-signal-banner",
+    )].map((element) => element.getBoundingClientRect());
     const navigationTargets = [...document.querySelectorAll(".public-bottom-nav button")]
       .map((element) => element.getBoundingClientRect());
     const overlaps = (left, right) => Boolean(left && right
@@ -643,12 +689,20 @@ async function assertPublicHomeLayout(page, mapScope) {
       trigger: trigger ? { width: trigger.width, height: trigger.height } : null,
       navigationTargets: navigationTargets.map(({ width, height }) => ({ width, height })),
       lowerControls: {
+        priority: risk?.toJSON(),
+        priorityContentWidth: priorityIndicator?.scrollWidth,
+        priorityClientWidth: priorityIndicator?.clientWidth,
+        attribution: attribution?.toJSON(),
+        availability: availability?.toJSON(),
         riskNavigationGap: risk && navigation ? navigation.top - risk.bottom : null,
         hazardNavigationGap: hazard && navigation ? navigation.top - hazard.bottom : null,
         hazardAttributionOverlap: overlaps(hazard, attribution),
         availabilityRiskOverlap: overlaps(availability, risk),
         availabilityHazardOverlap: overlaps(availability, hazard),
         availabilityAttributionOverlap: overlaps(availability, attribution),
+        availabilityMapControlOverlap: mapControls.some((control) => overlaps(availability, control)),
+        closedAvailabilityListOverlap: overlaps(closedAvailability, listBounds),
+        listReceivesPointer: Boolean(listSummary && listPointerTarget && listSummary.contains(listPointerTarget)),
       },
     };
   }, mapScope);
@@ -676,14 +730,40 @@ async function assertPublicHomeLayout(page, mapScope) {
     throw new Error("Public bottom navigation contains a touch target smaller than 44px.");
   }
   if (
-    audit.lowerControls.riskNavigationGap < 10
+    audit.lowerControls.priorityContentWidth > audit.lowerControls.priorityClientWidth + 1
+    || audit.lowerControls.riskNavigationGap < 10
     || audit.lowerControls.hazardNavigationGap < 10
     || audit.lowerControls.hazardAttributionOverlap
     || audit.lowerControls.availabilityRiskOverlap
     || audit.lowerControls.availabilityHazardOverlap
     || audit.lowerControls.availabilityAttributionOverlap
+    || audit.lowerControls.availabilityMapControlOverlap
+    || audit.lowerControls.closedAvailabilityListOverlap
+    || !audit.lowerControls.listReceivesPointer
   ) {
     throw new Error(`Public Home lower controls overlap or crowd the navigation: ${JSON.stringify(audit.lowerControls)}.`);
+  }
+}
+
+async function assertPublicPlanningFallback(page, mapScope) {
+  const indicator = await page.locator(".public-risk-indicator").innerText();
+  for (const required of ["Historical planning priority", "2024", "Confidence: low", "Verify current conditions"]) {
+    if (!indicator.includes(required)) throw new Error(`Public planning context is missing: ${required}.`);
+  }
+  if (/Low risk|High risk/.test(indicator)) {
+    throw new Error("Public historical planning priority is still labelled as current risk.");
+  }
+  await page.locator("#public-area-search").fill("Mae Sai Hospital");
+  await page.locator(".public-location-status").filter({ hasText: "Online address search is unavailable" }).waitFor({ state: "visible" });
+  const list = page.locator(`${mapScope} .map-text-alternative`);
+  await list.locator("summary").click();
+  await list.locator(".map-area-results button").filter({ hasText: /^Mae Sai/ }).click();
+  await page.waitForFunction(() => (
+    document.querySelector(".geo-map-shell")?.getAttribute("data-selected-area") === "TH570901"
+  ));
+  await list.locator("summary").click();
+  if (await page.locator("#public-area-search").inputValue() !== "") {
+    throw new Error("Choosing a local planning area did not clear the failed online search.");
   }
 }
 
@@ -693,7 +773,7 @@ async function exerciseBasemapSelector(page, scopeSelector, expectedState) {
     await menu.locator("summary").click();
   }
   const buttons = page.locator(
-    `${scopeSelector} .map-basemap-switcher button, ${scopeSelector} .map-basemap-menu button`,
+    `${scopeSelector} .map-basemap-switcher button[aria-pressed], ${scopeSelector} .map-basemap-menu button[aria-pressed]`,
   );
   if (await buttons.count() !== 3) {
     throw new Error(`${scopeSelector} must expose Street, Satellite, and Terrain map backgrounds.`);
@@ -843,7 +923,15 @@ function assertFinalVisibleCopy(body, routePath) {
     : routePath === "/public/"
       ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu
       : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
-  const match = body.match(forbidden);
+  // The separate online research panel owns this comparison provenance. It is
+  // intentionally absent when its optional report cannot be fetched offline.
+  if (routePath === "/command/" && normalized.includes("geoai research report") && !body.includes(planningDataVersion)) {
+    throw new Error("Command is missing the exact data version used by its planning ranking.");
+  }
+  const presentationCopy = routePath === "/command/"
+    ? body.replaceAll(planningDataVersion, "")
+    : body;
+  const match = presentationCopy.match(forbidden);
   if (match) {
     throw new Error(`${routePath} exposes forbidden internal copy: ${match[0]}.`);
   }

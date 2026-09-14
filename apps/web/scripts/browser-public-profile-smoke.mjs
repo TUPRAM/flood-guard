@@ -386,6 +386,19 @@ async function assertStreetAddressSearch(page, geocoderRequests) {
     name: /117 หมู่ 10 ตำบลเวียงพางคำ อำเภอแม่สาย จังหวัดเชียงราย 57130/iu,
   });
   await suggestion.waitFor({ state: "visible" });
+  const suggestionHitTarget = await suggestion.evaluate((option) => {
+    const label = option.querySelector("strong");
+    const bounds = label?.getBoundingClientRect();
+    if (!bounds) return false;
+    const target = document.elementFromPoint(
+      bounds.left + Math.min(12, bounds.width / 2),
+      bounds.top + Math.min(8, bounds.height / 2),
+    );
+    return Boolean(target && option.contains(target));
+  });
+  if (!suggestionHitTarget) {
+    throw new Error("Public address suggestion label is covered by another map control.");
+  }
   if (geocoderRequests.length !== 1) {
     throw new Error(`Public Home made ${geocoderRequests.length} requests for one debounced address query.`);
   }

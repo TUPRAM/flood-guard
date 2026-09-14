@@ -253,6 +253,7 @@
   line-height: 1.4;
 }
 .public-home-map .public-map-search-field { margin-bottom: 52px; }
+.public-map-rail:has(.public-address-suggestions) { z-index: 2000; }
 .public-home-map .map-text-alternative {
   z-index: 720;
   top: 76px;

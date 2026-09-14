@@ -34,7 +34,7 @@ interface PublicHomePageProps {
   selectedAreaId: string;
   onSelectArea: (areaId: string) => void;
   location?: PublicMapLocation;
-  onLocationChange: (location: PublicMapLocation) => void;
+  onLocationChange: (location: PublicMapLocation | undefined) => void;
 }
 
 const EMPTY_ROADS: FeatureCollection = {
@@ -185,19 +185,38 @@ export function PublicHomePage({
     return areaId;
   }, [data.areaFeatures, onLocationChange, onSelectArea]);
 
+  const selectPlanningArea = useCallback((areaId: string) => {
+    locationAttemptRef.current += 1;
+    searchAbortRef.current?.abort();
+    setGpsState("idle");
+    setSearchEditing(false);
+    setSearchDraft("");
+    setSearchState("idle");
+    setSearchMessage("");
+    setSuggestions([]);
+    setActiveSuggestionIndex(-1);
+    onLocationChange(undefined);
+    onSelectArea(areaId);
+  }, [onLocationChange, onSelectArea]);
+
   const requestPreciseLocation = useCallback(() => {
     const geolocation = navigator.geolocation;
     if (!geolocation) {
       setGpsState("unavailable");
       setSearchMessage(th
-        ? "อุปกรณ์นี้ไม่รองรับตำแหน่ง GPS โปรดค้นหาที่อยู่แทน"
-        : "This device does not provide GPS location. Search for an address instead.");
+        ? "อุปกรณ์นี้ไม่รองรับตำแหน่ง GPS เลือกพื้นที่จากรายการแผนที่ หรือค้นหาที่อยู่เมื่อออนไลน์"
+        : "This device does not provide GPS location. Choose an area from the map list, or search for an address when online.");
       focusAddressInput();
       return;
     }
 
     const attempt = locationAttemptRef.current + 1;
     locationAttemptRef.current = attempt;
+    searchAbortRef.current?.abort();
+    setSearchEditing(false);
+    setSearchState("idle");
+    setSuggestions([]);
+    setActiveSuggestionIndex(-1);
     setGpsState("requesting");
     setSearchMessage(th
       ? "กำลังขอตำแหน่งที่แม่นยำจากอุปกรณ์…"
@@ -211,9 +230,9 @@ export function PublicHomePage({
         const accuracy = Number(position.coords.accuracy);
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
           setGpsState("unavailable");
-              setSearchMessage(th
-            ? "ตำแหน่งที่ได้รับไม่ถูกต้อง โปรดค้นหาที่อยู่แทน"
-            : "The returned position was invalid. Search for an address instead.");
+          setSearchMessage(th
+            ? "ตำแหน่งที่ได้รับไม่ถูกต้อง เลือกพื้นที่จากรายการแผนที่"
+            : "The returned position was invalid. Choose an area from the map list.");
           focusAddressInput();
           return;
         }
@@ -234,7 +253,7 @@ export function PublicHomePage({
         setSearchEditing(false);
         setSuggestions([]);
         setActiveSuggestionIndex(-1);
-          setSearchMessage([
+        setSearchMessage([
           th ? "วางหมุดที่ตำแหน่งอุปกรณ์แล้ว" : "Pin placed at the device position.",
           roundedAccuracy
             ? (th ? `ความแม่นยำประมาณ ±${roundedAccuracy} ม.` : `Reported accuracy ±${roundedAccuracy} m.`)
@@ -246,21 +265,21 @@ export function PublicHomePage({
       },
       (error) => {
         if (attempt !== locationAttemptRef.current) return;
-          if (error.code === 1) {
+        if (error.code === 1) {
           setGpsState("denied");
           setSearchMessage(th
-            ? "ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง โปรดพิมพ์ที่อยู่แทน"
-            : "Location permission was not granted. Enter an address instead.");
+            ? "ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง เลือกพื้นที่จากรายการแผนที่ หรือค้นหาที่อยู่เมื่อออนไลน์"
+            : "Location permission was not granted. Choose an area from the map list, or search for an address when online.");
         } else if (error.code === 3) {
           setGpsState("timeout");
           setSearchMessage(th
-            ? "การค้นหา GPS ใช้เวลานานเกินไป โปรดพิมพ์ที่อยู่หรือลองใหม่"
-            : "GPS took too long. Enter an address or try precise location again.");
+            ? "การค้นหา GPS ใช้เวลานานเกินไป เลือกพื้นที่จากรายการแผนที่ หรือลอง GPS อีกครั้ง"
+            : "GPS took too long. Choose an area from the map list, or try GPS again.");
         } else {
           setGpsState("unavailable");
           setSearchMessage(th
-            ? "ไม่สามารถรับตำแหน่ง GPS ได้ โปรดพิมพ์ที่อยู่แทน"
-            : "GPS position is unavailable. Enter an address instead.");
+            ? "ไม่สามารถรับตำแหน่ง GPS ได้ เลือกพื้นที่จากรายการแผนที่ หรือค้นหาที่อยู่เมื่อออนไลน์"
+            : "GPS position is unavailable. Choose an area from the map list, or search for an address when online.");
         }
         focusAddressInput();
       },
@@ -279,8 +298,8 @@ export function PublicHomePage({
       setSuggestions([]);
       setActiveSuggestionIndex(-1);
       setSearchMessage(th
-        ? "พิมพ์บ้านเลขที่และชื่อถนนอย่างน้อย 4 ตัวอักษร"
-        : "Enter at least four characters, including a street number when available.");
+        ? "พิมพ์อย่างน้อย 4 ตัวอักษร หรือเลือกพื้นที่จากรายการแผนที่"
+        : "Enter at least four characters, or choose an area from the map list.");
       return;
     }
 
@@ -301,17 +320,17 @@ export function PublicHomePage({
       setSearchState(nextSuggestions.length > 0 ? "ready" : "empty");
       setSearchMessage(nextSuggestions.length > 0
         ? (th ? "เลือกที่อยู่ที่ตรงกันเพื่อวางหมุด" : "Choose the matching address to place the pin.")
-        : (th ? "ไม่พบที่อยู่ โปรดเพิ่มบ้านเลขที่ ถนน ตำบล หรือรหัสไปรษณีย์" : "No address matched. Add a street number, road, district, or postcode."));
-    } catch (error) {
-      if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) {
+        : (th ? "ไม่พบที่อยู่ในพื้นที่แม่สาย เพิ่มถนนหรือตำบล หรือเลือกพื้นที่จากรายการแผนที่" : "No address matched in the Mae Sai coverage. Add a road or district, or choose an area from the map list."));
+    } catch {
+      if (controller.signal.aborted) {
         return;
       }
       setSuggestions([]);
       setActiveSuggestionIndex(-1);
       setSearchState("unavailable");
       setSearchMessage(th
-        ? "การค้นหาที่อยู่ออนไลน์ไม่พร้อมใช้งาน คุณยังสามารถลอง GPS หรือค้นหาอีกครั้งเมื่อออนไลน์"
-        : "Online address search is unavailable. You can still try GPS or search again when online.");
+        ? "การค้นหาที่อยู่ออนไลน์ไม่พร้อมใช้งาน เลือกพื้นที่จากรายการแผนที่ได้โดยไม่ใช้อินเทอร์เน็ต หรือลองค้นหาอีกครั้ง"
+        : "Online address search is unavailable. Choose an area from the map list without a network connection, or retry the search.");
     }
   }, [language, th]);
 
@@ -329,7 +348,10 @@ export function PublicHomePage({
     return () => window.clearTimeout(timer);
   }, [data.publicAreas, runAddressSearch, searchDraft, searchEditing]);
 
-  useEffect(() => () => searchAbortRef.current?.abort(), []);
+  useEffect(() => () => {
+    searchAbortRef.current?.abort();
+    locationAttemptRef.current += 1;
+  }, []);
 
   useEffect(() => {
     if (!hazardOpen) return;
@@ -390,13 +412,10 @@ export function PublicHomePage({
     const query = searchDraft.trim();
     const areaMatch = localAreaMatch(data.publicAreas, query);
     if (areaMatch) {
-      onSelectArea(areaMatch.area_id);
-      setSuggestions([]);
-      setActiveSuggestionIndex(-1);
-      setSearchState("idle");
+      selectPlanningArea(areaMatch.area_id);
       setSearchMessage(th
-        ? `เลือก ${areaMatch.area_name_th} แล้ว โปรดเพิ่มบ้านเลขที่และถนนเพื่อวางหมุดให้แม่นยำ`
-        : `${areaMatch.area_name_en} selected. Add a street number and road for an exact pin.`);
+        ? `เลือกพื้นที่วางแผน ${areaMatch.area_name_th} จากข้อมูลบนอุปกรณ์แล้ว`
+        : `${areaMatch.area_name_en} planning area selected from on-device data.`);
       return;
     }
     if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
@@ -447,7 +466,7 @@ export function PublicHomePage({
         <GeoMap
           areas={data.publicAreas}
           selectedId={focusAreaId}
-          onSelect={onSelectArea}
+          onSelect={selectPlanningArea}
           language={language}
           showRoads={false}
           showFacilities={false}
@@ -466,7 +485,7 @@ export function PublicHomePage({
           basemapControlVariant="menu"
           showLegend={false}
           showProvenanceBadge={false}
-          showTextAlternative={false}
+          showTextAlternative
           showDataAttribution={false}
           audience="public"
           location={location}
@@ -501,7 +520,9 @@ export function PublicHomePage({
             aria-describedby="public-location-search-status"
             onChange={(event) => {
               const value = event.target.value;
+              locationAttemptRef.current += 1;
               searchAbortRef.current?.abort();
+              setGpsState("idle");
               setSearchDraft(value);
               setSearchEditing(true);
               setSuggestions([]);
@@ -584,7 +605,9 @@ export function PublicHomePage({
                   : (th ? "ค้นหาตำแหน่ง" : "Location search")}
               </strong>
               <small>
-                {location?.source === "gps" && location.accuracyMeters
+                {locationProblem
+                  ? searchMessage
+                  : location?.source === "gps" && location.accuracyMeters
                   ? (th ? `GPS ±${location.accuracyMeters} ม. · ไม่บันทึก` : `GPS ±${location.accuracyMeters} m · not saved`)
                   : location?.source === "address"
                     ? (th ? "ตำแหน่งที่เลือก · ไม่บันทึก" : "Selected address · not saved")
@@ -619,6 +642,9 @@ export function PublicHomePage({
             className="public-risk-indicator"
             aria-label={th ? "ตัวชี้วัดการวางแผนน้ำท่วม" : "Flood planning indicator"}
           >
+            <p className="public-priority-label">
+              {th ? "ลำดับความสำคัญจากข้อมูลในอดีต" : "Historical planning priority"}
+            </p>
             <div className="public-risk-headline">
               <strong>
                 {selectedArea
@@ -643,9 +669,15 @@ export function PublicHomePage({
               )}
             </div>
             <div className="public-risk-scale-labels">
-              <span>{th ? "ความเสี่ยงต่ำ" : "Low risk"}</span>
-              <span>{th ? "ความเสี่ยงสูง" : "High risk"}</span>
+              <span>{th ? "ความสำคัญต่ำ" : "Lower priority"}</span>
+              <span>{th ? "ความสำคัญสูง" : "Higher priority"}</span>
             </div>
+            {selectedArea && (
+              <p className="public-priority-evidence">
+                <span>{th ? "ข้อมูล " : "Evidence "}{formatSourceTime(selectedArea.source_timestamp, language)} ICT</span>
+                <span>{th ? "ความเชื่อมั่น " : "Confidence: "}{formatConfidence(selectedArea.evidence_sufficiency, language)} · {th ? "ตรวจสอบสภาพปัจจุบัน" : "Verify current conditions"}</span>
+              </p>
+            )}
           </aside>
 
           <button

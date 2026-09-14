@@ -46,12 +46,12 @@ await new Promise((resolveListen, rejectListen) => {
 const address = server.address();
 if (!address || typeof address === "string") throw new Error("Public profile server did not bind.");
 const baseUrl = `http://127.0.0.1:${address.port}`;
-const approvedOrigins = new Set([
-  new URL(baseUrl).origin,
+const basemapOrigins = new Set([
   "https://tile.openstreetmap.org",
   "https://services.arcgisonline.com",
   "https://a.tile.opentopomap.org",
 ]);
+const approvedOrigins = new Set([new URL(baseUrl).origin, ...basemapOrigins]);
 const geocoderOrigin = "https://geocode.arcgis.com";
 const geocoderPath = "/arcgis/rest/services/World/GeocodeServer/findAddressCandidates";
 const routingOrigin = "https://routing.openstreetmap.de";
@@ -130,11 +130,23 @@ try {
   });
   const pageErrors = [];
   const consoleErrors = [];
+  const requestFailures = [];
   const unexpectedRequests = [];
+  let offlineMode = false;
   page.on("pageerror", (error) => pageErrors.push(error.stack ?? error.message));
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    if (message.type() === "error") consoleErrors.push({
+      text: message.text(),
+      url: message.location().url,
+      offline: offlineMode,
+    });
   });
+  page.on("requestfailed", (request) => requestFailures.push({
+    url: request.url(),
+    error: request.failure()?.errorText,
+    offline: offlineMode,
+    resourceType: request.resourceType(),
+  }));
   page.on("request", (request) => {
     const url = new URL(request.url());
     if (url.origin === geocoderOrigin && url.pathname === geocoderPath) return;
@@ -148,6 +160,7 @@ try {
   await page.waitForFunction(() => document.documentElement.lang === "en");
   await assertInitialPreciseLocation(page);
   await assertStreetAddressSearch(page, geocoderRequests);
+  await assertLocalAreaSelection(page);
   await assertCompactPublicShell(page);
   await exercisePublicPages(page);
   if (await page.locator('a[href^="/command"], a[href^="/studio"]').count()) {
@@ -160,7 +173,10 @@ try {
   }
 
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
-  await page.waitForFunction(() => document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("saved app ready"));
+  await page.waitForFunction(() => (
+    [...document.querySelectorAll('[data-pwa-availability="true"] dd')]
+      .some((value) => value.textContent === "Available offline")
+  ));
   const cacheAudit = await page.evaluate(async () => {
     const keys = (await caches.keys()).filter((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key));
     const urls = [];
@@ -187,10 +203,14 @@ try {
     if (!cacheAudit.urls.includes(required)) throw new Error(`Public offline cache omits ${required}`);
   }
 
+  offlineMode = true;
   await context.setOffline(true);
   for (const path of ["/", "/public", "/public/", "/public/?source=offline-check"]) {
     await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     await page.locator("main.public-page").waitFor({ state: "visible" });
+    await page.waitForFunction(() => (
+      document.querySelector(".public-home-page .geo-map-shell")?.getAttribute("data-basemap-state") === "offline"
+    ));
     await assertCompactPublicShell(page);
     await exercisePublicPages(page);
   }
@@ -205,8 +225,21 @@ try {
   if (unexpectedRequests.length) {
     throw new Error(`Public profile attempted unapproved requests: ${[...new Set(unexpectedRequests)].join(", ")}`);
   }
-  if (pageErrors.length || consoleErrors.length) {
-    throw new Error(`Public profile browser errors: ${[...new Set([...pageErrors, ...consoleErrors])].join(" | ")}`);
+  const expectedOfflineTileFailure = (failure) => failure.offline
+    && failure.error === "net::ERR_INTERNET_DISCONNECTED"
+    && basemapOrigins.has(new URL(failure.url).origin);
+  const unexpectedConsoleErrors = consoleErrors.filter((error) => !(
+    error.offline
+    && error.text === "Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+    && requestFailures.some((failure) => failure.url === error.url && expectedOfflineTileFailure(failure))
+  ));
+  const unexpectedFailures = requestFailures.filter((failure) => !(
+    expectedOfflineTileFailure(failure)
+    || failure.error === "net::ERR_ABORTED"
+    || (failure.offline && failure.url === `${baseUrl}/command/` && failure.resourceType === "document")
+  ));
+  if (pageErrors.length || unexpectedConsoleErrors.length || unexpectedFailures.length) {
+    throw new Error(`Public profile browser errors: ${JSON.stringify({ pageErrors, consoleErrors: unexpectedConsoleErrors, requestFailures: unexpectedFailures })}`);
   }
 
   await context.close();
@@ -394,4 +427,36 @@ async function assertStreetAddressSearch(page, geocoderRequests) {
   ) {
     throw new Error(`Public exact-address selection failed: ${JSON.stringify(audit)}.`);
   }
+}
+
+async function assertLocalAreaSelection(page) {
+  const list = page.locator(".public-home-page .map-text-alternative");
+  await list.locator("summary").click();
+  await list.locator(".map-area-results button").filter({ hasText: /^Ko Chang/ }).click();
+  await page.waitForFunction(() => {
+    const shell = document.querySelector(".public-home-page .geo-map-shell");
+    return shell?.getAttribute("data-selected-area") === "TH570903"
+      && shell.getAttribute("data-location-source") === "none"
+      && !document.querySelector(".public-location-marker");
+  });
+  await list.locator("summary").click();
+
+  await page.evaluate(() => {
+    navigator.geolocation.getCurrentPosition = (success) => {
+      globalThis.__floodGuardPendingGps = success;
+    };
+  });
+  await page.locator(".public-locate-button").click();
+  const input = page.locator("#public-area-search");
+  await input.fill("Mae Sai");
+  await input.press("Enter");
+  await page.evaluate(() => globalThis.__floodGuardPendingGps?.({
+    coords: { latitude: 20.429799, longitude: 99.884366, accuracy: 12 },
+  }));
+  await page.waitForFunction(() => {
+    const shell = document.querySelector(".public-home-page .geo-map-shell");
+    return shell?.getAttribute("data-selected-area") === "TH570901"
+      && shell.getAttribute("data-location-source") === "none"
+      && !document.querySelector(".public-location-marker");
+  });
 }

@@ -88,10 +88,15 @@ describe("PublicExperience", () => {
     expect(legend).toContain('data-band="high"');
     expect(legend).toContain(">สูง<");
     expect(legend).not.toMatch(/ยังไม่พบพื้นที่วางแผน/u);
-    // The card carries place and band only; the exact score stays in the panel.
+    // The exact score stays in the panel; historical evidence remains visible.
     expect(legend).not.toContain("public-risk-value");
-    expect(legend).toContain("ความเสี่ยงต่ำ");
-    expect(legend).toContain("ความเสี่ยงสูง");
+    expect(legend).toContain("ความสำคัญต่ำ");
+    expect(legend).toContain("ความสำคัญสูง");
+    expect(legend).toContain("ลำดับความสำคัญจากข้อมูลในอดีต");
+    expect(legend).toContain("ความเชื่อมั่น ต่ำ");
+    expect(legend).toContain("ตรวจสอบสภาพปัจจุบัน");
+    expect(legend).toContain("2567");
+    expect(html).toContain('class="map-text-alternative"');
 
     // The title is dropped from the visible card but kept as the accessible
     // name, so the card is still identifiable to a screen reader.

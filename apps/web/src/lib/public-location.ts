@@ -50,6 +50,7 @@ export const PUBLIC_GEOCODER_ATTRIBUTION_URL =
 
 const DEFAULT_GEOCODER_URL =
   "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates";
+export const PUBLIC_ADDRESS_SEARCH_TIMEOUT_MS = 10_000;
 const MAE_SAI_SEARCH_BOUNDS = {
   minLongitude: 99.72,
   minLatitude: 20.12,
@@ -85,15 +86,32 @@ export async function searchPublicAddresses(
   const token = process.env.NEXT_PUBLIC_ARCGIS_GEOCODING_TOKEN?.trim();
   if (token) endpoint.searchParams.set("token", token);
 
-  const response = await fetchImpl(endpoint, {
-    signal,
-    headers: { Accept: "application/json" },
-  });
-  if (!response.ok) {
-    throw new Error(`Address search failed with status ${response.status}.`);
+  const controller = new AbortController();
+  const cancelSearch = () => controller.abort(signal?.reason);
+  if (signal?.aborted) cancelSearch();
+  else signal?.addEventListener("abort", cancelSearch, { once: true });
+  const timeout = setTimeout(() => controller.abort(
+    new DOMException("Address search timed out.", "TimeoutError"),
+  ), PUBLIC_ADDRESS_SEARCH_TIMEOUT_MS);
+
+  let payload: ArcGisResponse;
+  try {
+    const response = await fetchImpl(endpoint, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+    });
+    if (!response.ok) {
+      throw new Error(`Address search failed with status ${response.status}.`);
+    }
+    payload = await response.json() as ArcGisResponse;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", cancelSearch);
   }
 
-  const payload = await response.json() as ArcGisResponse;
   if (payload.error) {
     const message = cleanProperty(payload.error.message);
     throw new Error(message || "The address search service rejected the request.");

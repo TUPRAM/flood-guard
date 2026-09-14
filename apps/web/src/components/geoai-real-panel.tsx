@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { EvidenceNotice } from "@/components/evidence-notice";
 import { StatePill } from "@/components/state-pill";
+import { formatConfidence } from "@/lib/format";
 import type { Language } from "@/lib/types";
 
 import styles from "./geoai-real-panel.module.css";
@@ -46,6 +47,9 @@ interface GeoaiRealBundle {
   data_mode: string;
   study_area: string;
   generated_at: string;
+  evaluation_protocol?: {
+    scale_anchors?: Record<string, string>;
+  };
   sources: Record<string, string>;
   headline: {
     sar_flood_pct: number;
@@ -76,9 +80,11 @@ const ACTION_LABEL: Record<string, { en: string; th: string }> = {
 export function GeoaiRealPanel({
   language = "en",
   variant = "studio",
+  planningDataVersion,
 }: {
   language?: Language;
   variant?: "studio" | "command";
+  planningDataVersion?: string;
 }) {
   const th = language === "th";
   const [bundle, setBundle] = useState<GeoaiRealBundle | null>(null);
@@ -116,39 +122,40 @@ export function GeoaiRealPanel({
           <p className="eyebrow">
             {variant === "command"
               ? th
-                ? "ชั้นข้อมูล GeoAI (ข้อมูลจริง)"
-                : "GEOAI LAYER · REAL DATA"
+                ? "รายงานวิจัย GeoAI · แยกจากการจัดลำดับเพื่อวางแผน"
+                : "GEOAI RESEARCH · SEPARATE FROM PLANNING RANKING"
               : th
-                ? "หลักฐาน GeoAI จากข้อมูลจริง"
-                : "GEOAI · REAL OBSERVED DATA"}
+                ? "รายงานวิจัย GeoAI · ข้อมูลย้อนหลัง"
+                : "GEOAI RESEARCH · HISTORICAL EVIDENCE"}
           </p>
           <h2 id="geoai-real-title">
             {th
-              ? "ผลแบบจำลอง GeoAI จริง — แม่สาย ก.ย. 2567"
-              : "Real GeoAI results — Mae Sai, Sept 2024"}
+              ? "รายงานวิจัย GeoAI — แม่สาย ก.ย. 2567"
+              : "GeoAI research report — Mae Sai, Sept 2024"}
           </h2>
         </div>
         <div className={styles.pills}>
-          <StatePill tone={bundle ? "ready" : "info"}>
-            {bundle
-              ? th
-                ? "ข้อมูลจริง"
-                : "Real data"
-              : th
-                ? "กำลังโหลด"
-                : "Loading"}
+          <StatePill tone="caution">
+            {th ? "เพื่อรายงานเท่านั้น" : "Report only"}
           </StatePill>
+          {!bundle && <StatePill tone="info">{th ? "กำลังโหลด" : "Loading"}</StatePill>}
         </div>
       </div>
 
       <EvidenceNotice
         tone="caution"
-        title={th ? "ขอบเขตของผลนี้" : "Scope of this result"}
+        title={th ? "ผลวิเคราะห์แยกต่างหาก ไม่ใช้กำหนดการดำเนินการ" : "Separate analysis; does not determine planning actions"}
       >
         {th
-          ? "คำนวณจากภาพดาวเทียมจริง (Sentinel-1/2, Copernicus DEM) และชั้นข้อมูลหน่วยงานไทยจริง สำหรับการวางแผนเท่านั้น ไม่ใช่คำเตือนภัยอย่างเป็นทางการ"
-          : "Computed from real satellite imagery (Sentinel-1/2, Copernicus DEM) and real Thai authoritative layers. For planning only — not an official warning."}
+          ? "รายงานวิจัยจากข้อมูลย้อนหลังนี้ใช้ข้อมูลนำเข้าและสมมติฐานต่างจากมุมมองการวางแผน คะแนน FPPS ชั้น A–E และความเชื่อมั่นของแบบจำลองในรายงานนี้ไม่ใช้กำหนดลำดับ สีแผนที่ หรือข้อเสนอการดำเนินการในมุมมองการวางแผน ไม่ใช่คำเตือนภัยอย่างเป็นทางการ"
+          : "This historical research report uses different inputs and assumptions from the planning view. Its FPPS, A–E classes and model confidence do not set the planning workspace ranking, map colors or recommended actions. Not an official warning."}
       </EvidenceNotice>
+
+      {variant === "command" && planningDataVersion && (
+        <p className={styles.detail}>
+          {th ? "รุ่นข้อมูลที่ใช้ในลำดับและหลักฐานพื้นที่ด้านบน" : "Data version used by the ranking and area evidence above"}: {planningDataVersion}
+        </p>
+      )}
 
       {h && (
         <div className={styles.chips}>
@@ -241,19 +248,27 @@ export function GeoaiRealPanel({
 
           <h3 className={styles.subhead}>
             {th
-              ? "ลำดับความสำคัญรายตำบล (AI ขับเคลื่อน 55% ของคะแนน)"
-              : "Sub-district priority — AI drives 55% of the score"}
+              ? "ผลรายตำบลเพื่อการวิจัยเท่านั้น"
+              : "Sub-district research results — report only"}
           </h3>
+          <p id="geoai-research-confidence" className={styles.detail}>
+            {th
+              ? "ความเชื่อมั่นของแบบจำลองในรายงานนี้อิงความสอดคล้องระหว่างสัญญาณ SAR และภูมิประเทศ รวมถึงความครบถ้วนของข้อมูล ไม่ใช่ความเชื่อมั่นของหลักฐานในมุมมองการวางแผน"
+              : "Model confidence here reflects agreement between SAR and terrain signals, with data-completeness checks. It is separate from the evidence confidence in the planning view."}
+          </p>
           <div className={styles.tableWrap}>
-            <table className={styles.table}>
+            <table className={styles.table} aria-describedby="geoai-research-confidence">
+              <caption className={styles.detail}>
+                {th ? "คะแนนและชั้นจากงานวิจัย ไม่ใช่ข้อเสนอการดำเนินการ" : "Research scores and classes; not action recommendations"}
+              </caption>
               <thead>
                 <tr>
                   <th>{th ? "ตำบล" : "Sub-district"}</th>
                   <th>{th ? "โอกาสน้ำท่วม" : "Flood lik."}</th>
                   <th>{th ? "ความเสี่ยง" : "Exposure"}</th>
-                  <th>FPPS</th>
-                  <th>{th ? "การกระทำ" : "Action"}</th>
-                  <th>{th ? "ความเชื่อมั่น" : "Confidence"}</th>
+                  <th>{th ? "FPPS งานวิจัย" : "Research FPPS"}</th>
+                  <th>{th ? "ชั้นจากงานวิจัย" : "Research class"}</th>
+                  <th>{th ? "ความเชื่อมั่นแบบจำลอง" : "Model confidence"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -273,7 +288,7 @@ export function GeoaiRealPanel({
                         {s.action}
                       </span>
                     </td>
-                    <td className={styles.conf}>{s.confidence}</td>
+                    <td className={styles.conf}>{formatConfidence(s.confidence, language)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -283,6 +298,16 @@ export function GeoaiRealPanel({
           <details className={styles.more}>
             <summary>{th ? "แหล่งข้อมูลและข้อจำกัด" : "Data sources & limitations"}</summary>
             <div className={styles.sources}>
+              <div>
+                <b>{th ? "แหล่งรายงานวิจัย" : "Research report source"}</b>
+                <a href="/geoai/mae-sai-real.json">mae-sai-real.json</a>
+              </div>
+              {bundle.evaluation_protocol?.scale_anchors && (
+                <div>
+                  <b>{th ? "รุ่นเกณฑ์คะแนนงานวิจัย" : "Research scoring anchor versions"}</b>
+                  {Object.values(bundle.evaluation_protocol.scale_anchors).join(" · ")}
+                </div>
+              )}
               {Object.entries(bundle.sources).map(([k, v]) => (
                 <div key={k}>
                   <b>{k}</b> {v}

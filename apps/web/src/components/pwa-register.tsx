@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import { getBasemapHealth, subscribeBasemapHealth, type BasemapState } from "@/lib/basemap-health";
 import { resolveDeploymentProfile } from "@/lib/deployment-profile";
 import { HOUSEHOLD_PLAN_STORAGE_KEY, LEGACY_HOUSEHOLD_PLAN_STORAGE_KEY } from "@/lib/household-plan";
 import type { Language } from "@/lib/types";
@@ -41,6 +42,10 @@ const PWA_AVAILABILITY_COPY = {
     checkingConnection: "Checking connection",
     online: "Online",
     offline: "Offline",
+    appOnline: "App online",
+    appOffline: "App offline",
+    mapUnavailable: "Map unavailable",
+    mapIncomplete: "Map incomplete",
     savedAppReady: "saved app ready",
     heading: "App availability",
     subtitle: "Mae Sai planning support",
@@ -56,8 +61,6 @@ const PWA_AVAILABILITY_COPY = {
     cachedSnapshot: "Cached planning snapshot",
     lastUpdateCheck: "Last successful update check",
     mapBackgrounds: "Map backgrounds",
-    backgroundsOffline: "May be unavailable offline",
-    backgroundsOnline: "Connection required",
     disclosure: "Saved planning overlays and this device’s household plan remain available offline. Current conditions still require official local information.",
     installUpdate: "Install available update",
     installing: "Installing…",
@@ -70,6 +73,10 @@ const PWA_AVAILABILITY_COPY = {
     checkingConnection: "กำลังตรวจสอบการเชื่อมต่อ",
     online: "ออนไลน์",
     offline: "ออฟไลน์",
+    appOnline: "แอปออนไลน์",
+    appOffline: "แอปออฟไลน์",
+    mapUnavailable: "แผนที่ไม่พร้อมใช้งาน",
+    mapIncomplete: "แผนที่ไม่ครบถ้วน",
     savedAppReady: "แอปที่บันทึกไว้พร้อมใช้งาน",
     heading: "สถานะแอป",
     subtitle: "เครื่องมือสนับสนุนการวางแผนแม่สาย",
@@ -85,8 +92,6 @@ const PWA_AVAILABILITY_COPY = {
     cachedSnapshot: "ข้อมูลการวางแผนที่แคชไว้",
     lastUpdateCheck: "ตรวจสอบการอัปเดตสำเร็จล่าสุด",
     mapBackgrounds: "พื้นหลังแผนที่",
-    backgroundsOffline: "อาจไม่พร้อมใช้งานเมื่อออฟไลน์",
-    backgroundsOnline: "ต้องเชื่อมต่ออินเทอร์เน็ต",
     disclosure: "ชั้นข้อมูลการวางแผนที่บันทึกไว้และแผนครัวเรือนในอุปกรณ์นี้ยังใช้งานออฟไลน์ได้ สภาพปัจจุบันยังต้องยืนยันกับแหล่งข้อมูลท้องถิ่นที่เป็นทางการ",
     installUpdate: "ติดตั้งการอัปเดตที่พร้อมใช้",
     installing: "กำลังติดตั้ง…",
@@ -99,6 +104,19 @@ const PWA_AVAILABILITY_COPY = {
 
 export function pwaAvailabilityCopy(language: Language) {
   return PWA_AVAILABILITY_COPY[language];
+}
+
+export function mapAvailabilityCopy(state: BasemapState | null, language: Language): string {
+  const labels: Record<BasemapState | "none", Record<Language, string>> = {
+    none: { en: "No map background active", th: "ไม่มีพื้นหลังแผนที่ที่เปิดใช้งาน" },
+    loading: { en: "Map background loading", th: "กำลังโหลดพื้นหลังแผนที่" },
+    ready: { en: "Map background available", th: "พื้นหลังแผนที่พร้อมใช้งาน" },
+    partial: { en: "Map background incomplete", th: "พื้นหลังแผนที่ไม่ครบถ้วน" },
+    unavailable: { en: "Map background unavailable", th: "พื้นหลังแผนที่ไม่พร้อมใช้งาน" },
+    offline: { en: "Map background offline", th: "พื้นหลังแผนที่ออฟไลน์" },
+    hidden: { en: "Map background hidden", th: "ซ่อนพื้นหลังแผนที่แล้ว" },
+  };
+  return labels[state ?? "none"][language];
 }
 
 function readableTime(value: string | null, language: Language): string {
@@ -185,6 +203,7 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
   const pathname = usePathname();
   const defaultLanguage = EXPECTED_PROFILE === "public-production" || pathname?.startsWith("/public") ? "th" : "en";
   const [language] = useLanguage(defaultLanguage);
+  const basemapHealth = useSyncExternalStore(subscribeBasemapHealth, getBasemapHealth, () => null);
   const [online, setOnline] = useState<boolean | null>(null);
   const [cacheState, setCacheState] = useState<CacheState>("checking");
   const [updateState, setUpdateState] = useState<UpdateState>("current");
@@ -412,9 +431,15 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
 
   const copy = pwaAvailabilityCopy(language);
   const connectionLabel = online === null ? copy.checkingConnection : online ? copy.online : copy.offline;
-  const summaryLabel = cacheState === "ready"
+  const appSummary = cacheState === "ready"
     ? `${connectionLabel} · ${copy.savedAppReady}`
     : connectionLabel;
+  const mapNeedsAttention = basemapHealth === "unavailable" || basemapHealth === "partial";
+  const mapSummary = basemapHealth === "partial" ? copy.mapIncomplete : copy.mapUnavailable;
+  const publicSummary = online === null ? copy.checkingConnection : online ? copy.appOnline : copy.appOffline;
+  const summaryLabel = mapNeedsAttention
+    ? mapSummary
+    : pathname?.startsWith("/public") || EXPECTED_PROFILE === "public-production" ? publicSummary : appSummary;
 
   return (
     <details
@@ -427,7 +452,7 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
       }}
     >
       <summary>
-        <span className={`${styles.dot} ${online === false ? styles.offline : ""}`} aria-hidden="true" />
+        <span className={`${styles.dot} ${online === false || mapNeedsAttention ? styles.offline : ""}`} aria-hidden="true" />
         <span role="status" aria-live="polite">{summaryLabel}</span>
       </summary>
       <div className={styles.body}>
@@ -461,7 +486,7 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
           </div>
           <div>
             <dt>{copy.mapBackgrounds}</dt>
-            <dd>{online === false ? copy.backgroundsOffline : copy.backgroundsOnline}</dd>
+            <dd data-map-availability={basemapHealth ?? "none"}>{mapAvailabilityCopy(basemapHealth, language)}</dd>
           </div>
         </dl>
         <p>{copy.disclosure}</p>

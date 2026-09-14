@@ -186,6 +186,7 @@ try {
   });
   await exerciseBasemapSelector(page, publicMapScope, "unavailable");
   await assertPublicHomeLayout(page, publicMapScope);
+  await selectPublicPlanningArea(page, "TH570906", "Wiang Phang Kham");
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 });
     for (const language of ["th", "en"]) {
@@ -659,7 +660,8 @@ async function assertPublicHomeLayout(page, mapScope) {
     const navigation = document.querySelector(".public-bottom-nav")?.getBoundingClientRect();
     const map = document.querySelector(`${scope} .leaflet-container`)?.getBoundingClientRect();
     const trigger = document.querySelector(".public-profile-trigger")?.getBoundingClientRect();
-    const risk = document.querySelector(".public-risk-indicator")?.getBoundingClientRect();
+    const priorityIndicator = document.querySelector(".public-risk-indicator");
+    const risk = priorityIndicator?.getBoundingClientRect();
     const hazard = document.querySelector(".public-hazard-button")?.getBoundingClientRect();
     const attribution = document.querySelector(".leaflet-control-attribution")?.getBoundingClientRect();
     const availability = document.querySelector('[data-pwa-availability="true"] > summary')?.getBoundingClientRect();
@@ -688,6 +690,8 @@ async function assertPublicHomeLayout(page, mapScope) {
       navigationTargets: navigationTargets.map(({ width, height }) => ({ width, height })),
       lowerControls: {
         priority: risk?.toJSON(),
+        priorityContentWidth: priorityIndicator?.scrollWidth,
+        priorityClientWidth: priorityIndicator?.clientWidth,
         attribution: attribution?.toJSON(),
         availability: availability?.toJSON(),
         riskNavigationGap: risk && navigation ? navigation.top - risk.bottom : null,
@@ -726,7 +730,8 @@ async function assertPublicHomeLayout(page, mapScope) {
     throw new Error("Public bottom navigation contains a touch target smaller than 44px.");
   }
   if (
-    audit.lowerControls.riskNavigationGap < 10
+    audit.lowerControls.priorityContentWidth > audit.lowerControls.priorityClientWidth + 1
+    || audit.lowerControls.riskNavigationGap < 10
     || audit.lowerControls.hazardNavigationGap < 10
     || audit.lowerControls.hazardAttributionOverlap
     || audit.lowerControls.availabilityRiskOverlap

@@ -228,8 +228,15 @@
   flex: 1;
   min-width: 0;
   max-width: 360px;
+  grid-template-columns: minmax(0, 1fr);
   font-family: var(--fg-font-body);
 }
+.public-risk-headline { flex-wrap: wrap; }
+.public-risk-headline > strong {
+  overflow: visible;
+  white-space: normal;
+}
+.public-home-map .public-risk-scale { min-width: 0; }
 .public-priority-label {
   margin: 0;
   color: var(--fg-neutral-700);

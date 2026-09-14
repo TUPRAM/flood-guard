@@ -444,6 +444,12 @@ try {
   if (await page.locator(".ranked-areas button").count() === 0) {
     throw new Error("Command route did not render its synchronized FPPS ranking.");
   }
+  const researchPanel = page.locator('section[aria-labelledby="geoai-real-title"]');
+  await researchPanel.locator("table").waitFor({ state: "visible" });
+  const researchCopy = await researchPanel.innerText();
+  if (!researchCopy.includes("Report only") || !researchCopy.includes(planningDataVersion)) {
+    throw new Error("The online research report must show its report-only boundary and the exact planning data version.");
+  }
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
   const cacheKeys = await page.evaluate(() => caches.keys());
   if (!cacheKeys.some((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key))) {
@@ -912,7 +918,9 @@ function assertFinalVisibleCopy(body, routePath) {
     : routePath === "/public/"
       ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu
       : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
-  if (routePath === "/command/" && !body.includes(planningDataVersion)) {
+  // The separate online research panel owns this comparison provenance. It is
+  // intentionally absent when its optional report cannot be fetched offline.
+  if (routePath === "/command/" && normalized.includes("geoai research report") && !body.includes(planningDataVersion)) {
     throw new Error("Command is missing the exact data version used by its planning ranking.");
   }
   const presentationCopy = routePath === "/command/"

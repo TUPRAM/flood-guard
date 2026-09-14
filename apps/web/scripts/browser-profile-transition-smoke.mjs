@@ -67,7 +67,7 @@ try {
   });
 
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
-  await page.locator("main.surface-chooser").waitFor({ state: "visible" });
+  await page.locator("main[data-landing]").waitFor({ state: "visible" });
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
   await waitForEvaluated(page, async () => {
     const registration = await navigator.serviceWorker.getRegistration();
@@ -182,7 +182,7 @@ try {
     "competition update to reach the waiting state",
   );
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
-  await page.locator("main.surface-chooser").waitFor({ state: "visible" });
+  await page.locator("main[data-landing]").waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Install available update")
     && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("saved app ready")
@@ -195,7 +195,7 @@ try {
   const pendingPanel = page.locator('[data-pwa-availability="true"]');
   if (await pendingPanel.getAttribute("open") === null) await pendingPanel.locator("summary").click();
   await page.getByRole("button", { name: "Install available update" }).click();
-  await page.locator("main.surface-chooser").waitFor({ state: "visible" });
+  await page.locator("main[data-landing]").waitFor({ state: "visible" });
   await waitForEvaluated(page, async (oldKey) => {
     const keys = (await caches.keys()).filter((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key));
     if (keys.length !== 1 || keys[0] === oldKey) return false;

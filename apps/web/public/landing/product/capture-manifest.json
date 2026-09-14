@@ -1,0 +1,183 @@
+{
+  "schema": 1,
+  "capturedAt": "2026-09-12T15:18:03.230Z",
+  "base": "http://127.0.0.1:4310",
+  "environment": "development",
+  "status": "actual UI capture, not operational validation",
+  "context": "mae-sai:2024-09:mae-sai-candidate-2024-09-15-v1",
+  "sourceBefore": {
+    "src/components/public-experience.tsx": "74d4afd8690196c2246db63b548c81644a7f8d5f27b2c96298b2fef41c86269f",
+    "src/components/household-plan-builder.tsx": "438b34e9862a81509cfc73fd2b7dbe51a4737beab70b73135db3daa310fdb235",
+    "src/components/command-workspace.tsx": "e9087165d3cd3027bd3fc7fbccbe69cdde437c11c90822afe32366731304f612",
+    "src/components/studio-workspace.tsx": "17c4474f7feab3838adabecb7574e16cc3b0b6dfc2edb2ae70f1a18108a2c770",
+    "public/offline-demo/mae-sai/bundle.json": "ea82b647327d3fc4171f723ae390759da62f71735768018fb766d8b36356eeb6",
+    "public/offline-demo/mae-sai/public-bundle.json": "f58dd8d6ba24e54dadcd15f9d9e485c5be81e30215d8976787438a09254e1aba"
+  },
+  "assets": [
+    {
+      "file": "/landing/product/public-preparedness.webp",
+      "sourcePng": "test-results/landing-v4/product-captures/public-preparedness.png",
+      "sourceRoute": "/public/",
+      "viewport": {
+        "width": 430,
+        "height": 1000
+      },
+      "clip": {
+        "x": 0,
+        "y": 75,
+        "width": 430,
+        "height": 849
+      },
+      "width": 430,
+      "height": 849,
+      "bytes": 96798,
+      "sha256": "06cc0caf0d6ea7e79656f970c1d64d4f816206461f56a598b133ea25ce7d611f",
+      "sourcePngSha256": "7eb0544406e162d6356f12f78e6c45294f02bde6deaedc7046af322687545680",
+      "state": "Prepare tab, empty and unreviewed household plan; no area or household needs entered.",
+      "qualification": "Actual local-device preparedness builder. No account, address, diagnosis, completed task, or submitted household record was added.",
+      "processing": "Browser screenshot clip plus lossless WebP format conversion; no page content altered or image elements composited.",
+      "errors": [],
+      "writes": [],
+      "geolocationCalls": 0,
+      "requestedData": [
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/public-areas.json"
+        }
+      ]
+    },
+    {
+      "file": "/landing/product/planning-priorities.webp",
+      "sourcePng": "test-results/landing-v4/product-captures/planning-priorities.png",
+      "sourceRoute": "/command/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "clip": null,
+      "width": 1440,
+      "height": 1000,
+      "bytes": 501926,
+      "sha256": "5a917a9be68826e233ef9701ceae40c6a19c5bc3e1b25a75e34fd56d371c2ae7",
+      "sourcePngSha256": "28062faea5d96865aa8ceae49ebaf28592b738e75d95dac8b01326fdfbbb15a2",
+      "state": "Default Ko Chang selection; eight-area ranking, map context, low-confidence modelled summary, disabled scenario selector.",
+      "qualification": "Historical candidate. Road/facility context is not verified current status. Scenario comparison is not available in this published view.",
+      "processing": "Browser screenshot clip plus lossless WebP format conversion; no page content altered or image elements composited.",
+      "errors": [],
+      "writes": [],
+      "geolocationCalls": 0,
+      "requestedData": [
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/_next/static/chunks/apps_web_src_components_geoai-real-panel_module_03ocznc.css"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/mae-sai-real.json"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/areas.json"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/roads.json"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/facilities.json"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/access-hotspots.json"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/scene_sar_post_vh.png"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/A_sar_flood_probability.png"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/scene_s2_rgb.png"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/B_water_mask.png"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/scene_dem.png"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/C_susceptibility.png"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/D_buildings.png"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/geoai/F_fewshot_prediction.png"
+        }
+      ]
+    },
+    {
+      "file": "/landing/product/studio-evidence.webp",
+      "sourcePng": "test-results/landing-v4/product-captures/studio-evidence.png",
+      "sourceRoute": "/studio/",
+      "viewport": {
+        "width": 1440,
+        "height": 1550
+      },
+      "clip": {
+        "x": 20,
+        "y": 418,
+        "width": 1400,
+        "height": 980
+      },
+      "width": 1400,
+      "height": 980,
+      "bytes": 58468,
+      "sha256": "658be6b62fa310ac01c7dc282e164c241a00e305ec4e26f25556b53ed79fb207",
+      "sourcePngSha256": "02cb5c4df6f23aece93e1466fd70f362e7adc2083796ff497929e870e2989a3c",
+      "state": "Exact Mae Sai context and default Technical verification decision matrix, including unbound evaluation and blocked authorization.",
+      "qualification": "Read-only evidence record. No qualified evaluation and no operational authorization; no pass badge or metric substituted from another result stream.",
+      "processing": "Browser screenshot clip plus lossless WebP format conversion; no page content altered or image elements composited.",
+      "errors": [],
+      "writes": [],
+      "geolocationCalls": 0,
+      "requestedData": [
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/areas.json"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/roads.json"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/facilities.json"
+        },
+        {
+          "method": "GET",
+          "url": "http://127.0.0.1:4310/offline-demo/mae-sai/access-hotspots.json"
+        }
+      ]
+    }
+  ],
+  "browser": "149.0.7827.55",
+  "sourceAfter": {
+    "src/components/public-experience.tsx": "74d4afd8690196c2246db63b548c81644a7f8d5f27b2c96298b2fef41c86269f",
+    "src/components/household-plan-builder.tsx": "438b34e9862a81509cfc73fd2b7dbe51a4737beab70b73135db3daa310fdb235",
+    "src/components/command-workspace.tsx": "e9087165d3cd3027bd3fc7fbccbe69cdde437c11c90822afe32366731304f612",
+    "src/components/studio-workspace.tsx": "17c4474f7feab3838adabecb7574e16cc3b0b6dfc2edb2ae70f1a18108a2c770",
+    "public/offline-demo/mae-sai/bundle.json": "ea82b647327d3fc4171f723ae390759da62f71735768018fb766d8b36356eeb6",
+    "public/offline-demo/mae-sai/public-bundle.json": "f58dd8d6ba24e54dadcd15f9d9e485c5be81e30215d8976787438a09254e1aba"
+  },
+  "completedAt": "2026-09-12T15:18:10.596Z"
+}

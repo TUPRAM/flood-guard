@@ -62,6 +62,7 @@ function validatePublicProduction() {
     throw new Error("Public deployment policy does not fail closed.");
   }
   for (const excluded of [
+    "landing",
     "command",
     "studio",
     "offline-demo/bundle.json",
@@ -88,8 +89,14 @@ function validatePublicProduction() {
       throw new Error(`Public root is missing the ${tab} navigation item.`);
     }
   }
-  if (/One platform\. Three planning views|href="\/command\/?"|href="\/studio\/?"/i.test(rootHtml)) {
+  if (/data-landing|href="\/command\/?"|href="\/studio\/?"/i.test(rootHtml)) {
     throw new Error("Public root retains competition or staff navigation.");
+  }
+  for (const asset of offlineAssets.filter((url) => url.endsWith(".js"))) {
+    const source = readFileSync(resolve(out, asset.slice(1)), "utf8");
+    if (source.includes("floodguard:landing-motion:v1") || source.includes("data-narrative-canvas")) {
+      throw new Error(`Public mandatory offline cache includes optional landing code: ${asset}`);
+    }
   }
   for (const forbidden of [
     "/offline-demo/mae-sai/roads.json",
@@ -151,7 +158,16 @@ function validateCompetition() {
     "offline-demo/mae-sai/access-hotspots.json",
   ]) requirePath(required);
   const rootHtml = readText("index.html");
-  if (!/One platform\. Three planning views/i.test(rootHtml)) throw new Error("Competition root chooser is missing.");
+  if (!/data-landing/i.test(rootHtml)) throw new Error("Competition root landing is missing.");
+  for (const name of ["hero-desktop.webp", "hero-mobile.webp"]) {
+    if (existsSync(resolve(out, "landing", name)) || rootHtml.includes(`/landing/${name}`)) {
+      throw new Error(`Competition profile published an unapproved aerial reference: ${name}`);
+    }
+  }
+  requirePath("landing/desktop-v4/far.webp");
+  if (process.env.VERCEL_URL && !rootHtml.includes("/landing/desktop-v4/far.webp")) {
+    throw new Error("Hosted landing metadata is missing the authored sharing image.");
+  }
   for (const route of ["/", "/public/", "/command/", "/studio/"]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }

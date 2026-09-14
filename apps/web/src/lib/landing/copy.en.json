@@ -1,0 +1,97 @@
+{
+  "schema_version": "2.0.0",
+  "locale": "en",
+  "status": "local_implementation_candidate_requires_owner_signoff",
+  "metadata": {
+    "title": "FloodGuard Thailand | Flood evidence. Connected decisions.",
+    "description": "A flood-planning prototype connecting flood evidence, communities, roads and essential services. Explore an illustrative access story and a qualified historical Mae Sai demo."
+  },
+  "hero": {
+    "eyebrow": "FLOODGUARD / FLOOD IMPACT PLANNING",
+    "heading_lines": ["See the flood.", "Understand who may be cut off."],
+    "body": "Connect flood evidence with communities, roads, and essential services to examine potential access disruption and planning priorities.",
+    "primary": { "label": "Explore the planning demo", "href": "/command/" },
+    "secondary": { "label": "How it works", "href": "#place" },
+    "scope": "Historical planning prototype. Not a live warning or evacuation service.",
+    "scene_note": "Mae Sai-inspired illustration. Inferred geography, not a verified reconstruction."
+  },
+  "story": {
+    "chapters": [
+      {
+        "id": "place", "number": "01", "label": "THE EVERYDAY CONNECTION", "short_label": "Connection", "asset": "connected",
+        "heading": "A familiar journey. An essential connection.",
+        "body": "A cluster of homes depends on the road to an essential service. Follow the blue connection through this one neighborhood.",
+        "callout": "Synthetic neighborhood and network. Not a surveyed route or travel advice.",
+        "poster_alt": "A dry home cluster connects by a blue line along local streets to an essential-service building in a Mae Sai-inspired district."
+      },
+      {
+        "id": "flood", "number": "02", "label": "FLOOD EVIDENCE", "short_label": "Flood evidence", "asset": "flood",
+        "heading": "The footprint is only the starting point.",
+        "body": "Water overlaps part of the connection. The homes and the service remain outside the illustrated flood footprint. Overlap raises a question; it does not confirm a road closure.",
+        "callout": "Illustrative flooding, not measured depth, a forecast, or current conditions.",
+        "poster_alt": "Floodwater reaches a low part of the same road network while both the highlighted homes and service building remain outside the water."
+      },
+      {
+        "id": "access", "number": "03", "label": "A NETWORK CONSEQUENCE", "short_label": "Access", "asset": "access",
+        "heading": "A home can stay dry. And still lose access.",
+        "body": "Assume the marked link is disrupted. In this small example network, the connection to the service is no longer available. The flood footprint alone would not explain that consequence.",
+        "callout": "Assumed disruption, not a confirmed closure. Other roads and real conditions require verification.",
+        "poster_alt": "The same flooded district with an amber dashed interruption on one assumed disrupted link in the blue home-to-service connection."
+      },
+      {
+        "id": "finding", "number": "04", "label": "AN EXPLAINABLE FINDING", "short_label": "Finding", "asset": "finding",
+        "heading": "Explain the finding.",
+        "body": "A useful planning result makes its reason, uncertainty, and next review step visible together.",
+        "callout": "Illustrative finding, not an analysis of a real household or an official recommendation.",
+        "poster_alt": "The flooded neighborhood and assumed interrupted connection remain visible with surrounding context subdued for evidence review."
+      }
+    ]
+  },
+  "method": {
+    "eyebrow": "THE METHOD",
+    "heading": "From a footprint to a planning question.",
+    "body": "FloodGuard brings evidence and local dependencies into the same view. It keeps source observations, modeled consequences, and human decisions distinct.",
+    "steps": [
+      { "title": "Establish the evidence", "body": "Check source dates, coverage, context, and confidence. An image or map is evidence with limits." },
+      { "title": "Examine dependencies", "body": "Relate the flood footprint to communities, roads, and essential services. Test what the available network can support." },
+      { "title": "Explain the priority", "body": "Expose the reason and uncertainty behind a result, then identify what needs verification before action." }
+    ],
+    "note": "The animation is a controlled example. Interactive scenario comparison is not included in the current published Planning view."
+  },
+  "workspaces": {
+    "eyebrow": "THE PRODUCT / AVAILABLE DEMO VIEWS",
+    "heading": "One problem. Different responsibilities.",
+    "body": "Prepare locally, inspect planning context, or question the evidence. These are parallel responsibilities, not an automatic dispatch chain.",
+    "cards": [
+      { "id": "public", "name": "Prepare for your household.", "audience": "PUBLIC / HOUSEHOLDS AND COMMUNITIES", "body": "Build a local household plan, review preparedness actions, and keep area context close at hand.", "detail": "Actual Public view: an empty, unreviewed household-plan builder. Plans remain on the device; completion is not proof of safety.", "action": "Open Public preparedness", "href": "/public/", "image": "public-preparedness.webp", "width": 430, "height": 849, "alt": "Actual Public Prepare screen with a planning-area selector, an empty household plan, unreviewed status, and household-needs controls." },
+      { "id": "command", "name": "Inspect what needs attention.", "audience": "PLANNING / PLANNERS AND COORDINATORS", "body": "Compare historical area priorities, inspect road and facility context, and review the explanations and limits behind the results.", "detail": "Actual historical candidate view, with low-confidence results. Scenario comparison is unavailable in this published view; road and facility status still need verification.", "action": "Explore the planning demo", "href": "/command/", "image": "planning-priorities.webp", "width": 1440, "height": 1000, "alt": "Actual Planning workspace with ranked areas, a map, modeled summaries marked low confidence, and a disabled scenario selector." },
+      { "id": "studio", "name": "Ask what the evidence supports.", "audience": "STUDIO / RESEARCHERS AND REVIEWERS", "body": "Inspect source records, evidence context, evaluation gates, and unresolved limitations before treating a result as reliable.", "detail": "Actual Studio context: no qualified evaluation and no operational authorization. A traceable record is not the same as a validated result.", "action": "Inspect the evidence", "href": "/studio/", "image": "studio-evidence.webp", "width": 1400, "height": 980, "alt": "Actual Studio evidence context and decision matrix showing no qualified evaluation, blocked gates, and no operational authorization." }
+    ]
+  },
+  "case": {
+    "eyebrow": "SEPARATE FROM THE ILLUSTRATION / HISTORICAL EVIDENCE",
+    "heading": "Mae Sai. A case you can inspect.",
+    "body": "The neighborhood above explains a concept. This historical candidate package is a separate source-backed record with its own dates, derived results, and unresolved checks.",
+    "facts": [{ "label": "Study area", "value": "Mae Sai, Chiang Rai" }, { "label": "Event context", "value": "September 2024 / Historical" }],
+    "evidence": [
+      { "label": "Available", "body": "Historical satellite context, reporting boundaries, population context, and mapped road and facility geometry.", "note": "Sources have different acquisition and extract dates." },
+      { "label": "Derived", "body": "Candidate area priorities and modeled access summaries, with source time, assumptions, and low-confidence qualifications.", "note": "Derived outputs are not observed road closures." },
+      { "label": "Needs verification", "body": "Qualified reference evaluation, segment-level flood intersection, facility roles and operation, and agency acceptance.", "note": "No operational authorization." }
+    ]
+  },
+  "faq": {
+    "heading": "Keep the limits in view.",
+    "items": [
+      { "question": "Does this show current flood conditions?", "answer": "No. The story is synthetic and the Mae Sai package is historical. Check current DDPM and local-authority information for present conditions and instructions." },
+      { "question": "Is the highlighted road confirmed closed?", "answer": "No. One link is assumed disrupted to explain a network consequence. The illustration is not a route survey, flood forecast, or evacuation recommendation." },
+      { "question": "Can I change scenarios in the Planning demo?", "answer": "Not in the current published historical view. It provides ranked areas and qualified road, facility, and access context. The landing story illustrates a controlled network example separately." },
+      { "question": "Is the Mae Sai case validated for operational use?", "answer": "No. The current evidence context has no qualified evaluation or operational authorization. Studio makes the source records and unresolved gates inspectable." }
+    ]
+  },
+  "footer": {
+    "line": "Flood evidence. Connected decisions.",
+    "scope": "Historical planning prototype. Not an official warning system or evacuation navigator.",
+    "credit": "A project by Teambits.",
+    "links": [{ "label": "Public", "href": "/public/" }, { "label": "Planning", "href": "/command/" }, { "label": "Studio", "href": "/studio/" }]
+  }
+}

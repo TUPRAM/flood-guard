@@ -131,12 +131,14 @@ try {
   const pageErrors = [];
   const consoleErrors = [];
   const unexpectedRequests = [];
+  const landingRequests = [];
   page.on("pageerror", (error) => pageErrors.push(error.stack ?? error.message));
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
   page.on("request", (request) => {
     const url = new URL(request.url());
+    if (url.pathname.startsWith("/landing/")) landingRequests.push(url.pathname);
     if (url.origin === geocoderOrigin && url.pathname === geocoderPath) return;
     if (url.origin === routingOrigin) return;
     if (!approvedOrigins.has(url.origin)) unexpectedRequests.push(request.url());
@@ -204,6 +206,9 @@ try {
   if (commandLoaded) throw new Error("Public profile recovered Command while offline.");
   if (unexpectedRequests.length) {
     throw new Error(`Public profile attempted unapproved requests: ${[...new Set(unexpectedRequests)].join(", ")}`);
+  }
+  if (landingRequests.length) {
+    throw new Error(`Public profile requested marketing assets: ${[...new Set(landingRequests)].join(", ")}`);
   }
   if (pageErrors.length || consoleErrors.length) {
     throw new Error(`Public profile browser errors: ${[...new Set([...pageErrors, ...consoleErrors])].join(" | ")}`);

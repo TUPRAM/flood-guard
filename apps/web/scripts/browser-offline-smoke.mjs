@@ -52,7 +52,7 @@ const baseUrl = `http://127.0.0.1:${address.port}`;
 const browser = await launchFloodGuardBrowser();
 
 const routes = [
-  { path: "/", selector: "main.surface-chooser" },
+  { path: "/", selector: "main[data-landing]" },
   { path: "/public/", selector: "main.public-page" },
   { path: "/command/", selector: "main.command-page" },
   { path: "/studio/", selector: "main.studio-page" },
@@ -131,27 +131,25 @@ try {
     await page.locator(route.selector).waitFor({ state: "visible" });
   }
 
-  // Root: the platform entry must use the final blue product system, expose
-  // all three role workspaces, and remain free of mobile overflow.
+  // The illustrated landing preserves direct entry and its synthetic scope.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   const rootBody = await page.locator("body").innerText();
-  assertFinalVisibleCopy(rootBody, "/");
+  if (!rootBody.includes("Synthetic illustration") || !rootBody.includes("not a confirmed closure")) throw new Error("Landing illustration and assumed-disruption scope is missing.");
   const rootAudit = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
-    language: document.querySelector("main.surface-chooser")?.getAttribute("lang"),
-    links: [...document.querySelectorAll(".surface-grid a")].map((link) => link.getAttribute("href")),
-    cards: document.querySelectorAll(".surface-card").length,
+    language: document.querySelector("main[data-landing]")?.getAttribute("lang"),
+    links: [...document.querySelectorAll('#workspaces a[href^="/"]')].map((link) => link.getAttribute("href")),
   }));
   if (rootAudit.documentWidth > rootAudit.viewportWidth + 1) {
-    throw new Error(`Root chooser has mobile overflow: ${rootAudit.documentWidth}px > ${rootAudit.viewportWidth}px.`);
+    throw new Error(`Root landing has mobile overflow: ${rootAudit.documentWidth}px > ${rootAudit.viewportWidth}px.`);
   }
-  if (rootAudit.cards !== 3 || rootAudit.links.join("|") !== "/public/|/command/|/studio/") {
-    throw new Error(`Root chooser workspaces are incomplete: ${JSON.stringify(rootAudit)}.`);
+  if (rootAudit.links.join("|") !== "/public/|/command/|/studio/") {
+    throw new Error(`Root landing workspaces are incomplete: ${JSON.stringify(rootAudit)}.`);
   }
   if (rootAudit.language !== "en") {
-    throw new Error(`Root chooser does not declare its English content language: ${JSON.stringify(rootAudit)}.`);
+    throw new Error(`Root landing does not declare its English content language: ${JSON.stringify(rootAudit)}.`);
   }
 
   // Public: the compact shell and all five pages must remain usable at the
@@ -800,7 +798,7 @@ async function assertMaeSaiMap(page, scopeSelector, {
 
 function requiredFinalCopy(routePath) {
   return routePath === "/"
-    ? ["one platform. three planning views.", "continue by role", "ddpm", "local-authority"]
+    ? ["see the flood.", "understand who may be cut off.", "synthetic illustration", "not a confirmed closure", "explore the planning demo"]
     : routePath === "/public/"
       // The Public header now shows the FloodGuard logo image instead of a text
       // wordmark, so the brand is no longer body text here. The nav labels and
@@ -838,7 +836,9 @@ function assertFinalVisibleCopy(body, routePath) {
       throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);
     }
   }
-  const forbidden = routePath === "/studio/"
+  const forbidden = routePath === "/"
+    ? /coming soon|under construction|work in progress|developer note/iu
+    : routePath === "/studio/"
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
     : routePath === "/public/"
       ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu

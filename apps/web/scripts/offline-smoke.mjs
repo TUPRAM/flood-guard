@@ -27,7 +27,7 @@ for (const relative of [...routeFiles, ...requiredPublicAssets]) {
 }
 
 const routeExpectations = {
-  "index.html": [/One platform\. Three planning views\./i, /Continue by role/i, /DDPM/i, /local-authority/i],
+  "index.html": [/data-landing/i, /See the flood\./i, /Understand who may be cut off\./i, /Synthetic illustration/i, /not a confirmed closure/i],
   "public/index.html": [
     /public-app-header/i,
     /FloodGuard/i,
@@ -107,6 +107,33 @@ if (!Array.isArray(generatedAssets) || generatedAssets.length === 0) throw new E
 for (const url of generatedAssets) {
   if (!url.startsWith("/_next/static/") || !existsSync(resolve(out, url.slice(1)))) {
     throw new Error(`Offline production chunk is invalid: ${url}`);
+  }
+}
+if (serviceWorker.includes('"/landing/')) {
+  throw new Error("Optional landing imagery is part of the mandatory offline cache.");
+}
+const dynamicManifestPaths = [
+  resolve(process.cwd(), ".next", "react-loadable-manifest.json"),
+  resolve(process.cwd(), ".next", "server", "app", "page", "react-loadable-manifest.json"),
+].filter((path) => existsSync(path));
+for (const dynamicManifestPath of dynamicManifestPaths) {
+  const dynamicManifest = JSON.parse(readFileSync(dynamicManifestPath, "utf8"));
+  const directResources = new Set(routeFiles.flatMap((route) => (
+    [...readFileSync(resolve(out, route), "utf8").matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"?#]+)[^"]*"/gi)]
+      .map((match) => match[1])
+  )));
+  for (const [name, entry] of Object.entries(dynamicManifest)) {
+    const isNarrative = name.includes("narrative-canvas") || (entry.files ?? []).some((file) => (
+      file.startsWith("static/") && file.endsWith(".js")
+      && readFileSync(resolve(out, "_next", file), "utf8").includes("data-narrative-canvas")
+    ));
+    if (!isNarrative) continue;
+    for (const file of entry.files ?? []) {
+      const url = `/_next/${file}`;
+      if (!directResources.has(url) && generatedAssets.includes(url)) {
+        throw new Error(`Optional narrative renderer is mandatory offline: ${url}`);
+      }
+    }
   }
 }
 

@@ -23,6 +23,9 @@
       }
     ],
     "paths": {
+      "@floodguard/root-entry": [
+        "./src/components/landing/root-competition.tsx"
+      ],
       "@/*": [
         "./src/*"
       ]

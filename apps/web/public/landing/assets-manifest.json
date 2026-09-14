@@ -1,0 +1,556 @@
+{
+  "revision": "architectural-district-v2",
+  "origin": "original_design_with_unverified_context_reference",
+  "source": "src/components/landing/scene/terrain-scene.ts",
+  "provenance": "Original authored Three.js district geometry and materials. The supplied aerial is unverified photo-style context, not documentary Mae Sai imagery or a verified before/after pair. Its selected road/field/roof region informed an illustrative plan only. No third-party 3D assets or Illoca artwork are used. Flood extent, building functions and people are illustrative, not surveyed or hydraulically modeled.",
+  "generator": "node scripts/render-landing-assets.mjs",
+  "status": "generated_and_browser_rendered_not_geographically_validated",
+  "assets": [
+    {
+      "id": "dry",
+      "path": "/landing/dry.webp",
+      "width": 1200,
+      "height": 900,
+      "bytes": 66934,
+      "sha256": "96bb547d13fbfaebc4321c2d81f98d0388f4574fa6392b97fb874137d06bbaed",
+      "triangles": 31046,
+      "drawCalls": 12,
+      "floodAmount": 0,
+      "cameraSignature": "0.843661,0.000000,-0.536875,0.000000,-0.313970,0.811170,-0.493382,0.000000,0.435497,0.584811,0.684353,0.000000,14.000000,19.000000,22.000000,1.000000,0.081860,0.000000,0.000000,0.000000,0.000000,0.109147,0.000000,0.000000,0.000000,0.000000,-0.016681,0.000000,0.000000,0.000000,-1.001668,1.000000",
+      "landmarks": {
+        "Junction_A": {
+          "x": 0.27460504253333823,
+          "y": 0.5630591711624447
+        },
+        "Service_A": {
+          "x": 0.389813885695267,
+          "y": 0.5593770738704189
+        },
+        "Neighborhood_A": {
+          "x": 0.27177975755116557,
+          "y": 0.3970991820426508
+        },
+        "Field_A": {
+          "x": 0.6261960625370444,
+          "y": 0.42707676621931356
+        }
+      }
+    },
+    {
+      "id": "dry-small",
+      "path": "/landing/dry-small.webp",
+      "width": 640,
+      "height": 480,
+      "bytes": 30170,
+      "sha256": "58f13e82217f441c5104d56ea0fd1cd97fd067f4f58bb6ab88392a3143757801"
+    },
+    {
+      "id": "flood",
+      "path": "/landing/flood.webp",
+      "width": 1200,
+      "height": 900,
+      "bytes": 63412,
+      "sha256": "c93e52b71d18ebfc804d0453b0e7826f69e285e4b56617fd94282f18c2639f6a",
+      "triangles": 32610,
+      "drawCalls": 13,
+      "floodAmount": 1,
+      "cameraSignature": "0.843661,0.000000,-0.536875,0.000000,-0.313970,0.811170,-0.493382,0.000000,0.435497,0.584811,0.684353,0.000000,14.000000,19.000000,22.000000,1.000000,0.081860,0.000000,0.000000,0.000000,0.000000,0.109147,0.000000,0.000000,0.000000,0.000000,-0.016681,0.000000,0.000000,0.000000,-1.001668,1.000000",
+      "landmarks": {
+        "Junction_A": {
+          "x": 0.27460504253333823,
+          "y": 0.5630591711624447
+        },
+        "Service_A": {
+          "x": 0.389813885695267,
+          "y": 0.5593770738704189
+        },
+        "Neighborhood_A": {
+          "x": 0.27177975755116557,
+          "y": 0.3970991820426508
+        },
+        "Field_A": {
+          "x": 0.6261960625370444,
+          "y": 0.42707676621931356
+        }
+      }
+    },
+    {
+      "id": "flood-small",
+      "path": "/landing/flood-small.webp",
+      "width": 640,
+      "height": 480,
+      "bytes": 29606,
+      "sha256": "e53a0152d546221c4f09fc94be535769c99011ac55124fb65a07af13438bd959"
+    },
+    {
+      "id": "place",
+      "path": "/landing/place.webp",
+      "width": 1200,
+      "height": 900,
+      "bytes": 66080,
+      "sha256": "332d2676a782adb6ca9dce6881ed6e1405e2b983fa4faad8772ea047cc7f25f7",
+      "triangles": 30822,
+      "drawCalls": 11,
+      "floodAmount": 0,
+      "cameraSignature": "0.843661,0.000000,-0.536875,0.000000,-0.313970,0.811170,-0.493382,0.000000,0.435497,0.584811,0.684353,0.000000,14.000000,19.000000,22.000000,1.000000,0.081860,0.000000,0.000000,0.000000,0.000000,0.109147,0.000000,0.000000,0.000000,0.000000,-0.016681,0.000000,0.000000,0.000000,-1.001668,1.000000",
+      "landmarks": {
+        "Junction_A": {
+          "x": 0.27460504253333823,
+          "y": 0.5630591711624447
+        },
+        "Service_A": {
+          "x": 0.389813885695267,
+          "y": 0.5593770738704189
+        },
+        "Neighborhood_A": {
+          "x": 0.27177975755116557,
+          "y": 0.3970991820426508
+        },
+        "Field_A": {
+          "x": 0.6261960625370444,
+          "y": 0.42707676621931356
+        }
+      }
+    },
+    {
+      "id": "place-small",
+      "path": "/landing/place-small.webp",
+      "width": 640,
+      "height": 480,
+      "bytes": 29932,
+      "sha256": "d72640a5e753a3059b0c1318e87638498c4b3983349169d701afa2e009d8dda7"
+    },
+    {
+      "id": "access",
+      "path": "/landing/access.webp",
+      "width": 1200,
+      "height": 900,
+      "bytes": 64498,
+      "sha256": "e9d09859a3da8e115df89f6db93ad452724ad3e950823605ae752abde4899a68",
+      "triangles": 32900,
+      "drawCalls": 15,
+      "floodAmount": 1,
+      "cameraSignature": "0.843661,0.000000,-0.536875,0.000000,-0.313970,0.811170,-0.493382,0.000000,0.435497,0.584811,0.684353,0.000000,14.000000,19.000000,22.000000,1.000000,0.081860,0.000000,0.000000,0.000000,0.000000,0.109147,0.000000,0.000000,0.000000,0.000000,-0.016681,0.000000,0.000000,0.000000,-1.001668,1.000000",
+      "landmarks": {
+        "Junction_A": {
+          "x": 0.27460504253333823,
+          "y": 0.5630591711624447
+        },
+        "Service_A": {
+          "x": 0.389813885695267,
+          "y": 0.5593770738704189
+        },
+        "Neighborhood_A": {
+          "x": 0.27177975755116557,
+          "y": 0.3970991820426508
+        },
+        "Field_A": {
+          "x": 0.6261960625370444,
+          "y": 0.42707676621931356
+        }
+      }
+    },
+    {
+      "id": "access-small",
+      "path": "/landing/access-small.webp",
+      "width": 640,
+      "height": 480,
+      "bytes": 29864,
+      "sha256": "7c6abfbc04b75345a552ce5f848c3f6dabb049d1024794dc920c66d3d6f6610f"
+    },
+    {
+      "id": "public",
+      "path": "/landing/public.webp",
+      "width": 1200,
+      "height": 900,
+      "bytes": 70452,
+      "sha256": "a7cefad9c5af4ab6b8b553bf7147896a0b0d6bcb0b4b6f8e833e9f9dbda423b9",
+      "triangles": 33308,
+      "drawCalls": 16,
+      "floodAmount": 1,
+      "cameraSignature": "0.853282,0.000000,-0.521450,0.000000,-0.298807,0.819533,-0.488957,0.000000,0.427346,0.573032,0.699293,0.000000,11.000000,15.000000,19.000000,1.000000,0.088000,0.000000,0.000000,0.000000,0.000000,0.117333,0.000000,0.000000,0.000000,0.000000,-0.016681,0.000000,0.000000,0.000000,-1.001668,1.000000",
+      "landmarks": {
+        "Junction_A": {
+          "x": 0.28224247605202,
+          "y": 0.5435252575529513
+        },
+        "Service_A": {
+          "x": 0.4065561583058477,
+          "y": 0.537169608364538
+        },
+        "Neighborhood_A": {
+          "x": 0.27556791593100916,
+          "y": 0.36809799540255217
+        },
+        "Field_A": {
+          "x": 0.6566435828399741,
+          "y": 0.39517905735029263
+        }
+      }
+    },
+    {
+      "id": "public-small",
+      "path": "/landing/public-small.webp",
+      "width": 640,
+      "height": 480,
+      "bytes": 32516,
+      "sha256": "671044f75a32b40603ee25df68b2e7597619b5c5ead005de034ae8a6b3567a18"
+    },
+    {
+      "id": "command",
+      "path": "/landing/command.webp",
+      "width": 1200,
+      "height": 900,
+      "bytes": 70248,
+      "sha256": "8c57df230522edc300678c91ae7859ede44b8d08a2d53c8c95aea58e8290f8d0",
+      "triangles": 33308,
+      "drawCalls": 16,
+      "floodAmount": 1,
+      "cameraSignature": "0.853282,0.000000,-0.521450,0.000000,-0.298807,0.819533,-0.488957,0.000000,0.427346,0.573032,0.699293,0.000000,11.000000,15.000000,19.000000,1.000000,0.088000,0.000000,0.000000,0.000000,0.000000,0.117333,0.000000,0.000000,0.000000,0.000000,-0.016681,0.000000,0.000000,0.000000,-1.001668,1.000000",
+      "landmarks": {
+        "Junction_A": {
+          "x": 0.28224247605202,
+          "y": 0.5435252575529513
+        },
+        "Service_A": {
+          "x": 0.4065561583058477,
+          "y": 0.537169608364538
+        },
+        "Neighborhood_A": {
+          "x": 0.27556791593100916,
+          "y": 0.36809799540255217
+        },
+        "Field_A": {
+          "x": 0.6566435828399741,
+          "y": 0.39517905735029263
+        }
+      }
+    },
+    {
+      "id": "command-small",
+      "path": "/landing/command-small.webp",
+      "width": 640,
+      "height": 480,
+      "bytes": 32606,
+      "sha256": "9f7c8ad8ddca0189d553c59519e89b80e458acf60366be5316b3266116fb2d26"
+    },
+    {
+      "id": "studio",
+      "path": "/landing/studio.webp",
+      "width": 1200,
+      "height": 900,
+      "bytes": 70214,
+      "sha256": "469e02a0417e38a9ab3f34c015ebf52a783c1a6e26ce441047a715aeb0b8c3b2",
+      "triangles": 32900,
+      "drawCalls": 15,
+      "floodAmount": 1,
+      "cameraSignature": "0.853282,0.000000,-0.521450,0.000000,-0.298807,0.819533,-0.488957,0.000000,0.427346,0.573032,0.699293,0.000000,11.000000,15.000000,19.000000,1.000000,0.088000,0.000000,0.000000,0.000000,0.000000,0.117333,0.000000,0.000000,0.000000,0.000000,-0.016681,0.000000,0.000000,0.000000,-1.001668,1.000000",
+      "landmarks": {
+        "Junction_A": {
+          "x": 0.28224247605202,
+          "y": 0.5435252575529513
+        },
+        "Service_A": {
+          "x": 0.4065561583058477,
+          "y": 0.537169608364538
+        },
+        "Neighborhood_A": {
+          "x": 0.27556791593100916,
+          "y": 0.36809799540255217
+        },
+        "Field_A": {
+          "x": 0.6566435828399741,
+          "y": 0.39517905735029263
+        }
+      }
+    },
+    {
+      "id": "studio-small",
+      "path": "/landing/studio-small.webp",
+      "width": 640,
+      "height": 480,
+      "bytes": 32576,
+      "sha256": "d470203a37e0affb19d3472e0fd385cdf584ef41155315cbf6deb65107236f2d"
+    },
+    {
+      "id": "shared",
+      "path": "/landing/shared.webp",
+      "width": 1200,
+      "height": 900,
+      "bytes": 64672,
+      "sha256": "26af0946c6f316fc856bd35c2e9e3c25ccb0bddfae91fb66df3a044b3143e812",
+      "triangles": 33308,
+      "drawCalls": 16,
+      "floodAmount": 1,
+      "cameraSignature": "0.843661,0.000000,-0.536875,0.000000,-0.313970,0.811170,-0.493382,0.000000,0.435497,0.584811,0.684353,0.000000,14.000000,19.000000,22.000000,1.000000,0.081860,0.000000,0.000000,0.000000,0.000000,0.109147,0.000000,0.000000,0.000000,0.000000,-0.016681,0.000000,0.000000,0.000000,-1.001668,1.000000",
+      "landmarks": {
+        "Junction_A": {
+          "x": 0.27460504253333823,
+          "y": 0.5630591711624447
+        },
+        "Service_A": {
+          "x": 0.389813885695267,
+          "y": 0.5593770738704189
+        },
+        "Neighborhood_A": {
+          "x": 0.27177975755116557,
+          "y": 0.3970991820426508
+        },
+        "Field_A": {
+          "x": 0.6261960625370444,
+          "y": 0.42707676621931356
+        }
+      }
+    },
+    {
+      "id": "shared-small",
+      "path": "/landing/shared-small.webp",
+      "width": 640,
+      "height": 480,
+      "bytes": 29932,
+      "sha256": "e9694843aa99bf1c1a6049b14b4e16aa8e33a0a7f3f78a0ff0ffecbe8e273b2a"
+    },
+    {
+      "id": "terrain-model",
+      "path": "/landing/models/terrain-v2.glb",
+      "bytes": 2060024,
+      "sha256": "f93f1b5b68e9624b4377363a51c8a55fa0e7df7f05057adbf8592997e31923b7",
+      "validation": "Reimported successfully with GLTFLoader",
+      "nodes": [
+        "AuxScene",
+        "TerrainRoot",
+        "DistrictGroundAndStreetNetwork",
+        "DistrictBuildings_47",
+        "DistrictBuildings_47_ArchitecturalEdges",
+        "VegetationAndFieldBoundary",
+        "StreetFurnitureAndResidents",
+        "ResidentRoot",
+        "ResidentWithHandheldPhone",
+        "CoordinatorRoot",
+        "IntegratedServiceReviewDesks",
+        "StudioRoot",
+        "FourResearchEvidenceSheets",
+        "DryAccessConnection",
+        "Annotation_HOMES",
+        "Annotation_SERVICE",
+        "Junction_A",
+        "Service_A",
+        "Neighborhood_A",
+        "Field_A",
+        "Community_A",
+        "RoadSegment_A",
+        "Hospital_A",
+        "PhoneScreenAnchor",
+        "CommandScreenAnchor",
+        "StudioScreenAnchor",
+        "Camera_place",
+        "Target_place",
+        "Camera_dry",
+        "Target_dry",
+        "Camera_flood",
+        "Target_flood",
+        "Camera_access",
+        "Target_access",
+        "Camera_public",
+        "Target_public",
+        "Camera_command",
+        "Target_command",
+        "Camera_studio",
+        "Target_studio",
+        "Camera_shared",
+        "Target_shared"
+      ]
+    },
+    {
+      "id": "flood-model",
+      "path": "/landing/models/flood-v2.glb",
+      "bytes": 2104096,
+      "sha256": "c2161c9de186b4b3185e59a89b85734f2cb9e13865b2d69a70d032b75b332151",
+      "validation": "Reimported successfully with GLTFLoader",
+      "nodes": [
+        "AuxScene",
+        "TerrainRoot",
+        "DistrictGroundAndStreetNetwork",
+        "DistrictBuildings_47",
+        "DistrictBuildings_47_ArchitecturalEdges",
+        "VegetationAndFieldBoundary",
+        "StreetFurnitureAndResidents",
+        "ResidentRoot",
+        "ResidentWithHandheldPhone",
+        "CoordinatorRoot",
+        "IntegratedServiceReviewDesks",
+        "StudioRoot",
+        "FourResearchEvidenceSheets",
+        "IllustrativeInundationMask",
+        "QuietSurfaceTraces",
+        "Annotation_HOMES",
+        "Annotation_SERVICE",
+        "Junction_A",
+        "Service_A",
+        "Neighborhood_A",
+        "Field_A",
+        "Community_A",
+        "RoadSegment_A",
+        "Hospital_A",
+        "PhoneScreenAnchor",
+        "CommandScreenAnchor",
+        "StudioScreenAnchor",
+        "Camera_place",
+        "Target_place",
+        "Camera_dry",
+        "Target_dry",
+        "Camera_flood",
+        "Target_flood",
+        "Camera_access",
+        "Target_access",
+        "Camera_public",
+        "Target_public",
+        "Camera_command",
+        "Target_command",
+        "Camera_studio",
+        "Target_studio",
+        "Camera_shared",
+        "Target_shared"
+      ]
+    },
+    {
+      "id": "resident-model",
+      "path": "/landing/models/resident-v2.glb",
+      "bytes": 13264,
+      "sha256": "a0cbc7899263a4246d11e35348ade5a075eb1720ae6df1d6e6bd910e5b225d92",
+      "validation": "Reimported successfully with GLTFLoader",
+      "nodes": [
+        "AuxScene",
+        "ResidentRoot",
+        "ResidentWithHandheldPhone"
+      ]
+    },
+    {
+      "id": "coordinator-model",
+      "path": "/landing/models/coordinator-v2.glb",
+      "bytes": 43884,
+      "sha256": "2701ed44010c34dba6bad23de31145630b670dde3fc0d5b719330de1ed04f105",
+      "validation": "Reimported successfully with GLTFLoader",
+      "nodes": [
+        "AuxScene",
+        "CoordinatorRoot",
+        "IntegratedServiceReviewDesks"
+      ]
+    },
+    {
+      "id": "researcher-model",
+      "path": "/landing/models/researcher-v2.glb",
+      "bytes": 28244,
+      "sha256": "c23000c85812628271a9cb4bfb1960d6cc2159686412fabd2cac9a29a089c040",
+      "validation": "Reimported successfully with GLTFLoader",
+      "nodes": [
+        "AuxScene",
+        "StudioRoot",
+        "FourResearchEvidenceSheets"
+      ]
+    },
+    {
+      "id": "hero-desktop",
+      "path": "/landing/hero-desktop.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 522592,
+      "sha256": "17a2070a8afbf753728d085435c99ca6dc7efd1ada3ba0dc2961c4bd34624b26",
+      "origin": "user_supplied_unverified_context"
+    },
+    {
+      "id": "hero-mobile",
+      "path": "/landing/hero-mobile.webp",
+      "width": 900,
+      "height": 507,
+      "bytes": 236388,
+      "sha256": "475e799e2ab277a778ef6bdccdc222842ff2f0a8863aea5600838c4c4dd402c3",
+      "origin": "user_supplied_unverified_context"
+    },
+    {
+      "id": "contours",
+      "path": "/landing/contours.svg",
+      "bytes": 2631,
+      "sha256": "70125955aab4705224816d4e013de1c86af3248f43364c27ec50096655b15c3e",
+      "origin": "original_design"
+    },
+    {
+      "id": "legacy-coordinator-v1.glb",
+      "path": "/landing/models/coordinator-v1.glb",
+      "bytes": 118380,
+      "sha256": "86f3a5b07d3d89c105a89415b5f8bbf464bcbad6782925ac891ab3023e1ff65d",
+      "status": "retained_unreferenced_v1_artifact",
+      "origin": "prior_original_procedural_illustration"
+    },
+    {
+      "id": "legacy-researcher-v1.glb",
+      "path": "/landing/models/researcher-v1.glb",
+      "bytes": 195992,
+      "sha256": "aeb9f466e895b0ef19a79b0c4582de228264262bcd51c0d94e49c34c0d3fc0e3",
+      "status": "retained_unreferenced_v1_artifact",
+      "origin": "prior_original_procedural_illustration"
+    },
+    {
+      "id": "legacy-resident-v1.glb",
+      "path": "/landing/models/resident-v1.glb",
+      "bytes": 100664,
+      "sha256": "3445abe73ddf8794f68f702a45a9a6c5c1979d0eb5c5f941dbebcb97dfe66bdf",
+      "status": "retained_unreferenced_v1_artifact",
+      "origin": "prior_original_procedural_illustration"
+    },
+    {
+      "id": "legacy-terrain-v1.glb",
+      "path": "/landing/models/terrain-v1.glb",
+      "bytes": 639828,
+      "sha256": "ffb8eef15d4f02316efe32c2ad099a6c0f8ec7bd663fa7096a7453b628178001",
+      "status": "retained_unreferenced_v1_artifact",
+      "origin": "prior_original_procedural_illustration"
+    }
+  ],
+  "editableMaster": {
+    "path": "src/components/landing/scene/terrain-scene.ts",
+    "bytes": 27261,
+    "sha256": "f10aae5b7a3d6e81e5a0269499587c813b5cf1b7f573c43dd6532018fc31589d"
+  },
+  "editableSources": [
+    {
+      "path": "src/components/landing/scene/terrain-scene.ts",
+      "bytes": 27261,
+      "sha256": "f10aae5b7a3d6e81e5a0269499587c813b5cf1b7f573c43dd6532018fc31589d"
+    },
+    {
+      "path": "src/lib/landing/sample-story.ts",
+      "bytes": 9122,
+      "sha256": "e5104fd390f1cbaef3cf7a50a41885cf624deb7fcb52b5ca7b0907578c2ae740"
+    },
+    {
+      "path": "scripts/render-landing-assets.mjs",
+      "bytes": 11293,
+      "sha256": "e94b95c3c5e83aba03e72ebb722136139f69dd3feafcf4f7b55e9fd110f1dfdb"
+    }
+  ],
+  "district": {
+    "buildingCount": 47,
+    "landmarks": [
+      "Junction_A",
+      "Service_A",
+      "Neighborhood_A",
+      "Field_A"
+    ],
+    "referenceSelection": {
+      "x": 650,
+      "y": 310,
+      "width": 640,
+      "height": 575,
+      "sourceWidth": 1672,
+      "sourceHeight": 941
+    }
+  },
+  "contextSource": {
+    "filename": "ChatGPT Image Sep 9, 2026, 11_04_51 AM.png",
+    "sha256": "0f6b0babc37fe09978ceec4b7acb4b58afc84f7c414555745ce27398fca1a1b7",
+    "bytes": 3561571,
+    "status": "user_supplied_unverified_photo_style_concept",
+    "manipulation": "resize and WebP encoding only; no synthetic image editing or claimed geographic registration"
+  }
+}

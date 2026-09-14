@@ -1,0 +1,733 @@
+{
+  "revision": "desktop-access-world-v4",
+  "worldId": "original-mae-sai-inspired-access-world-v4",
+  "status": "generated_and_browser_rendered_not_geographically_validated",
+  "provenance": "Original authored continuous Three.js terrain, low-rise town, neighborhood, river, fields, procedural DataTextures and lighting. Mae Sai-inspired illustrative geography, not surveyed terrain, photogrammetry, documentary imagery, measured flooding or current conditions. No external image, NYC asset or aerial texture is used.",
+  "generator": "node scripts/render-drone-assets.mjs",
+  "editableSources": [
+    {
+      "path": "src/components/landing/scene/drone-scene.ts",
+      "bytes": 37846,
+      "sha256": "36ef30201a4fd31deca2354f131906b731adbc42baa8e4dcddd5236e575a8ed7"
+    },
+    {
+      "path": "src/lib/landing/illustrative-scenario.ts",
+      "bytes": 7059,
+      "sha256": "d515c3e780604c5727926f0d7840d5e99639318a81473f7eb4e1df92d45081a1"
+    },
+    {
+      "path": "scripts/render-drone-assets.mjs",
+      "bytes": 5882,
+      "sha256": "5bd8a2fa461bca58d5f1312cb8ead3b90c0e2235bb5a5ef7bf064653b49b2fc6"
+    }
+  ],
+  "assets": [
+    {
+      "id": "far",
+      "path": "/landing/desktop-v4/far.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 192000,
+      "sha256": "eebdfdf2e8ee5147d21a61c2fb7d5baee9d1a0971cea84dd6ccbd9fbd0b04249",
+      "worldId": "original-mae-sai-inspired-access-world-v4",
+      "flight": 0,
+      "floodAmount": 0,
+      "waterHeight": 0.075,
+      "buildingCount": 1459,
+      "contextBuildingCount": 1419,
+      "networkAmount": 0,
+      "resultAmount": 0,
+      "annotations": {
+        "home": {
+          "x": 0.6083668107184109,
+          "y": 0.6058863128918428
+        },
+        "facility": {
+          "x": 0.6827075560381897,
+          "y": 0.8028610753324982
+        },
+        "affectedLink": {
+          "x": 0.6237945895737198,
+          "y": 0.7174440492014306
+        }
+      },
+      "baselineReachable": true,
+      "scenarioReachable": false,
+      "cameraSignature": "0.852323,0.000000,-0.523016,0.000000,-0.310049,0.805342,-0.505265,0.000000,0.421207,0.592810,0.686412,0.000000,25.000000,38.000000,43.000000,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,-0.320000,0.460000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.6083668107184109,
+          "y": 0.6058863128918428
+        },
+        "Junction_A": {
+          "x": 0.6237945895737198,
+          "y": 0.7174440492014306
+        },
+        "Service_A": {
+          "x": 0.6782590075087772,
+          "y": 0.8209429945379554
+        },
+        "Field_A": {
+          "x": 0.8123158090762894,
+          "y": 0.7449020962574402
+        }
+      },
+      "triangles": 228762,
+      "drawCalls": 23,
+      "textures": 4,
+      "geometries": 23,
+      "treeCount": 1725
+    },
+    {
+      "id": "connected",
+      "path": "/landing/desktop-v4/connected.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 176710,
+      "sha256": "7a0c7be35a8d618f002a52d67477ce68daabacb0c7c6afc1b7247309734f89c4",
+      "worldId": "original-mae-sai-inspired-access-world-v4",
+      "flight": 1,
+      "floodAmount": 0,
+      "waterHeight": 0.075,
+      "buildingCount": 1459,
+      "contextBuildingCount": 1419,
+      "networkAmount": 0,
+      "resultAmount": 0,
+      "annotations": {
+        "home": {
+          "x": 0.5462581111308371,
+          "y": 0.2685189650691469
+        },
+        "facility": {
+          "x": 0.6955409343736579,
+          "y": 0.6254100112546466
+        },
+        "affectedLink": {
+          "x": 0.5746614236850763,
+          "y": 0.46116869678275935
+        }
+      },
+      "baselineReachable": true,
+      "scenarioReachable": false,
+      "cameraSignature": "0.875034,-0.000000,-0.484061,0.000000,-0.287251,0.804894,-0.519261,0.000000,0.389618,0.593418,0.704310,0.000000,12.000000,20.000000,23.000000,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,-0.320000,0.000000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.5462581111308371,
+          "y": 0.2685189650691469
+        },
+        "Junction_A": {
+          "x": 0.5746614236850763,
+          "y": 0.46116869678275935
+        },
+        "Service_A": {
+          "x": 0.6871114157143108,
+          "y": 0.6633847322108883
+        },
+        "Field_A": {
+          "x": 0.9297159522414834,
+          "y": 0.49560870609085333
+        }
+      },
+      "triangles": 228762,
+      "drawCalls": 23,
+      "textures": 4,
+      "geometries": 23,
+      "treeCount": 1725
+    },
+    {
+      "id": "flood",
+      "path": "/landing/desktop-v4/flood.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 177070,
+      "sha256": "1d0958445573ca095b055e73f932b59b1cc2e2027fd68531b67d2a729394806a",
+      "worldId": "original-mae-sai-inspired-access-world-v4",
+      "flight": 1,
+      "floodAmount": 1,
+      "waterHeight": 0.3,
+      "buildingCount": 1459,
+      "contextBuildingCount": 1419,
+      "networkAmount": 0,
+      "resultAmount": 0,
+      "annotations": {
+        "home": {
+          "x": 0.5462581111308371,
+          "y": 0.2685189650691469
+        },
+        "facility": {
+          "x": 0.6955409343736579,
+          "y": 0.6254100112546466
+        },
+        "affectedLink": {
+          "x": 0.5746614236850763,
+          "y": 0.46116869678275935
+        }
+      },
+      "baselineReachable": true,
+      "scenarioReachable": false,
+      "cameraSignature": "0.875034,-0.000000,-0.484061,0.000000,-0.287251,0.804894,-0.519261,0.000000,0.389618,0.593418,0.704310,0.000000,12.000000,20.000000,23.000000,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,-0.320000,0.000000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.5462581111308371,
+          "y": 0.2685189650691469
+        },
+        "Junction_A": {
+          "x": 0.5746614236850763,
+          "y": 0.46116869678275935
+        },
+        "Service_A": {
+          "x": 0.6871114157143108,
+          "y": 0.6633847322108883
+        },
+        "Field_A": {
+          "x": 0.9297159522414834,
+          "y": 0.49560870609085333
+        }
+      },
+      "triangles": 229528,
+      "drawCalls": 26,
+      "textures": 5,
+      "geometries": 26,
+      "treeCount": 1725
+    },
+    {
+      "id": "access",
+      "path": "/landing/desktop-v4/access.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 179722,
+      "sha256": "977f1e6a863ebe3449a9875e05165a96648378f49c1863bb981550a34be00040",
+      "worldId": "original-mae-sai-inspired-access-world-v4",
+      "flight": 1,
+      "floodAmount": 1,
+      "waterHeight": 0.3,
+      "buildingCount": 1459,
+      "contextBuildingCount": 1419,
+      "networkAmount": 1,
+      "resultAmount": 0,
+      "annotations": {
+        "home": {
+          "x": 0.5462581111308371,
+          "y": 0.2685189650691469
+        },
+        "facility": {
+          "x": 0.6955409343736579,
+          "y": 0.6254100112546466
+        },
+        "affectedLink": {
+          "x": 0.5746614236850763,
+          "y": 0.46116869678275935
+        }
+      },
+      "baselineReachable": true,
+      "scenarioReachable": false,
+      "cameraSignature": "0.875034,-0.000000,-0.484061,0.000000,-0.287251,0.804894,-0.519261,0.000000,0.389618,0.593418,0.704310,0.000000,12.000000,20.000000,23.000000,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,-0.320000,0.000000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.5462581111308371,
+          "y": 0.2685189650691469
+        },
+        "Junction_A": {
+          "x": 0.5746614236850763,
+          "y": 0.46116869678275935
+        },
+        "Service_A": {
+          "x": 0.6871114157143108,
+          "y": 0.6633847322108883
+        },
+        "Field_A": {
+          "x": 0.9297159522414834,
+          "y": 0.49560870609085333
+        }
+      },
+      "triangles": 230154,
+      "drawCalls": 26,
+      "textures": 5,
+      "geometries": 28,
+      "treeCount": 1725
+    },
+    {
+      "id": "finding",
+      "path": "/landing/desktop-v4/finding.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 180396,
+      "sha256": "7abe12ac50744cc83043c9cee3d24bf73da0b6b4c4ada35ae441cf30962bfdad",
+      "worldId": "original-mae-sai-inspired-access-world-v4",
+      "flight": 1,
+      "floodAmount": 1,
+      "waterHeight": 0.3,
+      "buildingCount": 1459,
+      "contextBuildingCount": 1419,
+      "networkAmount": 1,
+      "resultAmount": 1,
+      "annotations": {
+        "home": {
+          "x": 0.5462581111308371,
+          "y": 0.2685189650691469
+        },
+        "facility": {
+          "x": 0.6955409343736579,
+          "y": 0.6254100112546466
+        },
+        "affectedLink": {
+          "x": 0.5746614236850763,
+          "y": 0.46116869678275935
+        }
+      },
+      "baselineReachable": true,
+      "scenarioReachable": false,
+      "cameraSignature": "0.875034,-0.000000,-0.484061,0.000000,-0.287251,0.804894,-0.519261,0.000000,0.389618,0.593418,0.704310,0.000000,12.000000,20.000000,23.000000,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,-0.320000,0.000000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.5462581111308371,
+          "y": 0.2685189650691469
+        },
+        "Junction_A": {
+          "x": 0.5746614236850763,
+          "y": 0.46116869678275935
+        },
+        "Service_A": {
+          "x": 0.6871114157143108,
+          "y": 0.6633847322108883
+        },
+        "Field_A": {
+          "x": 0.9297159522414834,
+          "y": 0.49560870609085333
+        }
+      },
+      "triangles": 230474,
+      "drawCalls": 27,
+      "textures": 5,
+      "geometries": 29,
+      "treeCount": 1725
+    }
+  ],
+  "plan": {
+    "contextBuildings": 1419,
+    "neighborhoodBuildings": 40,
+    "seed": 19317919,
+    "sourceStatus": "original_illustrative_geography_not_surveyed",
+    "camera": {
+      "far": {
+        "position": [
+          25,
+          38,
+          43
+        ],
+        "target": [
+          -2,
+          0,
+          -1
+        ],
+        "verticalViewOffset": 0.23
+      },
+      "close": {
+        "position": [
+          12,
+          20,
+          23
+        ],
+        "target": [
+          -1,
+          0.2,
+          -0.5
+        ]
+      },
+      "fov": 34
+    },
+    "finalHorizontalViewOffset": 0.16,
+    "toneMappingExposure": 1.02,
+    "scenario": {
+      "id": "SYN-ACCESS-01",
+      "origin": "synthetic_illustration",
+      "sourceStatus": "authored_not_observed",
+      "currentConditionClaim": false,
+      "operationalWriteAllowed": false,
+      "homeId": "SYN-HOME-A",
+      "facilityId": "SYN-FACILITY-A",
+      "assumedDisruptedLinkId": "SYN-LINK-CROSSING",
+      "nodes": [
+        {
+          "id": "SYN-HOME-A",
+          "position": [
+            -9,
+            -4.05
+          ]
+        },
+        {
+          "id": "SYN-NODE-ENTRY",
+          "position": [
+            -9,
+            -3.65
+          ]
+        },
+        {
+          "id": "SYN-NODE-WEST",
+          "position": [
+            -4.3,
+            -3.65
+          ]
+        },
+        {
+          "id": "SYN-NODE-BEFORE",
+          "position": [
+            -4.3,
+            -1.1
+          ]
+        },
+        {
+          "id": "SYN-NODE-AFTER",
+          "position": [
+            -4.3,
+            1.25
+          ]
+        },
+        {
+          "id": "SYN-NODE-JUNCTION",
+          "position": [
+            -4.3,
+            2.7
+          ]
+        },
+        {
+          "id": "SYN-NODE-CENTER",
+          "position": [
+            -2.25,
+            2.3
+          ]
+        },
+        {
+          "id": "SYN-NODE-FRONTAGE",
+          "position": [
+            -2,
+            6
+          ]
+        },
+        {
+          "id": "SYN-NODE-GATE",
+          "position": [
+            1.1,
+            5.8
+          ]
+        },
+        {
+          "id": "SYN-FACILITY-A",
+          "position": [
+            1.1,
+            5.35
+          ]
+        },
+        {
+          "id": "SYN-NODE-SPUR",
+          "position": [
+            -12,
+            -3.65
+          ]
+        }
+      ],
+      "links": [
+        {
+          "id": "SYN-LINK-DRIVE",
+          "from": "SYN-HOME-A",
+          "to": "SYN-NODE-ENTRY"
+        },
+        {
+          "id": "SYN-LINK-WEST",
+          "from": "SYN-NODE-ENTRY",
+          "to": "SYN-NODE-WEST"
+        },
+        {
+          "id": "SYN-LINK-APPROACH",
+          "from": "SYN-NODE-WEST",
+          "to": "SYN-NODE-BEFORE"
+        },
+        {
+          "id": "SYN-LINK-CROSSING",
+          "from": "SYN-NODE-BEFORE",
+          "to": "SYN-NODE-AFTER"
+        },
+        {
+          "id": "SYN-LINK-EXIT",
+          "from": "SYN-NODE-AFTER",
+          "to": "SYN-NODE-JUNCTION"
+        },
+        {
+          "id": "SYN-LINK-JUNCTION",
+          "from": "SYN-NODE-JUNCTION",
+          "to": "SYN-NODE-CENTER"
+        },
+        {
+          "id": "SYN-LINK-FRONTAGE",
+          "from": "SYN-NODE-CENTER",
+          "to": "SYN-NODE-FRONTAGE"
+        },
+        {
+          "id": "SYN-LINK-GATE",
+          "from": "SYN-NODE-FRONTAGE",
+          "to": "SYN-NODE-GATE"
+        },
+        {
+          "id": "SYN-LINK-FACILITY",
+          "from": "SYN-NODE-GATE",
+          "to": "SYN-FACILITY-A"
+        },
+        {
+          "id": "SYN-LINK-SPUR",
+          "from": "SYN-NODE-ENTRY",
+          "to": "SYN-NODE-SPUR"
+        }
+      ],
+      "floodFootprint": [
+        [
+          19,
+          -1.9
+        ],
+        [
+          17,
+          -2.1
+        ],
+        [
+          15.8,
+          -1.8
+        ],
+        [
+          14,
+          -1.9
+        ],
+        [
+          12.8,
+          -1.55
+        ],
+        [
+          11,
+          -1.5
+        ],
+        [
+          9.9,
+          -1.9
+        ],
+        [
+          8,
+          -1.75
+        ],
+        [
+          7,
+          -1.4
+        ],
+        [
+          5.8,
+          -1.65
+        ],
+        [
+          5,
+          -1.35
+        ],
+        [
+          4,
+          -1.25
+        ],
+        [
+          2.8,
+          -1.65
+        ],
+        [
+          1.4,
+          -1.2
+        ],
+        [
+          0.2,
+          -1.4
+        ],
+        [
+          -0.8,
+          -1.1
+        ],
+        [
+          -2.3,
+          -1.05
+        ],
+        [
+          -3,
+          -0.75
+        ],
+        [
+          -3.7,
+          -0.85
+        ],
+        [
+          -4.3,
+          -0.8
+        ],
+        [
+          -4.65,
+          -0.95
+        ],
+        [
+          -5.05,
+          -0.7
+        ],
+        [
+          -5.25,
+          -0.6
+        ],
+        [
+          -5.4,
+          0.05
+        ],
+        [
+          -5.22,
+          0.3
+        ],
+        [
+          -5.05,
+          0.75
+        ],
+        [
+          -4.6,
+          1.15
+        ],
+        [
+          -4,
+          1.03
+        ],
+        [
+          -3.5,
+          1.2
+        ],
+        [
+          -2.8,
+          0.85
+        ],
+        [
+          -2.1,
+          0.85
+        ],
+        [
+          -1,
+          0.45
+        ],
+        [
+          0.2,
+          0.6
+        ],
+        [
+          1.3,
+          0.37
+        ],
+        [
+          2.5,
+          0.75
+        ],
+        [
+          3.7,
+          0.3
+        ],
+        [
+          4.6,
+          0.62
+        ],
+        [
+          5.5,
+          0.6
+        ],
+        [
+          6.6,
+          0.93
+        ],
+        [
+          8,
+          1.1
+        ],
+        [
+          9.2,
+          0.7
+        ],
+        [
+          11,
+          0.95
+        ],
+        [
+          12.2,
+          1.5
+        ],
+        [
+          13,
+          1.25
+        ],
+        [
+          14,
+          1.5
+        ],
+        [
+          15.7,
+          1.7
+        ],
+        [
+          17,
+          1.55
+        ],
+        [
+          19,
+          2.2
+        ]
+      ],
+      "annotationAnchors": {
+        "home": [
+          -9,
+          1.3,
+          -5
+        ],
+        "facility": [
+          2.6,
+          1.55,
+          3.76
+        ],
+        "affectedLink": [
+          -4.3,
+          0.4,
+          0.075
+        ]
+      },
+      "assumptions": [
+        "Only the explicitly drawn synthetic links are included; surrounding streets are geographic context, not a complete transport network.",
+        "The crossing link is removed as an illustrative disruption assumption. Water overlap does not establish actual road status.",
+        "The destination is illustrative; current facility operation, road status and alternative connections are unverified.",
+        "No population, distance, travel time, facility capacity or real-world priority score is claimed."
+      ]
+    },
+    "finding": {
+      "scenarioId": "SYN-ACCESS-01",
+      "baseline": {
+        "reachable": true,
+        "linkIds": [
+          "SYN-LINK-DRIVE",
+          "SYN-LINK-WEST",
+          "SYN-LINK-APPROACH",
+          "SYN-LINK-CROSSING",
+          "SYN-LINK-EXIT",
+          "SYN-LINK-JUNCTION",
+          "SYN-LINK-FRONTAGE",
+          "SYN-LINK-GATE",
+          "SYN-LINK-FACILITY"
+        ],
+        "origin": "synthetic_illustration"
+      },
+      "scenario": {
+        "reachable": false,
+        "linkIds": null,
+        "origin": "synthetic_illustration"
+      },
+      "assumedDisruptedLinkId": "SYN-LINK-CROSSING",
+      "assumptions": [
+        "Only the explicitly drawn synthetic links are included; surrounding streets are geographic context, not a complete transport network.",
+        "The crossing link is removed as an illustrative disruption assumption. Water overlap does not establish actual road status.",
+        "The destination is illustrative; current facility operation, road status and alternative connections are unverified.",
+        "No population, distance, travel time, facility capacity or real-world priority score is claimed."
+      ],
+      "origin": "synthetic_illustration",
+      "currentConditionClaim": false,
+      "operationalWriteAllowed": false
+    }
+  }
+}

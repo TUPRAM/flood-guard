@@ -1,0 +1,208 @@
+{
+  "revision": "desktop-continuous-world-v3",
+  "worldId": "original-mae-sai-inspired-continuous-world-v3",
+  "status": "generated_and_browser_rendered_not_geographically_validated",
+  "provenance": "Original authored continuous Three.js terrain, low-rise town, neighborhood, river, fields, procedural DataTextures and lighting. Mae Sai-inspired illustrative geography, not surveyed terrain, photogrammetry, documentary imagery, measured flooding or current conditions. No external image, NYC asset or aerial texture is used.",
+  "generator": "node scripts/render-drone-assets.mjs",
+  "editableSources": [
+    {
+      "path": "src/components/landing/scene/drone-scene.ts",
+      "bytes": 30493,
+      "sha256": "1ed6f8e8b7afbd4ba19c8183230d2500255a143d908ad7c968af9e6969930e5e"
+    },
+    {
+      "path": "scripts/render-drone-assets.mjs",
+      "bytes": 5584,
+      "sha256": "872f964f44b51f0a8ee6d80bf190a49812c121e93503703aa53ca95daa58a044"
+    }
+  ],
+  "assets": [
+    {
+      "id": "far",
+      "path": "/landing/desktop-v3/far.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 212896,
+      "sha256": "5e66c126f6e043e613d6342d119638d8e7a2fa92f95087524dc9da71d5ce186f",
+      "worldId": "original-mae-sai-inspired-continuous-world-v3",
+      "flight": 0,
+      "floodAmount": 0,
+      "waterHeight": 0.075,
+      "buildingCount": 1461,
+      "contextBuildingCount": 1419,
+      "cameraSignature": "0.901002,0.000000,-0.433816,0.000000,-0.256728,0.806091,-0.533205,0.000000,0.349695,0.591791,0.726289,0.000000,65.000000,110.000000,115.000000,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,0.000000,0.000000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.41074584860359803,
+          "y": 0.5817403857583974
+        },
+        "Junction_A": {
+          "x": 0.4268312790957285,
+          "y": 0.6270482035853833
+        },
+        "Service_A": {
+          "x": 0.4547446303403668,
+          "y": 0.6249887162194832
+        },
+        "Field_A": {
+          "x": 0.5024892775537688,
+          "y": 0.5905582734080099
+        }
+      },
+      "triangles": 228574,
+      "drawCalls": 18,
+      "textures": 4,
+      "geometries": 18,
+      "treeCount": 1725
+    },
+    {
+      "id": "approach",
+      "path": "/landing/desktop-v3/approach.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 238586,
+      "sha256": "0dee9bef9c0b652a146a9696ad8f4568a962c6dd41b8d800ac672ac09d08731e",
+      "worldId": "original-mae-sai-inspired-continuous-world-v3",
+      "flight": 0.6,
+      "floodAmount": 0,
+      "waterHeight": 0.075,
+      "buildingCount": 1461,
+      "contextBuildingCount": 1419,
+      "cameraSignature": "0.890794,0.000000,-0.454407,0.000000,-0.302132,0.746938,-0.592283,0.000000,0.339414,0.664894,0.665368,0.000000,28.824320,56.601815,50.156800,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,-0.204768,0.000000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.4801507134769586,
+          "y": 0.5315801311329774
+        },
+        "Junction_A": {
+          "x": 0.5116727593226478,
+          "y": 0.6365084056931662
+        },
+        "Service_A": {
+          "x": 0.5719731534667227,
+          "y": 0.636572098222196
+        },
+        "Field_A": {
+          "x": 0.6731596591226777,
+          "y": 0.55558500937057
+        }
+      },
+      "triangles": 228574,
+      "drawCalls": 18,
+      "textures": 4,
+      "geometries": 18,
+      "treeCount": 1725
+    },
+    {
+      "id": "dry",
+      "path": "/landing/desktop-v3/dry.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 196314,
+      "sha256": "5a92c7b1a58344a21dbfc9da1966d19e1fb28857f6a3a22a3deaf5eb724cb77a",
+      "worldId": "original-mae-sai-inspired-continuous-world-v3",
+      "flight": 1,
+      "floodAmount": 0,
+      "waterHeight": 0.075,
+      "buildingCount": 1461,
+      "contextBuildingCount": 1419,
+      "cameraSignature": "0.857493,0.000000,-0.514496,0.000000,-0.300703,0.811421,-0.501172,0.000000,0.417473,0.584462,0.695788,0.000000,12.000000,17.000000,20.000000,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,-0.300000,0.000000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.41655327618380794,
+          "y": 0.3792122292682395
+        },
+        "Junction_A": {
+          "x": 0.469923325495733,
+          "y": 0.6428611236797394
+        },
+        "Service_A": {
+          "x": 0.6506535182973913,
+          "y": 0.6494844428522626
+        },
+        "Field_A": {
+          "x": 0.9389203726591098,
+          "y": 0.4758039231981892
+        }
+      },
+      "triangles": 228574,
+      "drawCalls": 18,
+      "textures": 4,
+      "geometries": 18,
+      "treeCount": 1725
+    },
+    {
+      "id": "flood",
+      "path": "/landing/desktop-v3/flood.webp",
+      "width": 1600,
+      "height": 900,
+      "bytes": 185778,
+      "sha256": "516740c97955107ad1c9a18d052586062889750323cbe66b932174d4376d9562",
+      "worldId": "original-mae-sai-inspired-continuous-world-v3",
+      "flight": 1,
+      "floodAmount": 1,
+      "waterHeight": 0.3,
+      "buildingCount": 1461,
+      "contextBuildingCount": 1419,
+      "cameraSignature": "0.857493,0.000000,-0.514496,0.000000,-0.300703,0.811421,-0.501172,0.000000,0.417473,0.584462,0.695788,0.000000,12.000000,17.000000,20.000000,1.000000,1.839855,0.000000,0.000000,0.000000,0.000000,3.270853,0.000000,0.000000,-0.300000,0.000000,-1.000333,-1.000000,0.000000,0.000000,-0.300050,0.000000",
+      "landmarks": {
+        "Neighborhood_A": {
+          "x": 0.41655327618380794,
+          "y": 0.3792122292682395
+        },
+        "Junction_A": {
+          "x": 0.469923325495733,
+          "y": 0.6428611236797394
+        },
+        "Service_A": {
+          "x": 0.6506535182973913,
+          "y": 0.6494844428522626
+        },
+        "Field_A": {
+          "x": 0.9389203726591098,
+          "y": 0.4758039231981892
+        }
+      },
+      "triangles": 229424,
+      "drawCalls": 20,
+      "textures": 4,
+      "geometries": 20,
+      "treeCount": 1725
+    }
+  ],
+  "plan": {
+    "contextBuildings": 1419,
+    "neighborhoodBuildings": 42,
+    "seed": 19317919,
+    "sourceStatus": "original_illustrative_geography_not_surveyed",
+    "camera": {
+      "far": {
+        "position": [
+          65,
+          110,
+          115
+        ],
+        "target": [
+          0,
+          0,
+          -20
+        ]
+      },
+      "close": {
+        "position": [
+          12,
+          17,
+          20
+        ],
+        "target": [
+          0,
+          0.2,
+          0
+        ]
+      },
+      "fov": 34
+    },
+    "finalHorizontalViewOffset": 0.15,
+    "toneMappingExposure": 1.02
+  }
+}

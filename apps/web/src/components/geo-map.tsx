@@ -1,6 +1,6 @@
 "use client";
 
-import type { GeoJSON as LeafletGeoJson, Layer, LayerGroup, Map as LeafletMap, Path, TileLayer as LeafletTileLayer } from "leaflet";
+import type { Canvas as LeafletCanvas, GeoJSON as LeafletGeoJson, Layer, LayerGroup, Map as LeafletMap, Path, TileLayer as LeafletTileLayer } from "leaflet";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import type { ActionReasonCode, DatasetMode, PublicPreparednessArea } from "@floodguard/contracts";
@@ -25,6 +25,29 @@ const ACTION_CLASS_LABELS = {
 } as const;
 
 type LeafletModule = typeof import("leaflet");
+
+/** Keep queued draws scoped to this map's Canvas lifecycle. */
+export function createGeoMapRenderer(leaflet: Pick<LeafletModule, "Canvas">): LeafletCanvas {
+  let active = false;
+  const base = leaflet.Canvas.prototype as LeafletCanvas & { _redraw: () => void };
+  const Renderer = leaflet.Canvas.extend({
+    onAdd(this: LeafletCanvas, map: LeafletMap) {
+      active = true;
+      base.onAdd.call(this, map);
+    },
+    onRemove(this: LeafletCanvas, map: LeafletMap) {
+      active = false;
+      base.onRemove.call(this, map);
+    },
+    _redraw(this: LeafletCanvas) {
+      // Leaflet 1.9.4 can lose a queued RAF handle when _updatePaths redraws
+      // synchronously. That orphan must not access a removed Canvas context.
+      if (active) base._redraw.call(this);
+    },
+  });
+  return new Renderer();
+}
+
 type FeatureLayer = Layer & {
   feature?: { properties?: Record<string, unknown> };
   getBounds?: () => import("leaflet").LatLngBounds;
@@ -231,6 +254,7 @@ export function GeoMap({
         maxZoom: 19,
         keyboard: true,
         preferCanvas: true,
+        renderer: L.Browser.canvas ? createGeoMapRenderer(L) : undefined,
       });
       mountedMap.setView([20.36, 99.89], 10);
       mapRef.current = mountedMap;

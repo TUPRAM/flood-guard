@@ -7,6 +7,10 @@ const nextStatic = resolve(out, "_next", "static");
 const appProfile = resolveAppProfile(process.env.FLOODGUARD_APP_PROFILE ?? process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE);
 
 if (appProfile === "public-production") prunePublicProductionOutput();
+// Historical user-supplied aerial references are not approved publication assets.
+for (const name of ["hero-desktop.webp", "hero-mobile.webp"]) {
+  rmSync(resolve(out, "landing", name), { force: true });
+}
 
 function walk(directory) {
   return readdirSync(directory).flatMap((name) => {
@@ -15,8 +19,10 @@ function walk(directory) {
   });
 }
 
+const optionalLandingAssets = collectOptionalLandingAssets();
 const assets = walk(nextStatic)
   .map((path) => `/${relative(out, path).split(sep).join("/")}`)
+  .filter((url) => !optionalLandingAssets.has(url))
   .sort();
 
 writeFileSync(resolve(out, "offline-assets.json"), `${JSON.stringify(assets, null, 2)}\n`, "utf8");
@@ -115,7 +121,53 @@ writeFileSync(
   "utf8",
 );
 
-console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets; profile ${appProfile}; cache ${cacheVersion}`);
+console.log(`offline asset manifest: ${assets.length} production chunks, ${optionalLandingAssets.size} optional landing chunks excluded, ${proposalEvidenceAssets.length} proposal evidence assets; profile ${appProfile}; cache ${cacheVersion}`);
+
+function collectOptionalLandingAssets() {
+  const manifestPath = resolve(process.cwd(), ".next", "react-loadable-manifest.json");
+  const appManifests = resolve(process.cwd(), ".next", "server", "app");
+  const manifests = [
+    ...(existsSync(manifestPath) ? [manifestPath] : []),
+    ...(existsSync(appManifests) ? walk(appManifests).filter((path) => path.endsWith(`${sep}react-loadable-manifest.json`)) : []),
+  ];
+  const optional = new Set();
+  for (const path of manifests) {
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    for (const [name, entry] of Object.entries(manifest)) {
+      const files = Array.isArray(entry?.files) ? entry.files : [];
+      const isNarrative = name.includes("narrative-canvas") || files.some((file) => {
+        if (typeof file !== "string" || !file.startsWith("static/") || !file.endsWith(".js")) return false;
+        const chunkPath = resolve(out, "_next", file);
+        return chunkPath.startsWith(`${nextStatic}${sep}`) && existsSync(chunkPath)
+          && readFileSync(chunkPath, "utf8").includes("data-narrative-canvas");
+      });
+      if (!isNarrative) continue;
+      for (const file of files) {
+        if (typeof file === "string" && file.startsWith("static/")) optional.add(`/_next/${file}`);
+      }
+    }
+  }
+  if (appProfile === "public-production") {
+    for (const path of walk(nextStatic)) {
+      if (!path.endsWith(".js")) continue;
+      const source = readFileSync(path, "utf8");
+      if (source.includes("floodguard:landing-motion:v1") || source.includes("data-narrative-canvas")) {
+        optional.add(`/${relative(out, path).split(sep).join("/")}`);
+      }
+    }
+  }
+  // A shared dependency referenced by a route remains mandatory even if the
+  // optional canvas also appears in its dynamic-import dependency manifest.
+  for (const route of ["index.html", "public/index.html", "command/index.html", "studio/index.html"]) {
+    const path = resolve(out, route);
+    if (!existsSync(path)) continue;
+    const html = readFileSync(path, "utf8");
+    for (const match of html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"?#]+)[^"]*"/gi)) {
+      optional.delete(match[1]);
+    }
+  }
+  return optional;
+}
 
 function resolveAppProfile(value) {
   const normalized = value?.trim().toLowerCase();
@@ -126,6 +178,7 @@ function resolveAppProfile(value) {
 
 function prunePublicProductionOutput() {
   const excluded = [
+    "landing",
     "command",
     "studio",
     "offline-demo/bundle.json",

@@ -905,7 +905,9 @@ function requiredFinalCopy(routePath) {
       ? ["hazard info", "report", "shelter", "prepare", "sos"]
       : routePath === "/command/"
         ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
-        : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
+        : routePath === "/studio/"
+          ? ["every result has a context", "research studies", "planning evidence", "historical studies"]
+          : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
 }
 
 /**

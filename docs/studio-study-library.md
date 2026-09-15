@@ -40,6 +40,8 @@ The source experiment checkout was `codex/public-flood-models` at `36e2536d9dee6
 
 The visual index itself is checksummed through the manifest. PNGs carry embedded provenance and individual digests in that index. `export_study_visuals.py` verifies all source/checkpoint receipts and the full-resolution confusion counts before publishing a completed index.
 
+`.gitattributes` preserves `/studies/` files byte-for-byte, including the original newline style of independently exported indexes. The integrity check also compares working files with their Git blobs, so a locally passing manifest cannot become invalid after a clean checkout.
+
 ### Geographic context
 
 The event map uses the recorded bounding-box centres and Natural Earth 1:110m country outlines. The outlines are [public domain](https://www.naturalearthdata.com/about/terms-of-use/). They are display context, not model features or labels. Country labels inferred by point-in-polygon lookup are marked accordingly; a centre does not describe every chip or establish an event boundary. Source URL, downloaded bytes, SHA-256, verification time and transformation assumptions are saved in `geography.json`.
@@ -77,10 +79,11 @@ pnpm lint
 pnpm typecheck
 pnpm test:contracts
 pnpm test:web
+pnpm --filter @floodguard/web exec node scripts/verify-study-assets.mjs
 pnpm --filter @floodguard/web verify:profiles
 pnpm test:offline
 pnpm --filter @floodguard/web test:csp
-pnpm --filter @floodguard/web exec node scripts/study-browser-smoke.mjs
+pnpm test:studies
 python -m pytest services/geoai-runner/tests -q
 python -m ruff check services/geoai-runner/scripts services/geoai-runner/tests/test_export_studio_study.py services/geoai-runner/tests/test_export_study_visuals.py services/geoai-runner/tests/test_study_geography.py
 ```

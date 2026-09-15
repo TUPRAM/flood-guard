@@ -50,8 +50,8 @@
 .error p { margin:0; font-size:13px; line-height:1.7; }
 .loading { padding:45px; text-align:center; color:#607a7e; border:1px dashed #bdd4cd; border-radius:14px; }
 .controls { display:flex; flex-wrap:wrap; align-items:end; gap:12px; padding:17px; margin:0 0 20px; border:1px solid #d2e2dc; border-radius:12px; background:#eaf3ee; }
-.controls label { display:grid; gap:7px; min-width:135px; flex:1; color:#47646b; font-size:11px; font-weight:700; }
-.controls select { min-height:43px; max-width:100%; padding:9px 30px 9px 10px; border:1px solid #b8cfc6; border-radius:7px; background:#fff; color:#163e47; font-size:12px; }
+.controls label { display:grid; grid-template-columns:minmax(0,1fr); gap:7px; min-width:135px; flex:1; color:#47646b; font-size:11px; font-weight:700; }
+.controls select { min-width:0; width:100%; min-height:43px; max-width:100%; padding:9px 30px 9px 10px; border:1px solid #b8cfc6; border-radius:7px; background:#fff; color:#163e47; font-size:12px; }
 .controls a, .button { display:inline-flex; align-items:center; justify-content:center; min-height:43px; padding:10px 15px; border:1px solid #b2cdc3; border-radius:8px; color:#09665d; background:#fff; font-size:12px; font-weight:750; text-decoration:none; cursor:pointer; }
 .tableWrap { width:100%; overflow:auto; border:1px solid #d8e5df; border-radius:11px; }
 .table { width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums; }

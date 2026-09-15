@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { StudySummary } from "@/lib/study-report-types";
 import { StudyData, StudyResults } from "./c2s-study-benchmark";
 import { StudyMaeSai } from "./c2s-study-inference";
-import { ConfusionTable, isStudyVisualUrl, num, STUDY_ASSETS, StudyFigure, StudyFrame, Unavailable } from "./c2s-study-shared";
+import { ConfusionTable, isStudyVisualUrl, num, STUDY_ASSETS, StudyFigure, StudyFrame, studyVisualRequestUrl, Unavailable } from "./c2s-study-shared";
 
 const summary = JSON.parse(readFileSync(resolve("public/studies/c2s-ms-20260915/r1/summary.json"), "utf8")) as StudySummary;
 
@@ -65,12 +65,21 @@ describe("C2S study presentation and evidence separation", () => {
 
   it("does not substitute historical or remote images for a missing study preview", () => {
     expect(isStudyVisualUrl(`${STUDY_ASSETS}visuals/chips/example/error.png`)).toBe(true);
-    for (const url of ["/geoai/B_water_mask.png", "https://example.com/image.png", `${STUDY_ASSETS}visuals/../old.png`]) {
+    for (const url of ["/geoai/B_water_mask.png", "https://example.com/image.png", `${STUDY_ASSETS}visuals/../old.png`, `${STUDY_ASSETS}visuals/%2e%2e/old.png`]) {
       expect(isStudyVisualUrl(url)).toBe(false);
       const html = renderToStaticMarkup(<StudyFigure layer={{url}} title="Recorded prediction"/>);
       expect(html).not.toContain("<img");
       expect(html).toContain("No replacement image");
     }
     expect(renderToStaticMarkup(<Unavailable reason="Hash mismatch"/>)).toContain("does not substitute data from another study");
+  });
+
+  it("keys image requests by source checksum and refuses an incompatible overlay", () => {
+    const layer = {url:`${STUDY_ASSETS}visuals/mae-sai/context/unet/probability.png`,sha256:"a".repeat(64),width:212,height:256};
+    expect(studyVisualRequestUrl(layer)).toBe(`${layer.url}?sha256=${"a".repeat(64)}`);
+    const html = renderToStaticMarkup(<StudyFigure layer={layer} title="Water probability" overlay={{url:`${STUDY_ASSETS}visuals/mae-sai/context/unet/abstention.png`,width:256,height:256}}/>);
+    expect(html).toContain("Abstention overlay unavailable or incompatible");
+    expect(html).not.toContain("Abstention overlay applied");
+    expect(html).toContain("sha256=");
   });
 });

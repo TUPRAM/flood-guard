@@ -27,6 +27,38 @@ describe("immutable public study reports", () => {
     expect(summary.benchmarks.filter((b) => b.arm === "context").every((b) => b.invalid_chips === 11 && b.supported_chips === 100)).toBe(true);
   });
 
+  it("retains same-origin Preview authentication while refusing redirects", async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.credentials !== "same-origin") throw new TypeError("Protected Preview requires its authentication cookie");
+      expect(init.redirect).toBe("error");
+      expect(init.cache).toBe("no-store");
+      expect(String(input)).toMatch(/^\/studies\/c2s-ms-20260915\/r1\//);
+      return new Response(source(String(input)), { status: 200 });
+    });
+    const summary = await loadStudySummary(fetcher);
+    const rtc = await loadStudyRtc(summary.rtc, fetcher);
+    expect(rtc.arms).toHaveLength(2);
+    expect(fetcher).toHaveBeenCalledTimes(4);
+  });
+
+  it("does not retry an authentication redirect with weaker fetch options", async () => {
+    const fetcher = vi.fn(async () => { throw new TypeError("Failed to fetch"); });
+    await expect(loadStudySummary(fetcher)).rejects.toThrow("Failed to fetch");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects cross-origin assets before any authenticated request", async () => {
+    const summary = summaryValue();
+    const fetcher = localFetch();
+    for (const href of [
+      "https://foreign.example/studies/c2s-ms-20260915/r1/rtc.json",
+      "//foreign.example/studies/c2s-ms-20260915/r1/rtc.json",
+    ]) {
+      await expect(loadStudyRtc({ ...summary.rtc, href }, fetcher)).rejects.toThrow("immutable study revision");
+    }
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it("loads every model detail, both RTC arms and all six separate inference records", async () => {
     const fetcher = localFetch();
     const summary = await loadStudySummary(fetcher);

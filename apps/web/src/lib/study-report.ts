@@ -329,7 +329,7 @@ function validateManifest(value: unknown): StudyManifest {
 }
 
 async function fetchBytes(href: string, expectedHash: string, expectedBytes: number | null, fetcher: Fetcher): Promise<unknown> {
-  const response = await fetcher(href, { cache: "no-store", credentials: "omit", redirect: "error" });
+  const response = await fetcher(href, { cache: "no-store", credentials: "same-origin", redirect: "error" });
   if (!response.ok) fail(`HTTP ${response.status} for the requested study asset.`);
   const bytes = await response.arrayBuffer();
   if (bytes.byteLength > 32 * 1024 * 1024 || (expectedBytes !== null && bytes.byteLength !== expectedBytes)) fail("Downloaded byte count mismatch.");

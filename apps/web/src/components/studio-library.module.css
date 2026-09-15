@@ -1,0 +1,65 @@
+.page { min-height: 100vh; background: #f5f7fb; color: #17253b; font-family: var(--font-inter), sans-serif; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.1rem max(5vw, 1rem); background: #fff; border-bottom: 1px solid #dce3ee; }
+.brand { display: flex; align-items: center; gap: .7rem; color: #17253b; text-decoration: none; font-weight: 750; font-size: 1.08rem; }
+.brand small { display: block; color: #617189; font-size: .62rem; letter-spacing: .18em; margin-top: .12rem; }
+.header nav { display: flex; gap: .35rem; }
+.header nav a { text-decoration: none; color: #45566f; padding: .6rem .85rem; border-radius: .5rem; font-size: .9rem; }
+.header nav a[aria-current] { color: #174ecb; background: #edf3ff; font-weight: 650; }
+.page a:focus-visible { outline: 3px solid #e8a526; outline-offset: 4px; }
+.page a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.container { max-width: 1220px; margin: auto; padding: 0 2rem; }
+.hero { padding: 4.5rem 0 3rem; max-width: 840px; }
+.eyebrow { color: #47618c; font-size: .7rem; letter-spacing: .14em; font-weight: 700; margin: 0 0 .85rem; }
+.hero h1 { font-family: var(--font-manrope), sans-serif; font-size: clamp(2.2rem, 4.3vw, 3.6rem); letter-spacing: -.045em; line-height: 1.12; margin: 0 0 1.3rem; }
+.lead { font-size: 1.1rem; color: #54647c; line-height: 1.8; max-width: 680px; }
+.principles { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.7rem; color: #52637c; font-size: .78rem; }
+.principles span { padding-right: .8rem; border-right: 1px solid #c6d1e3; }
+.principles span:last-child { border: 0; }
+.section { margin-bottom: 3rem; }
+.sectionHeading { display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; margin-bottom: 1.2rem; }
+.sectionHeading h2 { font-size: 1.4rem; margin: 0; letter-spacing: -.025em; }
+.sectionHeading p:last-child { color: #5b6b82; font-size: .85rem; line-height: 1.6; max-width: 380px; margin: 0; }
+.sectionHeading .eyebrow { margin-bottom: .5rem; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.3rem; }
+.card { display: flex; flex-direction: column; background: #fff; border: 1px solid #d5deeb; border-radius: 1rem; padding: 1.8rem; box-shadow: 0 4px 12px #16305804; }
+.featured { border-top: 4px solid #2e60d3; padding-top: calc(1.8rem - 3px); }
+.cardTop { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem; }
+.kind { font-size: .64rem; letter-spacing: .09em; font-weight: 700; color: #526b92; }
+.badge { padding: .35rem .5rem; border-radius: .35rem; font-size: .66rem; font-weight: 650; background: #edf3ff; color: #2853a1; }
+.amber { background: #fff4dd; color: #815313; }
+.card h3 { font-size: 1.4rem; letter-spacing: -.035em; margin: 1.1rem 0 .55rem; line-height: 1.35; }
+.card p { font-size: .88rem; line-height: 1.75; color: #52627a; margin: .15rem 0 .6rem; }
+.card dl { margin: 1.1rem 0; }
+.card dl div { display: grid; grid-template-columns: 6.5rem 1fr; gap: .65rem; font-size: .8rem; padding: .65rem 0; border-bottom: 1px solid #edf0f6; line-height: 1.6; }
+.card dt { color: #65758c; }
+.card dd { margin: 0; color: #223650; }
+.card .status { font-size: .78rem; }
+.open { display: flex; justify-content: space-between; align-items: center; gap: 1.2rem; color: #2454b8; text-decoration: none; font-weight: 650; font-size: .86rem; padding-top: 1.3rem; margin-top: auto; }
+.open span { font-size: 1.3rem; }
+.wide { flex-direction: row; align-items: center; gap: 2rem; }
+.wide > div { max-width: 750px; }
+.wide h3 { margin-top: .6rem; }
+.wide .open { min-width: 150px; margin: 0 0 0 auto; padding: .7rem 0; }
+.footer { padding: 1.5rem 0 2.5rem; border-top: 1px solid #dce3ee; font-size: .78rem; line-height: 1.8; color: #607089; }
+.breadcrumbs { padding: 2rem 0 0; display: flex; gap: .6rem; color: #65758c; font-size: .8rem; }
+.breadcrumbs a { color: #2454b8; }
+.archiveHero { padding-top: 2.5rem; }
+.notice { padding: 1.2rem 1.5rem; background: #fff5df; border: 1px solid #ead7ac; border-radius: .7rem; font-size: .87rem; line-height: 1.85; margin: 0 0 1.5rem; }
+.notice h2 { font-size: 1rem; margin: 0 0 .4rem; }
+.notice p { margin: .25rem 0; }
+.tableScroll { max-width: 100%; overflow-x: auto; background: #fff; border: 1px solid #d5deeb; border-radius: .7rem; margin-bottom: 2rem; }
+.tableScroll table { width: 100%; border-collapse: collapse; font-size: .85rem; line-height: 1.75; }
+.tableScroll th, .tableScroll td { text-align: left; vertical-align: top; padding: 1rem; border-bottom: 1px solid #e5eaf2; }
+.tableScroll th { background: #edf2fa; }
+.tableScroll td:first-child { min-width: 150px; font-weight: 600; }
+.sources { padding: 1.6rem; margin: 2rem 0; border-radius: .7rem; background: #eaf0fa; font-size: .85rem; line-height: 1.9; overflow-wrap: anywhere; }
+.sources h2 { margin-top: 0; font-size: 1.2rem; }
+.sources a { color: #1d50b4; }
+@media (max-width: 760px) {
+  .container { padding: 0 1rem; } .hero { padding: 3rem 0 2rem; }
+  .cards { grid-template-columns: 1fr; } .sectionHeading { align-items: start; flex-direction: column; gap: .75rem; }
+  .card { padding: 1.3rem; } .wide { align-items: stretch; flex-direction: column; gap: .5rem; }
+  .wide .open { margin: 0; } .header { padding: .8rem 1rem; } .header nav a { padding: .6rem .5rem; font-size: .8rem; }
+  .brand { gap: .4rem; font-size: .9rem; } .brand img { width: 30px; height: 30px; }
+  .card dl div { grid-template-columns: 5.7rem 1fr; } .hero h1 { font-size: 2.45rem; }
+}

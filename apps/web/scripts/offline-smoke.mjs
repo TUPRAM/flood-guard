@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const out = resolve(process.cwd(), "out");
-const routeFiles = ["index.html", "public/index.html", "command/index.html", "studio/index.html"];
+const routeFiles = ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/planning-evidence/index.html"];
 const requiredPublicAssets = [
   "manifest.webmanifest",
   "sw.js",
@@ -44,6 +44,13 @@ const routeExpectations = {
     /DDPM|ปภ\./i,
   ],
   "studio/index.html": [
+    /Every result has a context/i,
+    /Research studies/i,
+    /Planning evidence/i,
+    /Historical studies/i,
+    /Local accuracy unmeasured/i,
+  ],
+  "studio/planning-evidence/index.html": [
     /Validation &amp; evidence report|Validation & evidence report/i,
     /Source time/i,
     /Confidence/i,
@@ -88,7 +95,7 @@ if (
 ) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
-for (const route of ["/", "/public/", "/command/", "/studio/"]) {
+for (const route of ["/", "/public/", "/command/", "/studio/", "/studio/planning-evidence/"]) {
   if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Service worker does not precache ${route}`);
 }
 if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {

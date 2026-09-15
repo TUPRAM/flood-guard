@@ -61,6 +61,7 @@ const routes = [
   { path: "/public/", selector: "main.public-page" },
   { path: "/command/", selector: "main.command-page" },
   { path: "/studio/", selector: "main.studio-page" },
+  { path: "/studio/planning-evidence/", selector: "main.studio-page" },
 ];
 const approvedBasemapOrigins = new Set([
   "https://tile.openstreetmap.org",
@@ -337,7 +338,7 @@ try {
   // Studio: assurance levels must remain visibly separate and selecting an
   // evaluation must update the model card rather than detached presentation copy.
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`${baseUrl}/studio/`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/studio/planning-evidence/`, { waitUntil: "networkidle" });
   await page.locator("#evidence-context-title").waitFor({ state: "visible" });
   try {
     await page.waitForFunction(() => {
@@ -359,7 +360,7 @@ try {
       throw new Error(`Studio is missing its ${english} evidence scope.`);
     }
   }
-  assertFinalVisibleCopy(studioBody, "/studio/");
+  assertFinalVisibleCopy(studioBody, "/studio/planning-evidence/");
   await page.getByRole("tab", { name: "Models & evaluation" }).click();
   await page.locator("#qualified-evidence-foundation-title").waitFor({ state: "visible" });
   await page.locator("#model-registry-title").waitFor({ state: "visible" });
@@ -904,7 +905,9 @@ function requiredFinalCopy(routePath) {
       ? ["hazard info", "report", "shelter", "prepare", "sos"]
       : routePath === "/command/"
         ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
-        : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
+        : routePath === "/studio/"
+          ? ["every result has a context", "research studies", "planning evidence", "historical studies"]
+          : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
 }
 
 /**
@@ -936,7 +939,7 @@ function assertFinalVisibleCopy(body, routePath) {
   }
   const forbidden = routePath === "/"
     ? /developer note|processing_scope|can_feed_decision_layer|official dispatch confirmed/iu
-    : routePath === "/studio/"
+    : routePath === "/studio/planning-evidence/"
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
     : routePath === "/public/"
       ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu

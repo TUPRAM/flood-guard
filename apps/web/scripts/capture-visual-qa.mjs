@@ -73,7 +73,7 @@ const captures = [
   { route: "/command/", selector: "main.command-page", width: 1024, height: 768, file: "command-1024x768.png", basemap: "street", cycleBasemaps: true },
   { route: "/command/", selector: "main.command-page", width: 1440, height: 900, file: "command-1440x900.png", basemap: "street" },
   { route: "/command/", selector: "main.command-page", width: 1536, height: 1024, file: "command-1536x1024.png", basemap: "satellite" },
-  { route: "/studio/", selector: "main.studio-page", width: 2048, height: 1152, file: "studio-2048x1152.png" },
+  { route: "/studio/planning-evidence/", selector: "main.studio-page", width: 2048, height: 1152, file: "studio-2048x1152.png" },
 ];
 const approvedBasemapOrigins = new Set([
   "https://tile.openstreetmap.org",
@@ -192,7 +192,7 @@ try {
     if (capture.route === "/command/" && await page.locator(".ranked-areas button").count() === 0) {
       throw new Error(`${capture.file} is missing the FPPS ranked list.`);
     }
-    if (capture.route === "/studio/" && await page.locator("#evidence-context-title").count() !== 1) {
+    if (capture.route === "/studio/planning-evidence/" && await page.locator("#evidence-context-title").count() !== 1) {
       throw new Error(`${capture.file} is missing the active evidence-context panel.`);
     }
 
@@ -475,7 +475,7 @@ try {
         throw new Error(`${capture.file} renders a baseline comparison without a reviewed non-baseline scenario.`);
       }
     }
-    if (capture.route === "/studio/") {
+    if (capture.route === "/studio/planning-evidence/") {
       const body = pageAudit.bodyText;
       const normalizedBody = body.toLocaleLowerCase("en-US");
       for (const scope of ["Technical verification", "Observed-data validation", "Operational authorization"]) {
@@ -485,7 +485,7 @@ try {
       }
     }
     if (
-      capture.route === "/studio/"
+      capture.route === "/studio/planning-evidence/"
       && pageAudit.proofSingleFigureCoverage !== null
       && pageAudit.proofSingleFigureCoverage < 0.95
     ) {
@@ -709,7 +709,7 @@ function assertPolishedRouteCopy(body, route, file) {
       throw new Error(`${file} is missing polished final copy matching ${requirement}.`);
     }
   }
-  const forbidden = route === "/studio/"
+  const forbidden = route === "/studio/planning-evidence/"
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|ฝึกซ้อม/iu
     : route === "/public/"
       ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer|ฝึกซ้อม|สาธิต|ผู้สมัคร/iu

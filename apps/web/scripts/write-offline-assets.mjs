@@ -41,6 +41,7 @@ const coreAssets = appProfile === "public-production"
       ...publicCoreAssets,
       "/command/",
       "/studio/",
+      "/studio/planning-evidence/",
       "/offline-demo/bundle.json",
       "/offline-demo/areas.geojson",
       "/offline-demo/roads.geojson",
@@ -75,6 +76,7 @@ const versionedFiles = [
   ...(appProfile === "competition" ? [
     resolve(out, "command", "index.html"),
     resolve(out, "studio", "index.html"),
+    resolve(out, "studio", "planning-evidence", "index.html"),
     resolve(out, "offline-demo", "bundle.json"),
     resolve(out, "offline-demo", "areas.geojson"),
     resolve(out, "offline-demo", "roads.geojson"),
@@ -134,6 +136,7 @@ function prunePublicProductionOutput() {
     "landing",
     "command",
     "studio",
+    "studies",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
     "offline-demo/roads.geojson",

@@ -1,0 +1,97 @@
+{
+  "study_id": "mae-sai-geoai",
+  "revision": "2026-07-30-r1",
+  "historical": true,
+  "data_mode": "real_licensed_inputs",
+  "source_timestamp": "2024-09-15T23:16:14.175289+00:00",
+  "run_date": "2026-07-30",
+  "run_date_source": "docs/baseline/2026-07-30-run1/README.md",
+  "source_timestamp_note": "The original generated_at field is the observation timestamp, not the run date.",
+  "licence": "Historical project report; underlying sources retain their own terms. See the source links on the archive page. No new training permission is asserted.",
+  "assumptions": [
+    "Report only; cannot feed the decision layer.",
+    "Optical U-Net scores measure OmniWaterMask teacher agreement, not Mae Sai water accuracy.",
+    "Different inputs, labels, geography and split prevent direct comparison with C2S-MS scores."
+  ],
+  "can_feed_decision_layer": false,
+  "original_report_sha256": "bf2d39339463890981f9e70f24a0fa82f4254fe1fe73963b71c71b76b148b789",
+  "report": {
+    "href": "/studies/mae-sai-geoai/2026-07-30-r1/report.json",
+    "sha256": "4c400b15d07af1349e4ed462dfea3a4146e019f0689957786101e07408e6127d",
+    "bytes": 43077
+  },
+  "assets": [
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/6309d04d6a97f2c2-scene_sar_post_vh.png",
+      "sha256": "6309d04d6a97f2c273709bb20f3ecf170211ffa4ddd47b48d2664427ebc5ae35",
+      "bytes": 203965,
+      "original_href": "/geoai/scene_sar_post_vh.png"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/b72ca0de024320b7-A_sar_flood_probability.png",
+      "sha256": "b72ca0de024320b7a5a1917c389b901d87e83b17974ec166bf4bffb1f6b4f3f9",
+      "bytes": 191933,
+      "original_href": "/geoai/A_sar_flood_probability.png"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/b40d43697276a598-scene_s2_rgb.png",
+      "sha256": "b40d43697276a598457ac68fd4ded7c3d1a325e69d0bfdf4f501016e6f77d6e0",
+      "bytes": 455433,
+      "original_href": "/geoai/scene_s2_rgb.png"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/8585f5fd63d09788-B_water_mask.png",
+      "sha256": "8585f5fd63d09788a2e2b13ef2a3a09ccc9500defbbd245c7dc507ca48f14de6",
+      "bytes": 27550,
+      "original_href": "/geoai/B_water_mask.png"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/59382946bb4c10bd-scene_dem.png",
+      "sha256": "59382946bb4c10bdcaeb8b613b1802dfb609b569d75d969afcac99eb19c8fc78",
+      "bytes": 174314,
+      "original_href": "/geoai/scene_dem.png"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/355f44fc3f2fb1fc-C_susceptibility.png",
+      "sha256": "355f44fc3f2fb1fc34287e7cd5fdb1f0432062b000b85c94d7b6fe14dcf5637b",
+      "bytes": 313179,
+      "original_href": "/geoai/C_susceptibility.png"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/c9bd002a29f43b19-D_buildings.png",
+      "sha256": "c9bd002a29f43b19d99bf0063f33b8db0e4a0e6e6ae2c656a9cc9684d3f18370",
+      "bytes": 122739,
+      "original_href": "/geoai/D_buildings.png"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/b608770f41b0ab59-F_fewshot_prediction.png",
+      "sha256": "b608770f41b0ab599b9f29b6ccfa3314c2891f6d135886f1c984ee563c239dc6",
+      "bytes": 323116,
+      "original_href": "/geoai/F_fewshot_prediction.png"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/README.md",
+      "sha256": "dd7ec357efd680808c0b4bca4c34855af1e2026be1d2192aa01c96e9ec2eea6b",
+      "bytes": 2276,
+      "original_href": "docs/baseline/2026-07-30-run1/README.md"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/geoai_metrics.json",
+      "sha256": "6589eb3d0d680751f610b54b16b5cf5acd7084f523a389d6ab449fbf40d81b2e",
+      "bytes": 20590,
+      "original_href": "docs/baseline/2026-07-30-run1/geoai_metrics.json"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/CHECKSUMS",
+      "sha256": "fe7c8c1bc0d74f0562691713d3ffe7d5a25ab39a37261b07185ce6464dfe3ac7",
+      "bytes": 697,
+      "original_href": "docs/baseline/2026-07-30-run1/CHECKSUMS"
+    },
+    {
+      "href": "/studies/mae-sai-geoai/2026-07-30-r1/label-diagnosis.md",
+      "sha256": "1d1d88e42eed01af89e2a1588c9af316693c15864db48dc70fc50c2b8972eca6",
+      "bytes": 1979,
+      "original_href": "services/geoai-runner/geoai_runner/realpipeline/water_label.py module docstring"
+    }
+  ]
+}

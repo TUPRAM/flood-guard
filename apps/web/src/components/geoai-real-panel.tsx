@@ -81,10 +81,12 @@ export function GeoaiRealPanel({
   language = "en",
   variant = "studio",
   planningDataVersion,
+  archiveRecord,
 }: {
   language?: Language;
-  variant?: "studio" | "command";
+  variant?: "studio" | "command" | "archive";
   planningDataVersion?: string;
+  archiveRecord?: { href: string; sha256: string };
 }) {
   const th = language === "th";
   const [bundle, setBundle] = useState<GeoaiRealBundle | null>(null);
@@ -92,8 +94,18 @@ export function GeoaiRealPanel({
 
   useEffect(() => {
     let active = true;
-    fetch("/geoai/mae-sai-real.json")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    const controller = new AbortController();
+    fetch(archiveRecord?.href ?? "/geoai/mae-sai-real.json", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(String(response.status));
+        const bytes = await response.arrayBuffer();
+        if (archiveRecord) {
+          const hash = await crypto.subtle.digest("SHA-256", bytes);
+          const actual = Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+          if (actual !== archiveRecord.sha256) throw new Error("Historical report checksum mismatch");
+        }
+        return JSON.parse(new TextDecoder().decode(bytes)) as GeoaiRealBundle;
+      })
       .then((data: GeoaiRealBundle) => {
         if (active) setBundle(data);
       })
@@ -102,11 +114,12 @@ export function GeoaiRealPanel({
       });
     return () => {
       active = false;
+      controller.abort();
     };
-  }, []);
+  }, [archiveRecord]);
 
   if (failed) {
-    return null;
+    return variant === "archive" ? <p role="alert">Historical report unavailable. The archived record could not be loaded or verified.</p> : null;
   }
 
   const h = bundle?.headline;
@@ -163,7 +176,7 @@ export function GeoaiRealPanel({
             <b>SAR flood extent</b> {h.sar_flood_pct}%
           </span>
           <span className={styles.chip}>
-            <b>U-Net water IoU</b>{" "}
+            <b>{variant === "archive" ? "U-Net teacher-agreement IoU" : "U-Net water IoU"}</b>{" "}
             {h.unet_iou === null || h.unet_iou === undefined
               ? th
                 ? "รอการประเมินซ้ำ"
@@ -187,6 +200,7 @@ export function GeoaiRealPanel({
           <div className={styles.models}>
             {bundle.components.map((c) => (
               <article key={c.letter} className={styles.model}>
+                {variant === "archive" && c.letter === "B" && <p className={styles.detail}><strong>Teacher agreement / distillation fidelity.</strong> This score compares with an OmniWaterMask teacher. It does not measure water accuracy in Mae Sai; the original run is flagged degenerate.</p>}
                 <div className={styles.modelHead}>
                   <span className={styles.letter}>{c.letter}</span>
                   <div>

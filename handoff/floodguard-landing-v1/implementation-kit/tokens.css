@@ -1,0 +1,35 @@
+/* Scope to the landing only. Adapt the existing local font stack; no font files supplied. */
+.fg-landing {
+  --fg-paper:#f3f1e8; --fg-ink:#24332f; --fg-muted:#536560;
+  --fg-brand:#006f78; --fg-route:#3c6f8a; --fg-review:#9a5d0c;
+  --fg-border:#b9c7c1; --fg-card:#fffdf7;
+  --fg-header-clearance:116px;
+  color:var(--fg-ink); background:var(--fg-paper);
+  overflow-x:clip;
+}
+.fg-landing *, .fg-landing *::before, .fg-landing *::after {box-sizing:border-box;}
+.fg-landing h1, .fg-landing h2, .fg-landing h3 {text-wrap:balance;letter-spacing:-.045em;line-height:1.03;}
+.fg-landing h1 {font-size:clamp(2.7rem,5vw,5.75rem);font-weight:750;}
+.fg-landing .fg-story-title {font-size:clamp(2.1rem,3.5vw,3.65rem);font-weight:750;}
+.fg-landing p {line-height:1.5;}
+.fg-landing section[id] {scroll-margin-top:var(--fg-header-clearance);}
+.fg-landing :focus-visible {outline:3px solid var(--fg-brand);outline-offset:4px;}
+.fg-landing .fg-plate {margin:0;min-width:0;}
+.fg-landing .fg-plate__frame {border-radius:8px;}
+.fg-landing .fg-plate__label {
+  color:var(--fg-ink);background:var(--fg-card);border:1px solid var(--fg-border);
+  border-radius:4px;padding:.3rem .45rem;font-size:clamp(.875rem,.95vw,1.0625rem);
+  line-height:1.2;transform:translate(-50%,-100%);max-width:13rem;
+}
+.fg-landing .fg-plate figcaption {font-size:.875rem;line-height:1.4;margin-top:.4rem;}
+.fg-landing .fg-character {display:block;width:100%;height:auto;object-fit:contain;}
+.fg-landing .fg-card {background:var(--fg-card);border:1px solid var(--fg-border);border-radius:7px;padding:clamp(1rem,1.6vw,1.7rem);}
+.fg-landing .fg-sr-only {position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+@media (max-width:767px) {
+ .fg-landing {--fg-header-clearance:94px;}
+ .fg-landing .fg-plate__label {font-size:.8125rem;max-width:9rem;}
+}
+@media (prefers-reduced-motion:reduce) {
+ .fg-landing {scroll-behavior:auto;}
+ .fg-landing .fg-motion {animation:none!important;transition:none!important;transform:none!important;}
+}

@@ -1,0 +1,178 @@
+{
+  "source": "Editable Blender 5.1 neighborhood; same geometry and lighting in every water state",
+  "encoding": "Pillow WebP, Lanczos downsample, no generative image replacement",
+  "files": [
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-00.png",
+      "url": "/landing/floodguard-v2/camera/approach-00.webp",
+      "width": 1536,
+      "height": 1152,
+      "bytes": 330388,
+      "sha256": "657d4abb4203baa1efbd3410a4e5401a038914c78495fc2a3bb72834bb2635b7",
+      "sourceSha256": "54eb4e6ab7064fea120f66b04eba28b9427de0731d966eaa785c81be148aee8c"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-01.png",
+      "url": "/landing/floodguard-v2/camera/approach-01.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 209536,
+      "sha256": "86becc3bc7bc30af8afb66819f95274d72065896ede2b2704c7bb629df79a254",
+      "sourceSha256": "275549c2854949d01933c12fba7c48dbd35c2c1e83720dfb8d0bf33b63b0f6b0"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-02.png",
+      "url": "/landing/floodguard-v2/camera/approach-02.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 215728,
+      "sha256": "b14b6644be5efd60d8c64df612b4b2d5aace10584563fa3d86dd20c6173efacd",
+      "sourceSha256": "37d0c08ff456a72e5ce5ef5cd19cc941b65e94d42e5d99d0972524b7d305e7c5"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-03.png",
+      "url": "/landing/floodguard-v2/camera/approach-03.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 220690,
+      "sha256": "685ae5e68aee59b1cc09c574ec1f6792c8a20c8b1d806a22a4d5c0a27c70ab27",
+      "sourceSha256": "7d2b292af2043720640eb6b49b8519b552c63a5efc3ff93af2e6cc9130671d1a"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-04.png",
+      "url": "/landing/floodguard-v2/camera/approach-04.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 225492,
+      "sha256": "c9ca4e76c73d14aea4ce4dd37591ebf9b5b189e4f9c2241e3c6f8b030077f1c1",
+      "sourceSha256": "f83eae626ba3064514e49c240bb2611ac19d6afb9477ed57298523c9b20f3f3c"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-05.png",
+      "url": "/landing/floodguard-v2/camera/approach-05.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 229400,
+      "sha256": "7d6e40e7e04f97a1568cf77e19816c6e4689ec39f6ef9592556d9d90ea35f8bd",
+      "sourceSha256": "5ea35e8ea4a0cd252f3da5c1b248b5e785ada0adb10809b5b5567499b9988acf"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-06.png",
+      "url": "/landing/floodguard-v2/camera/approach-06.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 233090,
+      "sha256": "c5efcaf37a5fac421f40ff6e61dbb13af33fb4ac970773fe3360985987f93165",
+      "sourceSha256": "2d9ac962469c9d68a24bff3aa61b87fcf930e352b8b82f3d54cf653086d7cbda"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-07.png",
+      "url": "/landing/floodguard-v2/camera/approach-07.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 237860,
+      "sha256": "54876c59581316dcab5af5b50138798b689898d5cfaa6910dfec4459b7eaf58f",
+      "sourceSha256": "82003c66e8711ffa30fbb1da6e7957f5b231810bc85ea9d76941ce0ed7fa0a96"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-08.png",
+      "url": "/landing/floodguard-v2/camera/approach-08.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 241158,
+      "sha256": "d67449ae46c3ae94409c3e0b887af5dea0dd9521ae4232cd6a8f6f1e47696bce",
+      "sourceSha256": "5d530580f5342ed2e614ad5c56bc2d7760653e848fb8614fbfb018042746fbc2"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-09.png",
+      "url": "/landing/floodguard-v2/camera/approach-09.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 244784,
+      "sha256": "a753b153c4cff10b7f955d416ebadf1042a08abf4b3ecaf7d0a6caa27ce7c90d",
+      "sourceSha256": "24386970b7c956b94baa83b147fd49df659a7d1d15073fe82b241bf630c60c2b"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-10.png",
+      "url": "/landing/floodguard-v2/camera/approach-10.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 248798,
+      "sha256": "25cad67d31259690d526f616029b8c2a1352ba3900bf87eb32f8ce55d44f8f6a",
+      "sourceSha256": "25ae5fead2e4bd37a9a76fbbe51d73e36d844372ca5249071d1e7a43bfb31696"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-11.png",
+      "url": "/landing/floodguard-v2/camera/approach-11.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 250632,
+      "sha256": "815d77783f4215450482e7b28db6227429f9dff5af66ee4e39575009a103c6ff",
+      "sourceSha256": "30a5a100c99d60a682f597f7a92fd37a7e7edd37c88e752e13d845e878811761"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-12.png",
+      "url": "/landing/floodguard-v2/camera/approach-12.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 251832,
+      "sha256": "983ff63dbe029ad404bbcd53f8ea5560ad63322bbb4e1f762923b20667b31c7a",
+      "sourceSha256": "2480af690233b15cf30d587ff6db8f14b97ee9744a8f0c859eb72a7f91b6ffed"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-13.png",
+      "url": "/landing/floodguard-v2/camera/approach-13.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 252242,
+      "sha256": "fc5a68e687bdcc34eb7ed3ef785eb42e1923dd5646c016f8b0bc5fc57e0e394c",
+      "sourceSha256": "b31464b2e85bdc5ef230ca7347a48ab69ced0b086ab7238e2a2d7b81d9ef7198"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-14.png",
+      "url": "/landing/floodguard-v2/camera/approach-14.webp",
+      "width": 1152,
+      "height": 864,
+      "bytes": 256388,
+      "sha256": "2fd95363c64b6ded271a616823d49f02492e1b08eb7969d3ce7dffe1fa1dd933",
+      "sourceSha256": "3cbe28cb13ad0a785a59f10c5d8b7ceba989d42615cb856e91ebabdc2da68de8"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/approach-15.png",
+      "url": "/landing/floodguard-v2/camera/approach-15.webp",
+      "width": 1536,
+      "height": 1152,
+      "bytes": 417216,
+      "sha256": "ef500f029937e8d149dfe0daf5fe1fc2ea461bc0ace3aace663f66a9da1d4b8f",
+      "sourceSha256": "f988719c4aef122126af2fa6fe3fb3947ca2bef8ba0713fe2b72dc580c53563f"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/w0.png",
+      "url": "/landing/floodguard-v2/plates/w0.webp",
+      "width": 2048,
+      "height": 1536,
+      "bytes": 811710,
+      "sha256": "62219ee35f1c1f48d7a6de699c8d1ee27dfe367a024b73991b43951f0a7f1dee",
+      "sourceSha256": "fedf1055be4eaacf62aa674b6e5ffc0d39ee085bf9860fdf7b6e64e1da9202e1"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/w1.png",
+      "url": "/landing/floodguard-v2/plates/w1.webp",
+      "width": 2048,
+      "height": 1536,
+      "bytes": 796914,
+      "sha256": "855c1635bf4252f772daca0abdec390834b601c3323cbf58fafe1bbe81c553be",
+      "sourceSha256": "f7f81b141a4078a31c84102cb5500efcdeccc004972e914e96a1d722a3a565ff"
+    },
+    {
+      "source": "outputs/landing-v2-assets/renders/w2.png",
+      "url": "/landing/floodguard-v2/plates/w2.webp",
+      "width": 2048,
+      "height": 1536,
+      "bytes": 762626,
+      "sha256": "669ffb88548417aa2cd5837ca9e0c89aa36fb433d988646b91d18bed4c0f5589",
+      "sourceSha256": "121e97ce2664d541dc902fc601b5c06a45820fe9ae30e3b5bbcc8be9d88f5968"
+    }
+  ],
+  "runtimeBytes": 6436484
+}

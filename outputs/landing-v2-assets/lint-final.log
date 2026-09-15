@@ -1,0 +1,8 @@
+
+> floodguard-thailand-workspace@ lint C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/web lint
+
+
+> @floodguard/web@0.1.0 lint C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> eslint . --max-warnings=0
+

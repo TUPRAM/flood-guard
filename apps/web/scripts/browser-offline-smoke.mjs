@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 
 import { launchFloodGuardBrowser } from "./browser-launch.mjs";
+import { readLandingArtwork } from "./landing-artwork-inventory.mjs";
 
 const out = resolve(process.cwd(), "out");
 if (!existsSync(resolve(out, "public", "index.html"))) {
@@ -18,6 +19,7 @@ const contentTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".webp": "image/webp",
   ".woff2": "font/woff2",
 };
 
@@ -55,7 +57,7 @@ const baseUrl = `http://127.0.0.1:${address.port}`;
 const browser = await launchFloodGuardBrowser();
 
 const routes = [
-  { path: "/", selector: "main.surface-chooser" },
+  { path: "/", selector: "main[data-fg-landing]" },
   { path: "/public/", selector: "main.public-page" },
   { path: "/command/", selector: "main.command-page" },
   { path: "/studio/", selector: "main.studio-page" },
@@ -134,8 +136,7 @@ try {
     await page.locator(route.selector).waitFor({ state: "visible" });
   }
 
-  // Root: the platform entry must use the final blue product system, expose
-  // all three role workspaces, and remain free of mobile overflow.
+  // The illustrated landing retains all three workspaces and fits mobile.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   const rootBody = await page.locator("body").innerText();
@@ -143,18 +144,17 @@ try {
   const rootAudit = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
-    language: document.querySelector("main.surface-chooser")?.getAttribute("lang"),
-    links: [...document.querySelectorAll(".surface-grid a")].map((link) => link.getAttribute("href")),
-    cards: document.querySelectorAll(".surface-card").length,
+    language: document.querySelector("main[data-fg-landing]")?.getAttribute("lang"),
+    links: [...new Set([...document.querySelectorAll("[data-fg-landing] a")].map((link) => link.getAttribute("href")))],
   }));
   if (rootAudit.documentWidth > rootAudit.viewportWidth + 1) {
-    throw new Error(`Root chooser has mobile overflow: ${rootAudit.documentWidth}px > ${rootAudit.viewportWidth}px.`);
+    throw new Error(`Landing has mobile overflow: ${rootAudit.documentWidth}px > ${rootAudit.viewportWidth}px.`);
   }
-  if (rootAudit.cards !== 3 || rootAudit.links.join("|") !== "/public/|/command/|/studio/") {
-    throw new Error(`Root chooser workspaces are incomplete: ${JSON.stringify(rootAudit)}.`);
+  if (!["/public/", "/command/", "/studio/"].every((route) => rootAudit.links.includes(route))) {
+    throw new Error(`Landing workspaces are incomplete: ${JSON.stringify(rootAudit)}.`);
   }
   if (rootAudit.language !== "en") {
-    throw new Error(`Root chooser does not declare its English content language: ${JSON.stringify(rootAudit)}.`);
+    throw new Error(`Landing does not declare its English content language: ${JSON.stringify(rootAudit)}.`);
   }
 
   // Public: the compact shell and all five pages must remain usable at the
@@ -457,8 +457,24 @@ try {
     throw new Error(`Content-versioned offline cache was not installed: ${cacheKeys.join(", ")}`);
   }
 
+  // The landing itself requests optional artwork after paint. Wait for every
+  // srcset width, then prove all of them remain fetchable without the network.
+  const artwork = readLandingArtwork(out);
+  await page.goto(`${baseUrl}/`, { waitUntil: "load" });
+  await page.waitForFunction(async (urls) => {
+    const key = (await caches.keys()).find((entry) => /^floodguard-offline-[0-9a-f]{12}$/.test(entry));
+    if (!key) return false;
+    const cache = await caches.open(key);
+    return (await Promise.all(urls.map((url) => cache.match(url)))).every(Boolean);
+  }, artwork.map((asset) => asset.url), { timeout: 60_000 });
+
   offlineMode = true;
   await context.setOffline(true);
+  const artworkOffline = await page.evaluate(async (urls) => Promise.all(urls.map(async (url) => {
+    const response = await fetch(url);
+    return response.ok && (await response.arrayBuffer()).byteLength > 0;
+  })), artwork.map((asset) => asset.url));
+  if (!artworkOffline.every(Boolean)) throw new Error("An approved artwork variant is missing offline.");
   for (const route of routes) {
     await page.goto(`${baseUrl}${route.path}`, { waitUntil: "domcontentloaded" });
     await page.locator(route.selector).waitFor({ state: "visible" });
@@ -880,7 +896,7 @@ async function assertMaeSaiMap(page, scopeSelector, {
 
 function requiredFinalCopy(routePath) {
   return routePath === "/"
-    ? ["one platform. three planning views.", "continue by role", "ddpm", "local-authority"]
+    ? ["see the flood.", "understand what it changes.", "illustrat"]
     : routePath === "/public/"
       // The Public header now shows the FloodGuard logo image instead of a text
       // wordmark, so the brand is no longer body text here. The nav labels and
@@ -918,7 +934,9 @@ function assertFinalVisibleCopy(body, routePath) {
       throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);
     }
   }
-  const forbidden = routePath === "/studio/"
+  const forbidden = routePath === "/"
+    ? /developer note|processing_scope|can_feed_decision_layer|official dispatch confirmed/iu
+    : routePath === "/studio/"
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
     : routePath === "/public/"
       ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu

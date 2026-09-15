@@ -1,0 +1,11 @@
+
+> floodguard-thailand-workspace@ test:offline C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/web test:offline
+
+
+> @floodguard/web@0.1.0 test:offline C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs
+
+offline smoke: 4 polished routes and 15 core assets verified; internal safety contracts retained and no external runtime resources
+browser offline smoke: 4 routes rendered from a content-versioned service-worker cache; approved basemaps failed gracefully and no unapproved external requests occurred
+legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified

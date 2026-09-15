@@ -1,0 +1,59 @@
+
+> floodguard-thailand-workspace@ test:web C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/web test
+
+
+> @floodguard/web@0.1.0 test C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> vitest run --configLoader runner
+
+
+ RUN  v3.2.4 C:/Users/iputu/AppData/Local/Packages/OpenAI.Codex_2p2nqsd0c76g0/LocalCache/Local/CodexWorktrees/flood-guard/landing-v1/apps/web
+
+ ✓ src/lib/basemap-tiles.test.ts (9 tests) 50ms
+ ✓ src/lib/mae-sai-offline-bundle.test.ts (5 tests) 92ms
+ ✓ src/components/household-plan-builder.test.tsx (3 tests) 41ms
+ ✓ src/lib/public-data-provider.test.ts (4 tests) 62ms
+ ✓ src/lib/proposal-evidence.test.ts (8 tests) 60ms
+ ✓ src/components/model-registry-panel.test.tsx (5 tests) 117ms
+ ✓ src/lib/public-report.test.ts (8 tests) 80ms
+ ✓ src/components/geo-map.test.ts (13 tests) 101ms
+ ✓ src/components/public-home-page.test.tsx (1 test) 93ms
+ ✓ src/components/geoai-real-panel.test.tsx (2 tests) 319ms
+ ✓ src/components/landing-v1/scene-frame.test.tsx (11 tests) 747ms
+ ✓ src/app/page.test.tsx (2 tests) 518ms
+   ✓ Landing root > server-renders the artwork story and working role links  513ms
+ ✓ src/components/command-workspace.test.tsx (5 tests) 452ms
+   ✓ CommandWorkspace > renders the Mae Sai planning workspace with final-product context and safeguards  352ms
+ ✓ src/components/studio-workspace.test.tsx (4 tests) 116ms
+ ✓ src/lib/public-location.test.ts (8 tests) 38ms
+ ✓ src/lib/command-filter.test.ts (7 tests) 32ms
+ ✓ src/components/public-experience.test.tsx (6 tests) 395ms
+ ✓ src/lib/public-display-name.test.ts (5 tests) 26ms
+ ✓ src/lib/data-provider.test.ts (34 tests) 2122ms
+   ✓ partial API availability > rejects substituted non-road layer lineage and uses the pinned offline bundle  395ms
+ ✓ src/lib/qualified-evidence-foundation.test.ts (5 tests) 63ms
+ ✓ src/components/qualified-evidence-foundation-panel.test.tsx (3 tests) 29ms
+ ✓ src/lib/public-route.test.ts (9 tests) 22ms
+ ✓ src/lib/model-registry.test.ts (5 tests) 19ms
+ ✓ src/components/pwa-register.test.tsx (5 tests) 30ms
+ ✓ src/lib/household-plan.test.ts (7 tests) 18ms
+ ✓ src/lib/public-hazard-signals.test.ts (10 tests) 12ms
+ ✓ src/lib/landing-v1/story.test.ts (10 tests) 34ms
+ ✓ src/components/studio-presentation.test.ts (3 tests) 11ms
+ ✓ src/lib/studio-evidence.test.ts (5 tests) 11ms
+ ✓ src/lib/landing-v1/timeline.test.ts (11 tests) 25ms
+ ✓ src/lib/studio-evidence-scope.test.ts (6 tests) 10ms
+ ✓ src/lib/basemap-health.test.ts (2 tests) 9ms
+ ✓ src/lib/evidence-foundation.test.ts (4 tests) 10ms
+ ✓ src/lib/scenario-presentation.test.ts (6 tests) 9ms
+ ✓ src/lib/landing-v1/neighborhood.test.ts (3 tests) 16ms
+ ✓ src/lib/deployment-profile.test.ts (3 tests) 9ms
+ ✓ src/lib/use-language.test.ts (3 tests) 8ms
+ ✓ src/lib/pilot-readiness.test.ts (1 test) 8ms
+ ✓ src/lib/map-attribution.test.ts (1 test) 7ms
+
+ Test Files  39 passed (39)
+      Tests  242 passed (242)
+   Start at  17:47:45
+   Duration  8.92s (transform 15.48s, setup 0ms, collect 34.81s, tests 5.82s, environment 15ms, prepare 39.29s)
+

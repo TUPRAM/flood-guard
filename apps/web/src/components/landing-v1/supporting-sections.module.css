@@ -1,0 +1,386 @@
+.support {
+  position: relative;
+  z-index: 1;
+  padding: 0 clamp(24px, 4.2vw, 80px);
+  background: #faf8f2;
+  color: #24332f;
+  font-family: "Inter Variable", sans-serif;
+}
+
+.section,
+.footer {
+  width: min(100%, 1320px);
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: clamp(64px, 7vw, 112px);
+  border-top: 1px solid #dcded5;
+  scroll-margin-top: 112px;
+}
+
+.eyebrow {
+  margin: 0 0 20px;
+  color: #006f78;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .14em;
+  line-height: 1.6;
+}
+
+.section h2 {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(29px, 3.2vw, 46px);
+  font-weight: 700;
+  letter-spacing: -.045em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.section h3 {
+  margin: 0 0 14px;
+  font-size: clamp(20px, 1.8vw, 25px);
+  font-weight: 650;
+  letter-spacing: -.035em;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.steps,
+.workspaces {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 64px);
+  margin: 48px 0 0;
+  padding: 0;
+}
+
+.steps {
+  list-style: none;
+}
+
+.steps p,
+.workspace p,
+.intro,
+.questions p {
+  margin: 0;
+  color: #57655f;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.stepNumber {
+  display: inline-block;
+  margin-bottom: 26px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid #7baba5;
+  color: #006f78;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.evidence,
+.faq {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(40px, 7vw, 116px);
+  align-items: start;
+}
+
+.intro {
+  max-width: 390px;
+  margin-top: 24px;
+  font-size: 18px;
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 44px;
+  margin-top: 24px;
+  color: #006f78;
+  font-size: 15px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.evidenceRecord {
+  padding: clamp(24px, 3vw, 40px);
+  border: 1px solid #d6dcd1;
+  border-radius: 6px;
+  background: #f3f1e8;
+}
+
+.recordStatus {
+  margin: 0 0 17px;
+  color: #646d61;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.6;
+}
+
+.evidenceRecord h3 {
+  font-size: 29px;
+}
+
+.evidenceRecord dl {
+  margin: 26px 0 20px;
+}
+
+.evidenceRecord dl > div {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 16px;
+  padding-block: 10px;
+  border-bottom: 1px solid #dcded3;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.evidenceRecord dt {
+  color: #626f67;
+}
+
+.evidenceRecord dd {
+  margin: 0;
+  font-weight: 550;
+}
+
+.evidenceRecord dd::first-letter {
+  text-transform: uppercase;
+}
+
+.qualification,
+.sourceNote {
+  margin: 0;
+  color: #5e685e;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.sourceNote {
+  margin-top: 12px;
+}
+
+.workspaces {
+  gap: 20px;
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(24px, 2.8vw, 36px);
+  border: 1px solid #d6dcd1;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.workspace:hover {
+  border-color: #64938f;
+  background: #f1f3eb;
+}
+
+.audience {
+  margin-bottom: 18px;
+  color: #6a7469;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.workspace h3 {
+  max-width: 270px;
+}
+
+.workspaceAction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 32px;
+  color: #006f78;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.workspaceAction > span {
+  font-size: 21px;
+}
+
+.faq {
+  grid-template-columns: .8fr 1.2fr;
+}
+
+.questions details {
+  border-bottom: 1px solid #d7dcd2;
+}
+
+.questions details:first-child {
+  border-top: 1px solid #d7dcd2;
+}
+
+.questions summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 72px;
+  padding-block: 20px;
+  font-size: 16px;
+  font-weight: 550;
+  line-height: 1.5;
+  cursor: pointer;
+  list-style: none;
+}
+
+.questions summary::-webkit-details-marker {
+  display: none;
+}
+
+.faqIndicator {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: #006f78;
+}
+
+.faqIndicator::before,
+.faqIndicator::after {
+  position: absolute;
+  top: 7px;
+  left: 1px;
+  width: 14px;
+  height: 1.5px;
+  background: currentColor;
+  content: "";
+}
+
+.faqIndicator::after {
+  transform: rotate(90deg);
+}
+
+.questions details[open] .faqIndicator::after {
+  display: none;
+}
+
+.questions p {
+  max-width: 600px;
+  padding: 0 36px 24px 0;
+  font-size: 15px;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+  padding-block: 40px;
+  border-top: 1px solid #d7dcd2;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #24332f;
+  font-size: 23px;
+  font-weight: 750;
+  letter-spacing: -.055em;
+  text-decoration: none;
+}
+
+.brand > span {
+  color: #006f78;
+}
+
+.footer p {
+  margin: 4px 0 0;
+  color: #667165;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+}
+
+.footer nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #3f5750;
+  font-size: 13px;
+  font-weight: 550;
+  text-decoration: none;
+}
+
+.footer nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.support a:focus-visible,
+.support summary:focus-visible,
+.section:focus-visible {
+  outline: 3px solid #006f78;
+  outline-offset: 6px;
+  border-radius: 3px;
+}
+
+@media (max-width: 760px) {
+  .section {
+    scroll-margin-top: 88px;
+  }
+
+  .steps,
+  .workspaces,
+  .evidence,
+  .faq {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .steps {
+    gap: 32px;
+    margin-top: 36px;
+  }
+
+  .stepNumber {
+    margin-bottom: 16px;
+  }
+
+  .workspaces {
+    margin-top: 32px;
+  }
+
+  .workspace h3 {
+    max-width: none;
+  }
+
+  .workspaceAction {
+    padding-top: 22px;
+  }
+
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    padding-block: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace {
+    transition: none;
+  }
+}

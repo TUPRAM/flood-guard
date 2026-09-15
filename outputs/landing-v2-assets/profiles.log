@@ -1,0 +1,57 @@
+
+> @floodguard/web@0.1.0 verify:profiles C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> node scripts/verify-deployment-profiles.mjs
+
+▲ Next.js 16.2.6 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.1s
+  Running TypeScript ...
+  Finished TypeScript in 9.7s ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/4) ...
+  Generating static pages using 5 workers (1/4) 
+  Generating static pages using 5 workers (2/4) 
+  Generating static pages using 5 workers (3/4) 
+✓ Generating static pages using 5 workers (4/4) in 1166ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+└ ○ /public
+
+
+○  (Static)  prerendered as static content
+
+offline asset manifest: 47 production chunks, 0 proposal evidence assets, 0 deferred illustration assets; profile public-production; cache 3ef47137e0b2
+deployment profile smoke: public-production artifact, routes, evidence payloads, cache inventory, and shipped-text boundary verified
+public profile browser smoke: direct Public entry, five-page navigation, verified cache inventory, normalized offline navigation, and absent staff routes
+▲ Next.js 16.2.6 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.0s
+  Running TypeScript ...
+  Finished TypeScript in 9.9s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/6) ...
+  Generating static pages using 7 workers (1/6) 
+  Generating static pages using 7 workers (2/6) 
+  Generating static pages using 7 workers (4/6) 
+✓ Generating static pages using 7 workers (6/6) in 1314ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /command
+├ ○ /public
+└ ○ /studio
+
+
+○  (Static)  prerendered as static content
+
+offline asset manifest: 56 production chunks, 4 proposal evidence assets, 27 deferred illustration assets; profile competition; cache e2102271b1fa
+deployment profile smoke: competition artifact, routes, evidence payloads, cache inventory, and shipped-text boundary verified
+profile transition smoke: competition -> Public downgrade, Public -> competition user update, offline staff readiness, and reconnect state passed
+deployment profile verification: public and competition builds plus same-origin cache downgrade passed

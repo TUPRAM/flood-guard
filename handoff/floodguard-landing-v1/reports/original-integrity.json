@@ -1,0 +1,218 @@
+[
+  {
+    "file": "characters/FG_Characters_R01_P01.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "140e44d663e631061950d390253eca95fc1f1db46fc294b8f7d78ffe549769d9",
+    "dimensions": [
+      1536,
+      1024
+    ]
+  },
+  {
+    "file": "characters/FG_Planner_P01_Transparent.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "cdc1ecb340c7330bd2d92ae4110c0b9f50802edd38a9b36e2d85356875b0172a",
+    "dimensions": [
+      1374,
+      1145
+    ]
+  },
+  {
+    "file": "characters/FG_Resident_R01_Transparent.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "4851b8579b223b2f5f7d39280ef09f7365c83ce9c280fd372b6e2dab3cc40651",
+    "dimensions": [
+      1374,
+      1145
+    ]
+  },
+  {
+    "file": "desktop/FG_H01_Hero_W0.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "550a83b2af491045be0a4d8e4ddbf1f9ac2f5284aa7760b5c3741512e2783b40",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "desktop/FG_S101_Everyday_W0.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "3c75b503ebf9abcfd9da8dd5b8ad0b566c47832142681d418735d4edb094eb67",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "desktop/FG_S201_Changing_W1.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "f2c2235a76a1753217850ec82f1d3b75394bfe57d5755f1854a200e0e0caa8c7",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "desktop/FG_S3A01_Connection_W2.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "5bef2c380ef16dc553e478be48bca138d78bf1806a758076d450b89eb0aacfd1",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "desktop/FG_S3B_OBS_SampleReport_W2.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "87ff24d4e7e99fa7402d2551f6091069d0bb1b9f330564159fcd1b47ff0c1caf",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "desktop/FG_S3B01_Analysis_W2.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "e4530a5c389142876d6275b71278c2da998d4eef1233ba566304cad1f7923254",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "desktop/FG_S4_END_Closing_W2.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "3e02b456e6aa783e90d871fbdbb41804ff4edc2546edc469cbb7d749e0c8f209",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "desktop/FG_S4_PUBLIC_Preparedness_W2.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "3b24955b45fb195e1b63951bdb3ede689e6c40ca65448e68e02df256b827854a",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "desktop/FG_S401_Planning_W2.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "cedbe296cb81504d41b43f0ff75d1e4f57ed0c5442c690c1684e2d683bebae77",
+    "dimensions": [
+      1672,
+      941
+    ]
+  },
+  {
+    "file": "mobile/FG_H01_Hero_W0_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "b5e57de004fd2504f0c11e636862949f6095091029cef0d8a409603139a64b58",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "mobile/FG_S101_Everyday_W0_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "46303c444ebd30aa52cdcdbc164858c89f42d136451ff903e29b44603b4108a5",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "mobile/FG_S201_Changing_W1_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "996aff18338bb23e2075d44c071abc9335ab3cc13b5db59e03501ac2ffab9e10",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "mobile/FG_S3A01_Connection_W2_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "13707e757547f67d3d54249c1c3b69647d889a48124c35dd7c279441970b573a",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "mobile/FG_S3B_OBS_SampleReport_W2_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "49ad43e90e9f1ffb51a2eb24e85a8700b644c16f0f0e76da26112ed1998d6c32",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "mobile/FG_S3B01_Analysis_W2_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "7db2463eeb2af64688544522ddae6b707f60b320989ee708531d852173b527c4",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "mobile/FG_S4_END_Closing_W2_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "a2bb5de0ee5dafe90f5a5c8db8041dd477f137a802ad925944f7001fc857eccf",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "mobile/FG_S4_PUBLIC_Preparedness_W2_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "26d39c3e01ec7202b027a100c75e4d8b11a35915eb15be85b073e17d9279851f",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "mobile/FG_S401_Planning_W2_Mobile.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "5a34ffa748d1dbb36c689fa226cc142ee137c9e0af5a480b3b032fbcbe75f778",
+    "dimensions": [
+      853,
+      1844
+    ]
+  },
+  {
+    "file": "plates/FG_Master_W0.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "bc49409fb68f1fcc2cff3684e427a1986a59694f217ec09a8bd96b7e15a32029",
+    "dimensions": [
+      1536,
+      1024
+    ]
+  },
+  {
+    "file": "plates/FG_Master_W1.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "d9869ba54b32d98b4f87451c4565d89152369954232ee60b9a526377ec85097c",
+    "dimensions": [
+      1536,
+      1024
+    ]
+  },
+  {
+    "file": "plates/FG_Master_W2.png",
+    "matchesSuppliedManifest": true,
+    "sha256": "48b7e32784e337617f0c1854e89a753aea64e21c5d150eb48f8e4f0398f09eb0",
+    "dimensions": [
+      1536,
+      1024
+    ]
+  }
+]

@@ -1,12 +1,14 @@
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
+import { collectLandingArtwork } from "./landing-artwork-inventory.mjs";
 
 const out = resolve(process.cwd(), "out");
 const nextStatic = resolve(out, "_next", "static");
 const appProfile = resolveAppProfile(process.env.FLOODGUARD_APP_PROFILE ?? process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE);
 
 if (appProfile === "public-production") prunePublicProductionOutput();
+const optionalArtwork = appProfile === "competition" ? collectLandingArtwork(out) : [];
 
 function walk(directory) {
   return readdirSync(directory).flatMap((name) => {
@@ -85,6 +87,7 @@ const versionedFiles = [
     resolve(out, "offline-demo", "mae-sai", "access-hotspots.json"),
   ] : []),
   ...proposalEvidenceAssets.map((url) => resolve(out, url.slice(1))),
+  ...optionalArtwork.map((asset) => resolve(out, asset.url.slice(1))),
 ];
 const serviceWorkerPath = resolve(out, "sw.js");
 const serviceWorker = readFileSync(serviceWorkerPath, "utf8");
@@ -97,9 +100,10 @@ buildHash.update("service-worker-policy");
 buildHash.update(serviceWorker);
 buildHash.update(JSON.stringify(deploymentProfile));
 buildHash.update(JSON.stringify(coreAssets));
+buildHash.update(JSON.stringify(optionalArtwork));
 const cacheVersion = buildHash.digest("hex").slice(0, 12);
 const cacheCreatedAt = new Date().toISOString();
-if (!serviceWorker.includes("__BUILD__") || !serviceWorker.includes("__APP_PROFILE__") || !serviceWorker.includes("__CACHE_CREATED_AT__") || !serviceWorker.includes("__PROFILE_CORE_ASSETS__")) {
+if (!serviceWorker.includes("__BUILD__") || !serviceWorker.includes("__APP_PROFILE__") || !serviceWorker.includes("__CACHE_CREATED_AT__") || !serviceWorker.includes("__PROFILE_CORE_ASSETS__") || !serviceWorker.includes("__OPTIONAL_LANDING_ARTWORK__")) {
   throw new Error("Service-worker build tokens are missing.");
 }
 writeFileSync(
@@ -108,6 +112,7 @@ writeFileSync(
     .replaceAll("__BUILD__", cacheVersion)
     .replaceAll("__APP_PROFILE__", appProfile)
     .replaceAll("__CACHE_CREATED_AT__", cacheCreatedAt)
+    .replace("const OPTIONAL_LANDING_ARTWORK = []; /* __OPTIONAL_LANDING_ARTWORK__ */", `const OPTIONAL_LANDING_ARTWORK = ${JSON.stringify(optionalArtwork)};`)
     .replace(
       "const CORE_ASSETS = []; /* __PROFILE_CORE_ASSETS__ */",
       `const CORE_ASSETS = ${JSON.stringify(coreAssets)};`,
@@ -115,7 +120,7 @@ writeFileSync(
   "utf8",
 );
 
-console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets; profile ${appProfile}; cache ${cacheVersion}`);
+console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets, ${optionalArtwork.length} deferred illustration assets; profile ${appProfile}; cache ${cacheVersion}`);
 
 function resolveAppProfile(value) {
   const normalized = value?.trim().toLowerCase();
@@ -126,6 +131,7 @@ function resolveAppProfile(value) {
 
 function prunePublicProductionOutput() {
   const excluded = [
+    "landing",
     "command",
     "studio",
     "offline-demo/bundle.json",

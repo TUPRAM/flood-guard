@@ -1,0 +1,12 @@
+
+> floodguard-thailand-workspace@ typecheck C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/contracts typecheck && pnpm --filter @floodguard/web typecheck
+
+
+> @floodguard/contracts@0.1.0 typecheck C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\packages\contracts
+> tsc --noEmit -p tsconfig.json
+
+
+> @floodguard/web@0.1.0 typecheck C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> tsc --noEmit
+

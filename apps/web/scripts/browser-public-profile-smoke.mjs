@@ -187,6 +187,7 @@ try {
     return { keys, urls };
   });
   if (cacheAudit.keys.length !== 1) throw new Error(`Public profile installed ${cacheAudit.keys.length} FloodGuard caches.`);
+  if (cacheAudit.urls.some((url) => url.startsWith("/landing/"))) throw new Error("Public cache includes landing artwork.");
   for (const forbidden of [
     "/command/",
     "/studio/",

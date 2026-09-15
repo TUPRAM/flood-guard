@@ -27,7 +27,7 @@ for (const relative of [...routeFiles, ...requiredPublicAssets]) {
 }
 
 const routeExpectations = {
-  "index.html": [/One platform\. Three planning views\./i, /Continue by role/i, /DDPM/i, /local-authority/i],
+  "index.html": [/data-fg-landing/i, /See the flood/i, /Understand what it changes/i, /illustrat/i, /href="\/public\/"/i, /href="\/command\/"/i, /href="\/studio\/"/i],
   "public/index.html": [
     /public-app-header/i,
     /FloodGuard/i,
@@ -83,6 +83,7 @@ if (
   serviceWorker.includes("__APP_PROFILE__") ||
   serviceWorker.includes("__CACHE_CREATED_AT__") ||
   serviceWorker.includes("__PROFILE_CORE_ASSETS__") ||
+  serviceWorker.includes("__OPTIONAL_LANDING_ARTWORK__") ||
   !/floodguard-offline-[0-9a-f]{12}/.test(serviceWorker)
 ) {
   throw new Error("Service worker does not use a content-derived cache version");

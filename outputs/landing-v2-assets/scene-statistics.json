@@ -1,0 +1,10 @@
+{
+  "meshObjects": 1780,
+  "vertices": 10082162,
+  "faces": 5881541,
+  "materials": 63,
+  "houses": 26,
+  "clinics": 1,
+  "seed": 41127,
+  "blender": "5.1.1"
+}

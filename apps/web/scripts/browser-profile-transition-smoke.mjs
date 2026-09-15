@@ -3,11 +3,13 @@ import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 
 import { launchFloodGuardBrowser } from "./browser-launch.mjs";
+import { readLandingArtwork } from "./landing-artwork-inventory.mjs";
 
 const competitionOut = resolve(process.env.FLOODGUARD_COMPETITION_PROFILE_OUT ?? resolve(process.cwd(), "out"));
 const publicOut = resolve(process.env.FLOODGUARD_PUBLIC_PROFILE_OUT ?? "");
 if (!existsSync(resolve(competitionOut, "command", "index.html"))) throw new Error("Competition profile output is unavailable.");
 if (!publicOut || !existsSync(resolve(publicOut, "deployment-profile.json"))) throw new Error("Public profile output is unavailable.");
+const expectedArtworkUrls = readLandingArtwork(competitionOut).map((asset) => asset.url);
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
@@ -15,6 +17,7 @@ const contentTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".webp": "image/webp",
   ".woff2": "font/woff2",
 };
 let activeOut = competitionOut;
@@ -102,12 +105,19 @@ try {
   });
 
   await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
-  await page.locator("main.surface-chooser").waitFor({ state: "visible" });
+  await page.locator("main[data-fg-landing]").waitFor({ state: "visible" });
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
   await waitForEvaluated(page, async () => {
     const registration = await navigator.serviceWorker.getRegistration();
     return Boolean(registration?.active && !registration.installing && !registration.waiting);
   }, undefined, "initial competition worker to settle");
+  await waitForEvaluated(page, async (expectedUrls) => {
+    const key = (await caches.keys()).find((item) => /^floodguard-offline-[0-9a-f]{12}$/.test(item));
+    if (!key) return false;
+    const paths = (await (await caches.open(key)).keys()).map((request) => new URL(request.url).pathname);
+    const artworkPaths = paths.filter((path) => path.startsWith("/landing/"));
+    return artworkPaths.length === expectedUrls.length && expectedUrls.every((url) => artworkPaths.includes(url));
+  }, expectedArtworkUrls, "deferred competition artwork to be cached before profile downgrade");
   const competitionCache = await page.evaluate(async () => {
     const key = (await caches.keys()).find((item) => /^floodguard-offline-[0-9a-f]{12}$/.test(item));
     if (!key) return null;
@@ -181,6 +191,7 @@ try {
   if (publicCacheAudit.keys.includes(competitionCache.key)) {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
+  if (publicCacheAudit.paths.some((path) => path.startsWith("/landing/"))) throw new Error("Public cache retained competition artwork after downgrade.");
   for (const forbidden of ["/command/", "/studio/", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
     if (publicCacheAudit.paths.includes(forbidden)) throw new Error(`Public cache retained ${forbidden} after transition.`);
   }
@@ -226,7 +237,10 @@ try {
     "competition update to reach the waiting state",
   );
   await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
-  await page.locator("main.surface-chooser").waitFor({ state: "visible" });
+  await page.locator("main[data-fg-landing]").waitFor({ state: "visible" });
+  await page.locator('[data-pwa-availability="true"]').waitFor({ state: "hidden" });
+  await page.goto(`${baseUrl}/public/`, { waitUntil: "domcontentloaded" });
+  await page.locator("main.public-page").waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Install available update")
     && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("saved app ready")
@@ -240,7 +254,7 @@ try {
   if (await pendingPanel.getAttribute("open") === null) await pendingPanel.locator("summary").click();
   phase = "activate competition update";
   await page.getByRole("button", { name: "Install available update" }).click();
-  await page.locator("main.surface-chooser").waitFor({ state: "visible" });
+  await page.locator("main.public-page").waitFor({ state: "visible" });
   await waitForEvaluated(page, async (oldKey) => {
     const keys = (await caches.keys()).filter((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key));
     if (keys.length !== 1 || keys[0] === oldKey) return false;

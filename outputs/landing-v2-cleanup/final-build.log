@@ -1,0 +1,34 @@
+
+> floodguard-thailand-workspace@ build:web C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/web build:competition
+
+
+> @floodguard/web@0.1.0 build:competition C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> node scripts/build-profile.mjs competition
+
+▲ Next.js 16.2.6 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.1s
+  Running TypeScript ...
+  Finished TypeScript in 7.4s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/6) ...
+  Generating static pages using 7 workers (1/6) 
+  Generating static pages using 7 workers (2/6) 
+  Generating static pages using 7 workers (4/6) 
+✓ Generating static pages using 7 workers (6/6) in 891ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /command
+├ ○ /public
+└ ○ /studio
+
+
+○  (Static)  prerendered as static content
+
+offline asset manifest: 56 production chunks, 4 proposal evidence assets, 27 deferred illustration assets; profile competition; cache eef688b01ca8
+deployment profile smoke: competition artifact, routes, evidence payloads, cache inventory, and shipped-text boundary verified

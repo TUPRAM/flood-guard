@@ -1,0 +1,17 @@
+
+> @floodguard/web@0.1.0 test C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> vitest run --configLoader runner "src/lib/landing-v1/neighborhood.test.ts" "src/lib/landing-v1/timeline.test.ts" "src/lib/landing-v1/story.test.ts" "src/app/page.test.tsx"
+
+
+ RUN  v3.2.4 C:/Users/iputu/AppData/Local/Packages/OpenAI.Codex_2p2nqsd0c76g0/LocalCache/Local/CodexWorktrees/flood-guard/landing-v1/apps/web
+
+ ✓ src/lib/landing-v1/neighborhood.test.ts (3 tests) 6ms
+ ✓ src/lib/landing-v1/story.test.ts (10 tests) 15ms
+ ✓ src/lib/landing-v1/timeline.test.ts (11 tests) 11ms
+ ✓ src/app/page.test.tsx (2 tests) 54ms
+
+ Test Files  4 passed (4)
+      Tests  26 passed (26)
+   Start at  18:00:10
+   Duration  1.46s (transform 404ms, setup 0ms, collect 813ms, tests 86ms, environment 1ms, prepare 1.43s)
+

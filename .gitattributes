@@ -43,6 +43,11 @@
 *.onnx    binary
 *.woff    binary
 *.woff2   binary
+*.webp    binary
+*.webm    binary
+
+# Preserve the exact bytes of the supplied, checksummed storyboard manifest.
+handoff/floodguard-landing-v1/references/storyboard-original/asset-manifest.csv -text
 
 # ---------------------------------------------------------------------------
 # Byte-exact artifacts.

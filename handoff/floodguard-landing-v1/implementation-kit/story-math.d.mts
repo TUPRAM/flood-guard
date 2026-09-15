@@ -1,0 +1,12 @@
+export type Point = [number, number];
+export type Crop = [number, number, number, number];
+export function validateCrop(crop: Crop): Crop;
+export function projectCropPoint(point: Point, crop: Crop, width: number, height: number): Point;
+export function unprojectCropPoint(point: Point, crop: Crop, width: number, height: number): Point;
+export function cropImageStyle(crop: Crop, nativeWidth?: number, nativeHeight?: number): {width:string;height:string;left:string;top:string};
+export function fitRect(nativeWidth:number,nativeHeight:number,width:number,height:number,mode?:'contain'|'cover',posX?:number,posY?:number):{scale:number;width:number;height:number;x:number;y:number};
+export function polylinePath(points: Point[]): string;
+export function routeSegments(points: Point[],start:number,end:number):{before:Point[];affected:Point[];after:Point[]};
+export function findScene<T extends {id:string}>(scenes:T[],id:string):T;
+export function transitionKind(from:{id:string;waterState:string},to:{id:string;waterState:string},reducedMotion?:boolean):'instant'|'none'|'overlay-only'|'fade-through-paper';
+export function resolveProgress<T extends {weight:number}>(scenes:T[],progress:number):T;

@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "space": "illustration-native-pixels",
+  "nativeSize": {
+    "width": 1536,
+    "height": 1024
+  },
+  "status": "Hand-traced starting coordinates. Calibrate against the supplied clean plates before shipping; not geographic data.",
+  "needsVisualAcceptance": true,
+  "viewports": {
+    "desktop": [
+      0,
+      0,
+      1536,
+      1024
+    ],
+    "hero": [
+      0,
+      0,
+      1536,
+      900
+    ],
+    "mobile": [
+      300,
+      190,
+      1190,
+      830
+    ]
+  },
+  "points": {
+    "homeGate": [
+      453,
+      433
+    ],
+    "clinicEntrance": [
+      1227,
+      629
+    ],
+    "affectedCenter": [
+      810,
+      633
+    ],
+    "report": [
+      825,
+      688
+    ]
+  },
+  "route": [
+    [
+      453,
+      433
+    ],
+    [
+      454,
+      457
+    ],
+    [
+      479,
+      482
+    ],
+    [
+      529,
+      512
+    ],
+    [
+      593,
+      546
+    ],
+    [
+      663,
+      576
+    ],
+    [
+      740,
+      606
+    ],
+    [
+      825,
+      638
+    ],
+    [
+      918,
+      678
+    ],
+    [
+      1005,
+      716
+    ],
+    [
+      1086,
+      749
+    ],
+    [
+      1118,
+      741
+    ],
+    [
+      1136,
+      704
+    ],
+    [
+      1151,
+      680
+    ],
+    [
+      1192,
+      651
+    ],
+    [
+      1227,
+      629
+    ]
+  ],
+  "affectedSegment": {
+    "startIndex": 4,
+    "endIndex": 10
+  },
+  "selectedAreaPath": "M 368 350 C 510 319 718 381 871 490 C 1099 531 1391 590 1360 740 C 1295 832 1040 852 831 763 C 623 690 369 602 350 449 Z",
+  "selectedAreaMeaning": "Narrative selection only; not a flood extent, catchment, priority boundary, or measured polygon.",
+  "waterBoundaryPath": null,
+  "waterBoundaryNote": "Do not invent a rectangular flood outline. Physical water is already rendered. A detailed shoreline trace is optional and requires native-pixel visual review; absence is preferable to incorrect geography.",
+  "byState": {
+    "W0": {
+      "registration": "independent same-framing reference; no morph certification",
+      "homeGate": [
+        453,
+        433
+      ],
+      "clinicEntrance": [
+        1227,
+        629
+      ]
+    },
+    "W1": {
+      "registration": "independent same-framing reference; no morph certification",
+      "homeGate": [
+        453,
+        433
+      ],
+      "clinicEntrance": [
+        1227,
+        629
+      ]
+    },
+    "W2": {
+      "registration": "independent same-framing reference; no morph certification",
+      "homeGate": [
+        453,
+        433
+      ],
+      "clinicEntrance": [
+        1227,
+        629
+      ]
+    }
+  },
+  "labelAnchors": {
+    "homes": [
+      390,
+      370
+    ],
+    "clinic": [
+      1333,
+      684
+    ],
+    "connection": [
+      810,
+      558
+    ],
+    "report": [
+      858,
+      749
+    ],
+    "selection": [
+      981,
+      827
+    ]
+  },
+  "criticalBoxes": {
+    "home": [
+      285,
+      234,
+      573,
+      464
+    ],
+    "clinic": [
+      1130,
+      451,
+      1415,
+      716
+    ],
+    "affectedRoad": [
+      562,
+      514,
+      1099,
+      769
+    ]
+  },
+  "cardSafeRect": [
+    970,
+    45,
+    520,
+    370
+  ]
+}

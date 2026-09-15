@@ -1,0 +1,7 @@
+{
+  "workbenchBrowserTest": "blocked-by-environment-policy",
+  "reason": "System Chromium was available, but both file:// and local HTTP navigation were blocked by the container browser administrator policy. No policy bypass was attempted.",
+  "inlineJavaScriptSyntaxCheck": "passed with node --check",
+  "actualUIInteractionsTested": false,
+  "applicationWebsiteTested": false
+}

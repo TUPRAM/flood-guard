@@ -1,22 +1,28 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import RootEntry, { generateMetadata } from "./page";
 
-import { SurfaceChooser } from "./page";
+afterEach(() => vi.unstubAllEnvs());
 
-describe("SurfaceChooser", () => {
-  it("renders the final-product platform entry with all three role workspaces", () => {
-    const html = renderToStaticMarkup(<SurfaceChooser />);
-    const visibleText = html.replace(/<[^>]*>/g, " ");
+describe("Landing root", () => {
+  it("server-renders the artwork story and working role links", () => {
+    const html = renderToStaticMarkup(<RootEntry />);
+    const visibleText = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+    expect(html).toContain("data-fg-landing");
+    expect(html).toContain('id="main-content"');
+    expect(html).toContain('lang="en"');
+    expect(visibleText).toMatch(/See the flood\.\s*Understand what it changes\./);
+    for (const route of ["public", "command", "studio"]) expect(html).toContain(`href="/${route}/"`);
+    expect(html).toContain("/landing/floodguard-v2/camera/approach-00.webp");
+    expect(html).not.toContain("/landing/floodguard-v1/plates/");
+    expect(html).not.toContain("/_next/image");
+    expect(visibleText).toMatch(/illustrat/i);
+  });
 
-    expect(html).toContain('class="surface-chooser"');
-    expect(html).toContain('id="main-content" lang="en"');
-    expect(html).toContain('class="chooser-thai" lang="th"');
-    expect(html).toContain('class="chooser-header"');
-    expect(html).toContain('href="/public"');
-    expect(html).toContain('href="/command"');
-    expect(html).toContain('href="/studio"');
-    expect(html).toContain("One platform. Three planning views.");
-    expect(html).toContain("Check DDPM and local-authority updates");
-    expect(visibleText).not.toMatch(/\b(?:rehearsal|demo|fixture|candidate|synthetic|non-operational)\b/i);
+  it("keeps landing metadata out of the public-production profile", () => {
+    vi.stubEnv("FLOODGUARD_APP_PROFILE", "public-production");
+    expect(generateMetadata()).toEqual({});
+    vi.stubEnv("FLOODGUARD_APP_PROFILE", "competition");
+    expect(generateMetadata().description).toMatch(/illustrated neighborhood/);
   });
 });

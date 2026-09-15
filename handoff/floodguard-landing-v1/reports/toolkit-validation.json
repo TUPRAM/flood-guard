@@ -1,0 +1,9 @@
+{
+  "dryRunWritesNoFiles": true,
+  "applyWritesExpectedFiles": 18,
+  "identicalRerunIsNonDestructive": true,
+  "differentExistingFileIsRejected": true,
+  "testedAgainst": "temporary mock repository, not FloodGuard app",
+  "all15RuntimeImagesDecode": true,
+  "allSixCharacterVariantsRetainAlpha": true
+}

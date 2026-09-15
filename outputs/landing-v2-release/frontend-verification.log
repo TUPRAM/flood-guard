@@ -1,0 +1,181 @@
+
+> floodguard-thailand-workspace@ verify:frontend C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm lint && pnpm typecheck && pnpm test:contracts && pnpm test:web && pnpm --filter @floodguard/web verify:profiles && pnpm test:offline && pnpm test:csp
+
+
+> floodguard-thailand-workspace@ lint C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/web lint
+
+
+> @floodguard/web@0.1.0 lint C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> eslint . --max-warnings=0
+
+
+> floodguard-thailand-workspace@ typecheck C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/contracts typecheck && pnpm --filter @floodguard/web typecheck
+
+
+> @floodguard/contracts@0.1.0 typecheck C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\packages\contracts
+> tsc --noEmit -p tsconfig.json
+
+
+> @floodguard/web@0.1.0 typecheck C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> tsc --noEmit
+
+
+> floodguard-thailand-workspace@ test:contracts C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/contracts test
+
+
+> @floodguard/contracts@0.1.0 test C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\packages\contracts
+> vitest run
+
+
+ RUN  v3.2.4 C:/Users/iputu/AppData/Local/Packages/OpenAI.Codex_2p2nqsd0c76g0/LocalCache/Local/CodexWorktrees/flood-guard/landing-v1/packages/contracts
+
+ ✓ src/contracts.test.ts (7 tests) 9ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  00:44:40
+   Duration  2.29s (transform 254ms, setup 0ms, collect 376ms, tests 9ms, environment 0ms, prepare 882ms)
+
+
+> floodguard-thailand-workspace@ test:web C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/web test
+
+
+> @floodguard/web@0.1.0 test C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> vitest run --configLoader runner
+
+
+ RUN  v3.2.4 C:/Users/iputu/AppData/Local/Packages/OpenAI.Codex_2p2nqsd0c76g0/LocalCache/Local/CodexWorktrees/flood-guard/landing-v1/apps/web
+
+ ✓ src/lib/qualified-evidence-foundation.test.ts (5 tests) 20ms
+ ✓ src/lib/proposal-evidence.test.ts (8 tests) 27ms
+ ✓ src/lib/mae-sai-offline-bundle.test.ts (5 tests) 45ms
+ ✓ src/lib/public-data-provider.test.ts (4 tests) 52ms
+ ✓ src/lib/public-report.test.ts (8 tests) 51ms
+ ✓ src/components/geoai-real-panel.test.tsx (2 tests) 39ms
+ ✓ src/components/model-registry-panel.test.tsx (5 tests) 99ms
+ ✓ src/lib/basemap-tiles.test.ts (9 tests) 44ms
+ ✓ src/components/geo-map.test.ts (13 tests) 103ms
+ ✓ src/components/public-home-page.test.tsx (1 test) 102ms
+ ✓ src/lib/public-location.test.ts (8 tests) 36ms
+ ✓ src/lib/command-filter.test.ts (7 tests) 35ms
+ ✓ src/components/studio-workspace.test.tsx (4 tests) 132ms
+ ✓ src/components/household-plan-builder.test.tsx (3 tests) 44ms
+ ✓ src/components/command-workspace.test.tsx (5 tests) 290ms
+ ✓ src/app/page.test.tsx (2 tests) 169ms
+ ✓ src/components/public-experience.test.tsx (6 tests) 210ms
+ ✓ src/components/landing-v1/scene-frame.test.tsx (11 tests) 647ms
+ ✓ src/lib/data-provider.test.ts (34 tests) 1489ms
+ ✓ src/lib/public-display-name.test.ts (5 tests) 23ms
+ ✓ src/lib/public-route.test.ts (9 tests) 22ms
+ ✓ src/components/qualified-evidence-foundation-panel.test.tsx (3 tests) 31ms
+ ✓ src/lib/model-registry.test.ts (5 tests) 19ms
+ ✓ src/lib/household-plan.test.ts (7 tests) 18ms
+ ✓ src/lib/public-hazard-signals.test.ts (10 tests) 11ms
+ ✓ src/lib/landing-v1/story.test.ts (10 tests) 36ms
+ ✓ src/lib/studio-evidence.test.ts (5 tests) 10ms
+ ✓ src/lib/landing-v1/timeline.test.ts (11 tests) 23ms
+ ✓ src/components/studio-presentation.test.ts (3 tests) 10ms
+ ✓ src/lib/studio-evidence-scope.test.ts (6 tests) 9ms
+ ✓ src/lib/evidence-foundation.test.ts (4 tests) 10ms
+ ✓ src/lib/scenario-presentation.test.ts (6 tests) 9ms
+ ✓ src/lib/basemap-health.test.ts (2 tests) 9ms
+ ✓ src/lib/deployment-profile.test.ts (3 tests) 7ms
+ ✓ src/components/pwa-register.test.tsx (5 tests) 29ms
+ ✓ src/lib/pilot-readiness.test.ts (1 test) 6ms
+ ✓ src/lib/map-attribution.test.ts (1 test) 6ms
+ ✓ src/lib/use-language.test.ts (3 tests) 8ms
+ ✓ src/lib/landing-v1/neighborhood.test.ts (3 tests) 13ms
+
+ Test Files  39 passed (39)
+      Tests  242 passed (242)
+   Start at  00:44:45
+   Duration  7.84s (transform 11.70s, setup 0ms, collect 35.11s, tests 3.94s, environment 15ms, prepare 33.33s)
+
+
+> @floodguard/web@0.1.0 verify:profiles C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> node scripts/verify-deployment-profiles.mjs
+
+▲ Next.js 16.2.6 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.2s
+  Running TypeScript ...
+  Finished TypeScript in 8.5s ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/4) ...
+  Generating static pages using 5 workers (1/4) 
+  Generating static pages using 5 workers (2/4) 
+  Generating static pages using 5 workers (3/4) 
+✓ Generating static pages using 5 workers (4/4) in 873ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+└ ○ /public
+
+
+○  (Static)  prerendered as static content
+
+offline asset manifest: 47 production chunks, 0 proposal evidence assets, 0 deferred illustration assets; profile public-production; cache 189026272da4
+deployment profile smoke: public-production artifact, routes, evidence payloads, cache inventory, and shipped-text boundary verified
+public profile browser smoke: direct Public entry, five-page navigation, verified cache inventory, normalized offline navigation, and absent staff routes
+▲ Next.js 16.2.6 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.8s
+  Running TypeScript ...
+  Finished TypeScript in 8.4s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/6) ...
+  Generating static pages using 7 workers (1/6) 
+  Generating static pages using 7 workers (2/6) 
+  Generating static pages using 7 workers (4/6) 
+✓ Generating static pages using 7 workers (6/6) in 1687ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /command
+├ ○ /public
+└ ○ /studio
+
+
+○  (Static)  prerendered as static content
+
+offline asset manifest: 56 production chunks, 4 proposal evidence assets, 27 deferred illustration assets; profile competition; cache efeef657283d
+deployment profile smoke: competition artifact, routes, evidence payloads, cache inventory, and shipped-text boundary verified
+profile transition smoke: competition -> Public downgrade, Public -> competition user update, offline staff readiness, and reconnect state passed
+deployment profile verification: public and competition builds plus same-origin cache downgrade passed
+
+> floodguard-thailand-workspace@ test:offline C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/web test:offline
+
+
+> @floodguard/web@0.1.0 test:offline C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs
+
+offline smoke: 4 polished routes and 15 core assets verified; internal safety contracts retained and no external runtime resources
+browser offline smoke: 4 routes rendered from a content-versioned service-worker cache; approved basemaps failed gracefully and no unapproved external requests occurred
+legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified
+
+> floodguard-thailand-workspace@ test:csp C:\Users\iputu\AppData\Local\CodexWorktrees\flood-guard\landing-v1
+> pnpm --filter @floodguard/web test:csp
+
+
+> @floodguard/web@0.1.0 test:csp C:\Users\iputu\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\LocalCache\Local\CodexWorktrees\flood-guard\landing-v1\apps\web
+> node scripts/csp-smoke.mjs
+
+  ok  / (2293 chars rendered)
+  ok  public address selection and opt-in synthetic GPS under production policies
+  ok  /public/ (431 chars rendered)
+  ok  map 403 images, partial loads, timeout, retry, hide/show, provider switching, offline and origin-only referrers
+  ok  /command/ (9085 chars rendered)
+  ok  /studio/ (2359 chars rendered)
+csp smoke: all routes render under production security headers

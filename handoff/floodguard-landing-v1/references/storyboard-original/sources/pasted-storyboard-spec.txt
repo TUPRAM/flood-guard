@@ -1,0 +1,656 @@
+FloodGuard — detailed storyboard specification v1.0
+
+The story follows one neighborhood, one household, one clinic, and one connection. Flooding changes that connection; FloodGuard then makes the possible consequences easier to examine.
+
+The visual progression is:
+
+An inhabited place → an everyday connection → changing conditions → a less-obvious consequence → an explained finding → a planning next step.
+
+There are six principal compositions, but still only one hero and four story stages. Stage 3 contains two connected beats: 3A, understanding the problem, and 3B, seeing the solution.
+
+Download the complete storyboard specification
+
+The specification below defines the setting, camera, characters, interface fragments, copy, and transitions that the later images should share.
+
+1. The visual foundation: one place, consistently represented
+1.1 Overall art direction
+
+The intended style is:
+
+A carefully made architectural neighborhood model, combined with restrained cartographic graphics and half-body editorial illustrations.
+
+The buildings should have convincing proportions and material detail without becoming photorealistic. The characters should be flatter and more illustrative than the environment. Interface elements should remain crisp and readable.
+
+Layer	Visual treatment	Main responsibility
+Neighborhood	Softly shaded 2.5D architecture, restrained textures, believable depth.	Establish the place and show the physical change.
+Analytical overlays	Thin lines, backed labels, selected-area outlines, simple markers.	Explain the connection and its possible consequences.
+Characters	Half-body 2D editorial illustration with subtle shading.	Express a human question or demonstrate an interaction.
+Interface cards	Clean, flat panels with strong typographic hierarchy.	Show what someone can inspect or do next.
+Page background	Warm paper, sparse topographic texture in the margins.	Give the whole presentation a coherent identity.
+
+Avoid a toy-city appearance, highly angular trees, shiny plastic water, neon network effects, and generic dashboard clutter.
+
+The scene should be detailed enough to feel inhabited, but simple enough that the important connection remains obvious.
+
+1.2 The neighborhood to build
+
+Use a fictional neighborhood inspired by Mae Sai, not a geographically exact reconstruction.
+
+Include approximately 35–45 low-rise buildings, with most peripheral buildings receiving less visual emphasis. Use irregular plots, modest shopfronts, shaded verandas, and a restrained mixture of tiled and metal roofs.
+
+The central scene contains these permanent anchors:
+
+ID	Element	Position within the illustration viewport	Locked appearance
+H01	Main household	Upper-left of the central composition, approximately 29% across and 36% down.	Cream two-storey home, terracotta hipped roof, shaded veranda, one distinctive tree on its left.
+R01	Residential cluster	Around H01.	Three to five homes that remain outside the final illustrated flood footprint.
+J01	First road junction	Approximately 44% across and 56% down.	A recognizable junction connecting the homes to the lower road.
+L01	Low road segment	Approximately 58% across and 60% down.	The section affected by the illustrated flood. It is an at-grade road, not a raised bridge.
+C01	Clinic	Lower-right of the composition, approximately 82% across and 65% down.	White two-storey building, muted teal roof, entrance canopy, teal medical identifier, visible forecourt.
+W01	Watercourse	Lower-left edge of the neighborhood.	A shallow channel with vegetated banks and adjoining low ground.
+P01	Small neighborhood shop	Above the central junction.	Desaturated blue roof and short awning; a secondary landmark for continuity.
+
+These percentages describe the composed image, not real geographic coordinates.
+
+The main connection follows the actual roads:
+
+Household gate → first junction → low road segment → clinic entrance.
+
+The overlay must not run across roofs or end in the middle of a building.
+
+Other roads can remain visible. The story is about the usual connection being affected, not a claim that all possible access has disappeared.
+
+1.3 Lock three physical states
+State	What changes physically	Frames using it
+W0 — Ordinary conditions	Water remains inside the channel. Roads and surrounding plots are dry.	Hero and Scene 1.
+W1 — Conditions changing	The channel is fuller; small areas of adjoining low ground begin to collect water. L01 is not yet shown underwater.	Scene 2.
+W2 — Illustrative flooding	Water spreads across connected low ground and reaches L01. The main household cluster and clinic remain outside the water.	Scenes 3A, 3B, and 4.
+
+The W2 flood footprint must remain identical from Scene 3A onward. The solution sequence changes the explanation—not the amount of flooding.
+
+Water should sit consistently against roads, curbs, plots, and foundations. Submerged road markings should not remain visibly painted over opaque water. Any connection line above the water must look clearly like an analytical overlay.
+
+2. Camera, page layout, and character design
+2.1 Camera rules
+
+Use an orthographic or near-orthographic view, initially composed at approximately 40 degrees downward from the horizontal.
+
+The exact angle can be adjusted when approving the first image, but once approved, the orientation stays fixed.
+
+Frame	Camera behavior
+Hero	Wider view of the same neighborhood.
+Scene 1	Move into the canonical composition containing the household, low connection, and clinic.
+Scenes 2–3B	Hold the same view.
+Scene 4	Hold the view during the interaction; allow a modest pullback at the ending.
+
+Do not rotate the town during the dry-to-flooded comparison. The viewer should immediately recognize the same road, house, and clinic.
+
+Lighting comes from the upper-left throughout. Changing conditions soften that light and introduce cooler cloud shadow; they do not reverse the sun direction.
+
+2.2 Desktop composition
+
+Use 1920 × 1080 as the reference artboard.
+
+Hero layout
+
+Place the headline and supporting copy above a wide neighborhood illustration, similar to the editorial balance in your reference.
+
+The neighborhood occupies approximately the lower half of the artboard. The headline should be readable before the visitor examines the roofs and roads.
+
+Story layout
+
+Keep a consistent split composition:
+
+Region	Approximate bounds	Content
+Navigation	Centered near the top; about 72 px high.	FloodGuard, story navigation, workspaces, evidence, demo action.
+Left editorial rail	x 64–592, beginning around y 156.	Chapter label, headline, short paragraph, character vignette.
+Right illustration viewport	x 640–1872, y 148–1008.	The neighborhood and analytical overlays.
+Analytical-card position	Upper-right of the illustration, approximately x 1440, y 184, 400 × 392 px.	Reserved for the finding and review brief in Scenes 3B and 4.
+
+The reserved card position must not cover the home, affected connection, or clinic.
+
+Use approximately 54–58 px story headings, with deliberate line breaks. Supporting copy can be 22–24 px, card copy 17–19 px, and meaningful map labels 16–18 px at the reference size.
+
+Exact text should eventually be rendered as interface or vector text, rather than being permanently baked into an illustration.
+
+2.3 Palette
+Purpose	Proposed color
+Paper background	#F3F1E8
+Primary text	#24332F
+Brand teal	#006F78
+Analytical connection blue	#3C6F8A
+Vegetation	#95A88E
+Blue-gray roofs	#A7B8BD
+Terracotta accent	#BF8064
+Sediment water	#A88B68
+Review/uncertainty amber	#9A5D0C
+
+Teal indicates brand or selection—not “safe.” Amber indicates something needing review—not a verified severity classification.
+
+2.4 The two recurring characters
+Resident R-01
+
+A fictional adult woman, approximately 30–40, with medium-tan skin and dark brown chin-length hair tucked behind one ear.
+
+She wears a muted terracotta or ochre overshirt over a cream top and uses a phone with a dark slate case.
+
+Her appearance progresses from relaxed preparation → attentive checking → thoughtful concern → informed preparation. Avoid panic, theatrical distress, or a celebratory ending.
+
+Her clothes, phone, hair, and home-table setting remain unchanged.
+
+Planner P-01
+
+A fictional adult man, approximately 40–50, with medium-tan skin, short dark hair with subtle gray at the temples, and a muted dark-teal overshirt.
+
+He sits behind a light warm-gray desk with a dark slate tablet or laptop. No official insignia or emergency-service uniform.
+
+His actions are limited and purposeful: select an area, inspect a finding, review a brief.
+
+How they occupy the page
+
+Characters remain in the editorial rail. Their torsos end naturally at a table, desk, or panel edge.
+
+They should never look like giant people standing inside the neighborhood.
+
+Each vignette contains one character, one short question or action, and at most one adjacent interface fragment. In Scenes 3B and 4, the main analytical card is already on the map, so do not duplicate it beside the planner.
+
+3. Hero — establish the place and the promise
+
+Frame ID: H-01
+
+Purpose
+
+Before any flooding appears, the viewer should understand that FloodGuard concerns the consequences of flooding and local planning.
+
+Exact copy
+
+Eyebrow
+
+FLOOD EVIDENCE → LOCAL PLANNING
+
+Headline
+
+See the flood.
+Understand what it changes.
+
+Supporting copy
+
+FloodGuard connects flood evidence with communities, roads, and essential services to support informed local planning.
+
+Actions
+
+Primary: Explore the planning demo
+Secondary: See how it works
+
+Context line
+
+Historical planning demonstration · Illustrative neighborhood
+
+What the image should show
+
+A warm paper canvas, a restrained floating navigation bar, and a large centered headline.
+
+Below the headline, show the wide, dry neighborhood. The terracotta-roof household sits left of center; the clinic is toward the right; the watercourse occupies the lower-left region.
+
+Buildings extend beyond the main relationship so this feels like part of a town, not three disconnected props on an empty platform.
+
+Use W0, soft daylight, and subtle architectural shadows.
+
+There are no characters, report pins, analytical findings, or prominent network graphics yet. Small “Homes” and “Clinic” labels are optional, but they should not compete with the headline.
+
+Transition into Scene 1
+
+As the visitor scrolls, the same neighborhood shifts into the right-side story viewport. The camera moves closer to the household–clinic relationship.
+
+The headline area becomes the left editorial rail.
+
+Complete that movement before introducing the detailed connection overlay.
+
+Approval test
+
+The hero communicates the product promise first, and the viewer can recognize the same household and clinic when Scene 1 appears.
+
+4. Scene 1 — an ordinary day
+
+Frame ID: S1-01 · Physical state: W0
+
+Purpose
+
+Establish the normal relationship that the flood will later change.
+
+Exact copy
+
+Chapter label
+
+01 / EVERYDAY CONNECTIONS
+
+Headline
+
+Everyday life
+depends on
+connections.
+
+Supporting copy
+
+Homes, care, supplies, and support are linked through the same local network.
+
+Resident card
+
+Household preparedness
+Review your plan and the information available for your area.
+
+What the image should show
+
+Use the canonical neighborhood view.
+
+The home and clinic are visually distinguishable, but not surrounded by oversized glowing rings. Their roof colors and architectural silhouettes should help the viewer identify them.
+
+A thin analytical-blue line follows the road from the household gate to the clinic entrance. Use a quiet light halo where necessary to keep it readable against the road surface.
+
+The line should be labeled “Usual connection.” It represents the relationship being explained, not an evacuation recommendation.
+
+The clinic’s entrance is clearly visible. The line ends there—not at its roof.
+
+In the left vignette, R-01 sits or stands beside a home table with a folded household plan and phone. Her shoulders are relaxed. The preparedness card appears beside her.
+
+The surrounding neighborhood remains detailed but less contrasty than the three main anchors: household, connection, clinic.
+
+Motion sequence
+
+First settle the camera and identify the endpoints. Then draw the connection once.
+
+A small neutral marker may travel along the line once to suggest an ordinary journey. It disappears after completing the movement; do not leave traffic continuously circulating through subsequent flood scenes.
+
+Introduce the resident vignette after the connection is established. Then hold the map still.
+
+What the finished still must communicate
+
+This household depends on a connection to an essential service.
+
+The scene should communicate that even with the character hidden.
+
+5. Scene 2 — conditions change
+
+Frame ID: S2-01 · Physical state: W1
+
+Purpose
+
+Introduce changing conditions and a preparation question without making the animation look like an unsupported forecast.
+
+Exact copy
+
+Chapter label
+
+02 / CONDITIONS CHANGE
+
+Headline
+
+When conditions
+change, the next
+question becomes
+local.
+
+Supporting copy
+
+Which places and connections might need attention?
+
+Resident card
+
+Conditions are changing
+Review available updates and your household plan.
+
+Small card label
+
+Illustrative preparedness view
+
+What the image should show
+
+The camera, building positions, road geometry, and analytical connection remain unchanged.
+
+The watercourse becomes visibly fuller. A narrow area of low ground beside it starts to collect water, but the central road segment is not yet shown underwater.
+
+A broad cloud shadow moves across the lower-middle part of the neighborhood. The light becomes cooler and less direct, while the buildings and roads remain easy to read.
+
+Prefer this restrained atmospheric change over black storm clouds and prominent lightning bolts. A little cloud edge at the distant top of the image is acceptable; the scene does not need cartoon weather symbols.
+
+R-01 is in the same home setting, with the same clothing and phone. Her attention shifts to the device.
+
+The card represents a preparedness concept, not an official warning or a FloodGuard-generated flood probability.
+
+Motion sequence
+
+Introduce the softer light first. Then move from W0 to W1.
+
+Once the environmental change is visible, shift the resident’s attention and reveal the updated card.
+
+Let the movement settle before the next scene.
+
+What the finished still must communicate
+
+Conditions are changing, and the household is checking relevant information.
+
+It should not communicate “the app detected clouds and predicted a flood.”
+
+6. Scene 3A — reveal the less-obvious consequence
+
+Frame ID: S3A-01 · Physical state: W2
+
+This is the most important problem frame.
+
+Purpose
+
+Make the viewer see that the household and clinic can remain outside the illustrated floodwater while their usual connection is affected.
+
+Exact copy
+
+Chapter label
+
+03 / CONNECTIONS AFFECTED
+
+Headline
+
+A place can remain
+dry while its usual
+connection is
+disrupted.
+
+Supporting copy
+
+The flood footprint does not tell the whole story of access.
+
+Resident question
+
+What does this mean for our access to care?
+
+What the image should show
+
+Hold the same camera.
+
+Water now spreads from the watercourse across the low-lying middle ground and reaches L01. It stops short of the residential cluster and clinic grounds.
+
+Keep both dry endpoints unmistakable. Do not surround them with floodwater in a way that contradicts the explanation.
+
+The usual connection remains visible on either side of L01. At the affected section, change the overlay to a short amber dashed segment, supported by a compact callout.
+
+Use three readable anchor labels:
+
+Homes · Affected connection · Clinic
+
+A fuller callout can state:
+
+Connection affected in this scenario
+
+R-01 appears in the left vignette with thoughtful concern. Her question is presented as clean editorial text, not a comic speech balloon.
+
+Do not show a route instruction on her phone. Do not introduce the full analytical finding yet.
+
+This frame needs space for the problem to become clear before the solution arrives.
+
+Motion sequence
+
+Advance W1 into W2 while holding the camera.
+
+Then stop the water progression.
+
+Change the affected connection’s line treatment. Only after that change is readable should the resident question appear.
+
+Avoid changing the water, camera, character, and interface simultaneously.
+
+What the finished still must communicate
+
+The home is dry. The clinic is dry. Something between them has changed.
+
+The scene should not claim that every possible route is unavailable or that the clinic is confirmed operational.
+
+7. Scene 3B — FloodGuard makes the consequence inspectable
+
+Frame ID: S3B-01 · Physical state: identical W2
+
+This is the main solution frame. It should receive more emphasis than the weather transition.
+
+Purpose
+
+Show the analytical contribution: connecting the illustrated flood footprint, road relationship, residential area, and local observation into a finding someone can examine.
+
+Exact copy
+
+Chapter label
+
+03 / CONNECTIONS AFFECTED
+
+Headline
+
+Connect the
+evidence to the
+consequences.
+
+Supporting copy
+
+Examine the affected connection, the communities linked to it, and the questions that still need review.
+
+What the image should show
+
+The same flooded neighborhood remains visible.
+
+Add a restrained blue-gray outline to clarify the flood footprint. The amber treatment still identifies the affected connection, so the two meanings remain visually distinct.
+
+Make the relevant road network and selected residential cluster easier to follow. Quiet unselected background details slightly, but do not bleach the entire model into white geometry.
+
+A thin perimeter identifies the area being inspected, labeled:
+
+Selected for review
+
+This is a selection—not a probability or severity classification.
+
+Place the finding card in the reserved upper-right map margin. The home, L01, and clinic must remain uncovered.
+
+P-01 now occupies the left vignette, seated at the desk. His small selection gesture should correspond to the area highlighted on the map.
+
+Exact finding card
+
+ILLUSTRATIVE ACCESS FINDING
+
+The usual connection may be affected.
+It crosses the flooded part of this scenario.
+
+Basis
+Flood footprint + road connection
+
+Local input
+DEMO-R01 · Not verified
+
+Needs review
+Road condition, other connections, and clinic status
+
+This card is the concrete demonstration of FloodGuard’s contribution. Avoid replacing it with an unexplained score or an attractive but unreadable dashboard.
+
+The sample-report microstate
+
+Immediately before the planner composition, briefly retain the resident in the same home setting.
+
+Show:
+
+DEMO-R01 / SAMPLE OBSERVATION
+Water reported near the lower connection.
+Not verified.
+
+A hollow report marker appears beside L01, offset so it does not obscure the road.
+
+During that introduction, its label can read:
+
+Reported—not yet verified
+
+When the main planner frame appears, collapse the map label to a compact DEMO-R01 badge. Keep the qualification in the finding card so labels do not accumulate across the map.
+
+This is a short beat inside Scene 3B—not another full chapter.
+
+Motion sequence
+
+Outline the flood footprint, clarify the relevant network, and introduce the sample observation.
+
+Then crossfade from resident to planner.
+
+The planner selects the area; the finding card appears. Hold the map and card still for reading.
+
+What the finished still must communicate
+
+FloodGuard connects the information to an explainable access concern, while keeping the open questions visible.
+
+The sample report remains unverified. It does not automatically become a confirmed closure.
+
+8. Scene 4 — support the next step
+
+Frame ID: S4-01 · Physical state: identical W2
+
+Purpose
+
+End with a specific, reviewable planning output—not a suggestion that the flood has been solved.
+
+Exact copy
+
+Chapter label
+
+04 / NEXT STEPS
+
+Headline
+
+A clearer picture
+of what needs
+attention.
+
+Supporting copy
+
+Review the connection, record the open questions, and prepare the next planning step.
+
+Main planner composition
+
+Keep P-01 at the desk and retain the selected connection on the map.
+
+The analytical finding becomes a compact review brief. Use the same card position so this feels like progressing through one interface, not introducing an unrelated panel.
+
+The main household marker, connection annotation, and clinic remain visible.
+
+Exact review brief
+
+ILLUSTRATIVE REVIEW BRIEF
+
+Homes–clinic connection
+
+Reason for review
+Scenario flooding intersects the usual connection.
+
+Next check
+Review road condition and other connections.
+
+Still unknown
+Clinic operating status.
+
+A proposed control can read:
+
+Inspect the review brief
+
+This is a storyboard interface concept until matched to the actual workspace. It should not look like confirmation that an external agency accepted or completed a task.
+
+Public-view microstate
+
+Briefly return to R-01 in the same home setting.
+
+Replace the staff-oriented finding with a simpler public-facing card:
+
+HOUSEHOLD PREPAREDNESS
+
+Review your household plan.
+Check available official updates.
+Find official contact information.
+
+Do not mirror the staff analytical road geometry into the resident’s phone as turn-by-turn navigation.
+
+The resident is focused and better informed—not celebrating or beginning a journey along a supposedly guaranteed route.
+
+This transition shows different role-specific views. It is not an animation of the planner issuing an official instruction to the resident.
+
+Closing microstate
+
+Withdraw the large character portraits and pull back slightly.
+
+The water remains at W2. The overcast light remains. Keep one compact summary of the connection concern and its open questions.
+
+Closing copy
+
+See the flood. Understand the impact.
+Support the next planning step.
+
+Primary action: Explore the planning demo
+
+Secondary destinations: Public preparedness and Inspect the evidence
+
+What the finished still must communicate
+
+The situation is not magically resolved, but the concern, its explanation, and the next planning question are clearer.
+
+9. The overlay language must remain consistent
+
+The map’s symbols need stable meanings across every frame.
+
+Meaning	Visual treatment	What it must not imply
+Usual connection	Thin analytical-blue line following the road.	A guaranteed safe route.
+Affected segment in the illustration	Short amber dashed section and a clear label.	An independently verified closure.
+Flood footprint	Illustrated muddy water; a restrained outline appears in analytical mode.	A live observation or forecast.
+Sample observation	Hollow marker with DEMO-R01 and an unverified status.	An official alert or accepted fact.
+Selected area	Thin perimeter and “Selected for review.”	A danger score or priority ranking.
+Missing knowledge	Explicit “Unknown” or “Needs review.”	An all-clear status.
+
+Use one persistent illustration label:
+
+Illustrative scenario · Not current conditions
+
+The historical case should be introduced separately with its own geographic, temporal, and evidence information. Do not place a real-looking acquisition timestamp onto the invented flood animation.
+
+10. Continuity rules for the later images
+Transition	What changes	What stays fixed
+Hero → Scene 1	Framing, layout, connection overlay, resident entrance.	Neighborhood identity and dry conditions.
+Scene 1 → Scene 2	Lighting, channel level, ponding, resident attention.	Camera, buildings, roads, clothing, phone.
+Scene 2 → Scene 3A	Floodwater reaches L01; connection treatment changes.	Camera and the two destinations.
+Scene 3A → Scene 3B	Analytical outline, report marker, planner, finding card.	Flood footprint and geography.
+Scene 3B → Scene 4	Finding becomes brief; public view appears; final pullback.	Flooding, uncertainty, neighborhood identity.
+
+Allocate more attention to the connection consequence and the analytical explanation than to the cloud and water effects.
+
+Every major frame must also work as a static illustration. Animation should explain the transition, not compensate for an unclear composition.
+
+For mobile, stack the headline, diagram, and vignette. Preserve the household, L01, and clinic in one registered crop rather than shrinking the entire desktop layout into unreadable detail.
+
+11. Image-production package and approval order
+Principal images
+Image ID	Image to produce later	Main visual test
+H-01	Full hero composition, dry neighborhood, no character.	Does the product promise lead the page?
+S1-01	Dry connection with resident preparedness vignette.	Is the home–clinic relationship obvious?
+S2-01	Same view with changing conditions.	Is the physical progression clear without an invented forecast?
+S3A-01	Flooded middle connection, dry endpoints, resident question.	Does the image explain the core problem?
+S3B-01	Same flood state with planner and analytical finding.	Is FloodGuard’s contribution visible?
+S4-01	Same flood state with a review brief.	Is there a concrete next planning step?
+
+The sample-report, public-view, and closing compositions can be produced afterward as supplementary frames.
+
+Recommended approval order
+
+Start with a clean Scene 1 neighborhood master, without characters or interface panels. Approve the geography and composition first.
+
+Then approve the two character designs and the composed Scene 1.
+
+Derive Scene 3A from that approved neighborhood, keeping the buildings and camera unchanged. Once the dry/flooded comparison works, create the intermediate water state and the analytical variations.
+
+Do not independently invent a new town for each image. Later frames should reference the approved master, with any drift in roads, roof shapes, character clothing, or flood boundaries corrected before approval.
+
+For eventual production, retain clean environmental artwork and separate character/interface elements where possible. The final labels and copy should be typeset separately.
+
+The decisive storyboard test
+
+Compare S1-01 and S3A-01 side by side.
+
+The viewer should immediately recognize the same neighborhood, see that the household and clinic remain outside the illustrated water, and understand that their usual connection has changed.
+
+Then compare S3A-01 and S3B-01.
+
+The physical situation should be unchanged, but the second image should reveal an explanation that was not visible before.
+
+Those two comparisons are the backbone of the FloodGuard story: first reveal the consequence, then reveal what the product contributes.

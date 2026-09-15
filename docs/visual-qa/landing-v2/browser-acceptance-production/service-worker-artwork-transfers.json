@@ -1,0 +1,744 @@
+{
+  "startedAt": "2026-09-15T10:01:18.684Z",
+  "baseUrl": "http://127.0.0.1:3100",
+  "browser": "149.0.7827.55",
+  "viewport": {
+    "width": 1672,
+    "height": 941
+  },
+  "deviceScaleFactor": 1,
+  "environment": "Fresh isolated browser context; service workers allowed; normal HTTP cache; local production static export.",
+  "method": "Observe the application's natural deferred cache request. Playwright response.body() records actual worker-fetched response body bytes. These exclude HTTP headers and are not encoded wire-byte measurements. No test message triggers artwork caching.",
+  "requests": [
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v1/characters/resident-480.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 50712,
+      "sha256": "c5ad782c516da4b3086abb86a099a4f0f3bf2357d999bd938af3accb1a2c930a",
+      "requestTiming": {
+        "startTime": 1789466479722.389,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.262,
+        "responseStart": 5.154,
+        "responseEnd": 5.968
+      },
+      "startAfterNavigationMs": 882.989013671875,
+      "startAfterFirstContentfulPaintMs": 538.989013671875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v1/characters/resident-800.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 115712,
+      "sha256": "98346653abcee0c2e5f03fb2cd81a59309b6cc9b63a1448eaca081aad4392408",
+      "requestTiming": {
+        "startTime": 1789466479732.887,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.31,
+        "responseStart": 5.086,
+        "responseEnd": 5.969
+      },
+      "startAfterNavigationMs": 893.487060546875,
+      "startAfterFirstContentfulPaintMs": 549.487060546875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v1/characters/resident-1374.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 275862,
+      "sha256": "c71662b2ae7e13310241ee95cbf242babf3d71622ec9463c5092252cac36050b",
+      "requestTiming": {
+        "startTime": 1789466479742.799,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.204,
+        "responseStart": 4.236,
+        "responseEnd": 5.346
+      },
+      "startAfterNavigationMs": 903.399169921875,
+      "startAfterFirstContentfulPaintMs": 559.399169921875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v1/characters/planner-480.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 35740,
+      "sha256": "34fe5592ca5c60dcea8ae0d561333fa13d553dfeaf88571d009ebb5d31ccb706",
+      "requestTiming": {
+        "startTime": 1789466479754.3162,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.204,
+        "responseStart": 3.858,
+        "responseEnd": 4.762
+      },
+      "startAfterNavigationMs": 914.916259765625,
+      "startAfterFirstContentfulPaintMs": 570.916259765625
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v1/characters/planner-800.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 82624,
+      "sha256": "ca6e77050430b0a2508b3f97bb71fce8ec9ff853b4cd637d0dd213f51baea3b5",
+      "requestTiming": {
+        "startTime": 1789466479763.3528,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.198,
+        "responseStart": 5.128,
+        "responseEnd": 6.023
+      },
+      "startAfterNavigationMs": 923.952880859375,
+      "startAfterFirstContentfulPaintMs": 579.952880859375
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v1/characters/planner-1374.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 202970,
+      "sha256": "f56ee433f723cba4fbf10ba9af96634eb0dba1089ba8be5b122734306be19501",
+      "requestTiming": {
+        "startTime": 1789466479773.8699,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.243,
+        "responseStart": 5.165,
+        "responseEnd": 6.696
+      },
+      "startAfterNavigationMs": 934.469970703125,
+      "startAfterFirstContentfulPaintMs": 590.469970703125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v1/decor/botanical.svg",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 365,
+      "sha256": "e9de929ed1e9747a795f3128e0905f087ad6a512592fbb81466e6f148966150a",
+      "requestTiming": {
+        "startTime": 1789466479788.2249,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.305,
+        "responseStart": 5.004,
+        "responseEnd": 5.89
+      },
+      "startAfterNavigationMs": 948.824951171875,
+      "startAfterFirstContentfulPaintMs": 604.824951171875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v1/decor/contours.svg",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 508,
+      "sha256": "b6d9c2ffae32edd9d498e3937e28721804a26bc9e736311f62146137e508ec40",
+      "requestTiming": {
+        "startTime": 1789466479797.3142,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.239,
+        "responseStart": 4.644,
+        "responseEnd": 5.627
+      },
+      "startAfterNavigationMs": 957.914306640625,
+      "startAfterFirstContentfulPaintMs": 613.914306640625
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-00.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 330388,
+      "sha256": "657d4abb4203baa1efbd3410a4e5401a038914c78495fc2a3bb72834bb2635b7",
+      "requestTiming": {
+        "startTime": 1789466479806.078,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.224,
+        "responseStart": 4.894,
+        "responseEnd": 6.224
+      },
+      "startAfterNavigationMs": 966.677978515625,
+      "startAfterFirstContentfulPaintMs": 622.677978515625
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-01.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 209536,
+      "sha256": "86becc3bc7bc30af8afb66819f95274d72065896ede2b2704c7bb629df79a254",
+      "requestTiming": {
+        "startTime": 1789466479820.8042,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.282,
+        "responseStart": 4.955,
+        "responseEnd": 6.072
+      },
+      "startAfterNavigationMs": 981.404296875,
+      "startAfterFirstContentfulPaintMs": 637.404296875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-02.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 215728,
+      "sha256": "b14b6644be5efd60d8c64df612b4b2d5aace10584563fa3d86dd20c6173efacd",
+      "requestTiming": {
+        "startTime": 1789466479833.02,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.328,
+        "responseStart": 4.218,
+        "responseEnd": 5.344
+      },
+      "startAfterNavigationMs": 993.6201171875,
+      "startAfterFirstContentfulPaintMs": 649.6201171875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-03.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 220690,
+      "sha256": "685ae5e68aee59b1cc09c574ec1f6792c8a20c8b1d806a22a4d5c0a27c70ab27",
+      "requestTiming": {
+        "startTime": 1789466479843.2,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.226,
+        "responseStart": 4.355,
+        "responseEnd": 5.533
+      },
+      "startAfterNavigationMs": 1003.800048828125,
+      "startAfterFirstContentfulPaintMs": 659.800048828125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-04.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 225492,
+      "sha256": "c9ca4e76c73d14aea4ce4dd37591ebf9b5b189e4f9c2241e3c6f8b030077f1c1",
+      "requestTiming": {
+        "startTime": 1789466479853.405,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.188,
+        "responseStart": 3.872,
+        "responseEnd": 4.816
+      },
+      "startAfterNavigationMs": 1014.005126953125,
+      "startAfterFirstContentfulPaintMs": 670.005126953125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-05.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 229400,
+      "sha256": "7d6e40e7e04f97a1568cf77e19816c6e4689ec39f6ef9592556d9d90ea35f8bd",
+      "requestTiming": {
+        "startTime": 1789466479862.198,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.177,
+        "responseStart": 3.649,
+        "responseEnd": 4.402
+      },
+      "startAfterNavigationMs": 1022.798095703125,
+      "startAfterFirstContentfulPaintMs": 678.798095703125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-06.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 233090,
+      "sha256": "c5efcaf37a5fac421f40ff6e61dbb13af33fb4ac970773fe3360985987f93165",
+      "requestTiming": {
+        "startTime": 1789466479871.4011,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.168,
+        "responseStart": 4.437,
+        "responseEnd": 5.556
+      },
+      "startAfterNavigationMs": 1032.001220703125,
+      "startAfterFirstContentfulPaintMs": 688.001220703125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-07.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 237860,
+      "sha256": "54876c59581316dcab5af5b50138798b689898d5cfaa6910dfec4459b7eaf58f",
+      "requestTiming": {
+        "startTime": 1789466479882.735,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.2,
+        "responseStart": 4.179,
+        "responseEnd": 5.323
+      },
+      "startAfterNavigationMs": 1043.335205078125,
+      "startAfterFirstContentfulPaintMs": 699.335205078125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-08.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 241158,
+      "sha256": "d67449ae46c3ae94409c3e0b887af5dea0dd9521ae4232cd6a8f6f1e47696bce",
+      "requestTiming": {
+        "startTime": 1789466479892.4902,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.261,
+        "responseStart": 4.406,
+        "responseEnd": 5.278
+      },
+      "startAfterNavigationMs": 1053.09033203125,
+      "startAfterFirstContentfulPaintMs": 709.09033203125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-09.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 244784,
+      "sha256": "a753b153c4cff10b7f955d416ebadf1042a08abf4b3ecaf7d0a6caa27ce7c90d",
+      "requestTiming": {
+        "startTime": 1789466479902.8508,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.205,
+        "responseStart": 4.522,
+        "responseEnd": 5.374
+      },
+      "startAfterNavigationMs": 1063.450927734375,
+      "startAfterFirstContentfulPaintMs": 719.450927734375
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-10.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 248798,
+      "sha256": "25cad67d31259690d526f616029b8c2a1352ba3900bf87eb32f8ce55d44f8f6a",
+      "requestTiming": {
+        "startTime": 1789466479912.514,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.169,
+        "responseStart": 3.409,
+        "responseEnd": 4.218
+      },
+      "startAfterNavigationMs": 1073.114013671875,
+      "startAfterFirstContentfulPaintMs": 729.114013671875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-11.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 250632,
+      "sha256": "815d77783f4215450482e7b28db6227429f9dff5af66ee4e39575009a103c6ff",
+      "requestTiming": {
+        "startTime": 1789466479921.552,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.173,
+        "responseStart": 4.133,
+        "responseEnd": 4.926
+      },
+      "startAfterNavigationMs": 1082.152099609375,
+      "startAfterFirstContentfulPaintMs": 738.152099609375
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-12.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 251832,
+      "sha256": "983ff63dbe029ad404bbcd53f8ea5560ad63322bbb4e1f762923b20667b31c7a",
+      "requestTiming": {
+        "startTime": 1789466479931.739,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.238,
+        "responseStart": 3.869,
+        "responseEnd": 4.887
+      },
+      "startAfterNavigationMs": 1092.339111328125,
+      "startAfterFirstContentfulPaintMs": 748.339111328125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-13.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 252242,
+      "sha256": "fc5a68e687bdcc34eb7ed3ef785eb42e1923dd5646c016f8b0bc5fc57e0e394c",
+      "requestTiming": {
+        "startTime": 1789466479940.976,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.184,
+        "responseStart": 4.112,
+        "responseEnd": 4.976
+      },
+      "startAfterNavigationMs": 1101.576171875,
+      "startAfterFirstContentfulPaintMs": 757.576171875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-14.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 256388,
+      "sha256": "2fd95363c64b6ded271a616823d49f02492e1b08eb7969d3ce7dffe1fa1dd933",
+      "requestTiming": {
+        "startTime": 1789466479950.539,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.174,
+        "responseStart": 4.305,
+        "responseEnd": 5.118
+      },
+      "startAfterNavigationMs": 1111.13916015625,
+      "startAfterFirstContentfulPaintMs": 767.13916015625
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-15.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 417216,
+      "sha256": "ef500f029937e8d149dfe0daf5fe1fc2ea461bc0ace3aace663f66a9da1d4b8f",
+      "requestTiming": {
+        "startTime": 1789466479960.876,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.205,
+        "responseStart": 3.392,
+        "responseEnd": 4.441
+      },
+      "startAfterNavigationMs": 1121.47607421875,
+      "startAfterFirstContentfulPaintMs": 777.47607421875
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/plates/w0.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 811710,
+      "sha256": "62219ee35f1c1f48d7a6de699c8d1ee27dfe367a024b73991b43951f0a7f1dee",
+      "requestTiming": {
+        "startTime": 1789466479971.739,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.216,
+        "responseStart": 5.049,
+        "responseEnd": 6.558
+      },
+      "startAfterNavigationMs": 1132.339111328125,
+      "startAfterFirstContentfulPaintMs": 788.339111328125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/plates/w1.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 796914,
+      "sha256": "855c1635bf4252f772daca0abdec390834b601c3323cbf58fafe1bbe81c553be",
+      "requestTiming": {
+        "startTime": 1789466479991.041,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.185,
+        "responseStart": 4.136,
+        "responseEnd": 5.727
+      },
+      "startAfterNavigationMs": 1151.64111328125,
+      "startAfterFirstContentfulPaintMs": 807.64111328125
+    },
+    {
+      "url": "http://127.0.0.1:3100/landing/floodguard-v2/plates/w2.webp",
+      "worker": "http://127.0.0.1:3100/sw.js",
+      "status": 200,
+      "bodyBytes": 762626,
+      "sha256": "669ffb88548417aa2cd5837ca9e0c89aa36fb433d988646b91d18bed4c0f5589",
+      "requestTiming": {
+        "startTime": 1789466480006.632,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.177,
+        "responseStart": 4.012,
+        "responseEnd": 5.332
+      },
+      "startAfterNavigationMs": 1167.232177734375,
+      "startAfterFirstContentfulPaintMs": 823.232177734375
+    }
+  ],
+  "errors": [],
+  "expectedAssets": [
+    {
+      "url": "/landing/floodguard-v1/characters/resident-480.webp",
+      "sha256": "c5ad782c516da4b3086abb86a099a4f0f3bf2357d999bd938af3accb1a2c930a",
+      "bytes": 50712
+    },
+    {
+      "url": "/landing/floodguard-v1/characters/resident-800.webp",
+      "sha256": "98346653abcee0c2e5f03fb2cd81a59309b6cc9b63a1448eaca081aad4392408",
+      "bytes": 115712
+    },
+    {
+      "url": "/landing/floodguard-v1/characters/resident-1374.webp",
+      "sha256": "c71662b2ae7e13310241ee95cbf242babf3d71622ec9463c5092252cac36050b",
+      "bytes": 275862
+    },
+    {
+      "url": "/landing/floodguard-v1/characters/planner-480.webp",
+      "sha256": "34fe5592ca5c60dcea8ae0d561333fa13d553dfeaf88571d009ebb5d31ccb706",
+      "bytes": 35740
+    },
+    {
+      "url": "/landing/floodguard-v1/characters/planner-800.webp",
+      "sha256": "ca6e77050430b0a2508b3f97bb71fce8ec9ff853b4cd637d0dd213f51baea3b5",
+      "bytes": 82624
+    },
+    {
+      "url": "/landing/floodguard-v1/characters/planner-1374.webp",
+      "sha256": "f56ee433f723cba4fbf10ba9af96634eb0dba1089ba8be5b122734306be19501",
+      "bytes": 202970
+    },
+    {
+      "url": "/landing/floodguard-v1/decor/botanical.svg",
+      "sha256": "e9de929ed1e9747a795f3128e0905f087ad6a512592fbb81466e6f148966150a",
+      "bytes": 365
+    },
+    {
+      "url": "/landing/floodguard-v1/decor/contours.svg",
+      "sha256": "b6d9c2ffae32edd9d498e3937e28721804a26bc9e736311f62146137e508ec40",
+      "bytes": 508
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-00.webp",
+      "sha256": "657d4abb4203baa1efbd3410a4e5401a038914c78495fc2a3bb72834bb2635b7",
+      "bytes": 330388
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-01.webp",
+      "sha256": "86becc3bc7bc30af8afb66819f95274d72065896ede2b2704c7bb629df79a254",
+      "bytes": 209536
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-02.webp",
+      "sha256": "b14b6644be5efd60d8c64df612b4b2d5aace10584563fa3d86dd20c6173efacd",
+      "bytes": 215728
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-03.webp",
+      "sha256": "685ae5e68aee59b1cc09c574ec1f6792c8a20c8b1d806a22a4d5c0a27c70ab27",
+      "bytes": 220690
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-04.webp",
+      "sha256": "c9ca4e76c73d14aea4ce4dd37591ebf9b5b189e4f9c2241e3c6f8b030077f1c1",
+      "bytes": 225492
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-05.webp",
+      "sha256": "7d6e40e7e04f97a1568cf77e19816c6e4689ec39f6ef9592556d9d90ea35f8bd",
+      "bytes": 229400
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-06.webp",
+      "sha256": "c5efcaf37a5fac421f40ff6e61dbb13af33fb4ac970773fe3360985987f93165",
+      "bytes": 233090
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-07.webp",
+      "sha256": "54876c59581316dcab5af5b50138798b689898d5cfaa6910dfec4459b7eaf58f",
+      "bytes": 237860
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-08.webp",
+      "sha256": "d67449ae46c3ae94409c3e0b887af5dea0dd9521ae4232cd6a8f6f1e47696bce",
+      "bytes": 241158
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-09.webp",
+      "sha256": "a753b153c4cff10b7f955d416ebadf1042a08abf4b3ecaf7d0a6caa27ce7c90d",
+      "bytes": 244784
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-10.webp",
+      "sha256": "25cad67d31259690d526f616029b8c2a1352ba3900bf87eb32f8ce55d44f8f6a",
+      "bytes": 248798
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-11.webp",
+      "sha256": "815d77783f4215450482e7b28db6227429f9dff5af66ee4e39575009a103c6ff",
+      "bytes": 250632
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-12.webp",
+      "sha256": "983ff63dbe029ad404bbcd53f8ea5560ad63322bbb4e1f762923b20667b31c7a",
+      "bytes": 251832
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-13.webp",
+      "sha256": "fc5a68e687bdcc34eb7ed3ef785eb42e1923dd5646c016f8b0bc5fc57e0e394c",
+      "bytes": 252242
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-14.webp",
+      "sha256": "2fd95363c64b6ded271a616823d49f02492e1b08eb7969d3ce7dffe1fa1dd933",
+      "bytes": 256388
+    },
+    {
+      "url": "/landing/floodguard-v2/camera/approach-15.webp",
+      "sha256": "ef500f029937e8d149dfe0daf5fe1fc2ea461bc0ace3aace663f66a9da1d4b8f",
+      "bytes": 417216
+    },
+    {
+      "url": "/landing/floodguard-v2/plates/w0.webp",
+      "sha256": "62219ee35f1c1f48d7a6de699c8d1ee27dfe367a024b73991b43951f0a7f1dee",
+      "bytes": 811710
+    },
+    {
+      "url": "/landing/floodguard-v2/plates/w1.webp",
+      "sha256": "855c1635bf4252f772daca0abdec390834b601c3323cbf58fafe1bbe81c553be",
+      "bytes": 796914
+    },
+    {
+      "url": "/landing/floodguard-v2/plates/w2.webp",
+      "sha256": "669ffb88548417aa2cd5837ca9e0c89aa36fb433d988646b91d18bed4c0f5589",
+      "bytes": 762626
+    }
+  ],
+  "pageTiming": {
+    "timeOrigin": 1789466478839.4,
+    "firstContentfulPaintMs": 344,
+    "loadEventEndMs": 347.6000000014901,
+    "messages": [
+      {
+        "type": "FLOODGUARD_LANDING_ARTWORK_STATUS",
+        "cached": 27,
+        "failed": 0,
+        "total": 27,
+        "receivedAfterNavigationMs": 1190.1000000014901
+      }
+    ]
+  },
+  "responseBodyBytes": 7200977,
+  "assetCount": 27,
+  "cache": [
+    {
+      "name": "floodguard-offline-fd9e33e50178",
+      "artworkUrls": [
+        "http://127.0.0.1:3100/landing/floodguard-v1/characters/resident-480.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v1/characters/resident-800.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v1/characters/resident-1374.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v1/characters/planner-480.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v1/characters/planner-800.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v1/characters/planner-1374.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v1/decor/botanical.svg",
+        "http://127.0.0.1:3100/landing/floodguard-v1/decor/contours.svg",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-00.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-01.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-02.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-03.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-04.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-05.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-06.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-07.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-08.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-09.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-10.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-11.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-12.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-13.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-14.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/camera/approach-15.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/plates/w0.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/plates/w1.webp",
+        "http://127.0.0.1:3100/landing/floodguard-v2/plates/w2.webp"
+      ]
+    }
+  ],
+  "status": "passed",
+  "finishedAt": "2026-09-15T10:01:20.049Z"
+}

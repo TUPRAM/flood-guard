@@ -1,5 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { relative, resolve, sep } from "node:path";
+import { fallbackArtworkUrls, readLandingArtwork, sceneArtworkUrls } from "./landing-artwork-inventory.mjs";
 
 const requested = process.argv[2]?.trim().toLowerCase();
 const profile = requested === "public" || requested === "public-production"
@@ -18,7 +20,7 @@ if (JSON.stringify(deployment.included_surfaces) !== JSON.stringify(expectedSurf
 }
 
 const serviceWorker = readText("sw.js");
-for (const token of ["__BUILD__", "__APP_PROFILE__", "__CACHE_CREATED_AT__", "__PROFILE_CORE_ASSETS__"]) {
+for (const token of ["__BUILD__", "__APP_PROFILE__", "__CACHE_CREATED_AT__", "__PROFILE_CORE_ASSETS__", "__OPTIONAL_LANDING_ARTWORK__"]) {
   if (serviceWorker.includes(token)) throw new Error(`Finalized service worker retains ${token}`);
 }
 if (!serviceWorker.includes(`const APP_PROFILE = "${profile}"`)) throw new Error("Service worker profile is incorrect.");
@@ -62,6 +64,7 @@ function validatePublicProduction() {
     throw new Error("Public deployment policy does not fail closed.");
   }
   for (const excluded of [
+    "landing",
     "command",
     "studio",
     "offline-demo/bundle.json",
@@ -88,10 +91,14 @@ function validatePublicProduction() {
       throw new Error(`Public root is missing the ${tab} navigation item.`);
     }
   }
-  if (/One platform\. Three planning views|href="\/command\/?"|href="\/studio\/?"/i.test(rootHtml)) {
+  if (/data-fg-landing|href="\/command\/?"|href="\/studio\/?"/i.test(rootHtml)) {
     throw new Error("Public root retains competition or staff navigation.");
   }
   for (const forbidden of [
+    "data-fg-landing",
+    "/landing/floodguard-v1/",
+    "/landing/floodguard-v2/",
+    "fg-review-frame",
     "/offline-demo/mae-sai/roads.json",
     "/offline-demo/mae-sai/facilities.json",
     "/offline-demo/mae-sai/access-hotspots.json",
@@ -151,7 +158,26 @@ function validateCompetition() {
     "offline-demo/mae-sai/access-hotspots.json",
   ]) requirePath(required);
   const rootHtml = readText("index.html");
-  if (!/One platform\. Three planning views/i.test(rootHtml)) throw new Error("Competition root chooser is missing.");
+  if (!/data-fg-landing/i.test(rootHtml)) throw new Error("Competition artwork landing is missing.");
+  for (const route of ["public", "command", "studio"]) {
+    if (!rootHtml.includes(`href="/${route}/"`)) throw new Error(`Landing omits the ${route} workspace link.`);
+  }
+  const artwork = readLandingArtwork(out);
+  const expectedArtworkUrls = [...fallbackArtworkUrls, ...sceneArtworkUrls(readJson("landing/floodguard-v2/scene-manifest.json"))].sort();
+  if (JSON.stringify(artwork.map((asset) => asset.url).sort()) !== JSON.stringify(expectedArtworkUrls)) {
+    throw new Error("Deferred artwork inventory does not match the fallback assets and scene manifest.");
+  }
+  const workerArtwork = serviceWorker.match(/const OPTIONAL_LANDING_ARTWORK = (\[[^;]*\]);/)?.[1];
+  if (!workerArtwork || JSON.stringify(JSON.parse(workerArtwork)) !== JSON.stringify(artwork)) {
+    throw new Error("The worker's optional artwork does not match its built manifest.");
+  }
+  const coreDeclaration = serviceWorker.match(/const CORE_ASSETS = (\[[^;]*\]);/)?.[1];
+  if (!coreDeclaration || JSON.parse(coreDeclaration).some((url) => url.startsWith("/landing/"))) throw new Error("Optional artwork was added to blocking installation.");
+  for (const asset of artwork) {
+    requirePath(asset.url.slice(1));
+    const actualHash = createHash("sha256").update(readFileSync(resolve(out, asset.url.slice(1)))).digest("hex");
+    if (actualHash !== asset.sha256 || statSync(resolve(out, asset.url.slice(1))).size !== asset.bytes) throw new Error(`Landing art lacks versioned integrity: ${asset.url}`);
+  }
   for (const route of ["/", "/public/", "/command/", "/studio/"]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }

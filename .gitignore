@@ -101,4 +101,8 @@ research/**
 services/**/.venv-geoai/
 .venv-research/
 research/.venv-research/
+
+# Rebuild the detailed landing master from tools/neighborhood/build_scene.py.
+/assets/floodguard-neighborhood/*.blend
+/assets/floodguard-neighborhood/*.blend1
 services/**/.venv-research/

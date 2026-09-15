@@ -1,0 +1,273 @@
+{
+  "status": "passed",
+  "renderCount": 19,
+  "uniqueCameraPositions": 16,
+  "registeredWaterStates": 3,
+  "waterChangeMeanRgb": 4.341832054985894,
+  "runtimeAssetCount": 19,
+  "runtimeBytes": 6436484,
+  "cameraRegistration": {
+    "frames": 16,
+    "triangleAreaMinPx2": 63008.46265940554,
+    "triangleAreaMaxPx2": 130525.40976967503,
+    "midpointAdjacentFrameResidualMax": {
+      "ground": {
+        "nativePixels": 2.720179,
+        "pair": [
+          14,
+          15
+        ],
+        "probe": "rear-west-ground"
+      },
+      "roof": {
+        "nativePixels": 3.394162,
+        "pair": [
+          14,
+          15
+        ],
+        "probe": "Clinic_story-roof-center"
+      }
+    },
+    "measurement": "Separation of corresponding probe points after affine alignment at each adjacent pair midpoint, in native image pixels."
+  },
+  "checks": [
+    "Actual camera movement",
+    "Same camera across water states",
+    "Distinct water levels",
+    "Nonidentical rendered artwork",
+    "RGBA native dimensions",
+    "Anchor bounds",
+    "Finite nondegenerate camera registration triangles",
+    "Exact native and WebP provenance"
+  ],
+  "renders": [
+    {
+      "render": "w0",
+      "camera": [
+        69.0,
+        -95.0,
+        92.0
+      ],
+      "water": -0.3799999952316284,
+      "width": 3072,
+      "samples": 96,
+      "sha256": "fedf1055be4eaacf62aa674b6e5ffc0d39ee085bf9860fdf7b6e64e1da9202e1"
+    },
+    {
+      "render": "w1",
+      "camera": [
+        69.0,
+        -95.0,
+        92.0
+      ],
+      "water": 0.18000000715255737,
+      "width": 3072,
+      "samples": 96,
+      "sha256": "f7f81b141a4078a31c84102cb5500efcdeccc004972e914e96a1d722a3a565ff"
+    },
+    {
+      "render": "w2",
+      "camera": [
+        69.0,
+        -95.0,
+        92.0
+      ],
+      "water": 0.6299999952316284,
+      "width": 3072,
+      "samples": 96,
+      "sha256": "121e97ce2664d541dc902fc601b5c06a45820fe9ae30e3b5bbcc8be9d88f5968"
+    },
+    {
+      "render": "approach-00",
+      "camera": [
+        105.0,
+        -136.0,
+        154.0
+      ],
+      "water": -0.3799999952316284,
+      "width": 2048,
+      "samples": 48,
+      "sha256": "54eb4e6ab7064fea120f66b04eba28b9427de0731d966eaa785c81be148aee8c"
+    },
+    {
+      "render": "approach-01",
+      "camera": [
+        102.5999984741211,
+        -133.26666259765625,
+        149.86666870117188
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "275549c2854949d01933c12fba7c48dbd35c2c1e83720dfb8d0bf33b63b0f6b0"
+    },
+    {
+      "render": "approach-02",
+      "camera": [
+        100.19999694824219,
+        -130.53334045410156,
+        145.73333740234375
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "37d0c08ff456a72e5ce5ef5cd19cc941b65e94d42e5d99d0972524b7d305e7c5"
+    },
+    {
+      "render": "approach-03",
+      "camera": [
+        97.80000305175781,
+        -127.80000305175781,
+        141.60000610351562
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "7d2b292af2043720640eb6b49b8519b552c63a5efc3ff93af2e6cc9130671d1a"
+    },
+    {
+      "render": "approach-04",
+      "camera": [
+        95.4000015258789,
+        -125.06666564941406,
+        137.4666748046875
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "f83eae626ba3064514e49c240bb2611ac19d6afb9477ed57298523c9b20f3f3c"
+    },
+    {
+      "render": "approach-05",
+      "camera": [
+        92.99999237060547,
+        -122.33333587646484,
+        133.3333282470703
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "5ea35e8ea4a0cd252f3da5c1b248b5e785ada0adb10809b5b5567499b9988acf"
+    },
+    {
+      "render": "approach-06",
+      "camera": [
+        90.60000610351562,
+        -119.60000610351562,
+        129.1999969482422
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "2d9ac962469c9d68a24bff3aa61b87fcf930e352b8b82f3d54cf653086d7cbda"
+    },
+    {
+      "render": "approach-07",
+      "camera": [
+        88.19999694824219,
+        -116.86666107177734,
+        125.06666564941406
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "82003c66e8711ffa30fbb1da6e7957f5b231810bc85ea9d76941ce0ed7fa0a96"
+    },
+    {
+      "render": "approach-08",
+      "camera": [
+        85.80000305175781,
+        -114.13333129882812,
+        120.93333435058594
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "5d530580f5342ed2e614ad5c56bc2d7760653e848fb8614fbfb018042746fbc2"
+    },
+    {
+      "render": "approach-09",
+      "camera": [
+        83.39999389648438,
+        -111.4000015258789,
+        116.79999542236328
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "24386970b7c956b94baa83b147fd49df659a7d1d15073fe82b241bf630c60c2b"
+    },
+    {
+      "render": "approach-10",
+      "camera": [
+        81.0,
+        -108.66667175292969,
+        112.66667175292969
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "25ae5fead2e4bd37a9a76fbbe51d73e36d844372ca5249071d1e7a43bfb31696"
+    },
+    {
+      "render": "approach-11",
+      "camera": [
+        78.5999984741211,
+        -105.93333435058594,
+        108.53333282470703
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "30a5a100c99d60a682f597f7a92fd37a7e7edd37c88e752e13d845e878811761"
+    },
+    {
+      "render": "approach-12",
+      "camera": [
+        76.19999694824219,
+        -103.19999694824219,
+        104.39999389648438
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "2480af690233b15cf30d587ff6db8f14b97ee9744a8f0c859eb72a7f91b6ffed"
+    },
+    {
+      "render": "approach-13",
+      "camera": [
+        73.79999542236328,
+        -100.46666717529297,
+        100.26667022705078
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "b31464b2e85bdc5ef230ca7347a48ab69ced0b086ab7238e2a2d7b81d9ef7198"
+    },
+    {
+      "render": "approach-14",
+      "camera": [
+        71.4000015258789,
+        -97.73332977294922,
+        96.13333129882812
+      ],
+      "water": -0.3799999952316284,
+      "width": 1536,
+      "samples": 48,
+      "sha256": "3cbe28cb13ad0a785a59f10c5d8b7ceba989d42615cb856e91ebabdc2da68de8"
+    },
+    {
+      "render": "approach-15",
+      "camera": [
+        69.0,
+        -95.0,
+        92.0
+      ],
+      "water": -0.3799999952316284,
+      "width": 2048,
+      "samples": 48,
+      "sha256": "f988719c4aef122126af2fa6fe3fb3947ca2bef8ba0713fe2b72dc580c53563f"
+    }
+  ]
+}

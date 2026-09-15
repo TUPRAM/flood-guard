@@ -1,0 +1,109 @@
+.frame.frame {
+  min-height: 0;
+  padding: 116px clamp(20px, 4vw, 72px) 38px;
+}
+
+.frame .body {
+  display: grid;
+  grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr);
+  grid-template-areas: "narrative map" "portrait map" "question card";
+  gap: 24px 40px;
+  align-items: start;
+  height: auto;
+  min-height: 0;
+  max-width: 1500px;
+}
+
+.frame .narrative {
+  grid-area: narrative;
+  width: 100%;
+  padding: 12px 0 0;
+  text-align: left;
+}
+
+.frame .title {
+  max-width: 850px;
+  font-size: clamp(2.25rem, 3.2vw, 3.25rem);
+}
+
+.frame .title span { display: inline; }
+.frame .narrative > p { max-width: 680px; }
+
+.frame .map {
+  grid-area: map;
+  position: relative;
+  inset: auto;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+
+.frame [data-fg-artwork="same-world-v2"]::before { display: none; }
+
+.frame .portrait {
+  grid-area: portrait;
+  position: relative;
+  inset: auto;
+  width: min(100%, 320px);
+  max-width: 320px;
+  margin: 0;
+  align-self: end;
+}
+
+.frame .card {
+  grid-area: card;
+  position: relative;
+  inset: auto;
+  width: 100%;
+  margin: 0;
+  padding: 24px;
+}
+
+.frame .card :is(h3, h4) { font-size: 1.375rem; }
+.frame .card p { font-size: 1rem; }
+.frame .card dl { font-size: .9375rem; }
+.frame .card details[open] p { max-height: none; overflow: visible; }
+
+.frame .question {
+  grid-area: question;
+  position: relative;
+  inset: auto;
+  width: 100%;
+  margin: 0;
+  max-width: 360px;
+  font-size: 1.375rem;
+}
+
+.frame[data-fg-scene="H-01"] .body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.frame[data-fg-scene="H-01"] .narrative { text-align: center; }
+.frame[data-fg-scene="H-01"] .narrative > p { margin-left: auto; margin-right: auto; }
+.frame[data-fg-scene="H-01"] .title { margin: auto; font-size: clamp(2.5rem, 4vw, 4rem); }
+.frame[data-fg-scene="H-01"] .map { max-width: 1120px; }
+
+@media (max-width: 999px) {
+  .frame.frame { padding: 110px 24px 32px; }
+  .frame .body { display: flex; flex-direction: column; align-items: stretch; gap: 24px; }
+  .frame .narrative { padding: 0; order: 0; }
+  .frame .map { order: 1; }
+  .frame .portrait { order: 2; width: min(76%, 300px); margin: 0 auto; }
+  .frame .question { order: 3; margin: 0 auto; text-align: center; }
+  .frame .card { order: 4; }
+  .frame .title { font-size: 2.5rem; }
+}
+
+@media (max-width: 599px) {
+  .frame.frame { padding: 106px 18px 28px; }
+  .frame .body { gap: 20px; }
+  .frame .title { font-size: 2.125rem; }
+  .frame .card { padding: 18px; }
+  .frame .card :is(h3, h4) { font-size: 1.25rem; }
+  .frame .card p, .frame .card dl { font-size: .9375rem; }
+}

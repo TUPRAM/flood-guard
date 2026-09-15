@@ -1,0 +1,77 @@
+{
+  "verifiedAt": "2026-09-15T10:30:57.645Z",
+  "results": [
+    {
+      "name": "desktop",
+      "status": "passed",
+      "viewport": {
+        "width": 1672,
+        "height": 941
+      },
+      "removedElements": true,
+      "headerPreserved": true,
+      "captures": [
+        "desktop-hero.png",
+        "desktop-story.png"
+      ],
+      "pageErrors": [],
+      "settledArtworkReady": true
+    },
+    {
+      "name": "phone",
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "removedElements": true,
+      "headerPreserved": true,
+      "captures": [
+        "phone-hero.png",
+        "phone-story.png"
+      ],
+      "pageErrors": [],
+      "settledArtworkReady": true
+    },
+    {
+      "name": "reduced-motion",
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "removedElements": true,
+      "headerPreserved": true,
+      "captures": [
+        "reduced-motion-hero.png"
+      ],
+      "pageErrors": []
+    },
+    {
+      "name": "no-javascript",
+      "status": "passed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "removedElements": true,
+      "headerPreserved": true,
+      "captures": [
+        "no-javascript-hero.png"
+      ],
+      "pageErrors": []
+    },
+    {
+      "name": "public-availability-controls",
+      "status": "passed"
+    },
+    {
+      "name": "command-availability-controls",
+      "status": "passed"
+    },
+    {
+      "name": "studio-availability-controls",
+      "status": "passed"
+    }
+  ]
+}

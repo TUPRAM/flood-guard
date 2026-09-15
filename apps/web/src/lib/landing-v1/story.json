@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "language": "en",
+  "scope": "Fictional illustrative neighborhood, not operational evidence. Exact supplied English narrative; soft line breaks are desktop preferences, not mobile requirements.",
+  "status": "Historical planning demonstration · Illustrative neighborhood",
+  "illustrationCaption": "Illustrative scenario · Not current conditions",
+  "primaryCta": {
+    "label": "Explore the planning demo",
+    "href": "/command/"
+  },
+  "secondaryCta": {
+    "label": "See how it works",
+    "href": "#story-everyday"
+  },
+  "chapters": [
+    {
+      "id": "01",
+      "label": "Everyday connections",
+      "anchor": "story-everyday",
+      "firstScene": "S1-01"
+    },
+    {
+      "id": "02",
+      "label": "Conditions change",
+      "anchor": "story-conditions",
+      "firstScene": "S2-01"
+    },
+    {
+      "id": "03",
+      "label": "Connections affected",
+      "anchor": "story-connections",
+      "firstScene": "S3A-01"
+    },
+    {
+      "id": "04",
+      "label": "Next steps",
+      "anchor": "story-next",
+      "firstScene": "S4-01"
+    }
+  ],
+  "cards": {
+    "preparedness": {
+      "eyebrow": null,
+      "title": "Household preparedness",
+      "body": "Review your plan and the information available for your area.",
+      "status": "Illustrative preparedness view"
+    },
+    "changing": {
+      "eyebrow": null,
+      "title": "Conditions are changing",
+      "body": "Review available updates and your household plan.",
+      "status": "Illustrative preparedness view"
+    },
+    "observation": {
+      "eyebrow": "DEMO-R01 / SAMPLE OBSERVATION",
+      "title": null,
+      "body": "Water reported near the lower connection.",
+      "status": "Not verified.",
+      "interactionLabel": "Inspect sample observation",
+      "interactionScope": "Local example only. No report is submitted."
+    },
+    "analysis": {
+      "eyebrow": "ILLUSTRATIVE ACCESS FINDING",
+      "title": "The usual connection may be affected.",
+      "body": "It crosses the flooded part of this scenario.",
+      "rows": [
+        {
+          "label": "Basis",
+          "value": "Flood footprint + road connection"
+        },
+        {
+          "label": "Local input",
+          "value": "DEMO-R01 · Not verified"
+        },
+        {
+          "label": "Needs review",
+          "value": "Road condition, other connections, and clinic status"
+        }
+      ]
+    },
+    "brief": {
+      "eyebrow": "ILLUSTRATIVE REVIEW BRIEF",
+      "title": "Homes–clinic connection",
+      "rows": [
+        {
+          "label": "Reason for review",
+          "value": "Scenario flooding intersects the usual connection."
+        },
+        {
+          "label": "Next check",
+          "value": "Review road condition and other connections."
+        },
+        {
+          "label": "Still unknown",
+          "value": "Clinic operating status."
+        }
+      ],
+      "actionLabel": "Inspect the review brief",
+      "action": "local-illustrative-details",
+      "details": "This example shows a planning question, not a verified closure. Review the road condition and other possible connections, and check the clinic operating status. No verification task or rescue request is sent by this example."
+    },
+    "public": {
+      "eyebrow": "HOUSEHOLD PREPAREDNESS",
+      "title": null,
+      "items": [
+        "Review your household plan.",
+        "Check available official updates.",
+        "Find official contact information."
+      ]
+    }
+  },
+  "scenes": [
+    {
+      "id": "H-01",
+      "chapter": null,
+      "waterState": "W0",
+      "character": null,
+      "title": "See the flood.\nUnderstand what it changes.",
+      "body": "FloodGuard connects flood evidence with communities, roads, and essential services to support informed local planning.",
+      "card": null,
+      "eyebrow": "FLOOD EVIDENCE → LOCAL PLANNING",
+      "route": "none",
+      "selection": false,
+      "report": false,
+      "weight": 0,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_H01_Hero_W0.png",
+        "mobile": "references/storyboard-original/mobile/FG_H01_Hero_W0_Mobile.png"
+      },
+      "imageDescription": "Illustrative dry neighborhood. A household and a clinic are connected by the usual local road."
+    },
+    {
+      "id": "S1-01",
+      "chapter": "01",
+      "waterState": "W0",
+      "character": "resident",
+      "title": "Everyday life\ndepends on\nconnections.",
+      "body": "Homes, care, supplies, and support are linked through the same local network.",
+      "card": "preparedness",
+      "route": "usual",
+      "selection": false,
+      "report": false,
+      "weight": 100,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_S101_Everyday_W0.png",
+        "mobile": "references/storyboard-original/mobile/FG_S101_Everyday_W0_Mobile.png"
+      },
+      "imageDescription": "Illustrative dry neighborhood. A household and a clinic are connected by the usual local road."
+    },
+    {
+      "id": "S2-01",
+      "chapter": "02",
+      "waterState": "W1",
+      "character": "resident",
+      "title": "When conditions\nchange, the next\nquestion becomes\nlocal.",
+      "body": "Which places and connections might need attention?",
+      "card": "changing",
+      "route": "usual",
+      "selection": false,
+      "report": false,
+      "weight": 90,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_S201_Changing_W1.png",
+        "mobile": "references/storyboard-original/mobile/FG_S201_Changing_W1_Mobile.png"
+      },
+      "imageDescription": "Illustrative neighborhood with increased channel water and ponding; the usual road is still dry in this state."
+    },
+    {
+      "id": "S3A-01",
+      "chapter": "03",
+      "waterState": "W2",
+      "character": "resident",
+      "title": "A place can remain\ndry while its usual\nconnection is\ndisrupted.",
+      "body": "The flood footprint does not tell the whole story of access.",
+      "card": null,
+      "question": "What does this mean for our access to care?",
+      "route": "affected",
+      "selection": false,
+      "report": false,
+      "weight": 95,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_S3A01_Connection_W2.png",
+        "mobile": "references/storyboard-original/mobile/FG_S3A01_Connection_W2_Mobile.png"
+      },
+      "imageDescription": "Illustrative flooded neighborhood. The home and clinic remain outside the water, while part of their usual connection crosses the affected area."
+    },
+    {
+      "id": "S3B-OBS",
+      "chapter": "03",
+      "waterState": "W2",
+      "character": "resident",
+      "title": "Connect the\nevidence to the\nconsequences.",
+      "body": "Examine the affected connection, the communities linked to it, and the questions that still need review.",
+      "card": "observation",
+      "route": "affected",
+      "selection": false,
+      "report": true,
+      "weight": 55,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_S3B_OBS_SampleReport_W2.png",
+        "mobile": "references/storyboard-original/mobile/FG_S3B_OBS_SampleReport_W2_Mobile.png"
+      },
+      "imageDescription": "Illustrative flooded neighborhood. The home and clinic remain outside the water, while part of their usual connection crosses the affected area."
+    },
+    {
+      "id": "S3B-01",
+      "chapter": "03",
+      "waterState": "W2",
+      "character": "planner",
+      "title": "Connect the\nevidence to the\nconsequences.",
+      "body": "Examine the affected connection, the communities linked to it, and the questions that still need review.",
+      "card": "analysis",
+      "route": "affected",
+      "selection": true,
+      "report": true,
+      "weight": 115,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_S3B01_Analysis_W2.png",
+        "mobile": "references/storyboard-original/mobile/FG_S3B01_Analysis_W2_Mobile.png"
+      },
+      "imageDescription": "Illustrative flooded neighborhood. The home and clinic remain outside the water, while part of their usual connection crosses the affected area."
+    },
+    {
+      "id": "S4-01",
+      "chapter": "04",
+      "waterState": "W2",
+      "character": "planner",
+      "title": "A clearer picture\nof what needs\nattention.",
+      "body": "Review the connection, record the open questions, and prepare the next planning step.",
+      "card": "brief",
+      "route": "affected",
+      "selection": true,
+      "report": true,
+      "weight": 85,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_S401_Planning_W2.png",
+        "mobile": "references/storyboard-original/mobile/FG_S401_Planning_W2_Mobile.png"
+      },
+      "imageDescription": "Illustrative flooded neighborhood. The home and clinic remain outside the water, while part of their usual connection crosses the affected area."
+    },
+    {
+      "id": "S4-PUBLIC",
+      "chapter": "04",
+      "waterState": "W2",
+      "character": "resident",
+      "title": "A clearer picture\nof what needs\nattention.",
+      "body": "Review the connection, record the open questions, and prepare the next planning step.",
+      "card": "public",
+      "route": "affected",
+      "selection": false,
+      "report": false,
+      "weight": 60,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_S4_PUBLIC_Preparedness_W2.png",
+        "mobile": "references/storyboard-original/mobile/FG_S4_PUBLIC_Preparedness_W2_Mobile.png"
+      },
+      "imageDescription": "Illustrative flooded neighborhood. The home and clinic remain outside the water, while part of their usual connection crosses the affected area."
+    },
+    {
+      "id": "S4-END",
+      "chapter": "04",
+      "waterState": "W2",
+      "character": null,
+      "title": "See the flood.\nUnderstand the impact.",
+      "body": "Support the next planning step.",
+      "card": "brief",
+      "route": "affected",
+      "selection": false,
+      "report": true,
+      "weight": 60,
+      "reference": {
+        "desktop": "references/storyboard-original/desktop/FG_S4_END_Closing_W2.png",
+        "mobile": "references/storyboard-original/mobile/FG_S4_END_Closing_W2_Mobile.png"
+      },
+      "imageDescription": "Illustrative flooded neighborhood. The home and clinic remain outside the water, while part of their usual connection crosses the affected area."
+    }
+  ],
+  "routeLabels": {
+    "homes": "Homes",
+    "clinic": "Clinic",
+    "usual": "Usual connection",
+    "affected": "Affected connection",
+    "affectedQualification": "Connection affected in this scenario",
+    "dryQualification": "Outside the illustrated flood",
+    "report": "DEMO-R01",
+    "reportQualification": "Reported—not yet verified",
+    "selection": "Selected for review"
+  },
+  "supportingSections": {
+    "howItWorks": {
+      "title": "From observations to planning questions.",
+      "items": [
+        {
+          "title": "Check the evidence",
+          "body": "Inspect coverage, dates, sources, and uncertainty."
+        },
+        {
+          "title": "Examine possible consequences",
+          "body": "Connect flood evidence with communities, roads, and essential services."
+        },
+        {
+          "title": "Review planning options",
+          "body": "Inspect the reasons and open questions behind a planning next step."
+        }
+      ]
+    },
+    "evidence": {
+      "title": "A specific case to inspect.",
+      "body": "Explore the historical Mae Sai evidence in the existing research view.",
+      "href": "/studio/",
+      "rule": "Actual dates, figures and evaluation status must come from current repository evidence; do not fabricate them from the illustration."
+    },
+    "workspaces": [
+      {
+        "title": "Public preparedness",
+        "audience": "For households and communities",
+        "body": "Review preparedness information and available official contacts.",
+        "href": "/public/"
+      },
+      {
+        "title": "Planning command center",
+        "audience": "For planners and coordinators",
+        "body": "Inspect the planning workspace and the evidence behind its findings.",
+        "href": "/command/"
+      },
+      {
+        "title": "Research and validation studio",
+        "audience": "For researchers and reviewers",
+        "body": "Inspect sources, evaluation records, limitations, and open questions.",
+        "href": "/studio/"
+      }
+    ],
+    "faq": [
+      {
+        "q": "Does this show current flood conditions?",
+        "a": "No. This story uses fictional illustrative geography alongside a historical planning demonstration."
+      },
+      {
+        "q": "Is the animation a flood forecast?",
+        "a": "No. The three water states explain the story; they are not a forecast or a measured flood-time sequence."
+      },
+      {
+        "q": "Does the example report send a rescue request?",
+        "a": "No. The sample observation and review brief are local illustrations. They do not submit a report or dispatch help."
+      }
+    ]
+  }
+}

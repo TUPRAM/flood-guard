@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "space": "illustration-native-pixels",
+  "nativeSize": {
+    "width": 1536,
+    "height": 1024
+  },
+  "status": "Calibrated against native W0/W1/W2 artwork and browser overlays on 2026-09-15. Illustration pixels only; not geographic data. Owner design acceptance remains separate.",
+  "needsVisualAcceptance": false,
+  "viewports": {
+    "desktop": [
+      0,
+      0,
+      1536,
+      1024
+    ],
+    "hero": [
+      0,
+      210,
+      1536,
+      510
+    ],
+    "mobile": [
+      260,
+      190,
+      1250,
+      830
+    ],
+    "heroMobile": [
+      260,
+      120,
+      1250,
+      904
+    ]
+  },
+  "points": {
+    "homeGate": [
+      453,
+      433
+    ],
+    "clinicEntrance": [
+      1227,
+      629
+    ],
+    "affectedCenter": [
+      825,
+      610
+    ],
+    "report": [
+      825,
+      703
+    ]
+  },
+  "route": [
+    [
+      453,
+      433
+    ],
+    [
+      464,
+      454
+    ],
+    [
+      500,
+      480
+    ],
+    [
+      532,
+      499
+    ],
+    [
+      580,
+      524
+    ],
+    [
+      630,
+      541
+    ],
+    [
+      680,
+      560
+    ],
+    [
+      750,
+      584
+    ],
+    [
+      825,
+      610
+    ],
+    [
+      900,
+      636
+    ],
+    [
+      975,
+      662
+    ],
+    [
+      1045,
+      686
+    ],
+    [
+      1098,
+      704
+    ],
+    [
+      1125,
+      685
+    ],
+    [
+      1158,
+      659
+    ],
+    [
+      1192,
+      641
+    ],
+    [
+      1227,
+      629
+    ]
+  ],
+  "affectedSegment": {
+    "startIndex": 3,
+    "endIndex": 12
+  },
+  "selectedAreaPath": "M 368 350 C 510 319 718 381 871 490 C 1099 531 1391 590 1360 740 C 1295 832 1040 852 831 763 C 623 690 369 602 350 449 Z",
+  "selectedAreaMeaning": "Narrative selection only; not a flood extent, catchment, priority boundary, or measured polygon.",
+  "waterBoundaryPath": null,
+  "waterBoundaryNote": "Do not invent a rectangular flood outline. Physical water is already rendered. A detailed shoreline trace is optional and requires native-pixel visual review; absence is preferable to incorrect geography.",
+  "byState": {
+    "W0": {
+      "registration": "independent same-framing reference; no morph certification",
+      "homeGate": [
+        453,
+        433
+      ],
+      "clinicEntrance": [
+        1227,
+        629
+      ]
+    },
+    "W1": {
+      "registration": "independent same-framing reference; no morph certification",
+      "homeGate": [
+        453,
+        433
+      ],
+      "clinicEntrance": [
+        1227,
+        629
+      ]
+    },
+    "W2": {
+      "registration": "independent same-framing reference; no morph certification",
+      "homeGate": [
+        453,
+        433
+      ],
+      "clinicEntrance": [
+        1227,
+        629
+      ]
+    }
+  },
+  "labelAnchors": {
+    "homes": [
+      410,
+      367
+    ],
+    "clinic": [
+      1333,
+      718
+    ],
+    "connection": [
+      810,
+      558
+    ],
+    "report": [
+      750,
+      790
+    ],
+    "selection": [
+      1030,
+      902
+    ],
+    "heroClinic": [
+      1333,
+      675
+    ]
+  },
+  "criticalBoxes": {
+    "home": [
+      285,
+      234,
+      573,
+      464
+    ],
+    "clinic": [
+      1130,
+      451,
+      1415,
+      716
+    ],
+    "affectedRoad": [
+      562,
+      514,
+      1099,
+      769
+    ]
+  },
+  "cardSafeRect": [
+    970,
+    45,
+    520,
+    370
+  ]
+}

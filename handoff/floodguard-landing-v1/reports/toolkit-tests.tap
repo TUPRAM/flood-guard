@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: crop origin and endpoint map correctly
+ok 1 - crop origin and endpoint map correctly
+  ---
+  duration_ms: 4.93473
+  type: 'test'
+  ...
+# Subtest: projection reverses for all story anchors
+ok 2 - projection reverses for all story anchors
+  ---
+  duration_ms: 0.80862
+  type: 'test'
+  ...
+# Subtest: seed home/clinic points survive the proposed mobile crop
+ok 3 - seed home/clinic points survive the proposed mobile crop
+  ---
+  duration_ms: 1.247709
+  type: 'test'
+  ...
+# Subtest: crop style uses the same native image space
+ok 4 - crop style uses the same native image space
+  ---
+  duration_ms: 0.462618
+  type: 'test'
+  ...
+# Subtest: contain letterboxing and cover crop are explicit
+ok 5 - contain letterboxing and cover crop are explicit
+  ---
+  duration_ms: 2.354983
+  type: 'test'
+  ...
+# Subtest: invalid geometry is rejected
+ok 6 - invalid geometry is rejected
+  ---
+  duration_ms: 0.747115
+  type: 'test'
+  ...
+# Subtest: route splits retain contiguous endpoints
+ok 7 - route splits retain contiguous endpoints
+  ---
+  duration_ms: 0.766614
+  type: 'test'
+  ...
+# Subtest: invalid route and indices rejected
+ok 8 - invalid route and indices rejected
+  ---
+  duration_ms: 0.427957
+  type: 'test'
+  ...
+# Subtest: nine states and four chapters in expected order
+ok 9 - nine states and four chapters in expected order
+  ---
+  duration_ms: 2.150753
+  type: 'test'
+  ...
+# Subtest: all consequence-to-ending scenes use the same W2
+ok 10 - all consequence-to-ending scenes use the same W2
+  ---
+  duration_ms: 3.117449
+  type: 'test'
+  ...
+# Subtest: water change differs from overlay change
+ok 11 - water change differs from overlay change
+  ---
+  duration_ms: 0.449464
+  type: 'test'
+  ...
+# Subtest: progress clamps and spans first/last reading states
+ok 12 - progress clamps and spans first/last reading states
+  ---
+  duration_ms: 0.439853
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 311.316319

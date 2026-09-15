@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
-import { StudioWorkspace } from "@/components/studio-workspace";
+import { StudioLibrary } from "@/components/studio-library";
 
 export const metadata: Metadata = {
-  title: "Validation & evidence report",
-  description: "Read-only validation, provenance, and authorization evidence for one immutable context.",
+  title: "Studio — Studies & evidence",
+  description: "Explore separate FloodGuard research studies, benchmark evaluations, planning evidence and historical reports.",
 };
 
 export default function StudioPage() {
-  return <div id="main-content"><StudioWorkspace /></div>;
+  return <StudioLibrary />;
 }

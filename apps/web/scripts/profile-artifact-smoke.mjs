@@ -67,6 +67,7 @@ function validatePublicProduction() {
     "landing",
     "command",
     "studio",
+    "studies",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
     "offline-demo/roads.geojson",
@@ -108,6 +109,7 @@ function validatePublicProduction() {
     "synthetic-sar-baseline-v1",
     "mae-sai-2024-model-evaluation-blocked",
     "geoai-synthetic-proof-001-report-only-product",
+    "c2s-ms-20260915",
   ]) {
     const hit = scanTextArtifacts(forbidden);
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
@@ -151,6 +153,11 @@ function validateCompetition() {
   for (const required of [
     "command/index.html",
     "studio/index.html",
+    "studio/planning-evidence/index.html",
+    "studio/archive/mae-sai-geoai/index.html",
+    "studio/studies/c2s-ms-20260915/index.html",
+    "studio/studies/c2s-ms-20260915/mae-sai/index.html",
+    "studies/c2s-ms-20260915/r1/manifest.json",
     "offline-demo/bundle.json",
     "offline-demo/mae-sai/bundle.json",
     "offline-demo/mae-sai/roads.json",

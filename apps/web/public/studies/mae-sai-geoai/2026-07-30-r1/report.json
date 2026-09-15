@@ -1,0 +1,314 @@
+{
+  "data_mode": "real_licensed_inputs",
+  "study_area": "Mae Sai District, Chiang Rai",
+  "generated_at": "2024-09-15T23:16:14.175289+00:00",
+  "official_warning": false,
+  "evidence_tier": "candidate",
+  "can_feed_decision_layer": false,
+  "aggregation_status": "report_only",
+  "sources": {
+    "sentinel1": "S1A_IW_GRDH_1SDV_20240822T231600_20240822T231625_055332_06BF48_rtc -> S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_rtc (Planetary Computer, RTC)",
+    "sentinel2": "S2B_MSIL2A_20240218T034819_R104_T47QPC_20240218T072820 (2024-02-18, 0.000% cloud)",
+    "dem": "Copernicus DEM GLO-30 (Planetary Computer)",
+    "water_reference": "JRC Global Surface Water (Pekel et al. 2016)",
+    "subdistricts": "DOPA sub-districts via NGIS ArcGIS",
+    "rivers": "DWR natural streams via NGIS ArcGIS",
+    "buildings": "OpenStreetMap (Overpass API)",
+    "population": "WorldPop Thailand 100 m 2020 (via committed decision-layer context)",
+    "decision_context": "outputs/mae_sai_subdistrict_flood_inputs.csv"
+  },
+  "evaluation_protocol": {
+    "partition": {
+      "kind": "runner_local_spatial_blocks_v1",
+      "is_sealed_multi_event_partition": false,
+      "seed": 1,
+      "seed_declared_before_metrics": true,
+      "ratios": {
+        "train": 0.6,
+        "val": 0.2,
+        "test": 0.2
+      },
+      "geometry": {
+        "blocks_per_axis": 3,
+        "n_blocks": 9,
+        "block_m": 8307,
+        "buffer_m": 1600,
+        "tile_size_px": 128,
+        "tile_m": 3201.3,
+        "core_m": 5107,
+        "pixel_m_y": 24.337,
+        "pixel_m_x": 25.01,
+        "scene_m_y": 24920.9,
+        "scene_m_x": 25610
+      },
+      "blocks": {
+        "train": 5,
+        "val": 2,
+        "test": 2
+      },
+      "pixel_share": {
+        "train": 0.41655,
+        "val": 0.1155,
+        "test": 0.12877,
+        "buffer": 0.33917
+      },
+      "block_role_map": [
+        [
+          "train",
+          "test",
+          "val"
+        ],
+        [
+          "train",
+          "val",
+          "train"
+        ],
+        [
+          "train",
+          "train",
+          "test"
+        ]
+      ],
+      "contiguity": {
+        "train": {
+          "n_blocks": 5,
+          "n_components": 2,
+          "single_patch": false
+        },
+        "val": {
+          "n_blocks": 2,
+          "n_components": 2,
+          "single_patch": false
+        },
+        "test": {
+          "n_blocks": 2,
+          "n_components": 2,
+          "single_patch": false
+        }
+      },
+      "assignment_sha256": "b895f6b435a16a56dbb04440cd7d54954133d6f817b38743a4d00268c4b4cb36"
+    },
+    "scale_anchors": {
+      "flood_likelihood": "fpps_flood_anchor_v1",
+      "exposure": "fpps_exposure_anchor_v1"
+    },
+    "headline_role": "test",
+    "notes": "Component B and F metrics are reported per partition role; the headline is the held-out test role. Preprocessing and label sampling use training blocks only. This is a runner-local spatial split, NOT a sealed multi-event partition under docs/immutable-multi-event-partitions-v1.md."
+  },
+  "headline": {
+    "sar_flood_pct": 0.21,
+    "sar_pre": "2024-08-22",
+    "sar_post": "2024-09-15",
+    "unet_iou": 0.0023,
+    "unet_f1": 0.0047,
+    "unet_metric_role": "test",
+    "susc_auc": 0.7454,
+    "susc_auc_jrc": 0.7255,
+    "buildings": 118050,
+    "exposed": 232
+  },
+  "components": [
+    {
+      "letter": "A",
+      "name": "SAR flood-extent detection",
+      "book": "Ch. 12 · change detection",
+      "metric": "0.21% of district flooded",
+      "detail": "Sentinel-1 RTC · pre 2024-08-22 → post 2024-09-15",
+      "input": "/studies/mae-sai-geoai/2026-07-30-r1/6309d04d6a97f2c2-scene_sar_post_vh.png",
+      "output": "/studies/mae-sai-geoai/2026-07-30-r1/b72ca0de024320b7-A_sar_flood_probability.png"
+    },
+    {
+      "letter": "B",
+      "name": "U-Net water-mask refinement",
+      "book": "Ch. 9 · semantic segmentation",
+      "metric": "IoU 0.0023 · F1 0.0047 (held-out test blocks)",
+      "detail": "Sentinel-2 L2A · ImageNet-pretrained ResNet · 216 training tiles · held-out spatial blocks (1600 m buffer)",
+      "input": "/studies/mae-sai-geoai/2026-07-30-r1/b40d43697276a598-scene_s2_rgb.png",
+      "output": "/studies/mae-sai-geoai/2026-07-30-r1/8585f5fd63d09788-B_water_mask.png"
+    },
+    {
+      "letter": "C",
+      "name": "Flood susceptibility surface",
+      "book": "Ch. 13 · pixel regression",
+      "metric": "AUC 0.7454 vs the real Sentinel-1 flood extent",
+      "detail": "Copernicus DEM GLO-30 + 1925 DWR river features",
+      "input": "/studies/mae-sai-geoai/2026-07-30-r1/59382946bb4c10bd-scene_dem.png",
+      "output": "/studies/mae-sai-geoai/2026-07-30-r1/355f44fc3f2fb1fc-C_susceptibility.png"
+    },
+    {
+      "letter": "D",
+      "name": "Critical-infrastructure extraction",
+      "book": "Ch. 14 · footprints",
+      "metric": "118050 buildings · 232 flood-exposed",
+      "detail": "OpenStreetMap building footprints vs SAR flood extent (coverage-flagged)",
+      "input": "/studies/mae-sai-geoai/2026-07-30-r1/b40d43697276a598-scene_s2_rgb.png",
+      "output": "/studies/mae-sai-geoai/2026-07-30-r1/c9bd002a29f43b19-D_buildings.png"
+    }
+  ],
+  "subdistricts": [
+    {
+      "id": "570903",
+      "name": "Ko Chang",
+      "flood_likelihood": 58.6,
+      "exposure": 14.1,
+      "fpps": 44,
+      "action": "D",
+      "confidence": "medium",
+      "population": 6708.4,
+      "context_source": "decision_layer_real_context",
+      "narrative_en": "Ko Chang shows substantial observed inundation on the 2024-09-15 acquisition (2.11% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 58.6/100. The sub-district is sparsely populated (about 6,708 residents, exposure 14.1/100). Priority score 44.0/100 places it in action class D - Build Resilience. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+      "narrative_th": "ตำบลต.เกาะช้าง พบน้ำท่วมเป็นบริเวณมากจากภาพวันที่ 2024-09-15 (คิดเป็น 2.11% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (58.6/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 6,708 คน ค่าการเปิดรับความเสี่ยง 14.1/100) คะแนนลำดับความสำคัญ 44.0/100 อยู่ในระดับการปฏิบัติ D - เสริมความยืดหยุ่น โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    {
+      "id": "570901",
+      "name": "Mae Sai",
+      "flood_likelihood": 36.9,
+      "exposure": 82.9,
+      "fpps": 34,
+      "action": "E",
+      "confidence": "low",
+      "population": 17893.1,
+      "context_source": "decision_layer_real_context",
+      "narrative_en": "Mae Sai shows localised observed inundation on the 2024-09-15 acquisition (0.56% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 36.9/100. The sub-district is densely populated (about 17,893 residents, exposure 82.9/100). Priority score 34.0/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+      "narrative_th": "ตำบลต.แม่สาย พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.56% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (36.9/100) พื้นที่นี้มีประชากรหนาแน่น (ประมาณ 17,893 คน ค่าการเปิดรับความเสี่ยง 82.9/100) คะแนนลำดับความสำคัญ 34.0/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    {
+      "id": "570906",
+      "name": "Wiang Phang Kham",
+      "flood_likelihood": 13.9,
+      "exposure": 64.3,
+      "fpps": 23.6,
+      "action": "E",
+      "confidence": "high",
+      "population": 19532.1,
+      "context_source": "decision_layer_real_context",
+      "narrative_en": "Wiang Phang Kham shows localised observed inundation on the 2024-09-15 acquisition (0.33% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 13.9/100. The sub-district is densely populated (about 19,532 residents, exposure 64.3/100). Priority score 23.6/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak. This is a planning estimate, not an official warning.",
+      "narrative_th": "ตำบลต.เวียงพางคำ พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.33% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (13.9/100) พื้นที่นี้มีประชากรหนาแน่น (ประมาณ 19,532 คน ค่าการเปิดรับความเสี่ยง 64.3/100) คะแนนลำดับความสำคัญ 23.6/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    {
+      "id": "570905",
+      "name": "Si Mueang Chum",
+      "flood_likelihood": 41.8,
+      "exposure": 17.1,
+      "fpps": 36.7,
+      "action": "E",
+      "confidence": "low",
+      "population": 7157,
+      "context_source": "decision_layer_real_context",
+      "narrative_en": "Si Mueang Chum shows localised observed inundation on the 2024-09-15 acquisition (0.89% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 41.8/100. The sub-district is sparsely populated (about 7,157 residents, exposure 17.1/100). Priority score 36.7/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+      "narrative_th": "ตำบลต.ศรีเมืองชุม พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.89% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (41.8/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 7,157 คน ค่าการเปิดรับความเสี่ยง 17.1/100) คะแนนลำดับความสำคัญ 36.7/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    {
+      "id": "570904",
+      "name": "Pong Pha",
+      "flood_likelihood": 22.9,
+      "exposure": 21.3,
+      "fpps": 15.2,
+      "action": "E",
+      "confidence": "medium",
+      "population": 9311.6,
+      "context_source": "decision_layer_real_context",
+      "narrative_en": "Pong Pha shows localised observed inundation on the 2024-09-15 acquisition (0.24% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 22.9/100. The sub-district is sparsely populated (about 9,312 residents, exposure 21.3/100). Priority score 15.2/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+      "narrative_th": "ตำบลต.โป่งผา พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.24% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (22.9/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 9,312 คน ค่าการเปิดรับความเสี่ยง 21.3/100) คะแนนลำดับความสำคัญ 15.2/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    {
+      "id": "570909",
+      "name": "Pong Ngam",
+      "flood_likelihood": 15.3,
+      "exposure": 17,
+      "fpps": 12.6,
+      "action": "E",
+      "confidence": "high",
+      "population": 7248.7,
+      "context_source": "decision_layer_real_context",
+      "narrative_en": "Pong Ngam shows localised observed inundation on the 2024-09-15 acquisition (0.31% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 15.3/100. The sub-district is sparsely populated (about 7,249 residents, exposure 17.0/100). Priority score 12.6/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak. This is a planning estimate, not an official warning.",
+      "narrative_th": "ตำบลต.โป่งงาม พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.31% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (15.3/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 7,249 คน ค่าการเปิดรับความเสี่ยง 17.0/100) คะแนนลำดับความสำคัญ 12.6/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    {
+      "id": "570908",
+      "name": "Ban Dai",
+      "flood_likelihood": 33.2,
+      "exposure": 14.9,
+      "fpps": 17.1,
+      "action": "E",
+      "confidence": "low",
+      "population": 5036.1,
+      "context_source": "decision_layer_real_context",
+      "narrative_en": "Ban Dai shows localised observed inundation on the 2024-09-15 acquisition (0.25% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 33.2/100. The sub-district is sparsely populated (about 5,036 residents, exposure 14.9/100). Priority score 17.1/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+      "narrative_th": "ตำบลต.บ้านด้าย พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.25% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (33.2/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 5,036 คน ค่าการเปิดรับความเสี่ยง 14.9/100) คะแนนลำดับความสำคัญ 17.1/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    },
+    {
+      "id": "570902",
+      "name": "Huai Khrai",
+      "flood_likelihood": 15.7,
+      "exposure": 20.1,
+      "fpps": 12.9,
+      "action": "E",
+      "confidence": "medium",
+      "population": 8911.5,
+      "context_source": "decision_layer_real_context",
+      "narrative_en": "Huai Khrai shows localised observed inundation on the 2024-09-15 acquisition (0.24% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 15.7/100. The sub-district is sparsely populated (about 8,912 residents, exposure 20.1/100). Priority score 12.9/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+      "narrative_th": "ตำบลต.ห้วยไคร้ พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.24% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (15.7/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 8,912 คน ค่าการเปิดรับความเสี่ยง 20.1/100) คะแนนลำดับความสำคัญ 12.9/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+    }
+  ],
+  "additional_methods": [
+    {
+      "letter": "F",
+      "name": "Label-scarce embeddings (few-shot)",
+      "book": "Ch. 16 · foundation embeddings",
+      "metric": "IoU 0.0485 on held-out blocks from 80 labels",
+      "detail": "Lightweight classifier on Sentinel-2 features. The feature vector contains the bands the MNDWI target is derived from, so this demonstrates the workflow rather than proving few-shot generalisation.",
+      "image": "/studies/mae-sai-geoai/2026-07-30-r1/b608770f41b0ab59-F_fewshot_prediction.png"
+    },
+    {
+      "letter": "G",
+      "name": "Plain-language narrative (deterministic)",
+      "book": "Ch. 15 · communication",
+      "metric": "8 bilingual narratives (EN/TH)",
+      "detail": "Ko Chang shows substantial observed inundation on the 2024-09-15 acquisition (2.11% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 58.6/100. The s",
+      "image": null,
+      "narratives": {
+        "Ko Chang": {
+          "en": "Ko Chang shows substantial observed inundation on the 2024-09-15 acquisition (2.11% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 58.6/100. The sub-district is sparsely populated (about 6,708 residents, exposure 14.1/100). Priority score 44.0/100 places it in action class D - Build Resilience. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+          "th": "ตำบลต.เกาะช้าง พบน้ำท่วมเป็นบริเวณมากจากภาพวันที่ 2024-09-15 (คิดเป็น 2.11% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (58.6/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 6,708 คน ค่าการเปิดรับความเสี่ยง 14.1/100) คะแนนลำดับความสำคัญ 44.0/100 อยู่ในระดับการปฏิบัติ D - เสริมความยืดหยุ่น โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+        },
+        "Mae Sai": {
+          "en": "Mae Sai shows localised observed inundation on the 2024-09-15 acquisition (0.56% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 36.9/100. The sub-district is densely populated (about 17,893 residents, exposure 82.9/100). Priority score 34.0/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+          "th": "ตำบลต.แม่สาย พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.56% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (36.9/100) พื้นที่นี้มีประชากรหนาแน่น (ประมาณ 17,893 คน ค่าการเปิดรับความเสี่ยง 82.9/100) คะแนนลำดับความสำคัญ 34.0/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+        },
+        "Wiang Phang Kham": {
+          "en": "Wiang Phang Kham shows localised observed inundation on the 2024-09-15 acquisition (0.33% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 13.9/100. The sub-district is densely populated (about 19,532 residents, exposure 64.3/100). Priority score 23.6/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak. This is a planning estimate, not an official warning.",
+          "th": "ตำบลต.เวียงพางคำ พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.33% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (13.9/100) พื้นที่นี้มีประชากรหนาแน่น (ประมาณ 19,532 คน ค่าการเปิดรับความเสี่ยง 64.3/100) คะแนนลำดับความสำคัญ 23.6/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+        },
+        "Si Mueang Chum": {
+          "en": "Si Mueang Chum shows localised observed inundation on the 2024-09-15 acquisition (0.89% of the sub-district). Combined with terrain susceptibility this gives a moderate flood likelihood of 41.8/100. The sub-district is sparsely populated (about 7,157 residents, exposure 17.1/100). Priority score 36.7/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+          "th": "ตำบลต.ศรีเมืองชุม พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.89% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับปานกลาง (41.8/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 7,157 คน ค่าการเปิดรับความเสี่ยง 17.1/100) คะแนนลำดับความสำคัญ 36.7/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+        },
+        "Pong Pha": {
+          "en": "Pong Pha shows localised observed inundation on the 2024-09-15 acquisition (0.24% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 22.9/100. The sub-district is sparsely populated (about 9,312 residents, exposure 21.3/100). Priority score 15.2/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+          "th": "ตำบลต.โป่งผา พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.24% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (22.9/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 9,312 คน ค่าการเปิดรับความเสี่ยง 21.3/100) คะแนนลำดับความสำคัญ 15.2/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+        },
+        "Pong Ngam": {
+          "en": "Pong Ngam shows localised observed inundation on the 2024-09-15 acquisition (0.31% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 15.3/100. The sub-district is sparsely populated (about 7,249 residents, exposure 17.0/100). Priority score 12.6/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak. This is a planning estimate, not an official warning.",
+          "th": "ตำบลต.โป่งงาม พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.31% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (15.3/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 7,249 คน ค่าการเปิดรับความเสี่ยง 17.0/100) คะแนนลำดับความสำคัญ 12.6/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+        },
+        "Ban Dai": {
+          "en": "Ban Dai shows localised observed inundation on the 2024-09-15 acquisition (0.25% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 33.2/100. The sub-district is sparsely populated (about 5,036 residents, exposure 14.9/100). Priority score 17.1/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is low. This is a planning estimate, not an official warning.",
+          "th": "ตำบลต.บ้านด้าย พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.25% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (33.2/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 5,036 คน ค่าการเปิดรับความเสี่ยง 14.9/100) คะแนนลำดับความสำคัญ 17.1/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ low ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+        },
+        "Huai Khrai": {
+          "en": "Huai Khrai shows localised observed inundation on the 2024-09-15 acquisition (0.24% of the sub-district). Combined with terrain susceptibility this gives a low flood likelihood of 15.7/100. The sub-district is sparsely populated (about 8,912 residents, exposure 20.1/100). Priority score 12.9/100 places it in action class E - Monitor and Verify. Treat with caution: the acquisition is 4 days after the flood peak, so the mapped extent is residual and under-represents the peak; model confidence is medium. This is a planning estimate, not an official warning.",
+          "th": "ตำบลต.ห้วยไคร้ พบน้ำท่วมเฉพาะจุดจากภาพวันที่ 2024-09-15 (คิดเป็น 0.24% ของพื้นที่ตำบล) เมื่อรวมกับความอ่อนไหวของภูมิประเทศ ได้ค่าโอกาสเกิดน้ำท่วมระดับต่ำ (15.7/100) พื้นที่นี้มีประชากรเบาบาง (ประมาณ 8,912 คน ค่าการเปิดรับความเสี่ยง 20.1/100) คะแนนลำดับความสำคัญ 12.9/100 อยู่ในระดับการปฏิบัติ E - ติดตามและตรวจสอบ โปรดใช้ด้วยความระมัดระวัง: ภาพถ่ายบันทึกหลังจุดสูงสุดของน้ำท่วม 4 วัน ขอบเขตที่ตรวจพบจึงเป็นน้ำที่ตกค้างและต่ำกว่าความเป็นจริงที่จุดสูงสุด; ระดับความเชื่อมั่นของแบบจำลองอยู่ที่ medium ข้อมูลนี้ใช้เพื่อการวางแผนเท่านั้น ไม่ใช่การเตือนภัยอย่างเป็นทางการ"
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Nearest post-event same-orbit Sentinel-1 scene (2024-09-15) is ~4 days after the ~Sep-11 flood peak, so extent is residual and under-represents the peak.",
+    "U-Net labels are the MNDWI water index (weak supervision from a physical index, not hand annotation); metrics measure agreement with that index on held-out spatial blocks, not against a gold human mask.",
+    "Susceptibility is relative propensity, not flood depth. Non-operational; not an official warning.",
+    "flood_likelihood and exposure use fixed versioned anchors ({'flood_likelihood': 'fpps_flood_anchor_v1', 'exposure': 'fpps_exposure_anchor_v1'}), so values are absolute rather than ranked within the district.",
+    "OpenStreetMap building coverage in Mae Sai is 0.9-5.1% of the population-implied expectation, so building counts are diagnostic only and do not enter exposure.",
+    "The spatial holdout is runner-local. It is NOT a sealed multi-event partition and does not clear the qualified-label gates."
+  ]
+}

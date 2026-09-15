@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { LanguageToggle } from "@/components/language-toggle";
-import { GeoaiRealPanel } from "@/components/geoai-real-panel";
 import { ModelRegistryPanel } from "@/components/model-registry-panel";
 import { QualifiedEvidenceFoundationPanel } from "@/components/qualified-evidence-foundation-panel";
 import { StatusBar } from "@/components/status-bar";
@@ -209,6 +208,7 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
       <StatusBar data={data} language={language} compact />
 
       <div className={`studio-shell studio-final-shell ${styles.shell}`}>
+        <nav aria-label="Breadcrumb"><a href="/studio/">Studio</a> / {th ? "หลักฐานการวางแผน" : "Planning evidence"}</nav>
         <section className={styles.hero} aria-labelledby="research-console-title">
           <div>
             <p className="eyebrow">{th ? "รายงานแบบอ่านอย่างเดียว" : "Read-only evidence report"}</p>
@@ -338,7 +338,10 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
                     evidenceReason={data.modelEvidenceReason}
                     language={language}
                   />
-                  <GeoaiRealPanel language={language} variant="studio" />
+                  <article className={styles.notice}>
+                    <b>{th ? "รายงานวิจัยแยกตามการศึกษา" : "Research studies have their own evidence records"}</b>
+                    <p><a href="/studio/studies/c2s-ms-20260915/">C2S-MS public benchmark</a> · <a href="/studio/archive/mae-sai-geoai/">{th ? "งานวิจัย GeoAI ย้อนหลัง" : "Historical Mae Sai GeoAI research"}</a></p>
+                  </article>
                 </>
               )}
 

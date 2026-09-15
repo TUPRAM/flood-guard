@@ -140,7 +140,7 @@ export function requiredOfflinePaths(profile: AppProfile): string[] {
   ];
   return profile === "public-production"
     ? publicPaths
-    : [...publicPaths, "/command/", "/studio/", "/offline-demo/mae-sai/bundle.json"];
+    : [...publicPaths, "/command/", "/studio/", "/studio/planning-evidence/", "/offline-demo/mae-sai/bundle.json"];
 }
 
 async function inspectOfflineCache(status: WorkerCacheStatus | null): Promise<CacheState> {

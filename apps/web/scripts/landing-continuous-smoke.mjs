@@ -546,7 +546,7 @@ try {
     await open(page);
     const measure = () => page.evaluate(() => {
       const heading = document.querySelector("main h1");
-      const body = heading.parentElement.querySelectorAll("p")[1];
+      const body = heading.parentElement.querySelector("h1 + p");
       return { rootPx: parseFloat(getComputedStyle(document.documentElement).fontSize), headingPx: parseFloat(getComputedStyle(heading).fontSize), bodyPx: parseFloat(getComputedStyle(body).fontSize) };
     });
     const before = await measure();

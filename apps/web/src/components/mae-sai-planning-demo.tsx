@@ -84,6 +84,8 @@ export function MaeSaiPlanningDemo({ defaultLanguage = "en" }: { defaultLanguage
   const comparison = scenario.areas.find((item) => item.area_id === areaId)!;
   const selectedRecord = records.find((record) => record.id === activeRecordId);
   const areaName = th ? area.name_th : area.name_en;
+  const otherChange = scenario.areas.find((item) => item.area_id !== areaId && item.change_people_losing_30_min_access !== 0);
+  const otherArea = otherChange ? maeSaiCase.areas.find((item) => item.area_id === otherChange.area_id) : undefined;
   const delta = comparison.change_people_losing_30_min_access;
   const chartMax = Math.max(comparison.baseline_people_losing_30_min_access, comparison.scenario_people_losing_30_min_access, 1);
 
@@ -168,6 +170,10 @@ export function MaeSaiPlanningDemo({ defaultLanguage = "en" }: { defaultLanguage
           <label className={styles.field}>{th ? "พื้นที่ที่ต้องการพิจารณา" : "Focus area"}<select value={areaId} onChange={(event) => setAreaId(event.target.value)}>{maeSaiCase.areas.map((item) => <option key={item.area_id} value={item.area_id}>{th ? item.name_th : item.name_en}</option>)}</select></label>
         </div>
         <div className={styles.scenarioDescription}><span aria-hidden="true">↳</span><div><strong>{scenarioTitle(scenario, th)}</strong><p lang="en">{scenario.description}</p><p lang="en">{scenario.changed_assumption}</p></div></div>
+        {otherChange && otherArea ? <aside className={styles.affectedArea} aria-label={th ? "การเปลี่ยนแปลงนอกพื้นที่ที่เลือก" : "Changes outside the focus area"}>
+          <p>{th ? "สมมติฐานนี้เปลี่ยนผลการเข้าถึงในพื้นที่อื่นด้วย" : "This assumption changes modelled access loss in another area."}</p>
+          <button type="button" className={styles.button} onClick={() => setAreaId(otherArea.area_id)}>{th ? "ดู" : "View"} {th ? otherArea.name_th : otherArea.name_en} ({otherChange.change_people_losing_30_min_access > 0 ? "+" : "−"}{number(Math.abs(otherChange.change_people_losing_30_min_access))}) <span aria-hidden="true">↗</span></button>
+        </aside> : null}
         <div aria-live="polite" aria-atomic="true">
           <div className={styles.metrics}>
             <div className={styles.metric}><span>{th ? "สูญเสียการเข้าถึง · สภาพฐาน" : "Access loss · Baseline"}</span><strong>{number(comparison.baseline_people_losing_30_min_access)}</strong><small>{th ? `คนในแบบจำลอง · ${areaName}` : `Modelled people · ${areaName}`}</small></div>
@@ -215,12 +221,12 @@ export function MaeSaiPlanningDemo({ defaultLanguage = "en" }: { defaultLanguage
             <div className={styles.formPair}><label className={styles.field}>{th ? "ทีมผู้รับผิดชอบในแบบฝึกหัด" : "Exercise owner / team"}<input required maxLength={120} value={owner} onChange={(event) => setOwner(event.target.value)} placeholder={th ? "เช่น ทีมวางแผน A" : "e.g. Planning team A"} /></label><label className={styles.field}>{th ? "บทบาทในแบบฝึกหัด" : "Exercise role"}<input required maxLength={120} value={role} onChange={(event) => setRole(event.target.value)} placeholder={th ? "เช่น ผู้วิเคราะห์การเข้าถึง" : "e.g. Access analyst"} /></label></div>
             <label className={styles.field}>{th ? "สถานะการทบทวนในแบบฝึกหัด" : "Exercise review status"}<select value={status} onChange={(event) => setStatus(event.target.value as "draft" | "reviewed_for_exercise")}><option value="draft">{th ? "ร่าง · ยังไม่ทบทวน" : "Draft · Not reviewed"}</option><option value="reviewed_for_exercise">{th ? "ทบทวนเพื่อแบบฝึกหัดเท่านั้น" : "Reviewed for exercise only"}</option></select><small>{th ? "ระบุเพียงชื่อทีมและบทบาท ไม่ใส่ข้อมูลส่วนบุคคลหรือข้อมูลอ่อนไหว" : "Use team labels and roles. Do not enter personal or sensitive information."}</small></label>
             <div className={styles.formActions}><button className={`${styles.button} ${styles.primary}`} type="submit" disabled={!loaded}>{th ? "บันทึกฉบับใหม่" : "Save a new record"}<span aria-hidden="true">↗</span></button><p>{th ? "ทุกครั้งสร้างฉบับใหม่ เก็บประวัติก่อนหน้าไว้ในเบราว์เซอร์นี้" : "Each save creates a new snapshot and preserves the earlier history in this browser."}</p></div>
+            {notice ? <p role="status" className={`${styles.notice} ${noticeIsError ? styles.error : ""}`}>{notice}</p> : null}
             <p className={styles.caption}>{th ? "การล้างข้อมูลเบราว์เซอร์อาจลบบันทึก ส่งออกไฟล์เพื่อเก็บหรือแบ่งปัน" : "Clearing browser storage can remove these records. Export a copy to retain or share your work."}</p>
           </form>
           <aside className={styles.panel} aria-labelledby="history-heading">
             <div className={styles.historyHeader}><h3 id="history-heading">{th ? "ประวัติการตัดสินใจ" : "Decision history"}</h3><span>{records.length} {th ? "รายการ" : "records"}</span></div>
             <p>{th ? "เลือกฉบับที่บันทึกไว้เพื่ออ่านและส่งออก เหตุผลผูกกับรุ่นหลักฐานและสมมติฐานเดิมเสมอ" : "Choose a saved snapshot to review and export. Its reasoning stays bound to the original evidence version and assumption."}</p>
-            {notice ? <p role="status" className={`${styles.notice} ${noticeIsError ? styles.error : ""}`}>{notice}</p> : null}
             {records.length ? <ol className={styles.historyList}>{records.map((record) => <li key={record.id}><button type="button" aria-pressed={record.id === activeRecordId} onClick={() => setActiveRecordId(record.id)}><strong>{record.decision}</strong><span>{date(record.createdAt)} · {record.status === "draft" ? th ? "ร่าง" : "Draft" : th ? "ทบทวนในแบบฝึกหัด" : "Reviewed for exercise"}</span></button></li>)}</ol> : <p className={styles.caption}>{loaded ? th ? "ยังไม่มีบันทึกในอุปกรณ์นี้" : "No records saved on this device yet." : th ? "กำลังอ่านประวัติในอุปกรณ์…" : "Loading local history…"}</p>}
             {selectedRecord ? <div className={styles.recordPreview}><span className={styles.tag}>{th ? "ฉบับที่บันทึกไว้" : "Saved snapshot"}</span><h4>{th ? "ผู้รับผิดชอบ / บทบาท" : "Owner / role"}</h4><p>{selectedRecord.owner} · {selectedRecord.role}</p><h4>{th ? "พื้นที่ / สมมติฐาน" : "Area / assumption"}</h4><p>{selectedRecord.areaId} · {selectedRecord.scenarioId}</p><h4>{th ? "เหตุผล" : "Reasoning"}</h4><p>{selectedRecord.reasoning}</p><h4>{th ? "ต้องตรวจสอบ" : "Verification required"}</h4><p>{selectedRecord.verificationNeed}</p><h4>{th ? "รุ่นหลักฐาน" : "Evidence version"}</h4><p>{selectedRecord.caseVersion}</p><div className={styles.exports}><button type="button" className={styles.button} onClick={() => exportRecord("markdown")}>{th ? "ส่งออกบันทึก Markdown" : "Export brief · Markdown"} ↓</button><button type="button" className={styles.button} onClick={() => exportRecord("json")}>{th ? "ส่งออกหลักฐาน JSON" : "Export evidence · JSON"} ↓</button></div></div> : null}
           </aside>

@@ -21,7 +21,7 @@ describe("LandingPage", () => {
     expect(html).toContain("See the flood.");
     expect(html).toContain("Understand who may be cut off.");
     expect(html).toContain("Synthetic illustration");
-    expect(html).toContain("Assumed disruption, not a confirmed closure");
+    expect(html).toContain("We assumed this road is cut. Nobody has confirmed it.");
     expect(html).toContain("No qualified evaluation or operational authorization");
     expect(html).not.toContain("DEMO-R017");
     expect(html).not.toContain("Sample report received");
@@ -36,8 +36,12 @@ describe("LandingPage", () => {
     expect(html).toContain("data-opening-provenance");
     expect(html).toMatch(/inferred|Inferred/);
     expect(html).toMatch(/not a verified reconstruction/i);
+    // Decode only well-formed escapes: page copy legitimately contains bare "%"
+    // (percentages in the pipeline extracts), which would make a whole-document
+    // decodeURIComponent throw URIError.
+    const decoded = html.replace(/%[0-9A-Fa-f]{2}/g, (escape) => decodeURIComponent(escape));
     for (const chapter of ["connected", "flood", "access", "finding"]) {
-      expect(decodeURIComponent(html)).toMatch(new RegExp(`(?:src="|url=)/landing/desktop-v4/${chapter}\\.webp`));
+      expect(decoded).toMatch(new RegExp(`(?:src="|url=)/landing/desktop-v4/${chapter}\\.webp`));
     }
     expect(html).toContain('href="#place"');
   });

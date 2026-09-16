@@ -1,0 +1,1144 @@
+[
+  {
+    "id": "sentinel-1-sar-pre-and-post-event-vv-vh",
+    "step": "INPUT 1",
+    "title": "Sentinel-1 SAR — pre- and post-event VV, VH",
+    "codes": [
+      {
+        "caption": "realpipeline/real_data.py:39 — the two dates are constants, not parameters",
+        "tokens": [
+          [
+            "c",
+            "# lon/lat bounding box for Mae Sai district"
+          ],
+          [
+            "",
+            "\nMAE_SAI_BBOX = (99.83, 20.33, 99.97, 20.49)\nDEFAULT_PRE  = "
+          ],
+          [
+            "s",
+            "\"2024-08-22\""
+          ],
+          [
+            "",
+            "  "
+          ],
+          [
+            "c",
+            "# same descending orbit as post (clean geometry)"
+          ],
+          [
+            "",
+            "\nDEFAULT_POST = "
+          ],
+          [
+            "s",
+            "\"2024-09-15\""
+          ],
+          [
+            "",
+            "  "
+          ],
+          [
+            "c",
+            "# nearest post-event same-orbit acquisition"
+          ],
+          [
+            "",
+            "\n"
+          ]
+        ]
+      },
+      {
+        "caption": "realpipeline/real_data.py:114 — one scene per date, from Planetary Computer",
+        "tokens": [
+          [
+            "k",
+            "def"
+          ],
+          [
+            "",
+            " _find_rtc_scene(bbox, date: str):\n    cat = _pc_client()\n    items = sorted(\n        cat.search(collections=["
+          ],
+          [
+            "s",
+            "\"sentinel-1-rtc\""
+          ],
+          [
+            "",
+            "], bbox=list(bbox),\n                   datetime=date).items(),\n        key="
+          ],
+          [
+            "k",
+            "lambda"
+          ],
+          [
+            "",
+            " i: i.datetime,\n    )\n    "
+          ],
+          [
+            "k",
+            "if not"
+          ],
+          [
+            "",
+            " items:\n        "
+          ],
+          [
+            "k",
+            "raise"
+          ],
+          [
+            "",
+            " RealDataError(f"
+          ],
+          [
+            "s",
+            "\"No Sentinel-1 RTC scene found for {date}.\""
+          ],
+          [
+            "",
+            ")\n    "
+          ],
+          [
+            "k",
+            "return"
+          ],
+          [
+            "",
+            " items[0]\n"
+          ]
+        ]
+      }
+    ],
+    "viz": {
+      "src": "sentinel-1-sar-pre-and-post-event-vv-vh.svg",
+      "w": 640,
+      "h": 210,
+      "caption": "Why water reads as dark: a rough surface scatters some energy back to the satellite, a smooth one mirrors it away. This is the entire physical basis of the detector — and why \"dark\" also catches roads, dry sand and permanent rivers, which is what forces the two-date comparison.",
+      "alt": "Radar pulse scatters back from rough dry ground but reflects away from smooth water, so flooded ground appears dark"
+    },
+    "rows": [
+      {
+        "label": "What it is",
+        "body": "A radar satellite that makes its own illumination, so it sees through monsoon cloud, day or night. Optical satellites cannot do this — during a flood, the sky is exactly the wrong colour."
+      },
+      {
+        "label": "VV and VH",
+        "body": "Two ways the radar pulse comes back. VV = sent vertical, returned vertical. VH = returned horizontal, meaning something with structure — trees, walls — twisted the signal. Open water is smooth, so it mirrors the pulse away and goes dark in both."
+      },
+      {
+        "label": "Why two dates",
+        "body": "Dark alone is not flood: roads and dry sand are dark too, rivers are always dark. You need a before and an after of the same place to find pixels that newly went dark."
+      },
+      {
+        "label": "The actual pair",
+        "body": "pre 2024-08-22 23:16:00 UTC → post 2024-09-15 23:16:01 UTC, both Sentinel-1A, orbits 055332 → 055682"
+      }
+    ]
+  },
+  {
+    "id": "terrain-dem-hand-slope",
+    "step": "INPUT 2",
+    "title": "Terrain — DEM, HAND, slope",
+    "codes": [],
+    "viz": {
+      "src": "terrain-dem-hand-slope.svg",
+      "w": 640,
+      "h": 210,
+      "caption": "HAND answers the only question that matters for flooding: how far must water rise from the nearest channel to reach this spot. In susceptibility.py it carries the largest weight, and the curve is calibrated so 0 m scores ~1, 8 m scores 0.5, and anything above ~25 m scores ~0.",
+      "alt": "Cross-section showing HAND measured as vertical height above the nearest drainage channel, low for the valley floor and high for the hillside"
+    },
+    "rows": [
+      {
+        "label": "What it is",
+        "body": "The shape of the ground. DEM is elevation. Slope is steepness. HAND — Height Above Nearest Drainage — is how high a spot sits above the nearest stream it would drain into."
+      },
+      {
+        "label": "Why it is here",
+        "body": "It removes physically impossible answers and adds physical reasoning. Water does not sit on a 30° hillside, so a dark pixel on a steep slope is radar shadow, not flood. Low HAND means water reaches you first."
+      },
+      {
+        "label": "In the repo",
+        "body": "Copernicus DEM GLO-30 via Planetary Computer, feeding the susceptibility surface in susceptibility.py."
+      }
+    ]
+  },
+  {
+    "id": "hydromet-context-rainfall-permanent-wate",
+    "step": "INPUT 3",
+    "title": "Hydromet context — rainfall, permanent water",
+    "codes": [],
+    "viz": {
+      "src": "hydromet-context-rainfall-permanent-wate.svg",
+      "w": 640,
+      "h": 190,
+      "caption": "Five lines of code, but without them the Mae Sai river is reported as a flood on every single run. The mask is JRC Global Surface Water thresholded at occurrence > 50, meaning pixels wet more than half the time in the multi-year record.",
+      "alt": "Detected dark pixels minus the permanent water mask equals new flooding only"
+    },
+    "rows": [
+      {
+        "label": "What it is",
+        "body": "Rainfall before the event, and a map of water that is always there — rivers, reservoirs, ponds."
+      },
+      {
+        "label": "Why it is here",
+        "body": "Permanent water must be subtracted, or the system reports the Mae Sai river as a flood every single run. Rainfall is plausibility: heavy antecedent rain makes a detection more believable."
+      },
+      {
+        "label": "The word \"context\"",
+        "body": "Deliberate. These layers are coarse and never decide anything on their own — they condition and mask."
+      }
+    ]
+  },
+  {
+    "id": "canonical-preprocessing-and-feature-alig",
+    "step": "STAGE",
+    "title": "Canonical preprocessing and feature alignment",
+    "codes": [
+      {
+        "caption": "realpipeline/real_data.py:127 — windowed read puts every band on one grid",
+        "tokens": [
+          [
+            "k",
+            "def"
+          ],
+          [
+            "",
+            " _read_band(item, pol: str, bbox, out_shape):\n    "
+          ],
+          [
+            "k",
+            "with"
+          ],
+          [
+            "",
+            " rasterio.open(item.assets[pol].href) "
+          ],
+          [
+            "k",
+            "as"
+          ],
+          [
+            "",
+            " src:\n        "
+          ],
+          [
+            "c",
+            "# reproject the lon/lat box into the scene's own CRS (EPSG:32647)"
+          ],
+          [
+            "",
+            "\n        left, bottom, right, top = transform_bounds("
+          ],
+          [
+            "s",
+            "\"EPSG:4326\""
+          ],
+          [
+            "",
+            ", src.crs, *bbox)\n        win = from_bounds(left, bottom, right, top, transform=src.transform)\n        "
+          ],
+          [
+            "c",
+            "# read ONLY the window, resampled to a fixed shape -> perfect alignment"
+          ],
+          [
+            "",
+            "\n        data = src.read(1, window=win, out_shape=out_shape,\n                        boundless="
+          ],
+          [
+            "k",
+            "True"
+          ],
+          [
+            "",
+            ", fill_value=0)\n        "
+          ],
+          [
+            "k",
+            "return"
+          ],
+          [
+            "",
+            " data.astype("
+          ],
+          [
+            "s",
+            "\"float32\""
+          ],
+          [
+            "",
+            "), str(src.crs)\n"
+          ]
+        ]
+      },
+      {
+        "caption": "realpipeline/sar_flood.py:160 — speckle control before differencing",
+        "tokens": [
+          [
+            "k",
+            "def"
+          ],
+          [
+            "",
+            " _boxcar(array, window):\n    "
+          ],
+          [
+            "c",
+            "\"\"\"Odd-window boxcar mean (speckle filter) without SciPy.\"\"\""
+          ],
+          [
+            "",
+            "\n    "
+          ],
+          [
+            "k",
+            "if"
+          ],
+          [
+            "",
+            " window <= 1:\n        "
+          ],
+          [
+            "k",
+            "return"
+          ],
+          [
+            "",
+            " array.astype("
+          ],
+          [
+            "s",
+            "\"float64\""
+          ],
+          [
+            "",
+            ")\n    pad = window // 2\n    a = np.pad(array.astype("
+          ],
+          [
+            "s",
+            "\"float64\""
+          ],
+          [
+            "",
+            "), pad, mode="
+          ],
+          [
+            "s",
+            "\"edge\""
+          ],
+          [
+            "",
+            ")\n    out = np.zeros_like(array, dtype="
+          ],
+          [
+            "s",
+            "\"float64\""
+          ],
+          [
+            "",
+            ")\n    "
+          ],
+          [
+            "k",
+            "for"
+          ],
+          [
+            "",
+            " dy "
+          ],
+          [
+            "k",
+            "in"
+          ],
+          [
+            "",
+            " range(window):\n        "
+          ],
+          [
+            "k",
+            "for"
+          ],
+          [
+            "",
+            " dx "
+          ],
+          [
+            "k",
+            "in"
+          ],
+          [
+            "",
+            " range(window):\n            out += a[dy : dy + array.shape[0], dx : dx + array.shape[1]]\n    "
+          ],
+          [
+            "k",
+            "return"
+          ],
+          [
+            "",
+            " out / (window * window)\n"
+          ]
+        ]
+      }
+    ],
+    "viz": {
+      "src": "canonical-preprocessing-and-feature-alig.svg",
+      "w": 640,
+      "h": 230,
+      "caption": "Alignment is not a later resampling step — it happens at read time, which is also why only the Mae Sai window is downloaded instead of a 600 MB scene. Speckle filtering comes before differencing: SAR noise is multiplicative, so differencing raw pixels amplifies it.",
+      "alt": "Four differently gridded source rasters are read through one window into a single aligned stack, then speckle-filtered"
+    },
+    "rows": [
+      {
+        "label": "What it is",
+        "body": "Make the three inputs comparable. Every layer is put on the same grid, at the same resolution, in the same coordinate system, with the same maths applied every run."
+      },
+      {
+        "label": "What happens",
+        "body": "Orbit and noise correction, calibration to real backscatter values, speckle control, terrain correction, then stacking into one layered image plus a validity mask marking unusable pixels."
+      },
+      {
+        "label": "Why \"canonical\"",
+        "body": "The same recipe runs at training time and at prediction time. If those two differ even slightly, a model learns one world and is tested in another."
+      },
+      {
+        "label": "Which product",
+        "body": "FloodGuard uses Sentinel-1 RTC products, which arrive already terrain-corrected and calibrated — so part of this step is supplied by the product rather than run in-house."
+      }
+    ]
+  },
+  {
+    "id": "sar-change-detection-the-operational-bas",
+    "step": "MODEL A",
+    "title": "SAR change detection — the operational baseline",
+    "codes": [
+      {
+        "caption": "realpipeline/sar_flood.py:99 — the five lines that are the entire flood detector",
+        "tokens": [
+          [
+            "c",
+            "# dB conversion: 10 * log10(amplitude), zeros -> NaN"
+          ],
+          [
+            "",
+            "\nvv_drop  = _to_db(pre_vv) - _to_db(post_vv)\nvh_drop  = _to_db(pre_vh) - _to_db(post_vh)\ncombined = vh_weight * vh_drop + (1.0 - vh_weight) * vv_drop   "
+          ],
+          [
+            "c",
+            "# 0.6 / 0.4"
+          ],
+          [
+            "",
+            "\n\n"
+          ],
+          [
+            "c",
+            "# linear ramp: 1 dB drop -> 0.0,  5 dB drop -> 1.0"
+          ],
+          [
+            "",
+            "\nprobability = np.clip((combined - dry_change_db)\n                      / (flood_change_db - dry_change_db), 0.0, 1.0)\nprobability = np.where(np.isfinite(probability), probability, 0.0)\nbinary      = (probability >= probability_threshold).astype("
+          ],
+          [
+            "s",
+            "\"uint8\""
+          ],
+          [
+            "",
+            ")\n"
+          ]
+        ]
+      },
+      {
+        "caption": "realpipeline/sar_flood.py:106 — subtract the river, or report it as a flood forever",
+        "tokens": [
+          [
+            "k",
+            "if"
+          ],
+          [
+            "",
+            " permanent_water_path "
+          ],
+          [
+            "k",
+            "is not None"
+          ],
+          [
+            "",
+            ":\n    perm, _, _ = read_geotiff(permanent_water_path)\n    perm = perm[0].astype(bool)\n    binary[perm] = 0\n    probability = np.where(perm, 0.0, probability)\n"
+          ]
+        ]
+      }
+    ],
+    "viz": {
+      "src": "sar-change-detection-the-operational-bas.svg",
+      "w": 640,
+      "h": 270,
+      "caption": "The actual decision function in the shipped detector — a fixed, physically anchored ramp. This is what the proposal calls \"adaptive Otsu\"; it is not. An Otsu threshold would be recomputed per scene from the histogram, moving with each acquisition. This one does not move, which is arguably the stronger property.",
+      "alt": "Flood probability as a function of decibel drop: flat at zero below 1 dB, rising linearly to 1 at 5 dB, with the binary cut at 0.5 falling at 3 dB"
+    },
+    "rows": [
+      {
+        "label": "What it does",
+        "body": "Converts both dates to decibels, subtracts after from before, and maps the drop onto a 0–1 probability with a fixed physical ramp: a 1 dB drop is dry, a 5 dB drop is certainly flooded, and 0.5 is the cut."
+      },
+      {
+        "label": "The maths",
+        "body": "combined = 0.6 · VH_drop + 0.4 · VV_drop"
+      },
+      {
+        "label": "Why VH is heavier",
+        "body": "Vegetation and buildings depolarize strongly, so their VH is high. Losing it under water is a bigger, cleaner signal than the VV drop."
+      },
+      {
+        "label": "Not a model",
+        "body": "This is a deterministic statistical method. Nothing is trained, nothing is learned. It is transparent and it always runs — which is precisely why it is the baseline everything else must beat."
+      },
+      {
+        "label": "Executed result",
+        "body": "0.21% of Mae Sai district newly flooded on the 15 Sep acquisition."
+      }
+    ]
+  },
+  {
+    "id": "rf-xgboost-refinement",
+    "step": "MODEL B",
+    "title": "RF / XGBoost — refinement",
+    "codes": [
+      {
+        "caption": "realpipeline/susceptibility.py:91 — what runs instead: four physical factors, no training",
+        "tokens": [
+          [
+            "",
+            "hand_m    = np.asarray(hand[0],  dtype="
+          ],
+          [
+            "s",
+            "\"float64\""
+          ],
+          [
+            "",
+            ")\nslope_deg = np.asarray(slope[0], dtype="
+          ],
+          [
+            "s",
+            "\"float64\""
+          ],
+          [
+            "",
+            ")\ndist_m    = np.asarray(dist[0],  dtype="
+          ],
+          [
+            "s",
+            "\"float64\""
+          ],
+          [
+            "",
+            ")\n\nfactors = {\n    "
+          ],
+          [
+            "c",
+            "# ~1 at HAND 0 m, ~0.5 at 8 m, ~0 above ~25 m"
+          ],
+          [
+            "",
+            "\n    "
+          ],
+          [
+            "s",
+            "\"hand\""
+          ],
+          [
+            "",
+            ": 1.0 / (1.0 + np.exp((hand_m - 8.0) / 3.5)),\n    "
+          ],
+          [
+            "c",
+            "# ~1 within 100 m of a channel, decaying to ~0 by ~1.5 km"
+          ],
+          [
+            "",
+            "\n    "
+          ],
+          [
+            "s",
+            "\"distance_to_river\""
+          ],
+          [
+            "",
+            ": np.exp(-dist_m / 600.0),\n    "
+          ],
+          [
+            "s",
+            "\"twi\""
+          ],
+          [
+            "",
+            ": _normalise(twi[0], invert="
+          ],
+          [
+            "k",
+            "False"
+          ],
+          [
+            "",
+            "),\n    "
+          ],
+          [
+            "c",
+            "# ~1 on flat ground, ~0 above ~12 degrees"
+          ],
+          [
+            "",
+            "\n    "
+          ],
+          [
+            "s",
+            "\"slope\""
+          ],
+          [
+            "",
+            ": 1.0 / (1.0 + np.exp((slope_deg - 5.0) / 2.0)),\n}\nlinear = sum(weights[k] * factors[k] "
+          ],
+          [
+            "k",
+            "for"
+          ],
+          [
+            "",
+            " k "
+          ],
+          [
+            "k",
+            "in"
+          ],
+          [
+            "",
+            " factors) / total_weight\n"
+          ],
+          [
+            "c",
+            "# logistic sharpening centres the boundary and spreads the tails"
+          ],
+          [
+            "",
+            "\nsusceptibility = 1.0 / (1.0 + np.exp(-(linear - 0.5) * 6.0))\nsurface = (susceptibility * 100.0).astype("
+          ],
+          [
+            "s",
+            "\"float32\""
+          ],
+          [
+            "",
+            ")\n"
+          ]
+        ]
+      }
+    ],
+    "viz": {
+      "src": "rf-xgboost-refinement.svg",
+      "w": 640,
+      "h": 250,
+      "caption": "The four factors plotted from the real coefficients in the source. Each is a physical statement, not a fitted parameter: half-response at 8 m above drainage, 600 m from a channel, and 5° of slope. This is what scores AUC 0.74 — and why a tree ensemble would add opacity without adding evidence.",
+      "alt": "Three response curves: HAND falls to half at 8 metres, distance to river decays to near zero by 1.5 kilometres, slope falls to half at 5 degrees"
+    },
+    "rows": [
+      {
+        "label": "What it does",
+        "body": "Decision-tree ensembles take the radar change plus terrain, drainage and land cover, and learn which combinations really mean flood. Interpretable — you can ask which feature drove each prediction."
+      },
+      {
+        "label": "Benchmark result",
+        "body": "XGBoost IoU 0.868, F1 0.929, precision 0.913, recall 0.946, ECE 0.040. Random Forest is marginally ahead at IoU 0.869. Both are well calibrated at full coverage."
+      },
+      {
+        "label": "Beats the baseline",
+        "body": "Decisively — the VH-Otsu baseline scores IoU 0.233 on the same split. That satisfies our promotion criterion on the benchmark."
+      },
+      {
+        "label": "Still gated for Mae Sai",
+        "body": "Mae Sai inference exists per model but carries evidence_tier: candidate, can_feed_decision_layer: false, and claims no Mae Sai accuracy. The terrain susceptibility index (AUC 0.74) remains the training-free fallback."
+      }
+    ]
+  },
+  {
+    "id": "u-net-fpn-deep-segmentation",
+    "step": "MODEL C",
+    "title": "U-Net / FPN — deep segmentation",
+    "codes": [
+      {
+        "caption": "realpipeline/water_label.py:8 — why the U-Net metric was withdrawn, recorded in the source itself",
+        "tokens": [
+          [
+            "c",
+            "\"\"\"Component B trained on (MNDWI > 0), and that label is measurably wrong.\n\n    MNDWI > 0  (was)      3.240 %   0.055   0.058   0.502\n    MNDWI > 0.05          1.993 %   0.076   0.084   0.451\n    MNDWI > 0.10 (best)   1.042 %   0.079   0.100   0.279\n\nAt the shipped threshold MNDWI flags 8.7x the reference area while missing\n[...] so tuning is not a fix -- the best MNDWI threshold still has\n\"\"\""
+          ],
+          [
+            "",
+            "\n"
+          ]
+        ]
+      }
+    ],
+    "viz": {
+      "src": "u-net-fpn-deep-segmentation.svg",
+      "w": 640,
+      "h": 250,
+      "caption": "The U-Net was not the failure — its supervision was. Registration error was ruled out as the benign explanation: agreement only reaches 0.081 even at 3-pixel tolerance, and 79% of the reference survives 1-pixel erosion.",
+      "alt": "Area-proportional diagram: the MNDWI training label covers 8.7 times the reference water area while overlapping only half of it"
+    },
+    "rows": [
+      {
+        "label": "What it is",
+        "body": "Image-segmentation networks that label every pixel flood or not-flood, learning shape and texture rather than one brightness cut-off. U-Net compresses the image then rebuilds it at full resolution; FPN reads several scales at once."
+      },
+      {
+        "label": "Benchmark result",
+        "body": "SAR arm IoU 0.370 (F1 0.540, precision 0.788, recall 0.411, ECE 0.205). Context arm, with terrain and land cover added, improves markedly to IoU 0.703 (F1 0.825, ECE 0.063)."
+      },
+      {
+        "label": "It loses to the trees",
+        "body": "XGBoost and Random Forest reach IoU ~0.87 on the same split. This reproduces a published finding (Li et al., 2023): deep nets do not automatically beat tree ensembles for pixel-level flood mapping."
+      }
+    ]
+  },
+  {
+    "id": "flood-observation-product",
+    "step": "OUTPUT",
+    "title": "Flood observation product",
+    "codes": [],
+    "rows": [
+      {
+        "label": "What it carries",
+        "body": "Not a yes/no map. Four things: probability per pixel, validity (was this pixel observable at all), uncertainty, and abstention — the right to say \"not sure here\" instead of guessing."
+      },
+      {
+        "label": "Why abstention matters",
+        "body": "A model that must answer everywhere is forced to guess in radar shadow and dense city. One that can decline gives a smaller, more trustworthy map."
+      }
+    ]
+  },
+  {
+    "id": "blocked-report-only-held-for-review",
+    "step": "FAIL PATH",
+    "title": "Blocked — report-only, held for review",
+    "codes": [],
+    "rows": [
+      {
+        "label": "What it means",
+        "body": "The work is not deleted or hidden. It is published, inspectable, and carries the named reason it was refused. It simply has no influence."
+      },
+      {
+        "label": "Why this is a feature",
+        "body": "Most rapid-mapping products handle limitations with a disclaimer printed after the recommendation. Here the limitation decides whether the recommendation can be made at all."
+      }
+    ]
+  },
+  {
+    "id": "exposure-road-risk-access-loss-equity-ga",
+    "step": "FIVE STEPS",
+    "title": "Exposure → Road risk → Access loss → Equity gap → FPPS",
+    "codes": [
+      {
+        "caption": "realpipeline/aggregate.py:157 — where AI output becomes a decision input, with both terms kept separate",
+        "tokens": [
+          [
+            "c",
+            "# observed = what the radar saw; prior = what the terrain implies"
+          ],
+          [
+            "",
+            "\nobserved = min(1.0, flooded_share / anchor.observed_saturation_share)\nprior    = float(np.clip(\n    0.5 + anchor.prior_gain * (susceptibility_mean - anchor.prior_reference_mean),\n    0.0, 1.0))\n\nfused = anchor.observed_weight * observed + anchor.prior_weight * prior\n"
+          ],
+          [
+            "k",
+            "return"
+          ],
+          [
+            "",
+            " round(float(np.clip(fused, 0.0, 1.0) * 100.0), 1), {\n    "
+          ],
+          [
+            "c",
+            "# the decomposition ships with the number, so a reader can see"
+          ],
+          [
+            "",
+            "\n    "
+          ],
+          [
+            "c",
+            "# WHICH signal drove the score instead of inferring it"
+          ],
+          [
+            "",
+            "\n    "
+          ],
+          [
+            "s",
+            "\"observed_term\""
+          ],
+          [
+            "",
+            ": round(observed, 4),\n    "
+          ],
+          [
+            "s",
+            "\"prior_term\""
+          ],
+          [
+            "",
+            ":    round(prior, 4),\n    "
+          ],
+          [
+            "s",
+            "\"observed_weight\""
+          ],
+          [
+            "",
+            ": anchor.observed_weight,\n    "
+          ],
+          [
+            "s",
+            "\"prior_weight\""
+          ],
+          [
+            "",
+            ":    anchor.prior_weight,\n}\n"
+          ]
+        ]
+      },
+      {
+        "caption": "src/floodguard/scoring.py:28 — the five published weights, re-weightable by design",
+        "tokens": [
+          [
+            "",
+            "DEFAULT_WEIGHTS: dict[str, float] = {\n    "
+          ],
+          [
+            "s",
+            "\"flood_likelihood_0_100\""
+          ],
+          [
+            "",
+            ":      0.30,\n    "
+          ],
+          [
+            "s",
+            "\"exposure_0_100\""
+          ],
+          [
+            "",
+            ":              0.25,\n    "
+          ],
+          [
+            "s",
+            "\"access_gap_0_100\""
+          ],
+          [
+            "",
+            ":            0.20,\n    "
+          ],
+          [
+            "s",
+            "\"road_criticality_0_100\""
+          ],
+          [
+            "",
+            ":      0.15,\n    "
+          ],
+          [
+            "s",
+            "\"vulnerability_context_0_100\""
+          ],
+          [
+            "",
+            ": 0.10,\n}\n"
+          ]
+        ]
+      },
+      {
+        "caption": "src/floodguard/scoring.py:185 — the fail-closed rule, in two lines",
+        "tokens": [
+          [
+            "k",
+            "def"
+          ],
+          [
+            "",
+            " assign_action_class(row: pd.Series) -> str:\n    "
+          ],
+          [
+            "c",
+            "\"\"\"Assign the A-E action class for a scored subdistrict row.\"\"\""
+          ],
+          [
+            "",
+            "\n    confidence = str(row["
+          ],
+          [
+            "s",
+            "\"confidence_class\""
+          ],
+          [
+            "",
+            "]).lower()\n\n    "
+          ],
+          [
+            "c",
+            "# LOW CONFIDENCE WINS OVER A HIGH SCORE. This is the whole policy."
+          ],
+          [
+            "",
+            "\n    "
+          ],
+          [
+            "k",
+            "if"
+          ],
+          [
+            "",
+            " confidence == "
+          ],
+          [
+            "s",
+            "\"low\""
+          ],
+          [
+            "",
+            " "
+          ],
+          [
+            "k",
+            "or"
+          ],
+          [
+            "",
+            " float(row["
+          ],
+          [
+            "s",
+            "\"fpps_0_100\""
+          ],
+          [
+            "",
+            "]) < 35:\n        "
+          ],
+          [
+            "k",
+            "return"
+          ],
+          [
+            "",
+            " "
+          ],
+          [
+            "s",
+            "\"E\""
+          ],
+          [
+            "",
+            "\n\n    exposure         = float(row["
+          ],
+          [
+            "s",
+            "\"exposure_0_100\""
+          ],
+          [
+            "",
+            "])\n    access_gap       = float(row["
+          ],
+          [
+            "s",
+            "\"access_gap_0_100\""
+          ],
+          [
+            "",
+            "])\n    road_criticality = float(row["
+          ],
+          [
+            "s",
+            "\"road_criticality_0_100\""
+          ],
+          [
+            "",
+            "])\n\n    "
+          ],
+          [
+            "k",
+            "if"
+          ],
+          [
+            "",
+            " exposure >= 70 "
+          ],
+          [
+            "k",
+            "and"
+          ],
+          [
+            "",
+            " access_gap >= 70:\n        "
+          ],
+          [
+            "k",
+            "return"
+          ],
+          [
+            "",
+            " "
+          ],
+          [
+            "s",
+            "\"A\""
+          ],
+          [
+            "",
+            "          "
+          ],
+          [
+            "c",
+            "# protect lives now"
+          ],
+          [
+            "",
+            "\n    "
+          ],
+          [
+            "k",
+            "if"
+          ],
+          [
+            "",
+            " road_criticality >= 75 "
+          ],
+          [
+            "k",
+            "and"
+          ],
+          [
+            "",
+            " access_gap >= 55:\n        "
+          ],
+          [
+            "k",
+            "return"
+          ],
+          [
+            "",
+            " "
+          ],
+          [
+            "s",
+            "\"B\""
+          ],
+          [
+            "",
+            "          "
+          ],
+          [
+            "c",
+            "# keep routes open"
+          ],
+          [
+            "",
+            "\n"
+          ]
+        ]
+      }
+    ],
+    "viz": {
+      "src": "exposure-road-risk-access-loss-equity-ga.svg",
+      "w": 640,
+      "h": 250,
+      "caption": "The two halves of the scoring policy in one picture: a published, re-weightable index on top, and the override that outranks it below. Flood likelihood carries the largest weight, which is precisely why the AI feeding it must pass the gate first.",
+      "alt": "The five FPPS weights drawn to scale, and the low-confidence override that sends Ko Chang's score of 44 to class E"
+    },
+    "rows": [
+      {
+        "label": "Exposure",
+        "body": "How many people are under the water. The beginning of the analysis, not the end of it."
+      },
+      {
+        "label": "Road risk",
+        "body": "Which roads likely became impassable, scored from flood evidence, road class and bridge context. An estimate, never a report of an actual closure."
+      },
+      {
+        "label": "Access loss",
+        "body": "Shortest-path routing run twice — normal network, then disrupted network. A person counts as losing access only if they could reach a hospital or shelter within 15/30/60 minutes before, and cannot after."
+      },
+      {
+        "label": "Equity gap",
+        "body": "The signature output. Compare the access-loss rate of a declared vulnerable group against a comparison group: the difference in percentage points and the ratio. Today the Mae Sai group split is a terrain/remoteness proxy — not age-resolved, and must not be described as older-adult vulnerability."
+      },
+      {
+        "label": "FPPS and A–E",
+        "body": "One score from five weighted components, mapped to five action classes. Low confidence forces Class E regardless of how high the number is."
+      }
+    ]
+  },
+  {
+    "id": "three-surfaces-one-evidence-context",
+    "step": "OUTPUTS",
+    "title": "Three surfaces, one evidence context",
+    "codes": [],
+    "rows": [
+      {
+        "label": "Public",
+        "body": "Thai-first preparedness for residents. Reduced evidence set, unverified facilities withheld, no evacuation instructions issued."
+      },
+      {
+        "label": "Command",
+        "body": "Government and rescue. Priority ranking with score components and confidence on every rank; candidate road risk always labelled separately from confirmed conditions."
+      },
+      {
+        "label": "Studio",
+        "body": "Reviewers and technical staff. Gate status with exact block reasons, run receipts, and whether each artifact may feed the decision layer."
+      },
+      {
+        "label": "The key point",
+        "body": "Three controlled interpretations of one evidence context — enforced in code, not in layout. Not one dashboard in three skins."
+      }
+    ]
+  },
+  {
+    "id": "what-these-numbers-do-and-do-not-say",
+    "step": "READ IT",
+    "title": "What these numbers do and do not say",
+    "codes": [],
+    "rows": [
+      {
+        "label": "Trees win",
+        "body": "XGBoost and Random Forest are near-identical and beat the Otsu baseline by 0.64 IoU. They are also well calibrated (ECE ~0.04): when they say 70%, they mean it."
+      },
+      {
+        "label": "The baseline’s shape",
+        "body": "Otsu has precision 0.884 but recall 0.241 — it finds only the most obvious water, and is right when it speaks. That is a defensible baseline, not a broken one."
+      },
+      {
+        "label": "Deep learning loses",
+        "body": "U-Net trails badly on SAR alone (0.370) and improves a lot with terrain context (0.703), but still loses to the trees. This matches Li et al. (2023), which the proposal already cites. Say so plainly."
+      },
+      {
+        "label": "What it is not",
+        "body": "These are benchmark numbers. Every Mae Sai artifact still carries evidence_tier: candidate, can_feed_decision_layer: false, and the explicit assumption that no qualified Thai reference exists, so no Mae Sai accuracy is claimed."
+      }
+    ]
+  },
+  {
+    "id": "the-evidence-and-promotion-gate",
+    "step": "GATE",
+    "title": "The evidence and promotion gate",
+    "codes": [],
+    "viz": {
+      "src": "the-evidence-and-promotion-gate.svg",
+      "w": 640,
+      "h": 250,
+      "caption": "The current Mae Sai state, drawn honestly. Two criteria pass, three do not, and one failure is enough — there is no partial credit and no \"use it with a caveat\" path.",
+      "alt": "Five promotion criteria feed one gate; four pass but the reference requirement fails, so the flood map is routed to blocked rather than into the decision layer"
+    }
+  }
+]

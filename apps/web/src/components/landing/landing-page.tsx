@@ -5,6 +5,8 @@ import caseRecord from "../../../public/offline-demo/mae-sai/manifest.json";
 import { LandingNavigation } from "./landing-nav.client";
 import { AccessComparison, ConnectionDiagram, IllustrativeFinding } from "./illustrative-finding";
 import NarrativeExperience from "./narrative-experience.client";
+import { PipelineDiagram } from "./pipeline-diagram";
+import { PipelineDetail } from "./pipeline-detail";
 import styles from "./landing.module.css";
 
 const workspaceIcons = [House, Map, Microscope];
@@ -68,6 +70,90 @@ export function LandingPage() {
       <div className={styles.sectionIntro}><p className={styles.eyebrow}>{copy.method.eyebrow}</p><h2 id="method-heading">{copy.method.heading}</h2><p>{copy.method.body}</p></div>
       <ol className={styles.methodSteps}>{copy.method.steps.map((step, index) => <li key={step.title}><span className={styles.stepNumber}>0{index + 1}</span><h3>{step.title}</h3><p>{step.body}</p></li>)}</ol>
       <div className={styles.methodFooter}><p>{copy.method.note}</p><a className={styles.textLink} href="/command/">Explore the planning demo<ArrowUpRight size={18}/></a></div>
+    </div></section>
+
+    <section className={styles.inputs} id="inputs" aria-labelledby="inputs-heading"><div className={styles.container}>
+      <div className={styles.sectionIntro}><p className={styles.eyebrow}>{copy.inputs.eyebrow}</p><h2 id="inputs-heading">{copy.inputs.heading}</h2><p>{copy.inputs.body}</p></div>
+      {copy.inputs.groups.map(group => <div className={styles.inputGroup} key={group.id}>
+        <h3 className={styles.inputGroupLabel}>{group.label}</h3>
+        <ul className={styles.inputList}>
+          {copy.inputs.items.filter(item => item.group === group.id).map(item => <li key={item.id} className={styles.inputCard} data-input-status={item.status}>
+            <span className={styles.stepNumber}>{item.number}</span>
+            <div>
+              <h4>{item.title}</h4>
+              <p className={styles.inputLayers}>{item.layers}</p>
+              <p className={styles.inputPlain}>{item.plain}</p>
+              <ul className={styles.inputFigures}>
+                {item.figures.map(figure => <li key={figure.src}>
+                  <figure>
+                    <Image src={`/landing/inputs/${figure.src}.webp`} alt={figure.alt} width={figure.w} height={figure.h} sizes="(max-width: 680px) 90vw, 300px" loading="lazy"/>
+                    <figcaption>{figure.label}</figcaption>
+                  </figure>
+                </li>)}
+              </ul>
+              <p className={styles.inputSource}>{item.figure_source}</p>
+              <details className={styles.inputTechnical}><summary>Role in the workflow</summary><p>{item.technical}</p></details>
+            </div>
+            <span className={styles.inputStatus}>{item.status_label}</span>
+          </li>)}
+        </ul>
+      </div>)}
+      <p className={styles.methodFooter}>{copy.inputs.note}</p>
+      <p className={styles.inputFigureNote}>{copy.inputs.figure_note}</p>
+    </div></section>
+
+    <section className={styles.pipeline} id="pipeline" aria-labelledby="pipeline-heading"><div className={styles.container}>
+      <div className={styles.sectionIntro}><p className={styles.eyebrow}>{copy.pipeline.eyebrow}</p><h2 id="pipeline-heading">{copy.pipeline.heading}</h2><p>{copy.pipeline.body}</p></div>
+
+      <PipelineDiagram />
+
+      <div className={styles.pipelineLanes}>
+        {copy.pipeline.lanes.map(lane => <div className={styles.pipelineLane} key={lane.id}><h3>{lane.label}</h3><p>{lane.body}</p></div>)}
+      </div>
+
+      <div className={styles.pipelineBlock}>
+        <h3>{copy.pipeline.models.heading}</h3>
+        <p>{copy.pipeline.models.body}</p>
+        <div className={styles.tableScroll}><table className={styles.modelTable}>
+          <thead><tr>{copy.pipeline.models.columns.map(column => <th key={column} scope="col">{column}</th>)}</tr></thead>
+          <tbody>{copy.pipeline.models.rows.map(row => <tr key={row.name} data-best={row.status === "best-on-rtc" ? "rtc" : row.status === "best-on-grd" ? "grd" : undefined}>
+            <td><span className={styles.modelName}>{row.name}</span></td>
+            <td><span className={styles.modelWhat}>{row.note}</span></td>
+            <td>{row.grd}</td>
+            <td>{row.rtc}</td>
+          </tr>)}</tbody>
+        </table></div>
+        <p className={styles.modelNote}>{copy.pipeline.models.caption}</p>
+        <p className={styles.modelNote}>{copy.pipeline.models.spread}</p>
+      </div>
+
+      <div className={styles.pipelineBlock}>
+        <h3>{copy.pipeline.gate.heading}</h3>
+        <p>{copy.pipeline.gate.body}</p>
+        <ul className={styles.gateList}>{copy.pipeline.gate.criteria.map(criterion => <li key={criterion.label} data-met={String(criterion.met)}>
+          <span className={styles.gateMark} aria-hidden="true">{criterion.met ? "✓" : "✕"}</span>
+          <span><strong>{criterion.label}</strong><small>{criterion.detail}</small></span>
+        </li>)}</ul>
+        <p className={styles.gateVerdict}>{copy.pipeline.gate.verdict}</p>
+      </div>
+
+      <div className={styles.pipelineBlock}>
+        <h3>{copy.pipeline.outcome.heading}</h3>
+        <p>{copy.pipeline.outcome.body}</p>
+        <div className={styles.outcomeCard}>
+          <div><p className={styles.eyebrow}>{copy.pipeline.outcome.example_label}</p><span className={styles.outcomeScore}>{copy.pipeline.outcome.example_score}</span></div>
+          <ArrowRight size={20} className={styles.outcomeArrow} aria-hidden="true"/>
+          <span className={styles.outcomeClass}>{copy.pipeline.outcome.example_class}</span>
+          <p className={styles.outcomeNote}>{copy.pipeline.outcome.example_note}</p>
+        </div>
+        <p className={styles.modelNote}>{copy.pipeline.note}</p>
+      </div>
+
+      <div className={styles.pipelineBlock}>
+        <h3>Look inside any stage</h3>
+        <p>Each stage below opens to the diagram that explains it and the actual source lines that implement it. Nothing here is a mock-up.</p>
+        <PipelineDetail />
+      </div>
     </div></section>
 
     <section className={styles.workspaces} id="workspaces" aria-labelledby="workspace-heading">

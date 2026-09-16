@@ -100,7 +100,7 @@ function getConnection(): Connection | undefined {
 function getMotionSnapshot(): string {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ? "reduced"
-    : window.innerWidth < 1100 || window.innerHeight < 700
+    : window.innerWidth < 1100 || window.innerHeight < 560
       ? "compact"
       : getConnection()?.saveData
         ? "data-saving"
@@ -313,20 +313,32 @@ export default function NarrativeExperience({
   useEffect(() => {
     if (!enhanced || !stage.current || !root.current) return;
     const element = root.current;
+    const opening = element.querySelector<HTMLElement>("[data-story-opening]");
     let frame = 0;
     const updateInset = () => {
       frame = 0;
       // The sticky stage initially sits below the header, outside viewport zero.
       element.style.setProperty("--stage-viewport-offset", `${Math.max(0, stage.current?.getBoundingClientRect().top ?? 0)}px`);
+      // Reveal the stage from the opening's *measured* height. A fixed clamp
+      // cannot know how tall the hero actually is once type wraps, so a short
+      // viewport or a long translation would otherwise overlap copy onto art.
+      if (opening) {
+        element.style.setProperty("--opening-height", `${Math.ceil(opening.getBoundingClientRect().height)}px`);
+      }
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(updateInset); };
     updateInset();
+    // Fonts, wrapping and zoom all change the opening's height after first paint.
+    const openingResize = opening && "ResizeObserver" in window ? new ResizeObserver(schedule) : undefined;
+    openingResize?.observe(opening as HTMLElement);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
       cancelAnimationFrame(frame);
+      openingResize?.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
+      element.style.removeProperty("--opening-height");
       element.style.removeProperty("--stage-viewport-offset");
     };
   }, [enhanced]);

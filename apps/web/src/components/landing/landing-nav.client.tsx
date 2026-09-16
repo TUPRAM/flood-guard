@@ -66,14 +66,14 @@ export function LandingNavigation() {
   return <header className={styles.header}>
     <a className={styles.brand} href="#hero" aria-label="FloodGuard home"><span className={styles.publicBrandMark} data-landing-brand-mark aria-hidden="true" /><Waves size={28} strokeWidth={1.7} /><span>FloodGuard<span className={styles.brandDot}>.</span></span></a>
     <nav className={styles.desktopNav} aria-label="Landing navigation">
-      <a href="#place">The story</a><a href="#method">How it works</a>
+      <a href="#place">The story</a><a href="#method">How it works</a><a href="#inputs">Data</a><a href="#pipeline">Pipeline</a>
       <details ref={workspaceMenu} className={styles.workspaceMenu}><summary>Workspaces</summary><div>{workspaces.map(([label, href]) => <a key={href} href={href}>{label}<ArrowUpRight size={16} /></a>)}</div></details>
       <a href="#case">Evidence</a>
     </nav>
     <div className={styles.headerActions}><span className={styles.language} lang="en">EN</span><a className={styles.demoButton} href="/command/"><span className={styles.desktopDemo}>Planning demo</span><span className={styles.mobileDemo}>Demo</span><ArrowUpRight size={17} /></a></div>
     <details ref={menu} className={styles.mobileMenu}><summary aria-label="Open navigation menu"><Menu size={24} /></summary>
       <nav aria-label="Mobile navigation" onClick={(event) => { if ((event.target as Element).closest("a") && menu.current) menu.current.open = false; }}>
-        <a href="#place">The story</a><a href="#method">How it works</a><a href="#workspaces">Workspaces</a><a href="#case">Evidence</a>
+        <a href="#place">The story</a><a href="#method">How it works</a><a href="#inputs">Data</a><a href="#pipeline">Pipeline</a><a href="#workspaces">Workspaces</a><a href="#case">Evidence</a>
         {workspaces.map(([label, href]) => <a key={href} href={href}>Open {label}<ArrowUpRight size={18} /></a>)}<span>English</span>
       </nav>
     </details>

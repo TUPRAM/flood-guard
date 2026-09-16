@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 250" role="img" aria-label="Five promotion criteria feed one gate; four pass but the reference requirement fails, so the flood map is routed to blocked rather than into the decision layer">
+          <style>text{font-family:"Manrope Variable",system-ui,sans-serif;fill:#3D4E57}.lbl{font-size:12px}.sml{font-size:10.5px;fill:#64767E}.mono-t{font-family:ui-monospace,"IBM Plex Mono",monospace;font-size:11px}.hi{fill:#0C6A74}.warnt{fill:#8A4A44}</style><defs>
+            <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <polygon points="0,0 10,5 0,10" fill="currentColor"/>
+            </marker>
+          </defs>
+          <text class="sml hi" x="24" y="40">✓ provenance verified</text>
+          <text class="sml hi" x="24" y="62">✓ licence cleared for processing</text>
+          <text class="sml warnt" x="24" y="84">✕ qualified reference mask</text>
+          <text class="sml warnt" x="24" y="106">✕ frozen holdout + calibration</text>
+          <text class="sml warnt" x="24" y="128">✕ blind review + adjudication</text>
+
+          <line x1="212" y1="84" x2="268" y2="110" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar3)"/>
+
+          <polygon points="340,60 420,110 340,160 260,110" fill="none" stroke="#9C6414" stroke-width="2.2"/>
+          <text class="lbl" x="340" y="106" text-anchor="middle" fill="#9C6414">promotion</text>
+          <text class="lbl" x="340" y="122" text-anchor="middle" fill="#9C6414">gate</text>
+
+          <line x1="420" y1="96" x2="500" y2="62" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar3)"/>
+          <text class="sml" x="448" y="58">pass</text>
+          <rect x="500" y="36" width="122" height="44" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+          <text class="sml" x="561" y="56" text-anchor="middle" opacity="0.7">decision layer</text>
+          <text class="sml" x="561" y="70" text-anchor="middle" opacity="0.7">(not taken today)</text>
+
+          <line x1="420" y1="126" x2="500" y2="162" stroke="#8A4A44" stroke-width="2.4" marker-end="url(#ar3)"/>
+          <text class="sml warnt" x="440" y="158">fail</text>
+          <rect x="500" y="140" width="122" height="46" fill="#F4E5E3" stroke="#8A4A44" stroke-width="1.8"/>
+          <text class="lbl warnt" x="561" y="160" text-anchor="middle">BLOCKED</text>
+          <text class="sml warnt" x="561" y="176" text-anchor="middle">report-only</text>
+
+          <text class="lbl" x="24" y="220">Blocked is not hidden: the map stays published and inspectable,</text>
+          <text class="lbl" x="24" y="238">with the named reason attached — it simply has zero influence.</text>
+        </svg>

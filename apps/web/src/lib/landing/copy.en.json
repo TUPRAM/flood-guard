@@ -8,90 +8,465 @@
   },
   "hero": {
     "eyebrow": "FLOODGUARD / FLOOD IMPACT PLANNING",
-    "heading_lines": ["See the flood.", "Understand who may be cut off."],
-    "body": "Connect flood evidence with communities, roads, and essential services to examine potential access disruption and planning priorities.",
-    "primary": { "label": "Explore the planning demo", "href": "/command/" },
-    "secondary": { "label": "How it works", "href": "#place" },
+    "heading_lines": [
+      "See the flood.",
+      "Understand who may be cut off."
+    ],
+    "body": "A flooded road can cut a whole neighbourhood off from its clinic — even when not one house takes on water. FloodGuard puts the water, the roads and the people who depend on them in the same picture.",
+    "primary": {
+      "label": "Explore the planning demo",
+      "href": "/command/"
+    },
+    "secondary": {
+      "label": "How it works",
+      "href": "#place"
+    },
     "scope": "Historical planning prototype. Not a live warning or evacuation service.",
-    "scene_note": "Mae Sai-inspired illustration. Inferred geography, not a verified reconstruction."
+    "scene_note": "A Mae Sai-inspired illustration. The geography is inferred, not a verified reconstruction."
   },
   "story": {
     "chapters": [
       {
-        "id": "place", "number": "01", "label": "THE EVERYDAY CONNECTION", "short_label": "Connection", "asset": "connected",
-        "heading": "A familiar journey. An essential connection.",
-        "body": "A cluster of homes depends on the road to an essential service. Follow the blue connection through this one neighborhood.",
-        "callout": "Synthetic neighborhood and network. Not a surveyed route or travel advice.",
+        "id": "place",
+        "number": "01",
+        "label": "THE EVERYDAY CONNECTION",
+        "short_label": "Connection",
+        "asset": "connected",
+        "heading": "Every neighbourhood has one road that matters most.",
+        "body": "These homes reach their clinic one way: along this street. Follow the blue line — on an ordinary day, that is the whole journey.",
+        "callout": "This neighbourhood and its roads are an illustration, not a real place. Not a surveyed route, and not travel advice.",
         "poster_alt": "A dry home cluster connects by a blue line along local streets to an essential-service building in a Mae Sai-inspired district."
       },
       {
-        "id": "flood", "number": "02", "label": "FLOOD EVIDENCE", "short_label": "Flood evidence", "asset": "flood",
-        "heading": "The footprint is only the starting point.",
-        "body": "Water overlaps part of the connection. The homes and the service remain outside the illustrated flood footprint. Overlap raises a question; it does not confirm a road closure.",
-        "callout": "Illustrative flooding, not measured depth, a forecast, or current conditions.",
+        "id": "flood",
+        "number": "02",
+        "label": "FLOOD EVIDENCE",
+        "short_label": "Flood evidence",
+        "asset": "flood",
+        "heading": "The water arrives. The houses stay dry.",
+        "body": "Flooding covers one stretch of that street. No home here is under water, and neither is the clinic — so on a flood map, nothing looks wrong. Water on a road raises a question. It does not prove the road is shut.",
+        "callout": "Illustrated flooding — not a measurement, not a forecast, and not current conditions.",
         "poster_alt": "Floodwater reaches a low part of the same road network while both the highlighted homes and service building remain outside the water."
       },
       {
-        "id": "access", "number": "03", "label": "A NETWORK CONSEQUENCE", "short_label": "Access", "asset": "access",
-        "heading": "A home can stay dry. And still lose access.",
-        "body": "Assume the marked link is disrupted. In this small example network, the connection to the service is no longer available. The flood footprint alone would not explain that consequence.",
-        "callout": "Assumed disruption, not a confirmed closure. Other roads and real conditions require verification.",
+        "id": "access",
+        "number": "03",
+        "label": "A NETWORK CONSEQUENCE",
+        "short_label": "Access",
+        "asset": "access",
+        "heading": "You can stay dry and still be cut off.",
+        "body": "Suppose that stretch is impassable. There is no second route out of here, so the clinic is now unreachable — for people whose houses never got wet. This is the part a flood map alone will never show you.",
+        "callout": "We assumed this road is cut. Nobody has confirmed it. Other routes and real conditions still need checking.",
         "poster_alt": "The same flooded district with an amber dashed interruption on one assumed disrupted link in the blue home-to-service connection."
       },
       {
-        "id": "finding", "number": "04", "label": "AN EXPLAINABLE FINDING", "short_label": "Finding", "asset": "finding",
-        "heading": "Explain the finding.",
-        "body": "A useful planning result makes its reason, uncertainty, and next review step visible together.",
-        "callout": "Illustrative finding, not an analysis of a real household or an official recommendation.",
+        "id": "finding",
+        "number": "04",
+        "label": "AN EXPLAINABLE FINDING",
+        "short_label": "Finding",
+        "asset": "finding",
+        "heading": "Show the working, not just the answer.",
+        "body": "A number on its own is hard to trust and impossible to argue with. Every result here carries the reason behind it, how sure we are, and what somebody should go and verify.",
+        "callout": "An illustration, not a real household, and not an official recommendation.",
         "poster_alt": "The flooded neighborhood and assumed interrupted connection remain visible with surrounding context subdued for evidence review."
       }
     ]
   },
   "method": {
     "eyebrow": "THE METHOD",
-    "heading": "From a footprint to a planning question.",
-    "body": "FloodGuard brings evidence and local dependencies into the same view. It keeps source observations, modeled consequences, and human decisions distinct.",
+    "heading": "How this actually works",
+    "body": "FloodGuard keeps three things firmly apart: what a satellite observed, what a model worked out from it, and what a person decided to do. Blurring those is how a rough estimate ends up sounding like a fact.",
     "steps": [
-      { "title": "Establish the evidence", "body": "Check source dates, coverage, context, and confidence. An image or map is evidence with limits." },
-      { "title": "Examine dependencies", "body": "Relate the flood footprint to communities, roads, and essential services. Test what the available network can support." },
-      { "title": "Explain the priority", "body": "Expose the reason and uncertainty behind a result, then identify what needs verification before action." }
+      {
+        "title": "Start with what we can see",
+        "body": "Where did this image come from, when was it taken, and how much of the area does it actually cover? Every source has limits. We write them down instead of hoping nobody asks."
+      },
+      {
+        "title": "Follow the roads",
+        "body": "Which homes, clinics and shelters depend on the roads the water touched? We ask what is still reachable — not just what is wet."
+      },
+      {
+        "title": "Show the reasoning",
+        "body": "Every priority says why it ranked where it did, how confident we are, and what still needs checking before anyone acts on it."
+      }
     ],
     "note": "The animation is a controlled example. Interactive scenario comparison is not included in the current published Planning view."
+  },
+  "inputs": {
+    "eyebrow": "THE INPUTS",
+    "heading": "Five things have to line up before any of this means anything.",
+    "body": "Three tell us where the water went. Two tell us who that water strands. We list what each one is for, where it comes from, and whether it is wired into the current demonstration or still planned — because a data source nobody can check is not evidence.",
+    "groups": [
+      {
+        "id": "evidence",
+        "label": "Flood evidence"
+      },
+      {
+        "id": "context",
+        "label": "Decision context"
+      }
+    ],
+    "items": [
+      {
+        "id": "sar",
+        "number": "01",
+        "group": "evidence",
+        "title": "Sentinel-1 radar, before and after",
+        "layers": "VV + VH polarisation · pre 22 Aug 2024, post 15 Sep 2024 (23:16 UTC)",
+        "status": "in_use",
+        "status_label": "In the current run",
+        "plain": "Radar takes a before-and-after picture of the ground and sees straight through monsoon cloud. Water is smooth, so it bounces the pulse away instead of back — which is how newly flooded ground shows up dark.",
+        "technical": "Dual-polarisation acquisitions matched to the same relative orbit. Water reflects radar specularly away from the antenna, dropping backscatter intensity; differencing matched orbits isolates pixels with newly standing or residual surface water.",
+        "figures": [
+          {
+            "src": "sar-pre",
+            "w": 1400,
+            "h": 883,
+            "label": "Pre-event · 22 Aug 2024",
+            "alt": "Sentinel-1 VH backscatter over the Mae Sai area before the flood. Dark tones are smooth water surfaces, mid tones vegetation, bright tones steep slopes."
+          },
+          {
+            "src": "sar-post",
+            "w": 1400,
+            "h": 884,
+            "label": "Post-event · 15 Sep 2024",
+            "alt": "The same Sentinel-1 VH scene after the flood, showing where backscatter has dropped compared with the pre-event acquisition."
+          }
+        ],
+        "figure_source": "Sentinel-1 (ESA Copernicus) · basemap © Google"
+      },
+      {
+        "id": "terrain",
+        "number": "02",
+        "group": "evidence",
+        "title": "Terrain — elevation, slope, HAND",
+        "layers": "Copernicus DEM GLO-30 · slope · Height Above Nearest Drainage",
+        "status": "in_use",
+        "status_label": "In the current run",
+        "plain": "A 3D read of the landscape, so the system knows water runs downhill. It is the sanity check that stops a radar shadow on a steep mountain being called a flood.",
+        "technical": "Radar shadow in steep topography produces low backscatter that mimics water. Slope and HAND impose physical constraints, masking steep terrain and elevations where standing water cannot pool.",
+        "figures": [
+          {
+            "src": "terrain-dem",
+            "w": 1400,
+            "h": 1026,
+            "label": "Elevation (DEM)",
+            "alt": "Copernicus GLO-30 elevation model of the study area, with river valleys low and surrounding ranges high."
+          },
+          {
+            "src": "terrain-hand",
+            "w": 1400,
+            "h": 1039,
+            "label": "Height Above Nearest Drainage",
+            "alt": "HAND surface derived from the elevation model, showing how far each point sits above the channel it drains into."
+          }
+        ],
+        "figure_source": "Copernicus DEM GLO-30 · HAND derived · basemap © Google"
+      },
+      {
+        "id": "hydromet",
+        "number": "03",
+        "group": "evidence",
+        "title": "Rainfall and permanent water",
+        "layers": "JRC Global Surface Water (in use) · ERA5-Land / CHIRPS rainfall (planned)",
+        "status": "partial",
+        "status_label": "Partly wired",
+        "plain": "The permanent-water mask removes rivers and lakes that are always wet — without it we would report the Mae Sai river as a disaster on every single run. Rainfall before the event tells us whether a detection is plausible.",
+        "technical": "The permanent-water baseline masks existing rivers, lakes and reservoirs so only temporary inundation is mapped. Rainfall accumulation characterises antecedent soil wetness ahead of the overpass; the gridded rainfall layer is specified but not yet bound to the published run.",
+        "figures": [
+          {
+            "src": "water-permanent",
+            "w": 1164,
+            "h": 906,
+            "label": "Permanent water",
+            "alt": "JRC Global Surface Water showing water bodies present in the long-term record."
+          },
+          {
+            "src": "water-network",
+            "w": 1050,
+            "h": 1508,
+            "label": "Water bodies and waterways",
+            "alt": "Mapped rivers, channels and water bodies across the study area."
+          },
+          {
+            "src": "rainfall",
+            "w": 1400,
+            "h": 991,
+            "label": "Rainfall",
+            "alt": "Gridded precipitation accumulation over the study area ahead of the satellite overpass."
+          }
+        ],
+        "figure_source": "JRC Global Surface Water (Pekel et al. 2016) · rainfall: ERA5-Land / CHIRPS · basemap © Google"
+      },
+      {
+        "id": "roads",
+        "number": "04",
+        "group": "context",
+        "title": "Roads, shelters and hospitals",
+        "layers": "OpenStreetMap centrelines and facilities (in use) · DOH / DRR official road data (planned)",
+        "status": "partial",
+        "status_label": "Open data now, official data planned",
+        "plain": "Laying the flood over the street network is what turns a wet map into a reachability question: which roads are cut, and how much longer it takes a stranded household to reach help.",
+        "technical": "Provides the network graph for accessibility analysis. Intersecting the flood layer with road segments identifies candidate impassable links and travel-time increases to critical facilities. Road status is an estimate, never a confirmed closure.",
+        "figures": [
+          {
+            "src": "roads",
+            "w": 1400,
+            "h": 751,
+            "label": "Road network",
+            "alt": "Road centrelines across the study area, forming the network graph used for routing."
+          },
+          {
+            "src": "shelters",
+            "w": 1400,
+            "h": 875,
+            "label": "Shelters",
+            "alt": "Mapped evacuation shelter locations across the study area."
+          },
+          {
+            "src": "hospitals",
+            "w": 1400,
+            "h": 861,
+            "label": "Health facilities",
+            "alt": "Mapped hospital and health facility locations across the study area."
+          }
+        ],
+        "figure_source": "OpenStreetMap contributors · basemap © Google"
+      },
+      {
+        "id": "population",
+        "number": "05",
+        "group": "context",
+        "title": "Who lives there",
+        "layers": "WorldPop 100 m total population (in use) · WorldPop age–sex cohorts (planned)",
+        "status": "planned",
+        "status_label": "Age breakdown not yet in use",
+        "plain": "Exposure counts are only half the story — the same number of people can mean very different things depending on who they are. Today we use total population. Age-resolved counts are the committed upgrade, and until they land we will not describe any result as an older-adult finding.",
+        "technical": "Gridded residential population quantifies demographic exposure inside the flooded footprint and isolated zones. Age-bracket counts are required for the vulnerability and evacuation-equity indicators; the current group split is a terrain and remoteness proxy, not an age cohort.",
+        "figures": [
+          {
+            "src": "population",
+            "w": 1392,
+            "h": 1200,
+            "label": "Residential population density",
+            "alt": "Gridded residential population over the study area, with denser settlement shown in brighter tones."
+          }
+        ],
+        "figure_source": "WorldPop · basemap © Google"
+      }
+    ],
+    "note": "Every layer carries its source, its date and its limits. Where a source is not yet bound to the published run we say so here rather than implying it is.",
+    "figure_note": "Screen captures from the working analysis environment, not production outputs. Basemap imagery © Google; overlay datasets are credited per figure."
+  },
+  "pipeline": {
+    "eyebrow": "THE PIPELINE",
+    "heading": "Detection and decision are separated by one hard gate.",
+    "body": "Three inputs become a flood map. That map then faces a single yes-or-no question: is it allowed to influence anything? Everything to the right of that gate is rule-based and reproducible by hand — because a recommendation that sends a rescue team has to be checkable by a person.",
+    "lanes": [
+      {
+        "id": "evidence",
+        "label": "Flood evidence",
+        "body": "Radar, terrain and water context are aligned onto one grid, then three methods compete to turn them into a flood probability."
+      },
+      {
+        "id": "decision",
+        "label": "Protected decision layer",
+        "body": "Exposure, road risk, access loss, the equity gap and the priority score. Deterministic: the same inputs always give the same answer."
+      }
+    ],
+    "models": {
+      "heading": "Three ways to find the water",
+      "body": "Each is scored on a public benchmark of 18 flood events, with three events held back and opened once.",
+      "columns": [
+        "Method",
+        "What it does",
+        "Benchmark IoU",
+        "On our Mae Sai product"
+      ],
+      "rows": [
+        {
+          "name": "Change detection",
+          "note": "Subtracts before from after in decibels. No training, fully transparent.",
+          "grd": "0.233",
+          "rtc": "0.032",
+          "status": "baseline"
+        },
+        {
+          "name": "XGBoost / Random Forest",
+          "note": "Tree ensembles combining radar change with terrain and land cover.",
+          "grd": "0.868",
+          "rtc": "0.464",
+          "status": "best-on-grd"
+        },
+        {
+          "name": "U-Net",
+          "note": "Pixel-by-pixel segmentation that learns shape and texture.",
+          "grd": "0.370",
+          "rtc": "0.493",
+          "status": "best-on-rtc"
+        }
+      ],
+      "caption": "IoU on the benchmark's held-out events. The two columns are different satellite products — we train on GRD and our Mae Sai run uses RTC, and the ranking reverses between them. Neither column is a Mae Sai accuracy.",
+      "spread": "Per-event scores ranged 0.24 to 0.90 across the three held-out countries. We report the spread rather than the average, because the average hides it."
+    },
+    "gate": {
+      "heading": "One question, no partial credit",
+      "body": "A flood map does not reach the decision layer because it exists. It must pass every one of these. A failure produces a blocked record — still published, still inspectable, with the reason attached — and it changes nothing.",
+      "criteria": [
+        {
+          "label": "Provenance verified",
+          "met": true,
+          "detail": "Which scenes, which dates, which processing run."
+        },
+        {
+          "label": "Licence cleared for processing",
+          "met": true,
+          "detail": "We may use these sources for this purpose."
+        },
+        {
+          "label": "Qualified reference mask",
+          "met": false,
+          "detail": "No rights-cleared, event-aligned Thai reference exists yet."
+        },
+        {
+          "label": "Frozen hold-out and calibration",
+          "met": false,
+          "detail": "Cannot run without an approved reference to score against."
+        },
+        {
+          "label": "Blind review and adjudication",
+          "met": false,
+          "detail": "Requires a four-person review campaign."
+        }
+      ],
+      "verdict": "Mae Sai fails this gate today. That is the system working, not a missing feature."
+    },
+    "outcome": {
+      "heading": "So what reaches a planner",
+      "body": "The priority score still runs — on the deterministic inputs it is allowed to use. Low confidence then overrides the number entirely: a sub-district can show a real score and still be filed as monitor-and-verify.",
+      "example_label": "Ko Chang, Mae Sai district",
+      "example_score": "44.0 / 100",
+      "example_class": "Class E — monitor and verify",
+      "example_note": "A score of 90 would land in exactly the same place while confidence stays low."
+    },
+    "note": "Benchmark figures are transcribed from study c2s-ms-20260915/r1. They describe public benchmark events, never Mae Sai."
   },
   "workspaces": {
     "eyebrow": "THE PRODUCT / AVAILABLE DEMO VIEWS",
     "heading": "One problem. Different responsibilities.",
     "body": "Prepare locally, inspect planning context, or question the evidence. These are parallel responsibilities, not an automatic dispatch chain.",
     "cards": [
-      { "id": "public", "name": "Prepare for your household.", "audience": "PUBLIC / HOUSEHOLDS AND COMMUNITIES", "body": "Build a local household plan, review preparedness actions, and keep area context close at hand.", "detail": "Actual Public view: an empty, unreviewed household-plan builder. Plans remain on the device; completion is not proof of safety.", "action": "Open Public preparedness", "href": "/public/", "image": "public-preparedness.webp", "width": 430, "height": 849, "alt": "Actual Public Prepare screen with a planning-area selector, an empty household plan, unreviewed status, and household-needs controls." },
-      { "id": "command", "name": "Inspect what needs attention.", "audience": "PLANNING / PLANNERS AND COORDINATORS", "body": "Compare historical area priorities, inspect road and facility context, and review the explanations and limits behind the results.", "detail": "Actual historical candidate view, with low-confidence results. Scenario comparison is unavailable in this published view; road and facility status still need verification.", "action": "Explore the planning demo", "href": "/command/", "image": "planning-priorities.webp", "width": 1440, "height": 1000, "alt": "Actual Planning workspace with ranked areas, a map, modeled summaries marked low confidence, and a disabled scenario selector." },
-      { "id": "studio", "name": "Ask what the evidence supports.", "audience": "STUDIO / RESEARCHERS AND REVIEWERS", "body": "Inspect source records, evidence context, evaluation gates, and unresolved limitations before treating a result as reliable.", "detail": "Actual Studio context: no qualified evaluation and no operational authorization. A traceable record is not the same as a validated result.", "action": "Inspect the evidence", "href": "/studio/", "image": "studio-evidence.webp", "width": 1400, "height": 980, "alt": "Actual Studio evidence context and decision matrix showing no qualified evaluation, blocked gates, and no operational authorization." }
+      {
+        "id": "public",
+        "name": "Prepare for your household.",
+        "audience": "PUBLIC / HOUSEHOLDS AND COMMUNITIES",
+        "body": "Build a local household plan, review preparedness actions, and keep area context close at hand.",
+        "detail": "Actual Public view: an empty, unreviewed household-plan builder. Plans remain on the device; completion is not proof of safety.",
+        "action": "Open Public preparedness",
+        "href": "/public/",
+        "image": "public-preparedness.webp",
+        "width": 430,
+        "height": 849,
+        "alt": "Actual Public Prepare screen with a planning-area selector, an empty household plan, unreviewed status, and household-needs controls."
+      },
+      {
+        "id": "command",
+        "name": "Inspect what needs attention.",
+        "audience": "PLANNING / PLANNERS AND COORDINATORS",
+        "body": "Compare historical area priorities, inspect road and facility context, and review the explanations and limits behind the results.",
+        "detail": "Actual historical candidate view, with low-confidence results. Scenario comparison is unavailable in this published view; road and facility status still need verification.",
+        "action": "Explore the planning demo",
+        "href": "/command/",
+        "image": "planning-priorities.webp",
+        "width": 1440,
+        "height": 1000,
+        "alt": "Actual Planning workspace with ranked areas, a map, modeled summaries marked low confidence, and a disabled scenario selector."
+      },
+      {
+        "id": "studio",
+        "name": "Ask what the evidence supports.",
+        "audience": "STUDIO / RESEARCHERS AND REVIEWERS",
+        "body": "Inspect source records, evidence context, evaluation gates, and unresolved limitations before treating a result as reliable.",
+        "detail": "Actual Studio context: no qualified evaluation and no operational authorization. A traceable record is not the same as a validated result.",
+        "action": "Inspect the evidence",
+        "href": "/studio/",
+        "image": "studio-evidence.webp",
+        "width": 1400,
+        "height": 980,
+        "alt": "Actual Studio evidence context and decision matrix showing no qualified evaluation, blocked gates, and no operational authorization."
+      }
     ]
   },
   "case": {
     "eyebrow": "SEPARATE FROM THE ILLUSTRATION / HISTORICAL EVIDENCE",
     "heading": "Mae Sai. A case you can inspect.",
     "body": "The neighborhood above explains a concept. This historical candidate package is a separate source-backed record with its own dates, derived results, and unresolved checks.",
-    "facts": [{ "label": "Study area", "value": "Mae Sai, Chiang Rai" }, { "label": "Event context", "value": "September 2024 / Historical" }],
+    "facts": [
+      {
+        "label": "Study area",
+        "value": "Mae Sai, Chiang Rai"
+      },
+      {
+        "label": "Event context",
+        "value": "September 2024 / Historical"
+      }
+    ],
     "evidence": [
-      { "label": "Available", "body": "Historical satellite context, reporting boundaries, population context, and mapped road and facility geometry.", "note": "Sources have different acquisition and extract dates." },
-      { "label": "Derived", "body": "Candidate area priorities and modeled access summaries, with source time, assumptions, and low-confidence qualifications.", "note": "Derived outputs are not observed road closures." },
-      { "label": "Needs verification", "body": "Qualified reference evaluation, segment-level flood intersection, facility roles and operation, and agency acceptance.", "note": "No operational authorization." }
+      {
+        "label": "Available",
+        "body": "Historical satellite context, reporting boundaries, population context, and mapped road and facility geometry.",
+        "note": "Sources have different acquisition and extract dates."
+      },
+      {
+        "label": "Derived",
+        "body": "Candidate area priorities and modeled access summaries, with source time, assumptions, and low-confidence qualifications.",
+        "note": "Derived outputs are not observed road closures."
+      },
+      {
+        "label": "Needs verification",
+        "body": "Qualified reference evaluation, segment-level flood intersection, facility roles and operation, and agency acceptance.",
+        "note": "No operational authorization."
+      }
     ]
   },
   "faq": {
     "heading": "Keep the limits in view.",
     "items": [
-      { "question": "Does this show current flood conditions?", "answer": "No. The story is synthetic and the Mae Sai package is historical. Check current DDPM and local-authority information for present conditions and instructions." },
-      { "question": "Is the highlighted road confirmed closed?", "answer": "No. One link is assumed disrupted to explain a network consequence. The illustration is not a route survey, flood forecast, or evacuation recommendation." },
-      { "question": "Can I change scenarios in the Planning demo?", "answer": "Not in the current published historical view. It provides ranked areas and qualified road, facility, and access context. The landing story illustrates a controlled network example separately." },
-      { "question": "Is the Mae Sai case validated for operational use?", "answer": "No. The current evidence context has no qualified evaluation or operational authorization. Studio makes the source records and unresolved gates inspectable." }
+      {
+        "question": "Does this show current flood conditions?",
+        "answer": "No. The story is synthetic and the Mae Sai package is historical. Check current DDPM and local-authority information for present conditions and instructions."
+      },
+      {
+        "question": "Is the highlighted road confirmed closed?",
+        "answer": "No. One link is assumed disrupted to explain a network consequence. The illustration is not a route survey, flood forecast, or evacuation recommendation."
+      },
+      {
+        "question": "Can I change scenarios in the Planning demo?",
+        "answer": "Not in the current published historical view. It provides ranked areas and qualified road, facility, and access context. The landing story illustrates a controlled network example separately."
+      },
+      {
+        "question": "Is the Mae Sai case validated for operational use?",
+        "answer": "No. The current evidence context has no qualified evaluation or operational authorization. Studio makes the source records and unresolved gates inspectable."
+      }
     ]
   },
   "footer": {
     "line": "Flood evidence. Connected decisions.",
     "scope": "Historical planning prototype. Not an official warning system or evacuation navigator.",
     "credit": "A project by Teambits.",
-    "links": [{ "label": "Public", "href": "/public/" }, { "label": "Planning", "href": "/command/" }, { "label": "Studio", "href": "/studio/" }]
+    "links": [
+      {
+        "label": "Public",
+        "href": "/public/"
+      },
+      {
+        "label": "Planning",
+        "href": "/command/"
+      },
+      {
+        "label": "Studio",
+        "href": "/studio/"
+      }
+    ]
   }
 }

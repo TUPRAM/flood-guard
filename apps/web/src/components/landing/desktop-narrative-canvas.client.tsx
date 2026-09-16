@@ -119,11 +119,30 @@ function Scene({ store, onReady, onPending, onFailure, active, host }: DesktopCa
       }
       if (slowFrames >= 10) callbacks.current.onFailure("desktop-renderer-too-slow");
     });
+    // A lost WebGL context is usually transient: a GPU driver reset, a zoom
+    // change, or toggling the devtools device toolbar. calling preventDefault
+    // asks the browser to restore it, so failing immediately threw the scene
+    // away for a loss we had just asked to be repaired -- and the poster then
+    // stayed until a full page reload. Wait for the restore, and only give up
+    // if it never arrives.
+    let restoreTimer = 0;
     const lost = (event: Event) => {
       event.preventDefault();
-      callbacks.current.onFailure("desktop-context-lost");
+      callbacks.current.onPending();
+      window.clearTimeout(restoreTimer);
+      restoreTimer = window.setTimeout(() => {
+        restoreTimer = 0;
+        callbacks.current.onFailure("desktop-context-lost");
+      }, 4000);
+    };
+    const restored = () => {
+      window.clearTimeout(restoreTimer);
+      restoreTimer = 0;
+      needsReady.current = true;
+      requestFrame();
     };
     gl.domElement.addEventListener("webglcontextlost", lost);
+    gl.domElement.addEventListener("webglcontextrestored", restored);
     requestFrame();
     return () => {
       disposed = true;
@@ -133,7 +152,9 @@ function Scene({ store, onReady, onPending, onFailure, active, host }: DesktopCa
       window.removeEventListener("pointerout", leavePointer);
       window.removeEventListener("blur", resetPointer);
       finePointer.removeEventListener("change", resetPointer);
+      window.clearTimeout(restoreTimer);
       gl.domElement.removeEventListener("webglcontextlost", lost);
+      gl.domElement.removeEventListener("webglcontextrestored", restored);
       scene.remove(model.world);
       model.dispose();
       rig.current = null;

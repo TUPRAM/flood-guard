@@ -1,0 +1,581 @@
+{
+  "meta": {
+    "case_id": "mae-sai-2024-historical-planning-demo",
+    "case_version": "mae-sai-planning-rehearsal-v1",
+    "study_area_id": "mae_sai_candidate_v1",
+    "event_label": "Mae Sai · September 2024 historical planning rehearsal",
+    "source_timestamp": "2024-09-15T23:16:01Z",
+    "source_processing_timestamp": "2026-07-20T08:15:08Z",
+    "generated_at": "2026-09-16T06:07:49Z",
+    "operational_status": "non_operational",
+    "confidence_class": "low",
+    "fpps_recalculated": false,
+    "local_accuracy_status": "unqualified_local_accuracy",
+    "can_feed_decision_layer": false,
+    "official_warning": false,
+    "package_sha256": "622e53120e9e566b7df9e52b829abac9fda8f0acd4834430c2474b184cfd42f9"
+  },
+  "scope": {
+    "description": "Eight Mae Sai subdistricts, one committed candidate graph and two server-registered assumptions.",
+    "population_basis": "WorldPop 2020 modelled population snapped to the candidate OSM network. Fractional estimates are not a headcount; API access-loss counts round each result to whole people.",
+    "graph_population": 81798.51,
+    "graph_node_count": 28657,
+    "graph_edge_count": 30443,
+    "facility_count": 42,
+    "threshold_minutes": 30,
+    "priority_scope_note": "Scenario results use the complete committed cross-area graph. Its baseline access-loss counts match the archived ADM3 summaries within whole-person rounding. Original FPPS, action classes and source population estimates are retained separately and never recalculated; small population differences reflect source rounding."
+  },
+  "areas": [
+    {
+      "area_id": "TH570901",
+      "name_en": "Mae Sai",
+      "name_th": "แม่สาย",
+      "baseline": {
+        "total_population": 17893.062,
+        "people_losing_30_min_access": 74,
+        "baseline_underserved_30_min": 0.0,
+        "equity_gap_ratio": 0.0
+      },
+      "existing_priority": {
+        "fpps": 18.01,
+        "action_class": "E",
+        "total_population": 17893.07,
+        "people_losing_30_min_access": 73.62100000000001
+      }
+    },
+    {
+      "area_id": "TH570902",
+      "name_en": "Huai Khrai",
+      "name_th": "ห้วยไคร้",
+      "baseline": {
+        "total_population": 8911.491,
+        "people_losing_30_min_access": 0,
+        "baseline_underserved_30_min": 848.762,
+        "equity_gap_ratio": 1.0
+      },
+      "existing_priority": {
+        "fpps": 5.9,
+        "action_class": "E",
+        "total_population": 8911.488,
+        "people_losing_30_min_access": 0.0
+      }
+    },
+    {
+      "area_id": "TH570903",
+      "name_en": "Ko Chang",
+      "name_th": "เกาะช้าง",
+      "baseline": {
+        "total_population": 6708.386,
+        "people_losing_30_min_access": 5794,
+        "baseline_underserved_30_min": 0.0,
+        "equity_gap_ratio": 1.09
+      },
+      "existing_priority": {
+        "fpps": 53.65,
+        "action_class": "E",
+        "total_population": 6708.402,
+        "people_losing_30_min_access": 5794.158
+      }
+    },
+    {
+      "area_id": "TH570904",
+      "name_en": "Pong Pha",
+      "name_th": "โป่งผา",
+      "baseline": {
+        "total_population": 9311.575,
+        "people_losing_30_min_access": 17,
+        "baseline_underserved_30_min": 0.0,
+        "equity_gap_ratio": 0.0
+      },
+      "existing_priority": {
+        "fpps": 15.42,
+        "action_class": "E",
+        "total_population": 9311.573,
+        "people_losing_30_min_access": 16.65
+      }
+    },
+    {
+      "area_id": "TH570905",
+      "name_en": "Si Mueang Chum",
+      "name_th": "ศรีเมืองชุม",
+      "baseline": {
+        "total_population": 7157.034,
+        "people_losing_30_min_access": 5178,
+        "baseline_underserved_30_min": 1.884,
+        "equity_gap_ratio": 1.382
+      },
+      "existing_priority": {
+        "fpps": 50.37,
+        "action_class": "E",
+        "total_population": 7157.008,
+        "people_losing_30_min_access": 5178.339
+      }
+    },
+    {
+      "area_id": "TH570906",
+      "name_en": "Wiang Phang Kham",
+      "name_th": "เวียงพางคำ",
+      "baseline": {
+        "total_population": 19532.073,
+        "people_losing_30_min_access": 0,
+        "baseline_underserved_30_min": 0.0,
+        "equity_gap_ratio": 1.0
+      },
+      "existing_priority": {
+        "fpps": 9.03,
+        "action_class": "E",
+        "total_population": 19532.08,
+        "people_losing_30_min_access": 0.0
+      }
+    },
+    {
+      "area_id": "TH570908",
+      "name_en": "Ban Dai",
+      "name_th": "บ้านด้าย",
+      "baseline": {
+        "total_population": 5036.136,
+        "people_losing_30_min_access": 51,
+        "baseline_underserved_30_min": 659.36,
+        "equity_gap_ratio": 30.388
+      },
+      "existing_priority": {
+        "fpps": 16.99,
+        "action_class": "E",
+        "total_population": 5036.143,
+        "people_losing_30_min_access": 50.845
+      }
+    },
+    {
+      "area_id": "TH570909",
+      "name_en": "Pong Ngam",
+      "name_th": "โป่งงาม",
+      "baseline": {
+        "total_population": 7248.753,
+        "people_losing_30_min_access": 0,
+        "baseline_underserved_30_min": 57.847,
+        "equity_gap_ratio": 1.0
+      },
+      "existing_priority": {
+        "fpps": 11.28,
+        "action_class": "E",
+        "total_population": 7248.738,
+        "people_losing_30_min_access": 0.0
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "baseline",
+      "title": "Candidate disruption baseline",
+      "description": "Existing heuristic disruption times compared with the same graph's normal travel times.",
+      "changed_assumption": "No additional closure or facility is introduced. Baseline already includes heuristic disruption.",
+      "verification_need": "Check historical road and facility conditions; the candidate disruption is not an observed event reconstruction.",
+      "run_id": "mae-sai-candidate-baseline-v1",
+      "overall": {
+        "baseline_people_losing_30_min_access": 11114,
+        "scenario_people_losing_30_min_access": 11114,
+        "change_people_losing_30_min_access": 0,
+        "baseline_max_equity_gap_ratio": 30.388,
+        "scenario_max_equity_gap_ratio": 30.388,
+        "change_max_equity_gap_ratio": 0
+      },
+      "areas": [
+        {
+          "area_id": "TH570901",
+          "baseline_people_losing_30_min_access": 74,
+          "scenario_people_losing_30_min_access": 74,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 0.0,
+          "scenario_equity_gap_ratio": 0.0,
+          "change_equity_gap_ratio": 0
+        },
+        {
+          "area_id": "TH570902",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0
+        },
+        {
+          "area_id": "TH570903",
+          "baseline_people_losing_30_min_access": 5794,
+          "scenario_people_losing_30_min_access": 5794,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.09,
+          "scenario_equity_gap_ratio": 1.09,
+          "change_equity_gap_ratio": 0
+        },
+        {
+          "area_id": "TH570904",
+          "baseline_people_losing_30_min_access": 17,
+          "scenario_people_losing_30_min_access": 17,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 0.0,
+          "scenario_equity_gap_ratio": 0.0,
+          "change_equity_gap_ratio": 0
+        },
+        {
+          "area_id": "TH570905",
+          "baseline_people_losing_30_min_access": 5178,
+          "scenario_people_losing_30_min_access": 5178,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.382,
+          "scenario_equity_gap_ratio": 1.382,
+          "change_equity_gap_ratio": 0
+        },
+        {
+          "area_id": "TH570906",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0
+        },
+        {
+          "area_id": "TH570908",
+          "baseline_people_losing_30_min_access": 51,
+          "scenario_people_losing_30_min_access": 51,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 30.388,
+          "scenario_equity_gap_ratio": 30.388,
+          "change_equity_gap_ratio": 0
+        },
+        {
+          "area_id": "TH570909",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0
+        }
+      ],
+      "assumptions": [
+        "Population is modeled WorldPop context snapped to a candidate OSM graph.",
+        "Vulnerability is a terrain/remoteness proxy, not demographic truth.",
+        "Disrupted edge times are heuristic candidates, not observed closures.",
+        "Scenario outputs are planning evidence and not evacuation instructions."
+      ]
+    },
+    {
+      "scenario_id": "close_road",
+      "title": "Close one candidate connection",
+      "description": "Remove the registered graph connection from the disrupted network and recompute access.",
+      "changed_assumption": "Candidate edge MS-EDGE-0008687 is unavailable; this is a hypothetical closure, not an observation.",
+      "verification_need": "Verify the connection's real identity, event-time passability and alternative routes with a responsible local reviewer before changing a plan.",
+      "run_id": "mae-sai-candidate-close-edge-ms-edge-0008687-v1",
+      "overall": {
+        "baseline_people_losing_30_min_access": 11114,
+        "scenario_people_losing_30_min_access": 11212,
+        "change_people_losing_30_min_access": 98,
+        "baseline_max_equity_gap_ratio": 30.388,
+        "scenario_max_equity_gap_ratio": 30.388,
+        "change_max_equity_gap_ratio": 0.0
+      },
+      "areas": [
+        {
+          "area_id": "TH570901",
+          "baseline_people_losing_30_min_access": 74,
+          "scenario_people_losing_30_min_access": 172,
+          "change_people_losing_30_min_access": 98,
+          "baseline_equity_gap_ratio": 0.0,
+          "scenario_equity_gap_ratio": 0.0,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570902",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570903",
+          "baseline_people_losing_30_min_access": 5794,
+          "scenario_people_losing_30_min_access": 5794,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.09,
+          "scenario_equity_gap_ratio": 1.09,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570904",
+          "baseline_people_losing_30_min_access": 17,
+          "scenario_people_losing_30_min_access": 17,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 0.0,
+          "scenario_equity_gap_ratio": 0.0,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570905",
+          "baseline_people_losing_30_min_access": 5178,
+          "scenario_people_losing_30_min_access": 5178,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.382,
+          "scenario_equity_gap_ratio": 1.382,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570906",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570908",
+          "baseline_people_losing_30_min_access": 51,
+          "scenario_people_losing_30_min_access": 51,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 30.388,
+          "scenario_equity_gap_ratio": 30.388,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570909",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0.0
+        }
+      ],
+      "assumptions": [
+        "Population is modeled WorldPop context snapped to a candidate OSM graph.",
+        "Vulnerability is a terrain/remoteness proxy, not demographic truth.",
+        "Disrupted edge times are heuristic candidates, not observed closures.",
+        "Scenario outputs are planning evidence and not evacuation instructions.",
+        "Access uses nearest-facility shortest-path thresholds, not 2SFCA.",
+        "FPPS is not recalculated; this result contains access and equity deltas only.",
+        "MS-EDGE-0008687 is a modelled graph edge, not an observed closure."
+      ]
+    },
+    {
+      "scenario_id": "add_temporary_shelter",
+      "title": "Add a candidate service location",
+      "description": "Add the registered candidate facility to the normal and disrupted networks using the existing nearest-facility engine.",
+      "changed_assumption": "A hypothetical facility exists at N-99.9742609-20.4457677. It is not an approved shelter; no capacity or transport allocation is calculated.",
+      "verification_need": "Verify site suitability, permission, actual function, operating status and access. The model treats all facility types as interchangeable destinations.",
+      "run_id": "mae-sai-candidate-add-temporary-shelter-n-99-9742609-20-4457677-capacity-500-v1",
+      "overall": {
+        "baseline_people_losing_30_min_access": 11114,
+        "scenario_people_losing_30_min_access": 10197,
+        "change_people_losing_30_min_access": -917,
+        "baseline_max_equity_gap_ratio": 30.388,
+        "scenario_max_equity_gap_ratio": 30.388,
+        "change_max_equity_gap_ratio": 0.0
+      },
+      "areas": [
+        {
+          "area_id": "TH570901",
+          "baseline_people_losing_30_min_access": 74,
+          "scenario_people_losing_30_min_access": 74,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 0.0,
+          "scenario_equity_gap_ratio": 0.0,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570902",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570903",
+          "baseline_people_losing_30_min_access": 5794,
+          "scenario_people_losing_30_min_access": 4877,
+          "change_people_losing_30_min_access": -917,
+          "baseline_equity_gap_ratio": 1.09,
+          "scenario_equity_gap_ratio": 0.986,
+          "change_equity_gap_ratio": -0.104
+        },
+        {
+          "area_id": "TH570904",
+          "baseline_people_losing_30_min_access": 17,
+          "scenario_people_losing_30_min_access": 17,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 0.0,
+          "scenario_equity_gap_ratio": 0.0,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570905",
+          "baseline_people_losing_30_min_access": 5178,
+          "scenario_people_losing_30_min_access": 5178,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.382,
+          "scenario_equity_gap_ratio": 1.382,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570906",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570908",
+          "baseline_people_losing_30_min_access": 51,
+          "scenario_people_losing_30_min_access": 51,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 30.388,
+          "scenario_equity_gap_ratio": 30.388,
+          "change_equity_gap_ratio": 0.0
+        },
+        {
+          "area_id": "TH570909",
+          "baseline_people_losing_30_min_access": 0,
+          "scenario_people_losing_30_min_access": 0,
+          "change_people_losing_30_min_access": 0,
+          "baseline_equity_gap_ratio": 1.0,
+          "scenario_equity_gap_ratio": 1.0,
+          "change_equity_gap_ratio": 0.0
+        }
+      ],
+      "assumptions": [
+        "Population is modeled WorldPop context snapped to a candidate OSM graph.",
+        "Vulnerability is a terrain/remoteness proxy, not demographic truth.",
+        "Disrupted edge times are heuristic candidates, not observed closures.",
+        "Scenario outputs are planning evidence and not evacuation instructions.",
+        "Access uses nearest-facility shortest-path thresholds, not 2SFCA.",
+        "FPPS is not recalculated; this result contains access and equity deltas only.",
+        "Capacity is bounded metadata only and is not used by the access engine."
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "services/api/data/study_area_bundles/mae_sai_candidate_v1.json",
+      "sha256": "0bb7feff4b84d7a202b006856352d619d66607155bdf41430d5a5ea0f9d52026",
+      "role": "historical case identity"
+    },
+    {
+      "path": "outputs/mae_sai_scenario_inputs_manifest.json",
+      "sha256": "20ce7a6d7007daeccbb64afcbabc00e447bb96de8c66eb44776a827be6c61a04",
+      "role": "immutable graph inputs and receipt"
+    },
+    {
+      "path": "outputs/mae_sai_priority_subdistricts.geojson",
+      "sha256": "659fb730c8ece12524872272738163f14d11a5b327634b66323d87cb626344a8",
+      "role": "unchanged historical priority context"
+    },
+    {
+      "path": "outputs/mae_sai_population_nodes.csv",
+      "sha256": "172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac",
+      "role": "population_nodes"
+    },
+    {
+      "path": "outputs/mae_sai_access_edges.csv",
+      "sha256": "266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454",
+      "role": "access_edges"
+    },
+    {
+      "path": "outputs/mae_sai_facility_context.csv",
+      "sha256": "fbfb5332a72edcea7ff05290abb883f340e0b974806e325b2b4d962b59ef6c0d",
+      "role": "facility_candidates"
+    },
+    {
+      "path": "src/floodguard/access.py",
+      "sha256": "e61c7ff108630e7193e3761d5028d56e2a9be4c79b3707f3ef571ecab37c2d0d",
+      "role": "Python computation"
+    },
+    {
+      "path": "src/floodguard/equity.py",
+      "sha256": "943f8a508672fc093f5c01514f9c24dde32ad94d1d16b7fc7d8a28f202b1e936",
+      "role": "Python computation"
+    },
+    {
+      "path": "src/floodguard/scenarios.py",
+      "sha256": "8160a4b67f255376548f942f09bbe8aad2e95441282b751a158b15b53748c43d",
+      "role": "Python computation"
+    },
+    {
+      "path": "services/api/src/floodguard_api/dataset_registry.py",
+      "sha256": "d72e326ccc799e9841420b01b05f1160e4003497372daeca58dfb5c0211b833f",
+      "role": "Python computation"
+    },
+    {
+      "path": "services/api/src/floodguard_api/scenario_registry.py",
+      "sha256": "252bf232c57e91bd356c7fc1a4d72776e0ce65b89fee1800d4f397eaf5b5ced6",
+      "role": "Python computation"
+    },
+    {
+      "path": "scripts/build_mae_sai_planning_demo.py",
+      "sha256": "10e5736313599398cc03d084778574a3a3f1c983e4cc02fe737cec8d85619513",
+      "role": "Python computation"
+    }
+  ],
+  "source_components": [
+    {
+      "name": "CDSE Sentinel-1",
+      "timestamp": "2024-09-15T23:16:01Z",
+      "temporal_meaning": "observation_time"
+    },
+    {
+      "name": "HDX Thailand COD-AB",
+      "timestamp": "2022-01-22T00:00:00Z",
+      "temporal_meaning": "valid_from"
+    },
+    {
+      "name": "WorldPop",
+      "timestamp": "2020-01-01T00:00:00Z",
+      "temporal_meaning": "publication_year"
+    },
+    {
+      "name": "OpenStreetMap Thailand via Geofabrik",
+      "timestamp": "2026-07-09T14:53:08Z",
+      "temporal_meaning": "extract_time"
+    },
+    {
+      "name": "Copernicus DEM GLO-30",
+      "timestamp": null,
+      "temporal_meaning": "unknown"
+    }
+  ],
+  "assumptions": [
+    "Population is modeled WorldPop context snapped to a candidate OSM graph.",
+    "Vulnerability is a terrain/remoteness proxy, not demographic truth.",
+    "Disrupted edge times are heuristic candidates, not observed closures.",
+    "Scenario outputs are planning evidence and not evacuation instructions.",
+    "New access loss counts only residents who had normal-network access within 30 minutes and lose it under disruption. Baseline underserved residents already lack normal-network access and are reported separately.",
+    "The 2024 Sentinel-1 observation, 2020 population and July 2026 OSM extract are not date-aligned. This is a reproducible planning rehearsal, not a validated reconstruction of September 2024 conditions.",
+    "The temporary facility exists in both normal and disrupted graphs in the existing engine, so its delta is a comparison of scenario-specific access-loss definitions; it is not a fixed-cohort estimate of people rescued.",
+    "Routes are undirected shortest-path travel-time estimates; service types are pooled and capacity, queueing, vehicle availability and flood-safe navigation are not modelled.",
+    "A high or low equity ratio concerns a terrain/remoteness proxy, not independently measured demographic disadvantage; zero losses can yield a ratio of 1 by convention.",
+    "No research model has been promoted into planning. Existing FPPS and action classes remain unchanged; scenario results are candidate review evidence only."
+  ],
+  "validation": {
+    "status": "Local scientific and operating-partner validation not completed",
+    "measured": [
+      "Deterministic recomputation of the existing access/equity engine on checksum-bound committed inputs; not independent scientific accuracy."
+    ],
+    "not_measured": [
+      "Date-aligned Mae Sai observation accuracy",
+      "Actual event-time road passability or facility operation",
+      "Demographic equity, shelter capacity or safe routes",
+      "Decision usefulness with an operating partner"
+    ],
+    "required_next_steps": [
+      "Agree an intended claim and a permitted, date-aligned independent reference.",
+      "Predefine sampling, unknown areas and held-out evaluation before measuring local water or inundation accuracy.",
+      "Check road passability, facility operating status and pre-existing access disadvantage separately from pixel accuracy.",
+      "Run a supervised planning exercise and record interpretation errors, decisions and unresolved evidence before considering a bounded pilot."
+    ]
+  }
+}

@@ -26,5 +26,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="th"><body><a className="skip-link" href="#main-content">Skip to content</a>{children}<PwaRegister /></body></html>;
+  return <html lang="en"><body><a className="skip-link" href="#main-content">Skip to content</a>{children}<PwaRegister /></body></html>;
 }

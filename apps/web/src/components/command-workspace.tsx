@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { GeoaiRealPanel } from "@/components/geoai-real-panel";
 import { GeoMap } from "@/components/geo-map";
-import { LanguageToggle } from "@/components/language-toggle";
+import { WorkspaceHeader } from "@/components/workspace-header";
 import { ScoreBar } from "@/components/score-bar";
 import { StatePill } from "@/components/state-pill";
 import { commandRankPositions, resolveCommandSelection, searchRankedAreas, toggleCommandClass } from "@/lib/command-filter";
@@ -17,6 +16,8 @@ import { formatServerDelta, scenarioMapPresentation } from "@/lib/scenario-prese
 import type { AreaRecord, FeatureCollection, FloodGuardData, ScenarioId } from "@/lib/types";
 import { useFloodGuardData } from "@/lib/use-floodguard-data";
 import { useLanguage } from "@/lib/use-language";
+
+import styles from "./command-workspace.module.css";
 
 const ACTION_CLASSES = ["A", "B", "C", "D", "E"] as const;
 const COMMAND_AREA_STORAGE_KEY = "floodguard:command:selected-area:v1";
@@ -332,12 +333,8 @@ export function CommandWorkspace() {
   };
 
   return (
-    <main className="command-page" lang={language}>
-      <header className="command-header command-product-header">
-        <a href="/command/" className="brand brand-light"><Image src="/floodguard-logo.png" alt="" width={40} height={40} priority /><span><b>FloodGuard</b><small>{th ? "พื้นที่ทำงานวางแผน" : "Planning workspace"}</small></span></a>
-        <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a className="active" href="/command/">{th ? "การวางแผน" : "Planning"}</a><a href="/studio/">Studio</a></nav>
-        <LanguageToggle language={language} onChange={setLanguage} />
-      </header>
+    <main className={`command-page ${styles.page}`} lang={language}>
+      <WorkspaceHeader activeSurface="planning" language={language} onLanguageChange={setLanguage} />
       <section className="command-context-bar" aria-label={th ? "บริบทข้อมูลการวางแผน" : "Planning data context"}>
         <strong className="command-context-label">{th ? "ข้อมูลเพื่อการวางแผน" : "Planning intelligence"}</strong>
         <dl className="command-context-metadata">

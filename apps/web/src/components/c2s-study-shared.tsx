@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { StudyAsset, StudyMetrics, StudyModel, StudyRole } from "@/lib/study-report-types";
+import { useLanguage } from "@/lib/use-language";
 import { StudioLibraryHeader } from "./studio-library";
 import styles from "./c2s-study.module.css";
 
@@ -16,6 +17,11 @@ export const SECTIONS = [
   ["files", "Files & reproducibility", "/files"], ["mae-sai", "Mae Sai application", "/mae-sai"],
 ] as const;
 export type StudySection = typeof SECTIONS[number][0];
+const THAI_SECTION_NAMES: Record<StudySection, string> = {
+  overview: "ภาพรวม", data: "ข้อมูลและการแบ่งเหตุการณ์", models: "โมเดลและการฝึก",
+  results: "ผลการประเมิน", rtc: "การเปรียบเทียบภาพ RTC ที่จับคู่", explorer: "สำรวจข้อผิดพลาดจากภาพ",
+  files: "ไฟล์และการทำซ้ำ", "mae-sai": "การประยุกต์ใช้ที่แม่สาย",
+};
 export const MODEL_NAMES: Record<StudyModel, string> = { random_forest: "Random Forest", xgboost: "XGBoost", unet: "U-Net", vh_otsu: "VH Otsu" };
 export const ROLE_NAMES: Record<StudyRole, string> = { train: "Training", tune: "Tuning", calibration: "Calibration", selection: "Selection", test: "Final test" };
 export const ROLE_COLORS: Record<StudyRole, string> = { train: "#4a8b73", tune: "#8272bb", calibration: "#c79a3e", selection: "#3c8cac", test: "#cf6b54" };
@@ -86,6 +92,55 @@ export function StudyFigure({ layer, title, description, overlay }: { layer?: Vi
 }
 
 export function StudyFrame({ section, children }: { section: StudySection; children: ReactNode }) {
+  const [language] = useLanguage("en");
+  const th = language === "th";
+  const text = (en: string, thai: string) => th ? thai : en;
+  const sectionName = (id: StudySection, english: string) => th ? THAI_SECTION_NAMES[id] : english;
   const mae = section === "mae-sai";
-  return <div className={styles.page} lang="en"><StudioLibraryHeader /><main id="main-content" className={styles.main}><nav aria-label="Breadcrumb" className={styles.breadcrumb}><a href="/studio/">Studies &amp; evidence</a><span>/</span><a href={`${STUDY_BASE}/`}>C2S-MS</a>{section !== "overview" ? <><span>/</span><span>{SECTIONS.find(([id]) => id === section)?.[1]}</span></> : null}</nav><header className={styles.hero}><p className={styles.eyebrow}>{mae ? "Separate inference record · Thailand" : "Public benchmark · Human water reference"}</p><h1>{mae ? "Mae Sai · application of C2S models" : "C2S-MS public benchmark"}</h1><p>{mae ? "Frozen C2S-trained models applied to the August / September 2024 Sentinel-1 pair. Inspect probability, uncertainty and abstention for the recorded acquisition." : "A reproducible study of Random Forest, XGBoost and SAR U-Net across independent events. The target is event-date water, including permanent water."}</p><div className={styles.badges}><span className={styles.badge}>{mae ? "Inference completed" : "Benchmark completed"}</span><span className={styles.badge}>Report only</span><span className={styles.badge}>{mae ? "Thai accuracy unmeasured" : "C2S-MS human labels"}</span></div><dl className={styles.context}><div><dt>{mae ? "Observations · UTC" : "Observation period"}</dt><dd>{mae ? "22 Aug / 15 Sep 2024" : "12 Aug 2016 – 20 Oct 2020"}</dd></div><div><dt>{mae ? "Evaluation status" : "Held-out evaluation"}</dt><dd>{mae ? "No qualified Thai reference" : "Australia · Nigeria · Pakistan"}</dd></div><div><dt>Study / revision</dt><dd>c2s-ms-20260915 · r1</dd></div><div><dt>{mae ? "Model lineage" : "Experiment date"}</dt><dd>{mae ? "Evaluated on C2S-MS; applied to Mae Sai" : "15 September 2026"}</dd></div></dl></header><div className={styles.layout}><nav className={styles.sidebar} aria-label="C2S study sections"><p>Inside this study</p>{SECTIONS.map(([id, label, path], i) => <a key={id} href={`${STUDY_BASE}${path}/`} aria-current={section === id ? "page" : undefined}><span>{String(i + 1).padStart(2, "0")}</span>{label}</a>)}</nav><div className={styles.content}><label className={styles.mobileNav}>Study section<select value={section} onChange={(e) => { const item = SECTIONS.find(([id]) => id === e.target.value); if (item) window.location.assign(`${STUDY_BASE}${item[2]}/`); }}>{SECTIONS.map(([id, label]) => <option value={id} key={id}>{label}</option>)}</select></label>{children}<footer className={styles.footer}>C2S-MS · revision r1 · research report only. These outputs cannot feed exposure, road risk, access, equity or FPPS. FloodGuard supports preparedness and rapid post-event prioritisation; this study is not an official warning.<br /><a href="/studio/">All studies</a> · <a href="/studio/planning-evidence/">Planning evidence</a> · <a href="/studio/archive/mae-sai-geoai/">Historical research</a></footer></div></div></main></div>;
+  const currentSection = SECTIONS.find(([id]) => id === section);
+  return <div className={styles.page} lang={language}>
+    <StudioLibraryHeader />
+    <main id="main-content" className={styles.main}>
+      <nav aria-label={text("Breadcrumb", "เส้นทางนำทาง")} className={styles.breadcrumb}>
+        <a href="/studio/">{text("Studies & evidence", "งานศึกษาและหลักฐาน")}</a><span>/</span>
+        <a href={`${STUDY_BASE}/`}>C2S-MS</a>
+        {section !== "overview" && currentSection ? <><span>/</span><span>{sectionName(section, currentSection[1])}</span></> : null}
+      </nav>
+      <header className={styles.hero}>
+        <p className={styles.eyebrow}>{mae
+          ? text("Separate inference record · Thailand", "บันทึกการอนุมานแยกต่างหาก · ประเทศไทย")
+          : text("Public benchmark · Human water reference", "การประเมินด้วยข้อมูลสาธารณะ · ข้อมูลอ้างอิงพื้นที่น้ำที่มนุษย์กำกับ")}</p>
+        <h1>{mae ? text("Mae Sai · application of C2S models", "แม่สาย · การประยุกต์ใช้โมเดล C2S") : text("C2S-MS public benchmark", "การประเมินด้วยข้อมูลสาธารณะ C2S-MS")}</h1>
+        <p>{mae
+          ? text("Frozen C2S-trained models applied to the August / September 2024 Sentinel-1 pair. Inspect probability, uncertainty and abstention for the recorded acquisition.", "นำโมเดลที่ฝึกด้วย C2S และตรึงเวอร์ชันแล้วมาใช้กับภาพ Sentinel-1 คู่เดือนสิงหาคมและกันยายน ค.ศ. 2024 สำรวจความน่าจะเป็น ความไม่แน่นอน และพื้นที่ที่โมเดลงดตัดสินจากภาพที่บันทึกไว้")
+          : text("A reproducible study of Random Forest, XGBoost and SAR U-Net across independent events. The target is event-date water, including permanent water.", "งานศึกษาที่ทำซ้ำได้ของ Random Forest, XGBoost และ SAR U-Net โดยแยกเหตุการณ์ออกจากกัน เป้าหมายคือพื้นที่น้ำในวันที่บันทึกภาพเหตุการณ์ รวมถึงแหล่งน้ำถาวร")}</p>
+        <div className={styles.badges}>
+          <span className={styles.badge}>{mae ? text("Inference completed", "อนุมานเสร็จสิ้น") : text("Benchmark completed", "ประเมินเสร็จสิ้น")}</span>
+          <span className={styles.badge}>{text("Report only", "ใช้เพื่อรายงานเท่านั้น")}</span>
+          <span className={styles.badge}>{mae ? text("Thai accuracy unmeasured", "ยังไม่ได้วัดความแม่นยำในประเทศไทย") : text("C2S-MS human labels", "ป้ายกำกับ C2S-MS โดยมนุษย์")}</span>
+        </div>
+        <dl className={styles.context}>
+          <div><dt>{mae ? text("Observations · UTC", "วันบันทึกภาพ · UTC") : text("Observation period", "ช่วงเวลาบันทึกภาพ")}</dt><dd>{mae ? text("22 Aug / 15 Sep 2024", "22 ส.ค. / 15 ก.ย. ค.ศ. 2024") : text("12 Aug 2016 – 20 Oct 2020", "12 ส.ค. ค.ศ. 2016 – 20 ต.ค. ค.ศ. 2020")}</dd></div>
+          <div><dt>{mae ? text("Evaluation status", "สถานะการประเมิน") : text("Held-out evaluation", "เหตุการณ์ที่กันไว้ประเมิน")}</dt><dd>{mae ? text("No qualified Thai reference", "ยังไม่มีข้อมูลอ้างอิงไทยที่ผ่านเกณฑ์") : text("Australia · Nigeria · Pakistan", "ออสเตรเลีย · ไนจีเรีย · ปากีสถาน")}</dd></div>
+          <div><dt>{text("Study / revision", "งานศึกษา / ฉบับ")}</dt><dd>c2s-ms-20260915 · r1</dd></div>
+          <div><dt>{mae ? text("Model lineage", "ที่มาของโมเดล") : text("Experiment date", "วันที่ทดลอง")}</dt><dd>{mae ? text("Evaluated on C2S-MS; applied to Mae Sai", "ประเมินบน C2S-MS แล้วนำมาใช้กับแม่สาย") : text("15 September 2026", "15 กันยายน ค.ศ. 2026")}</dd></div>
+        </dl>
+      </header>
+      <div className={styles.layout}>
+        <nav className={styles.sidebar} aria-label={text("C2S study sections", "ส่วนต่าง ๆ ของงานศึกษา C2S")}>
+          <p>{text("Inside this study", "ภายในงานศึกษานี้")}</p>
+          {SECTIONS.map(([id, label, path], i) => <a key={id} href={`${STUDY_BASE}${path}/`} aria-current={section === id ? "page" : undefined}><span>{String(i + 1).padStart(2, "0")}</span>{sectionName(id, label)}</a>)}
+        </nav>
+        <div className={styles.content}>
+          <label className={styles.mobileNav}>{text("Study section", "ส่วนของงานศึกษา")}<select value={section} onChange={(e) => { const item = SECTIONS.find(([id]) => id === e.target.value); if (item) window.location.assign(`${STUDY_BASE}${item[2]}/`); }}>{SECTIONS.map(([id, label]) => <option value={id} key={id}>{sectionName(id, label)}</option>)}</select></label>
+          {th ? <Notice>รายละเอียดการทดลอง ผลลัพธ์ และหลักฐานต้นฉบับด้านล่างคงไว้เป็นภาษาอังกฤษ การเปลี่ยนภาษาส่วนติดต่อไม่เปลี่ยนข้อมูลหรือขอบเขตการประเมิน</Notice> : null}
+          <div lang="en">{children}</div>
+          <footer className={styles.footer}>
+            {text("C2S-MS · revision r1 · research report only. These outputs cannot feed exposure, road risk, access, equity or FPPS. FloodGuard supports preparedness and rapid post-event prioritisation; this study is not an official warning.", "C2S-MS · ฉบับ r1 · รายงานวิจัยเท่านั้น ผลลัพธ์นี้ไม่สามารถนำไปใช้คำนวณการรับสัมผัสภัย ความเสี่ยงถนน การเข้าถึง ความเป็นธรรม หรือ FPPS ได้ FloodGuard สนับสนุนการเตรียมพร้อมและการจัดลำดับความสำคัญอย่างรวดเร็วหลังเหตุการณ์ งานศึกษานี้ไม่ใช่การแจ้งเตือนอย่างเป็นทางการ")}
+            <br /><a href="/studio/">{text("All studies", "งานศึกษาทั้งหมด")}</a> · <a href="/studio/planning-evidence/">{text("Planning evidence", "หลักฐานเพื่อการวางแผน")}</a> · <a href="/studio/archive/mae-sai-geoai/">{text("Historical research", "งานวิจัยที่ผ่านมา")}</a>
+          </footer>
+        </div>
+      </div>
+    </main>
+  </div>;
 }

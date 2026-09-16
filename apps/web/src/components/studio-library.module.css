@@ -1,16 +1,10 @@
-.page { min-height: 100vh; background: #f5f7fb; color: #17253b; font-family: var(--font-inter), sans-serif; }
-.header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.1rem max(5vw, 1rem); background: #fff; border-bottom: 1px solid #dce3ee; }
-.brand { display: flex; align-items: center; gap: .7rem; color: #17253b; text-decoration: none; font-weight: 750; font-size: 1.08rem; }
-.brand small { display: block; color: #617189; font-size: .62rem; letter-spacing: .18em; margin-top: .12rem; }
-.header nav { display: flex; gap: .35rem; }
-.header nav a { text-decoration: none; color: #45566f; padding: .6rem .85rem; border-radius: .5rem; font-size: .9rem; }
-.header nav a[aria-current] { color: #174ecb; background: #edf3ff; font-weight: 650; }
+.page { min-height: 100vh; background: #f5f7fb; color: #17253b; font-family: "Inter Variable", "Noto Sans Thai Variable", sans-serif; }
 .page a:focus-visible { outline: 3px solid #e8a526; outline-offset: 4px; }
 .page a:hover { text-decoration: underline; text-underline-offset: .2em; }
 .container { max-width: 1220px; margin: auto; padding: 0 2rem; }
 .hero { padding: 4.5rem 0 3rem; max-width: 840px; }
 .eyebrow { color: #47618c; font-size: .7rem; letter-spacing: .14em; font-weight: 700; margin: 0 0 .85rem; }
-.hero h1 { font-family: var(--font-manrope), sans-serif; font-size: clamp(2.2rem, 4.3vw, 3.6rem); letter-spacing: -.045em; line-height: 1.12; margin: 0 0 1.3rem; }
+.hero h1 { font-family: "Manrope Variable", "Noto Sans Thai Variable", sans-serif; font-size: clamp(2.2rem, 4.3vw, 3.6rem); letter-spacing: -.045em; line-height: 1.12; margin: 0 0 1.3rem; }
 .lead { font-size: 1.1rem; color: #54647c; line-height: 1.8; max-width: 680px; }
 .principles { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.7rem; color: #52637c; font-size: .78rem; }
 .principles span { padding-right: .8rem; border-right: 1px solid #c6d1e3; }
@@ -59,7 +53,6 @@
   .container { padding: 0 1rem; } .hero { padding: 3rem 0 2rem; }
   .cards { grid-template-columns: 1fr; } .sectionHeading { align-items: start; flex-direction: column; gap: .75rem; }
   .card { padding: 1.3rem; } .wide { align-items: stretch; flex-direction: column; gap: .5rem; }
-  .wide .open { margin: 0; } .header { padding: .8rem 1rem; } .header nav a { padding: .6rem .5rem; font-size: .8rem; }
-  .brand { gap: .4rem; font-size: .9rem; } .brand img { width: 30px; height: 30px; }
+  .wide .open { margin: 0; }
   .card dl div { grid-template-columns: 5.7rem 1fr; } .hero h1 { font-size: 2.45rem; }
 }

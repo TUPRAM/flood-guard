@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
-import { LanguageToggle } from "@/components/language-toggle";
+import { WorkspaceHeader } from "@/components/workspace-header";
 import { ModelRegistryPanel } from "@/components/model-registry-panel";
 import { QualifiedEvidenceFoundationPanel } from "@/components/qualified-evidence-foundation-panel";
 import { StatusBar } from "@/components/status-bar";
@@ -197,14 +196,7 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
 
   return (
     <main className="studio-page studio-final-surface" lang={language}>
-      <header className="studio-header studio-final-header">
-        <a href="/studio/" className="brand brand-light">
-          <Image src="/floodguard-logo.png" alt="" width={40} height={40} priority />
-          <span><b>FloodGuard</b><small>{th ? "รายงานการตรวจสอบหลักฐาน" : "Validation & evidence report"}</small></span>
-        </a>
-        <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a href="/command/">{th ? "การวางแผน" : "Planning"}</a><a className="active" href="/studio/">Studio</a></nav>
-        <LanguageToggle language={language} onChange={setLanguage} />
-      </header>
+      <WorkspaceHeader activeSurface="studio" language={language} onLanguageChange={setLanguage} />
       <StatusBar data={data} language={language} compact />
 
       <div className={`studio-shell studio-final-shell ${styles.shell}`}>

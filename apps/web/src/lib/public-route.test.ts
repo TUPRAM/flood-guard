@@ -149,7 +149,7 @@ describe("public route geometry", () => {
       code: "Ok",
       routes: [{ geometry: { coordinates: [[99.88, 20.43]] }, legs: [] }],
     }))).toBeUndefined();
-    // Network failure falls through to the straight-line caller.
+    // Network failure leaves the caller without a route.
     expect(await fetchWalkingRoute(from, to, undefined, (() => {
       throw new Error("offline");
     }) as unknown as typeof fetch)).toBeUndefined();

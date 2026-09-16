@@ -172,8 +172,8 @@ export function buildRouteLeg(
    OpenStreetMap hosts a public OSRM instance with a foot profile. It returns
    the road-following geometry and the turn list, so the directions on screen
    are the router's, not text this app invented. It is a shared community
-   service with no availability guarantee: every caller must handle failure by
-   falling back to the straight-line leg.
+   service with no availability guarantee: callers must show route unavailable
+   on failure rather than generate straight-line travel guidance.
    ------------------------------------------------------------------------- */
 
 const OSRM_FOOT_ENDPOINT = "https://routing.openstreetmap.de/routed-foot/route/v1/foot";
@@ -260,7 +260,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /**
  * Requests a walking route. Returns undefined whenever the service is
  * unreachable or answers with anything this app cannot verify, so the caller
- * shows the straight-line fallback instead of a half-parsed route.
+ * shows route unavailable instead of a half-parsed route.
  */
 export async function fetchWalkingRoute(
   from: RoutePoint,

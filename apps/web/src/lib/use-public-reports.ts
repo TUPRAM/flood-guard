@@ -21,28 +21,33 @@ function browserStorage(): Storage | null {
 
 export function usePublicReports() {
   const [reports, setReports] = useState<PublicReport[]>([]);
+  const [sessionOnlyIds, setSessionOnlyIds] = useState<Set<string>>(new Set());
+  const currentReports = useRef<PublicReport[]>([]);
   const hydrated = useRef(false);
 
   useEffect(() => {
     if (hydrated.current) return;
     hydrated.current = true;
-    setReports(readStoredPublicReports(browserStorage()));
+    currentReports.current = readStoredPublicReports(browserStorage());
+    setReports(currentReports.current);
   }, []);
 
-  const addReport = useCallback((input: CreatePublicReportInput): PublicReport => {
+  const addReport = useCallback((input: CreatePublicReportInput) => {
     const timestamp = new Date().toISOString();
     const report = createPublicReport(input, timestamp, createReportId(timestamp));
 
-    setReports((current) => {
-      const next = [report, ...current].slice(0, PUBLIC_REPORT_LIMIT);
-      writeStoredPublicReports(browserStorage(), next);
-      return next;
-    });
+    const next = [report, ...currentReports.current].slice(0, PUBLIC_REPORT_LIMIT);
+    const persisted = writeStoredPublicReports(browserStorage(), next);
+    currentReports.current = next;
+    setReports(next);
+    setSessionOnlyIds((current) => persisted
+      ? new Set()
+      : new Set([...current, report.report_id]));
 
-    return report;
+    return { report, persisted };
   }, []);
 
-  return { reports, addReport } as const;
+  return { reports, addReport, sessionOnlyIds } as const;
 }
 
 function createReportId(timestamp: string): string {

@@ -83,7 +83,7 @@ export function PublicReportPage({
   onSelectArea,
 }: PublicReportPageProps) {
   const th = language === "th";
-  const { reports, addReport } = usePublicReports();
+  const { reports, addReport, sessionOnlyIds } = usePublicReports();
   const [waterDepthCm, setWaterDepthCm] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
@@ -148,7 +148,7 @@ export function PublicReportPage({
       return;
     }
 
-    addReport({
+    const { persisted } = addReport({
       area: selectedArea,
       waterDepth: publicReportDepthBand(waterDepthCm),
       waterDepthCm,
@@ -159,15 +159,22 @@ export function PublicReportPage({
     setWaterDepthCm(null);
     setNotes("");
     clearPhotoPreview();
-    setFormMessage(th
-      ? `บันทึกรายงานไว้ในอุปกรณ์นี้สำหรับ ${selectedArea.area_name_th}`
-      : `Report saved on this device for ${selectedArea.area_name_en}.`);
+    setFormMessage(persisted
+      ? (th
+        ? `บันทึกรายงานไว้ในอุปกรณ์นี้สำหรับ ${selectedArea.area_name_th} ยังไม่ได้ส่งให้เจ้าหน้าที่`
+        : `Report saved on this device for ${selectedArea.area_name_en}. It has not been sent to staff.`)
+      : (th
+        ? "อุปกรณ์ไม่อนุญาตให้บันทึกถาวร รายงานอยู่ในหน้านี้เท่านั้นและจะหายเมื่อปิดหรือโหลดใหม่ ยังไม่ได้ส่งให้เจ้าหน้าที่"
+        : "Device storage is unavailable. This report is kept only in this open page and will be lost on reload or close. It has not been sent to staff."));
   };
 
   return (
     <section className="public-report-page" aria-labelledby="public-report-title">
       <div className="public-report-heading">
-        <h1 id="public-report-title">{th ? "ส่งรายงานสถานการณ์" : "Submit a situation report"}</h1>
+        <h1 id="public-report-title">{th ? "บันทึกสิ่งที่พบในพื้นที่" : "Record a local observation"}</h1>
+        <p>{th
+          ? "รายงานอยู่ในอุปกรณ์นี้เท่านั้น ไม่ได้ส่งให้เจ้าหน้าที่ ภาพที่เลือกใช้แสดงตัวอย่างและจะไม่ถูกบันทึก"
+          : "Reports stay on this device and are not sent to staff. Selected photos are previews and are not saved."}</p>
       </div>
 
       <form className="public-report-form" onSubmit={submitReport}>
@@ -345,7 +352,9 @@ export function PublicReportPage({
                   </small>
                 </div>
                 <span className="public-report-feed-status">
-                  {th ? "ในอุปกรณ์" : "On device"}
+                  {sessionOnlyIds.has(report.report_id)
+                    ? (th ? "เฉพาะหน้านี้" : "This session only")
+                    : (th ? "ในอุปกรณ์" : "On device")}
                 </span>
               </li>
             ))}
@@ -357,8 +366,7 @@ export function PublicReportPage({
           matched alongside — real report content. See FEED_EXAMPLES.
         */}
         <div className="public-report-feed-example" data-example="true">
-          {/* Kept for assistive tech and the safety guard; visually removed. */}
-          <p className="sr-only">
+          <p>
             {th
               ? "ตัวอย่างสถานะรายงาน ไม่ใช่รายงานจริง"
               : "Example report statuses. Not real reports."}
@@ -366,7 +374,7 @@ export function PublicReportPage({
 
           <section className="public-report-status-card">
             <p className="public-report-status-title">
-              {th ? "สถานะรายงานล่าสุดของคุณ" : "Your latest report status"}
+              {th ? "ตัวอย่างขั้นตอนการตรวจสอบรายงาน" : "Example review workflow"}
             </p>
             <ol className="public-report-status-track" aria-hidden="true">
               {REPORT_STATUS_STEPS.map((step) => (

@@ -114,13 +114,14 @@ describe("device-local public reports", () => {
       (_, index) => report(`public-report:item${String(index).padStart(3, "0")}`),
     );
 
-    expect(() => writeStoredPublicReports(storage, reports)).not.toThrow();
+    expect(writeStoredPublicReports(storage, reports)).toBe(true);
     expect(JSON.parse(values.get(PUBLIC_REPORT_STORAGE_KEY) ?? "[]")).toHaveLength(
       PUBLIC_REPORT_LIMIT,
     );
     expect(readStoredPublicReports(storage)).toHaveLength(PUBLIC_REPORT_LIMIT);
     expect(readStoredPublicReports({ getItem: () => { throw new Error("blocked"); } })).toEqual([]);
-    expect(() => writeStoredPublicReports({ setItem: () => { throw new Error("full"); } }, reports)).not.toThrow();
+    expect(writeStoredPublicReports(null, reports)).toBe(false);
+    expect(writeStoredPublicReports({ setItem: () => { throw new Error("full"); } }, reports)).toBe(false);
   });
 
   it("renders bilingual, semantic report controls without network or verification claims", () => {
@@ -151,10 +152,26 @@ describe("device-local public reports", () => {
     const example = html.slice(exampleStart);
     expect(example).toContain('data-example="true"');
     expect(example).toContain("Not real reports");
+    expect(example).toContain("<p>Example report statuses. Not real reports.</p>");
+    expect(example).toContain("Example review workflow");
+    expect(example).not.toContain("Your latest report status");
+    expect(html).toContain("Reports stay on this device and are not sent to staff.");
     const realContent = html.slice(0, exampleStart);
     expect(realContent).not.toMatch(
       /real[- ]time|verified|authority received|responders notified/iu,
     );
+  });
+
+  it("visibly identifies illustrative statuses in Thai", () => {
+    const html = renderToStaticMarkup(createElement(PublicReportPage, {
+      language: "th",
+      selectedArea: area,
+      areas: [area],
+      onSelectArea: () => {},
+    }));
+    expect(html).toContain("<p>ตัวอย่างสถานะรายงาน ไม่ใช่รายงานจริง</p>");
+    expect(html).toContain("ตัวอย่างขั้นตอนการตรวจสอบรายงาน");
+    expect(html).toContain("ไม่ได้ส่งให้เจ้าหน้าที่");
   });
 
   it("names the band a reported depth falls into", () => {

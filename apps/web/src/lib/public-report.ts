@@ -155,8 +155,8 @@ export function readStoredPublicReports(
 export function writeStoredPublicReports(
   storage: Pick<PublicReportStorage, "setItem"> | null,
   reports: PublicReport[],
-): void {
-  if (!storage) return;
+): boolean {
+  if (!storage) return false;
 
   const safeReports = reports
     .flatMap((value) => {
@@ -167,9 +167,9 @@ export function writeStoredPublicReports(
 
   try {
     storage.setItem(PUBLIC_REPORT_STORAGE_KEY, JSON.stringify(safeReports));
+    return true;
   } catch {
-    // Device storage is an enhancement. Private browsing, storage quotas, or
-    // browser policy must not make the report form unusable.
+    return false;
   }
 }
 

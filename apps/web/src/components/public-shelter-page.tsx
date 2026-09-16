@@ -16,7 +16,6 @@ import {
   type PublicMapLocation,
 } from "@/lib/public-location";
 import {
-  COMPASS_LABELS,
   MANEUVER_ICONS,
   MANEUVER_LABELS,
   areaCentre,
@@ -43,26 +42,6 @@ const EMPTY_FEATURES: FeatureCollection = {
   name: "public_shelter_withheld",
   features: [],
 };
-
-/**
- * Worked example the page opens on: a destination a household could have
- * confirmed, with the first two checklist steps already ticked.
- *
- * Ban Pa Daeng School sits in a village inside the Ko Chang planning area and
- * geocodes to the same point from either language, which keeps the example
- * walk local. Schools are the usual evacuation point in Thai districts, but
- * FloodGuard has verified nothing here — the confirmation checkbox and the
- * safety notice still carry that qualification.
- */
-const EXAMPLE_DESTINATION: Record<Language, string> = {
-  en: "Ban Pa Daeng School, Mae Sai",
-  th: "โรงเรียนบ้านป่าแดง แม่สาย",
-};
-
-const EXAMPLE_COMPLETED_STEPS: RouteStepId[] = [
-  "confirm_destination",
-  "confirm_route",
-];
 
 type RouteStepId =
   | "confirm_destination"
@@ -300,12 +279,13 @@ export function PublicShelterPage({
   const destinationInputId = useId();
   const destinationConfirmationId = useId();
   const routeChecklistId = useId();
-  const exampleDestination = EXAMPLE_DESTINATION[language];
-  const [destinationDraft, setDestinationDraft] = useState(exampleDestination);
-  const [selectedDestination, setSelectedDestination] = useState(exampleDestination);
-  const [authorityConfirmed, setAuthorityConfirmed] = useState(true);
+  const [destinationDraft, setDestinationDraft] = useState("");
+  const [selectedDestination, setSelectedDestination] = useState("");
+  const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
+  const [confirmationAreaId, setConfirmationAreaId] = useState("");
+  const confirmationApplies = authorityConfirmed && confirmationAreaId === selectedAreaId;
   const [completedSteps, setCompletedSteps] = useState<Set<RouteStepId>>(
-    () => new Set(EXAMPLE_COMPLETED_STEPS),
+    () => new Set(),
   );
   const [resolvedPin, setResolvedPin] = useState<{
     destination: string;
@@ -364,10 +344,13 @@ export function PublicShelterPage({
   const routeKey = routeLeg
     ? `${routeLeg.from.latitude},${routeLeg.from.longitude};${routeLeg.to.latitude},${routeLeg.to.longitude}`
     : "";
-  const walkingRoute = resolvedRoute?.key === routeKey ? resolvedRoute.route : undefined;
+  const walkingRoute = confirmationApplies
+    && destinationDraft.trim() === selectedDestination
+    && resolvedRoute?.key === routeKey
+    ? resolvedRoute.route
+    : undefined;
 
-  // Asks OSRM for the road-following route. On failure the page keeps the
-  // straight-line leg rather than showing nothing.
+  // Only a road-following response can provide a route preview.
   useEffect(() => {
     if (!routeLeg || !routeKey) return;
     const controller = new AbortController();
@@ -377,19 +360,12 @@ export function PublicShelterPage({
         setResolvedRoute({ key: routeKey, route });
       })
       .catch(() => {
-        /* Routing is an enhancement; the straight-line leg stays. */
+        /* An unavailable route must not produce movement instructions. */
       });
     return () => controller.abort();
   }, [routeKey, routeLeg]);
 
-  const routePath = useMemo(() => {
-    if (walkingRoute) return walkingRoute.path;
-    if (!routeLeg) return undefined;
-    return [
-      [routeLeg.from.latitude, routeLeg.from.longitude] as const,
-      [routeLeg.to.latitude, routeLeg.to.longitude] as const,
-    ];
-  }, [routeLeg, walkingRoute]);
+  const routePath = walkingRoute?.path;
 
   const directions = useMemo(() => {
     // Real turns from the router when it answered. OSRM names the road each
@@ -446,40 +422,8 @@ export function PublicShelterPage({
       });
     }
 
-    // Routing unavailable: fall back to the measured straight-line leg, and say so.
-    if (!routeLeg) return [];
-    const heading = COMPASS_LABELS[routeLeg.bearing][language];
-    const distance = formatRouteDistance(routeLeg.metres, language);
-    const origin = selectedAreaName || (th ? "พื้นที่ที่เลือก" : "the selected area");
-    return [
-      {
-        id: "depart",
-        icon: "arrow" as const,
-        title: th ? `มุ่งหน้าไป${heading}` : `Head ${heading}`,
-        detail: th
-          ? `ออกจาก${origin} มุ่งหน้าไปยัง ${selectedDestination}`
-          : `Set out from ${origin} towards ${selectedDestination}.`,
-      },
-      {
-        id: "distance",
-        icon: "route" as const,
-        title: th
-          ? `ระยะตรง ${distance} ประมาณ ${routeLeg.minutes} นาที`
-          : `${distance} direct, about ${routeLeg.minutes} min`,
-        detail: th
-          ? "ยังไม่ได้เส้นทางตามถนน นี่คือระยะเส้นตรง เส้นทางเดินจริงจะยาวกว่านี้"
-          : "The road-by-road route is unavailable, so this is the straight-line distance. The walking route will be longer.",
-      },
-      {
-        id: "arrive",
-        icon: "destination" as const,
-        title: th ? `ถึง ${selectedDestination}` : `Arrive at ${selectedDestination}`,
-        detail: th
-          ? "ยืนยันทางเข้าและว่าจุดหมายเปิดให้บริการก่อนออกเดินทาง"
-          : "Confirm the entrance and that the destination is open before you travel.",
-      },
-    ];
-  }, [language, routeLeg, selectedAreaName, selectedDestination, th, walkingRoute]);
+    return [];
+  }, [language, selectedDestination, th, walkingRoute]);
 
   const selectedNeeds = useMemo(
     () => HOUSEHOLD_NEEDS.filter(({ id }) => plan.needs[id]),
@@ -489,7 +433,7 @@ export function PublicShelterPage({
 
   const saveDestination = () => {
     const normalizedDestination = destinationDraft.trim();
-    if (!normalizedDestination || !authorityConfirmed) return;
+    if (!normalizedDestination || !confirmationApplies) return;
     setSelectedDestination(normalizedDestination);
     setCompletedSteps(new Set());
   };
@@ -506,7 +450,10 @@ export function PublicShelterPage({
   return (
     <section className="public-shelter-page" aria-labelledby="public-shelter-title">
       <header className="public-shelter-page__heading">
-        <h1 id="public-shelter-title">{th ? "วางแผนเส้นทางไปยังจุดหมายที่ยืนยันแล้ว" : "Plan a route to a confirmed destination"}</h1>
+        <h1 id="public-shelter-title">{th ? "เตรียมแผนการเดินทางในครัวเรือน" : "Prepare a household journey plan"}</h1>
+        <p>{th
+          ? "ยังไม่มีจุดหมายหรือเส้นทางที่ได้รับการยืนยัน โปรดยืนยันกับหน่วยงานท้องถิ่นก่อนเลือกจุดหมาย"
+          : "No destination or route is confirmed by default. Confirm with a local authority before selecting a destination."}</p>
       </header>
 
       <section className="public-shelter-profile" aria-labelledby="public-shelter-profile-title">
@@ -573,8 +520,11 @@ export function PublicShelterPage({
           <label className="public-shelter-destination__confirmation" htmlFor={destinationConfirmationId}>
             <input
               id={destinationConfirmationId}
-              checked={authorityConfirmed}
-              onChange={(event) => setAuthorityConfirmed(event.target.checked)}
+              checked={confirmationApplies}
+              onChange={(event) => {
+                setAuthorityConfirmed(event.target.checked);
+                setConfirmationAreaId(selectedAreaId);
+              }}
               type="checkbox"
             />
             <span>
@@ -586,7 +536,7 @@ export function PublicShelterPage({
           <div className="public-shelter-destination__actions">
             <button
               className="public-shelter-primary-action"
-              disabled={!destinationDraft.trim() || !authorityConfirmed}
+              disabled={!destinationDraft.trim() || !confirmationApplies}
               type="button"
               onClick={saveDestination}
             >
@@ -601,12 +551,6 @@ export function PublicShelterPage({
       </section>
 
       <section className="public-shelter-route-overview" aria-labelledby="public-shelter-route-title">
-        {/*
-          A real basemap with the planning-area boundary and a geocoded pin for
-          the confirmed destination. It deliberately draws no route line: the
-          walking route is computed by Google Maps from "Start Guidance", and
-          sketching one here would imply routing FloodGuard has not done.
-        */}
         <div className="public-shelter-route-overview__graphic">
           <GeoMap
             areas={areas}
@@ -639,8 +583,8 @@ export function PublicShelterPage({
           />
           <p className="sr-only">
             {th
-              ? `แผนที่แสดงขอบเขตพื้นที่ ${selectedAreaName || "ที่เลือก"} และหมุดจุดหมาย ${selectedDestination || "ที่ยังไม่ได้เลือก"} ไม่ได้แสดงเส้นทางเดิน`
-              : `Map showing the ${selectedAreaName || "selected"} area boundary and a pin for ${selectedDestination || "the destination yet to be selected"}. It does not show a walking route.`}
+              ? `แผนที่แสดงขอบเขตพื้นที่ ${selectedAreaName || "ที่เลือก"} และจุดหมาย ${selectedDestination || "ที่ยังไม่ได้เลือก"} เส้นทางตัวอย่างจะแสดงเมื่อบริการเส้นทางตอบกลับเท่านั้น`
+              : `Map showing the ${selectedAreaName || "selected"} area boundary and ${selectedDestination || "no selected destination"}. A route preview is shown only when the routing service responds.`}
           </p>
         </div>
 
@@ -649,6 +593,9 @@ export function PublicShelterPage({
           <h2 id="public-shelter-route-title">
             {selectedDestination || (th ? "กรอกและยืนยันจุดหมายด้านบน" : "Enter and confirm a destination above")}
           </h2>
+          <p>{th
+            ? "จุดเริ่มต้นตัวอย่างคือกึ่งกลางขอบเขตพื้นที่วางแผน ไม่ใช่ตำแหน่งบ้านของคุณ เส้นทางนี้ใช้ทบทวนการวางแผนและไม่รับรองความปลอดภัยจากน้ำท่วม"
+            : "The preview starts at the centre of the planning-area boundary, not your home. It is for planning review and does not establish a flood-safe route."}</p>
           <dl>
             <div>
               <dt>{th ? "พื้นที่วางแผน" : "Planning area"}</dt>
@@ -659,15 +606,11 @@ export function PublicShelterPage({
               <dd>{th ? "เดินเท้า" : "Walking"}</dd>
             </div>
             <div>
-              <dt>{walkingRoute
-                ? (th ? "ระยะเดิน" : "Walking distance")
-                : (th ? "ระยะเส้นตรง" : "Direct distance")}</dt>
+              <dt>{th ? "ระยะทางตามถนนตัวอย่าง" : "Road-route preview distance"}</dt>
               <dd>
                 {walkingRoute
                   ? `${formatRouteDistance(walkingRoute.metres, language)} · ${walkingRoute.minutes} ${th ? "นาที" : "min"}`
-                  : routeLeg
-                    ? `${formatRouteDistance(routeLeg.metres, language)} · ${routeLeg.minutes} ${th ? "นาที" : "min"}`
-                    : (th ? "ยังคำนวณไม่ได้" : "Not available yet")}
+                  : (th ? "ไม่มีเส้นทางที่ใช้แสดงได้" : "Route unavailable")}
               </dd>
             </div>
           </dl>
@@ -676,7 +619,7 @@ export function PublicShelterPage({
 
       <section className="public-shelter-directions" aria-labelledby="public-shelter-directions-title">
         <h2 id="public-shelter-directions-title">
-          {th ? "เส้นทางทีละขั้น" : "Step-by-step directions"}
+          {th ? "ทบทวนเส้นทางตัวอย่าง" : "Planning route preview"}
         </h2>
         {directions.length > 0 ? (
           <ol className="public-shelter-directions__list">
@@ -695,8 +638,8 @@ export function PublicShelterPage({
         ) : (
           <p className="public-shelter-directions__empty">
             {th
-              ? "ยืนยันจุดหมายด้านบนเพื่อดูทิศทางและระยะทาง"
-              : "Confirm a destination above to see the heading and distance."}
+              ? "ไม่มีเส้นทางที่ใช้แสดงได้ ระบบจะไม่ใช้เส้นตรงแทนคำแนะนำการเดินทาง โปรดยืนยันจุดหมายและเส้นทางกับหน่วยงานท้องถิ่น"
+              : "Route unavailable. A straight line will not be used as travel guidance. Confirm the destination and route with a local authority."}
           </p>
         )}
       </section>

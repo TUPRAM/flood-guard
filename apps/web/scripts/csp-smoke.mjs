@@ -29,7 +29,7 @@ const OUT_DIR = resolve(HERE, "..", "out");
 const VERCEL_JSON = resolve(HERE, "..", "..", "..", "vercel.json");
 
 const ROUTES = [
-  "/", "/public/", "/command/", "/studio/", "/studio/planning-evidence/",
+  "/", "/public/", "/command/", "/command/mae-sai-demo/", "/studio/", "/studio/planning-evidence/",
   "/studio/archive/mae-sai-geoai/", "/studio/studies/c2s-ms-20260915/",
   ...["data", "models", "results", "rtc", "explorer", "files", "mae-sai"].map((section) => `/studio/studies/c2s-ms-20260915/${section}/`),
 ];

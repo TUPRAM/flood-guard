@@ -60,6 +60,7 @@ const routes = [
   { path: "/", selector: "main[data-fg-landing]" },
   { path: "/public/", selector: "main.public-page" },
   { path: "/command/", selector: "main.command-page" },
+  { path: "/command/mae-sai-demo/", selector: "main#main-content" },
   { path: "/studio/", selector: "main.studio-page" },
   { path: "/studio/planning-evidence/", selector: "main.studio-page" },
 ];
@@ -896,6 +897,9 @@ async function assertMaeSaiMap(page, scopeSelector, {
 }
 
 function requiredFinalCopy(routePath) {
+  if (routePath === "/command/mae-sai-demo/") {
+    return ["defensible decision", "historical planning exercise", "modelled people", "device-local exercise", "not an official warning"];
+  }
   return routePath === "/"
     ? ["see the flood.", "understand what it changes.", "illustrat"]
     : routePath === "/public/"
@@ -937,7 +941,9 @@ function assertFinalVisibleCopy(body, routePath) {
       throw new Error(`${routePath} is missing polished final copy: ${phrase}.`);
     }
   }
-  const forbidden = routePath === "/"
+  const forbidden = routePath === "/command/mae-sai-demo/"
+    ? /official dispatch confirmed|guaranteed safe route|agency approval received/iu
+    : routePath === "/"
     ? /developer note|processing_scope|can_feed_decision_layer|official dispatch confirmed/iu
     : routePath === "/studio/planning-evidence/"
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu

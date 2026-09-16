@@ -32,6 +32,8 @@
 
 .page :global(.command-context-label) { color: #47618c; font-size: .75rem; font-weight: 650; }
 .page :global(.command-context-label)::before { background: #2e60d3; box-shadow: 0 0 0 4px #e6edfc; }
+.demoLink { color: #2454b8; font-size: .78rem; font-weight: 650; padding: .55rem .7rem; border: 1px solid #c7d5ef; border-radius: .5rem; background: #edf3ff; }
+.demoLink:focus-visible { outline: 3px solid #2454b8; outline-offset: 3px; }
 .page :global(.command-context-metadata) { gap: 1rem; }
 .page :global(.command-context-metadata) div { flex-wrap: wrap; font-size: .7rem; }
 .page :global(.command-context-metadata) dt { color: var(--muted); }

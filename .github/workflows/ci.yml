@@ -55,6 +55,8 @@ jobs:
         run: >-
           uv run --project services/api pytest services/api/tests
           --junitxml=.tmp/proposal-evidence/api.xml
+      - name: Verify the reproducible Mae Sai planning case
+        run: uv run --project services/api python scripts/build_mae_sai_planning_demo.py --check
       - name: Upload API test receipt
         if: always()
         uses: actions/upload-artifact@v4

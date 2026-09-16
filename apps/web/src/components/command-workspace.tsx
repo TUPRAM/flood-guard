@@ -337,6 +337,7 @@ export function CommandWorkspace() {
       <WorkspaceHeader activeSurface="planning" language={language} onLanguageChange={setLanguage} />
       <section className="command-context-bar" aria-label={th ? "บริบทข้อมูลการวางแผน" : "Planning data context"}>
         <strong className="command-context-label">{th ? "ข้อมูลเพื่อการวางแผน" : "Planning intelligence"}</strong>
+        <a className={styles.demoLink} href="/command/mae-sai-demo/">{th ? "เปิดกรณีศึกษาย้อนหลังแม่สาย →" : "Present the Mae Sai historical case →"}</a>
         <dl className="command-context-metadata">
           <div><dt>{th ? "เวลาข้อมูล" : "Source time"}</dt><dd>{formatSourceTime(selected.source_timestamp, language)} ICT</dd></div>
           <div><dt>{th ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{formatConfidence(selected.confidence_class, language)}</dd></div>

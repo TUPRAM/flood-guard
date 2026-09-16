@@ -40,6 +40,7 @@ const coreAssets = appProfile === "public-production"
   : [
       ...publicCoreAssets,
       "/command/",
+      "/command/mae-sai-demo/",
       "/studio/",
       "/studio/planning-evidence/",
       "/offline-demo/bundle.json",
@@ -75,6 +76,7 @@ const versionedFiles = [
   resolve(out, "offline-demo", "mae-sai", "public-areas.json"),
   ...(appProfile === "competition" ? [
     resolve(out, "command", "index.html"),
+    resolve(out, "command", "mae-sai-demo", "index.html"),
     resolve(out, "studio", "index.html"),
     resolve(out, "studio", "planning-evidence", "index.html"),
     resolve(out, "offline-demo", "bundle.json"),

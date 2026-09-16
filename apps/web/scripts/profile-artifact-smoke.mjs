@@ -152,6 +152,7 @@ function validateCompetition() {
   }
   for (const required of [
     "command/index.html",
+    "command/mae-sai-demo/index.html",
     "studio/index.html",
     "studio/planning-evidence/index.html",
     "studio/archive/mae-sai-geoai/index.html",

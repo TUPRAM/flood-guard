@@ -164,8 +164,8 @@ export function PublicReportPage({
         ? `บันทึกรายงานไว้ในอุปกรณ์นี้สำหรับ ${selectedArea.area_name_th} ยังไม่ได้ส่งให้เจ้าหน้าที่`
         : `Report saved on this device for ${selectedArea.area_name_en}. It has not been sent to staff.`)
       : (th
-        ? "อุปกรณ์ไม่อนุญาตให้บันทึกถาวร รายงานอยู่ในหน้านี้เท่านั้นและจะหายเมื่อปิดหรือโหลดใหม่ ยังไม่ได้ส่งให้เจ้าหน้าที่"
-        : "Device storage is unavailable. This report is kept only in this open page and will be lost on reload or close. It has not been sent to staff."));
+        ? "อุปกรณ์ไม่อนุญาตให้บันทึกถาวร รายงานอยู่ในหน้านี้เท่านั้นและจะหายเมื่อออกจากหน้ารายงาน ปิดหน้า หรือโหลดใหม่ ยังไม่ได้ส่งให้เจ้าหน้าที่"
+        : "Device storage is unavailable. This report is kept only in this open page and will be lost when you leave this Report page, reload, or close it. It has not been sent to staff."));
   };
 
   return (

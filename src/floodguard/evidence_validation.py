@@ -5,6 +5,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import math
 import re
 from datetime import datetime, timezone
 from html.parser import HTMLParser
@@ -17,6 +18,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from .evidence_catalog import (
     FAMILIES,
     assert_public_safe,
+    canonical_bytes,
     dataset_applies,
     safe_asset_path,
     sha256_file,
@@ -27,7 +29,13 @@ from .scoring import DEFAULT_WEIGHTS
 
 PREFIX = "/evidence-library/"
 HASH = re.compile(r"^[a-f0-9]{64}$")
-PUBLIC_DATASETS = {"dataset-14", "context-osm", "context-worldpop", "project-scenarios"}
+PUBLIC_DATASETS = {
+    "dataset-14",
+    "context-osm",
+    "context-worldpop",
+    "project-scenarios",
+    "context-admin",
+}
 DATABASE_KEYS = {
     "license",
     "source_urls",
@@ -218,8 +226,135 @@ def _assessment(assessment: dict) -> None:
     )
 
 
+def _brief_partition(value: dict | None, label: str) -> None:
+    if value is None:
+        return
+    parts = (
+        "unknown_access_population",
+        "connected_without_route_population",
+        "over_30_minutes_population",
+        "within_30_minutes_population",
+    )
+    _require(
+        abs(value["modelled_population"] - math.fsum(value[key] for key in parts))
+        <= 0.05,
+        f"Decision brief population partition differs: {label}",
+    )
+
+
+def _decision_brief(package: dict, schemas: Path) -> None:
+    """Bind an optional new brief to its package and check independent totals."""
+    if "decision_brief" not in package:
+        return
+    brief = package["decision_brief"]
+    _schema(brief, "decision-brief", schemas)
+    for key in ("aoi_id", "event_id", "generated_at"):
+        _require(brief[key] == package[key], f"Mixed decision brief {key}")
+    _brief_partition(brief["access"], "AOI")
+    reporting = brief["reporting"]
+    units = _unique(reporting["units"], "id", "reporting unit")
+    _unique(brief["interventions"], "id", "brief intervention")
+    _unique(brief["capacity_experiments"], "id", "brief capacity experiment")
+    _unique(brief["next_actions"], "id", "brief next action")
+    _require(
+        brief["status"]
+        == ("scenario_only" if brief["access"] is not None else "coverage_only"),
+        "Decision brief status differs from available access context",
+    )
+    if reporting["status"] == "unavailable":
+        _require(
+            not units
+            and reporting["coverage_fraction"] is None
+            and reporting["unassigned_modelled_population"] is None,
+            "Unavailable reporting scope contains quantities",
+        )
+    else:
+        _require(
+            reporting["source_url"] is not None
+            and reporting["reference_date"] is not None
+            and reporting["coverage_fraction"] is not None,
+            "Available reporting scope lacks source or coverage",
+        )
+        boundary_layers = [
+            layer
+            for layer in package["layers"]
+            if layer["dataset_id"] == "context-admin" and "data" in layer
+        ]
+        boundary_codes = {
+            feature.get("properties", {}).get("adm3_pcode")
+            for layer in boundary_layers
+            for feature in layer["data"]["features"]
+        }
+        _require(
+            set(units) == boundary_codes
+            and all(re.fullmatch(r"TH\d{6}", code) for code in units),
+            "Decision brief reporting units differ from published boundaries",
+        )
+        if brief["access"] is not None:
+            _require(
+                reporting["unassigned_modelled_population"] is not None
+                and all(
+                    unit["population_context"] is not None for unit in units.values()
+                ),
+                "Reporting population partition is incomplete",
+            )
+            total = (
+                math.fsum(
+                    unit["population_context"]["modelled_population"]
+                    for unit in units.values()
+                )
+                + reporting["unassigned_modelled_population"]
+            )
+            # Quantities are rounded separately to two decimals by the builder.
+            tolerance = 0.005 * (len(units) + 2) + 1e-6
+            _require(
+                abs(total - brief["access"]["modelled_population"]) <= tolerance,
+                "Decision brief reporting/AOI population partition differs",
+            )
+    for unit in units.values():
+        _brief_partition(unit["population_context"], unit["id"])
+        _unique(unit["interventions"], "id", "reporting intervention")
+        if brief["access"] is None:
+            _require(
+                unit["population_context"] is None,
+                "Reporting unit contains population without AOI access context",
+            )
+    for experiment in brief["capacity_experiments"]:
+        fields = (
+            "assigned",
+            "capacity_limited",
+            "unreachable",
+            "coverage_excluded",
+            "unknown_capacity",
+        )
+        if experiment["assumed_demand"] is not None and all(
+            experiment[key] is not None for key in fields
+        ):
+            _require(
+                abs(
+                    experiment["assumed_demand"]
+                    - math.fsum(experiment[key] for key in fields)
+                )
+                <= 0.05,
+                "Decision brief capacity-demand partition differs",
+            )
+
+
 def _database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
-    _require(set(payload) == DATABASE_KEYS, "Unexpected source keys in public database")
+    _require(
+        set(payload) in (DATABASE_KEYS, DATABASE_KEYS | {"connectivity_review"}),
+        "Unexpected source keys in public database",
+    )
+    if "connectivity_review" in payload:
+        review = payload["connectivity_review"]
+        _require(
+            review.get("connections_added") == 0
+            and all(
+                row.get("automatic_connection") is False
+                for row in review.get("review_candidates", [])
+            ),
+            "Unreviewed road connection in public database",
+        )
     assert_public_safe(payload)
     for source in ("context-osm", "context-worldpop"):
         _require(
@@ -380,6 +515,90 @@ class _ReportParser(HTMLParser):
             self._pre = None
 
 
+def _report_projection(appendix: dict, packages: dict[str, dict]) -> None:
+    """Validate the explicit aggregate-only appendix against verified packages."""
+    from .evidence_pipeline import REPORT_OMITTED_FIELDS, REPORT_PROJECTION
+
+    _require(
+        appendix.get("projection") == REPORT_PROJECTION, "Unknown report projection"
+    )
+    _require(
+        set(appendix)
+        == {
+            "projection",
+            "omitted_detail_fields",
+            "package_version",
+            "build_runtime",
+            "source_inventory_sha256",
+            "aois",
+            "datasets",
+            "scenarios",
+            "decision_briefs",
+            "downloadable_packages",
+            "package_inputs",
+            "package_downloads",
+            "osm_derivative_notice",
+        },
+        "Unexpected report projection fields",
+    )
+    _require(
+        appendix["omitted_detail_fields"] == sorted(REPORT_OMITTED_FIELDS),
+        "Report projection omission declaration differs",
+    )
+    _require(
+        appendix["package_inputs"]
+        == {key: package["input_hashes"] for key, package in packages.items()},
+        "Mixed report input bindings",
+    )
+    _require(
+        appendix["package_downloads"]
+        == {key: package.get("downloads", []) for key, package in packages.items()},
+        "Mixed report database bindings",
+    )
+    _require(
+        set(appendix["scenarios"])
+        == {package["aoi_id"] for package in packages.values()},
+        "Report scenario AOIs differ",
+    )
+
+    def aggregate_only(value: Any) -> None:
+        if isinstance(value, dict):
+            _require(
+                not (set(value) & REPORT_OMITTED_FIELDS),
+                "Detailed records or geometry in compact report projection",
+            )
+            _require(
+                value.get("type")
+                not in {
+                    "Feature",
+                    "FeatureCollection",
+                    "Polygon",
+                    "MultiPolygon",
+                    "LineString",
+                    "MultiLineString",
+                },
+                "GeoJSON layer in compact report projection",
+            )
+            for child in value.values():
+                aggregate_only(child)
+        elif isinstance(value, list):
+            for child in value:
+                aggregate_only(child)
+
+    aggregate_only(appendix["scenarios"])
+    for package in packages.values():
+        _require(
+            appendix["source_inventory_sha256"]
+            == package["input_hashes"].get("source_inventory_sha256"),
+            "Mixed report source inventory",
+        )
+        _require(
+            appendix["scenarios"][package["aoi_id"]].get("summaries")
+            == package["scenarios"],
+            "Mixed report scenario summaries",
+        )
+
+
 def verify_evidence_library(
     public_dir: str | Path, *, local_dir: str | Path | None = None
 ) -> dict[str, Any]:
@@ -426,6 +645,7 @@ def verify_evidence_library(
     packages = {}
     downloads_seen: dict[str, str] = {}
     reports = set()
+    report_projections = []
     for identifier, entry in entries.items():
         _require(
             identifier == f"{entry['aoi_id']}_{entry['event_id']}",
@@ -443,6 +663,7 @@ def verify_evidence_library(
         _schema(package["assessment"], "evidence-assessment", schemas)
         assert_public_safe(package)
         _assessment(package["assessment"])
+        _decision_brief(package, schemas)
         for key in ("id", "aoi_id", "event_id"):
             _require(package[key] == entry[key], f"Mixed package {key}")
         _require(
@@ -539,6 +760,19 @@ def verify_evidence_library(
                 and appendix.get("datasets") == catalog["datasets"],
                 "Mixed report source/AOI metadata",
             )
+            if any("decision_brief" in package for package in packages.values()):
+                _require(
+                    appendix.get("decision_briefs")
+                    == [package.get("decision_brief") for package in packages.values()],
+                    "Mixed report decision briefs",
+                )
+            if "projection" in appendix:
+                _require(
+                    len(path.read_bytes()) < 5 * 1024 * 1024,
+                    "Compact report exceeds 5 MiB budget",
+                )
+                _report_projection(appendix, packages)
+                report_projections.append(appendix["scenarios"])
     actual = {
         path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()
     }
@@ -548,7 +782,7 @@ def verify_evidence_library(
     )
     hashes = {name: sha256_file(root / name) for name in sorted(files)}
     local_result = (
-        _verify_local(Path(local_dir), catalog, packages, hashes)
+        _verify_local(Path(local_dir), catalog, packages, hashes, report_projections)
         if local_dir is not None
         else None
     )
@@ -569,11 +803,194 @@ def verify_evidence_library(
     }
 
 
-def _verify_local(root: Path, catalog: dict, packages: dict, hashes: dict) -> dict:
+def _proof(root: Path, name: str, expected: str, label: str) -> None:
+    path = safe_asset_path(root, name)
+    _require(path.is_file(), f"Missing {label}: {name}")
+    _hash(expected, sha256_file(path), f"{label}: {name}")
+
+
+def _review_lineage(root: Path, package: dict, aois: dict) -> None:
+    """Check declared review objects and their current local proof manifests."""
+    bindings = package["input_hashes"]
+    brief = package.get("decision_brief")
+    if brief is not None:
+        _require(
+            "population_review_sha256" in bindings,
+            "Decision brief lacks population review binding",
+        )
+        if brief["reporting"]["status"] == "available":
+            _require(
+                "event_review_sha256" in bindings,
+                "Decision brief lacks reporting review binding",
+            )
+    if "population_review_sha256" in bindings:
+        population = _read(root / "review/population_review_summary.json")
+        _hash(
+            bindings["population_review_sha256"],
+            hashlib.sha256(canonical_bytes(population)).hexdigest(),
+            "population review summary",
+        )
+        files = population.get("local_review_files", {})
+        _require(
+            set(files)
+            == {
+                "population_group_review.json",
+                "destination_identity_review.json",
+                "capacity_assumptions.json",
+            },
+            "Population review proof manifest differs",
+        )
+        for name, expected in files.items():
+            _proof(root / "review", name, expected, "population review proof")
+    if "event_review_sha256" not in bindings:
+        return
+    review = _read(root / "event_review/summary.json")
+    _hash(
+        bindings["event_review_sha256"],
+        hashlib.sha256(canonical_bytes(review)).hexdigest(),
+        "event review summary",
+    )
+    names = {
+        "reporting_units": "reporting_units.geojson",
+        "crosswalk": "reporting_crosswalk.json",
+        "event_evidence": "event_evidence_review.json",
+    }
+    for key, name in names.items():
+        artifact = review.get(key, {})
+        _require(
+            artifact.get("path") == name, f"Event review artifact path differs: {key}"
+        )
+        _proof(
+            root / "event_review", name, artifact.get("sha256"), "event review proof"
+        )
+    units = _read(root / "event_review/reporting_units.geojson")
+    crosswalk = _read(root / "event_review/reporting_crosswalk.json")
+    if brief is not None and brief["reporting"]["status"] == "available":
+        rows = _unique(crosswalk["aois"], "aoi_id", "reporting crosswalk AOI")
+        _require(package["aoi_id"] in rows, "Missing reporting crosswalk AOI")
+        row = rows[package["aoi_id"]]
+        codes = {unit["adm3_pcode"] for unit in row["units"]}
+        projected = {
+            "type": "FeatureCollection",
+            "features": [
+                {key: value for key, value in feature.items() if key != "id"}
+                for feature in units["features"]
+                if feature["properties"]["adm3_pcode"] in codes
+            ],
+        }
+        layers = [
+            layer
+            for layer in package["layers"]
+            if layer["dataset_id"] == "context-admin" and "data" in layer
+        ]
+        _require(
+            len(layers) == 1 and layers[0]["data"] == projected,
+            "Public reporting geometry differs from verified local proof",
+        )
+        _require(
+            brief["reporting"]["coverage_fraction"] == row["coverage_fraction"],
+            "Public reporting coverage differs from verified local proof",
+        )
+        by_code = {unit["adm3_pcode"]: unit for unit in row["units"]}
+        for unit in brief["reporting"]["units"]:
+            _require(
+                unit["id"] in by_code,
+                "Brief reporting unit absent from local crosswalk",
+            )
+            for key in ("scope", "unit_coverage_fraction", "intersection_area_km2"):
+                _require(
+                    unit[key] == by_code[unit["id"]][key],
+                    f"Public reporting {key} differs from verified local proof",
+                )
+    input_hashes = review.get("input_hashes", {})
+    _require(
+        {"boundary_archive", "boundary_metadata", "boundary_license"}
+        <= input_hashes.keys(),
+        "Event review input manifest incomplete",
+    )
+    for name, expected in input_hashes.items():
+        _hash(expected, expected, f"event review input {name}")
+        if name == "boundary_metadata":
+            local_name = "acquisition/event_review/hdx_cod_ab_metadata.json"
+        elif name == "boundary_license":
+            local_name = "acquisition/event_review/cc_by_igo_3_legalcode.html"
+        elif name.startswith("acquisition/"):
+            local_name = "acquisition/event_review/" + name.removeprefix("acquisition/")
+        elif name.startswith("prior/"):
+            local_name = "normalized/" + name.removeprefix("prior/")
+        elif name.startswith("aoi/"):
+            identifier = name.removeprefix("aoi/").removesuffix(".geojson")
+            _require(identifier in aois, "Event review references unknown AOI")
+            _hash(expected, aois[identifier]["sha256"], "event review AOI source")
+            continue
+        else:
+            # These immutable originals live outside the output tree. Their
+            # intake hashes are bound here, not represented as bytes reverified.
+            _require(
+                name in {"boundary_archive", "original_flood_readme"},
+                "Unknown event review input binding",
+            )
+            continue
+        _proof(root, local_name, expected, "event review input")
+    from .evidence_event_review import BOUNDARY_SOURCE
+
+    source = review.get("boundary_source", {})
+    for key in (
+        "source_sha256",
+        "license",
+        "license_url",
+        "license_snapshot_sha256",
+        "source_timestamp",
+        "public_derivatives",
+    ):
+        _require(
+            source.get(key) == BOUNDARY_SOURCE[key],
+            f"Reporting boundary source policy differs: {key}",
+        )
+    _hash(
+        input_hashes["boundary_archive"],
+        source["source_sha256"],
+        "boundary original binding",
+    )
+    _hash(
+        input_hashes["boundary_license"],
+        source["license_snapshot_sha256"],
+        "boundary license binding",
+    )
+
+
+def _verify_local(
+    root: Path,
+    catalog: dict,
+    packages: dict,
+    hashes: dict,
+    report_projections: list[dict] | None = None,
+) -> dict:
     registry = _read(root / "evidence_registry.json")
     assets = _unique(registry["assets"], "id", "local asset")
     datasets = _unique(registry["datasets"], "id", "local dataset")
     local_aois = _unique(registry["aois"], "id", "local AOI")
+    supplementary = registry.get("supplementary_evidence_hashes", {})
+    _require(isinstance(supplementary, dict), "Invalid supplementary proof manifest")
+    for name, expected in supplementary.items():
+        _proof(root, name, expected, "supplementary evidence")
+    if any("decision_brief" in package for package in packages.values()):
+        directories = ("review", "event_review", "acquisition/event_review")
+        actual_proofs = {
+            path.relative_to(root).as_posix()
+            for directory in directories
+            for path in (root / directory).rglob("*")
+            if path.is_file()
+        }
+        declared_proofs = {
+            name
+            for name in supplementary
+            if any(name.startswith(directory + "/") for directory in directories)
+        }
+        _require(
+            actual_proofs == declared_proofs,
+            "Supplementary review proof inventory differs",
+        )
     for aoi in catalog["aois"]:
         _require(aoi["id"] in local_aois, "Missing local AOI")
         for key in ("sha256", "geometry", "event_ids"):
@@ -600,8 +1017,13 @@ def _verify_local(root: Path, catalog: dict, packages: dict, hashes: dict) -> di
             _require(
                 asset_id in assets, "Dataset references missing parent/source asset"
             )
+    projected_scenarios = {}
     for identifier, package in packages.items():
         local = _read(root / "packages" / f"{identifier}.json")
+        _require(
+            local.get("decision_brief") == package.get("decision_brief"),
+            "Mixed local/public package decision_brief",
+        )
         for key in (
             "id",
             "aoi_id",
@@ -627,6 +1049,20 @@ def _verify_local(root: Path, catalog: dict, packages: dict, hashes: dict) -> di
             sha256_file(scenario),
             "local scenario",
         )
+        _review_lineage(root, package, local_aois)
+        if report_projections:
+            from .evidence_pipeline import report_scenario_projection
+
+            aoi_id = package["aoi_id"]
+            if aoi_id not in projected_scenarios:
+                projected_scenarios[aoi_id] = report_scenario_projection(
+                    _read(scenario)
+                )
+            for projection in report_projections:
+                _require(
+                    projection[aoi_id] == projected_scenarios[aoi_id],
+                    "Report aggregate results differ from verified local scenarios",
+                )
     receipt = _read(root / "normalization_receipt.json")
     _require(bool(receipt["outputs"]), "Empty normalization receipt")
     for name, expected in receipt["outputs"].items():
@@ -646,6 +1082,7 @@ def _verify_local(root: Path, catalog: dict, packages: dict, hashes: dict) -> di
         "assets": len(assets),
         "datasets": len(datasets),
         "normalized_outputs": len(receipt["outputs"]),
+        "supplementary_proofs": len(supplementary),
         "source_bytes_reverified": False,
         "scope": "Registry lineage and derived outputs; immutable source bundle verification belongs to intake.",
     }

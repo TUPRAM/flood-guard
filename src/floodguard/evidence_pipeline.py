@@ -23,6 +23,7 @@ from .evidence_catalog import (
     sha256_file,
     validate_layer_export,
 )
+from .evidence_decision_brief import build_decision_brief
 from .evidence_scenarios import build_illustrative_scenarios, evidence_assessment
 
 TRANSFORMATION_VERSION = "evidence-demo-1"
@@ -155,42 +156,55 @@ def _public_context(context: dict) -> dict:
         "edges": context["edges"],
         "osm_facilities": context["osm_facilities"],
         "coverage": context["coverage"],
+        "connectivity_review": context.get("connectivity_review", {}),
     }
     assert_public_safe(projected)
     return projected
 
 
-def _compact_details(details: dict) -> dict:
-    """Retain exact changes and totals while keeping large OD tables local."""
-    return {
-        k: v
-        for k, v in details.items()
-        if k not in ("access_scenarios", "capacity_scenarios", "map_geojson")
-    } | {
-        "access_scenarios": {
-            k: {
-                key: value
-                for key, value in result.items()
-                if key
-                not in (
-                    "node_results",
-                    "baseline_reachable_pairs",
-                    "scenario_reachable_pairs",
-                    "areas",
-                    "facility_snap_review",
-                )
-            }
-            for k, result in details.get("access_scenarios", {}).items()
-        },
-        "capacity_scenarios": [
-            {
-                k: v
-                for k, v in result.items()
-                if k not in ("allocations", "population_results", "facility_results")
-            }
-            for result in details.get("capacity_scenarios", [])
-        ],
+REPORT_PROJECTION = "aggregate_scenarios_v2"
+REPORT_OMITTED_FIELDS = frozenset(
+    {
+        "allocations",
+        "population_results",
+        "facility_results",
+        "node_results",
+        "baseline_reachable_pairs",
+        "scenario_reachable_pairs",
+        "areas",
+        "facility_snap_review",
+        "map_geojson",
+        "layers",
+        "geometry",
     }
+)
+
+
+def _compact_details(details: dict) -> dict:
+    """Project exact settings and aggregate results, excluding detailed records.
+
+    The same projection covers both capacity presets and participation
+    sensitivities, including wrapped results. Full scenario records stay local;
+    public geometry and ODbL source databases are separate hash-bound downloads.
+    """
+
+    def project(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {
+                key: project(item)
+                for key, item in value.items()
+                if key not in REPORT_OMITTED_FIELDS
+            }
+        if isinstance(value, list):
+            return [project(item) for item in value]
+        return value
+
+    return project(details)
+
+
+def report_scenario_projection(details: dict) -> dict:
+    """Return the explicit compact report projection used by offline verification."""
+    return _compact_details(details) | {"summaries": scenario_summaries(details)}
 
 
 def _display_roads(path: Path) -> dict:
@@ -251,7 +265,20 @@ def _scenario_features(context: dict, details: dict) -> dict:
                 },
                 "properties": {
                     "facility_id": "scenario-added-destination",
-                    "name": "Hypothetical temporary destination; 50/100/200-place capacity experiments",
+                    "name": "Hypothetical access destination; suitability unverified",
+                    "evidence_role": "scenario",
+                },
+            }
+        )
+    site = details.get("hypothetical_capacity_site")
+    if site:
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": site["coordinates"]},
+                "properties": {
+                    "facility_id": site["facility_id"],
+                    "name": "Separate hypothetical capacity site; 50/100/200 places and 5/10/25% residential participation",
                     "evidence_role": "scenario",
                 },
             }
@@ -271,7 +298,12 @@ def _context_scenarios(
         "build_runtime_sha256": runtime["sha256"],
         "transformations": {
             name: sha256_file(Path(__file__).parent / name)
-            for name in ("evidence_context.py", "evidence_scenarios.py")
+            for name in (
+                "evidence_context.py",
+                "evidence_scenarios.py",
+                "evidence_interventions.py",
+                "evidence_population_review.py",
+            )
         },
     }
     receipt_path = path.with_suffix(".receipt.json")
@@ -487,6 +519,7 @@ def scenario_summaries(details: dict) -> list[dict]:
     capacities = details.get("capacity_scenarios", [])
     if isinstance(capacities, dict):
         capacities = [value for _, value in sorted(capacities.items())]
+    capacities = [*capacities, *details.get("capacity_participation_sensitivity", [])]
     for index, result in enumerate(capacities):
         label = result.get(
             "title",
@@ -651,6 +684,7 @@ def build_library(
     public_dir: Path,
     generated_at: str,
     context_root: Path | None = None,
+    boundary_archive: Path | None = None,
     reuse_normalized: bool = False,
 ) -> dict:
     """Verify inputs, normalize locally, compute scenarios and project safe assets."""
@@ -719,6 +753,41 @@ def build_library(
         from .evidence_acquisition import review_public_responses
 
         review_public_responses(output_dir / "acquisition", aois)
+    from .evidence_population_review import build_population_review
+
+    def review_input(name: str) -> list:
+        path = output_dir / "review" / name
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+
+    population_review = build_population_review(
+        output_dir / "normalized",
+        output_dir / "review",
+        source_evidence=review_input("population_definition_evidence.json"),
+        identity_reviews=review_input("public_identity_reviews.json"),
+        generated_at=generated_at,
+    )
+    reporting_review, reporting_units, event_evidence = {}, {}, {}
+    if boundary_archive is not None:
+        from .evidence_event_review import build_event_review
+
+        reporting_review = build_event_review(
+            aoi_dir=aoi_dir,
+            acquisition_dir=output_dir / "acquisition/event_review",
+            output_dir=output_dir / "event_review",
+            existing_boundary_zip=boundary_archive,
+            prior_evidence_dir=output_dir,
+            open_data_dir=bundle_root,
+        )
+        reporting_units = json.loads(
+            (output_dir / "event_review/reporting_units.geojson").read_text(
+                encoding="utf-8"
+            )
+        )
+        event_evidence = json.loads(
+            (output_dir / "event_review/event_evidence_review.json").read_text(
+                encoding="utf-8"
+            )
+        )
     supplementary = {}
     for relative in (
         "facility_review/public_identity_reviews.json",
@@ -728,6 +797,12 @@ def build_library(
         path = output_dir / relative
         if path.exists():
             supplementary[relative] = sha256_file(path)
+    for directory in ("review", "event_review", "acquisition/event_review"):
+        for path in sorted((output_dir / directory).rglob("*")):
+            if path.is_file():
+                supplementary[path.relative_to(output_dir).as_posix()] = sha256_file(
+                    path
+                )
     ngis_path = output_dir / "acquisition/ngis/context_manifest.json"
     ngis = (
         json.loads(ngis_path.read_text(encoding="utf-8"))
@@ -781,6 +856,22 @@ def build_library(
         "datasets": [public_dataset(d) for d in registry["datasets"]] + SUPPORTING,
         "packages": [],
     }
+    if reporting_review:
+        source = reporting_review["boundary_source"]
+        admin = _supporting_dataset(
+            "context-admin",
+            "Official Thai subdistrict reporting boundaries (2022)",
+            source["license"],
+            source["source_url"],
+            "static_context",
+            reporting_review["assumptions"],
+        )
+        admin["source_urls"].append(source["license_url"])
+        admin["rights"]["attribution"] = [source["attribution"]]
+        admin["temporal"]["label"] = (
+            "Source valid 22 January 2022; event-era boundary currency unverified"
+        )
+        catalog["datasets"].append(admin)
     public_dir.mkdir(parents=True, exist_ok=True)
     expected_files = {"catalog.json", "report.html"}
     public_packages = []
@@ -943,6 +1034,43 @@ def build_library(
                 **image_fields,
             }
             layers.append(terrain_layer)
+            if reporting_review:
+                boundary_row = next(
+                    row
+                    for row in reporting_review["crosswalk"]["aois"]
+                    if row["aoi_id"] == aoi["id"]
+                )
+                codes = {row["adm3_pcode"] for row in boundary_row["units"]}
+                layers.append(
+                    {
+                        "id": "reporting-subdistricts",
+                        "title": "Official subdistrict boundaries — 2022 reference",
+                        "role": "static_context",
+                        "dataset_id": "context-admin",
+                        "availability": "partial",
+                        "reason": "Full source polygons; analytical totals describe only their intersection with the selected AOI.",
+                        "attribution": reporting_review["boundary_source"][
+                            "attribution"
+                        ],
+                        "data": {
+                            "type": "FeatureCollection",
+                            "features": [
+                                {k: v for k, v in feature.items() if k != "id"}
+                                for feature in reporting_units["features"]
+                                if feature["properties"]["adm3_pcode"] in codes
+                            ],
+                        },
+                    }
+                )
+                datasets.append(
+                    {
+                        "dataset_id": "context-admin",
+                        "availability": "partial",
+                        "coverage": f"{len(codes)} intersecting subdistricts; {boundary_row['coverage_fraction']:.2%} of AOI covered. Unassigned land and ambiguous memberships remain explicit.",
+                        "qc": policies["context-admin"]["limitations"],
+                        "summary": "Royal Thai Survey Department / OCHA COD-AB, CC BY 3.0 IGO. AOI windows are not administrative units.",
+                    }
+                )
             if context:
                 for key, title in (
                     ("road_geojson", "OSM routing context — display ways"),
@@ -1023,6 +1151,13 @@ def build_library(
             }
             if context:
                 hashes.update(context["input_hashes"])
+            hashes["population_review_sha256"] = hashlib.sha256(
+                canonical_bytes(population_review)
+            ).hexdigest()
+            if reporting_review:
+                hashes["event_review_sha256"] = hashlib.sha256(
+                    canonical_bytes(reporting_review)
+                ).hexdigest()
             event_assumptions = []
             if event == "mae_sai_2024":
                 event_assumptions.append(
@@ -1061,6 +1196,17 @@ def build_library(
                 "gauges": [],
                 "assessment": _assessment(aoi["id"]),
                 "scenarios": scenario_summaries(details),
+                "decision_brief": build_decision_brief(
+                    aoi_id=aoi["id"],
+                    event_id=event,
+                    generated_at=generated_at,
+                    context=context,
+                    details=details,
+                    reporting_review=reporting_review,
+                    reporting_units=reporting_units,
+                    event_evidence=event_evidence,
+                    population_review=population_review,
+                ),
                 "report_url": PUBLIC_PREFIX + "report.html",
                 "downloads": downloads,
             }
@@ -1175,7 +1321,43 @@ def render_report(
         for d in catalog["datasets"]
     )
     sections = []
+    package_bindings = {entry["id"]: entry for entry in catalog["packages"]}
     for package in packages:
+        binding = package_bindings[package["id"]]
+        brief = package.get("decision_brief", {})
+        context = brief.get("access") or {}
+        brief_rows = "".join(
+            f"<tr><td>{esc(unit['name'])} ({esc(unit['id'])})</td><td>{unit['unit_coverage_fraction']:.1%}</td><td>{esc((unit.get('population_context') or {}).get('modelled_population', 'unavailable'))}</td><td>{esc((unit.get('population_context') or {}).get('unknown_access_population', 'unavailable'))}</td></tr>"
+            for unit in brief.get("reporting", {}).get("units", [])
+        )
+        concise = (
+            (
+                "<h3>Decision brief</h3><p>Review priority: verify consequential connections and destinations. Accepted FPPS, action class and flood-affected population remain unavailable.</p>"
+                + f"<p>Modelled residential population (2020): {esc(context.get('modelled_population', 'unavailable'))}. Access unknown because no accepted graph connector: {esc(context.get('unknown_access_population', 'unavailable'))}. These counts are not flood exposure or evacuation demand.</p>"
+                + "<table><tr><th>Subdistrict / code</th><th>Area inside AOI</th><th>Modelled residents in AOI intersection</th><th>Access unknown</th></tr>"
+                + brief_rows
+                + "</table>"
+                + "<ul>"
+                + "".join(
+                    f"<li>{esc(item['kind'])}: gain/loss of 30-minute access {item['gaining_30_min_access']} / {item['losing_30_min_access']}; slower/faster population {item['slower_population']} / {item['faster_population']}; mean finite-route travel change {esc(item['mean_travel_time_delta_minutes'])} minutes. {esc(item['result'])}.</li>"
+                    for item in brief.get("interventions", [])
+                )
+                + "</ul>"
+                + "<details><summary>Source-review findings</summary><ul>"
+                + "".join(
+                    f"<li>{esc(note['summary'])} "
+                    + " ".join(
+                        f'<a href="{esc(url)}">Source</a>'
+                        for url in note["source_urls"]
+                    )
+                    + "</li>"
+                    for note in brief.get("evidence_notes", [])
+                )
+                + "</ul></details>"
+            )
+            if brief
+            else ""
+        )
         table = "".join(
             f"<tr><td>{esc(s['title'])}</td><td>{esc(s['kind'])}</td><td>"
             + "<br>".join(
@@ -1186,13 +1368,14 @@ def render_report(
             for s in package["scenarios"]
         )
         sections.append(
-            f"<section><h2>{esc(package['id'])}</h2><p>Actual FPPS and action class: unavailable. Fixed-weight sensitivity range 0–100; no qualified event input is silently filled.</p><ul>"
+            f"<section><h2>{esc(package['id'])}</h2>{concise}<p>Actual FPPS and action class: unavailable. Fixed-weight sensitivity range 0–100; no qualified event input is silently filled.</p><ul>"
             + "".join(f"<li>{esc(a)}</li>" for a in package["assumptions"])
             + "".join(
                 f"<li>{esc(d['dataset_id'])} — {esc(d['coverage'])}</li>"
                 for d in package["datasets"]
             )
             + "</ul>"
+            + f'<p><a href="{esc(binding["url"])}">Full evidence package and published map geometry (JSON)</a> — SHA-256 <code>{esc(binding["sha256"])}</code></p>'
             + "".join(
                 f'<p><a href="{esc(d["url"])}">{esc(d["title"])}</a> — SHA-256 <code>{esc(d["sha256"])}</code></p>'
                 for d in package.get("downloads", [])
@@ -1209,22 +1392,26 @@ def render_report(
         if r.get("status") == "downloaded_context_candidate"
     )
     compact_scenarios = {
-        aoi: {
-            key: value
-            for key, value in details.items()
-            if key not in {"access_scenarios", "capacity_scenarios", "map_geojson"}
-        }
-        | {"summaries": scenario_summaries(details)}
+        aoi: report_scenario_projection(details)
         for aoi, details in scenario_details.items()
     }
     appendix = {
+        "projection": REPORT_PROJECTION,
+        "omitted_detail_fields": sorted(REPORT_OMITTED_FIELDS),
         "package_version": catalog["package_version"],
         "build_runtime": registry.get("build_runtime"),
         "source_inventory_sha256": registry["source_inventory_sha256"],
         "aois": catalog["aois"],
         "datasets": catalog["datasets"],
         "scenarios": compact_scenarios,
+        "decision_briefs": [package.get("decision_brief") for package in packages],
         "downloadable_packages": catalog["packages"],
+        "package_inputs": {
+            package["id"]: package["input_hashes"] for package in packages
+        },
+        "package_downloads": {
+            package["id"]: package.get("downloads", []) for package in packages
+        },
         "osm_derivative_notice": "Any OSM-derived road/site database in these packages and appendix is offered under Open Database License 1.0: https://opendatacommons.org/licenses/odbl/1-0/ . © OpenStreetMap contributors. WorldPop-derived modelled population retains CC BY 4.0 attribution. Scenario changes are FloodGuard assumptions.",
     }
     assert_public_safe(appendix)
@@ -1242,7 +1429,7 @@ def render_report(
         + source_links
         + "</ul>"
         + "".join(sections)
-        + "<h2>Reproducibility appendix</h2><p>The JSON below contains exact precomputed scenario definitions, input identities and results. Synthetic diagrams are explicitly identified; OSM/WorldPop scenarios are historical estimates.</p><details><summary>Show analytical receipt / ODbL derived database offer</summary><pre>"
+        + "<h2>Reproducibility appendix</h2><p>The JSON below retains exact scenario settings, input identities and aggregate results. Detailed per-cell allocations and routing tables remain in the local research artifacts. Full published map geometry is in the linked evidence packages; the ODbL road, site and modelled-population databases are offered through the separate checksum-bound downloads above. Synthetic diagrams are explicitly identified; OSM/WorldPop scenarios are historical estimates.</p><details><summary>Show compact analytical receipt and database download bindings</summary><pre>"
         + esc(canonical_bytes(appendix).decode())
         + "</pre></details></body></html>"
     )

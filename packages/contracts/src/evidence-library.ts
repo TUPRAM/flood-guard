@@ -1,4 +1,5 @@
 /** Static, candidate-only evidence packages. These are not AreaDecision payloads. */
+import type { DecisionBrief } from "./decision-brief";
 export const EVIDENCE_AVAILABILITIES = ["available", "partial", "metadata_only", "missing", "blocked"] as const;
 export type EvidenceAvailability = (typeof EVIDENCE_AVAILABILITIES)[number];
 
@@ -108,5 +109,6 @@ export interface EvidenceLibraryPackage {
   assessment: EvidenceAssessment;
   scenarios: EvidenceLibraryScenario[];
   report_url: string | null;
+  decision_brief?: DecisionBrief;
   downloads?: { title: string; url: string; sha256: string }[];
 }

@@ -155,10 +155,9 @@ try {
   if (await page.locator('a[href^="/command"], a[href^="/studio"]').count()) {
     throw new Error("Public profile root exposes a staff-surface link.");
   }
-  const commandResponse = await context.request.get(`${baseUrl}/command/`);
-  const studioResponse = await context.request.get(`${baseUrl}/studio/`);
-  if (commandResponse.status() !== 404 || studioResponse.status() !== 404) {
-    throw new Error(`Public profile staff routes did not return 404: ${commandResponse.status()}, ${studioResponse.status()}`);
+  for (const staffRoute of ["/command/", "/studio/", "/studio/library/", "/studio/brief/"]) {
+    const response = await context.request.get(`${baseUrl}${staffRoute}`);
+    if (response.status() !== 404) throw new Error(`Public profile staff route did not return 404: ${staffRoute}: ${response.status()}`);
   }
 
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
@@ -176,6 +175,8 @@ try {
   for (const forbidden of [
     "/command/",
     "/studio/",
+    "/studio/library/",
+    "/studio/brief/",
     "/offline-demo/bundle.json",
     "/offline-demo/mae-sai/bundle.json",
     "/offline-demo/mae-sai/roads.json",

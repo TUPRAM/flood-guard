@@ -26,7 +26,7 @@ const HERE = fileURLToPath(new URL(".", import.meta.url));
 const OUT_DIR = resolve(HERE, "..", "out");
 const VERCEL_JSON = resolve(HERE, "..", "..", "..", "vercel.json");
 
-const ROUTES = ["/", "/public/", "/command/", "/studio/", "/studio/library/"];
+const ROUTES = ["/", "/public/", "/command/", "/studio/", "/studio/library/", "/studio/brief/"];
 
 const MIME = {
   ".html": "text/html; charset=utf-8",

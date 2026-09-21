@@ -56,6 +56,8 @@ const routes = [
   { path: "/public/", selector: "main.public-page" },
   { path: "/command/", selector: "main.command-page" },
   { path: "/studio/", selector: "main.studio-page" },
+  { path: "/studio/library/", selector: "main[data-evidence-library]" },
+  { path: "/studio/brief/", selector: "main[data-evidence-library]" },
 ];
 const approvedBasemapOrigins = new Set([
   "https://tile.openstreetmap.org",
@@ -797,6 +799,8 @@ async function assertMaeSaiMap(page, scopeSelector, {
 }
 
 function requiredFinalCopy(routePath) {
+  if (routePath === "/studio/library/") return ["study-area evidence library", "non-operational", "candidate research evidence"];
+  if (routePath === "/studio/brief/") return ["study-area decision brief", "non-operational", "candidate research evidence"];
   return routePath === "/"
     ? ["see the flood.", "understand who may be cut off.", "synthetic illustration", "not a confirmed closure", "explore the planning demo"]
     : routePath === "/public/"
@@ -838,7 +842,7 @@ function assertFinalVisibleCopy(body, routePath) {
   }
   const forbidden = routePath === "/"
     ? /coming soon|under construction|work in progress|developer note/iu
-    : routePath === "/studio/"
+    : routePath.startsWith("/studio/")
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
     : routePath === "/public/"
       ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu

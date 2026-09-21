@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { EvidenceAvailability, EvidenceLibraryCatalog, EvidenceLibraryGauge, EvidenceLibraryPackage } from "@floodguard/contracts";
 import { LanguageToggle } from "@/components/language-toggle";
+import { DecisionBriefPanel } from "./decision-brief";
 import { EvidenceFeatureBrowser } from "./evidence-library-features";
 import { useLanguage } from "@/lib/use-language";
 import { EVIDENCE_CATALOG_URL, evidenceAssetUrl, fetchEvidencePackage, gaugeSegments, parseEvidenceCatalog, selectEvidencePackage, sourceClockCoordinate } from "@/lib/evidence-library";
@@ -14,7 +15,7 @@ const STATUS: Record<EvidenceAvailability, [string, string]> = {
   available: ["Available", "มีข้อมูล"], partial: ["Partial coverage", "ข้อมูลบางส่วน"],
   metadata_only: ["Metadata only", "เฉพาะข้อมูลกำกับ"], missing: ["Not acquired", "ยังไม่ได้ข้อมูล"], blocked: ["Blocked", "ยังใช้ไม่ได้"],
 };
-const SUPPORTING_SOURCES = new Set(["project-scenarios", "context-osm", "context-worldpop"]);
+const SUPPORTING_SOURCES = new Set(["project-scenarios", "context-osm", "context-worldpop", "context-admin"]);
 
 export function EvidenceGaugeChart({ gauge, th }: { gauge: EvidenceLibraryGauge; th: boolean }) {
   const segments = gaugeSegments(gauge.points, 10 * 60 * 1000, gauge.timezone);
@@ -41,8 +42,8 @@ export function EvidenceGaugeChart({ gauge, th }: { gauge: EvidenceLibraryGauge;
   </article>;
 }
 
-export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, initialAoiId, initialEventId }: {
-  initialCatalog?: EvidenceLibraryCatalog | null; initialPackage?: EvidenceLibraryPackage | null; initialAoiId?: string; initialEventId?: string;
+export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, initialAoiId, initialEventId, view = "evidence" }: {
+  initialCatalog?: EvidenceLibraryCatalog | null; initialPackage?: EvidenceLibraryPackage | null; initialAoiId?: string; initialEventId?: string; view?: "brief" | "evidence";
 } = {}) {
   const [language, setLanguage] = useLanguage("en");
   const th = language === "th";
@@ -90,11 +91,11 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
   return <main id="main-content" className={styles.library} data-evidence-library="true">
     <header className={styles.header}>
       <a className={styles.brand} href="/studio/">FloodGuard <span>Studio</span></a>
-      <nav aria-label={th ? "หน้าหลักฐาน" : "Evidence navigation"}><a href="/studio/">{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href="/studio/library/" aria-current="page">{th ? "คลังข้อมูล" : "Evidence library"}</a></nav>
+      <nav aria-label={th ? "หน้าหลักฐาน" : "Evidence navigation"}><a href="/studio/">{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href="/studio/brief/" aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"}</a><a href="/studio/library/" aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังข้อมูล" : "Evidence library"}</a></nav>
       <LanguageToggle language={language} onChange={setLanguage} />
     </header>
     <div className={styles.content}>
-      <div className={styles.heading}><div><p className={styles.eyebrow}>{th ? "หลักฐานสำหรับต้นแบบ" : "PROTOTYPE EVIDENCE"}</p><h1>{th ? "คลังข้อมูลพื้นที่ศึกษา" : "Study-area evidence library"}</h1><p>{th ? "ตรวจสอบข้อมูลที่มี ช่องว่าง และสมมติฐานของแต่ละพื้นที่และเหตุการณ์" : "Inspect acquired data, coverage gaps and assumptions for each area and event."}</p></div><span className={styles.badge}>{th ? "ไม่ใช่ระบบปฏิบัติการ" : "Non-operational"}</span></div>
+      <div className={styles.heading}><div><p className={styles.eyebrow}>{th ? "หลักฐานสำหรับต้นแบบ" : "PROTOTYPE EVIDENCE"}</p><h1>{view === "brief" ? (th ? "บทสรุปเพื่อการตัดสินใจ" : "Study-area decision brief") : (th ? "คลังข้อมูลพื้นที่ศึกษา" : "Study-area evidence library")}</h1><p>{view === "brief" ? (th ? "เปรียบเทียบสิ่งที่ควรตรวจสอบ การเปลี่ยนแปลงที่มีผล และความไม่แน่นอนของพื้นที่" : "Compare useful experiments, target verification and understand the limits of each result.") : (th ? "ตรวจสอบข้อมูลที่มี ช่องว่าง และสมมติฐานของแต่ละพื้นที่และเหตุการณ์" : "Inspect acquired data, coverage gaps and assumptions for each area and event.")}</p></div><span className={styles.badge}>{th ? "ไม่ใช่ระบบปฏิบัติการ" : "Non-operational"}</span></div>
       <aside className={styles.notice}>{th ? "ข้อมูลวิจัยที่ยังไม่ผ่านการรับรอง ไม่ใช่คำเตือนภัย เส้นทางปลอดภัย หรือการยืนยันความพร้อมของศูนย์พักพิง ไม่มีการเปลี่ยนเกณฑ์รับรองหลักฐาน" : "Candidate research evidence. This is not an official warning, a safe-route recommendation or confirmation of shelter availability. Evidence acceptance gates remain unchanged."}</aside>
       {catalogError ? <div className={styles.error} role="alert">{th ? "โหลดคลังข้อมูลไม่ได้" : "Evidence catalog unavailable"}: {catalogError}</div> : null}
       {!catalog && !catalogError ? <p role="status">{th ? "กำลังโหลดคลังข้อมูล…" : "Loading evidence catalog…"}</p> : null}
@@ -114,6 +115,7 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
         {packageError ? <p className={styles.error} role="alert">{th ? "ชุดข้อมูลใช้ไม่ได้" : "Evidence package unavailable"}: {packageError}</p> : null}
         {reference && !evidence && !packageError ? <p role="status">{th ? "กำลังโหลดและตรวจสอบชุดข้อมูล…" : "Loading and verifying evidence package…"}</p> : null}
         {evidence && aoi ? <>
+          {view === "brief" ? <DecisionBriefPanel evidence={evidence} th={th} /> : <>
           <section className={styles.panel} aria-labelledby="evidence-map-title"><div className={styles.sectionTitle}><h2 id="evidence-map-title">{th ? "แผนที่หลักฐาน" : "Evidence map"}</h2><span>{th ? aoi.name_th ?? aoi.name : aoi.name}</span></div>
             <EvidenceMap key={evidence.id} aoi={aoi} layers={evidence.layers} th={th} />
             <ul className={styles.layerList}>{evidence.layers.map((layer) => <li key={layer.id}><b>{layer.title}</b><span>{STATUS[layer.availability][th ? 1 : 0]}</span>{layer.reason ? <small>{layer.reason}</small> : null}</li>)}</ul>
@@ -132,6 +134,7 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
             <ul>{evidence.assessment.limitations.map((item, index) => <li key={index}>{item}</li>)}</ul>
           </section>
           <section className={styles.panel} aria-labelledby="evidence-scenario-title"><h2 id="evidence-scenario-title">{th ? "สถานการณ์สมมติเพื่อทดสอบวิธี" : "Explicit scenario comparisons"}</h2><p>{th ? "ผลคำนวณล่วงหน้าตามสมมติฐาน ไม่ใช่ค่าที่สังเกตหรือเส้นทางปลอดภัยที่ยืนยัน" : "Precomputed results under stated assumptions, not observed outcomes or confirmed safe routes."}</p><div className={styles.scenarios}>{evidence.scenarios.map((scenario) => <article key={scenario.id}><p className={styles.eyebrow}>{scenario.kind}</p><h3>{scenario.title}</h3><p>{scenario.summary}</p><dl>{scenario.metrics.map((metric, index) => <div key={index}><dt>{metric.label}</dt><dd>{metric.value ?? (th ? "ยังไม่มี" : "Unavailable")} {metric.unit}</dd></div>)}</dl><details><summary>{th ? "สมมติฐาน" : "Assumptions"}</summary><ul>{scenario.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details></article>)}</div>{!evidence.scenarios.length ? <p>{th ? "ไม่มีผลสถานการณ์สมมติในชุดนี้" : "No scenario results are included in this package."}</p> : null}</section>
+          </>}
           <footer className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id} · {evidence.generated_at}</p><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาของแหล่งข้อมูล: " : "Confidence: low · Source timestamp: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></footer>
         </> : null}
       </> : null}

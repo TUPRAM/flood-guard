@@ -1,6 +1,6 @@
 # Local evidence library and scenario demonstration
 
-The evidence library connects the 17 acquired dataset selections to six study AOIs and eight AOI/event packages. Four AOIs (01, 03, 05 and 06) run the full context-based scenario demonstration. AOI-02 (Mae Sai district) and AOI-04 (U Taphao basin) provide coverage-only evidence packages and surrounding routing context for the two core demonstrations; they do not have district-wide or basin-wide access results. The library supports a traceable, non-operational research demonstration while event references, facility availability, road conditions and some reuse permissions remain unresolved. `/studio/library/` is an additional Studio view; the existing Studio workflow and report remain available.
+The evidence library connects the 17 acquired dataset selections to six study AOIs and eight AOI/event packages. Four AOIs (01, 03, 05 and 06) run the full context-based scenario demonstration. AOI-02 (Mae Sai district) and AOI-04 (U Taphao basin) provide coverage-only evidence packages and surrounding routing context for the two core demonstrations; they do not have district-wide or basin-wide access results. The library supports a traceable, non-operational research demonstration while event references, facility availability, road conditions and some reuse permissions remain unresolved. `/studio/brief/` leads with review priorities, modelled access and three consequential intervention comparisons. `/studio/library/` retains the detailed evidence review; the existing `/studio/` validation report remains available. No brief fabricates an accepted event impact or FPPS.
 
 The local research package contains normalized observations, quality reviews and candidate geometry. The web package contains a separate, explicitly allowlisted projection. A file being downloadable from an official website does not, by itself, establish permission to redistribute it or suitability as an event reference. No private agency export or agency contact is required by this workflow.
 
@@ -49,6 +49,10 @@ foreach ($variableName in $requiredVariables) {
     }
 }
 
+$contextData = $env:FLOODGUARD_CONTEXT_ROOT
+if (Test-Path -LiteralPath (Join-Path $contextData 'open_context') -PathType Container) {
+    $contextData = Join-Path $contextData 'open_context'
+}
 $evidenceArguments = @(
     'scripts/build_evidence_library.py',
     '--bundle-root', $env:FLOODGUARD_BUNDLE_ROOT,
@@ -58,7 +62,8 @@ $evidenceArguments = @(
     '--public-dir', (Join-Path (Get-Location) 'apps/web/public/evidence-library'),
     '--aoi-dir', (Join-Path (Get-Location) 'resources/aoi/upload'),
     '--context-root', $env:FLOODGUARD_CONTEXT_ROOT,
-    '--generated-at', '2026-09-21T08:35:05+00:00',
+    '--boundary-archive', (Join-Path $contextData 'hdx_cod_ab/tha_admin_boundaries.gdb.zip'),
+    '--generated-at', '2026-09-21T11:05:43Z',
     '--reuse-normalized'
 )
 uv run --all-extras python @evidenceArguments
@@ -261,7 +266,7 @@ Open the development server's `/studio/library/` route. Select an AOI and event,
 For the static competition candidate and its relevant checks:
 
 ```powershell
-uv run --locked --all-extras pytest tests/test_evidence_catalog.py tests/test_evidence_adapters.py tests/test_evidence_review.py tests/test_evidence_acquisition.py tests/test_evidence_context.py tests/test_evidence_scenarios.py tests/test_evidence_local_report.py tests/test_evidence_export_validation.py tests/test_evidence_reproducibility.py
+uv run --locked --all-extras pytest tests/test_evidence_catalog.py tests/test_evidence_adapters.py tests/test_evidence_review.py tests/test_evidence_acquisition.py tests/test_evidence_context.py tests/test_evidence_scenarios.py tests/test_evidence_local_report.py tests/test_evidence_export_validation.py tests/test_evidence_reproducibility.py tests/test_evidence_event_review.py tests/test_evidence_population_review.py tests/test_evidence_interventions.py tests/test_evidence_decision_brief.py tests/test_access.py tests/test_scoring.py tests/test_equity.py
 uv run --locked --all-extras python scripts/verify_evidence_library.py --public-dir apps/web/public/evidence-library --local-dir $env:FLOODGUARD_EVIDENCE_OUTPUT --output-receipt (Join-Path $env:FLOODGUARD_EVIDENCE_OUTPUT 'qa/export-integrity.json')
 pnpm lint
 pnpm typecheck
@@ -289,3 +294,26 @@ The commands above define the required verification, not a claim that a particul
 Hand off the immutable bundle, both input inventory CSVs, the existing context collection and the durable external output as separately identified directories. Preserve `FILES_SHA256.csv`, `evidence_registry.json`, `normalization_receipt.json`, the facility-review evidence and acquisition manifests. Use logical filenames and hashes in shared documentation; personal absolute paths and credentials are not part of the repository or hosted package.
 
 The next data work remains bounded to published websites: recover a usable suitably dated flood reference if one is actually exposed; obtain missing gauge observations if a public archive provides them; reconcile population definitions and administrative coverage; verify facility identity and coordinates; and look for geocoded documentary road conditions and local drainage detail with usable terms. Until those checks succeed, retain the existing explicit gaps and scenario assumptions. No agency-contact task is a prerequisite for running or reviewing this prototype.
+
+
+## Decision brief and reviewed public evidence
+
+The decision brief is an additive version 1.0 contract. It does not modify `AreaDecision`, the scorer, the legacy comparator or qualified-reference ingestion. Accepted priority/action class and affected population remain null. The visible review priority explains what to verify next. Invalid AOI/event choices remain unavailable. EN/TH headings and comparison labels share the same package; source quotations and analyst review findings retain their original language.
+
+For the reviewed release, preserve the external output's `review/population_definition_evidence.json`, `review/public_identity_reviews.json`, their `review/acquisition/` receipts and `acquisition/event_review/` snapshots. These are curated inputs, not generated substitutes. The builder hashes them, reruns population/destination review and binds the results into package identity. `--boundary-archive` also requires the saved official HDX metadata and exact CC BY 3.0 IGO legal text. Without that optional argument, administrative reporting stays unavailable; search polygons never substitute for subdistricts. The source archive is SHA-bound and retains its 2022-01-22 vintage, attribution and unverified event-era currency. Crosswalk areas use equal-area EPSG:6933; travel calculations retain EPSG:32647. Web geometry uses EPSG:4326.
+
+Full official ADM3 geometries are selected by intersection with the AOI. Every brief labels full/partial reporting scope, and joins population-cell centroids to unique subdistrict codes. Shared-boundary or overlapping membership stays unassigned. No-data population remains unknown; AOI totals and subdistrict intersection totals are not interchangeable. Mae Sai study windows include land outside the Thai reporting source.
+
+The event review retains the October 12/22 conflict, distinguishes the dated September UNOSAT publication from a usable vector, and records the downloaded EOS-RS November 23 Hat Yai proxy as a local/citation asset with unresolved source-specific terms and no analysis footprint. No present product passes event-context or independent-validation acceptance. No flood exposure is calculated from an inadmissible mask.
+
+## Consequential access experiments and demand assumptions
+
+The scenario selector uses the baseline network, before evaluating outcomes. It ranks one closure by baseline-route residential demand; one removal by residents served by a nearest destination; and one hypothetical addition by residents lacking 30-minute access. Stable IDs break ties; the top ten candidates, exact selection reason and single-outcome-evaluation bound are recorded. These are reproducible experiments, not optimal interventions or observed disruptions. The review never automatically joins same-coordinate grade splits or creates crossings from proximity.
+
+Results separate five resident categories: within 30 minutes, connected with a route beyond 30 minutes, connected with no route to a candidate destination, no accepted graph connection, and population unavailable because of source nodata (unknown count reported in coverage). The first four conserve known modelled residential population. Travel-time comparisons include only residents with finite routes in both cases; newly reachable/unreachable counts are separate. Zero threshold change can coexist with nonzero travel-time change.
+
+Capacity demand is an explicit 10% residential-participation scenario, with 5%/10%/25% sensitivity. It does not equate all residential population or all flood-exposed population with evacuation need. Hypothetical 50/100/200-place capacity settings remain separate from source capacity. The hypothetical capacity mechanics site is deliberately distinct from the underserved-access addition: it uses a node in the largest connected residential component to test capacity constraints. Neither site is accepted as safe, feasible or activated. Assigned demand, capacity-limited demand, unreachable demand, missing graph coverage and unknown capacity are mutually exclusive allocation outcomes. Actual capacity and actual evacuation demand remain null.
+
+Chiang Rai district children/working-age numerical bounds remain unresolved; 60+ and 65+ overlap. The owner catalog's provincial elderly subgroup definitions are not silently applied to district columns. The 2024 gap and arithmetic failures remain visible. Pathum Thani's 17 explicit age bands support a provincial distribution relative to that table's sum, not a local demographic allocation. Repeated Songkhla village keys remain unaggregated. Current healthcare name/address matches and dated Mae Sai shelter-activity reports improve identity review without confirming historical point geometry, continuous operation or event capacity. Demographic equity remains unavailable.
+
+The downloadable report includes the concise briefs and a reproducibility appendix. Public exports contain approved boundaries, OSM/WorldPop scenario derivatives, terrain context and source metadata. Restricted flood/facility/gauge geometry or observations remain outside the actual static build.

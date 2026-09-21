@@ -202,10 +202,26 @@ def refresh(value):
         "datasets": catalog["datasets"],
         "downloadable_packages": catalog["packages"],
     }
-    (public / "report.html").write_text(
-        "<html><pre>" + html.escape(json.dumps(appendix)) + "</pre></html>",
-        encoding="utf-8",
-    )
+    if "decision_brief" in package:
+        appendix["decision_briefs"] = [package["decision_brief"]]
+    report = "<html><pre>" + html.escape(json.dumps(appendix)) + "</pre></html>"
+    if value.get("compact_report"):
+        from floodguard.evidence_pipeline import render_report
+
+        details = json.loads(
+            (local / "scenarios" / f"{package['aoi_id']}.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        report = render_report(
+            catalog,
+            [package],
+            value["registry"] | {"verified_asset_count": 2},
+            {},
+            {"routes": []},
+            {package["aoi_id"]: details},
+        )
+    (public / "report.html").write_text(report, encoding="utf-8")
     write(local / "evidence_registry.json", value["registry"])
     write(
         local / "packages" / f"{package['id']}.json",
@@ -404,3 +420,473 @@ def test_source_metadata_requires_both_sources_and_keeps_observation_time_unknow
     refresh(exported)
     with pytest.raises(ValueError, match="exactly OSM and WorldPop"):
         verify_evidence_library(exported["public"])
+
+
+@pytest.fixture
+def brief_export(exported, monkeypatch):
+    from floodguard.evidence_decision_brief import build_decision_brief
+    from floodguard.evidence_event_review import BOUNDARY_SOURCE
+    from floodguard.evidence_pipeline import _supporting_dataset
+
+    package, local = exported["package"], exported["local"]
+    brief = build_decision_brief(
+        aoi_id=package["aoi_id"],
+        event_id=package["event_id"],
+        generated_at=package["generated_at"],
+        context=None,
+        details={},
+    )
+    brief.update(
+        status="scenario_only",
+        population_reference_year=2020,
+        access={
+            "modelled_population": 100,
+            "unknown_access_population": 10,
+            "connected_without_route_population": 20,
+            "over_30_minutes_population": 30,
+            "within_30_minutes_population": 40,
+        },
+    )
+    brief["reporting"].update(
+        status="available",
+        source_url=BOUNDARY_SOURCE["source_url"],
+        reference_date="2022-01-22",
+        coverage_fraction=0.5,
+        unassigned_modelled_population=10,
+        units=[
+            {
+                "id": "TH570901",
+                "name": "Fixture unit",
+                "name_th": "Fixture unit",
+                "scope": "full_unit",
+                "unit_coverage_fraction": 1,
+                "intersection_area_km2": 1,
+                "population_context": {
+                    **brief["access"],
+                    "modelled_population": 90,
+                    "unknown_access_population": 0,
+                },
+                "affected_population": None,
+                "fpps": None,
+                "action_class": None,
+                "interventions": [],
+            }
+        ],
+    )
+    brief["capacity_experiments"] = [
+        {
+            "id": "capacity-test",
+            "title": "Hypothetical fixture",
+            "participation_fraction": 0.1,
+            "residential_population": 100,
+            "demand_basis": "residential_participation",
+            "actual_evacuation_demand": None,
+            "actual_available_capacity": None,
+            "assumed_demand": 10,
+            "assigned": 4,
+            "capacity_limited": 3,
+            "unreachable": 2,
+            "coverage_excluded": 1,
+            "unknown_capacity": 0,
+        }
+    ]
+    package["decision_brief"] = brief
+    boundary = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"adm3_pcode": "TH570901"},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [[99, 20], [99.5, 20], [99.5, 21], [99, 21], [99, 20]]
+                    ],
+                },
+            }
+        ],
+    }
+    package["layers"].append(
+        {
+            "id": "reporting-subdistricts",
+            "title": "Fixture reporting boundaries",
+            "role": "static_context",
+            "dataset_id": "context-admin",
+            "availability": "partial",
+            "reason": "Partial coverage",
+            "data": boundary,
+        }
+    )
+    exported["catalog"]["datasets"].append(
+        _supporting_dataset(
+            "context-admin",
+            "Fixture reporting units",
+            "CC BY 3.0 IGO",
+            BOUNDARY_SOURCE["source_url"],
+            "static_context",
+            ["Synthetic test geometry"],
+        )
+    )
+    proof_files = [
+        "population_group_review.json",
+        "destination_identity_review.json",
+        "capacity_assumptions.json",
+    ]
+    for name in proof_files:
+        write(local / "review" / name, {"fixture": name})
+    population = {
+        "local_review_files": {
+            name: sha256_file(local / "review" / name) for name in proof_files
+        }
+    }
+    write(local / "review/population_review_summary.json", population)
+    write(local / "event_review/reporting_units.geojson", boundary)
+    write(
+        local / "event_review/reporting_crosswalk.json",
+        {
+            "aois": [
+                {
+                    "aoi_id": package["aoi_id"],
+                    "coverage_fraction": 0.5,
+                    "units": [
+                        {
+                            "adm3_pcode": "TH570901",
+                            "scope": "full_unit",
+                            "unit_coverage_fraction": 1,
+                            "intersection_area_km2": 1,
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+    write(
+        local / "event_review/event_evidence_review.json",
+        {"event_context_eligible_count": 0},
+    )
+    write(
+        local / "acquisition/event_review/hdx_cod_ab_metadata.json",
+        {"fixture": "metadata"},
+    )
+    legal = local / "acquisition/event_review/cc_by_igo_3_legalcode.html"
+    legal.write_bytes(b"fixture terms, not an actual legal instrument")
+    monkeypatch.setitem(BOUNDARY_SOURCE, "license_snapshot_sha256", sha256_file(legal))
+    event = {
+        "boundary_source": dict(BOUNDARY_SOURCE),
+        "input_hashes": {
+            "boundary_archive": BOUNDARY_SOURCE["source_sha256"],
+            "boundary_metadata": sha256_file(
+                local / "acquisition/event_review/hdx_cod_ab_metadata.json"
+            ),
+            "boundary_license": sha256_file(legal),
+        },
+        **{
+            key: {"path": name, "sha256": sha256_file(local / "event_review" / name)}
+            for key, name in (
+                ("reporting_units", "reporting_units.geojson"),
+                ("crosswalk", "reporting_crosswalk.json"),
+                ("event_evidence", "event_evidence_review.json"),
+            )
+        },
+    }
+    write(local / "event_review/summary.json", event)
+    package["input_hashes"].update(
+        population_review_sha256=hashlib.sha256(
+            canonical_bytes(population)
+        ).hexdigest(),
+        event_review_sha256=hashlib.sha256(canonical_bytes(event)).hexdigest(),
+    )
+    exported["registry"]["supplementary_evidence_hashes"] = {
+        path.relative_to(local).as_posix(): sha256_file(path)
+        for directory in ("review", "event_review", "acquisition/event_review")
+        for path in (local / directory).rglob("*")
+        if path.is_file()
+    }
+    refresh(exported)
+    return exported
+
+
+def test_new_brief_and_review_proofs_pass_independent_and_local_checks(brief_export):
+    assert verify_evidence_library(brief_export["public"])["status"] == "passed"
+    result = verify_evidence_library(
+        brief_export["public"], local_dir=brief_export["local"]
+    )
+    assert result["local_verification"]["supplementary_proofs"] == 10
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("aoi_id", "another-aoi"),
+        ("event_id", "another-event"),
+        ("generated_at", "2026-09-20T00:00:00Z"),
+    ],
+)
+def test_resealed_brief_identity_cannot_differ_from_package(brief_export, field, value):
+    brief_export["package"]["decision_brief"][field] = value
+    refresh(brief_export)
+    with pytest.raises(ValueError, match="Mixed decision brief"):
+        verify_evidence_library(brief_export["public"])
+
+
+@pytest.mark.parametrize("part", ["aoi", "unit", "reporting", "capacity"])
+def test_resealed_brief_inconsistent_partitions_rejected(brief_export, part):
+    brief = brief_export["package"]["decision_brief"]
+    if part == "aoi":
+        brief["access"]["unknown_access_population"] = 20
+    elif part == "unit":
+        brief["reporting"]["units"][0]["population_context"][
+            "unknown_access_population"
+        ] = 5
+    elif part == "reporting":
+        brief["reporting"]["unassigned_modelled_population"] = 20
+    else:
+        brief["capacity_experiments"][0]["assigned"] = 8
+    refresh(brief_export)
+    with pytest.raises(ValueError, match="partition differs"):
+        verify_evidence_library(brief_export["public"])
+
+
+@pytest.mark.parametrize("change", ["duplicate", "wrong_code"])
+def test_reporting_identity_binds_published_geometry(brief_export, change):
+    units = brief_export["package"]["decision_brief"]["reporting"]["units"]
+    if change == "duplicate":
+        units.append(copy.deepcopy(units[0]))
+    else:
+        units[0]["id"] = "TH570999"
+    refresh(brief_export)
+    with pytest.raises(ValueError, match="reporting unit"):
+        verify_evidence_library(brief_export["public"])
+
+
+def test_local_brief_cannot_differ_even_when_other_package_fields_match(brief_export):
+    path = brief_export["local"] / "packages" / f"{brief_export['package']['id']}.json"
+    package = json.loads(path.read_text(encoding="utf-8"))
+    package["decision_brief"]["limitations"].append("Changed local proof")
+    write(path, package)
+    with pytest.raises(ValueError, match="Mixed local/public package decision_brief"):
+        verify_evidence_library(brief_export["public"], local_dir=brief_export["local"])
+
+
+@pytest.mark.parametrize("name", ["population_review_sha256", "event_review_sha256"])
+def test_review_summary_hash_binding_cannot_be_dropped_or_changed(brief_export, name):
+    brief_export["package"]["input_hashes"][name] = "f" * 64
+    refresh(brief_export)
+    with pytest.raises(ValueError, match="review summary"):
+        verify_evidence_library(brief_export["public"], local_dir=brief_export["local"])
+    del brief_export["package"]["input_hashes"][name]
+    refresh(brief_export)
+    with pytest.raises(ValueError, match="lacks .* review binding"):
+        verify_evidence_library(brief_export["public"], local_dir=brief_export["local"])
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "review/population_group_review.json",
+        "event_review/reporting_units.geojson",
+        "acquisition/event_review/cc_by_igo_3_legalcode.html",
+    ],
+)
+def test_supplementary_bytes_are_reverified(brief_export, name):
+    path = brief_export["local"] / name
+    path.write_bytes(path.read_bytes() + b"changed")
+    with pytest.raises(ValueError, match="supplementary evidence"):
+        verify_evidence_library(brief_export["public"], local_dir=brief_export["local"])
+
+
+def test_unlisted_or_removed_supplementary_manifest_entries_rejected(brief_export):
+    del brief_export["registry"]["supplementary_evidence_hashes"][
+        "review/capacity_assumptions.json"
+    ]
+    refresh(brief_export)
+    with pytest.raises(ValueError, match="proof inventory differs"):
+        verify_evidence_library(brief_export["public"], local_dir=brief_export["local"])
+
+
+@pytest.mark.parametrize(
+    "name,match",
+    [
+        ("review/population_group_review.json", "population review proof"),
+        ("event_review/reporting_units.geojson", "event review proof"),
+        ("acquisition/event_review/cc_by_igo_3_legalcode.html", "event review input"),
+    ],
+)
+def test_resealed_registry_does_not_override_review_proof_hashes(
+    brief_export, name, match
+):
+    path = brief_export["local"] / name
+    path.write_bytes(path.read_bytes() + b" ")
+    brief_export["registry"]["supplementary_evidence_hashes"][name] = sha256_file(path)
+    refresh(brief_export)
+    with pytest.raises(ValueError, match=match):
+        verify_evidence_library(brief_export["public"], local_dir=brief_export["local"])
+
+
+def test_report_brief_cannot_drift_from_verified_package(brief_export):
+    path = brief_export["public"] / "report.html"
+    data = {
+        "package_version": brief_export["catalog"]["package_version"],
+        "aois": brief_export["catalog"]["aois"],
+        "datasets": brief_export["catalog"]["datasets"],
+        "downloadable_packages": brief_export["catalog"]["packages"],
+        "decision_briefs": [],
+    }
+    path.write_text(
+        "<html><pre>" + html.escape(json.dumps(data)) + "</pre></html>",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="Mixed report decision briefs"):
+        verify_evidence_library(brief_export["public"])
+
+
+def test_resealed_public_geometry_cannot_drift_from_local_reporting_proof(brief_export):
+    geometry = brief_export["package"]["layers"][0]["data"]["features"][0]["geometry"]
+    geometry["coordinates"][0][1][0] = 99.6
+    refresh(brief_export)
+    with pytest.raises(ValueError, match="Public reporting geometry differs"):
+        verify_evidence_library(brief_export["public"], local_dir=brief_export["local"])
+
+
+@pytest.fixture
+def compact_export(exported):
+    exported["compact_report"] = True
+    refresh(exported)
+    return exported
+
+
+def report_appendix(value):
+    from floodguard.evidence_validation import _ReportParser
+
+    parser = _ReportParser()
+    parser.feed((value["public"] / "report.html").read_text(encoding="utf-8"))
+    assert len(parser.receipts) == 1
+    return json.loads(parser.receipts[0])
+
+
+def replace_appendix(value, appendix):
+    (value["public"] / "report.html").write_text(
+        "<html><pre>" + html.escape(json.dumps(appendix)) + "</pre></html>",
+        encoding="utf-8",
+    )
+
+
+def test_compact_report_binds_downloads_inputs_and_exact_local_aggregates(
+    compact_export,
+):
+    result = verify_evidence_library(
+        compact_export["public"], local_dir=compact_export["local"]
+    )
+    assert result["status"] == "passed"
+    appendix = report_appendix(compact_export)
+    package = compact_export["package"]
+    assert appendix["package_inputs"][package["id"]] == package["input_hashes"]
+    assert appendix["package_downloads"][package["id"]] == package["downloads"]
+    html_text = (compact_export["public"] / "report.html").read_text(encoding="utf-8")
+    assert compact_export["catalog"]["packages"][0]["url"] in html_text
+    assert compact_export["catalog"]["packages"][0]["sha256"] in html_text
+
+
+@pytest.mark.parametrize(
+    "change,match",
+    [
+        ("details", "Detailed records"),
+        ("inputs", "Mixed report input"),
+        ("downloads", "Mixed report database"),
+        ("summaries", "Mixed report scenario"),
+        ("unknown_projection", "Unknown report projection"),
+        ("private", "Private field"),
+    ],
+)
+def test_compact_projection_cannot_reintroduce_rows_or_lose_bindings(
+    compact_export, change, match
+):
+    appendix = report_appendix(compact_export)
+    package = compact_export["package"]
+    if change == "details":
+        appendix["scenarios"][package["aoi_id"]][
+            "capacity_participation_sensitivity"
+        ] = [{"population_results": []}]
+    elif change == "inputs":
+        appendix["package_inputs"][package["id"]]["scenario_sha256"] = "f" * 64
+    elif change == "downloads":
+        appendix["package_downloads"][package["id"]] = []
+    elif change == "summaries":
+        appendix["scenarios"][package["aoi_id"]]["summaries"] = [{"invented": "result"}]
+    elif change == "private":
+        appendix["scenarios"][package["aoi_id"]]["phone"] = "private"
+    else:
+        appendix["projection"] = "unrecognized"
+    replace_appendix(compact_export, appendix)
+    with pytest.raises(ValueError, match=match):
+        verify_evidence_library(compact_export["public"])
+
+
+def test_compact_report_exact_settings_are_bound_to_local_scenario_proof(
+    compact_export,
+):
+    appendix = report_appendix(compact_export)
+    appendix["scenarios"][compact_export["package"]["aoi_id"]]["synthetic"] = False
+    replace_appendix(compact_export, appendix)
+    with pytest.raises(ValueError, match="aggregate results differ"):
+        verify_evidence_library(
+            compact_export["public"], local_dir=compact_export["local"]
+        )
+
+
+def test_compact_report_size_budget_enforced(compact_export):
+    path = compact_export["public"] / "report.html"
+    path.write_bytes(path.read_bytes() + b" " * (5 * 1024 * 1024))
+    with pytest.raises(ValueError, match="5 MiB budget"):
+        verify_evidence_library(compact_export["public"])
+
+
+def test_large_capacity_sensitivity_rows_do_not_inflate_report(compact_export):
+    from floodguard.evidence_pipeline import _compact_details, scenario_summaries
+    from floodguard.evidence_scenarios import build_illustrative_scenarios
+
+    package = compact_export["package"]
+    details = build_illustrative_scenarios(package["aoi_id"], [99, 20, 100, 21])
+    details["capacity_participation_sensitivity"] = [
+        copy.deepcopy(details["capacity_scenarios"][0])
+    ]
+    sensitivity = details["capacity_participation_sensitivity"][0]
+    sensitivity["demand_assumptions"] = {
+        "participation_fraction": 0.05,
+        "actual_evacuation_demand": None,
+    }
+    large_rows = [
+        {"population_id": "fixture-cell-" + "x" * 400, "scenario_demand": 1.23456789}
+    ] * 20000
+    sensitivity["population_results"] = large_rows
+    details["capacity_scenarios"][0]["population_results"] = large_rows
+    assert len(canonical_bytes(details)) > 5 * 1024 * 1024
+    projected = _compact_details(details)
+    assert projected == _compact_details(projected)
+    for family in ("capacity_scenarios", "capacity_participation_sensitivity"):
+        assert "population_results" not in projected[family][0]
+        assert "allocations" not in projected[family][0]
+        assert (
+            projected[family][0]["served_population"]
+            == details[family][0]["served_population"]
+        )
+    assert (
+        projected["capacity_participation_sensitivity"][0]["demand_assumptions"]
+        == sensitivity["demand_assumptions"]
+    )
+    assert scenario_summaries(details) == scenario_summaries(projected)
+    package["scenarios"] = scenario_summaries(details)
+    package["input_hashes"]["scenario_sha256"] = hashlib.sha256(
+        canonical_bytes(details)
+    ).hexdigest()
+    write(compact_export["local"] / "scenarios" / f"{package['aoi_id']}.json", details)
+    refresh(compact_export)
+    report = compact_export["public"] / "report.html"
+    assert report.stat().st_size < 5 * 1024 * 1024
+    assert report.stat().st_size < len(canonical_bytes(details)) / 10
+    assert (
+        verify_evidence_library(
+            compact_export["public"], local_dir=compact_export["local"]
+        )["status"]
+        == "passed"
+    )

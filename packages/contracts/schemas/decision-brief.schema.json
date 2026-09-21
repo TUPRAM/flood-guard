@@ -1,0 +1,702 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/schemas/decision-brief.schema.json",
+  "title": "Decision brief",
+  "x-contract-version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "generated_at": {
+      "type": "string",
+      "minLength": 1,
+      "format": "date-time"
+    },
+    "aoi_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "scenario_only",
+        "coverage_only"
+      ]
+    },
+    "priority": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "unavailable"
+        },
+        "fpps": {
+          "type": "null"
+        },
+        "action_class": {
+          "type": "null"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "status",
+        "fpps",
+        "action_class",
+        "reason"
+      ]
+    },
+    "affected_population": {
+      "type": "null"
+    },
+    "population_reference_year": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "population_role": {
+      "const": "modelled_residential_context"
+    },
+    "access": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "modelled_population": {
+              "type": "number",
+              "minimum": 0
+            },
+            "unknown_access_population": {
+              "type": "number",
+              "minimum": 0
+            },
+            "connected_without_route_population": {
+              "type": "number",
+              "minimum": 0
+            },
+            "over_30_minutes_population": {
+              "type": "number",
+              "minimum": 0
+            },
+            "within_30_minutes_population": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "modelled_population",
+            "unknown_access_population",
+            "connected_without_route_population",
+            "over_30_minutes_population",
+            "within_30_minutes_population"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reporting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "available",
+            "unavailable"
+          ]
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "format": "uri"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coverage_fraction": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unassigned_modelled_population": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ambiguous_population_cells": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name_th": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scope": {
+                "enum": [
+                  "full_unit",
+                  "partial_unit"
+                ]
+              },
+              "unit_coverage_fraction": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "intersection_area_km2": {
+                "type": "number",
+                "minimum": 0
+              },
+              "population_context": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "modelled_population": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "unknown_access_population": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "connected_without_route_population": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "over_30_minutes_population": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "within_30_minutes_population": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "modelled_population",
+                      "unknown_access_population",
+                      "connected_without_route_population",
+                      "over_30_minutes_population",
+                      "within_30_minutes_population"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "affected_population": {
+                "type": "null"
+              },
+              "fpps": {
+                "type": "null"
+              },
+              "action_class": {
+                "type": "null"
+              },
+              "interventions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "scenario_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "enum": [
+                        "add_destination",
+                        "close_edge",
+                        "remove_destination"
+                      ]
+                    },
+                    "gaining_30_min_access": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "losing_30_min_access": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "slower_population": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "faster_population": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "comparable_population": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "mean_travel_time_delta_minutes": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "result": {
+                      "enum": [
+                        "threshold_change",
+                        "travel_time_only",
+                        "no_measured_change"
+                      ]
+                    },
+                    "observed": {
+                      "const": false
+                    },
+                    "selection_method": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "scenario_id",
+                    "kind",
+                    "gaining_30_min_access",
+                    "losing_30_min_access",
+                    "slower_population",
+                    "faster_population",
+                    "comparable_population",
+                    "mean_travel_time_delta_minutes",
+                    "result",
+                    "observed"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "name_th",
+              "scope",
+              "unit_coverage_fraction",
+              "intersection_area_km2",
+              "population_context",
+              "affected_population",
+              "fpps",
+              "action_class",
+              "interventions"
+            ]
+          }
+        }
+      },
+      "required": [
+        "status",
+        "source_url",
+        "reference_date",
+        "coverage_fraction",
+        "unassigned_modelled_population",
+        "ambiguous_population_cells",
+        "scope",
+        "units"
+      ]
+    },
+    "interventions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scenario_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "add_destination",
+              "close_edge",
+              "remove_destination"
+            ]
+          },
+          "gaining_30_min_access": {
+            "type": "number",
+            "minimum": 0
+          },
+          "losing_30_min_access": {
+            "type": "number",
+            "minimum": 0
+          },
+          "slower_population": {
+            "type": "number",
+            "minimum": 0
+          },
+          "faster_population": {
+            "type": "number",
+            "minimum": 0
+          },
+          "comparable_population": {
+            "type": "number",
+            "minimum": 0
+          },
+          "mean_travel_time_delta_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result": {
+            "enum": [
+              "threshold_change",
+              "travel_time_only",
+              "no_measured_change"
+            ]
+          },
+          "observed": {
+            "const": false
+          },
+          "selection_method": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "scenario_id",
+          "kind",
+          "gaining_30_min_access",
+          "losing_30_min_access",
+          "slower_population",
+          "faster_population",
+          "comparable_population",
+          "mean_travel_time_delta_minutes",
+          "result",
+          "observed"
+        ]
+      }
+    },
+    "capacity_status": {
+      "const": "assumed_demand_and_capacity_only"
+    },
+    "demographic_equity_status": {
+      "const": "unavailable"
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "connected_components": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "connected_destinations": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "candidate_destinations": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "connected_components",
+        "connected_destinations",
+        "candidate_destinations"
+      ]
+    },
+    "drivers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "order",
+          "action",
+          "reason"
+        ]
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evidence_notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "format": "uri"
+            }
+          }
+        },
+        "required": [
+          "topic",
+          "status",
+          "summary",
+          "source_urls"
+        ]
+      }
+    },
+    "capacity_experiments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "participation_fraction": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "assumed_demand": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "assigned": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "capacity_limited": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "unreachable": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "coverage_excluded": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "residential_population": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "demand_basis": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actual_evacuation_demand": {
+            "type": "null"
+          },
+          "actual_available_capacity": {
+            "type": "null"
+          },
+          "unknown_capacity": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "participation_fraction",
+          "assumed_demand",
+          "assigned",
+          "capacity_limited",
+          "unreachable",
+          "coverage_excluded",
+          "residential_population",
+          "demand_basis",
+          "actual_evacuation_demand",
+          "actual_available_capacity",
+          "unknown_capacity"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "generated_at",
+    "aoi_id",
+    "event_id",
+    "status",
+    "priority",
+    "affected_population",
+    "population_reference_year",
+    "population_role",
+    "access",
+    "reporting",
+    "interventions",
+    "capacity_status",
+    "demographic_equity_status",
+    "coverage",
+    "drivers",
+    "next_actions",
+    "limitations",
+    "evidence_notes",
+    "capacity_experiments"
+  ]
+}

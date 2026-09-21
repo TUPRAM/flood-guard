@@ -27,6 +27,11 @@ def main() -> None:
     )
     parser.add_argument("--context-root", type=Path)
     parser.add_argument(
+        "--boundary-archive",
+        type=Path,
+        help="Reviewed public Thai COD-AB archive; requires saved public acquisition receipts in the output directory.",
+    )
+    parser.add_argument(
         "--generated-at", default=datetime.now(timezone.utc).isoformat()
     )
     parser.add_argument("--reuse-normalized", action="store_true")

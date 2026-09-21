@@ -145,7 +145,7 @@ try {
   if (publicCacheAudit.keys.includes(competitionCache.key)) {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
-  for (const forbidden of ["/command/", "/studio/", "/studio/library/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
+  for (const forbidden of ["/command/", "/studio/", "/studio/library/", "/studio/brief/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
     if (publicCacheAudit.paths.includes(forbidden)) throw new Error(`Public cache retained ${forbidden} after transition.`);
   }
   await performSuccessfulUpdateCheck(page);
@@ -207,7 +207,7 @@ try {
   // The activated competition worker must now serve both staff routes offline,
   // and the availability panel must report the cached snapshot and map limits.
   await context.setOffline(true);
-  for (const [path, selector] of [["/command/", "main.command-page"], ["/studio/", "main.studio-page"]]) {
+  for (const [path, selector] of [["/studio/brief/", "main[data-evidence-library]"], ["/studio/library/", "main[data-evidence-library]"], ["/command/", "main.command-page"], ["/studio/", "main.studio-page"]]) {
     await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     await page.locator(selector).waitFor({ state: "visible" });
   }

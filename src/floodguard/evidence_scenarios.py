@@ -6,6 +6,8 @@ data nor change the strict decision scorer or its low-confidence class-E rule.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -43,6 +45,7 @@ def calculate_total_access(
     thresholds: Sequence[int] = (15, 30, 60),
     source_timestamp: str | None = None,
     assumptions: Sequence[str] = (),
+    baseline_result: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Compare total-population access without inventing demographic groups.
 
@@ -53,6 +56,9 @@ def calculate_total_access(
     length_m/road_class. All travel times are modelled and edges are undirected.
     Scenario accepts closed_edge_ids, removed_facility_ids and added_facilities.
     No facility is a valid scenario; it means unavailable destination access.
+    An optional result from these identical baseline inputs reuses its route
+    pairs after an input-hash check. Coverage and finite-trip time comparisons
+    are reported separately from legacy threshold totals.
     """
     pops = _population(population)
     sites = _facilities(facilities)
@@ -86,7 +92,15 @@ def calculate_total_access(
     selected_sites = [
         site for site in sites if site["facility_id"] not in removed
     ] + additions
-    normal_pairs = _reachable_pairs(pops, sites, graph)
+    signature = hashlib.sha256(
+        json.dumps([pops, edge_rows, sites], sort_keys=True, allow_nan=False).encode()
+    ).hexdigest()
+    if baseline_result is not None:
+        if baseline_result.get("baseline_input_sha256") != signature:
+            raise EvidenceScenarioError("baseline result does not match access inputs")
+        normal_pairs = baseline_result["baseline_reachable_pairs"]
+    else:
+        normal_pairs = _reachable_pairs(pops, sites, graph)
     changed_graph = graph
     if closed:
         changed_graph, _ = _graph(
@@ -126,6 +140,17 @@ def calculate_total_access(
                 not baseline_access and scenario_access
             )
         row["snap_status"] = _snap_status(pop, POPULATION_SNAP_LIMIT_M, graph)
+        for label, value in (("baseline", before), ("scenario", after)):
+            row[f"{label}_access_status"] = (
+                "missing_graph_coverage"
+                if row["snap_status"] != "connected"
+                else "no_modelled_route_to_selected_destination"
+                if value is None
+                else "modelled_route_available"
+            )
+        row["travel_time_delta_minutes"] = (
+            after - before if before is not None and after is not None else None
+        )
         node_results.append(row)
     areas = [
         {
@@ -151,6 +176,9 @@ def calculate_total_access(
         "node_results": node_results,
         "areas": areas,
         "totals": _access_totals(node_results, limits),
+        "coverage_review": _coverage_review(node_results, limits),
+        "travel_time_summary": _travel_time_summary(node_results),
+        "baseline_input_sha256": signature,
         "baseline_reachable_pairs": normal_pairs,
         "scenario_reachable_pairs": changed_pairs,
         "facility_snap_review": [
@@ -162,6 +190,105 @@ def calculate_total_access(
         ],
         "equity_gap_ratio": None,
         "equity_status": "unavailable_demographic_groups_not_supplied",
+    }
+
+
+def _coverage_review(
+    rows: Sequence[Mapping[str, Any]], thresholds: Sequence[int]
+) -> dict[str, Any]:
+    """Partition resident demand without interpreting graph gaps as observed isolation."""
+    result = {
+        "missing_graph_coverage_population": math.fsum(
+            row["total_population"] for row in rows if row["snap_status"] != "connected"
+        )
+    }
+    for label, key in (
+        ("baseline", "normal_access_minutes"),
+        ("scenario", "scenario_access_minutes"),
+    ):
+        connected = [row for row in rows if row["snap_status"] == "connected"]
+        result[label] = {
+            "graph_connected_no_modelled_route_population": math.fsum(
+                row["total_population"] for row in connected if row[key] is None
+            ),
+            "thresholds": {
+                str(limit): {
+                    "modelled_reachable_population": math.fsum(
+                        row["total_population"]
+                        for row in connected
+                        if row[key] is not None and row[key] <= limit
+                    ),
+                    "modelled_over_threshold_population": math.fsum(
+                        row["total_population"]
+                        for row in connected
+                        if row[key] is not None and row[key] > limit
+                    ),
+                }
+                for limit in thresholds
+            },
+        }
+    result["interpretation"] = (
+        "Disjoint missing graph coverage, graph-connected no modelled route, over-threshold and within-threshold groups. Missing roads, destinations, restrictions and grade connections remain possible; no observed isolation claim."
+    )
+    return result
+
+
+def _travel_time_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    comparable = [row for row in rows if row["travel_time_delta_minutes"] is not None]
+    population = math.fsum(row["total_population"] for row in comparable)
+    weighted = math.fsum(
+        row["total_population"] * row["travel_time_delta_minutes"] for row in comparable
+    )
+    return {
+        "comparison_population": population,
+        "baseline_population_weighted_mean_minutes": math.fsum(
+            row["total_population"] * row["normal_access_minutes"] for row in comparable
+        )
+        / population
+        if population
+        else None,
+        "scenario_population_weighted_mean_minutes": math.fsum(
+            row["total_population"] * row["scenario_access_minutes"]
+            for row in comparable
+        )
+        / population
+        if population
+        else None,
+        "population_weighted_mean_delta_minutes": weighted / population
+        if population
+        else None,
+        "net_change_person_minutes": weighted,
+        "additional_person_minutes": math.fsum(
+            row["total_population"] * max(0, row["travel_time_delta_minutes"])
+            for row in comparable
+        ),
+        "saved_person_minutes": math.fsum(
+            row["total_population"] * max(0, -row["travel_time_delta_minutes"])
+            for row in comparable
+        ),
+        "slower_population": math.fsum(
+            row["total_population"]
+            for row in comparable
+            if row["travel_time_delta_minutes"] > 1e-9
+        ),
+        "faster_population": math.fsum(
+            row["total_population"]
+            for row in comparable
+            if row["travel_time_delta_minutes"] < -1e-9
+        ),
+        "newly_without_modelled_route_population": math.fsum(
+            row["total_population"]
+            for row in rows
+            if row["normal_access_minutes"] is not None
+            and row["scenario_access_minutes"] is None
+        ),
+        "newly_with_modelled_route_population": math.fsum(
+            row["total_population"]
+            for row in rows
+            if row["normal_access_minutes"] is None
+            and row["scenario_access_minutes"] is not None
+        ),
+        "interpretation": "Finite-route comparisons only; missing/unreachable trips are never converted to zero or a fabricated infinite travel time. Positive delta is slower.",
     }
 
 

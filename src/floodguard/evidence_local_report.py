@@ -480,7 +480,12 @@ def render_local_report(output_dir: Path, registry: dict, summary: dict) -> Path
             sections.append(
                 f'<li><a href="normalized/{html.escape(path.name, quote=True)}">{_escape(path.name)}</a></li>'
             )
-    for directory in (root / "acquisition", root / "facility_review"):
+    for directory in (
+        root / "acquisition",
+        root / "facility_review",
+        root / "review",
+        root / "event_review",
+    ):
         for path in sorted(directory.rglob("*")) if directory.exists() else []:
             if (
                 path.is_file()

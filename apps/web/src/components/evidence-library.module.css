@@ -2,7 +2,7 @@
 .header { display: flex; align-items: center; gap: 28px; padding: 20px max(24px, calc((100vw - 1440px)/2)); background: #123b52; color: white; }
 .brand { font-size: 21px; font-weight: 800; text-decoration: none; white-space: nowrap; }
 .brand span { margin-left: 8px; font-size: 13px; font-weight: 500; opacity: .7; }
-.header nav { display: flex; flex: 1; gap: 24px; font-size: 13px; }
+.header nav { display: flex; flex-wrap: wrap; flex: 1; gap: 24px; font-size: 13px; }
 .header nav a { min-height: 36px; display: inline-flex; align-items: center; }
 .header nav [aria-current] { font-weight: 750; text-underline-offset: 8px; }
 .content { max-width: 1440px; padding: 36px 28px 60px; margin: auto; }
@@ -72,3 +72,13 @@
 .library :is(a, button, select, summary):focus-visible { outline: 3px solid #e3a52a; outline-offset: 3px; }
 @media(max-width: 900px) { .header { flex-wrap: wrap; gap: 12px; padding: 16px 20px; } .header nav { order: 3; flex-basis: 100%; } .brand { flex: 1; } .selectors { grid-template-columns: 1fr 1fr; } .selectionMeta { grid-column: 1/-1; } .layerList { grid-template-columns: 1fr 1fr; } .scenarios { grid-template-columns: 1fr; } }
 @media(max-width: 560px) { .content { padding: 24px 14px; } .heading { flex-direction: column-reverse; gap: 10px; } .panel { padding: 16px; } .selectors { grid-template-columns: 1fr; } .layerList { grid-template-columns: 1fr; } .map { height: 340px; } .sectionTitle { flex-direction: column; gap: 0; margin-bottom: 12px; } .provenance { flex-direction: column; } }
+
+.briefLead { border-top: 4px solid #187783; }
+.briefStats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; margin: 24px 0; }
+.briefStats div { padding: 16px; background: #edf4f5; border-radius: 6px; }
+.briefStats span { display:block; font-size:12px; }
+.briefStats strong { display:block; font-size:23px; margin-top:8px; }
+.briefMetrics { margin:0; font-size:14px; }
+.briefMetrics div { display:flex; justify-content:space-between; gap:24px; padding:12px 0; border-bottom:1px solid #dbe5ea; }
+.briefMetrics dd { margin:0; font-weight:750; }
+@media(max-width:560px) { .briefStats { grid-template-columns:1fr; } .briefStats strong { font-size:20px; } }

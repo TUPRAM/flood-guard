@@ -279,9 +279,9 @@ def test_capacity_fallback_is_hypothetical_and_never_counts_healthcare_beds():
     assert result["hypothetical_capacity_site"]["synthetic"] is True
     assert result["hypothetical_capacity_site"]["coordinates"] == [100, 15]
     assert [row["served_population"] for row in result["capacity_scenarios"]] == [
-        50,
-        100,
-        200,
+        25,
+        25,
+        25,
     ]
     assert all(
         row["facility_results"][0]["facility_id"] == "scenario-temporary-shelter"
@@ -361,10 +361,71 @@ def test_unreviewed_duplicate_shelter_rows_never_multiply_assumed_capacity():
     assert result["hypothetical_capacity_site"]["synthetic"] is True
     assert [row["served_population"] for row in result["capacity_scenarios"]] == [
         50,
-        100,
-        200,
+        50,
+        50,
     ]
     assert len(result["capacity_scenarios"]) == 3
     assert all(
         len(row["facility_results"]) == 1 for row in result["capacity_scenarios"]
     )
+
+
+def test_grade_endpoint_diagnostics_do_not_invent_connections():
+    roads = collection(
+        road("approach", [[100, 15], [100.001, 15]]),
+        road(
+            "bridge",
+            [[100.001, 15], [100.002, 15]],
+            other_tags='"bridge"=>"yes","layer"=>"1"',
+        ),
+        road("crossing", [[100.0015, 14.999], [100.0015, 15.001]]),
+    )
+    _, _, _, topology = context._road_graph(roads, box(99.99, 14.99, 100.01, 15.01))
+    review = topology["grade_connection_review"]
+    assert topology["connected_components"] == 3
+    assert review["possible_endpoint_transition_count"] == 1
+    assert review["connections_added"] == 0
+    assert review["review_candidates"][0]["distinct_components"] == 2
+    assert review["review_candidates"][0]["automatic_connection"] is False
+    assert (
+        review
+        == context._road_graph(
+            collection(*roads["features"][::-1]), box(99.99, 14.99, 100.01, 15.01)
+        )[3]["grade_connection_review"]
+    )
+
+
+def test_context_capacity_participation_and_compact_pairs_are_explicit():
+    data = {
+        "population": [
+            {
+                "population_id": "p",
+                "node_id": "a",
+                "snap_distance_m": 0,
+                "subdistrict_id": "area",
+                "total_population": 1000,
+            }
+        ],
+        "edges": [
+            {"edge_id": "ab", "from_node": "a", "to_node": "b", "normal_minutes": 2}
+        ],
+        "facilities": [],
+        "osm_facilities": [],
+        "node_coordinates": {"a": [100, 15]},
+        "assumptions": [],
+    }
+    result = context.build_context_scenarios(data, "area")
+    assert result["capacity_demand_assumptions"]["actual_evacuation_demand"] is None
+    assert result["capacity_demand_assumptions"]["scenario_demand_population"] == 100
+    assert [
+        row["demand_assumptions"]["participation_fraction"]
+        for row in result["capacity_participation_sensitivity"]
+    ] == [0.05, 0.10, 0.25]
+    assert [
+        row["served_population"] for row in result["capacity_participation_sensitivity"]
+    ] == [50, 100, 100]
+    assert all(
+        "baseline_reachable_pairs" not in row and "scenario_reachable_pairs" not in row
+        for row in result["access_scenarios"].values()
+    )
+    assert result["access_scenarios"]["baseline"]["totals"]["total_population"] == 1000

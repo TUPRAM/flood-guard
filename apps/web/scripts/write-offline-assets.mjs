@@ -48,6 +48,7 @@ const coreAssets = appProfile === "public-production"
       "/command/",
       "/studio/",
       "/studio/library/",
+      "/studio/brief/",
       "/offline-demo/bundle.json",
       "/offline-demo/areas.geojson",
       "/offline-demo/roads.geojson",
@@ -164,7 +165,7 @@ function collectOptionalLandingAssets() {
   }
   // A shared dependency referenced by a route remains mandatory even if the
   // optional canvas also appears in its dynamic-import dependency manifest.
-  for (const route of ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/library/index.html"]) {
+  for (const route of ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/library/index.html", "studio/brief/index.html"]) {
     const path = resolve(out, route);
     if (!existsSync(path)) continue;
     const html = readFileSync(path, "utf8");

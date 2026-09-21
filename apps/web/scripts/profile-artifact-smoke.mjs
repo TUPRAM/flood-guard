@@ -116,7 +116,7 @@ function validatePublicProduction() {
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
     if (serviceWorker.includes(forbidden)) throw new Error(`Public service-worker cache inventory contains ${forbidden}`);
   }
-  for (const route of ["/command/", "/studio/", "/studio/library/"]) {
+  for (const route of ["/command/", "/studio/", "/studio/library/", "/studio/brief/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
 }
@@ -155,6 +155,7 @@ function validateCompetition() {
     "command/index.html",
     "studio/index.html",
     "studio/library/index.html",
+    "studio/brief/index.html",
     "evidence-library/catalog.json",
     "offline-demo/bundle.json",
     "offline-demo/mae-sai/bundle.json",
@@ -173,7 +174,7 @@ function validateCompetition() {
   if (process.env.VERCEL_URL && !rootHtml.includes("/landing/desktop-v4/far.webp")) {
     throw new Error("Hosted landing metadata is missing the authored sharing image.");
   }
-  for (const route of ["/", "/public/", "/command/", "/studio/", "/studio/library/", ...collectEvidenceLibraryAssets(out)]) {
+  for (const route of ["/", "/public/", "/command/", "/studio/", "/studio/library/", "/studio/brief/", ...collectEvidenceLibraryAssets(out)]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }
   const bundle = readJson("offline-demo/mae-sai/bundle.json");

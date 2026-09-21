@@ -943,3 +943,4 @@ export interface ProposalEvidenceManifest {
   test_suites: ProposalTestSuiteReceipt[];
   geoai_proof: ProposalGeoAIProof;
 }
+export type { BriefAccess, BriefIntervention, BriefReportingUnit, DecisionBrief } from "./decision-brief";

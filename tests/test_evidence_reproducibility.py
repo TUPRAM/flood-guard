@@ -180,7 +180,12 @@ def test_scenario_summaries_are_identical_after_canonical_cache_reload():
 def test_library_normalization_and_version_reject_changed_builder_identity(
     tmp_path, monkeypatch, change
 ):
-    from floodguard import evidence_adapters, evidence_local_report, evidence_review
+    from floodguard import (
+        evidence_adapters,
+        evidence_local_report,
+        evidence_population_review,
+        evidence_review,
+    )
 
     lock = tmp_path / "uv.lock"
     lock.write_text("first lock", encoding="utf-8")
@@ -218,6 +223,11 @@ def test_library_normalization_and_version_reject_changed_builder_identity(
         evidence_review, "build_facility_crosswalk", lambda *_: {"rows": []}
     )
     monkeypatch.setattr(evidence_local_report, "render_local_report", lambda *_: None)
+    monkeypatch.setattr(
+        evidence_population_review,
+        "build_population_review",
+        lambda *args, **kwargs: {"fixture": "no population rows in this cache test"},
+    )
     monkeypatch.setattr(
         pipeline, "render_report", lambda *_: "<html>deterministic fixture</html>"
     )

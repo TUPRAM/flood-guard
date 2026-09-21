@@ -109,6 +109,7 @@ def build_context_inputs(
         "OSM healthcare points are candidate destinations. Generic amenity=shelter may be a bus shelter, farm cottage or rest pavilion and is excluded from destination access and shelter capacity.",
         "No flood layer is converted into observed closures or calibrated flood probability.",
     ]
+    connection_review = topology.pop("grade_connection_review")
     package = {
         "schema_version": "floodguard.context_scenario_inputs.v1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -124,6 +125,7 @@ def build_context_inputs(
         "facilities": supplied,
         "osm_facilities": osm,
         "node_coordinates": nodes,
+        "connectivity_review": connection_review,
         "road_geojson": road_geojson,
         "facilities_geojson": _facility_geojson(supplied),
         "osm_facilities_geojson": _facility_geojson(osm),
@@ -158,13 +160,12 @@ def build_context_scenarios(
     aoi_id: str,
     *,
     facility_source: str = "supplied",
+    capacity_participation_fraction: float = 0.10,
 ) -> dict[str, Any]:
     """Evaluate four access families and separate shelter capacity experiments.
 
-    The closure is an explicitly selected graph edge adjacent to the largest
-    connected demand cell. The removed site is the first stable candidate ID.
-    The added destination is hypothetical at that demand node. These choices
-    are repeatable stress tests, not optimized interventions or observed events.
+    Candidates use one deterministic baseline shortest-path tree and demand
+    relevance. Their post-intervention outcomes do not select the candidates.
     Only reconciled shelter identities with numeric planned capacity enter the
     25/50/100 percent planned-capacity experiment; fixed 50/100/200 capacities
     apply only to reviewed unique shelter identities. Otherwise an explicitly
@@ -189,21 +190,15 @@ def build_context_scenarios(
     baseline = calculate_total_access(
         population, edges, facilities, assumptions=assumptions
     )
-    connected = sorted(
-        (row for row in population if row["node_id"] is not None),
-        key=lambda row: (-row["total_population"], row["population_id"]),
+    from .evidence_interventions import (
+        intervention_effect_summary,
+        select_interventions,
     )
-    chosen_node = connected[0]["node_id"] if connected else None
-    candidates = sorted(
-        (edge for edge in edges if chosen_node in (edge["from_node"], edge["to_node"])),
-        key=lambda edge: edge["edge_id"],
-    )
-    closed = candidates[0]["edge_id"] if candidates else None
-    removable = sorted(
-        (row for row in facilities if row["node_id"] is not None),
-        key=lambda row: row["facility_id"],
-    )
-    removed = removable[0]["facility_id"] if removable else None
+
+    selection = select_interventions(population, edges, facilities, baseline)
+    chosen_node = selection["hypothetical_added_node"]
+    closed = selection["closed_edge_id"]
+    removed = selection["removed_facility_id"]
     changes = {
         "close_edge": {"closed_edge_ids": [closed]} if closed else None,
         "remove_destination": {"removed_facility_ids": [removed]} if removed else None,
@@ -226,7 +221,12 @@ def build_context_scenarios(
     for name, change in changes.items():
         access[name] = (
             calculate_total_access(
-                population, edges, facilities, scenario=change, assumptions=assumptions
+                population,
+                edges,
+                facilities,
+                scenario=change,
+                assumptions=assumptions,
+                baseline_result=baseline,
             )
             if change
             else {
@@ -242,13 +242,14 @@ def build_context_scenarios(
         and row.get("capacity_scenario_eligible", True) is True
     ]
     hypothetical_capacity_site = None
+    capacity_node = selection["hypothetical_capacity_node"]
     capacity_assumptions = list(assumptions)
     capacity_pairs_source = baseline["baseline_reachable_pairs"]
-    if not shelters and chosen_node is not None:
-        coordinate = input_dict.get("node_coordinates", {}).get(chosen_node)
+    if not shelters and capacity_node is not None:
+        coordinate = input_dict.get("node_coordinates", {}).get(capacity_node)
         hypothetical_capacity_site = {
             "facility_id": "scenario-temporary-shelter",
-            "node_id": chosen_node,
+            "node_id": capacity_node,
             "snap_distance_m": 0.0,
             "facility_type": "shelter_candidate",
             "capacity": None,
@@ -256,6 +257,7 @@ def build_context_scenarios(
             "synthetic": True,
             "coordinates": coordinate,
             "activation_status": "hypothetical_scenario_only",
+            "selection_reason": selection["selection_reason"]["capacity_site"],
         }
         shelters = [hypothetical_capacity_site]
         capacity_assumptions.append(
@@ -269,10 +271,25 @@ def build_context_scenarios(
         pair for pair in capacity_pairs_source if pair["facility_id"] in shelter_ids
     ]
     capacity = []
+    from .evidence_population_review import build_capacity_demand
+
+    demand = build_capacity_demand(
+        population,
+        demand_basis="residential_participation",
+        participation_fraction=capacity_participation_fraction,
+        assumption_id="capacity_residential_participation_v1",
+    )
+    demand_summary = {
+        key: value for key, value in demand.items() if key != "population_rows"
+    }
+    capacity_site_assumptions = list(capacity_assumptions)
+    capacity_assumptions.append(
+        f"Only an assumed {capacity_participation_fraction:.0%} of modelled residential population participates; actual evacuation demand is unknown."
+    )
     if shelters:
         for amount in (50, 100, 200):
             result = allocate_shelter_capacity(
-                population,
+                demand["population_rows"],
                 [{**row, "capacity": amount} for row in shelters],
                 shelter_pairs,
                 assumptions=[
@@ -283,10 +300,11 @@ def build_context_scenarios(
             capacity.append(
                 {
                     "scenario_id": f"assumed_{amount}_per_candidate",
-                    "title": f"Hypothetical temporary shelter: {amount} places"
+                    "title": f"Hypothetical temporary shelter: {amount} places / {capacity_participation_fraction:.0%} participation"
                     if hypothetical_capacity_site
-                    else f"Assumed {amount} places per candidate shelter",
+                    else f"Assumed {amount} places per candidate shelter / {capacity_participation_fraction:.0%} participation",
                     **result,
+                    "demand_assumptions": demand_summary,
                 }
             )
     reconciled = [
@@ -298,11 +316,11 @@ def build_context_scenarios(
     if reconciled:
         for fraction in (0.25, 0.5, 1.0):
             result = allocate_shelter_capacity(
-                population,
+                demand["population_rows"],
                 [{**row, "capacity": row["capacity"] * fraction} for row in reconciled],
                 [pair for pair in shelter_pairs if pair["facility_id"] in planned_ids],
                 assumptions=[
-                    *assumptions,
+                    *capacity_assumptions,
                     f"Scenario makes {fraction:.0%} of reconciled planned shelter capacity available.",
                 ],
             )
@@ -311,8 +329,45 @@ def build_context_scenarios(
                     "scenario_id": f"planned_capacity_{int(fraction * 100)}pct",
                     "title": f"Assumed availability: {int(fraction * 100)}% of reconciled planned capacity",
                     **result,
+                    "demand_assumptions": demand_summary,
                 }
             )
+    participation_sensitivity = []
+    if shelters:
+        for fraction in (0.05, 0.10, 0.25):
+            sensitivity_demand = build_capacity_demand(
+                population,
+                demand_basis="residential_participation",
+                participation_fraction=fraction,
+                assumption_id="capacity_residential_participation_v1",
+            )
+            allocation = allocate_shelter_capacity(
+                sensitivity_demand["population_rows"],
+                [{**row, "capacity": 100} for row in shelters],
+                shelter_pairs,
+                assumptions=[
+                    *capacity_site_assumptions,
+                    f"Sensitivity assumes {fraction:.0%} residential participation; each hypothetical/reviewed shelter is assigned 100 places. Actual evacuation demand is unknown.",
+                ],
+            )
+            participation_sensitivity.append(
+                {
+                    "scenario_id": f"participation_{int(fraction * 100)}pct_capacity_100",
+                    "title": f"Assumed {fraction:.0%} participation / 100 places per scenario shelter",
+                    "demand_assumptions": {
+                        key: value
+                        for key, value in sensitivity_demand.items()
+                        if key != "population_rows"
+                    },
+                    **allocation,
+                }
+            )
+    effects = intervention_effect_summary(access)
+    # All-OD pairs are intermediate allocator inputs, not four duplicate exports.
+    # The standalone calculator preserves its public pairs API.
+    for result in access.values():
+        result.pop("baseline_reachable_pairs", None)
+        result.pop("scenario_reachable_pairs", None)
     return {
         "schema_version": "floodguard.context_scenarios.v1",
         "aoi_id": aoi_id,
@@ -324,13 +379,13 @@ def build_context_scenarios(
         "facility_source": facility_source,
         "source_input_sha256": input_dict.get("canonical_sha256"),
         "assumptions": assumptions,
-        "stress_selection": {
-            "closed_edge_id": closed,
-            "removed_facility_id": removed,
-            "hypothetical_added_node": chosen_node,
-        },
+        "stress_selection": selection,
+        "intervention_effects": effects,
+        "intermediate_pair_export": "omitted_recomputable_from_hash_bound_context_inputs",
         "access_scenarios": access,
         "capacity_scenarios": capacity,
+        "capacity_participation_sensitivity": participation_sensitivity,
+        "capacity_demand_assumptions": demand_summary,
         "scenario_assessments": {
             name: _access_assessment(result, aoi_id, assumptions)
             for name, result in access.items()
@@ -573,6 +628,7 @@ def _road_graph(
 ]:
     edges, features = [], []
     nodes: dict[str, list[float]] = {}
+    node_review = {}
     omitted = 0
     road_ids = set()
     for feature in sorted(
@@ -606,10 +662,19 @@ def _road_graph(
                 omitted += 1
                 continue
             points = []
-            for coordinate in (start, end):
+            for endpoint, coordinate in enumerate((start, end)):
                 position = [float(coordinate[0]), float(coordinate[1])]
                 node_id = "osm-node-" + _canonical_hash([position, grade])[:20]
                 nodes[node_id] = position
+                review = node_review.setdefault(
+                    node_id,
+                    {"grade": list(grade), "way_ids": set(), "endpoint_way_ids": set()},
+                )
+                review["way_ids"].add(osm_id)
+                if (endpoint == 0 and offset == 0) or (
+                    endpoint == 1 and offset == len(coordinates) - 2
+                ):
+                    review["endpoint_way_ids"].add(osm_id)
                 points.append(node_id)
             length = transform(TO_METRES.transform, segment).length
             edge_id = f"osm-way-{osm_id}-segment-{offset}"
@@ -654,8 +719,65 @@ def _road_graph(
             "connected_components": nx.number_connected_components(graph),
             "segments_omitted_at_routing_boundary_or_degenerate": omitted,
             "topology_method": "shared_original_vertex_and_compatible_grade_no_crossing_noding",
+            "grade_connection_review": _grade_connection_review(
+                nodes, node_review, graph
+            ),
         },
     )
+
+
+def _grade_connection_review(nodes, details, graph) -> dict[str, Any]:
+    """Diagnose equal-coordinate grade splits; never bridge them automatically."""
+    import networkx as nx
+
+    positions = {}
+    for node, coordinate in nodes.items():
+        positions.setdefault(tuple(coordinate), []).append(node)
+    components = {}
+    for component in nx.connected_components(graph):
+        identifier = min(component)
+        components.update({node: identifier for node in component})
+    rows = []
+    for coordinate, group in sorted(positions.items()):
+        if len(group) < 2:
+            continue
+        variants = [
+            {
+                "node_id": node,
+                "grade": details[node]["grade"],
+                "way_ids": sorted(details[node]["way_ids"]),
+                "endpoint_way_ids": sorted(details[node]["endpoint_way_ids"]),
+                "component_id": components[node],
+            }
+            for node in sorted(group)
+        ]
+        endpoint_candidate = all(row["endpoint_way_ids"] for row in variants)
+        rows.append(
+            {
+                "coordinates": list(coordinate),
+                "nodes": variants,
+                "distinct_components": len({row["component_id"] for row in variants}),
+                "review_class": "possible_shared_endpoint_grade_transition"
+                if endpoint_candidate
+                else "coincident_grade_separated_vertices",
+                "automatic_connection": False,
+            }
+        )
+    return {
+        "method": "same_original_coordinate_grade_split_review_v1",
+        "shared_coordinate_grade_split_count": len(rows),
+        "possible_endpoint_transition_count": sum(
+            row["review_class"] == "possible_shared_endpoint_grade_transition"
+            for row in rows
+        ),
+        "different_component_split_count": sum(
+            row["distinct_components"] > 1 for row in rows
+        ),
+        "review_candidates": rows[:100],
+        "candidate_display_limit": 100,
+        "connections_added": 0,
+        "interpretation": "These are review candidates, not confirmed junctions. Exact coordinates and endpoint tags do not establish shared OSM node identity or traversability. Verify original node IDs/grade continuity before connecting; interior crossings and river/grade gaps remain disconnected.",
+    }
 
 
 class _NodeIndex:

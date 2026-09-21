@@ -116,6 +116,9 @@ def _public_json(path: Path, value: Any) -> None:
 
 def _public_context(context: dict) -> dict:
     """Offer the actual derived routing database, excluding supplied facilities."""
+    from .evidence_finals_export import SITE_EXTRA_KEYS
+    from .evidence_validation import EDGE_KEYS, OSM_SITE_KEYS, POPULATION_KEYS
+
     projected = {
         "license": "OSM-derived database: ODbL 1.0; WorldPop population: CC BY 4.0",
         "source_urls": [
@@ -152,9 +155,22 @@ def _public_context(context: dict) -> dict:
         },
         "analysis_crs": "EPSG:32647",
         "node_coordinates": context["node_coordinates"],
-        "population": context["population"],
-        "edges": context["edges"],
-        "osm_facilities": context["osm_facilities"],
+        "population": [
+            {key: value for key, value in row.items() if key in POPULATION_KEYS}
+            for row in context["population"]
+        ],
+        "edges": [
+            {key: value for key, value in row.items() if key in EDGE_KEYS}
+            for row in context["edges"]
+        ],
+        "osm_facilities": [
+            {
+                key: value
+                for key, value in row.items()
+                if key in OSM_SITE_KEYS | SITE_EXTRA_KEYS
+            }
+            for row in context["osm_facilities"]
+        ],
         "coverage": context["coverage"],
         "connectivity_review": context.get("connectivity_review", {}),
     }
@@ -797,7 +813,33 @@ def build_library(
         path = output_dir / relative
         if path.exists():
             supplementary[relative] = sha256_file(path)
-    for directory in ("review", "event_review", "acquisition/event_review"):
+    finals_analysis, finals_contexts = None, None
+    if (output_dir / "finals/build_receipt.json").is_file():
+        from .evidence_finals_export import load_finals
+
+        mae_sai = next(row for row in aois if row["id"] == "aoi-01_mae_sai_core")
+        finals_analysis, finals_contexts = load_finals(
+            output_dir / "finals", aoi_sha256=mae_sai["sha256"]
+        )
+        if finals_analysis["generated_at"] != generated_at:
+            raise ValueError("Finals generation metadata differs from package")
+        finals_receipt = json.loads(
+            (output_dir / "finals/build_receipt.json").read_text(encoding="utf-8")
+        )
+        for name in ("reporting_units", "reporting_crosswalk"):
+            suffix = ".geojson" if name == "reporting_units" else ".json"
+            if (
+                sha256_file(output_dir / "event_review" / (name + suffix))
+                != finals_receipt[name + "_sha256"]
+            ):
+                raise ValueError("Finals reporting geography differs from package")
+    for directory in (
+        "review",
+        "event_review",
+        "acquisition/event_review",
+        "finals",
+        "public_review",
+    ):
         for path in sorted((output_dir / directory).rglob("*")):
             if path.is_file():
                 supplementary[path.relative_to(output_dir).as_posix()] = sha256_file(
@@ -1210,6 +1252,32 @@ def build_library(
                 "report_url": PUBLIC_PREFIX + "report.html",
                 "downloads": downloads,
             }
+            if finals_analysis is not None and aoi["id"] == "aoi-01_mae_sai_core":
+                from .evidence_finals_export import public_finals_database
+
+                package["decision_brief"]["finals_analysis"] = finals_analysis
+                package["input_hashes"]["finals_analysis_sha256"] = finals_analysis[
+                    "analysis_sha256"
+                ]
+                dbfile = public_dir / "databases" / "aoi-01_mae_sai_core-finals.json.gz"
+                dbfile.write_bytes(
+                    gzip.compress(
+                        canonical_bytes(
+                            public_finals_database(finals_analysis, finals_contexts)
+                        ),
+                        compresslevel=9,
+                        mtime=0,
+                    )
+                )
+                expected_files.add("databases/" + dbfile.name)
+                package["downloads"] = [
+                    *downloads,
+                    {
+                        "title": "Mae Sai service, route and sensitivity inputs (ODbL / CC BY, gzip JSON)",
+                        "url": PUBLIC_PREFIX + "databases/" + dbfile.name,
+                        "sha256": sha256_file(dbfile),
+                    },
+                ]
             local_package = {
                 **package,
                 "layers": [*local_layers, terrain_layer],
@@ -1358,6 +1426,28 @@ def render_report(
             if brief
             else ""
         )
+        if "finals_analysis" in brief:
+            finals = brief["finals_analysis"]
+            routes = finals["routes"]
+            origins = {row["id"]: row for row in routes["origins"]}
+            route_rows = "".join(
+                f"<tr><td>{esc(origins[row['origin_id']]['name'])}</td><td>{esc(row['service_type'])} / {esc(row['travel_mode'])}</td><td>{esc(row['scenario_kind'])}</td><td>{esc(row['baseline']['destination_name'] or 'unavailable')} / {esc(row['baseline']['total_minutes'])}</td><td>{esc(row['after']['destination_name'] or 'unavailable')} / {esc(row['after']['total_minutes'])}</td><td>{esc(row['delta_minutes'])}</td></tr>"
+                for row in routes["comparisons"]
+            )
+            concise = (
+                "<h3>Prepared Mae Sai pin: service-specific before/after scenario</h3>"
+                + f"<p>{esc(finals['question'])}</p><p>Thai-scope modelled residential population: {finals['scope']['in_scope_population']:,.2f}; outside-scope exclusion: {finals['scope']['excluded_population']:,.2f}. Mixed source years; no observed flood-affected population or accepted priority.</p>"
+                + "<p>Prepared public site markers are not verified entrances. Before/after means an imposed disruption on the same model, not observed September road conditions. Hospital, primary care, pharmacy and shelter access remain separate.</p>"
+                + "<table><tr><th>Starting place</th><th>Service / mode</th><th>Independent change</th><th>Before destination / minutes</th><th>After destination / minutes</th><th>Delta minutes</th></tr>"
+                + route_rows
+                + "</table>"
+                + "<ul>"
+                + "".join(f"<li>{esc(row)}</li>" for row in finals["limitations"])
+                + "</ul>"
+                + "<details><summary>Earlier mixed-service aggregate comparator — separate assumptions</summary>"
+                + concise
+                + "</details>"
+            )
         table = "".join(
             f"<tr><td>{esc(s['title'])}</td><td>{esc(s['kind'])}</td><td>"
             + "<br>".join(

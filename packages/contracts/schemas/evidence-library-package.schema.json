@@ -1216,6 +1216,1009 @@
               "unknown_capacity"
             ]
           }
+        },
+        "finals_analysis": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "generated_at": {
+              "type": "string",
+              "minLength": 1
+            },
+            "status": {
+              "const": "scenario_only"
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1
+            },
+            "primary_service": {
+              "enum": [
+                "hospital",
+                "primary_care",
+                "pharmacy",
+                "shelter"
+              ]
+            },
+            "scope": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "jurisdiction": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "population_year": {
+                  "const": 2020
+                },
+                "boundary_reference_date": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "osm_retrieved_at": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "study_population": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "in_scope_population": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "excluded_population": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "jurisdiction",
+                "population_year",
+                "boundary_reference_date",
+                "osm_retrieved_at",
+                "study_population",
+                "in_scope_population",
+                "excluded_population"
+              ]
+            },
+            "timeline": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "start": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "end": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "role": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source_url": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "limitations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "start",
+                  "end",
+                  "role",
+                  "source_url",
+                  "limitations"
+                ]
+              }
+            },
+            "services": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "enum": [
+                      "hospital",
+                      "primary_care",
+                      "pharmacy",
+                      "shelter"
+                    ]
+                  },
+                  "status": {
+                    "enum": [
+                      "available",
+                      "unavailable"
+                    ]
+                  },
+                  "facilities": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "travel_mode": {
+                          "enum": [
+                            "walking",
+                            "modelled_vehicle"
+                          ]
+                        },
+                        "speed_factor": {
+                          "enum": [
+                            0.75,
+                            1,
+                            1.25
+                          ]
+                        },
+                        "context_sha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "baseline": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "modelled_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "unknown_access_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "connected_without_route_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "within_15_minutes_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "within_30_minutes_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "within_60_minutes_population": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "median_minutes": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "p90_minutes": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "max_minutes": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "modelled_population",
+                            "unknown_access_population",
+                            "connected_without_route_population",
+                            "within_15_minutes_population",
+                            "within_30_minutes_population",
+                            "within_60_minutes_population",
+                            "median_minutes",
+                            "p90_minutes",
+                            "max_minutes"
+                          ]
+                        },
+                        "interventions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "target_id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "target_label": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "selection_method": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "kind": {
+                                "enum": [
+                                  "add_destination",
+                                  "close_edge",
+                                  "remove_destination"
+                                ]
+                              },
+                              "gaining_15_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "gaining_30_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "gaining_60_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "losing_15_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "losing_30_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "losing_60_min_access": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "slower_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "faster_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "newly_reachable_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "newly_unreachable_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "comparable_population": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "mean_travel_time_delta_minutes": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "p90_delta_minutes": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "max_delta_minutes": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "net_person_minutes": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "target_id",
+                              "target_label",
+                              "selection_method",
+                              "kind",
+                              "gaining_15_min_access",
+                              "gaining_30_min_access",
+                              "gaining_60_min_access",
+                              "losing_15_min_access",
+                              "losing_30_min_access",
+                              "losing_60_min_access",
+                              "slower_population",
+                              "faster_population",
+                              "newly_reachable_population",
+                              "newly_unreachable_population",
+                              "comparable_population",
+                              "mean_travel_time_delta_minutes",
+                              "p90_delta_minutes",
+                              "max_delta_minutes",
+                              "net_person_minutes"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "travel_mode",
+                        "speed_factor",
+                        "context_sha256",
+                        "baseline",
+                        "interventions"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "status",
+                  "facilities",
+                  "reason",
+                  "variants"
+                ]
+              }
+            },
+            "facility_review": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "service_type": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "geometry_role": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "eligible": {
+                    "type": "boolean"
+                  },
+                  "event_availability": {
+                    "const": "unknown"
+                  },
+                  "actual_capacity": {
+                    "type": "null"
+                  },
+                  "source_url": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "service_type",
+                  "geometry_role",
+                  "eligible",
+                  "event_availability",
+                  "actual_capacity",
+                  "source_url"
+                ]
+              }
+            },
+            "capacity": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "enum": [
+                    "scenario_only",
+                    "unavailable"
+                  ]
+                },
+                "site_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "linked_access_intervention_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "linked_service": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "linked_variant_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "demand_basis": {
+                  "const": "residential_participation"
+                },
+                "actual_evacuation_demand": {
+                  "type": "null"
+                },
+                "actual_available_capacity": {
+                  "type": "null"
+                },
+                "experiments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "participation_fraction": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "places": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "assumed_demand": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "assigned": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "capacity_limited": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "unreachable": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "coverage_excluded": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "participation_fraction",
+                      "places",
+                      "assumed_demand",
+                      "assigned",
+                      "capacity_limited",
+                      "unreachable",
+                      "coverage_excluded"
+                    ]
+                  }
+                },
+                "assumptions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "status",
+                "site_id",
+                "linked_access_intervention_id",
+                "linked_service",
+                "linked_variant_id",
+                "demand_basis",
+                "actual_evacuation_demand",
+                "actual_available_capacity",
+                "experiments",
+                "assumptions"
+              ]
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "analysis_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "topology_review": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reviewed_candidates": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "accepted_connections": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "summary": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "reviewed_candidates",
+                "accepted_connections",
+                "summary"
+              ]
+            },
+            "focus_briefs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name_th": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "unit_coverage_fraction": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "modelled_population": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "priority": {
+                    "const": "verification"
+                  },
+                  "service_type": {
+                    "enum": [
+                      "hospital",
+                      "primary_care",
+                      "pharmacy",
+                      "shelter"
+                    ]
+                  },
+                  "travel_mode": {
+                    "const": "walking"
+                  },
+                  "main_drivers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "useful_intervention": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uncertainty": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "name_th",
+                  "unit_coverage_fraction",
+                  "modelled_population",
+                  "priority",
+                  "service_type",
+                  "travel_mode",
+                  "main_drivers",
+                  "useful_intervention",
+                  "uncertainty"
+                ]
+              }
+            },
+            "routes": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "enum": [
+                    "available",
+                    "unavailable"
+                  ]
+                },
+                "origins": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "source_url": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "geometry_role": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "location_status": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "longitude",
+                      "latitude",
+                      "source_url",
+                      "geometry_role",
+                      "location_status"
+                    ]
+                  }
+                },
+                "comparisons": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "origin_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "service_type": {
+                        "enum": [
+                          "hospital",
+                          "primary_care",
+                          "pharmacy",
+                          "shelter"
+                        ]
+                      },
+                      "travel_mode": {
+                        "enum": [
+                          "walking",
+                          "modelled_vehicle"
+                        ]
+                      },
+                      "scenario_kind": {
+                        "enum": [
+                          "close_edge",
+                          "remove_destination"
+                        ]
+                      },
+                      "changed_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "selection_method": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "context_sha256": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "baseline": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "enum": [
+                              "available",
+                              "unavailable"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "destination_id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "destination_name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "total_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "network_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "connector_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "distance_m": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "edge_ids": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "coordinates": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          },
+                          "connectors": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "reason",
+                          "destination_id",
+                          "destination_name",
+                          "total_minutes",
+                          "network_minutes",
+                          "connector_minutes",
+                          "distance_m",
+                          "edge_ids",
+                          "coordinates",
+                          "connectors"
+                        ]
+                      },
+                      "after": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "enum": [
+                              "available",
+                              "unavailable"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "destination_id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "destination_name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "total_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "network_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "connector_minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "distance_m": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "edge_ids": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "coordinates": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          },
+                          "connectors": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "reason",
+                          "destination_id",
+                          "destination_name",
+                          "total_minutes",
+                          "network_minutes",
+                          "connector_minutes",
+                          "distance_m",
+                          "edge_ids",
+                          "coordinates",
+                          "connectors"
+                        ]
+                      },
+                      "delta_minutes": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "origin_id",
+                      "service_type",
+                      "travel_mode",
+                      "scenario_kind",
+                      "changed_ids",
+                      "selection_method",
+                      "context_sha256",
+                      "baseline",
+                      "after",
+                      "delta_minutes"
+                    ]
+                  }
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "status",
+                "origins",
+                "comparisons",
+                "limitations"
+              ]
+            }
+          },
+          "required": [
+            "schema_version",
+            "generated_at",
+            "status",
+            "question",
+            "primary_service",
+            "scope",
+            "timeline",
+            "services",
+            "facility_review",
+            "capacity",
+            "limitations",
+            "analysis_sha256",
+            "topology_review",
+            "focus_briefs",
+            "routes"
+          ]
         }
       },
       "required": [

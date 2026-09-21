@@ -1,4 +1,5 @@
 import type { DecisionBrief } from "@floodguard/contracts";
+import { parseFinalsAnalysis } from "./finals-analysis";
 
 const record = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
@@ -45,5 +46,6 @@ export function parseDecisionBrief(value: unknown, aoi: string, event: string, g
     || !r.units.every((row) => record(row) && text(row.id) && text(row.name) && text(row.name_th)
       && ["full_unit", "partial_unit"].includes(String(row.scope)) && fraction(row.unit_coverage_fraction) && positive(row.intersection_area_km2)
       && access(row.population_context) && row.affected_population === null && row.fpps === null && row.action_class === null && interventions(row.interventions))) return fail();
+  if (value.finals_analysis !== undefined) parseFinalsAnalysis(value.finals_analysis, generatedAt);
   return value as unknown as DecisionBrief;
 }

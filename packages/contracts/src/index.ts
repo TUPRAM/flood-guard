@@ -944,3 +944,4 @@ export interface ProposalEvidenceManifest {
   geoai_proof: ProposalGeoAIProof;
 }
 export type { BriefAccess, BriefIntervention, BriefReportingUnit, DecisionBrief } from "./decision-brief";
+export type { FinalsAnalysis, FinalsBaseline, FinalsIntervention, FinalsServiceId, FinalsTravelMode, FinalsVariant, FinalsRoute, FinalsOrigin, FinalsRouteComparison, FinalsRoutes } from "./finals-analysis";

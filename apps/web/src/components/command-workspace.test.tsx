@@ -21,6 +21,9 @@ describe("CommandWorkspace", () => {
     expect(html).not.toContain('<a class="active" href="/command/">Command</a>');
     expect(html).toContain("Source time");
     expect(html).toContain("Confidence");
+    expect(html).toContain("Historical research workspace");
+    expect(html).toContain("not accepted event-response priorities");
+    expect(html).toContain("Open the current Mae Sai brief");
     expect(html).toContain("follow DDPM and local-authority instructions before action");
     expect(html).toContain("TH570903");
     expect(html).toContain("Ko Chang");

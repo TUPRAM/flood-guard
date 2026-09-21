@@ -637,6 +637,10 @@ button { color: inherit; }
 .command-context-metadata div { display: flex; gap: 5px; font-size: .64rem; }
 .command-context-metadata dt { color: #526a82; }.command-context-metadata dd { margin: 0; color: #0c2740; font-weight: 800; }
 .command-context-advisory { justify-self: end; margin: 0; color: #526a82; font-size: .64rem; line-height: 1.4; text-align: right; }
+.command-research-notice { grid-template-columns: minmax(110px, .5fr) minmax(0, 2fr) minmax(130px, .6fr); gap: 10px 18px; }
+.command-research-notice strong { font-size: .72rem; line-height: 1.4; }
+.command-research-notice p { margin: 0; font-size: .7rem; line-height: 1.5; }
+.command-research-notice a { display: flex; align-items: center; min-height: 44px; font-size: .7rem; font-weight: 750; line-height: 1.4; }
 .command-workspace { height: calc(100vh - 122px); min-height: 650px; display: grid; grid-template-columns: 245px minmax(420px, 1fr) 330px; gap: 1px; background: #cdd9e6; }
 .control-rail, .decision-panel { min-width: 0; padding: 17px; overflow: auto; background: #f8fbff; }
 .command-control-panel, .command-insight-panel { box-shadow: inset 0 1px 0 #fff; }
@@ -905,6 +909,8 @@ button.model-card { cursor: pointer; }
   .command-header nav, .studio-header nav { display: none; }
   .command-context-bar { grid-template-columns: 1fr auto; }
   .command-context-advisory { grid-column: 1 / -1; justify-self: start; text-align: left; }
+  .command-research-notice { grid-template-columns: 1fr auto; }
+  .command-research-notice p { grid-column: 1 / -1; grid-row: 2; }
   .command-workspace { grid-template-columns: 190px minmax(0, 1fr); }
   .model-comparison-grid { grid-template-columns: 1fr; }
   .model-detail-grid { grid-template-columns: 1fr; }
@@ -920,6 +926,7 @@ button.model-card { cursor: pointer; }
   .status-meta { justify-content: flex-start; }
   .status-meta span { white-space: normal; }
   .command-context-bar { grid-template-columns: 1fr; padding-inline: 14px; }
+  .command-research-notice p { grid-row: auto; }
   .command-context-metadata { flex-wrap: wrap; }
   .chooser-header { min-height: 66px; padding-inline: 16px; }
   .chooser-header-context { display: none; }

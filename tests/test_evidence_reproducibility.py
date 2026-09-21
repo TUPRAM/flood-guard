@@ -133,9 +133,9 @@ def test_osm_extraction_cache_is_invalidated_by_native_tool_change(
         "c" * 64,
     )
     first = context._extract_osm(*args)
-    assert context._extract_osm(*args) == first and len(calls) == 2
+    assert context._extract_osm(*args) == first and len(calls) == 3
     identity[changed_field] = "3.14.0" if changed_field == "gdal_version" else "d" * 64
-    assert context._extract_osm(*args) == first and len(calls) == 4
+    assert context._extract_osm(*args) == first and len(calls) == 6
 
 
 def test_external_ogr_identity_does_not_expose_installation_path(tmp_path, monkeypatch):

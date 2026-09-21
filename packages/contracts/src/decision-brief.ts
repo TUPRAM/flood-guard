@@ -1,3 +1,5 @@
+import type { FinalsAnalysis } from "./finals-analysis";
+
 /** A research decision brief keeps scenario evidence separate from accepted action. */
 export interface BriefAccess {
   modelled_population: number;
@@ -66,4 +68,5 @@ export interface DecisionBrief {
   drivers: string[];
   next_actions: { id: string; order: number; action: string; reason: string }[];
   limitations: string[];
+  finals_analysis?: FinalsAnalysis;
 }

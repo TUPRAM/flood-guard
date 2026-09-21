@@ -24,6 +24,210 @@ def collection(*features):
     return {"type": "FeatureCollection", "features": list(features)}
 
 
+def test_osm_service_roles_and_polygon_identity_are_not_interchangeable():
+    site = {
+        "type": "Feature",
+        "properties": {
+            "osm_way_id": "10",
+            "amenity": "hospital",
+            "name": "Test hospital",
+        },
+        "geometry": mapping(box(100, 15, 100.001, 15.001)),
+    }
+    relation = {
+        "type": "Feature",
+        "properties": {"osm_id": "20", "amenity": "clinic"},
+        "geometry": mapping(box(100.002, 15, 100.003, 15.001)),
+    }
+    pharmacy = {
+        "type": "Feature",
+        "properties": {"osm_id": "30", "other_tags": '"amenity"=>"pharmacy"'},
+        "geometry": {"type": "Point", "coordinates": [100, 15]},
+    }
+    rows = context._osm_facilities(collection(site, relation, pharmacy, site))
+    assert (
+        len(rows) == 3
+    )  # Only duplicate representations of the same OSM object deduplicate.
+    by_id = {row["facility_id"]: row for row in rows}
+    assert by_id["OSM-way-10"]["service_type"] == "hospital"
+    assert by_id["OSM-relation-20"]["service_type"] == "primary_care"
+    assert by_id["OSM-node-30"]["service_type"] == "pharmacy"
+    assert by_id["OSM-way-10"]["source_url"] == "https://www.openstreetmap.org/way/10"
+    assert (
+        by_id["OSM-way-10"]["geometry_role"]
+        == "derived_site_interior_representative_not_entrance"
+    )
+    assert all(
+        row["capacity"] is None and row["event_available_capacity"] is None
+        for row in rows
+    )
+    assert all(row["event_operation_status"] == "unknown" for row in rows)
+
+
+def test_osm_unique_boundary_entrance_is_explicit_and_duplicate_sites_are_reviewed():
+    hospital = {
+        "type": "Feature",
+        "properties": {
+            "osm_way_id": "10",
+            "amenity": "hospital",
+            "name": "Same hospital",
+        },
+        "geometry": mapping(box(100, 15, 100.001, 15.001)),
+    }
+    entrance = {
+        "type": "Feature",
+        "properties": {"osm_id": "11", "other_tags": '"entrance"=>"main"'},
+        "geometry": {"type": "Point", "coordinates": [100, 15.0005]},
+    }
+    point = {
+        "type": "Feature",
+        "properties": {
+            "osm_id": "12",
+            "other_tags": '"amenity"=>"hospital"',
+            "name": "Same hospital",
+        },
+        "geometry": {"type": "Point", "coordinates": [100.0005, 15.0005]},
+    }
+    rows = context._osm_facilities(collection(hospital, entrance, point))
+    site = next(row for row in rows if row["facility_id"] == "OSM-way-10")
+    assert site["geometry"]["coordinates"] == (100.0, 15.0005)
+    assert (
+        site["geometry_role"]
+        == "osm_tagged_site_boundary_entrance_not_independently_verified"
+    )
+    assert site["possible_duplicate_source_ids"] == ["OSM-node-12"]
+    assert len(rows) == 2  # Distinct identities are never silently merged.
+
+
+def test_public_origins_are_named_scoped_map_records_not_destinations():
+    features = collection(
+        *[
+            {
+                "type": "Feature",
+                "properties": {
+                    "osm_id": str(index),
+                    "name": name,
+                    "other_tags": f'"amenity"=>"{amenity}"',
+                },
+                "geometry": {"type": "Point", "coordinates": coordinate},
+            }
+            for index, (name, amenity, coordinate) in enumerate(
+                [
+                    ("Market", "marketplace", [100, 15]),
+                    ("School", "school", [100, 15]),
+                    ("Clinic", "clinic", [100, 15]),
+                    ("Outside", "school", [101, 15]),
+                    (None, "police", [100, 15]),
+                ],
+                1,
+            )
+        ]
+    )
+    scope = box(99.99, 14.99, 100.01, 15.01)
+    rows = context._osm_public_origins(
+        features, scope, scope, context._NodeIndex({"node": [100, 15]})
+    )
+    assert {row["name"] for row in rows} == {"Market", "School"}
+    assert all(row["node_id"] == "node" and "capacity" not in row for row in rows)
+    assert all(
+        "facility_id" not in row and row["origin_id"].startswith("OSM-node-")
+        for row in rows
+    )
+
+
+def test_walking_mode_uses_paths_and_honours_foot_access():
+    lines = collection(
+        road("path", [[100, 15], [100.001, 15]], highway="footway"),
+        road("prohibited", [[100.001, 15], [100.002, 15]], foot="no"),
+        road("motorway", [[100.002, 15], [100.003, 15]], highway="motorway"),
+        road(
+            "motor_forbidden_foot_allowed",
+            [[100.003, 15], [100.004, 15]],
+            motor_vehicle="no",
+            foot="yes",
+        ),
+    )
+    edges, _, _, _ = context._road_graph(
+        lines, box(99, 14, 101, 16), travel_mode="walking"
+    )
+    assert {row["osm_way_id"] for row in edges} == {
+        "path",
+        "motor_forbidden_foot_allowed",
+    }
+    assert all(
+        row["normal_minutes"] == pytest.approx(row["length_m"] / 1000 / 5 * 60)
+        for row in edges
+    )
+
+
+def test_reporting_scope_rejects_cross_border_segments_and_connectors():
+    # A narrow excluded strip cannot be crossed by road or connector proximity.
+    scope = box(99.99, 14.99, 100, 15.01).union(box(100.0001, 14.99, 100.01, 15.01))
+    roads = collection(road("cross", [[99.9999, 15], [100.0002, 15]]))
+    assert context._road_graph(roads, scope)[0] == []
+    index = context._NodeIndex({"across": [100.0002, 15]}, allowed_geometry=scope)
+    assert index.snap(99.9999, 15, 100)[0] is None
+    index = context._NodeIndex(
+        {"across": [100.0002, 15], "same_side": [99.9994, 15]}, allowed_geometry=scope
+    )
+    assert index.snap(99.9999, 15, 100)[0] == "same_side"
+
+
+def test_original_shared_osm_endpoint_receipt_connects_but_coordinate_alone_does_not():
+    lines = collection(
+        road("1", [[99.999, 15], [100, 15]]),
+        road("2", [[100, 15], [100.001, 15]], bridge="yes", layer="1"),
+    )
+    receipt = {
+        "status": "verified_shared_osm_node_endpoints",
+        "evidence_method": "pyosmium_original_way_node_references_v1",
+        "osm_node_id": "123",
+        "coordinates": [100.0, 15.0],
+        "members": [
+            {"osm_way_id": "1", "vertex_index": 1, "osm_node_id": "123"},
+            {"osm_way_id": "2", "vertex_index": 0, "osm_node_id": "123"},
+        ],
+    }
+    assert (
+        context._road_graph(lines, box(99, 14, 101, 16))[3]["connected_components"] == 2
+    )
+    edges, nodes, geojson, qc = context._road_graph(
+        lines, box(99, 14, 101, 16), reviewed_junctions=[receipt]
+    )
+    assert qc["connected_components"] == 1
+    assert "osm-original-node-123" in nodes
+    assert edges[0]["to_node"] == edges[1]["from_node"]
+    assert geojson["features"][0]["properties"]["to_node"] == edges[0]["to_node"]
+    bad = {
+        **receipt,
+        "members": [
+            receipt["members"][0],
+            {**receipt["members"][1], "osm_node_id": "456"},
+        ],
+    }
+    with pytest.raises(context.EvidenceContextError, match="share one"):
+        context._road_graph(lines, box(99, 14, 101, 16), reviewed_junctions=[bad])
+
+
+def test_reviewed_grade_join_never_accepts_an_interior_crossing():
+    lines = collection(
+        road("1", [[99.999, 15], [100, 15], [100.001, 15]]),
+        road("2", [[100, 15], [100, 15.001]], bridge="yes"),
+    )
+    receipt = {
+        "status": "verified_shared_osm_node_endpoints",
+        "evidence_method": "pyosmium_original_way_node_references_v1",
+        "osm_node_id": "123",
+        "coordinates": [100.0, 15.0],
+        "members": [
+            {"osm_way_id": "1", "vertex_index": 1, "osm_node_id": "123"},
+            {"osm_way_id": "2", "vertex_index": 0, "osm_node_id": "123"},
+        ],
+    }
+    with pytest.raises(context.EvidenceContextError, match="original way endpoint"):
+        context._road_graph(lines, box(99, 14, 101, 16), reviewed_junctions=[receipt])
+
+
 def test_crossing_geometry_does_not_create_a_junction():
     geometry = collection(
         road("horizontal", [[99.999, 15], [100.001, 15]]),
@@ -231,6 +435,59 @@ def test_checksum_failure_and_insufficient_routing_context_block(
     paths["osm"].write_bytes(b"changed source")
     with pytest.raises(context.EvidenceContextError, match="checksum"):
         context.build_context_inputs(tmp_path, aoi, aoi, [], tmp_path / "bad")
+
+
+def test_reporting_scope_conserves_original_demand_and_retains_origin_exclusions(
+    tmp_path, fixture_sources
+):
+    aoi = mapping(box(100, 15, 100.002, 15.002))
+    result = context.build_context_inputs(
+        tmp_path,
+        aoi,
+        aoi,
+        [],
+        tmp_path / "scoped",
+        reporting_geometry=mapping(box(100, 15, 100.001, 15.002)),
+        public_origin_records=[
+            {
+                "facility_id": "public-map-marker",
+                "name": "Municipal public marker",
+                "longitude": 100.0005,
+                "latitude": 15.0015,
+                "geometry_role": "official_site_marker_not_entrance",
+                "source_url": "https://example.test/municipality",
+            },
+            {
+                "facility_id": "out-of-scope-origin",
+                "longitude": 100.0015,
+                "latitude": 15.0015,
+            },
+        ],
+    )
+    assert result["coverage"]["modelled_population_in_original_aoi"] == 4
+    assert result["coverage"]["modelled_population_2020"] == 1.5
+    assert result["coverage"]["population_excluded_outside_reporting_scope"] == 2.5
+    assert len(result["population_excluded_outside_reporting_scope"]) == 1
+    origins = {row["origin_id"]: row for row in result["public_origins"]}
+    assert (
+        origins["public-map-marker"]["geometry_role"]
+        == "official_site_marker_not_entrance"
+    )
+    assert origins["out-of-scope-origin"]["within_demand_scope"] is False
+    assert origins["out-of-scope-origin"]["node_id"] is None
+
+
+def test_reviewed_junction_source_hash_must_match_inputs(tmp_path, fixture_sources):
+    aoi = mapping(box(100, 15, 100.002, 15.002))
+    with pytest.raises(context.EvidenceContextError, match="source hash"):
+        context.build_context_inputs(
+            tmp_path,
+            aoi,
+            aoi,
+            [],
+            tmp_path / "bad-junction",
+            reviewed_junctions=[{"pbf_sha256": "0" * 64}],
+        )
 
 
 def test_healthcare_is_not_shelter_capacity_and_no_sites_remain_explicit():

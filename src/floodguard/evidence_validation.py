@@ -248,6 +248,24 @@ def _decision_brief(package: dict, schemas: Path) -> None:
         return
     brief = package["decision_brief"]
     _schema(brief, "decision-brief", schemas)
+    if "finals_analysis" in brief:
+        from .evidence_finals_export import verify_finals_analysis
+
+        verify_finals_analysis(brief["finals_analysis"])
+        _require(
+            package["aoi_id"] == "aoi-01_mae_sai_core"
+            and package["event_id"] == "mae_sai_2024",
+            "Finals case belongs to another AOI/event",
+        )
+        _require(
+            brief["finals_analysis"]["generated_at"] == package["generated_at"],
+            "Mixed finals generation metadata",
+        )
+        _hash(
+            package["input_hashes"].get("finals_analysis_sha256"),
+            brief["finals_analysis"]["analysis_sha256"],
+            "finals analysis",
+        )
     for key in ("aoi_id", "event_id", "generated_at"):
         _require(brief[key] == package[key], f"Mixed decision brief {key}")
     _brief_partition(brief["access"], "AOI")
@@ -340,15 +358,35 @@ def _decision_brief(package: dict, schemas: Path) -> None:
             )
 
 
-def _database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
+def _database(
+    payload: dict,
+    package: dict,
+    policies: dict[str, dict],
+    *,
+    reviewed_junctions: list | None = None,
+) -> None:
     _require(
         set(payload) in (DATABASE_KEYS, DATABASE_KEYS | {"connectivity_review"}),
         "Unexpected source keys in public database",
     )
     if "connectivity_review" in payload:
         review = payload["connectivity_review"]
+        applied = payload.get("coverage", {}).get(
+            "reviewed_shared_node_junctions_applied", []
+        )
+        checked = {row["review_id"]: row for row in reviewed_junctions or []}
+        for row in applied:
+            source = checked.get(row["review_id"], {})
+            _require(
+                source.get("status") == "verified_shared_osm_node_endpoints"
+                and source.get("pbf_sha256") == payload["input_hashes"]["osm"]
+                and str(source.get("osm_node_id")) == str(row["osm_node_id"])
+                and source.get("coordinates") == row["coordinates"],
+                "Unverified junction source identity",
+            )
         _require(
-            review.get("connections_added") == 0
+            review.get("connections_added")
+            == sum(row["merged_grade_node_count"] - 1 for row in applied)
             and all(
                 row.get("automatic_connection") is False
                 for row in review.get("review_candidates", [])
@@ -443,7 +481,13 @@ def _database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
     ):
         _unique(payload[field], key, field)
         for row in payload[field]:
-            _require(set(row) == allowed, f"Unexpected source keys in database {field}")
+            from .evidence_finals_export import SITE_EXTRA_KEYS
+
+            optional = SITE_EXTRA_KEYS if field == "osm_facilities" else set()
+            _require(
+                allowed <= set(row) <= allowed | optional,
+                f"Unexpected source keys in database {field}",
+            )
             if field == "population":
                 _require(
                     row["population_reference_year"] == 2020
@@ -457,7 +501,9 @@ def _database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
                 )
             else:
                 _require(
-                    row["facility_id"].startswith("OSM-node-")
+                    row["facility_id"].startswith(
+                        ("OSM-node-", "OSM-way-", "OSM-relation-")
+                    )
                     and row["source_license"] == "ODbL-1.0",
                     "Non-OSM source in public OSM facility projection",
                 )
@@ -478,6 +524,177 @@ def _database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
                 _require(
                     row["node_id"] is None or row["node_id"] in nodes,
                     "Database connector references absent node",
+                )
+
+
+def _finals_database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
+    """Bind every displayed path and service case to the downloadable model inputs."""
+    _require(
+        set(payload) == {"schema_version", "analysis", "contexts"}
+        and payload["schema_version"] == "floodguard.finals_database.v1",
+        "Invalid finals database",
+    )
+    analysis = package.get("decision_brief", {}).get("finals_analysis")
+    _require(
+        analysis is not None and payload["analysis"] == analysis,
+        "Mixed finals database/brief",
+    )
+    _require(
+        set(payload["contexts"]) == {"walking", "modelled_vehicle"},
+        "Missing finals travel mode",
+    )
+    assert_public_safe(payload)
+    for mode, context in payload["contexts"].items():
+        from .evidence_finals_export import ORIGIN_KEYS
+        from .evidence_routes import calculate_pin_route
+
+        _require(
+            set(context)
+            == DATABASE_KEYS
+            | {
+                "connectivity_review",
+                "public_origins",
+                "reviewed_junctions",
+                "context_sha256",
+            },
+            "Unexpected finals source fields",
+        )
+        for key in ("osm", "worldpop"):
+            _hash(
+                package["input_hashes"][key],
+                context["input_hashes"][key],
+                "finals " + key,
+            )
+        base = {
+            key: value
+            for key, value in context.items()
+            if key not in {"public_origins", "reviewed_junctions", "context_sha256"}
+        }
+        _database(
+            base,
+            {**package, "input_hashes": context["input_hashes"]},
+            policies,
+            reviewed_junctions=context["reviewed_junctions"],
+        )
+        population = math.fsum(row["total_population"] for row in context["population"])
+        _require(
+            math.isclose(
+                population, analysis["scope"]["in_scope_population"], abs_tol=1e-6
+            ),
+            "Finals database population differs",
+        )
+        nodes, edges = (
+            context["node_coordinates"],
+            {row["edge_id"]: row for row in context["edges"]},
+        )
+        sites = {row["facility_id"]: row for row in context["osm_facilities"]}
+        origins = _unique(context["public_origins"], "origin_id", "finals origin")
+        for origin in origins.values():
+            _require(set(origin) <= ORIGIN_KEYS, "Unexpected public origin fields")
+        for service in analysis["services"]:
+            for variant in service["variants"]:
+                if variant["travel_mode"] != mode:
+                    continue
+                _hash(
+                    context["context_sha256"],
+                    variant["context_sha256"],
+                    "finals variant context",
+                )
+                for intervention in variant["interventions"]:
+                    key = intervention["target_id"]
+                    available = (
+                        edges
+                        if intervention["kind"] == "close_edge"
+                        else sites
+                        if intervention["kind"] == "remove_destination"
+                        else nodes
+                    )
+                    _require(
+                        key in available, "Finals intervention references absent input"
+                    )
+                    if intervention["kind"] == "remove_destination":
+                        _require(
+                            sites[key].get("service_type") == service["id"],
+                            "Finals intervention substitutes another service",
+                        )
+        for comparison in analysis["routes"]["comparisons"]:
+            if comparison["travel_mode"] != mode:
+                continue
+            _hash(
+                context["context_sha256"],
+                comparison["context_sha256"],
+                "pin route context",
+            )
+            _require(
+                comparison["origin_id"] in origins, "Route origin absent from model"
+            )
+            selected_sites = [
+                row
+                for row in sites.values()
+                if row.get("service_type") == comparison["service_type"]
+                and row.get("candidate_destination_eligible") is True
+                and row.get("within_routing_context") is True
+            ]
+            before = calculate_pin_route(
+                context, origins[comparison["origin_id"]], selected_sites
+            )
+            after = calculate_pin_route(
+                context,
+                origins[comparison["origin_id"]],
+                selected_sites,
+                closed_edge_ids=comparison["changed_ids"]
+                if comparison["scenario_kind"] == "close_edge"
+                else (),
+                removed_facility_ids=comparison["changed_ids"]
+                if comparison["scenario_kind"] == "remove_destination"
+                else (),
+            )
+            _require(
+                before == comparison["baseline"] and after == comparison["after"],
+                "Displayed route differs from model recomputation",
+            )
+            delta = (
+                round(after["total_minutes"] - before["total_minutes"], 4)
+                if before["status"] == after["status"] == "available"
+                else None
+            )
+            _require(delta == comparison["delta_minutes"], "Route time delta differs")
+            for state in ("baseline", "after"):
+                route = comparison[state]
+                _require(
+                    all(key in edges for key in route["edge_ids"]),
+                    "Route uses absent edge",
+                )
+                if route["status"] == "available":
+                    _require(
+                        route["destination_id"] in sites
+                        and sites[route["destination_id"]].get("service_type")
+                        == comparison["service_type"],
+                        "Route substitutes another destination service",
+                    )
+                    _require(
+                        len(route["coordinates"]) == len(route["edge_ids"]) + 1,
+                        "Route geometry/edge count differs",
+                    )
+                    for index, key in enumerate(route["edge_ids"]):
+                        a, b = route["coordinates"][index : index + 2]
+                        edge = edges[key]
+                        pair = [nodes[edge["from_node"]], nodes[edge["to_node"]]]
+                        _require(
+                            [a, b] == pair or [b, a] == pair,
+                            "Route geometry differs from source graph",
+                        )
+            if comparison["scenario_kind"] == "close_edge":
+                _require(
+                    not set(comparison["after"]["edge_ids"])
+                    & set(comparison["changed_ids"]),
+                    "Closed edge remains in after route",
+                )
+            else:
+                _require(
+                    comparison["after"]["destination_id"]
+                    not in comparison["changed_ids"],
+                    "Removed destination remains in after route",
                 )
 
 
@@ -711,8 +928,13 @@ def verify_evidence_library(
             reports.add(package["report_url"])
         for download in package.get("downloads", []):
             asset, path = _asset(root, download["url"])
+            finals_database = (
+                asset == "databases/aoi-01_mae_sai_core-finals.json.gz"
+                and aoi["id"] == "aoi-01_mae_sai_core"
+                and "finals_analysis" in package.get("decision_brief", {})
+            )
             _require(
-                asset == f"databases/{aoi['id']}.json.gz",
+                asset == f"databases/{aoi['id']}.json.gz" or finals_database,
                 "Database belongs to another AOI",
             )
             files.add(asset)
@@ -729,7 +951,10 @@ def verify_evidence_library(
                 len(content) <= 512 * 1024 * 1024,
                 "Public database exceeds verification size limit",
             )
-            _database(_json(content, asset), package, policies)
+            if finals_database:
+                _finals_database(_json(content, asset), package, policies)
+            else:
+                _database(_json(content, asset), package, policies)
             downloads_seen[asset] = download["sha256"]
         packages[identifier] = package
     for url in reports:

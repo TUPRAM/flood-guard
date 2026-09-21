@@ -81,4 +81,24 @@
 .briefMetrics { margin:0; font-size:14px; }
 .briefMetrics div { display:flex; justify-content:space-between; gap:24px; padding:12px 0; border-bottom:1px solid #dbe5ea; }
 .briefMetrics dd { margin:0; font-weight:750; }
+.hash { overflow-wrap: anywhere; font-size: 11px !important; }
+.routePanel { border-top: 4px solid #087f73; }
+.routePanel details { overflow-wrap: anywhere; }
+.routeMap { height: 540px; }
+.routeToolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 16px 0; font-size: 12px; }
+.routeToolbar fieldset { display: flex; flex-wrap: wrap; gap: 18px; border: 1px solid #cad9e0; border-radius: 6px; padding: 10px 14px; }
+.routeToolbar legend { padding: 0 5px; font-weight: 700; }
+.routeToolbar label { display: inline-flex; gap: 6px; align-items: center; min-height: 30px; }
+.routeLegend { list-style: none; display: flex; flex-wrap: wrap; gap: 12px 22px; padding: 0 !important; }
+.routeLegend li { display: inline-flex; align-items: center; gap: 8px; }
+.beforeLine, .afterLine, .closedLine { display: inline-block; width: 28px; border-top: 4px solid #087f73; }
+.afterLine { border-color: #853cb0; border-top-style: dashed; }
+.closedLine { border-color: #b64221; border-top-style: dashed; }
+.scenarios article.beforeRoute { border-top: 4px solid #087f73; }
+.scenarios article.afterRoute { border-top: 4px solid #853cb0; }
+.routeTime { font-size: 32px; font-weight: 800; }
+.routeTime span { font-size: 17px; font-weight: 500; }
+.routeTime small { font-size: 15px; margin-left: 20px; font-weight: 500; }
+.routeOutcome { padding: 16px; background: #edf4f5; font-size: 16px !important; font-weight: 750; }
+@media(max-width:560px) { .routeMap { height: 360px; } .routeToolbar { align-items: start; flex-direction: column; } }
 @media(max-width:560px) { .briefStats { grid-template-columns:1fr; } .briefStats strong { font-size:20px; } }

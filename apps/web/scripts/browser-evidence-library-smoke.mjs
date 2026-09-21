@@ -19,6 +19,7 @@ await new Promise((done) => server.listen(0, "127.0.0.1", done));
 const address = server.address();
 if (!address || typeof address === "string") throw new Error("Evidence QA server did not bind.");
 const origin = `http://127.0.0.1:${address.port}`;
+let routeCasesChecked = 0;
 const browser = await launchFloodGuardBrowser();
 try {
   const context = await browser.newContext({ serviceWorkers: "allow", viewport: { width: 1440, height: 1000 } });
@@ -87,7 +88,7 @@ try {
   if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error("Evidence library overflows the mobile viewport.");
   if (errors.length) throw new Error(`Browser errors: ${errors.join("; ")}`);
   if (invalidRequests.length) throw new Error(`Unexpected browser requests: ${invalidRequests.join("; ")}`);
-  console.log(`Evidence library and decision brief browser: ${catalog.packages.length} AOI/event packages online and offline; brief Thai/English desktop/mobile matrix, exact population and intervention counts, invalid selections, report download and no API requests passed.`);
+  console.log(`Evidence library and decision brief browser: ${catalog.packages.length} AOI/event packages online and offline; ${routeCasesChecked} exact route comparisons across service, mode, origin, change, Thai/English and desktop/mobile; exact population and intervention counts, invalid selections, report download and no API requests passed.`);
   await context.close();
 } finally {
   await browser.close();
@@ -113,8 +114,10 @@ async function verifyDecisionBrief(page, offline) {
         const brief = main.locator("[data-decision-brief]");
         await brief.waitFor();
         if (await main.getByRole("alert").count()) throw new Error(`Decision brief has an alert: ${reference.id}`);
-        if (await brief.locator("[data-brief-intervention]").count() !== evidence.decision_brief.interventions.length) throw new Error(`Decision brief intervention count differs from selected package: ${reference.id}`);
-        if (evidence.decision_brief.access) {
+        if (evidence.decision_brief.finals_analysis) {
+          await verifyFinalsComparison(page, brief, evidence.decision_brief.finals_analysis, th, offline);
+        } else if (evidence.decision_brief.access) {
+          if (await brief.locator("[data-brief-intervention]").count() !== evidence.decision_brief.interventions.length) throw new Error(`Decision brief intervention count differs from selected package: ${reference.id}`);
           const label = th ? "ประชากรตามแบบจำลองในพื้นที่ศึกษา (ปี 2020)" : "Modelled residents in the study area (2020)";
           const displayed = await brief.getByText(label, { exact: true }).locator("..").locator("dd").innerText();
           const expected = evidence.decision_brief.access.modelled_population.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 1 });
@@ -136,4 +139,73 @@ async function verifyDecisionBrief(page, offline) {
   if (await main.locator("[data-decision-brief]").count()) throw new Error(`Invalid brief selection substituted another package, offline=${offline}`);
   await page.goto(`${origin}/studio/brief/?aoi=${encodeURIComponent(first.aoi_id)}&event=${encodeURIComponent(first.event_id)}`, { waitUntil: "domcontentloaded" });
   await main.locator("footer").filter({ hasText: first.id }).waitFor();
+}
+
+async function verifyFinalsComparison(page, brief, analysis, th, offline) {
+  await brief.locator("[data-finals-analysis]").waitFor();
+  const serviceSelect = brief.getByRole("combobox", { name: th ? "บริการที่ต้องการ" : "Service needed", exact: true });
+  const modeSelect = brief.getByRole("combobox", { name: th ? "วิธีเดินทางตามแบบจำลอง" : "Modelled travel mode", exact: true });
+  const routes = analysis.routes;
+  for (const service of analysis.services) {
+    await serviceSelect.selectOption(service.id);
+    for (const mode of ["walking", "modelled_vehicle"]) {
+      await modeSelect.selectOption(mode);
+      const variant = service.variants.find((item) => item.travel_mode === mode && item.speed_factor === 1);
+      if (variant) {
+        const displayed = await brief.getByText(th ? "ประชากรตามแบบจำลองในขอบเขต" : "Modelled residents in scope", { exact: true }).locator("..").locator("strong").innerText();
+        const expected = variant.baseline.modelled_population.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 0 });
+        if (displayed !== expected) throw new Error(`Service population differs: ${service.id}/${mode}, ${displayed} != ${expected}`);
+      } else {
+        await brief.getByRole("status").filter({ hasText: th ? "ไม่มีผลสำหรับบริการที่เลือก" : "No result is available for this service" }).waitFor();
+      }
+      if (!routes || routes.status !== "available") continue;
+      const routePanel = brief.locator("[data-route-comparison]");
+      for (const pin of routes.origins) {
+        await routePanel.getByRole("combobox", { name: th ? "จุดเริ่มต้นสาธารณะ" : "Public starting place", exact: true }).selectOption(pin.id);
+        for (const kind of ["close_edge", "remove_destination"]) {
+          await routePanel.getByRole("combobox", { name: th ? "การเปลี่ยนแปลงที่กำหนด" : "Imposed change", exact: true }).selectOption(kind);
+          const expected = routes.comparisons.find((item) => item.origin_id === pin.id && item.service_type === service.id && item.travel_mode === mode && item.scenario_kind === kind);
+          if (!expected) {
+            await routePanel.getByText(th ? "ไม่มีผลเส้นทางสำหรับตัวเลือกนี้ จะไม่ใช้จุดเริ่มต้นหรือบริการอื่นแทน" : "No route comparison exists for this selection. Another origin or service is not substituted.", { exact: true }).waitFor();
+            continue;
+          }
+          await page.waitForFunction((id) => document.querySelector("[data-route-comparison]")?.getAttribute("data-route-id") === id, expected.id);
+          await routePanel.locator(".leaflet-container canvas").first().waitFor({ state: "visible" });
+          for (const phase of ["baseline", "after"]) {
+            const result = expected[phase];
+            const panel = routePanel.locator(`[data-route-result="${phase}"]`);
+            await panel.waitFor();
+            if (result.status === "available") {
+              const time = result.total_minutes.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 1 });
+              const distance = (result.distance_m / 1000).toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 2 });
+              if (await panel.locator("[data-route-total-minutes]").innerText() !== time || await panel.locator("[data-route-distance-km]").innerText() !== distance) throw new Error(`Route time/distance differs: ${expected.id}/${phase}`);
+              await panel.getByRole("heading", { name: result.destination_name, exact: true }).waitFor();
+            } else {
+              if (await panel.locator("[data-route-total-minutes]").count()) throw new Error(`Unavailable route has numerical time: ${expected.id}/${phase}`);
+              if (!(await panel.innerText()).includes(result.reason)) throw new Error(`Unavailable route reason lost: ${expected.id}/${phase}`);
+            }
+          }
+          const status = await routePanel.getByRole("status").innerText();
+          if (expected.delta_minutes === null) {
+            if (!status.includes(th ? "ไม่มีผลต่างเวลา" : "a time difference is unavailable")) throw new Error(`Missing route became zero delay: ${expected.id}`);
+          } else if (expected.delta_minutes === 0 && !status.includes(th ? "ไม่พบความต่าง" : "No difference")) throw new Error(`Zero route effect hidden: ${expected.id}`);
+          for (const [en, thai] of [["Before", "ก่อน"], ["After", "หลัง"], ["Both", "ทั้งสองกรณี"]]) {
+            const radio = routePanel.getByRole("radio", { name: th ? thai : en, exact: true });
+            await radio.check();
+            if (!await radio.isChecked()) throw new Error(`Route overlay toggle failed: ${expected.id}/${en}`);
+          }
+          if (await brief.getByRole("alert").count()) throw new Error(`Finals route alert: ${expected.id}, offline=${offline}`);
+          if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error(`Finals route viewport overflow: ${expected.id}, Thai=${th}, offline=${offline}`);
+          routeCasesChecked += 1;
+        }
+      }
+    }
+  }
+  await serviceSelect.selectOption(analysis.primary_service);
+  await modeSelect.selectOption("walking");
+  if (routes?.origins.length) {
+    const routePanel = brief.locator("[data-route-comparison]");
+    await routePanel.getByRole("combobox", { name: th ? "จุดเริ่มต้นสาธารณะ" : "Public starting place", exact: true }).selectOption(routes.origins[0].id);
+    await routePanel.getByRole("combobox", { name: th ? "การเปลี่ยนแปลงที่กำหนด" : "Imposed change", exact: true }).selectOption("close_edge");
+  }
 }

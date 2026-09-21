@@ -1,8 +1,12 @@
-# Proposal claim-to-evidence matrix
+# Retained proposal claim-to-evidence matrix
 
-This matrix is the wording boundary for the proposal, demo, pitch, and
-application form. A claim may be strengthened only after its named evidence is
-present and the final manifest re-hashes it.
+This matrix records the proposal-stage wording boundary. It is not the current
+finals capability inventory: scenario capacity allocation and the Hat Yai
+evidence demonstration were implemented later. Use the
+[active finals claim register](../../mae_sai_finals_guide.md) for the current
+demo and pitch. Original proposal metadata and binaries remain unchanged. A
+claim may be strengthened only when its named evidence exists and the current
+release receipt binds it; software capability does not establish event accuracy.
 
 | ID | Proposed claim | Repository or external evidence | Current status | Permitted wording |
 |---|---|---|---|---|

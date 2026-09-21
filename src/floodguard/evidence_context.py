@@ -48,12 +48,16 @@ ROAD_CLASSES = {
     "track": "local",
 }
 OSM_FACILITY_TYPES = {
-    "hospital": "healthcare",
-    "clinic": "healthcare",
-    "doctors": "healthcare",
-    "pharmacy": "healthcare",
+    "hospital": "hospital",
+    "clinic": "primary_care",
+    "doctors": "primary_care",
+    "pharmacy": "pharmacy",
     "shelter": "shelter_context",
 }
+OSM_PUBLIC_ORIGIN_TYPES = {
+    key: key for key in ("marketplace", "townhall", "school", "police")
+}
+TRAVEL_MODES = {"legacy_vehicle", "walking"}
 TO_METRES = Transformer.from_crs("EPSG:4326", "EPSG:32647", always_xy=True)
 
 
@@ -67,6 +71,11 @@ def build_context_inputs(
     routing_geometry: Mapping[str, Any],
     facilities: Sequence[Mapping[str, Any]],
     output_dir: str | Path,
+    *,
+    reporting_geometry: Mapping[str, Any] | None = None,
+    travel_mode: str = "legacy_vehicle",
+    reviewed_junctions: Sequence[Mapping[str, Any]] = (),
+    public_origin_records: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     """Build real context inputs using existing national source files only.
 
@@ -75,12 +84,24 @@ def build_context_inputs(
     Supplied facilities require facility_id and longitude/latitude, lon/lat, or
     Point geometry. Capacity may be null. identity_reconciled defaults false.
     Supplied and separately extracted OSM facilities never merge automatically.
+    Reporting geometry, when supplied, limits demand, destinations, road segments
+    and straight connector lines to that jurisdiction. Reviewed junctions require
+    source-hash-bound original OSM node evidence; proximity never creates a join.
     Files are written only under output_dir; source files are never modified.
     """
     aoi = _polygon(aoi_geometry)
     routing = _polygon(routing_geometry)
     if not routing.buffer(1e-9).covers(aoi):
         raise EvidenceContextError("routing geometry must contain the demand AOI")
+    if travel_mode not in TRAVEL_MODES:
+        raise EvidenceContextError("travel_mode must be legacy_vehicle or walking")
+    scope = _polygon(reporting_geometry) if reporting_geometry is not None else None
+    demand_geometry = aoi.intersection(scope) if scope is not None else aoi
+    routing_geometry_scoped = (
+        routing.intersection(scope) if scope is not None else routing
+    )
+    if demand_geometry.is_empty or routing_geometry_scoped.is_empty:
+        raise EvidenceContextError("reporting geometry must overlap demand and routing")
     target = Path(output_dir)
     target.mkdir(parents=True, exist_ok=True)
     sources, metadata = _load_sources(Path(context_root))
@@ -88,28 +109,130 @@ def build_context_inputs(
     for key, details in metadata.items():
         if hashes[key] != details["sha256"]:
             raise EvidenceContextError(f"source checksum changed for {key}")
+    for junction in reviewed_junctions:
+        if junction.get("pbf_sha256") != hashes["osm"]:
+            raise EvidenceContextError("reviewed junction PBF source hash mismatch")
     routing_hash = _canonical_hash(mapping(routing))
     roads, points = _extract_osm(
         sources["osm"], routing.bounds, target, hashes["osm"], routing_hash
     )
-    edges, nodes, road_geojson, topology = _road_graph(roads, routing)
-    index = _NodeIndex(nodes)
+    edges, nodes, road_geojson, topology = _road_graph(
+        roads,
+        routing_geometry_scoped,
+        travel_mode=travel_mode,
+        reviewed_junctions=reviewed_junctions,
+    )
+    index = _NodeIndex(nodes, allowed_geometry=scope)
     population, population_coverage = _population_cells(sources["worldpop"], aoi, index)
-    supplied = _snap_facilities(facilities, routing, index)
+    excluded_population = []
+    if scope is not None:
+        excluded_population = [
+            row
+            for row in population
+            if not scope.covers(Point(row["longitude"], row["latitude"]))
+        ]
+        population = [
+            row
+            for row in population
+            if scope.covers(Point(row["longitude"], row["latitude"]))
+        ]
+        total = math.fsum(row["total_population"] for row in population)
+        connected = math.fsum(
+            row["total_population"] for row in population if row["node_id"] is not None
+        )
+        population_coverage.update(
+            {
+                "modelled_population_in_original_aoi": population_coverage[
+                    "modelled_population_2020"
+                ],
+                "modelled_population_2020": total,
+                "population_cells_in_original_aoi": population_coverage[
+                    "population_cells"
+                ],
+                "population_cells": len(population),
+                "population_connected_within_250m": connected,
+                "population_unconnected": total - connected,
+                "population_snap_coverage_fraction": connected / total
+                if total
+                else None,
+                "population_excluded_outside_reporting_scope": math.fsum(
+                    row["total_population"] for row in excluded_population
+                ),
+                "population_cells_excluded_outside_reporting_scope": len(
+                    excluded_population
+                ),
+                "raster_coverage_statistics_scope": "original_aoi_before_reporting_filter",
+            }
+        )
+    supplied = _snap_facilities(facilities, routing_geometry_scoped, index)
     osm_raw = _osm_facilities(points)
-    osm = _snap_facilities(osm_raw, routing, index)
+    osm = _snap_facilities(osm_raw, routing_geometry_scoped, index)
+    origins = _osm_public_origins(
+        points, demand_geometry, routing_geometry_scoped, index
+    )
+    origin_ids = {row["origin_id"] for row in origins}
+    for row in _snap_facilities(public_origin_records, routing_geometry_scoped, index):
+        if row["facility_id"] in origin_ids:
+            raise EvidenceContextError(
+                "public origin records must have unique source IDs"
+            )
+        origin_ids.add(row["facility_id"])
+        in_demand = demand_geometry.covers(Point(row["longitude"], row["latitude"]))
+        origins.append(
+            {
+                "origin_id": row["facility_id"],
+                "public_place_type": row.get(
+                    "public_place_type", "reviewed_public_location"
+                ),
+                "name": row.get("name", row["facility_id"]),
+                "source_url": row.get("source_url"),
+                "geometry_role": row.get(
+                    "geometry_role", "source_point_not_verified_entrance"
+                ),
+                "location_review_status": row.get(
+                    "location_review_status", "source_location_not_verified_entrance"
+                ),
+                "evidence_role": "public_source_map_record_not_event_observation",
+                "within_demand_scope": in_demand,
+                "node_id": row["node_id"] if in_demand else None,
+                **{
+                    key: row[key]
+                    for key in (
+                        "longitude",
+                        "latitude",
+                        "snap_distance_m",
+                        "within_routing_context",
+                        "connector_walkability",
+                    )
+                },
+            }
+        )
     assumptions = [
         "WorldPop 2020 is modelled residential population context, not event-year counts or observed evacuation demand.",
         "Demand contains positive raster cells whose centres fall in the AOI; boundary cells are not apportioned.",
         "Routing uses a surrounding district/basin polygon; paths outside that polygon are not evaluated.",
-        "Road times use fixed class speeds on an undirected graph; one-way rules, turn restrictions and event passability are not represented.",
-        "Only shared original OSM vertex coordinates with compatible layer/bridge/tunnel tags connect. Geometric crossings are never noded.",
+        "Road times use fixed class speeds on an undirected graph; one-way rules, turn restrictions and event passability are not represented."
+        if travel_mode == "legacy_vehicle"
+        else "Walking scenarios use 5 km/h on an undirected network of OSM roads and paths where walking is not explicitly prohibited; motorways and trunk roads require explicit foot permission. Foot direction restrictions and event conditions are unmodelled. This is an assumed able-bodied walking speed, not a measured evacuation speed.",
+        "Shared OSM vertex coordinates with compatible grade connect. Any additional grade transition requires recorded original shared-node evidence; geometric crossings are never noded.",
         "Conservative grade separation may disconnect bridge approaches; disconnected components remain visible.",
         "100 m facility and 250 m population snaps use EPSG:32647; connector time is modelled at 5 km/h. Connector walkability and barriers are unverified.",
-        "OSM healthcare points are candidate destinations. Generic amenity=shelter may be a bus shelter, farm cottage or rest pavilion and is excluded from destination access and shelter capacity.",
+        "OSM node, way and relation facility objects are classified separately as hospital, primary care and pharmacy. Site interior representatives are not verified entrances. Generic amenity=shelter is excluded from emergency shelter destinations and capacity.",
         "No flood layer is converted into observed closures or calibrated flood probability.",
     ]
+    if scope is not None:
+        assumptions.append(
+            "Demand and destinations are restricted to the supplied Thai reporting-boundary union. Entire road segments and straight connectors must remain inside it; no cross-border route is assumed. Boundary exclusions are not observed isolation."
+        )
     connection_review = topology.pop("grade_connection_review")
+    connection_review["connections_added"] = sum(
+        row["merged_grade_node_count"] - 1
+        for row in topology["reviewed_shared_node_junctions_applied"]
+    )
+    connection_review["applied_review_ids"] = [
+        row["review_id"] for row in topology["reviewed_shared_node_junctions_applied"]
+    ]
+    _rank_connection_review(connection_review, nodes, edges, population)
     package = {
         "schema_version": "floodguard.context_scenario_inputs.v1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -121,9 +244,13 @@ def build_context_inputs(
         "official_warning": False,
         "analysis_crs": "EPSG:32647",
         "population": population,
+        "population_excluded_outside_reporting_scope": excluded_population,
+        "travel_mode": travel_mode,
+        "reporting_scope_applied": scope is not None,
         "edges": edges,
         "facilities": supplied,
         "osm_facilities": osm,
+        "public_origins": origins,
         "node_coordinates": nodes,
         "connectivity_review": connection_review,
         "road_geojson": road_geojson,
@@ -148,6 +275,13 @@ def build_context_inputs(
             "supplied_facilities": _canonical_hash(list(facilities)),
             "extracted_osm_roads": _canonical_hash(roads),
             "extracted_osm_points": _canonical_hash(points),
+            **(
+                {"reporting_geometry": _canonical_hash(mapping(scope))}
+                if scope is not None
+                else {}
+            ),
+            "reviewed_junctions": _canonical_hash(list(reviewed_junctions)),
+            "public_origin_records": _canonical_hash(list(public_origin_records)),
         },
     }
     package["canonical_sha256"] = _context_content_hash(package)
@@ -537,12 +671,13 @@ def _extract_osm(
     outputs = {
         "roads": target / "osm_roads.geojson",
         "points": target / "osm_points.geojson",
+        "areas": target / "osm_facility_areas.geojson",
     }
     bin_dir = find_qgis_bin()
     expected = {
         "pbf_sha256": source_hash,
         "routing_geometry_sha256": routing_hash,
-        "method": "gdal_osm_bbox_filter_v1",
+        "method": "gdal_osm_bbox_nodes_ways_relations_v2",
         "ogr_runtime": ogr_runtime_identity(bin_dir),
     }
     if receipt.exists() and all(path.exists() for path in outputs.values()):
@@ -550,13 +685,19 @@ def _extract_osm(
         if all(saved.get(key) == value for key, value in expected.items()) and all(
             saved.get(f"{key}_sha256") == _sha256(path) for key, path in outputs.items()
         ):
-            return tuple(
-                json.loads(outputs[key].read_text(encoding="utf-8"))
-                for key in ("roads", "points")
-            )
+            return _read_osm_extractions(outputs)
     for key, layer, where in (
         ("roads", "lines", "highway IS NOT NULL"),
-        ("points", "points", "other_tags LIKE '%amenity%'"),
+        (
+            "points",
+            "points",
+            "other_tags LIKE '%amenity%' OR other_tags LIKE '%healthcare%' OR other_tags LIKE '%entrance%'",
+        ),
+        (
+            "areas",
+            "multipolygons",
+            "amenity IS NOT NULL OR other_tags LIKE '%healthcare%'",
+        ),
     ):
         _run_ogr2ogr(
             bin_dir,
@@ -581,10 +722,18 @@ def _extract_osm(
             **{f"{key}_sha256": _sha256(path) for key, path in outputs.items()},
         },
     )
-    return tuple(
+    return _read_osm_extractions(outputs)
+
+
+def _read_osm_extractions(outputs: Mapping[str, Path]) -> tuple[dict, dict]:
+    roads, points, areas = (
         json.loads(outputs[key].read_text(encoding="utf-8"))
-        for key in ("roads", "points")
+        for key in ("roads", "points", "areas")
     )
+    return roads, {
+        "type": "FeatureCollection",
+        "features": [*points["features"], *areas["features"]],
+    }
 
 
 def _polygon(value: Mapping[str, Any]):
@@ -622,7 +771,11 @@ def _tags(properties: Mapping[str, Any]) -> dict[str, str]:
 
 
 def _road_graph(
-    geojson: Mapping[str, Any], routing
+    geojson: Mapping[str, Any],
+    routing,
+    *,
+    travel_mode: str = "legacy_vehicle",
+    reviewed_junctions: Sequence[Mapping[str, Any]] = (),
 ) -> tuple[
     list[dict[str, Any]], dict[str, list[float]], dict[str, Any], dict[str, Any]
 ]:
@@ -631,17 +784,39 @@ def _road_graph(
     node_review = {}
     omitted = 0
     road_ids = set()
+    way_features = {}
     for feature in sorted(
         geojson["features"],
         key=lambda item: str(item.get("properties", {}).get("osm_id", "")),
     ):
         tags = _tags(feature.get("properties", {}))
         road_class = ROAD_CLASSES.get(tags.get("highway", ""))
-        if (
-            road_class is None
-            or tags.get("access") in {"no", "private"}
-            or tags.get("motor_vehicle") == "no"
-        ):
+        if travel_mode == "walking":
+            if tags.get("highway") in {
+                "footway",
+                "path",
+                "pedestrian",
+                "steps",
+                "cycleway",
+                "bridleway",
+            }:
+                road_class = "local"
+            permitted_foot = tags.get("foot") in {"yes", "designated", "permissive"}
+            prohibited = tags.get("foot") in {"no", "private"} or (
+                not permitted_foot
+                and (
+                    tags.get("access") in {"no", "private"}
+                    or tags.get("highway")
+                    in {"motorway", "motorway_link", "trunk", "trunk_link"}
+                )
+            )
+        elif travel_mode == "legacy_vehicle":
+            prohibited = tags.get("access") in {"no", "private"} or tags.get(
+                "motor_vehicle"
+            ) in {"no", "private"}
+        else:
+            raise EvidenceContextError("unknown travel mode")
+        if road_class is None or prohibited:
             continue
         geometry = feature.get("geometry", {})
         if geometry.get("type") != "LineString":
@@ -650,6 +825,7 @@ def _road_graph(
         if not osm_id or osm_id in road_ids:
             raise EvidenceContextError("OSM road IDs must be present and unique")
         road_ids.add(osm_id)
+        way_features[osm_id] = feature
         grade = (
             tags.get("layer", "0"),
             tags.get("bridge", "no"),
@@ -686,12 +862,17 @@ def _road_graph(
                 "road_class": road_class,
                 "normal_minutes": length
                 / 1000
-                / MODELLED_ROAD_SPEED_KMH[road_class]
+                / (
+                    5.0
+                    if travel_mode == "walking"
+                    else MODELLED_ROAD_SPEED_KMH[road_class]
+                )
                 * 60,
                 "osm_way_id": osm_id,
                 "bridge": grade[1],
                 "layer": grade[0],
                 "tunnel": grade[2],
+                "travel_mode": travel_mode,
             }
             edges.append(row)
             features.append(
@@ -705,6 +886,9 @@ def _road_graph(
                     "geometry": mapping(segment),
                 }
             )
+    applied = _apply_reviewed_junctions(
+        reviewed_junctions, way_features, edges, features, nodes, node_review
+    )
     import networkx as nx
 
     graph = nx.Graph()
@@ -719,11 +903,98 @@ def _road_graph(
             "connected_components": nx.number_connected_components(graph),
             "segments_omitted_at_routing_boundary_or_degenerate": omitted,
             "topology_method": "shared_original_vertex_and_compatible_grade_no_crossing_noding",
+            "reviewed_shared_node_junctions_applied": applied,
             "grade_connection_review": _grade_connection_review(
                 nodes, node_review, graph
             ),
         },
     )
+
+
+def _apply_reviewed_junctions(reviews, way_features, edges, features, nodes, details):
+    """Join only reviewed, source-bound original shared-node way endpoints."""
+    aliases, applied, seen = {}, [], set()
+    for review in reviews:
+        if (
+            review.get("status") != "verified_shared_osm_node_endpoints"
+            or review.get("evidence_method")
+            != "pyosmium_original_way_node_references_v1"
+        ):
+            raise EvidenceContextError(
+                "junction lacks verified original-node endpoint evidence"
+            )
+        source_node = str(review.get("osm_node_id", ""))
+        if not source_node.isdigit() or source_node in seen:
+            raise EvidenceContextError(
+                "reviewed original node IDs must be unique numeric IDs"
+            )
+        seen.add(source_node)
+        coordinate = review.get("coordinates")
+        members = review.get("members", [])
+        if len(members) < 2 or len(
+            {str(row.get("osm_way_id")) for row in members}
+        ) != len(members):
+            raise EvidenceContextError("junction needs two distinct reviewed ways")
+        if any(str(row.get("osm_node_id")) != source_node for row in members):
+            raise EvidenceContextError(
+                "junction members must share one original OSM node ID"
+            )
+        group = []
+        for member in members:
+            way = way_features.get(str(member.get("osm_way_id")))
+            if way is None:
+                continue  # A mode or jurisdiction may intentionally omit this way.
+            points = way["geometry"]["coordinates"]
+            vertex = member.get("vertex_index")
+            if vertex not in {0, len(points) - 1} or points[vertex][:2] != coordinate:
+                raise EvidenceContextError(
+                    "junction evidence does not match original way endpoint"
+                )
+            tags = _tags(way.get("properties", {}))
+            grade = (
+                tags.get("layer", "0"),
+                tags.get("bridge", "no"),
+                tags.get("tunnel", "no"),
+            )
+            node = "osm-node-" + _canonical_hash([coordinate, grade])[:20]
+            if node in nodes:
+                group.append(node)
+        group = sorted(set(group))
+        if len(group) < 2:
+            continue
+        representative = "osm-original-node-" + source_node
+        nodes[representative] = list(coordinate)
+        details[representative] = {
+            "grade": ["reviewed_transition", "mixed", "mixed"],
+            "way_ids": set(),
+            "endpoint_way_ids": set(),
+        }
+        for node in group:
+            if node in aliases:
+                raise EvidenceContextError("junction reviews conflict on a graph node")
+            aliases[node] = representative
+            details[representative]["way_ids"].update(details[node]["way_ids"])
+            details[representative]["endpoint_way_ids"].update(
+                details[node]["endpoint_way_ids"]
+            )
+            nodes.pop(node)
+            details.pop(node)
+        applied.append(
+            {
+                "osm_node_id": source_node,
+                "merged_grade_node_count": len(group),
+                "review_id": review.get("review_id"),
+                "coordinates": coordinate,
+            }
+        )
+    for edge in edges:
+        edge["from_node"] = aliases.get(edge["from_node"], edge["from_node"])
+        edge["to_node"] = aliases.get(edge["to_node"], edge["to_node"])
+    for feature, edge in zip(features, edges, strict=True):
+        feature["properties"].update(
+            from_node=edge["from_node"], to_node=edge["to_node"]
+        )
+    return applied
 
 
 def _grade_connection_review(nodes, details, graph) -> dict[str, Any]:
@@ -773,16 +1044,55 @@ def _grade_connection_review(nodes, details, graph) -> dict[str, Any]:
         "different_component_split_count": sum(
             row["distinct_components"] > 1 for row in rows
         ),
-        "review_candidates": rows[:100],
-        "candidate_display_limit": 100,
+        "review_candidates": rows,
+        "candidate_display_limit": None,
         "connections_added": 0,
         "interpretation": "These are review candidates, not confirmed junctions. Exact coordinates and endpoint tags do not establish shared OSM node identity or traversability. Verify original node IDs/grade continuity before connecting; interior crossings and river/grade gaps remain disconnected.",
     }
 
 
+def _rank_connection_review(review, nodes, edges, population) -> None:
+    """Rank unresolved transitions by component demand without assuming a repair."""
+    import networkx as nx
+
+    graph = nx.Graph()
+    graph.add_nodes_from(nodes)
+    graph.add_edges_from((row["from_node"], row["to_node"]) for row in edges)
+    components, demand = {}, {}
+    for group in nx.connected_components(graph):
+        identifier = min(group)
+        components.update({node: identifier for node in group})
+    for row in population:
+        identifier = components.get(row.get("node_id"))
+        if identifier is not None:
+            demand[identifier] = demand.get(identifier, 0.0) + row["total_population"]
+    for row in review["review_candidates"]:
+        component_ids = {components[node["node_id"]] for node in row["nodes"]}
+        row["component_population"] = {
+            key: demand.get(key, 0.0) for key in sorted(component_ids)
+        }
+        values = sorted(row["component_population"].values())
+        row["smaller_component_population"] = (
+            sum(values[:-1]) if len(values) > 1 else 0.0
+        )
+        row["review_priority_reason"] = (
+            "Smaller distinct-component residential demand; this is not predicted access benefit."
+        )
+    review["review_candidates"].sort(
+        key=lambda row: (
+            -row["smaller_component_population"],
+            -row["distinct_components"],
+            row["coordinates"],
+        )
+    )
+    review["priority_candidates"] = review["review_candidates"][:20]
+
+
 class _NodeIndex:
-    def __init__(self, nodes: Mapping[str, Sequence[float]]):
+    def __init__(self, nodes: Mapping[str, Sequence[float]], allowed_geometry=None):
         self.ids = sorted(nodes)
+        self.coordinates = [nodes[key] for key in self.ids]
+        self.allowed_geometry = allowed_geometry
         self.points = [Point(TO_METRES.transform(*nodes[key])) for key in self.ids]
         self.tree = STRtree(self.points) if self.points else None
 
@@ -804,7 +1114,29 @@ class _NodeIndex:
                     self.ids[index],
                 ),
             )
-        return (self.ids[nearest] if distance <= limit else None), distance
+        accepted = distance <= limit
+        if accepted and self.allowed_geometry is not None:
+            candidates = sorted(
+                (int(index) for index in self.tree.query(point.buffer(limit))),
+                key=lambda index: (point.distance(self.points[index]), self.ids[index]),
+            )
+            accepted = False
+            for candidate in candidates:
+                candidate_distance = float(point.distance(self.points[candidate]))
+                if candidate_distance > limit:
+                    continue
+                connector = LineString(
+                    [(longitude, latitude), self.coordinates[candidate]]
+                )
+                covered = (
+                    self.allowed_geometry.covers(connector)
+                    if connector.length
+                    else self.allowed_geometry.covers(Point(longitude, latitude))
+                )
+                if covered:
+                    nearest, distance, accepted = candidate, candidate_distance, True
+                    break
+        return (self.ids[nearest] if accepted else None), distance
 
 
 def _population_cells(
@@ -871,37 +1203,187 @@ def _population_cells(
         }
 
 
-def _osm_facilities(points: Mapping[str, Any]) -> list[dict[str, Any]]:
-    result = []
+def _osm_facilities(
+    points: Mapping[str, Any], *, role_map: Mapping[str, str] | None = None
+) -> list[dict[str, Any]]:
+    """Preserve OSM object identities and service meanings across geometry types."""
+    result, identifiers = [], {}
+    role_map = OSM_FACILITY_TYPES if role_map is None else role_map
+    entrances = []
     for feature in points.get("features", []):
         tags = _tags(feature.get("properties", {}))
-        facility_type = OSM_FACILITY_TYPES.get(tags.get("amenity", ""))
-        if facility_type is None or feature.get("geometry", {}).get("type") != "Point":
+        if (
+            tags.get("entrance") not in {None, "no"}
+            and feature.get("geometry", {}).get("type") == "Point"
+            and tags.get("osm_id")
+        ):
+            entrances.append((tags, shape(feature["geometry"])))
+    for feature in points.get("features", []):
+        tags = _tags(feature.get("properties", {}))
+        service_type = role_map.get(tags.get("amenity", "")) or role_map.get(
+            tags.get("healthcare", "")
+        )
+        geometry_type = feature.get("geometry", {}).get("type")
+        if service_type is None or geometry_type not in {
+            "Point",
+            "Polygon",
+            "MultiPolygon",
+        }:
             continue
-        osm_id = tags.get("osm_id")
+        kind = (
+            "node"
+            if geometry_type == "Point"
+            else "way"
+            if tags.get("osm_way_id")
+            else "relation"
+        )
+        osm_id = tags.get("osm_way_id") if kind == "way" else tags.get("osm_id")
         if not osm_id:
             raise EvidenceContextError("OSM facility has no source ID")
+        identifier = f"OSM-{kind}-{osm_id}"
+        fingerprint = _canonical_hash(feature)
+        if identifier in identifiers:
+            if identifiers[identifier] != fingerprint:
+                raise EvidenceContextError(
+                    "OSM facility object has conflicting duplicate geometries"
+                )
+            continue
+        identifiers[identifier] = fingerprint
+        geometry = shape(feature["geometry"])
+        if geometry.is_empty or not geometry.is_valid:
+            raise EvidenceContextError(
+                f"OSM facility {identifier} has invalid geometry"
+            )
+        routing_point = (
+            geometry if geometry_type == "Point" else geometry.representative_point()
+        )
+        candidates = (
+            []
+            if geometry_type == "Point"
+            else [
+                {
+                    "osm_node_id": entry["osm_id"],
+                    "coordinates": [point.x, point.y],
+                    "entrance_tag": entry["entrance"],
+                }
+                for entry, point in entrances
+                if geometry.boundary.distance(point) <= 1e-8
+            ]
+        )
+        candidates.sort(key=lambda row: row["osm_node_id"])
+        geometry_role = (
+            "osm_facility_node"
+            if geometry_type == "Point"
+            else "derived_site_interior_representative_not_entrance"
+        )
+        if len(candidates) == 1:
+            routing_point = Point(candidates[0]["coordinates"])
+            geometry_role = (
+                "osm_tagged_site_boundary_entrance_not_independently_verified"
+            )
         result.append(
             {
-                "facility_id": f"OSM-node-{osm_id}",
+                "facility_id": identifier,
+                "source_record_ids": [identifier],
+                "source_url": f"https://www.openstreetmap.org/{kind}/{osm_id}",
                 "name": tags.get("name", "Unnamed OSM candidate"),
-                "facility_type": facility_type,
-                "geometry": feature["geometry"],
+                "facility_type": "shelter_context"
+                if service_type == "shelter_context"
+                else "healthcare",
+                "service_type": service_type,
+                "geometry": mapping(routing_point),
+                "source_geometry": feature["geometry"],
+                "geometry_role": geometry_role,
+                "source_geometry_type": geometry_type,
+                "entrance_candidates": candidates,
+                "location_review_status": "osm_candidate_not_independently_verified",
                 "capacity": None,
+                "event_available_capacity": None,
                 "identity_reconciled": False,
                 "source_name": "OpenStreetMap contributors via Geofabrik",
                 "source_license": "ODbL-1.0",
                 "activation_status": "unknown",
+                "event_operation_status": "unknown",
+                "current_operation_status": "unverified_osm_candidate",
                 "osm_amenity": tags.get("amenity"),
+                "osm_healthcare": tags.get("healthcare"),
+                "wikidata": tags.get("wikidata"),
                 "osm_shelter_type": tags.get("shelter_type"),
                 "source_description": tags.get(
                     "description:en", tags.get("description")
                 ),
-                "candidate_destination_eligible": facility_type == "healthcare",
+                "candidate_destination_eligible": service_type != "shelter_context",
                 "emergency_shelter_role": "not_established_by_generic_osm_tag",
             }
         )
-    return result
+    for row in result:
+        row["possible_duplicate_source_ids"] = []
+        for other in result:
+            if (
+                row["facility_id"] == other["facility_id"]
+                or row["service_type"] != other["service_type"]
+            ):
+                continue
+            same_external_id = bool(
+                row["wikidata"] and row["wikidata"] == other["wikidata"]
+            )
+            name_matches = (
+                row["name"] != "Unnamed OSM candidate"
+                and " ".join(row["name"].split()).casefold()
+                == " ".join(other["name"].split()).casefold()
+            )
+            overlap = shape(row["source_geometry"]).intersects(
+                shape(other["source_geometry"])
+            )
+            if same_external_id or (name_matches and overlap):
+                row["possible_duplicate_source_ids"].append(other["facility_id"])
+        row["possible_duplicate_source_ids"].sort()
+        row["identity_review_status"] = (
+            "possible_duplicate_requires_review"
+            if row["possible_duplicate_source_ids"]
+            else "unverified_osm_identity"
+        )
+    return sorted(result, key=lambda row: row["facility_id"])
+
+
+def _osm_public_origins(
+    features, demand_geometry, routing_geometry, index
+) -> list[dict[str, Any]]:
+    """Expose a bounded inventory of named public map locations, never shelters."""
+    candidates = _osm_facilities(features, role_map=OSM_PUBLIC_ORIGIN_TYPES)
+    snapped = _snap_facilities(candidates, routing_geometry, index)
+    selected = [
+        row
+        for row in snapped
+        if row["name"] != "Unnamed OSM candidate"
+        and demand_geometry.covers(Point(row["longitude"], row["latitude"]))
+    ]
+    selected.sort(
+        key=lambda row: (row["service_type"], row["name"], row["facility_id"])
+    )
+    keep = (
+        "name",
+        "source_url",
+        "geometry_role",
+        "source_geometry_type",
+        "longitude",
+        "latitude",
+        "node_id",
+        "snap_distance_m",
+        "within_routing_context",
+        "location_review_status",
+        "possible_duplicate_source_ids",
+        "connector_walkability",
+    )
+    return [
+        {
+            "origin_id": row["facility_id"],
+            "public_place_type": row["service_type"],
+            "evidence_role": "current_osm_map_record_not_event_observation",
+            **{key: row[key] for key in keep},
+        }
+        for row in selected[:20]
+    ]
 
 
 def _snap_facilities(

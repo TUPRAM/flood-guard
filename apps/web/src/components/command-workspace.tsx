@@ -347,6 +347,12 @@ export function CommandWorkspace() {
         <p className="command-context-advisory">{th ? "ยืนยันสภาพถนน สถานที่ และคำแนะนำปัจจุบันกับ ปภ. และหน่วยงานท้องถิ่นก่อนดำเนินการ" : "Confirm current road and facility conditions, and follow DDPM and local-authority instructions before action."}</p>
       </section>
 
+      {data.status.dataset_mode !== "official_input" ? <section className="command-context-bar command-research-notice" aria-label={th ? "ขอบเขตการวิจัย" : "Research scope"}>
+        <strong>{th ? "พื้นที่ทำงานวิจัยเดิม" : "Historical research workspace"}</strong>
+        <p>{th ? "คะแนนและชั้นที่แสดงด้านล่างเป็นผลวิจัยที่เก็บไว้เพื่อเปรียบเทียบ ไม่ใช่การจัดอันดับรับมือเหตุการณ์ที่ยอมรับแล้ว บทสรุปปัจจุบันแสดงคะแนนที่ยังไม่พร้อมและข้อจำกัดของหลักฐานอย่างชัดเจน" : "Scores and classes below are retained research comparisons, not accepted event-response priorities. The current brief keeps unavailable scores and evidence limits explicit."}</p>
+        <a href="/studio/brief/?aoi=aoi-01_mae_sai_core&amp;event=mae_sai_2024">{th ? "เปิดบทสรุปแม่สายปัจจุบัน" : "Open the current Mae Sai brief"}</a>
+      </section> : null}
+
       <div className="small-screen-command-note command-summary-card card">
         <h1>{th ? "สรุปพื้นที่ทำงานวางแผน" : "Planning workspace summary"}</h1>
         <p>{th ? "ใช้หน้าจอแท็บเล็ตหรือเดสก์ท็อปเพื่อดูแผนที่และแผงควบคุมทั้งหมด" : "Use a tablet or desktop for the full map and control workspace."}</p>

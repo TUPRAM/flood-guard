@@ -1,0 +1,114 @@
+{
+  "type": "FeatureCollection",
+  "name": "aoi-04_hat_yai_basin",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "aoi_id": "AOI-04",
+        "slug": "hat_yai_basin",
+        "name": "Hat Yai extended - U Taphao basin to Songkhla Lake outlet",
+        "name_th": "ลุ่มน้ำคลองอู่ตะเภา (ขยาย)",
+        "priority": "P3",
+        "event_id": "hat_yai_2025",
+        "event_name": "Hat Yai / Songkhla flood, November 2025",
+        "province": "Songkhla",
+        "district": "Hat Yai and adjacent districts",
+        "adm3_covered": "Hat Yai and neighbouring subdistricts along the U Taphao canal",
+        "derivation": "Extension of AOI-03 along the U Taphao canal axis toward the Songkhla Lake outlet, to capture upstream-to-outlet flood routing.",
+        "purpose": "Optional. Only useful if upstream basin context is needed to explain the Hat Yai urban flood; not required for the first development run.",
+        "bbox_wgs84": [
+          100.38,
+          6.9,
+          100.58,
+          7.12
+        ],
+        "approx_width_km": 22.1,
+        "approx_height_km": 24.3,
+        "approx_area_sq_km": 537.0,
+        "approx_theos2_pms_scenes": 9,
+        "requested_windows": [
+          {
+            "window_id": "W1-event",
+            "label": "Flood event window",
+            "start": "2025-11-28",
+            "end": "2025-12-08",
+            "max_cloud_pct": 70,
+            "portal_scene_cloud_filter_pct": 70,
+            "expectation": "medium",
+            "revision": "narrowed and cloud limit lowered from 80%",
+            "measured_evidence": "2025-12-03 at 39.3% AOI cloud (AOI-03) and 40.2% (AOI-04); 2025-12-01 at 63.8% / 50.7%. Both inside the requested window.",
+            "note": "A genuine partial-visibility opportunity during the flood. This is the most realistic flood-period optical chance in the whole request and should be treated as high priority despite the cloud."
+          },
+          {
+            "window_id": "W2-pre",
+            "label": "Pre-event clear baseline",
+            "start": "2025-03-25",
+            "end": "2025-04-05",
+            "max_cloud_pct": 15,
+            "portal_scene_cloud_filter_pct": 25,
+            "expectation": "medium",
+            "revision": "narrowed from a five-month range",
+            "measured_evidence": "Only 1 of 38 observed dates between 2025-03-01 and 2025-07-31 fell below 10% AOI cloud: 2025-03-31 at 3.0%. Next best was 2025-07-14 at 14.4%.",
+            "note": "Deliberately narrow. The original five-month request at 10% cloud would have returned almost nothing; southern Thailand is far cloudier year-round than the north."
+          },
+          {
+            "window_id": "W3-post",
+            "label": "Post-event clear baseline",
+            "start": "2026-03-15",
+            "end": "2026-04-15",
+            "max_cloud_pct": 10,
+            "portal_scene_cloud_filter_pct": 30,
+            "expectation": "high",
+            "revision": "narrowed from 2026-02-01 to 2026-06-30",
+            "measured_evidence": "2026-04-12 at 0.1%, 2026-03-21 at 0.2%, 2026-03-26 at 0.2% AOI cloud.",
+            "note": "First reliably clear period after the November 2025 event."
+          }
+        ],
+        "project": "FloodGuard Thailand",
+        "request_id": "FG-THEOS2-REQ-001",
+        "request_version": "v2-cloud-scouted",
+        "requested_on": "2026-09-17",
+        "crs": "EPSG:4326 (WGS84)",
+        "preferred_product": "ORTHO PMS, 4-band (B/G/R/NIR)",
+        "cloud_metric": "max_cloud_pct is the AOI-clipped Sentinel-2 SCL measurement from scripts/scout_theos2_aoi_cloud.py and is what determines whether an acquisition is usable. portal_scene_cloud_filter_pct is the scene-level value to enter in the GISTDA ordering portal, which filters over the whole satellite footprint rather than the AOI; entering the AOI value there would discard usable dates. See outputs/theos2_aoi_cloud_scout.csv and outputs/theos2_portal_cloud_thresholds.csv.",
+        "operational_status": "non_operational_research_prototype",
+        "official_warning": false,
+        "redistribution_intent": "None. Imagery stays in a controlled workspace outside version control. Only derived, checksum-tracked evidence is committed."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.38,
+              6.9
+            ],
+            [
+              100.58,
+              6.9
+            ],
+            [
+              100.58,
+              7.12
+            ],
+            [
+              100.38,
+              7.12
+            ],
+            [
+              100.38,
+              6.9
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

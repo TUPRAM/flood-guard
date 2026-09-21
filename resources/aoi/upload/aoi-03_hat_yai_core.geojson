@@ -1,0 +1,38 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "AOI-03 hat yai core"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              100.43,
+              6.965
+            ],
+            [
+              100.52,
+              6.965
+            ],
+            [
+              100.52,
+              7.055
+            ],
+            [
+              100.43,
+              7.055
+            ],
+            [
+              100.43,
+              6.965
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

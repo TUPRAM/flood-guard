@@ -12,6 +12,7 @@ import tempfile
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 REQUIRED_SITE_FILES = (
     "index.html",
@@ -29,10 +30,13 @@ TEXT_SUFFIXES = {".css", ".html", ".js", ".json", ".md", ".mjs", ".svg", ".txt"}
 PRIVATE_PATH_PATTERNS = (
     re.compile(r"(?<![A-Za-z0-9_])[A-Za-z]:[\\/][A-Za-z0-9._ -]+"),
     re.compile(r"\\\\[A-Za-z0-9][A-Za-z0-9._-]*\\[A-Za-z0-9$._-]+"),
-    re.compile(r"/(?:Users|home|tmp|var|private)/", re.IGNORECASE),
-    re.compile(r"/root/"),
     re.compile(r"file://", re.IGNORECASE),
 )
+UNIX_PRIVATE_PATH_PATTERNS = (
+    re.compile(r"/(?:Users|home|tmp|var|private)/", re.IGNORECASE),
+    re.compile(r"/root/"),
+)
+HTTPS_URL_PATTERN = re.compile(r"(?<![A-Za-z0-9+.-])https://[^\s<>\"'`\\]+", re.IGNORECASE)
 ZIP_TIMESTAMP = (2026, 1, 1, 0, 0, 0)
 FINALS_START_URL = "/studio/brief/?aoi=aoi-01_mae_sai_core&event=mae_sai_2024"
 
@@ -56,6 +60,21 @@ def _git_commit(repository_root: Path) -> str:
     return result.stdout.strip()
 
 
+def _mask_https_path(match: re.Match[str]) -> str:
+    """Exclude URL paths, while keeping query/fragment local paths visible."""
+    value = match.group()
+    try:
+        parsed = urlsplit(value)
+        if not parsed.hostname or parsed.username is not None or parsed.password is not None:
+            return value
+        # Accessing port also validates malformed/non-numeric authority ports.
+        _ = parsed.port
+    except ValueError:
+        return value
+    start = len(parsed.scheme) + 3 + len(parsed.netloc)
+    return value[:start] + (" " * len(parsed.path)) + value[start + len(parsed.path) :]
+
+
 def _validate_site(site_root: Path) -> None:
     missing = [relative for relative in REQUIRED_SITE_FILES if not (site_root / relative).is_file()]
     if missing:
@@ -65,10 +84,14 @@ def _validate_site(site_root: Path) -> None:
         if path.suffix.lower() not in TEXT_SUFFIXES:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
-        for pattern in PRIVATE_PATH_PATTERNS:
-            if pattern.search(text):
-                relative = path.relative_to(site_root).as_posix()
-                raise ValueError(f"Private local path found in static export: {relative}")
+        # A public URL such as arcgis.com/home/item.html is not a local /home
+        # path. Drive paths, UNC paths and file URLs are never exempted.
+        unix_text = HTTPS_URL_PATTERN.sub(_mask_https_path, text)
+        if any(pattern.search(text) for pattern in PRIVATE_PATH_PATTERNS) or any(
+            pattern.search(unix_text) for pattern in UNIX_PRIVATE_PATH_PATTERNS
+        ):
+            relative = path.relative_to(site_root).as_posix()
+            raise ValueError(f"Private local path found in static export: {relative}")
 
 
 def _write_reproducible_zip(source_root: Path, output_zip: Path) -> None:

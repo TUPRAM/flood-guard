@@ -171,6 +171,20 @@ async function verifyFinalsComparison(page, brief, analysis, th, offline) {
           }
           await page.waitForFunction((id) => document.querySelector("[data-route-comparison]")?.getAttribute("data-route-id") === id, expected.id);
           await routePanel.locator(".leaflet-container canvas").first().waitFor({ state: "visible" });
+          await routePanel.locator("[data-route-origin]").filter({ hasText: pin.name }).waitFor();
+          const startTooltip = routePanel.locator(".leaflet-tooltip").filter({ has: page.locator("[data-route-start-label]") });
+          await startTooltip.waitFor({ state: "visible" });
+          const mapBox = await routePanel.locator(".leaflet-container").boundingBox();
+          const startBox = await startTooltip.boundingBox();
+          if (!mapBox || !startBox || startBox.x < mapBox.x || startBox.y < mapBox.y || startBox.x + startBox.width > mapBox.x + mapBox.width || startBox.y + startBox.height > mapBox.y + mapBox.height) throw new Error(`Starting-place tooltip is clipped: ${expected.id}, Thai=${th}`);
+          if (page.viewportSize().width <= 560) {
+            const availability = page.locator("[data-pwa-availability]");
+            if (await availability.count()) {
+              const badgeBox = await availability.boundingBox();
+              const reportBox = await page.locator("main[data-evidence-library]").boundingBox();
+              if (badgeBox && reportBox && badgeBox.y < reportBox.y + reportBox.height) throw new Error(`Availability control overlaps the mobile evidence report: ${expected.id}`);
+            }
+          }
           for (const phase of ["baseline", "after"]) {
             const result = expected[phase];
             const panel = routePanel.locator(`[data-route-result="${phase}"]`);

@@ -92,12 +92,27 @@ def test_build_bundle_rejects_missing_route(tmp_path: Path) -> None:
     [
         r"C:\Users\private\source.tif",
         r"D:\data\private\source.tif",
+        "C:/Users/private/source.tif",
         r"\\server\private-share\source.tif",
+        r"\\server\share\source.tif",
         "/home/private/source.tif",
         "/Users/private/source.tif",
         "/root/private/source.tif",
         "/tmp/private-run/source.tif",
+        "/var/private/source.tif",
+        "/private/source.tif",
         "file:///private/source.tif",
+        "file:///C:/Users/private/source.tif",
+        r"file:\/\/\/home/private/source.tif",
+        'const source="https://www.arcgis.com/home/item.html";const local="/home/private/a.tif";',
+        "https://example.org/home/item.html?source=/home/private/source.tif",
+        "https://example.org/home/item.html#source=/tmp/private/source.tif",
+        "https://example.org/C:/Users/private/source.tif",
+        "https://example.org/file:///private/source.tif",
+        r"https://example.org/asset?source=\\server\share\source.tif",
+        "https:///home/private/source.tif",
+        "https://example.org:invalid/home/private/source.tif",
+        "https://user:password@example.org/home/private/source.tif",
     ],
 )
 def test_build_bundle_rejects_private_absolute_paths(tmp_path: Path, private_path: str) -> None:
@@ -117,6 +132,43 @@ def test_build_bundle_rejects_private_absolute_paths(tmp_path: Path, private_pat
             generated_at="2026-07-30T00:00:00Z",
             git_commit="c" * 40,
         )
+    assert not (tmp_path / "bundle.zip").exists()
+
+
+@pytest.mark.parametrize(
+    "public_reference",
+    [
+        "https://www.arcgis.com/home/item.html",
+        'const source="https://www.arcgis.com/home/item.html?id=public-item";',
+        r'{"source":"https:\/\/www.arcgis.com\/home\/item.html"}',
+        '<a href="https://example.org/Users/documentation">Reference</a>',
+        "https://example.org/tmp/reference/var/data/private/docs/root/index.html",
+        "HTTPS://WWW.ARCGIS.COM:443/home/item.html",
+    ],
+)
+def test_build_bundle_allows_public_https_reference_paths(
+    tmp_path: Path, public_reference: str
+) -> None:
+    site = tmp_path / "site"
+    templates = tmp_path / "templates"
+    _make_site(site)
+    script = site / "public-source.js"
+    script.write_text(public_reference, encoding="utf-8")
+    templates.mkdir()
+    _make_templates(templates)
+    output = tmp_path / "bundle.zip"
+
+    build_bundle(
+        repository_root=tmp_path,
+        site_root=site,
+        template_root=templates,
+        output_zip=output,
+        generated_at="2026-09-21T13:44:35Z",
+        git_commit="c" * 40,
+    )
+
+    with zipfile.ZipFile(output) as archive:
+        assert archive.read("site/public-source.js").decode("utf-8") == public_reference
 
 
 def _finals_inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict:

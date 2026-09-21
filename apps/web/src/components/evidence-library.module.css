@@ -102,3 +102,6 @@
 .routeOutcome { padding: 16px; background: #edf4f5; font-size: 16px !important; font-weight: 750; }
 @media(max-width:560px) { .routeMap { height: 360px; } .routeToolbar { align-items: start; flex-direction: column; } }
 @media(max-width:560px) { .briefStats { grid-template-columns:1fr; } .briefStats strong { font-size:20px; } }
+@media(max-width:560px) {
+  :global(body:has([data-evidence-library]) [data-pwa-availability]) { position: static; width: calc(100% - 28px); margin: 0 auto; padding-bottom: 20px; }
+}

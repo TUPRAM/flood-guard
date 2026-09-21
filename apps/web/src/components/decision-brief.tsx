@@ -35,14 +35,14 @@ export function DecisionBriefPanel({ evidence, th }: { evidence: EvidenceLibrary
   const brief = evidence.decision_brief;
   if (!brief) return <p className={styles.empty}>{th ? "ชุดข้อมูลนี้ยังไม่มีบทสรุปเพื่อการตัดสินใจ" : "A decision brief is unavailable for this package."}</p>;
   const query = new URLSearchParams({ aoi: evidence.aoi_id, event: evidence.event_id });
-  if (brief.finals_analysis) return <div data-decision-brief="true">
-    <FinalsAnalysisPanel key={brief.finals_analysis.analysis_sha256} analysis={brief.finals_analysis} layers={evidence.layers} th={th} />
+  if (brief.finals_analysis) return <div data-decision-brief="true" className={styles.finalsBrief}>
+    <FinalsAnalysisPanel key={brief.finals_analysis.analysis_sha256} analysis={brief.finals_analysis} layers={evidence.layers} th={th} context={
     <section className={styles.panel}><h2>{th ? "ขอบเขตของข้อสรุปนี้" : "What this comparison can establish"}</h2>
       <p>{th ? "ผลนี้ช่วยเลือกเส้นทางและจุดหมายที่ควรตรวจสอบ และเปรียบเทียบการเปลี่ยนแปลงตามสมมติฐาน ยังไม่ใช่ผลยอมรับสำหรับจัดอันดับตอบโต้เหตุการณ์" : "These results help choose routes and destinations to investigate and compare explicit changes. They are not an accepted event-response ranking."}</p>
       <div className={styles.briefStats}><div><span>{th ? "คะแนน / ระดับการดำเนินการ" : "FPPS / action class"}</span><strong>{th ? "ยังไม่พร้อม" : "Unavailable"}</strong></div><div><span>{th ? "ประชากรที่ได้รับผลจากน้ำท่วม" : "Flood-affected population"}</span><strong>{th ? "ยังไม่ทราบ" : "Unknown"}</strong></div><div><span>{th ? "ความเท่าเทียมตามกลุ่มอายุ" : "Age-group equity"}</span><strong>{th ? "ยังไม่พร้อม" : "Unavailable"}</strong></div></div>
       <p>{th ? "ความต้องการอพยพ ความจุจริง และการเปิดใช้สถานที่ยังไม่ทราบ ลำดับการตรวจสอบไม่ใช่คำสั่งปฏิบัติการ" : "Actual evacuation demand, shelter capacity and event-time destination availability remain unknown. Verification priority is not an operational instruction."}</p>
       <a className={styles.download} href={`/studio/library/?${query}`}>{th ? "ตรวจสอบหลักฐานและสมมติฐานทั้งหมด" : "Inspect the evidence and assumptions"}</a>
-    </section>
+    </section>} />
   </div>;
   return <div data-decision-brief="true">
     <section className={`${styles.panel} ${styles.briefLead}`}>

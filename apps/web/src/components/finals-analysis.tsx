@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { EvidenceLibraryLayer, FinalsAnalysis, FinalsIntervention, FinalsServiceId, FinalsTravelMode } from "@floodguard/contracts";
 import { FinalsRouteComparisonPanel } from "./finals-route-comparison";
 import styles from "./evidence-library.module.css";
@@ -24,40 +24,77 @@ function InterventionTable({ items, th, detailed = false }: { items: FinalsInter
   </div>;
 }
 
-export function FinalsAnalysisPanel({ analysis, layers, th }: { analysis: FinalsAnalysis; layers: EvidenceLibraryLayer[]; th: boolean }) {
+type DetailSection = "population" | "interventions" | "evidence";
+const DETAIL_SECTIONS: { id: DetailSection; names: [string, string] }[] = [
+  { id: "population", names: ["Population", "ประชากร"] },
+  { id: "interventions", names: ["Interventions", "การเปลี่ยนแปลง"] },
+  { id: "evidence", names: ["Evidence", "หลักฐาน"] },
+];
+
+export function FinalsAnalysisPanel({ analysis, layers, th, context }: { analysis: FinalsAnalysis; layers: EvidenceLibraryLayer[]; th: boolean; context?: ReactNode }) {
   const [serviceId, setServiceId] = useState<FinalsServiceId>(analysis.primary_service);
   const [mode, setMode] = useState<FinalsTravelMode>("walking");
   const service = analysis.services.find((item) => item.id === serviceId);
   const variant = service?.variants.find((item) => item.travel_mode === mode && item.speed_factor === 1);
   const baseline = variant?.baseline;
   const focus = analysis.focus_briefs ?? [];
-  return <div data-finals-analysis="true">
-    <section className={`${styles.panel} ${styles.briefLead}`} aria-labelledby="finals-question">
-      <p className={styles.eyebrow}>{th ? "แม่สาย · การทดลองตามสมมติฐาน" : "MAE SAI · CONDITIONAL COMPARISON"}</p>
-      <h2 id="finals-question">{th ? "การเปลี่ยนแปลงใดช่วยให้เข้าถึงบริการได้ดีขึ้น?" : "Which changes could improve access to a specific service?"}</h2>
-      <p>{th ? "เลือกประเภทบริการและวิธีเดินทางก่อนเปรียบเทียบ ร้านขายยาไม่ใช่โรงพยาบาลหรือศูนย์พักพิง จุดหมายเป็นผู้สมัครที่ยังไม่ยืนยันการเปิดใช้งานช่วงน้ำท่วม" : "Choose the service and travel mode before comparing results. Pharmacies do not substitute for hospitals or shelters. Candidate locations have unverified event-time availability."}</p>
-      <div className={styles.selectors}><label>{th ? "บริการที่ต้องการ" : "Service needed"}<select value={serviceId} onChange={(event) => setServiceId(event.target.value as FinalsServiceId)}>{analysis.services.map((item) => <option key={item.id} value={item.id}>{SERVICE_NAMES[item.id][th ? 1 : 0]}{item.status === "unavailable" ? (th ? " — ยังไม่มีจุดหมายที่ใช้ได้" : " — unavailable") : ""}</option>)}</select></label>
-        <label>{th ? "วิธีเดินทางตามแบบจำลอง" : "Modelled travel mode"}<select value={mode} onChange={(event) => setMode(event.target.value as FinalsTravelMode)}>{Object.entries(MODE_NAMES).map(([id, names]) => <option key={id} value={id}>{names[th ? 1 : 0]}</option>)}</select></label>
-        <p className={styles.selectionMeta}>{th ? "จุดหมายผู้สมัคร" : "Candidate destinations"}: {service?.facilities ?? 0}<small>{th ? "ไม่ได้ยืนยันทางเข้า ความปลอดภัย หรือความจุ" : "Entrance, safety and capacity unverified"}</small></p>
-      </div>
-      <p className={styles.notice}>{mode === "walking" ? (th ? "สมมติเดินบนถนนที่เข้าข่ายด้วยความเร็ว 5 กม./ชม. ยังไม่ยืนยันสิ่งกีดขวาง การเดินได้จริง หรือความสามารถของแต่ละกลุ่ม" : "Walking assumes 5 km/h on eligible network segments. Barriers, walkability and individual mobility are unverified.") : (th ? "ยานพาหนะใช้ความเร็วตามประเภทถนนและกราฟสองทิศทาง ไม่ได้จำลองกฎวันเวย์ ข้อห้ามเลี้ยว หรือการผ่านได้จริงในช่วงน้ำท่วม" : "Vehicle travel uses road-class speeds on an undirected graph. One-way rules, turn restrictions and event passability are not modelled.")}</p>
-      {analysis.routes ? <FinalsRouteComparisonPanel routes={analysis.routes} service={serviceId} mode={mode} layers={layers} th={th} /> : null}
-      {!baseline ? <p className={styles.empty} role="status">{th ? "ไม่มีผลสำหรับบริการที่เลือก จะไม่แทนด้วยบริการประเภทอื่น" : "No result is available for this service. Another service is not substituted."} {service?.reason}</p> : <>
+  const [detailSection, setDetailSection] = useState<DetailSection>("population");
+  const dialog = useRef<HTMLDialogElement>(null);
+  const detailsId = useId();
+  const openDetails = (section: DetailSection) => {
+    setDetailSection(section);
+    if (!dialog.current?.open) dialog.current?.showModal();
+  };
+  const navigateTabs = (event: KeyboardEvent<HTMLButtonElement>, section: DetailSection) => {
+    const index = DETAIL_SECTIONS.findIndex((item) => item.id === section);
+    const next = event.key === "ArrowRight" ? (index + 1) % DETAIL_SECTIONS.length
+      : event.key === "ArrowLeft" ? (index + DETAIL_SECTIONS.length - 1) % DETAIL_SECTIONS.length
+        : event.key === "Home" ? 0 : event.key === "End" ? DETAIL_SECTIONS.length - 1 : null;
+    if (next === null) return;
+    event.preventDefault();
+    const id = DETAIL_SECTIONS[next].id;
+    setDetailSection(id);
+    dialog.current?.querySelector<HTMLButtonElement>(`[data-detail-tab="${id}"]`)?.focus();
+  };
+  const controls = <>
+    <label>{th ? "บริการที่ต้องการ" : "Service needed"}<select value={serviceId} onChange={(event) => setServiceId(event.target.value as FinalsServiceId)}>{analysis.services.map((item) => <option key={item.id} value={item.id}>{SERVICE_NAMES[item.id][th ? 1 : 0]}{item.status === "unavailable" ? (th ? " — ยังไม่มีจุดหมายที่ใช้ได้" : " — unavailable") : ""}</option>)}</select></label>
+    <label>{th ? "วิธีเดินทางตามแบบจำลอง" : "Modelled travel mode"}<select value={mode} onChange={(event) => setMode(event.target.value as FinalsTravelMode)}>{Object.entries(MODE_NAMES).map(([id, names]) => <option key={id} value={id}>{names[th ? 1 : 0]}</option>)}</select></label>
+  </>;
+  const actions = <>{DETAIL_SECTIONS.map((section) => <button key={section.id} type="button" data-finals-detail={section.id} aria-haspopup="dialog" aria-controls={detailsId} onClick={() => openDetails(section.id)}>{section.names[th ? 1 : 0]}</button>)}</>;
+  return <div data-finals-analysis="true" className={styles.finalsWorkspace}>
+    {analysis.routes ? <FinalsRouteComparisonPanel routes={analysis.routes} service={serviceId} mode={mode} layers={layers} th={th} controls={controls} actions={actions} /> : <section className={styles.panel}><div className={styles.workspaceControls}>{controls}{actions}</div><p className={styles.empty} role="status">{th ? "ยังไม่มีข้อมูลเส้นทางสำหรับการเปรียบเทียบนี้" : "Route data is unavailable for this comparison."}</p></section>}
+    <dialog ref={dialog} id={detailsId} className={styles.workspaceDialog} data-finals-detail-panel="true" aria-labelledby={`${detailsId}-title`}>
+      <header className={styles.workspaceDialogHeader}><h2 id={`${detailsId}-title`}>{th ? "ข้อมูลและหลักฐานเบื้องหลัง" : "Analysis and evidence"}</h2><button type="button" onClick={() => dialog.current?.close()}>{th ? "ปิด" : "Close"}</button></header>
+      <div className={styles.workspaceDialogTabs} role="tablist" aria-label={th ? "หมวดรายละเอียด" : "Detail sections"}>{DETAIL_SECTIONS.map((section) => <button key={section.id} type="button" role="tab" id={`${detailsId}-tab-${section.id}`} aria-controls={`${detailsId}-panel-${section.id}`} aria-selected={detailSection === section.id} tabIndex={detailSection === section.id ? 0 : -1} data-detail-tab={section.id} onClick={() => setDetailSection(section.id)} onKeyDown={(event) => navigateTabs(event, section.id)}>{section.names[th ? 1 : 0]}</button>)}</div>
+      <div className={styles.workspaceDialogBody}>
+        <div role="tabpanel" id={`${detailsId}-panel-population`} aria-labelledby={`${detailsId}-tab-population`} hidden={detailSection !== "population"} tabIndex={0}>
+          <section className={styles.panel}>
+                  {!baseline ? <p className={styles.empty} role="status">{th ? "ไม่มีผลสำหรับบริการที่เลือก จะไม่แทนด้วยบริการประเภทอื่น" : "No result is available for this service. Another service is not substituted."} {service?.reason}</p> : <>
         <h3>{th ? "กรณีฐานก่อนเพิ่มการเปลี่ยนแปลงสมมติ" : "Baseline before the imposed change"}</h3>
         <div className={styles.briefStats}><div><span>{th ? "ประชากรตามแบบจำลองในขอบเขต" : "Modelled residents in scope"}</span><strong>{n(baseline.modelled_population, th, 0)}</strong></div><div><span>{th ? "เข้าถึงบริการภายใน 30 นาที" : "Reach this service within 30 minutes"}</span><strong>{n(baseline.within_30_minutes_population, th, 0)}</strong></div><div><span>{th ? "ยังไม่ทราบการเข้าถึง: ไม่มีจุดเชื่อมต่อ" : "Access unknown: no accepted connector"}</span><strong>{n(baseline.unknown_access_population, th, 0)}</strong></div></div>
         <dl className={styles.briefMetrics}><div><dt>{th ? "เชื่อมถนนแล้ว แต่ไม่มีเส้นทางถึงบริการ" : "Connected to roads, but no route to this service"}</dt><dd>{n(baseline.connected_without_route_population, th)}</dd></div><div><dt>{th ? "มีเส้นทาง แต่เกิน 30 นาที" : "A route exists, but exceeds 30 minutes"}</dt><dd>{n(Math.max(0, baseline.modelled_population - baseline.unknown_access_population - baseline.connected_without_route_population - baseline.within_30_minutes_population), th)}</dd></div><div><dt>{th ? "เวลาเดินทาง: มัธยฐาน / P90 / สูงสุด" : "Travel time: median / P90 / maximum"}</dt><dd>{n(baseline.median_minutes, th)} / {n(baseline.p90_minutes, th)} / {n(baseline.max_minutes, th)} {th ? "นาที" : "min"}</dd></div></dl>
         <p className={styles.hint}>{th ? "ค่าร้อยละและเวลาคำนวณจากผู้อยู่อาศัยตามแบบจำลอง ค่ามัธยฐานและ P90 ถ่วงด้วยประชากรเฉพาะผู้มีเส้นทาง ไม่ใช่จำนวนผู้ประสบภัย" : "Counts are modelled residents, not flood victims. Median and P90 times are population-weighted over residents with a finite route."}</p>
       </>}
-    </section>
-    {variant ? <section className={styles.panel}><h2>{th ? "เปรียบเทียบการเปลี่ยนแปลงอย่างตรงไปตรงมา" : "Compare interventions against the same baseline"}</h2>
+          </section>
+          {focus.length ? <section className={styles.panel}><h2>{th ? "บทสรุปการตรวจสอบระดับตำบล" : "Subdistrict verification briefs"}</h2><p>{th ? "ลำดับการตรวจสอบ ไม่ใช่คำสั่งอพยพหรืออันดับความรุนแรง ตัวเลขครอบคลุมเฉพาะพื้นที่ตำบลที่อยู่ใน AOI" : "These are verification priorities, not evacuation orders or severity rankings. Counts cover only the subdistrict intersection with the AOI."}</p><div className={styles.scenarios}>{focus.map((item) => <article key={item.id}><p className={styles.eyebrow}>{th ? "ควรตรวจสอบ" : "VERIFY"}</p><h3>{th ? item.name_th : item.name}</h3><p>{n(item.unit_coverage_fraction * 100, th)}% {th ? "ของพื้นที่ตำบล" : "of subdistrict area"} · {n(item.modelled_population, th, 0)} {th ? "ผู้อยู่อาศัยตามแบบจำลอง" : "modelled residents"}</p><h4>{th ? "เหตุผลหลัก" : "Main drivers"}</h4><ul>{item.main_drivers.map((driver) => <li key={driver}>{driver}</li>)}</ul><h4>{th ? "การทดลองที่ควรพิจารณา" : "Intervention to investigate"}</h4><p>{item.useful_intervention}</p><h4>{th ? "ความไม่แน่นอน" : "Uncertainty"}</h4><ul>{item.uncertainty.map((point) => <li key={point}>{point}</li>)}</ul></article>)}</div></section> : null}
+        </div>
+        <div role="tabpanel" id={`${detailsId}-panel-interventions`} aria-labelledby={`${detailsId}-tab-interventions`} hidden={detailSection !== "interventions"} tabIndex={0}>
+          {variant ? <section className={styles.panel}><h2>{th ? "เปรียบเทียบการเปลี่ยนแปลงอย่างตรงไปตรงมา" : "Compare interventions against the same baseline"}</h2>
       <p>{th ? "เลือกไม่เกินสองรายการต่อประเภทจากความต้องการกรณีฐานก่อนประเมินผล ไม่ใช่การค้นหาตำแหน่งที่ดีที่สุดหรือหลักฐานถนนปิดจริง ผลเป็นศูนย์ยังแสดงไว้" : "Up to two candidates per family are selected from baseline demand before outcomes are evaluated. This is neither an exhaustive site search nor evidence of an observed closure. Zero effects remain visible."}</p>
       {serviceId === "hospital" && service?.facilities === 1 ? <p className={styles.notice} data-hospital-connection-caveat="true">{th ? "ผลโรงพยาบาลขึ้นอยู่กับจุดหมายเพียงแห่งเดียวและจุดเชื่อมถนนที่สมมติไว้ ตัวเลขผู้สูญเสียการเข้าถึงจำนวนมากในกรณีปิดถนนจึงชี้ว่าควรตรวจสอบทางเข้าและจุดเชื่อมนี้ก่อน ไม่ใช่จำนวนผู้ถูกตัดขาดที่สังเกตจริงหรือผลกระทบที่ตรวจสอบยืนยันแล้ว" : "Hospital results depend on one candidate site and its assumed road connection. Large access losses in these closure tests make the entrance and connection a review priority; they are not observed isolation or validated impact."}</p> : null}
       <InterventionTable items={variant.interventions} th={th} detailed />
       <p className={styles.hint}>{th ? "เพิ่ม/สูญเสียคือประชากรที่ข้ามเกณฑ์เวลา การไม่มีเส้นทางแยกจากการเกินเกณฑ์ เวลาเฉลี่ยและ P90 เปรียบเทียบเฉพาะผู้มีเส้นทางทั้งสองกรณี รวมผู้ที่เวลาไม่เปลี่ยนด้วย" : "Gain/lose counts cross the stated threshold. Losing every route differs from exceeding a threshold. Mean and P90 changes compare residents with a route in both cases, including unchanged journeys."}</p>
       <details><summary>{th ? "ผลเปลี่ยนหรือไม่เมื่อปรับความเร็ว?" : "Does the result change under different speeds?"}</summary><p>{th ? "ใช้รายการทดสอบเดิมที่ความเร็วถนน 0.75×, 1× และ 1.25× เวลาเชื่อมต่อยังใช้ 5 กม./ชม. ไม่ใช่ช่วงความเชื่อมั่นทางสถิติ" : "The same shortlist is tested at 0.75×, 1× and 1.25× network speeds. Connectors remain at 5 km/h. These are sensitivity cases, not confidence intervals."}</p>{service?.variants.filter((item) => item.travel_mode === mode).map((item) => <div key={item.id}><h3>{item.speed_factor}× · {MODE_NAMES[item.travel_mode][th ? 1 : 0]}</h3><p>{th ? "กรณีฐาน: เข้าถึงภายใน 15 / 30 / 60 นาที" : "Baseline: within 15 / 30 / 60 minutes"}: {n(item.baseline.within_15_minutes_population, th)} / {n(item.baseline.within_30_minutes_population, th)} / {n(item.baseline.within_60_minutes_population, th)}</p><InterventionTable items={item.interventions} th={th} /></div>)}</details>
     </section> : null}
-    {focus.length ? <section className={styles.panel}><h2>{th ? "บทสรุปการตรวจสอบระดับตำบล" : "Subdistrict verification briefs"}</h2><p>{th ? "ลำดับการตรวจสอบ ไม่ใช่คำสั่งอพยพหรืออันดับความรุนแรง ตัวเลขครอบคลุมเฉพาะพื้นที่ตำบลที่อยู่ใน AOI" : "These are verification priorities, not evacuation orders or severity rankings. Counts cover only the subdistrict intersection with the AOI."}</p><div className={styles.scenarios}>{focus.map((item) => <article key={item.id}><p className={styles.eyebrow}>{th ? "ควรตรวจสอบ" : "VERIFY"}</p><h3>{th ? item.name_th : item.name}</h3><p>{n(item.unit_coverage_fraction * 100, th)}% {th ? "ของพื้นที่ตำบล" : "of subdistrict area"} · {n(item.modelled_population, th, 0)} {th ? "ผู้อยู่อาศัยตามแบบจำลอง" : "modelled residents"}</p><h4>{th ? "เหตุผลหลัก" : "Main drivers"}</h4><ul>{item.main_drivers.map((driver) => <li key={driver}>{driver}</li>)}</ul><h4>{th ? "การทดลองที่ควรพิจารณา" : "Intervention to investigate"}</h4><p>{item.useful_intervention}</p><h4>{th ? "ความไม่แน่นอน" : "Uncertainty"}</h4><ul>{item.uncertainty.map((point) => <li key={point}>{point}</li>)}</ul></article>)}</div></section> : null}
-    <section className={styles.panel}><h2>{th ? "พื้นที่ เวลา และหลักฐานเบื้องหลัง" : "Geography, time and supporting evidence"}</h2>
+          {!variant ? <p className={styles.empty} role="status">{th ? "ไม่มีผลสำหรับบริการที่เลือก จะไม่แทนด้วยบริการประเภทอื่น" : "No result is available for this service. Another service is not substituted."} {service?.reason}</p> : null}
+        </div>
+        <div role="tabpanel" id={`${detailsId}-panel-evidence`} aria-labelledby={`${detailsId}-tab-evidence`} hidden={detailSection !== "evidence"} tabIndex={0}>
+          <section className={styles.panel}><h2>{th ? "ความหมายของการเปรียบเทียบ" : "What this comparison means"}</h2>
+                  <p>{th ? "เลือกประเภทบริการและวิธีเดินทางก่อนเปรียบเทียบ ร้านขายยาไม่ใช่โรงพยาบาลหรือศูนย์พักพิง จุดหมายเป็นผู้สมัครที่ยังไม่ยืนยันการเปิดใช้งานช่วงน้ำท่วม" : "Choose the service and travel mode before comparing results. Pharmacies do not substitute for hospitals or shelters. Candidate locations have unverified event-time availability."}</p>
+                    <p className={styles.selectionMeta}>{th ? "จุดหมายผู้สมัคร" : "Candidate destinations"}: {service?.facilities ?? 0}<small>{th ? "ไม่ได้ยืนยันทางเข้า ความปลอดภัย หรือความจุ" : "Entrance, safety and capacity unverified"}</small></p>
+                  <p className={styles.notice}>{mode === "walking" ? (th ? "สมมติเดินบนถนนที่เข้าข่ายด้วยความเร็ว 5 กม./ชม. ยังไม่ยืนยันสิ่งกีดขวาง การเดินได้จริง หรือความสามารถของแต่ละกลุ่ม" : "Walking assumes 5 km/h on eligible network segments. Barriers, walkability and individual mobility are unverified.") : (th ? "ยานพาหนะใช้ความเร็วตามประเภทถนนและกราฟสองทิศทาง ไม่ได้จำลองกฎวันเวย์ ข้อห้ามเลี้ยว หรือการผ่านได้จริงในช่วงน้ำท่วม" : "Vehicle travel uses road-class speeds on an undirected graph. One-way rules, turn restrictions and event passability are not modelled.")}</p>
+          </section>
+          <section className={styles.panel}><h2>{th ? "พื้นที่ เวลา และหลักฐานเบื้องหลัง" : "Geography, time and supporting evidence"}</h2>
       <p>{th ? "ฉากทัศน์ใช้ข้อมูลต่างปี ไม่ใช่การจำลองสภาพจริงย้อนหลังทั้งหมดในเดือนกันยายน 2024" : "This scenario combines different source years. It is not a complete reconstruction of September 2024 conditions."}</p>
       <dl className={styles.briefMetrics}><div><dt>{th ? "ประชากรปี" : "Population year"}</dt><dd>{analysis.scope.population_year}</dd></div><div><dt>{th ? "ขอบเขตอ้างอิง" : "Boundary reference"}</dt><dd>{analysis.scope.boundary_reference_date}</dd></div><div><dt>{th ? "วันที่ได้ OSM" : "OSM retrieval"}</dt><dd>{analysis.scope.osm_retrieved_at}</dd></div><div><dt>{th ? "ประชากรเดิม / อยู่ในขอบเขต / ยกเว้น" : "Original / in-scope / excluded residents"}</dt><dd>{n(analysis.scope.study_population, th)} / {n(analysis.scope.in_scope_population, th)} / {n(analysis.scope.excluded_population, th)}</dd></div></dl>
       <p>{analysis.scope.jurisdiction}</p>
@@ -67,5 +104,9 @@ export function FinalsAnalysisPanel({ analysis, layers, th }: { analysis: Finals
       <details><summary>{th ? "ความจุและความต้องการสมมติ" : "Hypothetical capacity and demand"}</summary><p>{th ? "ผูกตำแหน่งกับการเพิ่มจุดหมายสมมติที่ระบุ แล้วสมมติบทบาทเป็นศูนย์พักพิงแยกต่างหาก ไม่ได้เปลี่ยนโรงพยาบาลเป็นศูนย์พักพิงหรือยืนยันว่าพื้นที่ปลอดภัย" : "A named hypothetical access-addition location is assigned a separate shelter scenario. This does not turn a hospital into a shelter or establish site safety."}</p><p>{analysis.capacity.site_id ?? (th ? "ไม่มีสถานที่ที่ใช้ได้" : "No eligible site")} · {analysis.capacity.linked_variant_id} · {analysis.capacity.linked_access_intervention_id}</p><ul>{analysis.capacity.assumptions.map((point) => <li key={point}>{point}</li>)}</ul><div className={styles.tableWrap} tabIndex={0} role="region" aria-label={th ? "ตารางความจุสมมติ เลื่อนแนวนอนได้" : "Hypothetical capacity table; scroll horizontally"}><table><thead><tr><th>{th ? "สัดส่วน / ที่รองรับ" : "Participation / places"}</th><th>{th ? "ความต้องการสมมติ" : "Assumed demand"}</th><th>{th ? "จัดสรร / ความจุไม่พอ" : "Assigned / capacity-limited"}</th><th>{th ? "ไปไม่ถึง / ข้อมูลไม่ครอบคลุม" : "Unreachable / coverage excluded"}</th></tr></thead><tbody>{analysis.capacity.experiments.map((item) => <tr key={`${item.participation_fraction}-${item.places}`}><th scope="row">{n(item.participation_fraction * 100, th)}% / {item.places}</th><td>{n(item.assumed_demand, th)}</td><td>{n(item.assigned, th)} / {n(item.capacity_limited, th)}</td><td>{n(item.unreachable, th)} / {n(item.coverage_excluded, th)}</td></tr>)}</tbody></table></div></details>
       <details><summary>{th ? "ข้อจำกัดและรหัสผลวิเคราะห์" : "Limitations and analysis identity"}</summary><ul>{analysis.limitations.map((point) => <li key={point}>{point}</li>)}</ul><p className={styles.hash}>{analysis.analysis_sha256}</p></details>
     </section>
+          {context}
+        </div>
+      </div>
+    </dialog>
   </div>;
 }

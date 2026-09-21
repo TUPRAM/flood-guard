@@ -105,3 +105,126 @@
 @media(max-width:560px) {
   :global(body:has([data-evidence-library]) [data-pwa-availability]) { position: static; width: calc(100% - 28px); margin: 0 auto; padding-bottom: 20px; }
 }
+
+/* The route brief reserves the viewport for controls, map and comparison. */
+.visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.workspace { height: calc(100dvh - 30px); min-height: 630px; display: flex; flex-direction: column; }
+.workspace .header { flex: none; min-height: 46px; padding: 5px 20px; gap: 20px; }
+.workspace .header nav { gap: 20px; }
+.workspace .content { width: 100%; max-width: 1800px; margin: 0 auto; padding: 10px 18px 0; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.workspaceHeading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.workspaceHeading h1 { font-size: 22px; letter-spacing: -.025em; line-height: 1.3; margin: 0; }
+.workspaceHeading .badge { padding: 4px 8px; font-size: 10px; }
+.workspaceNotice { margin: 0; padding: 5px 10px; border-left: 3px solid #a47827; background: #fff8e9; color: #614e27; font-size: 11px; line-height: 1.4; }
+.workspace .content > .selectors { margin: 0; gap: 12px; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; }
+.workspace .selectors label, .routeControls label { min-width: 0; font-size: 11px; font-weight: 700; }
+.workspace .selectors select, .routeControls select { display: block; width: 100%; min-width: 0; min-height: 34px; padding: 5px 9px; margin-top: 3px; border: 1px solid #b4c5ce; border-radius: 5px; background: white; color: #17384b; font: inherit; }
+.workspace .selectionMeta { margin: 0; font-size: 10px; }
+.finalsBrief, .finalsWorkspace, .routeWorkspace { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.routeWorkspace { gap: 7px; }
+.routeControls, .workspaceControls { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.workspaceActions { display: flex; flex-wrap: wrap; gap: 6px; }
+.workspaceActions button, .workspaceFooter button, .workspaceDialog button { min-height: 32px; border: 1px solid #b4c5ce; border-radius: 5px; padding: 5px 12px; background: #fff; color: #17384b; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.workspaceActions button:hover, .workspaceFooter button:hover { background: #e1edef; border-color: #417885; }
+.routeStage { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0,1fr) 290px; gap: 12px; }
+.routeCanvas { min-height: 0; min-width: 0; display: flex; flex-direction: column; padding: 8px; background: white; border: 1px solid #d6e1e7; border-radius: 8px; }
+.routeViews { display: flex; gap: 15px; flex: none; border: 0; margin: 0; padding: 0; font-size: 11px; align-items: center; }
+.routeViews legend { float: left; padding: 5px 12px 5px 0; font-weight: 750; }
+.routeViews label { display: flex; align-items: center; min-height: 28px; gap: 4px; cursor: pointer; }
+.routeViews input { accent-color: #146477; }
+.routeMapFrame { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.routeMapFrame > p { margin: 2px 0 5px; flex: none; font-size: 10px !important; line-height: 1.3; }
+.routeMapFrame .routeMap { height: auto; flex: 1; min-height: 100px; }
+.compactLegend { display: flex; flex-wrap: wrap; list-style: none; margin: 5px 0 0; padding: 0; gap: 4px 14px; font-size: 10px; }
+.compactLegend li { display: inline-flex; align-items: center; gap: 5px; }
+.compactLegend span { width: 20px; border-top-width: 3px; }
+.routeResults { min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.routeCards { display: grid; gap: 10px; }
+.routeCards article { border: 1px solid #d6e1e7; border-top: 4px solid #087f73; border-radius: 8px; padding: 14px; background: white; }
+.routeCards .afterRoute { border-top-color: #853cb0; }
+.routeCards h3 { font-size: 15px; line-height: 1.35; margin: 8px 0; }
+.routeCards .eyebrow { font-size: 9px; letter-spacing: .06em; margin: 0; }
+.routeCards .routeTime { font-size: 30px; line-height: 1.2; }
+.routeCards .routeTime small { font-size: 12px; margin-left: 10px; }
+.routeBreakdown, .routeMissing { font-size: 10px; line-height: 1.4; margin: 8px 0 0; }
+.routeResults .routeOutcome { margin: 0; padding: 12px; font-size: 13px !important; line-height: 1.45; border: 1px solid #c3dcdf; border-radius: 6px; }
+.routeCaution { font-size: 11px; line-height: 1.5; margin: 0; color: #526e7c; }
+.workspaceFooter { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 9px; min-height: 30px; }
+.workspaceFooter > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspaceFooter button { min-height: 26px; font-size: 10px; padding: 3px 9px; white-space: nowrap; }
+.workspaceDialog { width: min(1040px,calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 32px); padding: 0; border: 1px solid #a9c1cc; border-radius: 12px; color: #17384b; background: #f1f5f7; box-shadow: 0 20px 80px #0c243a55; overflow: hidden; }
+.workspaceDialog[open] { display: flex; flex-direction: column; }
+.workspaceDialog::backdrop { background: #102a3dcc; }
+.workspaceDialogHeader { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; background: white; border-bottom: 1px solid #d6e1e7; }
+.workspaceDialogHeader h2 { margin: 0; font-size: 18px; }
+.workspaceDialogTabs { display: flex; flex: none; gap: 8px; padding: 10px 18px; }
+.workspaceDialogTabs [aria-selected=true] { background: #125e6c; color: white; border-color: #125e6c; }
+.workspaceDialogBody { overflow: auto; padding: 0 18px 18px; min-height: 0; overflow-wrap: anywhere; font-size: 12px; line-height: 1.7; }
+.workspaceDialogBody .panel { margin: 12px 0; }
+.workspaceDialogBody .panel:first-child { margin-top: 0; }
+.workspaceDialogBody .provenance { padding-top: 18px; }
+:global(body:has([data-route-workspace=true]) [data-pwa-availability]) { position: fixed; right: 12px; bottom: 0; margin: 0; padding: 0; width: min(340px,calc(100vw - 24px)); }
+:global(body:has([data-route-workspace=true]) [data-pwa-availability] > summary) { min-height: 28px; padding: 3px 9px; font-size: 10px; box-shadow: none; }
+:global(body:has([data-route-workspace=true]) [data-pwa-availability] > div) { position: absolute; bottom: 34px; right: 0; width: 100%; max-height: calc(100dvh - 70px); overflow: auto; }
+@media(max-width:1100px) {
+  .routeStage { grid-template-columns: minmax(0,1fr) 250px; }
+  .workspace .header { flex-wrap: nowrap; gap: 15px; }
+  .workspace .header nav { order: initial; flex-basis: auto; gap: 12px; }
+  .workspace .selectionMeta { grid-column: auto; }
+}
+@media(max-width:700px) {
+  .workspace { min-height: 635px; }
+  .workspace .header { min-height: 38px; padding: 3px 10px; gap: 8px; }
+  .workspace .brand { font-size: 16px; flex: none; }
+  .workspace .brand span { display: none; }
+  .workspace .header nav { flex: 1; gap: 8px; font-size: 10px; justify-content: flex-end; }
+  .workspace .header nav a { min-height: 28px; }
+  .workspace .header nav a:first-child { display: none; }
+  .workspace .content { padding: 5px 8px 0; gap: 4px; }
+  .workspaceHeading h1 { font-size: 16px; }
+  .workspaceHeading .badge { font-size: 8px; padding: 3px 5px; }
+  .workspaceNotice { font-size: 9px; line-height: 1.3; padding: 3px 6px; }
+  .workspace .content > .selectors { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .workspace .selectionMeta { display: none; }
+  .workspace .selectors label, .routeControls label { font-size: 10px; }
+  .workspace .selectors select, .routeControls select { min-height: 30px; margin-top: 1px; padding: 3px 5px; }
+  .routeControls { grid-template-columns: 1fr 1fr; gap: 4px 7px; }
+  .routeWorkspace { gap: 4px; }
+  .workspaceActions { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; }
+  .workspaceActions button { padding: 3px; font-size: 9px; min-height: 28px; }
+  .routeStage { display: flex; flex-direction: column; gap: 5px; }
+  .routeCanvas { flex: 1; min-height: 160px; padding: 4px; border-radius: 5px; }
+  .routeViews { gap: 9px; font-size: 10px; }
+  .routeViews legend { padding: 3px 7px 3px 0; }
+  .routeViews label { min-height: 23px; }
+  .routeMapFrame > p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 3px; font-size: 9px !important; }
+  .routeMapFrame .routeMap { min-height: 94px; }
+  .compactLegend { font-size: 8px; gap: 3px 7px; margin-top: 3px; }
+  .compactLegend span { width: 13px; }
+  .routeResults { gap: 4px; flex: none; }
+  .routeCards { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .routeCards article { padding: 5px 7px; border-top-width: 3px; border-radius: 5px; }
+  .routeCards h3 { font-size: 11px; line-height: 1.3; margin: 3px 0; }
+  .routeCards .eyebrow { font-size: 8px; letter-spacing: 0; }
+  .routeCards .routeTime { font-size: 21px; }
+  .routeCards .routeTime span, .routeCards .routeTime small { font-size: 10px; }
+  .routeCards .routeTime small { margin-left: 6px; }
+  .routeBreakdown { display: none; }
+  .routeMissing { font-size: 9px; margin: 0; }
+  .routeResults .routeOutcome { padding: 5px 7px; font-size: 10px !important; line-height: 1.3; }
+  .routeCaution { font-size: 9px; line-height: 1.3; }
+  .workspaceFooter { min-height: 23px; font-size: 8px; }
+  .workspaceFooter button { min-height: 23px; font-size: 9px; }
+  .workspaceDialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+  .workspaceDialogHeader { padding: 10px 12px; }
+  .workspaceDialogHeader h2 { font-size: 16px; }
+  .workspaceDialogTabs { padding: 8px 12px; }
+  .workspaceDialogBody { padding: 0 12px 12px; }
+}
+/* Small or zoomed viewports reflow instead of clipping controls or text. */
+@media(max-height:620px), (max-width:350px) {
+  .workspace { height: auto; min-height: calc(100dvh - 30px); padding-bottom: 30px; }
+  .routeMapFrame .routeMap { flex: auto; min-height: 220px; }
+  .routeCanvas { flex: auto; }
+  .workspace .header { flex-wrap: wrap; }
+}

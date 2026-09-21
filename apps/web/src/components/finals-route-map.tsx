@@ -14,6 +14,7 @@ export function FinalsRouteMap({ origin, comparison, layers, view, th }: { origi
   useEffect(() => {
     let disposed = false;
     let map: LeafletMap | undefined;
+    let resize: ResizeObserver | undefined;
     async function mount() {
       const L = await import("leaflet");
       if (disposed || !container.current) return;
@@ -21,8 +22,15 @@ export function FinalsRouteMap({ origin, comparison, layers, view, th }: { origi
       for (const route of [comparison.baseline, comparison.after]) {
         for (const point of [...route.coordinates, ...route.connectors.flat()]) bounds.extend([point[1], point[0]]);
       }
-      map = L.map(container.current, { scrollWheelZoom: false, preferCanvas: true });
-      map.fitBounds(bounds, { padding: [45, 45], maxZoom: 16 });
+      map = L.map(container.current, { scrollWheelZoom: false, preferCanvas: true, zoomAnimation: false });
+      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16, animate: false });
+      resize = new ResizeObserver(() => {
+        if (!disposed && map) {
+          map.invalidateSize({ animate: false });
+          map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16, animate: false });
+        }
+      });
+      resize.observe(container.current);
       for (const layer of layers) {
         if (layer.data && ["road_geojson", "reporting-subdistricts"].includes(layer.id)) L.geoJSON(layer.data as MapGeometry, {
           style: { color: layer.id === "road_geojson" ? "#a7bbc4" : "#6b8895", weight: layer.id === "road_geojson" ? 1.2 : 1, fillOpacity: 0, dashArray: layer.id === "reporting-subdistricts" ? "5 6" : undefined },
@@ -50,7 +58,7 @@ export function FinalsRouteMap({ origin, comparison, layers, view, th }: { origi
       map.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · Reporting boundaries: HDX Thailand COD-AB');
     }
     mount().catch(() => { if (!disposed) setFailed(true); });
-    return () => { disposed = true; map?.remove(); };
+    return () => { disposed = true; resize?.disconnect(); map?.remove(); };
   }, [origin, comparison, layers, view, th]);
-  return <div><p className={styles.hint} data-route-origin><strong>{th ? "จุดเริ่มต้น · หมุดสีเหลือง" : "Start · yellow marker"}:</strong> {origin.name}</p><div ref={container} className={`${styles.map} ${styles.routeMap}`} role="region" aria-label={th ? "เส้นทางก่อนและหลังการเปลี่ยนแปลงสมมติ" : "Routes before and after an imposed disruption"} />{failed ? <p role="alert">{th ? "แผนที่ไม่พร้อม ดูผลและรหัสเส้นทางในตารางด้านล่าง" : "Map unavailable. Route results and identities remain available in the table below."}</p> : null}</div>;
+  return <div className={styles.routeMapFrame}><p className={styles.hint} data-route-origin><strong>{th ? "จุดเริ่มต้น · หมุดสีเหลือง" : "Start · yellow marker"}:</strong> {origin.name}</p><div ref={container} className={`${styles.map} ${styles.routeMap}`} role="region" aria-label={th ? "เส้นทางก่อนและหลังการเปลี่ยนแปลงสมมติ" : "Routes before and after an imposed disruption"} />{failed ? <p role="alert">{th ? "แผนที่ไม่พร้อม ผลเส้นทางยังแสดงอยู่ เปิดรายละเอียดเส้นทางเพื่อดูข้อมูลแบบข้อความ" : "Map unavailable. Route results remain available; open Route details for the text record."}</p> : null}</div>;
 }

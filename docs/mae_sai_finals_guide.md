@@ -22,6 +22,28 @@ vehicle assumptions must be named. A historical September 2024 event context
 combined with 2020 population, 2022 boundaries and later OSM acquisition is a
 mixed-vintage scenario, not a complete historical reconstruction.
 
+The brief uses a compact route workspace. Select the study area/event, service,
+travel mode, public starting place and imposed change above the map. **Both /
+Before / After** switches the displayed paths; the two result cards retain the
+comparison. Supporting detail opens without changing those selections:
+
+- **Route details:** starting-place source, pin and entrance limitations,
+  selection rationale, route-time breakdown, changed IDs and ordered road edges.
+- **Population:** service-wide baseline coverage and subdistrict verification
+  briefs. These counts are distinct from the selected pin's journey.
+- **Interventions:** service-wide experiments and speed sensitivity, kept
+  separate from the prepared route example.
+- **Evidence:** input years, flood timeline, destination/topology reviews,
+  capacity assumptions and accepted-claim limitations.
+- **Sources and downloads:** package identity, source timestamps, assumptions,
+  input hashes and downloadable reports.
+
+The Population, Interventions and Evidence sections share a detail panel. Use its
+tabs to switch sections and **Close** or **Escape** to return to the map. Long
+content scrolls inside the panel; small or zoomed viewports may reflow to keep
+controls and text accessible. The full evidence library remains available from
+the navigation and Evidence panel.
+
 ## Prepared public-place case
 
 Start at **Mae Sai Municipal Office**, using its official public site marker at
@@ -69,7 +91,8 @@ Interpret the controls and outcomes as follows:
   service and a graph-connected origin with no route.
 - Walking and vehicle results answer different conditional questions. The
   route case uses the unscaled baseline speed assumptions; the service-wide
-  sensitivity tables below test 0.75×, 1× and 1.25× network speeds separately.
+  sensitivity tables in **Interventions** test 0.75×, 1× and 1.25× network
+  speeds separately.
 
 Keep the service-wide closure shortlist separate from the public-origin route
 example. At the 1× walking assumption, its two hospital closure candidates are
@@ -217,24 +240,29 @@ Without `--finals`, the builder retains the proposal fixture mode and entrypoint
 ## Three-minute rehearsal
 
 1. **Question and place — 30 seconds.** Open the current Mae Sai brief and the
-   prepared public starting pin. Name the service and travel mode; the published
-   place identity does not establish a verified entrance or safe connection.
+   prepared public starting pin. Set the service and travel mode using the
+   visible controls; the published place identity does not establish a verified
+   entrance or safe connection.
 2. **Route change — 60 seconds.** Show the baseline route and impose the stated
-   road-link closure or destination removal. Compare the paths, destinations,
-   times and distances. Explain that "before/after" refers to a controlled
-   assumption, not measured before/after flood conditions. A zero change or
-   missing route remains visible. Disclose this is an explanatory selection,
-   not an independently selected performance-evaluation case.
-3. **Who else could be affected — 40 seconds.** Show residential population,
-   reachable population and unknown coverage separately for the same service and
-   mode. State the mixed input vintages and AOI/subdistrict intersection. An
-   unresolved graph connection is a verification priority, not observed isolation.
-4. **What could change the conclusion — 30 seconds.** Show speed/topology
-   sensitivity and the most consequential unresolved facility or route fact.
-   Keep actual shelter capacity and evacuation demand distinct from scenarios.
-5. **Evidence and boundary — 20 seconds.** Open the source detail or library, then
-   return to the brief. State that accepted event scoring/accuracy remain pending
-   where qualified evidence is missing.
+   road-link closure or destination removal. Switch **Both / Before / After**
+   and compare the paths, destinations, times and distances. **Route details**
+   explains the inputs and changed IDs. Explain that "before/after" refers to a
+   controlled assumption, not measured before/after flood conditions. A zero
+   change or missing route remains visible. Disclose this is an explanatory
+   selection, not an independently selected performance-evaluation case.
+3. **Who else could be affected — 40 seconds.** Open **Population** to show
+   residential population, reachable population and unknown coverage separately
+   for the same service and mode. State the mixed input vintages and
+   AOI/subdistrict intersection. An unresolved graph connection is a verification
+   priority, not observed isolation.
+4. **What could change the conclusion — 30 seconds.** Switch to **Interventions**
+   for speed sensitivity and **Evidence** for the most consequential unresolved
+   facility or road-connection fact. Keep actual shelter capacity and evacuation
+   demand distinct from scenarios.
+5. **Evidence and boundary — 20 seconds.** Show the accepted-claim limitations in
+   **Evidence**; **Sources and downloads** provides the package identity and
+   reports. Close the panel to return to the same route. State that accepted
+   event scoring/accuracy remain pending where qualified evidence is missing.
 
 Use this timing as an internal rehearsal aid only. The official
 [GeoHackathon site](https://geohackathon.gistda.or.th/) publishes Final Pitching on

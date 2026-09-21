@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/schemas/evidence-assessment.schema.json",
+  "title": "evidence-assessment",
+  "x-contract-version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "weight",
+          "value",
+          "reason"
+        ]
+      }
+    },
+    "fpps": {
+      "type": "null"
+    },
+    "bounds": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lower": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "upper": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "lower",
+            "upper"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "action_class": {
+      "type": "null"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "components",
+    "fpps",
+    "bounds",
+    "action_class",
+    "limitations"
+  ]
+}

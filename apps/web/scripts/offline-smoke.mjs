@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
 
 const out = resolve(process.cwd(), "out");
-const routeFiles = ["index.html", "public/index.html", "command/index.html", "studio/index.html"];
+const routeFiles = ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/library/index.html"];
 const requiredPublicAssets = [
   "manifest.webmanifest",
   "sw.js",
@@ -19,6 +20,7 @@ const requiredPublicAssets = [
   "offline-demo/mae-sai/access-hotspots.json",
   "proposal-evidence-status.json",
   "offline-assets.json",
+  "evidence-library/catalog.json",
 ];
 
 for (const relative of [...routeFiles, ...requiredPublicAssets]) {
@@ -51,6 +53,7 @@ const routeExpectations = {
     /Observed-data validation/i,
     /Operational authorization/i,
   ],
+  "studio/library/index.html": [/Study-area evidence library/i, /Non-operational/i, /Candidate research evidence/i],
 };
 
 for (const relative of routeFiles) {
@@ -87,7 +90,7 @@ if (
 ) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
-for (const route of ["/", "/public/", "/command/", "/studio/"]) {
+for (const route of ["/", "/public/", "/command/", "/studio/", "/studio/library/", ...collectEvidenceLibraryAssets(out)]) {
   if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Service worker does not precache ${route}`);
 }
 if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {

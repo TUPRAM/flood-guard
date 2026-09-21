@@ -28,6 +28,11 @@ jobs:
         run: uv sync --locked --all-extras
       - name: Run root tests
         run: uv run pytest --junitxml=.tmp/proposal-evidence/root.xml
+      - name: Verify committed public evidence packages
+        run: >-
+          uv run python scripts/verify_evidence_library.py
+          --public-dir apps/web/public/evidence-library
+          --output-receipt .tmp/proposal-evidence/export-integrity.json
       - name: Upload core test receipt
         if: always()
         uses: actions/upload-artifact@v4

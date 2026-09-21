@@ -1,5 +1,7 @@
 /** Runtime enum constants and hand-maintained types for FloodGuard JSON schemas. */
 
+export * from "./evidence-library";
+
 export const SCHEMA_VERSION = "1.0" as const;
 
 export const COMMON_METADATA_FIELDS = [

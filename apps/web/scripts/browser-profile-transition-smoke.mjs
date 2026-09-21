@@ -145,7 +145,7 @@ try {
   if (publicCacheAudit.keys.includes(competitionCache.key)) {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
-  for (const forbidden of ["/command/", "/studio/", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
+  for (const forbidden of ["/command/", "/studio/", "/studio/library/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
     if (publicCacheAudit.paths.includes(forbidden)) throw new Error(`Public cache retained ${forbidden} after transition.`);
   }
   await performSuccessfulUpdateCheck(page);

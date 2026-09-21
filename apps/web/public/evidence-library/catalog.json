@@ -1,0 +1,981 @@
+{
+  "aois": [
+    {
+      "event_ids": [
+        "mae_sai_2024"
+      ],
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              99.8384,
+              20.3705
+            ],
+            [
+              99.9441,
+              20.3705
+            ],
+            [
+              99.9441,
+              20.4563
+            ],
+            [
+              99.8384,
+              20.4563
+            ],
+            [
+              99.8384,
+              20.3705
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "aoi-01_mae_sai_core",
+      "name": "Mae Sai core",
+      "name_th": "แม่สาย พื้นที่หลัก",
+      "sha256": "e4f09010f75328d02260d4915ff6fc85356854397b85260259672879a7192734"
+    },
+    {
+      "event_ids": [
+        "mae_sai_2024"
+      ],
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              99.8107,
+              20.2577
+            ],
+            [
+              100.0368,
+              20.2577
+            ],
+            [
+              100.0368,
+              20.4651
+            ],
+            [
+              99.8107,
+              20.4651
+            ],
+            [
+              99.8107,
+              20.2577
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "aoi-02_mae_sai_district",
+      "name": "Mae Sai district",
+      "name_th": "อำเภอแม่สาย",
+      "sha256": "99ac323314dc0c0a0930af9240368cb2ec5fa9c3edbb998c1d885816df4b3319"
+    },
+    {
+      "event_ids": [
+        "hat_yai_2025"
+      ],
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              100.43,
+              6.965
+            ],
+            [
+              100.52,
+              6.965
+            ],
+            [
+              100.52,
+              7.055
+            ],
+            [
+              100.43,
+              7.055
+            ],
+            [
+              100.43,
+              6.965
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "aoi-03_hat_yai_core",
+      "name": "Hat Yai core",
+      "name_th": "หาดใหญ่ พื้นที่หลัก",
+      "sha256": "8ca938deddb527ddb9e6a6c54767e771985e5696d353de5ff9f144be056f61de"
+    },
+    {
+      "event_ids": [
+        "hat_yai_2025"
+      ],
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              100.38,
+              6.9
+            ],
+            [
+              100.58,
+              6.9
+            ],
+            [
+              100.58,
+              7.12
+            ],
+            [
+              100.38,
+              7.12
+            ],
+            [
+              100.38,
+              6.9
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "aoi-04_hat_yai_basin",
+      "name": "Hat Yai basin",
+      "name_th": "ลุ่มน้ำหาดใหญ่",
+      "sha256": "3dca778114bee73436db7fbd5e118869c08ae8f830faa347d5ab69f62d352123"
+    },
+    {
+      "event_ids": [
+        "chao_phraya_2024",
+        "chao_phraya_2025"
+      ],
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              100.4,
+              14.25
+            ],
+            [
+              100.52,
+              14.25
+            ],
+            [
+              100.52,
+              14.37
+            ],
+            [
+              100.4,
+              14.37
+            ],
+            [
+              100.4,
+              14.25
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "aoi-05_chao_phraya_bang_ban_sena",
+      "name": "Bang Ban / Sena",
+      "name_th": "บางบาล / เสนา",
+      "sha256": "b548f3e30c88ec0ec5492f5cd4f8dfbd8e87cdcaa3047f5fb0b928ba4c959fcc"
+    },
+    {
+      "event_ids": [
+        "chao_phraya_2024",
+        "chao_phraya_2025"
+      ],
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              100.6,
+              13.98
+            ],
+            [
+              100.72,
+              13.98
+            ],
+            [
+              100.72,
+              14.08
+            ],
+            [
+              100.6,
+              14.08
+            ],
+            [
+              100.6,
+              13.98
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": "aoi-06_chao_phraya_rangsit",
+      "name": "Rangsit",
+      "name_th": "รังสิต",
+      "sha256": "0a7d32aab4a94cc88260071312b7f346bfc05914600e33b0df713e57f3f2dee3"
+    }
+  ],
+  "datasets": [
+    {
+      "id": "dataset-01",
+      "limitations": [
+        "October 12/22 temporal conflict is unresolved.",
+        "No dates for individual patches; September-only extent cannot be recovered.",
+        "Outside the analysis footprint is unobserved, not dry.",
+        "Source confidence codes are not calibrated percentages."
+      ],
+      "rights": {
+        "attribution": [
+          "UNOSAT / GISTDA"
+        ],
+        "license": "CC BY-SA; version unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
+        "https://unosat.org/static/unosat_filesystem/4009/FL20240912THA_GDB.zip"
+      ],
+      "temporal": {
+        "end": "2024-10-22",
+        "kind": "conflicting_cumulative_interval",
+        "label": "1 August–22 October 2024; layer name ends 12 October",
+        "start": "2024-08-01"
+      },
+      "title": "Mae Sai - UNOSAT/GISTDA accumulated flood extent and analysis footprint"
+    },
+    {
+      "id": "dataset-02",
+      "limitations": [
+        "An October water observation cannot validate September flood accuracy.",
+        "Provider source-area fields are not AOI-clipped areas."
+      ],
+      "rights": {
+        "attribution": [
+          "UNOSAT / GISTDA"
+        ],
+        "license": "CC BY-SA; version unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
+        "https://unosat.org/static/unosat_filesystem/4009/FL20240912THA_GDB.zip"
+      ],
+      "temporal": {
+        "end": "2024-10-22",
+        "kind": "observation",
+        "label": "22 October 2024; later observation, not September",
+        "start": "2024-10-22"
+      },
+      "title": "Mae Sai - UNOSAT/GISTDA single-date flood extent"
+    },
+    {
+      "id": "dataset-03",
+      "limitations": [
+        "Missing readings remain visible; maximum observed level is not necessarily the event peak.",
+        "Observation timezone and ambiguous station metadata fields remain unresolved."
+      ],
+      "rights": {
+        "attribution": [
+          "Hydro-Informatics Institute (HII)"
+        ],
+        "license": "CC Attribution Non-Commercial; version unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "event_observation",
+      "source_urls": [
+        "https://data.go.th/th/dataset/water-level",
+        "https://gdcatalog.go.th/dataset/gdpublish-water-level",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/ATG052.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/ATG081.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/ATG082.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/ATG091.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/ATG092.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/ATG101.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/ATG171.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/HDA001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/HDA003.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/HDA004.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202409/HDA005.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/ATG052.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/ATG081.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/ATG082.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/ATG091.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/ATG092.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/ATG101.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/ATG171.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/HDA001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/HDA003.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/HDA004.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202410/HDA005.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/ATG052.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/ATG081.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/ATG082.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/ATG091.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/ATG092.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/ATG101.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/ATG171.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/HDA001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/HDA003.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/HDA004.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2024/202411/HDA005.csv"
+      ],
+      "temporal": {
+        "end": "2024-11-30",
+        "kind": "observation",
+        "label": "September–November 2024; measurements incomplete",
+        "start": "2024-09-01"
+      },
+      "title": "Ayutthaya and Pathum Thani - HII water-level observations"
+    },
+    {
+      "id": "dataset-04",
+      "limitations": [
+        "Station availability differs from 2024.",
+        "No interpolation or verified satellite time alignment while timezone is unresolved."
+      ],
+      "rights": {
+        "attribution": [
+          "Hydro-Informatics Institute (HII)"
+        ],
+        "license": "CC Attribution Non-Commercial; version unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "event_observation",
+      "source_urls": [
+        "https://data.go.th/th/dataset/water-level",
+        "https://gdcatalog.go.th/dataset/gdpublish-water-level",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/ATG052.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/ATG081.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/ATG082.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/ATG091.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/ATG101.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/ATG171.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/BKK002.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/BKK013.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/BKK015.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/CPY009.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/CPY010.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/CPY011.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/CPY012.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/CPY013.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/CPY016.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/CPY017.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/HDA001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/HDA003.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/HDA004.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/HDA005.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/LBI001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/PAS008.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202509/PAS009.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/ATG052.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/ATG081.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/ATG082.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/ATG091.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/ATG101.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/ATG171.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/BKK002.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/BKK013.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/BKK015.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/CPY009.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/CPY010.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/CPY011.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/CPY012.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/CPY013.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/CPY016.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/CPY017.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/HDA001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/HDA003.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/HDA004.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/HDA005.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/LBI001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/PAS008.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202510/PAS009.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/ATG052.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/ATG081.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/ATG082.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/ATG091.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/ATG101.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/ATG171.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/BKK002.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/BKK013.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/BKK015.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/CPY009.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/CPY010.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/CPY011.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/CPY012.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/CPY013.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/CPY016.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/CPY017.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/HDA001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/HDA003.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/HDA004.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/HDA005.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/LBI001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/PAS008.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/PAS009.csv"
+      ],
+      "temporal": {
+        "end": "2025-11-30",
+        "kind": "observation",
+        "label": "September–November 2025; measurements incomplete",
+        "start": "2025-09-01"
+      },
+      "title": "Ayutthaya and Pathum Thani - HII water-level observations"
+    },
+    {
+      "id": "dataset-05",
+      "limitations": [
+        "All four stations have event-period gaps.",
+        "ONE037 is outside the uploaded basin AOI; regional context is not local substitution."
+      ],
+      "rights": {
+        "attribution": [
+          "Hydro-Informatics Institute (HII)"
+        ],
+        "license": "CC Attribution Non-Commercial; version unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "event_observation",
+      "source_urls": [
+        "https://data.go.th/th/dataset/water-level",
+        "https://gdcatalog.go.th/dataset/gdpublish-water-level",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/ONE037.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/SLA001.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/SLA002.csv",
+        "https://tiservice.hii.or.th/opendata/data_catalog/water_level/2025/202511/SLA007.csv"
+      ],
+      "temporal": {
+        "end": "2025-11-30",
+        "kind": "observation",
+        "label": "November 2025; event-period gaps",
+        "start": "2025-11-01"
+      },
+      "title": "Hat Yai / U Taphao - four HII station series"
+    },
+    {
+      "id": "dataset-06",
+      "limitations": [
+        "No 2024 age records.",
+        "Age definitions and overlapping elderly groups need reconciliation.",
+        "District statistics are not observed subdistrict/AOI counts."
+      ],
+      "rights": {
+        "attribution": [
+          "DOPA and provincial government data catalogs"
+        ],
+        "license": "Open Data Common; legal variant unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://chiangrai.gdcatalog.go.th/dataset/dataset_50_01",
+        "https://chiangrai.gdcatalog.go.th/dataset/f5cfb097-8a3e-4b94-b6a5-4478f8bdf3c6/resource/a316c045-cdd3-4ab0-ac0e-61b231fd408a/download/dataset_50_01_07.csv",
+        "https://chiangrai.gdcatalog.go.th/dataset/f5cfb097-8a3e-4b94-b6a5-4478f8bdf3c6/resource/cc4dae3c-a529-4316-bee9-dcc4d990bd19/download/dataset_50_01_05.csv",
+        "https://chiangrai.gdcatalog.go.th/dataset/f5cfb097-8a3e-4b94-b6a5-4478f8bdf3c6/resource/cd5fe118-fcad-4b3a-aa78-5aac654d916f/download/dataset_50_01_03.csv",
+        "https://stat.bora.dopa.go.th/"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "reference_year",
+        "label": "2018–2023; ปี 2561–2566",
+        "start": null
+      },
+      "title": "Chiang Rai - district population by age category"
+    },
+    {
+      "id": "dataset-07",
+      "limitations": [
+        "Shares from 2025 are not observed 2024 counts.",
+        "Same three physical files as dataset 6.",
+        "Mae Sai 2025 age-category total differs from district total by 37."
+      ],
+      "rights": {
+        "attribution": [
+          "DOPA and provincial government data catalogs"
+        ],
+        "license": "Open Data Common; legal variant unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://chiangrai.gdcatalog.go.th/dataset/dataset_50_01",
+        "https://chiangrai.gdcatalog.go.th/dataset/f5cfb097-8a3e-4b94-b6a5-4478f8bdf3c6/resource/a316c045-cdd3-4ab0-ac0e-61b231fd408a/download/dataset_50_01_07.csv",
+        "https://chiangrai.gdcatalog.go.th/dataset/f5cfb097-8a3e-4b94-b6a5-4478f8bdf3c6/resource/cc4dae3c-a529-4316-bee9-dcc4d990bd19/download/dataset_50_01_05.csv",
+        "https://chiangrai.gdcatalog.go.th/dataset/f5cfb097-8a3e-4b94-b6a5-4478f8bdf3c6/resource/cd5fe118-fcad-4b3a-aa78-5aac654d916f/download/dataset_50_01_03.csv",
+        "https://stat.bora.dopa.go.th/"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "reference_year",
+        "label": "2025; ปี 2568; not observed 2024 ages",
+        "start": null
+      },
+      "title": "Chiang Rai - district population by age category"
+    },
+    {
+      "id": "dataset-08",
+      "limitations": [
+        "Registered district total is not population inside a search rectangle."
+      ],
+      "rights": {
+        "attribution": [
+          "DOPA and provincial government data catalogs"
+        ],
+        "license": "Open Data Common; legal variant unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://chiangrai.gdcatalog.go.th/dataset/dataset_50_01",
+        "https://chiangrai.gdcatalog.go.th/dataset/f5cfb097-8a3e-4b94-b6a5-4478f8bdf3c6/resource/d32ae148-a36c-4e24-8f11-3bfd38d2751c/download/dataset_50_01_06.csv",
+        "https://stat.bora.dopa.go.th/"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "reference_year",
+        "label": "2022–2025",
+        "start": null
+      },
+      "title": "Chiang Rai - total registered population by district"
+    },
+    {
+      "id": "dataset-09",
+      "limitations": [
+        "Provincial scale; allocating to subdistricts requires explicit assumptions.",
+        "No observed 2025 age structure."
+      ],
+      "rights": {
+        "attribution": [
+          "DOPA and provincial government data catalogs"
+        ],
+        "license": "Open Data Common; legal variant unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://pathumthani.gdcatalog.go.th/dataset/ba0e49d3-ffe5-443c-b8fd-ff2c8ff2da85/resource/09585a04-664c-4690-96a1-cdbbd3e45ec6/download/people.csv",
+        "https://pathumthani.gdcatalog.go.th/dataset/people13",
+        "https://stat.bora.dopa.go.th/"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "reference_year",
+        "label": "2018–2024; provincial age bands",
+        "start": null
+      },
+      "title": "Pathum Thani - provincial population by age band"
+    },
+    {
+      "id": "dataset-10",
+      "limitations": [
+        "No age bands; district totals cannot directly establish AOI vulnerability."
+      ],
+      "rights": {
+        "attribution": [
+          "DOPA and provincial government data catalogs"
+        ],
+        "license": "Open Data Common; legal variant unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://songkhla.gdcatalog.go.th/dataset/abb13956-7c00-4d27-9917-d4af1c9471d0/resource/82139fa5-2884-4b69-84f1-70d0da201ae1/download/population.csv",
+        "https://songkhla.gdcatalog.go.th/dataset/dataset_03_46",
+        "https://stat.bora.dopa.go.th/"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "reference_year",
+        "label": "2019–2025; district and sex, no age bands",
+        "start": null
+      },
+      "title": "Songkhla - population by district and sex"
+    },
+    {
+      "id": "dataset-11",
+      "limitations": [
+        "Municipality/village registration coverage and administrative codes need reconciliation."
+      ],
+      "rights": {
+        "attribution": [
+          "DOPA and provincial government data catalogs"
+        ],
+        "license": "Open Data Common; legal variant unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://songkhla.gdcatalog.go.th/dataset/abb13956-7c00-4d27-9917-d4af1c9471d0/resource/1ec9c572-18ce-44e0-b2dc-e1ce115ed7bf/download/village-pop.csv",
+        "https://songkhla.gdcatalog.go.th/dataset/dataset_03_46",
+        "https://stat.bora.dopa.go.th/"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "reference_year",
+        "label": "2023–2025; village registration context",
+        "start": null
+      },
+      "title": "Songkhla - village population, households and administrative codes"
+    },
+    {
+      "id": "dataset-12",
+      "limitations": [
+        "Source update 6 May and file modification 9 August 2024 are not activation dates.",
+        "Shared coordinates are unresolved facility identities; capacities must not be summed blindly.",
+        "Unknown event availability and capacity remain null."
+      ],
+      "rights": {
+        "attribution": [
+          "Department of Disaster Prevention and Mitigation"
+        ],
+        "license": "Open Data Common; legal variant unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://catalog.disaster.go.th/dataset/4fa4748c-8cdc-4a81-975f-947bffbd89e0/resource/a727b6b7-e8e0-448b-9462-eb89f43cd0a5/download/dpm-gd002_final2.csv",
+        "https://gdcatalog.go.th/en/dataset/gdpublish-dsc_11_01"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "inventory_snapshot",
+        "label": "2024 inventory; activation unknown",
+        "start": null
+      },
+      "title": "DDPM planned shelter inventory"
+    },
+    {
+      "id": "dataset-13",
+      "limitations": [
+        "Historical 2020 derivative; current and event-time operation unknown.",
+        "Repeated source IDs are not unique facility identifiers."
+      ],
+      "rights": {
+        "attribution": [
+          "DGA CITIZENinfo via Open Development Mekong"
+        ],
+        "license": "CC BY; version unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "historical_context",
+      "source_urls": [
+        "https://data.go.th/dataset/health-citizeninfo",
+        "https://data.opendevelopmentmekong.net/dataset/ab20b509-2b7f-442e-8448-05d3a17651ac/resource/76253a1a-b472-4d64-b209-0ea3114f51f4/download/thailand_health_facilities_th.geojson",
+        "https://data.opendevelopmentmekong.net/dataset/health-facilities-in-thailand-2020",
+        "https://data.thailand.opendevelopmentmekong.net/dataset/health-facilities-in-thailand-2020"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "reference_year",
+        "label": "2020 historical healthcare inventory",
+        "start": null
+      },
+      "title": "DGA CITIZENinfo-derived healthcare locations"
+    },
+    {
+      "id": "dataset-14",
+      "limitations": [
+        "DSM includes vegetation and buildings; not bare-earth terrain or flood depth.",
+        "Negative values remain under review; no fine drainage or hydraulic modelling.",
+        "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30."
+      ],
+      "rights": {
+        "attribution": [
+          "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved"
+        ],
+        "license": "Copernicus GLO-30-F license",
+        "public_derivatives": true,
+        "status": "public_derivatives_permitted"
+      },
+      "role": "static_context",
+      "source_urls": [
+        "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N06_00_E100_00_DEM/Copernicus_DSM_COG_10_N06_00_E100_00_DEM.tif",
+        "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N07_00_E100_00_DEM/Copernicus_DSM_COG_10_N07_00_E100_00_DEM.tif",
+        "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N13_00_E100_00_DEM/Copernicus_DSM_COG_10_N13_00_E100_00_DEM.tif",
+        "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N14_00_E100_00_DEM/Copernicus_DSM_COG_10_N14_00_E100_00_DEM.tif",
+        "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N20_00_E099_00_DEM/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif",
+        "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N20_00_E100_00_DEM/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif",
+        "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/DEM/resources/license/License-COPDEM-30.pdf"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "static_release",
+        "label": "2021 release; historical surface elevation",
+        "start": null
+      },
+      "title": "Copernicus GLO-30 terrain/surface elevation - six AOIs"
+    },
+    {
+      "id": "dataset-15",
+      "limitations": [
+        "Missing local drains, culverts and canals do not mean no drainage.",
+        "Full-reach and clipped lengths differ; downstream links may leave the AOI."
+      ],
+      "rights": {
+        "attribution": [
+          "HydroSHEDS / HydroRIVERS, WWF; Lehner and Grill (2013)"
+        ],
+        "license": "HydroSHEDS custom license; no standalone redistribution",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "static_context",
+      "source_urls": [
+        "https://data.hydrosheds.org/file/HydroRIVERS/HydroRIVERS_v10_as_shp.zip",
+        "https://www.hydrosheds.org/products/hydrorivers"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "static_release",
+        "label": "Version 1; generalized historical network",
+        "start": null
+      },
+      "title": "HydroRIVERS river network - Asia source and six AOIs"
+    },
+    {
+      "id": "dataset-16",
+      "limitations": [
+        "Route/district and article/photo chainage conflicts remain unresolved.",
+        "Documentary evidence is not an observed geocoded closure layer."
+      ],
+      "rights": {
+        "attribution": [
+          "Department of Highways / Public Relations Department"
+        ],
+        "license": "Public documentary evidence; derivative reuse unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "event_observation",
+      "source_urls": [
+        "https://nbtchiangmai.prd.go.th/th/content/category/detail/id/2010/iid/323256",
+        "https://nbtchiangmai.prd.go.th/th/file/get/file/202409110ee17eb4e062f6c8a77cc84ef187b59d170249.jpg",
+        "https://nbtchiangmai.prd.go.th/th/file/get/file/202409113376c7c65f0d8ecdce4b8f77ccf30ef2170249.jpg",
+        "https://nbtchiangmai.prd.go.th/th/file/get/file/202409118a74fd127cbd92926dceabb6210619f8170249.jpg",
+        "https://nbtchiangmai.prd.go.th/th/file/get/file/202409119379008b2ad1b083d46e4e4de30db52c170249.jpg",
+        "https://nbtchiangmai.prd.go.th/th/file/get/file/20240911c3fa5f395ed81cc71d7e7d93da9a163e170249.jpg",
+        "https://www.prd.go.th/"
+      ],
+      "temporal": {
+        "end": "2024-09-11",
+        "kind": "documentary_report",
+        "label": "11 September 2024",
+        "start": "2024-09-11"
+      },
+      "title": "Chiang Rai / Mae Sai road-condition bulletin"
+    },
+    {
+      "id": "dataset-17",
+      "limitations": [
+        "Narrative recovery announcement contains no segment-level passability inventory."
+      ],
+      "rights": {
+        "attribution": [
+          "Department of Highways / Public Relations Department"
+        ],
+        "license": "Public documentary evidence; derivative reuse unresolved",
+        "public_derivatives": false,
+        "status": "local_context_public_derivatives_unresolved"
+      },
+      "role": "event_observation",
+      "source_urls": [
+        "https://www.prd.go.th/",
+        "https://www.prd.go.th/th/content/category/detail/id/33/iid/448502"
+      ],
+      "temporal": {
+        "end": "2025-11-27",
+        "kind": "documentary_report",
+        "label": "27 November 2025",
+        "start": "2025-11-27"
+      },
+      "title": "Hat Yai road-restoration announcement"
+    },
+    {
+      "id": "project-scenarios",
+      "limitations": [
+        "Invented inputs demonstrate mechanics; no local road, shelter, population or event observation."
+      ],
+      "rights": {
+        "attribution": [
+          "FloodGuard illustrative scenarios"
+        ],
+        "license": "Project-owned synthetic data",
+        "public_derivatives": true,
+        "status": "public_derivatives_permitted"
+      },
+      "role": "scenario",
+      "source_urls": [
+        "https://github.com/TUPRAM/flood-guard"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "scenario",
+        "label": "Explicit synthetic experiment",
+        "start": null
+      },
+      "title": "FloodGuard illustrative scenarios"
+    },
+    {
+      "id": "context-osm",
+      "limitations": [
+        "Candidate map features; no observed passability, verified shelter designation or activation.",
+        "Derived road/site database is available under ODbL 1.0 in the downloadable report appendix."
+      ],
+      "rights": {
+        "attribution": [
+          "OpenStreetMap contributors / existing Geofabrik snapshot"
+        ],
+        "license": "Open Database License 1.0",
+        "public_derivatives": true,
+        "status": "public_derivatives_permitted"
+      },
+      "role": "static_context",
+      "source_urls": [
+        "https://www.openstreetmap.org/copyright"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "static_context",
+        "label": "Source snapshot; not event-time conditions",
+        "start": null
+      },
+      "title": "OpenStreetMap contributors / existing Geofabrik snapshot"
+    },
+    {
+      "id": "context-worldpop",
+      "limitations": [
+        "Modelled 2020 population; not an observed event-year count or evacuation demand."
+      ],
+      "rights": {
+        "attribution": [
+          "WorldPop Thailand 2020 population estimate"
+        ],
+        "license": "Creative Commons Attribution 4.0",
+        "public_derivatives": true,
+        "status": "public_derivatives_permitted"
+      },
+      "role": "candidate_estimate",
+      "source_urls": [
+        "https://hub.worldpop.org/geodata/summary?id=6439"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "static_context",
+        "label": "Source snapshot; not event-time conditions",
+        "start": null
+      },
+      "title": "WorldPop Thailand 2020 population estimate"
+    }
+  ],
+  "events": [
+    {
+      "end": "2024-09-30",
+      "id": "mae_sai_2024",
+      "name": "Mae Sai · September 2024",
+      "name_th": "แม่สาย · กันยายน 2567",
+      "start": "2024-09-01"
+    },
+    {
+      "end": "2025-11-30",
+      "id": "hat_yai_2025",
+      "name": "Hat Yai · November 2025",
+      "name_th": "หาดใหญ่ · พฤศจิกายน 2568",
+      "start": "2025-11-01"
+    },
+    {
+      "end": "2024-11-30",
+      "id": "chao_phraya_2024",
+      "name": "Lower Chao Phraya · 2024",
+      "name_th": "เจ้าพระยาตอนล่าง · 2567",
+      "start": "2024-09-01"
+    },
+    {
+      "end": "2025-11-30",
+      "id": "chao_phraya_2025",
+      "name": "Lower Chao Phraya · 2025",
+      "name_th": "เจ้าพระยาตอนล่าง · 2568",
+      "start": "2025-09-01"
+    }
+  ],
+  "generated_at": "2026-09-21T08:35:05+00:00",
+  "non_operational": true,
+  "package_version": "8ad2652d399e73aa",
+  "packages": [
+    {
+      "aoi_id": "aoi-01_mae_sai_core",
+      "event_id": "mae_sai_2024",
+      "id": "aoi-01_mae_sai_core_mae_sai_2024",
+      "sha256": "a5f6d2b60326c6e94f38ff854f16a71a03fc11aabe54482f3fc2f2cfd1fa3c63",
+      "url": "/evidence-library/packages/aoi-01_mae_sai_core_mae_sai_2024.json"
+    },
+    {
+      "aoi_id": "aoi-02_mae_sai_district",
+      "event_id": "mae_sai_2024",
+      "id": "aoi-02_mae_sai_district_mae_sai_2024",
+      "sha256": "dfbb199e383680772d165e0050231d5485d08a12b998b63fea2470c63afaa5b7",
+      "url": "/evidence-library/packages/aoi-02_mae_sai_district_mae_sai_2024.json"
+    },
+    {
+      "aoi_id": "aoi-03_hat_yai_core",
+      "event_id": "hat_yai_2025",
+      "id": "aoi-03_hat_yai_core_hat_yai_2025",
+      "sha256": "32306615d780b3c7ce5c0d9bf4009861e8d59878391ea676c2abe9b2821e396f",
+      "url": "/evidence-library/packages/aoi-03_hat_yai_core_hat_yai_2025.json"
+    },
+    {
+      "aoi_id": "aoi-04_hat_yai_basin",
+      "event_id": "hat_yai_2025",
+      "id": "aoi-04_hat_yai_basin_hat_yai_2025",
+      "sha256": "06f123acfe1a366df8177c10f83477b69aa6075c09c8da6106e891f9eddf72e9",
+      "url": "/evidence-library/packages/aoi-04_hat_yai_basin_hat_yai_2025.json"
+    },
+    {
+      "aoi_id": "aoi-05_chao_phraya_bang_ban_sena",
+      "event_id": "chao_phraya_2024",
+      "id": "aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2024",
+      "sha256": "8e974bc66788d3c16c80ab133f0aae166bf1690e908eef1838b662d5a0a057cb",
+      "url": "/evidence-library/packages/aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2024.json"
+    },
+    {
+      "aoi_id": "aoi-05_chao_phraya_bang_ban_sena",
+      "event_id": "chao_phraya_2025",
+      "id": "aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2025",
+      "sha256": "d6190d8b39ff4ec4abaa5707d1224ee1f20acf88f00a2d3c84c4749b2e67d0e8",
+      "url": "/evidence-library/packages/aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2025.json"
+    },
+    {
+      "aoi_id": "aoi-06_chao_phraya_rangsit",
+      "event_id": "chao_phraya_2024",
+      "id": "aoi-06_chao_phraya_rangsit_chao_phraya_2024",
+      "sha256": "4fe6e58d40badb6a0218385861f7b31a526e333c121db82a3d5e4bda06f25663",
+      "url": "/evidence-library/packages/aoi-06_chao_phraya_rangsit_chao_phraya_2024.json"
+    },
+    {
+      "aoi_id": "aoi-06_chao_phraya_rangsit",
+      "event_id": "chao_phraya_2025",
+      "id": "aoi-06_chao_phraya_rangsit_chao_phraya_2025",
+      "sha256": "313acc2e4be03e6b2e33b313939c8ceb6da13fe84805192c2b73f4022dab04b2",
+      "url": "/evidence-library/packages/aoi-06_chao_phraya_rangsit_chao_phraya_2025.json"
+    }
+  ],
+  "schema_version": "1.0"
+}

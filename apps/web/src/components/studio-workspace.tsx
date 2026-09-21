@@ -203,7 +203,7 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
           <Image src="/floodguard-logo.png" alt="" width={40} height={40} priority />
           <span><b>FloodGuard</b><small>{th ? "รายงานการตรวจสอบหลักฐาน" : "Validation & evidence report"}</small></span>
         </a>
-        <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a href="/command/">{th ? "การวางแผน" : "Planning"}</a><a className="active" href="/studio/">Studio</a></nav>
+        <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a href="/command/">{th ? "การวางแผน" : "Planning"}</a><a className="active" href="/studio/">Studio</a><a href="/studio/library/">{th ? "คลังข้อมูล" : "Evidence library"}</a></nav>
         <LanguageToggle language={language} onChange={setLanguage} />
       </header>
       <StatusBar data={data} language={language} compact />

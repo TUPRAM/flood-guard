@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
+import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
 
 const out = resolve(process.cwd(), "out");
 const nextStatic = resolve(out, "_next", "static");
@@ -29,6 +30,7 @@ writeFileSync(resolve(out, "offline-assets.json"), `${JSON.stringify(assets, nul
 
 if (appProfile === "competition") copyCanonicalProposalEvidence();
 const proposalEvidenceAssets = appProfile === "competition" ? collectProposalEvidenceAssets() : [];
+const evidenceLibraryAssets = appProfile === "competition" ? collectEvidenceLibraryAssets(out) : [];
 const publicCoreAssets = [
   "/",
   "/public/",
@@ -45,6 +47,7 @@ const coreAssets = appProfile === "public-production"
       ...publicCoreAssets,
       "/command/",
       "/studio/",
+      "/studio/library/",
       "/offline-demo/bundle.json",
       "/offline-demo/areas.geojson",
       "/offline-demo/roads.geojson",
@@ -56,6 +59,7 @@ const coreAssets = appProfile === "public-production"
       "/offline-demo/mae-sai/facilities.json",
       "/offline-demo/mae-sai/access-hotspots.json",
       ...proposalEvidenceAssets,
+      ...evidenceLibraryAssets,
     ];
 const deploymentProfile = {
   profile: appProfile,
@@ -79,6 +83,7 @@ const versionedFiles = [
   ...(appProfile === "competition" ? [
     resolve(out, "command", "index.html"),
     resolve(out, "studio", "index.html"),
+    resolve(out, "studio", "library", "index.html"),
     resolve(out, "offline-demo", "bundle.json"),
     resolve(out, "offline-demo", "areas.geojson"),
     resolve(out, "offline-demo", "roads.geojson"),
@@ -91,6 +96,7 @@ const versionedFiles = [
     resolve(out, "offline-demo", "mae-sai", "access-hotspots.json"),
   ] : []),
   ...proposalEvidenceAssets.map((url) => resolve(out, url.slice(1))),
+  ...evidenceLibraryAssets.map((url) => resolve(out, url.slice(1))),
 ];
 const serviceWorkerPath = resolve(out, "sw.js");
 const serviceWorker = readFileSync(serviceWorkerPath, "utf8");
@@ -158,7 +164,7 @@ function collectOptionalLandingAssets() {
   }
   // A shared dependency referenced by a route remains mandatory even if the
   // optional canvas also appears in its dynamic-import dependency manifest.
-  for (const route of ["index.html", "public/index.html", "command/index.html", "studio/index.html"]) {
+  for (const route of ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/library/index.html"]) {
     const path = resolve(out, route);
     if (!existsSync(path)) continue;
     const html = readFileSync(path, "utf8");
@@ -181,6 +187,7 @@ function prunePublicProductionOutput() {
     "landing",
     "command",
     "studio",
+    "evidence-library",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
     "offline-demo/roads.geojson",

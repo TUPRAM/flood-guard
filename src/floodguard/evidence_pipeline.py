@@ -6,6 +6,9 @@ import gzip
 import hashlib
 import html
 import json
+import platform
+import zlib
+from importlib import metadata
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +27,70 @@ from .evidence_scenarios import build_illustrative_scenarios, evidence_assessmen
 
 TRANSFORMATION_VERSION = "evidence-demo-1"
 PUBLIC_PREFIX = "/evidence-library/"
+
+
+def build_runtime_identity(
+    *, context_enabled: bool, lock_path: Path | None = None
+) -> dict:
+    """Identify numerical/compression runtimes without machine-specific paths.
+
+    Installed versions are recorded independently of the dependency lock. An
+    unsynchronized environment cannot share the locked runtime's identity.
+    Export verifiers check artifact bytes, not their own runtime environment.
+    """
+    import pyproj
+    import rasterio
+    import shapely
+
+    lock = lock_path or Path(__file__).resolve().parents[2] / "uv.lock"
+    packages = {}
+    for name in (
+        "geopandas",
+        "networkx",
+        "numpy",
+        "pandas",
+        "Pillow",
+        "pyproj",
+        "rasterio",
+        "requests",
+        "shapely",
+    ):
+        try:
+            packages[name] = metadata.version(name)
+        except metadata.PackageNotFoundError:
+            packages[name] = None
+    tools = {}
+    if context_enabled:
+        from .evidence_context import ogr_runtime_identity
+
+        tools["ogr2ogr"] = ogr_runtime_identity()
+    identity = {
+        "schema_version": "floodguard.build_runtime.v1",
+        "uv_lock_sha256": sha256_file(lock),
+        "python": {
+            "version": platform.python_version(),
+            "implementation": platform.python_implementation(),
+        },
+        "platform": {"system": platform.system(), "machine": platform.machine()},
+        "packages": packages,
+        "native": {
+            "rasterio_gdal": rasterio.__gdal_version__,
+            "rasterio_proj": getattr(rasterio, "__proj_version__", None),
+            "pyproj_proj": pyproj.proj_version_str,
+            "shapely_geos": shapely.geos_version_string,
+            "zlib": zlib.ZLIB_RUNTIME_VERSION,
+        },
+        "external_tools": tools,
+    }
+    assert_public_safe(identity)
+    return {**identity, "sha256": hashlib.sha256(canonical_bytes(identity)).hexdigest()}
+
+
+def _runtime_bound_hash(value: dict, runtime: dict) -> str:
+    """Bind transformation input identity to the actual builder runtime."""
+    return hashlib.sha256(
+        canonical_bytes({"inputs": value, "build_runtime_sha256": runtime["sha256"]})
+    ).hexdigest()
 
 
 def write_json(path: Path, value: Any) -> None:
@@ -193,7 +260,7 @@ def _scenario_features(context: dict, details: dict) -> dict:
 
 
 def _context_scenarios(
-    context: dict, aoi_id: str, source: str, path: Path, reuse: bool
+    context: dict, aoi_id: str, source: str, path: Path, reuse: bool, runtime: dict
 ) -> dict:
     from .evidence_context import build_context_scenarios
 
@@ -201,6 +268,7 @@ def _context_scenarios(
         "input_sha256": context["canonical_sha256"],
         "facility_source": source,
         "aoi_id": aoi_id,
+        "build_runtime_sha256": runtime["sha256"],
         "transformations": {
             name: sha256_file(Path(__file__).parent / name)
             for name in ("evidence_context.py", "evidence_scenarios.py")
@@ -215,7 +283,10 @@ def _context_scenarios(
             return json.loads(path.read_text(encoding="utf-8"))
     result = build_context_scenarios(context, aoi_id, facility_source=source)
     write_json(path, result)
-    write_json(receipt_path, {"binding": binding, "sha256": sha256_file(path)})
+    write_json(
+        receipt_path,
+        {"binding": binding, "sha256": sha256_file(path), "build_runtime": runtime},
+    )
     return result
 
 
@@ -366,7 +437,7 @@ def _assessment(aoi_id: str) -> dict:
 def scenario_summaries(details: dict) -> list[dict]:
     """Make concise public cards without losing exact scenario definitions locally."""
     rows = []
-    for key, result in details.get("access_scenarios", {}).items():
+    for key, result in sorted(details.get("access_scenarios", {}).items()):
         if "result" in result:
             result = result["result"]
         if "totals" not in result:
@@ -388,7 +459,7 @@ def scenario_summaries(details: dict) -> list[dict]:
                 "value": round(value, 2) if isinstance(value, (float, int)) else value,
                 "unit": "people",
             }
-            for key, value in totals.items()
+            for key, value in sorted(totals.items())
         ]
         rows.append(
             {
@@ -415,7 +486,7 @@ def scenario_summaries(details: dict) -> list[dict]:
         )
     capacities = details.get("capacity_scenarios", [])
     if isinstance(capacities, dict):
-        capacities = list(capacities.values())
+        capacities = [value for _, value in sorted(capacities.items())]
     for index, result in enumerate(capacities):
         label = result.get(
             "title",
@@ -472,7 +543,7 @@ def scenario_summaries(details: dict) -> list[dict]:
                 ],
             }
         )
-    for family, assessment in details.get("scenario_assessments", {}).items():
+    for family, assessment in sorted(details.get("scenario_assessments", {}).items()):
         for completion in assessment.get("scenario_completions", []):
             rows.append(
                 {
@@ -592,18 +663,19 @@ def build_library(
         bundle_root, locations_csv, inventory_csv, aois, generated_at
     )
     output_dir.mkdir(parents=True, exist_ok=True)
-    normalization_key = hashlib.sha256(
-        canonical_bytes(
-            {
-                "manifest": registry["source_inventory_sha256"],
-                "aois": {a["id"]: a["sha256"] for a in aois},
-                "adapters": {
-                    name: sha256_file(Path(__file__).parent / name)
-                    for name in ("evidence_adapters.py", "evidence_adapters_geo.py")
-                },
-            }
-        )
-    ).hexdigest()
+    runtime = build_runtime_identity(context_enabled=context_root is not None)
+    write_json(output_dir / "build_runtime.json", runtime)
+    normalization_key = _runtime_bound_hash(
+        {
+            "manifest": registry["source_inventory_sha256"],
+            "aois": {a["id"]: a["sha256"] for a in aois},
+            "adapters": {
+                name: sha256_file(Path(__file__).parent / name)
+                for name in ("evidence_adapters.py", "evidence_adapters_geo.py")
+            },
+        },
+        runtime,
+    )
     receipt = output_dir / "normalization_receipt.json"
     previous = (
         json.loads(receipt.read_text(encoding="utf-8")) if receipt.exists() else {}
@@ -622,6 +694,7 @@ def build_library(
             receipt,
             {
                 "key": normalization_key,
+                "build_runtime": runtime,
                 "outputs": {p: sha256_file(output_dir / p) for p in sorted(set(files))},
             },
         )
@@ -671,27 +744,27 @@ def build_library(
                 ):
                     raise ValueError("Supplementary NGIS asset checksum changed")
     registry["supplementary_evidence_hashes"] = supplementary
+    registry["build_runtime"] = runtime
     write_json(output_dir / "evidence_registry.json", registry)
     # A changed implementation or configuration always creates a new version.
     implementation = {
         p.name: sha256_file(p)
         for p in sorted(Path(__file__).parent.glob("evidence_*.py"))
     }
-    version = hashlib.sha256(
-        canonical_bytes(
-            {
-                "registry": {k: v for k, v in registry.items() if k != "generated_at"},
-                "implementation": implementation,
-                "use_existing_context": context_root is not None,
-                "context_manifest": sha256_file(
-                    Path(__file__).resolve().parents[2]
-                    / "outputs/open_context_data_file_manifest.csv"
-                )
-                if context_root
-                else None,
-            }
-        )
-    ).hexdigest()[:16]
+    version = _runtime_bound_hash(
+        {
+            "registry": {k: v for k, v in registry.items() if k != "generated_at"},
+            "implementation": implementation,
+            "use_existing_context": context_root is not None,
+            "context_manifest": sha256_file(
+                Path(__file__).resolve().parents[2]
+                / "outputs/open_context_data_file_manifest.csv"
+            )
+            if context_root
+            else None,
+        },
+        runtime,
+    )[:16]
     catalog = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": generated_at,
@@ -795,6 +868,7 @@ def build_library(
                 "supplied",
                 output_dir / "context" / aoi["id"] / "local_facility_scenarios.json",
                 reuse_normalized,
+                runtime,
             )
             details = _context_scenarios(
                 context,
@@ -802,6 +876,7 @@ def build_library(
                 "osm",
                 output_dir / "context" / aoi["id"] / "osm_context_scenarios.json",
                 reuse_normalized,
+                runtime,
             )
         scenarios_by_aoi[aoi["id"]] = _compact_details(details)
         write_json(output_dir / "scenarios" / (aoi["id"] + ".json"), details)
@@ -941,6 +1016,8 @@ def build_library(
                 )
             hashes = {
                 "aoi_sha256": aoi["sha256"],
+                "build_runtime_sha256": runtime["sha256"],
+                "uv_lock_sha256": runtime["uv_lock_sha256"],
                 "source_inventory_sha256": registry["source_inventory_sha256"],
                 "scenario_sha256": hashlib.sha256(canonical_bytes(details)).hexdigest(),
             }
@@ -1038,6 +1115,7 @@ def build_library(
     export = {
         "schema_version": SCHEMA_VERSION,
         "package_version": version,
+        "build_runtime": runtime,
         "source_verified_files": registry["verified_asset_count"],
         "physical_assets": len(registry["assets"]),
         "dataset_groups": 17,
@@ -1141,6 +1219,7 @@ def render_report(
     }
     appendix = {
         "package_version": catalog["package_version"],
+        "build_runtime": registry.get("build_runtime"),
         "source_inventory_sha256": registry["source_inventory_sha256"],
         "aois": catalog["aois"],
         "datasets": catalog["datasets"],

@@ -6,7 +6,9 @@ import csv
 import hashlib
 import json
 import math
+import os
 import re
+import subprocess
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 from itertools import pairwise
@@ -440,6 +442,35 @@ def _load_sources(
     return paths, metadata
 
 
+def ogr_runtime_identity(bin_dir: Path | None = None) -> dict[str, str]:
+    """Identify the separate OSM-extraction GDAL executable without exposing paths."""
+    directory = bin_dir or find_qgis_bin()
+    executable = directory / ("ogr2ogr.exe" if os.name == "nt" else "ogr2ogr")
+    environment = {
+        **os.environ,
+        "PATH": str(directory) + os.pathsep + os.environ.get("PATH", ""),
+    }
+    try:
+        result = subprocess.run(
+            [str(executable), "--version"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=environment,
+            timeout=15,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise EvidenceContextError(
+            "Unable to identify the OSM extraction GDAL runtime"
+        ) from error
+    version = re.search(r"\bGDAL\s+(\d+\.\d+(?:\.\d+)?)", result.stdout)
+    if result.returncode != 0 or version is None:
+        raise EvidenceContextError("Unable to identify the OSM extraction GDAL runtime")
+    return {"gdal_version": version.group(1), "executable_sha256": _sha256(executable)}
+
+
 def _extract_osm(
     pbf: Path,
     bounds: Sequence[float],
@@ -452,10 +483,12 @@ def _extract_osm(
         "roads": target / "osm_roads.geojson",
         "points": target / "osm_points.geojson",
     }
+    bin_dir = find_qgis_bin()
     expected = {
         "pbf_sha256": source_hash,
         "routing_geometry_sha256": routing_hash,
         "method": "gdal_osm_bbox_filter_v1",
+        "ogr_runtime": ogr_runtime_identity(bin_dir),
     }
     if receipt.exists() and all(path.exists() for path in outputs.values()):
         saved = json.loads(receipt.read_text(encoding="utf-8"))
@@ -466,7 +499,6 @@ def _extract_osm(
                 json.loads(outputs[key].read_text(encoding="utf-8"))
                 for key in ("roads", "points")
             )
-    bin_dir = find_qgis_bin()
     for key, layer, where in (
         ("roads", "lines", "highway IS NOT NULL"),
         ("points", "points", "other_tags LIKE '%amenity%'"),

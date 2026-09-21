@@ -4,7 +4,7 @@ on:
   push:
     branches: [master, "codex/**", "system-fix"]
   pull_request:
-    branches: [master]
+    branches: [master, landing-page-revised]
 
 permissions:
   contents: read

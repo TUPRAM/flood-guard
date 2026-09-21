@@ -9,7 +9,7 @@ The local research package contains normalized observations, quality reviews and
 Run commands from the repository root. Use Python 3.10 or later, `uv`, and the repository's pinned pnpm version from `package.json`. Synchronize the committed Python and JavaScript dependencies:
 
 ```powershell
-uv sync --all-extras
+uv sync --locked --all-extras
 pnpm install --frozen-lockfile
 ```
 
@@ -58,13 +58,13 @@ $evidenceArguments = @(
     '--public-dir', (Join-Path (Get-Location) 'apps/web/public/evidence-library'),
     '--aoi-dir', (Join-Path (Get-Location) 'resources/aoi/upload'),
     '--context-root', $env:FLOODGUARD_CONTEXT_ROOT,
-    '--generated-at', '2026-09-21T00:00:00Z',
+    '--generated-at', '2026-09-21T08:35:05+00:00',
     '--reuse-normalized'
 )
 uv run --all-extras python @evidenceArguments
 ```
 
-`--reuse-normalized` is safe for a first build. It reuses a previous normalization only when the source manifest, AOI hashes and adapter implementation hashes match. It also verifies the saved hashes of the normalized outputs. A changed normalized output is an error; a changed cache key causes normalization to run again. Remove this flag to force a fresh normalization from the immutable sources.
+`--reuse-normalized` is safe for a first build. It reuses a previous normalization only when the source manifest, AOI hashes, adapter implementation hashes and recorded runtime identity match. It also verifies the saved hashes of the normalized outputs. A changed normalized output is an error; a changed cache key causes normalization to run again. Remove this flag to force fresh normalization and scenario calculations from the immutable sources.
 
 Omitting `--context-root` produces clearly labelled illustrative synthetic scenarios for AOIs 01, 03, 05 and 06; AOIs 02 and 04 remain coverage-only. Synthetic scenarios test mechanics and are not results for the actual local road network or population. Supply the existing context collection for the four AOI demonstrations.
 
@@ -80,7 +80,7 @@ If `facility_review/public_identity_reviews.json` is present in the external out
 
 ## Catalog, lineage and output boundaries
 
-The catalog uses schema version `1.0` and transformation version `evidence-demo-1`. A package version is derived from registry content, evidence implementation hashes and the existing-context configuration/manifest. Individual AOIs, inputs and output packages also have hashes. Source dates, acquisition dates, source-layer temporal assertions and package-generation dates remain separate fields. Registry enrichment links derived records back to verified source assets, including source archives where available.
+The catalog uses schema version `1.0` and transformation version `evidence-demo-1`. A package version is derived from registry content, evidence implementation hashes, runtime identity and the existing-context configuration/manifest. Runtime identity includes the dependency lock and relevant installed Python/native geospatial versions; a changed geospatial runtime can change floating-point calculations and therefore creates a new package identity. Reproduce the recorded environment when comparing bytes. Individual AOIs, inputs and output packages also have hashes. Source dates, acquisition dates, source-layer temporal assertions and package-generation dates remain separate fields. Registry enrichment links derived records back to verified source assets, including source archives where available.
 
 The original 17 selections are retained, even where two selections share physical files. In particular, the two Chiang Rai age selections use year filters on the same three source CSVs. Additional entries for existing OSM, existing WorldPop and project-owned scenarios describe supporting inputs, not newly acquired datasets.
 
@@ -124,6 +124,7 @@ The external output contains the following logical artifacts:
 | `evidence_registry.json` | Dataset selections, verified physical assets, source lineage, temporal assertions and rights decisions. |
 | `adapter_summary.json` | Dataset and AOI quality summaries. |
 | `normalization_receipt.json` | Cache key and output-integrity checks. |
+| `build_runtime.json` | Locked dependency identity, actual Python/native geospatial versions and external OGR identity. |
 | `normalized/` | Local normalized CSV, GeoJSON, raster and gauge-series artifacts. |
 | `context/<aoi>/context_inputs.json` | Existing road graph, population, candidate facilities, coverage and input identities for AOIs 01, 03, 05 and 06. |
 | `context/<aoi>/local_facility_scenarios.json` | Local experiments using supplied facility candidates for those four analytical AOIs. |
@@ -260,7 +261,8 @@ Open the development server's `/studio/library/` route. Select an AOI and event,
 For the static competition candidate and its relevant checks:
 
 ```powershell
-uv run --all-extras pytest tests/test_evidence_catalog.py tests/test_evidence_adapters.py tests/test_evidence_review.py tests/test_evidence_acquisition.py tests/test_evidence_context.py tests/test_evidence_scenarios.py tests/test_evidence_local_report.py
+uv run --locked --all-extras pytest tests/test_evidence_catalog.py tests/test_evidence_adapters.py tests/test_evidence_review.py tests/test_evidence_acquisition.py tests/test_evidence_context.py tests/test_evidence_scenarios.py tests/test_evidence_local_report.py tests/test_evidence_export_validation.py tests/test_evidence_reproducibility.py
+uv run --locked --all-extras python scripts/verify_evidence_library.py --public-dir apps/web/public/evidence-library --local-dir $env:FLOODGUARD_EVIDENCE_OUTPUT --output-receipt (Join-Path $env:FLOODGUARD_EVIDENCE_OUTPUT 'qa/export-integrity.json')
 pnpm lint
 pnpm typecheck
 pnpm test:contracts

@@ -32,13 +32,15 @@ jobs:
         run: >-
           uv run python scripts/verify_evidence_library.py
           --public-dir apps/web/public/evidence-library
-          --output-receipt .tmp/proposal-evidence/export-integrity.json
+          --output-receipt "${RUNNER_TEMP}/export-integrity.json"
       - name: Upload core test receipt
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: core-junit
-          path: .tmp/proposal-evidence/root.xml
+          path: |
+            .tmp/proposal-evidence/root.xml
+            ${{ runner.temp }}/export-integrity.json
           if-no-files-found: error
           retention-days: 14
 

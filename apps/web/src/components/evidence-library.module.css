@@ -17,7 +17,7 @@
 .selectors label { font-size: 12px; font-weight: 750; }
 .selectors select { display: block; width: 100%; margin-top: 8px; padding: 12px; background: white; color: #17384b; border: 1px solid #b4c5ce; border-radius: 6px; font: inherit; min-height: 45px; }
 .selectionMeta { font-size: 12px; line-height: 1.9; }
-.selectionMeta small { display: block; color: #627c89; }
+.selectionMeta small { display: block; color: #526e7c; }
 .panel { background: white; border: 1px solid #d6e1e7; border-radius: 10px; margin: 22px 0; padding: 24px; box-shadow: 0 3px 10px #17384b05; }
 .panel h2 { margin: 0 0 16px; font-size: 20px; letter-spacing: -.02em; }
 .panel h3 { margin: 0 0 10px; font-size: 16px; }
@@ -46,7 +46,7 @@
 .pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; }
 .pagination button { padding: 10px 14px; min-height: 44px; border: 1px solid #b4c5ce; border-radius: 6px; color: #17384b; background: #edf3f5; font: inherit; font-size: 12px; cursor: pointer; }
 .pagination button:disabled { color: #637984; background: #f3f5f6; cursor: default; }
-.featureBrowser .tableWrap:focus-visible { outline: 3px solid #e3a52a; outline-offset: 3px; }
+.tableWrap:focus-visible { outline: 3px solid #e3a52a; outline-offset: 3px; }
 .tableWrap a { color: #17687a; text-underline-offset: 3px; }
 .library details { margin-top: 10px; }
 .library summary { cursor: pointer; padding: 6px 0; font-size: 12px; font-weight: 700; }

@@ -131,13 +131,16 @@ requires-dist = [
     { name = "jsonschema", marker = "extra == 'dev'", specifier = ">=4.23" },
     { name = "networkx", marker = "extra == 'geo'", specifier = ">=3.0" },
     { name = "pandas", specifier = ">=2.0" },
+    { name = "pillow", marker = "extra == 'evidence'", specifier = ">=10" },
     { name = "pyproj", marker = "extra == 'geo'", specifier = ">=3.6" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "rasterio", marker = "extra == 'evidence'", specifier = ">=1.4" },
     { name = "rasterio", marker = "extra == 'theos2'", specifier = ">=1.4" },
+    { name = "requests", marker = "extra == 'evidence'", specifier = ">=2.31" },
     { name = "scikit-learn", marker = "extra == 'ml'", specifier = ">=1.4" },
     { name = "shapely", marker = "extra == 'geo'", specifier = ">=2.0" },
 ]
-provides-extras = ["dev", "ml", "geo", "theos2"]
+provides-extras = ["dev", "ml", "geo", "theos2", "evidence"]
 
 [[package]]
 name = "h11"

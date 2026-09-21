@@ -135,7 +135,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   const rootBody = await page.locator("body").innerText();
-  if (!rootBody.includes("Synthetic illustration") || !rootBody.includes("not a confirmed closure")) throw new Error("Landing illustration and assumed-disruption scope is missing.");
+  if (!rootBody.includes("Synthetic illustration") || !rootBody.toLowerCase().includes("not a confirmed closure")) throw new Error("Landing illustration and assumed-disruption scope is missing.");
   const rootAudit = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,

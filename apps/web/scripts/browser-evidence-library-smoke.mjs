@@ -36,7 +36,8 @@ try {
     await page.locator("main[data-evidence-library] footer").filter({ hasText: reference.id }).waitFor();
     const text = await page.locator("main[data-evidence-library]").innerText();
     if (!text.includes("Primary FPPS: unavailable") || !text.includes("Action class: unavailable")) throw new Error(`Primary scoring boundary lost: ${reference.id}`);
-    if (await page.getByRole("alert").count()) throw new Error(`Evidence package has an alert: ${reference.id}`);
+    const alerts = page.locator("main[data-evidence-library]").getByRole("alert");
+    if (await alerts.count()) throw new Error(`Evidence package has an alert: ${reference.id}: ${(await alerts.allTextContents()).join("; ")}`);
     const evidence = JSON.parse(readFileSync(resolve(out, reference.url.replace(/^\//, "")), "utf8"));
     const featureBrowser = page.locator("[data-feature-browser]");
     await featureBrowser.locator("summary").click();

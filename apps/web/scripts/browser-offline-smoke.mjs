@@ -800,7 +800,7 @@ async function assertMaeSaiMap(page, scopeSelector, {
 
 function requiredFinalCopy(routePath) {
   if (routePath === "/studio/library/") return ["study-area evidence library", "non-operational", "candidate research evidence"];
-  if (routePath === "/studio/brief/") return ["study-area decision brief", "non-operational", "candidate research evidence"];
+  if (routePath === "/studio/brief/") return ["compare before & after routes", "research prototype", "imposed scenarios", "not observed flood conditions or safe-route guidance"];
   return routePath === "/"
     ? ["see the flood.", "understand who may be cut off.", "synthetic illustration", "not a confirmed closure", "explore the planning demo"]
     : routePath === "/public/"

@@ -23,11 +23,16 @@ export function FinalsRouteMap({ origin, comparison, layers, view, th }: { origi
         for (const point of [...route.coordinates, ...route.connectors.flat()]) bounds.extend([point[1], point[0]]);
       }
       map = L.map(container.current, { scrollWheelZoom: false, preferCanvas: true, zoomAnimation: false });
-      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16, animate: false });
+      const fitRoutes = () => {
+        if (!map) return;
+        const size = map.getSize();
+        map.fitBounds(bounds, { padding: [Math.min(35, size.x * .1), Math.min(35, size.y * .15)], maxZoom: 16, animate: false });
+      };
+      fitRoutes();
       resize = new ResizeObserver(() => {
         if (!disposed && map) {
           map.invalidateSize({ animate: false });
-          map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16, animate: false });
+          fitRoutes();
         }
       });
       resize.observe(container.current);

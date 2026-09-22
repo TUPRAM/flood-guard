@@ -184,6 +184,7 @@
   .workspace { min-height: 635px; }
   .workspace .header { min-height: 38px; padding: 3px 10px; gap: 8px; }
   .workspace .brand { font-size: 16px; flex: none; }
+  .workspace :global(.language-toggle button) { min-width: 32px; min-height: 30px; }
   .workspace .brand span { display: none; }
   .workspace .header nav { flex: 1; gap: 8px; font-size: 10px; justify-content: flex-end; }
   .workspace .header nav a { min-height: 28px; }
@@ -206,7 +207,8 @@
   .routeViews legend { padding: 3px 7px 3px 0; }
   .routeViews label { min-height: 23px; }
   .routeMapFrame > p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 3px; font-size: 9px !important; }
-  .routeMapFrame .routeMap { min-height: 70px; }
+  .routeMapFrame .routeMap { min-height: 80px; }
+  .routeMap :global(.leaflet-control-attribution) { font-size: 8px; line-height: 1.1; }
   .compactLegend { font-size: 8px; gap: 3px 7px; margin-top: 3px; }
   .compactLegend span { width: 13px; }
   .routeResults { gap: 4px; flex: none; }

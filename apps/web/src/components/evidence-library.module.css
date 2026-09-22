@@ -201,12 +201,12 @@
   .workspaceActions { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; }
   .workspaceActions button { padding: 3px; font-size: 9px; min-height: 28px; }
   .routeStage { display: flex; flex-direction: column; gap: 5px; }
-  .routeCanvas { flex: 1; min-height: 160px; padding: 4px; border-radius: 5px; }
+  .routeCanvas { flex: 1; min-height: 130px; padding: 4px; border-radius: 5px; }
   .routeViews { gap: 9px; font-size: 10px; }
   .routeViews legend { padding: 3px 7px 3px 0; }
   .routeViews label { min-height: 23px; }
   .routeMapFrame > p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 3px; font-size: 9px !important; }
-  .routeMapFrame .routeMap { min-height: 94px; }
+  .routeMapFrame .routeMap { min-height: 70px; }
   .compactLegend { font-size: 8px; gap: 3px 7px; margin-top: 3px; }
   .compactLegend span { width: 13px; }
   .routeResults { gap: 4px; flex: none; }

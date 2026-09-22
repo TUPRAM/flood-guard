@@ -7,7 +7,7 @@ import math
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 
-from .evidence_scenarios import CONNECTOR_SPEED_KMH, FACILITY_SNAP_LIMIT_M
+from .evidence_scenarios import CONNECTOR_SPEED_KMH, FACILITY_SNAP_LIMIT_M, facility_connectors
 
 
 def calculate_pin_route(
@@ -74,9 +74,10 @@ def calculate_pin_route(
         for site in destinations
         if site["facility_id"] not in removed_facility_ids
         and site.get("candidate_destination_eligible") is True
-        and site.get("node_id") in graph
-        and site.get("snap_distance_m") is not None
-        and 0 <= site["snap_distance_m"] <= FACILITY_SNAP_LIMIT_M
+        and any(connection.get("node_id") in graph
+                and connection.get("snap_distance_m") is not None
+                and 0 <= connection["snap_distance_m"] <= FACILITY_SNAP_LIMIT_M
+                for connection in facility_connectors(site))
     ]
     if not candidates:
         return {
@@ -103,20 +104,22 @@ def calculate_pin_route(
                 heapq.heappush(queue, (candidate, other))
     available = [
         (
-            distances[site["node_id"]]
-            + site["snap_distance_m"] / 1000 / CONNECTOR_SPEED_KMH * 60,
+            distances[connection["node_id"]]
+            + connection["snap_distance_m"] / 1000 / CONNECTOR_SPEED_KMH * 60,
             site["facility_id"],
-            site,
+            {**site, **connection},
         )
         for site in candidates
-        if site["node_id"] in distances
+        for connection in facility_connectors(site)
+        if connection["node_id"] in distances and connection.get("snap_distance_m") is not None
+        and 0 <= connection["snap_distance_m"] <= FACILITY_SNAP_LIMIT_M
     ]
     if not available:
         return {
             **empty,
             "reason": "Origin is graph-connected but no modelled route reaches the selected service.",
         }
-    _, _, site = min(available, key=lambda value: value[:2])
+    _, _, site = min(available, key=lambda value: (*value[:2], value[2]["node_id"]))
     current, reverse_nodes, reverse_edges = site["node_id"], [site["node_id"]], []
     while current != node:
         current, edge_id = predecessor[current]
@@ -153,7 +156,7 @@ def calculate_pin_route(
     }
 
 
-def build_pin_comparisons(contexts: Mapping[str, Mapping]) -> dict:
+def build_pin_comparisons(contexts: Mapping[str, Mapping], *, flood_closures: Mapping[str, Sequence[str]] | None = None) -> dict:
     """Compare up to three named public origins, with path-based explicit changes.
 
     A closure targets the longest edge of that origin's baseline route, selected
@@ -206,6 +209,8 @@ def build_pin_comparisons(contexts: Mapping[str, Mapping]) -> dict:
                     before["edge_ids"],
                     key=lambda key: (-edge_by_id[key]["length_m"], key),
                 )[:1]
+                if flood_closures is not None:
+                    closure = list(flood_closures[mode])
                 removed = [before["destination_id"]] if before["destination_id"] else []
                 for kind, identifiers in (
                     ("close_edge", closure),
@@ -228,7 +233,7 @@ def build_pin_comparisons(contexts: Mapping[str, Mapping]) -> dict:
                             "travel_mode": mode,
                             "scenario_kind": kind,
                             "changed_ids": identifiers,
-                            "selection_method": "Longest baseline route edge, stable ID tie-break; selected before measuring the closure effect."
+                            "selection_method": ("All positive-length road intersections with the fixed SAR flood candidate, selected before computing route effects; candidate inundation and assumed closures, not observed passability." if flood_closures is not None else "Longest baseline route edge, stable ID tie-break; selected before measuring the closure effect.")
                             if kind == "close_edge"
                             else "Remove this origin's minimum-time baseline destination; no other service substitutes.",
                             "context_sha256": context["canonical_sha256"],

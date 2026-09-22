@@ -17,7 +17,7 @@ function RouteSummary({ route, after, th }: { route: FinalsRoute; after: boolean
   </article>;
 }
 
-export function FinalsRouteComparisonPanel({ routes, service, mode, layers, th, controls, actions }: { routes: FinalsRoutes; service: FinalsServiceId; mode: FinalsTravelMode; layers: EvidenceLibraryLayer[]; th: boolean; controls?: ReactNode; actions?: ReactNode }) {
+export function FinalsRouteComparisonPanel({ routes, service, mode, layers, th, controls, actions, populationHeadline }: { routes: FinalsRoutes; service: FinalsServiceId; mode: FinalsTravelMode; layers: EvidenceLibraryLayer[]; th: boolean; controls?: ReactNode; actions?: ReactNode; populationHeadline?: ReactNode }) {
   const detailDialog = useRef<HTMLDialogElement>(null);
   const [originId, setOriginId] = useState(routes.origins[0]?.id ?? "");
   const [kind, setKind] = useState<"close_edge" | "remove_destination">("close_edge");
@@ -28,19 +28,20 @@ export function FinalsRouteComparisonPanel({ routes, service, mode, layers, th, 
     <h2 id="route-comparison-title" className={styles.visuallyHidden}>{th ? "จากจุดนี้ เส้นทางเปลี่ยนอย่างไร?" : "From this place, how does the route change?"}</h2>
     <div className={styles.routeControls}>{controls}
       <label>{th ? "จุดเริ่มต้นสาธารณะ" : "Public starting place"}<select value={originId} onChange={(event) => setOriginId(event.target.value)}>{routes.origins.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <label>{th ? "การเปลี่ยนแปลงที่กำหนด" : "Imposed change"}<select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}><option value="close_edge">{th ? "ปิดช่วงถนนบนเส้นทางกรณีฐาน" : "Close a baseline route link"}</option><option value="remove_destination">{th ? "หยุดให้บริการจุดหมายกรณีฐาน" : "Remove the baseline destination"}</option></select></label>
+      <label>{th ? "การเปลี่ยนแปลงที่กำหนด" : "Imposed change"}<select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}><option value="close_edge">{routes.closure_basis === "candidate_flood" ? (th ? "ปิดถนนตามขอบเขตน้ำท่วมผู้สมัคร" : "Candidate flood-derived closures") : (th ? "ปิดช่วงถนนบนเส้นทางกรณีฐาน" : "Close a baseline route link")}</option><option value="remove_destination">{th ? "หยุดให้บริการจุดหมายกรณีฐาน" : "Remove the baseline destination"}</option></select></label>
     </div>
     <div className={styles.workspaceActions}>{actions}<button type="button" aria-haspopup="dialog" onClick={() => detailDialog.current?.showModal()}>{th ? "รายละเอียดเส้นทาง" : "Route details"}</button></div>
     {routes.status === "available" && origin && comparison ? <div className={styles.routeStage}>
       <div className={styles.routeCanvas}>
         <fieldset className={styles.routeViews}><legend>{th ? "แสดงเส้นทาง" : "Show routes"}</legend>{(["both", "baseline", "after"] as const).map((option) => <label key={option}><input type="radio" name="route-map-view" checked={view === option} onChange={() => setView(option)} />{option === "both" ? (th ? "ทั้งสองกรณี" : "Both") : option === "baseline" ? (th ? "ก่อน" : "Before") : (th ? "หลัง" : "After")}</label>)}</fieldset>
         <RouteMap origin={origin} comparison={comparison} layers={layers} view={view} th={th} />
-        <ul className={styles.compactLegend} aria-label={th ? "สัญลักษณ์เส้นทาง" : "Route legend"}><li><span className={styles.beforeLine} />{th ? "ก่อน" : "Before"}</li><li><span className={styles.afterLine} />{th ? "หลัง" : "After"}</li><li><span className={styles.closedLine} />{th ? "สมมติให้ปิด" : "Imposed closure"}</li><li>{th ? "เส้นจุด: จุดเชื่อมสมมติ" : "Dotted: assumed connectors"}</li></ul>
+        <ul className={styles.compactLegend} aria-label={th ? "สัญลักษณ์เส้นทาง" : "Route legend"}><li><span className={styles.beforeLine} />{th ? "ก่อน" : "Before"}</li><li><span className={styles.afterLine} />{th ? "หลัง" : "After"}</li><li><span className={styles.closedLine} />{th ? "สมมติให้ปิด" : "Imposed closure"}</li>{layers.some((layer) => layer.id === "sar-candidate_extent") ? <li>{th ? "สีน้ำเงิน: ขอบเขตผู้สมัคร ไม่ยืนยัน" : "Blue fill: unvalidated candidate"}</li> : null}<li>{th ? "เส้นจุด: จุดเชื่อมสมมติ" : "Dotted: assumed connectors"}</li></ul>
       </div>
       <aside className={styles.routeResults} aria-label={th ? "เปรียบเทียบผลเส้นทาง" : "Route comparison results"}>
+        {kind === "close_edge" ? populationHeadline : null}
         <div className={styles.routeCards}><RouteSummary route={comparison.baseline} after={false} th={th} /><RouteSummary route={comparison.after} after th={th} /></div>
         <p className={styles.routeOutcome} data-route-outcome role="status">{comparison.delta_minutes !== null ? `${th ? "เวลาเปลี่ยน" : "Travel-time change"}: ${comparison.delta_minutes > 0 ? "+" : ""}${n(comparison.delta_minutes, th, 2)} ${th ? "นาที" : "minutes"}${comparison.delta_minutes === 0 ? (th ? " · ไม่ต่างในกรณีนี้" : " · No difference in this case.") : ""}` : (th ? "ผลต่างเวลาไม่มี: อย่างน้อยหนึ่งกรณีไม่มีเส้นทาง ไม่ใช่ศูนย์" : "Time difference unavailable: at least one case has no route. Missing time is not zero.")}</p>
-        <p className={styles.routeCaution}>{th ? "จุดหมายใช้เวลาต่ำสุดตามแบบจำลอง ยังไม่ยืนยันทางเข้า การเปิดใช้งาน หรือความปลอดภัย" : "Minimum-time candidate. Entrance, event-time availability and route safety remain unverified."}</p>
+        <p className={styles.routeCaution} data-route-caution>{th ? "จุดหมายใช้เวลาต่ำสุดตามแบบจำลอง ยังไม่ยืนยันทางเข้า การเปิดใช้งาน หรือความปลอดภัย" : "Minimum-time candidate. Entrance, event-time availability and route safety remain unverified."}</p>
       </aside>
     </div> : <p className={styles.empty}>{th ? "ไม่มีผลเส้นทางสำหรับตัวเลือกนี้ จะไม่ใช้จุดเริ่มต้นหรือบริการอื่นแทน" : "No route comparison exists for this selection. Another origin or service is not substituted."}</p>}
     <dialog ref={detailDialog} className={styles.workspaceDialog} aria-labelledby="route-detail-title">

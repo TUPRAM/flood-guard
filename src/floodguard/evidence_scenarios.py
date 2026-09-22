@@ -762,9 +762,26 @@ def _facilities(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     result = _records(rows, "facility_id")
     for row in result:
         _validate_snap(row)
+        if "connectors" in row:
+            connectors = row["connectors"]
+            if not isinstance(connectors, list) or not connectors:
+                raise EvidenceScenarioError("explicit facility connectors must be nonempty")
+            seen = set()
+            for connector in connectors:
+                if not isinstance(connector, dict) or set(connector) != {"node_id", "snap_distance_m"}:
+                    raise EvidenceScenarioError("facility connector must contain only node_id and snap_distance_m")
+                _validate_snap(connector)
+                if connector["node_id"] in seen:
+                    raise EvidenceScenarioError("duplicate facility connector node")
+                seen.add(connector["node_id"])
         if row.get("capacity") is not None:
             row["capacity"] = _number(row["capacity"], "capacity")
     return result
+
+
+def facility_connectors(site: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """Return explicit reviewed scenario connections, or the legacy single snap."""
+    return site.get("connectors", [site])
 
 
 def _validate_snap(row: dict[str, Any]) -> None:
@@ -832,10 +849,13 @@ def _reachable_pairs(
 ) -> list[dict[str, Any]]:
     result = []
     for site in sites:
-        if _snap_status(site, FACILITY_SNAP_LIMIT_M, graph) != "connected":
-            continue
-        distances = _facility_minutes_by_node(graph, {site["node_id"]})
-        connector = site["snap_distance_m"] / 1000 / CONNECTOR_SPEED_KMH * 60
+        distances = {}
+        for connection in facility_connectors(site):
+            if _snap_status(connection, FACILITY_SNAP_LIMIT_M, graph) != "connected":
+                continue
+            connector = connection["snap_distance_m"] / 1000 / CONNECTOR_SPEED_KMH * 60
+            for node, minutes in _facility_minutes_by_node(graph, {connection["node_id"]}).items():
+                distances[node] = min(distances.get(node, math.inf), minutes + connector)
         for pop in pops:
             if _snap_status(pop, POPULATION_SNAP_LIMIT_M, graph) != "connected":
                 continue
@@ -846,7 +866,6 @@ def _reachable_pairs(
                         "population_id": pop["population_id"],
                         "facility_id": site["facility_id"],
                         "travel_minutes": distance
-                        + connector
                         + pop["snap_distance_m"] / 1000 / CONNECTOR_SPEED_KMH * 60,
                     }
                 )

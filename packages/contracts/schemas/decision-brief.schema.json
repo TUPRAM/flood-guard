@@ -1651,6 +1651,9 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "closure_basis": {
+              "const": "candidate_flood"
             }
           },
           "required": [
@@ -1658,6 +1661,1451 @@
             "origins",
             "comparisons",
             "limitations"
+          ]
+        },
+        "connectivity_audits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "modelled_vehicle": {
+              "$ref": "#/properties/finals_analysis/properties/connectivity_audits/properties/walking"
+            },
+            "walking": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "articulation_points": {
+                  "type": "number"
+                },
+                "assumptions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "baseline_input_sha256": {
+                  "type": "string"
+                },
+                "baseline_residents_with_route": {
+                  "type": "number"
+                },
+                "baseline_residents_without_route": {
+                  "type": "number"
+                },
+                "bridges": {
+                  "type": "number"
+                },
+                "confidence_class": {
+                  "type": "string"
+                },
+                "connected_components": {
+                  "type": "number"
+                },
+                "edges": {
+                  "type": "number"
+                },
+                "eligible_destination_connectors": {
+                  "type": "number"
+                },
+                "evidence_role": {
+                  "type": "string"
+                },
+                "highest_edge_impacts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "edge_id": {
+                        "type": "string"
+                      },
+                      "from_node": {
+                        "type": "string"
+                      },
+                      "is_bridge": {
+                        "type": "boolean"
+                      },
+                      "osm_way_id": {
+                        "type": "string"
+                      },
+                      "residents_losing_all_routes": {
+                        "type": "number"
+                      },
+                      "to_node": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "edge_id",
+                      "from_node",
+                      "is_bridge",
+                      "osm_way_id",
+                      "residents_losing_all_routes",
+                      "to_node"
+                    ]
+                  }
+                },
+                "method": {
+                  "type": "string"
+                },
+                "nodes": {
+                  "type": "number"
+                },
+                "official_warning": {
+                  "const": false
+                },
+                "operational_status": {
+                  "type": "string"
+                },
+                "residents_without_accepted_connector": {
+                  "type": "number"
+                },
+                "schema_version": {
+                  "type": "string"
+                },
+                "source_timestamp": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "articulation_points",
+                "assumptions",
+                "baseline_input_sha256",
+                "baseline_residents_with_route",
+                "baseline_residents_without_route",
+                "bridges",
+                "confidence_class",
+                "connected_components",
+                "edges",
+                "eligible_destination_connectors",
+                "evidence_role",
+                "highest_edge_impacts",
+                "method",
+                "nodes",
+                "official_warning",
+                "operational_status",
+                "residents_without_accepted_connector",
+                "schema_version",
+                "source_timestamp"
+              ]
+            }
+          },
+          "required": [
+            "modelled_vehicle",
+            "walking"
+          ]
+        },
+        "facility_connection_comparison": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "modelled_vehicle": {
+              "$ref": "#/properties/finals_analysis/properties/facility_connection_comparison/properties/walking"
+            },
+            "walking": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "fixed_edge_comparisons": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "edge_id": {
+                        "type": "string"
+                      },
+                      "original": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "comparable_population": {
+                            "type": "number"
+                          },
+                          "faster_population": {
+                            "type": "number"
+                          },
+                          "gaining_15_min_access": {
+                            "type": "number"
+                          },
+                          "gaining_30_min_access": {
+                            "type": "number"
+                          },
+                          "gaining_60_min_access": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "losing_15_min_access": {
+                            "type": "number"
+                          },
+                          "losing_30_min_access": {
+                            "type": "number"
+                          },
+                          "losing_60_min_access": {
+                            "type": "number"
+                          },
+                          "max_delta_minutes": {
+                            "type": "number"
+                          },
+                          "mean_travel_time_delta_minutes": {
+                            "type": "number"
+                          },
+                          "net_person_minutes": {
+                            "type": "number"
+                          },
+                          "newly_reachable_population": {
+                            "type": "number"
+                          },
+                          "newly_unreachable_population": {
+                            "type": "number"
+                          },
+                          "p90_delta_minutes": {
+                            "type": "number"
+                          },
+                          "selection_method": {
+                            "type": "string"
+                          },
+                          "slower_population": {
+                            "type": "number"
+                          },
+                          "target_id": {
+                            "type": "string"
+                          },
+                          "target_label": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "comparable_population",
+                          "faster_population",
+                          "gaining_15_min_access",
+                          "gaining_30_min_access",
+                          "gaining_60_min_access",
+                          "id",
+                          "kind",
+                          "losing_15_min_access",
+                          "losing_30_min_access",
+                          "losing_60_min_access",
+                          "max_delta_minutes",
+                          "mean_travel_time_delta_minutes",
+                          "net_person_minutes",
+                          "newly_reachable_population",
+                          "newly_unreachable_population",
+                          "p90_delta_minutes",
+                          "selection_method",
+                          "slower_population",
+                          "target_id",
+                          "target_label"
+                        ]
+                      },
+                      "revised": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "comparable_population": {
+                            "type": "number"
+                          },
+                          "faster_population": {
+                            "type": "number"
+                          },
+                          "gaining_15_min_access": {
+                            "type": "number"
+                          },
+                          "gaining_30_min_access": {
+                            "type": "number"
+                          },
+                          "gaining_60_min_access": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "losing_15_min_access": {
+                            "type": "number"
+                          },
+                          "losing_30_min_access": {
+                            "type": "number"
+                          },
+                          "losing_60_min_access": {
+                            "type": "number"
+                          },
+                          "max_delta_minutes": {
+                            "type": "number"
+                          },
+                          "mean_travel_time_delta_minutes": {
+                            "type": "number"
+                          },
+                          "net_person_minutes": {
+                            "type": "number"
+                          },
+                          "newly_reachable_population": {
+                            "type": "number"
+                          },
+                          "newly_unreachable_population": {
+                            "type": "number"
+                          },
+                          "p90_delta_minutes": {
+                            "type": "number"
+                          },
+                          "selection_method": {
+                            "type": "string"
+                          },
+                          "slower_population": {
+                            "type": "number"
+                          },
+                          "target_id": {
+                            "type": "string"
+                          },
+                          "target_label": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "comparable_population",
+                          "faster_population",
+                          "gaining_15_min_access",
+                          "gaining_30_min_access",
+                          "gaining_60_min_access",
+                          "id",
+                          "kind",
+                          "losing_15_min_access",
+                          "losing_30_min_access",
+                          "losing_60_min_access",
+                          "max_delta_minutes",
+                          "mean_travel_time_delta_minutes",
+                          "net_person_minutes",
+                          "newly_reachable_population",
+                          "newly_unreachable_population",
+                          "p90_delta_minutes",
+                          "selection_method",
+                          "slower_population",
+                          "target_id",
+                          "target_label"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "edge_id",
+                      "original",
+                      "revised"
+                    ]
+                  }
+                },
+                "original_baseline": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "connected_without_route_population": {
+                      "type": "number"
+                    },
+                    "max_minutes": {
+                      "type": "number"
+                    },
+                    "median_minutes": {
+                      "type": "number"
+                    },
+                    "modelled_population": {
+                      "type": "number"
+                    },
+                    "p90_minutes": {
+                      "type": "number"
+                    },
+                    "unknown_access_population": {
+                      "type": "number"
+                    },
+                    "within_15_minutes_population": {
+                      "type": "number"
+                    },
+                    "within_30_minutes_population": {
+                      "type": "number"
+                    },
+                    "within_60_minutes_population": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "connected_without_route_population",
+                    "max_minutes",
+                    "median_minutes",
+                    "modelled_population",
+                    "p90_minutes",
+                    "unknown_access_population",
+                    "within_15_minutes_population",
+                    "within_30_minutes_population",
+                    "within_60_minutes_population"
+                  ]
+                },
+                "revised_baseline": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "connected_without_route_population": {
+                      "type": "number"
+                    },
+                    "max_minutes": {
+                      "type": "number"
+                    },
+                    "median_minutes": {
+                      "type": "number"
+                    },
+                    "modelled_population": {
+                      "type": "number"
+                    },
+                    "p90_minutes": {
+                      "type": "number"
+                    },
+                    "unknown_access_population": {
+                      "type": "number"
+                    },
+                    "within_15_minutes_population": {
+                      "type": "number"
+                    },
+                    "within_30_minutes_population": {
+                      "type": "number"
+                    },
+                    "within_60_minutes_population": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "connected_without_route_population",
+                    "max_minutes",
+                    "median_minutes",
+                    "modelled_population",
+                    "p90_minutes",
+                    "unknown_access_population",
+                    "within_15_minutes_population",
+                    "within_30_minutes_population",
+                    "within_60_minutes_population"
+                  ]
+                }
+              },
+              "required": [
+                "fixed_edge_comparisons",
+                "original_baseline",
+                "revised_baseline"
+              ]
+            }
+          },
+          "required": [
+            "modelled_vehicle",
+            "walking"
+          ]
+        },
+        "facility_connection_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "confidence_class": {
+              "type": "string"
+            },
+            "facilities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "connectors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "coordinates": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "osm_node_id": {
+                          "type": "string"
+                        },
+                        "osm_way_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "coordinates",
+                        "osm_node_id",
+                        "osm_way_id"
+                      ]
+                    }
+                  },
+                  "facility_id": {
+                    "type": "string"
+                  },
+                  "finding": {
+                    "type": "string"
+                  },
+                  "limitations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "review_id": {
+                    "type": "string"
+                  },
+                  "selection_rule": {
+                    "type": "string"
+                  },
+                  "site_geometry_sha256": {
+                    "type": "string"
+                  },
+                  "source_urls": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "source_xml_sha256": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "connectors",
+                  "facility_id",
+                  "finding",
+                  "limitations",
+                  "review_id",
+                  "selection_rule",
+                  "site_geometry_sha256",
+                  "source_urls",
+                  "source_xml_sha256",
+                  "status"
+                ]
+              }
+            },
+            "official_warning": {
+              "const": false
+            },
+            "osm_source_sha256": {
+              "type": "string"
+            },
+            "reviewed_at": {
+              "type": "string"
+            },
+            "schema_version": {
+              "type": "string"
+            },
+            "source_timestamp": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "confidence_class",
+            "facilities",
+            "official_warning",
+            "osm_source_sha256",
+            "reviewed_at",
+            "schema_version",
+            "source_timestamp"
+          ]
+        },
+        "flood_scenarios": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "modelled_vehicle": {
+              "$ref": "#/properties/finals_analysis/properties/flood_scenarios/properties/walking"
+            },
+            "walking": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "accepted_action_class": {
+                  "type": "null"
+                },
+                "accepted_fpps": {
+                  "type": "null"
+                },
+                "baseline": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "connected_without_route_population": {
+                      "type": "number"
+                    },
+                    "max_minutes": {
+                      "type": "number"
+                    },
+                    "median_minutes": {
+                      "type": "number"
+                    },
+                    "modelled_population": {
+                      "type": "number"
+                    },
+                    "p90_minutes": {
+                      "type": "number"
+                    },
+                    "unknown_access_population": {
+                      "type": "number"
+                    },
+                    "within_15_minutes_population": {
+                      "type": "number"
+                    },
+                    "within_30_minutes_population": {
+                      "type": "number"
+                    },
+                    "within_60_minutes_population": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "connected_without_route_population",
+                    "max_minutes",
+                    "median_minutes",
+                    "modelled_population",
+                    "p90_minutes",
+                    "unknown_access_population",
+                    "within_15_minutes_population",
+                    "within_30_minutes_population",
+                    "within_60_minutes_population"
+                  ]
+                },
+                "candidate_affected_population": {
+                  "type": "number"
+                },
+                "candidate_provenance": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "aoi_pixels": {
+                      "type": "number"
+                    },
+                    "aoi_sha256": {
+                      "type": "string"
+                    },
+                    "candidate_pixels": {
+                      "type": "number"
+                    },
+                    "confidence_class": {
+                      "type": "string"
+                    },
+                    "eligible_for_accepted_fpps": {
+                      "const": false
+                    },
+                    "eligible_for_validation": {
+                      "const": false
+                    },
+                    "event_id": {
+                      "type": "string"
+                    },
+                    "evidence_role": {
+                      "type": "string"
+                    },
+                    "generated_at": {
+                      "type": "string"
+                    },
+                    "georeferencing": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "postVH": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "gcp_count": {
+                              "type": "number"
+                            },
+                            "gcp_crs": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "gcp_count",
+                            "gcp_crs"
+                          ]
+                        },
+                        "postVV": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "gcp_count": {
+                              "type": "number"
+                            },
+                            "gcp_crs": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "gcp_count",
+                            "gcp_crs"
+                          ]
+                        },
+                        "preVH": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "gcp_count": {
+                              "type": "number"
+                            },
+                            "gcp_crs": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "gcp_count",
+                            "gcp_crs"
+                          ]
+                        },
+                        "preVV": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "gcp_count": {
+                              "type": "number"
+                            },
+                            "gcp_crs": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "gcp_count",
+                            "gcp_crs"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "postVH",
+                        "postVV",
+                        "preVH",
+                        "preVV"
+                      ]
+                    },
+                    "grid": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "crs": {
+                          "type": "string"
+                        },
+                        "resolution_m": {
+                          "type": "number"
+                        },
+                        "shape": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "transform": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        }
+                      },
+                      "required": [
+                        "crs",
+                        "resolution_m",
+                        "shape",
+                        "transform"
+                      ]
+                    },
+                    "implementation_sha256": {
+                      "type": "string"
+                    },
+                    "limitations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "mask_sha256": {
+                      "type": "string"
+                    },
+                    "method": {
+                      "type": "string"
+                    },
+                    "official_warning": {
+                      "const": false
+                    },
+                    "polarization_weights": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "VH": {
+                          "type": "number"
+                        },
+                        "VV": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "VH",
+                        "VV"
+                      ]
+                    },
+                    "processing_scope": {
+                      "type": "string"
+                    },
+                    "products": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "candidate_extent": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "area_m2": {
+                              "type": "number"
+                            },
+                            "file": {
+                              "type": "string"
+                            },
+                            "sha256": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "area_m2",
+                            "file",
+                            "sha256"
+                          ]
+                        },
+                        "observation_footprint": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "area_m2": {
+                              "type": "number"
+                            },
+                            "file": {
+                              "type": "string"
+                            },
+                            "sha256": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "area_m2",
+                            "file",
+                            "sha256"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "candidate_extent",
+                        "observation_footprint"
+                      ]
+                    },
+                    "rights": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "attribution": {
+                          "type": "string"
+                        },
+                        "downloadable_derivatives": {
+                          "type": "boolean"
+                        },
+                        "hosted_display": {
+                          "type": "boolean"
+                        },
+                        "local_processing": {
+                          "type": "boolean"
+                        },
+                        "terms_url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "attribution",
+                        "downloadable_derivatives",
+                        "hosted_display",
+                        "local_processing",
+                        "terms_url"
+                      ]
+                    },
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "source_manifest_sha256": {
+                      "type": "string"
+                    },
+                    "source_timestamp": {
+                      "type": "string"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "acquisition_date": {
+                            "type": "string"
+                          },
+                          "download_url": {
+                            "type": "string"
+                          },
+                          "product_id": {
+                            "type": "string"
+                          },
+                          "product_name": {
+                            "type": "string"
+                          },
+                          "sha256": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "acquisition_date",
+                          "download_url",
+                          "product_id",
+                          "product_name",
+                          "sha256"
+                        ]
+                      }
+                    },
+                    "threshold_db": {
+                      "type": "number"
+                    },
+                    "valid_fraction": {
+                      "type": "number"
+                    },
+                    "valid_pixels": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "aoi_pixels",
+                    "aoi_sha256",
+                    "candidate_pixels",
+                    "confidence_class",
+                    "eligible_for_accepted_fpps",
+                    "eligible_for_validation",
+                    "event_id",
+                    "evidence_role",
+                    "generated_at",
+                    "georeferencing",
+                    "grid",
+                    "implementation_sha256",
+                    "limitations",
+                    "mask_sha256",
+                    "method",
+                    "official_warning",
+                    "polarization_weights",
+                    "processing_scope",
+                    "products",
+                    "rights",
+                    "schema_version",
+                    "source_manifest_sha256",
+                    "source_timestamp",
+                    "sources",
+                    "threshold_db",
+                    "valid_fraction",
+                    "valid_pixels"
+                  ]
+                },
+                "closed_edges": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "edge_id": {
+                        "type": "string"
+                      },
+                      "intersection_fraction": {
+                        "type": "number"
+                      },
+                      "intersection_length_m": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "edge_id",
+                      "intersection_fraction",
+                      "intersection_length_m"
+                    ]
+                  }
+                },
+                "confidence_class": {
+                  "type": "string"
+                },
+                "context_sha256": {
+                  "type": "string"
+                },
+                "event_id": {
+                  "type": "string"
+                },
+                "impact": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "comparable_population": {
+                      "type": "number"
+                    },
+                    "faster_population": {
+                      "type": "number"
+                    },
+                    "gaining_15_min_access": {
+                      "type": "number"
+                    },
+                    "gaining_30_min_access": {
+                      "type": "number"
+                    },
+                    "gaining_60_min_access": {
+                      "type": "number"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string"
+                    },
+                    "losing_15_min_access": {
+                      "type": "number"
+                    },
+                    "losing_30_min_access": {
+                      "type": "number"
+                    },
+                    "losing_60_min_access": {
+                      "type": "number"
+                    },
+                    "max_delta_minutes": {
+                      "type": "number"
+                    },
+                    "mean_travel_time_delta_minutes": {
+                      "type": "number"
+                    },
+                    "net_person_minutes": {
+                      "type": "number"
+                    },
+                    "newly_reachable_population": {
+                      "type": "number"
+                    },
+                    "newly_unreachable_population": {
+                      "type": "number"
+                    },
+                    "p90_delta_minutes": {
+                      "type": "number"
+                    },
+                    "selection_method": {
+                      "type": "string"
+                    },
+                    "slower_population": {
+                      "type": "number"
+                    },
+                    "target_id": {
+                      "type": "string"
+                    },
+                    "target_label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "comparable_population",
+                    "faster_population",
+                    "gaining_15_min_access",
+                    "gaining_30_min_access",
+                    "gaining_60_min_access",
+                    "id",
+                    "kind",
+                    "losing_15_min_access",
+                    "losing_30_min_access",
+                    "losing_60_min_access",
+                    "max_delta_minutes",
+                    "mean_travel_time_delta_minutes",
+                    "net_person_minutes",
+                    "newly_reachable_population",
+                    "newly_unreachable_population",
+                    "p90_delta_minutes",
+                    "selection_method",
+                    "slower_population",
+                    "target_id",
+                    "target_label"
+                  ]
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "normalization": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "access_gap_0_100": {
+                      "type": "string"
+                    },
+                    "exposure_0_100": {
+                      "type": "string"
+                    },
+                    "road_criticality_0_100": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "access_gap_0_100",
+                    "exposure_0_100",
+                    "road_criticality_0_100"
+                  ]
+                },
+                "official_warning": {
+                  "const": false
+                },
+                "schema_version": {
+                  "type": "string"
+                },
+                "source_timestamp": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "subdistricts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "assessment": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "action_class": {
+                            "type": "null"
+                          },
+                          "action_reason_code": {
+                            "type": "null"
+                          },
+                          "area_id": {
+                            "type": "string"
+                          },
+                          "assessment_status": {
+                            "type": "string"
+                          },
+                          "assumptions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "components": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "access_gap_0_100": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "exposure_0_100": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "flood_likelihood_0_100": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "road_criticality_0_100": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "vulnerability_context_0_100": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "access_gap_0_100",
+                              "exposure_0_100",
+                              "flood_likelihood_0_100",
+                              "road_criticality_0_100",
+                              "vulnerability_context_0_100"
+                            ]
+                          },
+                          "confidence_class": {
+                            "type": "string"
+                          },
+                          "dataset_mode": {
+                            "type": "string"
+                          },
+                          "evidence_role": {
+                            "type": "string"
+                          },
+                          "fixed_weight_bounds": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "lower": {
+                                "type": "number"
+                              },
+                              "meaning": {
+                                "type": "string"
+                              },
+                              "upper": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "lower",
+                              "meaning",
+                              "upper"
+                            ]
+                          },
+                          "fpps_0_100": {
+                            "type": "null"
+                          },
+                          "missing_components": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "official_warning": {
+                            "const": false
+                          },
+                          "operational_status": {
+                            "type": "string"
+                          },
+                          "scenario_completions": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "action_class": {
+                                  "type": "string"
+                                },
+                                "action_reason_code": {
+                                  "type": "string"
+                                },
+                                "assumed_components": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "assumed_missing_value": {
+                                  "type": "number"
+                                },
+                                "components": {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "access_gap_0_100": {
+                                      "type": [
+                                        "number",
+                                        "null"
+                                      ],
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "exposure_0_100": {
+                                      "type": [
+                                        "number",
+                                        "null"
+                                      ],
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "flood_likelihood_0_100": {
+                                      "type": [
+                                        "number",
+                                        "null"
+                                      ],
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "road_criticality_0_100": {
+                                      "type": [
+                                        "number",
+                                        "null"
+                                      ],
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "vulnerability_context_0_100": {
+                                      "type": [
+                                        "number",
+                                        "null"
+                                      ],
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    }
+                                  },
+                                  "required": [
+                                    "access_gap_0_100",
+                                    "exposure_0_100",
+                                    "flood_likelihood_0_100",
+                                    "road_criticality_0_100",
+                                    "vulnerability_context_0_100"
+                                  ]
+                                },
+                                "evidence_role": {
+                                  "type": "string"
+                                },
+                                "fpps_0_100": {
+                                  "type": "number"
+                                },
+                                "scenario_id": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "action_class",
+                                "action_reason_code",
+                                "assumed_components",
+                                "assumed_missing_value",
+                                "components",
+                                "evidence_role",
+                                "fpps_0_100",
+                                "scenario_id"
+                              ]
+                            }
+                          },
+                          "source_name": {
+                            "type": "string"
+                          },
+                          "source_timestamp": {
+                            "type": "string"
+                          },
+                          "weights": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "access_gap_0_100": {
+                                "type": "number"
+                              },
+                              "exposure_0_100": {
+                                "type": "number"
+                              },
+                              "flood_likelihood_0_100": {
+                                "type": "number"
+                              },
+                              "road_criticality_0_100": {
+                                "type": "number"
+                              },
+                              "vulnerability_context_0_100": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "access_gap_0_100",
+                              "exposure_0_100",
+                              "flood_likelihood_0_100",
+                              "road_criticality_0_100",
+                              "vulnerability_context_0_100"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "action_class",
+                          "action_reason_code",
+                          "area_id",
+                          "assessment_status",
+                          "assumptions",
+                          "components",
+                          "confidence_class",
+                          "dataset_mode",
+                          "evidence_role",
+                          "fixed_weight_bounds",
+                          "fpps_0_100",
+                          "missing_components",
+                          "official_warning",
+                          "operational_status",
+                          "scenario_completions",
+                          "source_name",
+                          "source_timestamp",
+                          "weights"
+                        ]
+                      },
+                      "candidate_affected_population": {
+                        "type": "number"
+                      },
+                      "missing_input_reasons": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "modelled_residents": {
+                        "type": "number"
+                      },
+                      "scope": {
+                        "type": "string"
+                      },
+                      "subdistrict_id": {
+                        "type": "string"
+                      },
+                      "unobserved_population": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "assessment",
+                      "candidate_affected_population",
+                      "missing_input_reasons",
+                      "modelled_residents",
+                      "scope",
+                      "subdistrict_id",
+                      "unobserved_population"
+                    ]
+                  }
+                },
+                "unobserved_population": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "accepted_action_class",
+                "accepted_fpps",
+                "baseline",
+                "candidate_affected_population",
+                "candidate_provenance",
+                "closed_edges",
+                "confidence_class",
+                "context_sha256",
+                "event_id",
+                "impact",
+                "limitations",
+                "normalization",
+                "official_warning",
+                "schema_version",
+                "source_timestamp",
+                "status",
+                "subdistricts",
+                "unobserved_population"
+              ]
+            }
+          },
+          "required": [
+            "modelled_vehicle",
+            "walking"
           ]
         }
       },

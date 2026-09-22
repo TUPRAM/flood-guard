@@ -11,6 +11,7 @@ from .evidence_scenarios import (
     CONNECTOR_SPEED_KMH,
     FACILITY_SNAP_LIMIT_M,
     MODELLED_ROAD_SPEED_KMH,
+    facility_connectors,
 )
 
 
@@ -42,13 +43,14 @@ def select_interventions(
         graph[b].append((a, minutes, edge["edge_id"]))
     best, predecessor, queue = {}, {}, []
     for site in sorted(facilities, key=lambda row: row["facility_id"]):
-        node, snap = site.get("node_id"), site.get("snap_distance_m")
-        if node not in graph or snap is None or snap > FACILITY_SNAP_LIMIT_M:
-            continue
-        value = (snap / 1000 / CONNECTOR_SPEED_KMH * 60, site["facility_id"])
-        if node not in best or value < best[node]:
-            best[node] = value
-            heapq.heappush(queue, (*value, node))
+        for connection in facility_connectors(site):
+            node, snap = connection.get("node_id"), connection.get("snap_distance_m")
+            if node not in graph or snap is None or snap > FACILITY_SNAP_LIMIT_M:
+                continue
+            value = (snap / 1000 / CONNECTOR_SPEED_KMH * 60, site["facility_id"])
+            if node not in best or value < best[node]:
+                best[node] = value
+                heapq.heappush(queue, (*value, node))
     settled, order = set(), []
     while queue:
         minutes, site, node = heapq.heappop(queue)

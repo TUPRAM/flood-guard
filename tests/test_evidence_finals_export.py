@@ -172,6 +172,25 @@ def test_valid_finals_fixture_passes_both_semantic_gates(finals):
     _finals_database(*database_case(finals))
 
 
+def test_connectivity_download_hash_binds_exported_not_local_only_fields(finals):
+    from floodguard.evidence_connectivity import audit_connectivity
+
+    analysis, contexts = finals
+    analysis["connectivity_audits"] = {}
+    for mode, context in contexts.items():
+        context["population"][0]["local_review_note"] = "Not a published input"
+        sites = [r for r in context["osm_facilities"] if r["service_type"] == "hospital"]
+        analysis["connectivity_audits"][mode] = audit_connectivity(
+            context["population"], context["edges"], sites,
+            source_timestamp=context["source_metadata"]["osm"]["retrieved_at_utc"],
+        )
+    resign(analysis)
+    payload, package, policies = database_case((analysis, contexts))
+    assert "local_review_note" not in payload["contexts"]["walking"]["population"][0]
+    assert payload["connectivity_audits"]["walking"]["baseline_input_sha256"] != analysis["connectivity_audits"]["walking"]["baseline_input_sha256"]
+    _finals_database(payload, package, policies)
+
+
 def test_corrupted_analysis_digest_rejected(finals):
     analysis = finals[0]
     analysis["question"] = "Changed without recomputing identity"

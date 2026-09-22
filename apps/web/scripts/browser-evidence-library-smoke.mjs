@@ -164,6 +164,14 @@ async function verifyFinalsComparison(page, brief, analysis, th, offline) {
       await modeSelect.selectOption(mode);
       const variant = service.variants.find((item) => item.travel_mode === mode && item.speed_factor === 1);
       const populationDialog = await openFinalsDetail(brief, "population");
+      const flood = service.id === "hospital" ? analysis.flood_scenarios?.[mode] : null;
+      const floodHeading = populationDialog.getByRole("heading", { name: th ? "ผลประชากรจากขอบเขตน้ำท่วมผู้สมัคร" : "Population consequences of the flood candidate", exact: true });
+      if (flood) {
+        await floodHeading.waitFor();
+        const text = await populationDialog.innerText();
+        if (!text.includes(flood.candidate_affected_population.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 1 }))) throw new Error("Candidate-overlap population differs from package");
+        if (!text.includes(th ? "Class E" : "Class E follows the low-confidence rule")) throw new Error("Candidate score confidence boundary lost");
+      } else if (await floodHeading.count()) throw new Error("Hospital flood population substituted for another service");
       if (variant) {
         const displayed = await populationDialog.getByText(th ? "ประชากรตามแบบจำลองในขอบเขต" : "Modelled residents in scope", { exact: true }).locator("..").locator("strong").innerText();
         const expected = variant.baseline.modelled_population.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 0 });
@@ -184,6 +192,11 @@ async function verifyFinalsComparison(page, brief, analysis, th, offline) {
             continue;
           }
           await page.waitForFunction((id) => document.querySelector("[data-route-comparison]")?.getAttribute("data-route-id") === id, expected.id);
+          const populationHeadline = routePanel.locator("[data-flood-headline]");
+          if (flood && kind === "close_edge") {
+            await populationHeadline.waitFor();
+            if (!(await populationHeadline.innerText()).includes(flood.impact.losing_30_min_access.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 0 }))) throw new Error("Headline differs from selected population scenario");
+          } else if (await populationHeadline.count()) throw new Error("Flood headline shown for a different intervention or service");
           await routePanel.locator(".leaflet-container canvas").first().waitFor({ state: "visible" });
           await routePanel.locator("[data-route-origin]").filter({ hasText: pin.name }).waitFor();
           const startTooltip = routePanel.locator(".leaflet-tooltip").filter({ has: page.locator("[data-route-start-label]") });
@@ -299,6 +312,7 @@ async function verifyRouteWorkspace(page) {
       await assertFitsViewport(page, routePanel.locator('[data-route-result="baseline"]'), "before result");
       await assertFitsViewport(page, routePanel.locator('[data-route-result="after"]'), "after result");
       await assertFitsViewport(page, routePanel.locator("[data-route-outcome]"), "route change result");
+      await assertFitsViewport(page, routePanel.locator("[data-route-caution]"), "route uncertainty");
       const dimensions = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight, viewportWidth: innerWidth, viewportHeight: innerHeight }));
       if (dimensions.width > dimensions.viewportWidth + 1 || dimensions.height > dimensions.viewportHeight + 1) throw new Error(`Route workspace requires document scrolling at ${viewport.width}×${viewport.height}, Thai=${th}: ${JSON.stringify(dimensions)}`);
       await assertAvailabilityDoesNotOverlap(page, routePanel, `${viewport.width}×${viewport.height}, Thai=${th}`);

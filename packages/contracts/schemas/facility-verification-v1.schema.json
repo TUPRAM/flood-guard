@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "floodguard.facility-verification.v1",
+  "title": "Facility review intake; semantic evidence checks also required",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "facility_id"
+    ],
+    "properties": {
+      "facility_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "verified_role": {
+        "enum": [
+          null,
+          "shelter",
+          "hospital",
+          "primary_care",
+          "pharmacy"
+        ]
+      },
+      "coordinates": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "entrance": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "capacity": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 0
+      },
+      "effective_from": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date"
+      },
+      "effective_to": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date"
+      },
+      "verification_method": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "verification_status": {
+        "enum": [
+          "unverified",
+          "verified",
+          "rejected"
+        ],
+        "default": "unverified"
+      },
+      "event_activation_verified": {
+        "type": "boolean",
+        "default": false
+      },
+      "capacity_verified": {
+        "type": "boolean",
+        "default": false
+      },
+      "evidence": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url",
+            "sha256",
+            "supports",
+            "observation_date"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^https://"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "supports": {
+              "enum": [
+                "role",
+                "location",
+                "entrance",
+                "activation",
+                "capacity"
+              ]
+            },
+            "observation_date": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        }
+      }
+    }
+  }
+}

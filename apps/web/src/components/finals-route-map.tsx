@@ -32,6 +32,9 @@ export function FinalsRouteMap({ origin, comparison, layers, view, th }: { origi
       });
       resize.observe(container.current);
       for (const layer of layers) {
+        if (layer.data && layer.id === "sar-candidate_extent") L.geoJSON(layer.data as MapGeometry, {
+          style: { color: "#356bb8", weight: .5, fillColor: "#356bb8", fillOpacity: .2 },
+        }).addTo(map);
         if (layer.data && ["road_geojson", "reporting-subdistricts"].includes(layer.id)) L.geoJSON(layer.data as MapGeometry, {
           style: { color: layer.id === "road_geojson" ? "#a7bbc4" : "#6b8895", weight: layer.id === "road_geojson" ? 1.2 : 1, fillOpacity: 0, dashArray: layer.id === "reporting-subdistricts" ? "5 6" : undefined },
         }).addTo(map);
@@ -56,6 +59,7 @@ export function FinalsRouteMap({ origin, comparison, layers, view, th }: { origi
       L.circleMarker([origin.latitude, origin.longitude], { radius: 9, color: "#17384b", weight: 3, fillColor: "#f4bf43", fillOpacity: 1 }).bindTooltip(startLabel, { permanent: true, direction: "top" }).addTo(map);
       map.attributionControl.setPrefix("Leaflet · FloodGuard");
       map.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · Reporting boundaries: HDX Thailand COD-AB');
+      if (layers.some((layer) => layer.id === "sar-candidate_extent")) map.attributionControl.addAttribution("Contains modified Copernicus Sentinel data (2024)");
     }
     mount().catch(() => { if (!disposed) setFailed(true); });
     return () => { disposed = true; resize?.disconnect(); map?.remove(); };

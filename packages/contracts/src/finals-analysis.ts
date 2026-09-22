@@ -89,6 +89,24 @@ export interface FinalsRoutes {
   origins: FinalsOrigin[];
   comparisons: FinalsRouteComparison[];
   limitations: string[];
+  closure_basis?: "candidate_flood";
+}
+
+export interface FinalsFloodScenario {
+  status: "candidate_scenario_only";
+  candidate_affected_population: number;
+  unobserved_population: number;
+  closed_edges: { edge_id: string; intersection_length_m: number; intersection_fraction: number }[];
+  impact: FinalsIntervention;
+  source_timestamp: string;
+  candidate_provenance: { threshold_db: number; method: string; limitations: string[]; sources: { product_id: string; acquisition_date: string; sha256: string }[] };
+  subdistricts: { subdistrict_id: string; candidate_affected_population: number; unobserved_population: number; missing_input_reasons: Record<string, string>; assessment: {
+    fpps_0_100: null; action_class: null; components: Record<string, number | null>;
+    fixed_weight_bounds: { lower: number; upper: number };
+    scenario_completions: { scenario_id: string; assumed_missing_value: number; fpps_0_100: number; action_class: string }[];
+  } }[];
+  normalization: Record<string, string>;
+  limitations: string[];
 }
 
 export interface FinalsAnalysis {
@@ -111,6 +129,9 @@ export interface FinalsAnalysis {
   services: { id: FinalsServiceId; status: "available" | "unavailable"; facilities: number; reason: string; variants: FinalsVariant[] }[];
   facility_review: { id: string; name: string; service_type: string; geometry_role: string; eligible: boolean; event_availability: "unknown"; actual_capacity: null; source_url: string }[];
   routes?: FinalsRoutes;
+  flood_scenarios?: Record<FinalsTravelMode, FinalsFloodScenario>;
+  connectivity_audits?: Record<FinalsTravelMode, { bridges: number; articulation_points: number; eligible_destination_connectors: number; baseline_residents_with_route: number; highest_edge_impacts: { edge_id: string; residents_losing_all_routes: number }[] }>;
+  facility_connection_comparison?: Record<FinalsTravelMode, { fixed_edge_comparisons: { edge_id: string; original: FinalsIntervention; revised: FinalsIntervention }[] }>;
   topology_review?: { reviewed_candidates: number; accepted_connections: number; summary: string };
   focus_briefs?: { id: string; name: string; name_th: string; unit_coverage_fraction: number; modelled_population: number; priority: "verification"; service_type: string; travel_mode: "walking"; main_drivers: string[]; useful_intervention: string; uncertainty: string[] }[];
   capacity: {

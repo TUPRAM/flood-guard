@@ -35,6 +35,7 @@ PUBLIC_DATASETS = {
     "context-worldpop",
     "project-scenarios",
     "context-admin",
+    "context-sar-candidate",
 }
 DATABASE_KEYS = {
     "license",
@@ -520,6 +521,14 @@ def _database(
                     == (row["facility_type"] == "healthcare"),
                     "Generic OSM shelter cannot be an access destination",
                 )
+                if "connectors" in row:
+                    _require(isinstance(row["connectors"], list) and 1 <= len(row["connectors"]) <= 2, "Invalid reviewed connector count")
+                    _require(row.get("connector_count") == len(row["connectors"]) and bool(row.get("connector_review_id")), "Connector review identity is missing")
+                    seen = set()
+                    for connector in row["connectors"]:
+                        _require(set(connector) == {"node_id", "snap_distance_m"}, "Unexpected nested connector fields")
+                        _require(connector["node_id"] in nodes and connector["node_id"] not in seen and 0 <= connector["snap_distance_m"] <= 100, "Invalid reviewed connector")
+                        seen.add(connector["node_id"])
             if "node_id" in row:
                 _require(
                     row["node_id"] is None or row["node_id"] in nodes,
@@ -530,7 +539,7 @@ def _database(
 def _finals_database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
     """Bind every displayed path and service case to the downloadable model inputs."""
     _require(
-        set(payload) == {"schema_version", "analysis", "contexts"}
+        {"schema_version", "analysis", "contexts"} <= set(payload) <= {"schema_version", "analysis", "contexts", "connectivity_audits"}
         and payload["schema_version"] == "floodguard.finals_database.v1",
         "Invalid finals database",
     )
@@ -544,6 +553,30 @@ def _finals_database(payload: dict, package: dict, policies: dict[str, dict]) ->
         "Missing finals travel mode",
     )
     assert_public_safe(payload)
+    if analysis.get("connectivity_audits"):
+        from .evidence_connectivity import audit_connectivity
+
+        _require(set(payload.get("connectivity_audits", {})) == {"walking", "modelled_vehicle"}, "Missing full connectivity audit")
+        for mode, value in payload["contexts"].items():
+            audit = audit_connectivity(value["population"], value["edges"], [r for r in value["osm_facilities"] if r.get("service_type") == "hospital" and r.get("candidate_destination_eligible") and r.get("within_routing_context")], source_timestamp=value["source_metadata"]["osm"]["retrieved_at_utc"])
+            _require(audit == payload["connectivity_audits"][mode], "Published connectivity impacts differ from recomputation")
+            for key in ("bridges", "articulation_points", "baseline_residents_with_route", "eligible_destination_connectors"):
+                _require(audit[key] == analysis["connectivity_audits"][mode][key], "Connectivity headline differs from model")
+    if analysis.get("flood_scenarios"):
+        from .evidence_flood_scenario import candidate_flood_scenario
+
+        layers = {r["id"]: r for r in package["layers"]}
+        for mode, value in payload["contexts"].items():
+            claimed = analysis["flood_scenarios"][mode]
+            provenance = claimed["candidate_provenance"]
+            geometries = []
+            for key in ("candidate_extent", "observation_footprint"):
+                layer = layers.get("sar-" + key)
+                _require(layer is not None and layer["dataset_id"] == "context-sar-candidate", "Missing source-bound SAR layer")
+                _hash(provenance["products"][key]["sha256"], hashlib.sha256(canonical_bytes(layer["data"])).hexdigest(), "SAR " + key)
+                geometries.append(layer["data"])
+            recalculated = candidate_flood_scenario({**value, "canonical_sha256": value["context_sha256"]}, *geometries, provenance)
+            _require(recalculated == claimed, "Candidate flood/access/score results differ from their source geometry")
     for mode, context in payload["contexts"].items():
         from .evidence_finals_export import ORIGIN_KEYS
         from .evidence_routes import calculate_pin_route

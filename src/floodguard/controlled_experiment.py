@@ -6989,7 +6989,9 @@ def _assert_unchanged_snapshot(
             f"{label.capitalize()} changed while its bytes were read."
         )
     try:
-        current = os.stat(path, follow_symlinks=False)
+        from floodguard.file_snapshot import path_snapshot
+
+        current = path_snapshot(path)
     except OSError as exc:
         raise ControlledExperimentError(
             f"{label.capitalize()} changed after its bytes were read."

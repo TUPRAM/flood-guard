@@ -371,6 +371,14 @@ def _supporting_dataset(
 
 SUPPORTING = [
     _supporting_dataset(
+        "context-sar-candidate",
+        "Contains modified Copernicus Sentinel data (2024), processed by FloodGuard",
+        "Copernicus Sentinel Data Legal Notice",
+        "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
+        "candidate_estimate",
+        ["Uncalibrated 3–15 September amplitude-change candidate, not validated flood extent or probability. No independent accuracy claim."],
+    ),
+    _supporting_dataset(
         "project-scenarios",
         "FloodGuard illustrative scenarios",
         "Project-owned synthetic data",
@@ -1255,6 +1263,19 @@ def build_library(
             if finals_analysis is not None and aoi["id"] == "aoi-01_mae_sai_core":
                 from .evidence_finals_export import public_finals_database
 
+                if finals_analysis.get("flood_scenarios"):
+                    flood = finals_analysis["flood_scenarios"]["walking"]
+                    for key, title in (("candidate_extent", "September SAR change candidate — unvalidated"), ("observation_footprint", "SAR candidate analysis footprint — not a validation mask")):
+                        path = output_dir / "flood_candidate" / (key + ".geojson")
+                        if sha256_file(path) != flood["candidate_provenance"]["products"][key]["sha256"]:
+                            raise ValueError("Published flood geometry differs from its calculation")
+                        package["layers"].append({"id": "sar-" + key, "title": title, "role": "candidate_estimate",
+                                                 "dataset_id": "context-sar-candidate", "availability": "available",
+                                                 "reason": "Contains modified Copernicus Sentinel data (2024). Fixed amplitude-drop threshold; no validation or observed closure claim.",
+                                                 "data": json.loads(path.read_bytes())})
+                    package["datasets"].append({"dataset_id": "context-sar-candidate", "availability": "partial",
+                                                "coverage": "Mae Sai core: 3–15 September 2024 change; candidate analysis coverage is separate from Thailand reporting coverage.",
+                                                "qc": flood["candidate_provenance"]["limitations"], "summary": "Fixed-threshold SAR candidate drives an explicit road-intersection closure experiment."})
                 package["decision_brief"]["finals_analysis"] = finals_analysis
                 package["input_hashes"]["finals_analysis_sha256"] = finals_analysis[
                     "analysis_sha256"
@@ -1448,6 +1469,26 @@ def render_report(
                 + concise
                 + "</details>"
             )
+            if finals.get("flood_scenarios"):
+                spur = finals["facility_connection_comparison"]["walking"]["fixed_edge_comparisons"][0]
+                flood_rows = "".join(
+                    f"<tr><td>{esc(mode)}</td><td>{len(result['closed_edges'])}</td><td>{result['candidate_affected_population']:,.1f}</td><td>{result['impact']['losing_30_min_access']:,.1f}</td><td>{result['impact']['newly_unreachable_population']:,.1f}</td></tr>"
+                    for mode, result in finals["flood_scenarios"].items()
+                )
+                score_rows = "".join(
+                    f"<tr><td>{esc(mode)} / {esc(unit['subdistrict_id'])}</td><td>{unit['candidate_affected_population']:,.1f}</td><td>"
+                    + " / ".join(f"{row['fpps_0_100']:.2f} {esc(row['action_class'])}" for row in unit['assessment']['scenario_completions'])
+                    + "</td><td>" + esc(" ".join(unit["missing_input_reasons"].values())) + "</td></tr>"
+                    for mode, result in finals["flood_scenarios"].items() for unit in result["subdistricts"]
+                )
+                concise = (
+                    "<h3>Candidate flood-driven population comparison</h3><p>Contains modified Copernicus Sentinel data (2024). Fixed 2.25 dB uncalibrated amplitude-drop candidate from 3 to 15 September; no independent validation. Every positive-length road intersection imposes a closure assumption, including bridges. Counts are modelled residents, not flood victims or observed isolation.</p>"
+                    + "<table><tr><th>Mode</th><th>Imposed closures</th><th>Candidate-overlap residents</th><th>Lose 30-minute access</th><th>Lose all routes</th></tr>" + flood_rows + "</table>"
+                    + "<p>Accepted FPPS remains unavailable: calibrated flood likelihood and compatible vulnerability/context are missing. The unchanged scorer produces low-confidence Class E for explicit 0/50/100 missing-input scenarios. Scores concern AOI intersections, not complete subdistricts.</p>"
+                    + "<table><tr><th>Mode / reporting intersection</th><th>Candidate overlap</th><th>FPPS at 0 / 50 / 100 assumptions</th><th>Named missing inputs</th></tr>" + score_rows + "</table>"
+                    + f"<p>The original catastrophic closure of internal hospital spur 934550386 depended on its single assumed site connector. Two geometry-checked connections to Tessaban Road 15 reduce the walking all-route loss for that same spur from {spur['original']['newly_unreachable_population']:,.1f} to {spur['revised']['newly_unreachable_population']:,.1f} residents. Neither connector is a surveyed entrance or evidence of event-time operation. Individual graph-edge and articulation impacts are included in the downloadable finals model database and must not be summed.</p>"
+                    + concise
+                )
         table = "".join(
             f"<tr><td>{esc(s['title'])}</td><td>{esc(s['kind'])}</td><td>"
             + "<br>".join(

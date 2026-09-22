@@ -16,7 +16,9 @@ from floodguard.evidence_catalog import (
     load_aois,
     sha256_file,
 )
+from floodguard.evidence_connectivity import audit_connectivity
 from floodguard.evidence_context import build_context_inputs
+from floodguard.evidence_facility_connections import apply_facility_connections
 from floodguard.evidence_finals import build_finals_analysis
 from floodguard.evidence_pipeline import build_runtime_identity, write_json
 from floodguard.evidence_routes import build_pin_comparisons
@@ -40,6 +42,8 @@ def main() -> None:
     )
     parser.add_argument("--reviewed-junctions", type=Path)
     parser.add_argument("--public-origins", type=Path)
+    parser.add_argument("--facility-connections", type=Path)
+    parser.add_argument("--flood-candidate", type=Path)
     parser.add_argument("--generated-at", required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
@@ -50,6 +54,9 @@ def main() -> None:
         "evidence_scenarios.py",
         "evidence_interventions.py",
         "evidence_population_review.py",
+        "evidence_facility_connections.py",
+        "evidence_connectivity.py",
+        "evidence_flood_scenario.py",
     )
     implementation = {
         name: sha256_file(root / "src/floodguard" / name) for name in modules
@@ -82,6 +89,12 @@ def main() -> None:
         else []
     )
     contexts = {}
+    connection_comparison = {}
+    connection_review = (
+        json.loads(args.facility_connections.read_bytes())
+        if args.facility_connections
+        else None
+    )
     for mode in ("walking", "modelled_vehicle"):
         print(f"Building {mode} context", flush=True)
         contexts[mode] = build_context_inputs(
@@ -95,6 +108,66 @@ def main() -> None:
             reviewed_junctions=reviewed,
             public_origin_records=origins,
         )
+        if connection_review:
+            from floodguard.evidence_finals import (
+                baseline_summary,
+                intervention_summary,
+            )
+            from floodguard.evidence_scenarios import calculate_total_access
+
+            before_context = contexts[mode]
+            selected = lambda c: [
+                r
+                for r in c["osm_facilities"]
+                if r.get("service_type") == "hospital"
+                and r.get("candidate_destination_eligible")
+                and r.get("within_routing_context")
+            ]
+            before = calculate_total_access(
+                before_context["population"],
+                before_context["edges"],
+                selected(before_context),
+            )
+            contexts[mode] = apply_facility_connections(
+                before_context, connection_review
+            )
+            after_context = contexts[mode]
+            after = calculate_total_access(
+                after_context["population"],
+                after_context["edges"],
+                selected(after_context),
+            )
+            comparison = {
+                "original_baseline": baseline_summary(before),
+                "revised_baseline": baseline_summary(after),
+                "fixed_edge_comparisons": [],
+            }
+            for edge_id in (
+                "osm-way-934550386-segment-0",
+                "osm-way-934550386-segment-1",
+            ):
+                definition = {
+                    "id": edge_id,
+                    "kind": "close_edge",
+                    "target_id": edge_id,
+                    "target_label": edge_id,
+                    "selection_method": "Previously reported internal spur; fixed before connector review.",
+                }
+                row = {"edge_id": edge_id}
+                for label, ctx, base in (
+                    ("original", before_context, before),
+                    ("revised", after_context, after),
+                ):
+                    result = calculate_total_access(
+                        ctx["population"],
+                        ctx["edges"],
+                        selected(ctx),
+                        scenario={"closed_edge_ids": [edge_id]},
+                        baseline_result=base,
+                    )
+                    row[label] = intervention_summary(result, definition)
+                comparison["fixed_edge_comparisons"].append(row)
+            connection_comparison[mode] = comparison
     population = contexts["walking"]["population"]
     # Resolve only unique point-in-polygon matches. Shared boundary cells remain unassigned.
     geometries = [
@@ -148,6 +221,35 @@ def main() -> None:
     summary, detailed = build_finals_analysis(
         contexts, scope=scope, timeline=timeline, generated_at=args.generated_at
     )
+    summary["connectivity_audits"] = {}
+    detailed["connectivity_audits"] = {}
+    for mode, context in contexts.items():
+        sites = [
+            r
+            for r in context["osm_facilities"]
+            if r.get("service_type") == "hospital"
+            and r.get("candidate_destination_eligible")
+            and r.get("within_routing_context")
+        ]
+        audit = audit_connectivity(
+            context["population"],
+            context["edges"],
+            sites,
+            source_timestamp=context["source_metadata"]["osm"]["retrieved_at_utc"],
+        )
+        detailed["connectivity_audits"][mode] = audit
+        summary["connectivity_audits"][mode] = {
+            k: v
+            for k, v in audit.items()
+            if k not in ("edge_impacts", "articulation_impacts")
+        }
+        summary["connectivity_audits"][mode]["highest_edge_impacts"] = sorted(
+            audit["edge_impacts"],
+            key=lambda r: (-r["residents_losing_all_routes"], r["edge_id"]),
+        )[:10]
+    summary["facility_connection_comparison"] = connection_comparison
+    if connection_review:
+        summary["facility_connection_review"] = connection_review
     summary["topology_review"] = {
         "reviewed_candidates": len(reviewed),
         "accepted_connections": contexts["walking"]["connectivity_review"].get(
@@ -203,7 +305,33 @@ def main() -> None:
     summary["focus_briefs"] = sorted(
         summaries, key=lambda row: (-row["modelled_population"], row["id"])
     )[:2]
-    summary["routes"] = build_pin_comparisons(contexts)
+    flood_closures = None
+    if args.flood_candidate:
+        from floodguard.evidence_flood_scenario import candidate_flood_scenario
+
+        provenance = json.loads((args.flood_candidate / "manifest.json").read_bytes())
+        if provenance["aoi_sha256"] != aoi["sha256"]:
+            raise ValueError("Candidate flood belongs to a different AOI")
+        candidate = {}
+        for name in ("candidate_extent", "observation_footprint"):
+            path = args.flood_candidate / (name + ".geojson")
+            if sha256_file(path) != provenance["products"][name]["sha256"]:
+                raise ValueError("Candidate geometry differs from its manifest")
+            candidate[name] = json.loads(path.read_bytes())
+        summary["flood_scenarios"] = {}
+        flood_closures = {}
+        for mode, context in contexts.items():
+            result = candidate_flood_scenario(
+                context,
+                candidate["candidate_extent"],
+                candidate["observation_footprint"],
+                provenance,
+            )
+            summary["flood_scenarios"][mode] = result
+            flood_closures[mode] = [r["edge_id"] for r in result["closed_edges"]]
+    summary["routes"] = build_pin_comparisons(contexts, flood_closures=flood_closures)
+    if flood_closures is not None:
+        summary["routes"]["closure_basis"] = "candidate_flood"
     summary["analysis_sha256"] = hashlib.sha256(
         canonical_bytes({k: v for k, v in summary.items() if k != "analysis_sha256"})
     ).hexdigest()

@@ -14,6 +14,9 @@ from .evidence_catalog import (
 )
 
 SITE_EXTRA_KEYS = {
+    "connectors",
+    "connector_count",
+    "connector_review_id",
     "service_type",
     "geometry_role",
     "source_url",
@@ -247,5 +250,12 @@ def public_finals_database(analysis: dict, contexts: dict) -> dict:
         "analysis": analysis,
         "contexts": projected,
     }
+    if analysis.get("connectivity_audits"):
+        from .evidence_connectivity import audit_connectivity
+
+        result["connectivity_audits"] = {
+            mode: audit_connectivity(value["population"], value["edges"], [r for r in value["osm_facilities"] if r.get("service_type") == "hospital" and r.get("candidate_destination_eligible") and r.get("within_routing_context")], source_timestamp=value["source_metadata"]["osm"]["retrieved_at_utc"])
+            for mode, value in projected.items()
+        }
     assert_public_safe(result)
     return result

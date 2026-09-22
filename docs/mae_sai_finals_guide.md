@@ -1,5 +1,8 @@
 # Mae Sai finals demonstration and claim register
 
+For the September 22 analytical correction, candidate flood closures, connector audit and current numerical interpretation, see [the model audit](mae_sai_model_audit_20260922.md). Its results supersede older numerical examples below.
+
+
 This is the active presentation guide for the evidence demonstration, not a
 certification that the project meets the organizer's requirements. Use the release
 handoff's Git SHA, package hashes and preview URL. Do not copy numbers from an

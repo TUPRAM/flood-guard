@@ -186,11 +186,24 @@ jobs:
       - name: Install Python 3.12
         run: uv python install 3.12
       - name: Audit root Python dependencies
-        run: uv run --with pip-audit pip-audit --strict || true
+        continue-on-error: true
+        run: |
+          uv export --locked --all-extras --no-emit-project --no-hashes --format requirements-txt --output-file root-audit-requirements.txt
+          uv tool run pip-audit --strict --no-deps --disable-pip -r root-audit-requirements.txt --format json --output root-python-audit.json
       - name: Audit API dependencies
-        run: >-
-          uv run --project services/api --with pip-audit pip-audit --strict || true
+        continue-on-error: true
+        run: |
+          uv export --project services/api --locked --no-emit-project --no-emit-package floodguard-thailand --no-hashes --format requirements-txt --output-file api-audit-requirements.txt
+          uv tool run pip-audit --strict --no-deps --disable-pip -r api-audit-requirements.txt --format json --output api-python-audit.json
       - name: Enable pinned pnpm
         run: corepack enable
       - name: Audit JavaScript dependencies
-        run: pnpm audit --audit-level moderate || true
+        continue-on-error: true
+        run: pnpm audit --json > javascript-audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-receipts
+          path: |
+            *-audit.json
+            *-audit-requirements.txt

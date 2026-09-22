@@ -890,3 +890,24 @@ def test_large_capacity_sensitivity_rows_do_not_inflate_report(compact_export):
         )["status"]
         == "passed"
     )
+
+
+@pytest.mark.parametrize("field,delta", [("intersection_length_m", 1e-8), ("intersection_fraction", 1e-10)])
+def test_candidate_geometry_roundoff_only(field, delta):
+    from floodguard.evidence_validation import _compare_flood_results
+
+    expected = {"closed_edges": [{"edge_id": "a", field: 0.5}], "residents": 12.0}
+    actual = copy.deepcopy(expected)
+    actual["closed_edges"][0][field] += delta
+    _compare_flood_results(actual, expected)
+    actual["closed_edges"][0][field] += 0.001
+    with pytest.raises(EvidenceValidationError, match="Flood intersection differs"):
+        _compare_flood_results(actual, expected)
+    actual = copy.deepcopy(expected)
+    actual["residents"] += 1e-8
+    with pytest.raises(EvidenceValidationError, match="candidate.residents"):
+        _compare_flood_results(actual, expected)
+    actual = copy.deepcopy(expected)
+    actual["closed_edges"][0]["edge_id"] = "b"
+    with pytest.raises(EvidenceValidationError, match="edge_id"):
+        _compare_flood_results(actual, expected)

@@ -170,7 +170,12 @@
 :global(body:has([data-route-workspace=true]) [data-pwa-availability] > summary) { min-height: 28px; padding: 3px 9px; font-size: 10px; box-shadow: none; }
 :global(body:has([data-route-workspace=true]) [data-pwa-availability] > div) { position: absolute; bottom: 34px; right: 0; width: 100%; max-height: calc(100dvh - 70px); overflow: auto; }
 @media(max-width:1100px) {
-  .routeStage { grid-template-columns: minmax(0,1fr) 250px; }
+  .routeStage { grid-template-columns: minmax(0,1fr) 310px; }
+  .routeResults { gap: 5px; }
+  .routeCards { gap: 5px; }
+  .routeCards article { padding: 7px 9px; }
+  .routeCards h3 { margin: 3px 0; }
+  .routeResults .routeOutcome { padding: 7px; }
   .workspace .header { flex-wrap: nowrap; gap: 15px; }
   .workspace .header nav { order: initial; flex-basis: auto; gap: 12px; }
   .workspace .selectionMeta { grid-column: auto; }

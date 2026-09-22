@@ -536,6 +536,29 @@ def _database(
                 )
 
 
+def _compare_flood_results(actual: Any, expected: Any, path: str = "candidate") -> None:
+    """Require exact model results, allowing only sub-micrometre geometry roundoff."""
+    if isinstance(actual, dict) and isinstance(expected, dict):
+        _require(set(actual) == set(expected), f"Flood result fields differ at {path}")
+        for key in actual:
+            _compare_flood_results(actual[key], expected[key], f"{path}.{key}")
+    elif isinstance(actual, list) and isinstance(expected, list):
+        _require(len(actual) == len(expected), f"Flood result count differs at {path}")
+        for index, (left, right) in enumerate(zip(actual, expected, strict=True)):
+            _compare_flood_results(left, right, f"{path}[{index}]")
+    elif path.startswith("candidate.closed_edges[") and path.endswith(
+        (".intersection_length_m", ".intersection_fraction")
+    ):
+        tolerance = 1e-7 if path.endswith(".intersection_length_m") else 1e-9
+        _require(
+            type(actual) in (int, float) and type(expected) in (int, float)
+            and math.isclose(actual, expected, rel_tol=0, abs_tol=tolerance),
+            f"Flood intersection differs at {path}: {actual!r} != {expected!r}",
+        )
+    else:
+        _require(actual == expected, f"Flood result differs at {path}: {actual!r} != {expected!r}")
+
+
 def _finals_database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
     """Bind every displayed path and service case to the downloadable model inputs."""
     _require(
@@ -576,7 +599,7 @@ def _finals_database(payload: dict, package: dict, policies: dict[str, dict]) ->
                 _hash(provenance["products"][key]["sha256"], hashlib.sha256(canonical_bytes(layer["data"])).hexdigest(), "SAR " + key)
                 geometries.append(layer["data"])
             recalculated = candidate_flood_scenario({**value, "canonical_sha256": value["context_sha256"]}, *geometries, provenance)
-            _require(recalculated == claimed, "Candidate flood/access/score results differ from their source geometry")
+            _compare_flood_results(recalculated, claimed)
     for mode, context in payload["contexts"].items():
         from .evidence_finals_export import ORIGIN_KEYS
         from .evidence_routes import calculate_pin_route

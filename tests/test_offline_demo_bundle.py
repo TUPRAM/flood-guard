@@ -317,3 +317,18 @@ def test_extracted_finals_server_rejects_changed_bytes_and_path_escape(
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     with pytest.raises(ValueError, match="unsafe"):
         server.validate_bundle(extracted)
+
+
+@pytest.mark.parametrize("concrete_path", [None, "file:///ROOT/private.tif", "file:///C:/Users/private/a.tif"])
+def test_turbopack_virtual_root_helper_is_not_a_private_path(tmp_path, concrete_path):
+    site = tmp_path / "site"
+    _make_site(site)
+    runtime = site / "_next/static/chunks/turbopack-test.js"
+    runtime.parent.mkdir(parents=True)
+    helper = 'k.F=function(e){return e?`file:///ROOT/${e.split("/").map(encodeURIComponent).join("/")}`:"file:///ROOT/"}'
+    runtime.write_text(helper + (concrete_path or ""), encoding="utf-8")
+    if concrete_path:
+        with pytest.raises(ValueError, match="Private local path"):
+            MODULE._validate_site(site)
+    else:
+        MODULE._validate_site(site)

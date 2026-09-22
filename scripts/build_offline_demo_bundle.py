@@ -86,6 +86,14 @@ def _validate_site(site_root: Path) -> None:
         text = path.read_text(encoding="utf-8", errors="ignore")
         # A public URL such as arcgis.com/home/item.html is not a local /home
         # path. Drive paths, UNC paths and file URLs are never exempted.
+        # Turbopack emits this virtual-root helper, not a host filesystem path.
+        # Exempt only its complete expression in a runtime chunk; concrete file
+        # URLs (including paths under /ROOT) remain prohibited.
+        if path.name.startswith("turbopack-") and path.suffix == ".js":
+            text = text.replace(
+                'e?`file:///ROOT/${e.split("/").map(encodeURIComponent).join("/")}`:"file:///ROOT/"',
+                'e?"virtual-root":"virtual-root"',
+            )
         unix_text = HTTPS_URL_PATTERN.sub(_mask_https_path, text)
         if any(pattern.search(text) for pattern in PRIVATE_PATH_PATTERNS) or any(
             pattern.search(unix_text) for pattern in UNIX_PRIVATE_PATH_PATTERNS

@@ -56,8 +56,7 @@ try {
   await page.getByRole("heading", { name: "Study-area evidence library" }).waitFor();
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
   for (const reference of catalog.packages) {
-    await page.selectOption("#evidence-aoi", reference.aoi_id);
-    await page.selectOption("#evidence-event", reference.event_id);
+    await page.selectOption("#evidence-case", reference.id);
     await page.locator("main[data-evidence-library] footer").filter({ hasText: reference.id }).waitFor();
     const text = await page.locator("main[data-evidence-library]").innerText();
     if (!text.includes("Primary FPPS: unavailable") || !text.includes("Action class: unavailable")) throw new Error(`Primary scoring boundary lost: ${reference.id}`);
@@ -106,8 +105,7 @@ try {
   await page.reload();
   await page.locator("main[data-evidence-library] footer").filter({ hasText: reference.id }).waitFor();
   for (const item of catalog.packages) {
-    await page.selectOption("#evidence-aoi", item.aoi_id);
-    await page.selectOption("#evidence-event", item.event_id);
+    await page.selectOption("#evidence-case", item.id);
     await page.locator("main[data-evidence-library] footer").filter({ hasText: item.id }).waitFor();
   }
   await verifyDecisionBrief(page, true);
@@ -132,6 +130,18 @@ async function verifySharedViews(page, offline) {
       const toggle = page.getByRole("button", { name: th ? "ใช้ภาษาไทย" : "Use English", exact: true });
       if (await toggle.count()) await toggle.click();
       await page.locator("main[data-evidence-library] footer").filter({ hasText: reference.id }).waitFor();
+      const caseSelect = page.getByRole("combobox", { name: th ? "พื้นที่ศึกษา — เหตุการณ์" : "Study area — Event", exact: true });
+      const choices = await caseSelect.locator("option").evaluateAll((options) => options.map((option) => option.value));
+      if (JSON.stringify(choices) !== JSON.stringify(catalog.packages.map((item) => item.id))) throw new Error("Study selector includes an unpublished area/event combination");
+      const alternative = catalog.packages.find((item) => item.id !== reference.id);
+      if (alternative) {
+        await caseSelect.selectOption(alternative.id);
+        await page.locator("main[data-evidence-library] footer").filter({ hasText: alternative.id }).waitFor();
+        await caseSelect.selectOption(reference.id);
+        await page.locator("main[data-evidence-library] footer").filter({ hasText: reference.id }).waitFor();
+        const selectedUrl = new URL(page.url());
+        if (selectedUrl.searchParams.get("aoi") !== reference.aoi_id || selectedUrl.searchParams.get("event") !== reference.event_id) throw new Error("Combined selection did not preserve its area/event deep link");
+      }
       const pkg = JSON.parse(readFileSync(resolve(out, reference.url.replace(/^\//, "")), "utf8"));
       const summary = page.locator("[data-public-case-summary]");
       if (pkg.decision_brief?.finals_analysis) {
@@ -167,8 +177,7 @@ async function verifyDecisionBrief(page, offline) {
       await page.getByRole("heading", { level: 1, name: th ? /^(บทสรุปเพื่อการตัดสินใจ|เส้นทางก่อนและหลัง)$/ : /^(Study-area decision brief|Compare before & after routes)$/ }).waitFor();
       for (const reference of catalog.packages) {
         console.log(`Checking ${reference.id}, ${viewport.width}px, Thai=${th}, offline=${offline}`);
-        await page.selectOption("#evidence-aoi", reference.aoi_id);
-        await page.selectOption("#evidence-event", reference.event_id);
+        await page.selectOption("#evidence-case", reference.id);
         await main.locator("footer").filter({ hasText: reference.id }).waitFor();
         const evidence = JSON.parse(readFileSync(resolve(out, reference.url.replace(/^\//, "")), "utf8"));
         if (!evidence.decision_brief) throw new Error(`Decision brief package missing: ${reference.id}`);
@@ -361,8 +370,7 @@ async function verifyRouteWorkspace(page, aoiId = "aoi-01_mae_sai_core") {
       if (await toggle.count()) await toggle.click();
       await routePanel.locator(".leaflet-container canvas").first().waitFor({ state: "visible" });
       await page.evaluate(() => window.scrollTo(0, 0));
-      await assertFitsViewport(page, page.locator("#evidence-aoi"), "area selector", true);
-      await assertFitsViewport(page, page.locator("#evidence-event"), "event selector", true);
+      await assertFitsViewport(page, page.locator("#evidence-case"), "study area and event selector", true);
       for (const label of th ? ["บริการที่ต้องการ", "วิธีเดินทางตามแบบจำลอง", "จุดเริ่มต้นสาธารณะ", "การเปลี่ยนแปลงที่กำหนด"] : ["Service needed", "Modelled travel mode", "Public starting place", "Imposed change"]) {
         await assertFitsViewport(page, brief.getByRole("combobox", { name: label, exact: true }), label, true);
       }

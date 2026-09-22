@@ -13,7 +13,7 @@
 .badge, .status { display: inline-block; border-radius: 6px; background: #e9eff3; border: 1px solid #c9d7de; padding: 6px 10px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .badge { background: #fff5dc; border-color: #e7c883; }
 .notice { padding: 17px 20px; border-left: 4px solid #a47827; background: #fff8e9; color: #614e27; line-height: 1.7; font-size: 13px; }
-.selectors { display: grid; grid-template-columns: minmax(220px, 1.25fr) minmax(180px, 1fr) auto; gap: 18px; align-items: end; margin: 26px 0; }
+.selectors { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; margin: 26px 0; }
 .selectors label { font-size: 12px; font-weight: 750; }
 .selectors select { display: block; width: 100%; margin-top: 8px; padding: 12px; background: white; color: #17384b; border: 1px solid #b4c5ce; border-radius: 6px; font: inherit; min-height: 45px; }
 .selectionMeta { font-size: 12px; line-height: 1.9; }
@@ -70,7 +70,7 @@
 .downloads small { display: block; font-size: 10px; overflow-wrap: anywhere; margin-top: 8px; }
 .downloads .download { white-space: normal; }
 .library :is(a, button, select, summary):focus-visible { outline: 3px solid #e3a52a; outline-offset: 3px; }
-@media(max-width: 900px) { .header { flex-wrap: wrap; gap: 12px; padding: 16px 20px; } .header nav { order: 3; flex-basis: 100%; } .brand { flex: 1; } .selectors { grid-template-columns: 1fr 1fr; } .selectionMeta { grid-column: 1/-1; } .layerList { grid-template-columns: 1fr 1fr; } .scenarios { grid-template-columns: 1fr; } }
+@media(max-width: 900px) { .header { flex-wrap: wrap; gap: 12px; padding: 16px 20px; } .header nav { order: 3; flex-basis: 100%; } .brand { flex: 1; } .selectors { grid-template-columns: 1fr; } .selectionMeta { grid-column: 1/-1; } .layerList { grid-template-columns: 1fr 1fr; } .scenarios { grid-template-columns: 1fr; } }
 @media(max-width: 560px) { .content { padding: 24px 14px; } .heading { flex-direction: column-reverse; gap: 10px; } .panel { padding: 16px; } .selectors { grid-template-columns: 1fr; } .layerList { grid-template-columns: 1fr; } .map { height: 340px; } .sectionTitle { flex-direction: column; gap: 0; margin-bottom: 12px; } .provenance { flex-direction: column; } }
 
 .briefLead { border-top: 4px solid #187783; }
@@ -121,7 +121,7 @@
 .workspaceHeading h1 { font-size: 22px; letter-spacing: -.025em; line-height: 1.3; margin: 0; }
 .workspaceHeading .badge { padding: 4px 8px; font-size: 10px; }
 .workspaceNotice { margin: 0; padding: 5px 10px; border-left: 3px solid #a47827; background: #fff8e9; color: #614e27; font-size: 11px; line-height: 1.4; }
-.workspace .content > .selectors { margin: 0; gap: 12px; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; }
+.workspace .content > .selectors { margin: 0; gap: 12px; grid-template-columns: minmax(0,1fr) auto; }
 .workspace .selectors label, .routeControls label { min-width: 0; font-size: 11px; font-weight: 700; }
 .workspace .selectors select, .routeControls select { display: block; width: 100%; min-width: 0; min-height: 34px; padding: 5px 9px; margin-top: 3px; border: 1px solid #b4c5ce; border-radius: 5px; background: white; color: #17384b; font: inherit; }
 .workspace .selectionMeta { margin: 0; font-size: 10px; }
@@ -198,7 +198,7 @@
   .workspaceHeading h1 { font-size: 16px; }
   .workspaceHeading .badge { font-size: 8px; padding: 3px 5px; }
   .workspaceNotice { font-size: 9px; line-height: 1.3; padding: 3px 6px; }
-  .workspace .content > .selectors { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .workspace .content > .selectors { grid-template-columns: 1fr; gap: 7px; }
   .workspace .selectionMeta { display: none; }
   .workspace .selectors label, .routeControls label { font-size: 10px; }
   .workspace .selectors select, .routeControls select { min-height: 30px; margin-top: 1px; padding: 3px 5px; }

@@ -117,13 +117,17 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
       {!catalog && !catalogError ? <p role="status">{th ? "กำลังโหลดคลังข้อมูล…" : "Loading evidence catalog…"}</p> : null}
       {catalog ? <>
         <section className={styles.selectors} aria-label={th ? "เลือกพื้นที่และเหตุการณ์" : "Area and event selection"}>
-          <label htmlFor="evidence-aoi">{th ? "พื้นที่ศึกษา" : "Study area"}<select id="evidence-aoi" value={selection.aoi} onChange={(e) => { const id = e.target.value; const current = catalog.packages.find((p) => p.aoi_id === id && p.event_id === selection.event); const next = current ?? catalog.packages.find((p) => p.aoi_id === id); choose({ aoi: id, event: next?.event_id ?? selection.event }); }}>
-            {!aoi ? <option value={selection.aoi}>{selection.aoi || (th ? "เลือกพื้นที่" : "Select area")}</option> : null}
-            {catalog.aois.map((item) => <option key={item.id} value={item.id}>{th ? item.name_th ?? item.name : item.name}</option>)}
-          </select></label>
-          <label htmlFor="evidence-event">{th ? "เหตุการณ์" : "Event"}<select id="evidence-event" value={selection.event} onChange={(e) => choose({ ...selection, event: e.target.value })}>
-            {!event ? <option value={selection.event}>{selection.event || (th ? "เลือกเหตุการณ์" : "Select event")}</option> : null}
-            {catalog.events.map((item) => <option key={item.id} value={item.id}>{th ? item.name_th ?? item.name : item.name}</option>)}
+          <label htmlFor="evidence-case">{th ? "พื้นที่ศึกษา — เหตุการณ์" : "Study area — Event"}<select id="evidence-case" value={reference?.id ?? ""} onChange={(e) => {
+            const next = catalog.packages.find((item) => item.id === e.target.value);
+            if (next) choose({ aoi: next.aoi_id, event: next.event_id });
+          }}>
+            {!reference ? <option value="" disabled>{th ? "เลือกพื้นที่และเหตุการณ์ที่มีข้อมูล" : "Choose an available study area — event"}</option> : null}
+            {catalog.packages.map((item) => {
+              const area = catalog.aois.find((entry) => entry.id === item.aoi_id)!;
+              const period = catalog.events.find((entry) => entry.id === item.event_id)!;
+              const periodName = th ? period.name_th ?? period.name : period.name;
+              return <option key={item.id} value={item.id}>{th ? area.name_th ?? area.name : area.name} — {periodName.split(" · ").at(-1)}</option>;
+            })}
           </select></label>
           <div className={styles.selectionMeta}>{event ? `${event.start} — ${event.end}` : null}<small>{catalog.packages.length} {th ? "ชุดพื้นที่/เหตุการณ์" : "area/event packages"} · {catalog.package_version}</small></div>
         </section>

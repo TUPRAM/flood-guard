@@ -6,7 +6,13 @@ import { EvidenceGaugeChart, EvidenceLibrary } from "./evidence-library";
 describe("EvidenceLibrary", () => {
   it("renders candidate provenance and unavailable primary scoring without a fabricated decision", () => {
     const { catalog, evidence } = evidenceFixtures();
+    catalog.events.push({ id: "unpublished-event", name: "Event without a package", start: "2025-01-01", end: "2025-01-31" });
     const html = renderToStaticMarkup(<EvidenceLibrary initialCatalog={catalog} initialPackage={evidence} />);
+    expect(html).toContain('id="evidence-case"');
+    expect(html).toContain("Synthetic test area — Synthetic test event");
+    expect(html).not.toContain("Event without a package");
+    expect(html).not.toContain('id="evidence-aoi"');
+    expect(html).not.toContain('id="evidence-event"');
     expect(html).toContain("Study-area evidence library");
     expect(html).toContain("Non-operational");
     expect(html).toContain("Primary FPPS: unavailable");
@@ -23,6 +29,7 @@ describe("EvidenceLibrary", () => {
     expect(html).toContain("No package exists for this area/event selection");
     expect(html).not.toContain("Scenario outcomes only");
     expect(html).not.toContain("Download report");
+    expect(html).toContain('<option value="" disabled="" selected="">');
   });
 
   it("renders separate observed gauge segments and discloses unknown timezone", () => {

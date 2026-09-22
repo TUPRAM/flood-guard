@@ -20,6 +20,8 @@ const address = server.address();
 if (!address || typeof address === "string") throw new Error("Evidence QA server did not bind.");
 const origin = `http://127.0.0.1:${address.port}`;
 const workspaceOnly = process.argv.includes("--workspace-only");
+const sharedOnly = process.argv.includes("--shared-only");
+const offlineOnly = process.argv.includes("--offline-only");
 const captureArgument = process.argv.indexOf("--capture-dir");
 const captureDirectory = captureArgument >= 0 && process.argv[captureArgument + 1] ? resolve(process.argv[captureArgument + 1]) : null;
 if (captureDirectory) mkdirSync(captureDirectory, { recursive: true });
@@ -33,7 +35,20 @@ try {
   const invalidRequests = [];
   page.on("pageerror", (error) => errors.push(error.stack ?? error.message));
   page.on("request", (request) => { const url = new URL(request.url()); if (url.origin !== origin || url.pathname.startsWith("/api/")) invalidRequests.push(url.href); });
-  if (workspaceOnly) {
+  if (sharedOnly) {
+    await verifySharedViews(page, false);
+    await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    await context.setOffline(true);
+    await verifySharedViews(page, true);
+  } else if (offlineOnly) {
+    await page.goto(`${origin}/studio/library/`, { waitUntil: "networkidle" });
+    await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    await context.setOffline(true);
+    await verifyDecisionBrief(page, true);
+    await verifySharedViews(page, true);
+    await verifyRouteWorkspace(page);
+    await verifyRouteWorkspace(page, "aoi-03_hat_yai_core");
+  } else if (workspaceOnly) {
     await verifyRouteWorkspace(page);
     await verifyRouteWorkspace(page, "aoi-03_hat_yai_core");
   } else {
@@ -102,7 +117,7 @@ try {
   }
   if (errors.length) throw new Error(`Browser errors: ${errors.join("; ")}`);
   if (invalidRequests.length) throw new Error(`Unexpected browser requests: ${invalidRequests.join("; ")}`);
-  console.log(workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence library and decision brief browser: ${catalog.packages.length} AOI/event packages online and offline; ${routeCasesChecked} exact route comparisons across service, mode, origin, change, Thai/English and desktop/mobile; ${workspaceViewportsChecked} workspace language/viewport combinations with visible controls and results; exact population and intervention counts, accessible detail dialogs, invalid selections, report download and no API requests passed.`);
+  console.log(sharedOnly ? `Shared views browser: ${catalog.packages.length} AOI/event packages in Thai/English, online/offline, with service/mode links and no application alerts or API requests passed.` : offlineOnly ? `Offline decision brief browser: ${catalog.packages.length} AOI/event packages; ${routeCasesChecked} exact route comparisons; ${workspaceViewportsChecked} workspace language/viewport combinations and shared views passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence library and decision brief browser: ${catalog.packages.length} AOI/event packages online and offline; ${routeCasesChecked} exact route comparisons across service, mode, origin, change, Thai/English and desktop/mobile; ${workspaceViewportsChecked} workspace language/viewport combinations with visible controls and results; exact population and intervention counts, accessible detail dialogs, invalid selections, report download and no API requests passed.`);
   await context.close();
 } finally {
   await browser.close();
@@ -134,7 +149,8 @@ async function verifySharedViews(page, offline) {
         if (await brief.getByRole("combobox", { name: th ? "บริการที่ต้องการ" : "Service needed", exact: true }).inputValue() !== "pharmacy") throw new Error("Command did not retain selected service");
         if (await brief.getByRole("combobox", { name: th ? "วิธีเดินทางตามแบบจำลอง" : "Modelled travel mode", exact: true }).inputValue() !== "modelled_vehicle") throw new Error("Command did not retain selected mode");
       } else if (await summary.count()) throw new Error("Context AOI received a substituted result");
-      if (await page.getByRole("alert").count()) throw new Error(`Shared-view alert: ${reference.id}, offline=${offline}`);
+      const alerts = page.locator("main[data-evidence-library]").getByRole("alert");
+      if (await alerts.count()) throw new Error(`Shared-view alert: ${reference.id}, offline=${offline}: ${JSON.stringify(await alerts.allTextContents())}`);
     }
   }
 }

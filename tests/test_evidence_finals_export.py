@@ -1,6 +1,7 @@
 """Publication checks exercise corruption and semantic lineage on open fixtures."""
 
 import hashlib
+import json
 from copy import deepcopy
 from pathlib import Path
 
@@ -172,6 +173,60 @@ def test_valid_finals_fixture_passes_both_semantic_gates(finals):
     _finals_database(*database_case(finals))
 
 
+def test_compact_report_binds_full_routes_without_duplicating_geometry(finals):
+    from floodguard.evidence_pipeline import report_brief_projection
+
+    analysis = deepcopy(finals[0])
+    analysis["routes"] = {"large_route_coordinates": [[100, 20]] * 100000}
+    analysis["flood_scenarios"] = {"walking": {
+        "closed_edges": [{"edge_id": str(i)} for i in range(100000)],
+        "impact": {"newly_unreachable_population": 30},
+    }}
+    brief = {"finals_analysis": analysis, "event_id": "fixture"}
+    projected = report_brief_projection(brief)
+    compact = projected["finals_analysis"]
+    assert compact["analysis_sha256"] == analysis["analysis_sha256"]
+    assert compact["services"] == analysis["services"]
+    assert compact["flood_scenarios"]["walking"] == {
+        "closed_edge_count": 100000, "impact": {"newly_unreachable_population": 30}}
+    assert len(canonical_bytes(projected)) < 100000
+    assert len(brief["finals_analysis"]["routes"]["large_route_coordinates"]) == 100000
+
+
+def test_healthcare_exclusion_requires_matching_source_bound_review(finals):
+    from floodguard.evidence_validation import DATABASE_KEYS, _database
+
+    payload, package, policies = database_case(finals)
+    context = payload["contexts"]["walking"]
+    base = {key: value for key, value in context.items() if key in DATABASE_KEYS}
+    site = base["osm_facilities"][0]
+    site["candidate_destination_eligible"] = False
+    with pytest.raises(ValueError, match="Destination eligibility"):
+        _database(base, package, policies)
+    review = {"osm_sha256": base["input_hashes"]["osm"], "exclusions": [
+        {"facility_id": site["facility_id"], "reason": "Fixture role is unsuitable for general hospital access.",
+         "source_url": "https://example.test/facility"}
+    ]}
+    with pytest.raises(ValueError, match="recorded review"):
+        _database(base, package, policies, destination_review=review)
+    site["identity_review_status"] = review["exclusions"][0]["reason"]
+    _database(base, package, policies, destination_review=review)
+    review["osm_sha256"] = "f" * 64
+    with pytest.raises(ValueError, match="another OSM"):
+        _database(base, package, policies, destination_review=review)
+
+
+def test_generic_shelter_cannot_be_enabled_by_destination_review(finals):
+    from floodguard.evidence_validation import DATABASE_KEYS, _database
+
+    payload, package, policies = database_case(finals)
+    context = payload["contexts"]["walking"]
+    base = {key: value for key, value in context.items() if key in DATABASE_KEYS}
+    base["osm_facilities"][0]["facility_type"] = "shelter_context"
+    with pytest.raises(ValueError, match="generic OSM shelter"):
+        _database(base, package, policies, destination_review={"osm_sha256": base["input_hashes"]["osm"], "exclusions": []})
+
+
 def test_connectivity_download_hash_binds_exported_not_local_only_fields(finals):
     from floodguard.evidence_connectivity import audit_connectivity
 
@@ -296,6 +351,18 @@ def test_local_changed_parent_bytes_are_rejected(local_finals):
     with (root / "contexts/walking/context_inputs.json").open("ab") as handle:
         handle.write(b" ")
     with pytest.raises(ValueError, match="checksum"):
+        load_finals(root, aoi_sha256="a" * 64)
+
+
+def test_case_identity_cannot_override_receipt_geography(local_finals):
+    root, receipt = local_finals
+    analysis = json.loads((root / "analysis.json").read_bytes())
+    analysis["case_identity"] = {"aoi_id": "another-area", "aoi_sha256": "b" * 64}
+    resign(analysis)
+    write(root / "analysis.json", analysis)
+    receipt["analysis_sha256"] = receipt["files"]["analysis.json"] = sha256_file(root / "analysis.json")
+    write(root / "build_receipt.json", receipt)
+    with pytest.raises(ValueError, match="analysis AOI"):
         load_finals(root, aoi_sha256="a" * 64)
 
 

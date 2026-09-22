@@ -812,11 +812,11 @@
     {
       "id": "context-sar-candidate",
       "limitations": [
-        "Uncalibrated 3–15 September amplitude-change candidate, not validated flood extent or probability. No independent accuracy claim."
+        "Uncalibrated amplitude-change candidates: Mae Sai 3–15 September 2024 UTC and Hat Yai 11–23 November 2025 UTC. Not validated flood extent or probability. No independent accuracy claim."
       ],
       "rights": {
         "attribution": [
-          "Contains modified Copernicus Sentinel data (2024), processed by FloodGuard"
+          "Contains modified Copernicus Sentinel data (2024, 2025), processed by FloodGuard"
         ],
         "license": "Copernicus Sentinel Data Legal Notice",
         "public_derivatives": true,
@@ -832,7 +832,32 @@
         "label": "Source snapshot; not event-time conditions",
         "start": null
       },
-      "title": "Contains modified Copernicus Sentinel data (2024), processed by FloodGuard"
+      "title": "Contains modified Copernicus Sentinel data (2024, 2025), processed by FloodGuard"
+    },
+    {
+      "id": "context-destination-search",
+      "limitations": [
+        "Hospital-tagged objects within a recorded search buffer, not a complete inventory of distinct operating hospitals. Identity and routing eligibility are reviewed separately."
+      ],
+      "rights": {
+        "attribution": [
+          "OpenStreetMap bounded destination inventory / existing Geofabrik snapshot"
+        ],
+        "license": "Open Database License 1.0",
+        "public_derivatives": true,
+        "status": "public_derivatives_permitted"
+      },
+      "role": "static_context",
+      "source_urls": [
+        "https://www.openstreetmap.org/copyright"
+      ],
+      "temporal": {
+        "end": null,
+        "kind": "static_context",
+        "label": "Source snapshot; not event-time conditions",
+        "start": null
+      },
+      "title": "OpenStreetMap bounded destination inventory / existing Geofabrik snapshot"
     },
     {
       "id": "project-scenarios",
@@ -974,62 +999,62 @@
   ],
   "generated_at": "2026-09-22T06:00:00Z",
   "non_operational": true,
-  "package_version": "58a7cb8c721057df",
+  "package_version": "8c231672b0969b50",
   "packages": [
     {
       "aoi_id": "aoi-01_mae_sai_core",
       "event_id": "mae_sai_2024",
       "id": "aoi-01_mae_sai_core_mae_sai_2024",
-      "sha256": "480f49a8c70fa04a58b1ec93ba7af05139100d409410fc2269a6a979ea3ea2b8",
+      "sha256": "2f51f7284496778660cde7d518bbc42952666076008040ee1668bd844fa5f93c",
       "url": "/evidence-library/packages/aoi-01_mae_sai_core_mae_sai_2024.json"
     },
     {
       "aoi_id": "aoi-02_mae_sai_district",
       "event_id": "mae_sai_2024",
       "id": "aoi-02_mae_sai_district_mae_sai_2024",
-      "sha256": "424735fc3832921595f887a3c615e0778cfe65653b5d1c13621085e75d6626cc",
+      "sha256": "f3e70aed4621b22d6888456fdc4fc2d401d960df279aa76af365825e4aaaea51",
       "url": "/evidence-library/packages/aoi-02_mae_sai_district_mae_sai_2024.json"
     },
     {
       "aoi_id": "aoi-03_hat_yai_core",
       "event_id": "hat_yai_2025",
       "id": "aoi-03_hat_yai_core_hat_yai_2025",
-      "sha256": "80a76317bdb8ea28433d4be3669a2a4f3ed0ea850bebbb43c2d3f2d547c597cc",
+      "sha256": "1598849f1b652cbaf1e24a888d00efd1b752197d015ca98966a59cf95d6dd3b4",
       "url": "/evidence-library/packages/aoi-03_hat_yai_core_hat_yai_2025.json"
     },
     {
       "aoi_id": "aoi-04_hat_yai_basin",
       "event_id": "hat_yai_2025",
       "id": "aoi-04_hat_yai_basin_hat_yai_2025",
-      "sha256": "da4d13b6aa018cc8208b5052f943fc2f970748207a4a35b9db27e3b95b2e26e0",
+      "sha256": "e2fd0bbf7aedef8949228ad553af71a5af4f8c8f930d58bdb2fd884cc0bb7abc",
       "url": "/evidence-library/packages/aoi-04_hat_yai_basin_hat_yai_2025.json"
     },
     {
       "aoi_id": "aoi-05_chao_phraya_bang_ban_sena",
       "event_id": "chao_phraya_2024",
       "id": "aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2024",
-      "sha256": "2ec270d2a5ea658d309f8290cadfc271ce12546ae9064a273b25b3951243cc05",
+      "sha256": "e28bf0c17244dec6e30f183e25edbc9aa069041dff1d86d14f983e300cbc55bd",
       "url": "/evidence-library/packages/aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2024.json"
     },
     {
       "aoi_id": "aoi-05_chao_phraya_bang_ban_sena",
       "event_id": "chao_phraya_2025",
       "id": "aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2025",
-      "sha256": "64a369598d41cb8a1af97b8212b5f987c93bfea72d92ef4afa96904cda9e61b5",
+      "sha256": "a8fa7cb06dd9dc205e0c867195a3b727c1ce2cd3296be653f2d97b35c6ca5e84",
       "url": "/evidence-library/packages/aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2025.json"
     },
     {
       "aoi_id": "aoi-06_chao_phraya_rangsit",
       "event_id": "chao_phraya_2024",
       "id": "aoi-06_chao_phraya_rangsit_chao_phraya_2024",
-      "sha256": "e093a097b92c79d903fe22d0d1eb72b061d4bd1c962462a1bba1f1c868c5b41f",
+      "sha256": "001f756c3bc77f61fc59431ecde46ef91a553b0089cbd4bc4327b281f7e207a7",
       "url": "/evidence-library/packages/aoi-06_chao_phraya_rangsit_chao_phraya_2024.json"
     },
     {
       "aoi_id": "aoi-06_chao_phraya_rangsit",
       "event_id": "chao_phraya_2025",
       "id": "aoi-06_chao_phraya_rangsit_chao_phraya_2025",
-      "sha256": "713c243bbebeeb689faa6da9bd34797422e6e44921675090a560856859e13358",
+      "sha256": "3daf62816a7f54496f2a811f9d6e941f4cae445b76d50c85137ab01389dc61fe",
       "url": "/evidence-library/packages/aoi-06_chao_phraya_rangsit_chao_phraya_2025.json"
     }
   ],

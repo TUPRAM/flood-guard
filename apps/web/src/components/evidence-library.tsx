@@ -17,6 +17,8 @@ const STATUS: Record<EvidenceAvailability, [string, string]> = {
 };
 const SUPPORTING_SOURCES = new Set(["project-scenarios", "context-osm", "context-worldpop", "context-admin"]);
 
+import { PublicCaseSummary } from "./public-case-summary";
+
 export function EvidenceGaugeChart({ gauge, th }: { gauge: EvidenceLibraryGauge; th: boolean }) {
   const segments = gaugeSegments(gauge.points, 10 * 60 * 1000, gauge.timezone);
   const numeric = segments.flat();
@@ -43,7 +45,7 @@ export function EvidenceGaugeChart({ gauge, th }: { gauge: EvidenceLibraryGauge;
 }
 
 export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, initialAoiId, initialEventId, view = "evidence" }: {
-  initialCatalog?: EvidenceLibraryCatalog | null; initialPackage?: EvidenceLibraryPackage | null; initialAoiId?: string; initialEventId?: string; view?: "brief" | "evidence";
+  initialCatalog?: EvidenceLibraryCatalog | null; initialPackage?: EvidenceLibraryPackage | null; initialAoiId?: string; initialEventId?: string; view?: "brief" | "evidence" | "public";
 } = {}) {
   const [language, setLanguage] = useLanguage("en");
   const th = language === "th";
@@ -89,23 +91,33 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
   const event = catalog?.events.find((item) => item.id === selection.event);
   const reportUrl = evidenceAssetUrl(evidence?.report_url);
 
+  const caseQuery = new URLSearchParams({ aoi: selection.aoi, event: selection.event }).toString();
   const workspace = view === "brief" && Boolean(evidence?.decision_brief?.finals_analysis?.routes);
   return <main id="main-content" className={`${styles.library} ${workspace ? styles.workspace : ""}`} data-evidence-library="true" data-route-workspace={workspace ? "true" : undefined}>
     <header className={styles.header}>
       <a className={styles.brand} href="/studio/">FloodGuard <span>Studio</span></a>
-      <nav aria-label={th ? "หน้าหลักฐาน" : "Evidence navigation"}><a href="/studio/">{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href="/studio/brief/" aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"}</a><a href="/studio/library/" aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังข้อมูล" : "Evidence library"}</a></nav>
+      <nav aria-label={th ? "หน้าหลักฐาน" : "Evidence navigation"}><a href="/studio/">{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={`/studio/brief/?${caseQuery}`} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"}</a><a href={`/studio/library/?${caseQuery}`} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังข้อมูล" : "Evidence library"}</a><a href={`/public-cases/?${caseQuery}`} aria-current={view === "public" ? "page" : undefined}>{th ? "สรุปสำหรับประชาชน" : "Public summary"}</a><a href={`/command/cases/?${caseQuery}`}>{th ? "เปรียบเทียบ" : "Command comparisons"}</a><a href="/public/">{th ? "หน้า Public" : "Public home"}</a></nav>
       <LanguageToggle language={language} onChange={setLanguage} />
+      <select className={styles.compactViews} aria-label={th ? "เปิดมุมมอง" : "Open view"} value="" onChange={(event) => window.location.assign(event.target.value)}>
+        <option value="" disabled>{th ? "มุมมอง" : "Views"}</option>
+        <option value={`/studio/brief/?${caseQuery}`}>{th ? "บทสรุป" : "Decision brief"}</option>
+        <option value={`/studio/library/?${caseQuery}`}>{th ? "คลังข้อมูล" : "Evidence library"}</option>
+        <option value={`/public-cases/?${caseQuery}`}>{th ? "สรุปสำหรับประชาชน" : "Public summary"}</option>
+        <option value={`/command/cases/?${caseQuery}`}>{th ? "เปรียบเทียบ" : "Command comparisons"}</option>
+        <option value="/studio/">{th ? "รายงานการตรวจสอบ" : "Validation report"}</option>
+        <option value="/public/">{th ? "หน้า Public" : "Public home"}</option>
+      </select>
     </header>
     <div className={styles.content}>
       {workspace ? <div className={styles.workspaceHeading}><h1>{th ? "เส้นทางก่อนและหลัง" : "Compare before & after routes"}</h1><span className={styles.badge}>{th ? "สถานการณ์สมมติ" : "Scenario demonstration"}</span></div> : <>
-      <div className={styles.heading}><div><p className={styles.eyebrow}>{th ? "หลักฐานสำหรับต้นแบบ" : "PROTOTYPE EVIDENCE"}</p><h1>{view === "brief" ? (th ? "บทสรุปเพื่อการตัดสินใจ" : "Study-area decision brief") : (th ? "คลังข้อมูลพื้นที่ศึกษา" : "Study-area evidence library")}</h1><p>{view === "brief" ? (th ? "เปรียบเทียบสิ่งที่ควรตรวจสอบ การเปลี่ยนแปลงที่มีผล และความไม่แน่นอนของพื้นที่" : "Compare useful experiments, target verification and understand the limits of each result.") : (th ? "ตรวจสอบข้อมูลที่มี ช่องว่าง และสมมติฐานของแต่ละพื้นที่และเหตุการณ์" : "Inspect acquired data, coverage gaps and assumptions for each area and event.")}</p></div><span className={styles.badge}>{th ? "ไม่ใช่ระบบปฏิบัติการ" : "Non-operational"}</span></div>
+      <div className={styles.heading}><div><p className={styles.eyebrow}>{th ? "หลักฐานสำหรับต้นแบบ" : "PROTOTYPE EVIDENCE"}</p><h1>{view === "public" ? (th ? "เรื่องราวของแต่ละพื้นที่" : "Understand the study cases") : view === "brief" ? (th ? "บทสรุปเพื่อการตัดสินใจ" : "Study-area decision brief") : (th ? "คลังข้อมูลพื้นที่ศึกษา" : "Study-area evidence library")}</h1><p>{view === "brief" ? (th ? "เปรียบเทียบสิ่งที่ควรตรวจสอบ การเปลี่ยนแปลงที่มีผล และความไม่แน่นอนของพื้นที่" : "Compare useful experiments, target verification and understand the limits of each result.") : (th ? "ตรวจสอบข้อมูลที่มี ช่องว่าง และสมมติฐานของแต่ละพื้นที่และเหตุการณ์" : "Inspect acquired data, coverage gaps and assumptions for each area and event.")}</p></div><span className={styles.badge}>{th ? "ไม่ใช่ระบบปฏิบัติการ" : "Non-operational"}</span></div>
       </>}
       <aside className={workspace ? styles.workspaceNotice : styles.notice}>{workspace ? (th ? "ต้นแบบวิจัย · เปรียบเทียบตามสมมติฐาน ไม่ใช่เส้นทางปลอดภัยหรือสภาพน้ำท่วมที่สังเกตจริง" : "Research prototype · Imposed scenarios, not observed flood conditions or safe-route guidance.") : (th ? "ข้อมูลวิจัยที่ยังไม่ผ่านการรับรอง ไม่ใช่คำเตือนภัย เส้นทางปลอดภัย หรือการยืนยันความพร้อมของศูนย์พักพิง ไม่มีการเปลี่ยนเกณฑ์รับรองหลักฐาน" : "Candidate research evidence. This is not an official warning, a safe-route recommendation or confirmation of shelter availability. Evidence acceptance gates remain unchanged.")}</aside>
       {catalogError ? <div className={styles.error} role="alert">{th ? "โหลดคลังข้อมูลไม่ได้" : "Evidence catalog unavailable"}: {catalogError}</div> : null}
       {!catalog && !catalogError ? <p role="status">{th ? "กำลังโหลดคลังข้อมูล…" : "Loading evidence catalog…"}</p> : null}
       {catalog ? <>
         <section className={styles.selectors} aria-label={th ? "เลือกพื้นที่และเหตุการณ์" : "Area and event selection"}>
-          <label htmlFor="evidence-aoi">{th ? "พื้นที่ศึกษา" : "Study area"}<select id="evidence-aoi" value={selection.aoi} onChange={(e) => choose({ ...selection, aoi: e.target.value })}>
+          <label htmlFor="evidence-aoi">{th ? "พื้นที่ศึกษา" : "Study area"}<select id="evidence-aoi" value={selection.aoi} onChange={(e) => { const id = e.target.value; const current = catalog.packages.find((p) => p.aoi_id === id && p.event_id === selection.event); const next = current ?? catalog.packages.find((p) => p.aoi_id === id); choose({ aoi: id, event: next?.event_id ?? selection.event }); }}>
             {!aoi ? <option value={selection.aoi}>{selection.aoi || (th ? "เลือกพื้นที่" : "Select area")}</option> : null}
             {catalog.aois.map((item) => <option key={item.id} value={item.id}>{th ? item.name_th ?? item.name : item.name}</option>)}
           </select></label>
@@ -119,7 +131,7 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
         {packageError ? <p className={styles.error} role="alert">{th ? "ชุดข้อมูลใช้ไม่ได้" : "Evidence package unavailable"}: {packageError}</p> : null}
         {reference && !evidence && !packageError ? <p role="status">{th ? "กำลังโหลดและตรวจสอบชุดข้อมูล…" : "Loading and verifying evidence package…"}</p> : null}
         {evidence && aoi ? <>
-          {view === "brief" ? <DecisionBriefPanel evidence={evidence} th={th} /> : <>
+          {view === "public" ? <PublicCaseSummary key={evidence.id} evidence={evidence} th={th} /> : view === "brief" ? <DecisionBriefPanel key={evidence.id} evidence={evidence} th={th} /> : <>
           <section className={styles.panel} aria-labelledby="evidence-map-title"><div className={styles.sectionTitle}><h2 id="evidence-map-title">{th ? "แผนที่หลักฐาน" : "Evidence map"}</h2><span>{th ? aoi.name_th ?? aoi.name : aoi.name}</span></div>
             <EvidenceMap key={evidence.id} aoi={aoi} layers={evidence.layers} th={th} />
             <ul className={styles.layerList}>{evidence.layers.map((layer) => <li key={layer.id}><b>{layer.title}</b><span>{STATUS[layer.availability][th ? 1 : 0]}</span>{layer.reason ? <small>{layer.reason}</small> : null}</li>)}</ul>

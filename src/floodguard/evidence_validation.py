@@ -36,6 +36,7 @@ PUBLIC_DATASETS = {
     "project-scenarios",
     "context-admin",
     "context-sar-candidate",
+    "context-destination-search",
 }
 DATABASE_KEYS = {
     "license",
@@ -253,11 +254,20 @@ def _decision_brief(package: dict, schemas: Path) -> None:
         from .evidence_finals_export import verify_finals_analysis
 
         verify_finals_analysis(brief["finals_analysis"])
-        _require(
-            package["aoi_id"] == "aoi-01_mae_sai_core"
-            and package["event_id"] == "mae_sai_2024",
-            "Finals case belongs to another AOI/event",
-        )
+        valid_events = {
+            "aoi-01_mae_sai_core": {"mae_sai_2024"},
+            "aoi-03_hat_yai_core": {"hat_yai_2025"},
+            "aoi-05_chao_phraya_bang_ban_sena": {"chao_phraya_2024", "chao_phraya_2025"},
+            "aoi-06_chao_phraya_rangsit": {"chao_phraya_2024", "chao_phraya_2025"},
+        }
+        identity = brief["finals_analysis"].get("case_identity", {"aoi_id": "aoi-01_mae_sai_core"})
+        _require(identity["aoi_id"] == package["aoi_id"]
+                 and package["event_id"] in valid_events.get(package["aoi_id"], set()),
+                 "Finals case belongs to another AOI/event")
+        for flood in brief["finals_analysis"].get("flood_scenarios", {}).values():
+            _require(flood["event_id"] == package["event_id"]
+                     and flood["candidate_provenance"]["event_id"] == package["event_id"],
+                     "Flood candidate belongs to another event")
         _require(
             brief["finals_analysis"]["generated_at"] == package["generated_at"],
             "Mixed finals generation metadata",
@@ -365,7 +375,16 @@ def _database(
     policies: dict[str, dict],
     *,
     reviewed_junctions: list | None = None,
+    destination_review: dict | None = None,
 ) -> None:
+    exclusions = {}
+    if destination_review is not None:
+        from .evidence_case_review import apply_destination_review
+
+        reviewed = apply_destination_review(payload, destination_review)
+        exclusions = {row["facility_id"]: row for row in destination_review["exclusions"]}
+        for original, checked in zip(payload["osm_facilities"], reviewed["osm_facilities"], strict=True):
+            _require(original == checked, "Destination exclusion differs from its recorded review")
     _require(
         set(payload) in (DATABASE_KEYS, DATABASE_KEYS | {"connectivity_review"}),
         "Unexpected source keys in public database",
@@ -518,8 +537,8 @@ def _database(
                 )
                 _require(
                     row["candidate_destination_eligible"]
-                    == (row["facility_type"] == "healthcare"),
-                    "Generic OSM shelter cannot be an access destination",
+                    == (row["facility_type"] == "healthcare" and row["facility_id"] not in exclusions),
+                    "Destination eligibility differs from role or recorded exclusion; generic OSM shelter cannot be an access destination",
                 )
                 if "connectors" in row:
                     _require(isinstance(row["connectors"], list) and 1 <= len(row["connectors"]) <= 2, "Invalid reviewed connector count")
@@ -631,6 +650,7 @@ def _finals_database(payload: dict, package: dict, policies: dict[str, dict]) ->
             {**package, "input_hashes": context["input_hashes"]},
             policies,
             reviewed_junctions=context["reviewed_junctions"],
+            destination_review=analysis.get("destination_review"),
         )
         population = math.fsum(row["total_population"] for row in context["population"])
         _require(
@@ -985,8 +1005,7 @@ def verify_evidence_library(
         for download in package.get("downloads", []):
             asset, path = _asset(root, download["url"])
             finals_database = (
-                asset == "databases/aoi-01_mae_sai_core-finals.json.gz"
-                and aoi["id"] == "aoi-01_mae_sai_core"
+                asset == f"databases/{aoi['id']}-finals.json.gz"
                 and "finals_analysis" in package.get("decision_brief", {})
             )
             _require(
@@ -1042,9 +1061,11 @@ def verify_evidence_library(
                 "Mixed report source/AOI metadata",
             )
             if any("decision_brief" in package for package in packages.values()):
+                from .evidence_pipeline import report_brief_projection
+
                 _require(
                     appendix.get("decision_briefs")
-                    == [package.get("decision_brief") for package in packages.values()],
+                    == [report_brief_projection(package.get("decision_brief")) for package in packages.values()],
                     "Mixed report decision briefs",
                 )
             if "projection" in appendix:

@@ -6,6 +6,17 @@ import { parseDecisionBrief } from "./decision-brief";
 
 const parse = (value: unknown) => parseFinalsAnalysis(value, "2026-09-21T00:00:00Z");
 describe("finals service and route evidence", () => {
+  it("rejects a candidate claim with no flood computation", () => {
+    const value = finalsAnalysisFixture();
+    value.case_identity!.flood_basis = "unvalidated_satellite_candidate";
+    expect(() => parse(value)).toThrow();
+  });
+  it("rejects another area's analysis even when the outer brief matches", () => {
+    const value = finalsAnalysisFixture();
+    value.case_identity!.aoi_id = "another-area";
+    const brief = { ...decisionBriefFixture(), finals_analysis: value };
+    expect(() => parseDecisionBrief(brief, brief.aoi_id, brief.event_id, brief.generated_at)).toThrow();
+  });
   it("accepts one linked scenario while keeping accepted claims unavailable", () => {
     const value = finalsAnalysisFixture();
     expect(parse(value)).toBe(value);

@@ -162,7 +162,7 @@ def candidate_flood_scenario(
     return {
         "schema_version": "1.0",
         "status": "candidate_scenario_only",
-        "event_id": "mae_sai_2024",
+        "event_id": provenance["event_id"],
         "official_warning": False,
         "accepted_fpps": None,
         "accepted_action_class": None,

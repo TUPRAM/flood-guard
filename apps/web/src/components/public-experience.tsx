@@ -149,6 +149,7 @@ export function PublicExperience() {
 
   return (
     <main className="public-page public-app-shell" lang={language}>
+      {process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE !== "public-production" ? <aside className="public-case-entry"><a href="/public-cases/">{language === "th" ? "สำรวจกรณีศึกษา: แม่สาย หาดใหญ่ และเจ้าพระยา" : "Explore study cases: Mae Sai, Hat Yai and Chao Phraya"}</a><small>{language === "th" ? "สถานการณ์วิจัย ไม่ใช่คำเตือนปัจจุบัน" : "Research scenarios, not current warnings"}</small></aside> : null}
       <PublicAppHeader
         language={language}
         onLanguageChange={setLanguage}

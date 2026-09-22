@@ -110,6 +110,9 @@ export interface FinalsFloodScenario {
 }
 
 export interface FinalsAnalysis {
+  case_identity?: { aoi_id: string; aoi_sha256: string; routing_aoi_id: string; flood_basis: "unavailable_explicit_disruptions_only" | "unvalidated_satellite_candidate" };
+  destination_review?: { service_definition: string; exclusions: { facility_id: string; reason: string; source_url: string; duplicate_of?: string }[] };
+  dependency_review?: Record<FinalsTravelMode, { service: string; routing_boundary: string; components_without_hospital: number; connection_policy: string; largest_populated_components: { id: string; nodes: number; population: number; destination_ids: string[] }[] }>;
   schema_version: "1.0";
   generated_at: string;
   status: "scenario_only";

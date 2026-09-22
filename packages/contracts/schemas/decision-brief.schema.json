@@ -3107,6 +3107,233 @@
             "modelled_vehicle",
             "walking"
           ]
+        },
+        "case_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "aoi_id",
+            "aoi_sha256",
+            "routing_aoi_id",
+            "flood_basis"
+          ],
+          "properties": {
+            "aoi_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "aoi_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "routing_aoi_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "flood_basis": {
+              "enum": [
+                "unavailable_explicit_disruptions_only",
+                "unvalidated_satellite_candidate"
+              ]
+            }
+          }
+        },
+        "destination_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "osm_sha256",
+            "service_definition",
+            "exclusions"
+          ],
+          "properties": {
+            "osm_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "service_definition": {
+              "type": "string",
+              "minLength": 1
+            },
+            "exclusions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "facility_id",
+                  "reason",
+                  "source_url"
+                ],
+                "properties": {
+                  "facility_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "duplicate_of": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "dependency_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "walking",
+            "modelled_vehicle"
+          ],
+          "properties": {
+            "walking": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "service",
+                "routing_boundary",
+                "components_without_hospital",
+                "connection_policy",
+                "unreviewed_grade_candidates",
+                "largest_populated_components"
+              ],
+              "properties": {
+                "service": {
+                  "const": "hospital"
+                },
+                "routing_boundary": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "components_without_hospital": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "connection_policy": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "unreviewed_grade_candidates": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "largest_populated_components": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "nodes",
+                      "population",
+                      "destination_ids"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "nodes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "population": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "destination_ids": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "modelled_vehicle": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "service",
+                "routing_boundary",
+                "components_without_hospital",
+                "connection_policy",
+                "unreviewed_grade_candidates",
+                "largest_populated_components"
+              ],
+              "properties": {
+                "service": {
+                  "const": "hospital"
+                },
+                "routing_boundary": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "components_without_hospital": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "connection_policy": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "unreviewed_grade_candidates": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "largest_populated_components": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "nodes",
+                      "population",
+                      "destination_ids"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "nodes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "population": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "destination_ids": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "required": [

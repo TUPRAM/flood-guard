@@ -178,7 +178,7 @@ def _public_context(context: dict) -> dict:
     return projected
 
 
-REPORT_PROJECTION = "aggregate_scenarios_v2"
+REPORT_PROJECTION = "aggregate_scenarios_v3"
 REPORT_OMITTED_FIELDS = frozenset(
     {
         "allocations",
@@ -221,6 +221,23 @@ def _compact_details(details: dict) -> dict:
 def report_scenario_projection(details: dict) -> dict:
     """Return the explicit compact report projection used by offline verification."""
     return _compact_details(details) | {"summaries": scenario_summaries(details)}
+
+
+def report_brief_projection(brief: dict | None) -> dict | None:
+    """Retain aggregate decisions; bind detailed routes through package downloads."""
+    if brief is None or "finals_analysis" not in brief:
+        return brief
+    finals = brief["finals_analysis"]
+    compact = {key: finals[key] for key in (
+        "analysis_sha256", "status", "scope", "primary_service", "services", "limitations"
+    )}
+    if "flood_scenarios" in finals:
+        compact["flood_scenarios"] = {
+            mode: {key: value for key, value in result.items() if key != "closed_edges"}
+            | {"closed_edge_count": len(result["closed_edges"])}
+            for mode, result in finals["flood_scenarios"].items()
+        }
+    return {**brief, "finals_analysis": compact}
 
 
 def _display_roads(path: Path) -> dict:
@@ -372,11 +389,19 @@ def _supporting_dataset(
 SUPPORTING = [
     _supporting_dataset(
         "context-sar-candidate",
-        "Contains modified Copernicus Sentinel data (2024), processed by FloodGuard",
+        "Contains modified Copernicus Sentinel data (2024, 2025), processed by FloodGuard",
         "Copernicus Sentinel Data Legal Notice",
         "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
         "candidate_estimate",
-        ["Uncalibrated 3–15 September amplitude-change candidate, not validated flood extent or probability. No independent accuracy claim."],
+        ["Uncalibrated amplitude-change candidates: Mae Sai 3–15 September 2024 UTC and Hat Yai 11–23 November 2025 UTC. Not validated flood extent or probability. No independent accuracy claim."],
+    ),
+    _supporting_dataset(
+        "context-destination-search",
+        "OpenStreetMap bounded destination inventory / existing Geofabrik snapshot",
+        "Open Database License 1.0",
+        "https://www.openstreetmap.org/copyright",
+        "static_context",
+        ["Hospital-tagged objects within a recorded search buffer, not a complete inventory of distinct operating hospitals. Identity and routing eligibility are reviewed separately."],
     ),
     _supporting_dataset(
         "project-scenarios",
@@ -821,31 +846,31 @@ def build_library(
         path = output_dir / relative
         if path.exists():
             supplementary[relative] = sha256_file(path)
-    finals_analysis, finals_contexts = None, None
-    if (output_dir / "finals/build_receipt.json").is_file():
+    finals_by_aoi = {}
+    for aoi in aois:
+        directory = output_dir / ("finals" if aoi["id"] == "aoi-01_mae_sai_core" else "study_finals/" + aoi["id"])
+        if not (directory / "build_receipt.json").is_file():
+            continue
         from .evidence_finals_export import load_finals
 
-        mae_sai = next(row for row in aois if row["id"] == "aoi-01_mae_sai_core")
-        finals_analysis, finals_contexts = load_finals(
-            output_dir / "finals", aoi_sha256=mae_sai["sha256"]
-        )
-        if finals_analysis["generated_at"] != generated_at:
+        analysis, contexts = load_finals(directory, aoi_sha256=aoi["sha256"])
+        if analysis["generated_at"] != generated_at:
             raise ValueError("Finals generation metadata differs from package")
-        finals_receipt = json.loads(
-            (output_dir / "finals/build_receipt.json").read_text(encoding="utf-8")
-        )
+        receipt = json.loads((directory / "build_receipt.json").read_bytes())
         for name in ("reporting_units", "reporting_crosswalk"):
             suffix = ".geojson" if name == "reporting_units" else ".json"
-            if (
-                sha256_file(output_dir / "event_review" / (name + suffix))
-                != finals_receipt[name + "_sha256"]
-            ):
+            if sha256_file(output_dir / "event_review" / (name + suffix)) != receipt[name + "_sha256"]:
                 raise ValueError("Finals reporting geography differs from package")
+        finals_by_aoi[aoi["id"]] = (analysis, contexts)
     for directory in (
         "review",
         "event_review",
         "acquisition/event_review",
         "finals",
+        "study_finals",
+        "flood_candidates",
+        "destination_audits",
+        "acquisition/shared_cases",
         "public_review",
     ):
         for path in sorted((output_dir / directory).rglob("*")):
@@ -1260,27 +1285,41 @@ def build_library(
                 "report_url": PUBLIC_PREFIX + "report.html",
                 "downloads": downloads,
             }
-            if finals_analysis is not None and aoi["id"] == "aoi-01_mae_sai_core":
+            if aoi["id"] in finals_by_aoi:
+                finals_analysis, finals_contexts = finals_by_aoi[aoi["id"]]
                 from .evidence_finals_export import public_finals_database
 
+                audit_path = output_dir / "destination_audits" / aoi["id"] / "destination_audit.json"
+                if audit_path.is_file():
+                    search = json.loads(audit_path.read_bytes())
+                    if search["aoi_sha256"] != aoi["sha256"] or search["source_sha256"] != finals_contexts["walking"]["input_hashes"]["osm"]:
+                        raise ValueError("Destination search belongs to different inputs")
+                    package["datasets"].append({
+                        "dataset_id": "context-destination-search", "availability": "partial",
+                        "coverage": f"{search['search_radius_outside_core_m'] / 1000:g} km outside the demand AOI; existing OSM snapshot, points and site polygons.",
+                        "summary": f"{search['hospital_count']} hospital-tagged source objects found; these are not necessarily distinct or operating hospitals. Routing eligibility is assessed separately.",
+                        "qc": search["limitations"],
+                    })
                 if finals_analysis.get("flood_scenarios"):
                     flood = finals_analysis["flood_scenarios"]["walking"]
-                    for key, title in (("candidate_extent", "September SAR change candidate — unvalidated"), ("observation_footprint", "SAR candidate analysis footprint — not a validation mask")):
-                        path = output_dir / "flood_candidate" / (key + ".geojson")
+                    candidate_dir = output_dir / ("flood_candidate" if aoi["id"] == "aoi-01_mae_sai_core" else "flood_candidates/" + aoi["id"])
+                    provenance = flood["candidate_provenance"]
+                    for key, title in (("candidate_extent", "SAR change candidate — unvalidated"), ("observation_footprint", "SAR candidate analysis footprint — not a validation mask")):
+                        path = candidate_dir / (key + ".geojson")
                         if sha256_file(path) != flood["candidate_provenance"]["products"][key]["sha256"]:
                             raise ValueError("Published flood geometry differs from its calculation")
                         package["layers"].append({"id": "sar-" + key, "title": title, "role": "candidate_estimate",
                                                  "dataset_id": "context-sar-candidate", "availability": "available",
-                                                 "reason": "Contains modified Copernicus Sentinel data (2024). Fixed amplitude-drop threshold; no validation or observed closure claim.",
+                                                 "reason": provenance["rights"]["attribution"] + " Fixed amplitude-drop threshold; no validation or observed closure claim.",
                                                  "data": json.loads(path.read_bytes())})
                     package["datasets"].append({"dataset_id": "context-sar-candidate", "availability": "partial",
-                                                "coverage": "Mae Sai core: 3–15 September 2024 change; candidate analysis coverage is separate from Thailand reporting coverage.",
+                                                "coverage": aoi["id"] + ": " + " to ".join(r["acquisition_date"] for r in provenance["sources"]) + "; candidate analysis coverage is separate from Thailand reporting coverage.",
                                                 "qc": flood["candidate_provenance"]["limitations"], "summary": "Fixed-threshold SAR candidate drives an explicit road-intersection closure experiment."})
                 package["decision_brief"]["finals_analysis"] = finals_analysis
                 package["input_hashes"]["finals_analysis_sha256"] = finals_analysis[
                     "analysis_sha256"
                 ]
-                dbfile = public_dir / "databases" / "aoi-01_mae_sai_core-finals.json.gz"
+                dbfile = public_dir / "databases" / (aoi["id"] + "-finals.json.gz")
                 dbfile.write_bytes(
                     gzip.compress(
                         canonical_bytes(
@@ -1294,14 +1333,17 @@ def build_library(
                 package["downloads"] = [
                     *downloads,
                     {
-                        "title": "Mae Sai service, route and sensitivity inputs (ODbL / CC BY, gzip JSON)",
+                        "title": aoi["id"] + " service, route and sensitivity inputs (ODbL / CC BY, gzip JSON)",
                         "url": PUBLIC_PREFIX + "databases/" + dbfile.name,
                         "sha256": sha256_file(dbfile),
                     },
                 ]
             local_package = {
                 **package,
-                "layers": [*local_layers, terrain_layer],
+                "layers": [*local_layers, terrain_layer, *[
+                    layer for layer in package["layers"]
+                    if layer["dataset_id"] == "context-sar-candidate"
+                ]],
                 "local_detail_files": {
                     "adapter_summary": "adapter_summary.json",
                     "scenarios": "scenarios/" + aoi["id"] + ".json",
@@ -1456,9 +1498,9 @@ def render_report(
                 for row in routes["comparisons"]
             )
             concise = (
-                "<h3>Prepared Mae Sai pin: service-specific before/after scenario</h3>"
+                "<h3>Prepared public pins: service-specific before/after scenario</h3>"
                 + f"<p>{esc(finals['question'])}</p><p>Thai-scope modelled residential population: {finals['scope']['in_scope_population']:,.2f}; outside-scope exclusion: {finals['scope']['excluded_population']:,.2f}. Mixed source years; no observed flood-affected population or accepted priority.</p>"
-                + "<p>Prepared public site markers are not verified entrances. Before/after means an imposed disruption on the same model, not observed September road conditions. Hospital, primary care, pharmacy and shelter access remain separate.</p>"
+                + "<p>Prepared public site markers are not verified entrances. Before/after means an imposed disruption on the same model, not observed event-time road conditions. Hospital, primary care, pharmacy and shelter access remain separate.</p>"
                 + "<table><tr><th>Starting place</th><th>Service / mode</th><th>Independent change</th><th>Before destination / minutes</th><th>After destination / minutes</th><th>Delta minutes</th></tr>"
                 + route_rows
                 + "</table>"
@@ -1470,7 +1512,12 @@ def render_report(
                 + "</details>"
             )
             if finals.get("flood_scenarios"):
-                spur = finals["facility_connection_comparison"]["walking"]["fixed_edge_comparisons"][0]
+                connection_review = finals.get("facility_connection_comparison", {}).get("walking", {}).get("fixed_edge_comparisons", [])
+                spur_note = ""
+                if connection_review:
+                    spur = connection_review[0]
+                    spur_note = f"<p>The original catastrophic closure of internal hospital spur 934550386 depended on its single assumed site connector. Two geometry-checked connections reduce the walking all-route loss for that same spur from {spur['original']['newly_unreachable_population']:,.1f} to {spur['revised']['newly_unreachable_population']:,.1f} residents. Neither connector is a surveyed entrance or evidence of event-time operation.</p>"
+                provenance = finals["flood_scenarios"]["walking"]["candidate_provenance"]
                 flood_rows = "".join(
                     f"<tr><td>{esc(mode)}</td><td>{len(result['closed_edges'])}</td><td>{result['candidate_affected_population']:,.1f}</td><td>{result['impact']['losing_30_min_access']:,.1f}</td><td>{result['impact']['newly_unreachable_population']:,.1f}</td></tr>"
                     for mode, result in finals["flood_scenarios"].items()
@@ -1482,11 +1529,11 @@ def render_report(
                     for mode, result in finals["flood_scenarios"].items() for unit in result["subdistricts"]
                 )
                 concise = (
-                    "<h3>Candidate flood-driven population comparison</h3><p>Contains modified Copernicus Sentinel data (2024). Fixed 2.25 dB uncalibrated amplitude-drop candidate from 3 to 15 September; no independent validation. Every positive-length road intersection imposes a closure assumption, including bridges. Counts are modelled residents, not flood victims or observed isolation.</p>"
+                    "<h3>Candidate flood-driven population comparison</h3><p>" + esc(provenance["rights"]["attribution"]) + " " + esc(" to ".join(r["acquisition_date"] for r in provenance["sources"])) + f". Fixed {provenance['threshold_db']:g} dB uncalibrated amplitude-drop candidate; no independent validation. Every positive-length road intersection imposes a closure assumption, including bridges. Counts are modelled residents, not flood victims or observed isolation.</p>"
                     + "<table><tr><th>Mode</th><th>Imposed closures</th><th>Candidate-overlap residents</th><th>Lose 30-minute access</th><th>Lose all routes</th></tr>" + flood_rows + "</table>"
                     + "<p>Accepted FPPS remains unavailable: calibrated flood likelihood and compatible vulnerability/context are missing. The unchanged scorer produces low-confidence Class E for explicit 0/50/100 missing-input scenarios. Scores concern AOI intersections, not complete subdistricts.</p>"
                     + "<table><tr><th>Mode / reporting intersection</th><th>Candidate overlap</th><th>FPPS at 0 / 50 / 100 assumptions</th><th>Named missing inputs</th></tr>" + score_rows + "</table>"
-                    + f"<p>The original catastrophic closure of internal hospital spur 934550386 depended on its single assumed site connector. Two geometry-checked connections to Tessaban Road 15 reduce the walking all-route loss for that same spur from {spur['original']['newly_unreachable_population']:,.1f} to {spur['revised']['newly_unreachable_population']:,.1f} residents. Neither connector is a surveyed entrance or evidence of event-time operation. Individual graph-edge and articulation impacts are included in the downloadable finals model database and must not be summed.</p>"
+                    + spur_note
                     + concise
                 )
         table = "".join(
@@ -1535,7 +1582,7 @@ def render_report(
         "aois": catalog["aois"],
         "datasets": catalog["datasets"],
         "scenarios": compact_scenarios,
-        "decision_briefs": [package.get("decision_brief") for package in packages],
+        "decision_briefs": [report_brief_projection(package.get("decision_brief")) for package in packages],
         "downloadable_packages": catalog["packages"],
         "package_inputs": {
             package["id"]: package["input_hashes"] for package in packages

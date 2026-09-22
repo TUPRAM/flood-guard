@@ -58,7 +58,10 @@ def load_finals(directory: Path, *, aoi_sha256: str) -> tuple[dict, dict]:
     receipt = json.loads((directory / "build_receipt.json").read_text(encoding="utf-8"))
     if receipt["aoi_sha256"] != aoi_sha256:
         raise ValueError("Finals AOI hash differs")
-    builder = Path(__file__).resolve().parents[2] / "scripts/build_mae_sai_finals.py"
+    builder_name = receipt.get("builder_name", "build_mae_sai_finals.py")
+    if builder_name not in {"build_mae_sai_finals.py", "build_study_area_finals.py"}:
+        raise ValueError("Unknown finals builder")
+    builder = Path(__file__).resolve().parents[2] / "scripts" / builder_name
     if receipt.get("builder_sha256") != sha256_file(builder):
         raise ValueError(
             "Finals builder identity is missing or changed; recompute the experiments"
@@ -73,6 +76,8 @@ def load_finals(directory: Path, *, aoi_sha256: str) -> tuple[dict, dict]:
         ):
             raise ValueError("Finals implementation changed; recompute the experiments")
     analysis = json.loads((directory / "analysis.json").read_text(encoding="utf-8"))
+    if "case_identity" in analysis and analysis["case_identity"].get("aoi_sha256") != aoi_sha256:
+        raise ValueError("Finals analysis AOI hash differs")
     if sha256_file(directory / "analysis.json") != receipt["analysis_sha256"]:
         raise ValueError("Finals analysis file differs from receipt")
     verify_finals_analysis(analysis)
@@ -113,6 +118,9 @@ def verify_finals_analysis(analysis: dict) -> None:
     if digest != analysis.get("analysis_sha256"):
         raise ValueError("Finals analysis identity differs")
     assert_public_safe(analysis)
+    identity = analysis.get("case_identity")
+    if identity and (identity.get("flood_basis") == "unvalidated_satellite_candidate") != bool(analysis.get("flood_scenarios")):
+        raise ValueError("Case flood identity differs from available scenarios")
     scope = analysis["scope"]
     if not isclose(
         scope["study_population"],

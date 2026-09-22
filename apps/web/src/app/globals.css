@@ -2979,3 +2979,8 @@ button.model-card { cursor: pointer; }
   .public-app-shell,
   .public-app-content.is-scrollable { height: auto; overflow: visible; }
 }
+
+.public-case-entry { padding: 12px 24px; background: #e9f3f4; color: #164654; border-bottom: 1px solid #b8d1d6; }
+.public-case-entry a { font-weight: 700; text-decoration: underline; }
+.public-case-entry small { display: block; margin-top: 4px; }
+.public-app-shell:has(> .public-case-entry) { grid-template-rows: auto auto minmax(0, 1fr) auto; }

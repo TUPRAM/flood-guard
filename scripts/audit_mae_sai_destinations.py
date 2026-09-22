@@ -23,6 +23,7 @@ def main() -> None:
     parser.add_argument("--pbf", type=Path, required=True)
     parser.add_argument("--finals-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--aoi-id", default="aoi-01_mae_sai_core", choices=("aoi-01_mae_sai_core", "aoi-03_hat_yai_core", "aoi-05_chao_phraya_bang_ban_sena", "aoi-06_chao_phraya_rangsit"))
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     if args.output_dir.resolve().is_relative_to(root):
@@ -33,7 +34,7 @@ def main() -> None:
     source_hash = sha256_file(args.pbf)
     if source_hash != context["input_hashes"]["osm"]:
         raise ValueError("Destination audit and routing use different OSM snapshots")
-    aoi_path = root / "resources/aoi/upload/aoi-01_mae_sai_core.geojson"
+    aoi_path = root / "resources/aoi/upload" / (args.aoi_id + ".geojson")
     aoi = unary_union(
         [shape(f["geometry"]) for f in json.loads(aoi_path.read_bytes())["features"]]
     )
@@ -125,7 +126,7 @@ def main() -> None:
         "records": sorted(records, key=lambda r: r["id"]),
         "hypothetical_placement_review": placements,
         "limitations": [
-            "Bounded OSM inventory, not proof that only one real hospital serves Mae Sai.",
+            "Bounded OSM inventory, not a complete inventory of distinct operating hospitals serving the study area.",
             "Current OSM identity does not establish event operation.",
             "Addition sites rank demand at a single snapped node, not regional accessibility improvement. Small isolated components cap their benefits; no claim of optimal hospital siting.",
         ],

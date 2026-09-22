@@ -35,6 +35,7 @@ try {
   page.on("request", (request) => { const url = new URL(request.url()); if (url.origin !== origin || url.pathname.startsWith("/api/")) invalidRequests.push(url.href); });
   if (workspaceOnly) {
     await verifyRouteWorkspace(page);
+    await verifyRouteWorkspace(page, "aoi-03_hat_yai_core");
   } else {
   await page.goto(`${origin}/studio/library/`, { waitUntil: "networkidle" });
   await page.getByRole("heading", { name: "Study-area evidence library" }).waitFor();
@@ -76,7 +77,9 @@ try {
   const download = await downloadPromise;
   if (await download.failure()) throw new Error("Evidence report download failed.");
   await verifyDecisionBrief(page, false);
+  await verifySharedViews(page, false);
   await verifyRouteWorkspace(page);
+  await verifyRouteWorkspace(page, "aoi-03_hat_yai_core");
 
   await page.goto(`${origin}/studio/library/?aoi=unknown&event=unknown`);
   await page.getByRole("alert").filter({ hasText: "No package exists" }).waitFor();
@@ -93,6 +96,7 @@ try {
     await page.locator("main[data-evidence-library] footer").filter({ hasText: item.id }).waitFor();
   }
   await verifyDecisionBrief(page, true);
+  await verifySharedViews(page, true);
   await page.setViewportSize({ width: 390, height: 844 });
   if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error("Evidence library overflows the mobile viewport.");
   }
@@ -103,6 +107,36 @@ try {
 } finally {
   await browser.close();
   await new Promise((done) => server.close(done));
+}
+
+async function verifySharedViews(page, offline) {
+  for (const th of [false, true]) {
+    for (const reference of catalog.packages) {
+      const query = `aoi=${reference.aoi_id}&event=${reference.event_id}`;
+      await page.goto(`${origin}/public-cases/?${query}`, { waitUntil: "domcontentloaded" });
+      const toggle = page.getByRole("button", { name: th ? "ใช้ภาษาไทย" : "Use English", exact: true });
+      if (await toggle.count()) await toggle.click();
+      await page.locator("main[data-evidence-library] footer").filter({ hasText: reference.id }).waitFor();
+      const pkg = JSON.parse(readFileSync(resolve(out, reference.url.replace(/^\//, "")), "utf8"));
+      const summary = page.locator("[data-public-case-summary]");
+      if (pkg.decision_brief?.finals_analysis) {
+        await summary.waitFor();
+        const link = summary.getByRole("link", { name: th ? "ดูแผนที่เส้นทางก่อน/หลัง" : "View before/after route map", exact: true });
+        const href = await link.getAttribute("href");
+        if (!href?.includes(query)) throw new Error("Public case link substituted another AOI/event");
+        await summary.getByRole("combobox", { name: th ? "บริการ" : "Service", exact: true }).selectOption("pharmacy");
+        await summary.getByRole("combobox", { name: th ? "การเดินทาง" : "Travel mode", exact: true }).selectOption("modelled_vehicle");
+        const command = summary.getByRole("link", { name: th ? "เปรียบเทียบใน Command" : "Compare in Command", exact: true });
+        if (!(await command.getAttribute("href"))?.includes("service=pharmacy&mode=modelled_vehicle")) throw new Error("Shared view lost service/mode");
+        await command.click();
+        const brief = page.locator("[data-decision-brief]");
+        await brief.locator("[data-finals-analysis]").waitFor();
+        if (await brief.getByRole("combobox", { name: th ? "บริการที่ต้องการ" : "Service needed", exact: true }).inputValue() !== "pharmacy") throw new Error("Command did not retain selected service");
+        if (await brief.getByRole("combobox", { name: th ? "วิธีเดินทางตามแบบจำลอง" : "Modelled travel mode", exact: true }).inputValue() !== "modelled_vehicle") throw new Error("Command did not retain selected mode");
+      } else if (await summary.count()) throw new Error("Context AOI received a substituted result");
+      if (await page.getByRole("alert").count()) throw new Error(`Shared-view alert: ${reference.id}, offline=${offline}`);
+    }
+  }
 }
 
 async function verifyDecisionBrief(page, offline) {
@@ -116,6 +150,7 @@ async function verifyDecisionBrief(page, offline) {
       if (await toggle.count()) await toggle.click();
       await page.getByRole("heading", { level: 1, name: th ? /^(บทสรุปเพื่อการตัดสินใจ|เส้นทางก่อนและหลัง)$/ : /^(Study-area decision brief|Compare before & after routes)$/ }).waitFor();
       for (const reference of catalog.packages) {
+        console.log(`Checking ${reference.id}, ${viewport.width}px, Thai=${th}, offline=${offline}`);
         await page.selectOption("#evidence-aoi", reference.aoi_id);
         await page.selectOption("#evidence-event", reference.event_id);
         await main.locator("footer").filter({ hasText: reference.id }).waitFor();
@@ -286,12 +321,20 @@ async function assertFitsViewport(page, locator, label, interactive = false) {
     const box = element.getBoundingClientRect();
     const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
     return hit === element || element.contains(hit);
-  })) throw new Error(`Workspace ${label} is covered by another element.`);
+  })) {
+    if (captureDirectory) await page.screenshot({ path: resolve(captureDirectory, "workspace-overlap.png") });
+    const covering = await locator.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return { expected: element.textContent, actual: hit?.outerHTML.slice(0, 400) };
+    });
+    throw new Error(`Workspace ${label} is covered at ${viewport.width}×${viewport.height}: ${JSON.stringify(covering)}`);
+  }
 }
 
-async function verifyRouteWorkspace(page) {
-  const reference = catalog.packages.find((item) => item.aoi_id === "aoi-01_mae_sai_core" && item.event_id === "mae_sai_2024");
-  if (!reference) throw new Error("Mae Sai route-workspace package is missing.");
+async function verifyRouteWorkspace(page, aoiId = "aoi-01_mae_sai_core") {
+  const reference = catalog.packages.find((item) => item.aoi_id === aoiId);
+  if (!reference) throw new Error(`Route-workspace package is missing: ${aoiId}`);
   await page.goto(`${origin}/studio/brief/?aoi=${reference.aoi_id}&event=${reference.event_id}`, { waitUntil: "networkidle" });
   const brief = page.locator("[data-decision-brief]");
   const routePanel = brief.locator("[data-route-comparison]");
@@ -318,8 +361,8 @@ async function verifyRouteWorkspace(page) {
       const dimensions = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight, viewportWidth: innerWidth, viewportHeight: innerHeight }));
       if (dimensions.width > dimensions.viewportWidth + 1 || dimensions.height > dimensions.viewportHeight + 1) throw new Error(`Route workspace requires document scrolling at ${viewport.width}×${viewport.height}, Thai=${th}: ${JSON.stringify(dimensions)}`);
       await assertAvailabilityDoesNotOverlap(page, routePanel, `${viewport.width}×${viewport.height}, Thai=${th}`);
-      if (captureDirectory) await page.screenshot({ path: resolve(captureDirectory, `route-workspace-${viewport.width}x${viewport.height}-${th ? "th" : "en"}.png`) });
-      for (const [en, thai, green, purple] of [["Before", "ก่อน", true, false], ["After", "หลัง", false, true], ["Both", "ทั้งสองกรณี", true, true]]) {
+      if (captureDirectory) await page.screenshot({ path: resolve(captureDirectory, `${aoiId}-route-workspace-${viewport.width}x${viewport.height}-${th ? "th" : "en"}.png`) });
+      for (const [en, thai, green, purple] of (aoiId === "aoi-01_mae_sai_core" ? [["Before", "ก่อน", true, false], ["After", "หลัง", false, true], ["Both", "ทั้งสองกรณี", true, true]] : [])) {
         await routePanel.getByRole("radio", { name: th ? thai : en, exact: true }).check();
         await page.waitForFunction(({ green, purple }) => {
           let greenPixels = 0;

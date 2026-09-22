@@ -350,7 +350,7 @@ export function CommandWorkspace() {
       {data.status.dataset_mode !== "official_input" ? <section className="command-context-bar command-research-notice" aria-label={th ? "ขอบเขตการวิจัย" : "Research scope"}>
         <strong>{th ? "พื้นที่ทำงานวิจัยเดิม" : "Historical research workspace"}</strong>
         <p>{th ? "คะแนนและชั้นที่แสดงด้านล่างเป็นผลวิจัยที่เก็บไว้เพื่อเปรียบเทียบ ไม่ใช่การจัดอันดับรับมือเหตุการณ์ที่ยอมรับแล้ว บทสรุปปัจจุบันแสดงคะแนนที่ยังไม่พร้อมและข้อจำกัดของหลักฐานอย่างชัดเจน" : "Scores and classes below are retained research comparisons, not accepted event-response priorities. The current brief keeps unavailable scores and evidence limits explicit."}</p>
-        <a href="/studio/brief/?aoi=aoi-01_mae_sai_core&amp;event=mae_sai_2024">{th ? "เปิดบทสรุปแม่สายปัจจุบัน" : "Open the current Mae Sai brief"}</a>
+        <a href="/command/cases/">{th ? "เปิดการเปรียบเทียบพื้นที่ศึกษา" : "Open shared case comparisons"}</a>
       </section> : null}
 
       <div className="small-screen-command-note command-summary-card card">

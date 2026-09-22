@@ -46,6 +46,7 @@ def inputs():
         ],
     }
     provenance = {
+        "event_id": "mae_sai_2024",
         "official_warning": False,
         "eligible_for_validation": False,
         "source_timestamp": "2024-09-15T23:16:01Z",
@@ -107,3 +108,13 @@ def test_extent_outside_observation_is_rejected():
             collection(box(99, 20, 99.01, 20.01)),
             provenance,
         )
+
+
+def test_candidate_preserves_hat_yai_event_identity():
+    context, provenance = inputs()
+    provenance["event_id"] = "hat_yai_2025"
+    result = candidate_flood_scenario(
+        context, collection(box(98.9999, 19.9999, 99.0001, 20.0001)),
+        collection(box(98.99, 19.99, 99.01, 20.01)), provenance,
+    )
+    assert result["event_id"] == "hat_yai_2025"

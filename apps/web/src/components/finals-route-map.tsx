@@ -64,7 +64,8 @@ export function FinalsRouteMap({ origin, comparison, layers, view, th }: { origi
       L.circleMarker([origin.latitude, origin.longitude], { radius: 9, color: "#17384b", weight: 3, fillColor: "#f4bf43", fillOpacity: 1 }).bindTooltip(startLabel, { permanent: true, direction: "top" }).addTo(map);
       map.attributionControl.setPrefix("Leaflet · FloodGuard");
       map.attributionControl.addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · Reporting boundaries: HDX Thailand COD-AB');
-      if (layers.some((layer) => layer.id === "sar-candidate_extent")) map.attributionControl.addAttribution("Contains modified Copernicus Sentinel data (2024)");
+      const sentinelAttribution = layers.find((layer) => layer.id === "sar-candidate_extent")?.reason?.match(/Contains modified Copernicus Sentinel data \(\d{4}\)/)?.[0];
+      if (sentinelAttribution) map.attributionControl.addAttribution(sentinelAttribution);
     }
     mount().catch(() => { if (!disposed) setFailed(true); });
     return () => { disposed = true; resize?.disconnect(); map?.remove(); };

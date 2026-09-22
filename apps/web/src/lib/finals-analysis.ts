@@ -76,6 +76,16 @@ export function parseFinalsAnalysis(value: unknown, generatedAt: string): Finals
     || !count(scope.population_year) || !["study_population", "in_scope_population", "excluded_population"].every((key) => nonnegative(scope[key]))
     || !almost(scope.study_population as number, (scope.in_scope_population as number) + (scope.excluded_population as number))) return fail();
   const total = scope.in_scope_population as number;
+  if (value.case_identity !== undefined && (!record(value.case_identity) || !text(value.case_identity.aoi_id) || !hash(value.case_identity.aoi_sha256)
+    || !text(value.case_identity.routing_aoi_id) || !["unavailable_explicit_disruptions_only", "unvalidated_satellite_candidate"].includes(value.case_identity.flood_basis as string))) return fail();
+  if (record(value.case_identity) && (value.case_identity.flood_basis === "unvalidated_satellite_candidate") !== Boolean(value.flood_scenarios)) return fail();
+  if (value.dependency_review !== undefined && (!record(value.dependency_review) || !["walking", "modelled_vehicle"].every((mode) => {
+    const row = (value.dependency_review as Record<string, unknown>)[mode];
+    return record(row) && row.service === "hospital" && text(row.routing_boundary) && count(row.components_without_hospital) && text(row.connection_policy)
+      && Array.isArray(row.largest_populated_components) && row.largest_populated_components.every((c) => record(c) && text(c.id) && count(c.nodes) && nonnegative(c.population) && strings(c.destination_ids));
+  }))) return fail();
+  if (value.destination_review !== undefined && (!record(value.destination_review) || !text(value.destination_review.service_definition)
+    || !Array.isArray(value.destination_review.exclusions) || !value.destination_review.exclusions.every((r) => record(r) && text(r.facility_id) && text(r.reason) && url(r.source_url)))) return fail();
   if (!Array.isArray(value.timeline) || !unique(value.timeline) || !value.timeline.every((row) => record(row)
     && ["id", "title", "role"].every((key) => text(row[key])) && nullableText(row.start) && nullableText(row.end) && url(row.source_url) && strings(row.limitations)
     && (row.start === null || row.end === null || String(row.start) <= String(row.end)))) return fail();

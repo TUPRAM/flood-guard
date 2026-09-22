@@ -67,6 +67,7 @@ function validatePublicProduction() {
     "command",
     "studio",
     "evidence-library",
+    "public-cases",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
     "offline-demo/roads.geojson",

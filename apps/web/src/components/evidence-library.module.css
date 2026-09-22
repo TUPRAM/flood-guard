@@ -91,6 +91,11 @@
 .routeToolbar label { display: inline-flex; gap: 6px; align-items: center; min-height: 30px; }
 .routeLegend { list-style: none; display: flex; flex-wrap: wrap; gap: 12px 22px; padding: 0 !important; }
 .routeLegend li { display: inline-flex; align-items: center; gap: 8px; }
+.compactViews { display: none; }
+@media (max-width: 560px) {
+  .workspace .header > nav { display: none; }
+  .workspace .header .compactViews { display: block; width: 82px; min-height: 30px; margin-left: auto; padding: 4px; font-size: 11px; color: #17384b; background: #fff; border-radius: 4px; }
+}
 .beforeLine, .afterLine, .closedLine { display: inline-block; width: 28px; border-top: 4px solid #087f73; }
 .afterLine { border-color: #853cb0; border-top-style: dashed; }
 .closedLine { border-color: #b64221; border-top-style: dashed; }
@@ -241,3 +246,6 @@
   .routeCanvas { flex: auto; }
   .workspace .header { flex-wrap: wrap; }
 }
+
+.caseLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin: 22px 0; }
+@media(max-width: 560px) { .briefStats { grid-template-columns: 1fr; } }

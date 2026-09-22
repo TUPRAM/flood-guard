@@ -46,6 +46,14 @@ export function parseDecisionBrief(value: unknown, aoi: string, event: string, g
     || !r.units.every((row) => record(row) && text(row.id) && text(row.name) && text(row.name_th)
       && ["full_unit", "partial_unit"].includes(String(row.scope)) && fraction(row.unit_coverage_fraction) && positive(row.intersection_area_km2)
       && access(row.population_context) && row.affected_population === null && row.fpps === null && row.action_class === null && interventions(row.interventions))) return fail();
-  if (value.finals_analysis !== undefined) parseFinalsAnalysis(value.finals_analysis, generatedAt);
+  if (value.finals_analysis !== undefined) {
+    parseFinalsAnalysis(value.finals_analysis, generatedAt);
+    const finals = value.finals_analysis as Record<string, unknown>;
+    const identity = finals.case_identity;
+    if (identity === undefined ? aoi !== "aoi-01_mae_sai_core" || event !== "mae_sai_2024"
+      : !record(identity) || identity.aoi_id !== aoi) return fail();
+    if (record(finals.flood_scenarios) && Object.values(finals.flood_scenarios).some((flood) =>
+      !record(flood) || flood.event_id !== event || !record(flood.candidate_provenance) || flood.candidate_provenance.event_id !== event)) return fail();
+  }
   return value as unknown as DecisionBrief;
 }

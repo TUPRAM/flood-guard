@@ -23,7 +23,8 @@ describe("CommandWorkspace", () => {
     expect(html).toContain("Confidence");
     expect(html).toContain("Historical research workspace");
     expect(html).toContain("not accepted event-response priorities");
-    expect(html).toContain("Open the current Mae Sai brief");
+    expect(html).toContain("Open shared case comparisons");
+    expect(html).toContain('href="/command/cases/"');
     expect(html).toContain("follow DDPM and local-authority instructions before action");
     expect(html).toContain("TH570903");
     expect(html).toContain("Ko Chang");

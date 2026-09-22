@@ -12,7 +12,7 @@ export const SERVICE_NAMES: Record<FinalsServiceId, [string, string]> = {
 const MODE_NAMES: Record<FinalsTravelMode, [string, string]> = {
   walking: ["Walking model", "แบบจำลองการเดิน"], modelled_vehicle: ["Vehicle model", "แบบจำลองยานพาหนะ"],
 };
-const KINDS = { add_destination: ["Add a hypothetical destination", "เพิ่มจุดหมายสมมติ"], remove_destination: ["Remove a candidate destination", "ทดสอบหยุดให้บริการจุดหมาย"], close_edge: ["Close one road link", "ทดสอบปิดช่วงถนน"] };
+const KINDS = { add_destination: ["Add a hypothetical destination", "เพิ่มจุดหมายสมมติ"], remove_destination: ["Remove a candidate destination", "ทดสอบหยุดให้บริการจุดหมาย"], close_edge: ["Impose road closures", "ทดสอบปิดช่วงถนน"] };
 const n = (value: number | null, th: boolean, digits = 1) => value === null ? (th ? "ยังไม่มี" : "Unavailable") : value.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: digits });
 const delta = (value: number | null, th: boolean) => value === null ? n(value, th) : value.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 2, signDisplay: "exceptZero" });
 

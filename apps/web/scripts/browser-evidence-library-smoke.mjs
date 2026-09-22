@@ -198,7 +198,8 @@ async function verifyFinalsComparison(page, brief, analysis, th, offline) {
             if (!(await populationHeadline.innerText()).includes(flood.impact.losing_30_min_access.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 0 }))) throw new Error("Headline differs from selected population scenario");
           } else if (await populationHeadline.count()) throw new Error("Flood headline shown for a different intervention or service");
           await routePanel.locator(".leaflet-container canvas").first().waitFor({ state: "visible" });
-          await routePanel.locator("[data-route-origin]").filter({ hasText: pin.name }).waitFor();
+          const selectedOrigin = routePanel.getByRole("combobox", { name: th ? "จุดเริ่มต้นสาธารณะ" : "Public starting place", exact: true });
+          if (await selectedOrigin.inputValue() !== pin.id) throw new Error("Starting-place selector differs from route origin");
           const startTooltip = routePanel.locator(".leaflet-tooltip").filter({ has: page.locator("[data-route-start-label]") });
           await startTooltip.waitFor({ state: "visible" });
           const mapBox = await routePanel.locator(".leaflet-container").boundingBox();
@@ -313,6 +314,7 @@ async function verifyRouteWorkspace(page) {
       await assertFitsViewport(page, routePanel.locator('[data-route-result="after"]'), "after result");
       await assertFitsViewport(page, routePanel.locator("[data-route-outcome]"), "route change result");
       await assertFitsViewport(page, routePanel.locator("[data-route-caution]"), "route uncertainty");
+      for (const item of await routePanel.getByRole("list", { name: th ? "สัญลักษณ์เส้นทาง" : "Route legend", exact: true }).getByRole("listitem").all()) await assertFitsViewport(page, item, "route legend item", true);
       const dimensions = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight, viewportWidth: innerWidth, viewportHeight: innerHeight }));
       if (dimensions.width > dimensions.viewportWidth + 1 || dimensions.height > dimensions.viewportHeight + 1) throw new Error(`Route workspace requires document scrolling at ${viewport.width}×${viewport.height}, Thai=${th}: ${JSON.stringify(dimensions)}`);
       await assertAvailabilityDoesNotOverlap(page, routePanel, `${viewport.width}×${viewport.height}, Thai=${th}`);

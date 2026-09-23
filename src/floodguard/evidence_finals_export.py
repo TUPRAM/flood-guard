@@ -76,6 +76,8 @@ def load_finals(directory: Path, *, aoi_sha256: str) -> tuple[dict, dict]:
         ):
             raise ValueError("Finals implementation changed; recompute the experiments")
     analysis = json.loads((directory / "analysis.json").read_text(encoding="utf-8"))
+    if analysis.get("generated_at") != receipt.get("generated_at"):
+        raise ValueError("Finals analysis generation time differs from build receipt")
     if "case_identity" in analysis and analysis["case_identity"].get("aoi_sha256") != aoi_sha256:
         raise ValueError("Finals analysis AOI hash differs")
     if sha256_file(directory / "analysis.json") != receipt["analysis_sha256"]:

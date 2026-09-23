@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { closeSync, ftruncateSync, mkdtempSync, mkdirSync, openSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve, sep } from "node:path";
 import { test } from "node:test";
@@ -59,6 +59,21 @@ test("rejects filesystem paths embedded in metadata", () => {
     assert.throws(() => assertPublicEvidenceText({ summary: path }), /filesystem path/);
   }
 });
+test("decodes bounded HTML entities before checking reports for private keys and paths", () => {
+  for (const value of [
+    "&#x43;:&#x5c;Users&#x5c;iputu&#x5c;private.csv",
+    "C&colon;&bsol;Users&bsol;private&bsol;raw.csv",
+    "&amp;#x43;:&#92;Users&#92;private.csv",
+    "&#x43:&#x5cUsers&#x5ciputu&#x5cprivate.csv",
+  ]) assert.throws(() => assertPublicEvidenceText(value), /filesystem path|Numeric HTML entity/);
+  for (const value of [
+    "{&#x22;api_key&#x22;:&#x22;secret&#x22;}",
+    "{&quot;api&lowbar;key&quot;:&quot;secret&quot;}",
+    "{&#34api_key&#34:&#34secret&#34}",
+    "{&quotapi_key&quot:&quotsecret&quot}",
+  ]) assert.throws(() => assertPublicEvidenceText(value), /Private\/raw field|Numeric HTML entity/);
+  assert.throws(() => assertPublicEvidenceText(`&${"amp;".repeat(9)}#x43;`), /Nested HTML entity/);
+});
 test("binds and inspects the gzip derivative database download", () => {
   const archive = gzipSync(JSON.stringify({ schema_version: "synthetic-test", edges: [], source_name: "Synthetic fixture" }));
   fixture((out, root) => {
@@ -86,3 +101,9 @@ test("rejects a correctly hashed file that is not valid gzip and an unlisted gzi
     assert.throws(() => collectEvidenceLibraryAssets(out), /Unlisted evidence asset/);
   });
 });
+test("rejects an oversized compressed download before reading or auditing it", () => fixture((out, root) => {
+  const path = resolve(root, "database.json.gz");
+  const handle = openSync(path, "w");
+  try { ftruncateSync(handle, 80 * 1024 * 1024 + 1); } finally { closeSync(handle); }
+  assert.throws(() => collectEvidenceLibraryAssets(out), /exceeds 80 MiB/);
+}, (data) => { data.downloads = [{ title: "Oversized fixture", url: "/evidence-library/database.json.gz", sha256: "0".repeat(64) }]; }));

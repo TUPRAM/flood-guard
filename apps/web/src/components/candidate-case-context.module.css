@@ -1,0 +1,24 @@
+.case { max-width: 1440px; margin: 18px auto; padding: 20px 24px; border: 1px solid #c8d9df; border-top: 4px solid #147483; border-radius: 8px; background: #f5fafb; color: #17384b; font: 13px/1.5 var(--font-sans), Arial, sans-serif; }
+.heading { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.heading h2 { margin: 2px 0 12px; font-size: 21px; }
+.eyebrow { margin: 0; font-size: 10px; letter-spacing: .1em; font-weight: 800; }
+.badge { padding: 5px 8px; border: 1px solid #e0c581; border-radius: 5px; background: #fff7df; font-size: 11px; white-space: nowrap; }
+.controls { display: grid; grid-template-columns: minmax(220px,2fr) minmax(130px,1fr) minmax(130px,1fr); gap: 12px; }
+.controls label { min-width: 0; font-weight: 700; }
+.controls select { display: block; width: 100%; min-height: 38px; margin-top: 4px; padding: 5px 8px; border: 1px solid #b4c5ce; border-radius: 5px; background: white; color: #17384b; font: inherit; }
+.identity { display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+.identity code, .provenance code { overflow-wrap: anywhere; }
+.identity small { color: #536f7e; }
+.metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; margin: 12px 0; }
+.metrics div { padding: 11px; border: 1px solid #d3e1e5; border-radius: 6px; background: #fff; }
+.metrics span { display: block; min-height: 36px; font-size: 11px; }
+.metrics strong { display: block; margin-top: 5px; font-size: 19px; }
+.provenance { color: #526c78; font-size: 11px; }
+.case nav { display: flex; flex-wrap: wrap; gap: 10px 17px; margin-top: 12px; }
+.case nav a { color: #0d5c6e; font-weight: 700; text-decoration: underline; }
+.case :is(a,select):focus-visible { outline: 3px solid #e3a52a; outline-offset: 2px; }
+.error { padding: 9px; border: 1px solid #ecc2b8; background: #fff0ed; color: #813c31; }
+.reset { display: inline-block; margin-left: 10px; padding: 4px 8px; border: 1px solid currentColor; border-radius: 4px; background: transparent; color: inherit; cursor: pointer; }
+.scopeNote { max-width: 1440px; margin: 10px auto; padding: 12px 20px; border-left: 4px solid #a47827; background: #fff8e9; color: #614e27; font: 12px/1.5 var(--font-sans), Arial, sans-serif; }
+@media(max-width:780px) { .case { margin: 10px; padding: 14px; } .controls { grid-template-columns: 1fr; } .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width:480px) { .heading { flex-direction: column; } .metrics { grid-template-columns: 1fr; } .metrics span { min-height: 0; } }

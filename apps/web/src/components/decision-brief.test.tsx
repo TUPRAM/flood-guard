@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { evidenceFixtures } from "@/lib/evidence-library.fixtures";
 import { decisionBriefFixture } from "@/lib/decision-brief.fixtures";
+import { finalsAnalysisFixture } from "@/lib/finals-analysis.fixtures";
 import { DecisionBriefPanel } from "./decision-brief";
 import { EvidenceLibrary } from "./evidence-library";
 
@@ -16,6 +17,7 @@ describe("concise decision view", () => {
     expect(html).toContain("Unknown");
     expect(html).toContain("Travel times change even though nobody crosses");
     expect(html).toContain("Access unknown: no accepted connection");
+    expect(html).toContain("Main-road access: unavailable as a separate qualified service result");
     expect(html).not.toContain("Acquired data and coverage");
     expect(html).not.toContain("Primary FPPS: unavailable.");
     expect(html).toContain("/studio/library/?aoi=test-aoi&amp;event=test-event");
@@ -33,5 +35,17 @@ describe("concise decision view", () => {
     const html = renderToStaticMarkup(<EvidenceLibrary view="brief" initialCatalog={catalog} initialPackage={evidence} initialAoiId="unknown" />);
     expect(html).toContain("Another area&#x27;s data will not be substituted");
     expect(html).not.toContain("data-decision-brief");
+  });
+  it("keeps a source analysis creation time distinct from a later release in the concise brief", () => {
+    const {evidence} = evidenceFixtures();
+    evidence.generated_at = "2026-09-23T12:00:00Z";
+    evidence.decision_brief = decisionBriefFixture();
+    evidence.decision_brief.generated_at = evidence.generated_at;
+    evidence.decision_brief.finals_analysis = finalsAnalysisFixture();
+    const html = renderToStaticMarkup(<DecisionBriefPanel evidence={evidence} th={false} />);
+    expect(html).toContain(`data-source-analysis-generated-at="${evidence.decision_brief.finals_analysis.generated_at}"`);
+    expect(html).toContain('data-package-release-generated-at="2026-09-23T12:00:00Z"');
+    expect(html).toContain("Source analysis generated");
+    expect(html).toContain("Package release generated");
   });
 });

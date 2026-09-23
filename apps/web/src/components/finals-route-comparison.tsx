@@ -1,10 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { EvidenceLibraryLayer, FinalsRoute, FinalsRoutes, FinalsServiceId, FinalsTravelMode } from "@floodguard/contracts";
 import type { RouteView } from "./finals-route-map";
 import styles from "./evidence-library.module.css";
+import { pushCaseSelection, readCaseSelection } from "@/lib/case-selection";
 
 const RouteMap = dynamic(() => import("./finals-route-map").then((module) => module.FinalsRouteMap), { ssr: false });
 const n = (value: number | null, th: boolean, digits = 1) => value === null ? (th ? "ยังไม่มี" : "Unavailable") : value.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: digits });
@@ -19,16 +20,38 @@ function RouteSummary({ route, after, th }: { route: FinalsRoute; after: boolean
 
 export function FinalsRouteComparisonPanel({ routes, service, mode, layers, th, controls, actions, populationHeadline }: { routes: FinalsRoutes; service: FinalsServiceId; mode: FinalsTravelMode; layers: EvidenceLibraryLayer[]; th: boolean; controls?: ReactNode; actions?: ReactNode; populationHeadline?: ReactNode }) {
   const detailDialog = useRef<HTMLDialogElement>(null);
-  const [originId, setOriginId] = useState(routes.origins[0]?.id ?? "");
-  const [kind, setKind] = useState<"close_edge" | "remove_destination">("close_edge");
+  const [originId, setOriginId] = useState(() => {
+    const value = typeof window === "undefined" ? null : readCaseSelection(window.location.search).origin;
+    return value ?? routes.origins[0]?.id ?? "";
+  });
+  const [kind, setKind] = useState<"close_edge" | "remove_destination">(() => {
+    const value = typeof window === "undefined" ? null : readCaseSelection(window.location.search).scenario;
+    return routes.comparisons.find((item) => item.id === value)?.scenario_kind ?? "close_edge";
+  });
   const [view, setView] = useState<RouteView>("both");
+  useEffect(() => {
+    const onPopState = () => {
+      const query = readCaseSelection(window.location.search);
+      setOriginId(query.origin ?? routes.origins[0]?.id ?? "");
+      setKind(routes.comparisons.find((item) => item.id === query.scenario)?.scenario_kind ?? "close_edge");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [routes]);
+  const choose = (nextOrigin: string, nextKind: "close_edge" | "remove_destination") => {
+    setOriginId(nextOrigin); setKind(nextKind);
+    const query = readCaseSelection(window.location.search);
+    const scenario = routes.comparisons.find((item) => item.origin_id === nextOrigin && item.service_type === service && item.travel_mode === mode && item.scenario_kind === nextKind);
+    const next = { ...query, origin: nextOrigin, scenario: scenario?.id };
+    pushCaseSelection(next);
+  };
   const origin = routes.origins.find((item) => item.id === originId);
   const comparison = routes.comparisons.find((item) => item.origin_id === originId && item.service_type === service && item.travel_mode === mode && item.scenario_kind === kind);
   return <section className={styles.routeWorkspace} aria-labelledby="route-comparison-title" data-route-comparison="true" data-route-id={comparison?.id}>
     <h2 id="route-comparison-title" className={styles.visuallyHidden}>{th ? "จากจุดนี้ เส้นทางเปลี่ยนอย่างไร?" : "From this place, how does the route change?"}</h2>
     <div className={styles.routeControls}>{controls}
-      <label>{th ? "จุดเริ่มต้นสาธารณะ" : "Public starting place"}<select value={originId} onChange={(event) => setOriginId(event.target.value)}>{routes.origins.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <label>{th ? "การเปลี่ยนแปลงที่กำหนด" : "Imposed change"}<select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}><option value="close_edge">{routes.closure_basis === "candidate_flood" ? (th ? "ปิดถนนตามขอบเขตน้ำท่วมผู้สมัคร" : "Candidate flood-derived closures") : (th ? "ปิดช่วงถนนบนเส้นทางกรณีฐาน" : "Close a baseline route link")}</option><option value="remove_destination">{th ? "หยุดให้บริการจุดหมายกรณีฐาน" : "Remove the baseline destination"}</option></select></label>
+      <label>{th ? "จุดเริ่มต้นสาธารณะ" : "Public starting place"}<select value={originId} onChange={(event) => choose(event.target.value, kind)}>{routes.origins.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label>{th ? "การเปลี่ยนแปลงที่กำหนด" : "Imposed change"}<select value={kind} onChange={(event) => choose(originId, event.target.value as typeof kind)}><option value="close_edge">{routes.closure_basis === "candidate_flood" ? (th ? "ปิดถนนตามขอบเขตน้ำท่วมผู้สมัคร" : "Candidate flood-derived closures") : (th ? "ปิดช่วงถนนบนเส้นทางกรณีฐาน" : "Close a baseline route link")}</option><option value="remove_destination">{th ? "หยุดให้บริการจุดหมายกรณีฐาน" : "Remove the baseline destination"}</option></select></label>
     </div>
     <div className={styles.workspaceActions}>{actions}<button type="button" aria-haspopup="dialog" onClick={() => detailDialog.current?.showModal()}>{th ? "รายละเอียดเส้นทาง" : "Route details"}</button></div>
     {routes.status === "available" && origin && comparison ? <div className={styles.routeStage}>

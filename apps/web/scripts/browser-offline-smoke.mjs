@@ -187,7 +187,7 @@ try {
   const hazardPanel = page.locator("#public-hazard-panel");
   await hazardPanel.waitFor({ state: "visible" });
   const hazardText = await hazardPanel.innerText();
-  for (const required of ["Planning indicator", "Evidence sufficiency", "Source time", "historical flood evidence", "DDPM"]) {
+  for (const required of ["Planning indicator", "Evidence sufficiency", "Source time", "candidate planning indicator", "separate from the selected study case", "non-operational", "DDPM"]) {
     if (!hazardText.includes(required)) {
       throw new Error(`Public Hazard Info is missing its evidence boundary: ${required}.`);
     }
@@ -807,7 +807,7 @@ function requiredFinalCopy(routePath) {
       // The Public header now shows the FloodGuard logo image instead of a text
       // wordmark, so the brand is no longer body text here. The nav labels and
       // Hazard Info still prove the finished Public UI rendered.
-      ? ["hazard info", "report", "shelter", "prepare", "sos"]
+      ? ["hazard info", "report", "shelter", "prepare", "sos", "candidate · non-operational", "lower priority", "higher priority"]
       : routePath === "/command/"
         ? ["planning intelligence", "source time", "confidence", "ddpm", "local-authority"]
         : ["validation & evidence report", "source time", "confidence", "technical verification", "observed-data validation", "operational authorization", "immutable evidence context"];
@@ -845,8 +845,8 @@ function assertFinalVisibleCopy(body, routePath) {
     : routePath.startsWith("/studio/")
     ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula/iu
     : routePath === "/public/"
-      ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu
-      : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|candidates?|synthetic|non[-_ ]?operational|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
+      ? /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|prototypes?|mocks?|samples?|illustrative|placeholders?|fixtures?|synthetic|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu
+      : /(?:^|[^\p{L}\p{N}])(?:rehearsals?|demos?|fixtures?|synthetic|fail[-_ ]?closed|server[-_ ]?produced)(?=$|[^\p{L}\p{N}])|developer note|no browser formula|processing_scope|can_feed_decision_layer/iu;
   const match = body.match(forbidden);
   if (match) {
     throw new Error(`${routePath} exposes forbidden internal copy: ${match[0]}.`);

@@ -35,6 +35,8 @@ def main() -> None:
         "--generated-at", default=datetime.now(timezone.utc).isoformat()
     )
     parser.add_argument("--reuse-normalized", action="store_true")
+    parser.add_argument("--require-lower-basin-context", action="store_true",
+                        help="Fail unless both lower Chao cases use reviewed 10 km routing finals.")
     parser.add_argument("--check-public-routes", action="store_true")
     args = vars(parser.parse_args())
     if args.pop("check_public_routes"):

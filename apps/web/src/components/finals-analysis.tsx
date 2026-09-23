@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { EvidenceLibraryLayer, FinalsAnalysis, FinalsIntervention, FinalsServiceId, FinalsTravelMode } from "@floodguard/contracts";
 import { FinalsRouteComparisonPanel } from "./finals-route-comparison";
+import { pushCaseSelection, readCaseSelection, resolveAnalysisSelection } from "@/lib/case-selection";
 import styles from "./evidence-library.module.css";
 
 export const SERVICE_NAMES: Record<FinalsServiceId, [string, string]> = {
@@ -34,6 +35,25 @@ const DETAIL_SECTIONS: { id: DetailSection; names: [string, string] }[] = [
 export function FinalsAnalysisPanel({ analysis, layers, th, context }: { analysis: FinalsAnalysis; layers: EvidenceLibraryLayer[]; th: boolean; context?: ReactNode }) {
   const [serviceId, setServiceId] = useState<FinalsServiceId>(() => { const value = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("service"); return analysis.services.find((item) => item.id === value)?.id ?? analysis.primary_service; });
   const [mode, setMode] = useState<FinalsTravelMode>(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mode") === "modelled_vehicle" ? "modelled_vehicle" : "walking");
+  const [selectionNotice, setSelectionNotice] = useState(false);
+  useEffect(() => {
+    const onPopState = () => {
+      const query = readCaseSelection(window.location.search);
+      if (analysis.services.some((item) => item.id === query.service)) setServiceId(query.service as FinalsServiceId);
+      if (query.mode === "walking" || query.mode === "modelled_vehicle") setMode(query.mode);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [analysis]);
+  const changeSelection = (nextService: FinalsServiceId, nextMode: FinalsTravelMode) => {
+    const current = readCaseSelection(window.location.search);
+    const next = { ...current, service: nextService, mode: nextMode };
+    const compatible = resolveAnalysisSelection(analysis, next).reason !== "unknown_scenario";
+    if (!compatible) delete next.scenario;
+    setSelectionNotice(!compatible);
+    setServiceId(nextService); setMode(nextMode);
+    pushCaseSelection(next);
+  };
   const service = analysis.services.find((item) => item.id === serviceId);
   const variant = service?.variants.find((item) => item.travel_mode === mode && item.speed_factor === 1);
   const baseline = variant?.baseline;
@@ -60,11 +80,12 @@ export function FinalsAnalysisPanel({ analysis, layers, th, context }: { analysi
     dialog.current?.querySelector<HTMLButtonElement>(`[data-detail-tab="${id}"]`)?.focus();
   };
   const controls = <>
-    <label>{th ? "บริการที่ต้องการ" : "Service needed"}<select value={serviceId} onChange={(event) => setServiceId(event.target.value as FinalsServiceId)}>{analysis.services.map((item) => <option key={item.id} value={item.id}>{SERVICE_NAMES[item.id][th ? 1 : 0]}{item.status === "unavailable" ? (th ? " — ยังไม่มีจุดหมายที่ใช้ได้" : " — unavailable") : ""}</option>)}</select></label>
-    <label>{th ? "วิธีเดินทางตามแบบจำลอง" : "Modelled travel mode"}<select value={mode} onChange={(event) => setMode(event.target.value as FinalsTravelMode)}>{Object.entries(MODE_NAMES).map(([id, names]) => <option key={id} value={id}>{names[th ? 1 : 0]}</option>)}</select></label>
+    <label>{th ? "บริการที่ต้องการ" : "Service needed"}<select value={serviceId} onChange={(event) => changeSelection(event.target.value as FinalsServiceId, mode)}>{analysis.services.map((item) => <option key={item.id} value={item.id}>{SERVICE_NAMES[item.id][th ? 1 : 0]}{item.status === "unavailable" ? (th ? " — ยังไม่มีจุดหมายที่ใช้ได้" : " — unavailable") : ""}</option>)}<option value="main_road" disabled>{th ? "ถนนสายหลัก — ยังไม่มีผลการเข้าถึง" : "Main-road access — unavailable"}</option></select></label>
+    <label>{th ? "วิธีเดินทางตามแบบจำลอง" : "Modelled travel mode"}<select value={mode} onChange={(event) => changeSelection(serviceId, event.target.value as FinalsTravelMode)}>{Object.entries(MODE_NAMES).map(([id, names]) => <option key={id} value={id}>{names[th ? 1 : 0]}</option>)}</select></label>
   </>;
   const actions = <>{DETAIL_SECTIONS.map((section) => <button key={section.id} type="button" data-finals-detail={section.id} aria-haspopup="dialog" aria-controls={detailsId} onClick={() => openDetails(section.id)}>{section.names[th ? 1 : 0]}</button>)}</>;
   return <div data-finals-analysis="true" className={styles.finalsWorkspace}>
+    {selectionNotice ? <p className={styles.workspaceNotice} role="status">{th ? "สถานการณ์เดิมไม่เข้ากับบริการหรือวิธีเดินทางใหม่ จึงยกเลิกตัวเลือกนั้น" : "The previous scenario is incompatible with the selected service or mode, so that scenario selection was cleared."}</p> : null}
     {analysis.routes ? <FinalsRouteComparisonPanel routes={analysis.routes} service={serviceId} mode={mode} layers={layers} th={th} controls={controls} actions={actions} populationHeadline={flood ? <div className={styles.populationHeadline} data-flood-headline><strong>{th ? "ฉากทัศน์ปิดถนนจากขอบเขตน้ำท่วมผู้สมัคร" : "Candidate flood → imposed road closures"}</strong><span><b>{n(flood.impact.losing_30_min_access, th, 0)}</b> {th ? "สูญเสียการเข้าถึง 30 นาที" : "lose 30-minute access"} · <b>{n(flood.impact.newly_unreachable_population, th, 0)}</b> {th ? "ไม่มีเส้นทางเหลือ" : "lose all routes"}</span><small>{th ? "ประชากรตามแบบจำลอง ไม่ใช่ผู้ประสบภัย · ความเชื่อมั่นต่ำ" : "Modelled residents, not flood victims · low confidence"}</small></div> : undefined} /> : <section className={styles.panel}><div className={styles.workspaceControls}>{controls}{actions}</div><p className={styles.empty} role="status">{th ? "ยังไม่มีข้อมูลเส้นทางสำหรับการเปรียบเทียบนี้" : "Route data is unavailable for this comparison."}</p></section>}
     <dialog ref={dialog} id={detailsId} className={styles.workspaceDialog} data-finals-detail-panel="true" aria-labelledby={`${detailsId}-title`}>
       <header className={styles.workspaceDialogHeader}><h2 id={`${detailsId}-title`}>{th ? "ข้อมูลและหลักฐานเบื้องหลัง" : "Analysis and evidence"}</h2><button type="button" onClick={() => dialog.current?.close()}>{th ? "ปิด" : "Close"}</button></header>

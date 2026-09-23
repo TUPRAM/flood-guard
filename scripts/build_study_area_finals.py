@@ -11,13 +11,26 @@ import networkx as nx
 from shapely.geometry import Point, mapping, shape
 from shapely.ops import unary_union
 
-from floodguard.evidence_catalog import assert_public_safe, canonical_bytes, load_aois, sha256_file
-from floodguard.evidence_connectivity import audit_connectivity
 from floodguard.evidence_case_review import apply_destination_review
+from floodguard.evidence_catalog import (
+    assert_public_safe,
+    canonical_bytes,
+    load_aois,
+    sha256_file,
+)
+from floodguard.evidence_connectivity import audit_connectivity
 from floodguard.evidence_context import build_context_inputs
 from floodguard.evidence_finals import build_finals_analysis
 from floodguard.evidence_pipeline import build_runtime_identity, write_json
 from floodguard.evidence_routes import build_pin_comparisons
+from floodguard.lower_basin_release_context import (
+    AOI_IDS as LOWER_BASIN_IDS,
+)
+from floodguard.lower_basin_release_context import (
+    bind_fixed_demand_roster,
+    select_lower_basin_context,
+    validate_documented_hospital_review,
+)
 
 
 def component_review(context: dict, sites: list[dict]) -> list[dict]:
@@ -45,13 +58,18 @@ def main() -> None:
     parser.add_argument("--generated-at", required=True)
     parser.add_argument("--destination-review", type=Path)
     parser.add_argument("--flood-candidate", type=Path)
+    parser.add_argument("--lower-basin-baseline-root", type=Path,
+        help="Verified prior case root supplying the fixed demand roster for AOI-05/06")
+    parser.add_argument("--lower-basin-review-root", type=Path,
+        help="Source-bound 10 km hospital object review root for AOI-05/06")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     if args.output_dir.resolve().is_relative_to(root):
         parser.error("Research outputs must remain outside Git")
     modules = ("evidence_finals.py", "evidence_routes.py", "evidence_context.py",
                "evidence_scenarios.py", "evidence_interventions.py",
-               "evidence_population_review.py", "evidence_connectivity.py", "evidence_case_review.py", "evidence_flood_scenario.py")
+               "evidence_population_review.py", "evidence_connectivity.py", "evidence_case_review.py", "evidence_flood_scenario.py",
+               "lower_basin_release_context.py")
     implementation = {name: sha256_file(root / "src/floodguard" / name) for name in modules}
     builder_hash = sha256_file(Path(__file__))
     aois = {row["id"]: row for row in load_aois(root / "resources/aoi/upload")}
@@ -60,26 +78,86 @@ def main() -> None:
     units = json.loads((args.reporting_dir / "reporting_units.geojson").read_bytes())
     jurisdiction = unary_union([shape(f["geometry"]) for f in units["features"]])
     geometries = [(f["properties"]["adm3_pcode"], shape(f["geometry"])) for f in units["features"]]
+    lower_basin = args.aoi_id in LOWER_BASIN_IDS
+    selection = None
+    baseline = None
+    documented_review = None
+    baseline_file = None
+    review_file = None
+    if lower_basin:
+        if not args.lower_basin_baseline_root or not args.lower_basin_review_root:
+            parser.error("AOI-05/06 require --lower-basin-baseline-root and --lower-basin-review-root")
+        selection = select_lower_basin_context(aoi_id=args.aoi_id,
+            demand_geometry=aoi["geometry"], reporting_geometry=mapping(jurisdiction),
+            aoi_sha256=aoi["sha256"],
+            reporting_units_sha256=sha256_file(args.reporting_dir / "reporting_units.geojson"))
+        baseline_case = args.lower_basin_baseline_root / args.aoi_id
+        baseline_file = baseline_case / "contexts/walking/context_inputs.json"
+        receipt = json.loads((baseline_case / "build_receipt.json").read_bytes())
+        if (receipt["aoi_sha256"] != aoi["sha256"]
+                or receipt["reporting_units_sha256"] != selection["reporting_units_sha256"]
+                or receipt["files"].get("contexts/walking/context_inputs.json") != sha256_file(baseline_file)):
+            raise ValueError("Fixed-demand baseline receipt or source identity differs")
+        baseline = json.loads(baseline_file.read_bytes())
+        review_file = args.lower_basin_review_root / args.aoi_id / "radius_10km/hospital_duplicate_review.json"
+        documented_review = json.loads(review_file.read_bytes())
+        routing = {"id": aoi["id"] + "-10km-buffer", "geometry": selection["routing_geometry"]}
+    elif args.lower_basin_baseline_root or args.lower_basin_review_root:
+        parser.error("Lower-basin review inputs are only valid for AOI-05/06")
     contexts = {}
     review = json.loads(args.destination_review.read_bytes()) if args.destination_review else None
     for mode in ("walking", "modelled_vehicle"):
         print(f"Building {args.aoi_id}: {mode}", flush=True)
         context = build_context_inputs(args.context_root, aoi["geometry"], routing["geometry"], [],
-            args.output_dir / "contexts" / mode, reporting_geometry=mapping(jurisdiction),
+            args.output_dir / "contexts" / mode,
+            reporting_geometry=None if lower_basin else mapping(jurisdiction),
             travel_mode="walking" if mode == "walking" else "legacy_vehicle")
+        if lower_basin:
+            if any(context["input_hashes"][key] != baseline["input_hashes"][key]
+                   for key in ("osm", "worldpop", "aoi_geometry")):
+                raise ValueError("Expanded routing changed fixed source or demand geometry")
+            context["population"], roster_sha = bind_fixed_demand_roster(
+                baseline["population"], context["population"])
+            validated_exclusions = validate_documented_hospital_review(context, documented_review)
+            if validated_exclusions:
+                context = apply_destination_review(context, documented_review)
+            context["input_hashes"].update({
+                "routing_selection": selection["selection_sha256"],
+                "fixed_demand_roster": roster_sha,
+                "baseline_context": sha256_file(baseline_file),
+                "hospital_object_review": sha256_file(review_file),
+            })
+            context["assumptions"] = [
+                "Routing uses the projected 10 km AOI buffer; paths and destinations beyond that boundary are not evaluated."
+                if assumption == "Routing uses a surrounding district/basin polygon; paths outside that polygon are not evaluated."
+                else assumption
+                for assumption in context["assumptions"]
+            ]
         if review:
             context = apply_destination_review(context, review)
             context["input_hashes"]["destination_review"] = sha256_file(args.destination_review)
-        for row in context["population"]:
-            matches = [code for code, geometry in geometries if geometry.covers(Point(row["longitude"], row["latitude"]))]
-            row["subdistrict_id"] = matches[0] if len(matches) == 1 else "unassigned"
+        if lower_basin:
+            original_assignments = {
+                row["population_id"]: row["subdistrict_id"]
+                for row in baseline["population"]
+            }
+            if any(
+                row["subdistrict_id"] != original_assignments[row["population_id"]]
+                for row in context["population"]
+            ):
+                raise ValueError("Expanded context changed fixed reporting assignments")
+        else:
+            for row in context["population"]:
+                matches = [code for code, geometry in geometries if geometry.covers(Point(row["longitude"], row["latitude"]))]
+                row["subdistrict_id"] = matches[0] if len(matches) == 1 else "unassigned"
         context["input_hashes"]["reporting_units"] = sha256_file(args.reporting_dir / "reporting_units.geojson")
         context["canonical_sha256"] = hashlib.sha256(canonical_bytes({k: v for k, v in context.items()
             if k not in ("canonical_sha256", "generated_at")})).hexdigest()
         contexts[mode] = context
     walking = contexts["walking"]
     population = sum(row["total_population"] for row in walking["population"])
-    excluded = walking["coverage"]["population_excluded_outside_reporting_scope"]
+    excluded = (0.0 if lower_basin else
+        walking["coverage"]["population_excluded_outside_reporting_scope"])
     scope = {"jurisdiction": "Thai reporting-boundary intersections; routes limited to the recorded context polygon",
         "population_year": 2020, "boundary_reference_date": "2022-01-22",
         "osm_retrieved_at": walking["source_metadata"]["osm"]["retrieved_at_utc"],
@@ -90,12 +168,20 @@ def main() -> None:
     summary["question"] = f"How does access to distinct services change under explicit disruptions in {args.aoi_id}?"
     summary["case_identity"] = {"aoi_id": args.aoi_id, "aoi_sha256": aoi["sha256"],
         "routing_aoi_id": routing["id"], "flood_basis": "unavailable_explicit_disruptions_only"}
+    if lower_basin:
+        summary["case_identity"]["routing_policy"] = selection["policy_version"]
+        summary["case_identity"]["routing_selection_sha256"] = selection["selection_sha256"]
+        summary["destination_review"] = {
+            "service_definition": "OSM hospital-tagged source objects with contained same-name/site point duplicates excluded; operation, entrance and capacity unverified.",
+            **documented_review,
+        }
+        summary["limitations"].insert(0, "A 10 km routing buffer retains fixed AOI demand and reporting assignments. Hospital objects were source-deduplicated; operating status, entrances and event passability remain unverified.")
     if review:
         summary["destination_review"] = review
         summary["limitations"].insert(0, review["service_definition"])
     summary["limitations"].insert(0, "No accepted event flood extent is bound to this case. Any candidate-driven closures remain hypothetical; accepted flood exposure and FPPS remain unavailable.")
     if args.aoi_id.startswith(("aoi-05", "aoi-06")):
-        summary["limitations"].insert(1, "The 2024 and 2025 event contexts share this same access baseline and scenario analysis. Identical values are not evidence of unchanged flood impacts. Routing stops at the AOI boundary; outside destinations and paths are not evaluated.")
+        summary["limitations"].insert(1, "The 2024 and 2025 event contexts share this same access baseline and scenario analysis. Identical values are not evidence of unchanged flood impacts. Routing stops at the selected 10 km context boundary; farther destinations and paths are not evaluated.")
     summary["connectivity_audits"], detailed["connectivity_audits"] = {}, {}
     summary["dependency_review"] = {}
     for mode, context in contexts.items():
@@ -163,6 +249,9 @@ def main() -> None:
     assert_public_safe(summary)
     write_json(args.output_dir / "analysis.json", summary)
     write_json(args.output_dir / "scenario_details.json", detailed)
+    if lower_basin:
+        write_json(args.output_dir / "routing_selection.json", selection)
+        write_json(args.output_dir / "hospital_duplicate_review.json", documented_review)
     for mode, context in contexts.items():
         write_json(args.output_dir / "contexts" / mode / "context_inputs.json", context)
     if builder_hash != sha256_file(Path(__file__)) or implementation != {name: sha256_file(root / "src/floodguard" / name) for name in modules}:
@@ -173,6 +262,9 @@ def main() -> None:
         "analysis_sha256": sha256_file(args.output_dir / "analysis.json"), "timeline_sha256": sha256_file(args.timeline),
         "reporting_units_sha256": sha256_file(args.reporting_dir / "reporting_units.geojson"),
         "reporting_crosswalk_sha256": sha256_file(args.reporting_dir / "reporting_crosswalk.json"),
+        "lower_basin_source": ({"baseline_context_sha256": sha256_file(baseline_file),
+            "hospital_review_sha256": sha256_file(review_file),
+            "routing_selection_sha256": selection["selection_sha256"]} if lower_basin else None),
         "context_hashes": {mode: ctx["canonical_sha256"] for mode, ctx in contexts.items()},
         "files": {p.relative_to(args.output_dir).as_posix(): sha256_file(p) for p in sorted(args.output_dir.rglob("*.json")) if p.name != "build_receipt.json"}})
     print(json.dumps({"analysis": summary["analysis_sha256"], "services": {s["id"]: s["facilities"] for s in summary["services"]}}))

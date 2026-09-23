@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
+import { collectPublicCaseAssets } from "./public-case-assets.mjs";
+import { collectCaseBriefAssets } from "./case-brief-assets.mjs";
 
 const requested = process.argv[2]?.trim().toLowerCase();
 const profile = requested === "public" || requested === "public-production"
@@ -67,6 +69,8 @@ function validatePublicProduction() {
     "command",
     "studio",
     "evidence-library",
+    "public-case-projections",
+    "briefs",
     "public-cases",
     "offline-demo/bundle.json",
     "offline-demo/areas.geojson",
@@ -108,6 +112,7 @@ function validatePublicProduction() {
     "/offline-demo/bundle.json",
     "/api/v1/scenario-runs",
     "/evidence-library/catalog.json",
+    "/public-case-projections/catalog.json",
     "OSM-11566575669",
     "synthetic-sar-baseline-v1",
     "mae-sai-2024-model-evaluation-blocked",
@@ -158,6 +163,8 @@ function validateCompetition() {
     "studio/library/index.html",
     "studio/brief/index.html",
     "evidence-library/catalog.json",
+    "public-case-projections/catalog.json",
+    "briefs/catalog.json",
     "offline-demo/bundle.json",
     "offline-demo/mae-sai/bundle.json",
     "offline-demo/mae-sai/roads.json",
@@ -175,7 +182,7 @@ function validateCompetition() {
   if (process.env.VERCEL_URL && !rootHtml.includes("/landing/desktop-v4/far.webp")) {
     throw new Error("Hosted landing metadata is missing the authored sharing image.");
   }
-  for (const route of ["/", "/public/", "/command/", "/studio/", "/studio/library/", "/studio/brief/", ...collectEvidenceLibraryAssets(out)]) {
+  for (const route of ["/", "/public/", "/command/", "/studio/", "/studio/library/", "/studio/brief/", ...collectEvidenceLibraryAssets(out), ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }
   const bundle = readJson("offline-demo/mae-sai/bundle.json");

@@ -28,6 +28,14 @@ describe("finals service and route evidence", () => {
     expect(() => parse(value)).toThrow(/scope/);
     expect(() => parse({ ...finalsAnalysisFixture(), generated_at: "2026-01-01T00:00:00Z" })).toThrow();
   });
+  it("accepts an earlier, receipt-bound analysis while rejecting a future or unbound one", () => {
+    const brief = { ...decisionBriefFixture(), finals_analysis: { ...finalsAnalysisFixture(), generated_at: "2026-09-20T00:00:00Z" } };
+    const hashes = { finals_receipt_sha256: "a".repeat(64), finals_generation_identity_sha256: "b".repeat(64) };
+    expect(parseDecisionBrief(brief, brief.aoi_id, brief.event_id, brief.generated_at, hashes).priority.fpps).toBeNull();
+    expect(() => parseDecisionBrief(brief, brief.aoi_id, brief.event_id, brief.generated_at)).toThrow();
+    brief.finals_analysis.generated_at = "2026-09-22T00:00:00Z";
+    expect(() => parseDecisionBrief(brief, brief.aoi_id, brief.event_id, brief.generated_at, hashes)).toThrow();
+  });
   it("rejects substitution of available facilities into an unavailable service", () => {
     const value = finalsAnalysisFixture(); value.services[3].facilities = 1;
     expect(() => parse(value)).toThrow(/service/);

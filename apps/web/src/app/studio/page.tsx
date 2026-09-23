@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { StudioWorkspace } from "@/components/studio-workspace";
+import { CandidateCaseContext } from "@/components/candidate-case-context";
+import { CaseRoleBody } from "@/components/case-role-body";
 
 export const metadata: Metadata = {
   title: "Validation & evidence report",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function StudioPage() {
-  return <div id="main-content"><StudioWorkspace /></div>;
+  return <><CandidateCaseContext role="studio" /><CaseRoleBody role="studio" /></>;
 }

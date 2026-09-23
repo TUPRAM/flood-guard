@@ -5,6 +5,11 @@ import { launchFloodGuardBrowser } from "./browser-launch.mjs";
 
 const out = resolve(process.env.FLOODGUARD_PROFILE_OUT ?? resolve(process.cwd(), "out"));
 const catalog = JSON.parse(readFileSync(resolve(out, "evidence-library", "catalog.json"), "utf8"));
+const ROUTE_CASES = {
+  maeSai: "aoi-01_mae_sai_core_mae_sai_2024",
+  hatYai: "aoi-03_hat_yai_core_hat_yai_2025",
+  lower2024: "aoi-06_chao_phraya_rangsit_chao_phraya_2024",
+};
 const types = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".css": "text/css", ".png": "image/png", ".webp": "image/webp", ".woff2": "font/woff2", ".md": "text/markdown" };
 const server = createServer((request, response) => {
   const url = new URL(request.url ?? "/", "http://127.0.0.1");
@@ -26,6 +31,9 @@ const captureArgument = process.argv.indexOf("--capture-dir");
 const captureDirectory = captureArgument >= 0 && process.argv[captureArgument + 1] ? resolve(process.argv[captureArgument + 1]) : null;
 if (captureDirectory) mkdirSync(captureDirectory, { recursive: true });
 let routeCasesChecked = 0;
+let briefCasesChecked = 0;
+let sharedViewsChecked = 0;
+const routeCoverageCounts = { hospital_origin_change: 0, service_mode: 0, other_case: 0, representative: 0 };
 let workspaceViewportsChecked = 0;
 const browser = await launchFloodGuardBrowser();
 try {
@@ -34,18 +42,21 @@ try {
   const errors = [];
   const invalidRequests = [];
   page.on("pageerror", (error) => errors.push(error.stack ?? error.message));
-  page.on("request", (request) => { const url = new URL(request.url()); if (url.origin !== origin || url.pathname.startsWith("/api/")) invalidRequests.push(url.href); });
+  page.on("request", (request) => { const url = new URL(request.url()); const optionalMapTile = url.protocol === "https:" && url.hostname === "tile.openstreetmap.org" && /^\/\d+\/\d+\/\d+\.png$/.test(url.pathname); if ((!optionalMapTile && url.origin !== origin) || url.pathname.startsWith("/api/")) invalidRequests.push(url.href); });
   if (sharedOnly) {
     await verifySharedViews(page, false);
+    await verifyMainSurfaces(page, false);
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
     await context.setOffline(true);
     await verifySharedViews(page, true);
+    await verifyMainSurfaces(page, true);
   } else if (offlineOnly) {
     await page.goto(`${origin}/studio/library/`, { waitUntil: "networkidle" });
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
     await context.setOffline(true);
     await verifyDecisionBrief(page, true);
     await verifySharedViews(page, true);
+    await verifyMainSurfaces(page, true);
     await verifyRouteWorkspace(page);
     await verifyRouteWorkspace(page, "aoi-03_hat_yai_core");
   } else if (workspaceOnly) {
@@ -92,6 +103,7 @@ try {
   if (await download.failure()) throw new Error("Evidence report download failed.");
   await verifyDecisionBrief(page, false);
   await verifySharedViews(page, false);
+  await verifyMainSurfaces(page, false);
   await verifyRouteWorkspace(page);
   await verifyRouteWorkspace(page, "aoi-03_hat_yai_core");
 
@@ -110,12 +122,31 @@ try {
   }
   await verifyDecisionBrief(page, true);
   await verifySharedViews(page, true);
+  await verifyMainSurfaces(page, true);
   await page.setViewportSize({ width: 390, height: 844 });
   if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error("Evidence library overflows the mobile viewport.");
   }
   if (errors.length) throw new Error(`Browser errors: ${errors.join("; ")}`);
   if (invalidRequests.length) throw new Error(`Unexpected browser requests: ${invalidRequests.join("; ")}`);
-  console.log(sharedOnly ? `Shared views browser: ${catalog.packages.length} AOI/event packages in Thai/English, online/offline, with service/mode links and no application alerts or API requests passed.` : offlineOnly ? `Offline decision brief browser: ${catalog.packages.length} AOI/event packages; ${routeCasesChecked} exact route comparisons; ${workspaceViewportsChecked} workspace language/viewport combinations and shared views passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence library and decision brief browser: ${catalog.packages.length} AOI/event packages online and offline; ${routeCasesChecked} exact route comparisons across service, mode, origin, change, Thai/English and desktop/mobile; ${workspaceViewportsChecked} workspace language/viewport combinations with visible controls and results; exact population and intervention counts, accessible detail dialogs, invalid selections, report download and no API requests passed.`);
+  if (sharedOnly && sharedViewsChecked !== catalog.packages.length * 2 * 2) {
+    throw new Error(`Incomplete shared-view coverage: ${sharedViewsChecked}`);
+  }
+  if (!sharedOnly && !workspaceOnly) {
+    const networkStates = offlineOnly ? 1 : 2;
+    const expectedBriefs = catalog.packages.length * 2 * 2 * networkStates;
+    const expectedShared = catalog.packages.length * 2 * networkStates;
+    if (briefCasesChecked !== expectedBriefs || sharedViewsChecked !== expectedShared) {
+      throw new Error(`Incomplete case coverage: ${briefCasesChecked}/${expectedBriefs} briefs, ${sharedViewsChecked}/${expectedShared} shared views`);
+    }
+    if (!offlineOnly && (routeCoverageCounts.hospital_origin_change !== 16 || routeCoverageCounts.service_mode !== 7
+      || routeCoverageCounts.other_case !== 3 || routeCoverageCounts.representative !== 7 || routeCasesChecked !== 33)) {
+      throw new Error(`Incomplete bounded route coverage: ${JSON.stringify(routeCoverageCounts)}, total ${routeCasesChecked}`);
+    }
+    if (offlineOnly && (routeCoverageCounts.representative !== 4 || routeCasesChecked !== 4)) {
+      throw new Error(`Incomplete offline route coverage: ${JSON.stringify(routeCoverageCounts)}, total ${routeCasesChecked}`);
+    }
+  }
+  console.log(sharedOnly ? `Shared views browser: ${sharedViewsChecked} case/language/network selections; links for service-result cases passed.` : offlineOnly ? `Offline decision brief browser: ${briefCasesChecked} case/language/viewport/network selections, ${routeCasesChecked} exact route comparisons (${JSON.stringify(routeCoverageCounts)}), and ${workspaceViewportsChecked} workspace language/viewport combinations passed.` : workspaceOnly ? `Route workspace browser: ${workspaceViewportsChecked} language/viewport combinations; visible controls, map, results, accessible detail dialogs and no API requests passed.` : `Evidence browser: ${briefCasesChecked} brief case/language/viewport/network selections, ${sharedViewsChecked} shared-view selections (role links for service-result cases), and ${routeCasesChecked} bounded exact route checks (${JSON.stringify(routeCoverageCounts)}); ${workspaceViewportsChecked} workspace language/viewport combinations, keyboard/details, report download, invalid links, and no unexpected requests passed.`);
   await context.close();
 } finally {
   await browser.close();
@@ -151,9 +182,22 @@ async function verifySharedViews(page, offline) {
         if (!href?.includes(query)) throw new Error("Public case link substituted another AOI/event");
         await summary.getByRole("combobox", { name: th ? "บริการ" : "Service", exact: true }).selectOption("pharmacy");
         await summary.getByRole("combobox", { name: th ? "การเดินทาง" : "Travel mode", exact: true }).selectOption("modelled_vehicle");
-        const command = summary.getByRole("link", { name: th ? "เปรียบเทียบใน Command" : "Compare in Command", exact: true });
+        const selectedVariant = pkg.decision_brief.finals_analysis.services.find((item) => item.id === "pharmacy")?.variants.find((item) => item.travel_mode === "modelled_vehicle" && item.speed_factor === 1);
+        if (!selectedVariant) throw new Error(`Pharmacy vehicle result missing: ${reference.id}`);
+        const modelledCount = selectedVariant.baseline.within_30_minutes_population.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 0 });
+        if (!(await summary.innerText()).includes(modelledCount)) throw new Error(`Public case number differs from package: ${reference.id}`);
+        const command = summary.getByRole("link", { name: th ? "เปรียบเทียบใน Planning" : "Compare in Planning", exact: true });
         if (!(await command.getAttribute("href"))?.includes("service=pharmacy&mode=modelled_vehicle")) throw new Error("Shared view lost service/mode");
+        const studioLink = summary.getByRole("link", { name: th ? "ตรวจสอบใน Studio" : "Inspect in Studio", exact: true });
+        if (!(await studioLink.getAttribute("href"))?.includes(`${query}&version=${pkg.package_version}&service=pharmacy&mode=modelled_vehicle`)) throw new Error("Public-to-Studio link lost case and selection identity");
         await command.click();
+        const main = page.locator('[data-shared-case="planning"]');
+        await main.locator(`text=${reference.id}`).first().waitFor();
+        if (await main.getByRole("combobox", { name: th ? "บริการ" : "Service", exact: true }).inputValue() !== "pharmacy") throw new Error("Planning did not retain selected service");
+        if (await main.getByRole("combobox", { name: th ? "วิธีเดินทาง" : "Travel mode", exact: true }).inputValue() !== "modelled_vehicle") throw new Error("Planning did not retain selected mode");
+        if (!(await main.innerText()).includes(modelledCount)) throw new Error(`Planning case number differs from Public: ${reference.id}`);
+        if (!(await main.locator('a[href^="/studio/"]').first().getAttribute("href"))?.includes(`${query}&version=${pkg.package_version}&service=pharmacy&mode=modelled_vehicle`)) throw new Error("Planning-to-Studio link lost case and selection identity");
+        await page.goto(`${origin}/command/cases/?${query}&service=pharmacy&mode=modelled_vehicle`, { waitUntil: "domcontentloaded" });
         const brief = page.locator("[data-decision-brief]");
         await brief.locator("[data-finals-analysis]").waitFor();
         if (await brief.getByRole("combobox", { name: th ? "บริการที่ต้องการ" : "Service needed", exact: true }).inputValue() !== "pharmacy") throw new Error("Command did not retain selected service");
@@ -161,8 +205,182 @@ async function verifySharedViews(page, offline) {
       } else if (await summary.count()) throw new Error("Context AOI received a substituted result");
       const alerts = page.locator("main[data-evidence-library]").getByRole("alert");
       if (await alerts.count()) throw new Error(`Shared-view alert: ${reference.id}, offline=${offline}: ${JSON.stringify(await alerts.allTextContents())}`);
+      sharedViewsChecked += 1;
     }
   }
+}
+
+async function verifyMainSurfaces(page, offline) {
+  const reference = catalog.packages[0];
+  const projectedCatalog = JSON.parse(readFileSync(resolve(out, "public-case-projections", "catalog.json"), "utf8"));
+  const projectionReference = projectedCatalog.packages.find((item) => item.id === reference.id);
+  const projection = JSON.parse(readFileSync(resolve(out, projectionReference.url.slice(1)), "utf8"));
+  const variant = projection.services.find((item) => item.id === "hospital").variants.find((item) => item.travel_mode === "walking");
+  const query = `aoi=${reference.aoi_id}&event=${reference.event_id}&version=${catalog.package_version}&service=hospital&mode=walking&scenario=${variant.candidate_flood_scenario_id}`;
+  await page.goto(`${origin}/public/?${query}`, { waitUntil: "domcontentloaded" });
+  if (await page.evaluate(() => document.documentElement.lang) === "th") await page.getByRole("button", { name: "Use English", exact: true }).click();
+  const publicCase = page.locator("[data-public-research-case]");
+  await publicCase.getByText(reference.id, { exact: true }).waitFor();
+  if (await publicCase.getByRole("alert").count()) throw new Error("Public candidate scenario is incompatible with its selected case");
+  const publicText = await publicCase.innerText();
+  const count = variant.within_30_minutes_population.toLocaleString("en-GB", { maximumFractionDigits: 0 });
+  if (!publicText.includes(count) || !publicText.includes("Accepted FPPS / action class: unavailable")) throw new Error(`Public main case differs from projection: ${reference.id}, offline=${offline}`);
+  if (variant.candidate_flood_source_timestamp && !publicText.includes(variant.candidate_flood_source_timestamp)) throw new Error("Public candidate acquisition differs from projection");
+  const language = await page.evaluate(() => document.documentElement.lang);
+  await publicCase.locator('a[href^="/command/"]').click();
+  const planning = page.locator('[data-shared-case="planning"]');
+  await planning.getByText(reference.id, { exact: true }).waitFor();
+  if (await page.evaluate(() => document.documentElement.lang) !== language) throw new Error("Language preference changed on Public to Planning transition");
+  if (await planning.getByRole("combobox", { name: "Service", exact: true }).inputValue() !== "hospital") throw new Error("Planning lost Public service choice");
+  if (await planning.getByRole("combobox", { name: "Travel mode", exact: true }).inputValue() !== "walking") throw new Error("Planning lost Public mode choice");
+  if (await planning.getByRole("alert").count() || new URL(page.url()).searchParams.get("scenario") !== variant.candidate_flood_scenario_id) {
+    throw new Error("Planning lost or rejected the selected Public flood scenario");
+  }
+  if (!(await planning.innerText()).includes(count)) throw new Error("Planning case result differs from Public projection");
+  if (variant.candidate_flood_source_timestamp && !(await planning.innerText()).includes(`Candidate flood acquisition: ${variant.candidate_flood_source_timestamp}`)) {
+    throw new Error("Planning candidate acquisition differs from Public projection");
+  }
+  await planning.locator('a[href^="/studio/?"]').click();
+  const studio = page.locator('[data-shared-case="studio"]');
+  await studio.getByText(reference.id, { exact: true }).waitFor();
+  if (await page.evaluate(() => document.documentElement.lang) !== language) throw new Error("Language preference changed on Planning to Studio transition");
+  const studioText = await studio.innerText();
+  if (!studioText.includes(count) || !studioText.includes(projection.source_package_sha256)) {
+    throw new Error("Studio case result differs from the linked case");
+  }
+  if (variant.candidate_flood_source_timestamp && !studioText.includes(`Candidate flood acquisition: ${variant.candidate_flood_source_timestamp}`)) {
+    throw new Error("Studio candidate acquisition differs from Public projection");
+  }
+  const selected = new URL(page.url());
+  if (selected.searchParams.get("aoi") !== reference.aoi_id || selected.searchParams.get("event") !== reference.event_id
+    || selected.searchParams.get("version") !== catalog.package_version
+    || selected.searchParams.get("service") !== "hospital" || selected.searchParams.get("mode") !== "walking"
+    || selected.searchParams.get("scenario") !== variant.candidate_flood_scenario_id || await studio.getByRole("alert").count()) throw new Error("Main-surface deep link lost case or scenario identity");
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator('[data-shared-case="studio"]').getByText(reference.id, { exact: true }).waitFor();
+  if (new URL(page.url()).searchParams.get("version") !== catalog.package_version
+    || new URL(page.url()).searchParams.get("scenario") !== variant.candidate_flood_scenario_id
+    || await page.locator('[data-shared-case="studio"]').getByRole("alert").count()) {
+    throw new Error("Studio reload lost or rejected the selected flood scenario");
+  }
+  await page.getByRole("button", { name: "ใช้ภาษาไทย", exact: true }).click();
+  await page.locator('[data-shared-case="studio"] a[href^="/public/?"]').click();
+  await page.locator("[data-public-research-case]").getByText(reference.id, { exact: true }).waitFor();
+  if (await page.evaluate(() => document.documentElement.lang) !== "th") throw new Error("Thai preference was lost on Studio to Public transition");
+  await page.setViewportSize({ width: 390, height: 844 });
+  if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error("Main Public case overflows the mobile viewport");
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole("button", { name: "Use English", exact: true }).click();
+  await verifyRoleUrlSynchronization(page, offline);
+  await page.goto(`${origin}/public/?aoi=unknown&event=unknown`, { waitUntil: "domcontentloaded" });
+  await page.locator("[data-public-research-case]").getByRole("alert").filter({ hasText: "Another case is not substituted" }).waitFor();
+  if ((await page.locator("[data-public-research-case]").innerText()).includes(reference.id)) throw new Error("Unknown Public case displayed another case");
+  for (const [path, role] of [["/command/", "planning"], ["/studio/", "studio"]]) {
+    await page.goto(`${origin}${path}?aoi=unknown&event=unknown`, { waitUntil: "domcontentloaded" });
+    const card = page.locator(`[data-shared-case="${role}"]`);
+    await card.getByRole("alert").filter({ hasText: "Another case is not substituted" }).waitFor();
+    if ((await card.innerText()).includes(reference.id) || await card.getAttribute("data-case-id")) {
+      throw new Error(`Unknown ${role} case displayed a different package`);
+    }
+  }
+}
+
+async function verifyRoleUrlSynchronization(page, offline) {
+  const first = catalog.packages[0];
+  const alternative = catalog.packages.find((item) => item.aoi_id.startsWith("aoi-03")) ?? catalog.packages[1];
+  for (const [path, role] of [["/command/", "planning"], ["/studio/", "studio"]]) {
+    await page.goto(`${origin}${path}?aoi=${first.aoi_id}&event=${first.event_id}&version=${catalog.package_version}`, { waitUntil: "domcontentloaded" });
+    const top = page.locator(`[data-shared-case="${role}"]`);
+    const lower = page.locator("main[data-evidence-library]");
+    await top.getByText(first.id, { exact: true }).waitFor();
+    await lower.locator("footer").filter({ hasText: first.id }).waitFor();
+    await top.getByRole("combobox", { name: "Study area — Event", exact: true }).selectOption(alternative.id);
+    await top.getByText(alternative.id, { exact: true }).waitFor();
+    await lower.locator("footer").filter({ hasText: alternative.id }).waitFor();
+    let selected = new URL(page.url());
+    if (selected.searchParams.get("aoi") !== alternative.aoi_id || selected.searchParams.get("event") !== alternative.event_id) {
+      throw new Error(`${role} top case switch left a divergent URL; offline=${offline}`);
+    }
+    await lower.locator("#evidence-case").selectOption(first.id);
+    await top.getByText(first.id, { exact: true }).waitFor();
+    await lower.locator("footer").filter({ hasText: first.id }).waitFor();
+    selected = new URL(page.url());
+    if (selected.searchParams.get("aoi") !== first.aoi_id || selected.searchParams.get("event") !== first.event_id) {
+      throw new Error(`${role} lower case switch left a divergent URL; offline=${offline}`);
+    }
+    if (role === "planning") {
+      await lower.getByRole("combobox", { name: "Service needed", exact: true }).selectOption("pharmacy");
+      if (await top.getByRole("combobox", { name: "Service", exact: true }).inputValue() !== "pharmacy") {
+        throw new Error("Planning service switch did not update the shared case card");
+      }
+      if ((await top.innerText()).includes("Candidate flood acquisition")) throw new Error("Planning retained hospital flood acquisition for pharmacy");
+      await lower.getByRole("combobox", { name: "Modelled travel mode", exact: true }).selectOption("modelled_vehicle");
+      if (await top.getByRole("combobox", { name: "Travel mode", exact: true }).inputValue() !== "modelled_vehicle") {
+        throw new Error("Planning mode switch did not update the shared case card");
+      }
+      await lower.getByRole("combobox", { name: "Service needed", exact: true }).selectOption("hospital");
+      await lower.getByRole("combobox", { name: "Modelled travel mode", exact: true }).selectOption("walking");
+      const route = lower.locator("[data-route-comparison]");
+      await route.waitFor();
+      await route.getByRole("combobox", { name: "Imposed change", exact: true }).selectOption("remove_destination");
+      selected = new URL(page.url());
+      const scenario = selected.searchParams.get("scenario");
+      if (!scenario || await route.getAttribute("data-route-id") !== scenario
+        || !(await top.locator('a[href^="/studio/"]').first().getAttribute("href"))?.includes(`scenario=${scenario}`)) {
+        throw new Error("Planning route scenario did not update the shared case and URL");
+      }
+    } else {
+      await top.getByRole("combobox", { name: "Service", exact: true }).selectOption("pharmacy");
+      await top.getByRole("combobox", { name: "Travel mode", exact: true }).selectOption("modelled_vehicle");
+      selected = new URL(page.url());
+      const briefLink = await lower.locator('a[href^="/studio/brief/"]').first().getAttribute("href");
+      if (selected.searchParams.get("service") !== "pharmacy" || selected.searchParams.get("mode") !== "modelled_vehicle"
+        || !briefLink?.includes("service=pharmacy&mode=modelled_vehicle")) {
+        throw new Error("Studio top service/mode switch did not update lower case links and URL");
+      }
+    }
+  }
+}
+
+// Browser coverage is bounded: all 8 case briefs at 2 widths × 2 languages ×
+// online/offline; 16 hospital/walking origin-change checks in three areas;
+// seven other service/mode checks, three other finals-case routes and seven
+// representative Thai/mobile/offline routes. Package tests own exhaustive data.
+function boundedRouteTargets(reference, analysis, viewport, th, offline) {
+  const routes = analysis.routes;
+  if (!routes || routes.status !== "available") return [];
+  const first = (service, mode, category) => {
+    const comparison = routes.comparisons.find((item) => item.service_type === service && item.travel_mode === mode && item.scenario_kind === "close_edge");
+    if (!comparison) throw new Error(`Browser route matrix lacks ${reference.id}/${service}/${mode}`);
+    return { service, mode, originId: comparison.origin_id, kind: comparison.scenario_kind, category };
+  };
+  if (!offline && !th && viewport.width === 1440) {
+    const extras = {
+      [ROUTE_CASES.maeSai]: [["hospital", "modelled_vehicle"], ["primary_care", "walking"], ["primary_care", "modelled_vehicle"]],
+      [ROUTE_CASES.hatYai]: [["pharmacy", "walking"], ["pharmacy", "modelled_vehicle"]],
+      [ROUTE_CASES.lower2024]: [["shelter", "walking"], ["shelter", "modelled_vehicle"]],
+    };
+    const targets = (extras[reference.id] ?? []).map(([service, mode]) => first(service, mode, "service_mode"));
+    if ([ROUTE_CASES.maeSai, ROUTE_CASES.hatYai, ROUTE_CASES.lower2024].includes(reference.id)) {
+      for (const origin of routes.origins) {
+        for (const kind of ["close_edge", "remove_destination"]) {
+          targets.push({ service: "hospital", mode: "walking", originId: origin.id, kind, category: "hospital_origin_change" });
+        }
+      }
+    } else targets.push(first("hospital", "walking", "other_case"));
+    return targets;
+  }
+  const context = `${viewport.width === 390 ? "mobile" : "desktop"}-${th ? "th" : "en"}-${offline ? "offline" : "online"}`;
+  const representatives = {
+    "desktop-th-online": ROUTE_CASES.hatYai,
+    "mobile-en-online": ROUTE_CASES.lower2024,
+    "mobile-th-online": ROUTE_CASES.maeSai,
+    "desktop-en-offline": ROUTE_CASES.lower2024,
+    "desktop-th-offline": ROUTE_CASES.maeSai,
+    "mobile-en-offline": ROUTE_CASES.hatYai,
+    "mobile-th-offline": ROUTE_CASES.lower2024,
+  };
+  return representatives[context] === reference.id ? [first("hospital", "walking", "representative")] : [];
 }
 
 async function verifyDecisionBrief(page, offline) {
@@ -185,10 +403,12 @@ async function verifyDecisionBrief(page, offline) {
         await brief.waitFor();
         if (await main.getByRole("alert").count()) throw new Error(`Decision brief has an alert: ${reference.id}`);
         if (evidence.decision_brief.finals_analysis) {
-          await verifyFinalsComparison(page, brief, evidence.decision_brief.finals_analysis, th, offline);
+          const analysis = evidence.decision_brief.finals_analysis;
+          await verifyFinalsComparison(page, brief, analysis, th, offline, boundedRouteTargets(reference, analysis, viewport, th, offline));
         } else if (evidence.decision_brief.access) {
           if (await brief.locator("[data-brief-intervention]").count() !== evidence.decision_brief.interventions.length) throw new Error(`Decision brief intervention count differs from selected package: ${reference.id}`);
-          const label = th ? "ประชากรตามแบบจำลองในพื้นที่ศึกษา (ปี 2020)" : "Modelled residents in the study area (2020)";
+          const year = evidence.decision_brief.population_reference_year ?? (th ? "ไม่ทราบ" : "year unknown");
+          const label = th ? `ประชากรตามแบบจำลองในพื้นที่ศึกษา (ปี ${year})` : `Modelled residents in the study area (${year})`;
           const displayed = await brief.getByText(label, { exact: true }).locator("..").locator("dd").innerText();
           const expected = evidence.decision_brief.access.modelled_population.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 1 });
           if (displayed !== expected) throw new Error(`Decision brief population differs from selected package: ${reference.id}: ${displayed} != ${expected}`);
@@ -200,8 +420,15 @@ async function verifyDecisionBrief(page, offline) {
         for (const boundary of th ? ["คะแนน / ระดับการดำเนินการ", "ยังไม่พร้อม", "ประชากรที่ได้รับผลจากน้ำท่วม", "ยังไม่ทราบ"] : ["FPPS / action class", "Unavailable", "Flood-affected population", "Unknown"]) {
           if (!text.includes(boundary)) throw new Error(`Decision brief lost its unknown-evidence boundary: ${reference.id}: ${boundary}`);
         }
+        if (evidenceDialog && reference.id === first.id && evidence.decision_brief.finals_analysis.capacity.site_id) {
+          await evidenceDialog.getByText(th ? "ความจุและความต้องการสมมติ" : "Hypothetical capacity and demand", { exact: true }).click();
+          await evidenceDialog.getByText(th
+            ? "ผูกตำแหน่งกับการเพิ่มจุดหมายสมมติที่ระบุ แล้วสมมติบทบาทเป็นศูนย์พักพิงแยกต่างหาก ไม่ได้เปลี่ยนโรงพยาบาลเป็นศูนย์พักพิงหรือยืนยันว่าพื้นที่ปลอดภัย"
+            : "A named hypothetical access-addition location is assigned a separate shelter scenario. This does not turn a hospital into a shelter or establish site safety.", { exact: true }).waitFor();
+        }
         if (evidenceDialog) await closeFinalsDetail(page, brief, "evidence");
         if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error(`Decision brief overflows ${viewport.width}px: ${reference.id}, Thai=${th}, offline=${offline}`);
+        briefCasesChecked += 1;
       }
     }
   }
@@ -213,14 +440,17 @@ async function verifyDecisionBrief(page, offline) {
   await main.locator("footer").filter({ hasText: first.id }).waitFor();
 }
 
-async function verifyFinalsComparison(page, brief, analysis, th, offline) {
+async function verifyFinalsComparison(page, brief, analysis, th, offline, routeTargets) {
   await brief.locator("[data-finals-analysis]").waitFor();
   const serviceSelect = brief.getByRole("combobox", { name: th ? "บริการที่ต้องการ" : "Service needed", exact: true });
   const modeSelect = brief.getByRole("combobox", { name: th ? "วิธีเดินทางตามแบบจำลอง" : "Modelled travel mode", exact: true });
   const routes = analysis.routes;
+  const selectedPairs = new Set([`${analysis.primary_service}/walking`, ...routeTargets.map((item) => `${item.service}/${item.mode}`)]);
   for (const service of analysis.services) {
+    const selectedModes = ["walking", "modelled_vehicle"].filter((mode) => selectedPairs.has(`${service.id}/${mode}`));
+    if (!selectedModes.length) continue;
     await serviceSelect.selectOption(service.id);
-    for (const mode of ["walking", "modelled_vehicle"]) {
+    for (const mode of selectedModes) {
       await modeSelect.selectOption(mode);
       const variant = service.variants.find((item) => item.travel_mode === mode && item.speed_factor === 1);
       const populationDialog = await openFinalsDetail(brief, "population");
@@ -242,9 +472,11 @@ async function verifyFinalsComparison(page, brief, analysis, th, offline) {
       await closeFinalsDetail(page, brief, "population");
       if (!routes || routes.status !== "available") continue;
       const routePanel = brief.locator("[data-route-comparison]");
-      for (const pin of routes.origins) {
+      for (const target of routeTargets.filter((item) => item.service === service.id && item.mode === mode)) {
+        const pin = routes.origins.find((item) => item.id === target.originId);
+        if (!pin) throw new Error(`Browser route matrix names an unknown origin: ${target.originId}`);
         await routePanel.getByRole("combobox", { name: th ? "จุดเริ่มต้นสาธารณะ" : "Public starting place", exact: true }).selectOption(pin.id);
-        for (const kind of ["close_edge", "remove_destination"]) {
+        const kind = target.kind;
           await routePanel.getByRole("combobox", { name: th ? "การเปลี่ยนแปลงที่กำหนด" : "Imposed change", exact: true }).selectOption(kind);
           const expected = routes.comparisons.find((item) => item.origin_id === pin.id && item.service_type === service.id && item.travel_mode === mode && item.scenario_kind === kind);
           if (!expected) {
@@ -297,7 +529,7 @@ async function verifyFinalsComparison(page, brief, analysis, th, offline) {
           if (await brief.getByRole("alert").count()) throw new Error(`Finals route alert: ${expected.id}, offline=${offline}`);
           if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error(`Finals route viewport overflow: ${expected.id}, Thai=${th}, offline=${offline}`);
           routeCasesChecked += 1;
-        }
+          routeCoverageCounts[target.category] += 1;
       }
     }
   }

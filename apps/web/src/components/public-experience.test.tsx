@@ -90,8 +90,9 @@ describe("PublicExperience", () => {
     expect(legend).not.toMatch(/ยังไม่พบพื้นที่วางแผน/u);
     // The card carries place and band only; the exact score stays in the panel.
     expect(legend).not.toContain("public-risk-value");
-    expect(legend).toContain("ความเสี่ยงต่ำ");
-    expect(legend).toContain("ความเสี่ยงสูง");
+    expect(legend).toContain("ลำดับต่ำกว่า");
+    expect(legend).toContain("ลำดับสูงกว่า");
+    expect(legend).toContain("ข้อมูลผู้สมัคร · ไม่ใช้ปฏิบัติการ");
 
     // The title is dropped from the visible card but kept as the accessible
     // name, so the card is still identifiable to a screen reader.

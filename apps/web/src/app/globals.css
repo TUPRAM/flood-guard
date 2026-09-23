@@ -1741,6 +1741,11 @@ button.model-card { cursor: pointer; }
   gap: 12px;
   margin-top: -3px;
 }
+.public-risk-status {
+  margin: -5px 0 0;
+  font-size: .6rem;
+  line-height: 1.2;
+}
 /* Map-tool column, stacked upward: locate, zoom, layers. */
 .public-locate-button {
   position: absolute;
@@ -2984,3 +2989,15 @@ button.model-card { cursor: pointer; }
 .public-case-entry a { font-weight: 700; text-decoration: underline; }
 .public-case-entry small { display: block; margin-top: 4px; }
 .public-app-shell:has(> .public-case-entry) { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.public-research-details[open] { max-height: min(42dvh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+.public-research-details > summary { cursor: pointer; font-weight: 750; }
+.public-research-case { max-width: 1050px; margin: 8px auto 0; font-size: .78rem; line-height: 1.5; }
+.public-research-case h2 { font-size: 1rem; margin: 0 0 5px; }
+.public-research-case p { margin: 6px 0; }
+.public-research-case label { display: block; font-weight: 700; min-width: 0; }
+.public-research-case select { display: block; width: 100%; min-height: 36px; margin: 3px 0 7px; padding: 5px 8px; border: 1px solid #86aab4; border-radius: 5px; color: #17384b; background: white; }
+.public-research-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.public-research-case nav { display: flex; flex-wrap: wrap; gap: 14px; margin: 9px 0; }
+.public-research-case code { overflow-wrap: anywhere; }
+.public-research-case [role="alert"] { padding: 6px 8px; background: #fff0ed; color: #813c31; }
+@media(max-width: 520px) { .public-case-entry { padding: 8px 12px; } .public-research-controls { grid-template-columns: 1fr; } }

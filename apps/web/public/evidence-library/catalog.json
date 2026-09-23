@@ -997,64 +997,64 @@
       "start": "2025-09-01"
     }
   ],
-  "generated_at": "2026-09-22T06:00:00Z",
+  "generated_at": "2026-09-23T13:25:21.4176612Z",
   "non_operational": true,
-  "package_version": "8c231672b0969b50",
+  "package_version": "3385c9eacccd0d2d",
   "packages": [
     {
       "aoi_id": "aoi-01_mae_sai_core",
       "event_id": "mae_sai_2024",
       "id": "aoi-01_mae_sai_core_mae_sai_2024",
-      "sha256": "2f51f7284496778660cde7d518bbc42952666076008040ee1668bd844fa5f93c",
+      "sha256": "35af237030cc5951ad7d648612909153e955c27a4cf64a376da519b8c9287157",
       "url": "/evidence-library/packages/aoi-01_mae_sai_core_mae_sai_2024.json"
     },
     {
       "aoi_id": "aoi-02_mae_sai_district",
       "event_id": "mae_sai_2024",
       "id": "aoi-02_mae_sai_district_mae_sai_2024",
-      "sha256": "f3e70aed4621b22d6888456fdc4fc2d401d960df279aa76af365825e4aaaea51",
+      "sha256": "9a03c214d284d594e772c76211edb7f12cf3ec7af779f5b4c9593f707027c685",
       "url": "/evidence-library/packages/aoi-02_mae_sai_district_mae_sai_2024.json"
     },
     {
       "aoi_id": "aoi-03_hat_yai_core",
       "event_id": "hat_yai_2025",
       "id": "aoi-03_hat_yai_core_hat_yai_2025",
-      "sha256": "1598849f1b652cbaf1e24a888d00efd1b752197d015ca98966a59cf95d6dd3b4",
+      "sha256": "838ca9b47bb833ecf358b9850bb1e06a4834b67e820eb48f07eb64377df60275",
       "url": "/evidence-library/packages/aoi-03_hat_yai_core_hat_yai_2025.json"
     },
     {
       "aoi_id": "aoi-04_hat_yai_basin",
       "event_id": "hat_yai_2025",
       "id": "aoi-04_hat_yai_basin_hat_yai_2025",
-      "sha256": "e2fd0bbf7aedef8949228ad553af71a5af4f8c8f930d58bdb2fd884cc0bb7abc",
+      "sha256": "ace71e34e413b1f0af824bf88913f9d66ed58629a2bf2f14804eeea03de1a937",
       "url": "/evidence-library/packages/aoi-04_hat_yai_basin_hat_yai_2025.json"
     },
     {
       "aoi_id": "aoi-05_chao_phraya_bang_ban_sena",
       "event_id": "chao_phraya_2024",
       "id": "aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2024",
-      "sha256": "e28bf0c17244dec6e30f183e25edbc9aa069041dff1d86d14f983e300cbc55bd",
+      "sha256": "3e0b7c748e172eb040738d261663fa1ad4b3561ebb4e2d23e17bf88ca142752b",
       "url": "/evidence-library/packages/aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2024.json"
     },
     {
       "aoi_id": "aoi-05_chao_phraya_bang_ban_sena",
       "event_id": "chao_phraya_2025",
       "id": "aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2025",
-      "sha256": "a8fa7cb06dd9dc205e0c867195a3b727c1ce2cd3296be653f2d97b35c6ca5e84",
+      "sha256": "7b5f91668cad039666b481d850bb50e4ca4dd7c0cb6bcd6b54fd46dc545061e9",
       "url": "/evidence-library/packages/aoi-05_chao_phraya_bang_ban_sena_chao_phraya_2025.json"
     },
     {
       "aoi_id": "aoi-06_chao_phraya_rangsit",
       "event_id": "chao_phraya_2024",
       "id": "aoi-06_chao_phraya_rangsit_chao_phraya_2024",
-      "sha256": "001f756c3bc77f61fc59431ecde46ef91a553b0089cbd4bc4327b281f7e207a7",
+      "sha256": "fb7545ba68ecdc158ae45fe5d0d1455be9345b8e5ae08dc965476f3c105c143a",
       "url": "/evidence-library/packages/aoi-06_chao_phraya_rangsit_chao_phraya_2024.json"
     },
     {
       "aoi_id": "aoi-06_chao_phraya_rangsit",
       "event_id": "chao_phraya_2025",
       "id": "aoi-06_chao_phraya_rangsit_chao_phraya_2025",
-      "sha256": "3daf62816a7f54496f2a811f9d6e941f4cae445b76d50c85137ab01389dc61fe",
+      "sha256": "9ba41fc8e5a38bcab7aa61e21554a3e8c0d6a3e2d52e1901df7a1ef556268fdf",
       "url": "/evidence-library/packages/aoi-06_chao_phraya_rangsit_chao_phraya_2025.json"
     }
   ],

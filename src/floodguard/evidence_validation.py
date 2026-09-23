@@ -29,6 +29,7 @@ from .scoring import DEFAULT_WEIGHTS
 
 PREFIX = "/evidence-library/"
 HASH = re.compile(r"^[a-f0-9]{64}$")
+MAX_PUBLIC_DATABASE_BYTES = 640 * 1024 * 1024
 PUBLIC_DATASETS = {
     "dataset-14",
     "context-osm",
@@ -268,10 +269,32 @@ def _decision_brief(package: dict, schemas: Path) -> None:
             _require(flood["event_id"] == package["event_id"]
                      and flood["candidate_provenance"]["event_id"] == package["event_id"],
                      "Flood candidate belongs to another event")
-        _require(
-            brief["finals_analysis"]["generated_at"] == package["generated_at"],
-            "Mixed finals generation metadata",
-        )
+        finals_receipt_sha256 = package["input_hashes"].get("finals_receipt_sha256")
+        generation_identity = package["input_hashes"].get("finals_generation_identity_sha256")
+        if finals_receipt_sha256 is None and generation_identity is None:
+            _require(
+                brief["finals_analysis"]["generated_at"] == package["generated_at"],
+                "Mixed finals generation metadata",
+            )
+        else:
+            _require(bool(finals_receipt_sha256 and generation_identity)
+                     and HASH.fullmatch(finals_receipt_sha256) is not None,
+                     "Incomplete finals generation identity")
+            try:
+                finals_time = datetime.fromisoformat(
+                    brief["finals_analysis"]["generated_at"].replace("Z", "+00:00"))
+                release_time = datetime.fromisoformat(
+                    package["generated_at"].replace("Z", "+00:00"))
+            except (TypeError, AttributeError, ValueError) as error:
+                raise ValueError("Invalid finals or package generation time") from error
+            _require(finals_time.tzinfo is not None and release_time.tzinfo is not None
+                     and finals_time <= release_time,
+                     "Finals generation must precede release generation")
+            expected_generation = hashlib.sha256(canonical_bytes({
+                "generated_at": brief["finals_analysis"]["generated_at"],
+                "receipt_sha256": finals_receipt_sha256,
+            })).hexdigest()
+            _hash(generation_identity, expected_generation, "finals generation identity")
         _hash(
             package["input_hashes"].get("finals_analysis_sha256"),
             brief["finals_analysis"]["analysis_sha256"],
@@ -378,6 +401,35 @@ def _database(
     destination_review: dict | None = None,
 ) -> None:
     exclusions = {}
+    from .lower_basin_release_context import AOI_IDS, review_hospital_source_duplicates
+
+    if package["aoi_id"] in AOI_IDS:
+        _require(
+            destination_review is not None,
+            "Lower-basin database lacks its documented destination review",
+        )
+        expected_review = review_hospital_source_duplicates(payload)
+        published_review = {
+            key: value for key, value in destination_review.items()
+            if key != "service_definition"
+        }
+        _require(
+            published_review == expected_review,
+            "Lower-basin destination review differs from source objects",
+        )
+        _hash(
+            package["input_hashes"].get("hospital_object_review"),
+            hashlib.sha256(canonical_bytes(expected_review)).hexdigest(),
+            "lower-basin hospital object review",
+        )
+        for key in (
+            "aoi_geometry", "routing_geometry", "routing_selection",
+            "fixed_demand_roster", "hospital_object_review",
+        ):
+            _require(
+                payload["input_hashes"].get(key) == package["input_hashes"].get(key),
+                f"Lower-basin database source mismatch: {key}",
+            )
     if destination_review is not None:
         from .evidence_case_review import apply_destination_review
 
@@ -580,6 +632,8 @@ def _compare_flood_results(actual: Any, expected: Any, path: str = "candidate") 
 
 def _finals_database(payload: dict, package: dict, policies: dict[str, dict]) -> None:
     """Bind every displayed path and service case to the downloadable model inputs."""
+    from .lower_basin_release_context import AOI_IDS
+
     _require(
         {"schema_version", "analysis", "contexts"} <= set(payload) <= {"schema_version", "analysis", "contexts", "connectivity_audits"}
         and payload["schema_version"] == "floodguard.finals_database.v1",
@@ -640,6 +694,16 @@ def _finals_database(payload: dict, package: dict, policies: dict[str, dict]) ->
                 context["input_hashes"][key],
                 "finals " + key,
             )
+        if package["aoi_id"] in AOI_IDS:
+            for key in (
+                "aoi_geometry", "routing_geometry", "routing_selection",
+                "fixed_demand_roster", "hospital_object_review",
+            ):
+                _hash(
+                    package["input_hashes"].get(key),
+                    context["input_hashes"].get(key),
+                    "finals " + key,
+                )
         base = {
             key: value
             for key, value in context.items()
@@ -957,6 +1021,31 @@ def verify_evidence_library(
         assert_public_safe(package)
         _assessment(package["assessment"])
         _decision_brief(package, schemas)
+        from .lower_basin_release_context import AOI_IDS, POLICY_VERSION
+
+        analysis = package.get("decision_brief", {}).get("finals_analysis", {})
+        case_identity = analysis.get("case_identity", {})
+        if package["aoi_id"] in AOI_IDS:
+            _require(
+                case_identity.get("aoi_id") == package["aoi_id"]
+                and case_identity.get("aoi_sha256") == aois[package["aoi_id"]]["sha256"]
+                and case_identity.get("routing_aoi_id") == package["aoi_id"] + "-10km-buffer"
+                and case_identity.get("routing_policy") == POLICY_VERSION
+                and case_identity.get("flood_basis") == "unavailable_explicit_disruptions_only"
+                and case_identity.get("routing_selection_sha256")
+                == package["input_hashes"].get("routing_selection")
+                and all(package["input_hashes"].get(key) for key in (
+                    "fixed_demand_roster", "hospital_object_review",
+                ))
+                and analysis.get("destination_review") is not None,
+                "Lower-basin case lacks its fixed routing and source-review identity",
+            )
+        else:
+            _require(
+                not case_identity.get("routing_policy")
+                and not case_identity.get("routing_selection_sha256"),
+                "Lower-basin routing policy used for another AOI",
+            )
         for key in ("id", "aoi_id", "event_id"):
             _require(package[key] == entry[key], f"Mixed package {key}")
         _require(
@@ -1021,15 +1110,23 @@ def verify_evidence_library(
             )
             with gzip.open(path, "rb") as stream:
                 # Bound decompression before parsing a potentially untrusted archive.
-                content = stream.read(512 * 1024 * 1024 + 1)
+                content = stream.read(MAX_PUBLIC_DATABASE_BYTES + 1)
             _require(
-                len(content) <= 512 * 1024 * 1024,
+                len(content) <= MAX_PUBLIC_DATABASE_BYTES,
                 "Public database exceeds verification size limit",
             )
             if finals_database:
                 _finals_database(_json(content, asset), package, policies)
             else:
-                _database(_json(content, asset), package, policies)
+                destination_review = None
+                if package["aoi_id"] in AOI_IDS:
+                    destination_review = analysis.get("destination_review")
+                _database(
+                    _json(content, asset),
+                    package,
+                    policies,
+                    destination_review=destination_review,
+                )
             downloads_seen[asset] = download["sha256"]
         packages[identifier] = package
     for url in reports:
@@ -1261,6 +1358,40 @@ def _review_lineage(root: Path, package: dict, aois: dict) -> None:
     )
 
 
+def _verify_local_finals(root: Path, package: dict, finals_analysis: dict) -> None:
+    finals_dir = (
+        "finals"
+        if package["aoi_id"] == "aoi-01_mae_sai_core"
+        else "study_finals/" + package["aoi_id"]
+    )
+    receipt_path = safe_asset_path(root, finals_dir + "/build_receipt.json")
+    analysis_path = safe_asset_path(root, finals_dir + "/analysis.json")
+    _require(receipt_path.is_file() and analysis_path.is_file(),
+             "Local finals receipt or analysis is missing")
+    receipt = _read(receipt_path)
+    if package["input_hashes"].get("finals_receipt_sha256") is not None:
+        _hash(package["input_hashes"]["finals_receipt_sha256"],
+              sha256_file(receipt_path), "local finals receipt")
+    _require(receipt["generated_at"] == finals_analysis["generated_at"],
+             "Local finals receipt generation time differs")
+    _require(
+        isinstance(receipt.get("files"), dict) and bool(receipt["files"]),
+        "Local finals receipt has no file inventory",
+    )
+    for relative, expected in receipt["files"].items():
+        _require(
+            isinstance(relative, str) and isinstance(expected, str),
+            "Local finals receipt file inventory is invalid",
+        )
+        path = safe_asset_path(receipt_path.parent, relative)
+        _require(path.is_file(), "Local finals receipt file is missing")
+        _hash(expected, sha256_file(path), "local finals file " + relative)
+    _hash(receipt["analysis_sha256"], sha256_file(analysis_path),
+          "local finals analysis")
+    _require(_read(analysis_path) == finals_analysis,
+             "Local finals analysis differs from public package")
+
+
 def _verify_local(
     root: Path,
     catalog: dict,
@@ -1335,6 +1466,9 @@ def _verify_local(
             "datasets",
         ):
             _require(local[key] == package[key], f"Mixed local/public package {key}")
+        finals_analysis = package.get("decision_brief", {}).get("finals_analysis")
+        if finals_analysis is not None:
+            _verify_local_finals(root, package, finals_analysis)
         _hash(
             package["input_hashes"].get("source_inventory_sha256"),
             registry["source_inventory_sha256"],

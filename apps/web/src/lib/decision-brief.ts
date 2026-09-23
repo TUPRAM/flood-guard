@@ -23,7 +23,7 @@ function interventions(v: unknown): boolean {
 }
 
 /** Reject mixed identities and unsupported observed action/exposure claims. */
-export function parseDecisionBrief(value: unknown, aoi: string, event: string, generatedAt: string): DecisionBrief {
+export function parseDecisionBrief(value: unknown, aoi: string, event: string, generatedAt: string, inputHashes?: Record<string, string>): DecisionBrief {
   const fail = () => { throw new Error("Invalid decision brief: identity, population partition or evidence boundary differs from its package."); };
   if (!record(value)) return fail();
   const p = value.priority; const r = value.reporting; const c = value.coverage;
@@ -47,8 +47,17 @@ export function parseDecisionBrief(value: unknown, aoi: string, event: string, g
       && ["full_unit", "partial_unit"].includes(String(row.scope)) && fraction(row.unit_coverage_fraction) && positive(row.intersection_area_km2)
       && access(row.population_context) && row.affected_population === null && row.fpps === null && row.action_class === null && interventions(row.interventions))) return fail();
   if (value.finals_analysis !== undefined) {
-    parseFinalsAnalysis(value.finals_analysis, generatedAt);
     const finals = value.finals_analysis as Record<string, unknown>;
+    const finalsTime = finals.generated_at;
+    if (finalsTime !== generatedAt) {
+      const digest = /^[a-f0-9]{64}$/;
+      const releaseMs = Date.parse(generatedAt);
+      const finalsMs = typeof finalsTime === "string" ? Date.parse(finalsTime) : NaN;
+      if (!inputHashes || !digest.test(inputHashes.finals_receipt_sha256 ?? "")
+        || !digest.test(inputHashes.finals_generation_identity_sha256 ?? "")
+        || !Number.isFinite(releaseMs) || !Number.isFinite(finalsMs) || finalsMs > releaseMs) return fail();
+    }
+    parseFinalsAnalysis(value.finals_analysis, finalsTime as string);
     const identity = finals.case_identity;
     if (identity === undefined ? aoi !== "aoi-01_mae_sai_core" || event !== "mae_sai_2024"
       : !record(identity) || identity.aoi_id !== aoi) return fail();

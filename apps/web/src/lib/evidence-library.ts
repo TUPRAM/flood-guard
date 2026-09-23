@@ -126,7 +126,7 @@ export function parseEvidencePackage(value: unknown, catalog: EvidenceLibraryCat
       || (typeof metric.value === "number" && Number.isFinite(metric.value))) && (metric.unit === undefined || typeof metric.unit === "string")))) {
     throw new Error("Invalid scenario summary.");
   }
-  if (value.decision_brief !== undefined) parseDecisionBrief(value.decision_brief, reference.aoi_id, reference.event_id, value.generated_at as string);
+  if (value.decision_brief !== undefined) parseDecisionBrief(value.decision_brief, reference.aoi_id, reference.event_id, value.generated_at as string, value.input_hashes as Record<string, string>);
   return value as unknown as EvidenceLibraryPackage;
 }
 

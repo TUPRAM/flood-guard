@@ -236,6 +236,7 @@
   font-size: .62rem;
   font-weight: 600;
 }
+.public-risk-status { color: var(--fg-neutral-700); }
 
 /*
    Hazard-info action. Same card surface as the legend it sits beside, so the

@@ -17,9 +17,12 @@ from floodguard.evidence_catalog import canonical_bytes, sha256_file
 from floodguard.evidence_pipeline import SUPPORTING, _assessment
 from floodguard.evidence_validation import (
     EvidenceValidationError,
+    _database,
     _geometry_hash,
+    _verify_local_finals,
     verify_evidence_library,
 )
+from floodguard.lower_basin_release_context import review_hospital_source_duplicates
 
 
 def write(path, value):
@@ -249,6 +252,71 @@ def test_complete_export_and_optional_local_receipts(exported):
     assert result["gzip_databases"] == 1 and result["local_verification"]["assets"] == 2
     assert result["scientific_or_operational_acceptance"] is False
     assert verify_evidence_library(exported["public"])["local_verification"] is None
+
+
+def test_lower_basin_database_requires_recomputed_destination_review(exported):
+    database = copy.deepcopy(exported["database"])
+    package = copy.deepcopy(exported["package"])
+    package["aoi_id"] = "aoi-06_chao_phraya_rangsit"
+    review = review_hospital_source_duplicates(database)
+    review_hash = hashlib.sha256(canonical_bytes(review)).hexdigest()
+    extra_hashes = {
+        "routing_selection": "4" * 64,
+        "fixed_demand_roster": "5" * 64,
+        "hospital_object_review": review_hash,
+    }
+    database["input_hashes"].update(extra_hashes)
+    package["input_hashes"].update(extra_hashes)
+    policies = {row["id"]: row for row in exported["catalog"]["datasets"]}
+    documented = {**review, "service_definition": "OSM source objects only"}
+
+    _database(database, package, policies, destination_review=documented)
+    with pytest.raises(EvidenceValidationError, match="documented destination review"):
+        _database(database, package, policies)
+    with pytest.raises(EvidenceValidationError, match="differs from source objects"):
+        _database(
+            database,
+            package,
+            policies,
+            destination_review={**documented, "method": "unsupported_review"},
+        )
+    with pytest.raises(EvidenceValidationError, match="source mismatch: routing_selection"):
+        _database(
+            database,
+            {**package, "input_hashes": {**package["input_hashes"], "routing_selection": "6" * 64}},
+            policies,
+            destination_review=documented,
+        )
+
+
+def test_local_mixed_generation_requires_actual_finals_receipt(tmp_path):
+    analysis = {"generated_at": "2026-09-22T06:00:00Z", "analysis_sha256": "a" * 64}
+    analysis_path = tmp_path / "finals/analysis.json"
+    receipt_path = tmp_path / "finals/build_receipt.json"
+    selection_path = tmp_path / "finals/routing_selection.json"
+    write(analysis_path, analysis)
+    write(selection_path, {"selection": "frozen"})
+    receipt = {"generated_at": analysis["generated_at"],
+               "analysis_sha256": sha256_file(analysis_path),
+               "files": {"routing_selection.json": sha256_file(selection_path)}}
+    write(receipt_path, receipt)
+    package = {"aoi_id": "aoi-01_mae_sai_core", "input_hashes": {
+        "finals_receipt_sha256": sha256_file(receipt_path),
+    }}
+    _verify_local_finals(tmp_path, package, analysis)
+    package["input_hashes"]["finals_receipt_sha256"] = "f" * 64
+    with pytest.raises(ValueError, match="local finals receipt"):
+        _verify_local_finals(tmp_path, package, analysis)
+    package["input_hashes"]["finals_receipt_sha256"] = sha256_file(receipt_path)
+    write(receipt_path, {**receipt, "generated_at": "2026-09-23T00:00:00Z"})
+    package["input_hashes"]["finals_receipt_sha256"] = sha256_file(receipt_path)
+    with pytest.raises(ValueError, match="generation time differs"):
+        _verify_local_finals(tmp_path, package, analysis)
+    write(receipt_path, receipt)
+    package["input_hashes"]["finals_receipt_sha256"] = sha256_file(receipt_path)
+    write(selection_path, {"selection": "changed after receipt"})
+    with pytest.raises(ValueError, match="local finals file routing_selection.json"):
+        _verify_local_finals(tmp_path, package, analysis)
 
 
 @pytest.mark.parametrize(

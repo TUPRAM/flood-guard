@@ -735,6 +735,7 @@ def build_library(
     context_root: Path | None = None,
     boundary_archive: Path | None = None,
     reuse_normalized: bool = False,
+    require_lower_basin_context: bool = False,
 ) -> dict:
     """Verify inputs, normalize locally, compute scenarios and project safe assets."""
     from shapely.geometry import shape
@@ -854,14 +855,24 @@ def build_library(
         from .evidence_finals_export import load_finals
 
         analysis, contexts = load_finals(directory, aoi_sha256=aoi["sha256"])
-        if analysis["generated_at"] != generated_at:
-            raise ValueError("Finals generation metadata differs from package")
         receipt = json.loads((directory / "build_receipt.json").read_bytes())
+        if analysis["generated_at"] != receipt["generated_at"]:
+            raise ValueError("Finals generation metadata differs from its build receipt")
         for name in ("reporting_units", "reporting_crosswalk"):
             suffix = ".geojson" if name == "reporting_units" else ".json"
             if sha256_file(output_dir / "event_review" / (name + suffix)) != receipt[name + "_sha256"]:
                 raise ValueError("Finals reporting geography differs from package")
         finals_by_aoi[aoi["id"]] = (analysis, contexts)
+    if require_lower_basin_context:
+        from .lower_basin_release_context import AOI_IDS, POLICY_VERSION
+
+        for aoi_id in AOI_IDS:
+            if aoi_id not in finals_by_aoi:
+                raise ValueError(f"Required lower-basin finals are missing: {aoi_id}")
+            case_identity = finals_by_aoi[aoi_id][0]["case_identity"]
+            if (case_identity.get("routing_policy") != POLICY_VERSION
+                    or not case_identity.get("routing_selection_sha256")):
+                raise ValueError(f"Required lower-basin routing policy is missing: {aoi_id}")
     for directory in (
         "review",
         "event_review",
@@ -986,6 +997,19 @@ def build_library(
                 if aoi["id"].startswith("aoi-03")
                 else aoi
             )
+            lower_finals = (finals_by_aoi.get(aoi["id"])
+                            if aoi["id"].startswith(("aoi-05", "aoi-06")) else None)
+            routing_geometry = parent["geometry"]
+            if lower_finals:
+                from .lower_basin_release_context import POLICY_VERSION
+
+                selection_path = output_dir / "study_finals" / aoi["id"] / "routing_selection.json"
+                selection = json.loads(selection_path.read_bytes())
+                if (selection["policy_version"] != POLICY_VERSION
+                        or selection["aoi_sha256"] != aoi["sha256"]
+                        or selection["selection_sha256"] != lower_finals[0]["case_identity"]["routing_selection_sha256"]):
+                    raise ValueError("Lower-basin routing selection differs from finals")
+                routing_geometry = selection["routing_geometry"]
             facilities = []
             for name in ("shelter_candidates", "healthcare_candidates"):
                 collection = json.loads(
@@ -994,7 +1018,7 @@ def build_library(
                     )
                 )
                 for feature in collection["features"]:
-                    if feature["geometry"] and shape(parent["geometry"]).covers(
+                    if feature["geometry"] and shape(routing_geometry).covers(
                         shape(feature["geometry"])
                     ):
                         props = feature["properties"]
@@ -1021,10 +1045,46 @@ def build_library(
             context = build_context_inputs(
                 context_root,
                 aoi["geometry"],
-                parent["geometry"],
+                routing_geometry,
                 facilities,
                 output_dir / "context" / aoi["id"],
             )
+            if lower_finals:
+                from .evidence_case_review import apply_destination_review
+                from .lower_basin_release_context import (
+                    bind_fixed_demand_roster,
+                    validate_documented_hospital_review,
+                )
+
+                finals_analysis, finals_contexts = lower_finals
+                fixed = finals_contexts["walking"]
+                if any(context["input_hashes"][key] != fixed["input_hashes"][key]
+                       for key in ("osm", "worldpop", "aoi_geometry", "routing_geometry")):
+                    raise ValueError("Lower-basin public context differs from finals sources")
+                context["population"], roster_sha = bind_fixed_demand_roster(
+                    fixed["population"], context["population"])
+                review_path = output_dir / "study_finals" / aoi["id"] / "hospital_duplicate_review.json"
+                review = json.loads(review_path.read_bytes())
+                if (finals_analysis["destination_review"].get("exclusions") != review["exclusions"]
+                        or finals_analysis["destination_review"].get("osm_sha256") != review["osm_sha256"]):
+                    raise ValueError("Lower-basin displayed destination review differs from source review")
+                if validate_documented_hospital_review(context, review):
+                    context = apply_destination_review(context, review)
+                context["input_hashes"].update({
+                    "routing_selection": selection["selection_sha256"],
+                    "fixed_demand_roster": roster_sha,
+                    "hospital_object_review": sha256_file(review_path),
+                })
+                context["assumptions"] = [
+                    "Routing uses the projected 10 km AOI buffer; paths and destinations beyond that boundary are not evaluated."
+                    if assumption == "Routing uses a surrounding district/basin polygon; paths outside that polygon are not evaluated."
+                    else assumption
+                    for assumption in context["assumptions"]
+                ]
+                context["canonical_sha256"] = hashlib.sha256(canonical_bytes({
+                    key: value for key, value in context.items()
+                    if key not in ("canonical_sha256", "generated_at")
+                })).hexdigest()
             write_json(
                 output_dir / "context" / aoi["id"] / "context_inputs.json", context
             )
@@ -1319,6 +1379,14 @@ def build_library(
                 package["input_hashes"]["finals_analysis_sha256"] = finals_analysis[
                     "analysis_sha256"
                 ]
+                finals_receipt_sha256 = sha256_file(
+                    output_dir / ("finals" if aoi["id"] == "aoi-01_mae_sai_core"
+                                  else "study_finals/" + aoi["id"]) / "build_receipt.json")
+                package["input_hashes"]["finals_receipt_sha256"] = finals_receipt_sha256
+                package["input_hashes"]["finals_generation_identity_sha256"] = hashlib.sha256(
+                    canonical_bytes({"generated_at": finals_analysis["generated_at"],
+                                     "receipt_sha256": finals_receipt_sha256})
+                ).hexdigest()
                 dbfile = public_dir / "databases" / (aoi["id"] + "-finals.json.gz")
                 dbfile.write_bytes(
                     gzip.compress(

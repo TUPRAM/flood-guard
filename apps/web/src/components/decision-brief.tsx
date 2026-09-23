@@ -1,5 +1,8 @@
 import type { BriefAccess, BriefIntervention, EvidenceLibraryPackage } from "@floodguard/contracts";
+import { caseHref, readCaseSelection } from "@/lib/case-selection";
 import { FinalsAnalysisPanel } from "./finals-analysis";
+import { GenerationTimes } from "./generation-times";
+import { MainRoadStatus } from "./main-road-status";
 import styles from "./evidence-library.module.css";
 
 const names = {
@@ -10,9 +13,9 @@ const names = {
 const count = (value: number | null | undefined, th: boolean) => value == null ? (th ? "ยังไม่มีข้อมูล" : "Unavailable") : value.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 1 });
 const duration = (value: number | null, th: boolean) => value == null ? count(value, th) : value.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 4, signDisplay: "exceptZero" });
 
-function AccessContext({ access, th }: { access: BriefAccess; th: boolean }) {
+function AccessContext({ access, year, th }: { access: BriefAccess; year: number | null; th: boolean }) {
   const rows: [string, number][] = [
-    [th ? "ประชากรตามแบบจำลองในพื้นที่ศึกษา (ปี 2020)" : "Modelled residents in the study area (2020)", access.modelled_population],
+    [th ? `ประชากรตามแบบจำลองในพื้นที่ศึกษา (ปี ${year ?? "ไม่ทราบ"})` : `Modelled residents in the study area (${year ?? "year unknown"})`, access.modelled_population],
     [th ? "เข้าถึงจุดหมายภายใน 30 นาทีตามแบบจำลอง" : "Within 30 minutes in the baseline model", access.within_30_minutes_population],
     [th ? "มีเส้นทาง แต่เกิน 30 นาที" : "A route exists, but exceeds 30 minutes", access.over_30_minutes_population],
     [th ? "เชื่อมกับถนน แต่ไม่มีเส้นทางถึงจุดหมาย" : "Connected to roads, without a route to a destination", access.connected_without_route_population],
@@ -34,18 +37,22 @@ function Intervention({ item, th }: { item: BriefIntervention; th: boolean }) {
 export function DecisionBriefPanel({ evidence, th }: { evidence: EvidenceLibraryPackage; th: boolean }) {
   const brief = evidence.decision_brief;
   if (!brief) return <p className={styles.empty}>{th ? "ชุดข้อมูลนี้ยังไม่มีบทสรุปเพื่อการตัดสินใจ" : "A decision brief is unavailable for this package."}</p>;
-  const query = new URLSearchParams({ aoi: evidence.aoi_id, event: evidence.event_id });
+  const query = { ...(typeof window === "undefined" ? {} : readCaseSelection(window.location.search)), aoi: evidence.aoi_id, event: evidence.event_id, version: evidence.package_version };
   if (brief.finals_analysis) return <div data-decision-brief="true" className={styles.finalsBrief}>
     <FinalsAnalysisPanel key={brief.finals_analysis.analysis_sha256} analysis={brief.finals_analysis} layers={evidence.layers} th={th} context={
     <section className={styles.panel}><h2>{th ? "ขอบเขตของข้อสรุปนี้" : "What this comparison can establish"}</h2>
+      <GenerationTimes sourceAnalysisGeneratedAt={brief.finals_analysis.generated_at} releaseGeneratedAt={evidence.generated_at} th={th} />
+      <MainRoadStatus th={th} />
       <p>{th ? "ผลนี้ช่วยเลือกเส้นทางและจุดหมายที่ควรตรวจสอบ และเปรียบเทียบการเปลี่ยนแปลงตามสมมติฐาน ยังไม่ใช่ผลยอมรับสำหรับจัดอันดับตอบโต้เหตุการณ์" : "These results help choose routes and destinations to investigate and compare explicit changes. They are not an accepted event-response ranking."}</p>
       <div className={styles.briefStats}><div><span>{th ? "คะแนน / ระดับการดำเนินการ" : "FPPS / action class"}</span><strong>{th ? "ยังไม่พร้อม" : "Unavailable"}</strong></div><div><span>{th ? "ประชากรที่ได้รับผลจากน้ำท่วม" : "Flood-affected population"}</span><strong>{th ? "ยังไม่ทราบ" : "Unknown"}</strong></div><div><span>{th ? "ความเท่าเทียมตามกลุ่มอายุ" : "Age-group equity"}</span><strong>{th ? "ยังไม่พร้อม" : "Unavailable"}</strong></div></div>
       {brief.finals_analysis.flood_scenarios ? <p>{th ? "คะแนนที่ยอมรับยังขาดความน่าจะเป็นน้ำท่วมที่สอบเทียบและข้อมูลความเปราะบางที่เข้ากันได้ ดูจำนวนประชากรในขอบเขตผู้สมัครและคะแนน Class E ตามสมมติฐานได้ในแท็บประชากร ความต้องการอพยพ ความจุจริง และการเปิดใช้สถานที่ยังไม่ทราบ" : "Accepted scoring is missing calibrated flood likelihood and a compatible vulnerability/context input. Population details show candidate-overlap counts and explicit Class E score assumptions. Actual evacuation demand, shelter capacity and event-time destination availability remain unknown."}</p> : <p>{th ? "ยังไม่มีขอบเขตน้ำท่วมที่ยอมรับ ความน่าจะเป็นที่สอบเทียบ หรือข้อมูลความเปราะบางที่สอดคล้องกัน ผลนี้เป็นการทดสอบการเข้าถึงตามสมมติฐาน ไม่ใช่จำนวนผู้ได้รับผลจากน้ำท่วมหรือคะแนนเหตุการณ์" : "An admissible event flood extent, calibrated flood likelihood and compatible vulnerability/context are missing. These are access-disruption experiments, not event flood exposure or accepted scores."}</p>}
-      <a className={styles.download} href={`/studio/library/?${query}`}>{th ? "ตรวจสอบหลักฐานและสมมติฐานทั้งหมด" : "Inspect the evidence and assumptions"}</a>
+      <a className={styles.download} href={caseHref("/studio/library/", query)}>{th ? "ตรวจสอบหลักฐานและสมมติฐานทั้งหมด" : "Inspect the evidence and assumptions"}</a>
     </section>} />
   </div>;
   return <div data-decision-brief="true">
     <section className={`${styles.panel} ${styles.briefLead}`}>
+      <GenerationTimes sourceAnalysisGeneratedAt={null} releaseGeneratedAt={evidence.generated_at} th={th} />
+      <MainRoadStatus th={th} />
       <p className={styles.eyebrow}>{th ? "สิ่งที่ตัดสินใจได้ในขณะนี้" : "WHAT CAN BE DECIDED NOW"}</p>
       <h2>{th ? "ตรวจสอบจุดเชื่อมต่อและจุดหมายที่มีผลต่อการเข้าถึง" : "Prioritize review of consequential connections and destinations"}</h2>
       <p>{th ? "ยังจัดอันดับความเร่งด่วนของพื้นที่ไม่ได้ หลักฐานปัจจุบันช่วยเลือกสิ่งที่ควรตรวจสอบและเปรียบเทียบสถานการณ์สมมติ" : "An accepted response ranking is not yet available. The current evidence helps target verification and compare explicit interventions."}</p>
@@ -53,7 +60,7 @@ export function DecisionBriefPanel({ evidence, th }: { evidence: EvidenceLibrary
       <p className={styles.hint}>{th ? "ลำดับการตรวจสอบไม่ใช่ลำดับการอพยพหรือคำสั่งปฏิบัติการ" : "Review priority is not an evacuation priority or an operational instruction."}</p>
     </section>
     <section className={styles.panel}><h2>{th ? "ประชากรและช่องว่างการเข้าถึง" : "Population context and access gaps"}</h2>
-      {brief.access ? <AccessContext access={brief.access} th={th} /> : <p className={styles.empty}>{th ? "พื้นที่นี้มีข้อมูลความครอบคลุม ยังไม่มีการคำนวณการเข้าถึง" : "This area has an evidence-coverage view; access calculations are unavailable."}</p>}
+      {brief.access ? <AccessContext access={brief.access} year={brief.population_reference_year} th={th} /> : <p className={styles.empty}>{th ? "พื้นที่นี้มีข้อมูลความครอบคลุม ยังไม่มีการคำนวณการเข้าถึง" : "This area has an evidence-coverage view; access calculations are unavailable."}</p>}
       <p>{th ? "ตัวเลขเหล่านี้เป็นประชากรที่อยู่อาศัยตามแบบจำลอง WorldPop ปี 2020 ไม่ใช่จำนวนผู้ประสบภัยหรือผู้ต้องการอพยพ การเดินทางใช้ความเร็วและจุดเชื่อมต่อตามสมมติฐาน" : "These are WorldPop 2020 modelled residents, not flood victims or evacuation demand. Travel times depend on assumed speeds and accepted graph connectors."}</p>
     </section>
     <section className={styles.panel}><h2>{th ? "การเปลี่ยนแปลงใดมีผลในแบบจำลอง" : "Which changes make a difference in the model?"}</h2>
@@ -70,8 +77,8 @@ export function DecisionBriefPanel({ evidence, th }: { evidence: EvidenceLibrary
       <details><summary>{th ? "ผลตรวจสอบแหล่งข้อมูลและช่องว่าง" : "Source-review findings and remaining gaps"}</summary>{brief.evidence_notes.map((note, index) => <p key={index}><strong>{note.topic} · {note.status}</strong><br />{note.summary} {note.source_urls.map((url) => <a key={url} href={url} target="_blank" rel="noopener noreferrer">{th ? "แหล่งข้อมูล " : "Source "}</a>)}</p>)}</details>
       <ol>{brief.next_actions.map((action) => <li key={action.id}><strong>{th ? ({event_reference:"ขอบเขตน้ำท่วมที่ตรงเหตุการณ์",access_review:"จุดเชื่อมต่อถนนและจุดหมายที่มีผล",demand_capacity:"กลุ่มประชากรและสมมติฐานความจุ"}[action.id] ?? action.action) : action.action}</strong><p>{action.reason}</p></li>)}</ol>
       <p>{th ? "ความเท่าเทียมตามกลุ่มอายุยังประเมินไม่ได้ ความจุสถานที่จริงและความต้องการอพยพยังไม่ทราบ ดูสมมติฐานความจุและสัดส่วนผู้เข้าร่วมในคลังหลักฐาน" : "Age-group equity remains unavailable. Actual shelter capacity and evacuation demand remain unknown; the evidence library records explicit capacity and participation assumptions."}</p>
-      {brief.capacity_experiments.length ? <details><summary>{th ? "การทดลองความจุและสัดส่วนผู้เข้าร่วม" : "Capacity and participation experiments"}</summary><p>{th ? "ใช้จุดหมายสมมติแยกจากการทดลองเพิ่มจุดหมายด้านบน ยังไม่ยืนยันความเหมาะสมของสถานที่หรือจำนวนผู้ต้องการอพยพ" : "The capacity site is a separate hypothetical location from the access addition above. Its suitability and actual evacuation demand are unverified."}</p><div className={styles.tableWrap} tabIndex={0} role="region" aria-label={th ? "ตารางการทดลองความจุ เลื่อนแนวนอนได้" : "Capacity experiment table; scroll horizontally"}><table><thead><tr><th>{th ? "สมมติฐาน" : "Assumption"}</th><th>{th ? "ความต้องการสมมติ" : "Assumed demand"}</th><th>{th ? "จัดสรรได้" : "Assigned"}</th><th>{th ? "จำกัดด้วยความจุ" : "Capacity-limited"}</th><th>{th ? "ไปไม่ถึง / ข้อมูลไม่ครอบคลุม" : "Unreachable / coverage excluded"}</th><th>{th ? "ไม่ทราบความจุ" : "Unknown capacity"}</th></tr></thead><tbody>{brief.capacity_experiments.map((item) => <tr key={item.id}><th scope="row">{item.title}</th><td>{count(item.assumed_demand, th)}</td><td>{count(item.assigned, th)}</td><td>{count(item.capacity_limited, th)}</td><td>{count(item.unreachable, th)} / {count(item.coverage_excluded, th)}</td><td>{count(item.unknown_capacity, th)}</td></tr>)}</tbody></table></div></details> : null}
-      <a className={styles.download} href={`/studio/library/?${query}`}>{th ? "ตรวจสอบหลักฐานและสมมติฐานทั้งหมด" : "Inspect the evidence and assumptions"}</a>
+      {brief.capacity_experiments.length ? <details><summary>{th ? "การทดลองความจุและสัดส่วนผู้เข้าร่วม" : "Capacity and participation experiments"}</summary><p>{th ? "การทดลองความจุใช้ตำแหน่งสมมติเดียวกับการเพิ่มจุดหมายด้านบน แต่เป็นบริการศูนย์พักพิงแยกต่างหาก ยังไม่ยืนยันความเหมาะสมของสถานที่หรือจำนวนผู้ต้องการอพยพ" : "The capacity experiment uses the same hypothetical location as the access addition above, with a separate shelter service. Site suitability and actual evacuation demand remain unverified."}</p><div className={styles.tableWrap} tabIndex={0} role="region" aria-label={th ? "ตารางการทดลองความจุ เลื่อนแนวนอนได้" : "Capacity experiment table; scroll horizontally"}><table><thead><tr><th>{th ? "สมมติฐาน" : "Assumption"}</th><th>{th ? "ความต้องการสมมติ" : "Assumed demand"}</th><th>{th ? "จัดสรรได้" : "Assigned"}</th><th>{th ? "จำกัดด้วยความจุ" : "Capacity-limited"}</th><th>{th ? "ไปไม่ถึง / ข้อมูลไม่ครอบคลุม" : "Unreachable / coverage excluded"}</th><th>{th ? "ไม่ทราบความจุ" : "Unknown capacity"}</th></tr></thead><tbody>{brief.capacity_experiments.map((item) => <tr key={item.id}><th scope="row">{item.title}</th><td>{count(item.assumed_demand, th)}</td><td>{count(item.assigned, th)}</td><td>{count(item.capacity_limited, th)}</td><td>{count(item.unreachable, th)} / {count(item.coverage_excluded, th)}</td><td>{count(item.unknown_capacity, th)}</td></tr>)}</tbody></table></div></details> : null}
+      <a className={styles.download} href={caseHref("/studio/library/", query)}>{th ? "ตรวจสอบหลักฐานและสมมติฐานทั้งหมด" : "Inspect the evidence and assumptions"}</a>
     </section>
   </div>;
 }

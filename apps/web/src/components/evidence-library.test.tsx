@@ -19,6 +19,9 @@ describe("EvidenceLibrary", () => {
     expect(html).toContain("Action class: unavailable");
     expect(html).toContain("No publishable gauge series");
     expect(html).toContain("Scenario outcomes only");
+    expect(html).toContain('data-source-analysis-generated-at="unavailable"');
+    expect(html).toContain('data-package-release-generated-at="2026-09-21T00:00:00Z"');
+    expect(html).toContain("Main-road access: unavailable as a separate qualified service result");
     expect(html).toContain("test-report.md");
     expect(html).not.toContain("/api/");
   });

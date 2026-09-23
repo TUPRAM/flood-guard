@@ -158,6 +158,7 @@ def database_case(finals):
     analysis, contexts = finals
     payload = public_finals_database(analysis, contexts)
     package = {
+        "aoi_id": "fixture-aoi",
         "decision_brief": {"finals_analysis": analysis},
         "input_hashes": contexts["walking"]["input_hashes"],
     }
@@ -313,6 +314,7 @@ def local_finals(finals, tmp_path):
         write(tmp_path / "contexts" / mode / "context_inputs.json", context)
     receipt = {
         "aoi_sha256": "a" * 64,
+        "generated_at": analysis["generated_at"],
         "builder_sha256": sha256_file(
             Path(__file__).resolve().parents[1] / "scripts/build_mae_sai_finals.py"
         ),
@@ -351,6 +353,14 @@ def test_local_changed_parent_bytes_are_rejected(local_finals):
     with (root / "contexts/walking/context_inputs.json").open("ab") as handle:
         handle.write(b" ")
     with pytest.raises(ValueError, match="checksum"):
+        load_finals(root, aoi_sha256="a" * 64)
+
+
+def test_local_generation_time_is_bound_to_receipt(local_finals):
+    root, receipt = local_finals
+    receipt["generated_at"] = "2026-01-01T00:00:00Z"
+    write(root / "build_receipt.json", receipt)
+    with pytest.raises(ValueError, match="generation time"):
         load_finals(root, aoi_sha256="a" * 64)
 
 

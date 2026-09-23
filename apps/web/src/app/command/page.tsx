@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { CommandWorkspace } from "@/components/command-workspace";
+import { CandidateCaseContext } from "@/components/candidate-case-context";
+import { CaseRoleBody } from "@/components/case-role-body";
 
 export const metadata: Metadata = {
   title: "Planning workspace",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function CommandPage() {
-  return <div id="main-content"><CommandWorkspace /></div>;
+  return <><CandidateCaseContext role="planning" /><CaseRoleBody role="planning" /></>;
 }

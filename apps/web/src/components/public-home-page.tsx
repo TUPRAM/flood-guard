@@ -643,9 +643,10 @@ export function PublicHomePage({
               )}
             </div>
             <div className="public-risk-scale-labels">
-              <span>{th ? "ความเสี่ยงต่ำ" : "Low risk"}</span>
-              <span>{th ? "ความเสี่ยงสูง" : "High risk"}</span>
+              <span>{th ? "ลำดับต่ำกว่า" : "Lower priority"}</span>
+              <span>{th ? "ลำดับสูงกว่า" : "Higher priority"}</span>
             </div>
+            <p className="public-risk-status">{th ? "ข้อมูลผู้สมัคร · ไม่ใช้ปฏิบัติการ" : "Candidate · non-operational"}</p>
           </aside>
 
           <button
@@ -753,8 +754,8 @@ export function PublicHomePage({
                   </div>
                   <p className="public-hazard-boundary">
                     {th
-                      ? "ตัวชี้วัดนี้ใช้ข้อมูลอุทกภัยในอดีตเพื่อการเตรียมพร้อม ไม่ได้ยืนยันระดับน้ำหรืออันตรายในปัจจุบัน"
-                      : "This indicator uses historical flood evidence for preparedness. It does not confirm current water levels or hazards."}
+                      ? "ตัวชี้วัดการวางแผนแบบผู้สมัครบนแผนที่นี้แยกจากกรณีศึกษาที่เลือก เป็นผลวิจัยที่ไม่ใช้ปฏิบัติการ ไม่ใช่คะแนน FPPS ที่ยอมรับ การวัดอันตรายปัจจุบัน หรือคำเตือนทางการ"
+                      : "This map's candidate planning indicator is separate from the selected study case. It is non-operational, not an accepted FPPS, a current hazard reading or an official warning."}
                   </p>
                 </>
               ) : (

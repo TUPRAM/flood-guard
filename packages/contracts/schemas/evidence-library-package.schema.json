@@ -3652,6 +3652,10 @@
             "case_identity": {
               "type": "object",
               "additionalProperties": false,
+              "dependentRequired": {
+                "routing_policy": ["routing_selection_sha256"],
+                "routing_selection_sha256": ["routing_policy"]
+              },
               "required": [
                 "aoi_id",
                 "aoi_sha256",
@@ -3670,6 +3674,13 @@
                 "routing_aoi_id": {
                   "type": "string",
                   "minLength": 1
+                },
+                "routing_policy": {
+                  "const": "lower_basin_10km_epsg32647_v1"
+                },
+                "routing_selection_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
                 },
                 "flood_basis": {
                   "enum": [
@@ -3696,6 +3707,29 @@
                   "type": "string",
                   "minLength": 1
                 },
+                "method": {
+                  "const": "contained_point_matching_name_or_wikidata_v1"
+                },
+                "identity_scope": {
+                  "const": "OSM source-object duplication only; operation and entrance unverified"
+                },
+                "ambiguous": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["facility_id", "possible_parents"],
+                    "properties": {
+                      "facility_id": { "type": "string", "minLength": 1 },
+                      "possible_parents": {
+                        "type": "array",
+                        "minItems": 2,
+                        "uniqueItems": true,
+                        "items": { "type": "string", "minLength": 1 }
+                      }
+                    }
+                  }
+                },
                 "exclusions": {
                   "type": "array",
                   "items": {
@@ -3716,6 +3750,10 @@
                         "minLength": 1
                       },
                       "source_url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "parent_source_url": {
                         "type": "string",
                         "format": "uri"
                       },

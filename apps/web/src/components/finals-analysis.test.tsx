@@ -32,6 +32,8 @@ describe("finals route-first comparison", () => {
     const html = renderToStaticMarkup(<FinalsAnalysisPanel analysis={analysis} layers={[]} th={false} />);
     expect(html).toContain("Route data is unavailable for this comparison.");
     expect(html).toContain("Service needed");
+    expect(html).toContain('value="main_road" disabled=""');
+    expect(html).toContain("Main-road access — unavailable");
     expect(html).toContain("Modelled travel mode");
     expect(html).toContain('data-finals-detail="evidence"');
     expect(html).toContain("Flood evidence timeline");

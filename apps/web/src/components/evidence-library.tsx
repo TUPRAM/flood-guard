@@ -5,9 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import type { EvidenceAvailability, EvidenceLibraryCatalog, EvidenceLibraryGauge, EvidenceLibraryPackage } from "@floodguard/contracts";
 import { LanguageToggle } from "@/components/language-toggle";
 import { DecisionBriefPanel } from "./decision-brief";
+import { GenerationTimes } from "./generation-times";
+import { MainRoadStatus } from "./main-road-status";
 import { EvidenceFeatureBrowser } from "./evidence-library-features";
 import { useLanguage } from "@/lib/use-language";
-import { EVIDENCE_CATALOG_URL, evidenceAssetUrl, fetchEvidencePackage, gaugeSegments, parseEvidenceCatalog, selectEvidencePackage, sourceClockCoordinate } from "@/lib/evidence-library";
+import { caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
+import { EVIDENCE_CATALOG_URL, evidenceAssetUrl, fetchEvidencePackage, gaugeSegments, parseEvidenceCatalog, sourceClockCoordinate } from "@/lib/evidence-library";
 import styles from "./evidence-library.module.css";
 
 const EvidenceMap = dynamic(() => import("./evidence-library-map").then((module) => module.EvidenceLibraryMap), { ssr: false });
@@ -44,16 +47,20 @@ export function EvidenceGaugeChart({ gauge, th }: { gauge: EvidenceLibraryGauge;
   </article>;
 }
 
-export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, initialAoiId, initialEventId, view = "evidence" }: {
-  initialCatalog?: EvidenceLibraryCatalog | null; initialPackage?: EvidenceLibraryPackage | null; initialAoiId?: string; initialEventId?: string; view?: "brief" | "evidence" | "public";
+export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, initialAoiId, initialEventId, view = "evidence", role = "studio" }: {
+  initialCatalog?: EvidenceLibraryCatalog | null; initialPackage?: EvidenceLibraryPackage | null; initialAoiId?: string; initialEventId?: string; view?: "brief" | "evidence" | "public"; role?: "public" | "planning" | "studio";
 } = {}) {
   const [language, setLanguage] = useLanguage("en");
   const th = language === "th";
   const sourcesDialog = useRef<HTMLDialogElement>(null);
   const [catalog, setCatalog] = useState(initialCatalog);
   const [catalogError, setCatalogError] = useState<string | null>(null);
-  const [selection, setSelection] = useState({ aoi: initialAoiId ?? initialCatalog?.packages[0]?.aoi_id ?? "", event: initialEventId ?? initialCatalog?.packages[0]?.event_id ?? "" });
-  const [loaded, setLoaded] = useState<{ package: EvidenceLibraryPackage | null; referenceId: string; error: string | null }>({ package: initialPackage, referenceId: initialPackage?.id ?? "", error: null });
+  const [selection, setSelection] = useState<CaseSelection>(() => ({
+    aoi: initialAoiId ?? initialCatalog?.packages[0]?.aoi_id ?? "",
+    event: initialEventId ?? initialCatalog?.packages[0]?.event_id ?? "",
+    ...(typeof window === "undefined" ? {} : readCaseSelection(window.location.search)),
+  }));
+  const [loaded, setLoaded] = useState<{ package: EvidenceLibraryPackage | null; referenceHash: string; error: string | null }>({ package: initialPackage, referenceHash: initialCatalog?.packages.find((item) => item.id === initialPackage?.id)?.sha256 ?? "", error: null });
 
   useEffect(() => {
     if (initialCatalog) return;
@@ -63,40 +70,47 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
       return parseEvidenceCatalog(await response.json());
     }).then((next) => {
       if (controller.signal.aborted) return;
-      const query = new URLSearchParams(window.location.search);
       setCatalog(next);
-      setSelection({ aoi: query.get("aoi") ?? next.packages[0]?.aoi_id ?? "", event: query.get("event") ?? next.packages[0]?.event_id ?? "" });
+      setSelection({ aoi: next.packages[0]?.aoi_id, event: next.packages[0]?.event_id, ...readCaseSelection(window.location.search) });
     }).catch((error: unknown) => { if (!controller.signal.aborted) setCatalogError(error instanceof Error ? error.message : "Catalog unavailable"); });
     return () => controller.abort();
   }, [initialCatalog]);
 
-  const reference = catalog ? selectEvidencePackage(catalog, selection.aoi, selection.event) : null;
   useEffect(() => {
-    if (!catalog || !reference || initialPackage?.id === reference.id) return;
+    const onPopState = () => setSelection({ aoi: catalog?.packages[0]?.aoi_id, event: catalog?.packages[0]?.event_id, ...readCaseSelection(window.location.search) });
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [catalog]);
+
+  const resolved = catalog ? resolveEvidenceCase(catalog, selection) : null;
+  const reference = resolved?.reference ?? null;
+  useEffect(() => {
+    if (!catalog || !reference || (initialPackage?.id === reference.id && initialCatalog?.packages.find((item) => item.id === initialPackage.id)?.sha256 === reference.sha256)) return;
     const controller = new AbortController();
     fetchEvidencePackage(catalog, reference, controller.signal)
-      .then((next) => { if (!controller.signal.aborted) setLoaded({ package: next, referenceId: reference.id, error: null }); })
-      .catch((error: unknown) => { if (!controller.signal.aborted) setLoaded({ package: null, referenceId: reference.id, error: error instanceof Error ? error.message : "Package unavailable" }); });
+      .then((next) => { if (!controller.signal.aborted) setLoaded({ package: next, referenceHash: reference.sha256, error: null }); })
+      .catch((error: unknown) => { if (!controller.signal.aborted) setLoaded({ package: null, referenceHash: reference.sha256, error: error instanceof Error ? error.message : "Package unavailable" }); });
     return () => controller.abort();
-  }, [catalog, reference, initialPackage]);
+  }, [catalog, reference, initialCatalog, initialPackage]);
 
-  function choose(next: typeof selection) {
+  function choose(next: CaseSelection) {
     setSelection(next);
-    const query = new URLSearchParams({ aoi: next.aoi, event: next.event });
-    window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
+    pushCaseSelection(next);
   }
-  const evidence = reference && loaded.referenceId === reference.id ? loaded.package : null;
-  const packageError = reference && loaded.referenceId === reference.id ? loaded.error : null;
+  const evidence = reference && loaded.referenceHash === reference.sha256 ? loaded.package : null;
+  const packageError = reference && loaded.referenceHash === reference.sha256 ? loaded.error : null;
   const aoi = catalog?.aois.find((item) => item.id === selection.aoi);
   const event = catalog?.events.find((item) => item.id === selection.event);
   const reportUrl = evidenceAssetUrl(evidence?.report_url);
 
-  const caseQuery = new URLSearchParams({ aoi: selection.aoi, event: selection.event }).toString();
+  const caseQuery = caseHref("", { ...selection, version: catalog?.package_version }).slice(1);
+  const analysis = evidence?.decision_brief?.finals_analysis;
+  const analysisError = analysis ? resolveAnalysisSelection(analysis, selection).reason : (selection.service || selection.mode || selection.scenario || selection.origin ? "unknown_service" : null);
   const workspace = view === "brief" && Boolean(evidence?.decision_brief?.finals_analysis?.routes);
   return <main id="main-content" className={`${styles.library} ${workspace ? styles.workspace : ""}`} data-evidence-library="true" data-route-workspace={workspace ? "true" : undefined}>
     <header className={styles.header}>
-      <a className={styles.brand} href="/studio/">FloodGuard <span>Studio</span></a>
-      <nav aria-label={th ? "หน้าหลักฐาน" : "Evidence navigation"}><a href="/studio/">{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={`/studio/brief/?${caseQuery}`} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"}</a><a href={`/studio/library/?${caseQuery}`} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังข้อมูล" : "Evidence library"}</a><a href={`/public-cases/?${caseQuery}`} aria-current={view === "public" ? "page" : undefined}>{th ? "สรุปสำหรับประชาชน" : "Public summary"}</a><a href={`/command/cases/?${caseQuery}`}>{th ? "เปรียบเทียบ" : "Command comparisons"}</a><a href="/public/">{th ? "หน้า Public" : "Public home"}</a></nav>
+      <a className={styles.brand} href={role === "planning" ? "/command/" : role === "public" ? "/public/" : "/studio/"}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : role === "public" ? "Public" : "Studio"}</span></a>
+      <nav aria-label={th ? "หน้าหลักฐาน" : "Evidence navigation"}><a href={caseHref("/studio/", selection)}>{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={`/studio/brief/?${caseQuery}`} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"}</a><a href={`/studio/library/?${caseQuery}`} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังข้อมูล" : "Evidence library"}</a><a href={`/public-cases/?${caseQuery}`} aria-current={view === "public" ? "page" : undefined}>{th ? "สรุปสำหรับประชาชน" : "Public summary"}</a><a href={`/command/cases/?${caseQuery}`}>{th ? "เปรียบเทียบ" : "Planning comparisons"}</a><a href={caseHref("/public/", selection)}>{th ? "หน้า Public" : "Public home"}</a></nav>
       <LanguageToggle language={language} onChange={setLanguage} />
       <select className={styles.compactViews} aria-label={th ? "เปิดมุมมอง" : "Open view"} value="" onChange={(event) => window.location.assign(event.target.value)}>
         <option value="" disabled>{th ? "มุมมอง" : "Views"}</option>
@@ -119,7 +133,7 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
         <section className={styles.selectors} aria-label={th ? "เลือกพื้นที่และเหตุการณ์" : "Area and event selection"}>
           <label htmlFor="evidence-case">{th ? "พื้นที่ศึกษา — เหตุการณ์" : "Study area — Event"}<select id="evidence-case" value={reference?.id ?? ""} onChange={(e) => {
             const next = catalog.packages.find((item) => item.id === e.target.value);
-            if (next) choose({ aoi: next.aoi_id, event: next.event_id });
+            if (next) choose({ aoi: next.aoi_id, event: next.event_id, version: catalog.package_version });
           }}>
             {!reference ? <option value="" disabled>{th ? "เลือกพื้นที่และเหตุการณ์ที่มีข้อมูล" : "Choose an available study area — event"}</option> : null}
             {catalog.packages.map((item) => {
@@ -131,11 +145,12 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
           </select></label>
           <div className={styles.selectionMeta}>{event ? `${event.start} — ${event.end}` : null}<small>{catalog.packages.length} {th ? "ชุดพื้นที่/เหตุการณ์" : "area/event packages"} · {catalog.package_version}</small></div>
         </section>
-        {!reference ? <p className={styles.error} role="alert">{th ? "ไม่มีชุดข้อมูลสำหรับพื้นที่และเหตุการณ์ที่เลือก ระบบจะไม่ใช้ข้อมูลของพื้นที่อื่นแทน" : "No package exists for this area/event selection. Another area's data will not be substituted."}</p> : null}
+        {!reference ? <p className={styles.error} role="alert">{resolved?.reason === "version_mismatch" ? (th ? "เวอร์ชันของลิงก์ไม่ตรงกับแค็ตตาล็อกที่เผยแพร่" : "The link's package version differs from the published catalog.") : (th ? "ไม่มีชุดข้อมูลสำหรับพื้นที่และเหตุการณ์ที่เลือก ระบบจะไม่ใช้ข้อมูลของพื้นที่อื่นแทน" : "No package exists for this area/event selection. Another area's data will not be substituted.")}</p> : null}
         {packageError ? <p className={styles.error} role="alert">{th ? "ชุดข้อมูลใช้ไม่ได้" : "Evidence package unavailable"}: {packageError}</p> : null}
         {reference && !evidence && !packageError ? <p role="status">{th ? "กำลังโหลดและตรวจสอบชุดข้อมูล…" : "Loading and verifying evidence package…"}</p> : null}
         {evidence && aoi ? <>
-          {view === "public" ? <PublicCaseSummary key={evidence.id} evidence={evidence} th={th} /> : view === "brief" ? <DecisionBriefPanel key={evidence.id} evidence={evidence} th={th} /> : <>
+          {view === "evidence" ? <section className={styles.panel}><MainRoadStatus th={th} /></section> : null}
+          {analysisError ? <p className={styles.error} role="alert">{th ? "ไม่มีผลสำหรับตัวเลือกบริการ วิธีเดินทาง สถานการณ์ หรือจุดเริ่มต้นนี้ จะไม่ใช้ผลอื่นแทน" : "No result exists for this service, mode, scenario or origin. Another selection is not substituted."} <code>{analysisError}</code></p> : view === "public" ? <PublicCaseSummary key={evidence.id} evidence={evidence} th={th} /> : view === "brief" ? <DecisionBriefPanel key={evidence.id} evidence={evidence} th={th} /> : <>
           <section className={styles.panel} aria-labelledby="evidence-map-title"><div className={styles.sectionTitle}><h2 id="evidence-map-title">{th ? "แผนที่หลักฐาน" : "Evidence map"}</h2><span>{th ? aoi.name_th ?? aoi.name : aoi.name}</span></div>
             <EvidenceMap key={evidence.id} aoi={aoi} layers={evidence.layers} th={th} />
             <ul className={styles.layerList}>{evidence.layers.map((layer) => <li key={layer.id}><b>{layer.title}</b><span>{STATUS[layer.availability][th ? 1 : 0]}</span>{layer.reason ? <small>{layer.reason}</small> : null}</li>)}</ul>
@@ -155,8 +170,8 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
           </section>
           <section className={styles.panel} aria-labelledby="evidence-scenario-title"><h2 id="evidence-scenario-title">{th ? "สถานการณ์สมมติเพื่อทดสอบวิธี" : "Explicit scenario comparisons"}</h2><p>{th ? "ผลคำนวณล่วงหน้าตามสมมติฐาน ไม่ใช่ค่าที่สังเกตหรือเส้นทางปลอดภัยที่ยืนยัน" : "Precomputed results under stated assumptions, not observed outcomes or confirmed safe routes."}</p><div className={styles.scenarios}>{evidence.scenarios.map((scenario) => <article key={scenario.id}><p className={styles.eyebrow}>{scenario.kind}</p><h3>{scenario.title}</h3><p>{scenario.summary}</p><dl>{scenario.metrics.map((metric, index) => <div key={index}><dt>{metric.label}</dt><dd>{metric.value ?? (th ? "ยังไม่มี" : "Unavailable")} {metric.unit}</dd></div>)}</dl><details><summary>{th ? "สมมติฐาน" : "Assumptions"}</summary><ul>{scenario.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details></article>)}</div>{!evidence.scenarios.length ? <p>{th ? "ไม่มีผลสถานการณ์สมมติในชุดนี้" : "No scenario results are included in this package."}</p> : null}</section>
           </>}
-          {workspace ? <footer className={styles.workspaceFooter}><span>{evidence.id}</span><button type="button" aria-haspopup="dialog" onClick={() => sourcesDialog.current?.showModal()}>{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</button><dialog ref={sourcesDialog} className={styles.workspaceDialog} aria-labelledby="workspace-sources-title"><div className={styles.workspaceDialogHeader}><h2 id="workspace-sources-title">{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</h2><button type="button" onClick={() => sourcesDialog.current?.close()}>{th ? "ปิด" : "Close"}</button></div><div className={styles.workspaceDialogBody}><div className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id} · {evidence.generated_at}</p><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาของแหล่งข้อมูล: " : "Confidence: low · Source timestamp: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></div></div></dialog></footer> : (
-          <footer className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id} · {evidence.generated_at}</p><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาของแหล่งข้อมูล: " : "Confidence: low · Source timestamp: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></footer>)}
+          {workspace ? <footer className={styles.workspaceFooter}><span>{evidence.id}</span><button type="button" aria-haspopup="dialog" onClick={() => sourcesDialog.current?.showModal()}>{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</button><dialog ref={sourcesDialog} className={styles.workspaceDialog} aria-labelledby="workspace-sources-title"><div className={styles.workspaceDialogHeader}><h2 id="workspace-sources-title">{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</h2><button type="button" onClick={() => sourcesDialog.current?.close()}>{th ? "ปิด" : "Close"}</button></div><div className={styles.workspaceDialogBody}><div className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></div></div></dialog></footer> : (
+          <footer className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></footer>)}
 
         </> : null}
       </> : null}

@@ -7,6 +7,7 @@ import { PublicAppHeader } from "@/components/public-app-header";
 import { PublicAppIcon, type PublicAppIconName } from "@/components/public-app-icon";
 import { PublicHomePage } from "@/components/public-home-page";
 import { PublicReportPage } from "@/components/public-report-page";
+import { PublicResearchCase } from "@/components/public-research-case";
 import { PublicShelterPage } from "@/components/public-shelter-page";
 import { PublicSosPage } from "@/components/public-sos-page";
 import { HOUSEHOLD_NEEDS, countCompletedPlanItems } from "@/lib/household-plan";
@@ -149,7 +150,7 @@ export function PublicExperience() {
 
   return (
     <main className="public-page public-app-shell" lang={language}>
-      {process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE !== "public-production" ? <aside className="public-case-entry"><a href="/public-cases/">{language === "th" ? "สำรวจกรณีศึกษา: แม่สาย หาดใหญ่ และเจ้าพระยา" : "Explore study cases: Mae Sai, Hat Yai and Chao Phraya"}</a><small>{language === "th" ? "สถานการณ์วิจัย ไม่ใช่คำเตือนปัจจุบัน" : "Research scenarios, not current warnings"}</small></aside> : null}
+      {process.env.NEXT_PUBLIC_FLOODGUARD_APP_PROFILE !== "public-production" ? <aside className="public-case-entry"><PublicResearchCase language={language} /></aside> : null}
       <PublicAppHeader
         language={language}
         onLanguageChange={setLanguage}

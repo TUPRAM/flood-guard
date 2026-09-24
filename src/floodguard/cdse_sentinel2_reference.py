@@ -11,13 +11,17 @@ until the rights owner and Reference Authority sign.
 from __future__ import annotations
 
 import hashlib
+import http.client
 import os
 import re
+import time
 import zipfile
 import zlib
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Callable
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 import pandas as pd
 
@@ -26,7 +30,6 @@ from floodguard.cdse_download import (
     DEFAULT_EXTERNAL_DATA_DIR,
     CDSEDownloadError,
     build_cdse_product_download_url,
-    download_cdse_product,
     request_cdse_access_token,
 )
 
@@ -34,6 +37,9 @@ MAE_SAI_SENTINEL2_REFERENCE_PRODUCT_ID = "f1a638d2-3b8f-4f9a-a862-1b651d6662c3"
 MAE_SAI_SENTINEL2_REFERENCE_PRODUCT_NAME = (
     "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE"
 )
+# Published by the CDSE catalogue for this product; used to resume and verify.
+MAE_SAI_SENTINEL2_REFERENCE_CONTENT_LENGTH = 1_157_904_758
+MAE_SAI_SENTINEL2_REFERENCE_PROVIDER_MD5 = "43a17ba47b7235c47a72abbbcb5f27fa"
 MAE_SAI_SENTINEL2_REFERENCE_ROLE = "unsigned independent optical reference candidate"
 MAE_SAI_SENTINEL2_REFERENCE_BLOCKER = (
     "rights-owner purpose record, Reference Authority qualification and human "
@@ -144,22 +150,108 @@ def build_sentinel2_reference_acquisition_manifest(
     token = access_token or os.environ.get("CDSE_ACCESS_TOKEN", "")
     user = username or os.environ.get("CDSE_USERNAME", "")
     secret = password or os.environ.get("CDSE_PASSWORD", "")
-    if not token and user and secret:
-        token = request_cdse_access_token(user, secret)
-    if not token:
+    if not token and not (user and secret):
         row.update(download_status="blocked_missing_cdse_credentials")
         return pd.DataFrame([row], columns=CDSE_ACQUISITION_COLUMNS)
 
+    def fresh_token() -> str:
+        # CDSE access tokens expire after minutes, so each attempt gets a new one when possible.
+        return request_cdse_access_token(user, secret) if user and secret else token
+
     target.parent.mkdir(parents=True, exist_ok=True)
-    download_cdse_product(download_url, target, token)
+    download_with_resume(
+        download_url, target, fresh_token,
+        expected_length=MAE_SAI_SENTINEL2_REFERENCE_CONTENT_LENGTH,
+        expected_md5=MAE_SAI_SENTINEL2_REFERENCE_PROVIDER_MD5,
+    )
     validate_existing_sentinel2_safe_zip(target, expected_product_name=product_name)
     row.update(sha256=_sha256(target), sha256_status="recorded", file_size_bytes=target.stat().st_size,
-               download_attempted=True, download_status="downloaded_outside_git")
+               download_attempted=True, download_status="downloaded_outside_git_provider_md5_verified")
     return pd.DataFrame([row], columns=CDSE_ACQUISITION_COLUMNS)
 
 
+def download_with_resume(
+    url: str,
+    target: Path,
+    get_token: Callable[[], str],
+    *,
+    expected_length: int,
+    expected_md5: str,
+    attempts: int = 8,
+    read_timeout_s: float = 60.0,
+    retry_wait_s: float = 5.0,
+    progress: Callable[[int, int], None] | None = None,
+) -> None:
+    """Download ``url`` to ``target``, resuming a partial file with HTTP Range.
+
+    Each attempt fetches a fresh token and asks for the bytes after the ones
+    already on disk. If the server ignores the range (HTTP 200), the file is
+    restarted. When the size reaches ``expected_length`` the whole file must
+    match the provider's MD5, otherwise it is deleted and an error raised.
+    """
+
+    report = progress or _print_progress
+    last_error: Exception | None = None
+    range_supported = True
+    for attempt in range(1, attempts + 1):
+        have = target.stat().st_size if target.exists() else 0
+        if have == expected_length:
+            break
+        if have > expected_length or (have and not range_supported):
+            target.unlink()
+            have = 0
+        headers = {"Authorization": f"Bearer {get_token()}", "User-Agent": "FloodGuard-cdse-download/0.2"}
+        if have:
+            headers["Range"] = f"bytes={have}-"
+        try:
+            with urlopen(Request(url, headers=headers), timeout=read_timeout_s) as response:  # noqa: S310 - official CDSE endpoint
+                resumed = have > 0 and getattr(response, "status", 200) == 206
+                with target.open("ab" if resumed else "wb") as handle:
+                    written = have if resumed else 0
+                    for chunk in iter(lambda: response.read(1024 * 1024), b""):
+                        handle.write(chunk)
+                        written += len(chunk)
+                        report(written, expected_length)
+        except HTTPError as error:
+            last_error = error
+            if "Range" in headers and error.code in (416, 501):
+                # The CDSE zipper does not implement byte ranges: restart the whole file.
+                range_supported = False
+                print(f"server refused resume (HTTP {error.code}); restarting the full download", flush=True)
+                continue
+            print(f"attempt {attempt}/{attempts} failed: HTTP {error.code}; retrying", flush=True)
+            time.sleep(retry_wait_s)
+            continue
+        except (TimeoutError, URLError, ConnectionError, http.client.HTTPException, OSError) as error:
+            last_error = error
+            print(f"attempt {attempt}/{attempts} interrupted at {target.stat().st_size if target.exists() else 0:,} bytes: {error}; retrying", flush=True)
+            time.sleep(retry_wait_s)
+            continue
+    size = target.stat().st_size if target.exists() else 0
+    if size != expected_length:
+        raise CDSEDownloadError(f"Download incomplete after {attempts} attempts ({size:,}/{expected_length:,} bytes): {last_error}")
+    actual_md5 = _digest(target, "md5")
+    if actual_md5 != expected_md5:
+        target.unlink()
+        raise CDSEDownloadError(f"Downloaded file MD5 {actual_md5} differs from provider MD5 {expected_md5}; file removed.")
+
+
+_last_reported = [0]
+
+
+def _print_progress(done: int, total: int) -> None:
+    step = 50 * 1024 * 1024
+    if done - _last_reported[0] >= step or done == total:
+        _last_reported[0] = done
+        print(f"{done / 1e6:,.0f} / {total / 1e6:,.0f} MB ({100 * done / total:.0f}%)", flush=True)
+
+
 def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
+    return _digest(path, "sha256")
+
+
+def _digest(path: Path, algorithm: str) -> str:
+    digest = hashlib.new(algorithm)
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)

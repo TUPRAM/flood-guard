@@ -417,7 +417,8 @@
 .modelTable { width: 100%; border-collapse: collapse; font-size: 13px; max-width: 1020px; }
 .modelTable th { text-align: left; padding: 8px 10px; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--landing-muted); font-weight: 500; background: #eef2f7; border-bottom: 1px solid #cbd5e1; }
 .modelTable td { padding: 9px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
-.modelTable td:nth-child(3),.modelTable td:nth-child(4) { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.modelTable td:nth-child(3),.modelTable td:nth-child(4),.modelTable td:nth-child(5) { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.modelTable td:nth-child(5) { color: var(--landing-muted); font-style: italic; }
 .modelTable tr[data-best="rtc"] td:nth-child(4) { font-weight: 700; color: var(--landing-teal); }
 .modelTable tr[data-best="grd"] td:nth-child(3) { font-weight: 700; color: var(--landing-teal); }
 .modelNote { margin-top: 10px !important; font-size: 11.5px; line-height: 1.6; color: var(--landing-muted); max-width: 76ch; }
@@ -432,6 +433,8 @@
 .gateList li[data-met="false"] .gateMark { color: #8a4a44; }
 .gateList strong { display: block; font-size: 13.5px; }
 .gateList small { font-size: 12px; color: var(--landing-muted); }
+.automatedAgreement { display: grid; gap: 8px; margin-top: 12px; max-width: 760px; }
+.automatedAgreement p { margin: 0 !important; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 3px; background: #ffffffb8; font-size: 12.5px; line-height: 1.6; }
 .gateVerdict { margin-top: 12px !important; padding: 11px 14px; border-left: 3px solid #9c6414; background: #f6ebdb; font-size: 13.5px; line-height: 1.55; max-width: 760px; }
 
 .outcomeCard { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 14px; padding: 16px 18px; border: 1px solid #cbd5e1; border-radius: 4px; background: #ffffffb8; }

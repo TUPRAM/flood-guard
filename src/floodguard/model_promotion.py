@@ -1843,10 +1843,12 @@ def _verify_seal(
 
 
 def _read_stable_bytes(path: Path, label: str) -> bytes:
+    from floodguard.file_snapshot import path_snapshot
+
     if path.is_symlink():
         raise ModelPromotionError(f"{label.capitalize()} must not be a symbolic link.")
     try:
-        before = path.stat()
+        before = path_snapshot(path)
         if not stat.S_ISREG(before.st_mode):
             raise ModelPromotionError(f"{label.capitalize()} is not a regular file.")
         with path.open("rb") as handle:
@@ -1854,7 +1856,7 @@ def _read_stable_bytes(path: Path, label: str) -> bytes:
             content = handle.read()
             descriptor = handle.fileno()
             during = os.fstat(descriptor)
-        after = path.stat()
+        after = path_snapshot(path)
     except OSError as exc:
         raise ModelPromotionError(f"Could not read {label} as a stable file.") from exc
     if (

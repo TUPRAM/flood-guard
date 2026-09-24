@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { collectEvidenceLibraryAssets } from "./evidence-library-assets.mjs";
 
 const out = resolve(process.cwd(), "out");
-const routeFiles = ["index.html", "public/index.html", "command/index.html", "studio/index.html"];
+const routeFiles = ["index.html", "public/index.html", "public-cases/index.html", "command/index.html", "command/cases/index.html", "command/archive/index.html", "studio/index.html", "studio/library/index.html", "studio/brief/index.html", "studio/archive/index.html"];
 const requiredPublicAssets = [
   "manifest.webmanifest",
   "sw.js",
@@ -19,6 +20,7 @@ const requiredPublicAssets = [
   "offline-demo/mae-sai/access-hotspots.json",
   "proposal-evidence-status.json",
   "offline-assets.json",
+  "evidence-library/catalog.json",
 ];
 
 for (const relative of [...routeFiles, ...requiredPublicAssets]) {
@@ -37,20 +39,22 @@ const routeExpectations = {
     /public-tab-prepare/i,
     /public-tab-sos/i,
   ],
+  "public-cases/index.html": [/Understand the study cases/i, /Candidate research evidence/i, /Non-operational/i],
   "command/index.html": [
-    /Planning intelligence|ข้อมูลเพื่อการวางแผน/i,
-    /Source time|เวลาข้อมูล/i,
-    /Confidence|ความเชื่อมั่น/i,
-    /DDPM|ปภ\./i,
+    /Planning case/i,
+    /Candidate.*low confidence/i,
+    /Loading case catalog/i,
   ],
+  "command/cases/index.html": [/Study-area decision brief/i, /Candidate research evidence/i, /Non-operational/i],
+  "command/archive/index.html": [/Historical Mae Sai research archive/i, /not accepted event-response priorities/i],
   "studio/index.html": [
-    /Validation &amp; evidence report|Validation & evidence report/i,
-    /Source time/i,
-    /Confidence/i,
-    /Technical verification/i,
-    /Observed-data validation/i,
-    /Operational authorization/i,
+    /Evidence status and decision boundary/i,
+    /verified checksum does not qualify/i,
+    /Loading case catalog/i,
   ],
+  "studio/library/index.html": [/Study-area evidence library/i, /Non-operational/i, /Candidate research evidence/i],
+  "studio/brief/index.html": [/Study-area decision brief/i, /Non-operational/i, /Candidate research evidence/i],
+  "studio/archive/index.html": [/Historical Mae Sai technical report/i, /separate evidence context/i],
 };
 
 for (const relative of routeFiles) {
@@ -87,7 +91,7 @@ if (
 ) {
   throw new Error("Service worker does not use a content-derived cache version");
 }
-for (const route of ["/", "/public/", "/command/", "/studio/"]) {
+for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/", ...collectEvidenceLibraryAssets(out)]) {
   if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Service worker does not precache ${route}`);
 }
 if (!serviceWorker.includes("requestUrl.origin !== self.location.origin")) {

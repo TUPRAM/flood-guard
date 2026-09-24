@@ -4,7 +4,7 @@ on:
   push:
     branches: [master, "codex/**", "system-fix"]
   pull_request:
-    branches: [master]
+    branches: [master, landing-page-revised]
 
 permissions:
   contents: read
@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -28,12 +30,19 @@ jobs:
         run: uv sync --locked --all-extras
       - name: Run root tests
         run: uv run pytest --junitxml=.tmp/proposal-evidence/root.xml
+      - name: Verify committed public evidence packages
+        run: >-
+          uv run python scripts/verify_evidence_library.py
+          --public-dir apps/web/public/evidence-library
+          --output-receipt "${RUNNER_TEMP}/export-integrity.json"
       - name: Upload core test receipt
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: core-junit
-          path: .tmp/proposal-evidence/root.xml
+          path: |
+            .tmp/proposal-evidence/root.xml
+            ${{ runner.temp }}/export-integrity.json
           if-no-files-found: error
           retention-days: 14
 
@@ -179,11 +188,24 @@ jobs:
       - name: Install Python 3.12
         run: uv python install 3.12
       - name: Audit root Python dependencies
-        run: uv run --with pip-audit pip-audit --strict || true
+        continue-on-error: true
+        run: |
+          uv export --locked --all-extras --no-emit-project --no-hashes --format requirements-txt --output-file root-audit-requirements.txt
+          uv tool run pip-audit --strict --no-deps --disable-pip -r root-audit-requirements.txt --format json --output root-python-audit.json
       - name: Audit API dependencies
-        run: >-
-          uv run --project services/api --with pip-audit pip-audit --strict || true
+        continue-on-error: true
+        run: |
+          uv export --project services/api --locked --no-emit-project --no-emit-package floodguard-thailand --no-hashes --format requirements-txt --output-file api-audit-requirements.txt
+          uv tool run pip-audit --strict --no-deps --disable-pip -r api-audit-requirements.txt --format json --output api-python-audit.json
       - name: Enable pinned pnpm
         run: corepack enable
       - name: Audit JavaScript dependencies
-        run: pnpm audit --audit-level moderate || true
+        continue-on-error: true
+        run: pnpm audit --json > javascript-audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-receipts
+          path: |
+            *-audit.json
+            *-audit-requirements.txt

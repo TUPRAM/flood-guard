@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function PublicPage() {
-  return <div id="main-content"><PublicExperience /></div>;
+  return <PublicExperience />;
 }

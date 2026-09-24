@@ -5,73 +5,11 @@ import { useEffect, useState } from "react";
 import { EvidenceNotice } from "@/components/evidence-notice";
 import { StatePill } from "@/components/state-pill";
 import type { Language } from "@/lib/types";
+import { parseGeoaiResearchBundle, type GeoaiResearchBundle } from "@/lib/geoai-research-bundle";
 
 import styles from "./geoai-real-panel.module.css";
 
-interface GeoaiComponent {
-  letter: string;
-  name: string;
-  book: string;
-  metric: string;
-  detail: string;
-  input: string;
-  output: string;
-}
-
-interface GeoaiExtraMethod {
-  letter: string;
-  name: string;
-  book: string;
-  metric: string;
-  detail: string;
-  image: string | null;
-  narratives?: Record<string, Record<string, string>>;
-}
-
-interface GeoaiSubdistrict {
-  id: string;
-  name: string;
-  flood_likelihood: number;
-  exposure: number;
-  fpps: number;
-  action: string;
-  confidence: string;
-  population?: number | null;
-  context_source?: string;
-  narrative_en?: string | null;
-  narrative_th?: string | null;
-}
-
-interface GeoaiRealBundle {
-  data_mode: string;
-  study_area: string;
-  generated_at: string;
-  sources: Record<string, string>;
-  headline: {
-    sar_flood_pct: number;
-    sar_pre: string;
-    sar_post: string;
-    unet_iou: number | null;
-    unet_f1: number | null;
-    unet_metric_role?: string;
-    susc_auc: number;
-    susc_auc_jrc: number;
-    buildings: number;
-    exposed: number;
-  };
-  components: GeoaiComponent[];
-  additional_methods?: GeoaiExtraMethod[];
-  subdistricts: GeoaiSubdistrict[];
-  limitations: string[];
-}
-
-const ACTION_LABEL: Record<string, { en: string; th: string }> = {
-  A: { en: "Protect lives", th: "ปกป้องชีวิต" },
-  B: { en: "Keep routes open", th: "รักษาเส้นทาง" },
-  C: { en: "Essential services", th: "บริการจำเป็น" },
-  D: { en: "Build resilience", th: "เสริมความพร้อม" },
-  E: { en: "Monitor & verify", th: "เฝ้าระวัง" },
-};
+const briefHref = "/studio/brief/?aoi=aoi-01_mae_sai_core&event=mae_sai_2024";
 
 export function GeoaiRealPanel({
   language = "en",
@@ -81,15 +19,17 @@ export function GeoaiRealPanel({
   variant?: "studio" | "command";
 }) {
   const th = language === "th";
-  const [bundle, setBundle] = useState<GeoaiRealBundle | null>(null);
+  const [bundle, setBundle] = useState<GeoaiResearchBundle | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (variant === "command") return;
     let active = true;
     fetch("/geoai/mae-sai-real.json")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((data: GeoaiRealBundle) => {
-        if (active) setBundle(data);
+      .then((data: unknown) => {
+        const checked = parseGeoaiResearchBundle(data);
+        if (active) setBundle(checked);
       })
       .catch(() => {
         if (active) setFailed(true);
@@ -97,14 +37,22 @@ export function GeoaiRealPanel({
     return () => {
       active = false;
     };
-  }, []);
+  }, [variant]);
 
-  if (failed) {
-    return null;
-  }
+  if (variant === "command") return <section className={`studio-section ${styles.panel}`} aria-label={th ? "ขอบเขตผลการวิจัยเดิม" : "Archived research scope"}>
+    <h2>{th ? "ผลวิจัยแม่สายที่เก็บไว้เพื่อเปรียบเทียบ" : "Archived Mae Sai research comparator"}</h2>
+    <p>{th ? "คะแนนและชั้นการดำเนินการในงานวิจัยเดิมยังไม่ผ่านการยอมรับเพื่อจัดอันดับรับมือเหตุการณ์ ดูสถานะหลักฐานและการทดลองปัจจุบันในบทสรุป" : "Earlier research scores and classes are not accepted event-response priorities. The current brief explains evidence status and intervention experiments."}</p>
+    <a href={briefHref}>{th ? "เปิดบทสรุปหลักฐานปัจจุบัน" : "Open the current evidence brief"}</a>
+    <a href="/studio/#geoai-real-title">{th ? "ตรวจสอบงานวิจัยเดิม" : "Inspect the research archive in Studio"}</a>
+  </section>;
 
+  return <GeoaiResearchContent bundle={bundle} th={th} failed={failed} />;
+}
+
+/** Display only a parsed archive, separately from the accepted decision brief. */
+export function GeoaiResearchContent({ bundle, th, failed = false }: { bundle: GeoaiResearchBundle | null; th: boolean; failed?: boolean }) {
   const h = bundle?.headline;
-  const ranked = bundle ? [...bundle.subdistricts].sort((a, b) => b.fpps - a.fpps) : [];
+  const rows = bundle?.subdistricts ?? [];
 
   return (
     <section
@@ -114,46 +62,40 @@ export function GeoaiRealPanel({
       <div className="section-heading">
         <div>
           <p className="eyebrow">
-            {variant === "command"
-              ? th
-                ? "ชั้นข้อมูล GeoAI (ข้อมูลจริง)"
-                : "GEOAI LAYER · REAL DATA"
-              : th
-                ? "หลักฐาน GeoAI จากข้อมูลจริง"
-                : "GEOAI · REAL OBSERVED DATA"}
+            {th ? "งานวิจัยเดิม · ใช้ตรวจสอบเท่านั้น" : "RESEARCH ARCHIVE · REPORT ONLY"}
           </p>
           <h2 id="geoai-real-title">
             {th
-              ? "ผลแบบจำลอง GeoAI จริง — แม่สาย ก.ย. 2567"
-              : "Real GeoAI results — Mae Sai, Sept 2024"}
+              ? "ผลวิจัยแม่สายที่เก็บไว้เพื่อเปรียบเทียบ"
+              : "Archived GeoAI comparator — Mae Sai"}
           </h2>
         </div>
         <div className={styles.pills}>
-          <StatePill tone={bundle ? "ready" : "info"}>
-            {bundle
-              ? th
-                ? "ข้อมูลจริง"
-                : "Real data"
-              : th
-                ? "กำลังโหลด"
-                : "Loading"}
+          <StatePill tone="caution">
+            {th ? "ยังไม่ยอมรับเพื่อการตัดสินใจ" : "Not accepted for decisions"}
           </StatePill>
         </div>
       </div>
 
       <EvidenceNotice
         tone="caution"
-        title={th ? "ขอบเขตของผลนี้" : "Scope of this result"}
+        title={th ? "แยกงานวิจัยเดิมออกจากข้อเสนอแนะปัจจุบัน" : "Earlier arithmetic is not an accepted action recommendation"}
       >
         {th
-          ? "คำนวณจากภาพดาวเทียมจริง (Sentinel-1/2, Copernicus DEM) และชั้นข้อมูลหน่วยงานไทยจริง สำหรับการวางแผนเท่านั้น ไม่ใช่คำเตือนภัยอย่างเป็นทางการ"
-          : "Computed from real satellite imagery (Sentinel-1/2, Copernicus DEM) and real Thai authoritative layers. For planning only — not an official warning."}
+          ? "ชุดวิจัยนี้ใช้ภาพและข้อมูลจริง แต่ผลประมาณการไม่ใช่ขอบเขตน้ำท่วมที่ผ่านการตรวจสอบ และไม่ได้รับอนุญาตให้ป้อนชั้นการตัดสินใจ คะแนนหรือชั้น D/E เดิมไม่เปลี่ยนสถานะ FPPS และจำนวนผู้ได้รับผลกระทบที่ยังไม่พร้อมในบทสรุปปัจจุบัน"
+          : "This archive uses real inputs, but its estimates are not validated flood observations and cannot feed the decision layer. Its earlier scores or D/E classes do not replace the unavailable accepted FPPS and flood-affected population in the current brief."}
       </EvidenceNotice>
+      <a href={briefHref}>{th ? "เปิดบทสรุปหลักฐานปัจจุบัน" : "Open the current evidence brief"}</a>
+      {failed ? <p role="status">{th ? "ไม่สามารถยืนยันชุดวิจัยเดิมได้ จึงไม่แสดงผลตัวเลข" : "The archive could not be verified. Its numerical results are unavailable."}</p> : !bundle ? <p role="status">{th ? "กำลังโหลดชุดวิจัยเดิม" : "Loading the research archive."}</p> : null}
 
+      {bundle && <details className={styles.more}>
+        <summary>{th ? "เปิดบันทึกวิธีและตัวเลขเดิม (ไม่ใช่ผลยอมรับสำหรับเหตุการณ์)" : "Inspect archived methods and arithmetic (not accepted event results)"}</summary>
+        <p>{th ? "วันที่ที่บันทึกในชุดวิจัย" : "Timestamp recorded in the archive"}: <time dateTime={bundle.generated_at}>{bundle.generated_at}</time> · {bundle.study_area}</p>
+        <p>{th ? "เวลาในบันทึกนี้ไม่ใช่เวลาตรวจสอบภาคสนามหรือหลักฐานว่าข้อมูลทั้งหมดมาจากช่วงเดียวกัน" : "This recorded timestamp does not establish field validation or a common observation period for all inputs."}</p>
       {h && (
         <div className={styles.chips}>
           <span className={styles.chip}>
-            <b>SAR flood extent</b> {h.sar_flood_pct}%
+            <b>{th ? "สัดส่วนตามการประมาณ SAR เดิม" : "Archived SAR candidate fraction"}</b> {h.sar_flood_pct}%
           </span>
           <span className={styles.chip}>
             <b>U-Net water IoU</b>{" "}
@@ -205,7 +147,7 @@ export function GeoaiRealPanel({
           {bundle.additional_methods && bundle.additional_methods.length > 0 && (
             <>
               <h3 className={styles.subhead}>
-                {th ? "วิธี AI เพิ่มเติม" : "Additional AI methods (baseline + roadmap, executed)"}
+                {th ? "บันทึกวิธีวิจัยเพิ่มเติม" : "Additional method records"}
               </h3>
               <div className={styles.extras}>
                 {bundle.additional_methods.map((x) => (
@@ -241,38 +183,29 @@ export function GeoaiRealPanel({
 
           <h3 className={styles.subhead}>
             {th
-              ? "ลำดับความสำคัญรายตำบล (AI ขับเคลื่อน 55% ของคะแนน)"
-              : "Sub-district priority — AI drives 55% of the score"}
+              ? "ตัวเลขรายตำบลจากงานวิจัยเดิม · ไม่ใช่ลำดับที่ยอมรับ"
+              : "Archived subdistrict arithmetic · no accepted ranking"}
           </h3>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
                 <tr>
                   <th>{th ? "ตำบล" : "Sub-district"}</th>
-                  <th>{th ? "โอกาสน้ำท่วม" : "Flood lik."}</th>
-                  <th>{th ? "ความเสี่ยง" : "Exposure"}</th>
-                  <th>FPPS</th>
-                  <th>{th ? "การกระทำ" : "Action"}</th>
-                  <th>{th ? "ความเชื่อมั่น" : "Confidence"}</th>
+                  <th>{th ? "องค์ประกอบน้ำท่วมเดิม" : "Archived flood component"}</th>
+                  <th>{th ? "องค์ประกอบการเปิดรับเดิม" : "Archived exposure component"}</th>
+                  <th>{th ? "คะแนนเดิม" : "Archived score"}</th>
+                  <th>{th ? "ชั้นเดิม" : "Archived class"}</th>
+                  <th>{th ? "ความเชื่อมั่นที่บันทึกไว้" : "Recorded confidence"}</th>
                 </tr>
               </thead>
               <tbody>
-                {ranked.map((s) => (
+                {rows.map((s) => (
                   <tr key={s.id}>
                     <td>{s.name}</td>
                     <td>{s.flood_likelihood}</td>
                     <td>{s.exposure}</td>
-                    <td className={styles.fpps}>{s.fpps}</td>
-                    <td>
-                      <span
-                        className={`${styles.action} ${styles[`a${s.action}`]}`}
-                        title={
-                          th ? ACTION_LABEL[s.action]?.th : ACTION_LABEL[s.action]?.en
-                        }
-                      >
-                        {s.action}
-                      </span>
-                    </td>
+                    <td>{s.fpps}</td>
+                    <td>{s.action}</td>
                     <td className={styles.conf}>{s.confidence}</td>
                   </tr>
                 ))}
@@ -297,6 +230,7 @@ export function GeoaiRealPanel({
           </details>
         </>
       )}
+      </details>}
     </section>
   );
 }

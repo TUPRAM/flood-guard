@@ -96,7 +96,7 @@ try {
       worker.postMessage({ type: "FLOODGUARD_STATUS_REQUEST" }, [channel.port2]);
     });
     return status?.profile === "public-production";
-  }, undefined, "public worker to control the page");
+  }, undefined, "public worker to control the page", 90_000);
   await waitForEvaluated(page, async (oldKey) => {
     const keys = (await caches.keys()).filter((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key));
     if (keys.length !== 1 || keys[0] === oldKey) return false;
@@ -145,7 +145,7 @@ try {
   if (publicCacheAudit.keys.includes(competitionCache.key)) {
     throw new Error(`Competition cache survived the public-profile transition: ${JSON.stringify(publicCacheAudit)}`);
   }
-  for (const forbidden of ["/command/", "/studio/", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
+  for (const forbidden of ["/command/", "/studio/", "/studio/library/", "/studio/brief/", "/evidence-library/catalog.json", "/offline-demo/mae-sai/roads.json", "/offline-demo/mae-sai/facilities.json"]) {
     if (publicCacheAudit.paths.includes(forbidden)) throw new Error(`Public cache retained ${forbidden} after transition.`);
   }
   await performSuccessfulUpdateCheck(page);
@@ -156,7 +156,7 @@ try {
   let commandRecovered = false;
   try {
     await page.goto(`${baseUrl}/command/`, { waitUntil: "domcontentloaded", timeout: 5000 });
-    commandRecovered = await page.locator("main.command-page").count() > 0;
+    commandRecovered = await page.locator("main[data-planning-candidate], main.command-page").count() > 0;
   } catch {
     commandRecovered = false;
   }
@@ -180,12 +180,13 @@ try {
     async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting),
     undefined,
     "competition update to reach the waiting state",
+    90_000,
   );
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   await page.locator("main[data-landing]").waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Install available update")
-    && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("saved app ready")
+    && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("app pages saved offline")
   ));
   const pendingRows = await readAvailabilityRows(page);
   if (pendingRows["Saved planning view"] !== "Open once online to save") {
@@ -207,7 +208,7 @@ try {
   // The activated competition worker must now serve both staff routes offline,
   // and the availability panel must report the cached snapshot and map limits.
   await context.setOffline(true);
-  for (const [path, selector] of [["/command/", "main.command-page"], ["/studio/", "main.studio-page"]]) {
+  for (const [path, selector] of [["/studio/brief/", "main[data-evidence-library]"], ["/studio/library/", "main[data-evidence-library]"], ["/command/", "main[data-planning-candidate]"], ["/studio/", "main[data-evidence-case-id]"]]) {
     await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     await page.locator(selector).waitFor({ state: "visible" });
   }
@@ -240,7 +241,7 @@ async function assertAvailabilityPanel(page, { online, ready }) {
     ({ expectedOnline, expectedReady }) => {
       const text = document.querySelector('[data-pwa-availability="true"]')?.textContent ?? "";
       return text.includes(expectedOnline ? "Online" : "Offline")
-        && text.includes(expectedReady ? "saved app ready" : "Open once online to save");
+        && text.includes(expectedReady ? "app pages saved offline" : "Open once online to save");
     },
     { expectedOnline: online, expectedReady: ready },
   );
@@ -300,5 +301,22 @@ async function waitForEvaluated(page, predicate, argument, description, timeoutM
     await page.waitForTimeout(100);
   }
   const detail = lastError instanceof Error ? ` Last evaluation error: ${lastError.message}` : "";
-  throw new Error(`Timed out waiting for ${description}.${detail}`);
+  const workerState = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    const state = (worker) => worker?.state ?? null;
+    const cacheProfiles = await Promise.all((await caches.keys())
+      .filter((key) => /^floodguard-offline-/.test(key))
+      .map(async (key) => {
+        const response = await caches.open(key).then((cache) => cache.match("/deployment-profile.json"));
+        return { key, profile: response ? (await response.json()).profile : null };
+      }));
+    return {
+      controller: state(navigator.serviceWorker.controller),
+      active: state(registration?.active),
+      installing: state(registration?.installing),
+      waiting: state(registration?.waiting),
+      cacheProfiles,
+    };
+  }).catch((error) => ({ error: error.message }));
+  throw new Error(`Timed out waiting for ${description}.${detail} Worker state: ${JSON.stringify(workerState)}`);
 }

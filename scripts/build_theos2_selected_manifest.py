@@ -11,7 +11,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from floodguard.theos2_readiness import (  # noqa: E402
+from floodguard.theos2_readiness import (
     DEFAULT_SELECTED_THEOS2_FILES,
     write_theos2_selected_file_manifest,
 )
@@ -50,7 +50,22 @@ def main() -> None:
             "Defaults to the curated disaster-context candidates."
         ),
     )
+    parser.add_argument(
+        "--delivery-metadata",
+        type=Path,
+        help="Use the strict written-terms delivery intake, separate from legacy sample inventory.",
+    )
+    parser.add_argument(
+        "--aoi-dir", type=Path, default=REPO_ROOT / "resources/aoi/upload"
+    )
     args = parser.parse_args()
+    if args.delivery_metadata:
+        from floodguard.theos2_delivery import write_delivery_manifest
+
+        print(
+            f"Wrote {write_delivery_manifest(args.input_dir, args.delivery_metadata, args.aoi_dir, args.output)}"
+        )
+        return
 
     selected_files = args.selected_file or list(DEFAULT_SELECTED_THEOS2_FILES)
     written = write_theos2_selected_file_manifest(

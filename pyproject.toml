@@ -32,6 +32,11 @@ geo = [
 theos2 = [
   "rasterio>=1.4"
 ]
+evidence = [
+  "rasterio>=1.4",
+  "Pillow>=10",
+  "requests>=2.31"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

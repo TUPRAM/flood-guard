@@ -1,0 +1,277 @@
+{
+  "schema": "floodguard.automated_optical_reference.v1",
+  "evidence_tier": "automated_optical_reference",
+  "reference_kind": "automated_optical_reference",
+  "event_id": "TH-MAESAI-2024-09",
+  "study_area_id": "aoi-01_mae_sai_core",
+  "source_timestamp": "2024-09-15T03:45:29Z",
+  "processed_utc": "2026-09-24T10:09:58Z",
+  "confidence": "limited: two automated optical methods with cloud, turbidity, date-gap, and model-resolution uncertainty",
+  "assumptions": [
+    "Element84 COG reflectance follows the STAC scale 0.0001 and offset -0.1, clipped to unit reflectance for DN > 0.",
+    "The 5 September scene is dry context for permanent water, not event-time flood truth.",
+    "All model vector and OSM inputs are disabled; the pinned model still has its published training lineage."
+  ],
+  "preregistration_path": "docs/proposal_execution/automated_track/preregistration_v1.json",
+  "preregistration_sha256": "bc5c6e9d2237a6423655e44790d0455131990ba954819265101f722d518cf543",
+  "preregistration_commit": "77833df9d595429c1cf903c9a841e86aa8668b79",
+  "input_manifest_path": "outputs/earth_search_mae_sai_sentinel2_reference_assets.csv",
+  "input_manifest_sha256": "7c55665f5d70958e0b03c9be8eb51ee7a0ad944326271240f893bd50a8741bf8",
+  "input_assets": [
+    {
+      "scene_role": "dry",
+      "item_id": "S2B_47QNC_20240905_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+      "asset": "blue",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240905_0_L2A/B02.tif",
+      "file_size_bytes": 218096139,
+      "sha256": "5ef3970df5afa0c0722a4a2e55e8469b00fd403fbbc9d0b52a86e6e32cd59098",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "dry",
+      "item_id": "S2B_47QNC_20240905_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+      "asset": "green",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240905_0_L2A/B03.tif",
+      "file_size_bytes": 224435909,
+      "sha256": "bbfead49c36db4cc569ec71504ddd103ed28513c87e354068fa823fa8c1402d1",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "dry",
+      "item_id": "S2B_47QNC_20240905_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+      "asset": "nir",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240905_0_L2A/B08.tif",
+      "file_size_bytes": 242530994,
+      "sha256": "b432a1802bff06a1ea5215f8b0bf645e2029067b96f6e0f7e8ff9b35a44d31aa",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "dry",
+      "item_id": "S2B_47QNC_20240905_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+      "asset": "nir08",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240905_0_L2A/B8A.tif",
+      "file_size_bytes": 63982294,
+      "sha256": "037fc84a88d92571e9df42b4dd85e565fe2c6fecc97539e71a809e79feb5165a",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "dry",
+      "item_id": "S2B_47QNC_20240905_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+      "asset": "red",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240905_0_L2A/B04.tif",
+      "file_size_bytes": 220785832,
+      "sha256": "1a4515d50ab222e6f77b936e8285455ea249701e4563a1f3eadcd112dfd04af2",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "dry",
+      "item_id": "S2B_47QNC_20240905_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+      "asset": "scl",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240905_0_L2A/SCL.tif",
+      "file_size_bytes": 3345372,
+      "sha256": "c33c2de5e59fbb9768776b7449f9193c3843aae51460a3085cfc5cf4c152de3e",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "dry",
+      "item_id": "S2B_47QNC_20240905_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+      "asset": "swir16",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240905_0_L2A/B11.tif",
+      "file_size_bytes": 61345276,
+      "sha256": "24d39dba72cf3f6cd700af6a2506d3c4893e31f52681fe38655be3c4b2c0747f",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "dry",
+      "item_id": "S2B_47QNC_20240905_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+      "asset": "swir22",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240905_0_L2A/B12.tif",
+      "file_size_bytes": 60355683,
+      "sha256": "f47ff987ed719c2838301f8c922ed3badd48b6753c2a3d9b80eaa30b033f59b2",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "event",
+      "item_id": "S2B_47QNC_20240915_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+      "asset": "blue",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240915_0_L2A/B02.tif",
+      "file_size_bytes": 220036077,
+      "sha256": "aa058cecc7643f0384ef363d131ea59c3ba6f415e9e1ab7d6d5ec8824d48a7a8",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "event",
+      "item_id": "S2B_47QNC_20240915_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+      "asset": "green",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240915_0_L2A/B03.tif",
+      "file_size_bytes": 222041166,
+      "sha256": "36e6eae2c783f37842d3cc3c8cee5be5764b275b186c8adfbf109f21aaec8650",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "event",
+      "item_id": "S2B_47QNC_20240915_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+      "asset": "nir",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240915_0_L2A/B08.tif",
+      "file_size_bytes": 233985883,
+      "sha256": "39c3a31ddf87853e9425a9d4ace82af117d35bc77e42e0397be6c874c894a837",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "event",
+      "item_id": "S2B_47QNC_20240915_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+      "asset": "nir08",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240915_0_L2A/B8A.tif",
+      "file_size_bytes": 63643409,
+      "sha256": "5e880fb8787fed3e5e6362b4e8a4ae79eb8037b55f1495e8b8d8629d6fc8036c",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "event",
+      "item_id": "S2B_47QNC_20240915_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+      "asset": "red",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240915_0_L2A/B04.tif",
+      "file_size_bytes": 221362768,
+      "sha256": "dbe241cefd75a7e94f9259aeffe3b8d9b471a0c02b115db09ac38d27a0ac29d8",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "event",
+      "item_id": "S2B_47QNC_20240915_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+      "asset": "scl",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240915_0_L2A/SCL.tif",
+      "file_size_bytes": 3465002,
+      "sha256": "ce119a84f064e8e712ccfc450721350ab91852a6962ae8b8bf83a8fe05b3366f",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "event",
+      "item_id": "S2B_47QNC_20240915_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+      "asset": "swir16",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240915_0_L2A/B11.tif",
+      "file_size_bytes": 61284543,
+      "sha256": "67929ca9285acf1254578f9d550aa9907abde160b7b5c625a434184708a31da2",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    },
+    {
+      "scene_role": "event",
+      "item_id": "S2B_47QNC_20240915_0_L2A",
+      "product_uri": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+      "asset": "swir22",
+      "asset_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/47/Q/NC/2024/9/S2B_47QNC_20240915_0_L2A/B12.tif",
+      "file_size_bytes": 60537029,
+      "sha256": "67a786470b1ba30e01d336539a01f165baa90c0f8fd8329f05f1a3c0108c4e03",
+      "source_edition": "element84_cog_of_l2a",
+      "original_safe_sha256": "not_recorded"
+    }
+  ],
+  "grid": {
+    "crs": "EPSG:32647",
+    "pixel_size_m": 10,
+    "transform": [
+      10.0,
+      0.0,
+      587440.0,
+      0.0,
+      -10.0,
+      2262270.0
+    ],
+    "width": 1109,
+    "height": 957,
+    "aoi_sha256": "d837a1b058c86739150bb6b844f9dcfdedf32feb83be99194e855430d4a613c2"
+  },
+  "label_raster_path_hint": "<external_data_workspace>/proposal_execution/automated_track/automated_optical_reference_v1.tif",
+  "label_raster_sha256": "759b8cfab1496ef9d64750777217ac1ec7bf9b353c20ef0285443ce9397eaebc",
+  "method_raster_sha256": {
+    "event_a": "29b4d062628d5a06757cba74f34806c382c2820c21193d6275f71408c78ecdf0",
+    "event_b": "120c08a5e212b03bd5376f08cdc2a6792c33b1a0ad5a75b092fe84117ecf45f1",
+    "dry_a": "c934b04380a4f353531e7f050a2bd9376ee63f427afaf65d27a5ce2520d28a89",
+    "dry_b": "7aeab45212584b4c2e99b9e458cf62c0b8974d4a080d5b40489843a7f374e56e"
+  },
+  "quicklook_path": "outputs/automated_optical_reference_v1.png",
+  "quicklook_sha256": "c6725532c4487d0273e3d1cef7b3fb99b1108a143287cb307f76da5d81c9812b",
+  "class_counts": {
+    "0": 710219,
+    "1": 179,
+    "2": 5,
+    "3": 9620,
+    "4": 327297
+  },
+  "aoi_cell_count": 1047320,
+  "ab_agreement": {
+    "evidence_tier": "automated_cross_review",
+    "water_dice": 0.06950871320271734,
+    "cohen_kappa": 0.06325197981929327,
+    "valid_pair_count": 720023,
+    "ignored_pair_count": 0,
+    "water_count_a": 3909,
+    "water_count_b": 6248,
+    "passes_limits": false,
+    "human_reviewed": false
+  },
+  "method_versions": {
+    "A": {
+      "id": "omniwatermask_optical_v1",
+      "geoai_py": "0.41.1",
+      "omniwatermask": "0.5.0",
+      "model_weights_file": "PM_model_1.5.38_s1s2_water_flair_convnextv2_base_PT.pth_weights.pth",
+      "model_weights_sha256": "3887c1ff2914459207adf195e6c5b2b6a85bb68876e75323fbec07dda8daf4ce",
+      "model_weights_license": "MIT",
+      "vector_inputs": "disabled",
+      "max_input_dimension_pixels": 512,
+      "requested_patch_size_pixels": 512,
+      "internal_patch_size_adaptation": "observed_on_both_scenes"
+    },
+    "B": {
+      "id": "fixed_multi_index_spectral_v1",
+      "mndwi_gt": 0.1,
+      "awei_sh_gt": 0.0,
+      "ndvi_lt": 0.2
+    }
+  },
+  "human_reviewed": false,
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "accepted_observation": false,
+  "limitations": [
+    "The 15 September optical scene precedes the SAR post-acquisition by 19 h 31 min; flood evolution or recession may change the extent.",
+    "Turbid floodwater is often missed by spectral rules. The repository Component ★ finding found MNDWI > 0 flagged 8.7× the reference area on a dry-season scene.",
+    "OmniWaterMask is pretrained and its published training lineage includes S1S2-Water, but this run ingests only Sentinel-2 optical bands; neither method establishes independent human flood truth.",
+    "OmniWaterMask inference uses a maximum 512-pixel input dimension and nearest-neighbor upsampling to the 10 m grid, so its effective detail is coarser.",
+    "Cloud, shadow, invalid reflectance, and ambiguous dry context are excluded or marked uncertain; only codes 0 and 1 are eligible for later evaluation.",
+    "The two optical methods failed at least one pre-registered cross-review agreement limit; this result was retained without threshold tuning.",
+    "The pinned model package may internally reduce the requested 512-pixel patch size when large masked areas are present; both scene runs emitted this adjustment warning."
+  ],
+  "receipt_sha256": "4c27509001ca097b4da631b9026eabfae66789789ade324e59dcc97e50415d93"
+}

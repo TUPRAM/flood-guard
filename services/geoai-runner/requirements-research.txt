@@ -44,4 +44,6 @@ numpy>=2.3,<2.4
 jsonschema==4.25.1
 rasterio==1.4.4
 geoai-py==0.41.1
-omniwatermask>=0.5
+omniwatermask==0.5.0
+# Its patch-size adjustment is recorded in automated optical v2 receipts.
+omnicloudmask==1.7.1

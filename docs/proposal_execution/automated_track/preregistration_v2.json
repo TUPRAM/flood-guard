@@ -1,0 +1,145 @@
+{
+  "schema": "floodguard.automated_optical_preregistration.v2",
+  "status": "preregistered",
+  "preregistered_at_utc": "2026-09-24T12:34:11Z",
+  "preregistered_by": "automated agent (Codex)",
+  "purpose": "Prospective test of native-grid tiled optical model inference and a physically motivated quality mask. Mae Sai v1 is previously inspected development evidence; Chaiyaphum is a separate untouched event holdout.",
+  "source_edition": "element84_cog_of_sentinel2_l2a",
+  "source_metadata_rule": "Pin each Earth Search STAC item ID and s2:product_uri; record each COG URL, SHA-256, byte count, and raster:bands scale and offset. Convert valid DN with that asset's recorded scale and offset, then clip reflectance to [0,1]. Never reuse the Mae Sai offset for another processing edition without checking its metadata.",
+  "development": {
+    "event_id": "TH-MAESAI-2024-09",
+    "event_item_id": "S2B_47QNC_20240915_0_L2A",
+    "dry_item_id": "S2B_47QNC_20240905_0_L2A",
+    "aoi_path": "resources/aoi/aoi-01_mae_sai_core.geojson",
+    "aoi_sha256": "d837a1b058c86739150bb6b844f9dcfdedf32feb83be99194e855430d4a613c2",
+    "asset_manifest_path": "outputs/earth_search_mae_sai_sentinel2_reference_assets.csv",
+    "asset_manifest_sha256": "7c55665f5d70958e0b03c9be8eb51ee7a0ad944326271240f893bd50a8741bf8",
+    "v1_reference_receipt_sha256": "4c27509001ca097b4da631b9026eabfae66789789ade324e59dcc97e50415d93",
+    "interpretation": "Already inspected development episode only; its v1 final holdout is consumed and will not be rerun. The v2 method may be diagnosed here, but this is not a fresh confirmation."
+  },
+  "final_holdout": {
+    "event_id": "TH-CHAIYAPHUM-2021-09",
+    "event_item_id": "S2B_47PRT_20210928_1_L2A",
+    "event_product_uri": "S2B_MSIL2A_20210928T033539_N0500_R061_T47PRT_20230125T034127.SAFE",
+    "event_sensing_utc": "2021-09-28T03:53:49.285Z",
+    "dry_item_id": "S2B_47PRT_20210918_1_L2A",
+    "dry_product_uri": "S2B_MSIL2A_20210918T033529_N0500_R061_T47PRT_20230120T031526.SAFE",
+    "dry_sensing_utc": "2021-09-18T03:53:46.794Z",
+    "aoi_bbox_wgs84": [
+      101.99,
+      15.77,
+      102.08,
+      15.85
+    ],
+    "aoi_rasterization": "pixel_center_all_touched_false",
+    "prior_screen": "Catalog metadata and SCL clear fraction only; no v2 method output or reference comparison inspected before this plan.",
+    "dry_context_failure_rule": "If the 18 September scene is clouded, already flooded, or otherwise unsuitable for permanent-water distinction, mark those pixels uncertain and report the limitation; do not substitute a new dry scene after seeing the event result.",
+    "single_use_marker": "<external_data_workspace>/proposal_execution/automated_track/v2/automated_optical_holdout_consumption.json"
+  },
+  "grid": {
+    "crs": "EPSG:32647",
+    "pixel_size_m": 10,
+    "origin": "event blue 10 m COG affine origin",
+    "ten_m_band_resampling": "nearest",
+    "twenty_m_reflectance_resampling": "bilinear",
+    "scl_resampling": "nearest"
+  },
+  "methods": {
+    "A": {
+      "id": "omniwatermask_native_tiled_v2",
+      "family": "pretrained_optical_water_model",
+      "geoai_py_version": "0.41.1",
+      "omniwatermask_version": "0.5.0",
+      "model_version": "OmniWaterMask_0.5.0",
+      "model_weights_sha256": "3887c1ff2914459207adf195e6c5b2b6a85bb68876e75323fbec07dda8daf4ce",
+      "input_stack": [
+        "blue",
+        "green",
+        "red",
+        "nir",
+        "swir16",
+        "swir22"
+      ],
+      "band_order_red_green_blue_nir": [
+        3,
+        2,
+        1,
+        4
+      ],
+      "input_resolution_m": 10,
+      "pre_inference_downsampling": "none",
+      "patch_size_pixels": 512,
+      "overlap_size_pixels": 128,
+      "batch_size": 1,
+      "device": "cpu",
+      "dtype": "float32",
+      "no_data_value": -9999,
+      "use_osm_water": false,
+      "use_osm_building": false,
+      "use_osm_roads": false,
+      "use_cache": false,
+      "output_water_rule": "output raster band 1 > 0",
+      "threshold_policy": "Use pinned package defaults internally; no agent-selected model threshold."
+    },
+    "B": {
+      "id": "fixed_multi_index_spectral_v1_reused_in_v2",
+      "family": "fixed_physical_spectral_rule",
+      "mndwi_gt": 0.1,
+      "awei_sh_gt": 0.0,
+      "ndvi_lt": 0.2,
+      "combination": "mndwi_gt AND awei_sh_gt AND ndvi_lt"
+    }
+  },
+  "quality_mask": {
+    "scl_codes": [
+      0,
+      1,
+      2,
+      3,
+      8,
+      9,
+      10
+    ],
+    "buffer_m": 20,
+    "buffer_distance": "Euclidean distance between 10 m pixel centers, inclusive",
+    "apply_to": [
+      "event",
+      "dry_context"
+    ],
+    "invalid_dn_rule": "DN <= 0 or nonfinite reflectance is unobservable"
+  },
+  "quality_mask_justification": "SCL 1 identifies saturated/defective pixels and SCL 2 cast shadows, both unsuitable for an unqualified optical water comparison; retain the v1 20 m buffer and report coverage so masking cannot hide a small clear subset.",
+  "permanent_water_rule": "For event water agreed by A and B, code 2 only if both methods also say water on observable dry-context cells; code 1 only if both say dry there; otherwise code 3 uncertain.",
+  "label_codes": {
+    "dry": 0,
+    "temporary_water": 1,
+    "permanent_water": 2,
+    "method_disagreement_or_indeterminate_dry_context": 3,
+    "event_unobservable": 4,
+    "outside_aoi": 255
+  },
+  "cross_review_limits": {
+    "min_water_dice": 0.6,
+    "min_cohen_kappa": 0.5,
+    "min_event_observable_fraction_of_aoi": 0.5
+  },
+  "cross_review_limit_justifications": {
+    "min_water_dice": "Keep the v1 substantial-overlap requirement; a low-overlap pair cannot support consensus water mapping.",
+    "min_cohen_kappa": "Keep the v1 chance-adjusted agreement requirement despite a large shared dry background.",
+    "min_event_observable_fraction_of_aoi": "Prevent agreement on a small clear remnant from being called a representative event result."
+  },
+  "analysis_order": [
+    "Verify exact optical inputs and metadata before inference.",
+    "Run and record the already-inspected Mae Sai development episode with these exact methods.",
+    "Verify the holdout acquisition and method runtime without inspecting the Chaiyaphum water outputs.",
+    "Consume one exclusive local marker, run the Chaiyaphum holdout once, and record its result whether limits pass or fail."
+  ],
+  "independent_context_rule": "UNOSAT maps and Sentinel-2 SCL can guide source plausibility checks; neither is pixelwise ground truth or human qualification for this protocol.",
+  "metric_interpretation": "Agreement with an automated optical map, not accuracy.",
+  "human_reviewed": false,
+  "accepted_observation": false,
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "preregistration_sha256": "9067fa37f817c283e908472595dba7fa9e16b36ae8101dce6f887e1ffc51e263"
+}

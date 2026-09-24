@@ -5,7 +5,15 @@ submission. It is intentionally fail-closed: the release build must not
 produce a final PDF while owner-supplied identity, contact, portal, demo, or
 final-verification evidence is missing.
 
-## Current release state
+**Finals presentation:** this directory preserves the proposal-stage release and
+its original metadata/binaries. It is not the current evidence-demo claim source.
+Use [the Mae Sai finals guide](../../mae_sai_finals_guide.md) and
+[/studio/brief/](../../../apps/web/src/app/studio/brief/page.tsx) for the current
+demonstration. Hat Yai scenario packages and conditional capacity allocation now
+exist; this does not establish independent event validation or actual shelter
+availability. Current organizer rules and owner fields remain separate checks.
+
+## Retained proposal release state
 
 - Dataset mode: `fixture_demo` and `candidate` evidence only.
 - Operational status: `non_operational`.

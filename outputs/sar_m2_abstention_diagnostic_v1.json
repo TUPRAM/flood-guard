@@ -1,0 +1,68 @@
+{
+  "aoi_counts": {
+    "aoi_cells": 1047320,
+    "classified_cells": 0,
+    "histogram_abstained_cells": 312625,
+    "outside_source_footprint_cells": 604672,
+    "permanent_water_abstained_cells": 0,
+    "terrain_abstained_cells": 121176,
+    "unsupported_inside_source_footprint_cells": 8847
+  },
+  "aoi_sha256": "d837a1b058c86739150bb6b844f9dcfdedf32feb83be99194e855430d4a613c2",
+  "can_feed_decision_layer": false,
+  "candidate_non_abstained_cells": 0,
+  "candidate_rethresholded": false,
+  "human_reviewed": false,
+  "limitations": [
+    "Histogram QC failure explains abstention, not whether flood was present.",
+    "The AOI counts describe abstention reasons, not agreement or accuracy against optical labels.",
+    "The optical-to-SAR time gap permits scene change; it does not prove recession or progression."
+  ],
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "optical_observed_at_utc": "2024-09-15T03:45:29Z",
+  "optical_to_sar_seconds": 70232.67569,
+  "pilot_grid_counts": {
+    "candidate_cells": 0,
+    "classified_non_candidate_cells": 0,
+    "histogram_abstained_cells": 936386,
+    "permanent_water_abstained_cells": 25,
+    "terrain_abstained_cells": 671955,
+    "total_cells": 1638400,
+    "unsupported_cells": 30034
+  },
+  "receipt_sha256": "1db539d41f0ed12c4a4233ae0fbd152f15961f50e2f4aa770d18780cf20f3f6e",
+  "reference_label_values_accessed": false,
+  "sar_post_observed_at_utc": "2024-09-15T23:16:01.675690Z",
+  "schema": "floodguard.sar_m2_abstention_diagnostic.v1",
+  "source_candidate_mask_sha256": "a6482a70fbf959d47d612a94e4250942e831efe4bf32ae90cd7920509c293593",
+  "source_receipt_self_hash_verified": true,
+  "source_receipt_sha256": "7814cfb5f936952a581ab72c40bde7ab14f638715834f39974dddfa81c5394fe",
+  "source_reference_receipt_sha256": "87dc529fa4aee0c71793bdcd3900caac783d7828fde55f817dcfa5e3361baf98",
+  "target_grid_metadata": {
+    "crs": "EPSG:32647",
+    "height": 957,
+    "transform": [
+      10.0,
+      0.0,
+      587440.0,
+      0.0,
+      -10.0,
+      2262270.0
+    ],
+    "width": 1109
+  },
+  "window_summary": {
+    "between_variance_fraction_max": 0.651191,
+    "between_variance_fraction_min": 0.598414,
+    "frozen_min_between_variance_fraction": 0.72,
+    "qualified_windows": 0,
+    "reason_counts": {
+      "unimodal_or_unstable_histogram": 81
+    },
+    "sole_variance_veto_windows": 81,
+    "total_windows": 81,
+    "valid_samples_max": 65497,
+    "valid_samples_min": 14771
+  }
+}

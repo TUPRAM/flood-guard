@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { LandingPage } from "../components/landing/landing-page";
+import { landingGateStatus } from "../lib/landing/gate-status";
 
 describe("LandingPage", () => {
   it("exports the complete story and direct workspace entry without JavaScript", () => {
@@ -57,5 +58,30 @@ describe("LandingPage", () => {
     expect(html).toContain("Scenario comparison is unavailable");
     expect(html).toContain("Not a September flood mask");
     expect(html).not.toMatch(/href="\/public\/(prepare|#prepare)/);
+  });
+
+  it("labels the automated evidence track and its hold-out scores honestly", () => {
+    const html = renderToStaticMarkup(<LandingPage />);
+    for (const label of [
+      "Copernicus reuse terms recorded",
+      "Automated optical reference (not human-qualified)",
+      "Two-method automated cross-review (no human review)",
+      "Pre-registered hold-out evaluation (automated)",
+      "Human qualification and blind review were not performed.",
+    ]) expect(html).toContain(label);
+    expect(html).toContain("Any final-holdout score is agreement with an automated optical map, not accuracy.");
+    expect(html).toContain("Contains modified Copernicus Sentinel data 2024.");
+    for (const id of ["automated_optical_reference", "automated_cross_review", "preregistered_holdout_evaluation"]) {
+      expect(html).toContain(`data-criterion-id="${id}"`);
+    }
+    expect(html).not.toContain("A four-person blind-reviewed, adjudicated label release revalidates.");
+    if (landingGateStatus.criteria.preregistered_holdout_evaluation.met) {
+      expect(html).toContain('data-automated-score="mae_sai_m2_gamma0_10m_otsu_candidate"');
+      expect(html).toContain('data-automated-score="mae_sai_20m_amplitude_comparator"');
+      expect(html.match(/agreement with an automated optical map, not accuracy/g)).toHaveLength(3);
+    } else {
+      expect(html).toContain("Final-holdout agreement scores are not available from a verified result.");
+      expect(html).not.toContain("data-automated-score=");
+    }
   });
 });

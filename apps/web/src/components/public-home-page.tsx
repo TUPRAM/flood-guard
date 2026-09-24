@@ -35,6 +35,9 @@ interface PublicHomePageProps {
   onSelectArea: (areaId: string) => void;
   location?: PublicMapLocation;
   onLocationChange: (location: PublicMapLocation) => void;
+  onNavigatePrepare: () => void;
+  onNavigateSos: () => void;
+  researchHref?: string;
 }
 
 const EMPTY_ROADS: FeatureCollection = {
@@ -144,6 +147,9 @@ export function PublicHomePage({
   onSelectArea,
   location,
   onLocationChange,
+  onNavigatePrepare,
+  onNavigateSos,
+  researchHref,
 }: PublicHomePageProps) {
   const th = language === "th";
   const [searchDraft, setSearchDraft] = useState(
@@ -164,11 +170,10 @@ export function PublicHomePage({
   const hazardButtonRef = useRef<HTMLButtonElement>(null);
   const hazardCloseRef = useRef<HTMLButtonElement>(null);
   const hazardPanelRef = useRef<HTMLElement>(null);
-  // Home frames the highest-priority area until the reader picks one. Keeping it
-  // local means opening the app never writes a planning area into the saved
-  // household plan — that stays an explicit choice.
+  // The map opens on an example area without selecting it for the household.
   const focusAreaId = selectedAreaId || highestPriorityAreaId(data.publicAreas);
   const selectedArea = data.publicAreas.find((area) => area.area_id === focusAreaId);
+  const chosenArea = data.publicAreas.find((area) => area.area_id === selectedAreaId);
 
   const focusAddressInput = useCallback(() => {
     window.requestAnimationFrame(() => searchInputRef.current?.focus());
@@ -432,7 +437,7 @@ export function PublicHomePage({
   };
 
   const priorityValue = selectedArea?.planning_priority_0_100 ?? 0;
-  const hazardSignals = derivePublicHazardSignals(selectedArea);
+  const hazardSignals = derivePublicHazardSignals(chosenArea);
   const locationProblem = gpsState === "denied"
     || gpsState === "unavailable"
     || gpsState === "timeout"
@@ -442,7 +447,25 @@ export function PublicHomePage({
     && Boolean(location || locationProblem);
 
   return (
-    <section className="public-home-page" aria-label={th ? "แผนที่หน้าแรก" : "Home map"}>
+    <section className="public-home-page" aria-label={th ? "หน้าแรกเพื่อการเตรียมพร้อม" : "Preparedness home"}>
+      <div className="public-home-intro">
+        <div className="public-home-intro-copy">
+          <p className="public-home-context">{th ? "ข้อมูลเพื่อการเตรียมพร้อม · ไม่ใช่คำเตือนทางการ" : "Preparedness research · not an official warning"}</p>
+          <h1>{chosenArea
+            ? (th ? chosenArea.area_name_th : chosenArea.area_name_en)
+            : (th ? "เลือกพื้นที่วางแผนของคุณ" : "Choose your planning area")}</h1>
+          <p>{chosenArea
+            ? (th ? `แหล่งข้อมูล ${formatSourceTime(chosenArea.source_timestamp, language)} ICT · ความเชื่อมั่น ${formatConfidence(chosenArea.evidence_sufficiency, language)}` : `Source ${formatSourceTime(chosenArea.source_timestamp, language)} ICT · confidence ${formatConfidence(chosenArea.evidence_sufficiency, language)}`)
+            : selectedArea
+              ? (th ? "แผนที่เริ่มที่พื้นที่ตัวอย่าง เลือกพื้นที่หรือค้นหาที่อยู่ก่อนดูข้อมูลสำหรับพื้นที่ของคุณ" : "The map starts at an example area. Choose an area or search an address before viewing local planning information.")
+              : (th ? "ข้อมูลพื้นที่วางแผนไม่พร้อมใช้งาน โปรดตรวจสอบประกาศจากหน่วยงานทางการ" : "Planning-area data is unavailable. Check current official updates.")}</p>
+        </div>
+        <div className="public-home-actions">
+          <button type="button" onClick={onNavigatePrepare}>{th ? "จัดทำแผนของฉัน" : "Make my plan"}</button>
+          <button type="button" onClick={onNavigateSos}>{th ? "หมายเลขช่วยเหลือ" : "Help and contacts"}</button>
+        </div>
+        {researchHref ? <a className="public-home-research-link" href={researchHref}>{th ? "สำรวจกรณีศึกษาวิจัย →" : "Explore research cases →"}</a> : null}
+      </div>
       <div className="public-home-map">
         <GeoMap
           areas={data.publicAreas}
@@ -617,12 +640,13 @@ export function PublicHomePage({
         <div className="public-map-dock">
           <aside
             className="public-risk-indicator"
+            data-area-context={chosenArea ? "selected" : "example"}
             aria-label={th ? "ตัวชี้วัดการวางแผนน้ำท่วม" : "Flood planning indicator"}
           >
             <div className="public-risk-headline">
               <strong>
                 {selectedArea
-                  ? (th ? selectedArea.area_name_th : selectedArea.area_name_en)
+                  ? `${chosenArea ? "" : (th ? "ตัวอย่าง · " : "Example · ")}${th ? selectedArea.area_name_th : selectedArea.area_name_en}`
                   : (th ? "ยังไม่พบพื้นที่วางแผน" : "No planning area matched")}
               </strong>
               {selectedArea && (
@@ -643,9 +667,12 @@ export function PublicHomePage({
               )}
             </div>
             <div className="public-risk-scale-labels">
-              <span>{th ? "ความเสี่ยงต่ำ" : "Low risk"}</span>
-              <span>{th ? "ความเสี่ยงสูง" : "High risk"}</span>
+              <span>{th ? "ลำดับต่ำกว่า" : "Lower priority"}</span>
+              <span>{th ? "ลำดับสูงกว่า" : "Higher priority"}</span>
             </div>
+            <p className="public-risk-status">{chosenArea
+              ? (th ? "ข้อมูลผู้สมัคร · ไม่ใช้ปฏิบัติการ" : "Candidate · non-operational")
+              : (th ? "พื้นที่ตัวอย่าง · ข้อมูลผู้สมัคร ไม่ใช้ปฏิบัติการ" : "Example area · candidate, non-operational")}</p>
           </aside>
 
           <button
@@ -753,8 +780,8 @@ export function PublicHomePage({
                   </div>
                   <p className="public-hazard-boundary">
                     {th
-                      ? "ตัวชี้วัดนี้ใช้ข้อมูลอุทกภัยในอดีตเพื่อการเตรียมพร้อม ไม่ได้ยืนยันระดับน้ำหรืออันตรายในปัจจุบัน"
-                      : "This indicator uses historical flood evidence for preparedness. It does not confirm current water levels or hazards."}
+                      ? "ตัวชี้วัดการวางแผนแบบผู้สมัครบนแผนที่นี้แยกจากกรณีศึกษาที่เลือก เป็นผลวิจัยที่ไม่ใช้ปฏิบัติการ ไม่ใช่คะแนน FPPS ที่ยอมรับ การวัดอันตรายปัจจุบัน หรือคำเตือนทางการ"
+                      : "This map's candidate planning indicator is separate from the selected study case. It is non-operational, not an accepted FPPS, a current hazard reading or an official warning."}
                   </p>
                 </>
               ) : (

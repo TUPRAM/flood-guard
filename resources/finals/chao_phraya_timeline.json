@@ -1,0 +1,4 @@
+[
+  {"id":"event-2024","title":"Lower Chao Phraya 2024 study window","role":"historical_context","start":"2024-09-01","end":"2024-11-30","source_url":"https://tiservice.hii.or.th/opendata/data_catalog/water_level/","limitations":["Gauge context only; no admissible dated flood extent bound to this access experiment."]},
+  {"id":"event-2025","title":"Lower Chao Phraya 2025 study window","role":"historical_context","start":"2025-09-01","end":"2025-11-30","source_url":"https://tiservice.hii.or.th/opendata/data_catalog/water_level/","limitations":["Both event selections share the same mixed-year residential access model. They are not independent historical reconstructions or a flood trend comparison."]}
+]

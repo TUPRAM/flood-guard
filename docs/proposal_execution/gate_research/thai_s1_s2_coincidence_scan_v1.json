@@ -1,0 +1,678 @@
+{
+ "evidence_tier": "research_hypothesis",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "grants_reference_authority": false,
+ "confidence": "research probe; observability screen only, not a flood label or reference decision",
+ "processed_utc": "2026-09-24T08:04:47+00:00",
+ "sources": [
+  "https://earth-search.aws.element84.com/v1",
+  "https://planetarycomputer.microsoft.com/api/stac/v1"
+ ],
+ "assumptions": [
+  "SCL is the ESA Sen2Cor scene classification; its cloud and shadow classes are used only as an observability screen.",
+  "SCL 'water' is not a flood label: turbid floodwater is often classed as not_vegetated or unclassified.",
+  "A clear-sky fraction says a scene could be interpreted, not that it shows the flood peak or that a reference exists.",
+  "Episode boxes are small illustrative windows around flooded towns, not declared study areas.",
+  "Temporal proximity to a Sentinel-1 pass does not by itself establish independence or date fitness; a Reference Authority must decide both."
+ ],
+ "probe": "thai_sentinel1_sentinel2_coincidence_scan",
+ "max_hours": 48.0,
+ "source_timestamp": [
+  "2024-09-08/2024-09-22",
+  "2024-09-25/2024-10-12",
+  "2024-08-18/2024-09-01",
+  "2024-08-22/2024-09-20",
+  "2024-11-25/2024-12-12",
+  "2025-11-20/2025-12-06",
+  "2022-10-01/2022-10-25",
+  "2021-09-24/2021-10-10",
+  "2019-09-01/2019-09-22"
+ ],
+ "episodes": [
+  {
+   "episode_id": "mae_sai_2024",
+   "name": "Mae Sai, Chiang Rai (Sai River)",
+   "bbox_wgs84": [
+    99.838,
+    20.37,
+    99.944,
+    20.456
+   ],
+   "window": "2024-09-08/2024-09-22",
+   "n_sentinel1_grd": 2,
+   "n_sentinel2_l2a": 3,
+   "sentinel2_box_clear_fraction": {
+    "S2A_47QNC_20240910_0_L2A": 0.0,
+    "S2B_47QNC_20240915_0_L2A": 0.7309,
+    "S2A_47QNC_20240920_1_L2A": 0.0
+   },
+   "pairs": [
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA",
+     "sar_utc": "2024-09-15T23:16:14.175289+00:00",
+     "optical_item": "S2B_47QNC_20240915_0_L2A",
+     "optical_utc": "2024-09-15T04:02:41.830000+00:00",
+     "hours_optical_minus_sar": -19.2,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 135,
+     "optical_box_clear_fraction": 0.7309
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240918T113107_20240918T113132_055719_06CE27",
+     "sar_utc": "2024-09-18T11:31:19.897284+00:00",
+     "optical_item": "S2A_47QNC_20240920_1_L2A",
+     "optical_utc": "2024-09-20T04:02:40.734000+00:00",
+     "hours_optical_minus_sar": 40.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.0
+    }
+   ]
+  },
+  {
+   "episode_id": "chiang_mai_2024",
+   "name": "Chiang Mai city (Ping River)",
+   "bbox_wgs84": [
+    98.96,
+    18.74,
+    99.03,
+    18.82
+   ],
+   "window": "2024-09-25/2024-10-12",
+   "n_sentinel1_grd": 3,
+   "n_sentinel2_l2a": 8,
+   "sentinel2_box_clear_fraction": {
+    "S2B_47QNA_20240925_0_L2A": 0.0,
+    "S2B_47QMA_20240925_0_L2A": 0.0,
+    "S2A_47QNA_20240930_0_L2A": 0.0136,
+    "S2A_47QMA_20240930_0_L2A": 0.1152,
+    "S2B_47QNA_20241005_0_L2A": 0.3002,
+    "S2B_47QMA_20241005_0_L2A": 0.497,
+    "S2A_47QNA_20241010_0_L2A": 0.1293,
+    "S2A_47QMA_20241010_0_L2A": 0.4102
+   },
+   "pairs": [
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20241009T231627_20241009T231652_056032_06DA89",
+     "sar_utc": "2024-10-09T23:16:39.928051+00:00",
+     "optical_item": "S2A_47QMA_20241010_0_L2A",
+     "optical_utc": "2024-10-10T04:03:12.151000+00:00",
+     "hours_optical_minus_sar": 4.8,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 135,
+     "optical_box_clear_fraction": 0.4102
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20241009T231627_20241009T231652_056032_06DA89",
+     "sar_utc": "2024-10-09T23:16:39.928051+00:00",
+     "optical_item": "S2A_47QNA_20241010_0_L2A",
+     "optical_utc": "2024-10-10T04:03:08.889000+00:00",
+     "hours_optical_minus_sar": 4.8,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 135,
+     "optical_box_clear_fraction": 0.1293
+    }
+   ]
+  },
+  {
+   "episode_id": "nan_2024",
+   "name": "Nan city (Nan River)",
+   "bbox_wgs84": [
+    100.74,
+    18.75,
+    100.8,
+    18.82
+   ],
+   "window": "2024-08-18/2024-09-01",
+   "n_sentinel1_grd": 1,
+   "n_sentinel2_l2a": 6,
+   "sentinel2_box_clear_fraction": {
+    "S2A_47QPA_20240818_0_L2A": 0.0002,
+    "S2A_47QPA_20240821_0_L2A": 0.0,
+    "S2B_47QPA_20240823_0_L2A": 0.0,
+    "S2B_47QPA_20240826_0_L2A": 0.0035,
+    "S2A_47QPA_20240828_0_L2A": 0.0,
+    "S2A_47QPA_20240831_0_L2A": 0.0037
+   },
+   "pairs": [
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240820T112216_20240820T112241_055296_06BDE3",
+     "sar_utc": "2024-08-20T11:22:28.521778+00:00",
+     "optical_item": "S2A_47QPA_20240821_0_L2A",
+     "optical_utc": "2024-08-21T04:03:06.611000+00:00",
+     "hours_optical_minus_sar": 16.7,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 99,
+     "optical_box_clear_fraction": 0.0
+    }
+   ]
+  },
+  {
+   "episode_id": "sukhothai_2024",
+   "name": "Sukhothai (Yom River)",
+   "bbox_wgs84": [
+    99.78,
+    16.98,
+    99.88,
+    17.06
+   ],
+   "window": "2024-08-22/2024-09-20",
+   "n_sentinel1_grd": 8,
+   "n_sentinel2_l2a": 6,
+   "sentinel2_box_clear_fraction": {
+    "S2B_47QNU_20240826_0_L2A": 0.3333,
+    "S2A_47QNU_20240831_0_L2A": 0.6458,
+    "S2B_47QNU_20240905_0_L2A": 0.3255,
+    "S2A_47QNU_20240910_0_L2A": 0.0,
+    "S2B_47QNU_20240915_0_L2A": 0.3154,
+    "S2A_47QNU_20240920_0_L2A": 0.1999
+   },
+   "pairs": [
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240825T113016_20240825T113041_055369_06C0AB",
+     "sar_utc": "2024-08-25T11:30:29.097167+00:00",
+     "optical_item": "S2B_47QNU_20240826_0_L2A",
+     "optical_utc": "2024-08-26T04:03:41.864000+00:00",
+     "hours_optical_minus_sar": 16.6,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.3333
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240910T230841_20240910T230906_055609_06C9DF",
+     "sar_utc": "2024-09-10T23:08:53.763162+00:00",
+     "optical_item": "S2A_47QNU_20240910_0_L2A",
+     "optical_utc": "2024-09-10T04:03:39.787000+00:00",
+     "hours_optical_minus_sar": -19.1,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 62,
+     "optical_box_clear_fraction": 0.0
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240915T231651_20240915T231716_055682_06CCBA",
+     "sar_utc": "2024-09-15T23:17:04.175176+00:00",
+     "optical_item": "S2B_47QNU_20240915_0_L2A",
+     "optical_utc": "2024-09-15T04:03:39.930000+00:00",
+     "hours_optical_minus_sar": -19.2,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 135,
+     "optical_box_clear_fraction": 0.3154
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240903T231650_20240903T231715_055507_06C5C9",
+     "sar_utc": "2024-09-03T23:17:03.274681+00:00",
+     "optical_item": "S2B_47QNU_20240905_0_L2A",
+     "optical_utc": "2024-09-05T04:03:43.440000+00:00",
+     "hours_optical_minus_sar": 28.8,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 135,
+     "optical_box_clear_fraction": 0.3255
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240829T230841_20240829T230906_055434_06C307",
+     "sar_utc": "2024-08-29T23:08:53.709563+00:00",
+     "optical_item": "S2A_47QNU_20240831_0_L2A",
+     "optical_utc": "2024-08-31T04:03:39.921000+00:00",
+     "hours_optical_minus_sar": 28.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 62,
+     "optical_box_clear_fraction": 0.6458
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240906T113016_20240906T113041_055544_06C73C",
+     "sar_utc": "2024-09-06T11:30:29.257218+00:00",
+     "optical_item": "S2B_47QNU_20240905_0_L2A",
+     "optical_utc": "2024-09-05T04:03:43.440000+00:00",
+     "hours_optical_minus_sar": -31.4,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.3255
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20240918T113017_20240918T113042_055719_06CE27",
+     "sar_utc": "2024-09-18T11:30:29.896537+00:00",
+     "optical_item": "S2A_47QNU_20240920_0_L2A",
+     "optical_utc": "2024-09-20T04:03:41.862000+00:00",
+     "hours_optical_minus_sar": 40.6,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.1999
+    }
+   ]
+  },
+  {
+   "episode_id": "narathiwat_2024",
+   "name": "Sungai Kolok / Tak Bai, Narathiwat",
+   "bbox_wgs84": [
+    101.9,
+    6.0,
+    102.1,
+    6.3
+   ],
+   "window": "2024-11-25/2024-12-12",
+   "n_sentinel1_grd": 3,
+   "n_sentinel2_l2a": 6,
+   "sentinel2_box_clear_fraction": {
+    "S2B_47NRH_20241128_1_L2A": 0.0,
+    "S2B_47NRG_20241128_0_L2A": 0.0,
+    "S2A_47NRH_20241203_0_L2A": 0.0,
+    "S2A_47NRG_20241203_0_L2A": 0.0,
+    "S2B_47NRH_20241208_0_L2A": 0.0,
+    "S2B_47NRG_20241208_0_L2A": 0.0204
+   },
+   "pairs": [
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20241129T112656_20241129T112721_056769_06F7D2",
+     "sar_utc": "2024-11-29T11:27:08.891338+00:00",
+     "optical_item": "S2B_47NRG_20241128_0_L2A",
+     "optical_utc": "2024-11-28T03:46:36.888000+00:00",
+     "hours_optical_minus_sar": -31.7,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.0
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20241129T112656_20241129T112721_056769_06F7D2",
+     "sar_utc": "2024-11-29T11:27:08.891338+00:00",
+     "optical_item": "S2B_47NRH_20241128_1_L2A",
+     "optical_utc": "2024-11-28T03:46:22.311000+00:00",
+     "hours_optical_minus_sar": -31.7,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.0
+    }
+   ]
+  },
+  {
+   "episode_id": "hat_yai_2025",
+   "name": "Hat Yai, Songkhla (U-Taphao canal)",
+   "bbox_wgs84": [
+    100.42,
+    6.96,
+    100.52,
+    7.05
+   ],
+   "window": "2025-11-20/2025-12-06",
+   "n_sentinel1_grd": 5,
+   "n_sentinel2_l2a": 5,
+   "sentinel2_box_clear_fraction": {
+    "S2C_47NPH_20251121_0_L2A": 0.0,
+    "S2B_47NPH_20251126_0_L2A": 0.0,
+    "S2C_47NPH_20251201_0_L2A": 0.3484,
+    "S2A_47NPH_20251203_1_L2A": 0.5806,
+    "S2B_47NPH_20251206_0_L2A": 0.1489
+   },
+   "pairs": [
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20251205T230307_20251205T230332_062186_07C8AD",
+     "sar_utc": "2025-12-05T23:03:20.353236+00:00",
+     "optical_item": "S2B_47NPH_20251206_0_L2A",
+     "optical_utc": "2025-12-06T03:56:18.239000+00:00",
+     "hours_optical_minus_sar": 4.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 164,
+     "optical_box_clear_fraction": 0.1489
+    },
+    {
+     "sar_item": "S1C_IW_GRDH_1SDV_20251205T113426_20251205T113453_005316_00A908",
+     "sar_utc": "2025-12-05T11:34:40.298401+00:00",
+     "optical_item": "S2B_47NPH_20251206_0_L2A",
+     "optical_utc": "2025-12-06T03:56:18.239000+00:00",
+     "hours_optical_minus_sar": 16.4,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 70,
+     "optical_box_clear_fraction": 0.1489
+    },
+    {
+     "sar_item": "S1C_IW_GRDH_1SDV_20251129T230152_20251129T230221_005235_00A644",
+     "sar_utc": "2025-11-29T23:02:07.104142+00:00",
+     "optical_item": "S2C_47NPH_20251201_0_L2A",
+     "optical_utc": "2025-12-01T03:56:30.026000+00:00",
+     "hours_optical_minus_sar": 28.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 164,
+     "optical_box_clear_fraction": 0.3484
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20251129T113521_20251129T113546_062092_07C503",
+     "sar_utc": "2025-11-29T11:35:33.511454+00:00",
+     "optical_item": "S2C_47NPH_20251201_0_L2A",
+     "optical_utc": "2025-12-01T03:56:30.026000+00:00",
+     "hours_optical_minus_sar": 40.3,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 70,
+     "optical_box_clear_fraction": 0.3484
+    }
+   ]
+  },
+  {
+   "episode_id": "ayutthaya_2022",
+   "name": "Phra Nakhon Si Ayutthaya (Chao Phraya)",
+   "bbox_wgs84": [
+    100.5,
+    14.3,
+    100.62,
+    14.4
+   ],
+   "window": "2022-10-01/2022-10-25",
+   "n_sentinel1_grd": 3,
+   "n_sentinel2_l2a": 10,
+   "sentinel2_box_clear_fraction": {
+    "S2B_47PPS_20221003_0_L2A": 0.0001,
+    "S2B_47PPR_20221003_0_L2A": 0.0042,
+    "S2A_47PPS_20221008_0_L2A": 0.0,
+    "S2A_47PPR_20221008_0_L2A": 0.0,
+    "S2B_47PPS_20221013_0_L2A": 0.2075,
+    "S2B_47PPR_20221013_0_L2A": 0.8561,
+    "S2A_47PPS_20221018_0_L2A": 0.0033,
+    "S2A_47PPR_20221018_0_L2A": 0.0342,
+    "S2B_47PPS_20221023_0_L2A": 0.1625,
+    "S2B_47PPR_20221023_0_L2A": 0.823
+   },
+   "pairs": [
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20221023T112926_20221023T112951_045569_0572B7",
+     "sar_utc": "2022-10-23T11:29:39.175035+00:00",
+     "optical_item": "S2B_47PPR_20221023_0_L2A",
+     "optical_utc": "2022-10-23T03:54:25.174000+00:00",
+     "hours_optical_minus_sar": -7.6,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.823
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20221023T112926_20221023T112951_045569_0572B7",
+     "sar_utc": "2022-10-23T11:29:39.175035+00:00",
+     "optical_item": "S2B_47PPS_20221023_0_L2A",
+     "optical_utc": "2022-10-23T03:54:10.735000+00:00",
+     "hours_optical_minus_sar": -7.6,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.1625
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20221003T230931_20221003T230956_045284_0569E1",
+     "sar_utc": "2022-10-03T23:09:43.672974+00:00",
+     "optical_item": "S2B_47PPR_20221003_0_L2A",
+     "optical_utc": "2022-10-03T03:54:24.354000+00:00",
+     "hours_optical_minus_sar": -19.3,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 62,
+     "optical_box_clear_fraction": 0.0042
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20221003T230931_20221003T230956_045284_0569E1",
+     "sar_utc": "2022-10-03T23:09:43.672974+00:00",
+     "optical_item": "S2B_47PPS_20221003_0_L2A",
+     "optical_utc": "2022-10-03T03:54:09.907000+00:00",
+     "hours_optical_minus_sar": -19.3,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 62,
+     "optical_box_clear_fraction": 0.0001
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20221011T112926_20221011T112951_045394_056D8C",
+     "sar_utc": "2022-10-11T11:29:39.026780+00:00",
+     "optical_item": "S2B_47PPR_20221013_0_L2A",
+     "optical_utc": "2022-10-13T03:54:24.628000+00:00",
+     "hours_optical_minus_sar": 40.4,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.8561
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20221011T112926_20221011T112951_045394_056D8C",
+     "sar_utc": "2022-10-11T11:29:39.026780+00:00",
+     "optical_item": "S2B_47PPS_20221013_0_L2A",
+     "optical_utc": "2022-10-13T03:54:10.188000+00:00",
+     "hours_optical_minus_sar": 40.4,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 172,
+     "optical_box_clear_fraction": 0.2075
+    }
+   ]
+  },
+  {
+   "episode_id": "chaiyaphum_2021",
+   "name": "Chaiyaphum city (Storm Dianmu)",
+   "bbox_wgs84": [
+    101.99,
+    15.77,
+    102.08,
+    15.85
+   ],
+   "window": "2021-09-24/2021-10-10",
+   "n_sentinel1_grd": 4,
+   "n_sentinel2_l2a": 7,
+   "sentinel2_box_clear_fraction": {
+    "S2B_47PRT_20210928_1_L2A": 0.6823,
+    "S2B_47PRT_20210928_0_L2A": 0.7757,
+    "S2A_47PRT_20211003_1_L2A": 0.2737,
+    "S2A_47PRT_20211003_0_L2A": 0.3242,
+    "S2B_47PRT_20211008_2_L2A": 0.0,
+    "S2B_47PRT_20211008_1_L2A": 0.0,
+    "S2B_47PRT_20211008_0_L2A": 0.0
+   },
+   "pairs": [
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20210927T230011_20210927T230036_028890_0372A1",
+     "sar_utc": "2021-09-27T23:00:24.269444+00:00",
+     "optical_item": "S2B_47PRT_20210928_0_L2A",
+     "optical_utc": "2021-09-28T03:53:49.286000+00:00",
+     "hours_optical_minus_sar": 4.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 164,
+     "optical_box_clear_fraction": 0.7757
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20210927T230011_20210927T230036_028890_0372A1",
+     "sar_utc": "2021-09-27T23:00:24.269444+00:00",
+     "optical_item": "S2B_47PRT_20210928_1_L2A",
+     "optical_utc": "2021-09-28T03:53:49.285000+00:00",
+     "hours_optical_minus_sar": 4.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 164,
+     "optical_box_clear_fraction": 0.6823
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20210929T112120_20210929T112145_039896_04B880",
+     "sar_utc": "2021-09-29T11:21:32.501079+00:00",
+     "optical_item": "S2B_47PRT_20210928_0_L2A",
+     "optical_utc": "2021-09-28T03:53:49.286000+00:00",
+     "hours_optical_minus_sar": -31.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 99,
+     "optical_box_clear_fraction": 0.7757
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20210929T112120_20210929T112145_039896_04B880",
+     "sar_utc": "2021-09-29T11:21:32.501079+00:00",
+     "optical_item": "S2B_47PRT_20210928_1_L2A",
+     "optical_utc": "2021-09-28T03:53:49.285000+00:00",
+     "hours_optical_minus_sar": -31.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 99,
+     "optical_box_clear_fraction": 0.6823
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20211009T230011_20211009T230036_029065_0377DF",
+     "sar_utc": "2021-10-09T23:00:24.420272+00:00",
+     "optical_item": "S2B_47PRT_20211008_0_L2A",
+     "optical_utc": "2021-10-08T03:53:50.996000+00:00",
+     "hours_optical_minus_sar": -43.1,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 164,
+     "optical_box_clear_fraction": 0.0
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20211009T230011_20211009T230036_029065_0377DF",
+     "sar_utc": "2021-10-09T23:00:24.420272+00:00",
+     "optical_item": "S2B_47PRT_20211008_1_L2A",
+     "optical_utc": "2021-10-08T03:53:50.996000+00:00",
+     "hours_optical_minus_sar": -43.1,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 164,
+     "optical_box_clear_fraction": 0.0
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20211009T230011_20211009T230036_029065_0377DF",
+     "sar_utc": "2021-10-09T23:00:24.420272+00:00",
+     "optical_item": "S2B_47PRT_20211008_2_L2A",
+     "optical_utc": "2021-10-08T03:53:50.996000+00:00",
+     "hours_optical_minus_sar": -43.1,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 164,
+     "optical_box_clear_fraction": 0.0
+    }
+   ]
+  },
+  {
+   "episode_id": "ubon_2019",
+   "name": "Warin Chamrap / Ubon Ratchathani (Mun River)",
+   "bbox_wgs84": [
+    104.8,
+    15.18,
+    104.92,
+    15.28
+   ],
+   "window": "2019-09-01/2019-09-22",
+   "n_sentinel1_grd": 7,
+   "n_sentinel2_l2a": 10,
+   "sentinel2_box_clear_fraction": {
+    "S2A_48PVB_20190901_0_L2A": 0.1821,
+    "S2A_48PVB_20190901_1_L2A": 0.1192,
+    "S2B_48PVB_20190906_0_L2A": 0.1046,
+    "S2B_48PVB_20190906_1_L2A": 0.0361,
+    "S2A_48PVB_20190911_0_L2A": 0.0,
+    "S2A_48PVB_20190911_1_L2A": 0.0,
+    "S2B_48PVB_20190916_0_L2A": 0.0007,
+    "S2B_48PVB_20190916_1_L2A": 0.0001,
+    "S2A_48PVB_20190921_1_L2A": 0.0013,
+    "S2A_48PVB_20190921_0_L2A": 0.0632
+   },
+   "pairs": [
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20190915T225235_20190915T225300_029038_034B75",
+     "sar_utc": "2019-09-15T22:52:47.811443+00:00",
+     "optical_item": "S2B_48PVB_20190916_0_L2A",
+     "optical_utc": "2019-09-16T03:44:00.902000+00:00",
+     "hours_optical_minus_sar": 4.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 91,
+     "optical_box_clear_fraction": 0.0007
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20190915T225235_20190915T225300_029038_034B75",
+     "sar_utc": "2019-09-15T22:52:47.811443+00:00",
+     "optical_item": "S2B_48PVB_20190916_1_L2A",
+     "optical_utc": "2019-09-16T03:44:00.905000+00:00",
+     "hours_optical_minus_sar": 4.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 91,
+     "optical_box_clear_fraction": 0.0001
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20190911T111245_20190911T111310_028973_034937",
+     "sar_utc": "2019-09-11T11:12:57.716264+00:00",
+     "optical_item": "S2A_48PVB_20190911_0_L2A",
+     "optical_utc": "2019-09-11T03:43:59.483000+00:00",
+     "hours_optical_minus_sar": -7.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 26,
+     "optical_box_clear_fraction": 0.0
+    },
+    {
+     "sar_item": "S1A_IW_GRDH_1SDV_20190911T111245_20190911T111310_028973_034937",
+     "sar_utc": "2019-09-11T11:12:57.716264+00:00",
+     "optical_item": "S2A_48PVB_20190911_1_L2A",
+     "optical_utc": "2019-09-11T03:43:59.485000+00:00",
+     "hours_optical_minus_sar": -7.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 26,
+     "optical_box_clear_fraction": 0.0
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20190905T111200_20190905T111225_017902_021B0B",
+     "sar_utc": "2019-09-05T11:12:12.687233+00:00",
+     "optical_item": "S2B_48PVB_20190906_0_L2A",
+     "optical_utc": "2019-09-06T03:44:03.443000+00:00",
+     "hours_optical_minus_sar": 16.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 26,
+     "optical_box_clear_fraction": 0.1046
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20190905T111200_20190905T111225_017902_021B0B",
+     "sar_utc": "2019-09-05T11:12:12.687233+00:00",
+     "optical_item": "S2B_48PVB_20190906_1_L2A",
+     "optical_utc": "2019-09-06T03:44:03.446000+00:00",
+     "hours_optical_minus_sar": 16.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 26,
+     "optical_box_clear_fraction": 0.0361
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20190921T225150_20190921T225215_018142_0222A3",
+     "sar_utc": "2019-09-21T22:52:03.052489+00:00",
+     "optical_item": "S2A_48PVB_20190921_0_L2A",
+     "optical_utc": "2019-09-21T03:44:01.291000+00:00",
+     "hours_optical_minus_sar": -19.1,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 91,
+     "optical_box_clear_fraction": 0.0632
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20190921T225150_20190921T225215_018142_0222A3",
+     "sar_utc": "2019-09-21T22:52:03.052489+00:00",
+     "optical_item": "S2A_48PVB_20190921_1_L2A",
+     "optical_utc": "2019-09-21T03:44:01.291000+00:00",
+     "hours_optical_minus_sar": -19.1,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 91,
+     "optical_box_clear_fraction": 0.0013
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20190909T225150_20190909T225215_017967_021D3C",
+     "sar_utc": "2019-09-09T22:52:02.693873+00:00",
+     "optical_item": "S2A_48PVB_20190911_0_L2A",
+     "optical_utc": "2019-09-11T03:43:59.483000+00:00",
+     "hours_optical_minus_sar": 28.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 91,
+     "optical_box_clear_fraction": 0.0
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20190909T225150_20190909T225215_017967_021D3C",
+     "sar_utc": "2019-09-09T22:52:02.693873+00:00",
+     "optical_item": "S2A_48PVB_20190911_1_L2A",
+     "optical_utc": "2019-09-11T03:43:59.485000+00:00",
+     "hours_optical_minus_sar": 28.9,
+     "sar_orbit_state": "descending",
+     "sar_relative_orbit": 91,
+     "optical_box_clear_fraction": 0.0
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20190917T111200_20190917T111225_018077_022084",
+     "sar_utc": "2019-09-17T11:12:13.122357+00:00",
+     "optical_item": "S2B_48PVB_20190916_0_L2A",
+     "optical_utc": "2019-09-16T03:44:00.902000+00:00",
+     "hours_optical_minus_sar": -31.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 26,
+     "optical_box_clear_fraction": 0.0007
+    },
+    {
+     "sar_item": "S1B_IW_GRDH_1SDV_20190917T111200_20190917T111225_018077_022084",
+     "sar_utc": "2019-09-17T11:12:13.122357+00:00",
+     "optical_item": "S2B_48PVB_20190916_1_L2A",
+     "optical_utc": "2019-09-16T03:44:00.905000+00:00",
+     "hours_optical_minus_sar": -31.5,
+     "sar_orbit_state": "ascending",
+     "sar_relative_orbit": 26,
+     "optical_box_clear_fraction": 0.0001
+    }
+   ]
+  }
+ ]
+}

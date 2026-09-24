@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  generateGuestDisplayName,
   greetingText,
   PUBLIC_DISPLAY_NAME_STORAGE_KEY,
   resolveInitialDisplayName,
@@ -22,14 +21,10 @@ function memoryStorage(seed: Record<string, string> = {}): Storage {
 }
 
 describe("public display name", () => {
-  it("assigns a guest handle on first launch and keeps it afterwards", () => {
+  it("uses a generic greeting on first launch without creating an identifier", () => {
     const storage = memoryStorage();
-    const first = resolveInitialDisplayName(storage);
-
-    expect(first).toMatch(/^Username\d{3}$/);
-    expect(storage.getItem(PUBLIC_DISPLAY_NAME_STORAGE_KEY)).toBe(first);
-    // A second visit must greet the same reader, not rename them.
-    expect(resolveInitialDisplayName(storage)).toBe(first);
+    expect(resolveInitialDisplayName(storage)).toBe("");
+    expect(storage.getItem(PUBLIC_DISPLAY_NAME_STORAGE_KEY)).toBeNull();
   });
 
   it("keeps a name the reader chose", () => {
@@ -40,21 +35,19 @@ describe("public display name", () => {
     expect(resolveInitialDisplayName(storage)).toBe("Nong Fah");
   });
 
-  it("still returns a usable handle when storage is unavailable", () => {
-    expect(resolveInitialDisplayName(null)).toMatch(/^Username\d{3}$/);
+  it("removes a legacy generated guest handle", () => {
+    const storage = memoryStorage({ [PUBLIC_DISPLAY_NAME_STORAGE_KEY]: "Username647" });
+    expect(resolveInitialDisplayName(storage)).toBe("");
+    expect(storage.getItem(PUBLIC_DISPLAY_NAME_STORAGE_KEY)).toBeNull();
   });
 
-  it("generates handles inside the three-digit range", () => {
-    for (let attempt = 0; attempt < 200; attempt += 1) {
-      const suffix = Number(generateGuestDisplayName().replace("Username", ""));
-      expect(suffix).toBeGreaterThanOrEqual(100);
-      expect(suffix).toBeLessThanOrEqual(999);
-    }
+  it("still uses a generic greeting when storage is unavailable", () => {
+    expect(resolveInitialDisplayName(null)).toBe("");
   });
 
   it("greets with the name in both languages", () => {
-    expect(greetingText("Username123", "en")).toBe("Hello, Username123");
-    expect(greetingText("Username123", "th")).toBe("สวัสดี Username123");
+    expect(greetingText("Nong Fah", "en")).toBe("Hello, Nong Fah");
+    expect(greetingText("Nong Fah", "th")).toBe("สวัสดี Nong Fah");
     expect(greetingText("", "en")).toBe("Hello");
   });
 });

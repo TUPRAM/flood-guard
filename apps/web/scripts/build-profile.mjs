@@ -58,7 +58,7 @@ if (verify.status !== 0) process.exit(verify.status ?? 1);
 function hideStaffRoutes() {
   const appDirectory = resolve(process.cwd(), "src", "app");
   const backupDirectory = resolve(process.cwd(), ".profile-route-backup");
-  const routeNames = ["command", "studio"];
+  const routeNames = ["command", "studio", "public-cases"];
 
   if (existsSync(backupDirectory)) {
     recoverInterruptedRouteMove(appDirectory, backupDirectory, routeNames);

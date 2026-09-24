@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 
-import { StudioWorkspace } from "@/components/studio-workspace";
+import { CandidateCaseContext } from "@/components/candidate-case-context";
+import { StudioCandidateReport } from "@/components/studio-candidate-report";
 
 export const metadata: Metadata = {
   title: "Validation & evidence report",
-  description: "Read-only validation, provenance, and authorization evidence for one immutable context.",
+  description: "Read-only candidate-package validation, provenance and decision boundaries for the selected FloodGuard case.",
 };
 
 export default function StudioPage() {
-  return <div id="main-content"><StudioWorkspace /></div>;
+  return <>
+    <CandidateCaseContext role="studio" />
+    <StudioCandidateReport />
+  </>;
 }

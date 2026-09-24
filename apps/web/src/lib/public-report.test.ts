@@ -143,18 +143,11 @@ describe("device-local public reports", () => {
     expect(html).toContain("<fieldset");
     expect(html).toContain("Mae Sai");
 
-    // The illustrative feed is the only place status vocabulary may appear, and
-    // it must say so on screen. Everything outside it still may not imply that
-    // a stored report was received, verified, or acted on.
-    const exampleStart = html.indexOf('class="public-report-feed-example"');
-    expect(exampleStart).toBeGreaterThan(-1);
-    const example = html.slice(exampleStart);
-    expect(example).toContain('data-example="true"');
-    expect(example).toContain("Not real reports");
-    const realContent = html.slice(0, exampleStart);
-    expect(realContent).not.toMatch(
-      /real[- ]time|verified|authority received|responders notified/iu,
-    );
+    expect(html).toContain("Reports saved on this device");
+    expect(html).toContain("This note is not sent to an agency or shared with others.");
+    expect(html).toContain("the image file is not stored");
+    expect(html).not.toContain('data-example="true"');
+    expect(html).not.toMatch(/Community feed|Verified|Resolved|authority received|responders notified/iu);
   });
 
   it("names the band a reported depth falls into", () => {

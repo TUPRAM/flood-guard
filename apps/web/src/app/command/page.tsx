@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 
-import { CommandWorkspace } from "@/components/command-workspace";
+import { CandidateCaseContext } from "@/components/candidate-case-context";
+import { PlanningCandidateOverview } from "@/components/planning-candidate-overview";
 
 export const metadata: Metadata = {
-  title: "Planning workspace",
-  description: "Mae Sai area planning, evidence review, and verification workspace.",
+  title: "Planning overview | FloodGuard",
+  description: "Candidate case access, services, road assumptions, equity limits, and verification priorities for non-operational planning.",
 };
 
 export default function CommandPage() {
-  return <div id="main-content"><CommandWorkspace /></div>;
+  return <><CandidateCaseContext role="planning" /><PlanningCandidateOverview /></>;
 }

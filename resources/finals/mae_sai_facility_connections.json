@@ -1,0 +1,47 @@
+{
+  "confidence_class": "low",
+  "facilities": [
+    {
+      "connectors": [
+        {
+          "coordinates": [
+            99.8792785,
+            20.4293617
+          ],
+          "osm_node_id": "8661331590",
+          "osm_way_id": "1388175295"
+        },
+        {
+          "coordinates": [
+            99.879225,
+            20.42969
+          ],
+          "osm_node_id": "484222069",
+          "osm_way_id": "1388175295"
+        }
+      ],
+      "facility_id": "OSM-way-371233866",
+      "finding": "Way 934550386 is an internal dead-end spur. Node 484222068 joins it to Tessaban Road 15 (way 1388175295), which intersects the hospital site boundary twice. This does not prove either crossing is an operating entrance.",
+      "limitations": [
+        "Geometry-checked site-reachability scenario; no surveyed entrance, barrier or internal building-access check.",
+        "Source way was last edited in May 2025; no assertion about September 2024 access.",
+        "The original one-spur model is retained in the before/after audit."
+      ],
+      "review_id": "mae-sai-hospital-through-road-v1",
+      "selection_rule": "Two existing nodes on Tessaban Road 15, immediately on opposite sides of shared node 484222068, within 100 m of the unchanged site representative. Straight connectors must remain inside the site polygon; no new road junctions.",
+      "site_geometry_sha256": "7aab913888aa161e3110024427f5c50c174e39c621d417cbff6ff6448f0e046f",
+      "source_urls": [
+        "https://www.openstreetmap.org/way/934550386",
+        "https://www.openstreetmap.org/way/1388175295",
+        "https://www.openstreetmap.org/way/371233866"
+      ],
+      "source_xml_sha256": "9cbe8496187c7bab4b696b65fa49613efaabedff5953cec468d425954a64d146",
+      "status": "osm_geometry_reviewed_scenario_only"
+    }
+  ],
+  "official_warning": false,
+  "osm_source_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+  "reviewed_at": "2026-09-22",
+  "schema_version": "1.0",
+  "source_timestamp": "2026-07-10T02:46:49Z"
+}

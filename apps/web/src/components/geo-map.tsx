@@ -109,6 +109,30 @@ type MapArea = AreaRecord | PublicPreparednessArea;
 
 type BasemapId = "street" | "satellite" | "terrain";
 
+// OSM can return its 256px policy-block image as a successfully loaded PNG.
+// Its distinctive black/yellow left rail lets us discard that image without
+// issuing another tile request or treating a blocked background as map data.
+function isOsmBlockImage(tile: HTMLImageElement): boolean {
+  if (tile.naturalWidth !== 256 || tile.naturalHeight !== 256) return false;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 16;
+    canvas.height = 241;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return false;
+    context.drawImage(tile, 0, 0);
+    const pixel = (y: number) => context.getImageData(10, y, 1, 1).data;
+    const black = (y: number) => { const [r, g, b] = pixel(y); return r < 35 && g < 35 && b < 35; };
+    const yellow = (y: number) => { const [r, g, b] = pixel(y); return r > 220 && g > 220 && b < 35; };
+    return black(20) && yellow(40) && black(60) && yellow(80)
+      && yellow(100) && black(120) && black(150) && yellow(170);
+  } catch {
+    // Another provider may not permit canvas inspection; its normal load/error
+    // handling remains in effect.
+    return false;
+  }
+}
+
 const BASEMAPS: Record<BasemapId, {
   url: string;
   maxZoom: number;
@@ -188,6 +212,7 @@ export function GeoMap({
   const leafletRef = useRef<LeafletModule | null>(null);
   const areaLayerRef = useRef<LeafletGeoJson | null>(null);
   const basemapLayerRef = useRef<LeafletTileLayer | null>(null);
+  const basemapMenuRef = useRef<HTMLDetailsElement>(null);
   const contextLayerRef = useRef<LayerGroup | null>(null);
   const roadLayerRef = useRef<LayerGroup | null>(null);
   const facilityLayerRef = useRef<LayerGroup | null>(null);
@@ -200,7 +225,9 @@ export function GeoMap({
   const selectionSheetId = useId();
   const [mapReady, setMapReady] = useState(false);
   const [basemapId, setBasemapId] = useState<BasemapId>("street");
-  const [basemapState, setBasemapState] = useState<"loading" | "ready" | "unavailable">("loading");
+  const [basemapState, setBasemapState] = useState<"loading" | "ready" | "unavailable" | "hidden">("loading");
+  const [basemapVisible, setBasemapVisible] = useState(true);
+  const [basemapRetry, setBasemapRetry] = useState(0);
   const [selectionSheetOpen, setSelectionSheetOpen] = useState(true);
   const [visibleRoadCount, setVisibleRoadCount] = useState(0);
   const [visibleRoadRiskCount, setVisibleRoadRiskCount] = useState(0);
@@ -212,7 +239,7 @@ export function GeoMap({
     ? scenarioMapPresentation(selectedStaffArea.action_class, scenarioId, selectedScenarioResult)
     : undefined;
   const actionClassColors = visualPalette === "public-blue" ? PUBLIC_ACTION_CLASS_COLORS : ACTION_CLASS_COLORS;
-  const visibleAttributions = enableBasemaps
+  const visibleAttributions = enableBasemaps && basemapVisible && basemapState === "ready"
     ? [...new Set([...BASEMAPS[basemapId].attributions, ...attributions])]
     : attributions;
   const visibleFacilityFeatures = useMemo<FeatureCollection>(() => ({
@@ -233,9 +260,10 @@ export function GeoMap({
   const hasAnyVisibleRoadRisk = visibleRoadRiskCount > 0;
   const allVisibleRoadsHaveRisk = visibleRoadCount > 0 && visibleRoadRiskCount === visibleRoadCount;
   const selectBasemap = (nextBasemapId: BasemapId) => {
-    if (nextBasemapId === basemapId) return;
+    setBasemapVisible(true);
     setBasemapState("loading");
-    setBasemapId(nextBasemapId);
+    if (nextBasemapId === basemapId) setBasemapRetry((value) => value + 1);
+    else setBasemapId(nextBasemapId);
   };
 
   useEffect(() => {
@@ -288,6 +316,7 @@ export function GeoMap({
     const L = leafletRef.current;
     if (!mapReady || !map || !L || !enableBasemaps) return;
     basemapLayerRef.current?.remove();
+    if (!basemapVisible) return;
     if (!navigator.onLine) {
       const offlineStateTimer = window.setTimeout(
         () => setBasemapState("unavailable"),
@@ -307,25 +336,57 @@ export function GeoMap({
     });
     let disposed = false;
     let hadTileError = false;
-    layer.on("tileload", () => {
-      if (!disposed && !hadTileError) setBasemapState("ready");
+    let successfulTiles = 0;
+    let failedTiles = 0;
+    let failedLayerRemoval: number | undefined;
+    const failBasemap = () => {
+      if (hadTileError) return;
+      hadTileError = true;
+      if (!disposed) {
+        setBasemapState("unavailable");
+        // Leaflet still reads the tile's map while dispatching tileload.
+        // Remove the layer after that dispatch finishes.
+        failedLayerRemoval = window.setTimeout(() => {
+          if (disposed) return;
+          layer.remove();
+          if (basemapLayerRef.current === layer) basemapLayerRef.current = null;
+        }, 0);
+      }
+    };
+    layer.on("loading", () => {
+      successfulTiles = 0;
+      failedTiles = 0;
+    });
+    layer.on("tileload", (event) => {
+      if (disposed || hadTileError) return;
+      if (basemapId === "street" && isOsmBlockImage((event as { tile: HTMLImageElement }).tile)) {
+        failBasemap();
+        return;
+      }
+      successfulTiles += 1;
+      setBasemapState("ready");
     });
     layer.on("load", () => {
-      if (!disposed && !hadTileError) setBasemapState("ready");
+      if (disposed || hadTileError) return;
+      if (failedTiles > 0 && successfulTiles === 0) failBasemap();
+      else setBasemapState("ready");
     });
-    layer.on("tileerror", () => {
-      hadTileError = true;
-      if (!disposed) setBasemapState("unavailable");
+    layer.on("tileerror", (event) => {
+      if (disposed || hadTileError) return;
+      failedTiles += 1;
+      const tile = (event as { tile?: HTMLImageElement }).tile;
+      if (tile) tile.style.visibility = "hidden";
     });
     layer.addTo(map);
     layer.bringToBack();
     basemapLayerRef.current = layer;
     return () => {
       disposed = true;
+      if (failedLayerRemoval !== undefined) window.clearTimeout(failedLayerRemoval);
       layer.remove();
       if (basemapLayerRef.current === layer) basemapLayerRef.current = null;
     };
-  }, [basemapId, enableBasemaps, mapReady]);
+  }, [basemapId, basemapRetry, basemapVisible, enableBasemaps, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -797,7 +858,7 @@ export function GeoMap({
       data-map-audience={audience}
       data-road-evidence={allVisibleRoadsHaveRisk ? "road_segment" : hasAnyVisibleRoadRisk ? "mixed" : "network_context"}
       data-access-feature-count={accessFeatures.features.length}
-      data-basemap={enableBasemaps ? basemapId : "none"}
+      data-basemap={enableBasemaps && basemapVisible ? basemapId : "none"}
       data-basemap-state={enableBasemaps ? basemapState : "disabled"}
       data-location-source={location?.source ?? "none"}
       data-location-latitude={location?.latitude ?? ""}
@@ -817,43 +878,46 @@ export function GeoMap({
             <button
               key={id}
               type="button"
-              aria-pressed={basemapId === id}
-              className={basemapId === id ? "active" : ""}
+              aria-pressed={basemapVisible && basemapId === id}
+              className={basemapVisible && basemapId === id ? "active" : ""}
               onClick={() => selectBasemap(id)}
             >
               {BASEMAPS[id].labels[language]}
             </button>
           ))}
+          <button type="button" aria-pressed={!basemapVisible} className={!basemapVisible ? "active" : ""} onClick={() => { setBasemapVisible(false); setBasemapState("hidden"); }}>{language === "th" ? "ซ่อนพื้นหลัง" : "Hide background"}</button>
         </div>
       )}
       {enableBasemaps && basemapControlVariant === "menu" && (
-        <details className="map-basemap-menu">
+        <details className="map-basemap-menu" ref={basemapMenuRef}>
           <summary aria-label={language === "th" ? "เปิดตัวเลือกชั้นแผนที่" : "Open map layer choices"}>
             <PublicAppIcon name="layers" />
-            <span>{BASEMAPS[basemapId].labels[language]}</span>
+            <span>{basemapVisible ? BASEMAPS[basemapId].labels[language] : (language === "th" ? "ไม่มีพื้นหลัง" : "No background")}</span>
           </summary>
           <div role="group" aria-label={language === "th" ? "เลือกพื้นหลังแผนที่" : "Choose map background"}>
             {(Object.keys(BASEMAPS) as BasemapId[]).map((id) => (
               <button
                 key={id}
                 type="button"
-                aria-pressed={basemapId === id}
-                className={basemapId === id ? "active" : ""}
-                onClick={() => selectBasemap(id)}
+                aria-pressed={basemapVisible && basemapId === id}
+                className={basemapVisible && basemapId === id ? "active" : ""}
+                onClick={() => { selectBasemap(id); if (basemapMenuRef.current) basemapMenuRef.current.open = false; }}
               >
                 <span aria-hidden="true" />
                 {BASEMAPS[id].labels[language]}
               </button>
-            ))}
-          </div>
+              ))}
+              <button type="button" aria-pressed={!basemapVisible} onClick={() => { setBasemapVisible(false); setBasemapState("hidden"); if (basemapMenuRef.current) basemapMenuRef.current.open = false; }}><span aria-hidden="true" />{language === "th" ? "ซ่อนพื้นหลัง" : "Hide background"}</button>
+            </div>
         </details>
       )}
-      {enableBasemaps && basemapState === "unavailable" && (
-        <p className="map-basemap-notice" role="status">
-          {language === "th"
-            ? "พื้นหลังแผนที่ไม่พร้อมใช้งานชั่วคราว แต่ขอบเขตและข้อมูลการวางแผนยังแสดงอยู่"
-            : "The map background is temporarily unavailable; planning boundaries and evidence remain visible."}
-        </p>
+      {enableBasemaps && (basemapState === "unavailable" || basemapState === "hidden") && (
+        <div className="map-basemap-notice" role="status">
+          <span>{basemapState === "hidden"
+            ? (language === "th" ? "ซ่อนพื้นหลังแผนที่แล้ว ขอบเขตและข้อมูลยังแสดงอยู่" : "Map background hidden; boundaries and evidence remain visible.")
+            : (language === "th" ? "พื้นหลังแผนที่ไม่พร้อมใช้งาน ขอบเขตและข้อมูลยังแสดงอยู่" : "Map background unavailable; boundaries and evidence remain visible.")}</span>
+          <button type="button" onClick={() => selectBasemap(basemapId)}>{basemapState === "hidden" ? (language === "th" ? "แสดงพื้นหลัง" : "Show background") : (language === "th" ? "ลองอีกครั้ง" : "Retry")}</button>
+        </div>
       )}
       {(roadDetailState === "loading" || roadDetailState === "unavailable") && (
         <p className={`map-detail-notice ${roadDetailState}`} role="status" aria-live="polite">

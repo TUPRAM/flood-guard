@@ -241,6 +241,15 @@ def build_automated_landing_gate_status(
         "schema": STATUS_SCHEMA,
         "track": "automated",
         "generated_utc": generated_at_utc or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source_timestamp": verified_plan["source"]["event_sensing_utc"] if verified_plan else None,
+        "confidence": (
+            "limited: single-event automated optical reference with failed two-method agreement"
+            if verified_reference else "unverified: automated optical reference receipt is unavailable"
+        ),
+        "assumptions": [
+            "The optical map is automated research evidence, not human flood truth.",
+            "A verified evaluation measures agreement with that map, not accuracy.",
+        ],
         "criteria": {name: criteria[name] for name in AUTOMATED_CRITERIA},
         "candidate_agreement": candidate_agreement,
         "human_reviewed": False,

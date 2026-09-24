@@ -1,7 +1,13 @@
 {
   "schema": "floodguard.landing_gate_status.v1",
   "track": "automated",
-  "generated_utc": "2026-09-24T10:24:58Z",
+  "generated_utc": "2026-09-24T10:31:38Z",
+  "source_timestamp": "2024-09-15T03:45:29Z",
+  "confidence": "limited: single-event automated optical reference with failed two-method agreement",
+  "assumptions": [
+    "The optical map is automated research evidence, not human flood truth.",
+    "A verified evaluation measures agreement with that map, not accuracy."
+  ],
   "criteria": {
     "automated_optical_reference": {
       "met": true,

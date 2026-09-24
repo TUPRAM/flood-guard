@@ -151,6 +151,9 @@ def test_missing_automated_receipts_keep_all_three_indicators_closed():
     assert list(status["criteria"]) == list(AUTOMATED_CRITERIA)
     assert all(not criterion["met"] for criterion in status["criteria"].values())
     assert status["candidate_agreement"] == {}
+    assert status["source_timestamp"] is None
+    assert status["confidence"].startswith("unverified:")
+    assert status["assumptions"]
     assert status["human_reviewed"] is False
     assert status["can_feed_decision_layer"] is False
 
@@ -158,6 +161,8 @@ def test_missing_automated_receipts_keep_all_three_indicators_closed():
 def test_verified_holdout_shows_both_candidate_states_even_when_limits_fail(tmp_path, monkeypatch):
     context = _context(tmp_path, monkeypatch, water_dice=0.4, cohen_kappa=0.2)
     status = _build(context)
+    assert status["source_timestamp"] == context["plan"]["source"]["event_sensing_utc"]
+    assert status["confidence"].startswith("limited:")
     assert status["criteria"]["automated_optical_reference"]["met"] is True
     assert status["criteria"]["automated_cross_review"]["met"] is False
     assert status["criteria"]["preregistered_holdout_evaluation"]["met"] is True, status["criteria"]["preregistered_holdout_evaluation"]["reason"]

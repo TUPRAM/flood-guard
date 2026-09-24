@@ -29,6 +29,9 @@ export interface GateStatusDocument {
   schema: string;
   generated_utc: string;
   track?: "automated";
+  source_timestamp?: string | null;
+  confidence?: string;
+  assumptions?: string[];
   criteria: Record<string, GateStatusEntry>;
   candidate_agreement?: Record<string, {
     processing_variant: string;

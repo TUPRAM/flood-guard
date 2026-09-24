@@ -6,7 +6,8 @@ import { launchFloodGuardBrowser } from "./browser-launch.mjs";
 
 const target = process.argv[2];
 if (!target) throw new Error("Pass the Preview URL.");
-const url = new URL("/", target);
+const url = new URL(target);
+url.pathname = "/";
 assert(["http:", "https:"].includes(url.protocol), "Preview URL must use HTTP or HTTPS.");
 
 const out = resolve("test-results/automated-gate-preview");
@@ -22,7 +23,7 @@ const expectedMarks = {
   preregistered_holdout_evaluation: "true",
 };
 const candidates = ["mae_sai_m2_gamma0_10m_otsu_candidate", "mae_sai_20m_amplitude_comparator"];
-const report = { url: url.href, checked_at_utc: new Date().toISOString(), viewports: [] };
+const report = { url: `${url.origin}/`, checked_at_utc: new Date().toISOString(), viewports: [] };
 const browser = await launchFloodGuardBrowser();
 try {
   for (const width of [360, 1440]) {

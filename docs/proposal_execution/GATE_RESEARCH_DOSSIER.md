@@ -12,6 +12,26 @@ Scores against that reference mean **agreement with an automated optical map,
 not accuracy**. The measured reference, development and final-holdout results,
 including failed limits, are recorded below.
 
+### 25 September 2026 prospective Thai event screen — none selected
+
+The [prospective selection protocol](automated_track/thai_event_selection_protocol_v1.json)
+was frozen at `a4b4e46f403dae2fcf318a15b039f072499018a2` before any new Thai
+event detector/reference score. The [source feasibility screen](automated_track/THAI_EVENT_FEASIBILITY_V1.md)
+then checked actual radar footprints, optical coverage, acquisition timing,
+reference class meaning and rights. Ayutthaya's 23 October optical scene has
+only **46.671%** buffered SCL observability over the existing AOI-05, despite
+the earlier **82.3%** in a different small illustrative box. Doi Tao's 5
+October scene has only about **18–19%** over the full UNOSAT analysis polygon.
+Both fail the frozen 50% optical cross-review condition on those AOIs. Doi
+Tao has a Gaofen-derived georeferenced flood and analysis polygon, but no
+documented dry/unknown semantics or product-specific derived-use terms. A
+NASA daily MODIS flood map offers explicit flood/dry/insufficient-data codes
+and permissive use terms, but its AOI contents remain unread because its HDF
+requires Earthdata Login. No reference-ready Thai event, dry pre-radar scene
+or processed-grid validity has been established. **No event was selected, no
+numerical methods or limits were frozen for a selected event, and no Thai
+detector score was run.** The next pre-registration must precede that score.
+
 ### 24 September 2026 optical v2 follow-up — overall FAIL
 
 The new [optical v2 result](automated_track/OPTICAL_V2_RESULT.md) tests the

@@ -19,7 +19,7 @@ Mae Sai AOI-01 (`aoi-01_mae_sai_core`, geometry SHA-256 `e4f09010f75328d02260d49
 | M0 | PASS | Reviewed branch/worktree/PR identity and every handoff hash; ordinary checkout untouched. New release identity belongs to M9. |
 | M1 | PASS | Reopened 363/363 open-data files (616,159,975 bytes), documented reference/rights gaps and acquired all 20 exact-year 2024 and 2025 WorldPop 1 km age bands. This is source feasibility, not qualified reference or publication rights. |
 | M2 | PARTIAL | Existing original SAFE and 10 m Gamma0 inputs rehashed. New candidate Otsu run abstained in all 81 windows and yields null candidate area; no qualified observation or independent accuracy. |
-| M3 | BLOCKED | Exact-purpose reference, assigned independent reviewers, frozen evaluation and separate downstream decision acceptance absent. User can identify the authority and source, but no names/receipts are yet supplied. |
+| M3 | NOT PURSUED (human track) | Human Reference Authority, reviewer and qualified-label gates remain intact but unused under the owner's automated-track decision. The separate automated optical reference and failed two-method cross-review are recorded below; neither supplies human qualification or accepted observation. |
 | M4 | PARTIAL | Lower-basin 5/10/15 km walking comparison passed. Corrected AOI-05/06 finals bind 10 km walking and modelled-vehicle contexts and reproduce the fixed 20,677/17,083 cell rosters; all listed outputs rehashed. Eight-case staged build, independent public export verifier and exact 24-file repository copy passed. Consequential link, grade, entrance and event closure review remain. |
 | M5 | PARTIAL | Equity v2 full-precision/bounds tests passed; 20-band 2024/2025 modelled age counts were reviewed at full-unit and fractional AOI grain. Mae Sai 2024 age mass was conservatively bound to fixed 2020 access nodes for a hypothetical closure, with unsupported cells/access explicit. Hosted derivative rights and accepted group loss remain open. |
 | M6 | PARTIAL | Existing hypothetical max-flow and new binary 2SFCA tooling are tested. No dated verified shelter service/capacity or qualified real 2SFCA result exists. |
@@ -27,7 +27,7 @@ Mae Sai AOI-01 (`aoi-01_mae_sai_core`, geometry SHA-256 `e4f09010f75328d02260d49
 | M8 | PARTIAL | Frozen code commit `577500c1bb31d67424984153028c6fbecb99f068` passed exact-source frontend and cross-role browser checks: nine contracts, 343 web tests, 17 asset tests, both profiles, ten cached routes, ten-route CSP, 64 briefs, 32 shared views, 33 deep routes and 16 workspaces. Public, Planning and Studio share the selected candidate identity, with separate historical archives. The requested branch Preview is READY and anonymous; the six-view live QA found no horizontal overflow and retained a Hat Yai case across Planning/Studio. These are technical presentation results, not accepted observation, equity, FPPS or action class. |
 | M9 | PARTIAL | The exact code commit/tree is `577500c1bb31d67424984153028c6fbecb99f068` / `47613dd622873793ecf8e45c5074de89127d4c3c`; PR 31 remains open to `landing-page-revised`. Both push/PR GitHub CI workflows passed core, API, runner, frontend and extras jobs. The competition Preview deployment `dpl_HFBaADxm74eTKikK8TXFrQyhmWVG` is READY at the requested branch alias, and anonymous QA got HTTP 200 on ten routes. The 287-file competition offline ZIP passed manifest/local-server replay on this machine; all three catalogs and 16 downloadable briefs match the Preview byte for byte. A stable external code-release receipt records these checks. Final documentation-commit binding, second-machine and human rehearsal remain pending. |
 | M10 | PARTIAL | Separate Hat Yai closure sensitivity and exact-year 2025 modelled age review completed. Corrected Hat Yai and AOI-05/06 source-bound finals are rebuilt; AOI-05/06 use fixed-demand 10 km routing context. The combined candidate catalog passed independent export verification and its 24-file repository copy. No transfer accuracy or observed 2024/2025 lower-basin comparison follows. |
-| M11 | BLOCKED | Synthetic file-backed release preflight and signed one-use opening checks are tested. Optional GeoAI dependency resolution passed without installation (292 frozen dry-run packages; 293 research-only Python 3.12 compiled entries). No real five-event qualified releases, owner keys or immutable custody; no learned real experiment ran. |
+| M11 | NOT PURSUED (human track) | Synthetic file-backed human release/opening checks remain tested, but no real five-event qualified releases or custodian keys exist. The owner chose a separate single-event automated hold-out with an exclusive local marker; that is not M11 human or multi-event authorization. |
 | M12 | PARTIAL | Locked bootstrap, external-root source manifests and reproducible commands exist. Three corrected finals and the staged eight-case EvidenceLibrary build have source/runtime hashes and sampled local time, working-set and disk measurements in `replication_resources.md`; second-machine replay remains NOT RUN. |
 | M13 | NOT RUN | Post-finals partner pilot and operational acceptance require its owner, source data and separate authority. |
 | M14 | NOT RUN | Advanced extensions need individual selected purposes and separate gates. |
@@ -97,3 +97,69 @@ The exact-code competition offline ZIP at `Project Support/FloodGuard/execution/
 Stable external code-release receipt: `Project Support/FloodGuard/execution/2026-09-23/proposal-release-staging-v1/qa/cleanup-live-577500c1/cleanup-release-receipt.json`, SHA-256 `968b78156f5b09ae75f10f6c036a9967f5e0e7db90e610df52111ba62344ac3e`. It records UI release **PASS** and full proposal **PARTIAL**, with `documentation_followup_commit_sha=null` intentionally. A separate final-binding receipt must name the later documentation commit/tree after its CI and Preview are checked; the stable code-release receipt is not modified to guess that SHA.
 
 Next release dependency: reconcile the documentation commit/Preview identity and update only directly evidenced register rows. AC41 stays **NOT RUN** until a real nontechnical reviewer and another physical machine complete their checks; this laptop's offline run is AC40 evidence only. Independent reference, road/service review, age rights, five-event ML custody and downstream FPPS acceptance remain open.
+
+## 24 September 2026 automated Mae Sai track
+
+The owner selected a separately named automated research chain: optical
+reference, two-method automated cross-review, one-use pre-registered
+development/final-holdout comparison, and landing indicators. The existing
+human Reference Authority, reviewer, adjudicator, qualified-release and
+custodian contracts remain available in code but are **not pursued** for this
+run. No human qualification, blind review, adjudication or signature occurred.
+
+The first commit of this work, `77833df9d595429c1cf903c9a841e86aa8668b79`
+(24 September 2026, 09:53:30 UTC), contains only
+`automated_track/preregistration_v1.json`, self-hash
+`bc5c6e9d2237a6423655e44790d0455131990ba954819265101f722d518cf543`.
+It fixes the optical methods, masks, grid, partition, both SAR candidate source
+hashes, metrics and acceptance limits before any SAR/reference comparison.
+The separate `automated_track/rights_basis_v1.json` records the Copernicus
+legal-notice purposes and attribution with `signed_by_human=false`.
+
+Credentials were not present in the process environment. The exact 15
+September and 5 September Sentinel-2B L2A products were therefore read through
+anonymous Earth Search as Element84 COG editions, with 16 asset sizes and
+SHA-256 hashes in `outputs/earth_search_mae_sai_sentinel2_reference_assets.csv`.
+The original SAFE SHA-256 is `not_recorded`; no original SAFE acquisition is
+claimed. Large source COGs, model weights, working rasters and the one-use
+hold-out ledger remain outside Git.
+
+The completed automated optical reference covers 1,047,320 AOI cells: 710,219
+dry, **179 temporary-flood**, 5 permanent-water, 9,620 uncertain and 327,297
+unobservable. On 720,023 comparable cells the two optical methods had water
+Dice **0.0695** and Cohen's kappa **0.0633**, failing the frozen Dice ≥ 0.60
+and kappa ≥ 0.50 cross-review limits. This is a negative result, not a
+qualified reference. No threshold was changed after the comparison.
+
+The validated development result binds the frozen reference receipt
+`4c27509001ca097b4da631b9026eabfae66789789ade324e59dcc97e50415d93`.
+The 10 m M2 Gamma0 candidate abstained on all 145,048 evaluable cells, so its
+score is unavailable and all five limits fail. The 20 m raw-amplitude
+comparator had IoU 0.000856 and Dice 0.001711 against the optical map; its
+coverage 0.999986 passes, while IoU, precision, recall and area-error limits
+fail. The development receipt is
+`outputs/automated_observation_development_v1.json` (self-hash
+`6bcf0b301963a0a53409b8dca0da46b71b650d47b48e80c8c660fb7c0036e1c2`).
+
+The final partition was consumed **once** by an exclusive marker outside Git;
+the self-hashed result `outputs/automated_observation_final_holdout_v1.json`
+(`51b8af0fdfc83555ae6d73cb3d379802d5b17de69c04c3f60d49c3087bfe1a1d`)
+binds that marker (canonical SHA-256
+`8fc790bc255a69eebed6780f28c0df12bdf7b10bf06e29978bb8d00790a26706`)
+and the development result. The marker is in
+`<external_data_workspace>/proposal_execution/automated_track/holdout_ledger_v1/`,
+with filename keyed by final-partition SHA-256
+`e0755afa7953ea4ce3acb8cca52d6b6107ff97e879bc6f5238c3f1fd6af4b452`.
+M2 again covered 0 of 114,588
+evaluable cells, so all five limits fail. The raw 20 m comparator covered
+114,517 cells (0.999380 coverage, PASS), but had TP 0, FP 6,405, FN 3,
+TN 108,109; IoU, precision and recall were **0**, and absolute area-error
+fraction was **2,134.0**. Those four limits FAIL. Its sole passing limit is
+coverage. Both candidates fail overall, and the reference cross-review also
+fails. No hold-out rerun or post-result threshold adjustment is authorized.
+
+An automated evaluation score is **agreement with an automated optical map,
+not accuracy**. A negative or missing limit stays visible. All outputs remain
+`official_warning=false`, `operational_status=non_operational`,
+`can_feed_decision_layer=false` and `accepted_observation=false`. Accepted FPPS
+and A–E action class remain null; Class E never means safe.

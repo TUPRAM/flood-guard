@@ -1,9 +1,106 @@
 # Gate research dossier — Mae Sai reference, review, evaluation and multi-event gates
 
+## 24 September 2026 track decision
+
+The project owner chose an end-to-end **automated research track** for this Mae
+Sai comparison. The human qualification and blind-review programme documented
+below is retained as a historical plan and is **not pursued** in this run. No
+automated receipt is a human appointment, signature, qualified label release or
+accepted observation. The automated track has its own pre-registration, rights
+basis, optical reference, two-method cross-review and one-use hold-out result.
+Scores against that reference mean **agreement with an automated optical map,
+not accuracy**. The measured reference, development and final-holdout results,
+including failed limits, are recorded below.
+
+### Automated optical reference result
+
+The exact 15 September event and 5 September dry-context Sentinel-2B L2A
+products were acquired anonymously as 16 Element84 Earth Search COG assets.
+Each asset's URL, byte count and SHA-256 are in
+`outputs/earth_search_mae_sai_sentinel2_reference_assets.csv`; the original
+SAFE SHA-256 is `not_recorded`. The optical rasters and model weight remain
+outside Git. Two frozen optical methods produced this AOI-01 label raster on
+the 10 m EPSG:32647 grid:
+
+| Label code | Meaning | AOI cells |
+| --- | --- | ---: |
+| 0 | Both methods dry | 710,219 |
+| 1 | Temporary flood agreed by both methods | 179 |
+| 2 | Permanent water in the 5 September dry context | 5 |
+| 3 | Method disagreement or indeterminate dry context | 9,620 |
+| 4 | SCL/unobservable and buffered cells | 327,297 |
+
+The 1,047,320 AOI cells include 720,023 cells on which both event methods
+could be compared. Their automated water Dice is **0.0695** and Cohen's kappa
+is **0.0633**. Both pre-registered cross-review limits fail (Dice ≥ 0.60,
+kappa ≥ 0.50). The methods marked 3,909 and 6,248 water cells respectively;
+their consensus temporary flood is sparse. No SAR data entered either optical
+method, and no method threshold was changed after seeing these results.
+Turbid water, cloud/shadow masking, the optical model's downsampling and the
+19 h 31 min gap before the SAR post scene constrain interpretation. The
+Component ★ finding that MNDWI > 0 flagged 8.7 times the reference area on a
+dry-season scene is a specific warning against treating a spectral mask as
+human flood truth.
+
+### Pre-registered development comparison
+
+The development partition was scored against reference codes 0 and 1 only;
+permanent water, uncertain and unobservable cells were excluded. The 10 m M2
+Gamma0 Otsu mask abstained on all 145,048 evaluable development cells. Its
+coverage is 0 and its IoU, Dice, precision, recall and area error are
+unavailable; **all five** pre-registered candidate limits fail. This is an
+abstaining candidate result, not evidence that the area was dry.
+
+The 20 m raw-amplitude comparator covered 145,046 of 145,048 evaluable cells
+(coverage 0.999986, the one passing limit). It had TP 6, FP 6,969, FN 33 and
+TN 138,038. Agreement IoU was **0.000856**, Dice **0.001711**, precision
+**0.000860**, recall **0.153846**, and absolute area error **177.846** times
+the 39-cell reference flood area on covered development cells. IoU,
+precision, recall and area-error limits all fail. The 33 false negatives are
+logged as possible time-gap/recession candidates, not proof of recession.
+These are agreement statistics against a weak automated optical map, not
+flood-detection accuracy.
+
+### Single-use final hold-out comparison
+
+The development result was checked before opening the final partition. One
+exclusive `automated_holdout_consumption` marker was created outside Git for
+the frozen partition; the final result binds that marker, the development
+result, the pre-registration commit and the optical reference receipt. This
+hold-out was run **once**. Its result is a recorded failure, not an opportunity
+to adjust thresholds or repeat the partition.
+
+| Final-holdout measure | M2 Gamma0 Otsu, radiometrically calibrated SAR input | Raw 20 m amplitude comparator |
+| --- | ---: | ---: |
+| Evaluable cells | 114,588 | 114,588 |
+| Covered cells / coverage | 0 / 0 | 114,517 / 0.999380 |
+| TP / FP / FN / TN | 0 / 0 / 0 / 0 (abstention) | 0 / 6,405 / 3 / 108,109 |
+| IoU / Dice | unavailable / unavailable | 0 / 0 |
+| Precision / recall | unavailable / unavailable | 0 / 0 |
+| Absolute area-error fraction | unavailable | 2,134.0 |
+| Boundary F1 at 20 m | unavailable | 0.000414 |
+| Pre-registered limits met | 0 of 5 | 1 of 5 (coverage only) |
+
+The M2 mask contains only abstentions in the aligned footprint and fails every
+limit. For the raw amplitude comparator, coverage passes ≥ 0.50; IoU fails
+≥ 0.30, precision fails ≥ 0.50, recall fails ≥ 0.50, and absolute area error
+fails ≤ 0.50. It predicts 640,500 m² of flood among scored cells against
+300 m² in the automated optical map. The three false negatives are a possible
+timing/recession diagnostic only. The optical scene preceded the SAR post scene
+by 19 h 31 min, and the reference's own two-method cross-review failed badly.
+The number on the landing page is **agreement with an automated optical map,
+not accuracy**. Neither candidate passes the frozen observation limits or
+earns accepted observation status. The raw comparator's source manifest also
+marks it `eligible_for_validation=false`; this automated comparison does not
+override that source status.
+
+## Historical human-track plan — not pursued in this run
+
 Prepared 24 September 2026 on `codex/open-data-evidence-demo`, starting from
 HEAD `e4a6a3ddd7112b9b7cdb3225411c2a23021b46ea`.
 
-**Status: research evidence and unsigned drafts. This dossier clears no gate.**
+**Status of the human track: research evidence and unsigned drafts. No human
+gate was opened.**
 Steps 1–6 of the gate sequence each end in a decision or act by a named,
 qualified person: a rights record, a Reference Authority signature, four-person
 blind review, a frozen evaluation plan, custodian keys, and downstream

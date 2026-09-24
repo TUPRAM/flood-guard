@@ -559,7 +559,7 @@ def verify_result_consistency(value: Mapping[str, Any], plan: Mapping[str, Any])
         raise AutomatedOpticalV2Error("V2 Dice differs from reported water counts.")
     po = (n - a - b + 2 * shared) / n
     pe = (a * b + (n - a) * (n - b)) / (n * n)
-    expected_kappa = (po - pe) / (1 - pe) if not math.isclose(pe, 1.0, abs_tol=1e-15) else None
+    expected_kappa = (po - pe) / (1 - pe) if not math.isclose(pe, 1.0, rel_tol=0, abs_tol=1e-15) else None
     if (kappa is None) != (expected_kappa is None) or (
         kappa is not None and not math.isclose(kappa, expected_kappa, rel_tol=0, abs_tol=1e-9)
     ):
@@ -568,6 +568,74 @@ def verify_result_consistency(value: Mapping[str, Any], plan: Mapping[str, Any])
     overall_pass = pair_pass and coverage >= limits["min_event_observable_fraction_of_aoi"] and feasibility_pass
     if agreement.get("passes_limits") is not pair_pass or value.get("passes_all_limits") is not overall_pass:
         raise AutomatedOpticalV2Error("V2 result pass flag contradicts its frozen limits.")
+
+
+def validate_result_artifacts(
+    *, result_path: Path, preparation_path: Path, manifest_path: Path,
+    external_root: Path, output_dir: Path, quicklook_path: Path,
+    development_path: Path | None = None,
+) -> dict[str, Any]:
+    """Verify a recorded v2 result and its file/marker hashes without rerunning scoring."""
+    plan = load_plan()
+    result = verify_receipt(result_path, "floodguard.automated_optical_v2_result.v1", plan)
+    preparation = verify_receipt(
+        preparation_path, "floodguard.automated_optical_v2_preparation.v1", plan,
+    )
+    role = result["role"]
+    if (preparation.get("role") != role
+            or result.get("preparation_receipt_sha256") != preparation["receipt_sha256"]
+            or result.get("input_manifest_sha256") != file_sha256(manifest_path)
+            or preparation.get("asset_manifest_sha256") != result["input_manifest_sha256"]
+            or result.get("input_assets") != preparation.get("input_assets")):
+        raise AutomatedOpticalV2Error("V2 result and preparation inputs do not match.")
+    rows = load_asset_manifest(manifest_path, plan, role)
+    if rows != result["input_assets"]:
+        raise AutomatedOpticalV2Error("V2 result assets differ from the source manifest.")
+    verify_asset_files(rows, scene_root(external_root, role))
+    if (result.get("model_raster_sha256") != preparation.get("model_raster_sha256")
+            or result.get("model_tiling") != preparation.get("model_tiling")
+            or result.get("model_runtime_versions") != preparation.get("model_runtime_versions")
+            or result.get("source_timestamp") != preparation.get("source_timestamp")
+            or result.get("dry_context_source_timestamp") != preparation.get("dry_context_source_timestamp")):
+        raise AutomatedOpticalV2Error("V2 model or source-time provenance differs from preparation.")
+    for scene_role in ("event", "dry"):
+        for kind in ("input", "output"):
+            path = output_dir / f"{scene_role}_native_model_{kind}.tif"
+            expected = result["model_raster_sha256"][scene_role][f"{kind}_sha256"]
+            if file_sha256(path) != expected:
+                raise AutomatedOpticalV2Error("V2 prepared model raster hash mismatch.")
+        for method in ("a", "b"):
+            key = f"{scene_role}_{method}"
+            if file_sha256(output_dir / f"{scene_role}_method_{method}_water.tif") != result["method_raster_sha256"][key]:
+                raise AutomatedOpticalV2Error("V2 method raster hash mismatch.")
+    if (file_sha256(output_dir / "automated_optical_reference_v2.tif") != result["label_raster_sha256"]
+            or file_sha256(quicklook_path) != result["quicklook_sha256"]):
+        raise AutomatedOpticalV2Error("V2 label or quicklook hash mismatch.")
+    if role == "final_holdout":
+        if development_path is None:
+            raise AutomatedOpticalV2Error("V2 final verification needs the development receipt.")
+        gate = load_feasibility_gate(plan)
+        development = verify_receipt(
+            development_path, "floodguard.automated_optical_v2_result.v1", plan,
+        )
+        marker_path = (external_root / "proposal_execution" / "automated_track" / "v2"
+                       / "automated_optical_holdout_consumption.json")
+        try:
+            marker = json.loads(marker_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise AutomatedOpticalV2Error("V2 exclusive holdout marker is unavailable.") from exc
+        if (marker.get("schema") != "floodguard.automated_optical_holdout_consumption.v2"
+                or marker.get("marker_sha256") != canonical_sha256(marker, omit="marker_sha256")
+                or marker["marker_sha256"] != result["holdout_consumption_marker_sha256"]
+                or marker.get("preregistration_sha256") != plan["preregistration_sha256"]
+                or marker.get("preregistration_commit") != PLAN_COMMIT
+                or marker.get("feasibility_gate_sha256") != gate["feasibility_gate_sha256"]
+                or marker.get("feasibility_gate_commit") != FEASIBILITY_COMMIT
+                or marker.get("preparation_receipt_sha256") != preparation["receipt_sha256"]
+                or marker.get("development_receipt_sha256") != development["receipt_sha256"]
+                or result.get("development_receipt_sha256") != development["receipt_sha256"]):
+            raise AutomatedOpticalV2Error("V2 holdout marker or development binding is invalid.")
+    return result
 
 
 def utc_now() -> str:

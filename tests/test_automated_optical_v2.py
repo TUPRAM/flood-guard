@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import floodguard.automated_optical_v2 as v2
 from floodguard.automated_optical_v2 import (
     ASSETS,
     AutomatedOpticalV2Error,
@@ -21,6 +22,7 @@ from floodguard.automated_optical_v2 import (
     load_plan,
     model_input,
     spectral_validity_only,
+    validate_result_artifacts,
     verify_receipt,
     write_self_hashed,
 )
@@ -210,3 +212,38 @@ def test_rehashed_false_pass_result_refuses(tmp_path: Path) -> None:
     write_self_hashed(result, forged)
     with pytest.raises(AutomatedOpticalV2Error, match="pass flag contradicts"):
         verify_receipt(forged, result["schema"], plan)
+
+
+def test_result_artifact_validation_refuses_changed_method_raster(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    result_path = root / "outputs/automated_optical_v2_development.json"
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    expected_hashes = {
+        "automated_optical_reference_v2.tif": result["label_raster_sha256"],
+    }
+    for scene in ("event", "dry"):
+        for kind in ("input", "output"):
+            expected_hashes[f"{scene}_native_model_{kind}.tif"] = result["model_raster_sha256"][scene][f"{kind}_sha256"]
+        for method in ("a", "b"):
+            expected_hashes[f"{scene}_method_{method}_water.tif"] = result["method_raster_sha256"][f"{scene}_{method}"]
+    real_file_sha256 = v2.file_sha256
+
+    def simulated_file_sha256(path: Path) -> str:
+        if path.name == "event_method_a_water.tif":
+            return "0" * 64
+        return expected_hashes[path.name] if path.name in expected_hashes else real_file_sha256(path)
+
+    monkeypatch.setattr(v2, "file_sha256", simulated_file_sha256)
+    monkeypatch.setattr(v2, "load_asset_manifest", lambda *_args: result["input_assets"])
+    monkeypatch.setattr(v2, "verify_asset_files", lambda *_args: None)
+    with pytest.raises(AutomatedOpticalV2Error, match="method raster hash mismatch"):
+        validate_result_artifacts(
+            result_path=result_path,
+            preparation_path=root / "outputs/automated_optical_v2_development_preparation.json",
+            manifest_path=root / "outputs/earth_search_automated_optical_v2_development_assets.csv",
+            external_root=tmp_path,
+            output_dir=tmp_path,
+            quicklook_path=root / "outputs/automated_optical_v2_development.png",
+        )

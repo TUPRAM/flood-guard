@@ -1,0 +1,48 @@
+{
+  "_form_status": "TEMPLATE - UNSIGNED - NOT EVIDENCE. Remove every key starting with '_' before building. Only the appointed Reference Authority fills null decision and attestation fields.",
+  "_instructions": "Shape: docs/reference_authority_design_approval.md. Consumed by scripts/build_reference_authority_approval.py after the pre-calibration human-role package and the provisional reserve design exist. Set each attestation to true only if the authority agrees with it.",
+  "schema": "floodguard.reference_authority_design_decision_request.v1",
+  "package_id": "mae_sai_reference_authority_decision_v1",
+  "event_id": "TH-MAESAI-2024-09",
+  "created_at_utc": "<UTC-after-evidence-capture>",
+  "reference_authority_role_id": "FG-RA-001",
+  "reference_authority_person_id": "FG-HUM-<NNN>",
+  "decision_evidence": {
+    "evidence_id": "FG-RA-DEC-001",
+    "evidence_type": "<email_export | signed_pdf | message_export>",
+    "local_path": "<authority_decision file name>",
+    "sha256": "<64-lowercase-hex>",
+    "decision_at_utc": "<UTC-from-message>",
+    "captured_at_utc": "<UTC-of-export>",
+    "attributable_sender": "<sender shown by export>",
+    "attributable_recipient": "<recipient shown by export>",
+    "attributable_sender_person_id": "FG-HUM-<NNN>"
+  },
+  "reserve_design_decision": {
+    "design_id": "mae_sai_reserve_design_v1",
+    "chosen_candidate_id": "<CALRES-XXXXXXXXXXXX from candidate_reserve_combinations.csv>",
+    "decision": null,
+    "rationale": null
+  },
+  "review_derivative_decision": {
+    "decision": "not_submitted",
+    "receipt_sha256": null,
+    "rationale": "No SAR change display is proposed in this version. The Sentinel-2 reviewer display needs its own governed candidate first (signing_forms/README.md, contract gap 2)."
+  },
+  "reference_procedure_decision": {
+    "document_version": "reference_procedure_v2",
+    "document_sha256": "<SHA-256 of the frozen reference_procedure_v2.md>",
+    "decision": null,
+    "rationale": null
+  },
+  "authority_attestations": {
+    "reserve_uses_static_non_label_context_only": null,
+    "reserve_candidate_is_not_flood_truth": null,
+    "calibration_and_retest_queries_remain_unselected_and_unseen": null,
+    "reference_procedure_is_fixed_to_the_bound_hash_and_version": null,
+    "derivative_decision_governs_display_inclusion_only": null,
+    "no_bundle_calibration_or_formal_review_is_authorized": null,
+    "human_role_evidence_limitation_is_acknowledged": null
+  },
+  "assumptions": "Authority decision only; no query, label, model, or operational claim."
+}

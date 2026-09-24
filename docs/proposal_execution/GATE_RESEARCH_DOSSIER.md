@@ -196,6 +196,18 @@ Road passability, facility operation, entrances and capacity still need the
 dated review described in `road_service_review_queue.md`. News leads help
 reviewers find evidence but are not receipts.
 
+## Tooling that makes the human steps fast
+
+Added after this dossier. Each tool fails closed; none replaces a signature.
+
+| Tool | Status here |
+| --- | --- |
+| `scripts/acquire_cdse_mae_sai_sentinel2_reference.py` | Ran. Recorded `blocked_missing_cdse_credentials` in `outputs/cdse_mae_sai_sentinel2_reference_acquisition_manifest.csv`. With `CDSE_USERNAME`/`CDSE_PASSWORD` set, it downloads, validates and hashes the SAFE outside Git; `--register-existing` hashes an already-downloaded ZIP. |
+| `signing_forms/` | Pre-filled forms for rights (1), roles (2), the Reference Authority decision and draft procedure v2 (3), and the evaluation plan (4). Decisions, attestations, limits and identities are left blank. |
+| `scripts/evaluate_mae_sai_observation.py` (`floodguard.observation_evaluation`) | Ready. Refuses to run without a frozen plan and a label release that the canonical preflight marks eligible; the final holdout also needs a verified, consumed custodian opening. |
+| `scripts/build_landing_gate_status.py` (`floodguard.landing_gate_status`) | Ran. The landing page's three indicators now come from `apps/web/src/lib/landing/gate-status.json`, which only a passing validator can switch on; all three are off today. |
+| 12 + 12 calibration bundles | **Not built.** The production writer requires the approved Reference Authority package and appointed roles, and it rejects optical context. The external workspace is also not on this machine. See `signing_forms/README.md`, contract gaps. |
+
 ## Presentation corrections made in this change
 
 These fix wording on the Preview. They do not clear any gate.

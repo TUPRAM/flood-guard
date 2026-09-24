@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowDown, ArrowRight, ArrowUpRight, CircleHelp, FileSearch, House, Map, Microscope, ShieldCheck, Waves } from "lucide-react";
 import copy from "@/lib/landing/copy.en.json";
+import { landingGateStatus, resolveGateCriteria } from "@/lib/landing/gate-status";
 import caseRecord from "../../../public/offline-demo/mae-sai/manifest.json";
 import { LandingNavigation } from "./landing-nav.client";
 import { AccessComparison, ConnectionDiagram, IllustrativeFinding } from "./illustrative-finding";
@@ -10,6 +11,7 @@ import { PipelineDetail } from "./pipeline-detail";
 import styles from "./landing.module.css";
 
 const workspaceIcons = [House, Map, Microscope];
+const gateCriteria = resolveGateCriteria(copy.pipeline.gate.criteria, landingGateStatus);
 const sourceTime = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", hour12: false }).format(new Date(caseRecord.source_timestamp));
 
 function ChapterDetail({ id }: { id: string }) {
@@ -131,11 +133,12 @@ export function LandingPage() {
       <div className={styles.pipelineBlock}>
         <h3>{copy.pipeline.gate.heading}</h3>
         <p>{copy.pipeline.gate.body}</p>
-        <ul className={styles.gateList}>{copy.pipeline.gate.criteria.map(criterion => <li key={criterion.label} data-met={String(criterion.met)}>
+        <ul className={styles.gateList}>{gateCriteria.map(criterion => <li key={criterion.label} data-met={String(criterion.met)} data-source={criterion.source}>
           <span className={styles.gateMark} aria-hidden="true">{criterion.met ? "✓" : "✕"}</span>
           <span><strong>{criterion.label}</strong><small>{criterion.detail}</small></span>
         </li>)}</ul>
-        <p className={styles.gateVerdict}>{copy.pipeline.gate.verdict}</p>
+        <p className={styles.gateVerdict}>{gateCriteria.every(criterion => criterion.met) ? copy.pipeline.gate.verdict_met : copy.pipeline.gate.verdict}</p>
+        <p className={styles.modelNote}>{copy.pipeline.gate.status_note.replace("{generated}", landingGateStatus.generated_utc)}</p>
       </div>
 
       <div className={styles.pipelineBlock}>

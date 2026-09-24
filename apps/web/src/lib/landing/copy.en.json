@@ -344,22 +344,30 @@
           "detail": "We may use these sources for this purpose."
         },
         {
+          "id": "qualified_reference_mask",
           "label": "Qualified reference mask",
           "met": false,
-          "detail": "No rights-cleared, event-aligned Thai reference exists yet."
+          "detail": "No rights-cleared, event-aligned Thai reference exists yet.",
+          "detail_met": "A qualified reference release validates against its Reference Authority record."
         },
         {
+          "id": "frozen_holdout_and_calibration",
           "label": "Frozen hold-out and calibration",
           "met": false,
-          "detail": "Cannot run without an approved reference to score against."
+          "detail": "Cannot run without an approved reference to score against.",
+          "detail_met": "A custodian-opened final hold-out was scored under a frozen, signed plan."
         },
         {
+          "id": "blind_review_and_adjudication",
           "label": "Blind review and adjudication",
           "met": false,
-          "detail": "Requires a four-person review campaign."
+          "detail": "Requires a four-person review campaign.",
+          "detail_met": "A four-person blind-reviewed, adjudicated label release revalidates."
         }
       ],
-      "verdict": "Mae Sai fails this gate today. That is the system working, not a missing feature."
+      "verdict": "Mae Sai fails this gate today. That is the system working, not a missing feature.",
+      "verdict_met": "Every criterion now has a validated receipt. The flood map may be considered by the separate downstream acceptance review.",
+      "status_note": "The last three marks are read from validated receipts, not typed in. Status generated {generated}."
     },
     "outcome": {
       "heading": "So what reaches a planner",

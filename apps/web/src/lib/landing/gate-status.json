@@ -1,0 +1,26 @@
+{
+  "schema": "floodguard.landing_gate_status.v1",
+  "generated_utc": "2026-09-24T08:36:32Z",
+  "criteria": {
+    "qualified_reference_mask": {
+      "met": false,
+      "receipt_sha256": null,
+      "validator": "qualified_reference_release.validate_qualified_reference_release",
+      "reason": "no qualified reference release supplied"
+    },
+    "blind_review_and_adjudication": {
+      "met": false,
+      "receipt_sha256": null,
+      "validator": "multi_event_preflight.revalidate_qualified_release_files",
+      "reason": "no qualified label release supplied"
+    },
+    "frozen_holdout_and_calibration": {
+      "met": false,
+      "receipt_sha256": null,
+      "validator": "observation_evaluation (frozen plan + final_holdout result)",
+      "reason": "no frozen plan and final-holdout result supplied"
+    }
+  },
+  "official_warning": false,
+  "operational_status": "non_operational"
+}

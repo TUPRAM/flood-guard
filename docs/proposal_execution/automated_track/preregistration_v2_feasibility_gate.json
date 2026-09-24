@@ -1,0 +1,22 @@
+{
+  "schema": "floodguard.automated_optical_v2_feasibility_gate.v1",
+  "status": "committed_before_final_holdout_method_run",
+  "recorded_at_utc": "2026-09-24T12:46:18Z",
+  "recorded_by": "automated agent (Codex)",
+  "base_preregistration_path": "docs/proposal_execution/automated_track/preregistration_v2.json",
+  "base_preregistration_commit": "efc69f5f66dfe8c2d667a9827566126709f1cab9",
+  "base_preregistration_sha256": "9067fa37f817c283e908472595dba7fa9e16b36ae8101dce6f887e1ffc51e263",
+  "holdout_event_id": "TH-CHAIYAPHUM-2021-09",
+  "minimum_event_water_cells_each_method": 100,
+  "minimum_shared_water_cells": 100,
+  "reason": "Dice and kappa can appear strong when only a handful of water pixels exist amid a large dry background; require at least 100 water pixels from each method and 100 shared pixels before treating a passing score as substantial evidence.",
+  "relationship_to_base_limits": "Additional stricter feasibility requirement; the original Dice, kappa and observable-coverage limits remain unchanged.",
+  "holdout_state_at_freeze": "Only product identity, acquisition metadata and SCL clear-fraction screening have been inspected; no Chaiyaphum v2 water outputs or A/B comparison have been run.",
+  "metric_interpretation": "Agreement with an automated optical map, not accuracy.",
+  "human_reviewed": false,
+  "accepted_observation": false,
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "feasibility_gate_sha256": "628cd733d6fd3bc23b448a26df28829c292bd9f4f53f22934cfe5d62437b3428"
+}

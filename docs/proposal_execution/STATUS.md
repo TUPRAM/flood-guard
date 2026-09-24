@@ -189,8 +189,10 @@ half the AOI cells were observable. Label codes 0–4 count 713,615 / 196 / 32 /
 water classification; the dry scene's suitability is uncertain, so it does not
 prove permanent water. The two-method score is **agreement with an automated
 optical map, not accuracy**. No independent date-compatible pixelwise flood
-truth was verified; the [source search](automated_track/independent_evidence_candidates_v2.md)
-and AWA GAD imagery-order route have not supplied one.
+truth was verified. The [source search](automated_track/independent_evidence_candidates_v2.md)
+found a same-day GISTDA ALOS-2 flood polygon inside Mae Sai AOI-01 in the
+signed-in STAC map, but no complete AOI export or derivative-use grant. The AWA
+GAD imagery-order route has not supplied a reference either.
 
 V2 has no human review, accepted observation, FPPS or A–E action class. It
 remains `official_warning=false`, `operational_status=non_operational` and

@@ -50,8 +50,10 @@ diagnosis](automated_track/SAR_M2_ABSTENTION_DIAGNOSIS.md) are separately
 reproducible. The SAR M2 candidate still has zero classified cells because all
 81 windows failed its frozen histogram test; v2 optical work does not repair
 that candidate. The [independent-source search](automated_track/independent_evidence_candidates_v2.md)
-found contextual UNOSAT reports and later GISTDA imagery but no verified,
-same-time, legally reusable Mae Sai pixelwise truth. Human-track gates remain
+subsequently located a same-day GISTDA ALOS-2 flood polygon inside the Mae Sai
+AOI in the signed-in STAC map. Its complete AOI geometry, processing lineage
+and reuse rights have not been verified, so no legally reusable pixelwise truth
+has been established. Human-track gates remain
 not pursued, and no v2 output is an accepted observation, official warning or
 downstream FPPS input.
 

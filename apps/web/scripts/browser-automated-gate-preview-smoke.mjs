@@ -4,12 +4,12 @@ import { resolve } from "node:path";
 
 import { launchFloodGuardBrowser } from "./browser-launch.mjs";
 
-const target = process.argv[2] ?? process.env.FLOODGUARD_PREVIEW_BASE_URL;
-if (!target) throw new Error("Pass the Preview URL or set FLOODGUARD_PREVIEW_BASE_URL.");
+const target = process.argv[2];
+if (!target) throw new Error("Pass the Preview URL.");
 const url = new URL("/", target);
 assert(["http:", "https:"].includes(url.protocol), "Preview URL must use HTTP or HTTPS.");
 
-const out = resolve(process.env.FLOODGUARD_GATE_PREVIEW_CAPTURE_DIR ?? "test-results/automated-gate-preview");
+const out = resolve("test-results/automated-gate-preview");
 mkdirSync(out, { recursive: true });
 const labels = {
   automated_optical_reference: "Automated optical reference (not human-qualified)",

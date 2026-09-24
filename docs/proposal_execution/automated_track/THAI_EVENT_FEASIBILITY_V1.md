@@ -44,9 +44,12 @@ eligibility claim.
 ## Independent-reference acquisition route
 
 NASA's [MCDWD_L3 historical Global Flood Product](https://www.earthdata.nasa.gov/global-flood-product)
-has daily HDF maps through 2025. Its [user guide](https://www.earthdata.nasa.gov/s3fs-public/2025-12/MCDWD_VCDWD_UserGuide_RevF.pdf)
-defines 1-day classes 0 no water, 1 expected water, 2 recurring flood, 3
-unusual flood and 255 insufficient data. It is an **automated 250 m MODIS
+has daily HDF maps through 2025. Its [user guide](https://www.earthdata.nasa.gov/s3fs-public/2025-04/MCDWD_VCDWD_UserGuide_RevE_04.22.25.pdf)
+defines 1-day classes 0 no water, 1 surface water matching reference water,
+2 recurring flood, 3 unusual flood and 255 insufficient data. The guide notes
+that code 2 was not yet populated in Release 1; the actual archive version
+must be checked. Its 1-day layer can include cloud-shadow false positives.
+It is an **automated 250 m MODIS
 reference**, independent of Sentinel-1 but neither field truth nor a 10 m
 reference. A comparison would aggregate the radar result onto the MODIS grid
 and report source-map agreement with resolution and date limitations.

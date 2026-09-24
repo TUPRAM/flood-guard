@@ -20,6 +20,10 @@ from typing import Any
 import numpy as np
 
 from floodguard.label_factory.agreement import compute_agreement
+from floodguard.observation_evaluation import (
+    ObservationEvaluationError,
+    verify_automated_preregistration_commit,
+)
 
 PREREG_PATH = Path(__file__).resolve().parents[2] / "docs" / "proposal_execution" / "automated_track" / "preregistration_v1.json"
 PREREG_COMMIT = "77833df9d595429c1cf903c9a841e86aa8668b79"
@@ -50,7 +54,7 @@ def _file_sha256(path: Path) -> str:
 
 
 def load_preregistration(path: Path = PREREG_PATH) -> dict[str, Any]:
-    """Load and verify the committed automated pre-registration self-hash."""
+    """Load the automated plan and verify its self-hash and Git commit content."""
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -59,6 +63,10 @@ def load_preregistration(path: Path = PREREG_PATH) -> dict[str, Any]:
         raise AutomatedReferenceError("Unexpected automated pre-registration schema.")
     if payload.get("preregistration_sha256") != _canonical_sha256(payload, "preregistration_sha256"):
         raise AutomatedReferenceError("Automated pre-registration self-hash mismatch.")
+    try:
+        verify_automated_preregistration_commit(payload, PREREG_COMMIT, Path(__file__).resolve().parents[2])
+    except ObservationEvaluationError as exc:
+        raise AutomatedReferenceError(f"Automated pre-registration Git commit mismatch: {exc}") from exc
     return payload
 
 

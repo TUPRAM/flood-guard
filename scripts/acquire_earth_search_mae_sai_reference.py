@@ -81,10 +81,16 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _download(url: str, target: Path, expected_size: int, *, attempts: int = 8) -> None:
+def _download(
+    url: str, target: Path, expected_size: int, *, trusted_sha256: str | None = None, attempts: int = 8,
+) -> None:
     if target.exists():
         if target.stat().st_size != expected_size:
             raise ValueError(f"Existing COG has an unexpected size: {target}")
+        if trusted_sha256 is None:
+            raise ValueError(f"Existing COG has no matching prior manifest: {target}")
+        if _sha256(target) != trusted_sha256:
+            raise ValueError(f"Existing COG SHA-256 disagrees with prior manifest: {target}")
         return
     target.parent.mkdir(parents=True, exist_ok=True)
     partial = target.with_suffix(target.suffix + ".part")
@@ -152,12 +158,27 @@ def _acquire_asset(
     asset_name: str,
     url: str,
     external_dir: Path,
+    prior: dict[str, str] | None,
 ) -> dict[str, str]:
     size, etag = _head(url)
     target = external_dir / item_id / f"{asset_name}.tif"
-    print(f"  downloading {role}/{asset_name}: {size} bytes", flush=True)
-    _download(url, target, size)
+    if prior is not None and any((
+        prior["scene_role"] != role,
+        prior["item_id"] != item_id,
+        prior["product_uri"] != product_uri,
+        prior["asset"] != asset_name,
+        prior["asset_url"] != url,
+        prior["file_size_bytes"] != str(size),
+    )):
+        raise ValueError(f"Existing manifest disagrees with asset {item_id}/{asset_name}.")
+    reused = target.exists()
+    print(f"  acquiring {role}/{asset_name}: {size} bytes", flush=True)
+    _download(url, target, size, trusted_sha256=prior["sha256"] if prior else None)
     digest = _sha256(target)
+    if prior is not None and digest != prior["sha256"]:
+        raise ValueError(f"Existing manifest disagrees with asset {item_id}/{asset_name}.")
+    if reused and prior is not None:
+        return prior
     return {
         "scene_role": role,
         "item_id": item_id,
@@ -201,6 +222,7 @@ def acquire(
                     asset_name,
                     item["assets"][asset_name]["href"],
                     external_dir,
+                    rows.get((item_id, asset_name)),
                 )
                 for asset_name in ASSETS
             ]

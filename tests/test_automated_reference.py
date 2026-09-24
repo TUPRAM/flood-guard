@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import json
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,7 @@ from floodguard.automated_reference import (
     validate_automated_reference_receipt,
     write_receipt,
 )
+from floodguard.observation_evaluation import canonical_sha256
 
 
 def test_label_codes_cover_disagreement_cloud_and_dry_context() -> None:
@@ -74,6 +76,19 @@ def test_cross_review_uses_agreement_metric_and_fixed_limits() -> None:
     assert report["cohen_kappa"] == 1.0
     assert report["passes_limits"] is True
     assert report["human_reviewed"] is False
+
+
+def test_rehashed_plan_that_differs_from_git_commit_is_rejected(tmp_path: Path) -> None:
+    plan = load_preregistration()
+    plan["methods"]["B"]["mndwi_gt"] = 0.11
+    plan["preregistration_sha256"] = canonical_sha256({
+        key: value for key, value in plan.items() if key != "preregistration_sha256"
+    })
+    changed = tmp_path / "preregistration_v1.json"
+    changed.write_text(json.dumps(plan), encoding="utf-8")
+
+    with pytest.raises(AutomatedReferenceError, match="Git commit mismatch"):
+        load_preregistration(changed)
 
 
 def _manifest(tmp_path: Path) -> Path:

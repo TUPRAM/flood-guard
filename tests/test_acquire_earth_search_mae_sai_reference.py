@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import io
 import json
@@ -54,6 +55,33 @@ def test_download_resumes_only_at_the_verified_range(tmp_path: Path, monkeypatch
     assert not target.with_suffix(".tif.part").exists()
 
 
+def test_existing_complete_cog_requires_matching_prior_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    item_id, product_uri = acquisition.SCENES["event"]
+    url = "https://example.test/blue.tif"
+    target = tmp_path / item_id / "blue.tif"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"abcdef")
+    monkeypatch.setattr(acquisition, "_head", lambda asset_url: (6, "etag"))
+
+    with pytest.raises(ValueError, match="no matching prior manifest"):
+        acquisition._acquire_asset("event", item_id, product_uri, "blue", url, tmp_path, None)
+
+    prior = {
+        "scene_role": "event", "item_id": item_id, "product_uri": product_uri,
+        "asset": "blue", "asset_url": url, "file_size_bytes": "6",
+        "sha256": hashlib.sha256(b"abcdef").hexdigest(),
+    }
+    assert acquisition._acquire_asset("event", item_id, product_uri, "blue", url, tmp_path, prior) == prior
+    with pytest.raises(ValueError, match="Existing manifest disagrees"):
+        acquisition._acquire_asset(
+            "event", item_id, product_uri, "blue", url, tmp_path, {**prior, "asset_url": "https://other.test/blue.tif"},
+        )
+    with pytest.raises(ValueError, match="SHA-256 disagrees"):
+        acquisition._acquire_asset("event", item_id, product_uri, "blue", url, tmp_path, {**prior, "sha256": "0" * 64})
+
+
 def test_acquire_records_each_asset_and_refuses_changed_receipt(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -63,7 +91,7 @@ def test_acquire_records_each_asset_and_refuses_changed_receipt(
     monkeypatch.setattr(acquisition, "_item", lambda item_id, product_uri: {"assets": assets})
     monkeypatch.setattr(acquisition, "_head", lambda url: (6, "etag"))
 
-    def write_cog(url: str, target: Path, expected_size: int) -> None:
+    def write_cog(url: str, target: Path, expected_size: int, *, trusted_sha256: str | None = None) -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(b"abcdef")
 

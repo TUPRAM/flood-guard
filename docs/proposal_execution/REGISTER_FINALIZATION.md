@@ -1,6 +1,6 @@
 # Finalizing source-bound execution registers
 
-Current state: **PARTIAL**. The 40 requirement rows and 50 acceptance rows contain evidence paths and honest PASS/PARTIAL/BLOCKED/NOT RUN decisions, but their `last_verified_sha` cells remain blank. The baseline commit `14df822e8161cef4edd253f371a89c09d0e5fac9` identifies the reviewed starting point and must **not** be copied into rows for new work. Fill only rows actually checked against a frozen new source commit after the final case packages, catalog, briefs, profiles and tests stabilize.
+Current state: **PARTIAL**. The 40 requirement rows and 50 acceptance rows contain evidence paths and honest PASS/PARTIAL/BLOCKED/NOT RUN decisions. Specific technical acceptance rows now bind the verified code commit `577500c1bb31d67424984153028c6fbecb99f068`; scientific, human and unverified rows retain blank `last_verified_sha` cells where appropriate. The baseline commit `14df822e8161cef4edd253f371a89c09d0e5fac9` identifies the reviewed starting point and must **not** be copied into rows for new work. Fill further rows only after their named evidence is checked against a frozen source commit.
 
 ## Source identity rule
 

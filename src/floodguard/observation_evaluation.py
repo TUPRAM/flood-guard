@@ -443,6 +443,12 @@ def validate_automated_evaluation_result(
         raise ObservationEvaluationError("automated result interpretation is missing")
     if not isinstance(value.get("source_timestamp"), str) or not value["source_timestamp"]:
         raise ObservationEvaluationError("automated result source timestamp is missing")
+    if not isinstance(value.get("processed_utc"), str) or not _UTC.fullmatch(value["processed_utc"]):
+        raise ObservationEvaluationError("automated result processing timestamp is invalid")
+    try:
+        datetime.fromisoformat(value["processed_utc"].replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ObservationEvaluationError("automated result processing timestamp is invalid") from error
     if not isinstance(value.get("confidence"), str) or not value["confidence"]:
         raise ObservationEvaluationError("automated result confidence is missing")
     if not isinstance(value.get("assumptions"), list) or not value["assumptions"]:
@@ -541,9 +547,13 @@ def _validate_automated_final_evidence(
     if not isinstance(consumed_at, str) or not _UTC.fullmatch(consumed_at):
         raise ObservationEvaluationError("automated holdout marker timestamp is invalid")
     try:
-        datetime.fromisoformat(consumed_at.replace("Z", "+00:00"))
+        consumed_time = datetime.fromisoformat(consumed_at.replace("Z", "+00:00"))
     except ValueError as error:
         raise ObservationEvaluationError("automated holdout marker timestamp is invalid") from error
+    development_time = datetime.fromisoformat(development["processed_utc"].replace("Z", "+00:00"))
+    final_time = datetime.fromisoformat(final["processed_utc"].replace("Z", "+00:00"))
+    if not development_time <= consumed_time <= final_time:
+        raise ObservationEvaluationError("automated holdout marker is not between development and final processing")
     serialized = json.dumps(marker, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8") + b"\n"
     if marker_bytes != serialized:
         raise ObservationEvaluationError("automated holdout marker bytes are not canonical")

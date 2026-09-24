@@ -234,6 +234,17 @@ def test_forged_self_consistent_final_consumption_hash_refuses(tmp_path, synthet
         )
 
 
+def test_final_timestamp_must_follow_existing_consumption(tmp_path, synthetic_commit):
+    plan, reference, development_path, final, marker_path = _final_evidence(tmp_path)
+    forged = copy.deepcopy(final)
+    forged["processed_utc"] = "2000-01-01T00:00:00Z"
+    forged["result_sha256"] = canonical_sha256({k: v for k, v in forged.items() if k != "result_sha256"})
+    with pytest.raises(ObservationEvaluationError, match="not between development and final"):
+        validate_automated_evaluation_result(
+            forged, plan, reference, development_result=development_path, holdout_marker=marker_path,
+        )
+
+
 def test_tampered_marker_or_development_file_refuses_final(tmp_path, synthetic_commit):
     plan, reference, development_path, final, marker_path = _final_evidence(tmp_path)
     marker = json.loads(marker_path.read_text(encoding="utf-8"))

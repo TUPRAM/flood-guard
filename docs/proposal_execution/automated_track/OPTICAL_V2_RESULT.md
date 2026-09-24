@@ -103,8 +103,10 @@ remaining method gap at native resolution. The [M2 SAR diagnosis](SAR_M2_ABSTENT
 shows that all 81 windows failed the frozen histogram quality test, while
 its pilot footprint covered only part of AOI-01. Optical A/B agreement does
 not repair SAR abstention. The [independent-source search](independent_evidence_candidates_v2.md)
-found contextual UNOSAT reports and later GISTDA THEOS imagery, but no
-verified, same-time, reusable Mae Sai pixelwise truth. A future study needs
+found contextual UNOSAT reports, later GISTDA THEOS imagery, and a same-day
+GISTDA ALOS-2 flood polygon in Mae Sai. The complete AOI vector, processing
+lineage and reuse terms remain unverified, so this is not established pixelwise
+truth. A future study needs
 an independently dated and licensed reference, a defensible dry baseline and
 a **new** event holdout with methods and limits frozen before predictions.
 

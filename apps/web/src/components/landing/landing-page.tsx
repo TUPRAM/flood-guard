@@ -12,6 +12,17 @@ import styles from "./landing.module.css";
 
 const workspaceIcons = [House, Map, Microscope];
 const gateCriteria = resolveGateCriteria(copy.pipeline.gate.criteria, landingGateStatus);
+const automatedHoldoutVerified = landingGateStatus.track === "automated" && gateCriteria.some(
+  criterion => criterion.id === "preregistered_holdout_evaluation" && criterion.met,
+);
+const automatedCandidates = [
+  { id: "mae_sai_m2_gamma0_10m_otsu_candidate", label: "M2 Gamma0 Otsu (10 m, radiometrically calibrated SAR input)" },
+  { id: "mae_sai_20m_amplitude_comparator", label: "Amplitude comparator (raw radar amplitude, 20 m)" },
+] as const;
+const automatedAgreement = automatedHoldoutVerified ? automatedCandidates.flatMap(candidate => {
+  const score = landingGateStatus.candidate_agreement?.[candidate.id];
+  return score ? [{ ...candidate, score }] : [];
+}) : [];
 const sourceTime = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", hour12: false }).format(new Date(caseRecord.source_timestamp));
 
 function ChapterDetail({ id }: { id: string }) {
@@ -133,10 +144,22 @@ export function LandingPage() {
       <div className={styles.pipelineBlock}>
         <h3>{copy.pipeline.gate.heading}</h3>
         <p>{copy.pipeline.gate.body}</p>
-        <ul className={styles.gateList}>{gateCriteria.map(criterion => <li key={criterion.label} data-met={String(criterion.met)} data-source={criterion.source}>
+        <ul className={styles.gateList}>{gateCriteria.map(criterion => <li key={criterion.label} data-criterion-id={criterion.id} data-met={String(criterion.met)} data-source={criterion.source}>
           <span className={styles.gateMark} aria-hidden="true">{criterion.met ? "✓" : "✕"}</span>
           <span><strong>{criterion.label}</strong><small>{criterion.detail}</small></span>
         </li>)}</ul>
+        {landingGateStatus.track === "automated" && <>
+          <p className={styles.modelNote}>Human qualification and blind review were not performed.</p>
+          <p className={styles.modelNote}>Any final-holdout score is agreement with an automated optical map, not accuracy.</p>
+          <p className={styles.modelNote}>Contains modified Copernicus Sentinel data 2024.</p>
+          {automatedAgreement.length > 0 ? <div className={styles.automatedAgreement} aria-label="Mae Sai automated hold-out agreement">
+            {automatedAgreement.map(candidate => <p key={candidate.id} data-automated-score={candidate.id}>
+              <strong>{candidate.label}:</strong> {candidate.score.iou === null ? "Not evaluable" : `IoU ${(candidate.score.iou * 100).toFixed(1)}%`} — agreement with an automated optical map, not accuracy.
+              {candidate.score.evaluated_coverage !== null && <> Evaluated coverage {(candidate.score.evaluated_coverage * 100).toFixed(1)}%.</>}
+              {candidate.score.meets_predeclared_limits ? " Pre-registered limits met." : " Pre-registered limits failed."}
+            </p>)}
+          </div> : <p className={styles.modelNote}>Final-holdout agreement scores are not available from a verified result.</p>}
+        </>}
         <p className={styles.gateVerdict}>{gateCriteria.every(criterion => criterion.met) ? copy.pipeline.gate.verdict_met : copy.pipeline.gate.verdict}</p>
         <p className={styles.modelNote}>{copy.pipeline.gate.status_note.replace("{generated}", landingGateStatus.generated_utc)}</p>
       </div>

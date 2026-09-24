@@ -1,26 +1,43 @@
 {
   "schema": "floodguard.landing_gate_status.v1",
-  "generated_utc": "2026-09-24T08:36:32Z",
+  "track": "automated",
+  "generated_utc": "2026-09-24T10:24:58Z",
   "criteria": {
-    "qualified_reference_mask": {
-      "met": false,
-      "receipt_sha256": null,
-      "validator": "qualified_reference_release.validate_qualified_reference_release",
-      "reason": "no qualified reference release supplied"
+    "automated_optical_reference": {
+      "met": true,
+      "receipt_sha256": "4c27509001ca097b4da631b9026eabfae66789789ade324e59dcc97e50415d93",
+      "validator": "automated_reference.validate_automated_reference_receipt",
+      "reason": "validated"
     },
-    "blind_review_and_adjudication": {
+    "automated_cross_review": {
       "met": false,
       "receipt_sha256": null,
-      "validator": "multi_event_preflight.revalidate_qualified_release_files",
-      "reason": "no qualified label release supplied"
+      "validator": "pre-registered A/B Dice and Cohen's kappa",
+      "reason": "A/B agreement below pre-registered limits: water Dice 0.070 (min 0.600), kappa 0.063 (min 0.500)"
     },
-    "frozen_holdout_and_calibration": {
-      "met": false,
-      "receipt_sha256": null,
-      "validator": "observation_evaluation (frozen plan + final_holdout result)",
-      "reason": "no frozen plan and final-holdout result supplied"
+    "preregistered_holdout_evaluation": {
+      "met": true,
+      "receipt_sha256": "51b8af0fdfc83555ae6d73cb3d379802d5b17de69c04c3f60d49c3087bfe1a1d",
+      "validator": "observation_evaluation.validate_automated_evaluation_result",
+      "reason": "validated"
     }
   },
+  "candidate_agreement": {
+    "mae_sai_m2_gamma0_10m_otsu_candidate": {
+      "processing_variant": "radiometrically_calibrated_gamma0",
+      "iou": null,
+      "evaluated_coverage": 0.0,
+      "meets_predeclared_limits": false
+    },
+    "mae_sai_20m_amplitude_comparator": {
+      "processing_variant": "raw_uncalibrated_amplitude",
+      "iou": 0.0,
+      "evaluated_coverage": 0.9993803888714351,
+      "meets_predeclared_limits": false
+    }
+  },
+  "human_reviewed": false,
+  "can_feed_decision_layer": false,
   "official_warning": false,
   "operational_status": "non_operational"
 }

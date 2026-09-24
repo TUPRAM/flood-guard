@@ -433,6 +433,8 @@
 .gateList li[data-met="false"] .gateMark { color: #8a4a44; }
 .gateList strong { display: block; font-size: 13.5px; }
 .gateList small { font-size: 12px; color: var(--landing-muted); }
+.automatedAgreement { display: grid; gap: 8px; margin-top: 12px; max-width: 760px; }
+.automatedAgreement p { margin: 0 !important; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 3px; background: #ffffffb8; font-size: 12.5px; line-height: 1.6; }
 .gateVerdict { margin-top: 12px !important; padding: 11px 14px; border-left: 3px solid #9c6414; background: #f6ebdb; font-size: 13.5px; line-height: 1.55; max-width: 760px; }
 
 .outcomeCard { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 14px; padding: 16px 18px; border: 1px solid #cbd5e1; border-radius: 4px; background: #ffffffb8; }

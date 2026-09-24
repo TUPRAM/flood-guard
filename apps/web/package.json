@@ -21,6 +21,7 @@
     "test:live-api": "node scripts/live-api-smoke.mjs",
     "qa:visual": "node scripts/capture-visual-qa.mjs",
     "qa:landing": "node scripts/landing-smoke.mjs",
+    "test:automated-gate-preview": "node scripts/browser-automated-gate-preview-smoke.mjs",
     "qa:desktop": "node scripts/desktop-landing-smoke.mjs",
     "art:desktop": "node scripts/render-drone-assets.mjs",
     "art:landing": "node scripts/render-landing-assets.mjs"

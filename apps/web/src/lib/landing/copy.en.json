@@ -331,7 +331,7 @@
     },
     "gate": {
       "heading": "One question, no partial credit",
-      "body": "A flood map does not reach the decision layer because it exists. It must pass every one of these. A failure produces a blocked record — still published, still inspectable, with the reason attached — and it changes nothing.",
+      "body": "This automated research track checks optical source provenance, two-method agreement and a pre-registered hold-out evaluation. Its results remain non-operational and cannot feed the decision layer.",
       "criteria": [
         {
           "label": "Provenance verified",
@@ -339,35 +339,35 @@
           "detail": "Which scenes, which dates, which processing run."
         },
         {
-          "label": "Licence cleared for processing",
+          "label": "Copernicus reuse terms recorded",
           "met": true,
-          "detail": "We may use these sources for this purpose."
+          "detail": "The public legal notice covers processing and display with attribution."
         },
         {
-          "id": "qualified_reference_mask",
-          "label": "Qualified reference mask",
+          "id": "automated_optical_reference",
+          "label": "Automated optical reference (not human-qualified)",
           "met": false,
-          "detail": "No rights-cleared, event-aligned Thai reference exists yet.",
-          "detail_met": "A qualified reference release validates against its Reference Authority record."
+          "detail": "The optical reference receipt and source manifest have not both verified.",
+          "detail_met": "The self-hashed optical reference receipt matches its source manifest."
         },
         {
-          "id": "frozen_holdout_and_calibration",
-          "label": "Frozen hold-out and calibration",
+          "id": "automated_cross_review",
+          "label": "Two-method automated cross-review (no human review)",
           "met": false,
-          "detail": "Cannot run without an approved reference to score against.",
-          "detail_met": "A custodian-opened final hold-out was scored under a frozen, signed plan."
+          "detail": "The two optical methods have not met the pre-registered Dice and kappa limits.",
+          "detail_met": "Both pre-registered water Dice and Cohen's kappa limits were met."
         },
         {
-          "id": "blind_review_and_adjudication",
-          "label": "Blind review and adjudication",
+          "id": "preregistered_holdout_evaluation",
+          "label": "Pre-registered hold-out evaluation (automated)",
           "met": false,
-          "detail": "Requires a four-person review campaign.",
-          "detail_met": "A four-person blind-reviewed, adjudicated label release revalidates."
+          "detail": "No final-holdout result verifies against the pre-registration commit yet.",
+          "detail_met": "The final-holdout result verifies against the pre-registration commit; candidate agreement is shown below."
         }
       ],
-      "verdict": "Mae Sai fails this gate today. That is the system working, not a missing feature.",
-      "verdict_met": "Every criterion now has a validated receipt. The flood map may be considered by the separate downstream acceptance review.",
-      "status_note": "The last three marks are read from validated receipts, not typed in. Status generated {generated}."
+      "verdict": "At least one automated check is incomplete or below its pre-registered limit. The result remains available for inspection and cannot feed the decision layer.",
+      "verdict_met": "All three automated checks have verified receipts. The results remain non-operational and cannot feed the decision layer.",
+      "status_note": "The three automated marks come from validated receipts. Status generated {generated}."
     },
     "outcome": {
       "heading": "So what reaches a planner",

@@ -64,9 +64,10 @@ the downloaded local path without sharing credentials. The
 [LAADS data-use policy](https://modaps.modaps.eosdis.nasa.gov/services/faq/LAADS_Data-Use_Citation_Policies.pdf)
 states that subsequent use and redistribution are unrestricted and asks for
 NASA LAADS acknowledgment and data citation. This does not imply that an
-uninspected file has useful flood/dry/unknown coverage on AOI-05. A daily
-composite date alone does not establish that every contributing source pixel
-falls within 24 hours of the radar pass.
+uninspected file has useful flood/dry/unknown coverage on AOI-05. If the
+historical file's 1-day layer uses only its stated UTC day, its input times
+are within 24 hours of the 11:29 UTC radar pass; inspect `INPUTPOINTER` to
+report the actual contributing acquisition times and confirm this assumption.
 
 For Doi Tao, the exact 5 and 6 October granules are
 [`MCDWD_L3.A2024279.h27v07.061.2025279130431.hdf`](https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/61/MCDWD_L3/2024/279/MCDWD_L3.A2024279.h27v07.061.2025279130431.hdf)

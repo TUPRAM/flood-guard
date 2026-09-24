@@ -140,7 +140,14 @@ supply the downloaded local path without sharing credentials. NASA's public
 cannot substitute for that HDF: its
 [official colormap](https://gibs.earthdata.nasa.gov/colormaps/v1.3/MODIS_Flood.xml)
 renders both no water and no data transparent, so mapped dry and unknown
-cannot be counted separately. The
+cannot be counted separately. Its
+[layer metadata](https://gibs.earthdata.nasa.gov/layer-metadata/v1.0/MODIS_Combined_Flood_1-Day.json)
+identifies near-real-time product editions, not the historical reprocessed
+HDF edition. The candidate 13 August pre-scene has a separate
+[`MCDWD_L3.A2024226.h28v07.061.2025279185114.hdf`](https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/61/MCDWD_L3/2024/226/MCDWD_L3.A2024226.h28v07.061.2025279185114.hdf)
+(11,005,856 bytes, provider MD5 `d89ccd4c00bbd48d96b27a2661f69582`),
+also requiring login. Its native AOI class inventory must be checked before
+calling the radar pre-scene dry. The
 [LAADS data-use policy](https://modaps.modaps.eosdis.nasa.gov/services/faq/LAADS_Data-Use_Citation_Policies.pdf)
 states that subsequent use and redistribution are unrestricted and asks for
 NASA LAADS acknowledgment and data citation. This does not imply that an

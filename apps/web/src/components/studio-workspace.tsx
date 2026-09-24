@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { LanguageToggle } from "@/components/language-toggle";
 import { GeoaiRealPanel } from "@/components/geoai-real-panel";
@@ -175,15 +175,24 @@ function nextTab(current: StudioTab, key: string): StudioTab | null {
 
 export interface StudioWorkspaceProps {
   evidenceContextId?: string;
+  archive?: boolean;
 }
 
-export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}) {
+export function StudioWorkspace({ evidenceContextId, archive = false }: StudioWorkspaceProps = {}) {
   const data = useFloodGuardData({
     studyArea: requestedStudyArea(evidenceContextId),
     role: "studio",
     evidenceContextId,
   });
   const [language, setLanguage] = useLanguage("en");
+  const [archiveQuery, setArchiveQuery] = useState<string | null>(null);
+  const archiveHref = (path: string) => archiveQuery === null ? undefined : `${path}${archiveQuery}`;
+  useEffect(() => {
+    const syncQuery = () => setArchiveQuery(window.location.search);
+    syncQuery();
+    window.addEventListener("popstate", syncQuery);
+    return () => window.removeEventListener("popstate", syncQuery);
+  }, []);
   const [activeTab, setActiveTab] = useState<StudioTab>("technical");
   const th = language === "th";
   const context = data.evidenceContext;
@@ -199,20 +208,26 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
   return (
     <main className="studio-page studio-final-surface" lang={language}>
       <header className="studio-header studio-final-header">
-        <a href="/studio/" className="brand brand-light">
+        <a href={archiveHref(archive ? "/studio/archive/" : "/studio/")} className="brand brand-light">
           <Image src="/floodguard-logo.png" alt="" width={40} height={40} priority />
-          <span><b>FloodGuard</b><small>{th ? "รายงานการตรวจสอบหลักฐาน" : "Validation & evidence report"}</small></span>
+          <span><b>FloodGuard</b><small>{archive ? (th ? "คลังรายงานทางเทคนิคแม่สาย" : "Historical Mae Sai technical archive") : (th ? "รายงานการตรวจสอบหลักฐาน" : "Validation & evidence report")}</small></span>
         </a>
-        <nav aria-label="Product surfaces"><a href="/public/">{th ? "ประชาชน" : "Public"}</a><a href="/command/">{th ? "การวางแผน" : "Planning"}</a><a className="active" href="/studio/">Studio</a><a href="/studio/brief/">{language === "th" ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"}</a><a href="/studio/library/">{th ? "คลังข้อมูล" : "Evidence library"}</a></nav>
+        <nav aria-label="Product surfaces"><a href={archiveHref("/public/")}>{th ? "ประชาชน" : "Public"}</a><a href={archiveHref("/command/")}>{th ? "การวางแผน" : "Planning"}</a><a className={archive ? undefined : "active"} href={archiveHref("/studio/")}>Studio</a><a href={archiveHref("/studio/brief/")}>{language === "th" ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"}</a><a href={archiveHref("/studio/library/")}>{th ? "คลังข้อมูล" : "Evidence library"}</a>{archive ? <a className="active" href={archiveHref("/studio/archive/")}>{th ? "คลังเดิม" : "Archive"}</a> : null}</nav>
         <LanguageToggle language={language} onChange={setLanguage} />
       </header>
+      <div data-app-availability-slot />
       <StatusBar data={data} language={language} compact />
 
-      <div className={`studio-shell studio-final-shell ${styles.shell}`}>
+      <div id="main-content" tabIndex={-1} className={`studio-shell studio-final-shell ${styles.shell}`}>
+        {archive ? <aside className={styles.archiveBanner}>
+          <strong>{th ? "รายงานแม่สายฉบับเก่า · บริบทหลักฐานแยกต่างหาก" : "Historical Mae Sai report · separate evidence context"}</strong>
+          <p>{th ? "ผลการตรวจสอบและข้อกำหนดด้านล่างเป็นของชุดหลักฐานที่ระบุในรายงานนี้เท่านั้น ไม่ได้อนุมัติกรณีศึกษาผู้สมัครที่เลือกในรายงานปัจจุบัน" : "The checks and gates below belong only to this report's named evidence package. They do not validate or authorize the selected candidate study case."}</p>
+          <a href={archiveHref("/studio/")}>{th ? "เปิดรายงานกรณีศึกษาปัจจุบัน" : "Open the current study-case report"}</a>
+        </aside> : null}
         <section className={styles.hero} aria-labelledby="research-console-title">
           <div>
-            <p className="eyebrow">{th ? "รายงานแบบอ่านอย่างเดียว" : "Read-only evidence report"}</p>
-            <h1 id="research-console-title">{th ? "การตรวจสอบและหลักฐาน" : "Validation & evidence report"}</h1>
+            <p className="eyebrow">{archive ? (th ? "คลังรายงาน · อ่านอย่างเดียว" : "Historical archive · read-only") : (th ? "รายงานแบบอ่านอย่างเดียว" : "Read-only evidence report")}</p>
+            <h1 id="research-console-title">{archive ? (th ? "รายงานทางเทคนิคแม่สายเดิม" : "Historical Mae Sai technical report") : (th ? "การตรวจสอบและหลักฐาน" : "Validation & evidence report")}</h1>
             <p>{th ? "ตรวจสอบแหล่งข้อมูล คุณภาพ การประเมิน และข้อจำกัดของหลักฐานชุดเดียวกัน โดยไม่เปลี่ยนสถานะหรืออนุมัติการใช้งาน" : "Inspect provenance, quality, evaluation, and authorization for one immutable evidence context. This report does not change state or grant approval."}</p>
             <div className={styles.heroMeta}>
               <span>{th ? "เวลาบริบทน้ำท่วม" : "Flood-context time"}: <b>{formatSourceTime(data.status.source_timestamp, language)}</b></span>
@@ -281,7 +296,7 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
               {activeTab === "technical" && (
                 <section aria-labelledby="decision-matrix-title">
                   <div className={styles.sectionHeading}><div><p className="eyebrow">01 · {th ? "ขอบเขตการตัดสินใจ" : "DECISION BOUNDARY"}</p><h2 id="decision-matrix-title">{th ? "เมทริกซ์สถานะหลักฐาน" : "Evidence decision matrix"}</h2></div><p>{th ? "แต่ละแถวแสดงหลักฐานที่บันทึกจริง ไม่ได้อนุมานสถานะจากหน้าจออื่น" : "Each row reflects an explicit record; no decision or authority is inferred from another readiness flag."}</p></div>
-                  <div className={styles.tableScroll}>
+                  <div className={styles.tableScroll} tabIndex={0} role="region" aria-label={th ? "ตารางสถานะหลักฐาน เลื่อนแนวนอนได้" : "Evidence decision table; scroll horizontally"}>
                     <table className={styles.reportTable}>
                       <thead><tr><th>{th ? "ขั้นตอน" : "Stage"}</th><th>{th ? "สถานะ" : "Canonical state"}</th><th>{th ? "ความหมาย" : "Meaning"}</th></tr></thead>
                       <tbody>{decisionRows.map((row) => <tr key={row.stage}><td><b>{STAGE_LABELS[row.stage][language]}</b><code>{row.stage}</code></td><td><span className={`${styles.state} ${styles[row.state]}`}>{row.state}</span></td><td>{decisionReasonPresentation(row, language)}</td></tr>)}</tbody>
@@ -311,7 +326,7 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
               {activeTab === "quality" && (
                 <section aria-labelledby="quality-title">
                   <div className={styles.sectionHeading}><div><p className="eyebrow">03 · {th ? "คุณภาพข้อมูล" : "DATA QUALITY"}</p><h2 id="quality-title">{th ? "ตารางหลักฐานที่ยังขาด" : "Blocking evidence table"}</h2></div><span>{blockedGateCount} {th ? "ข้อกำหนด" : "gates"}</span></div>
-                  <div className={styles.tableScroll}>
+                  <div className={styles.tableScroll} tabIndex={0} role="region" aria-label={th ? "ตารางข้อกำหนดหลักฐาน เลื่อนแนวนอนได้" : "Evidence gate table; scroll horizontally"}>
                     <table className={styles.reportTable}>
                       <thead><tr><th>{th ? "ข้อกำหนด" : "Gate"}</th><th>{th ? "สถานะ" : "State"}</th><th>{th ? "เหตุผล" : "Reason"}</th><th>{th ? "หลักฐานที่ต้องมี" : "Required evidence"}</th><th>{th ? "ลิงก์" : "Evidence link"}</th><th>{th ? "อัปเดตล่าสุด" : "Last update"}</th></tr></thead>
                       <tbody>{data.readiness.map((row) => {
@@ -373,7 +388,7 @@ export function StudioWorkspace({ evidenceContextId }: StudioWorkspaceProps = {}
           </>
         )}
 
-        <footer className="studio-footer"><span>{th ? "รายงานนี้ไม่ใช่คำเตือนภัยหรือการอนุญาตใช้งาน" : "This report is not a warning or operational authorization."}</span><a href="/command/">{th ? "เปิดพื้นที่วางแผน →" : "Open planning workspace →"}</a></footer>
+        <footer className="studio-footer"><span>{th ? "รายงานนี้ไม่ใช่คำเตือนภัยหรือการอนุญาตใช้งาน" : "This report is not a warning or operational authorization."}</span><a href={archiveHref("/command/")}>{th ? "เปิดพื้นที่วางแผน →" : "Open planning workspace →"}</a></footer>
       </div>
     </main>
   );
@@ -385,7 +400,7 @@ function SourceHistory({ language, data, roles }: { language: Language; data: Re
     ? data.evidenceContext.source_components.filter((component) => roles.includes(component.role))
     : data.evidenceContext.source_components;
   return (
-    <div className={styles.tableScroll}>
+    <div className={styles.tableScroll} tabIndex={0} role="region" aria-label={th ? "ตารางประวัติแหล่งข้อมูล เลื่อนแนวนอนได้" : "Source history table; scroll horizontally"}>
       <table className={styles.reportTable}>
         <thead><tr><th>{th ? "องค์ประกอบ" : "Source component"}</th><th>{th ? "บทบาท" : "Role"}</th><th>{th ? "เวลาของแหล่งข้อมูล" : "Source time"}</th><th>{th ? "ความหมายของเวลา" : "Temporal meaning"}</th><th>{th ? "ความใหม่" : "Freshness"}</th><th>{th ? "ตรวจสอบล่าสุด" : "Last checked"}</th></tr></thead>
         <tbody>{components.map((component) => <tr key={component.source_component_id}><td><b>{component.source_name}</b><code>{component.source_component_id}</code></td><td><code>{component.role}</code></td><td>{component.source_timestamp ? formatSourceTime(component.source_timestamp, language) : (th ? "ไม่ทราบ" : "Unknown")}</td><td><code>{component.temporal_meaning}</code></td><td><span className={`${styles.state} ${component.freshness === "current" ? styles.recorded : styles.not_recorded}`}>{component.freshness}</span></td><td>{component.last_checked_at ? formatSourceTime(component.last_checked_at, language) : (th ? "ยังไม่บันทึก" : "Not recorded")}</td></tr>)}</tbody>

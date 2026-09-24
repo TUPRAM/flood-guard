@@ -8,6 +8,32 @@
   font-family: var(--font-body, "Plus Jakarta Sans Variable", sans-serif);
 }
 
+.panel.inlinePanel {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  margin: 0;
+  z-index: 1000;
+}
+.panel.inlinePanel > summary {
+  width: 100%;
+  min-height: 34px;
+  justify-content: center;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 0;
+  box-shadow: none;
+  background: #edf5f7;
+}
+.panel.inlinePanel .body {
+  position: absolute;
+  top: 100%;
+  right: 8px;
+  width: min(340px, calc(100vw - 16px));
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+}
+
 .panel > summary {
   width: max-content;
   max-width: 100%;
@@ -85,6 +111,8 @@
   .panel { right: 10px; bottom: 82px; width: min(340px, calc(100vw - 20px)); }
   .panel > summary { min-height: 44px; padding: 8px 11px; }
   .body { max-height: min(500px, calc(100dvh - 150px)); overflow-y: auto; }
+  .inlinePanel { right: auto; bottom: auto; width: 100%; }
+  .inlinePanel > summary { min-height: 34px; padding: 5px 10px; }
 }
 
 @media print {

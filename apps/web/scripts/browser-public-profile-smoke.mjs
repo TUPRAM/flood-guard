@@ -155,13 +155,13 @@ try {
   if (await page.locator('a[href^="/command"], a[href^="/studio"]').count()) {
     throw new Error("Public profile root exposes a staff-surface link.");
   }
-  for (const staffRoute of ["/command/", "/studio/", "/studio/library/", "/studio/brief/"]) {
+  for (const staffRoute of ["/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/"]) {
     const response = await context.request.get(`${baseUrl}${staffRoute}`);
     if (response.status() !== 404) throw new Error(`Public profile staff route did not return 404: ${staffRoute}: ${response.status()}`);
   }
 
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
-  await page.waitForFunction(() => document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("saved app ready"));
+  await page.waitForFunction(() => document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("app pages saved offline"));
   const cacheAudit = await page.evaluate(async () => {
     const keys = (await caches.keys()).filter((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key));
     const urls = [];
@@ -200,7 +200,7 @@ try {
   let commandLoaded = true;
   try {
     await page.goto(`${baseUrl}/command/`, { waitUntil: "domcontentloaded", timeout: 5000 });
-    commandLoaded = await page.locator("main.command-page").count() > 0;
+    commandLoaded = await page.locator("main[data-planning-candidate], main.command-page").count() > 0;
   } catch {
     commandLoaded = false;
   }
@@ -250,11 +250,11 @@ async function assertCompactPublicShell(page) {
 
 async function exercisePublicPages(page) {
   const publicPages = [
-    ["home", "#public-active-panel .leaflet-container"],
-    ["report", "#public-active-panel .public-report-page"],
-    ["shelter", "#public-active-panel .public-shelter-page, #public-active-panel .public-shelter-view"],
-    ["prepare", "#public-active-panel #household-plan-builder"],
-    ["sos", "#public-active-panel .public-sos-page, #public-active-panel .public-sos-view"],
+    ["home", "#main-content .leaflet-container"],
+    ["report", "#main-content .public-report-page"],
+    ["shelter", "#main-content .public-shelter-page, #main-content .public-shelter-view"],
+    ["prepare", "#main-content #household-plan-builder"],
+    ["sos", "#main-content .public-sos-page, #main-content .public-sos-view"],
   ];
   for (const [id, readySelector] of publicPages) {
     const button = page.locator(`#public-tab-${id}`);
@@ -269,7 +269,7 @@ async function exercisePublicPages(page) {
     if (state.current !== "page" && state.pressed !== "true" && state.selected !== "true") {
       throw new Error(`Public navigation did not expose ${id} as active.`);
     }
-    const visibleText = await page.locator("#public-active-panel").innerText();
+    const visibleText = await page.locator("#main-content").innerText();
     const forbidden = visibleText.match(
       /(?:^|[^\p{L}\p{N}])(?:demos?|prototypes?|mocks?|samples?|illustrative|placeholders?)(?=$|[^\p{L}\p{N}])|coming soon|under construction|not ready|work in progress/iu,
     );

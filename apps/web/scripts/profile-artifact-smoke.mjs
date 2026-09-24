@@ -122,7 +122,7 @@ function validatePublicProduction() {
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
     if (serviceWorker.includes(forbidden)) throw new Error(`Public service-worker cache inventory contains ${forbidden}`);
   }
-  for (const route of ["/command/", "/studio/", "/studio/library/", "/studio/brief/"]) {
+  for (const route of ["/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
 }
@@ -159,9 +159,13 @@ function validateCompetition() {
   }
   for (const required of [
     "command/index.html",
+    "command/cases/index.html",
+    "command/archive/index.html",
+    "public-cases/index.html",
     "studio/index.html",
     "studio/library/index.html",
     "studio/brief/index.html",
+    "studio/archive/index.html",
     "evidence-library/catalog.json",
     "public-case-projections/catalog.json",
     "briefs/catalog.json",
@@ -182,7 +186,7 @@ function validateCompetition() {
   if (process.env.VERCEL_URL && !rootHtml.includes("/landing/desktop-v4/far.webp")) {
     throw new Error("Hosted landing metadata is missing the authored sharing image.");
   }
-  for (const route of ["/", "/public/", "/command/", "/studio/", "/studio/library/", "/studio/brief/", ...collectEvidenceLibraryAssets(out), ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
+  for (const route of ["/", "/public/", "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/library/", "/studio/brief/", "/studio/archive/", ...collectEvidenceLibraryAssets(out), ...collectPublicCaseAssets(out), ...collectCaseBriefAssets(out)]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }
   const bundle = readJson("offline-demo/mae-sai/bundle.json");

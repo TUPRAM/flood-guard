@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { FeatureCollection } from "@/lib/types";
 
-import { PublicExperience, projectPublicFacilityFeatures } from "./public-experience";
+import { PublicExperience, projectPublicFacilityFeatures, readPublicPage } from "./public-experience";
 
 describe("PublicExperience", () => {
   it("renders the compact Public shell without the removed logo, subtitle, or historical banner", () => {
@@ -29,9 +29,10 @@ describe("PublicExperience", () => {
     expect(visibleText).not.toMatch(/Public preparedness/iu);
     expect(visibleText).not.toMatch(/Historical preparedness information/iu);
     expect(html).not.toContain('href="/studio/"');
-    expect(visibleText).not.toMatch(
-      /rehearsal|demo|prototype|mock|sample|illustrative|placeholder|coming soon|under construction|not ready|work in progress|fixture|candidate|synthetic|non-operational/iu,
-    );
+    expect(visibleText).toMatch(/ตัวอย่าง/u);
+    expect(visibleText).toMatch(/ไม่ใช่คำเตือนทางการ/u);
+    expect(html).toContain('href="/public-cases/"');
+    expect(html).not.toContain("public-research-details");
   });
 
   it("ships Thai-first navigation with exactly Home, Report, Shelter, Prepare, and SOS", () => {
@@ -39,7 +40,7 @@ describe("PublicExperience", () => {
     const navHtml = html.match(/<nav class="public-bottom-nav"[\s\S]*?<\/nav>/)?.[0] ?? "";
     const tabIds = [...navHtml.matchAll(/id="public-tab-([^"]+)"/g)].map((match) => match[1]);
 
-    expect(html).toContain('aria-controls="public-active-panel"');
+    expect(html).toContain('aria-controls="main-content"');
     expect(tabIds).toEqual(["home", "report", "shelter", "prepare", "sos"]);
     for (const tab of ["home", "report", "shelter", "prepare", "sos"]) {
       expect(html).toContain(`id="public-tab-${tab}"`);
@@ -84,7 +85,8 @@ describe("PublicExperience", () => {
 
     // Ko Chang carries the highest planning priority in the Mae Sai bundle, so
     // Home opens on it and the severity chip reports its own band.
-    expect(legend).toContain("เกาะช้าง");
+    expect(legend).toContain("ตัวอย่าง · เกาะช้าง");
+    expect(legend).toContain('data-area-context="example"');
     expect(legend).toContain('data-band="high"');
     expect(legend).toContain(">สูง<");
     expect(legend).not.toMatch(/ยังไม่พบพื้นที่วางแผน/u);
@@ -92,7 +94,7 @@ describe("PublicExperience", () => {
     expect(legend).not.toContain("public-risk-value");
     expect(legend).toContain("ลำดับต่ำกว่า");
     expect(legend).toContain("ลำดับสูงกว่า");
-    expect(legend).toContain("ข้อมูลผู้สมัคร · ไม่ใช้ปฏิบัติการ");
+    expect(legend).toContain("พื้นที่ตัวอย่าง · ข้อมูลผู้สมัคร ไม่ใช้ปฏิบัติการ");
 
     // The title is dropped from the visible card but kept as the accessible
     // name, so the card is still identifiable to a screen reader.
@@ -109,6 +111,7 @@ describe("PublicExperience", () => {
     )?.[0] ?? "";
     expect(greeting).toContain("ยังไม่ได้เลือกตำแหน่ง");
     expect(greeting).not.toContain("เกาะช้าง");
+    expect(html).not.toContain("public-signal-banner");
   });
 
   it("draws the public preparedness areas on the Home map instead of hiding them", () => {
@@ -187,5 +190,16 @@ describe("PublicExperience", () => {
       "AGENCY-VERIFIED-SHELTER",
     ]);
     expect(projected.name).toBe("facilities_public_confirmed");
+  });
+});
+
+describe("Public tab URL", () => {
+  it("accepts only the five known tabs and defaults to Home", () => {
+    expect(readPublicPage("?tab=report&aoi=aoi-01")).toBe("report");
+    expect(readPublicPage("?tab=shelter")).toBe("shelter");
+    expect(readPublicPage("?tab=prepare")).toBe("prepare");
+    expect(readPublicPage("?tab=sos")).toBe("sos");
+    expect(readPublicPage("?tab=unknown")).toBe("home");
+    expect(readPublicPage("?aoi=aoi-01")).toBe("home");
   });
 });

@@ -186,17 +186,18 @@ async function verifySharedViews(page, offline) {
         if (!selectedVariant) throw new Error(`Pharmacy vehicle result missing: ${reference.id}`);
         const modelledCount = selectedVariant.baseline.within_30_minutes_population.toLocaleString(th ? "th-TH" : "en-GB", { maximumFractionDigits: 0 });
         if (!(await summary.innerText()).includes(modelledCount)) throw new Error(`Public case number differs from package: ${reference.id}`);
-        const command = summary.getByRole("link", { name: th ? "เปรียบเทียบใน Planning" : "Compare in Planning", exact: true });
+        const mainNav = page.getByRole("navigation", { name: th ? "พื้นที่หลัก" : "Main areas" });
+        const command = mainNav.getByRole("link", { name: th ? "การวางแผน" : "Planning", exact: true });
         if (!(await command.getAttribute("href"))?.includes("service=pharmacy&mode=modelled_vehicle")) throw new Error("Shared view lost service/mode");
-        const studioLink = summary.getByRole("link", { name: th ? "ตรวจสอบใน Studio" : "Inspect in Studio", exact: true });
+        const studioLink = mainNav.getByRole("link", { name: th ? "หลักฐาน" : "Studio", exact: true });
         if (!(await studioLink.getAttribute("href"))?.includes(`${query}&version=${pkg.package_version}&service=pharmacy&mode=modelled_vehicle`)) throw new Error("Public-to-Studio link lost case and selection identity");
         await command.click();
         const main = page.locator('[data-shared-case="planning"]');
-        await main.locator(`text=${reference.id}`).first().waitFor();
+        await page.locator(`[data-shared-case="planning"][data-case-id="${reference.id}"]`).waitFor();
         if (await main.getByRole("combobox", { name: th ? "บริการ" : "Service", exact: true }).inputValue() !== "pharmacy") throw new Error("Planning did not retain selected service");
         if (await main.getByRole("combobox", { name: th ? "วิธีเดินทาง" : "Travel mode", exact: true }).inputValue() !== "modelled_vehicle") throw new Error("Planning did not retain selected mode");
-        if (!(await main.innerText()).includes(modelledCount)) throw new Error(`Planning case number differs from Public: ${reference.id}`);
-        if (!(await main.locator('a[href^="/studio/"]').first().getAttribute("href"))?.includes(`${query}&version=${pkg.package_version}&service=pharmacy&mode=modelled_vehicle`)) throw new Error("Planning-to-Studio link lost case and selection identity");
+        if (!(await page.locator(`[data-planning-candidate="${reference.id}"]`).innerText()).includes(modelledCount)) throw new Error(`Planning case number differs from Public: ${reference.id}`);
+        if (!(await main.getByRole("navigation", { name: th ? "พื้นที่หลัก" : "Main areas" }).getByRole("link", { name: th ? "หลักฐาน" : "Studio" }).getAttribute("href"))?.includes(`${query}&version=${pkg.package_version}&service=pharmacy&mode=modelled_vehicle`)) throw new Error("Planning-to-Studio link lost case and selection identity");
         await page.goto(`${origin}/command/cases/?${query}&service=pharmacy&mode=modelled_vehicle`, { waitUntil: "domcontentloaded" });
         const brief = page.locator("[data-decision-brief]");
         await brief.locator("[data-finals-analysis]").waitFor();
@@ -215,133 +216,130 @@ async function verifyMainSurfaces(page, offline) {
   const projectedCatalog = JSON.parse(readFileSync(resolve(out, "public-case-projections", "catalog.json"), "utf8"));
   const projectionReference = projectedCatalog.packages.find((item) => item.id === reference.id);
   const projection = JSON.parse(readFileSync(resolve(out, projectionReference.url.slice(1)), "utf8"));
-  const variant = projection.services.find((item) => item.id === "hospital").variants.find((item) => item.travel_mode === "walking");
-  const query = `aoi=${reference.aoi_id}&event=${reference.event_id}&version=${catalog.package_version}&service=hospital&mode=walking&scenario=${variant.candidate_flood_scenario_id}`;
-  await page.goto(`${origin}/public/?${query}`, { waitUntil: "domcontentloaded" });
+  const projectedVariant = projection.services.find((item) => item.id === "hospital").variants.find((item) => item.travel_mode === "walking");
+  const query = "aoi=" + reference.aoi_id + "&event=" + reference.event_id + "&version=" + catalog.package_version
+    + "&service=hospital&mode=walking&scenario=" + projectedVariant.candidate_flood_scenario_id;
+  await page.goto(origin + "/public/?" + query, { waitUntil: "domcontentloaded" });
   if (await page.evaluate(() => document.documentElement.lang) === "th") await page.getByRole("button", { name: "Use English", exact: true }).click();
-  const publicCase = page.locator("[data-public-research-case]");
-  await publicCase.getByText(reference.id, { exact: true }).waitFor();
-  if (await publicCase.getByRole("alert").count()) throw new Error("Public candidate scenario is incompatible with its selected case");
-  const publicText = await publicCase.innerText();
-  const count = variant.within_30_minutes_population.toLocaleString("en-GB", { maximumFractionDigits: 0 });
-  if (!publicText.includes(count) || !publicText.includes("Accepted FPPS / action class: unavailable")) throw new Error(`Public main case differs from projection: ${reference.id}, offline=${offline}`);
-  if (variant.candidate_flood_source_timestamp && !publicText.includes(variant.candidate_flood_source_timestamp)) throw new Error("Public candidate acquisition differs from projection");
+  const researchLink = page.locator(".public-home-research-link");
+  await researchLink.waitFor();
+  if (!(await researchLink.getAttribute("href"))?.includes(query)) throw new Error("Public home research link lost the selected case or scenario");
+  await researchLink.click();
+  const publicSummary = page.locator("[data-public-case-summary]");
+  await publicSummary.waitFor();
+  const pkg = JSON.parse(readFileSync(resolve(out, reference.url.replace(/^\//, "")), "utf8"));
+  const baseline = pkg.decision_brief.finals_analysis.services.find((item) => item.id === "hospital").variants.find((item) => item.travel_mode === "walking" && item.speed_factor === 1).baseline;
+  const count = baseline.within_30_minutes_population.toLocaleString("en-GB", { maximumFractionDigits: 0 });
+  const publicText = await publicSummary.innerText();
+  if (!publicText.includes(count) || !publicText.includes("Accepted FPPS / action class: unavailable")) {
+    throw new Error("Public study case differs from its package: " + reference.id + ", offline=" + offline + ", expected baseline=" + count + ", visible=" + publicText.slice(0, 900));
+  }
+  if (!(await publicSummary.getByRole("link", { name: "View before/after route map" }).getAttribute("href"))?.includes("scenario=" + projectedVariant.candidate_flood_scenario_id)) {
+    throw new Error("Public route link lost the selected scenario");
+  }
   const language = await page.evaluate(() => document.documentElement.lang);
-  await publicCase.locator('a[href^="/command/"]').click();
+  await page.getByRole("navigation", { name: "Main areas" }).getByRole("link", { name: "Planning" }).click();
   const planning = page.locator('[data-shared-case="planning"]');
-  await planning.getByText(reference.id, { exact: true }).waitFor();
+  await page.locator('[data-shared-case="planning"][data-case-id="' + reference.id + '"]').waitFor();
+  const overview = page.locator('[data-planning-candidate="' + reference.id + '"]');
+  await overview.waitFor();
   if (await page.evaluate(() => document.documentElement.lang) !== language) throw new Error("Language preference changed on Public to Planning transition");
   if (await planning.getByRole("combobox", { name: "Service", exact: true }).inputValue() !== "hospital") throw new Error("Planning lost Public service choice");
   if (await planning.getByRole("combobox", { name: "Travel mode", exact: true }).inputValue() !== "walking") throw new Error("Planning lost Public mode choice");
-  if (await planning.getByRole("alert").count() || new URL(page.url()).searchParams.get("scenario") !== variant.candidate_flood_scenario_id) {
-    throw new Error("Planning lost or rejected the selected Public flood scenario");
+  if (!(await overview.innerText()).includes(count) || !(await overview.innerText()).includes("Accepted FPPS and action class remain unavailable")) {
+    throw new Error("Planning result or acceptance boundary differs from Public");
   }
-  if (!(await planning.innerText()).includes(count)) throw new Error("Planning case result differs from Public projection");
-  if (variant.candidate_flood_source_timestamp && !(await planning.innerText()).includes(`Candidate flood acquisition: ${variant.candidate_flood_source_timestamp}`)) {
-    throw new Error("Planning candidate acquisition differs from Public projection");
-  }
-  await planning.locator('a[href^="/studio/?"]').click();
+  if (new URL(page.url()).searchParams.get("scenario") !== projectedVariant.candidate_flood_scenario_id) throw new Error("Planning lost the Public scenario");
+  await planning.getByRole("navigation", { name: "Main areas" }).getByRole("link", { name: "Studio" }).click();
   const studio = page.locator('[data-shared-case="studio"]');
-  await studio.getByText(reference.id, { exact: true }).waitFor();
+  await page.locator('[data-shared-case="studio"][data-case-id="' + reference.id + '"]').waitFor();
+  const report = page.locator('[data-evidence-case-id="' + reference.id + '"]');
+  await report.waitFor();
   if (await page.evaluate(() => document.documentElement.lang) !== language) throw new Error("Language preference changed on Planning to Studio transition");
-  const studioText = await studio.innerText();
-  if (!studioText.includes(count) || !studioText.includes(projection.source_package_sha256)) {
-    throw new Error("Studio case result differs from the linked case");
-  }
-  if (variant.candidate_flood_source_timestamp && !studioText.includes(`Candidate flood acquisition: ${variant.candidate_flood_source_timestamp}`)) {
-    throw new Error("Studio candidate acquisition differs from Public projection");
-  }
+  if (!(await report.innerText()).includes("Accepted FPPS / action class")) throw new Error("Studio report lost the downstream acceptance boundary");
   const selected = new URL(page.url());
   if (selected.searchParams.get("aoi") !== reference.aoi_id || selected.searchParams.get("event") !== reference.event_id
     || selected.searchParams.get("version") !== catalog.package_version
     || selected.searchParams.get("service") !== "hospital" || selected.searchParams.get("mode") !== "walking"
-    || selected.searchParams.get("scenario") !== variant.candidate_flood_scenario_id || await studio.getByRole("alert").count()) throw new Error("Main-surface deep link lost case or scenario identity");
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.locator('[data-shared-case="studio"]').getByText(reference.id, { exact: true }).waitFor();
-  if (new URL(page.url()).searchParams.get("version") !== catalog.package_version
-    || new URL(page.url()).searchParams.get("scenario") !== variant.candidate_flood_scenario_id
-    || await page.locator('[data-shared-case="studio"]').getByRole("alert").count()) {
-    throw new Error("Studio reload lost or rejected the selected flood scenario");
+    || selected.searchParams.get("scenario") !== projectedVariant.candidate_flood_scenario_id || await studio.getByRole("alert").count()) {
+    throw new Error("Main-surface deep link lost case or scenario identity");
   }
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator('[data-evidence-case-id="' + reference.id + '"]').waitFor();
+  if (new URL(page.url()).searchParams.get("scenario") !== projectedVariant.candidate_flood_scenario_id) throw new Error("Studio reload lost the scenario");
   await page.getByRole("button", { name: "ใช้ภาษาไทย", exact: true }).click();
-  await page.locator('[data-shared-case="studio"] a[href^="/public/?"]').click();
-  await page.locator("[data-public-research-case]").getByText(reference.id, { exact: true }).waitFor();
+  await page.locator('[data-shared-case="studio"]').getByRole("navigation", { name: "พื้นที่หลัก" }).getByRole("link", { name: "ประชาชน" }).click();
   if (await page.evaluate(() => document.documentElement.lang) !== "th") throw new Error("Thai preference was lost on Studio to Public transition");
   await page.setViewportSize({ width: 390, height: 844 });
-  if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error("Main Public case overflows the mobile viewport");
+  if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) throw new Error("Main Public page overflows the mobile viewport");
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("button", { name: "Use English", exact: true }).click();
-  await verifyRoleUrlSynchronization(page, offline);
-  await page.goto(`${origin}/public/?aoi=unknown&event=unknown`, { waitUntil: "domcontentloaded" });
-  await page.locator("[data-public-research-case]").getByRole("alert").filter({ hasText: "Another case is not substituted" }).waitFor();
-  if ((await page.locator("[data-public-research-case]").innerText()).includes(reference.id)) throw new Error("Unknown Public case displayed another case");
-  for (const [path, role] of [["/command/", "planning"], ["/studio/", "studio"]]) {
-    await page.goto(`${origin}${path}?aoi=unknown&event=unknown`, { waitUntil: "domcontentloaded" });
-    const card = page.locator(`[data-shared-case="${role}"]`);
+  await verifyRoleUrlSynchronization(page);
+  await page.goto(origin + "/public/?aoi=unknown&event=unknown", { waitUntil: "domcontentloaded" });
+  await page.locator(".public-home-research-link").click();
+  await page.locator("main[data-evidence-library]").getByRole("alert").filter({ hasText: "Another area's data will not be substituted" }).waitFor();
+  if (await page.locator("[data-public-case-summary]").count()) throw new Error("Unknown Public case displayed another case");
+  for (const [path, role, lowerSelector] of [
+    ["/command/", "planning", "[data-planning-candidate]"],
+    ["/studio/", "studio", "[data-evidence-case-id]"],
+  ]) {
+    await page.goto(origin + path + "?aoi=unknown&event=unknown", { waitUntil: "domcontentloaded" });
+    const card = page.locator('[data-shared-case="' + role + '"]');
     await card.getByRole("alert").filter({ hasText: "Another case is not substituted" }).waitFor();
-    if ((await card.innerText()).includes(reference.id) || await card.getAttribute("data-case-id")) {
-      throw new Error(`Unknown ${role} case displayed a different package`);
+    const lower = page.locator(lowerSelector);
+    const lowerCaseId = await lower.count() ? await lower.first().getAttribute(role === "planning" ? "data-planning-candidate" : "data-evidence-case-id") : null;
+    if (await card.getAttribute("data-case-id") || lowerCaseId === reference.id) {
+      throw new Error("Unknown " + role + " case displayed another package");
     }
   }
 }
 
-async function verifyRoleUrlSynchronization(page, offline) {
+async function verifyRoleUrlSynchronization(page) {
   const first = catalog.packages[0];
   const alternative = catalog.packages.find((item) => item.aoi_id.startsWith("aoi-03")) ?? catalog.packages[1];
-  for (const [path, role] of [["/command/", "planning"], ["/studio/", "studio"]]) {
-    await page.goto(`${origin}${path}?aoi=${first.aoi_id}&event=${first.event_id}&version=${catalog.package_version}`, { waitUntil: "domcontentloaded" });
-    const top = page.locator(`[data-shared-case="${role}"]`);
-    const lower = page.locator("main[data-evidence-library]");
-    await top.getByText(first.id, { exact: true }).waitFor();
-    await lower.locator("footer").filter({ hasText: first.id }).waitFor();
+  for (const [path, role, lowerSelector, detailPath] of [
+    ["/command/", "planning", "[data-planning-candidate]", "/command/cases/"],
+    ["/studio/", "studio", "[data-evidence-case-id]", "/studio/library/"],
+  ]) {
+    await page.goto(origin + path + "?aoi=" + first.aoi_id + "&event=" + first.event_id + "&version=" + catalog.package_version, { waitUntil: "domcontentloaded" });
+    const top = page.locator('[data-shared-case="' + role + '"]');
+    await page.locator('[data-shared-case="' + role + '"][data-case-id="' + first.id + '"]').waitFor();
+    const lower = page.locator(lowerSelector);
+    await lower.waitFor();
     await top.getByRole("combobox", { name: "Study area — Event", exact: true }).selectOption(alternative.id);
-    await top.getByText(alternative.id, { exact: true }).waitFor();
-    await lower.locator("footer").filter({ hasText: alternative.id }).waitFor();
-    let selected = new URL(page.url());
+    await page.locator('[data-shared-case="' + role + '"][data-case-id="' + alternative.id + '"]').waitFor();
+    await page.locator(lowerSelector + '[' + (role === "planning" ? "data-planning-candidate" : "data-evidence-case-id") + '="' + alternative.id + '"]').waitFor();
+    const selected = new URL(page.url());
     if (selected.searchParams.get("aoi") !== alternative.aoi_id || selected.searchParams.get("event") !== alternative.event_id) {
-      throw new Error(`${role} top case switch left a divergent URL; offline=${offline}`);
-    }
-    await lower.locator("#evidence-case").selectOption(first.id);
-    await top.getByText(first.id, { exact: true }).waitFor();
-    await lower.locator("footer").filter({ hasText: first.id }).waitFor();
-    selected = new URL(page.url());
-    if (selected.searchParams.get("aoi") !== first.aoi_id || selected.searchParams.get("event") !== first.event_id) {
-      throw new Error(`${role} lower case switch left a divergent URL; offline=${offline}`);
+      throw new Error(role + " case selector left a divergent URL");
     }
     if (role === "planning") {
-      await lower.getByRole("combobox", { name: "Service needed", exact: true }).selectOption("pharmacy");
-      if (await top.getByRole("combobox", { name: "Service", exact: true }).inputValue() !== "pharmacy") {
-        throw new Error("Planning service switch did not update the shared case card");
-      }
-      if ((await top.innerText()).includes("Candidate flood acquisition")) throw new Error("Planning retained hospital flood acquisition for pharmacy");
-      await lower.getByRole("combobox", { name: "Modelled travel mode", exact: true }).selectOption("modelled_vehicle");
-      if (await top.getByRole("combobox", { name: "Travel mode", exact: true }).inputValue() !== "modelled_vehicle") {
-        throw new Error("Planning mode switch did not update the shared case card");
-      }
-      await lower.getByRole("combobox", { name: "Service needed", exact: true }).selectOption("hospital");
-      await lower.getByRole("combobox", { name: "Modelled travel mode", exact: true }).selectOption("walking");
-      const route = lower.locator("[data-route-comparison]");
-      await route.waitFor();
-      await route.getByRole("combobox", { name: "Imposed change", exact: true }).selectOption("remove_destination");
-      selected = new URL(page.url());
-      const scenario = selected.searchParams.get("scenario");
-      if (!scenario || await route.getAttribute("data-route-id") !== scenario
-        || !(await top.locator('a[href^="/studio/"]').first().getAttribute("href"))?.includes(`scenario=${scenario}`)) {
-        throw new Error("Planning route scenario did not update the shared case and URL");
-      }
-    } else {
       await top.getByRole("combobox", { name: "Service", exact: true }).selectOption("pharmacy");
       await top.getByRole("combobox", { name: "Travel mode", exact: true }).selectOption("modelled_vehicle");
-      selected = new URL(page.url());
-      const briefLink = await lower.locator('a[href^="/studio/brief/"]').first().getAttribute("href");
-      if (selected.searchParams.get("service") !== "pharmacy" || selected.searchParams.get("mode") !== "modelled_vehicle"
-        || !briefLink?.includes("service=pharmacy&mode=modelled_vehicle")) {
-        throw new Error("Studio top service/mode switch did not update lower case links and URL");
+      const choice = new URL(page.url());
+      if (choice.searchParams.get("service") !== "pharmacy" || choice.searchParams.get("mode") !== "modelled_vehicle") {
+        throw new Error("Planning service and mode did not update the URL");
       }
     }
+    await page.goto(origin + detailPath + "?aoi=" + first.aoi_id + "&event=" + first.event_id + "&version=" + catalog.package_version, { waitUntil: "domcontentloaded" });
+    const detail = page.locator("main[data-evidence-library]");
+    await detail.locator("footer").filter({ hasText: first.id }).waitFor();
+    await detail.locator("#evidence-case").selectOption(alternative.id);
+    await detail.locator("footer").filter({ hasText: alternative.id }).waitFor();
+    const detailSelected = new URL(page.url());
+    if (detailSelected.searchParams.get("aoi") !== alternative.aoi_id || detailSelected.searchParams.get("event") !== alternative.event_id) {
+      throw new Error(role + " detail selector left a divergent URL");
+    }
+    const archiveLink = detail.getByRole("navigation", { name: "Pages in this area" }).getByRole("link", { name: role === "planning" ? "Research archive" : "Historical report" });
+    await archiveLink.click();
+    const archived = new URL(page.url());
+    if (archived.searchParams.get("aoi") !== alternative.aoi_id || archived.searchParams.get("event") !== alternative.event_id) {
+      throw new Error(role + " archive link dropped the selected case");
+    }
+    await page.getByRole("link", { name: role === "planning" ? "Current planning overview" : "Open the current study-case report" }).click();
+    await page.locator('[data-shared-case="' + role + '"][data-case-id="' + alternative.id + '"]').waitFor();
   }
 }
-
 // Browser coverage is bounded: all 8 case briefs at 2 widths × 2 languages ×
 // online/offline; 16 hospital/walking origin-change checks in three areas;
 // seven other service/mode checks, three other finals-case routes and seven
@@ -597,25 +595,35 @@ async function verifyRouteWorkspace(page, aoiId = "aoi-01_mae_sai_core") {
   const routePanel = brief.locator("[data-route-comparison]");
   for (const viewport of [{ width: 1366, height: 768 }, { width: 1024, height: 768 }, { width: 390, height: 844 }, { width: 375, height: 667 }]) {
     await page.setViewportSize(viewport);
+    const mobileDocument = viewport.width <= 700;
+    const checkWorkspaceItem = async (locator, label, interactive = false) => {
+      if (mobileDocument) await locator.scrollIntoViewIfNeeded();
+      await assertFitsViewport(page, locator, label, interactive);
+    };
     for (const th of [false, true]) {
       const toggle = page.getByRole("button", { name: th ? "ใช้ภาษาไทย" : "Use English", exact: true });
       if (await toggle.count()) await toggle.click();
       await routePanel.locator(".leaflet-container canvas").first().waitFor({ state: "visible" });
       await page.evaluate(() => window.scrollTo(0, 0));
-      await assertFitsViewport(page, page.locator("#evidence-case"), "study area and event selector", true);
+      await checkWorkspaceItem(page.locator("#evidence-case"), "study area and event selector", true);
       for (const label of th ? ["บริการที่ต้องการ", "วิธีเดินทางตามแบบจำลอง", "จุดเริ่มต้นสาธารณะ", "การเปลี่ยนแปลงที่กำหนด"] : ["Service needed", "Modelled travel mode", "Public starting place", "Imposed change"]) {
-        await assertFitsViewport(page, brief.getByRole("combobox", { name: label, exact: true }), label, true);
+        await checkWorkspaceItem(brief.getByRole("combobox", { name: label, exact: true }), label, true);
       }
-      for (const radio of await routePanel.getByRole("radio").all()) await assertFitsViewport(page, radio, "route overlay selector", true);
-      for (const kind of ["population", "interventions", "evidence"]) await assertFitsViewport(page, brief.locator(`[data-finals-detail="${kind}"]`), `${kind} detail button`, true);
-      await assertFitsViewport(page, routePanel.locator(".leaflet-container"), "route map");
-      await assertFitsViewport(page, routePanel.locator('[data-route-result="baseline"]'), "before result");
-      await assertFitsViewport(page, routePanel.locator('[data-route-result="after"]'), "after result");
-      await assertFitsViewport(page, routePanel.locator("[data-route-outcome]"), "route change result");
-      await assertFitsViewport(page, routePanel.locator("[data-route-caution]"), "route uncertainty");
-      for (const item of await routePanel.getByRole("list", { name: th ? "สัญลักษณ์เส้นทาง" : "Route legend", exact: true }).getByRole("listitem").all()) await assertFitsViewport(page, item, "route legend item", true);
+      for (const radio of await routePanel.getByRole("radio").all()) await checkWorkspaceItem(radio, "route overlay selector", true);
+      for (const kind of ["population", "interventions", "evidence"]) await checkWorkspaceItem(brief.locator(`[data-finals-detail="${kind}"]`), `${kind} detail button`, true);
+      await checkWorkspaceItem(routePanel.locator(".leaflet-container"), "route map");
+      await checkWorkspaceItem(routePanel.locator('[data-route-result="baseline"]'), "before result");
+      await checkWorkspaceItem(routePanel.locator('[data-route-result="after"]'), "after result");
+      await checkWorkspaceItem(routePanel.locator("[data-route-outcome]"), "route change result");
+      await checkWorkspaceItem(routePanel.locator("[data-route-caution]"), "route uncertainty");
+      for (const item of await routePanel.getByRole("list", { name: th ? "สัญลักษณ์เส้นทาง" : "Route legend", exact: true }).getByRole("listitem").all()) await checkWorkspaceItem(item, "route legend item", true);
       const dimensions = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight, viewportWidth: innerWidth, viewportHeight: innerHeight }));
-      if (dimensions.width > dimensions.viewportWidth + 1 || dimensions.height > dimensions.viewportHeight + 1) throw new Error(`Route workspace requires document scrolling at ${viewport.width}×${viewport.height}, Thai=${th}: ${JSON.stringify(dimensions)}`);
+      if (dimensions.width > dimensions.viewportWidth + 1 || (!mobileDocument && dimensions.height > dimensions.viewportHeight + 1)) throw new Error(`Route workspace overflows at ${viewport.width}×${viewport.height}, Thai=${th}: ${JSON.stringify(dimensions)}`);
+      if (mobileDocument) {
+        const resultTop = await routePanel.locator('[data-route-result="baseline"]').evaluate((element) => element.getBoundingClientRect().top + scrollY);
+        const mapTop = await routePanel.locator(".leaflet-container").evaluate((element) => element.getBoundingClientRect().top + scrollY);
+        if (resultTop >= mapTop) throw new Error(`Phone route result must appear before the map: ${viewport.width}×${viewport.height}`);
+      }
       await assertAvailabilityDoesNotOverlap(page, routePanel, `${viewport.width}×${viewport.height}, Thai=${th}`);
       if (captureDirectory) await page.screenshot({ path: resolve(captureDirectory, `${aoiId}-route-workspace-${viewport.width}x${viewport.height}-${th ? "th" : "en"}.png`) });
       for (const [en, thai, green, purple] of (aoiId === "aoi-01_mae_sai_core" ? [["Before", "ก่อน", true, false], ["After", "หลัง", false, true], ["Both", "ทั้งสองกรณี", true, true]] : [])) {
@@ -641,7 +649,7 @@ async function verifyRouteWorkspace(page, aoiId = "aoi-01_mae_sai_core") {
       const routeId = await routePanel.getAttribute("data-route-id");
       for (const kind of ["population", "interventions", "evidence"]) {
         const dialog = await openFinalsDetail(brief, kind);
-        await assertFitsViewport(page, dialog, `${kind} dialog`);
+        await checkWorkspaceItem(dialog, `${kind} dialog`);
         await page.keyboard.press("Tab");
         if (!await dialog.evaluate((element) => element.contains(document.activeElement))) throw new Error(`Keyboard focus escaped the ${kind} modal.`);
         if (kind === "population") {
@@ -655,7 +663,7 @@ async function verifyRouteWorkspace(page, aoiId = "aoi-01_mae_sai_core") {
         if (await routePanel.getAttribute("data-route-id") !== routeId) throw new Error(`Opening ${kind} reset the selected route.`);
       }
       const detailsButton = routePanel.getByRole("button", { name: th ? "รายละเอียดเส้นทาง" : "Route details", exact: true });
-      await assertFitsViewport(page, detailsButton, "route details button", true);
+      await checkWorkspaceItem(detailsButton, "route details button", true);
       await detailsButton.click();
       const routeDialog = page.getByRole("dialog");
       await routeDialog.waitFor({ state: "visible" });
@@ -665,7 +673,7 @@ async function verifyRouteWorkspace(page, aoiId = "aoi-01_mae_sai_core") {
       if (!await detailsButton.evaluate((button) => document.activeElement === button)) throw new Error("Route details dialog did not restore trigger focus.");
 
       const sourcesButton = page.getByRole("button", { name: th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads", exact: true });
-      await assertFitsViewport(page, sourcesButton, "sources and downloads button", true);
+      await checkWorkspaceItem(sourcesButton, "sources and downloads button", true);
       await sourcesButton.click();
       const sourcesDialog = page.getByRole("dialog");
       await sourcesDialog.waitFor({ state: "visible" });

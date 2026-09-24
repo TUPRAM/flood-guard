@@ -40,4 +40,11 @@ describe("PwaRegister", () => {
     expect(publicPaths).not.toContain("/studio/");
     expect(publicPaths.join(" ")).not.toMatch(/roads\.json|facilities\.json|access-hotspots\.json/);
   });
+
+  it("requires every role route before calling the competition app saved offline", () => {
+    expect(requiredOfflinePaths("competition")).toEqual(expect.arrayContaining([
+      "/public-cases/", "/command/", "/command/cases/", "/command/archive/",
+      "/studio/", "/studio/brief/", "/studio/library/", "/studio/archive/",
+    ]));
+  });
 });

@@ -13,7 +13,7 @@ function escapeLabel(value: string): string {
   element.textContent = value;
   return element.innerHTML;
 }
-export function EvidenceLibraryMap({ aoi, layers, th }: { aoi: EvidenceLibraryAoi; layers: EvidenceLibraryLayer[]; th: boolean }) {
+export function EvidenceLibraryMap({ aoi, layers, th, collapsedLayers = false }: { aoi: EvidenceLibraryAoi; layers: EvidenceLibraryLayer[]; th: boolean; collapsedLayers?: boolean }) {
   const container = useRef<HTMLDivElement>(null);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -47,12 +47,12 @@ export function EvidenceLibraryMap({ aoi, layers, th }: { aoi: EvidenceLibraryAo
           }).addTo(map);
         }
       }
-      L.control.layers(undefined, overlays, { collapsed: false }).addTo(map);
+      L.control.layers(undefined, overlays, { collapsed: collapsedLayers }).addTo(map);
       map.attributionControl.setPrefix("Leaflet · FloodGuard candidate evidence");
     }
     mount().catch((error: unknown) => { if (!disposed) setFailure(error instanceof Error ? error.message : "Map unavailable"); });
     return () => { disposed = true; map?.remove(); };
-  }, [aoi, layers]);
+  }, [aoi, layers, collapsedLayers]);
 
   return <div>
     <div className={styles.map} ref={container} role="region" aria-label={th ? "แผนที่หลักฐานในพื้นที่ศึกษา" : "Study-area evidence map"} />

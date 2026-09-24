@@ -190,6 +190,27 @@ export function PublicSosPage({
         <h1 id="public-sos-title">{th ? "ขอความช่วยเหลือฉุกเฉิน" : "Get emergency help"}</h1>
       </header>
 
+      <section className="public-sos-hotlines" aria-labelledby="public-sos-hotlines-title">
+        <h2 id="public-sos-hotlines-title">
+          {th ? "หมายเลขฉุกเฉินของหน่วยงานทางการ" : "Official emergency hotlines"}
+        </h2>
+        <p>{th ? "แตะหมายเลขเพื่อเปิดแอปโทรศัพท์ ระบบจะไม่โทรออกเอง" : "Tap a number to open your phone app. FloodGuard does not place the call."}</p>
+        <ul>
+          {hotlineActions.map((hotline) => (
+            <li key={hotline.number}>
+              <a
+                href={hotline.href}
+                aria-label={`${th ? "โทร" : "Call"} ${hotline.number} · ${th ? hotline.label_th : hotline.label_en}`}
+              >
+                <strong>{hotline.number}</strong>
+                <span>{th ? hotline.label_th : hotline.label_en}</span>
+                <b>{th ? "โทร" : "Call"}</b>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section className="public-sos-calm-advice" aria-labelledby="public-sos-advice-title">
         <span className="public-sos-advice-icon" aria-hidden="true">!</span>
         <div>
@@ -307,26 +328,6 @@ export function PublicSosPage({
               : "No household needs are recorded on this device."}
           </p>
         )}
-      </section>
-
-      <section className="public-sos-hotlines" aria-labelledby="public-sos-hotlines-title">
-        <h2 id="public-sos-hotlines-title">
-          {th ? "หมายเลขฉุกเฉินของหน่วยงานทางการ" : "Official emergency hotlines"}
-        </h2>
-        <ul>
-          {hotlineActions.map((hotline) => (
-            <li key={hotline.number}>
-              <a
-                href={hotline.href}
-                aria-label={`${th ? "โทร" : "Call"} ${hotline.number} · ${th ? hotline.label_th : hotline.label_en}`}
-              >
-                <strong>{hotline.number}</strong>
-                <span>{th ? hotline.label_th : hotline.label_en}</span>
-                <b>{th ? "โทร" : "Call"}</b>
-              </a>
-            </li>
-          ))}
-        </ul>
       </section>
 
       <aside className="public-sos-privacy-boundary" aria-labelledby="public-sos-privacy-title">

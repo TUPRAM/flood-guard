@@ -38,7 +38,7 @@ function StoryOverlay() {
 }
 
 export function LandingPage() {
-  return <main className={styles.landing} data-landing id="main-content" lang="en">
+  return <main className={styles.landing} data-landing id="main-content" tabIndex={-1} lang="en">
     <LandingNavigation />
     <section id="story" className={styles.story} aria-labelledby="landing-title">
       <NarrativeExperience chapterIds={copy.story.chapters.map(chapter => chapter.id)} chapterLabels={copy.story.chapters.map(chapter => chapter.short_label)}

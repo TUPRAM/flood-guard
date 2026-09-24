@@ -10,21 +10,25 @@ import type { FloodGuardData } from "@/lib/types";
 import { buildFilteredAreaGeoJson, buildVerificationQueueExport, CommandWorkspace, offlineBrief } from "./command-workspace";
 
 describe("CommandWorkspace", () => {
-  it("renders the Mae Sai planning workspace with final-product context and safeguards", () => {
+  it("renders the historical Mae Sai planning archive with explicit research boundaries", () => {
     const html = renderToStaticMarkup(<CommandWorkspace />);
     const visibleText = html.replace(/<[^>]*>/g, " ");
 
     expect(html).toContain('aria-label="Planning data context"');
     expect(html).toContain("Planning intelligence");
     expect(html).toContain("Planning workspace");
-    expect(html).toContain('<a class="active" href="/command/">Planning</a>');
-    expect(html).not.toContain('<a class="active" href="/command/">Command</a>');
+    expect(html).toContain('<a class="active">Planning</a>');
+    expect(html).not.toContain('<a class="active">Command</a>');
     expect(html).toContain("Source time");
     expect(html).toContain("Confidence");
     expect(html).toContain("Historical research workspace");
+    expect(html).toContain("Historical Mae Sai research archive");
+    expect(html).toContain("2020 population context");
+    expect(html).toContain("Data version: mae-sai-candidate-2024-09-15-v1");
+    expect(html).toContain("Current planning overview");
     expect(html).toContain("not accepted event-response priorities");
     expect(html).toContain("Open shared case comparisons");
-    expect(html).toContain('href="/command/cases/"');
+    expect(html).not.toContain('href="/command/cases/"');
     expect(html).toContain("follow DDPM and local-authority instructions before action");
     expect(html).toContain("TH570903");
     expect(html).toContain("Ko Chang");
@@ -48,7 +52,7 @@ describe("CommandWorkspace", () => {
     expect(html).toContain('aria-label="Map data attribution"');
     expect(html).toContain("HDX Thailand COD-AB");
     expect(html).toContain("FloodGuard");
-    expect(visibleText).not.toMatch(/\b(?:rehearsal|demo|fixture|candidate|synthetic|non-operational|server-produced|FastAPI)\b/i);
+    expect(visibleText).not.toMatch(/\b(?:rehearsal|demo|fixture|synthetic|server-produced|FastAPI)\b/i);
     expect(html).not.toContain("can_feed_decision_layer");
     expect(html).not.toContain("processing_scope");
   });
@@ -76,6 +80,8 @@ describe("CommandWorkspace", () => {
     expect(brief).toContain(`Canonical reason: ${bundle.areas[0].top_reason}`);
     expect(brief).toContain("Data version: mae-sai-candidate-2024-09-15-v1");
     expect(brief).toContain("Study area: mae_sai_candidate_v1");
+    expect(brief).toContain("Retained Mae Sai research comparison");
+    expect(brief).toContain("not accepted event-response priorities");
     expect(brief).toContain(bundle.areas[0].assumptions[0]);
   });
 

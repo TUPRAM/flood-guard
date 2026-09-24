@@ -18,7 +18,7 @@ The user confirmed a **ten-minute final pitch**, no file submission, and no addi
 
 - For a shorter slot, omit the 5:45-6:45 transfer module and shorten the method walkthrough; keep the candidate/assumption distinction and decision limitations.
 - If an accepted observation or learned model later qualifies, replace the relevant module only after an exact source-bound scientific/rights/custody receipt and downstream acceptance. Do not change its label in this outline to imply the gate passed.
-- Demonstration path after package freeze: `/public/?aoi=aoi-01_mae_sai_core&event=mae_sai_2024&version=<verified-release-version>` -> `/command/` -> `/studio/` with the same query. Rehearse Thai/English, keyboard, narrow screen and offline package on the exact Preview/build. A real nontechnical comprehension check and another-laptop offline rehearsal remain pending until a person/device actually performs them.
+- Demonstration path after package freeze: start at `/public/`, open its compact study-case entry, then select `/public-cases/?aoi=aoi-01_mae_sai_core&event=mae_sai_2024&version=<verified-release-version>` -> `/command/` -> `/studio/` while retaining the compatible case query. Rehearse Thai/English, keyboard, narrow screen and offline package on the exact Preview/build. A real nontechnical comprehension check and another-laptop offline rehearsal remain pending until a person/device actually performs them.
 - Before presenting, compare each screenshot, figure, brief hash, route and downloadable file to the final Preview commit/tree, package catalog and offline manifest. Never present this outline as organizer-approved slides or as a predicted judging result.
 
 ## Ten-minute speaking script

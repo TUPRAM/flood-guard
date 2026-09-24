@@ -58,7 +58,6 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
   const [selection, setSelection] = useState<CaseSelection>(() => ({
     aoi: initialAoiId ?? initialCatalog?.packages[0]?.aoi_id ?? "",
     event: initialEventId ?? initialCatalog?.packages[0]?.event_id ?? "",
-    ...(typeof window === "undefined" ? {} : readCaseSelection(window.location.search)),
   }));
   const [loaded, setLoaded] = useState<{ package: EvidenceLibraryPackage | null; referenceHash: string; error: string | null }>({ package: initialPackage, referenceHash: initialCatalog?.packages.find((item) => item.id === initialPackage?.id)?.sha256 ?? "", error: null });
 
@@ -78,6 +77,7 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
 
   useEffect(() => {
     const onPopState = () => setSelection({ aoi: catalog?.packages[0]?.aoi_id, event: catalog?.packages[0]?.event_id, ...readCaseSelection(window.location.search) });
+    onPopState();
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, [catalog]);
@@ -103,26 +103,28 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
   const event = catalog?.events.find((item) => item.id === selection.event);
   const reportUrl = evidenceAssetUrl(evidence?.report_url);
 
-  const caseQuery = caseHref("", { ...selection, version: catalog?.package_version }).slice(1);
+  const linkedSelection = reference
+    ? { ...selection, aoi: reference.aoi_id, event: reference.event_id, version: catalog?.package_version }
+    : selection;
+  const link = (path: string) => caseHref(path, linkedSelection);
   const analysis = evidence?.decision_brief?.finals_analysis;
   const analysisError = analysis ? resolveAnalysisSelection(analysis, selection).reason : (selection.service || selection.mode || selection.scenario || selection.origin ? "unknown_service" : null);
   const workspace = view === "brief" && Boolean(evidence?.decision_brief?.finals_analysis?.routes);
-  return <main id="main-content" className={`${styles.library} ${workspace ? styles.workspace : ""}`} data-evidence-library="true" data-route-workspace={workspace ? "true" : undefined}>
+  return <main className={`${styles.library} ${workspace ? styles.workspace : ""}`} data-evidence-library="true" data-route-workspace={workspace ? "true" : undefined}>
     <header className={styles.header}>
-      <a className={styles.brand} href={role === "planning" ? "/command/" : role === "public" ? "/public/" : "/studio/"}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : role === "public" ? "Public" : "Studio"}</span></a>
-      <nav aria-label={th ? "หน้าหลักฐาน" : "Evidence navigation"}><a href={caseHref("/studio/", selection)}>{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={`/studio/brief/?${caseQuery}`} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"}</a><a href={`/studio/library/?${caseQuery}`} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังข้อมูล" : "Evidence library"}</a><a href={`/public-cases/?${caseQuery}`} aria-current={view === "public" ? "page" : undefined}>{th ? "สรุปสำหรับประชาชน" : "Public summary"}</a><a href={`/command/cases/?${caseQuery}`}>{th ? "เปรียบเทียบ" : "Planning comparisons"}</a><a href={caseHref("/public/", selection)}>{th ? "หน้า Public" : "Public home"}</a></nav>
+      <a className={styles.brand} href={link(role === "planning" ? "/command/" : role === "public" ? "/public/" : "/studio/")}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : role === "public" ? "Public" : "Studio"}</span></a>
+      <nav aria-label={th ? "พื้นที่หลัก" : "Main areas"}>
+        <a href={link("/public/")} aria-current={role === "public" ? "page" : undefined}>{th ? "ประชาชน" : "Public"}</a>
+        <a href={link("/command/")} aria-current={role === "planning" ? "page" : undefined}>{th ? "การวางแผน" : "Planning"}</a>
+        <a href={link("/studio/")} aria-current={role === "studio" ? "page" : undefined}>{th ? "หลักฐาน" : "Studio"}</a>
+      </nav>
       <LanguageToggle language={language} onChange={setLanguage} />
-      <select className={styles.compactViews} aria-label={th ? "เปิดมุมมอง" : "Open view"} value="" onChange={(event) => window.location.assign(event.target.value)}>
-        <option value="" disabled>{th ? "มุมมอง" : "Views"}</option>
-        <option value={`/studio/brief/?${caseQuery}`}>{th ? "บทสรุป" : "Decision brief"}</option>
-        <option value={`/studio/library/?${caseQuery}`}>{th ? "คลังข้อมูล" : "Evidence library"}</option>
-        <option value={`/public-cases/?${caseQuery}`}>{th ? "สรุปสำหรับประชาชน" : "Public summary"}</option>
-        <option value={`/command/cases/?${caseQuery}`}>{th ? "เปรียบเทียบ" : "Command comparisons"}</option>
-        <option value="/studio/">{th ? "รายงานการตรวจสอบ" : "Validation report"}</option>
-        <option value="/public/">{th ? "หน้า Public" : "Public home"}</option>
-      </select>
     </header>
-    <div className={styles.content}>
+    <nav className={styles.subnav} aria-label={th ? "หน้าของพื้นที่นี้" : "Pages in this area"}>
+      {role === "public" ? <><a href={link("/public/")}>{th ? "หน้าแรก" : "Home"}</a><a href={link("/public-cases/")} aria-current="page">{th ? "กรณีศึกษา" : "Study cases"}</a></> : role === "planning" ? <><a href={link("/command/")}>{th ? "ภาพรวม" : "Overview"}</a><a href={link("/command/cases/")} aria-current="page">{th ? "เปรียบเทียบเส้นทาง" : "Route comparison"}</a><a href={link("/command/archive/")}>{th ? "คลังงานวิจัย" : "Research archive"}</a></> : <><a href={link("/studio/")}>{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={link("/studio/brief/")} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปและเส้นทาง" : "Decision brief"}</a><a href={link("/studio/library/")} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังหลักฐาน" : "Evidence library"}</a><a href={link("/studio/archive/")}>{th ? "รายงานเก่า" : "Historical report"}</a></>}
+    </nav>
+    <div data-app-availability-slot />
+    <div id="main-content" tabIndex={-1} className={styles.content}>
       {workspace ? <div className={styles.workspaceHeading}><h1>{th ? "เส้นทางก่อนและหลัง" : "Compare before & after routes"}</h1><span className={styles.badge}>{th ? "สถานการณ์สมมติ" : "Scenario demonstration"}</span></div> : <>
       <div className={styles.heading}><div><p className={styles.eyebrow}>{th ? "หลักฐานสำหรับต้นแบบ" : "PROTOTYPE EVIDENCE"}</p><h1>{view === "public" ? (th ? "เรื่องราวของแต่ละพื้นที่" : "Understand the study cases") : view === "brief" ? (th ? "บทสรุปเพื่อการตัดสินใจ" : "Study-area decision brief") : (th ? "คลังข้อมูลพื้นที่ศึกษา" : "Study-area evidence library")}</h1><p>{view === "brief" ? (th ? "เปรียบเทียบสิ่งที่ควรตรวจสอบ การเปลี่ยนแปลงที่มีผล และความไม่แน่นอนของพื้นที่" : "Compare useful experiments, target verification and understand the limits of each result.") : (th ? "ตรวจสอบข้อมูลที่มี ช่องว่าง และสมมติฐานของแต่ละพื้นที่และเหตุการณ์" : "Inspect acquired data, coverage gaps and assumptions for each area and event.")}</p></div><span className={styles.badge}>{th ? "ไม่ใช่ระบบปฏิบัติการ" : "Non-operational"}</span></div>
       </>}
@@ -149,12 +151,31 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
         {packageError ? <p className={styles.error} role="alert">{th ? "ชุดข้อมูลใช้ไม่ได้" : "Evidence package unavailable"}: {packageError}</p> : null}
         {reference && !evidence && !packageError ? <p role="status">{th ? "กำลังโหลดและตรวจสอบชุดข้อมูล…" : "Loading and verifying evidence package…"}</p> : null}
         {evidence && aoi ? <>
-          {view === "evidence" ? <section className={styles.panel}><MainRoadStatus th={th} /></section> : null}
-          {analysisError ? <p className={styles.error} role="alert">{th ? "ไม่มีผลสำหรับตัวเลือกบริการ วิธีเดินทาง สถานการณ์ หรือจุดเริ่มต้นนี้ จะไม่ใช้ผลอื่นแทน" : "No result exists for this service, mode, scenario or origin. Another selection is not substituted."} <code>{analysisError}</code></p> : view === "public" ? <PublicCaseSummary key={evidence.id} evidence={evidence} th={th} /> : view === "brief" ? <DecisionBriefPanel key={evidence.id} evidence={evidence} th={th} /> : <>
+          {view === "evidence" ? <section className={`${styles.panel} ${styles.overview}`} aria-labelledby="evidence-overview-title">
+            <p className={styles.eyebrow}>{th ? "ชุดหลักฐานที่ตรวจสอบค่าแฮชแล้ว · ยังไม่รับรอง" : "HASH-VERIFIED PACKAGE · CANDIDATE ONLY"}</p>
+            <h2 id="evidence-overview-title">{th ? "สถานะหลักฐานโดยสรุป" : "Evidence at a glance"}</h2>
+            <dl className={styles.summaryGrid}>
+              <div><dt>{th ? "พื้นที่และเหตุการณ์" : "Area and event"}</dt><dd>{th ? aoi.name_th ?? aoi.name : aoi.name} · {th ? event?.name_th ?? event?.name : event?.name}</dd></div>
+              <div><dt>{th ? "ความเชื่อมั่น" : "Confidence"}</dt><dd>{th ? "ต่ำ · ผู้สมัคร" : "Low · candidate"}</dd></div>
+              <div><dt>{th ? "คะแนนและระดับที่รับรอง" : "Accepted FPPS and class"}</dt><dd>{th ? "ยังไม่มี" : "Unavailable"}</dd></div>
+              <div><dt>{th ? "กลุ่มข้อมูลในชุดนี้" : "Dataset records"}</dt><dd>{evidence.datasets.length}</dd></div>
+            </dl>
+            <MainRoadStatus th={th} />
+            <nav className={styles.contents} aria-label={th ? "สารบัญหลักฐาน" : "Evidence contents"}>
+              <a href="#evidence-map-title">{th ? "แผนที่" : "Map and layers"}</a>
+              <a href="#evidence-source-title">{th ? "ข้อมูลและสิทธิ์" : "Sources and rights"}</a>
+              <a href="#evidence-gauge-title">{th ? "ระดับน้ำ" : "Gauge context"}</a>
+              <a href="#evidence-score-title">{th ? "องค์ประกอบคะแนน" : "Score inputs"}</a>
+              <a href="#evidence-scenario-title">{th ? "สถานการณ์" : "Scenarios"}</a>
+              <a href="#evidence-provenance">{th ? "ที่มาและดาวน์โหลด" : "Provenance and downloads"}</a>
+            </nav>
+          </section> : null}
+          {analysisError ? <p className={styles.error} role="alert">{th ? "ไม่มีผลสำหรับตัวเลือกบริการ วิธีเดินทาง สถานการณ์ หรือจุดเริ่มต้นนี้ จะไม่ใช้ผลอื่นแทน" : "No result exists for this service, mode, scenario or origin. Another selection is not substituted."} <code>{analysisError}</code></p> : null}
+          {view === "public" ? (analysisError ? null : <PublicCaseSummary key={evidence.id} evidence={evidence} th={th} />) : view === "brief" ? (analysisError ? null : <DecisionBriefPanel key={evidence.id} evidence={evidence} th={th} />) : <>
           <section className={styles.panel} aria-labelledby="evidence-map-title"><div className={styles.sectionTitle}><h2 id="evidence-map-title">{th ? "แผนที่หลักฐาน" : "Evidence map"}</h2><span>{th ? aoi.name_th ?? aoi.name : aoi.name}</span></div>
-            <EvidenceMap key={evidence.id} aoi={aoi} layers={evidence.layers} th={th} />
+            <EvidenceMap key={`map-${evidence.id}`} aoi={aoi} layers={evidence.layers} th={th} />
             <ul className={styles.layerList}>{evidence.layers.map((layer) => <li key={layer.id}><b>{layer.title}</b><span>{STATUS[layer.availability][th ? 1 : 0]}</span>{layer.reason ? <small>{layer.reason}</small> : null}</li>)}</ul>
-            <EvidenceFeatureBrowser key={evidence.id} layers={evidence.layers} th={th} />
+            <EvidenceFeatureBrowser key={`features-${evidence.id}`} layers={evidence.layers} th={th} />
           </section>
           <section className={styles.panel} aria-labelledby="evidence-source-title"><h2 id="evidence-source-title">{th ? "ข้อมูลที่ได้และข้อจำกัด" : "Acquired data and coverage"}</h2>
             <p>{catalog.datasets.filter((item) => !SUPPORTING_SOURCES.has(item.id)).length} {th ? "กลุ่มข้อมูลที่ได้มา" : "acquired data groups"} · {catalog.datasets.filter((item) => SUPPORTING_SOURCES.has(item.id)).length} {th ? "แหล่งข้อมูลสนับสนุนหรือสถานการณ์สมมติ" : "supporting or scenario sources"}. {th ? "วันที่หมายถึงช่วงเวลาของแหล่งข้อมูล ไม่ใช่วันที่ดาวน์โหลด" : "Dates describe source coverage, not download time."}</p>
@@ -171,7 +192,7 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
           <section className={styles.panel} aria-labelledby="evidence-scenario-title"><h2 id="evidence-scenario-title">{th ? "สถานการณ์สมมติเพื่อทดสอบวิธี" : "Explicit scenario comparisons"}</h2><p>{th ? "ผลคำนวณล่วงหน้าตามสมมติฐาน ไม่ใช่ค่าที่สังเกตหรือเส้นทางปลอดภัยที่ยืนยัน" : "Precomputed results under stated assumptions, not observed outcomes or confirmed safe routes."}</p><div className={styles.scenarios}>{evidence.scenarios.map((scenario) => <article key={scenario.id}><p className={styles.eyebrow}>{scenario.kind}</p><h3>{scenario.title}</h3><p>{scenario.summary}</p><dl>{scenario.metrics.map((metric, index) => <div key={index}><dt>{metric.label}</dt><dd>{metric.value ?? (th ? "ยังไม่มี" : "Unavailable")} {metric.unit}</dd></div>)}</dl><details><summary>{th ? "สมมติฐาน" : "Assumptions"}</summary><ul>{scenario.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details></article>)}</div>{!evidence.scenarios.length ? <p>{th ? "ไม่มีผลสถานการณ์สมมติในชุดนี้" : "No scenario results are included in this package."}</p> : null}</section>
           </>}
           {workspace ? <footer className={styles.workspaceFooter}><span>{evidence.id}</span><button type="button" aria-haspopup="dialog" onClick={() => sourcesDialog.current?.showModal()}>{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</button><dialog ref={sourcesDialog} className={styles.workspaceDialog} aria-labelledby="workspace-sources-title"><div className={styles.workspaceDialogHeader}><h2 id="workspace-sources-title">{th ? "แหล่งข้อมูลและดาวน์โหลด" : "Sources and downloads"}</h2><button type="button" onClick={() => sourcesDialog.current?.close()}>{th ? "ปิด" : "Close"}</button></div><div className={styles.workspaceDialogBody}><div className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></div></div></dialog></footer> : (
-          <footer className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></footer>)}
+          <footer id="evidence-provenance" className={styles.provenance}><div><strong>{th ? "ชุดข้อมูลที่ตรวจสอบย้อนกลับได้" : "Traceable evidence package"}</strong><p>{evidence.id}</p><GenerationTimes sourceAnalysisGeneratedAt={evidence.decision_brief?.finals_analysis?.generated_at ?? null} releaseGeneratedAt={evidence.generated_at} th={th} /><p>{th ? "ความเชื่อมั่น: ต่ำ · เวลาสังเกตการณ์ของแหล่งข้อมูล: " : "Confidence: low · Source observation time: "}{evidence.source_timestamp ?? (th ? "หลายช่วงเวลา ดูข้อมูลกำกับแต่ละแหล่ง" : "mixed source periods; see dataset metadata")}</p><details><summary>{th ? "สมมติฐานของชุดข้อมูล" : "Package assumptions"}</summary><ul>{evidence.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul></details><details><summary>{th ? "ค่าแฮชข้อมูลนำเข้า" : "Input checksums"}</summary><dl>{Object.entries(evidence.input_hashes).map(([name, hash]) => <div key={name}><dt>{name}</dt><dd><code>{hash}</code></dd></div>)}</dl></details></div><div className={styles.downloads}>{reportUrl ? <a className={styles.download} href={reportUrl} download>{th ? "ดาวน์โหลดรายงาน" : "Download report"}</a> : <span>{th ? "ไม่มีรายงานให้ดาวน์โหลด" : "Report download unavailable"}</span>}{evidence.downloads?.map((item) => { const url = evidenceAssetUrl(item.url); return url ? <div key={url}><a className={styles.download} href={url} download>{item.title}</a><small>SHA-256: <code>{item.sha256}</code></small></div> : null; })}</div></footer>)}
 
         </> : null}
       </> : null}

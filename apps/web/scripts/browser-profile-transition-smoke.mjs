@@ -156,7 +156,7 @@ try {
   let commandRecovered = false;
   try {
     await page.goto(`${baseUrl}/command/`, { waitUntil: "domcontentloaded", timeout: 5000 });
-    commandRecovered = await page.locator("main.command-page").count() > 0;
+    commandRecovered = await page.locator("main[data-planning-candidate], main.command-page").count() > 0;
   } catch {
     commandRecovered = false;
   }
@@ -185,7 +185,7 @@ try {
   await page.locator("main[data-landing]").waitFor({ state: "visible" });
   await page.waitForFunction(() => (
     document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("Install available update")
-    && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("saved app ready")
+    && !document.querySelector('[data-pwa-availability="true"]')?.textContent?.includes("app pages saved offline")
   ));
   const pendingRows = await readAvailabilityRows(page);
   if (pendingRows["Saved planning view"] !== "Open once online to save") {
@@ -207,7 +207,7 @@ try {
   // The activated competition worker must now serve both staff routes offline,
   // and the availability panel must report the cached snapshot and map limits.
   await context.setOffline(true);
-  for (const [path, selector] of [["/studio/brief/", "main[data-evidence-library]"], ["/studio/library/", "main[data-evidence-library]"], ["/command/", "main.command-page"], ["/studio/", "main.studio-page"]]) {
+  for (const [path, selector] of [["/studio/brief/", "main[data-evidence-library]"], ["/studio/library/", "main[data-evidence-library]"], ["/command/", "main[data-planning-candidate]"], ["/studio/", "main[data-evidence-case-id]"]]) {
     await page.goto(`${baseUrl}${path}`, { waitUntil: "domcontentloaded" });
     await page.locator(selector).waitFor({ state: "visible" });
   }
@@ -240,7 +240,7 @@ async function assertAvailabilityPanel(page, { online, ready }) {
     ({ expectedOnline, expectedReady }) => {
       const text = document.querySelector('[data-pwa-availability="true"]')?.textContent ?? "";
       return text.includes(expectedOnline ? "Online" : "Offline")
-        && text.includes(expectedReady ? "saved app ready" : "Open once online to save");
+        && text.includes(expectedReady ? "app pages saved offline" : "Open once online to save");
     },
     { expectedOnline: online, expectedReady: ready },
   );

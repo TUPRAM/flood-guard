@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { resolveDeploymentProfile } from "@/lib/deployment-profile";
 import { HOUSEHOLD_PLAN_STORAGE_KEY, LEGACY_HOUSEHOLD_PLAN_STORAGE_KEY } from "@/lib/household-plan";
@@ -41,7 +42,7 @@ const PWA_AVAILABILITY_COPY = {
     checkingConnection: "Checking connection",
     online: "Online",
     offline: "Offline",
-    savedAppReady: "saved app ready",
+    savedAppReady: "app pages saved offline",
     heading: "App availability",
     subtitle: "Mae Sai planning support",
     savedPlanningView: "Saved planning view",
@@ -57,8 +58,8 @@ const PWA_AVAILABILITY_COPY = {
     lastUpdateCheck: "Last successful update check",
     mapBackgrounds: "Map backgrounds",
     backgroundsOffline: "May be unavailable offline",
-    backgroundsOnline: "Connection required",
-    disclosure: "Saved planning overlays and this device’s household plan remain available offline. Current conditions still require official local information.",
+    backgroundsOnline: "External service; check the map itself",
+    disclosure: "Saved app pages and this device’s household plan can remain available offline. Map backgrounds and routes are separate external services. Current conditions still require official local information.",
     installUpdate: "Install available update",
     installing: "Installing…",
     checkUpdate: "Check for app update",
@@ -70,7 +71,7 @@ const PWA_AVAILABILITY_COPY = {
     checkingConnection: "กำลังตรวจสอบการเชื่อมต่อ",
     online: "ออนไลน์",
     offline: "ออฟไลน์",
-    savedAppReady: "แอปที่บันทึกไว้พร้อมใช้งาน",
+    savedAppReady: "บันทึกหน้าแอปไว้ใช้ออฟไลน์",
     heading: "สถานะแอป",
     subtitle: "เครื่องมือสนับสนุนการวางแผนแม่สาย",
     savedPlanningView: "มุมมองการวางแผนที่บันทึกไว้",
@@ -86,8 +87,8 @@ const PWA_AVAILABILITY_COPY = {
     lastUpdateCheck: "ตรวจสอบการอัปเดตสำเร็จล่าสุด",
     mapBackgrounds: "พื้นหลังแผนที่",
     backgroundsOffline: "อาจไม่พร้อมใช้งานเมื่อออฟไลน์",
-    backgroundsOnline: "ต้องเชื่อมต่ออินเทอร์เน็ต",
-    disclosure: "ชั้นข้อมูลการวางแผนที่บันทึกไว้และแผนครัวเรือนในอุปกรณ์นี้ยังใช้งานออฟไลน์ได้ สภาพปัจจุบันยังต้องยืนยันกับแหล่งข้อมูลท้องถิ่นที่เป็นทางการ",
+    backgroundsOnline: "บริการภายนอก ต้องตรวจสอบที่แผนที่",
+    disclosure: "หน้าแอปที่บันทึกไว้และแผนครัวเรือนในอุปกรณ์นี้อาจใช้งานออฟไลน์ได้ พื้นหลังแผนที่และเส้นทางเป็นบริการภายนอกแยกกัน สภาพปัจจุบันยังต้องยืนยันกับแหล่งข้อมูลท้องถิ่นที่เป็นทางการ",
     installUpdate: "ติดตั้งการอัปเดตที่พร้อมใช้",
     installing: "กำลังติดตั้ง…",
     checkUpdate: "ตรวจสอบการอัปเดตแอป",
@@ -122,7 +123,7 @@ export function requiredOfflinePaths(profile: AppProfile): string[] {
   ];
   return profile === "public-production"
     ? publicPaths
-    : [...publicPaths, "/command/", "/studio/", "/offline-demo/mae-sai/bundle.json"];
+    : [...publicPaths, "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/brief/", "/studio/library/", "/studio/archive/", "/offline-demo/mae-sai/bundle.json"];
 }
 
 async function inspectOfflineCache(status: WorkerCacheStatus | null): Promise<CacheState> {
@@ -183,6 +184,25 @@ async function removeDevelopmentWorker(): Promise<boolean> {
 
 export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }: PwaRegisterProps = {}) {
   const pathname = usePathname();
+  const [availabilitySlot, setAvailabilitySlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    let active = true;
+    const observer = new MutationObserver(() => {
+      const nextSlot = document.querySelector<HTMLElement>("[data-app-availability-slot]");
+      if (nextSlot) {
+        setAvailabilitySlot(nextSlot);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    queueMicrotask(() => {
+      if (!active) return;
+      const slot = document.querySelector<HTMLElement>("[data-app-availability-slot]");
+      setAvailabilitySlot(slot);
+      if (slot) observer.disconnect();
+    });
+    return () => { active = false; observer.disconnect(); };
+  }, [pathname]);
   const defaultLanguage = EXPECTED_PROFILE === "public-production" || pathname?.startsWith("/public") ? "th" : "en";
   const [language] = useLanguage(defaultLanguage);
   const [online, setOnline] = useState<boolean | null>(null);
@@ -416,9 +436,9 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
     ? `${connectionLabel} · ${copy.savedAppReady}`
     : connectionLabel;
 
-  return (
+  const panel = (
     <details
-      className={styles.panel}
+      className={`${styles.panel} ${availabilitySlot ? styles.inlinePanel : ""}`}
       data-pwa-availability="true"
       onToggle={(event) => {
         if (!event.currentTarget.open) return;
@@ -482,4 +502,5 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
       </div>
     </details>
   );
+  return availabilitySlot ? createPortal(panel, availabilitySlot) : panel;
 }

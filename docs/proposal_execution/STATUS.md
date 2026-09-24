@@ -198,3 +198,20 @@ V2 has no human review, accepted observation, FPPS or A–E action class. It
 remains `official_warning=false`, `operational_status=non_operational` and
 `can_feed_decision_layer=false`. The frozen v1 optical failure and M2 SAR
 abstention/final-holdout failure remain separate, unchanged results.
+
+## 25 September 2026 prospective Thai event selection
+
+The [selection protocol](automated_track/thai_event_selection_protocol_v1.json)
+was committed first at `a4b4e46f403dae2fcf318a15b039f072499018a2`.
+The [source-feasibility screen](automated_track/THAI_EVENT_FEASIBILITY_V1.md)
+identifies Ayutthaya, 12 October 2024 as the strongest *unselected* candidate:
+the event Sentinel-1 footprint covers AOI-05 by official catalog geometry,
+and a Sentinel-2 scene about 7 h 35 min earlier leaves **54.7666%** of AOI-05
+usable after the complete frozen optical quality checks, above the 50% source
+floor. The exact NASA daily flood HDF is cataloged and its published data-use
+terms are usable, but its AOI flood/dry/unknown inventory and source times
+cannot be verified without the actual file. A dry pre-radar scene and valid
+processed radar grids also remain unverified. **No Thai event was selected or
+scored.** Exact methods and numerical limits for a selected event must be
+committed before any radar/reference comparison. The GEOID-Flood sample
+benchmark is a separate radar engineering diagnostic, not a Thai event result.

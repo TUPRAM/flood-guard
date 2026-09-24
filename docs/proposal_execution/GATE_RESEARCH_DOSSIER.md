@@ -17,18 +17,28 @@ including failed limits, are recorded below.
 The [prospective selection protocol](automated_track/thai_event_selection_protocol_v1.json)
 was frozen at `a4b4e46f403dae2fcf318a15b039f072499018a2` before any new Thai
 event detector/reference score. The [source feasibility screen](automated_track/THAI_EVENT_FEASIBILITY_V1.md)
-then checked actual radar footprints, optical coverage, acquisition timing,
-reference class meaning and rights. Ayutthaya's 23 October optical scene has
-only **46.671%** buffered SCL observability over the existing AOI-05, despite
-the earlier **82.3%** in a different small illustrative box. Doi Tao's 5
+then checked catalog radar footprints, optical coverage, acquisition timing,
+reference class meaning and rights. The strongest source-only candidate is
+**Ayutthaya, 12 October 2024**: a full AOI-05 catalog radar footprint and an
+optical scene about 7 h 35 min earlier. After the frozen SCL buffer, all seven
+band-validity checks and spectral-denominator checks, **941,218 / 1,718,599 =
+54.7666%** of AOI-05 cells remain observable, narrowly above the frozen 50%
+optical feasibility floor. This is source quality, **not** a flood score. The
+16–17 October 2024 pair falls to **44.5476%** under the same complete check;
+Ayutthaya 23 October 2022 had only **46.671%** buffered SCL observability over
+AOI-05, despite the earlier **82.3%** in a different small box. Doi Tao's 5
 October scene has only about **18–19%** over the full UNOSAT analysis polygon.
-Both fail the frozen 50% optical cross-review condition on those AOIs. Doi
-Tao has a Gaofen-derived georeferenced flood and analysis polygon, but no
+The latter three fail the frozen 50% optical cross-review condition on those
+AOIs.
+
+Doi Tao has a Gaofen-derived georeferenced flood and analysis polygon, but no
 documented dry/unknown semantics or product-specific derived-use terms. A
 NASA daily MODIS flood map offers explicit flood/dry/insufficient-data codes
-and permissive use terms, but its AOI contents remain unread because its HDF
-requires Earthdata Login. No reference-ready Thai event, dry pre-radar scene
-or processed-grid validity has been established. **No event was selected, no
+and permissive LAADS use terms. Its **12 October 2024 HDF is still needed** to
+verify actual AOI-05 class inventory, source observation times and
+georeferencing; NASA's browse visualization cannot distinguish transparent
+dry from transparent nodata. The pre-event radar acquisition's dry status and
+processed-grid validity also remain unverified. **No event was selected, no
 numerical methods or limits were frozen for a selected event, and no Thai
 detector score was run.** The next pre-registration must precede that score.
 

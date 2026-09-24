@@ -163,3 +163,36 @@ not accuracy**. A negative or missing limit stays visible. All outputs remain
 `official_warning=false`, `operational_status=non_operational`,
 `can_feed_decision_layer=false` and `accepted_observation=false`. Accepted FPPS
 and A–E action class remain null; Class E never means safe.
+
+### 24 September 2026 optical v2 research checkpoint
+
+The separate v2 plan was committed as `efc69f5f66dfe8c2d667a9827566126709f1cab9`
+before the new optical comparisons. The additional positive-cell feasibility
+gate was committed as `09a4e03c14da9a9bd72cb70f0c7711f703fc9c0d`
+before the Chaiyaphum method results. V2 uses native 10 m OmniWaterMask input
+(the package used effective 478-pixel tiles for the Mae Sai event) and the
+frozen spectral rule. The [development diagnosis](automated_track/DIAGNOSTICS_V2_DEVELOPMENT.md)
+retains Mae Sai as an already-inspected development episode; its v1 reference
+and consumed SAR hold-out are unchanged.
+
+| Episode and evidence | Water Dice (limit ≥ 0.60) | Cohen's kappa (limit ≥ 0.50) | Observable AOI fraction (limit ≥ 0.50) | Overall |
+| --- | ---: | ---: | ---: | --- |
+| Mae Sai development, 15 September 2024; [`automated_optical_v2_development.json`](../../outputs/automated_optical_v2_development.json) | 0.228611 **FAIL** | 0.226780 **FAIL** | 0.687491 **PASS** | **FAIL** |
+| Chaiyaphum single-use final hold-out, 28 September 2021; [`automated_optical_v2_holdout.json`](../../outputs/automated_optical_v2_holdout.json) | 0.899900 **PASS** | 0.857963 **PASS** | 0.465944 **FAIL** | **FAIL** |
+
+The Chaiyaphum positive-cell gate passed: method A marked 110,129 observable
+water cells, B marked 126,255, and 106,361 overlapped, above the predeclared
+100-cell minima. The final hold-out still **fails overall** because fewer than
+half the AOI cells were observable. Label codes 0–4 count 713,615 / 196 / 32 /
+6,180 / 327,297 in Mae Sai development and 268,418 / 21,853 / 1,374 /
+106,796 / 456,686 in Chaiyaphum. Code 2 denotes a two-date automated
+water classification; the dry scene's suitability is uncertain, so it does not
+prove permanent water. The two-method score is **agreement with an automated
+optical map, not accuracy**. No independent date-compatible pixelwise flood
+truth was verified; the [source search](automated_track/independent_evidence_candidates_v2.md)
+and AWA GAD imagery-order route have not supplied one.
+
+V2 has no human review, accepted observation, FPPS or A–E action class. It
+remains `official_warning=false`, `operational_status=non_operational` and
+`can_feed_decision_layer=false`. The frozen v1 optical failure and M2 SAR
+abstention/final-holdout failure remain separate, unchanged results.

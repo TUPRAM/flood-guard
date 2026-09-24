@@ -43,9 +43,13 @@ produced:
 | Permanent-water abstention | 0 | 0.00% |
 | Classified dry or flood | **0** | **0.00%** |
 
-The optical acquisition was 15 September 2024 at 03:45:29 UTC and the SAR
-post acquisition was 23:16:01.675690 UTC, a gap of **19 h 30 min 32.675690 s**.
-Water can change in that interval; the gap alone does not show recession or
+The v1 optical receipt records the Sentinel-2 **product-name start** at
+15 September 2024 03:45:29 UTC and the SAR post acquisition at
+23:16:01.675690 UTC, a nominal gap of **19 h 30 min 32.675690 s**.
+The later Earth Search tile `datetime` recorded in the v2 acquisition manifest
+is 04:02:41.830 UTC, giving **19 h 13 min 19.845690 s** to that SAR pass.
+These are different timestamp semantics, not two optical scenes. Water can
+change in either interval; timing alone does not show recession or
 progression. The pre/post SAR span is about 12 days. Neither timing nor the
 optical reference's poor two-method agreement changes the recorded M2
 abstention or its failed acceptance limits.

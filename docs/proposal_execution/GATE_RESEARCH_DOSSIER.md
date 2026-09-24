@@ -12,6 +12,49 @@ Scores against that reference mean **agreement with an automated optical map,
 not accuracy**. The measured reference, development and final-holdout results,
 including failed limits, are recorded below.
 
+### 24 September 2026 optical v2 follow-up — overall FAIL
+
+The new [optical v2 result](automated_track/OPTICAL_V2_RESULT.md) tests the
+pixel-diagnosis lead without changing the frozen v1 reference or reopening its
+SAR hold-out. V2 pre-registration commit
+`efc69f5f66dfe8c2d667a9827566126709f1cab9` fixed native 10 m model
+inference, per-asset radiometry, the enlarged SCL quality mask and the
+unchanged spectral rule. A stricter positive-cell gate was committed as
+`09a4e03c14da9a9bd72cb70f0c7711f703fc9c0d` before the fresh-event
+hold-out. The package requested 512 px patches, but its recorded
+OmniCloudMask 1.7.1 high-nodata rule used 478 px for Mae Sai and 450 px for
+Chaiyaphum. It did not downsample the 10 m grid.
+
+| Optical v2 episode | A/B water Dice; limit ≥ 0.60 | Cohen's kappa; limit ≥ 0.50 | Observable AOI; limit ≥ 0.50 | Overall |
+| --- | ---: | ---: | ---: | --- |
+| Mae Sai, already-inspected development | 0.228611 **FAIL** | 0.226780 **FAIL** | 720,023 / 1,047,320 = 0.687491 **PASS** | **FAIL** |
+| Chaiyaphum 28 September 2021, one-use event hold-out | 0.899900 **PASS** | 0.857963 **PASS** | 398,441 / 855,127 = 0.465944 **FAIL** | **FAIL** |
+
+The Chaiyaphum methods marked 110,129 and 126,255 observable cells as water
+and shared 106,361; all positive-cell minima of 100 pass. The hold-out score
+was recorded once after its exclusive marker was created. High two-method
+agreement on the scored subset is **agreement with an automated optical map,
+not accuracy** and cannot cancel the failed coverage limit. The expanded
+event SCL mask excluded 271,619 AOI cells and its 20 m buffer another 32,259.
+Per-asset scale/offset and clipping left spectral denominators zero on a
+further 152,808 cells, including 80,286 carrying SCL class 6, an automated
+water class. This selection could inflate apparent agreement; its effect is
+unknown. Only 21,853 of the 106,361 shared event-water cells were also
+classified dry by both methods on the earlier date; 82,645 lacked observable
+dry context, so they stayed uncertain. Code 2 records water on both dates,
+not independently established permanent water.
+
+The [v1 pixel diagnosis](automated_track/DIAGNOSTICS_V1.md), [v2 development
+diagnosis](automated_track/DIAGNOSTICS_V2_DEVELOPMENT.md) and [M2 abstention
+diagnosis](automated_track/SAR_M2_ABSTENTION_DIAGNOSIS.md) are separately
+reproducible. The SAR M2 candidate still has zero classified cells because all
+81 windows failed its frozen histogram test; v2 optical work does not repair
+that candidate. The [independent-source search](automated_track/independent_evidence_candidates_v2.md)
+found contextual UNOSAT reports and later GISTDA imagery but no verified,
+same-time, legally reusable Mae Sai pixelwise truth. Human-track gates remain
+not pursued, and no v2 output is an accepted observation, official warning or
+downstream FPPS input.
+
 ### Automated optical reference result
 
 The exact 15 September event and 5 September dry-context Sentinel-2B L2A
@@ -37,7 +80,9 @@ kappa ≥ 0.50). The methods marked 3,909 and 6,248 water cells respectively;
 their consensus temporary flood is sparse. No SAR data entered either optical
 method, and no method threshold was changed after seeing these results.
 Turbid water, cloud/shadow masking, the optical model's downsampling and the
-19 h 31 min gap before the SAR post scene constrain interpretation. The
+nominal 19 h 31 min gap from the v1 product-name start to the SAR post scene
+constrain interpretation. The v2 Earth Search tile sensing time makes that
+gap 19 h 13 min instead; neither interval establishes water stability. The
 Component ★ finding that MNDWI > 0 flagged 8.7 times the reference area on a
 dry-season scene is a specific warning against treating a spectral mask as
 human flood truth.
@@ -87,7 +132,8 @@ limit. For the raw amplitude comparator, coverage passes ≥ 0.50; IoU fails
 fails ≤ 0.50. It predicts 640,500 m² of flood among scored cells against
 300 m² in the automated optical map. The three false negatives are a possible
 timing/recession diagnostic only. The optical scene preceded the SAR post scene
-by 19 h 31 min, and the reference's own two-method cross-review failed badly.
+by a nominal 19 h 31 min from the v1 product-name start (19 h 13 min from
+the v2 STAC tile time), and the reference's own two-method cross-review failed badly.
 The number on the landing page is **agreement with an automated optical map,
 not accuracy**. Neither candidate passes the frozen observation limits or
 earns accepted observation status. The raw comparator's source manifest also
@@ -145,7 +191,7 @@ Both JSON files carry `evidence_tier=research_hypothesis`,
 | CDSE product id | `f1a638d2-3b8f-4f9a-a862-1b651d6662c3` (already listed in `outputs/cdse_mae_sai_2024_sentinel2_metadata.csv` as "post-event optical context candidate") |
 | Sensing | Datatake start 2024-09-15 03:45:29 UTC (10:45 Thailand time); Earth Search item time 04:02:41 UTC |
 | Sensor / lineage | Sentinel-2B MSI, optical multispectral; Level-2A processed by ESA Sen2Cor baseline N0511; tile T47QNC is natively UTM 47N (EPSG:32647) at 10/20/60 m |
-| Relation to the tested SAR | The SAR post scene is 2024-09-15 23:16:01 UTC, so this optical scene came **19 h 31 min earlier**, on the same UTC day. It is a different sensor with a different physical measurement. No part of it derives from any Sentinel-1 product. |
+| Relation to the tested SAR | The SAR post scene is 2024-09-15 23:16:01 UTC. The v1 optical product-name start is **nominally 19 h 31 min earlier**; the Earth Search tile sensing time gives 19 h 13 min. Both are on the same UTC day. It is a different sensor with a different physical measurement. No part of it derives from any Sentinel-1 product. |
 | AOI-01 coverage (SCL, 20 m) | 261,806 pixels. Clear and observable **0.7346**. Cloud (medium + high) 0.1887, cloud shadow 0.0767, no data 0. |
 | Flood presence | UNOSAT's Charter assessment of 16 September reports widespread flooding in Mae Sai "as of 15 September 2024" from Pléiades imagery taken 15 September 03:58 UTC, about 13 minutes after this Sentinel-2 pass. |
 | Other September scenes | 5 Sept: 0.877 clear, but it predates the 10–16 September flood peak, so it is a useful dry-context scene. 10, 20 and 25 Sept: 0.000, 0.000 and 0.021 clear, so unusable. |

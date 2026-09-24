@@ -1,0 +1,113 @@
+{
+ "evidence_tier": "research_hypothesis",
+ "official_warning": false,
+ "can_feed_decision_layer": false,
+ "grants_reference_authority": false,
+ "confidence": "research probe; observability screen only, not a flood label or reference decision",
+ "processed_utc": "2026-09-24T07:59:25+00:00",
+ "sources": [
+  "https://earth-search.aws.element84.com/v1"
+ ],
+ "assumptions": [
+  "SCL is the ESA Sen2Cor scene classification; its cloud and shadow classes are used only as an observability screen.",
+  "SCL 'water' is not a flood label: turbid floodwater is often classed as not_vegetated or unclassified.",
+  "A clear-sky fraction says a scene could be interpreted, not that it shows the flood peak or that a reference exists.",
+  "Episode boxes are small illustrative windows around flooded towns, not declared study areas.",
+  "Temporal proximity to a Sentinel-1 pass does not by itself establish independence or date fitness; a Reference Authority must decide both."
+ ],
+ "probe": "sentinel2_scl_aoi_observability",
+ "aoi_file": "resources/aoi/aoi-01_mae_sai_core.geojson",
+ "aoi_file_sha256": "d837a1b058c86739150bb6b844f9dcfdedf32feb83be99194e855430d4a613c2",
+ "aoi_bounds_wgs84": [
+  99.8384,
+  20.3705,
+  99.9441,
+  20.4563
+ ],
+ "window": "2024-09-01/2024-09-25",
+ "source_timestamp": "2024-09-01/2024-09-25",
+ "scenes": [
+  {
+   "item": "S2B_47QNC_20240905_0_L2A",
+   "sensing_utc": "2024-09-05T04:02:45.342000+00:00",
+   "tile_cloud_cover_percent": 35.853153,
+   "s2_product_id": "S2B_MSIL2A_20240905T034539_N0511_R104_T47QNC_20240905T080012.SAFE",
+   "pixels": 261806,
+   "scl_fractions": {
+    "dark_area_or_topographic_shadow": 0.0005,
+    "cloud_shadow": 0.0352,
+    "vegetation": 0.6608,
+    "not_vegetated": 0.2054,
+    "water": 0.0013,
+    "unclassified": 0.0093,
+    "cloud_medium_probability": 0.0518,
+    "cloud_high_probability": 0.0357
+   },
+   "unobservable_fraction": 0.1227,
+   "clear_observable_fraction": 0.8773
+  },
+  {
+   "item": "S2A_47QNC_20240910_0_L2A",
+   "sensing_utc": "2024-09-10T04:02:41.690000+00:00",
+   "tile_cloud_cover_percent": 99.287617,
+   "s2_product_id": "S2A_MSIL2A_20240910T034531_N0511_R104_T47QNC_20240910T091456.SAFE",
+   "pixels": 261806,
+   "scl_fractions": {
+    "cloud_medium_probability": 0.924,
+    "cloud_high_probability": 0.076
+   },
+   "unobservable_fraction": 1.0,
+   "clear_observable_fraction": 0.0
+  },
+  {
+   "item": "S2B_47QNC_20240915_0_L2A",
+   "sensing_utc": "2024-09-15T04:02:41.830000+00:00",
+   "tile_cloud_cover_percent": 61.544627,
+   "s2_product_id": "S2B_MSIL2A_20240915T034529_N0511_R104_T47QNC_20240915T065143.SAFE",
+   "pixels": 261806,
+   "scl_fractions": {
+    "cloud_shadow": 0.0767,
+    "vegetation": 0.4819,
+    "not_vegetated": 0.2353,
+    "water": 0.0063,
+    "unclassified": 0.0112,
+    "cloud_medium_probability": 0.1023,
+    "cloud_high_probability": 0.0864,
+    "thin_cirrus": 0.0
+   },
+   "unobservable_fraction": 0.2654,
+   "clear_observable_fraction": 0.7346
+  },
+  {
+   "item": "S2A_47QNC_20240920_1_L2A",
+   "sensing_utc": "2024-09-20T04:02:40.734000+00:00",
+   "tile_cloud_cover_percent": 95.649225,
+   "s2_product_id": "S2A_MSIL2A_20240920T034531_N0511_R104_T47QNC_20240920T072151.SAFE",
+   "pixels": 261806,
+   "scl_fractions": {
+    "cloud_medium_probability": 0.0007,
+    "cloud_high_probability": 0.9993
+   },
+   "unobservable_fraction": 1.0,
+   "clear_observable_fraction": 0.0
+  },
+  {
+   "item": "S2B_47QNC_20240925_0_L2A",
+   "sensing_utc": "2024-09-25T04:02:41.540000+00:00",
+   "tile_cloud_cover_percent": 80.981606,
+   "s2_product_id": "S2B_MSIL2A_20240925T034529_N0511_R104_T47QNC_20240925T070331.SAFE",
+   "pixels": 261806,
+   "scl_fractions": {
+    "cloud_shadow": 0.0126,
+    "vegetation": 0.0043,
+    "not_vegetated": 0.006,
+    "water": 0.0,
+    "unclassified": 0.0102,
+    "cloud_medium_probability": 0.143,
+    "cloud_high_probability": 0.8239
+   },
+   "unobservable_fraction": 0.9795,
+   "clear_observable_fraction": 0.0205
+  }
+ ]
+}

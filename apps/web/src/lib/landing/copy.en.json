@@ -275,39 +275,59 @@
       }
     ],
     "models": {
-      "heading": "Three ways to find the water",
-      "body": "Each is scored on a public benchmark of 18 flood events, with three events held back and opened once.",
+      "heading": "How the methods compare on a public benchmark",
+      "body": "Each is scored on a public benchmark of 18 flood events (C2S-MS Floods v1.0), with three events held back and opened once. These are benchmark scores, not Mae Sai scores.",
       "columns": [
         "Method",
         "What it does",
-        "Benchmark IoU",
-        "On our Mae Sai product"
+        "GRD benchmark IoU (calibrated / raw)",
+        "RTC benchmark transfer IoU (calibrated / raw)",
+        "Mae Sai IoU"
       ],
       "rows": [
         {
-          "name": "Change detection",
-          "note": "Subtracts before from after in decibels. No training, fully transparent.",
-          "grd": "0.233",
-          "rtc": "0.032",
+          "name": "VH-Otsu threshold (GRD baseline)",
+          "note": "One automatic cut-off on post-event VH backscatter. No training, fully transparent.",
+          "grd": "0.233 / 0.482",
+          "rtc": "not run",
+          "mae_sai": "unavailable",
           "status": "baseline"
         },
         {
-          "name": "XGBoost / Random Forest",
-          "note": "Tree ensembles combining radar change with terrain and land cover.",
-          "grd": "0.868",
-          "rtc": "0.464",
+          "name": "Fixed dB change ramp (RTC baseline)",
+          "note": "Subtracts before from after in decibels. No training; needs a matched pre-flood image.",
+          "grd": "not run",
+          "rtc": "— / 0.032",
+          "mae_sai": "unavailable",
+          "status": "baseline"
+        },
+        {
+          "name": "XGBoost",
+          "note": "Gradient-boosted trees on post-event VV, VH and VV−VH backscatter (radar-only arm).",
+          "grd": "0.868 / 0.801",
+          "rtc": "0.374 / 0.464",
+          "mae_sai": "unavailable",
+          "status": "best-on-grd"
+        },
+        {
+          "name": "Random Forest",
+          "note": "Bagged decision trees on the same three radar features.",
+          "grd": "0.869 / 0.816",
+          "rtc": "0.328 / 0.459",
+          "mae_sai": "unavailable",
           "status": "best-on-grd"
         },
         {
           "name": "U-Net",
-          "note": "Pixel-by-pixel segmentation that learns shape and texture.",
-          "grd": "0.370",
-          "rtc": "0.493",
+          "note": "Pixel-by-pixel segmentation on the same radar bands, learning shape and texture.",
+          "grd": "0.370 / 0.480",
+          "rtc": "0.480 / 0.493",
+          "mae_sai": "unavailable",
           "status": "best-on-rtc"
         }
       ],
-      "caption": "IoU on the benchmark's held-out events. The two columns are different satellite products — we train on GRD and our Mae Sai run uses RTC, and the ranking reverses between them. Neither column is a Mae Sai accuracy.",
-      "spread": "Per-event scores ranged 0.24 to 0.90 across the three held-out countries. We report the spread rather than the average, because the average hides it."
+      "caption": "Pooled IoU on the benchmark's three held-out events, from study c2s-ms-20260915/r1. \"Calibrated\" applies the probability calibrator fitted on the calibration events; \"raw\" is the model's own output at 0.5. The RTC column is a domain-transfer check on a matched subset (46 of 111 test chips from 2 of the 3 events), using models trained on GRD; it is not a Mae Sai result. The two baselines differ, so they are listed separately. Random Forest and XGBoost differ by less than 0.001 on GRD, so both are marked. The tree models lead on GRD and U-Net leads on the RTC subset, whether you read calibrated or raw scores. Mae Sai IoU is unavailable because no qualified Thai reference exists yet.",
+      "spread": "On the three held-out events, calibrated per-event IoU for the radar-only tree models ranged from 0.39 to 0.92 (XGBoost 0.39–0.92, Random Forest 0.39–0.92). We report the spread rather than the average, because the average hides it."
     },
     "gate": {
       "heading": "One question, no partial credit",

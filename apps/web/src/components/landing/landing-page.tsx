@@ -121,6 +121,7 @@ export function LandingPage() {
             <td><span className={styles.modelWhat}>{row.note}</span></td>
             <td>{row.grd}</td>
             <td>{row.rtc}</td>
+            <td>{row.mae_sai}</td>
           </tr>)}</tbody>
         </table></div>
         <p className={styles.modelNote}>{copy.pipeline.models.caption}</p>

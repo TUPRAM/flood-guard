@@ -210,8 +210,10 @@ and a Sentinel-2 scene about 7 h 35 min earlier leaves **54.7666%** of AOI-05
 usable after the complete frozen optical quality checks, above the 50% source
 floor. The exact NASA daily flood HDF is cataloged and its published data-use
 terms are usable, but its AOI flood/dry/unknown inventory and source times
-cannot be verified without the actual file. A dry pre-radar scene and valid
-processed radar grids also remain unverified. **No Thai event was selected or
+cannot be verified without the actual file. Hosted RTC COGs for the event and
+13 August pre-scene have 100% finite positive VV/VH AOI-05 pixels, but a dry
+pre-radar scene and valid grids from the exact FloodGuard processing remain
+unverified. **No Thai event was selected or
 scored.** Exact methods and numerical limits for a selected event must be
 committed before any radar/reference comparison. The GEOID-Flood sample
 benchmark is a separate radar engineering diagnostic, not a Thai event result.

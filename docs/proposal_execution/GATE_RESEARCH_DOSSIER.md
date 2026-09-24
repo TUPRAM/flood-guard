@@ -37,8 +37,10 @@ NASA daily MODIS flood map offers explicit flood/dry/insufficient-data codes
 and permissive LAADS use terms. Its **12 October 2024 HDF is still needed** to
 verify actual AOI-05 class inventory, source observation times and
 georeferencing; NASA's browse visualization cannot distinguish transparent
-dry from transparent nodata. The pre-event radar acquisition's dry status and
-processed-grid validity also remain unverified. **No event was selected, no
+dry from transparent nodata. Hosted Sentinel-1 RTC COGs for the 12 October
+event and 13 August pre-scene have finite positive VV/VH pixels throughout
+AOI-05, but pre-scene dryness and FloodGuard's exact candidate-processed
+Gamma0 grids remain unverified. **No event was selected, no
 numerical methods or limits were frozen for a selected event, and no Thai
 detector score was run.** The next pre-registration must precede that score.
 

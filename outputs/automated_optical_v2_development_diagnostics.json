@@ -1,0 +1,514 @@
+{
+  "assumptions": [
+    "Uses only frozen Mae Sai v2 development artifacts and both declared Sentinel-2 scenes."
+  ],
+  "can_feed_decision_layer": false,
+  "chips_sha256": "c94d0e7d36a8063e7456defdac2879722b26e5a936b500fca9e6a6b787931219",
+  "comparable_cell_count": 720023,
+  "confidence": "limited: automated pair and spectral strata, no independent pixelwise truth",
+  "cross_review": {
+    "cohen_kappa": 0.226780265458521,
+    "evidence_tier": "automated_cross_review",
+    "human_reviewed": false,
+    "ignored_pair_count": 0,
+    "passes_limits": false,
+    "valid_pair_count": 720023,
+    "water_count_a": 987,
+    "water_count_b": 6248,
+    "water_dice": 0.2286109191430546
+  },
+  "development_receipt_sha256": "75e94913f2224ee91bd3efed2a34a58ad85b63876d4dbc00701d74b5bef458d5",
+  "dry_change_by_event_pair": {
+    "a_only": {
+      "delta_mndwi_event_minus_dry": {
+        "median": 0.5181122422218323,
+        "p10": 0.07203775644302368,
+        "p90": 1.0083220899105072
+      },
+      "delta_swir16_event_minus_dry": {
+        "median": -0.007262490689754486,
+        "p10": -0.08190000802278519,
+        "p90": 0.027134377509355545
+      },
+      "dry_observable_cells": 86,
+      "dry_pair_counts": {
+        "a_only": 3,
+        "b_only": 1,
+        "both": 2,
+        "neither": 80
+      },
+      "event_cells": 160
+    },
+    "b_only": {
+      "delta_mndwi_event_minus_dry": {
+        "median": 2.0,
+        "p10": 0.297618305683136,
+        "p90": 2.0
+      },
+      "delta_swir16_event_minus_dry": {
+        "median": -0.059424988925457,
+        "p10": -0.10535248965024949,
+        "p90": -0.0018887475132942076
+      },
+      "dry_observable_cells": 4603,
+      "dry_pair_counts": {
+        "a_only": 3,
+        "b_only": 195,
+        "both": 2,
+        "neither": 4403
+      },
+      "event_cells": 5421
+    },
+    "both": {
+      "delta_mndwi_event_minus_dry": {
+        "median": 1.2757054567337036,
+        "p10": 0.0,
+        "p90": 2.0
+      },
+      "delta_swir16_event_minus_dry": {
+        "median": -0.030156247317790985,
+        "p10": -0.08097250014543533,
+        "p90": 0.0
+      },
+      "dry_observable_cells": 265,
+      "dry_pair_counts": {
+        "a_only": 15,
+        "b_only": 22,
+        "both": 32,
+        "neither": 196
+      },
+      "event_cells": 827
+    },
+    "neither": {
+      "delta_mndwi_event_minus_dry": {
+        "median": 0.0,
+        "p10": -0.05989482402801513,
+        "p90": 0.39225023388862607
+      },
+      "delta_swir16_event_minus_dry": {
+        "median": -0.006118759512901306,
+        "p10": -0.059243758022785184,
+        "p90": 0.03950623571872711
+      },
+      "dry_observable_cells": 632055,
+      "dry_pair_counts": {
+        "a_only": 32,
+        "b_only": 574,
+        "both": 19,
+        "neither": 631430
+      },
+      "event_cells": 713615
+    }
+  },
+  "event_asset_sha256": {
+    "blue": "aa058cecc7643f0384ef363d131ea59c3ba6f415e9e1ab7d6d5ec8824d48a7a8",
+    "green": "36e6eae2c783f37842d3cc3c8cee5be5764b275b186c8adfbf109f21aaec8650",
+    "nir": "39c3a31ddf87853e9425a9d4ace82af117d35bc77e42e0397be6c874c894a837",
+    "nir08": "5e880fb8787fed3e5e6362b4e8a4ae79eb8037b55f1495e8b8d8629d6fc8036c",
+    "red": "dbe241cefd75a7e94f9259aeffe3b8d9b471a0c02b115db09ac38d27a0ac29d8",
+    "scl": "ce119a84f064e8e712ccfc450721350ab91852a6962ae8b8bf83a8fe05b3366f",
+    "swir16": "67929ca9285acf1254578f9d550aa9907abde160b7b5c625a434184708a31da2",
+    "swir22": "67a786470b1ba30e01d336539a01f165baa90c0f8fd8329f05f1a3c0108c4e03"
+  },
+  "event_id": "TH-MAESAI-2024-09",
+  "evidence_tier": "exploratory_development_diagnostic_only",
+  "human_reviewed": false,
+  "limitations": [
+    "Mae Sai has already been inspected; this is development diagnosis, not fresh confirmation.",
+    "SCL and visual chips are diagnostic context, not independent flood truth.",
+    "The 5 September scene is dry context, not proof that any 15 September cell flooded.",
+    "This report does not change v2 methods or inspect the separate event holdout."
+  ],
+  "method_raster_sha256": {
+    "dry_a": "4e8088c13c62ce3e06699ee1eacca7c81d12fe65f59f39c118a4e283a87c75db",
+    "dry_b": "3295bc36c94735b389aa70c6d1184855d9121833376d4560acfd8000ebdb06c7",
+    "event_a": "7d7ea9f42d1bf52b2755baf31a4e1f274ce6d30f761eaf964a1a7e5fb9fad067",
+    "event_b": "120c08a5e212b03bd5376f08cdc2a6792c33b1a0ad5a75b092fe84117ecf45f1"
+  },
+  "nearby_20m": {
+    "a_only_within_20m_of_b_water": 117,
+    "a_water_within_20m_of_b_water": 944,
+    "b_only_within_20m_of_a_water": 214,
+    "b_water_within_20m_of_a_water": 1041
+  },
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "pair_counts": {
+    "a_only": 160,
+    "b_only": 5421,
+    "both": 827,
+    "neither": 713615
+  },
+  "preparation_receipt_sha256": "6c4414ed8a4956a1f7ed547b7d7126795bf542ac22c43ea912cf577facdb746a",
+  "preregistration_sha256": "9067fa37f817c283e908472595dba7fa9e16b36ae8101dce6f887e1ffc51e263",
+  "processed_utc": "2026-09-24T13:04:29Z",
+  "quicklook_sha256": "704c029730a1ccd07f9f8806b9b4d71db1c44c9005ed7bc76fd3b259e7dbf10e",
+  "raw_dn_by_pair": {
+    "a_only": {
+      "blue": {
+        "median": 970.5,
+        "p10": 710.4,
+        "p90": 1716.4,
+        "valid_dn_at_or_below_offset_count": 89
+      },
+      "green": {
+        "median": 1522.0,
+        "p10": 1138.6,
+        "p90": 2090.4,
+        "valid_dn_at_or_below_offset_count": 8
+      },
+      "nir": {
+        "median": 1474.0,
+        "p10": 976.0,
+        "p90": 2160.2999999999997,
+        "valid_dn_at_or_below_offset_count": 22
+      },
+      "red": {
+        "median": 1444.0,
+        "p10": 1034.8,
+        "p90": 2491.5999999999995,
+        "valid_dn_at_or_below_offset_count": 14
+      },
+      "swir16": {
+        "median": 1681.625,
+        "p10": 1253.01875,
+        "p90": 2567.8749999999995,
+        "valid_dn_at_or_below_offset_count": 3
+      },
+      "swir22": {
+        "median": 1101.125,
+        "p10": 707.38125,
+        "p90": 1835.9812499999998,
+        "valid_dn_at_or_below_offset_count": 58
+      }
+    },
+    "b_only": {
+      "blue": {
+        "median": 882.0,
+        "p10": 792.0,
+        "p90": 4108.0,
+        "valid_dn_at_or_below_offset_count": 4146
+      },
+      "green": {
+        "median": 1548.0,
+        "p10": 1340.0,
+        "p90": 4340.0,
+        "valid_dn_at_or_below_offset_count": 0
+      },
+      "nir": {
+        "median": 1807.0,
+        "p10": 1334.0,
+        "p90": 3948.0,
+        "valid_dn_at_or_below_offset_count": 231
+      },
+      "red": {
+        "median": 2362.0,
+        "p10": 1686.0,
+        "p90": 4036.0,
+        "valid_dn_at_or_below_offset_count": 0
+      },
+      "swir16": {
+        "median": 362.5,
+        "p10": 87.75,
+        "p90": 3315.8125,
+        "valid_dn_at_or_below_offset_count": 4149
+      },
+      "swir22": {
+        "median": 229.6875,
+        "p10": 59.0,
+        "p90": 3008.5625,
+        "valid_dn_at_or_below_offset_count": 4412
+      }
+    },
+    "both": {
+      "blue": {
+        "median": 910.0,
+        "p10": 768.0,
+        "p90": 1450.3999999999999,
+        "valid_dn_at_or_below_offset_count": 523
+      },
+      "green": {
+        "median": 1524.0,
+        "p10": 1287.2,
+        "p90": 2084.0,
+        "valid_dn_at_or_below_offset_count": 0
+      },
+      "nir": {
+        "median": 1058.0,
+        "p10": 501.6,
+        "p90": 1572.3999999999999,
+        "valid_dn_at_or_below_offset_count": 360
+      },
+      "red": {
+        "median": 1692.0,
+        "p10": 1198.0,
+        "p90": 2691.5999999999995,
+        "valid_dn_at_or_below_offset_count": 0
+      },
+      "swir16": {
+        "median": 813.625,
+        "p10": 303.33750000000003,
+        "p90": 1330.175,
+        "valid_dn_at_or_below_offset_count": 526
+      },
+      "swir22": {
+        "median": 496.125,
+        "p10": 178.95,
+        "p90": 879.175,
+        "valid_dn_at_or_below_offset_count": 794
+      }
+    },
+    "neither": {
+      "blue": {
+        "median": 485.0,
+        "p10": 270.0,
+        "p90": 1294.0,
+        "valid_dn_at_or_below_offset_count": 599458
+      },
+      "green": {
+        "median": 781.0,
+        "p10": 470.0,
+        "p90": 1544.0,
+        "valid_dn_at_or_below_offset_count": 476218
+      },
+      "nir": {
+        "median": 3028.0,
+        "p10": 1974.0,
+        "p90": 4404.0,
+        "valid_dn_at_or_below_offset_count": 137
+      },
+      "red": {
+        "median": 606.0,
+        "p10": 226.0,
+        "p90": 1842.0,
+        "valid_dn_at_or_below_offset_count": 471606
+      },
+      "swir16": {
+        "median": 2203.9375,
+        "p10": 1353.6875,
+        "p90": 3209.0,
+        "valid_dn_at_or_below_offset_count": 24281
+      },
+      "swir22": {
+        "median": 1132.625,
+        "p10": 695.0625,
+        "p90": 2601.1875,
+        "valid_dn_at_or_below_offset_count": 272677
+      }
+    }
+  },
+  "role": "development",
+  "sample_chips": [
+    {
+      "center_easting_m": 591170.0,
+      "center_northing_m": 2258200.0,
+      "left_column": 283,
+      "matching_cell_count": 101,
+      "pair": "a_only",
+      "size_pixels": 180,
+      "top_row": 317
+    },
+    {
+      "center_easting_m": 597610.0,
+      "center_northing_m": 2257000.0,
+      "left_column": 927,
+      "matching_cell_count": 1519,
+      "pair": "b_only",
+      "size_pixels": 180,
+      "top_row": 437
+    },
+    {
+      "center_easting_m": 591170.0,
+      "center_northing_m": 2258200.0,
+      "left_column": 283,
+      "matching_cell_count": 225,
+      "pair": "both",
+      "size_pixels": 180,
+      "top_row": 317
+    }
+  ],
+  "schema": "floodguard.automated_optical_v2_development_diagnostics.v1",
+  "scl_counts_by_pair": {
+    "a_only": {
+      "4": 11,
+      "5": 124,
+      "6": 10,
+      "7": 15
+    },
+    "b_only": {
+      "4": 6,
+      "5": 2760,
+      "6": 2555,
+      "7": 100
+    },
+    "both": {
+      "4": 1,
+      "5": 601,
+      "6": 154,
+      "7": 71
+    },
+    "neither": {
+      "4": 481413,
+      "5": 226668,
+      "6": 3438,
+      "7": 2096
+    }
+  },
+  "source_timestamp": "2024-09-15T04:02:41.830000Z",
+  "spectral_by_pair": {
+    "a_only": {
+      "indices": {
+        "awei_sh": {
+          "median": -0.030909355729818344,
+          "p10": -0.19057547748088838,
+          "p90": 0.06450592651963233
+        },
+        "mndwi": {
+          "median": -0.10954899713397026,
+          "p10": -0.5874344646930695,
+          "p90": 0.12415398955345154
+        },
+        "ndvi": {
+          "median": -0.08647913858294487,
+          "p10": -1.0,
+          "p90": 0.843318176269531
+        }
+      },
+      "predicate_fail_counts": {
+        "awei_sh_gt_0": 103,
+        "mndwi_gt_0_1": 143,
+        "ndvi_lt_0_2": 49
+      },
+      "predicate_pass_counts": {
+        "awei_sh_gt_0": 57,
+        "mndwi_gt_0_1": 17,
+        "ndvi_lt_0_2": 111
+      }
+    },
+    "b_only": {
+      "indices": {
+        "awei_sh": {
+          "median": 0.019299998879432678,
+          "p10": 0.0031999945640563965,
+          "p90": 0.309660941362381
+        },
+        "mndwi": {
+          "median": 1.0,
+          "p10": 0.18560980260372162,
+          "p90": 1.0
+        },
+        "ndvi": {
+          "median": -0.24560610949993134,
+          "p10": -0.39447513222694397,
+          "p90": -0.02777773141860962
+        }
+      },
+      "predicate_fail_counts": {
+        "awei_sh_gt_0": 0,
+        "mndwi_gt_0_1": 0,
+        "ndvi_lt_0_2": 0
+      },
+      "predicate_pass_counts": {
+        "awei_sh_gt_0": 5421,
+        "mndwi_gt_0_1": 5421,
+        "ndvi_lt_0_2": 5421
+      }
+    },
+    "both": {
+      "indices": {
+        "awei_sh": {
+          "median": 0.10999998450279236,
+          "p10": 0.04789874628186226,
+          "p90": 0.2024493545293808
+        },
+        "mndwi": {
+          "median": 1.0,
+          "p10": 0.3971984446048737,
+          "p90": 1.0
+        },
+        "ndvi": {
+          "median": -0.8652175068855286,
+          "p10": -1.0,
+          "p90": -0.2818875253200531
+        }
+      },
+      "predicate_fail_counts": {
+        "awei_sh_gt_0": 0,
+        "mndwi_gt_0_1": 0,
+        "ndvi_lt_0_2": 0
+      },
+      "predicate_pass_counts": {
+        "awei_sh_gt_0": 827,
+        "mndwi_gt_0_1": 827,
+        "ndvi_lt_0_2": 827
+      }
+    },
+    "neither": {
+      "indices": {
+        "awei_sh": {
+          "median": -0.4603766202926636,
+          "p10": -0.7256531476974487,
+          "p90": -0.20603500306606296
+        },
+        "mndwi": {
+          "median": -1.0,
+          "p10": -1.0,
+          "p90": -0.38577179908752446
+        },
+        "ndvi": {
+          "median": 1.0,
+          "p10": 0.22004358172416688,
+          "p90": 1.0
+        }
+      },
+      "predicate_fail_counts": {
+        "awei_sh_gt_0": 710927,
+        "mndwi_gt_0_1": 684623,
+        "ndvi_lt_0_2": 647224
+      },
+      "predicate_pass_counts": {
+        "awei_sh_gt_0": 2688,
+        "mndwi_gt_0_1": 28992,
+        "ndvi_lt_0_2": 66391
+      }
+    }
+  },
+  "zero_reflectance_after_conversion_by_pair": {
+    "a_only": {
+      "blue": 89,
+      "green": 8,
+      "nir": 22,
+      "nir08": 1,
+      "red": 14,
+      "swir16": 3,
+      "swir22": 58
+    },
+    "b_only": {
+      "blue": 4146,
+      "green": 0,
+      "nir": 231,
+      "nir08": 73,
+      "red": 0,
+      "swir16": 4149,
+      "swir22": 4412
+    },
+    "both": {
+      "blue": 523,
+      "green": 0,
+      "nir": 360,
+      "nir08": 213,
+      "red": 0,
+      "swir16": 526,
+      "swir22": 794
+    },
+    "neither": {
+      "blue": 599458,
+      "green": 476218,
+      "nir": 137,
+      "nir08": 39,
+      "red": 471606,
+      "swir16": 24281,
+      "swir22": 272677
+    }
+  }
+}

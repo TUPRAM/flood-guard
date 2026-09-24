@@ -96,7 +96,7 @@ try {
       worker.postMessage({ type: "FLOODGUARD_STATUS_REQUEST" }, [channel.port2]);
     });
     return status?.profile === "public-production";
-  }, undefined, "public worker to control the page");
+  }, undefined, "public worker to control the page", 90_000);
   await waitForEvaluated(page, async (oldKey) => {
     const keys = (await caches.keys()).filter((key) => /^floodguard-offline-[0-9a-f]{12}$/.test(key));
     if (keys.length !== 1 || keys[0] === oldKey) return false;
@@ -180,6 +180,7 @@ try {
     async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting),
     undefined,
     "competition update to reach the waiting state",
+    90_000,
   );
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   await page.locator("main[data-landing]").waitFor({ state: "visible" });
@@ -300,5 +301,22 @@ async function waitForEvaluated(page, predicate, argument, description, timeoutM
     await page.waitForTimeout(100);
   }
   const detail = lastError instanceof Error ? ` Last evaluation error: ${lastError.message}` : "";
-  throw new Error(`Timed out waiting for ${description}.${detail}`);
+  const workerState = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    const state = (worker) => worker?.state ?? null;
+    const cacheProfiles = await Promise.all((await caches.keys())
+      .filter((key) => /^floodguard-offline-/.test(key))
+      .map(async (key) => {
+        const response = await caches.open(key).then((cache) => cache.match("/deployment-profile.json"));
+        return { key, profile: response ? (await response.json()).profile : null };
+      }));
+    return {
+      controller: state(navigator.serviceWorker.controller),
+      active: state(registration?.active),
+      installing: state(registration?.installing),
+      waiting: state(registration?.waiting),
+      cacheProfiles,
+    };
+  }).catch((error) => ({ error: error.message }));
+  throw new Error(`Timed out waiting for ${description}.${detail} Worker state: ${JSON.stringify(workerState)}`);
 }

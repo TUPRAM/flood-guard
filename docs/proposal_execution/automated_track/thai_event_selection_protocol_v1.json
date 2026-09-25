@@ -1,0 +1,49 @@
+{
+  "schema": "floodguard.thai_event_selection_protocol.v1",
+  "status": "frozen_selection_rules_no_event_selected",
+  "preregistered_by": "automated agent (Codex)",
+  "purpose": "Select one new Thai flood event for a prospective, non-operational radar evaluation using source availability and quality, never the detector's agreement score.",
+  "known_before_freeze": "Repository S1/S2 coincidence scan and source-only Ayutthaya and Sukhothai imagery checks have been inspected. The separate GEOID-Flood radar diagnostic abstained on all 29 tiles. No candidate Thai detector output has been compared with a reference for this selection.",
+  "excluded_events": [
+    "Mae Sai 2024: automated reference and final holdout already inspected",
+    "Chaiyaphum 28 September 2021: optical v2 final holdout already consumed"
+  ],
+  "selection_inputs_allowed": [
+    "public event reports and acquisition metadata",
+    "catalog footprint intersections with a declared study area",
+    "source radiometric validity and Sentinel-2 SCL observability",
+    "reference class inventory, analysis footprint, lineage, timestamps, and written reuse terms"
+  ],
+  "selection_inputs_forbidden": [
+    "candidate flood mask versus reference comparison",
+    "candidate confusion counts or agreement metrics",
+    "threshold changes motivated by a candidate's reference score"
+  ],
+  "eligibility_rules": {
+    "aoi": "Declare the full study AOI from the reference analysis footprint and event geography before prediction. A small illustrative scene box is insufficient. Record a GeoJSON file and SHA-256; do not trim the AOI using candidate output or label agreement.",
+    "radar": "A dated Sentinel-1 IW GRD VV/VH event acquisition and a same-relative-orbit, same-pass-direction VV/VH pre-event acquisition must each cover the entire declared AOI by catalog geometry. Verify the processed grids, finite calibrated values, and flood-phase suitability of the pre-event date before scoring; report any invalid cells.",
+    "optical_if_cross_review": "A Sentinel-2 L2A event acquisition must cover the declared AOI, be within 24 hours of the event radar midpoint, and leave at least 0.50 of AOI pixel centers observable after masking SCL 0, 1, 2, 3, 8, 9, 10 with a 20 m Euclidean buffer and invalid reflectance. Record the exact processing edition, asset URLs and hashes, grid, and dry-context scene. If this fails, the event is ineligible for optical cross-review but may remain eligible for a separately declared radar-only study.",
+    "reference": "Obtain the actual dated georeferenced vector or raster before selection. It must distinguish mapped flood, mapped dry or non-flood, and unknown/unmapped areas over the declared AOI, either by explicit classes or by a documented analysis footprint with explicit absence semantics. Verify acquisition time and time zone, native resolution, processing method, source sensor, and usable written terms for research comparison and publication of derived results. A picture, province total, flood polygons without non-flood/unknown semantics, or unlicensed download fails this rule.",
+    "independence": "For a sensor-independent radar agreement study, the reference may not be derived from the tested Sentinel-1 acquisition or a FloodGuard candidate. An independently produced automated map is still not ground truth or an accuracy measure. If the reference uses the same radar pass, report only source-correlated map agreement under a separately named diagnostic; it cannot satisfy this selection gate.",
+    "timing": "The reference acquisition must be within 24 hours of the radar midpoint. A multi-day cumulative extent cannot serve as same-time pixelwise truth unless every scored feature has a source timestamp within that window and non-flood/unknown semantics are documented.",
+    "rights": "Record the rights holder, exact license or written permission, attribution, allowed research comparison, and allowed publication of derived aggregate results before acquiring or publishing reference geometry. An unspecified license fails this rule."
+  },
+  "selection_order": "Among events passing all applicable rules, choose the smallest absolute reference-to-radar time gap, then the smallest optical-to-radar gap when optical cross-review is eligible, then the earliest radar acquisition UTC. Record every screened event and every failure. Do not choose based on predicted agreement.",
+  "next_preregistration_required_before_scoring": [
+    "selected event and committed AOI hash",
+    "exact source products, editions, preprocessing, method versions, and input-mask rules",
+    "reference class mapping and independent provenance check",
+    "development and one-use final-holdout partition and marker",
+    "metrics, numerical acceptance limits, and interpretation",
+    "commit SHA and timestamp of the complete evaluation plan"
+  ],
+  "if_no_event_qualifies": "Record no selection and no score. Seek the missing reference, rights, or acquisition evidence; do not relax a rule after seeing detector output.",
+  "safety": {
+    "evidence_tier": "research_selection_gate",
+    "human_reviewed": false,
+    "accepted_observation": false,
+    "official_warning": false,
+    "operational_status": "non_operational",
+    "can_feed_decision_layer": false
+  }
+}

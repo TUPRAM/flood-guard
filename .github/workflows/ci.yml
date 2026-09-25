@@ -18,8 +18,8 @@ jobs:
     name: Core and schema contracts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Install Python 3.12
@@ -30,7 +30,7 @@ jobs:
         run: uv run pytest --junitxml=.tmp/proposal-evidence/root.xml
       - name: Upload core test receipt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: core-junit
           path: .tmp/proposal-evidence/root.xml
@@ -41,8 +41,8 @@ jobs:
     name: FastAPI contract boundary
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Install Python 3.12
@@ -57,7 +57,7 @@ jobs:
           --junitxml=.tmp/proposal-evidence/api.xml
       - name: Upload API test receipt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-junit
           path: .tmp/proposal-evidence/api.xml
@@ -68,11 +68,11 @@ jobs:
     name: Static PWA and offline judging mode
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Enable pinned pnpm
@@ -89,7 +89,7 @@ jobs:
           -- pnpm verify:frontend
       - name: Upload frontend verification receipt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-junit
           path: .tmp/proposal-evidence/frontend.xml
@@ -100,8 +100,8 @@ jobs:
     name: Isolated GeoAI runner (dependency-light)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Install Python 3.12
@@ -125,7 +125,7 @@ jobs:
           --junitxml=.tmp/proposal-evidence/geoai-normal.xml
       - name: Upload runner test receipt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: geoai-normal-junit
           path: .tmp/proposal-evidence/geoai-normal.xml
@@ -141,8 +141,8 @@ jobs:
     # before reaching its tests (D-39 / D-10). Resolution is cheap; check it
     # separately so the signal is unambiguous.
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Install Python 3.12
@@ -169,11 +169,11 @@ jobs:
     # visibility. Promote to blocking once the baseline is clean.
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - name: Install Python 3.12

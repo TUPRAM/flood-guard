@@ -1,6 +1,22 @@
 # FloodGuard proposal execution status
 
-Updated 24 September 2026. This is the durable implementation record for PR 31, `codex/open-data-evidence-demo` -> `landing-page-revised`. The source baseline is commit `14df822e8161cef4edd253f371a89c09d0e5fac9`, tree `7817fb8f58d77028dc8e59f99bbd44e592efb715`. This file is updated at each integration checkpoint; the initial baseline is not a release receipt.
+## 25 September 2026 Thai source-only update
+
+The actual 12 October Ayutthaya NASA MCDWD HDF was obtained outside Git and
+passed its 15,923,177-byte provider MD5 check. Its
+[`source-only native inventory`](../../outputs/nasa_mcdwd_ayutthaya_20241012_native_inventory.json)
+records 3,364 AOI-05 native cells: the cloud-shadow-masked one-day map has
+221 no-water, 1 expected-water, 599 recurring-flood, 97 unusual-flood and
+**2,446 insufficient-data (72.71%)**. This is independent automated MODIS
+map evidence, not field truth or radar accuracy. The prior event-selection
+protocol remains frozen. The 1 August radar pre-scene is not verified dry, and
+the exact Ayutthaya SNAP Gamma0 input SAFEs are not local; the public DEM tile
+has been acquired and checked separately. No Thai
+event was selected, no candidate/reference score was computed, and no
+selected-event method or numerical limit was pre-registered. The human track
+and accepted observation remain not pursued/unavailable as recorded below.
+
+Original implementation record updated 24 September 2026; the newer Thai source-only update appears above. This is the durable implementation record for PR 31, `codex/open-data-evidence-demo` -> `landing-page-revised`. The source baseline is commit `14df822e8161cef4edd253f371a89c09d0e5fac9`, tree `7817fb8f58d77028dc8e59f99bbd44e592efb715`. This file is updated at each integration checkpoint; the initial baseline is not a release receipt.
 
 ## Authority and scope
 
@@ -208,10 +224,11 @@ identifies Ayutthaya, 12 October 2024 as the strongest *unselected* candidate:
 the event Sentinel-1 footprint covers AOI-05 by official catalog geometry,
 and a Sentinel-2 scene about 7 h 35 min earlier leaves **54.7666%** of AOI-05
 usable after the complete frozen optical quality checks, above the 50% source
-floor. The exact NASA daily flood HDF is cataloged and its published data-use
-terms are usable, but its AOI flood/dry/unknown inventory and source times
-cannot be verified without the actual file. Hosted RTC COGs for the event and
-13 August pre-scene have 100% finite positive VV/VH AOI-05 pixels, but a dry
+floor. The exact NASA daily flood HDF is now obtained and its native AOI
+flood/dry/unknown inventory is recorded in the source-only update above;
+the map leaves 72.71% of AOI-05 native cells unknown. Hosted RTC COGs for the
+event and 13 August pre-scene have 100% finite positive VV/VH AOI-05 pixels,
+but 13 August has a reported flood context. A genuinely dry
 pre-radar scene and valid grids from the exact FloodGuard processing remain
 unverified. **No Thai event was selected or
 scored.** Exact methods and numerical limits for a selected event must be

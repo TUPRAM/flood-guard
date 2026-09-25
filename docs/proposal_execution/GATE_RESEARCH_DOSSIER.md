@@ -32,14 +32,22 @@ The latter three fail the frozen 50% optical cross-review condition on those
 AOIs.
 
 Doi Tao has a Gaofen-derived georeferenced flood and analysis polygon, but no
-documented dry/unknown semantics or product-specific derived-use terms. A
-NASA daily MODIS flood map offers explicit flood/dry/insufficient-data codes
-and permissive LAADS use terms. Its **12 October 2024 HDF is still needed** to
-verify actual AOI-05 class inventory, source observation times and
-georeferencing; NASA's browse visualization cannot distinguish transparent
-dry from transparent nodata. Hosted Sentinel-1 RTC COGs for the 12 October
-event and 13 August pre-scene have finite positive VV/VH pixels throughout
-AOI-05, but pre-scene dryness and FloodGuard's exact candidate-processed
+documented dry/unknown semantics or product-specific derived-use terms. The
+user supplied the actual NASA **12 October 2024 MCDWD HDF**, whose size and
+provider MD5 match. A [native AOI-05 inventory](../../outputs/nasa_mcdwd_ayutthaya_20241012_native_inventory.json)
+on its 250 m cloud-shadow-masked one-day layer found **221 no-water, 1 expected
+water, 599 recurring-flood, 97 unusual-flood and 2,446 insufficient-data**
+cells among 3,364 native pixel centres. Thus **72.71% is unknown**; only 318
+cells are either unusual-flood or no-water. It is a dated, georeferenced,
+rights-usable, Sentinel-1-independent *automated* reference candidate, not
+field truth or an accuracy reference. Its HDF bounds a day, not exact
+per-pixel acquisition times. Hosted Sentinel-1 RTC COGs for 12 October and
+13 August have finite positive VV/VH pixels throughout AOI-05, but a
+[provincial flood report](https://ayutthaya.prd.go.th/th/content/category/detail/id/9/iid/315459)
+rules out presuming 13 August dry. A 1 August same-orbit scene and 19 June
+optical dry-context scene are source candidates, not established dry inputs.
+The required public DEM tile is acquired and finite over the AOI margin, but
+the original Ayutthaya SAFEs are absent locally, so FloodGuard's exact SNAP
 Gamma0 grids remain unverified. **No event was selected, no
 numerical methods or limits were frozen for a selected event, and no Thai
 detector score was run.** The next pre-registration must precede that score.

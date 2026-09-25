@@ -27,7 +27,7 @@ geo = [
   "geopandas>=0.14",
   "pyproj>=3.6",
   "shapely>=2.0",
-  "networkx>=3.0"
+  "networkx>=3.6.1"
 ]
 theos2 = [
   "rasterio>=1.4"

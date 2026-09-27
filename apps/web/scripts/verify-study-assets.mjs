@@ -39,6 +39,16 @@ visit(index);
 if (index.chips.length !== 111 || pngs.size !== 2147) throw new Error("Incomplete test-chip or preview inventory");
 const historical = JSON.parse(readAsset("/studies/mae-sai-geoai/2026-07-30-r1/manifest.json"));
 for (const asset of [historical.report, ...historical.assets]) verify(asset.href, asset.sha256, asset.bytes);
+const timelinePrefix = "/studies/mae-sai-2024-timeline/r1/";
+const timeline = JSON.parse(readAsset(`${timelinePrefix}timeline.json`));
+const timelineAssets = [timeline.hand, ...timeline.layers, ...Object.values(timeline.vectors)];
+for (const asset of timelineAssets) {
+  if (!asset.href.startsWith(timelinePrefix)) throw new Error(`Timeline asset outside its revision: ${asset.href}`);
+  verify(asset.href, asset.sha256, asset.bytes);
+}
+if (timeline.real_time !== false || timeline.official_warning !== false || !timeline.confidence || !timeline.source_timestamp) {
+  throw new Error("Mae Sai timeline must declare confidence, source timestamp and non-real-time, non-warning status");
+}
 
 // Windows newline conversion must not change a hash-bound artifact on checkout.
 const entries = execFileSync("git", ["ls-files", "--stage", "-z", "apps/web/public/studies"], { cwd: root, encoding: "utf8" }).split("\0").filter(Boolean);
@@ -49,4 +59,4 @@ for (const entry of entries) {
   const actual = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
   if (actual !== blobId) throw new Error(`Git changes exact study bytes or has stale staged content: ${path}`);
 }
-console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets and ${entries.length} byte-identical Git blobs.`);
+console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets and ${entries.length} byte-identical Git blobs.`);

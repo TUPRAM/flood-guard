@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve, sep } from "node:path";
+import { readCaseReplayAssets, timelineManifestUrl } from "./case-replay-inventory.mjs";
 
 const root = resolve(import.meta.dirname, "../../..");
 const publicRoot = resolve(root, "apps/web/public");
@@ -39,12 +40,26 @@ visit(index);
 if (index.chips.length !== 111 || pngs.size !== 2147) throw new Error("Incomplete test-chip or preview inventory");
 const historical = JSON.parse(readAsset("/studies/mae-sai-geoai/2026-07-30-r1/manifest.json"));
 for (const asset of [historical.report, ...historical.assets]) verify(asset.href, asset.sha256, asset.bytes);
-const timelinePrefix = "/studies/mae-sai-2024-timeline/r1/";
-const timeline = JSON.parse(readAsset(`${timelinePrefix}timeline.json`));
-const timelineAssets = [timeline.hand, ...timeline.layers, ...Object.values(timeline.vectors)];
-for (const asset of timelineAssets) {
-  if (!asset.href.startsWith(timelinePrefix)) throw new Error(`Timeline asset outside its revision: ${asset.href}`);
-  verify(asset.href, asset.sha256, asset.bytes);
+// The replay's revision is chosen only by TIMELINE_MANIFEST_URL; every asset is derived from that manifest.
+const { manifest: timeline, assets: timelineFiles } = readCaseReplayAssets(publicRoot, timelineManifestUrl());
+const timelineAssets = timelineFiles.slice(1);
+// Every file the page loads must be among the hash-verified ones: the HAND raster, imagery layers, vectors and,
+// from r2 on, the residents raster and the evacuation-access node file.
+const expectedTimelineAssets = [timeline.hand, ...timeline.layers, ...Object.values(timeline.vectors)];
+if (timeline.population) expectedTimelineAssets.push(timeline.population);
+if (timeline.access) expectedTimelineAssets.push(timeline.access.nodes);
+for (const asset of expectedTimelineAssets) {
+  if (!asset?.href || !timelineAssets.some((file) => file.url === asset.href)) throw new Error(`Timeline asset is not hash-verified: ${asset?.href}`);
+}
+if (timeline.access) {
+  const { nodes, sets } = timeline.access;
+  const cut = nodes.layout.find((field) => field.name === "cut_codes");
+  if (!cut || cut.shape?.[0] !== sets.length || cut.shape?.[1] !== nodes.count || cut.offset + sets.length * nodes.count !== nodes.bytes) {
+    throw new Error("Mae Sai access node layout does not match its declared sets, count and size");
+  }
+}
+if (timeline.population && (timeline.population.width !== timeline.hand.width || timeline.population.height !== timeline.hand.height)) {
+  throw new Error("Mae Sai residents raster must share the HAND grid");
 }
 if (timeline.real_time !== false || timeline.official_warning !== false || !timeline.confidence || !timeline.source_timestamp) {
   throw new Error("Mae Sai timeline must declare confidence, source timestamp and non-real-time, non-warning status");

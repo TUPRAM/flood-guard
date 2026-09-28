@@ -9,12 +9,40 @@
 export type Language = "en" | "th";
 export interface Localized { en: string; th: string }
 
+/**
+ * The one place the replay's data revision is chosen. Every other asset URL (HAND raster, imagery,
+ * vectors) is read from this manifest, and the offline cache inventory and the study-integrity
+ * check derive their file lists from it at build time.
+ */
+export const TIMELINE_MANIFEST_URL = "/studies/mae-sai-2024-timeline/r2/timeline.json";
+
+/** Directory of a manifest URL (with trailing slash); every asset the manifest lists must live under it. */
+export function manifestDirectory(manifestUrl: string = TIMELINE_MANIFEST_URL): string {
+  return manifestUrl.slice(0, manifestUrl.lastIndexOf("/") + 1);
+}
+
+/**
+ * Data revision the page serves: the manifest's directory name ("r2"). Tests assert that it equals the manifest's
+ * own `revision` field, so the label and the served files cannot drift apart.
+ */
+export function manifestRevision(manifestUrl: string = TIMELINE_MANIFEST_URL): string {
+  return manifestDirectory(manifestUrl).split("/").filter(Boolean).at(-1) ?? "";
+}
+
+/** Baked access figures for one shelter set at a keyframe (`days[].stats.access[set]`). */
+export interface AccessDayStats { people_lost_access: number; vulnerable_lost: number; non_vulnerable_lost: number }
+
 export interface TimelineStats {
   flooded_km2: number;
   tambon_flooded_km2: Record<string, number>;
   road_km_impassable: number;
   road_km_wet: number;
   facilities_wet: number;
+  /** Modelled residents (WorldPop 2020) in reconstructed water: district total (whole people) and per subdistrict (0.1). */
+  people_in_water?: number;
+  tambon_people_in_water?: Record<string, number>;
+  /** Baked evacuation-access figures for a few shelter sets (the replay recomputes every set from the node file). */
+  access?: Record<string, AccessDayStats>;
 }
 
 export interface TimelineDay { date: string; index: number; phase: string; stage_m: number; stats: TimelineStats }
@@ -48,6 +76,189 @@ export interface TimelineLayer extends HashedAsset {
 
 export interface TimelineSource { id: string; name: string; licence: string; timestamp: string; attribution: string }
 
+/**
+ * WorldPop residents on the water grid: `href` is a greyscale PNG of density codes
+ * (code = round(254 * ln(1 + p) / ln(1 + max_per_ha)), p = people per hectare), same size and bounds as the HAND raster.
+ * `tambon_histograms[tid][code]` holds the people living on cells of each HAND code.
+ */
+export interface PopulationInfo extends HashedAsset {
+  width: number;
+  height: number;
+  encoding: string;
+  max_per_ha: number;
+  tambon_histograms: Record<string, number[]>;
+  tambon_totals: Record<string, number>;
+  source: string;
+  licence: string;
+  timestamp: string;
+  note: string;
+}
+
+/** One field of the little-endian access node file. */
+export interface AccessLayoutField { name: string; dtype: string; offset: number; shape?: number[]; note?: string }
+
+/** Evacuation access scenario: per node and shelter set, the stage level at which the walk to a dry shelter is lost. */
+export interface AccessInfo {
+  nodes: HashedAsset & { count: number; layout: AccessLayoutField[] };
+  /** Stage levels (m) the access was evaluated at; `cut_codes` index into this list. */
+  levels: number[];
+  threshold_m: number;
+  travel_mode: string;
+  /** Subdistrict ids in `tambon_index` order (1-based). */
+  tambons: string[];
+  /** Shelter set ids in `cut_codes` row order, e.g. "reported_2024", "plan_1" … "plan_N". */
+  sets: string[];
+  totals: { population: number; vulnerable: number; non_vulnerable: number };
+  scenario_tier: string;
+  definition: string;
+  /** Confidence class of the access figures, why, and the timestamps of the inputs they rest on. */
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+}
+
+/** OpenStreetMap public building or ground screened as a possible shelter. */
+export interface ShelterCandidate {
+  id: string;
+  kind: string;
+  name: string;
+  lon: number;
+  lat: number;
+  source: string;
+  footprint_m2: number;
+  capacity_est: number | null;
+  /** Effective HAND (m) at the site, or null on high ground (never floods under these stages). */
+  h: number | null;
+  k: number;
+  freeboard_m: number | null;
+  snap_m: number;
+  eligible: boolean;
+  /** Screening reasons, e.g. "floods_or_under_freeboard_at_peak", "no_road_within_400m", "outside_model". */
+  ineligible_reasons: string[];
+  /** Inside the terrain model; false means there is no flood or freeboard result for the site. */
+  m: boolean;
+  high_ground?: boolean;
+}
+
+/** Greedy ranking step k (1-based position in `plan`): the site added and the coverage of the first k sites. */
+export interface ShelterPlanEntry {
+  candidate_id: string;
+  marginal_demand: number;
+  cumulative_demand: number;
+  cumulative_share: number;
+  late_cumulative_share: number;
+  /** Residents assigned to each of the first k sites when the plan has k sites. */
+  loads: number[];
+}
+
+export interface ShelterSourceRecord { title: string; publisher: string; date: string; url: string; quote_or_paraphrase: string }
+
+/** Model check of a reported shelter's location against the reconstruction at the modelled peak. */
+export interface ShelterModelCheck {
+  h: number | null;
+  k: number;
+  freeboard_m: number | null;
+  snap_m: number;
+  /** Inside the terrain model; false means the check has no flood result. */
+  m: boolean;
+  high_ground: boolean;
+  floods_at_modelled_peak: boolean;
+}
+
+/** What a reported site was used for in September 2024. */
+export type ReportedRole = "shelter" | "relief_command_centre";
+
+/** Shelter reported in use during the September 2024 flood (public reporting, not a model output). */
+export interface ReportedShelter {
+  id: string;
+  name_en: string;
+  name_th: string;
+  type: string;
+  tambon: string;
+  lon: number | null;
+  lat: number | null;
+  location_method: string;
+  location_evidence: string | null;
+  location_confidence: string;
+  period_used: string | null;
+  evidence_strength: string;
+  /** Null when no source reported a capacity or head count. */
+  reported_capacity_or_occupancy: string | null;
+  notes: string | null;
+  sources: ShelterSourceRecord[];
+  role: ReportedRole;
+  /** First reported use: a local date ("2024-09-21") or a bound ("2024-09-15 or earlier"). */
+  first_use: string;
+  /** Whether the "reported_2024" access set counts the site (only located sites can be counted). */
+  in_access_set: boolean;
+  /** Why the site is or is not in that set. */
+  access_set_note: string;
+  model_check: ShelterModelCheck | null;
+}
+
+export interface ShelterMethod {
+  evacuation_stage_m: number;
+  late_evacuation_stage_m: number;
+  threshold_m: number;
+  freeboard_m: number;
+  peak_stage_m: number;
+  m2_per_person: number;
+  usable_floor_share: number;
+  max_plan_sites: number;
+  snap_max_m: number;
+}
+
+export interface ShelterInfo {
+  candidates: ShelterCandidate[];
+  plan: ShelterPlanEntry[];
+  knee_k: number;
+  demand_people: number;
+  uncoverable_people: number;
+  eligible_count: number;
+  reported: ReportedShelter[];
+  method: ShelterMethod;
+  /** Confidence class of the candidate screening and plan, why, and the timestamps behind the shelter figures. */
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  /** Status of the reported-sites list (public reporting, not an official register). */
+  reported_status: string;
+  /** Date (YYYY-MM-DD) the reported-sites list was compiled. */
+  reported_compiled: string;
+  /** Which reported sites the "reported_2024" access set counts. */
+  reported_access_set_rule: string;
+}
+
+/**
+ * How an external figure relates to the reconstruction: a calibration anchor set a stage knot (the model agrees with
+ * it by construction), an independent magnitude check tests the size of the modelled extent.
+ */
+export type ExternalCheckRole = "calibration_anchor" | "independent_magnitude_check";
+
+/** Size comparison of the reconstruction with an external (observed or reported) product. */
+export interface ExternalCheck {
+  id: string;
+  observed: string;
+  reported_km2: number;
+  reported_people?: number;
+  reported_text: string;
+  scope?: string;
+  role: ExternalCheckRole;
+  /** Model figures comparable with the external one (for a windowed product, the largest extent within its window). */
+  model_km2: number;
+  model_people_in_water?: number;
+  model_stage_m?: number;
+  /** Which model extent `model_*` describes, when the external product covers a time window. */
+  model_window?: string;
+  /** Model figures at the modelled peak, for reference when the comparison window excludes it. */
+  model_peak_km2?: number;
+  model_peak_people_in_water?: number;
+  use: string;
+  urls: string[];
+}
+
+export interface ExternalReference { name: string; url: string; note?: string }
+
 export interface TimelineManifest {
   study_id: string;
   revision: string;
@@ -60,7 +271,23 @@ export interface TimelineManifest {
   timezone: string;
   area: Localized;
   bounds: [[number, number], [number, number]];
-  hand: HashedAsset & { width: number; height: number; step_m: number; channel_code: number; never_code: number; stream_threshold_km2?: number };
+  /**
+   * HAND code raster: 8-bit greyscale (grey = code), or RGB with R = the effective HAND code and, when
+   * `depth_factor_channel` is "G", G = round(k * 255) for a per-cell depth factor k in (0, 1]
+   * (wet iff the code is the channel or code * step < stage; depth = k * (stage - code * step); channel depth = k * stage).
+   * Without a factor channel k = 1 everywhere.
+   */
+  hand: HashedAsset & {
+    width: number;
+    height: number;
+    step_m: number;
+    channel_code: number;
+    never_code: number;
+    stream_threshold_km2?: number;
+    depth_factor_channel?: string | null;
+    /** How k was derived: clip((A / reference_km2) ** exponent, floor, 1) from each channel's upstream area A. */
+    depth_factor?: { exponent: number; floor: number; reference_km2: number; reference: string };
+  };
   impassable_depth_m: number;
   pixel_area_m2: number;
   /** Sorted stage knots (local-noon keyframes plus sub-daily anchors); the replay interpolates over these. */
@@ -89,6 +316,40 @@ export interface TimelineManifest {
   sources: TimelineSource[];
   assumptions: string[];
   limitations: string[];
+  /** Residents on the water grid (WorldPop); absent in revisions without population. */
+  population?: PopulationInfo;
+  /** Evacuation access scenario (T1 model); absent in revisions without it. */
+  access?: AccessInfo;
+  /** Shelter candidates, ranked plan and shelters reported in use in 2024. */
+  shelters?: ShelterInfo;
+  external_checks?: ExternalCheck[];
+  external_references?: ExternalReference[];
+  gauge_note?: string;
+}
+
+const SHA256_PATTERN = /^[a-f0-9]{64}$/;
+
+/**
+ * Every hashed asset a manifest references (`{ href, sha256, bytes }` anywhere in it: HAND raster,
+ * imagery layers, vectors, and any record a later revision adds), first occurrence per href.
+ */
+export function manifestAssets(manifest: unknown): HashedAsset[] {
+  const found = new Map<string, HashedAsset>();
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    const record = value as Record<string, unknown>;
+    if (typeof record.href === "string" && typeof record.sha256 === "string" && SHA256_PATTERN.test(record.sha256)
+      && typeof record.bytes === "number" && !found.has(record.href)) {
+      found.set(record.href, { href: record.href, sha256: record.sha256, bytes: record.bytes });
+    }
+    Object.values(record).forEach(visit);
+  };
+  visit(manifest);
+  return [...found.values()];
 }
 
 /** Minimal GeoJSON shapes used by the replay (avoids a hard dependency on @types/geojson). */
@@ -97,10 +358,18 @@ export interface GeoCollection<G, P> { type: "FeatureCollection"; features: GeoF
 export type LineGeometry = { type: "LineString"; coordinates: [number, number][] };
 export type PointGeometry = { type: "Point"; coordinates: [number, number] };
 export type AreaGeometry = { type: "Polygon" | "MultiPolygon"; coordinates: unknown };
-/** Road piece: class, lowest sampled HAND (m, `null` never floods), `m` = inside the model grid, length (m), subdistrict. */
-export interface RoadProps { c: string; h: number | null; m: boolean; len: number; t: string; n?: string }
-/** Candidate facility: `m` = inside the model grid; `h` lowest HAND (m) or `null` when it never floods. */
-export interface FacilityProps { id: string; type: string; n: string; t: string; h: number | null; m: boolean }
+/**
+ * Road piece: class, lowest sampled (effective) HAND (m, `null` never floods), `m` = inside the model grid,
+ * length (m), subdistrict, optional OSM name, and optional closure factor `k` (absent = 1). `k` is an equivalent
+ * factor, not a physical depth factor: the piece is wet once the stage exceeds `h` and impassable from the earliest
+ * stage at which any of its 10 m samples reaches the threshold, which is `h + threshold / k`.
+ */
+export interface RoadProps { c: string; h: number | null; m: boolean; len: number; t: string; n?: string; k?: number }
+/**
+ * Candidate facility: `m` = inside the model grid; `h` lowest (effective) HAND (m) or `null` when it never floods;
+ * optional depth factor `k` at that lowest sample (so `h * k` is its physical height above drainage).
+ */
+export interface FacilityProps { id: string; type: string; n: string; t: string; h: number | null; m: boolean; k?: number }
 export interface TambonProps { id: string; en: string; th: string }
 
 export type RoadState = "dry" | "wet" | "impassable";
@@ -177,37 +446,53 @@ export function floodedKm2(histogram: readonly number[], stage: number, step: nu
 }
 
 /**
- * Road state from its lowest sampled HAND (m); `null` never floods under these keyframes.
- * Depth is rounded to 1e-6 m first, like Python `round(x, 6)`, so 3.5 - 3.2 counts as 0.3 m.
+ * Residents on out-of-channel wet cells at `stage` from a 256-bin people-by-HAND-code histogram: the sum of
+ * bins 1..254 with code * step < stage (channel and never codes excluded, like the flooded area).
  */
-export function roadState(minHandM: number | null, stage: number, impassableDepthM = 0.3): RoadState {
+export function peopleInWater(histogram: readonly number[], stage: number, step: number): number {
+  if (histogram.length !== 256) throw new Error("histogram must have 256 bins");
+  let people = 0;
+  for (let code = 1; code < 255; code += 1) {
+    if (code * step < stage) people += histogram[code];
+  }
+  return people;
+}
+
+/**
+ * Road state from its lowest sampled (effective) HAND (m); `null` never floods under these keyframes.
+ * k * (stage - HAND) is rounded to 1e-6 m like Python `round(x, 6)` (so 3.5 - 3.2 counts as 0.3 m):
+ * impassable when it reaches `impassableDepthM`, wet when it is above 0, else dry — the same rule as
+ * `floodguard.flood_timeline.road_state` (k = 1 unless the piece carries a factor). For a road piece, k is the
+ * equivalent closure factor (h + threshold / k is its earliest per-sample closure), not a physical depth factor.
+ */
+export function roadState(minHandM: number | null, stage: number, impassableDepthM = 0.3, depthFactorK = 1): RoadState {
   if (minHandM === null) return "dry";
-  const depth = Math.round((stage - minHandM) * 1e6) / 1e6;
+  const depth = Math.round(depthFactorK * (stage - minHandM) * 1e6) / 1e6;
   if (depth >= impassableDepthM) return "impassable";
   if (depth > 0) return "wet";
   return "dry";
 }
 
-/** Reconstructed depth (m) at a candidate facility, or 0 when dry / never flooding. */
-export function facilityDepth(minHandM: number | null, stage: number): number {
-  return minHandM === null ? 0 : Math.max(0, stage - minHandM);
+/** Reconstructed depth (m) at a candidate facility, k * (stage - HAND), or 0 when dry / never flooding. */
+export function facilityDepth(minHandM: number | null, stage: number, depthFactorK = 1): number {
+  return minHandM === null ? 0 : depthFactorK * Math.max(0, stage - minHandM);
 }
 
-/** True when a modelled candidate facility is in reconstructed water (same rule as the baked `facilities_wet`). */
+/** True when a modelled candidate facility is in reconstructed water: stage > HAND (the rule behind the baked `facilities_wet`). */
 export function facilityWet(facility: Pick<FacilityProps, "h" | "m">, stage: number): boolean {
-  return facility.m && facility.h !== null && stage - facility.h > 0;
+  return facility.m && facility.h !== null && stage > facility.h;
 }
 
 export interface FacilityInWater<F> { facility: F; depth: number }
 
 /** Modelled candidate facilities in water at `stage`, deepest first (ties by name, then id). */
-export function facilitiesInWater<F extends Pick<FacilityProps, "h" | "m" | "id" | "n">>(
+export function facilitiesInWater<F extends Pick<FacilityProps, "h" | "m" | "id" | "n" | "k">>(
   facilities: readonly F[],
   stage: number,
 ): FacilityInWater<F>[] {
   return facilities
     .filter((facility) => facilityWet(facility, stage))
-    .map((facility) => ({ facility, depth: facilityDepth(facility.h, stage) }))
+    .map((facility) => ({ facility, depth: facilityDepth(facility.h, stage, facility.k ?? 1) }))
     .sort((a, b) => b.depth - a.depth || a.facility.n.localeCompare(b.facility.n) || a.facility.id.localeCompare(b.facility.id));
 }
 
@@ -236,13 +521,14 @@ export function roundLikePython(value: number, digits: number): number {
 const roundTo = roundLikePython;
 
 /**
- * District statistics at `stage`, identical in shape and rounding to `timeline.json` `days[].stats`.
+ * District statistics at `stage`, identical in shape and rounding to `timeline.json` `days[].stats` (people in water
+ * only when the manifest carries population; access figures come from `flood-timeline-evacuation`).
  * Roads and facilities outside the model grid (`m: false`) are excluded from every figure.
  */
 export function districtStats(
-  manifest: Pick<TimelineManifest, "tambon_histograms" | "hand" | "pixel_area_m2" | "impassable_depth_m">,
+  manifest: Pick<TimelineManifest, "tambon_histograms" | "hand" | "pixel_area_m2" | "impassable_depth_m" | "population">,
   stage: number,
-  roads: readonly Pick<RoadProps, "h" | "len" | "m">[],
+  roads: readonly Pick<RoadProps, "h" | "len" | "m" | "k">[],
   facilities: readonly Pick<FacilityProps, "h" | "m">[],
 ): TimelineStats {
   const tambon: Record<string, number> = {};
@@ -255,7 +541,7 @@ export function districtStats(
   let wet = 0;
   for (const road of roads) {
     if (!road.m) continue;
-    const state = roadState(road.h, stage, manifest.impassable_depth_m);
+    const state = roadState(road.h, stage, manifest.impassable_depth_m, road.k ?? 1);
     if (state === "impassable") impassable += road.len;
     else if (state === "wet") wet += road.len;
   }
@@ -266,7 +552,53 @@ export function districtStats(
     road_km_impassable: roundTo(impassable / 1000, 2),
     road_km_wet: roundTo(wet / 1000, 2),
     facilities_wet: facilitiesWet,
+    ...(manifest.population ? peopleInWaterStats(manifest.population, stage, manifest.hand.step_m) : {}),
   };
+}
+
+/**
+ * People in water per subdistrict (rounded to 0.1) and the district total (the sum of those, rounded to whole
+ * people like Python `round`), identical to the baked `tambon_people_in_water` and `people_in_water`.
+ */
+export function peopleInWaterStats(
+  population: Pick<PopulationInfo, "tambon_histograms">,
+  stage: number,
+  step: number,
+): { people_in_water: number; tambon_people_in_water: Record<string, number> } {
+  const tambon: Record<string, number> = {};
+  let total = 0;
+  for (const [id, histogram] of Object.entries(population.tambon_histograms)) {
+    tambon[id] = roundTo(peopleInWater(histogram, stage, step), 1);
+    total += tambon[id];
+  }
+  return { people_in_water: roundTo(total, 0), tambon_people_in_water: tambon };
+}
+
+// --- External checks and assumption caveats ------------------------------------------------------
+
+/**
+ * External size figures split by their manifest `role`: calibration anchors (they set a stage knot, so the model
+ * agrees with them by construction) and independent magnitude checks. Manifest order is kept within each group.
+ */
+export function externalChecksByRole(checks: readonly ExternalCheck[]): { calibration: ExternalCheck[]; independent: ExternalCheck[] } {
+  return {
+    calibration: checks.filter((check) => check.role === "calibration_anchor"),
+    independent: checks.filter((check) => check.role === "independent_magnitude_check"),
+  };
+}
+
+/**
+ * Caveat the page shows under a manifest assumption that leaves out something a reader needs (the manifest itself is
+ * frozen): GISTDA's report states no time zone, which the onset assumption does not say. Null for every other assumption.
+ */
+export function assumptionCaveat(text: string): Localized | null {
+  if (/GISTDA/.test(text) && /\b18:15\b/.test(text) && !/time zone/i.test(text)) {
+    return {
+      en: "GISTDA's report does not state a time zone; 18:15 is assumed to be ICT. If it were UTC, this knot would fall at 11 Sep 01:15 ICT.",
+      th: "รายงานของ GISTDA ไม่ได้ระบุเขตเวลา จึงสมมุติว่า 18:15 น. เป็นเวลาประเทศไทย (ICT) หากเป็นเวลา UTC จุดนี้จะตรงกับ 11 ก.ย. 01:15 น. ตามเวลาประเทศไทย",
+    };
+  }
+  return null;
 }
 
 export interface DepthClass { min: number; max: number; rgba: [number, number, number, number]; label: string }
@@ -336,11 +668,14 @@ export function waterCandidates(codes: Uint8Array, maxStage: number, step: numbe
   return out;
 }
 
-/** Write `lut[code]` into `pixels` for candidate indices only (all other pixels stay untouched). */
-export function paintDepth(codes: Uint8Array, candidates: Uint32Array, lut: Uint32Array, pixels: Uint32Array): void {
+/**
+ * Write `lut[key]` into `pixels` for candidate indices only (all other pixels stay untouched).
+ * `keys` are HAND codes (256-entry LUT) or depth-factor keys `code | factor << 8` (65 536-entry LUT).
+ */
+export function paintDepth(keys: Uint8Array | Uint16Array, candidates: Uint32Array, lut: Uint32Array, pixels: Uint32Array): void {
   for (let index = 0; index < candidates.length; index += 1) {
     const pixel = candidates[index];
-    pixels[pixel] = lut[codes[pixel]];
+    pixels[pixel] = lut[keys[pixel]];
   }
 }
 
@@ -439,20 +774,46 @@ export function formatAge(ageDays: number, language: Language): string {
   return before ? `${amount} before this moment` : `${amount} after this moment`;
 }
 
-export interface GrayRaster { width: number; height: number; data: Uint8Array }
-export type Inflate = (data: Uint8Array) => Promise<Uint8Array> | Uint8Array;
+
+/** "10 Sep 22:00" / "10 ก.ย. 22:00 น." for a whole-hour index on the replay clock (hours since 9 Sep 00:00 ICT). */
+export function formatHourStamp(hour: number, language: Language): string {
+  const p = ictParts(TIMELINE_EPOCH_MS + hour * 3_600_000);
+  return `${p.day} ${MONTHS[language][p.month]} ${pad2(p.hour)}:00${language === "th" ? " น." : ""}`;
+}
 
 /**
- * Decode an 8-bit, non-interlaced grayscale PNG into exact byte codes.
+ * Local span covering whole hours `from` … `to` (inclusive), shown by its start and end instants:
+ * "10 Sep 11:00–23:00", or "10 Sep 23:00 – 11 Sep 05:00" across midnight.
+ */
+export function formatHourSpan(from: number, to: number, language: Language): string {
+  const start = ictParts(TIMELINE_EPOCH_MS + from * 3_600_000);
+  const end = ictParts(TIMELINE_EPOCH_MS + (to + 1) * 3_600_000);
+  if (start.day === end.day && start.month === end.month) {
+    return `${start.day} ${MONTHS[language][start.month]} ${pad2(start.hour)}:00–${pad2(end.hour)}:00${language === "th" ? " น." : ""}`;
+  }
+  return `${formatHourStamp(from, language)} – ${formatHourStamp(to + 1, language)}`;
+}
+
+export interface GrayRaster { width: number; height: number; data: Uint8Array }
+/** Decoded 8-bit PNG: `channels` interleaved samples per pixel (1 grey, 2 grey + alpha, 3 RGB, 4 RGBA). */
+export interface PngRaster { width: number; height: number; channels: number; data: Uint8Array }
+export type Inflate = (data: Uint8Array) => Promise<Uint8Array> | Uint8Array;
+
+const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
+/** Samples per pixel by PNG colour type; palette images are not supported. */
+const PNG_CHANNELS: Record<number, number> = { 0: 1, 2: 3, 4: 2, 6: 4 };
+
+/**
+ * Decode an 8-bit, non-interlaced greyscale, grey + alpha, RGB or RGBA PNG into its exact samples.
  * Decoding the file directly avoids browser colour management and canvas read-back noise.
  */
-export async function decodeGrayPng(bytes: Uint8Array, inflate: Inflate): Promise<GrayRaster> {
-  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
-  if (bytes.length < 8 || signature.some((value, index) => bytes[index] !== value)) throw new Error("Not a PNG file");
+export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<PngRaster> {
+  if (bytes.length < 8 || PNG_SIGNATURE.some((value, index) => bytes[index] !== value)) throw new Error("Not a PNG file");
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let offset = 8;
   let width = 0;
   let height = 0;
+  let channels = 0;
   const parts: Uint8Array[] = [];
   while (offset + 8 <= bytes.length) {
     const length = view.getUint32(offset);
@@ -460,8 +821,9 @@ export async function decodeGrayPng(bytes: Uint8Array, inflate: Inflate): Promis
     if (type === "IHDR") {
       width = view.getUint32(offset + 8);
       height = view.getUint32(offset + 12);
-      if (bytes[offset + 16] !== 8 || bytes[offset + 17] !== 0 || bytes[offset + 20] !== 0) {
-        throw new Error("Expected an 8-bit non-interlaced grayscale PNG");
+      channels = PNG_CHANNELS[bytes[offset + 17]] ?? 0;
+      if (bytes[offset + 16] !== 8 || !channels || bytes[offset + 20] !== 0) {
+        throw new Error("Expected an 8-bit non-interlaced greyscale or RGB PNG");
       }
     } else if (type === "IDAT") {
       parts.push(bytes.subarray(offset + 8, offset + 8 + length));
@@ -478,39 +840,58 @@ export async function decodeGrayPng(bytes: Uint8Array, inflate: Inflate): Promis
     cursor += part.length;
   }
   const raw = await inflate(joined);
-  const stride = width + 1;
+  const bpp = channels;
+  const rowBytes = width * bpp;
+  const stride = rowBytes + 1;
   if (raw.length < height * stride) throw new Error("PNG image data is truncated");
-  const out = new Uint8Array(width * height);
+  // Uint8Array stores wrap modulo 256, which is exactly PNG's filter arithmetic.
+  const out = new Uint8Array(rowBytes * height);
   for (let y = 0; y < height; y += 1) {
     const filter = raw[y * stride];
     const source = y * stride + 1;
-    const row = y * width;
-    const previous = row - width;
-    for (let x = 0; x < width; x += 1) {
-      const value = raw[source + x];
-      const left = x > 0 ? out[row + x - 1] : 0;
-      const up = y > 0 ? out[previous + x] : 0;
-      const upLeft = x > 0 && y > 0 ? out[previous + x - 1] : 0;
-      let result: number;
-      switch (filter) {
-        case 0: result = value; break;
-        case 1: result = value + left; break;
-        case 2: result = value + up; break;
-        case 3: result = value + ((left + up) >> 1); break;
-        case 4: {
+    const row = y * rowBytes;
+    const previous = row - rowBytes;
+    switch (filter) {
+      case 0:
+        out.set(raw.subarray(source, source + rowBytes), row);
+        break;
+      case 1:
+        for (let i = 0; i < rowBytes; i += 1) out[row + i] = raw[source + i] + (i >= bpp ? out[row + i - bpp] : 0);
+        break;
+      case 2:
+        for (let i = 0; i < rowBytes; i += 1) out[row + i] = raw[source + i] + (y > 0 ? out[previous + i] : 0);
+        break;
+      case 3:
+        for (let i = 0; i < rowBytes; i += 1) {
+          const left = i >= bpp ? out[row + i - bpp] : 0;
+          const up = y > 0 ? out[previous + i] : 0;
+          out[row + i] = raw[source + i] + ((left + up) >> 1);
+        }
+        break;
+      case 4:
+        for (let i = 0; i < rowBytes; i += 1) {
+          const left = i >= bpp ? out[row + i - bpp] : 0;
+          const up = y > 0 ? out[previous + i] : 0;
+          const upLeft = i >= bpp && y > 0 ? out[previous + i - bpp] : 0;
           const estimate = left + up - upLeft;
           const dLeft = Math.abs(estimate - left);
           const dUp = Math.abs(estimate - up);
           const dUpLeft = Math.abs(estimate - upLeft);
-          result = value + (dLeft <= dUp && dLeft <= dUpLeft ? left : dUp <= dUpLeft ? up : upLeft);
-          break;
+          out[row + i] = raw[source + i] + (dLeft <= dUp && dLeft <= dUpLeft ? left : dUp <= dUpLeft ? up : upLeft);
         }
-        default: throw new Error(`Unsupported PNG filter ${filter}`);
-      }
-      out[row + x] = result & 255;
+        break;
+      default:
+        throw new Error(`Unsupported PNG filter ${filter}`);
     }
   }
-  return { width, height, data: out };
+  return { width, height, channels, data: out };
+}
+
+/** Decode an 8-bit, non-interlaced greyscale PNG into exact byte codes. */
+export async function decodeGrayPng(bytes: Uint8Array, inflate: Inflate): Promise<GrayRaster> {
+  const raster = await decodePng(bytes, inflate);
+  if (raster.channels !== 1) throw new Error("Expected an 8-bit non-interlaced grayscale PNG");
+  return { width: raster.width, height: raster.height, data: raster.data };
 }
 
 /** zlib inflate using the platform DecompressionStream (browsers and Node 18+). */
@@ -518,4 +899,494 @@ export async function inflateZlib(data: Uint8Array): Promise<Uint8Array> {
   const copy = new Uint8Array(data);
   const stream = new Blob([copy]).stream().pipeThrough(new DecompressionStream("deflate"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+// --- HAND grid with an optional per-cell depth factor ------------------------------------------
+
+/** HAND codes per cell, plus depth-factor bytes (round(k * 255)) when the manifest declares a factor channel. */
+export interface HandGrid { width: number; height: number; codes: Uint8Array; factors: Uint8Array | null }
+
+/** Manifest `depth_factor_channel` values this client understands, as a sample index into an RGB(A) pixel. */
+const FACTOR_CHANNELS: Record<string, number> = { G: 1 };
+
+/**
+ * Split a decoded HAND PNG into effective codes (the grey value, or R of an RGB raster) and, when
+ * `depthFactorChannel` is set, the factor bytes from that channel. Without it every factor is 1, even
+ * for an RGB raster. Fails closed on a declared channel the raster lacks or this client does not know.
+ */
+export function handGridFromRaster(raster: PngRaster, depthFactorChannel?: string | null): HandGrid {
+  const { width, height, channels, data } = raster;
+  let factorIndex = -1;
+  if (depthFactorChannel != null) {
+    factorIndex = FACTOR_CHANNELS[depthFactorChannel] ?? -1;
+    if (factorIndex < 0) throw new Error(`Unsupported HAND depth_factor_channel: ${depthFactorChannel}`);
+    if (channels < 3) throw new Error("The HAND raster has no depth-factor channel");
+  }
+  if (channels === 1) return { width, height, codes: data, factors: null };
+  const count = width * height;
+  const codes = new Uint8Array(count);
+  const factors = factorIndex >= 0 ? new Uint8Array(count) : null;
+  for (let cell = 0, sample = 0; cell < count; cell += 1, sample += channels) {
+    codes[cell] = data[sample];
+    if (factors) factors[cell] = data[sample + factorIndex];
+  }
+  return { width, height, codes, factors };
+}
+
+/** Depth factor k for a stored byte round(k * 255); 255 is full depth. */
+export const depthFactor = (byte: number): number => byte / 255;
+
+/**
+ * Reconstructed depth (m) of one HAND cell at `stage`, or `null` when it is dry.
+ * Wet iff it is the channel or `code * step < stage` (never for `neverCode`); depth = k * (stage - code * step),
+ * channel depth = k * stage. `factorByte` is 255 (k = 1) when the manifest has no factor channel.
+ */
+export function cellDepth(code: number, stage: number, step: number, factorByte = 255, channelCode = 0, neverCode = 255): number | null {
+  const k = depthFactor(factorByte);
+  if (code === channelCode) return k * Math.max(0, stage);
+  if (code === neverCode || !(code * step < stage)) return null;
+  return k * (stage - code * step);
+}
+
+/** Entries in a depth-factor LUT: one per `code | factor << 8` key. */
+export const FACTOR_LUT_SIZE = 65_536;
+
+/** Painter keys `code | factor << 8` for `buildFactorDepthLut`. */
+export function depthFactorKeys(codes: Uint8Array, factors: Uint8Array): Uint16Array {
+  if (codes.length !== factors.length) throw new Error("Codes and factors must cover the same cells");
+  const keys = new Uint16Array(codes.length);
+  for (let index = 0; index < codes.length; index += 1) keys[index] = codes[index] | (factors[index] << 8);
+  return keys;
+}
+
+/**
+ * Depth LUT indexed by `code | factor << 8`: the five depth classes of `buildDepthLut`, applied to
+ * k * (stage - code * step). Wetness still depends on the code alone. The factor-255 slice equals `buildDepthLut`.
+ */
+export function buildFactorDepthLut(stage: number, step: number, littleEndian = true, out?: Uint32Array): Uint32Array {
+  if (out && out.length !== FACTOR_LUT_SIZE) throw new Error(`LUT buffer must have ${FACTOR_LUT_SIZE} entries`);
+  const lut = out ?? new Uint32Array(FACTOR_LUT_SIZE);
+  if (out) lut.fill(0);
+  const channel = pack(CHANNEL_RGBA, littleEndian);
+  const classes = DEPTH_CLASSES.map((item) => pack(item.rgba, littleEndian));
+  for (let factor = 0; factor < 256; factor += 1) {
+    const base = factor << 8;
+    const k = depthFactor(factor);
+    lut[base] = channel;
+    for (let code = 1; code < 255; code += 1) {
+      const hand = code * step;
+      if (hand < stage) lut[base | code] = classes[depthClassIndex(k * (stage - hand))];
+    }
+  }
+  return lut;
+}
+
+// --- Residents (WorldPop density codes) ---------------------------------------------------------
+
+/**
+ * People per hectare for a density code of the population raster:
+ * the inverse of code = round(254 * ln(1 + p) / ln(1 + maxPerHa)). Code 0 is no residents.
+ */
+export function densityPerHa(code: number, maxPerHa: number): number {
+  if (code <= 0) return 0;
+  return Math.expm1((Math.min(code, 254) / 254) * Math.log1p(maxPerHa));
+}
+
+export interface DensityClass { min: number; max: number; rgba: Rgba }
+
+/** Sequential heat classes of residents per hectare (lower bound exclusive for the first, inclusive after). */
+export const DENSITY_CLASSES: readonly DensityClass[] = [
+  { min: 0, max: 2, rgba: [255, 230, 150, 226] },
+  { min: 2, max: 5, rgba: [254, 178, 76, 232] },
+  { min: 5, max: 10, rgba: [247, 118, 46, 238] },
+  { min: 10, max: 20, rgba: [214, 32, 39, 244] },
+  { min: 20, max: Infinity, rgba: [118, 0, 52, 248] },
+];
+/** Wet cells where the population raster has no residents: a faint neutral so the flood outline stays readable. */
+export const WET_WITHOUT_RESIDENTS_RGBA: Rgba = [96, 120, 148, 110];
+
+/** Density class for a positive number of people per hectare, or -1 for none. */
+export function densityClassIndex(perHa: number): number {
+  if (!(perHa > 0)) return -1;
+  const index = DENSITY_CLASSES.findIndex((item) => perHa < item.max);
+  return index < 0 ? DENSITY_CLASSES.length - 1 : index;
+}
+
+/** Legend classes that occur below the raster's density cap, the last one ending at the cap. */
+export function densityLegend(maxPerHa: number): DensityClass[] {
+  return DENSITY_CLASSES.filter((item) => item.min < maxPerHa).map((item) => ({ ...item, max: Math.min(item.max, maxPerHa) }));
+}
+
+/** Packed colour per density code (256 entries, code 0 transparent), for the people and residents LUTs. */
+export function densityColours(maxPerHa: number, littleEndian = true): Uint32Array {
+  const colours = new Uint32Array(256);
+  for (let code = 1; code < 256; code += 1) {
+    const index = densityClassIndex(densityPerHa(code, maxPerHa));
+    if (index >= 0) colours[code] = pack(DENSITY_CLASSES[index].rgba, littleEndian);
+  }
+  return colours;
+}
+
+/** Painter keys `handCode | densityCode << 8` for `buildPeopleLut`. */
+export function peopleKeys(codes: Uint8Array, density: Uint8Array): Uint16Array {
+  if (codes.length !== density.length) throw new Error("HAND and population rasters must cover the same cells");
+  const keys = new Uint16Array(codes.length);
+  for (let index = 0; index < codes.length; index += 1) keys[index] = codes[index] | (density[index] << 8);
+  return keys;
+}
+
+/**
+ * "People in flood water" LUT indexed by `handCode | densityCode << 8`: out-of-channel cells that are wet at
+ * `stage` (code * step < stage, the same rule as the depth view) take their residents' density colour, wet cells
+ * without residents a faint neutral; the channel keeps its colour and dry cells stay transparent.
+ */
+export function buildPeopleLut(stage: number, step: number, colours: Uint32Array, littleEndian = true, out?: Uint32Array): Uint32Array {
+  if (colours.length !== 256) throw new Error("Density colours must have 256 entries");
+  if (out && out.length !== FACTOR_LUT_SIZE) throw new Error(`LUT buffer must have ${FACTOR_LUT_SIZE} entries`);
+  const lut = out ?? new Uint32Array(FACTOR_LUT_SIZE);
+  if (out) lut.fill(0);
+  const channel = pack(CHANNEL_RGBA, littleEndian);
+  const empty = pack(WET_WITHOUT_RESIDENTS_RGBA, littleEndian);
+  let wetBelow = 1;
+  while (wetBelow < 255 && wetBelow * step < stage) wetBelow += 1;
+  for (let density = 0; density < 256; density += 1) {
+    const base = density << 8;
+    const colour = density === 0 ? empty : colours[density] || empty;
+    lut[base] = channel;
+    for (let code = 1; code < wetBelow; code += 1) lut[base | code] = colour;
+  }
+  return lut;
+}
+
+/** "All residents" LUT indexed by density code: every inhabited cell in its density colour, independent of water. */
+export function buildResidentsLut(colours: Uint32Array, out?: Uint32Array): Uint32Array {
+  if (colours.length !== 256) throw new Error("Density colours must have 256 entries");
+  if (out && out.length !== 256) throw new Error("LUT buffer must have 256 entries");
+  const lut = out ?? new Uint32Array(256);
+  lut.set(colours);
+  lut[0] = 0;
+  return lut;
+}
+
+/** Pixel indices with residents (density code > 0). */
+export function densityCandidates(density: Uint8Array): Uint32Array {
+  let count = 0;
+  for (let index = 0; index < density.length; index += 1) if (density[index] > 0) count += 1;
+  const out = new Uint32Array(count);
+  let cursor = 0;
+  for (let index = 0; index < density.length; index += 1) if (density[index] > 0) out[cursor++] = index;
+  return out;
+}
+
+// --- Arrival and time under water ---------------------------------------------------------------
+
+/** Whole hours in the replay window, 9 Sep 00:00 to 20 Sep 00:00 ICT. */
+export const EVENT_HOURS = TIMELINE_END_T * 24;
+
+/**
+ * Assumed stage at the start of every local hour of the replay: `stageAt(h / 24)` for h = 0 … hours - 1.
+ * Each sample stands for its whole hour. Arrival, time under water and road-cut durations are counted on
+ * this hourly grid, the same grid the time slider steps on, so they agree with what the slider shows.
+ */
+export function hourlyStages(anchors: readonly StageAnchor[], hours = EVENT_HOURS): Float64Array {
+  const stages = new Float64Array(hours);
+  for (let hour = 0; hour < hours; hour += 1) stages[hour] = stageAt(hour / 24, anchors);
+  return stages;
+}
+
+/** Per HAND code (0-255): hourly arrival and time under water; pure functions of the stage anchors. */
+export interface CodeTimings {
+  /** First hour whose sampled stage exceeds `code * step`, or -1 when none does (always -1 for the never code). */
+  arrivalHour: Int16Array;
+  /** Hourly samples whose stage exceeds `code * step` (0 for the never code). */
+  hoursUnder: Uint16Array;
+}
+
+/**
+ * Replay position (days since 9 Sep 00:00 ICT) at which HAND code `code` first floods: the start of the first
+ * hourly sample whose stage exceeds `code * step`, or null when none does (always null for `neverCode`).
+ */
+export function arrivalT(code: number, stages: ArrayLike<number>, step: number, neverCode = 255): number | null {
+  if (code === neverCode) return null;
+  const hand = code * step;
+  for (let hour = 0; hour < stages.length; hour += 1) if (stages[hour] > hand) return hour / 24;
+  return null;
+}
+
+/** Hours of the replay (hourly samples) during which HAND code `code` is under water; 0 for `neverCode`. */
+export function hoursUnder(code: number, stages: ArrayLike<number>, step: number, neverCode = 255): number {
+  if (code === neverCode) return 0;
+  const hand = code * step;
+  let hours = 0;
+  for (let hour = 0; hour < stages.length; hour += 1) if (stages[hour] > hand) hours += 1;
+  return hours;
+}
+
+/** `arrivalT` and `hoursUnder` for every code 0-255, as 256-entry tables for the LUT builders. */
+export function codeTimings(stages: ArrayLike<number>, step: number, neverCode = 255): CodeTimings {
+  const arrivalHour = new Int16Array(256).fill(-1);
+  const hoursUnderWater = new Uint16Array(256);
+  for (let code = 0; code < 256; code += 1) {
+    const arrival = arrivalT(code, stages, step, neverCode);
+    if (arrival !== null) arrivalHour[code] = Math.round(arrival * 24);
+    hoursUnderWater[code] = hoursUnder(code, stages, step, neverCode);
+  }
+  return { arrivalHour, hoursUnder: hoursUnderWater };
+}
+
+export type Rgba = readonly [number, number, number, number];
+/** A colour class over whole hours `from` … `to` (inclusive). */
+export interface HourClass { from: number; to: number; rgba: Rgba }
+
+/** Sequential "first flooded" ramp, earliest (dark) to latest (light). */
+export const ARRIVAL_RAMP: readonly Rgba[] = [
+  [45, 17, 96, 238],
+  [106, 28, 129, 236],
+  [168, 50, 125, 234],
+  [224, 80, 106, 232],
+  [250, 138, 92, 230],
+  [253, 199, 141, 228],
+];
+/** Alpha for cells whose first-flooded hour is still ahead of the playhead. */
+export const ARRIVAL_PENDING_ALPHA = 56;
+
+/**
+ * Equal-interval hour classes spanning the earliest to the latest arrival of any out-of-channel code
+ * (one class per ramp colour, fewer when the span is shorter). Empty when nothing ever floods.
+ */
+export function arrivalClasses(arrivalHour: Int16Array, ramp: readonly Rgba[] = ARRIVAL_RAMP, channelCode = 0): HourClass[] {
+  let min = Infinity;
+  let max = -Infinity;
+  arrivalHour.forEach((hour, code) => {
+    if (code === channelCode || hour < 0) return;
+    min = Math.min(min, hour);
+    max = Math.max(max, hour);
+  });
+  if (!Number.isFinite(min) || ramp.length === 0) return [];
+  const span = max - min + 1;
+  const count = Math.min(ramp.length, span);
+  return Array.from({ length: count }, (_, index) => ({
+    from: min + Math.floor((index * span) / count),
+    to: min + Math.floor(((index + 1) * span) / count) - 1,
+    rgba: ramp[index],
+  }));
+}
+
+/** Index of the class containing `hour`, or -1. */
+export function hourClassIndex(hour: number, classes: readonly HourClass[]): number {
+  return classes.findIndex((item) => hour >= item.from && hour <= item.to);
+}
+
+function checkLut(out: Uint32Array | undefined): Uint32Array {
+  if (out && out.length !== 256) throw new Error("LUT buffer must have 256 entries");
+  if (out) out.fill(0);
+  return out ?? new Uint32Array(256);
+}
+
+/**
+ * First-flooded LUT for `playheadHour`: cells already reached are drawn in their class colour, cells still
+ * to flood are dimmed, never-flooded and never-code cells stay transparent. The channel keeps its colour.
+ */
+export function buildArrivalLut(
+  arrivalHour: Int16Array,
+  classes: readonly HourClass[],
+  playheadHour: number,
+  littleEndian = true,
+  out?: Uint32Array,
+): Uint32Array {
+  const lut = checkLut(out);
+  lut[0] = pack(CHANNEL_RGBA, littleEndian);
+  for (let code = 1; code < 255; code += 1) {
+    const hour = arrivalHour[code];
+    if (hour < 0) continue;
+    const index = hourClassIndex(hour, classes);
+    if (index < 0) continue;
+    const [r, g, b, a] = classes[index].rgba;
+    lut[code] = pack(hour <= playheadHour ? [r, g, b, a] : [r, g, b, ARRIVAL_PENDING_ALPHA], littleEndian);
+  }
+  return lut;
+}
+
+export interface DurationClass { min: number; max: number; rgba: Rgba; label: Localized }
+
+/** Hours under water over the replay (lower bound inclusive); sequential, longer is darker. */
+export const DURATION_CLASSES: readonly DurationClass[] = [
+  { min: 1, max: 5, rgba: [254, 227, 145, 228], label: { en: "< 6 h", th: "< 6 ชม." } },
+  { min: 6, max: 23, rgba: [254, 196, 79, 230], label: { en: "6–24 h", th: "6–24 ชม." } },
+  { min: 24, max: 47, rgba: [254, 153, 41, 232], label: { en: "24–48 h", th: "24–48 ชม." } },
+  { min: 48, max: 95, rgba: [236, 112, 20, 236], label: { en: "48–96 h", th: "48–96 ชม." } },
+  { min: 96, max: 143, rgba: [204, 76, 2, 240], label: { en: "96–144 h", th: "96–144 ชม." } },
+  { min: 144, max: Infinity, rgba: [140, 45, 4, 244], label: { en: "≥ 144 h", th: "≥ 144 ชม." } },
+];
+
+/** Duration class index for a whole number of hours, or -1 for none. */
+export function durationClassIndex(hours: number): number {
+  return DURATION_CLASSES.findIndex((item) => hours >= item.min && hours <= item.max);
+}
+
+/** Hours-under-water LUT (static over the replay). The channel keeps its colour. */
+export function buildDurationLut(hoursUnder: Uint16Array, littleEndian = true, out?: Uint32Array): Uint32Array {
+  const lut = checkLut(out);
+  lut[0] = pack(CHANNEL_RGBA, littleEndian);
+  for (let code = 1; code < 255; code += 1) {
+    const index = durationClassIndex(hoursUnder[code]);
+    if (index >= 0) lut[code] = pack(DURATION_CLASSES[index].rgba, littleEndian);
+  }
+  return lut;
+}
+
+// --- Road cut duration -------------------------------------------------------------------------
+
+/** Hourly impassability of one road piece over the replay (same rounding and threshold as `roadState`). */
+export interface RoadCut {
+  /** Hours during which the piece is impassable. */
+  hours: number;
+  /** First impassable hour, or null when it is never cut. */
+  firstHour: number | null;
+  /** Hour from which it is passable again after its last cut; null when never cut or still cut when the replay ends. */
+  reopenHour: number | null;
+}
+
+export function roadCut(minHandM: number | null, stages: ArrayLike<number>, impassableDepthM = 0.3, depthFactorK = 1): RoadCut {
+  let hours = 0;
+  let first = -1;
+  let last = -1;
+  for (let hour = 0; hour < stages.length; hour += 1) {
+    if (roadState(minHandM, stages[hour], impassableDepthM, depthFactorK) !== "impassable") continue;
+    hours += 1;
+    if (first < 0) first = hour;
+    last = hour;
+  }
+  return {
+    hours,
+    firstHour: first < 0 ? null : first,
+    reopenHour: last < 0 || last + 1 >= stages.length ? null : last + 1,
+  };
+}
+
+export interface RoadCutClass { min: number; max: number; label: Localized; color: string; weight: number }
+
+/** Map classes for hours impassable (lower bound inclusive). */
+export const ROAD_CUT_CLASSES: readonly RoadCutClass[] = [
+  { min: 0, max: 0, label: { en: "Not cut", th: "ไม่ถูกตัดขาด" }, color: "#7d8ba0", weight: 1 },
+  { min: 1, max: 5, label: { en: "< 6 h", th: "< 6 ชม." }, color: "#f0a04b", weight: 2.2 },
+  { min: 6, max: 23, label: { en: "6–24 h", th: "6–24 ชม." }, color: "#e0632a", weight: 2.6 },
+  { min: 24, max: 47, label: { en: "24–48 h", th: "24–48 ชม." }, color: "#c62828", weight: 3 },
+  { min: 48, max: Infinity, label: { en: "≥ 48 h", th: "≥ 48 ชม." }, color: "#6d0f1a", weight: 3.4 },
+];
+
+export function roadCutClassIndex(hours: number): number {
+  const index = ROAD_CUT_CLASSES.findIndex((item) => hours >= item.min && hours <= item.max);
+  return index < 0 ? 0 : index;
+}
+
+/** A named road (or an unnamed class-and-subdistrict group) and how long its modelled pieces were cut. */
+export interface RoadCutGroup {
+  key: string;
+  /** OSM name shared by the pieces, or null for unnamed pieces grouped by class and subdistrict. */
+  name: string | null;
+  /** Road classes in the group, most important first. */
+  classes: string[];
+  /** Subdistrict ids of the cut pieces, longest cut length first. */
+  tambons: string[];
+  /** Length (km) of the pieces that are impassable at some hour. */
+  kmCut: number;
+  /** Longest cut of any piece (hours). */
+  maxHours: number;
+  firstHour: number;
+  /** Last reopening of its pieces; null when some piece is still cut when the replay ends. */
+  reopenHour: number | null;
+  /** Indices (into the input features) of the cut pieces. */
+  pieces: number[];
+  /** [[south, west], [north, east]] of the cut pieces. */
+  bounds: [[number, number], [number, number]];
+}
+
+const ROAD_CLASS_RANK = ["motorway", "trunk", "primary", "secondary", "tertiary", "unclassified", "residential"];
+const classRank = (roadClass: string) => {
+  const rank = ROAD_CLASS_RANK.indexOf(roadClass);
+  return rank < 0 ? ROAD_CLASS_RANK.length : rank;
+};
+
+/**
+ * Modelled road pieces cut at some hour, grouped by OSM name (or, for unnamed pieces, by class and
+ * subdistrict). Named routes come first, so a long unnamed street aggregate never pushes a named road out of
+ * the list; within each part the longest cut comes first, then most kilometres cut. Pieces outside the model
+ * (`m: false`) are excluded.
+ */
+export function roadCutGroups(
+  features: readonly { geometry: LineGeometry; properties: RoadProps }[],
+  cuts: readonly RoadCut[],
+  limit = 10,
+): RoadCutGroup[] {
+  if (features.length !== cuts.length) throw new Error("One road cut is required per feature");
+  interface Draft { group: RoadCutGroup; tambonMetres: Map<string, number>; classes: Set<string>; stillCut: boolean }
+  const drafts = new Map<string, Draft>();
+  features.forEach((feature, index) => {
+    const props = feature.properties;
+    const cut = cuts[index];
+    if (!props.m || cut.hours === 0 || cut.firstHour === null) return;
+    const name = props.n?.trim() || null;
+    const key = name ? `name:${name}` : `class:${props.c}|${props.t}`;
+    let draft = drafts.get(key);
+    if (!draft) {
+      draft = {
+        group: {
+          key, name, classes: [], tambons: [], kmCut: 0, maxHours: 0, firstHour: cut.firstHour, reopenHour: null, pieces: [],
+          bounds: [[Infinity, Infinity], [-Infinity, -Infinity]],
+        },
+        tambonMetres: new Map(), classes: new Set(), stillCut: false,
+      };
+      drafts.set(key, draft);
+    }
+    const { group } = draft;
+    group.kmCut += props.len / 1000;
+    group.maxHours = Math.max(group.maxHours, cut.hours);
+    group.firstHour = Math.min(group.firstHour, cut.firstHour);
+    if (cut.reopenHour === null) draft.stillCut = true;
+    else group.reopenHour = Math.max(group.reopenHour ?? 0, cut.reopenHour);
+    group.pieces.push(index);
+    draft.classes.add(props.c);
+    draft.tambonMetres.set(props.t, (draft.tambonMetres.get(props.t) ?? 0) + props.len);
+    for (const [lon, lat] of feature.geometry.coordinates) {
+      group.bounds[0][0] = Math.min(group.bounds[0][0], lat);
+      group.bounds[0][1] = Math.min(group.bounds[0][1], lon);
+      group.bounds[1][0] = Math.max(group.bounds[1][0], lat);
+      group.bounds[1][1] = Math.max(group.bounds[1][1], lon);
+    }
+  });
+  return [...drafts.values()]
+    .map(({ group, tambonMetres, classes, stillCut }) => ({
+      ...group,
+      kmCut: roundLikePython(group.kmCut, 2),
+      reopenHour: stillCut ? null : group.reopenHour,
+      classes: [...classes].sort((a, b) => classRank(a) - classRank(b) || a.localeCompare(b)),
+      tambons: [...tambonMetres].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([id]) => id),
+    }))
+    .sort((a, b) => Number(a.name === null) - Number(b.name === null)
+      || b.maxHours - a.maxHours || b.kmCut - a.kmCut || a.key.localeCompare(b.key))
+    .slice(0, limit);
+}
+
+/** Web Mercator northing (unitless) for a latitude in degrees. */
+export function mercatorY(latitude: number): number {
+  const phi = (latitude * Math.PI) / 180;
+  return Math.log(Math.tan(Math.PI / 4 + phi / 2));
+}
+
+/**
+ * Pixel position of a lon/lat inside a `width` x `height` frame spanning `bounds` ([[south, west], [north, east]]),
+ * linear in Web Mercator, which is how the map stretches the imagery and water rasters over the same bounds.
+ */
+export function projectToFrame(
+  longitude: number,
+  latitude: number,
+  bounds: readonly [readonly [number, number], readonly [number, number]],
+  width: number,
+  height: number,
+): [number, number] {
+  const [[south, west], [north, east]] = bounds;
+  const top = mercatorY(north);
+  const bottom = mercatorY(south);
+  return [((longitude - west) / (east - west)) * width, ((top - mercatorY(latitude)) / (top - bottom)) * height];
 }

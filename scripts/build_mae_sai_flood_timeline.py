@@ -10,7 +10,7 @@ Inputs
 * In-repo vectors: ``outputs/mae_sai_admin_context.geojson``, ``outputs/mae_sai_road_risk.geojson``,
   ``outputs/mae_sai_facilities.geojson``.
 
-Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r1/``): a HAND code raster, dated
+Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r2/``): a HAND code raster, dated
 Sentinel-1/2 image layers, a hillshade, sampled road/facility/tambon vectors and ``timeline.json``.
 
 The daily water surface is a HAND threshold reconstruction driven by illustrative stage keyframes.
@@ -58,10 +58,14 @@ from floodguard.flood_timeline import (  # noqa: E402
     stage_anchors,
     stage_at,
     road_state,
+    depth_factor,
 )
+import mae_sai_timeline_evacuation as evac  # noqa: E402
 
-OUT_REL = Path("apps/web/public/studies/mae-sai-2024-timeline/r1")
-HREF_PREFIX = "/studies/mae-sai-2024-timeline/r1/"
+OUT_REL = Path("apps/web/public/studies/mae-sai-2024-timeline/r2")
+HREF_PREFIX = "/studies/mae-sai-2024-timeline/r2/"
+SAI_REFERENCE_LONLAT = (99.8826, 20.4460)  # Sai River at the Mae Sai border bridges (main-stem reference reach).
+REPORTED_SHELTERS = Path("outputs/mae_sai_reported_shelters_2024.json")
 UTM = "EPSG:32647"
 AOI_UTM = (584400.0, 2240100.0, 608400.0, 2266100.0)  # Whole Mae Sai district plus Tachileik to the north.
 AOI_RES = 10.0
@@ -124,8 +128,8 @@ def warp(src: np.ndarray, src_transform, src_crs, grid: Grid, resampling=Resampl
     return dst
 
 
-def hydrology(dem_path: Path, work: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, Grid]:
-    """Return HAND (m), stream mask, conditioned DEM and the UTM hydrology grid."""
+def hydrology(dem_path: Path, work: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, Grid, np.ndarray, float]:
+    """Return HAND (m), stream mask, conditioned DEM, the UTM grid, the depth factor k and the reference area."""
     from pysheds.grid import Grid as ShedGrid
 
     bounds = transform_bounds("EPSG:4326", UTM, *HYDRO_LONLAT, densify_pts=21)
@@ -155,14 +159,29 @@ def hydrology(dem_path: Path, work: Path) -> tuple[np.ndarray, np.ndarray, np.nd
     edge[:, [0, -1]] = True
     stream_raster[edge & (area_km2 >= EDGE_OUTLET_KM2)] = True
     hand = np.asarray(sg.compute_hand(fdir, inflated, stream_raster), dtype=np.float32)
+    drain = np.asarray(sg.compute_hand(fdir, inflated, stream_raster, return_index=True), dtype=np.int64)
     conditioned = np.asarray(inflated, dtype=np.float32)
     # Large paddy flats can end without a resolved flow path; fall back to height above the nearest channel cell.
     missing = ~np.isfinite(hand) & ~nodata
     if missing.any():
         rows, cols = ndimage.distance_transform_edt(~np.asarray(stream_raster, dtype=bool), return_distances=False, return_indices=True)
         hand[missing] = conditioned[missing] - conditioned[rows, cols][missing]
+        drain[missing] = (rows * grid.width + cols)[missing]
     hand = np.where(np.isfinite(hand) & ~nodata, np.clip(hand, 0, None), np.nan)
-    return hand, streams, np.asarray(inflated, dtype=np.float32), grid
+    # Per-reach stage scaling: k from the upstream area of each cell's drainage cell, relative to the Sai main stem.
+    x0, y0 = Transformer.from_crs("EPSG:4326", UTM, always_xy=True).transform(*SAI_REFERENCE_LONLAT)
+    r0, c0 = int((grid.bounds[3] - y0) // HYDRO_RES), int((x0 - grid.bounds[0]) // HYDRO_RES)
+    near = np.zeros_like(streams)
+    near[max(r0 - 50, 0):r0 + 51, max(c0 - 50, 0):c0 + 51] = True
+    reference_km2 = float(area_km2[streams & near].max())
+    upstream = np.where(drain >= 0, area_km2.ravel()[np.clip(drain, 0, None)], np.nan).reshape(hand.shape)
+    east_outlet = edge & (np.arange(grid.width)[None, :] > grid.width // 2)
+    drains_east = np.zeros(hand.shape, dtype=bool)
+    valid_drain = drain >= 0
+    drains_east[valid_drain] = east_outlet.ravel()[drain[valid_drain]]
+    upstream[drains_east] = reference_km2  # Assume east-edge outlets feed the Ruak, a main river like the Sai.
+    k = np.where(np.isfinite(hand), depth_factor(np.nan_to_num(upstream, nan=reference_km2), reference_km2), np.nan)
+    return hand, streams, np.asarray(inflated, dtype=np.float32), grid, k.astype(np.float32), reference_km2
 
 
 def hillshade(dem: np.ndarray, res: float, azimuth: float = 315.0, altitude: float = 45.0) -> np.ndarray:
@@ -280,20 +299,26 @@ def build(external: Path, out_dir: Path) -> dict:
 
     # --- Hydrology and HAND -------------------------------------------------------------
     with tempfile.TemporaryDirectory() as tmp:
-        hand30, streams30, dem30, hgrid = hydrology(external / "open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif", Path(tmp))
+        hand30, streams30, dem30, hgrid, k30, reference_km2 = hydrology(external / "open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif", Path(tmp))
 
-    def hand_codes(grid: Grid) -> tuple[np.ndarray, np.ndarray]:
+    def hand_codes(grid: Grid) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         hand = warp(np.nan_to_num(hand30, nan=-1), hgrid.transform, UTM, grid, Resampling.bilinear, src_nodata=-1)
+        kk = warp(np.nan_to_num(k30, nan=-1), hgrid.transform, UTM, grid, Resampling.nearest, src_nodata=-1)
         chan = warp(streams30.astype(np.float32), hgrid.transform, UTM, grid, Resampling.nearest) > 0.5
-        valid = np.isfinite(hand)
-        return encode_hand(np.nan_to_num(hand, nan=1e6), chan, valid), valid
+        valid = np.isfinite(hand) & np.isfinite(kk)
+        kk = np.where(valid, np.clip(kk, 0.01, 1.0), 1.0)
+        effective = np.where(valid, hand / kk, 1e6)
+        return encode_hand(effective, chan, valid), valid, kk.astype(np.float32)
 
-    codes_aoi, valid_aoi = hand_codes(aoi)
-    codes_display, _ = hand_codes(water)
+    codes_aoi, valid_aoi, k_aoi = hand_codes(aoi)
+    codes_display, _, k_display = hand_codes(water)
     buf = tempfile.SpooledTemporaryFile()
-    Image.fromarray(codes_display, mode="L").save(buf, "PNG", optimize=True)
+    k_u8 = np.clip(np.rint(k_display * 255), 1, 255).astype(np.uint8)
+    Image.fromarray(np.dstack([codes_display, k_u8, np.zeros_like(k_u8)]), mode="RGB").save(buf, "PNG", optimize=True)
     buf.seek(0)
-    hand_record = emit("hand-codes.png", buf.read(), width=water.width, height=water.height)
+    hand_record = emit("hand-codes.png", buf.read(), width=water.width, height=water.height, depth_factor_channel="G",
+                       depth_factor={"exponent": 0.3, "floor": 0.35, "reference_km2": round(reference_km2, 1),
+                                     "reference": "Sai River main stem at the Mae Sai border bridges"})
 
     dem_aoi = warp(dem30, hgrid.transform, UTM, aoi, Resampling.bilinear)
     shade = hillshade(dem_aoi, AOI_RES)
@@ -363,13 +388,13 @@ def build(external: Path, out_dir: Path) -> dict:
                 continue
             steps = np.linspace(0, piece.length, max(2, int(piece.length // 10) + 1))
             pts = np.array([piece.interpolate(d).coords[0] for d in steps])
-            h = min_hand(sample_codes(codes_aoi, aoi, pts[:, 0], pts[:, 1]))
+            h, kf = evac.sample_road(codes_aoi, k_aoi, aoi, pts[:, 0], pts[:, 1])
             modelled = sample_mask(valid_aoi, aoi, pts[:, 0], pts[:, 1])
             if cls not in ROAD_KEEP_ALWAYS and (not modelled or h is None or h > ROAD_MAX_HAND_M):
                 continue
             coords = [[round(x, 5), round(y, 5)] for x, y in (to_ll(*c) for c in piece.coords)]
             road_features.append({"type": "Feature", "geometry": {"type": "LineString", "coordinates": coords},
-                                  "properties": {"c": cls, "h": h, "m": modelled, "len": round(piece.length), "t": props["subdistrict_id"],
+                                  "properties": {"c": cls, "h": h, "k": kf, "m": modelled, "len": round(piece.length), "t": props["subdistrict_id"],
                                                  **({"n": props["road_name"]} if props.get("road_name") and cls in ROAD_CLASSES[:4] else {})}})
     roads = {"type": "FeatureCollection", "features": road_features}
 
@@ -379,12 +404,84 @@ def build(external: Path, out_dir: Path) -> dict:
         x, y = to_utm(*f["geometry"]["coordinates"][:2])
         xs = np.array([x + dx for dx in (-10, 0, 10) for _ in range(3)])
         ys = np.array([y + dy for _ in range(3) for dy in (-10, 0, 10)])
-        window = sample_codes(codes_aoi, aoi, xs, ys)
+        fh, fk = evac.sample_eff(codes_aoi, k_aoi, aoi, xs, ys)
         p = f["properties"]
         facility_features.append({"type": "Feature", "geometry": f["geometry"], "properties": {
-            "id": p["facility_id"], "type": p["facility_type"], "n": p.get("facility_name") or "", "t": p["subdistrict_id"], "h": min_hand(window),
+            "id": p["facility_id"], "type": p["facility_type"], "n": p.get("facility_name") or "", "t": p["subdistrict_id"], "h": fh, "k": fk,
             "m": sample_mask(valid_aoi, aoi, xs, ys)}})
     facilities = {"type": "FeatureCollection", "features": facility_features}
+
+    # --- Population (WorldPop 2020) -------------------------------------------------------
+    coarse_pop, pop10 = evac.population_grid(external / "open_context/worldpop_population/tha_ppp_2020.tif", aoi)
+    pop_hist = {tid: np.round(np.bincount(codes_aoi[zones == i + 1], weights=pop10[zones == i + 1], minlength=256), 1).tolist()
+                for i, tid in enumerate(tambon_ids)}
+    density, density_cap = evac.density_codes(coarse_pop, aoi, water)
+    buf = tempfile.SpooledTemporaryFile()
+    Image.fromarray(density, mode="L").save(buf, "PNG", optimize=True)
+    buf.seek(0)
+    population_record = emit("population-density.png", buf.read(), width=water.width, height=water.height,
+                             encoding="code = round(254 * ln(1 + p) / ln(1 + max_per_ha)); p = people per hectare",
+                             max_per_ha=density_cap)
+
+    # --- Evacuation access and shelter plan ---------------------------------------------------
+    peak_stage = max(k.stage_m for k in KEYFRAMES)
+    graph = evac.build_graph(ROOT, to_utm, codes_aoi, k_aoi, aoi)
+    osm_dir = external / "derived_context/mae_sai_2024"
+    polygons_path, points_path = osm_dir / "mae_sai_osm_multipolygons.gpkg", osm_dir / "mae_sai_osm_points_full.gpkg"
+    if not polygons_path.exists() or not points_path.exists():
+        import pyogrio
+        pbf = external / "open_context/osm_geofabrik/thailand-latest.osm.pbf"
+        bbox = transform_bounds(UTM, "EPSG:4326", *AOI_UTM, densify_pts=21)
+        pyogrio.read_dataframe(pbf, layer="multipolygons", bbox=bbox).to_file(polygons_path, driver="GPKG")
+        pyogrio.read_dataframe(pbf, layer="points", bbox=bbox).to_file(points_path, driver="GPKG")
+    import pyogrio
+    sites = evac.shelter_candidates(pyogrio.read_dataframe(polygons_path), pyogrio.read_dataframe(points_path),
+                                    ROOT / "outputs/mae_sai_facilities.geojson", to_utm)
+    evac.evaluate_sites(sites, graph, codes_aoi, k_aoi, aoi, peak_stage, valid_aoi)
+    reported_doc = json.loads((ROOT / REPORTED_SHELTERS).read_text(encoding="utf-8")) if (ROOT / REPORTED_SHELTERS).exists() else {"shelters": []}
+    reported_all = reported_doc["shelters"]
+    located = [r for r in reported_all if r.get("lat") is not None and r.get("lon") is not None]
+    for r in located:
+        r["x"], r["y"] = to_utm(r["lon"], r["lat"])
+    evac.evaluate_sites(located, graph, codes_aoi, k_aoi, aoi, peak_stage, valid_aoi)
+    counted = [r for r in located if r.get("in_access_set", True)]
+    access = evac.plan_and_access(sites, counted, graph, peak_stage)
+    pop_df = graph["pop"]
+    tambon_order = list(tambon_ids)
+    node_tambon = np.array([tambon_order.index(t) + 1 if t in tambon_order else 0 for t in pop_df["subdistrict_id"]], dtype=np.uint8)
+    lonlat = graph["lonlat"][graph["pop_index"]]
+    blob = b"".join([
+        lonlat[:, 0].astype("<f4").tobytes(), lonlat[:, 1].astype("<f4").tobytes(),
+        pop_df["total_population"].to_numpy("<f4").tobytes(), pop_df["vulnerable_population"].to_numpy("<f4").tobytes(),
+        node_tambon.tobytes(), graph["home_code"].astype(np.uint8).tobytes(),
+        np.clip(np.rint(graph["home_k"] * 255), 1, 255).astype(np.uint8).tobytes(),
+        access["node_codes"].astype(np.uint8).tobytes(),
+    ])
+    n_nodes = len(pop_df)
+    nodes_record = emit("access-nodes.bin", blob, count=n_nodes, layout=[
+        {"name": "lon", "dtype": "float32", "offset": 0}, {"name": "lat", "dtype": "float32", "offset": 4 * n_nodes},
+        {"name": "population", "dtype": "float32", "offset": 8 * n_nodes}, {"name": "vulnerable_population", "dtype": "float32", "offset": 12 * n_nodes},
+        {"name": "tambon_index", "dtype": "uint8", "offset": 16 * n_nodes, "note": "1-based index into access.tambons; 0 = none"},
+        {"name": "home_code", "dtype": "uint8", "offset": 17 * n_nodes, "note": "effective HAND code at the node"},
+        {"name": "home_k", "dtype": "uint8", "offset": 18 * n_nodes, "note": "depth factor * 255"},
+        {"name": "cut_codes", "dtype": "uint8", "offset": 19 * n_nodes, "shape": [len(access["set_ids"]), n_nodes],
+         "note": "set-major; index into access.levels where the node first loses access; 254 never; 255 no baseline access"}])
+
+    def site_public(site: dict) -> dict:
+        keep = {k: site.get(k) for k in ("id", "kind", "name", "lon", "lat", "source", "footprint_m2", "capacity_est", "h", "k",
+                                          "freeboard_m", "snap_m", "eligible", "ineligible_reasons", "m")}
+        keep["high_ground"] = site.get("m", True) and site.get("flood_stage") == float("inf")
+        return keep
+
+    reported_public = [{**{k: r.get(k) for k in ("id", "name_en", "name_th", "type", "tambon", "lon", "lat", "location_method",
+                                                 "location_evidence", "location_confidence", "period_used", "evidence_strength",
+                                                 "sources", "notes", "reported_capacity_or_occupancy", "role", "first_use",
+                                                 "in_access_set", "access_set_note")},
+                        "model_check": None if r.get("lat") is None else {
+                            "h": r.get("h"), "k": r.get("k"), "freeboard_m": r.get("freeboard_m"), "snap_m": r.get("snap_m"),
+                            "m": r.get("m"), "high_ground": r.get("m", True) and r.get("flood_stage") == float("inf"),
+                            "floods_at_modelled_peak": (r.get("freeboard_m") is not None and r["freeboard_m"] < 0) or r.get("flood_stage") == 0.0}}
+                       for r in reported_all]
 
     vectors = {}
     for name, fc in (("tambons", tambons), ("roads", roads), ("facilities", facilities)):
@@ -395,22 +492,71 @@ def build(external: Path, out_dir: Path) -> dict:
     days = []
     for index, kf in enumerate(KEYFRAMES):
         per_tambon = {tid: round(flooded_area_km2(histograms[tid], kf.stage_m, AOI_RES**2), 3) for tid in tambon_ids}
-        states = [road_state(f["properties"]["h"], kf.stage_m) if f["properties"]["m"] and f["properties"]["h"] is not None else "dry"
+        states = [road_state(f["properties"]["h"], kf.stage_m, f["properties"]["k"]) if f["properties"]["m"] and f["properties"]["h"] is not None else "dry"
                   for f in road_features]
         km = lambda s: round(sum(f["properties"]["len"] for f, st in zip(road_features, states) if st == s) / 1000, 2)  # noqa: E731
         wet_fac = sum(1 for f in facility_features
                       if f["properties"]["m"] and f["properties"]["h"] is not None and kf.stage_m - f["properties"]["h"] > 0)
+        exposed = {tid: round(flooded_area_km2(pop_hist[tid], kf.stage_m, 1e6), 1) for tid in tambon_ids}
+        access_stats = {}
+        for set_index, set_id in enumerate(access["set_ids"]):
+            if set_id not in ("reported_2024", f"plan_{access['knee_k']}"):
+                continue
+            lost = evac.lost_at(access["node_codes"][set_index], kf.stage_m)
+            # Same float32 values the page reads from access-nodes.bin; non-vulnerable = total - vulnerable.
+            tot = pop_df["total_population"].to_numpy("<f4").astype(float)
+            vul = pop_df["vulnerable_population"].to_numpy("<f4").astype(float)
+            non = tot - vul
+            access_stats[set_id] = {"people_lost_access": round(float(tot[lost].sum())),
+                                    "vulnerable_lost": round(float(vul[lost].sum()), 1), "non_vulnerable_lost": round(float(non[lost].sum()), 1)}
         days.append({"date": kf.day.isoformat(), "index": index, "phase": kf.phase, "stage_m": kf.stage_m, "stats": {
             "flooded_km2": round(sum(per_tambon.values()), 3), "tambon_flooded_km2": per_tambon,
-            "road_km_impassable": km("impassable"), "road_km_wet": km("wet"), "facilities_wet": wet_fac}})
+            "road_km_impassable": km("impassable"), "road_km_wet": km("wet"), "facilities_wet": wet_fac,
+            "people_in_water": round(sum(exposed.values())), "tambon_people_in_water": exposed, "access": access_stats}})
+
+    gistda_stage = stage_at(1.0 + 18.25 / 24)
+    gistda_model_km2 = round(sum(flooded_area_km2(histograms[t], gistda_stage, AOI_RES**2) for t in tambon_ids), 1)
+    peak_model_km2 = max(d["stats"]["flooded_km2"] for d in days)
+    peak_people = max(d["stats"]["people_in_water"] for d in days)
+    window_stage = max(stage_at(t / 24) for t in range(4 * 24, 11 * 24))  # Highest modelled stage in 13-19 Sep ICT.
+    window_km2 = round(sum(flooded_area_km2(histograms[t], window_stage, AOI_RES**2) for t in tambon_ids), 1)
+    window_people = round(sum(flooded_area_km2(pop_hist[t], window_stage, 1e6) for t in tambon_ids))
 
     south, west = to_ll_3857(display.bounds[0], display.bounds[1])
     north, east = to_ll_3857(display.bounds[2], display.bounds[3])
     return {"layers": layers, "hand": hand_record, "vectors": vectors, "days": days, "histograms": histograms,
             "bounds": [[south, west], [north, east]], "display": {"width": display.width, "height": display.height},
             "s1_meta": s1_meta, "s1_anchor": anchor, "coverage": coverage,
+            "reported_meta": {k: reported_doc.get(k) for k in ("status", "compiled", "access_set_rule")},
+            "external_checks": [
+                {"id": "gistda-radarsat2-20240910", "observed": "GISTDA RADARSAT-2 flood analysis, 10 Sep 2024 18:15 (time zone not stated; assumed ICT)",
+                 "reported_km2": 9.9, "reported_text": "Mae Sai 6,182 rai", "scope": "Mae Sai district",
+                 "role": "calibration_anchor", "model_km2": gistda_model_km2, "model_stage_m": round(gistda_stage, 3),
+                 "use": "Calibration anchor for the 10 Sep 18:15 knot, not an independent check.",
+                 "urls": ["https://gistda.or.th/news_view.php?n_id=8072&lang=TH", "https://mgronline.com/science/detail/9670000084814"]},
+                {"id": "unosat-3991", "observed": "UNOSAT product 3991: cumulative satellite-detected water 13-19 Sep 2024 over Mae Sai District (Pleiades, RCM, TerraSAR-X, Sentinel, Landsat, PlanetScope)",
+                 "reported_km2": 70, "reported_people": 13600, "reported_text": "about 70 km2 flood-affected within a 305 km2 analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated",
+                 "role": "independent_magnitude_check", "model_km2": window_km2, "model_people_in_water": window_people,
+                 "model_window": "Largest modelled extent within 13-19 Sep ICT (the start of the UNOSAT window)",
+                 "model_stage_m": round(window_stage, 3), "model_peak_km2": peak_model_km2, "model_peak_people_in_water": peak_people,
+                 "use": "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model.",
+                 "urls": ["https://unosat.org/products/3991"]}],
             "facilities": {"total": len(facility_features), "modelled": sum(1 for f in facility_features if f["properties"]["m"])},
-            "roads_not_modelled_km": round(sum(f["properties"]["len"] for f in road_features if not f["properties"]["m"]) / 1000, 2)}
+            "roads_not_modelled_km": round(sum(f["properties"]["len"] for f in road_features if not f["properties"]["m"]) / 1000, 2),
+            "population": {**population_record, "tambon_histograms": pop_hist,
+                           "tambon_totals": {t: round(sum(h)) for t, h in pop_hist.items()}},
+            "access": {"nodes": nodes_record, "levels": evac.LEVELS, "threshold_m": evac.ACCESS_THRESHOLD_M, "travel_mode": "walking on passable roads (about 30 min at 4 km/h)",
+                       "tambons": tambon_order, "sets": access["set_ids"],
+                       "totals": {"population": round(float(pop_df["total_population"].sum())),
+                                  "vulnerable": round(float(pop_df["vulnerable_population"].sum()), 1),
+                                  "non_vulnerable": round(float(pop_df["non_vulnerable_population"].sum()), 1)}},
+            "shelters": {"candidates": [site_public(x) for x in sites], "plan": access["ranking"], "knee_k": access["knee_k"],
+                         "demand_people": access["demand_people"], "uncoverable_people": access["uncoverable_people"],
+                         "eligible_count": access["eligible_count"], "reported": reported_public,
+                         "method": {"evacuation_stage_m": evac.EVACUATION_STAGE_M, "late_evacuation_stage_m": evac.LATE_EVACUATION_STAGE_M, "threshold_m": evac.ACCESS_THRESHOLD_M,
+                                    "freeboard_m": evac.SHELTER_FREEBOARD_M, "peak_stage_m": peak_stage,
+                                    "m2_per_person": evac.SPHERE_M2_PER_PERSON, "usable_floor_share": evac.USABLE_FLOOR_SHARE,
+                                    "max_plan_sites": evac.MAX_PLAN_SITES, "snap_max_m": evac.SNAP_MAX_M}}}
 
 
 def to_ll_3857(x: float, y: float) -> tuple[float, float]:
@@ -471,13 +617,19 @@ SOURCES = [
 ASSUMPTIONS = [
     "Daily water surfaces are a HAND (height above nearest drainage) threshold reconstruction, not observations.",
     "Stage keyframes (metres above the mapped channel) are illustrative values shaped to the event chronology; no gauge record was used. The stage is held at 0 through 9 Sep and rises through the night of 10 Sep.",
-    "One stage is applied to every mapped channel at once; real water levels differed along the Sai and its tributaries.",
+    "The stage is the assumed Sai main-stem level at the Mae Sai bridges; tributaries rise k x stage (see the next assumption). Real water levels still differed reach by reach.",
     "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.",
-    "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece; river-channel samples on bridges are ignored.",
+    "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
     "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
     "The 16 September 06:16 ICT Sentinel-1 pass constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
+    "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative.",
     "Cells that drain off the DEM tile (east of 100°E, towards the Ruak) before meeting a mapped channel use their outlet on the tile edge as the HAND reference.",
     "Where flow routing leaves no path to a channel (large flats), HAND falls back to height above the nearest channel cell.",
+    "Stage varies along the river: each cell's water rise is scaled by k = clip((A / A_Sai) ** 0.3, 0.35, 1), where A is the upstream area of its drainage channel and A_Sai the Sai main stem at the Mae Sai bridges (downstream hydraulic geometry). Cells draining east off the tile are treated as main-river (k = 1).",
+    "People in water uses WorldPop 2020 (100 m, spread evenly over 10 m cells); it is modelled residential population, not the 2024 population or tourists and traders at the border market.",
+    "Evacuation access uses the repo road graph and walking distance: a resident node has access when an open, dry shelter is within 2 km along roads still passable (about 30 minutes on foot); a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it. Levels are evaluated every 0.05 m of stage.",
+    "Shelter candidates are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres; OSM amenity=shelter huts are excluded). A candidate is eligible only if it keeps 0.5 m freeboard at the modelled peak and a road node lies within 400 m. Ranking is greedy maximal coverage of residents whose homes are wet at the peak, within 2 km walking on normal roads (pre-emptive evacuation); late_cumulative_share repeats the check on roads still open at 1.0 m stage.",
+    "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.",
     "Flash-flood velocity, debris and mud deposition are not modelled.",
 ]
 
@@ -486,7 +638,7 @@ def compose_manifest(result: dict) -> dict:
     """Assemble ``timeline.json`` with provenance, confidence and assumptions."""
     anchor = result["s1_anchor"]
     return {
-        "study_id": "mae-sai-2024-flood-timeline", "revision": "r1", "schema_version": 1,
+        "study_id": "mae-sai-2024-flood-timeline", "revision": "r2", "schema_version": 1,
         "generated_by": "scripts/build_mae_sai_flood_timeline.py",
         "data_mode": "historical_reconstruction", "official_warning": False, "real_time": False, "can_feed_decision_layer": False,
         "confidence": "low",
@@ -517,6 +669,27 @@ def compose_manifest(result: dict) -> dict:
         "vectors": result["vectors"],
         "tambon_histograms": result["histograms"],
         "s1_anchor": {**anchor, "reconstruction_stage_at_pass_m": round(stage_at(7 + 6.27 / 24), 3)},
+        "population": {**result["population"], "source": "WorldPop Thailand 100 m constrained 2020 (tha_ppp_2020)",
+                       "licence": "CC BY 4.0", "timestamp": "2020 estimate",
+                       "note": "Modelled residential population, not a census count or the 2024 population."},
+        "access": {**result["access"], "scenario_tier": "T1 scenario (model), not observed evacuation outcomes",
+                   "confidence": "low",
+                   "confidence_reason": "Built on the reconstructed water, WorldPop 2020 residents at road nodes, an OSM road graph with assumed walking access and shelters assumed open for the whole replay.",
+                   "source_timestamp": "OSM roads and sites 2026-07-09; WorldPop 2020; water model 2024-09-09/2024-09-19 ICT",
+                   "definition": "A resident node loses access when no open, dry shelter of the chosen set is reachable within the threshold on roads that are still passable, having been reachable before the flood."},
+        "shelters": {**result["shelters"], "confidence": "low",
+                     "confidence_reason": "Candidates are OSM public buildings with sparse footprints; eligibility and coverage use the reconstructed peak and walking distance, not site surveys.",
+                     "source_timestamp": "OSM extract 2026-07-09; reported shelters compiled 2026-09-27 from reports dated 2024-09-11 to 2024-10-11",
+                     "reported_status": result["reported_meta"]["status"], "reported_compiled": result["reported_meta"]["compiled"],
+                     "reported_access_set_rule": result["reported_meta"]["access_set_rule"]},
+        "external_checks": result["external_checks"],
+        "external_references": [
+            {"name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)", "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province", "note": "Cumulative envelope; not yet overlaid."},
+            {"name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)", "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"},
+            {"name": "International Charter activation 912 (Typhoon Yagi, Thailand)", "url": "https://disasterscharter.org/activations/flood-in-thailand-activation-912-"},
+            {"name": "NOAA/GMU VIIRS 375 m daily flood products (block 090), 10-18 Sep 2024", "url": "https://jpssflood.gmu.edu/", "note": "Coarse daily optical evidence; not yet ingested."},
+            {"name": "HII ThaiWater September 2024 Chiang Rai flood event page (rainfall and Kok River hydrographs)", "url": "https://www.thaiwater.net/uploads/contents/current/2024/FloodChiangrai_Sep2024/"}],
+        "gauge_note": "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.",
         "sources": SOURCES,
         "assumptions": ASSUMPTIONS,
         "limitations": [
@@ -537,7 +710,7 @@ def main() -> None:
         parser.error("--external-root or FLOODGUARD_EXTERNAL_DATA is required")
     result = build(Path(args.external_root), Path(args.out))
     manifest = compose_manifest(result)
-    (Path(args.out) / "timeline.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    (Path(args.out) / "timeline.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps(manifest["s1_anchor"], indent=1))
     for d in result["days"]:
         s = d["stats"]

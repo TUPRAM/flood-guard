@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 
 import { launchFloodGuardBrowser } from "./browser-launch.mjs";
+import { readCaseReplay } from "./case-replay-inventory.mjs";
 import { readLandingArtwork } from "./landing-artwork-inventory.mjs";
 
 const out = resolve(process.cwd(), "out");
@@ -14,7 +15,10 @@ const planningDataVersion = JSON.parse(
 ).status.data_version;
 
 const contentTypes = {
+  ".bin": "application/octet-stream",
   ".css": "text/css; charset=utf-8",
+  ".geojson": "application/geo+json",
+  ".png": "image/png",
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
@@ -469,6 +473,21 @@ try {
     return (await Promise.all(urls.map((url) => cache.match(url)))).every(Boolean);
   }, artwork.map((asset) => asset.url), { timeout: 60_000 });
 
+  // Case replay: once it has rendered online it asks the worker to keep its deferred data (derived from the
+  // timeline manifest at build time); wait for every file, then replay it without the network below.
+  const caseReplay = readCaseReplay(out);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${baseUrl}${caseReplay.route}`, { waitUntil: "load" });
+  await page.getByTestId("replay-readout").waitFor({ state: "visible" });
+  await page.waitForFunction(async (urls) => {
+    const key = (await caches.keys()).find((entry) => /^floodguard-offline-[0-9a-f]{12}$/.test(entry));
+    if (!key) return false;
+    const cache = await caches.open(key);
+    return (await Promise.all(urls.map((url) => cache.match(url)))).every(Boolean);
+  }, caseReplay.assets.map((asset) => asset.url), { timeout: 60_000 });
+  await page.getByText(`Offline copy: this replay's ${caseReplay.assets.length} data files are saved on this device`, { exact: false })
+    .waitFor({ state: "attached", timeout: 15_000 });
+
   offlineMode = true;
   await context.setOffline(true);
   const artworkOffline = await page.evaluate(async (urls) => Promise.all(urls.map(async (url) => {
@@ -509,6 +528,30 @@ try {
         document.querySelector(`${scope} .geo-map-shell`)?.getAttribute("data-basemap-state") === "offline"
       ), offlinePublicMapScope);
     }
+  }
+
+  // The saved case replay renders offline at a shared moment; only the street basemap is missing, and says so.
+  await page.goto(`${baseUrl}${caseReplay.route}?t=84&wm=arrival`, { waitUntil: "domcontentloaded" });
+  const offlineReadout = page.getByTestId("replay-readout");
+  await offlineReadout.waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.querySelector("[data-testid='replay-readout']")?.textContent?.includes("12 Sep 2024 · 12:00"));
+  await page.getByTestId("basemap-note").waitFor({ state: "visible" });
+  if (!/basemap/i.test(await page.getByTestId("basemap-note").innerText())) throw new Error("The offline replay does not explain the online-only basemap.");
+  await page.getByText("First flooded (model, local time)", { exact: true }).waitFor({ state: "visible" });
+  await page.waitForFunction(() => !document.body.innerText.includes("Preparing the water model"), undefined, { timeout: 30_000 });
+  if (await page.locator("main").getByRole("alert").count() !== 0) {
+    throw new Error(`The saved case replay failed offline: ${await page.locator("main").getByRole("alert").first().innerText()}`);
+  }
+  await page.locator('input[type="range"][aria-label="Replay time (hourly)"]').fill("120");
+  await page.waitForFunction(() => document.querySelector("[data-testid='replay-readout']")?.textContent?.includes("14 Sep 2024 · 00:00"));
+  // The residents raster and the access node file come from the same offline copy.
+  await page.goto(`${baseUrl}${caseReplay.route}?t=84&wm=people&set=plan&k=3&layers=trfscx`, { waitUntil: "domcontentloaded" });
+  await page.getByTestId("people-in-water").waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByTestId("access-lost").waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByText("People in flood water: residents per hectare (WorldPop 2020, model)", { exact: true }).waitFor({ state: "visible" });
+  await page.waitForFunction(() => !/Preparing the (residents layer|access scenario)/.test(document.body.innerText), undefined, { timeout: 30_000 });
+  if (await page.locator("main").getByRole("alert").count() !== 0) {
+    throw new Error(`The saved residents or access data failed offline: ${await page.locator("main").getByRole("alert").first().innerText()}`);
   }
 
   if (externalRequests.length > 0) {
@@ -560,7 +603,7 @@ try {
   }
   await legacyContext.close();
   console.log(
-    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; approved basemaps failed gracefully and no unapproved external requests occurred`,
+    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline; approved basemaps failed gracefully and no unapproved external requests occurred`,
   );
   console.log("legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified");
 } finally {

@@ -26,6 +26,10 @@ NEVER_CODE = 255
 
 MAX_ENCODED_HAND_M = (NEVER_CODE - 1) * HAND_STEP_M
 
+DEPTH_FACTOR_EXPONENT = 0.3
+DEPTH_FACTOR_FLOOR = 0.35
+"""Per-reach stage scaling k = clip((A / A_main) ** 0.3, 0.35, 1); see :func:`depth_factor`."""
+
 IMPASSABLE_DEPTH_M = 0.3
 """Depth at which a road segment is treated as impassable for ordinary vehicles."""
 
@@ -59,7 +63,8 @@ KEYFRAMES: tuple[StageKeyframe, ...] = (
 
 EXTRA_ANCHORS: tuple[tuple[float, float], ...] = (
     (1.0, 0.0),  # 10 Sep 00:00: the river stays in bank for the whole dry day.
-    (1.0 + 22 / 24, 1.5),  # 10 Sep 22:00: overflow into town during the night.
+    (1.0 + 18.25 / 24, 0.12),  # 10 Sep 18:15: GISTDA RADARSAT-2 reports ~9.9 km2 flooded in Mae Sai.
+    (2.0 + 2 / 24, 2.5),  # 11 Sep 02:00: overnight surge into town (evacuees at shelters by 01:00).
 )
 """Sub-daily anchors (days since 9 Sep 00:00 ICT, stage m) added to the local-noon keyframes."""
 
@@ -103,11 +108,30 @@ def decode_hand(codes: np.ndarray) -> np.ndarray:
     return hand
 
 
-def depth_at_stage(codes: np.ndarray, stage_m: float) -> np.ndarray:
-    """Return water depth (m) for each coded cell at ``stage_m``; channel cells get the stage."""
-    depth = np.clip(stage_m - decode_hand(codes), 0.0, None)
-    depth[np.asarray(codes) == CHANNEL_CODE] = max(stage_m, 0.0)
+def depth_at_stage(codes: np.ndarray, stage_m: float, depth_factor: np.ndarray | float = 1.0) -> np.ndarray:
+    """Return water depth (m) per coded cell at ``stage_m``.
+
+    ``codes`` hold effective HAND (HAND divided by the cell's depth factor ``k``), so a
+    cell is wet when ``stage > HAND_eff`` and its depth is ``k * (stage - HAND_eff)``.
+    Channel cells get ``k * stage``.
+    """
+    k = np.broadcast_to(np.asarray(depth_factor, dtype=float), np.shape(codes))
+    depth = np.clip(stage_m - decode_hand(codes), 0.0, None) * k
+    channel = np.asarray(codes) == CHANNEL_CODE
+    depth[channel] = max(stage_m, 0.0) * k[channel]
     return depth
+
+
+def depth_factor(upstream_km2: np.ndarray, reference_km2: float, exponent: float = DEPTH_FACTOR_EXPONENT,
+                 floor: float = DEPTH_FACTOR_FLOOR) -> np.ndarray:
+    """Return the per-reach stage scaling ``k = clip((A / A_ref) ** exponent, floor, 1)``.
+
+    Downstream hydraulic geometry gives flow depth roughly proportional to
+    discharge^0.4 and discharge roughly proportional to drainage area^0.8, so depth
+    scales with area^~0.3: small tributaries rise less than the main stem.
+    """
+    ratio = np.asarray(upstream_km2, dtype=float) / float(reference_km2)
+    return np.clip(np.power(np.clip(ratio, 1e-9, None), exponent), floor, 1.0)
 
 
 def flooded_area_km2(histogram: Sequence[int], stage_m: float, pixel_area_m2: float) -> float:
@@ -119,9 +143,9 @@ def flooded_area_km2(histogram: Sequence[int], stage_m: float, pixel_area_m2: fl
     return float(np.asarray(histogram, dtype=float)[wet].sum() * pixel_area_m2 / 1e6)
 
 
-def road_state(min_hand_m: float, stage_m: float) -> RoadState:
-    """Classify a road segment from its lowest sampled HAND value."""
-    depth = round(stage_m - min_hand_m, 6)  # Avoid 3.5 - 3.2 == 0.2999999999999998.
+def road_state(min_hand_m: float, stage_m: float, depth_factor: float = 1.0) -> RoadState:
+    """Classify a road segment from its lowest sampled (effective) HAND value and depth factor."""
+    depth = round(depth_factor * (stage_m - min_hand_m), 6)  # Avoid 3.5 - 3.2 == 0.2999999999999998.
     if depth >= IMPASSABLE_DEPTH_M:
         return "impassable"
     if depth > 0:

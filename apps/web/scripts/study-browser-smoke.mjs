@@ -12,7 +12,7 @@ let server;
 let baseUrl = process.env.FLOODGUARD_STUDY_BASE_URL;
 if (!baseUrl) {
   assert(existsSync(resolve(output, "studio/studies/c2s-ms-20260915/index.html")), "Build the static study routes before running this check.");
-  const types = { ".html":"text/html", ".js":"text/javascript", ".css":"text/css", ".json":"application/json", ".png":"image/png", ".svg":"image/svg+xml", ".woff2":"font/woff2" };
+  const types = { ".html":"text/html", ".js":"text/javascript", ".css":"text/css", ".json":"application/json", ".geojson":"application/geo+json", ".png":"image/png", ".webp":"image/webp", ".svg":"image/svg+xml", ".woff2":"font/woff2" };
   server = createServer((request, response) => {
     const path = decodeURIComponent(new URL(request.url ?? "/", "http://localhost").pathname).replace(/^\/+/, "");
     let file = resolve(output, path || "index.html");
@@ -38,7 +38,7 @@ try {
   const consoleErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("response", (response) => { if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`); });
-  page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+  page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(`${message.text()} ${message.location()?.url ?? ""}`.trim()); });
   async function visit(path, ready) {
     const response = await page.goto(`${baseUrl}${path}`, { waitUntil:"networkidle" });
     assert.equal(response?.status(), 200, `Direct route ${path}`);
@@ -117,6 +117,176 @@ try {
   await expect(page.getByText(/teacher agreement|Teacher agreement|distillation fidelity/).first()).toBeVisible();
   await visit("/studio/", "Every result has a context.");
   await page.screenshot({path:resolve(artifacts,"studio-library-desktop.png"),fullPage:true});
+  // Case replay (/studio/cases/mae-sai-2024/): renders from its manifest, the hourly slider drives the readout,
+  // and the view is a shareable link. The street basemap is answered locally so the check never needs the network.
+  const caseRoute = "/studio/cases/mae-sai-2024/";
+  const blankTile = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+  await page.route("https://tile.openstreetmap.org/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: blankTile }));
+  const readout = page.getByTestId("replay-readout");
+  const slider = page.getByRole("slider", { name: "Replay time (hourly)" });
+  const waterModel = () => page.waitForFunction(() => !document.body.innerText.includes("Preparing the water model"), undefined, { timeout: 30_000 });
+  await visit(caseRoute, "Mae Sai flood, September 2024 — day by day");
+  await expect(readout).toContainText("Mon 9 Sep 2024 · 12:00 ICT");
+  await waterModel();
+  await expect(page.getByText("Historical reconstruction for preparedness learning — not real-time, not an official warning.")).toBeVisible();
+  await slider.fill("84");
+  await expect(readout).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
+  await expect(page).toHaveURL(/[?&]t=84(&|$)/);
+  await slider.press("Shift+ArrowRight");
+  await expect(readout).toContainText("Fri 13 Sep 2024 · 12:00 ICT");
+  await slider.press("ArrowLeft");
+  await expect(readout).toContainText("Fri 13 Sep 2024 · 11:00 ICT");
+  checks.push("case replay renders and the hourly slider moves the readout");
+  await page.getByRole("radio", { name: "First flooded (hour)" }).check();
+  await expect(page.getByText("First flooded (model, local time)", { exact: true })).toBeVisible();
+  await expect(page.getByText("Not yet flooded at this moment (faded)", { exact: true })).toBeVisible();
+  await page.getByRole("radio", { name: "Hours under water" }).check();
+  await expect(page.getByText("Hours under water, 9–19 Sep (model)", { exact: true })).toBeVisible();
+  await page.getByRole("radio", { name: "Hours cut" }).check();
+  await expect(page.getByText("Roads — hours impassable ≥ 0.3 m (model)", { exact: true })).toBeVisible();
+  const routes = page.locator("section[aria-labelledby='mae-sai-route-cuts-title']");
+  await expect(routes.getByText("Modelled, not observed closures", { exact: false })).toBeVisible();
+  const firstRoute = routes.getByRole("button").first();
+  await firstRoute.click();
+  await expect(firstRoute).toHaveAttribute("aria-pressed", "true");
+  await routes.getByRole("button", { name: "Show the whole area" }).click();
+  checks.push("water modes (depth, first flooded, hours under water) and modelled road-cut hours with the Keep Routes Open list");
+  await page.getByRole("button", { name: "Compare", exact: true }).click();
+  const divider = page.getByRole("slider", { name: "Imagery comparison divider" });
+  await expect(divider).toHaveAttribute("aria-valuenow", "50");
+  await divider.focus();
+  await divider.press("ArrowRight");
+  await expect(divider).toHaveAttribute("aria-valuenow", "52");
+  await expect(page.getByText("◀ 5 Sep 10:58 ICT · Sentinel-2", { exact: true })).toBeVisible();
+  await expect(page.getByText("15 Sep 10:58 ICT · Sentinel-2 ▶", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/cmp=s2-20240905,s2-20240915/);
+  const clips = await page.evaluate(() => [...document.querySelectorAll(".leaflet-fg-compare-left-pane, .leaflet-fg-compare-right-pane")].map((pane) => getComputedStyle(pane).clipPath));
+  assert(clips.length === 2 && clips.every((clip) => clip.startsWith("inset(")), `Swipe panes are clipped: ${JSON.stringify(clips)}`);
+  checks.push("imagery swipe compare: keyboard divider, dated side labels, clipped panes");
+  await expect(page).toHaveURL(/wm=duration/);
+  await expect(page).toHaveURL(/rm=hours/);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(readout).toContainText("Fri 13 Sep 2024 · 11:00 ICT");
+  await expect(page.getByRole("radio", { name: "Hours under water" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Hours cut" })).toBeChecked();
+  await expect(page.getByRole("slider", { name: "Imagery comparison divider" })).toBeVisible();
+  await page.getByRole("button", { name: "Copy link to this moment" }).click();
+  await expect(page.getByText(/Link to this moment copied\.|select the link below and copy it/)).toBeVisible();
+  await page.goto(`${baseUrl}${caseRoute}?t=99999&wm=flow&img=bogus&layers=zz&cmp=x,y&set=all&k=99`, { waitUntil: "networkidle" });
+  await expect(readout).toContainText("Mon 9 Sep 2024 · 12:00 ICT");
+  await expect(page.getByRole("radio", { name: "Depth at this moment" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: /^Reported used in Sep 2024/ })).toBeChecked();
+  assert.equal(await page.getByRole("slider", { name: "Imagery comparison divider" }).count(), 0, "Invalid comparison falls back to off");
+  checks.push("deep link restores the moment, modes and comparison; invalid parameters fall back to defaults");
+  await waterModel();
+  await slider.fill("84");
+  const [still] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Save PNG of this moment" }).click()]);
+  assert.equal(still.suggestedFilename(), "mae-sai-flood-2024-09-12-1200-ict.png");
+  const record = page.getByRole("button", { name: /^Record video/ });
+  if (await record.count()) {
+    await record.click();
+    await expect(page.getByRole("progressbar", { name: "Recording progress" })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel recording" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Recording cancelled." })).toBeVisible();
+    // Cancel while the video is still being prepared (image decoding slowed so "Preparing" lasts): it must never start.
+    await page.evaluate(() => {
+      const original = HTMLImageElement.prototype.decode;
+      window.__restoreImageDecode = () => { HTMLImageElement.prototype.decode = original; };
+      HTMLImageElement.prototype.decode = function decode() {
+        return new Promise((done) => window.setTimeout(done, 1500)).then(() => original.call(this));
+      };
+    });
+    await record.click();
+    await expect(page.getByRole("status").filter({ hasText: "Preparing the video…" })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel recording" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Recording cancelled." })).toBeVisible();
+    await page.waitForTimeout(2500);
+    assert.equal(await page.getByRole("progressbar", { name: "Recording progress" }).count(), 0, "A recording cancelled while preparing never starts");
+    await expect(page.getByRole("status").filter({ hasText: "Recording cancelled." })).toBeVisible();
+    await page.evaluate(() => window.__restoreImageDecode?.());
+  }
+  checks.push(`PNG export of the moment${(await record.count()) ? " and cancellable video recording, including cancel while preparing" : " (video hidden without MediaRecorder)"}`);
+  // Residents, the evacuation-access scenario and shelters (all model scenarios, never "observed").
+  await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
+  await waterModel();
+  await page.getByRole("radio", { name: "People in flood water" }).check();
+  await expect(page.getByText("People in flood water: residents per hectare (WorldPop 2020, model)", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("people-in-water")).toHaveText(/^\d{1,3}(,\d{3})*$/);
+  await page.getByRole("radio", { name: "All residents" }).check();
+  await expect(page.getByText("All residents per hectare (WorldPop 2020, modelled)", { exact: true })).toBeVisible();
+  await page.getByRole("radio", { name: "People in flood water" }).check();
+  const accessCard = page.getByTestId("access-card");
+  await expect(accessCard.getByText("not observed evacuation outcomes", { exact: false })).toBeVisible();
+  await expect(accessCard.getByTestId("access-without")).toContainText("/");
+  await expect(accessCard.getByTestId("equity-gap")).toContainText("Evacuation Equity Gap");
+  await expect(accessCard.getByTestId("equity-gap")).toContainText("terrain/remoteness proxy");
+  await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
+  const planSlider = accessCard.getByRole("slider", { name: /^Plan size k/ });
+  await planSlider.fill("3");
+  await expect(page).toHaveURL(/[?&]set=plan(&|$)/);
+  await expect(page).toHaveURL(/[?&]k=3(&|$)/);
+  await expect(page.locator(".leaflet-fg-shelters-pane [class*='planBadgeIcon']")).toHaveCount(3);
+  await accessCard.getByRole("checkbox", { name: /Show people cut off on the map/ }).check();
+  await expect(page.locator(".leaflet-fg-cutoff-pane canvas")).toHaveCount(1);
+  await expect(page.getByText("People cut off from a dry shelter (scenario)", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/[?&]layers=[a-z]*x/);
+  const planCard = page.getByTestId("shelter-plan-card");
+  await expect(planCard.getByText("Ranked range, not a fixed number", { exact: false })).toBeVisible();
+  await expect(planCard.getByText("Shelter gap", { exact: true })).toBeVisible();
+  await planCard.getByRole("button", { name: /^Show plan site 1, / }).click();
+  // A closing popup fades out for a moment, so each check picks the popup by its text.
+  const popupWith = (text) => page.locator(".leaflet-popup-content").filter({ hasText: text });
+  await expect(popupWith("Plan rank 1 of the first 3")).toBeVisible();
+  await expect(popupWith("Plan rank 1 of the first 3")).toContainText("planning scenario");
+  const reportedCard = page.getByTestId("reported-shelters-card");
+  await expect(page.locator(".leaflet-fg-shelters-pane [class*='starIcon']").first()).toBeAttached();
+  const firstReported = reportedCard.locator("details").first();
+  await firstReported.locator("summary").click();
+  await firstReported.getByRole("button", { name: /^Show .+ on the map$/ }).click();
+  await expect(popupWith("reported in use, Sep 2024")).toBeVisible();
+  assert((await popupWith("reported in use, Sep 2024").locator("a[rel='noopener noreferrer']").count()) > 0, "Reported shelter popups link their sources");
+  await expect(reportedCard.getByText("Not located on the map", { exact: false }).first()).toBeVisible();
+  checks.push("people in flood water and all-residents views, access scenario with set and k, cut-off heat, plan badges and sourced shelter popups");
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.getByRole("radio", { name: "People in flood water" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Ranked plan" })).toBeChecked();
+  await expect(page.getByTestId("access-card").getByRole("slider", { name: /^Plan size k/ })).toHaveValue("3");
+  await expect(page.getByRole("checkbox", { name: "People cut off (scenario)" })).toBeChecked();
+  checks.push("deep link restores the residents view, shelter set, plan size and cut-off layer");
+  await page.screenshot({ path: resolve(artifacts, "case-replay-desktop.png"), fullPage: true });
+  for (const width of [360, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
+    await expect(readout).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    if (overflow > 1) {
+      await page.screenshot({ path: resolve(artifacts, `case-replay-overflow-${width}.png`), fullPage: true });
+      assert.fail(`Case replay overflows by ${overflow}px at ${width}px`);
+    }
+    const clipped = await page.evaluate(() => [...document.querySelectorAll("[class*='segmentFull'], [class*='segmentShort']")]
+      .filter((label) => label.getClientRects().length > 0 && label.scrollWidth > label.clientWidth + 1)
+      .map((label) => label.textContent));
+    assert.deepEqual(clipped, [], `Phase labels are not truncated at ${width}px`);
+    await expect(page.getByRole("list", { name: "Event phases" })).toContainText("Peak");
+    if (width === 360) {
+      // Offline, the basemap note must sit above Leaflet's attribution (two lines at this width), not under it.
+      await context.setOffline(true);
+      await page.getByTestId("basemap-note").waitFor({ state: "visible" });
+      const overlap = await page.evaluate(() => {
+        const note = document.querySelector("[data-testid='basemap-note']").getBoundingClientRect();
+        const credit = document.querySelector(".leaflet-control-attribution").getBoundingClientRect();
+        const across = Math.min(note.right, credit.right) - Math.max(note.left, credit.left);
+        const down = Math.min(note.bottom, credit.bottom) - Math.max(note.top, credit.top);
+        return across > 0 && down > 0 ? Math.round(down * 10) / 10 : 0;
+      });
+      await context.setOffline(false);
+      assert.equal(overlap, 0, `The basemap note overlaps the map attribution by ${overlap}px at ${width}px`);
+    }
+  }
+  await page.screenshot({ path: resolve(artifacts, "case-replay-mobile.png"), fullPage: true });
+  // The tile route stays: this page keeps its map until the next navigation.
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  checks.push("case replay fits 360 and 390 px without overflow or truncated phase labels; the offline basemap note clears the attribution");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

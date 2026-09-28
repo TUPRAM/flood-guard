@@ -4,23 +4,35 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
+  ARRIVAL_RAMP,
+  arrivalClasses,
+  codeTimings,
   districtStats,
+  hourlyStages,
+  manifestRevision,
+  roadCut,
+  roadCutGroups,
   stageAt,
   tFromDate,
+  TIMELINE_MANIFEST_URL,
   type FacilityProps,
   type GeoCollection,
+  type LineGeometry,
   type RoadProps,
   type TambonProps,
   type TimelineManifest,
 } from "@/lib/flood-timeline";
-import { Hydrograph, ImpactCard, MaeSaiFloodTimeline, RadarCheck, TimelineLegend, WetFacilitiesCard } from "./mae-sai-flood-timeline";
+import { facilityStatusText, Hydrograph, ImpactCard, MaeSaiFloodTimeline, RadarCheck, RouteCutsCard, TimelineLegend, WetFacilitiesCard } from "./mae-sai-flood-timeline";
+import { pickVideoType, pngFileName, ReplayExportPanel, VIDEO_TYPES, videoReplayT } from "./mae-sai-replay-export";
 
-const dir = resolve(import.meta.dirname, "../../public/studies/mae-sai-2024-timeline/r1");
-const readJson = <T,>(name: string): T => JSON.parse(readFileSync(resolve(dir, name), "utf8")) as T;
-const manifest = readJson<TimelineManifest>("timeline.json");
-const roads = readJson<GeoCollection<unknown, RoadProps>>("roads.geojson").features.map((feature) => feature.properties);
-const facilities = readJson<GeoCollection<unknown, FacilityProps>>("facilities.geojson").features.map((feature) => feature.properties);
-const tambons = readJson<GeoCollection<unknown, TambonProps>>("tambons.geojson").features.map((feature) => feature.properties);
+// Fixture paths come from the page's one manifest constant and the hrefs inside that manifest.
+const publicRoot = resolve(import.meta.dirname, "../../public");
+const readJson = <T,>(href: string): T => JSON.parse(readFileSync(resolve(publicRoot, href.replace(/^\//, "")), "utf8")) as T;
+const manifest = readJson<TimelineManifest>(TIMELINE_MANIFEST_URL);
+const roadCollection = readJson<GeoCollection<LineGeometry, RoadProps>>(manifest.vectors.roads.href);
+const roads = roadCollection.features.map((feature) => feature.properties);
+const facilities = readJson<GeoCollection<unknown, FacilityProps>>(manifest.vectors.facilities.href).features.map((feature) => feature.properties);
+const tambons = readJson<GeoCollection<unknown, TambonProps>>(manifest.vectors.tambons.href).features.map((feature) => feature.properties);
 const peakStage = Math.max(...manifest.stage_anchors.map((anchor) => anchor.stage_m));
 const derived = {
   facilityProps: facilities,
@@ -103,6 +115,19 @@ describe("Mae Sai replay panels", () => {
     expect(renderToStaticMarkup(<WetFacilitiesCard facilities={facilities} stage={0} language="en" />)).toBe("");
   });
 
+  it("gives a dry facility's terrain height above drainage (h × k), not its effective HAND", () => {
+    // e.g. OSM-6388482785: effective HAND 4.8 m with k = 0.391 is about 1.9 m of terrain above drainage.
+    const site = facilities.find((facility) => facility.m && facility.h !== null && (facility.k ?? 1) < 0.5)!;
+    expect(site).toBeDefined();
+    const dry = facilityStatusText(site, 0, "en");
+    expect(dry).toContain(`about ${(site.h! * site.k!).toFixed(1)} m above drainage`);
+    expect(dry).toContain(`floods once the assumed stage exceeds ${site.h!.toFixed(2)} m`);
+    expect(dry).not.toContain(`(${site.h!.toFixed(1)} m above drainage`);
+    expect(facilityStatusText(site, site.h! + 1, "en")).toBe(`Reconstructed depth ≈ ${site.k!.toFixed(1)} m`);
+    expect(facilityStatusText(site, 0, "th")).toContain(`สูงจากร่องน้ำ ≈ ${(site.h! * site.k!).toFixed(1)} ม.`);
+    expect(facilityStatusText({ h: null, m: true }, 3, "en")).toBe("Above the modelled flood range");
+  });
+
   it("plots the stage anchor polyline and labels acquisitions outside the SVG", () => {
     const html = renderToStaticMarkup(<Hydrograph manifest={manifest} time={0.5} stage={0} observations={observations} language="en" />);
     const path = /<path d="(M[^"]+)" class="[^"]*hydroLine/.exec(html)?.[1];
@@ -117,5 +142,81 @@ describe("Mae Sai replay panels", () => {
     expect(html).not.toMatch(/<text[^>]*>S[12] /);
     expect(text(html)).toContain("Sentinel-2 · 15 Sep 10:58 ICT");
     expect(text(html)).toContain("Sentinel-1 · 16 Sep 06:16 ICT");
+    // r2 scales each cell's rise by k, so the curve is the Sai main-stem reference stage, not every channel's.
+    expect(text(html)).toContain("Assumed Sai main-stem stage at the Mae Sai bridges (m) — illustrative; tributaries rise k × stage");
+  });
+});
+
+describe("Mae Sai replay water modes, route cuts and exports", () => {
+  const stages = hourlyStages(manifest.stage_anchors);
+  const timings = codeTimings(stages, manifest.hand.step_m, manifest.hand.never_code);
+  const arrival = arrivalClasses(timings.arrivalHour, ARRIVAL_RAMP, manifest.hand.channel_code);
+  const cuts = roadCollection.features.map((feature) => roadCut(feature.properties.m ? feature.properties.h : null, stages, manifest.impassable_depth_m, feature.properties.k ?? 1));
+  const groups = roadCutGroups(roadCollection.features, cuts, 10);
+  const names = Object.fromEntries(tambons.map((tambon) => [tambon.id, tambon]));
+
+  it("labels each water mode's legend as a model in local time or hours", () => {
+    const arrivalLegend = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads unmodelledFacilities waterMode="arrival" arrival={arrival} />));
+    expect(arrivalLegend).toContain("First flooded (model, local time)");
+    expect(arrivalLegend).toContain("Not yet flooded at this moment (faded)");
+    expect(arrivalLegend).toMatch(/\d{1,2} Sep \d{2}:00/);
+    const durationLegend = text(renderToStaticMarkup(<TimelineLegend language="th" unmodelledRoads={false} unmodelledFacilities={false} waterMode="duration" roadMode="hours" />));
+    expect(durationLegend).toContain("จำนวนชั่วโมงที่จมน้ำ 9–19 ก.ย. (แบบจำลอง)");
+    expect(durationLegend).toContain("ถนน — ชั่วโมงที่สัญจรไม่ได้ ≥ 0.3 ม. (แบบจำลอง)");
+    expect(durationLegend).toContain("≥ 48 ชม.");
+    const hoursLegend = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads unmodelledFacilities={false} roadMode="hours" />));
+    expect(hoursLegend).toContain("Roads — hours impassable ≥ 0.3 m (model)");
+    for (const label of ["Not cut", "< 6 h", "6–24 h", "24–48 h", "≥ 48 h"]) expect(hoursLegend).toContain(label);
+  });
+
+  it("lists the longest-cut routes as modelled closures with local first-cut and reopen times", () => {
+    const html = renderToStaticMarkup(<RouteCutsCard groups={groups} names={names} language="en" focused={null} onFocus={() => undefined} onReset={() => undefined} />);
+    const plain = text(html);
+    expect(plain).toContain("Longest-cut routes (Keep Routes Open)");
+    expect(plain).toContain("Modelled, not observed closures");
+    expect(html.match(/<li>/g)).toHaveLength(groups.length);
+    expect(plain).toContain(`Up to ${groups[0].maxHours} h cut`);
+    expect(plain).toMatch(/First cut \d{1,2} Sep \d{2}:00 → reopened/);
+    expect(plain).not.toContain("Show the whole area");
+    expect(plain.replaceAll("not observed", "")).not.toMatch(/observed|real-time|\blive\b/i);
+    expect(plain).toContain("THEME: KEEP ROUTES OPEN · NO ACTION CLASS ASSIGNED");
+    expect(plain).not.toMatch(/ACTION CLASS [A-E]\b/);
+    const thai = text(renderToStaticMarkup(<RouteCutsCard groups={groups} names={names} language="th" focused={groups[0].key} onFocus={() => undefined} onReset={() => undefined} />));
+    expect(thai).toContain("เส้นทางที่ถูกตัดขาดนานที่สุด");
+    expect(thai).toContain("แสดงทั้งพื้นที่");
+    const none = text(renderToStaticMarkup(<RouteCutsCard groups={[]} names={names} language="en" focused={null} onFocus={() => undefined} onReset={() => undefined} />));
+    expect(none).toContain("No modelled road piece reaches 0.3 m");
+  });
+
+  it("prefers MP4, then VP9 WebM, then WebM, and times the video at two seconds per day", () => {
+    expect(VIDEO_TYPES.map((type) => type.mime)).toEqual(["video/mp4;codecs=avc1.42E01E", "video/webm;codecs=vp9", "video/webm"]);
+    expect(pickVideoType(() => true)?.ext).toBe("mp4");
+    expect(pickVideoType((mime) => mime.startsWith("video/webm"))?.mime).toBe("video/webm;codecs=vp9");
+    expect(pickVideoType((mime) => mime === "video/webm")?.mime).toBe("video/webm");
+    expect(pickVideoType(() => false)).toBeNull();
+    expect(pickVideoType(() => { throw new Error("unsupported"); })).toBeNull();
+    expect(videoReplayT(0)).toBe(0);
+    expect(videoReplayT(-1)).toBe(0);
+    expect(videoReplayT(7)).toBe(3.5);
+    expect(videoReplayT(60)).toBeLessThan(11);
+    expect(videoReplayT(60)).toBeGreaterThan(10.99);
+    expect(pngFileName(3.5)).toBe("mae-sai-flood-2024-09-12-1200-ict.png");
+    expect(pngFileName(0)).toBe("mae-sai-flood-2024-09-09-0000-ict.png");
+  });
+
+  it("names the served data revision, which is also the manifest's own revision field", () => {
+    expect(manifestRevision()).toBe("r2");
+    expect(manifest.revision).toBe(manifestRevision());
+    expect(manifestRevision("/studies/x/r9/timeline.json")).toBe("r9");
+  });
+
+  it("keeps exports disabled until the water model is ready and never offers video without a recorder", () => {
+    const html = renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="en" waterOpacity={0.85} />);
+    expect(text(html)).toContain("Save PNG of this moment");
+    expect(html).toMatch(/<button[^>]*disabled[^>]*>Save PNG of this moment/);
+    expect(text(html)).not.toContain("Record video");
+    expect(text(html)).toContain("Exports become available once the water model has loaded.");
+    const thai = text(renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="th" waterOpacity={0.85} />));
+    expect(thai).toContain("บันทึกภาพ PNG ของช่วงเวลานี้");
   });
 });

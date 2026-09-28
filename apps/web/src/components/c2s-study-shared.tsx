@@ -132,7 +132,7 @@ export function StudyFrame({ section, children }: { section: StudySection; child
           {SECTIONS.map(([id, label, path], i) => <a key={id} href={`${STUDY_BASE}${path}/`} aria-current={section === id ? "page" : undefined}><span>{String(i + 1).padStart(2, "0")}</span>{sectionName(id, label)}</a>)}
         </nav>
         <div className={styles.content}>
-          <label className={styles.mobileNav}>{text("Study section", "ส่วนของงานศึกษา")}<select value={section} onChange={(e) => { const item = SECTIONS.find(([id]) => id === e.target.value); if (item) window.location.assign(`${STUDY_BASE}${item[2]}/`); }}>{SECTIONS.map(([id, label]) => <option value={id} key={id}>{sectionName(id, label)}</option>)}</select></label>
+          <label className={styles.mobileNav}>{text("Study section", "ส่วนของงานศึกษา")}<select value={section} onChange={(e) => { const item = SECTIONS.find(([id]) => id === e.target.value); /* A full document load to the exported section page, as the sidebar's plain links do. */ if (item) window.location.assign(new URL(`${STUDY_BASE}${item[2]}/`, window.location.origin)); }}>{SECTIONS.map(([id, label]) => <option value={id} key={id}>{sectionName(id, label)}</option>)}</select></label>
           {th ? <Notice>รายละเอียดการทดลอง ผลลัพธ์ และหลักฐานต้นฉบับด้านล่างคงไว้เป็นภาษาอังกฤษ การเปลี่ยนภาษาส่วนติดต่อไม่เปลี่ยนข้อมูลหรือขอบเขตการประเมิน</Notice> : null}
           <div lang="en">{children}</div>
           <footer className={styles.footer}>

@@ -16,13 +16,14 @@ from floodguard.flood_timeline import (
     NEVER_CODE,
     decode_hand,
     depth_at_stage,
+    depth_factor,
     encode_hand,
     flooded_area_km2,
     road_state,
     stage_at,
 )
 
-MANIFEST = Path(__file__).resolve().parents[1] / "apps/web/public/studies/mae-sai-2024-timeline/r1/timeline.json"
+MANIFEST = Path(__file__).resolve().parents[1] / "apps/web/public/studies/mae-sai-2024-timeline/r2/timeline.json"
 
 
 def test_stage_hits_keyframes_at_local_noon_and_clamps() -> None:
@@ -30,7 +31,8 @@ def test_stage_hits_keyframes_at_local_noon_and_clamps() -> None:
         assert stage_at(index + 0.5) == pytest.approx(keyframe.stage_m)
     assert stage_at(-5) == KEYFRAMES[0].stage_m
     assert stage_at(99) == KEYFRAMES[-1].stage_m
-    assert stage_at(1.0 + 22 / 24) == pytest.approx(1.5)
+    assert stage_at(1.0 + 18.25 / 24) == pytest.approx(0.12)
+    assert stage_at(2.0 + 2 / 24) == pytest.approx(2.5)
 
 
 def test_dry_day_stays_dry_all_day() -> None:
@@ -85,6 +87,16 @@ def test_road_state_thresholds() -> None:
     assert road_state(1.0, 1.0 + IMPASSABLE_DEPTH_M / 2) == "wet"
     assert road_state(1.0, 1.0 + IMPASSABLE_DEPTH_M) == "impassable"
     assert road_state(3.2, 3.5) == "impassable"  # Float subtraction gives 0.2999999999999998.
+    assert road_state(1.0, 1.4, depth_factor=0.5) == "wet"  # 0.5 * 0.4 = 0.2 m on a tributary.
+
+
+def test_depth_factor_and_scaled_depth() -> None:
+    k = depth_factor(np.array([1000.0, 500.0, 1.0]), 500.0)
+    assert k[0] == 1.0 and k[1] == 1.0  # Capped at the main stem.
+    assert k[2] == pytest.approx(0.35)  # Floored for tiny catchments.
+    assert depth_factor(np.array([62.5]), 500.0)[0] == pytest.approx(0.125 ** 0.3)
+    codes = np.array([CHANNEL_CODE, 20], dtype=np.uint8)
+    assert depth_at_stage(codes, 2.0, np.array([0.5, 0.5])).tolist() == pytest.approx([1.0, 0.5])
 
 
 @pytest.mark.skipif(not MANIFEST.exists(), reason="baked manifest not present")
@@ -105,5 +117,21 @@ def test_baked_manifest_is_honest_and_consistent() -> None:
     knots = manifest["stage_anchors"]
     assert all(stage_at(k["t"]) == pytest.approx(k["stage_m"]) for k in knots)
     assert all(0 < c["modelled_km2"] <= c["total_km2"] + 0.01 for c in manifest["tambon_coverage"].values())
+    assert manifest["hand"]["depth_factor_channel"] == "G"
+    assert manifest["population"]["licence"] == "CC BY 4.0"
+    assert 70_000 < sum(manifest["population"]["tambon_totals"].values()) < 95_000  # WorldPop 2020 for the 8 tambons.
+    shelters = manifest["shelters"]
+    plan_ids = [p["candidate_id"] for p in shelters["plan"]]
+    candidates = {c["id"]: c for c in shelters["candidates"]}
+    assert plan_ids and all(candidates[i]["eligible"] for i in plan_ids)
+    shares = [p["cumulative_share"] for p in shelters["plan"]]
+    assert shares == sorted(shares) and 1 <= shelters["knee_k"] <= len(plan_ids)
+    assert all(c["kind"] != "shelter" for c in shelters["candidates"])
+    assert manifest["access"]["sets"][-1] == f"plan_{len(plan_ids)}"
+    checks = {c["id"]: c for c in manifest["external_checks"]}
+    assert {"gistda-radarsat2-20240910", "unosat-3991"} <= set(checks)
+    reported = manifest["shelters"]["reported"]
+    assert reported and all(r["sources"] for r in reported)
+    assert all((r["lat"] is None) == (r["model_check"] is None) for r in reported)
     anchor = manifest["s1_anchor"]
     assert abs(anchor["reconstruction_stage_at_pass_m"] - anchor["best_fit_stage_m"]) <= 0.05

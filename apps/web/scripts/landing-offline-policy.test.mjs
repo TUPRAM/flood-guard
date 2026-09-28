@@ -8,16 +8,21 @@ const workerSource = readFileSync(new URL("../public/sw.js", import.meta.url), "
 const illustrationUrl = "/landing/floodguard-v1/plates/w0-768.webp";
 const hash = (body) => createHash("sha256").update(body).digest("hex");
 
-function workerHarness({ version = "000000000001", profile = "competition", illustration = "approved image", illustrationUrls = [illustrationUrl], shared } = {}) {
-  const state = shared ?? { stores: new Map(), deployed: profile, requests: [], illustration, responseGate: null };
+function workerHarness({ version = "000000000001", profile = "competition", illustration = "approved image", illustrationUrls = [illustrationUrl], shared, caseReplay = {} } = {}) {
+  const state = shared ?? { stores: new Map(), deployed: profile, requests: [], illustration, responseGate: null, replayBodies: { ...caseReplay }, fetchModes: {} };
   const listeners = new Map();
   const messages = [];
   const pathname = (request) => new URL(typeof request === "string" ? request : request.url, "https://floodguard.test").pathname;
-  const fetcher = async (request) => {
+  const fetcher = async (request, init) => {
+    if (init?.cache && typeof request === "string") request = { url: request, cache: init.cache };
     const path = pathname(request);
     state.requests.push(path);
     if (path === "/deployment-profile.json") return Response.json({ profile: state.deployed });
     if (path === "/offline-assets.json") return Response.json(["/_next/static/app.js"]);
+    if (state.replayBodies && Object.hasOwn(state.replayBodies, path)) {
+      state.fetchModes[path] = typeof request === "string" ? undefined : request.cache;
+      return new Response(state.replayBodies[path]);
+    }
     if (illustrationUrls.includes(path)) {
       if (state.responseGate) await state.responseGate;
       return new Response(state.illustration, { headers: { "Content-Type": "image/webp" } });
@@ -50,6 +55,7 @@ function workerHarness({ version = "000000000001", profile = "competition", illu
     .replaceAll("__APP_PROFILE__", profile)
     .replaceAll("__CACHE_CREATED_AT__", "2026-09-15T00:00:00.000Z")
     .replace("const CORE_ASSETS = []; /* __PROFILE_CORE_ASSETS__ */", 'const CORE_ASSETS = ["/", "/deployment-profile.json"];')
+    .replace("const OPTIONAL_CASE_REPLAY = []; /* __OPTIONAL_CASE_REPLAY__ */", `const OPTIONAL_CASE_REPLAY = ${JSON.stringify(profile === "competition" ? Object.entries(caseReplay).map(([url, body]) => ({ url, sha256: hash(body) })) : [])};`)
     .replace("const OPTIONAL_LANDING_ARTWORK = []; /* __OPTIONAL_LANDING_ARTWORK__ */", `const OPTIONAL_LANDING_ARTWORK = ${JSON.stringify(profile === "competition" ? illustrationUrls.map((url) => ({ url, sha256: hash(illustration) })) : [])};`);
   runInNewContext(source, {
     self: {
@@ -138,4 +144,29 @@ test("a public downgrade excludes artwork and cannot revive a late competition c
   await publicWorker.dispatch("message", { type: "FLOODGUARD_CACHE_LANDING_ARTWORK" });
   assert.deepEqual([...competition.state.stores.keys()], [publicWorker.cacheName]);
   assert.ok(!competition.state.stores.get(publicWorker.cacheName).has(illustrationUrl));
+});
+
+test("the case replay is saved only when the replay asks, hash-checked and never during installation", async () => {
+  const replay = { "/studies/case/r9/timeline.json": "manifest", "/studies/case/r9/hand-codes.png": "raster" };
+  const worker = workerHarness({ caseReplay: replay });
+  await worker.dispatch("install");
+  assert.ok(Object.keys(replay).every((url) => !worker.state.requests.includes(url)));
+  worker.state.replayBodies["/studies/case/r9/hand-codes.png"] = "raster from another build";
+  await worker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.deepEqual({ ...worker.messages.at(-1) }, { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 1, failed: 1, total: 2 });
+  const cache = worker.state.stores.get(worker.cacheName);
+  assert.ok(cache.has("/studies/case/r9/timeline.json"));
+  assert.ok(!cache.has("/studies/case/r9/hand-codes.png"));
+  assert.equal(worker.state.fetchModes["/studies/case/r9/timeline.json"], "no-cache");
+  worker.state.replayBodies["/studies/case/r9/hand-codes.png"] = "raster";
+  await worker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.deepEqual({ ...worker.messages.at(-1) }, { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 2, failed: 0, total: 2 });
+  assert.equal(worker.state.requests.filter((url) => url === "/studies/case/r9/timeline.json").length, 1);
+  assert.ok(!worker.state.requests.includes(illustrationUrl), "The replay request does not pull landing artwork.");
+
+  const publicWorker = workerHarness({ profile: "public-production", caseReplay: replay });
+  await publicWorker.dispatch("install");
+  await publicWorker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.equal(publicWorker.messages.length, 0);
+  assert.ok(Object.keys(replay).every((url) => !publicWorker.state.requests.includes(url)));
 });

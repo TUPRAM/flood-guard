@@ -13,7 +13,21 @@
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 390px); gap: 1.25rem; align-items: start; margin-bottom: 2rem; }
 .stage { min-width: 0; background: #fff; border: 1px solid #d5deeb; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 12px #16305806; }
 
-.toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem 1.2rem; padding: .9rem 1rem; border-bottom: 1px solid #e5eaf2; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: .9rem 1.6rem; padding: .9rem 1rem; border-bottom: 1px solid #e5eaf2; }
+.toolGroup { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem .9rem; min-width: 0; }
+.compareFields { display: flex; flex-wrap: wrap; gap: .6rem .9rem; min-width: 0; }
+.toggleButton { min-height: 40px; padding: 0 .9rem; border: 1px solid #c6d1e3; border-radius: .5rem; background: #fff; color: #17253b; font-size: .8rem; font-weight: 700; cursor: pointer; }
+.toggleButton[aria-pressed="true"] { background: #0c2740; border-color: #0c2740; color: #fff; }
+.toggleButton:disabled { opacity: .55; cursor: not-allowed; }
+.segmented { min-width: 0; margin: 0; padding: 0; border: 0; }
+.segmented legend { margin-bottom: .3rem; padding: 0; font-size: .74rem; font-weight: 650; color: #3b4d68; }
+.segmented > div { display: inline-flex; flex-wrap: wrap; max-width: 100%; border: 1px solid #c6d1e3; border-radius: .5rem; overflow: hidden; background: #fff; }
+.segmented label { position: relative; display: inline-flex; min-width: 0; }
+.segmented input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.segmented span { display: inline-flex; align-items: center; min-height: 38px; padding: 0 .75rem; font-size: .78rem; font-weight: 650; color: #3b4d68; border-right: 1px solid #e0e7f1; }
+.segmented label:last-child span { border-right: 0; }
+.segmented input:checked + span { background: #0c2740; color: #fff; }
+.segmented input:focus-visible + span { outline: 3px solid #e8a526; outline-offset: -3px; }
 .field { display: grid; gap: .3rem; min-width: 0; font-size: .74rem; font-weight: 650; color: #3b4d68; }
 .field select { max-width: 100%; min-height: 40px; padding: 0 .6rem; border: 1px solid #c6d1e3; border-radius: .5rem; background: #fff; color: #17253b; font-size: .82rem; }
 .field input[type="range"] { width: 190px; max-width: 100%; accent-color: #08519c; }
@@ -30,6 +44,16 @@
   .imageryLayer { transition: opacity .9s ease; }
 }
 .waterLayer { image-rendering: auto; }
+/* Swipe comparison: the divider sits above the map panes (Leaflet panes reach z 700) but below its controls (z 800+). */
+.compareDivider { position: absolute; z-index: 720; top: 0; bottom: 0; width: 28px; transform: translateX(-50%); cursor: ew-resize; touch-action: none; }
+.compareDivider::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; transform: translateX(-50%); background: #fff; box-shadow: 0 0 0 1px rgb(12 39 64 / 55%), 0 0 10px rgb(12 39 64 / 35%); }
+.compareHandle { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 34px; height: 34px; transform: translate(-50%, -50%); border: 2px solid #0c2740; border-radius: 50%; background: #fff; color: #0c2740; font-size: .8rem; font-weight: 800; letter-spacing: -.05em; box-shadow: 0 2px 10px rgb(15 23 42 / 30%); }
+.compareDivider:focus-visible { outline: none; }
+.compareDivider:focus-visible .compareHandle { outline: 3px solid #e8a526; outline-offset: 2px; }
+/* Inline max-width keeps each label on its own side of the divider; the left one also clears the zoom control. */
+.compareLabel { position: absolute; z-index: 730; top: 10px; max-width: 42%; margin: 0; padding: .35rem .6rem; overflow: hidden; border-radius: .45rem; background: rgb(12 39 64 / 86%); color: #fff; font-size: .72rem; font-weight: 650; line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
+/* Sits above Leaflet's attribution, whose measured height (it wraps on narrow maps) the page keeps in --fg-attribution-h. */
+.basemapNote { position: absolute; z-index: 800; left: 10px; bottom: calc(var(--fg-attribution-h, 18px) + 8px); max-width: min(24rem, calc(100% - 20px)); margin: 0; padding: .4rem .65rem; border-radius: .45rem; background: rgb(255 255 255 / 94%); color: #3b4d68; font-size: .72rem; line-height: 1.45; box-shadow: 0 2px 10px rgb(15 23 42 / 18%); pointer-events: none; }
 /* Top-left, below Leaflet's zoom control (10px margin + two 30px buttons + borders), so the bottom-right attribution never covers it. */
 .caption { position: absolute; z-index: 800; right: 10px; top: 10px; max-width: min(22rem, calc(100% - 80px)); margin: 0; padding: .45rem .7rem; border-radius: .5rem; background: rgb(12 39 64 / 86%); color: #fff; font-size: .76rem; line-height: 1.45; pointer-events: none; }
 .mapStatus { position: absolute; z-index: 900; top: .75rem; left: 50%; transform: translateX(-50%); margin: 0; padding: .45rem .8rem; border-radius: 999px; background: #fff; color: #17253b; font-size: .78rem; font-weight: 600; box-shadow: 0 4px 16px rgb(15 23 42 / 16%); white-space: nowrap; }
@@ -51,7 +75,21 @@
 
 .track { position: relative; height: 44px; }
 .band { position: absolute; left: 10px; right: 10px; top: 12px; height: 26px; border-radius: .4rem; overflow: visible; }
-.segment { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0 .25rem; font-size: .66rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; border-right: 1px solid #fff; }
+.segment { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0 .25rem; font-size: .66rem; font-weight: 700; white-space: nowrap; border-right: 1px solid #fff; container-type: inline-size; }
+.segmentFull, .segmentShort { overflow: hidden; text-overflow: ellipsis; }
+.segmentShort { display: none; }
+/* Narrow segments show a short name, the narrowest none; the full label is in the title and the legend line below. */
+@container (max-width: 96px) {
+  .segmentFull { display: none; }
+  .segmentShort { display: inline; }
+}
+@container (max-width: 34px) {
+  .segmentShort { display: none; }
+}
+.phaseLegend { display: flex; flex-wrap: wrap; gap: .2rem .9rem; margin: .45rem 10px 0; padding: 0; list-style: none; font-size: .7rem; color: #3b4d68; }
+.phaseLegend li { display: inline-flex; align-items: center; gap: .3rem; }
+.phaseLegend li[data-active] { font-weight: 750; color: #17253b; }
+.phaseLegend i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; box-shadow: inset 0 0 0 1px rgb(12 39 64 / 18%); }
 .segment[data-active] { box-shadow: inset 0 -3px 0 rgb(12 39 64 / 45%); }
 .segment:first-child { border-radius: .4rem 0 0 .4rem; }
 .obsMarker { position: absolute; top: -13px; transform: translateX(-50%); padding: 0 .2rem; border-radius: .25rem; background: #0c2740; color: #fff; font-size: .58rem; font-weight: 700; line-height: 1.4; }
@@ -87,6 +125,20 @@
 .playhead { stroke: #e8a526; stroke-width: 2; }
 .playDot { fill: #fff; stroke: #0c2740; stroke-width: 2.5; }
 
+.shareBar { display: grid; gap: .45rem; padding: .8rem 1rem .9rem; border-top: 1px solid #e5eaf2; }
+.exportPanel { display: grid; gap: .45rem; }
+.actionRow { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .7rem; }
+.secondaryButton { display: inline-flex; align-items: center; min-height: 40px; padding: 0 .9rem; border: 1px solid #0c2740; border-radius: .55rem; background: #fff; color: #0c2740; font-size: .8rem; font-weight: 700; cursor: pointer; }
+.secondaryButton:hover:not(:disabled) { background: #eef3fa; }
+.secondaryButton:disabled { opacity: .55; cursor: not-allowed; }
+.linkButton { min-height: 32px; padding: 0 .2rem; border: 0; background: none; color: #2454b8; font-size: .78rem; font-weight: 650; text-decoration: underline; cursor: pointer; }
+.shareField { display: grid; gap: .25rem; max-width: 40rem; font-size: .74rem; font-weight: 650; color: #3b4d68; }
+.shareField input { min-width: 0; min-height: 38px; padding: 0 .6rem; border: 1px solid #c6d1e3; border-radius: .45rem; font-size: .78rem; color: #17253b; background: #f7f9fc; }
+.exportStatus { min-height: 1.1em; margin: 0; font-size: .74rem; color: #3b4d68; }
+.exportStatus:empty { display: none; }
+.progress { width: min(100%, 24rem); height: 10px; accent-color: #08519c; }
+.downloadRow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: 0; font-size: .8rem; }
+.downloadLink { color: #2454b8; font-weight: 700; }
 .legend { display: flex; flex-wrap: wrap; gap: .8rem 1.8rem; padding: .9rem 1rem 1rem; border-top: 1px solid #e5eaf2; font-size: .74rem; color: #3b4d68; }
 .legend strong { display: block; margin-bottom: .35rem; font-size: .72rem; color: #17253b; }
 .legend ul { display: flex; flex-wrap: wrap; gap: .3rem .8rem; margin: 0; padding: 0; list-style: none; }
@@ -128,12 +180,125 @@
 .confidence { display: inline-block; margin-right: .3rem; padding: .05rem .4rem; border-radius: .3rem; background: #fff4dd; color: #815313; font-size: .7rem; font-weight: 800; letter-spacing: .06em; }
 .anchor { margin-top: .6rem; padding: .7rem .8rem; border-radius: .6rem; background: #f1ecf8; color: #3d2a5c; font-size: .78rem; }
 .anchor p:first-child { margin-top: 0; }
+.routeList { display: grid; gap: .45rem; margin: .7rem 0 0; padding: 0; list-style: none; }
+.routeList button { display: grid; gap: .15rem; width: 100%; padding: .55rem .7rem; border: 1px solid #e5eaf2; border-left: 4px solid #c62828; border-radius: .5rem; background: #fbfcfe; color: #223650; font: inherit; font-size: .78rem; line-height: 1.45; text-align: left; cursor: pointer; }
+.routeList button:hover { border-color: #c6d1e3; border-left-color: #6d0f1a; background: #f4f7fb; }
+.routeList button[aria-pressed="true"] { border-color: #0c2740; border-left-color: #6d0f1a; background: #fff8e1; }
+.routeHead { display: flex; align-items: baseline; gap: .45rem; min-width: 0; }
+.routeHead strong { min-width: 0; color: #17253b; font-size: .84rem; overflow-wrap: anywhere; }
+.routeRank { flex: none; display: inline-grid; place-items: center; min-width: 1.35rem; height: 1.35rem; border-radius: 50%; background: #0c2740; color: #fff; font-size: .68rem; font-weight: 800; }
+.routeMeta { color: #5a6a80; font-size: .72rem; }
+.routeFigures { display: flex; flex-wrap: wrap; gap: .1rem .9rem; font-weight: 700; color: #9c2317; font-variant-numeric: tabular-nums; }
+.routeTimes { color: #3b4d68; font-size: .72rem; font-variant-numeric: tabular-nums; }
 .facilityList { display: grid; gap: .45rem; margin: 0; padding: 0; list-style: none; }
 .facilityList li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2rem .8rem; padding: .5rem .65rem; border: 1px solid #f0d3cf; border-left: 4px solid #c62828; border-radius: .5rem; background: #fff8f7; font-size: .8rem; color: #223650; }
 .depth { font-weight: 700; color: #b3261e; font-variant-numeric: tabular-nums; white-space: nowrap; }
 details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-height: 28px; }
 .list { margin: 0; padding-left: 1.1rem; font-size: .78rem; }
 .list li { margin-bottom: .35rem; }
+.assumptionNote { display: block; margin-top: .2rem; color: #7a3b0c; font-weight: 600; }
+
+/* --- Residents, evacuation access and shelters ------------------------------------------------ */
+.cutoffLayer { image-rendering: auto; }
+.srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.barPeople { background: linear-gradient(90deg, #fdb366, #b3261e) !important; }
+.kpis div.kpiWide { grid-column: 1 / -1; }
+.warningNote { margin: .6rem 0 0; padding: .55rem .7rem; border-radius: .5rem; background: #fff4dd; color: #815313; font-size: .8rem; }
+.kField { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; margin: .7rem 0 .2rem; font-size: .78rem; font-weight: 650; color: #223650; }
+.kField input[type="range"] { width: 100%; accent-color: #0b6e4f; }
+.card .segmented { margin-top: .7rem; }
+.card .segmented > div { width: 100%; }
+.card .segmented label { flex: 1 1 auto; }
+.card .segmented span { justify-content: center; width: 100%; min-height: 40px; padding: .3rem .6rem; line-height: 1.3; text-align: center; }
+.equity { margin-top: .8rem; padding: .7rem .8rem; border: 1px solid #e3dcf2; border-left: 4px solid #6a3d9a; border-radius: .6rem; background: #f8f5fd; }
+.equity p { margin: .3rem 0 0; }
+.equity p:first-child { margin-top: 0; color: #2e1f47; }
+.stackLegend { display: flex; flex-wrap: wrap; gap: .2rem .9rem; margin: 0 0 .45rem; padding: 0; list-style: none; font-size: .7rem; color: #3b4d68; }
+.stackLegend li { display: inline-flex; align-items: center; gap: .35rem; }
+.stackLegend i { display: inline-block; width: 14px; height: 9px; border-radius: 2px; }
+.stackTrack { display: flex; }
+.stackTrack span { border-radius: 0 !important; background: none; }
+.segLost { background: #6a1b9a !important; }
+.segNever { background: #c9b6de !important; }
+.miniChart { margin: .8rem 0 0; }
+.miniChart svg { display: block; width: 100%; max-width: 560px; height: auto; overflow: visible; }
+.miniChart figcaption { margin-top: .2rem; font-size: .7rem; color: #5a6a80; }
+.lostArea { fill: #9e5cd6; opacity: .22; }
+.lostLine { fill: none; stroke: #6a1b9a; stroke-width: 1.8; stroke-linejoin: round; }
+.inlineToggle { display: inline-flex; align-items: center; gap: .45rem; min-height: 36px; margin-top: .6rem; font-size: .8rem; font-weight: 650; color: #223650; cursor: pointer; }
+.inlineToggle input { width: 16px; height: 16px; accent-color: #6a1b9a; }
+.kBand { fill: #0b6e4f; opacity: .1; }
+.kneeLine { stroke: #5a6a80; stroke-width: 1; stroke-dasharray: 3 3; }
+.kneeText { fill: #3b4d68; font-size: 10px; font-weight: 700; }
+.coverLine { fill: none; stroke: #0b6e4f; stroke-width: 2.2; stroke-linejoin: round; }
+.coverLateLine { fill: none; stroke: #0b6e4f; stroke-width: 1.6; stroke-dasharray: 5 4; opacity: .8; }
+.coverDot { fill: #0b6e4f; stroke: #fff; stroke-width: 1.5; }
+.coverLateDot { fill: #fff; stroke: #0b6e4f; stroke-width: 2; }
+.curveLegend { display: flex; flex-wrap: wrap; gap: .2rem .9rem; margin: 0; padding: 0; list-style: none; }
+.curveLegend li { display: inline-flex; align-items: center; gap: .35rem; }
+.curveSolid, .curveDashed { display: inline-block; width: 18px; height: 0; border-top: 2.5px solid #0b6e4f; }
+.curveDashed { border-top-style: dashed; }
+.gapCallout { margin-top: .8rem; padding: .7rem .8rem; border: 1px solid #f0d3cf; border-left: 4px solid #b3261e; border-radius: .6rem; background: #fff8f7; color: #4a1c17; }
+.gapCallout p { margin: .25rem 0 0; font-size: .8rem; }
+.planList { display: grid; gap: .45rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+.planList li { display: grid; gap: .15rem; padding: .55rem .7rem; border: 1px solid #d7e9e1; border-left: 4px solid #0b6e4f; border-radius: .5rem; background: #f7fcfa; font-size: .78rem; line-height: 1.45; }
+.planList .linkButton { justify-self: start; min-height: 28px; padding: 0; }
+.planRank { flex: none; display: inline-grid; place-items: center; min-width: 1.45rem; height: 1.45rem; border-radius: 50%; background: #0b6e4f; color: #fff; font-size: .7rem; font-weight: 800; }
+.shortfall { color: #b3261e; }
+.reportedList { display: grid; gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; }
+.reportedList > li { border: 1px solid #ecdfb8; border-left: 4px solid #d19a00; border-radius: .5rem; background: #fffbef; }
+.reportedList details { padding: .5rem .7rem; font-size: .78rem; line-height: 1.5; }
+.reportedList summary { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .1rem .45rem; min-height: 32px; cursor: pointer; list-style: none; }
+.reportedList summary::-webkit-details-marker { display: none; }
+.reportedList summary strong { color: #17253b; font-size: .82rem; }
+.reportedStar, .reportedCommand { grid-row: span 2; color: #9aa3b2; font-size: 1rem; line-height: 1.2; }
+.reportedStar[data-located] { color: #d19a00; }
+.reportedCommand[data-located] { color: #4a3f8f; }
+.reportedList > li[data-role="relief_command"] { border-color: #d9d4ee; border-left-color: #4a3f8f; background: #f8f7fd; }
+.reportedRole { grid-column: 2; color: #4a3f8f; font-size: .74rem; font-weight: 650; }
+.reportedCheck { grid-column: 2; color: #3b4d68; font-size: .74rem; }
+.reportedCheck[data-status="floods"] { color: #b3261e; font-weight: 650; }
+.reportedCheck[data-status="not_located"] { color: #5a6a80; font-style: italic; }
+.reportedFacts { display: grid; gap: .3rem; margin: .5rem 0 0; }
+.reportedFacts div { display: grid; grid-template-columns: 6.2rem minmax(0, 1fr); gap: .5rem; }
+.reportedFacts dt { color: #5a6a80; }
+.reportedFacts dd { margin: 0; color: #223650; }
+.reportedList h4 { margin: .6rem 0 .3rem; font-size: .76rem; color: #17253b; }
+.sourceList { display: grid; gap: .35rem; margin: 0; padding-left: 1rem; font-size: .74rem; }
+.sourceList a, .inlineLink { color: #2454b8; overflow-wrap: anywhere; }
+.inlineLink { margin-right: .4rem; }
+.provenance { margin: .6rem 0 0 !important; padding: .5rem .65rem; border: 1px solid #ecdcb4; border-radius: .5rem; background: #fffaf0; color: #5b4516; font-size: .76rem; line-height: 1.5; }
+.caveat { margin: .6rem 0 0 !important; padding: .5rem .65rem; border-left: 3px solid #d19a00; border-radius: .35rem; background: #fdf8ea; color: #4a3a12; font-size: .76rem; line-height: 1.5; }
+.candidateList { display: grid; gap: .4rem; margin: .4rem 0 0; padding: 0; list-style: none; }
+.candidateList li { display: grid; gap: .1rem; padding: .5rem .65rem; border: 1px solid #d7e9e1; border-left: 4px solid #0b6e4f; border-radius: .5rem; background: #f7fcfa; font-size: .76rem; line-height: 1.45; }
+.candidateListIneligible li { border-color: #dde2ea; border-left-color: #6b7585; background: #f7f8fa; }
+.candidateList strong { color: #17253b; font-size: .8rem; }
+.candidateList .linkButton { justify-self: start; min-height: 28px; padding: 0; }
+.candidateReasons { color: #8a3a12; font-weight: 650; }
+.wetEmpty { background: rgb(96 120 148 / 43%) !important; }
+.legendNote { display: block; margin-top: .3rem; font-size: .68rem; color: #5a6a80; }
+.legend i.legendStar { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; color: #f5b700; font-size: 15px; font-style: normal; line-height: 1; text-shadow: 0 0 1px #5a3d00, 0 0 1px #5a3d00; }
+.legend i.legendStarFloods { color: #f5b700; text-shadow: 0 0 0 #b3261e, 0 0 2px #b3261e, 0 0 2px #b3261e; }
+.legend i.legendBadge { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: #0b6e4f; color: #fff; font-size: 10px; font-style: normal; font-weight: 800; }
+.legend i.cutoffRamp { width: 56px; height: 10px; background: linear-gradient(90deg, rgb(214 188 250 / 20%), rgb(170 110 225 / 50%), rgb(70 0 120 / 80%)); }
+
+/* Leaflet divIcon markers: the pane has no pointer events, the marker elements keep theirs. */
+.starIcon { display: grid; place-items: center; background: none; border: 0; color: #f5b700; filter: drop-shadow(0 1px 2px rgb(15 23 42 / 45%)); }
+.starIcon svg { fill: #f5b700; stroke: #5a3d00; stroke-width: 1.4; stroke-linejoin: round; }
+.starIconFloods svg { stroke: #b3261e; stroke-width: 2.2; }
+.commandIcon { display: grid; place-items: center; background: none; border: 0; filter: drop-shadow(0 1px 2px rgb(15 23 42 / 45%)); }
+.commandIcon svg { fill: #4a3f8f; stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
+.starIcon:focus-visible, .planBadgeIcon:focus-visible, .commandIcon:focus-visible { outline: 3px solid #e8a526; outline-offset: 2px; border-radius: 50%; }
+.legend i.legendCommand { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; color: #4a3f8f; font-size: 13px; font-style: normal; line-height: 1; }
+.planBadgeIcon { display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: #0b6e4f; color: #fff; font: 800 12px/1 "Inter Variable", system-ui, sans-serif; box-shadow: 0 1px 4px rgb(15 23 42 / 45%); }
+.popupFrame :global(.leaflet-popup-content) { margin: .7rem .8rem; }
+.popup { display: grid; gap: .2rem; font-size: .76rem; line-height: 1.45; color: #223650; }
+.popup strong { font-size: .84rem; color: #17253b; }
+.popup p { margin: 0 !important; }
+.popup [data-tone="muted"] { color: #5a6a80; }
+.popup [data-tone="alert"] { color: #b3261e; font-weight: 650; }
+.popup ul { display: grid; gap: .2rem; margin: .3rem 0 0; padding-left: 1rem; }
+.popup a { color: #2454b8; overflow-wrap: anywhere; }
 
 .errorBox { margin: 1rem 0 3rem; padding: 1.4rem 1.5rem; border: 1px solid #f0c9c4; border-radius: 1rem; background: #fff; }
 .errorBox h2 { margin: 0 0 .4rem; font-size: 1.1rem; }
@@ -154,11 +319,23 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
   .dock, .legend { padding-inline: .8rem; }
   .preEvent { margin-left: 0; flex-basis: 100%; }
   .caption { font-size: .72rem; }
-  /* The 640-unit hydrograph viewBox scales to about half size on phones; double the SVG text so it stays legible. */
-  .axisText { font-size: 18px; }
-  .peakText { font-size: 18px; }
+  /* The 640-unit hydrograph viewBox scales to about half size on phones; double its SVG text so it stays legible.
+     The 360-unit mini charts scale far less, so they get a smaller boost that their label spacing allows. */
+  .hydrograph .axisText, .hydrograph .peakText { font-size: 18px; }
+  .miniChart .axisText, .miniChart .kneeText { font-size: 12px; }
   .segment { font-size: .56rem; padding: 0 .1rem; }
+  .toolbar { gap: .8rem; }
+  .toolGroup, .compareFields { width: 100%; }
+  .compareFields .field { flex: 1 1 100%; }
+  .segmented, .segmented > div { width: 100%; }
+  .segmented label { flex: 1 1 auto; }
+  .segmented span { justify-content: center; width: 100%; padding: 0 .5rem; text-align: center; }
+  .shareBar { padding-inline: .8rem; }
+  /* Narrow maps: side labels wrap instead of truncating, and the left one stays clear of the zoom control. */
+  .compareLabel { font-size: .66rem; white-space: normal; overflow-wrap: anywhere; }
   .days button { font-size: .66rem; }
   .kpis dd { font-size: 1.25rem; }
   .bars li { grid-template-columns: minmax(0, 6rem) minmax(0, 1fr) 4.2rem; }
+  .reportedFacts div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .toggles label { min-height: 36px; }
 }

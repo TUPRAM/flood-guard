@@ -9,7 +9,16 @@ import {
   arrivalClasses,
   arrivalT,
   assumptionCaveat,
+  checkDifference,
+  coverageComplete,
   externalChecksByRole,
+  rainAt,
+  rainSummary,
+  referencesNotIngested,
+  smallestFloodedExtent,
+  VIIRS_CLASSES,
+  viirsDayAt,
+  viirsReading,
   manifestRevision,
   tFromLocalDate,
   buildArrivalLut,
@@ -31,17 +40,22 @@ import {
   formatLocalStamp,
   formatMoment,
   handGridFromRaster,
+  hatchStripes,
   hourClassIndex,
   hourIndex,
   hourlyStages,
   hoursUnder,
   inflateZlib,
   latestObservation,
+  LOW_CONFIDENCE_HATCH,
+  lowConfidenceCells,
+  lowConfidenceRgba,
   lutEquals,
   manifestAssets,
   manifestDirectory,
   observationGap,
   paintDepth,
+  paintLowConfidence,
   phaseAt,
   projectToFrame,
   ROAD_CUT_CLASSES,
@@ -55,7 +69,9 @@ import {
   cellDepth,
   stageAt,
   tFromDate,
+  TIMELINE_END_T,
   TIMELINE_MANIFEST_URL,
+  thaiYear,
   waterCandidates,
   type FacilityProps,
   type GeoCollection,
@@ -99,18 +115,20 @@ describe("Mae Sai flood timeline logic", () => {
     const anchors = manifest.stage_anchors;
     const gistda = anchors.find((anchor) => Math.abs(anchor.t - (1 + 18.25 / 24)) < 1e-5)!;
     const surge = anchors.find((anchor) => Math.abs(anchor.t - (2 + 2 / 24)) < 1e-5)!;
-    expect(gistda.stage_m).toBe(0.12);
+    const onsetCheck = manifest.external_checks!.find((check) => check.id.startsWith("gistda"))!;
+    // The 18:15 knot is the stage the manifest's GISTDA check reports; the 02:00 knot is the illustrative surge.
+    expect(gistda.stage_m).toBe(onsetCheck.model_stage_m);
     expect(surge.stage_m).toBe(2.5);
     expect(tFromDate("2024-09-10T18:15:00+07:00")).toBeCloseTo(gistda.t, 5);
-    expect(stageAt(gistda.t, anchors)).toBe(0.12);
+    expect(stageAt(gistda.t, anchors)).toBe(gistda.stage_m);
     expect(stageAt(surge.t, anchors)).toBe(2.5);
     // Between the two knots the stage is the straight line joining them, not the noon keyframes.
     const t = 1 + 22 / 24;
     const expected = gistda.stage_m + ((surge.stage_m - gistda.stage_m) * (t - gistda.t)) / (surge.t - gistda.t);
     expect(stageAt(t, anchors)).toBeCloseTo(expected, 12);
-    expect(stageAt(t, anchors)).toBeCloseTo(1.2716, 4);
-    const onsetCheck = manifest.external_checks?.find((check) => check.id.startsWith("gistda"));
-    expect(onsetCheck?.model_stage_m).toBe(roundLikePython(stageAt(gistda.t, anchors), 3));
+    expect(stageAt(t, anchors)).toBeGreaterThan(gistda.stage_m);
+    expect(stageAt(t, anchors)).toBeLessThan(surge.stage_m);
+    expect(onsetCheck.model_stage_m).toBe(roundLikePython(stageAt(gistda.t, anchors), 3));
   });
 
   it("quantises the replay clock to whole hours without drifting on float noise", () => {
@@ -330,7 +348,13 @@ describe("Mae Sai flood timeline logic", () => {
     expect(phaseAt(8, manifest.phases).label.en).toBe("Mostly receded");
     expect(manifest.days.every((day, index) => phaseAt(index + 0.5, manifest.phases).id === day.phase)).toBe(true);
     expect(formatMoment(3.5, "en")).toBe("Thu 12 Sep 2024 · 12:00 ICT");
-    expect(formatMoment(3.5, "th")).toBe("พฤ. 12 ก.ย. 2024 · 12:00 น.");
+    // Thai dates carry the Buddhist Era year with the CE year in brackets.
+    expect(formatMoment(3.5, "th")).toBe("พฤ. 12 ก.ย. 2567 (2024) · 12:00 น.");
+    expect(thaiYear(2024)).toBe("2567 (2024)");
+    // The replay's last position (20 Sep 00:00) is labelled as the end of 19 Sep, the last day it covers.
+    expect(formatMoment(TIMELINE_END_T, "en")).toBe("Thu 19 Sep 2024 · end of day (24:00 ICT)");
+    expect(formatMoment(TIMELINE_END_T, "th")).toBe("พฤ. 19 ก.ย. 2567 (2024) · สิ้นวัน (24:00 น.)");
+    expect(formatMoment(TIMELINE_END_T - 1 / 24, "en")).toBe("Thu 19 Sep 2024 · 23:00 ICT");
   });
 
   it("decodes the HAND code raster losslessly on the manifest grid", async () => {
@@ -342,7 +366,7 @@ describe("Mae Sai flood timeline logic", () => {
     for (let index = 0; index < grid.codes.length; index += 1) counts[grid.codes[index]] += 1;
     expect(counts[0]).toBeGreaterThan(0);
     expect(counts[255]).toBeGreaterThan(0);
-    // r2: RGB with R = effective HAND code and G = round(k * 255), k clipped to [floor, 1].
+    // From r2 on: RGB with R = effective HAND code and G = round(k * 255), k clipped to [floor, 1].
     expect(raster.channels).toBe(3);
     expect(manifest.hand.depth_factor_channel).toBe("G");
     expect(grid.factors).not.toBeNull();
@@ -369,6 +393,81 @@ describe("Mae Sai flood timeline logic", () => {
       expect(Buffer.compare(Buffer.from(gray.data), Buffer.from(grid.codes))).toBe(0);
     }
   }, 30_000);
+
+  it("decodes the low-confidence flag (B) only when the manifest declares it, and it matches the manifest's share", async () => {
+    const bytes = new Uint8Array(readFileSync(publicFile(manifest.hand.href)));
+    const raster = await decodePng(bytes, (data) => new Uint8Array(inflateSync(data)));
+    expect(manifest.hand.low_confidence_channel).toBe("B");
+    expect(manifest.hand.low_confidence?.meaning).toMatch(/reads as wet at almost any stage/);
+    const share = manifest.hand.low_confidence_share!;
+    expect(share.low_confidence_km2).toBeLessThan(share.peak_flooded_km2);
+    // Undeclared: the B values are ignored.
+    expect(handGridFromRaster(raster, manifest.hand.depth_factor_channel).lowConfidence).toBeNull();
+    const grid = handGridFromRaster(raster, manifest.hand.depth_factor_channel, manifest.hand.low_confidence_channel);
+    const flags = grid.lowConfidence!;
+    expect(flags).toHaveLength(grid.codes.length);
+    // The builder writes 255 or 0 only.
+    const blue = new Set<number>();
+    for (let index = 0; index < flags.length; index += 1) blue.add(raster.data[index * raster.channels + 2]);
+    expect([...blue].sort((a, b) => a - b)).toEqual([0, 255]);
+    // Share of the wet out-of-channel cells at the modelled peak that are flagged, close to the manifest's share.
+    const peak = manifest.shelters!.method.peak_stage_m;
+    const candidates = waterCandidates(grid.codes, Math.max(...manifest.stage_anchors.map((anchor) => anchor.stage_m)), manifest.hand.step_m);
+    const low = lowConfidenceCells(grid.codes, flags, candidates, manifest.hand.channel_code);
+    const wetAtPeak = (code: number) => code !== manifest.hand.channel_code && code !== manifest.hand.never_code && code * manifest.hand.step_m < peak;
+    let wet = 0;
+    let wetLow = 0;
+    for (const cell of candidates) if (wetAtPeak(grid.codes[cell])) wet += 1;
+    for (const cell of low) {
+      expect(grid.codes[cell]).not.toBe(manifest.hand.channel_code);
+      if (wetAtPeak(grid.codes[cell])) wetLow += 1;
+    }
+    expect(low.length).toBeGreaterThan(0);
+    expect(Math.abs(wetLow / wet - share.low_confidence_km2 / share.peak_flooded_km2)).toBeLessThan(0.03);
+  }, 30_000);
+
+  it("fails closed on an unknown or missing low-confidence channel and hatches flagged wet cells only", () => {
+    // 3 x 2 RGB raster: R codes, G factors, B flags.
+    const data = new Uint8Array([0, 255, 255, 1, 255, 255, 2, 255, 0, 3, 128, 255, 255, 255, 255, 4, 255, 127]);
+    const raster = { width: 3, height: 2, channels: 3, data };
+    const grid = handGridFromRaster(raster, "G", "B");
+    expect([...grid.lowConfidence!]).toEqual([1, 1, 0, 1, 1, 0]);
+    expect(handGridFromRaster(raster, "G", null).lowConfidence).toBeNull();
+    expect(() => handGridFromRaster(raster, "G", "A")).toThrow(/Unsupported HAND low_confidence_channel/);
+    expect(() => handGridFromRaster({ width: 1, height: 1, channels: 1, data: new Uint8Array([3]) }, null, "B")).toThrow(/no low confidence channel/);
+    // Channel cells and cells that never flood are not low-confidence water.
+    const candidates = new Uint32Array([0, 1, 2, 3, 5]);
+    expect([...lowConfidenceCells(grid.codes, grid.lowConfidence!, candidates, 0)]).toEqual([1, 3]);
+    expect(() => lowConfidenceCells(grid.codes, new Uint8Array(2), candidates)).toThrow();
+    // Diagonal stripes on the raster grid.
+    const stripes = hatchStripes(new Uint32Array([0, 1, 2, 3, 6, 7]), 3, 3, 1);
+    expect([...stripes]).toEqual([1, 0, 0, 0, 0, 1]);
+    expect(LOW_CONFIDENCE_HATCH.stripe).toBeLessThan(LOW_CONFIDENCE_HATCH.period);
+  });
+
+  it("draws low-confidence water paler and hatched, and leaves dry cells transparent", () => {
+    const blue: [number, number, number, number] = [8, 81, 156, 230];
+    const between = lowConfidenceRgba(blue, false);
+    const stripe = lowConfidenceRgba(blue, true);
+    expect(lowConfidenceRgba([0, 0, 0, 0], true)).toEqual([0, 0, 0, 0]);
+    // Lighter than the original, and the stripe keeps more of the water colour than the gaps between stripes.
+    const lightness = (rgba: readonly number[]) => rgba[0] + rgba[1] + rgba[2];
+    expect(lightness(between)).toBeGreaterThan(lightness(stripe));
+    expect(lightness(stripe)).toBeGreaterThan(lightness(blue));
+    expect(between[3]).toBeLessThan(blue[3]);
+    expect(stripe[3]).toBe(blue[3]);
+    // Desaturated: the channel spread shrinks.
+    const spread = (rgba: readonly number[]) => Math.max(rgba[0], rgba[1], rgba[2]) - Math.min(rgba[0], rgba[1], rgba[2]);
+    expect(spread(between)).toBeLessThan(spread(blue));
+    const pack = (rgba: readonly number[]) => ((rgba[3] << 24) | (rgba[2] << 16) | (rgba[1] << 8) | rgba[0]) >>> 0;
+    const pixels = new Uint32Array([pack(blue), 0, pack(blue), pack(blue)]);
+    paintLowConfidence(new Uint32Array([0, 1, 2]), new Uint8Array([1, 1, 0]), pixels, true);
+    expect(pixels[0]).toBe(pack(stripe));
+    expect(pixels[1]).toBe(0);
+    expect(pixels[2]).toBe(pack(between));
+    expect(pixels[3]).toBe(pack(blue));
+    expect(() => paintLowConfidence(new Uint32Array([0]), new Uint8Array(0), pixels)).toThrow();
+  });
 
   it("rounds like Python, including exact decimal ties", () => {
     expect(roundLikePython(0.0625, 3)).toBe(0.062);
@@ -534,6 +633,8 @@ describe("Mae Sai arrival and time under water (hourly stage samples)", () => {
       else expect(lut[code] >>> 24, `code ${code}`).toBeGreaterThan(200);
     }
     expect(lut[0] & 255).toBe(CHANNEL_RGBA[0]);
+    // No browns or oranges (red well above green, green above blue), so the ramp never reads as the 15 Sep flood mud.
+    for (const { rgba: [r, g, b] } of DURATION_CLASSES) expect(r - g > 40 && g >= b, `${r},${g},${b}`).toBe(false);
     expect(formatHourSpan(34, 40, "en")).toBe("10 Sep 10:00–17:00");
     expect(formatHourSpan(46, 50, "en")).toBe("10 Sep 22:00 – 11 Sep 03:00");
     expect(formatHourStamp(46, "th")).toBe("10 ก.ย. 22:00 น.");
@@ -642,5 +743,146 @@ describe("Mae Sai road cut duration (Keep Routes Open)", () => {
     const [, middle] = projectToFrame(west, (south + north) / 2, manifest.bounds, 800, 600);
     expect(middle).toBeGreaterThan(299);
     expect(middle).toBeLessThan(301);
+  });
+});
+
+describe("Mae Sai observed evidence: VIIRS daily flood maps and rain gauges", () => {
+  const viirs = manifest.viirs_daily!;
+  const rainfall = manifest.rainfall!;
+
+  it("lists one hashed VIIRS image per day, timed at its nominal pass on the replay clock", () => {
+    expect(viirs.days.length).toBeGreaterThan(0);
+    const hrefs = manifestAssets(manifest).map((asset) => asset.href);
+    expect(viirs.days.map((day) => day.date)).toEqual([...viirs.days.map((day) => day.date)].sort());
+    for (const day of viirs.days) {
+      expect(hrefs, day.date).toContain(day.href);
+      expect(day.date).toBe(day.nominal_local_time.slice(0, 10));
+      expect(day.t, day.date).toBeCloseTo(tFromDate(day.nominal_local_time), 6);
+      expect(day.cloud_share).toBeGreaterThanOrEqual(0);
+      expect(day.cloud_share).toBeLessThanOrEqual(1);
+      expect(day.clear_km2).toBeLessThanOrEqual(manifest.model_coverage.district_km2 + 0.1);
+      // The model side of the comparison uses the same stage curve the page interpolates (baked to 0.001 m).
+      expect(Math.abs(day.model_stage_m - stageAt(day.t, manifest.stage_anchors)), day.date).toBeLessThanOrEqual(0.0005 + 1e-9);
+      expect(day.model_flood_km2_clear).toBeLessThanOrEqual(day.model_flood_km2_district + 1e-9);
+    }
+  });
+
+  it("decodes every VIIRS image as RGBA on its declared grid, painted only in the legend's colours", async () => {
+    const allowed = new Set(VIIRS_CLASSES.map((item) => item.rgba.join(",")));
+    const unknown = new Set<string>();
+    const seen = new Set<string>();
+    for (const day of viirs.days) {
+      const raster = await decodePng(new Uint8Array(readFileSync(publicFile(day.href))), (data) => new Uint8Array(inflateSync(data)));
+      expect([raster.width, raster.height, raster.channels], day.date).toEqual([day.width, day.height, 4]);
+      for (let sample = 0; sample < raster.data.length; sample += 4) {
+        if (raster.data[sample + 3] === 0) continue;
+        const colour = Array.from(raster.data.subarray(sample, sample + 4)).join(",");
+        (allowed.has(colour) ? seen : unknown).add(colour);
+      }
+    }
+    expect([...unknown]).toEqual([]);
+    expect(seen.size).toBeGreaterThan(1);
+    // Every coloured class is named in the manifest legend.
+    for (const item of VIIRS_CLASSES) expect(viirs.legend[item.code], item.code).toBeTruthy();
+    expect(viirs.legend.transparent).toBeTruthy();
+  });
+
+  it("shows the map of the day at or before the playhead, and none outside the mapped dates", () => {
+    const first = viirs.days[0];
+    const last = viirs.days.at(-1)!;
+    expect(viirsDayAt(first.t - 1 / 24, viirs.days)).toBeNull();
+    expect(viirsDayAt(first.t, viirs.days)?.date).toBe(first.date);
+    viirs.days.forEach((day, index) => {
+      expect(viirsDayAt(day.t + 0.25, viirs.days)?.date).toBe(day.date);
+      const next = viirs.days[index + 1];
+      if (next) expect(viirsDayAt(next.t - 1 / 24, viirs.days)?.date).toBe(day.date);
+    });
+    // The last map stays up to the end of its local day, not into the next one.
+    expect(viirsDayAt(tFromLocalDate(last.date) + 1 - 1 / 24, viirs.days)?.date).toBe(last.date);
+    expect(viirsDayAt(tFromLocalDate(last.date) + 1, viirs.days)).toBeNull();
+    // A map is never carried more than a day across a gap.
+    const gappy = [{ t: 1.5625, date: "2024-09-10" }, { t: 4.5625, date: "2024-09-13" }];
+    expect(viirsDayAt(2.5, gappy)?.date).toBe("2024-09-10");
+    expect(viirsDayAt(2.6, gappy)).toBeNull();
+    expect(viirsDayAt(4.6, gappy)?.date).toBe("2024-09-13");
+    expect(viirsDayAt(1, [])).toBeNull();
+  });
+
+  it("reads each day's clear-sky comparison plainly, disagreement included, and never as a validation", () => {
+    for (const day of viirs.days) {
+      const reading = viirsReading(day);
+      expect(reading.en, day.date).not.toMatch(/validat|confirm|accura/i);
+      expect(reading.th).toMatch(/[฀-๿]/);
+      if (!(day.clear_km2 > 0)) expect(reading.kind).toBe("no_observation");
+    }
+    // Days on which VIIRS saw no flood water in clear pixels where the model has some are stated as such.
+    for (const day of viirs.days.filter((item) => viirsReading(item).kind === "model_only")) {
+      expect(viirsReading(day).en).toContain(`VIIRS detected no flood water in the ${day.clear_km2.toFixed(1)} km² of clear sky, where the model places ${day.model_flood_km2_clear.toFixed(1)} km².`);
+    }
+    for (const day of viirs.days.filter((item) => ["viirs_larger", "viirs_smaller", "similar_size"].includes(viirsReading(item).kind))) {
+      expect(viirsReading(day).en).toContain(`VIIRS ${day.viirs_flood_km2_clear.toFixed(1)} km² vs model ${day.model_flood_km2_clear.toFixed(1)} km²`);
+    }
+    const base = { cloud_share: 0.1, clear_km2: 250 };
+    expect(viirsReading({ cloud_share: 1, clear_km2: 0, viirs_flood_km2_clear: 0, model_flood_km2_clear: 0 }).kind).toBe("no_observation");
+    expect(viirsReading({ ...base, viirs_flood_km2_clear: 0, model_flood_km2_clear: 0.01 }).kind).toBe("neither");
+    expect(viirsReading({ ...base, viirs_flood_km2_clear: 4, model_flood_km2_clear: 0 }).kind).toBe("viirs_only");
+    expect(viirsReading({ ...base, viirs_flood_km2_clear: 46, model_flood_km2_clear: 19.5 }).en).toContain("VIIRS shows about 2.4× more");
+    expect(viirsReading({ ...base, viirs_flood_km2_clear: 3, model_flood_km2_clear: 8 }).kind).toBe("viirs_smaller");
+    expect(viirsReading({ ...base, viirs_flood_km2_clear: 10, model_flood_km2_clear: 9 }).en).toContain("does not show that the locations match");
+    expect(viirsReading({ cloud_share: 0.8, clear_km2: 50, viirs_flood_km2_clear: 0, model_flood_km2_clear: 7 }).en)
+      .toBe("Mostly cloudy (80% cloud). VIIRS detected no flood water in the 50.0 km² of clear sky, where the model places 7.0 km².");
+  });
+
+  it("keeps one hourly rain value per replay hour and gauge, with the baked totals", () => {
+    const [[south, west], [north, east]] = manifest.bounds;
+    expect(rainfall.stations.length).toBeGreaterThan(0);
+    for (const station of rainfall.stations) {
+      const series = rainfall.hourly_mm[station.code];
+      expect(series, station.code).toHaveLength(EVENT_HOURS);
+      const summary = rainSummary(series);
+      expect(summary.total_mm, station.code).toBeCloseTo(station.total_mm, 1);
+      expect(summary.max_hour_mm).toBe(station.max_hour_mm);
+      expect(summary.missing_hours).toBe(station.missing_hours);
+      expect(station.lat).toBeGreaterThan(south);
+      expect(station.lat).toBeLessThan(north);
+      expect(station.lon).toBeGreaterThan(west);
+      expect(station.lon).toBeLessThan(east);
+    }
+    expect(rainfall.note).toMatch(/not flooding/);
+    const code = rainfall.stations[0].code;
+    expect(rainAt(rainfall, code, 0)).toBe(rainfall.hourly_mm[code][0]);
+    for (const hour of [-1, EVENT_HOURS, 1.5]) expect(rainAt(rainfall, code, hour)).toBeNull();
+    expect(rainAt(rainfall, "none", 0)).toBeNull();
+    expect(rainAt({ hourly_mm: { X: [1, null] } }, "X", 1)).toBeNull();
+    expect(rainSummary([1.25, null, 2.5, 0])).toEqual({ total_mm: 3.8, max_hour_mm: 2.5, missing_hours: 1 });
+  });
+
+  it("drops a reference once its source is ingested and states full model coverage generically", () => {
+    const references = manifest.external_references ?? [];
+    const trim = (url: string) => url.replace(/\/+$/, "");
+    const ingested = references.filter((reference) => [viirs.source_url, rainfall.source_url].some((url) => trim(url) === trim(reference.url)));
+    // An ingested source is dropped whether or not the revision still lists it as a reference.
+    const pending = referencesNotIngested(manifest);
+    expect(pending).toHaveLength(references.length - ingested.length);
+    for (const reference of ingested) expect(pending).not.toContain(reference);
+    expect(referencesNotIngested({ external_references: [{ name: "a", url: "https://x.org/" }, { name: "b", url: "https://y.org" }], rainfall: { ...rainfall, source_url: "https://x.org" } }))
+      .toEqual([{ name: "b", url: "https://y.org" }]);
+    expect(coverageComplete(manifest.model_coverage)).toBe(manifest.model_coverage.modelled_km2 / manifest.model_coverage.district_km2 >= 0.999);
+    expect(coverageComplete({ modelled_km2: 305.6, district_km2: 305.6 })).toBe(true);
+    expect(coverageComplete({ modelled_km2: 294.4, district_km2: 305.6 })).toBe(false);
+  });
+
+  it("finds the smallest non-zero modelled extent, which bounds how close the GISTDA anchor can get", () => {
+    const smallest = smallestFloodedExtent(manifest)!;
+    expect(smallest.stage_m).toBeGreaterThan(0);
+    const justAbove = districtStats(manifest, smallest.stage_m + 1e-6, [], []).flooded_km2;
+    expect(smallest.km2).toBeCloseTo(justAbove, 2);
+    expect(districtStats(manifest, smallest.stage_m, [], []).flooded_km2).toBe(0);
+    const gistda = manifest.external_checks!.find((check) => check.id.startsWith("gistda"))!;
+    expect(checkDifference(gistda)).toBeCloseTo((gistda.model_km2 - gistda.reported_km2) / gistda.reported_km2, 12);
+    // No stage gives a non-zero extent below the smallest one, so an anchor under it cannot be matched from below.
+    if (smallest.km2 > gistda.reported_km2) expect(gistda.model_km2).toBeGreaterThanOrEqual(roundLikePython(smallest.km2, 1));
+    expect(checkDifference({ model_km2: 3, reported_km2: 0 })).toBeNull();
+    expect(smallestFloodedExtent({ tambon_histograms: { a: new Array(256).fill(0) }, hand: manifest.hand, pixel_area_m2: 100 })).toBeNull();
   });
 });

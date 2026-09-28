@@ -14,7 +14,7 @@ export interface Localized { en: string; th: string }
  * vectors) is read from this manifest, and the offline cache inventory and the study-integrity
  * check derive their file lists from it at build time.
  */
-export const TIMELINE_MANIFEST_URL = "/studies/mae-sai-2024-timeline/r2/timeline.json";
+export const TIMELINE_MANIFEST_URL = "/studies/mae-sai-2024-timeline/r3/timeline.json";
 
 /** Directory of a manifest URL (with trailing slash); every asset the manifest lists must live under it. */
 export function manifestDirectory(manifestUrl: string = TIMELINE_MANIFEST_URL): string {
@@ -22,7 +22,7 @@ export function manifestDirectory(manifestUrl: string = TIMELINE_MANIFEST_URL): 
 }
 
 /**
- * Data revision the page serves: the manifest's directory name ("r2"). Tests assert that it equals the manifest's
+ * Data revision the page serves: the manifest's directory name (e.g. "r3"). Tests assert that it equals the manifest's
  * own `revision` field, so the label and the served files cannot drift apart.
  */
 export function manifestRevision(manifestUrl: string = TIMELINE_MANIFEST_URL): string {
@@ -259,6 +259,67 @@ export interface ExternalCheck {
 
 export interface ExternalReference { name: string; url: string; note?: string }
 
+/**
+ * One NOAA/GMU VIIRS daily flood map, clipped to the replay bounds: an observation (375 m optical, daily composite
+ * of early-afternoon passes), compared with the reconstruction in clear-sky district pixels only. `href` is a
+ * pre-coloured RGBA PNG on the replay bounds (~375 m pixels); `t` is the nominal pass time in replay days.
+ */
+export interface ViirsDay extends HashedAsset {
+  date: string;
+  nominal_local_time: string;
+  t: number;
+  /** Share (0-1) of the district hidden by cloud. */
+  cloud_share: number;
+  /** Clear-sky district area (km²) the comparison uses. */
+  clear_km2: number;
+  /** VIIRS flood area (sum of flood fraction x pixel area) in the clear pixels, permanent water excluded. */
+  viirs_flood_km2_clear: number;
+  model_stage_m: number;
+  /** Modelled out-of-channel wet area averaged onto the same clear 375 m pixels. */
+  model_flood_km2_clear: number;
+  /** Modelled wet area over the whole district at the same moment, cloud or not. */
+  model_flood_km2_district: number;
+  width: number;
+  height: number;
+  source_file: string;
+}
+
+export interface ViirsDaily {
+  product: string;
+  source_url: string;
+  licence: string;
+  attribution: string;
+  /** Label per VIIRS class code ("1" cloud, "3" normal open water, "4"-"7" flood-fraction bins, "transparent"). */
+  legend: Record<string, string>;
+  nominal_overpass: string;
+  comparison_rule: string;
+  caveat: string;
+  days: ViirsDay[];
+}
+
+/** Hourly rain gauge (observed forcing, not flooding). */
+export interface RainStation {
+  code: string;
+  name_en: string;
+  name_th: string;
+  lat: number;
+  lon: number;
+  total_mm: number;
+  max_hour_mm: number;
+  missing_hours: number;
+}
+
+export interface Rainfall {
+  stations: RainStation[];
+  /** Per station code, one value per replay hour (index 0 = 9 Sep 00:00-01:00 ICT); null is a missing hour. */
+  hourly_mm: Record<string, (number | null)[]>;
+  source: string;
+  source_url: string;
+  licence: string;
+  units: string;
+  note: string;
+}
+
 export interface TimelineManifest {
   study_id: string;
   revision: string;
@@ -287,6 +348,14 @@ export interface TimelineManifest {
     depth_factor_channel?: string | null;
     /** How k was derived: clip((A / reference_km2) ** exponent, floor, 1) from each channel's upstream area A. */
     depth_factor?: { exponent: number; floor: number; reference_km2: number; reference: string };
+    /**
+     * Channel of an RGB raster that flags low-confidence water ("B" from r3 on): 255 on filled pits and dead-flat
+     * ground less than 0.1 m above its channel, which reads as wet at almost any stage. Absent or null: no flag.
+     */
+    low_confidence_channel?: string | null;
+    low_confidence?: { rule: string; meaning: string };
+    /** District area wet at the modelled peak and the part of it that is flagged low-confidence (km²). */
+    low_confidence_share?: { peak_flooded_km2: number; low_confidence_km2: number };
   };
   impassable_depth_m: number;
   pixel_area_m2: number;
@@ -325,6 +394,10 @@ export interface TimelineManifest {
   external_checks?: ExternalCheck[];
   external_references?: ExternalReference[];
   gauge_note?: string;
+  /** Observed daily VIIRS flood maps and their clear-sky comparison with the model; absent before r3. */
+  viirs_daily?: ViirsDaily;
+  /** Observed hourly rain at nearby gauges (forcing, not flooding); absent before r3. */
+  rainfall?: Rainfall;
 }
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
@@ -503,6 +576,14 @@ export function coverageShare(coverage: AreaCoverage | undefined): number {
 }
 
 /**
+ * True when the model grid covers the whole district (to 0.1%, since both areas are rounded), so the page must not
+ * describe any district land as unmodelled.
+ */
+export function coverageComplete(coverage: Pick<TimelineManifest["model_coverage"], "modelled_km2" | "district_km2">): boolean {
+  return coverageShare({ modelled_km2: coverage.modelled_km2, total_km2: coverage.district_km2 }) >= 0.999;
+}
+
+/**
  * Python `round(value, digits)` for non-negative values: rounds the exact binary value
  * (like `toFixed`), with exact decimal ties going to the even digit.
  */
@@ -599,6 +680,149 @@ export function assumptionCaveat(text: string): Localized | null {
     };
   }
   return null;
+}
+
+/**
+ * Smallest non-zero flooded extent the reconstruction can produce: the out-of-channel cells of the lowest HAND code
+ * that has any cells, i.e. the extent as soon as the stage passes that code. A calibration figure below this area
+ * cannot be matched by any stage.
+ */
+export function smallestFloodedExtent(
+  manifest: Pick<TimelineManifest, "tambon_histograms" | "hand" | "pixel_area_m2">,
+): { km2: number; stage_m: number } | null {
+  const histograms = Object.values(manifest.tambon_histograms);
+  for (let code = 1; code < manifest.hand.never_code; code += 1) {
+    const cells = histograms.reduce((sum, histogram) => sum + (histogram[code] ?? 0), 0);
+    if (cells > 0) return { km2: (cells * manifest.pixel_area_m2) / 1e6, stage_m: code * manifest.hand.step_m };
+  }
+  return null;
+}
+
+/** Relative difference (model − reported) ÷ reported of an external check, or null without a reported figure. */
+export function checkDifference(check: Pick<ExternalCheck, "model_km2" | "reported_km2">): number | null {
+  return check.reported_km2 > 0 ? (check.model_km2 - check.reported_km2) / check.reported_km2 : null;
+}
+
+const sameUrl = (a: string, b: string) => a.trim().replace(/\/+$/, "") === b.trim().replace(/\/+$/, "");
+
+/**
+ * External references that this revision has not ingested. A reference whose URL is the source of a block the
+ * manifest now carries (the VIIRS daily maps, the rain gauges) is left out, because its frozen note ("not yet
+ * ingested") no longer holds; other pages of the same provider (for example an event summary) stay listed.
+ */
+export function referencesNotIngested(manifest: Pick<TimelineManifest, "external_references" | "viirs_daily" | "rainfall">): ExternalReference[] {
+  const ingested = [manifest.viirs_daily?.source_url, manifest.rainfall?.source_url].filter((url): url is string => Boolean(url));
+  return (manifest.external_references ?? []).filter((reference) => !ingested.some((url) => sameUrl(url, reference.url)));
+}
+
+// --- Observed evidence: VIIRS daily flood maps and hourly rain gauges ---------------------------
+
+/**
+ * Colour of each class in the baked VIIRS PNGs (RGBA), in legend order: flood-water fraction bins, normal open water,
+ * cloud. Clear dry land is transparent. Mirrors the builder's palette; a unit test checks every baked pixel against it.
+ */
+export const VIIRS_CLASSES: readonly { code: string; rgba: Rgba; th: string }[] = [
+  { code: "4", rgba: [231, 212, 232, 210], th: "น้ำท่วม 1–24%" },
+  { code: "5", rgba: [194, 165, 207, 225], th: "น้ำท่วม 25–49%" },
+  { code: "6", rgba: [153, 112, 171, 235], th: "น้ำท่วม 50–74%" },
+  { code: "7", rgba: [118, 42, 131, 245], th: "น้ำท่วม 75–100%" },
+  { code: "3", rgba: [60, 100, 150, 200], th: "แหล่งน้ำเปิดปกติ" },
+  { code: "1", rgba: [205, 210, 220, 150], th: "เมฆ (ไม่มีการสังเกต)" },
+];
+
+/**
+ * The VIIRS daily map on show at replay position `t`: the latest day whose nominal pass (`day.t`) is at or before
+ * `t`, for at most one day after that pass and never past the local end of the last mapped date. Null before the
+ * first pass, in a gap of more than a day, and after the mapped dates.
+ */
+export function viirsDayAt<D extends Pick<ViirsDay, "t" | "date">>(t: number, days: readonly D[]): D | null {
+  if (days.length === 0 || Number.isNaN(t)) return null;
+  let best: D | null = null;
+  let lastDate = days[0].date;
+  for (const day of days) {
+    if (day.date > lastDate) lastDate = day.date;
+    if (day.t <= t + 1e-9 && (!best || day.t > best.t)) best = day;
+  }
+  if (!best || t - best.t >= 1 || t >= tFromLocalDate(lastDate) + 1) return null;
+  return best;
+}
+
+/** Below this area (km²) a VIIRS or model figure reads as "none" (it would print as 0.0). */
+export const VIIRS_NONE_KM2 = 0.05;
+
+export type ViirsReadingKind = "no_observation" | "neither" | "model_only" | "viirs_only" | "viirs_larger" | "viirs_smaller" | "similar_size";
+
+/**
+ * One-line reading of a day's clear-sky comparison, stating agreement or disagreement plainly. It is a coarse
+ * consistency check of size in cloud-free pixels, never a validation of the reconstruction.
+ */
+export function viirsReading(
+  day: Pick<ViirsDay, "cloud_share" | "clear_km2" | "viirs_flood_km2_clear" | "model_flood_km2_clear">,
+): { kind: ViirsReadingKind; en: string; th: string } {
+  const clear = day.clear_km2.toFixed(1);
+  const viirs = day.viirs_flood_km2_clear.toFixed(1);
+  const model = day.model_flood_km2_clear.toFixed(1);
+  const cloudPct = Math.round(day.cloud_share * 100);
+  if (!(day.clear_km2 > 0) || day.cloud_share >= 0.995) {
+    return {
+      kind: "no_observation",
+      en: "Cloud covered the whole district: no observation.",
+      th: "เมฆปกคลุมทั้งอำเภอ: ไม่มีการสังเกต",
+    };
+  }
+  const prefix = day.cloud_share >= 0.5
+    ? { en: `Mostly cloudy (${cloudPct}% cloud). `, th: `มีเมฆมาก (${cloudPct}%) ` }
+    : { en: "", th: "" };
+  const viirsNone = day.viirs_flood_km2_clear < VIIRS_NONE_KM2;
+  const modelNone = day.model_flood_km2_clear < VIIRS_NONE_KM2;
+  const say = (kind: ViirsReadingKind, en: string, th: string) => ({ kind, en: `${prefix.en}${en}`, th: `${prefix.th}${th}` });
+  if (viirsNone && modelNone) {
+    return say("neither", `Neither VIIRS nor the model shows flood water in the ${clear} km² of clear sky.`,
+      `ทั้ง VIIRS และแบบจำลองไม่พบน้ำท่วมในพื้นที่ท้องฟ้าโปร่ง ${clear} ตร.กม.`);
+  }
+  if (viirsNone) {
+    return say("model_only", `VIIRS detected no flood water in the ${clear} km² of clear sky, where the model places ${model} km².`,
+      `VIIRS ไม่พบน้ำท่วมในพื้นที่ท้องฟ้าโปร่ง ${clear} ตร.กม. ขณะที่แบบจำลองระบุ ${model} ตร.กม.`);
+  }
+  if (modelNone) {
+    return say("viirs_only", `VIIRS shows ${viirs} km² of flood water in the ${clear} km² of clear sky, where the model has none.`,
+      `VIIRS พบน้ำท่วม ${viirs} ตร.กม. ในพื้นที่ท้องฟ้าโปร่ง ${clear} ตร.กม. ขณะที่แบบจำลองไม่มีน้ำท่วมในบริเวณนั้น`);
+  }
+  const ratio = day.viirs_flood_km2_clear / day.model_flood_km2_clear;
+  if (ratio >= 1.5) {
+    return say("viirs_larger", `VIIRS ${viirs} km² vs model ${model} km² in the same clear pixels: VIIRS shows about ${ratio.toFixed(1)}× more.`,
+      `VIIRS ${viirs} ตร.กม. เทียบกับแบบจำลอง ${model} ตร.กม. ในพิกเซลท้องฟ้าโปร่งเดียวกัน: VIIRS มากกว่าประมาณ ${ratio.toFixed(1)} เท่า`);
+  }
+  if (ratio <= 1 / 1.5) {
+    return say("viirs_smaller", `VIIRS ${viirs} km² vs model ${model} km² in the same clear pixels: VIIRS shows about ${ratio.toFixed(1)}× the model's area.`,
+      `VIIRS ${viirs} ตร.กม. เทียบกับแบบจำลอง ${model} ตร.กม. ในพิกเซลท้องฟ้าโปร่งเดียวกัน: VIIRS เป็นประมาณ ${ratio.toFixed(1)} เท่าของแบบจำลอง`);
+  }
+  return say("similar_size", `VIIRS ${viirs} km² vs model ${model} km² in the same clear pixels: similar in size, which does not show that the locations match.`,
+    `VIIRS ${viirs} ตร.กม. เทียบกับแบบจำลอง ${model} ตร.กม. ในพิกเซลท้องฟ้าโปร่งเดียวกัน: ขนาดใกล้เคียงกัน แต่ไม่ได้แสดงว่าตำแหน่งตรงกัน`);
+}
+
+/** Rain (mm) at `code` during replay hour `hour` (0 = 9 Sep 00:00-01:00 ICT); null when missing or outside the record. */
+export function rainAt(rainfall: Pick<Rainfall, "hourly_mm">, code: string, hour: number): number | null {
+  const series = rainfall.hourly_mm[code];
+  if (!series || !Number.isInteger(hour) || hour < 0 || hour >= series.length) return null;
+  const value = series[hour];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** Total, wettest hour and missing hours of an hourly series, recomputed from the values (the manifest also bakes them). */
+export function rainSummary(series: readonly (number | null)[]): { total_mm: number; max_hour_mm: number; missing_hours: number } {
+  let total = 0;
+  let max = 0;
+  let missing = 0;
+  for (const value of series) {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      missing += 1;
+      continue;
+    }
+    total += value;
+    max = Math.max(max, value);
+  }
+  return { total_mm: roundLikePython(total, 1), max_hour_mm: max, missing_hours: missing };
 }
 
 export interface DepthClass { min: number; max: number; rgba: [number, number, number, number]; label: string }
@@ -739,13 +963,23 @@ function ictParts(ms: number) {
 
 const pad2 = (value: number) => String(value).padStart(2, "0");
 
-/** "Thu 12 Sep 2024 · 12:00 ICT" / "พฤ. 12 ก.ย. 2024 · 12:00 น." (CE year as elsewhere in Studio; time floored to the hour). */
+/** Thai year label: Buddhist Era with the CE year in brackets, e.g. "2567 (2024)". */
+export const thaiYear = (ceYear: number): string => `${ceYear + 543} (${ceYear})`;
+
+/**
+ * "Thu 12 Sep 2024 · 12:00 ICT" / "พฤ. 12 ก.ย. 2567 (2024) · 12:00 น." (time floored to the hour). The replay's end,
+ * 20 Sep 00:00, is labelled as the end of 19 Sep, the last day the replay covers.
+ */
 export function formatMoment(t: number, language: Language): string {
-  const hourT = hourIndex(t) / 24;
-  const p = ictParts(TIMELINE_EPOCH_MS + hourT * DAY_MS);
+  const hour = hourIndex(t);
+  const end = hour >= EVENT_HOURS;
+  const p = ictParts(TIMELINE_EPOCH_MS + (end ? EVENT_HOURS - 1 : hour) * 3_600_000);
+  const time = end
+    ? language === "th" ? "สิ้นวัน (24:00 น.)" : "end of day (24:00 ICT)"
+    : language === "th" ? `${pad2(p.hour)}:00 น.` : `${pad2(p.hour)}:00 ICT`;
   return language === "th"
-    ? `${WEEKDAYS.th[p.weekday]} ${p.day} ${MONTHS.th[p.month]} ${p.year} · ${pad2(p.hour)}:00 น.`
-    : `${WEEKDAYS.en[p.weekday]} ${p.day} ${MONTHS.en[p.month]} ${p.year} · ${pad2(p.hour)}:00 ICT`;
+    ? `${WEEKDAYS.th[p.weekday]} ${p.day} ${MONTHS.th[p.month]} ${thaiYear(p.year)} · ${time}`
+    : `${WEEKDAYS.en[p.weekday]} ${p.day} ${MONTHS.en[p.month]} ${p.year} · ${time}`;
 }
 
 /** "12 Sep" / "12 ก.ย." for a local ISO date or instant. */
@@ -903,34 +1137,125 @@ export async function inflateZlib(data: Uint8Array): Promise<Uint8Array> {
 
 // --- HAND grid with an optional per-cell depth factor ------------------------------------------
 
-/** HAND codes per cell, plus depth-factor bytes (round(k * 255)) when the manifest declares a factor channel. */
-export interface HandGrid { width: number; height: number; codes: Uint8Array; factors: Uint8Array | null }
+/**
+ * HAND codes per cell, plus depth-factor bytes (round(k * 255)) when the manifest declares a factor channel, and
+ * low-confidence flags (1 = flagged) when it declares a low-confidence channel.
+ */
+export interface HandGrid { width: number; height: number; codes: Uint8Array; factors: Uint8Array | null; lowConfidence: Uint8Array | null }
 
 /** Manifest `depth_factor_channel` values this client understands, as a sample index into an RGB(A) pixel. */
 const FACTOR_CHANNELS: Record<string, number> = { G: 1 };
+/** Manifest `low_confidence_channel` values this client understands, as a sample index into an RGB(A) pixel. */
+const LOW_CONFIDENCE_CHANNELS: Record<string, number> = { B: 2 };
+/** A low-confidence sample at or above this byte is flagged (the builder writes 255 or 0). */
+export const LOW_CONFIDENCE_MIN_BYTE = 128;
+
+function channelIndex(table: Record<string, number>, declared: string | null | undefined, name: string, channels: number): number {
+  if (declared == null) return -1;
+  const index = table[declared] ?? -1;
+  if (index < 0) throw new Error(`Unsupported HAND ${name}: ${declared}`);
+  if (channels < 3) throw new Error(`The HAND raster has no ${name.replaceAll("_", " ")}`);
+  return index;
+}
 
 /**
  * Split a decoded HAND PNG into effective codes (the grey value, or R of an RGB raster) and, when
  * `depthFactorChannel` is set, the factor bytes from that channel. Without it every factor is 1, even
- * for an RGB raster. Fails closed on a declared channel the raster lacks or this client does not know.
+ * for an RGB raster. The low-confidence channel is decoded only when `lowConfidenceChannel` is declared
+ * (a raster's B values are otherwise ignored). Fails closed on a declared channel the raster lacks or this
+ * client does not know.
  */
-export function handGridFromRaster(raster: PngRaster, depthFactorChannel?: string | null): HandGrid {
+export function handGridFromRaster(raster: PngRaster, depthFactorChannel?: string | null, lowConfidenceChannel?: string | null): HandGrid {
   const { width, height, channels, data } = raster;
-  let factorIndex = -1;
-  if (depthFactorChannel != null) {
-    factorIndex = FACTOR_CHANNELS[depthFactorChannel] ?? -1;
-    if (factorIndex < 0) throw new Error(`Unsupported HAND depth_factor_channel: ${depthFactorChannel}`);
-    if (channels < 3) throw new Error("The HAND raster has no depth-factor channel");
-  }
-  if (channels === 1) return { width, height, codes: data, factors: null };
+  const factorIndex = channelIndex(FACTOR_CHANNELS, depthFactorChannel, "depth_factor_channel", channels);
+  const flagIndex = channelIndex(LOW_CONFIDENCE_CHANNELS, lowConfidenceChannel, "low_confidence_channel", channels);
+  if (channels === 1) return { width, height, codes: data, factors: null, lowConfidence: null };
   const count = width * height;
   const codes = new Uint8Array(count);
   const factors = factorIndex >= 0 ? new Uint8Array(count) : null;
+  const lowConfidence = flagIndex >= 0 ? new Uint8Array(count) : null;
   for (let cell = 0, sample = 0; cell < count; cell += 1, sample += channels) {
     codes[cell] = data[sample];
     if (factors) factors[cell] = data[sample + factorIndex];
+    if (lowConfidence) lowConfidence[cell] = data[sample + flagIndex] >= LOW_CONFIDENCE_MIN_BYTE ? 1 : 0;
   }
-  return { width, height, codes, factors };
+  return { width, height, codes, factors, lowConfidence };
+}
+
+// --- Low-confidence water (filled pits and dead-flat ground in the elevation model) -------------
+
+/** Cells flagged low-confidence among `candidates` (cells that can ever be wet), channel cells excluded. */
+export function lowConfidenceCells(codes: Uint8Array, flags: Uint8Array, candidates: Uint32Array, channelCode = 0): Uint32Array {
+  if (codes.length !== flags.length) throw new Error("Codes and low-confidence flags must cover the same cells");
+  let count = 0;
+  for (let index = 0; index < candidates.length; index += 1) {
+    const cell = candidates[index];
+    if (flags[cell] && codes[cell] !== channelCode) count += 1;
+  }
+  const out = new Uint32Array(count);
+  let cursor = 0;
+  for (let index = 0; index < candidates.length; index += 1) {
+    const cell = candidates[index];
+    if (flags[cell] && codes[cell] !== channelCode) out[cursor++] = cell;
+  }
+  return out;
+}
+
+/** Period and stripe width (in raster cells) of the diagonal hatch on low-confidence water. */
+export const LOW_CONFIDENCE_HATCH = { period: 6, stripe: 2 } as const;
+
+/** 1 where a cell lies on a hatch stripe (diagonal "/" lines on the raster grid), else 0, for each of `cells`. */
+export function hatchStripes(cells: Uint32Array, width: number, period: number = LOW_CONFIDENCE_HATCH.period, stripe: number = LOW_CONFIDENCE_HATCH.stripe): Uint8Array {
+  const out = new Uint8Array(cells.length);
+  for (let index = 0; index < cells.length; index += 1) {
+    const cell = cells[index];
+    const x = cell % width;
+    const y = (cell - x) / width;
+    out[index] = (x + y) % period < stripe ? 1 : 0;
+  }
+  return out;
+}
+
+/** Neutral the low-confidence tone mixes toward, and how much of the original colour it keeps. */
+const LOW_CONFIDENCE_GREY = [226, 230, 236] as const;
+const LOW_CONFIDENCE_KEEP = { base: 0.35, stripe: 0.8 } as const;
+
+/**
+ * Colour of a wet low-confidence cell: the mode's colour washed toward a pale grey (lighter, desaturated) with a
+ * lower alpha between stripes; on a stripe it keeps most of its colour. Transparent stays transparent.
+ */
+export function lowConfidenceRgba(rgba: Rgba, onStripe: boolean): Rgba {
+  const [r, g, b, a] = rgba;
+  if (a === 0) return [0, 0, 0, 0];
+  const keep = onStripe ? LOW_CONFIDENCE_KEEP.stripe : LOW_CONFIDENCE_KEEP.base;
+  const mix = (value: number, grey: number) => Math.round(value * keep + grey * (1 - keep));
+  return [mix(r, LOW_CONFIDENCE_GREY[0]), mix(g, LOW_CONFIDENCE_GREY[1]), mix(b, LOW_CONFIDENCE_GREY[2]), Math.round(a * (onStripe ? 1 : 0.72))];
+}
+
+const unpack = (value: number, littleEndian: boolean): Rgba => (littleEndian
+  ? [value & 255, (value >>> 8) & 255, (value >>> 16) & 255, value >>> 24]
+  : [value >>> 24, (value >>> 16) & 255, (value >>> 8) & 255, value & 255]);
+
+/**
+ * Re-colour the painted low-confidence `cells` (as `lowConfidenceRgba`, hatched by `stripes`); dry (transparent)
+ * cells stay transparent, so this runs after the mode's own paint of the same frame.
+ */
+export function paintLowConfidence(cells: Uint32Array, stripes: Uint8Array, pixels: Uint32Array, littleEndian = true): void {
+  if (cells.length !== stripes.length) throw new Error("One stripe flag is required per low-confidence cell");
+  const cache = [new Map<number, number>(), new Map<number, number>()];
+  for (let index = 0; index < cells.length; index += 1) {
+    const cell = cells[index];
+    const colour = pixels[cell];
+    if (colour === 0) continue;
+    const stripe = stripes[index];
+    const known = cache[stripe];
+    let next = known.get(colour);
+    if (next === undefined) {
+      next = pack(lowConfidenceRgba(unpack(colour, littleEndian), stripe === 1), littleEndian);
+      known.set(colour, next);
+    }
+    pixels[cell] = next;
+  }
 }
 
 /** Depth factor k for a stored byte round(k * 255); 255 is full depth. */
@@ -994,13 +1319,16 @@ export function densityPerHa(code: number, maxPerHa: number): number {
 
 export interface DensityClass { min: number; max: number; rgba: Rgba }
 
-/** Sequential heat classes of residents per hectare (lower bound exclusive for the first, inclusive after). */
+/**
+ * Sequential classes of residents per hectare (lower bound exclusive for the first, inclusive after): yellow to
+ * green to deep blue, with no reds, so impassable (red) roads stay readable on top of it.
+ */
 export const DENSITY_CLASSES: readonly DensityClass[] = [
-  { min: 0, max: 2, rgba: [255, 230, 150, 226] },
-  { min: 2, max: 5, rgba: [254, 178, 76, 232] },
-  { min: 5, max: 10, rgba: [247, 118, 46, 238] },
-  { min: 10, max: 20, rgba: [214, 32, 39, 244] },
-  { min: 20, max: Infinity, rgba: [118, 0, 52, 248] },
+  { min: 0, max: 2, rgba: [237, 248, 177, 226] },
+  { min: 2, max: 5, rgba: [161, 218, 180, 232] },
+  { min: 5, max: 10, rgba: [65, 182, 196, 238] },
+  { min: 10, max: 20, rgba: [34, 94, 168, 244] },
+  { min: 20, max: Infinity, rgba: [12, 44, 132, 248] },
 ];
 /** Wet cells where the population raster has no residents: a faint neutral so the flood outline stays readable. */
 export const WET_WITHOUT_RESIDENTS_RGBA: Rgba = [96, 120, 148, 110];
@@ -1209,14 +1537,17 @@ export function buildArrivalLut(
 
 export interface DurationClass { min: number; max: number; rgba: Rgba; label: Localized }
 
-/** Hours under water over the replay (lower bound inclusive); sequential, longer is darker. */
+/**
+ * Hours under water over the replay (lower bound inclusive); sequential (viridis-like), longer is darker. No browns or
+ * oranges, so it never reads as the flood mud in the 15 Sep satellite image.
+ */
 export const DURATION_CLASSES: readonly DurationClass[] = [
-  { min: 1, max: 5, rgba: [254, 227, 145, 228], label: { en: "< 6 h", th: "< 6 ชม." } },
-  { min: 6, max: 23, rgba: [254, 196, 79, 230], label: { en: "6–24 h", th: "6–24 ชม." } },
-  { min: 24, max: 47, rgba: [254, 153, 41, 232], label: { en: "24–48 h", th: "24–48 ชม." } },
-  { min: 48, max: 95, rgba: [236, 112, 20, 236], label: { en: "48–96 h", th: "48–96 ชม." } },
-  { min: 96, max: 143, rgba: [204, 76, 2, 240], label: { en: "96–144 h", th: "96–144 ชม." } },
-  { min: 144, max: Infinity, rgba: [140, 45, 4, 244], label: { en: "≥ 144 h", th: "≥ 144 ชม." } },
+  { min: 1, max: 5, rgba: [240, 229, 66, 228], label: { en: "< 6 h", th: "< 6 ชม." } },
+  { min: 6, max: 23, rgba: [134, 206, 76, 230], label: { en: "6–24 h", th: "6–24 ชม." } },
+  { min: 24, max: 47, rgba: [42, 170, 138, 234], label: { en: "24–48 h", th: "24–48 ชม." } },
+  { min: 48, max: 95, rgba: [36, 125, 142, 238], label: { en: "48–96 h", th: "48–96 ชม." } },
+  { min: 96, max: 143, rgba: [60, 78, 138, 242], label: { en: "96–144 h", th: "96–144 ชม." } },
+  { min: 144, max: Infinity, rgba: [68, 18, 88, 246], label: { en: "≥ 144 h", th: "≥ 144 ชม." } },
 ];
 
 /** Duration class index for a whole number of hours, or -1 for none. */
@@ -1366,6 +1697,37 @@ export function roadCutGroups(
     .sort((a, b) => Number(a.name === null) - Number(b.name === null)
       || b.maxHours - a.maxHours || b.kmCut - a.kmCut || a.key.localeCompare(b.key))
     .slice(0, limit);
+}
+
+/** How much a road class matters for keeping routes open (trunk roads first); the weight multiplies hours cut. */
+export const ROAD_IMPORTANCE: Readonly<Record<string, number>> = {
+  motorway: 5, trunk: 4, primary: 3, secondary: 2, tertiary: 1.5, unclassified: 1, residential: 1,
+};
+/** Importance of a group: the weight of its most important class (1 for unknown classes). */
+export const roadImportance = (classes: readonly string[]): number => Math.max(1, ...classes.map((item) => ROAD_IMPORTANCE[item] ?? 1));
+
+/**
+ * Split route groups into named roads and unnamed street groups, each ranked by road importance × longest cut
+ * (then kilometres cut, then key); `unnamedLimit` keeps only the top unnamed groups.
+ */
+export function rankRouteGroups(groups: readonly RoadCutGroup[], { unnamedLimit = Infinity }: { unnamedLimit?: number } = {}): { named: RoadCutGroup[]; unnamed: RoadCutGroup[] } {
+  const score = (group: RoadCutGroup) => roadImportance(group.classes) * group.maxHours;
+  const order = (a: RoadCutGroup, b: RoadCutGroup) => score(b) - score(a) || b.kmCut - a.kmCut || a.key.localeCompare(b.key);
+  return {
+    named: groups.filter((group) => group.name !== null).sort(order),
+    unnamed: groups.filter((group) => group.name === null).sort(order).slice(0, unnamedLimit),
+  };
+}
+
+/** Total modelled length (km) of every piece of each named road, cut or not, for context next to "km cut". */
+export function namedRoadLengths(features: readonly { properties: Pick<RoadProps, "n" | "m" | "len"> }[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const { properties } of features) {
+    const name = properties.n?.trim();
+    if (!name || !properties.m) continue;
+    out.set(name, (out.get(name) ?? 0) + properties.len / 1000);
+  }
+  return out;
 }
 
 /** Web Mercator northing (unitless) for a latitude in degrees. */

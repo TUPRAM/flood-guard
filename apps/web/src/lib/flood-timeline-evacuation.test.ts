@@ -11,11 +11,19 @@ import {
   accessSnapshot,
   buildCutoffRamp,
   candidateReasons,
+  capacityFlag,
   capacityShortfall,
   clampPlanK,
   cutoffWeight,
+  equityWhy,
+  equityWording,
   evacuationEquityGap,
+  floodedHomeMask,
+  formatRate,
   formatSignificant3,
+  homeWetAt,
+  planCoverageSentence,
+  scopeTotals,
   NEVER_LOST_CODE,
   NO_BASELINE_CODE,
   nodeLostAccess,
@@ -41,6 +49,7 @@ import {
   buildPeopleLut,
   buildResidentsLut,
   CHANNEL_RGBA,
+  coverageComplete,
   decodeGrayPng,
   densityCandidates,
   densityClassIndex,
@@ -270,9 +279,13 @@ describe("Mae Sai shelter plan and reported shelters", () => {
     const byId = new Map(shelters.reported.map((shelter) => [shelter.id, shelter]));
     const statuses = shelters.reported.map((shelter) => reportedShelterCheck(shelter).status);
     expect(statuses).toContain("not_located");
-    expect(statuses).toContain("floods");
     expect(statuses).toContain("high_ground");
     expect(statuses).toContain("dry");
+    // "floods" appears exactly when the manifest flags a located, modelled site as flooding at the modelled peak.
+    const flagged = shelters.reported.some((shelter) => shelter.lat !== null && shelter.lon !== null && shelter.model_check?.m && shelter.model_check.floods_at_modelled_peak);
+    expect(statuses.includes("floods")).toBe(flagged);
+    expect(reportedShelterCheck({ lat: 1, lon: 1, model_check: { h: 1, k: 1, freeboard_m: -0.6, snap_m: 1, high_ground: false, floods_at_modelled_peak: true, m: true } }))
+      .toEqual({ status: "floods", freeboard: -0.6 });
     for (const shelter of shelters.reported) {
       const check = reportedShelterCheck(shelter);
       if (shelter.lat === null || shelter.lon === null) expect(check.status).toBe("not_located");
@@ -325,8 +338,15 @@ describe("Mae Sai shelter plan and reported shelters", () => {
 
   it("marks shelter sites outside the terrain model from the manifest's m flag", () => {
     const outside = shelters.candidates.filter((candidate) => !siteModelled(candidate)).map((candidate) => candidate.id).sort();
-    // Eight sites east of 100°E (off the DEM tile) and four outside the replay grid.
-    expect(outside).toEqual(["C023", "C032", "C053", "C078", "C082", "C095", "C096", "C105", "C107", "C108", "C109", "C110"]);
+    // The model flag and the screening reason agree, and (with both DEM tiles in r3) the only unmodelled sites are
+    // those outside the replay grid itself.
+    expect(outside.length).toBeGreaterThan(0);
+    expect(outside).toEqual(shelters.candidates.filter((candidate) => candidate.ineligible_reasons.includes("outside_model")).map((candidate) => candidate.id).sort());
+    const [[south, west], [north, east]] = manifest.bounds;
+    const inGrid = (candidate: { lat: number; lon: number }) => candidate.lat >= south && candidate.lat <= north && candidate.lon >= west && candidate.lon <= east;
+    if (coverageComplete(manifest.model_coverage)) {
+      expect(shelters.candidates.filter((candidate) => !inGrid(candidate)).map((candidate) => candidate.id).sort()).toEqual(outside);
+    }
     for (const candidate of shelters.candidates.filter((item) => outside.includes(item.id))) {
       expect(candidate.h).toBeNull();
       expect(candidate.high_ground).toBe(false);
@@ -411,4 +431,133 @@ describe("Mae Sai residents on the water grid", () => {
     expect(Array.from(peopleKeys(Uint8Array.from([3, 0]), Uint8Array.from([2, 9])))).toEqual([3 | (2 << 8), 9 << 8]);
     expect(() => peopleKeys(Uint8Array.from([1]), Uint8Array.from([1, 2]))).toThrow();
   }, 30_000);
+});
+
+describe("Access population scope: like-with-like comparison with the ranked plan", () => {
+  const peakStage = shelters.method.peak_stage_m;
+  const { step_m: step, channel_code: channel, never_code: never } = manifest.hand;
+  const mask = floodedHomeMask(nodes, peakStage, step, channel, never);
+  const flooded = summarizeAccessSets(nodes, access, mask);
+
+  it("reads a home as wet with the builder's rule: channel homes as soon as the stage rises, never-code homes never", () => {
+    expect(homeWetAt(0, 0, step)).toBe(false);
+    expect(homeWetAt(0, 0.01, step)).toBe(true);
+    expect(homeWetAt(20, 1.0, step)).toBe(false); // 20 * 0.05 = 1.0 is not below the stage
+    expect(homeWetAt(20, 1.01, step)).toBe(true);
+    expect(homeWetAt(255, 99, step)).toBe(false);
+    expect(homeWetAt(7, 1, 0.05, 7, 255)).toBe(true); // a custom channel code
+  });
+
+  it("counts the residents whose homes flood at the modelled peak, which is the plan's demand", () => {
+    const scoped = scopeTotals(nodes, mask);
+    expect(scoped.population).toBeCloseTo(shelters.demand_people, -1);
+    expect(Math.abs(scoped.population - shelters.demand_people)).toBeLessThan(1);
+    expect(scoped.vulnerable + scoped.nonVulnerable).toBeCloseTo(scoped.population, 6);
+    const all = scopeTotals(nodes);
+    expect(Math.round(all.population)).toBe(access.totals.population);
+    expect(scoped.population).toBeLessThan(all.population);
+    expect(() => summarizeAccessSets(nodes, access, new Uint8Array(3))).toThrow(/every access node/);
+  });
+
+  it("before the flood, residents out of reach of plan k plus the plan's coverage add up to the demand", () => {
+    // The plan covers flooded-home residents who can walk to a site on normal roads; the scoped card counts the same people.
+    for (let k = 1; k <= shelters.plan.length; k += 1) {
+      const summary = flooded[access.sets.indexOf(planSetId(k))];
+      const dry = accessSnapshot(summary, 0, access.levels);
+      expect(dry.lost.population).toBe(0);
+      expect(dry.never.population + shelters.plan[k - 1].cumulative_demand).toBeCloseTo(shelters.demand_people, -1);
+    }
+  });
+
+  it("answers the scoped figures from histograms exactly as a node-by-node count of the masked nodes", () => {
+    const setIndex = access.sets.indexOf(REPORTED_SET_ID);
+    for (const stage of [0.5, 2.0, peakStage]) {
+      const level = accessLevelIndex(stage, access.levels);
+      let lost = 0;
+      let without = 0;
+      for (let node = 0; node < nodes.count; node += 1) {
+        if (!mask[node]) continue;
+        const code = nodes.cutCodes[setIndex * nodes.count + node];
+        if (nodeLostAccess(code, level)) lost += nodes.population[node];
+        if (nodeWithoutAccess(code, level)) without += nodes.population[node];
+      }
+      const snapshot = accessSnapshot(flooded[setIndex], stage, access.levels);
+      expect(snapshot.lost.population).toBeCloseTo(lost, 3);
+      expect(snapshot.lost.population + snapshot.never.population).toBeCloseTo(without, 3);
+    }
+    const residents = tambonResidents(nodes, access.tambons.length, mask);
+    expect(residents.reduce((sum, value) => sum + value, 0)).toBeCloseTo(scopeTotals(nodes, mask).population, 3);
+  });
+});
+
+describe("Evacuation Equity Gap wording on the page", () => {
+  const gap = (vulnerableLost: number, vulnerableTotal: number, nonVulnerableLost: number, nonVulnerableTotal: number) =>
+    evacuationEquityGap({ vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal });
+
+  it("says '— (no one has lost access yet)' when both loss rates are zero, never a parity ratio", () => {
+    const none = equityWording(gap(0, 100, 0, 1000), "en");
+    expect(none).toEqual({ value: "— (no one has lost access yet)", sentence: "" });
+    expect(equityWording(gap(0, 100, 0, 1000), "th").value).toBe("— (ยังไม่มีผู้ใดสูญเสียการเข้าถึง)");
+  });
+
+  it("states the ratio to two decimals and compares the two rates in plain words", () => {
+    const lower = equityWording(gap(1, 100, 50, 1000), "en");
+    expect(lower.value).toBe("0.20");
+    expect(lower.sentence).toBe("Proxy-vulnerable residents are about 5.0× less likely to lose access (1.00% vs 5.00%).");
+    const higher = equityWording(gap(10, 100, 20, 1000), "en");
+    expect(higher.value).toBe("5.00");
+    expect(higher.sentence).toBe("Proxy-vulnerable residents are about 5.0× more likely to lose access (10.00% vs 2.00%).");
+    const far = equityWording(gap(18, 10_000, 960, 10_000), "en");
+    expect(far.value).toBe("0.02");
+    expect(far.sentence).toBe("Proxy-vulnerable residents are about 53× less likely to lose access (0.18% vs 9.60%).");
+    const similar = equityWording(gap(10, 100, 100, 1000), "en");
+    expect(similar.value).toBe("1.00");
+    expect(similar.sentence).toContain("about as likely as everyone else");
+    for (const value of [lower.value, higher.value, far.value, similar.value]) expect(value).toMatch(/^\d+\.\d{2}$/);
+    expect(formatRate(0.0018)).toBe("0.18%");
+    expect(equityWording(gap(1, 100, 50, 1000), "th").sentence).toContain("น้อยกว่าประมาณ 5.0 เท่า (1.00% เทียบกับ 5.00%)");
+  });
+
+  it("handles no vulnerable loss, only vulnerable loss and empty groups without a misleading number", () => {
+    const zero = equityWording(gap(0, 100, 50, 1000), "en");
+    expect(zero.value).toBe("0.00");
+    expect(zero.sentence).toBe("No proxy-vulnerable resident has lost access, against 5.00% of everyone else.");
+    const only = equityWording(gap(5, 100, 0, 1000), "en");
+    expect(only.value).toBe("undefined");
+    expect(only.sentence).toContain("so the ratio cannot be computed");
+    expect(equityWording(gap(0, 0, 5, 1000), "en").value).toBe("—");
+    expect(equityWording(gap(1, 100, 0, 0), "en").value).toBe("—");
+  });
+
+  it("explains why the proxy points this way only when proxy-vulnerable residents are less affected", () => {
+    expect(equityWhy(gap(1, 100, 50, 1000), "en")).toContain("hillside and remote homes that stay dry");
+    expect(equityWhy(gap(1, 100, 50, 1000), "th")).toMatch(/[฀-๿]/);
+    expect(equityWhy(gap(10, 100, 20, 1000), "en")).toBeNull();
+    expect(equityWhy(gap(0, 100, 0, 1000), "en")).toBeNull();
+  });
+});
+
+describe("Plan-size sentence and capacity flags", () => {
+  it("states what a plan of k sites covers, pre-emptive and late, from the ranked plan", () => {
+    const people = (value: number) => Math.round(value).toLocaleString("en-US");
+    for (const k of [1, 3, shelters.knee_k, shelters.plan.length]) {
+      const entry = shelters.plan[k - 1];
+      expect(planCoverageSentence(shelters, k, "en")).toBe(
+        `k = ${k}: ${k} site${k === 1 ? "" : "s"} cover${k === 1 ? "s" : ""} ${people(entry.cumulative_demand)} of ${people(shelters.demand_people)} residents whose homes flood (${Math.round(entry.cumulative_share * 100)}%) · late evacuation ${Math.round(entry.late_cumulative_share * 100)}%`,
+      );
+    }
+    expect(planCoverageSentence(shelters, 99, "en")).toBe(planCoverageSentence(shelters, shelters.plan.length, "en"));
+    expect(planCoverageSentence(shelters, 3, "th")).toContain(`k = 3: ที่พักพิง 3 แห่งครอบคลุม`);
+    expect(planCoverageSentence({ plan: [], demand_people: 0 }, 1, "en")).toBe("");
+  });
+
+  it("flags sites whose capacity is unknown or far below the residents assigned", () => {
+    expect(capacityFlag({ load: 500, capacity: null })).toBe("unknown");
+    expect(capacityFlag({ load: 1782, capacity: 41 })).toBe("far_below");
+    expect(capacityFlag({ load: 80, capacity: 40 })).toBe("far_below");
+    expect(capacityFlag({ load: 79, capacity: 40 })).toBeNull();
+    expect(capacityFlag({ load: 10, capacity: 400 })).toBeNull();
+    const flagged = planSites(shelters, shelters.plan.length).filter((site) => capacityFlag(site) !== null);
+    for (const site of flagged) expect(site.capacity === null || site.load >= 2 * site.capacity).toBe(true);
+  });
 });

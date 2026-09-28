@@ -8,11 +8,15 @@
 import { memo, useId, useState, type ReactNode } from "react";
 
 import {
+  checkDifference,
+  coverageComplete,
   densityLegend,
   externalChecksByRole,
   formatHourStamp,
   formatShortDate,
   rgbaCss,
+  smallestFloodedExtent,
+  thaiYear,
   TIMELINE_END_T,
   type AccessInfo,
   type ExternalCheck,
@@ -26,24 +30,28 @@ import {
   type TimelineManifest,
   type TimelineStats,
 } from "@/lib/flood-timeline";
+import { GLOSSARY, localizedText, placeNameText, plainManifestText, type GlossaryId } from "@/lib/flood-timeline-copy";
 import {
   candidateReasons,
+  capacityFlag,
   countedInReportedSet,
+  equityWhy,
+  equityWording,
   evacuationEquityGap,
   osmReference,
   otherCandidates,
+  planCoverageSentence,
   planSites,
   reportedSetExclusions,
   reportedShelterCheck,
   reportedSiteCounts,
   reportedSiteRole,
-  shareOfAchievable,
+  type AccessGroupSums,
   type AccessSnapshot,
-  type EquityGap,
   type PlannedShelter,
   type ReportedCheck,
 } from "@/lib/flood-timeline-evacuation";
-import type { ShelterSetChoice } from "@/lib/flood-timeline-link";
+import type { AccessScopeChoice, ShelterSetChoice } from "@/lib/flood-timeline-link";
 
 import styles from "./mae-sai-flood-timeline.module.css";
 
@@ -92,10 +100,13 @@ export const evidenceLabel = (strength: string, language: Language) => pick(EVID
 export const locationMethodLabel = (method: string, language: Language) => pick(LOCATION_METHODS, method, language);
 export const confidenceLabel = (level: string, language: Language) => pick(CONFIDENCE, level, language);
 
-/** Candidate name, or "Unnamed place of worship (OSM way 123)" when OpenStreetMap has none. */
+/**
+ * Candidate name (in English, a Thai-only name gets a type label first: "Mosque · มัสยิด…"), or "Unnamed place of
+ * worship (OSM way 123)" when OpenStreetMap has none.
+ */
 export function candidateTitle(candidate: Pick<ShelterCandidate, "name" | "kind" | "source">, language: Language): string {
   const name = candidate.name.trim();
-  if (name) return name;
+  if (name) return placeNameText(name, language, candidateKindLabel(candidate.kind, "en"));
   const reference = osmReference(candidate.source);
   const osm = reference ? `OSM ${reference.type} ${reference.id}` : candidate.source;
   const kind = candidateKindLabel(candidate.kind, language);
@@ -202,11 +213,13 @@ export function ThemeEyebrow({ prefix, theme, language }: { prefix?: string; the
 }
 
 /**
- * Confidence class, its reason and the source timestamp that the manifest gives for the figures in a card (the manifest
- * text stays in its English original). `children` adds card-specific status lines before the timestamp.
+ * One-line confidence chip for a card; it opens to the confidence reason, card-specific method notes (`children`) and
+ * the source timestamp the manifest gives for the card's figures. Manifest sentences are shown in Thai where the page
+ * knows a translation, otherwise in their English original. The shared "How to read these numbers" box explains the
+ * classes once for the whole page.
  */
 export function ProvenanceNote({ kind, confidence, reason, timestamp, language, children }: {
-  kind: "access" | "plan" | "reported";
+  kind: "access" | "plan" | "reported" | "impact" | "people" | "routes";
   confidence: string;
   reason?: string;
   timestamp: string;
@@ -215,13 +228,20 @@ export function ProvenanceNote({ kind, confidence, reason, timestamp, language, 
 }) {
   const t = translator(language);
   const level = confidenceLabel(confidence.toLowerCase(), language);
+  const why = reason ? localizedText(reason, language) : null;
+  const when = localizedText(timestamp, language);
   return (
-    <p className={styles.provenance} data-testid={`${kind}-provenance`}>
-      <span className={styles.confidence}>{t("CONFIDENCE", "ความเชื่อมั่น")}: {language === "th" ? level : level.toUpperCase()}</span>{" "}
-      {reason && <><span lang="en">{reason}</span>{" "}</>}
-      {children}{children ? " " : null}
-      {t("Source timestamp", "เวลาของข้อมูลต้นทาง")}: <span lang="en">{timestamp}</span>{language === "en" ? "." : ""}
-    </p>
+    <details className={styles.provenance} data-testid={`${kind}-provenance`}>
+      <summary>
+        <span className={styles.confidence}>{t("CONFIDENCE", "ความเชื่อมั่น")}: {language === "th" ? level : level.toUpperCase()}</span>
+        <span className={styles.provenanceHint}>{t("Why, method and source dates", "เหตุผล วิธีการ และวันที่ของข้อมูล")}</span>
+      </summary>
+      <p>
+        {why && <><span lang={why.lang}>{why.text}</span>{" "}</>}
+        {children}{children ? " " : null}
+        {t("Source timestamp", "เวลาของข้อมูลต้นทาง")}: <span lang={when.lang}>{when.text}</span>{language === "en" ? "." : ""}
+      </p>
+    </details>
   );
 }
 
@@ -264,38 +284,99 @@ export const occupancyText = (shelter: Pick<ReportedShelter, "reported_capacity_
 
 export const reportedName = (shelter: Pick<ReportedShelter, "name_en" | "name_th">, language: Language) => (language === "th" ? shelter.name_th : shelter.name_en);
 
+/**
+ * A technical term with its short definition on hover or keyboard focus (the definition is also the term's
+ * accessible description). Definitions come from the page glossary, which "How to read these numbers" lists in full.
+ */
+export function Term({ id, language, children }: { id: GlossaryId; language: Language; children: ReactNode }) {
+  const tipId = useId();
+  return (
+    <span className={styles.term}>
+      <span className={styles.termLabel} tabIndex={0} aria-describedby={tipId}>{children}</span>
+      <span role="tooltip" id={tipId} className={styles.termTip}>{GLOSSARY[id].definition[language]}</span>
+    </span>
+  );
+}
+
+/** "an" before a number read with a leading vowel sound (8, 11, 18, 80–89 …), otherwise "a". */
+export function indefiniteArticle(value: number): "a" | "an" {
+  const digits = String(Math.round(Math.abs(value)));
+  return digits.startsWith("8") || digits === "11" || digits === "18" ? "an" : "a";
+}
+
+/** Warning for a plan site with no capacity estimate or one far below the residents assigned to it; "" when neither. */
+export function capacityFlagText(site: Pick<PlannedShelter, "load" | "capacity">, language: Language): string {
+  const t = translator(language);
+  const flag = capacityFlag(site);
+  if (flag === "unknown") {
+    return t("Capacity unknown (no mapped building footprint): check on the ground", "ไม่ทราบความจุ (ไม่มีขอบเขตอาคารในแผนที่): ควรตรวจสอบในพื้นที่");
+  }
+  if (flag === "far_below" && site.capacity !== null) {
+    return t(
+      `Capacity far below its load: ≈ ${formatPeople(site.capacity)} places for ≈ ${formatPeople(site.load)} residents assigned`,
+      `ความจุต่ำกว่าภาระมาก: รองรับได้ ≈ ${formatPeople(site.capacity)} คน แต่ได้รับผู้อพยพ ≈ ${formatPeople(site.load)} คน`,
+    );
+  }
+  return "";
+}
+
 // --- People in flood water ------------------------------------------------------------------------------
 
-/** Modelled residents in reconstructed water: district total and per subdistrict, with the WorldPop caveat. */
-export function PeopleInWaterCard({ population, stats, names, scale, language }: {
+/**
+ * Modelled residents in reconstructed water: district total and per subdistrict, with the WorldPop caveat. These are
+ * population-grid counts; the access and plan cards count residents at road nodes, which the card says.
+ */
+export function PeopleInWaterCard({ population, stats, names, scale, language, accessResidents, demandPeople, provenance }: {
   population: PopulationInfo;
   stats: TimelineStats;
   names: Record<string, TambonProps>;
   /** Largest subdistrict value over the keyframes, for bar lengths. */
   scale: number;
   language: Language;
+  /** Residents snapped to road nodes (the access card's "all residents" total), when the access scenario exists. */
+  accessResidents?: number;
+  /** Residents at road nodes whose home floods at the modelled peak (the plan's demand). */
+  demandPeople?: number;
+  /** Confidence, reason and source timestamp of the water model behind the count, for the card's confidence chip. */
+  provenance?: { confidence: string; reason: string; timestamp: string };
 }) {
   const t = translator(language);
   const residents = Object.values(population.tambon_totals).reduce((sum, value) => sum + value, 0);
   const perTambon = stats.tambon_people_in_water ?? {};
+  const source = plainManifestText(population.source);
+  const counting = t(
+    "A home counts when its 10 m cell of the population grid is under the reconstructed water; the river channel is excluded.",
+    "นับบ้านเมื่อช่อง 10 ม. ของกริดประชากรอยู่ใต้น้ำจำลอง ไม่รวมร่องน้ำ",
+  );
   return (
     <section className={styles.card} aria-labelledby="mae-sai-people-title">
       <ThemeEyebrow theme="protect_lives" language={language} />
       <h2 id="mae-sai-people-title">{t("People in flood water (model)", "ประชากรในพื้นที่น้ำท่วม (แบบจำลอง)")}</h2>
       <dl className={styles.kpis}>
         <div>
-          <dt>{t("Modelled residents in reconstructed water now", "ผู้อยู่อาศัยตามแบบจำลองในพื้นที่น้ำจำลองขณะนี้")}</dt>
+          <dt>{t("Modelled residents in reconstructed water, at this replay hour", "ผู้อยู่อาศัยตามแบบจำลองในพื้นที่น้ำจำลอง ณ ชั่วโมงนี้ของการย้อนดู")}</dt>
           <dd data-tone="alert" data-testid="people-in-water">{formatPeople(stats.people_in_water ?? 0)}</dd>
         </div>
         <div>
-          <dt>{t("Modelled residents in the eight subdistricts", "ผู้อยู่อาศัยตามแบบจำลองใน 8 ตำบล")}</dt>
+          <dt>{t("Modelled residents in the eight subdistricts (population grid)", "ผู้อยู่อาศัยตามแบบจำลองใน 8 ตำบล (กริดประชากร)")}</dt>
           <dd>{formatPeople(residents)}</dd>
         </div>
       </dl>
       <p className={styles.muted}>{t(
-        `${population.source}, ${population.timestamp} (${population.licence}): modelled residents, not a census count, not the 2024 population and not visitors or traders at the border market. A home counts when its 10 m cell is under the reconstructed water; the river channel is excluded.`,
-        `${population.source} ${population.timestamp} (${population.licence}): ผู้อยู่อาศัยตามแบบจำลอง ไม่ใช่ตัวเลขสำมะโน ไม่ใช่ประชากรปี 2024 และไม่รวมนักท่องเที่ยวหรือผู้ค้าที่ตลาดชายแดน นับบ้านเมื่อช่อง 10 ม. อยู่ใต้น้ำจำลอง ไม่รวมร่องน้ำ`,
-      )}</p>
+        `${source}, ${population.timestamp} (${population.licence}): modelled residents, not a census count, not the 2024 population and not visitors or traders at the border market.`,
+        `${source} ${population.timestamp} (${population.licence}): ผู้อยู่อาศัยตามแบบจำลอง ไม่ใช่ตัวเลขสำมะโน ไม่ใช่ประชากรปี ${thaiYear(2024)} และไม่รวมนักท่องเที่ยวหรือผู้ค้าที่ตลาดชายแดน`,
+      )}{provenance ? null : ` ${counting}`}</p>
+      {provenance && (
+        <ProvenanceNote kind="people" confidence={provenance.confidence} reason={provenance.reason} timestamp={provenance.timestamp} language={language}>
+          {counting}{" "}{t(`Residents: ${source}, ${population.timestamp}.`, `ผู้อยู่อาศัย: ${source} ${population.timestamp}`)}
+        </ProvenanceNote>
+      )}
+      {accessResidents !== undefined && (
+        <p className={styles.muted} data-testid="people-reconcile">{t(
+          `Where the totals differ: this card counts the population grid cell by cell. The access and plan cards count the same WorldPop residents snapped to road nodes instead: ${formatPeople(accessResidents)} in all${demandPeople !== undefined ? `, of whom ${formatPeople(demandPeople)} have a home node that floods at the modelled peak` : ""}.`,
+          `เหตุที่ตัวเลขรวมต่างกัน: การ์ดนี้นับตามกริดประชากรทีละช่อง ส่วนการ์ดการเข้าถึงและการ์ดแผนนับผู้อยู่อาศัย WorldPop ชุดเดียวกันที่จุดถนนแทน รวม ${formatPeople(accessResidents)} คน${demandPeople !== undefined ? ` ในจำนวนนี้ ${formatPeople(demandPeople)} คนมีจุดบ้านที่ถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง` : ""}`,
+        )}</p>
+      )}
       <h3>{t("People in flood water by subdistrict", "ประชากรในพื้นที่น้ำท่วมรายตำบล")}</h3>
       <ul className={styles.bars}>
         {Object.entries(perTambon).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([id, value]) => (
@@ -340,23 +421,6 @@ export function DensityLegend({ maxPerHa, language, wetOnly }: { maxPerHa: numbe
 
 // --- Evacuation access ----------------------------------------------------------------------------------
 
-function equityText(gap: EquityGap, language: Language): string {
-  if (language === "en") return gap.interpretation;
-  const ratio = gap.ratio === null ? "" : String(gap.ratio);
-  switch (gap.status) {
-    case "no_vulnerable_denominator": return "คำนวณช่องว่างความเท่าเทียมไม่ได้: ไม่มีประชากรกลุ่มเปราะบางเป็นตัวหาร";
-    case "no_non_vulnerable_denominator": return "คำนวณช่องว่างความเท่าเทียมไม่ได้: ไม่มีประชากรกลุ่มอื่นเป็นตัวหาร";
-    case "no_loss": return "ไม่พบช่องว่าง: ทั้งสองกลุ่มไม่สูญเสียการเข้าถึง";
-    case "undefined_ratio": return "หาอัตราส่วนไม่ได้ เพราะกลุ่มเปราะบางสูญเสียการเข้าถึงขณะที่กลุ่มอื่นไม่สูญเสียเลย";
-    default:
-      return gap.band === "higher"
-        ? `กลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่ากลุ่มอื่น ${ratio} เท่า`
-        : gap.band === "lower"
-          ? `กลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงเป็น ${ratio} เท่าของกลุ่มอื่น`
-          : "อัตราการสูญเสียการเข้าถึงของทั้งสองกลุ่มใกล้เคียงกัน";
-  }
-}
-
 /** People who lost access over the whole replay for the selected set, with the playhead. */
 export function AccessChart({ series, time, language, label }: { series: Float64Array; time: number; language: Language; label: string }) {
   const t = translator(language);
@@ -379,8 +443,8 @@ export function AccessChart({ series, time, language, label }: { series: Float64
   const now = Math.min(hours - 1, Math.max(0, Math.floor(time * 24 + 1e-6)));
   const peakHour = series.findIndex((value) => value === peak);
   const summary = t(
-    `${label}: people who lost walking access to a dry shelter, 9–19 Sep. Peak ${formatPeople(peak)}${peakHour >= 0 ? ` at ${formatHourStamp(peakHour, "en")}` : ""}; now ${formatPeople(series[now] ?? 0)}.`,
-    `${label}: ผู้ที่สูญเสียการเดินถึงที่พักพิงที่แห้ง 9–19 ก.ย. สูงสุด ${formatPeople(peak)} คน${peakHour >= 0 ? ` เมื่อ ${formatHourStamp(peakHour, "th")}` : ""} ขณะนี้ ${formatPeople(series[now] ?? 0)} คน`,
+    `${label}: people who lost walking access to a dry shelter, 9–19 Sep. Peak ${formatPeople(peak)}${peakHour >= 0 ? ` at ${formatHourStamp(peakHour, "en")}` : ""}; ${formatPeople(series[now] ?? 0)} at this replay hour.`,
+    `${label}: ผู้ที่สูญเสียการเดินถึงที่พักพิงที่แห้ง 9–19 ก.ย. สูงสุด ${formatPeople(peak)} คน${peakHour >= 0 ? ` เมื่อ ${formatHourStamp(peakHour, "th")}` : ""} ณ ชั่วโมงนี้ของการย้อนดู ${formatPeople(series[now] ?? 0)} คน`,
   );
   return (
     <figure className={styles.miniChart}>
@@ -404,12 +468,35 @@ export function AccessChart({ series, time, language, label }: { series: Float64
   );
 }
 
+/** The shared plan-size slider label, identical on the access card and the plan card. */
+const planSizeLabel = (k: number, language: Language) => translator(language)(`Plan size k = ${k}`, `ขนาดแผน k = ${k}`);
+
+/** Live plan-size sentence under a plan-size slider, plus "(default …)" when k is the default size. */
+function PlanSizeSentence({ shelters, k, language }: { shelters: ShelterInfo; k: number; language: Language }) {
+  const t = translator(language);
+  return (
+    <p className={styles.kSentence} data-testid="plan-k-sentence">
+      <span className={styles.tagModel}>{t("Model", "แบบจำลอง")}</span>{" "}
+      {planCoverageSentence(shelters, k, language)}
+      {k === shelters.knee_k && (
+        <span className={styles.kDefault}>{t(
+          " (default: the smallest plan that gets most of the benefit)",
+          " (ค่าเริ่มต้น: แผนที่เล็กที่สุดที่ได้ประโยชน์ส่วนใหญ่แล้ว)",
+        )}</span>
+      )}
+    </p>
+  );
+}
+
 /**
- * Evacuation access at this stage for the chosen shelter set: who has no dry shelter within a 2 km walk (lost
- * during the flood versus never within reach), per subdistrict, the Evacuation Equity Gap and the replay curve.
+ * Evacuation access at this stage for the chosen shelter set and population scope: who lost walking access to a dry
+ * shelter because of the flood (the headline), who was already out of reach before it (context), per subdistrict,
+ * the Evacuation Equity Gap and the replay curve. The default scope counts the residents whose homes flood at the
+ * modelled peak, the same people the ranked plan is built for, so the reported set and the plan compare like with like.
  */
 export function AccessCard({
-  access, shelters, snapshot, series, time, names, tambonTotals, shelterSet, planK, onShelterSet, onPlanK, showCutoff, onShowCutoff, language, status,
+  access, shelters, snapshot, series, time, names, tambonTotals, shelterSet, planK, onShelterSet, onPlanK, showCutoff, onShowCutoff,
+  scope, onScope, scopeTotals, allResidents, floodedResidents, language, status,
 }: {
   access: AccessInfo;
   shelters: ShelterInfo;
@@ -424,6 +511,13 @@ export function AccessCard({
   onPlanK: (value: number) => void;
   showCutoff: boolean;
   onShowCutoff: (value: boolean) => void;
+  /** Whose access is counted: residents whose homes flood at the modelled peak, or every resident at a road node. */
+  scope: AccessScopeChoice;
+  onScope: (value: AccessScopeChoice) => void;
+  /** Residents (all, proxy-vulnerable, others) in the chosen scope; null until the node file is read. */
+  scopeTotals: AccessGroupSums | null;
+  allResidents: number;
+  floodedResidents: number;
   language: Language;
   status: "loading" | "ready" | "error";
 }) {
@@ -431,34 +525,53 @@ export function AccessCard({
   const sliderId = useId();
   const distanceKm = access.threshold_m / 1000;
   const setLabel = shelterSet === "reported"
-    ? t("Shelters reported used in Sep 2024", "ที่พักพิงที่มีรายงานว่าใช้จริงในเดือน ก.ย. 2024")
+    ? t("Shelters reported used in Sep 2024", "ที่พักพิงที่มีรายงานว่าใช้จริงในเดือน ก.ย. 2567 (2024)")
     : t(`Ranked plan, first ${planK} site${planK === 1 ? "" : "s"}`, `แผนจัดอันดับ ${planK} แห่งแรก`);
-  const gap = snapshot ? evacuationEquityGap({
+  const totals = scopeTotals ?? (scope === "all"
+    ? { population: access.totals.population, vulnerable: access.totals.vulnerable, nonVulnerable: access.totals.non_vulnerable }
+    : null);
+  const gap = snapshot && totals ? evacuationEquityGap({
     vulnerableLost: snapshot.lost.vulnerable,
-    vulnerableTotal: access.totals.vulnerable,
+    vulnerableTotal: totals.vulnerable,
     nonVulnerableLost: snapshot.lost.nonVulnerable,
-    nonVulnerableTotal: access.totals.non_vulnerable,
+    nonVulnerableTotal: totals.nonVulnerable,
   }) : null;
+  const wording = gap ? equityWording(gap, language) : null;
+  const why = gap ? equityWhy(gap, language) : null;
   const without = snapshot ? snapshot.lost.population + snapshot.never.population : 0;
   const counted = reportedSiteCounts(shelters).counted;
   const exclusions = shelterSet === "reported" ? reportedSetExclusions(shelters) : [];
+  const rule = localizedText(shelters.reported_access_set_rule, language);
+  const scopeText = scope === "flooded"
+    ? t("residents at road nodes whose homes flood at the modelled peak", "ผู้อยู่อาศัยที่จุดถนนซึ่งบ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง")
+    : t("all residents at road nodes", "ผู้อยู่อาศัยทั้งหมดที่จุดถนน");
+  const total = totals ? formatPeople(totals.population) : "…";
   return (
     <section className={styles.card} aria-labelledby="mae-sai-access-title" data-testid="access-card">
       <p className={styles.eyebrow}>{t("SCENARIO (T1 MODEL) · EVACUATION ACCESS", "สถานการณ์จำลอง (T1) · การเข้าถึงการอพยพ")}</p>
       <h2 id="mae-sai-access-title">{t("Walking access to a dry shelter (scenario)", "การเดินถึงที่พักพิงที่แห้ง (สถานการณ์จำลอง)")}</h2>
-      <p className={styles.muted}>{t(
-        `Planning scenario, not observed evacuation outcomes: modelled residents at road nodes who can still walk to an open, dry shelter of the chosen set within ${distanceKm} km on roads that are still passable (about 30 minutes at 4 km/h). A road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it; levels every 0.05 m of the assumed stage.`,
-        `สถานการณ์เพื่อการวางแผน ไม่ใช่ผลการอพยพที่สังเกตได้จริง: ผู้อยู่อาศัยตามแบบจำลองที่จุดถนนซึ่งยังเดินถึงที่พักพิงที่เปิดและแห้งของชุดที่เลือกได้ภายใน ${distanceKm} กม. บนถนนที่ยังสัญจรได้ (ประมาณ 30 นาทีที่ 4 กม./ชม.) ถนนปิดเมื่อน้ำจำลองลึก 0.3 ม. และที่พักพิงหยุดใช้งานเมื่อน้ำถึง ประเมินทุก 0.05 ม. ของระดับน้ำสมมุติ`,
-      )}</p>
+      <p className={styles.muted}>
+        {t("Planning scenario, not observed evacuation outcomes (", "สถานการณ์เพื่อการวางแผน ไม่ใช่ผลการอพยพที่สังเกตได้จริง (")}
+        <Term id="t1" language={language}>{t("T1 scenario", "สถานการณ์จำลองระดับ T1")}</Term>
+        {t("): modelled residents at ", "): ผู้อยู่อาศัยตามแบบจำลองที่")}
+        <Term id="road_nodes" language={language}>{t("road nodes", "จุดถนน")}</Term>
+        {t(
+          ` who can still walk to an open, dry shelter of the chosen set within ${distanceKm} km on roads that are still passable (about 30 minutes on foot).`,
+          `ซึ่งยังเดินถึงที่พักพิงที่เปิดและแห้งของชุดที่เลือกได้ภายใน ${distanceKm} กม. บนถนนที่ยังสัญจรได้ (เดินประมาณ 30 นาที)`,
+        )}
+      </p>
       <ProvenanceNote kind="access" confidence={access.confidence} reason={access.confidence_reason} timestamp={access.source_timestamp} language={language}>
-        {assumedWaterText(language)}
+        {t(
+          "Method: walking at about 4 km/h; a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it; access is evaluated every 0.05 m of the assumed stage.",
+          "วิธีการ: เดินประมาณ 4 กม./ชม. ถนนปิดเมื่อน้ำจำลองลึก 0.3 ม. และที่พักพิงหยุดใช้งานเมื่อน้ำถึง ประเมินการเข้าถึงทุก 0.05 ม. ของระดับน้ำสมมุติ",
+        )}{" "}{assumedWaterText(language)}
       </ProvenanceNote>
       <fieldset className={styles.segmented}>
         <legend>{t("Shelter set", "ชุดที่พักพิง")}</legend>
         <div>
           <label>
             <input type="radio" name="mae-sai-shelter-set" value="reported" checked={shelterSet === "reported"} onChange={() => onShelterSet("reported")} />
-            <span>{t(`Reported used in Sep 2024 (${counted} sites counted)`, `มีรายงานว่าใช้ ก.ย. 2024 (นับ ${counted} แห่ง)`)}</span>
+            <span>{t(`Reported used in Sep 2024 (${counted} sites counted)`, `มีรายงานว่าใช้ ก.ย. 2567 (2024) (นับ ${counted} แห่ง)`)}</span>
           </label>
           <label>
             <input type="radio" name="mae-sai-shelter-set" value="plan" checked={shelterSet === "plan"} onChange={() => onShelterSet("plan")} />
@@ -468,20 +581,37 @@ export function AccessCard({
       </fieldset>
       {shelterSet === "plan" && shelters.plan.length > 0 && (
         <div className={styles.kField}>
-          <label htmlFor={sliderId}>{t(`Plan size k = ${planK}`, `จำนวนที่พักพิงในแผน k = ${planK}`)}{planK === shelters.knee_k ? t(" (default: the knee)", " (ค่าเริ่มต้น: จุดหักเห)") : ""}</label>
+          <label htmlFor={sliderId}>{planSizeLabel(planK, language)}</label>
           <input id={sliderId} type="range" min={1} max={shelters.plan.length} step={1} value={planK}
-            aria-valuetext={t(`${planK} of ${shelters.plan.length} ranked sites`, `${planK} จาก ${shelters.plan.length} แห่งที่จัดอันดับ`)}
+            aria-valuetext={planCoverageSentence(shelters, planK, language)}
             onChange={(event) => onPlanK(Number(event.target.value))} />
-          <span className={styles.muted}>1 … {shelters.plan.length}</span>
+          <PlanSizeSentence shelters={shelters} k={planK} language={language} />
         </div>
       )}
+      <fieldset className={styles.segmented} data-testid="access-scope">
+        <legend>{t("Residents counted", "ผู้อยู่อาศัยที่นับ")}</legend>
+        <div>
+          <label>
+            <input type="radio" name="mae-sai-access-scope" value="flooded" checked={scope === "flooded"} onChange={() => onScope("flooded")} />
+            <span>{t(`Residents whose homes flood at the peak (${formatPeople(floodedResidents)})`, `ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุด (${formatPeople(floodedResidents)})`)}</span>
+          </label>
+          <label>
+            <input type="radio" name="mae-sai-access-scope" value="all" checked={scope === "all"} onChange={() => onScope("all")} />
+            <span>{t(`All residents at road nodes (${formatPeople(allResidents)})`, `ผู้อยู่อาศัยทั้งหมดที่จุดถนน (${formatPeople(allResidents)})`)}</span>
+          </label>
+        </div>
+      </fieldset>
+      <p className={styles.note} data-testid="plan-optimises">{t(
+        `What the ranked plan optimises: sites that as many as possible of the ${formatPeople(shelters.demand_people)} residents whose homes flood at the modelled peak can walk to before the water rises (roads normal). It does not try to serve every resident at a road node, so counted against all residents it can look worse than the shelters used in 2024.`,
+        `สิ่งที่แผนจัดอันดับมุ่งให้ดีที่สุด: สถานที่ที่ผู้อยู่อาศัย ${formatPeople(shelters.demand_people)} คนซึ่งบ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลองเดินไปถึงได้มากที่สุดก่อนน้ำขึ้น (ถนนปกติ) แผนไม่ได้มุ่งให้บริการผู้อยู่อาศัยทุกคนที่จุดถนน เมื่อนับเทียบกับผู้อยู่อาศัยทั้งหมดจึงอาจดูแย่กว่าที่พักพิงที่ใช้จริงในปี 2567 (2024)`,
+      )}</p>
       {shelterSet === "reported" && (
         <p className={styles.caveat} data-testid="reported-set-caveat">
           {t(
             `The ${counted} counted sites are assumed open for the whole replay, from before the flood.`,
             `สมมุติว่าสถานที่ที่นับรวม ${counted} แห่งเปิดใช้ตลอดช่วงการย้อนดู ตั้งแต่ก่อนน้ำท่วม`,
           )}
-          {" "}{t("Which sites count", "เกณฑ์การนับ")}: <span lang="en">{shelters.reported_access_set_rule}</span>
+          {" "}{t("Which sites count", "เกณฑ์การนับ")}: <span lang={rule.lang}>{rule.text}</span>
           {exclusions.length > 0 && <>
             {" "}{t("Mapped but not counted", "แสดงบนแผนที่แต่ไม่นับรวม")}:{" "}
             {exclusions.map((shelter) => reportedName(shelter, language)).join("; ")}{language === "en" ? "." : ""}
@@ -490,61 +620,68 @@ export function AccessCard({
       )}
       {status === "error" ? (
         <p className={styles.warningNote} role="alert">{t("The access scenario could not be loaded; the other figures remain available.", "โหลดสถานการณ์การเข้าถึงไม่สำเร็จ ตัวเลขอื่นยังใช้ได้")}</p>
-      ) : !snapshot ? (
+      ) : !snapshot || !totals ? (
         <p className={styles.muted} role="status">{t("Preparing the access scenario…", "กำลังเตรียมสถานการณ์การเข้าถึง…")}</p>
       ) : (
         <>
           <dl className={styles.kpis}>
             <div className={styles.kpiWide}>
-              <dt>{t(`No dry shelter of this set within a ${distanceKm} km walk, now`, `ไม่มีที่พักพิงที่แห้งของชุดนี้ในระยะเดิน ${distanceKm} กม. ขณะนี้`)}</dt>
-              <dd data-tone="alert" data-testid="access-without">{formatPeople(without)}<small> / {formatPeople(access.totals.population)}</small></dd>
+              <dt>{t("Lost walking access because of the flood, at this replay hour", "สูญเสียการเดินถึงที่พักพิงเพราะน้ำท่วม ณ ชั่วโมงนี้ของการย้อนดู")}</dt>
+              <dd data-tone="alert" data-testid="access-lost">{formatPeople(snapshot.lost.population)}<small> {t(`of ${total}`, `จาก ${total}`)}</small></dd>
             </div>
-            <div>
-              <dt>{t("Lost access during the flood", "สูญเสียการเข้าถึงระหว่างน้ำท่วม")}</dt>
-              <dd data-tone="alert" data-testid="access-lost">{formatPeople(snapshot.lost.population)}</dd>
-            </div>
-            <div>
-              <dt>{t("Never had one within reach, even before the flood", "ไม่มีในระยะเดินแม้ก่อนน้ำท่วม")}</dt>
-              <dd data-tone="warn">{formatPeople(snapshot.never.population)}</dd>
+            <div className={`${styles.kpiWide} ${styles.kpiContext}`}>
+              <dt>{t(
+                `Already more than ${distanceKm} km from a shelter of this set before the flood`,
+                `อยู่ห่างที่พักพิงของชุดนี้เกิน ${distanceKm} กม. ตั้งแต่ก่อนน้ำท่วม`,
+              )}</dt>
+              <dd data-testid="access-never">{formatPeople(snapshot.never.population)}<small> {t(`of ${total}`, `จาก ${total}`)}</small></dd>
             </div>
           </dl>
-          <p className={styles.muted}>{setLabel} · {t("modelled residents (WorldPop 2020) at road nodes", "ผู้อยู่อาศัยตามแบบจำลอง (WorldPop 2020) ที่จุดถนน")}</p>
-          {gap && (
+          <p className={styles.muted} data-testid="access-without">{t(
+            `No dry shelter of this set within a ${distanceKm} km walk at this replay hour, both groups together: ${formatPeople(without)} / ${total}.`,
+            `ไม่มีที่พักพิงที่แห้งของชุดนี้ในระยะเดิน ${distanceKm} กม. ณ ชั่วโมงนี้ของการย้อนดู รวมทั้งสองกลุ่ม: ${formatPeople(without)} / ${total}`,
+          )}</p>
+          <p className={styles.muted}>{setLabel} · {scopeText} · {t("modelled residents (WorldPop 2020)", "ผู้อยู่อาศัยตามแบบจำลอง (WorldPop 2020)")}</p>
+          {gap && wording && (
             <div className={styles.equity} data-testid="equity-gap">
               <p>
-                <strong>{t("Evacuation Equity Gap", "ช่องว่างความเท่าเทียมในการอพยพ")}: {gap.ratio === null ? t("undefined", "หาค่าไม่ได้") : gap.ratio}</strong>
-                {" · "}<span>{equityText(gap, language)}</span>
+                <strong>{t("Evacuation Equity Gap", "ช่องว่างความเท่าเทียมในการอพยพ")}: {wording.value}</strong>
+                {wording.sentence && <>{" · "}<span>{wording.sentence}</span></>}
               </p>
+              {why && <p data-testid="equity-why">{why}</p>}
               {gap.vulnerableRate !== null && gap.nonVulnerableRate !== null && (
                 <p className={styles.muted}>{t(
-                  `Proxy-vulnerable residents who lost access: ${percent(gap.vulnerableRate, 2)} (${formatPeople(snapshot.lost.vulnerable)} of ${formatPeople(access.totals.vulnerable)}); everyone else: ${percent(gap.nonVulnerableRate, 2)} (${formatPeople(snapshot.lost.nonVulnerable)} of ${formatPeople(access.totals.non_vulnerable)}).`,
-                  `กลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง: ${percent(gap.vulnerableRate, 2)} (${formatPeople(snapshot.lost.vulnerable)} จาก ${formatPeople(access.totals.vulnerable)}) กลุ่มอื่น: ${percent(gap.nonVulnerableRate, 2)} (${formatPeople(snapshot.lost.nonVulnerable)} จาก ${formatPeople(access.totals.non_vulnerable)})`,
+                  `Proxy-vulnerable residents who lost access: ${formatPeople(snapshot.lost.vulnerable)} of ${formatPeople(totals.vulnerable)}; everyone else: ${formatPeople(snapshot.lost.nonVulnerable)} of ${formatPeople(totals.nonVulnerable)}.`,
+                  `กลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง: ${formatPeople(snapshot.lost.vulnerable)} จาก ${formatPeople(totals.vulnerable)} คน กลุ่มอื่น: ${formatPeople(snapshot.lost.nonVulnerable)} จาก ${formatPeople(totals.nonVulnerable)} คน`,
                 )}</p>
               )}
-              <p className={styles.muted}>{t(
-                "Ratio of loss rates (vulnerable ÷ everyone else); above 1.2 means vulnerable residents are more likely to lose access, below 0.8 less likely. “Vulnerable” is this repository's terrain/remoteness proxy (homes on slopes of 8° or more, or 750 m or more from a drivable road), not demographic vulnerability such as age, disability or income.",
-                "อัตราส่วนของอัตราการสูญเสีย (กลุ่มเปราะบาง ÷ กลุ่มอื่น) มากกว่า 1.2 หมายถึงกลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.8 หมายถึงน้อยกว่า “กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (บ้านบนความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่ความเปราะบางทางประชากร เช่น อายุ ความพิการ หรือรายได้",
-              )}</p>
+              <details className={styles.more}>
+                <summary>{t("What the ratio and “vulnerable” mean", "อัตราส่วนและ “กลุ่มเปราะบาง” หมายถึงอะไร")}</summary>
+                <p className={styles.muted}>{t(
+                "Ratio of loss rates (vulnerable ÷ everyone else), two decimals; above 1.20 means vulnerable residents are more likely to lose access, below 0.80 less likely. “Vulnerable” is this repository's terrain/remoteness proxy (homes on slopes of 8° or more, or 750 m or more from a drivable road), not demographic vulnerability such as age, disability or income.",
+                "อัตราส่วนของอัตราการสูญเสีย (กลุ่มเปราะบาง ÷ กลุ่มอื่น) ทศนิยมสองตำแหน่ง มากกว่า 1.20 หมายถึงกลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.80 หมายถึงน้อยกว่า “กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (บ้านบนความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่ความเปราะบางทางประชากร เช่น อายุ ความพิการ หรือรายได้",
+                )}</p>
+              </details>
             </div>
           )}
           <h3>{t("Without a dry shelter within reach, by subdistrict", "ไม่มีที่พักพิงที่แห้งในระยะเดิน รายตำบล")}</h3>
           <ul className={styles.stackLegend} aria-hidden="true">
-            <li><i className={styles.segLost} />{t("lost during the flood", "สูญเสียระหว่างน้ำท่วม")}</li>
-            <li><i className={styles.segNever} />{t("never within reach", "ไม่เคยอยู่ในระยะ")}</li>
+            <li><i className={styles.segLost} />{t("lost because of the flood", "สูญเสียเพราะน้ำท่วม")}</li>
+            <li><i className={styles.segNever} />{t("already out of reach before the flood", "อยู่นอกระยะตั้งแต่ก่อนน้ำท่วม")}</li>
           </ul>
           <ul className={styles.bars}>
-            {access.tambons.map((id, place) => ({ id, lost: snapshot.lostByTambon[place] ?? 0, never: snapshot.neverByTambon[place] ?? 0, total: tambonTotals?.[place] ?? 0 }))
+            {access.tambons.map((id, place) => ({ id, lost: snapshot.lostByTambon[place] ?? 0, never: snapshot.neverByTambon[place] ?? 0, placeTotal: tambonTotals?.[place] ?? 0 }))
               .sort((a, b) => (b.lost + b.never) - (a.lost + a.never) || a.id.localeCompare(b.id))
-              .map(({ id, lost, never, total }) => (
+              .map(({ id, lost, never, placeTotal }) => (
                 <li key={id}>
                   <span className={styles.barName}><span>{names[id]?.[language] ?? id}</span></span>
                   <span className={`${styles.barTrack} ${styles.stackTrack}`} aria-hidden="true">
-                    <span className={styles.segLost} style={{ width: `${total > 0 ? Math.min(100, (lost / total) * 100) : 0}%` }} />
-                    <span className={styles.segNever} style={{ width: `${total > 0 ? Math.min(100, (never / total) * 100) : 0}%` }} />
+                    <span className={styles.segLost} style={{ width: `${placeTotal > 0 ? Math.min(100, (lost / placeTotal) * 100) : 0}%` }} />
+                    <span className={styles.segNever} style={{ width: `${placeTotal > 0 ? Math.min(100, (never / placeTotal) * 100) : 0}%` }} />
                   </span>
-                  <span className={styles.barValue} title={t(`lost ${formatPeople(lost)} · never ${formatPeople(never)} · of ${formatPeople(total)}`, `สูญเสีย ${formatPeople(lost)} · ไม่เคย ${formatPeople(never)} · จาก ${formatPeople(total)}`)}>
+                  <span className={styles.barValue} title={t(`lost ${formatPeople(lost)} · already out of reach ${formatPeople(never)} · of ${formatPeople(placeTotal)}`, `สูญเสีย ${formatPeople(lost)} · อยู่นอกระยะอยู่แล้ว ${formatPeople(never)} · จาก ${formatPeople(placeTotal)}`)}>
                     {formatPeople(lost + never)}
-                    <span className={styles.srOnly}>{t(` (lost ${formatPeople(lost)}, never within reach ${formatPeople(never)}, of ${formatPeople(total)} residents)`, ` (สูญเสีย ${formatPeople(lost)} ไม่เคยอยู่ในระยะ ${formatPeople(never)} จากผู้อยู่อาศัย ${formatPeople(total)})`)}</span>
+                    <span className={styles.srOnly}>{t(` (lost ${formatPeople(lost)}, already out of reach ${formatPeople(never)}, of ${formatPeople(placeTotal)} residents)`, ` (สูญเสีย ${formatPeople(lost)} อยู่นอกระยะอยู่แล้ว ${formatPeople(never)} จากผู้อยู่อาศัย ${formatPeople(placeTotal)})`)}</span>
                   </span>
                 </li>
               ))}
@@ -562,14 +699,17 @@ export function AccessCard({
 
 // --- Shelters ------------------------------------------------------------------------------------------
 
-/** Cumulative coverage of the ranked plan against k, pre-emptive and late, with the knee and the chosen k. */
+/**
+ * Cumulative coverage of the ranked plan against k, pre-emptive and late, with the default plan size (the smallest
+ * plan that gets most of the benefit) and the chosen k. The y axis is the share of flooded-home residents covered.
+ */
 export function CoverageCurve({ shelters, k, language }: { shelters: ShelterInfo; k: number; language: Language }) {
   const t = translator(language);
   const plan = shelters.plan;
   const width = 360;
   const height = 196;
   // Tick labels and the axis title sit 20 units apart so they stay clear at the larger mobile font size.
-  const margin = { left: 38, right: 12, top: 16, bottom: 38 };
+  const margin = { left: 52, right: 12, top: 16, bottom: 38 };
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
   const n = plan.length;
@@ -580,8 +720,8 @@ export function CoverageCurve({ shelters, k, language }: { shelters: ShelterInfo
   const knee = shelters.knee_k;
   const chosen = plan[k - 1];
   const summary = t(
-    `Coverage of the ${formatPeople(shelters.demand_people)} residents whose homes flood at the modelled peak, by plan size: ${percent(plan[0]?.cumulative_share ?? 0)} with 1 site, ${percent(plan[knee - 1]?.cumulative_share ?? 0)} with ${knee} (the knee), ${percent(plan.at(-1)?.cumulative_share ?? 0)} with ${n}. Selected k = ${k}: ${percent(chosen?.cumulative_share ?? 0)} pre-emptive, ${percent(chosen?.late_cumulative_share ?? 0)} late.`,
-    `ความครอบคลุมผู้อยู่อาศัย ${formatPeople(shelters.demand_people)} คนที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง ตามจำนวนที่พักพิง: ${percent(plan[0]?.cumulative_share ?? 0)} เมื่อมี 1 แห่ง ${percent(plan[knee - 1]?.cumulative_share ?? 0)} เมื่อมี ${knee} แห่ง (จุดหักเห) ${percent(plan.at(-1)?.cumulative_share ?? 0)} เมื่อมี ${n} แห่ง ที่เลือก k = ${k}: อพยพล่วงหน้า ${percent(chosen?.cumulative_share ?? 0)} อพยพล่าช้า ${percent(chosen?.late_cumulative_share ?? 0)}`,
+    `Coverage of the ${formatPeople(shelters.demand_people)} residents whose homes flood at the modelled peak, by plan size: ${percent(plan[0]?.cumulative_share ?? 0)} with 1 site, ${percent(plan[knee - 1]?.cumulative_share ?? 0)} with ${knee} (the default: the smallest plan that gets most of the benefit), ${percent(plan.at(-1)?.cumulative_share ?? 0)} with ${n}. Selected k = ${k}: ${percent(chosen?.cumulative_share ?? 0)} pre-emptive, ${percent(chosen?.late_cumulative_share ?? 0)} late.`,
+    `ความครอบคลุมผู้อยู่อาศัย ${formatPeople(shelters.demand_people)} คนที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง ตามจำนวนที่พักพิง: ${percent(plan[0]?.cumulative_share ?? 0)} เมื่อมี 1 แห่ง ${percent(plan[knee - 1]?.cumulative_share ?? 0)} เมื่อมี ${knee} แห่ง (ค่าเริ่มต้น: แผนที่เล็กที่สุดที่ได้ประโยชน์ส่วนใหญ่แล้ว) ${percent(plan.at(-1)?.cumulative_share ?? 0)} เมื่อมี ${n} แห่ง ที่เลือก k = ${k}: อพยพล่วงหน้า ${percent(chosen?.cumulative_share ?? 0)} อพยพล่าช้า ${percent(chosen?.late_cumulative_share ?? 0)}`,
   );
   return (
     <figure className={styles.miniChart}>
@@ -595,10 +735,13 @@ export function CoverageCurve({ shelters, k, language }: { shelters: ShelterInfo
         {plan.map((_, index) => (
           <text key={index} x={x(index + 1)} y={margin.top + plotH + 15} textAnchor="middle" className={styles.axisText}>{index + 1}</text>
         ))}
-        <text x={margin.left + plotW / 2} y={height - 3} textAnchor="middle" className={styles.axisText}>{t("k (sites in the plan)", "k (จำนวนที่พักพิงในแผน)")}</text>
+        <text x={margin.left + plotW / 2} y={height - 3} textAnchor="middle" className={styles.axisText}>{t("Plan size k (sites in the plan)", "ขนาดแผน k (จำนวนที่พักพิงในแผน)")}</text>
+        <text x={11} y={margin.top + plotH / 2} textAnchor="middle" transform={`rotate(-90 11 ${margin.top + plotH / 2})`} className={styles.axisText} data-testid="coverage-y-title">
+          {t("Flooded-home residents covered", "ผู้ที่บ้านถูกน้ำท่วมซึ่งครอบคลุมได้")}
+        </text>
         {chosen && <rect x={x(k) - 9} y={margin.top - 6} width={18} height={plotH + 6} className={styles.kBand} />}
         <line x1={x(knee)} x2={x(knee)} y1={margin.top - 6} y2={y(0)} className={styles.kneeLine} />
-        <text x={x(knee) + 5} y={margin.top + 4} className={styles.kneeText}>{t(`knee k = ${knee}`, `จุดหักเห k = ${knee}`)}</text>
+        <text x={x(knee) + 5} y={margin.top + 4} className={styles.kneeText}>{t(`default k = ${knee}`, `ค่าเริ่มต้น k = ${knee}`)}</text>
         <path d={path("cumulative_share")} className={styles.coverLine} />
         <path d={path("late_cumulative_share")} className={styles.coverLateLine} />
         {chosen && (
@@ -621,16 +764,18 @@ export function CoverageCurve({ shelters, k, language }: { shelters: ShelterInfo
 const THAI_SCRIPT = /[฀-๿]/;
 const textLang = (value: string, language: Language) => (THAI_SCRIPT.test(value) ? "th" : language);
 
-function PlannedSiteItem({ site, shelters, language, onShow }: {
+function PlannedSiteItem({ site, k, shelters, language, onShow }: {
   site: PlannedShelter;
+  k: number;
   shelters: ShelterInfo;
   language: Language;
   onShow: (id: string) => void;
 }) {
   const t = translator(language);
   const title = candidateTitle(site.candidate, language);
+  const flag = capacityFlag(site);
   return (
-    <li>
+    <li data-capacity-flag={flag ?? undefined}>
       <span className={styles.routeHead}>
         <span className={styles.planRank} aria-hidden="true">{site.rank}</span>
         <strong lang={textLang(title, language)}>{title}</strong>
@@ -638,11 +783,12 @@ function PlannedSiteItem({ site, shelters, language, onShow }: {
       <span className={styles.routeMeta}>{candidateKindLabel(site.candidate.kind, language)} · {freeboardText(site.candidate, language)}</span>
       <span className={styles.routeMeta}>{capacityText(site.candidate, shelters, language)}</span>
       <span className={styles.routeFigures}>
-        <span>{t(`Assigned ≈ ${formatPeople(site.load)} residents`, `รับผู้อพยพ ≈ ${formatPeople(site.load)} คน`)}</span>
-        {site.shortfall && site.capacity !== null && (
+        <span>{t(`Assigned ≈ ${formatPeople(site.load)} residents in ${indefiniteArticle(k)} ${k}-site plan`, `รับผู้อพยพ ≈ ${formatPeople(site.load)} คนในแผน ${k} แห่ง`)}</span>
+        {!flag && site.shortfall && site.capacity !== null && (
           <span className={styles.shortfall}>{t(`Over capacity by ≈ ${formatPeople(site.load - site.capacity)}`, `เกินความจุ ≈ ${formatPeople(site.load - site.capacity)} คน`)}</span>
         )}
       </span>
+      {flag && <span className={styles.capacityBadge} data-flag={flag} data-testid="capacity-flag"><b aria-hidden="true">!</b> {capacityFlagText(site, language)}</span>}
       <button type="button" className={styles.linkButton} onClick={() => onShow(site.candidate.id)} aria-label={t(`Show plan site ${site.rank}, ${title}, on the map`, `แสดงสถานที่ในแผนลำดับ ${site.rank} ${title} บนแผนที่`)}>
         {t("Show on map", "แสดงบนแผนที่")}
       </button>
@@ -666,29 +812,38 @@ export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPl
   if (shelters.plan.length === 0) return null;
   const sites = planSites(shelters, k);
   const knee = shelters.knee_k;
-  const kneeShare = Math.round(shareOfAchievable(shelters.plan, knee) * 100);
+  const flagged = sites.filter((site) => capacityFlag(site) !== null).length;
   const shortfalls = sites.filter((site) => site.shortfall).length;
   const unknown = sites.filter((site) => site.capacity === null).length;
+  const freeboard = shelters.method.freeboard_m;
   return (
     <section className={styles.card} aria-labelledby="mae-sai-plan-title" data-testid="shelter-plan-card">
       <ThemeEyebrow prefix={t("PLANNING SCENARIO", "สถานการณ์เพื่อการวางแผน")} theme="protect_lives" language={language} />
       <h2 id="mae-sai-plan-title">{t("Where dry shelters would help most (ranked plan)", "ที่พักพิงที่แห้งควรอยู่ที่ใด (แผนจัดอันดับ)")}</h2>
-      <p className={styles.muted}>{t(
-        `A planning scenario, not an official shelter list: OpenStreetMap schools, places of worship, government offices and community centres that keep ${shelters.method.freeboard_m} m freeboard at the modelled peak (${shelters.method.peak_stage_m} m stage) and lie within ${shelters.method.snap_max_m} m of a road (${shelters.eligible_count} of ${shelters.candidates.length} candidates), ranked greedily by how many of the ${formatPeople(shelters.demand_people)} residents whose homes flood at the peak each adds within a ${shelters.method.threshold_m / 1000} km walk.`,
-        `สถานการณ์เพื่อการวางแผน ไม่ใช่รายชื่อที่พักพิงทางการ: โรงเรียน ศาสนสถาน หน่วยงานราชการ และศูนย์ชุมชนจาก OpenStreetMap ที่สูงกว่าระดับน้ำอย่างน้อย ${shelters.method.freeboard_m} ม. ที่ระดับสูงสุดของแบบจำลอง (${shelters.method.peak_stage_m} ม.) และอยู่ห่างถนนไม่เกิน ${shelters.method.snap_max_m} ม. (${shelters.eligible_count} จาก ${shelters.candidates.length} แห่ง) จัดอันดับแบบละโมบตามจำนวนผู้อยู่อาศัยที่บ้านถูกน้ำท่วมที่ระดับสูงสุด (${formatPeople(shelters.demand_people)} คน) ซึ่งแต่ละแห่งเพิ่มความครอบคลุมได้ภายในระยะเดิน ${shelters.method.threshold_m / 1000} กม.`,
-      )}</p>
+      <p className={styles.muted}>
+        {t(
+          "A planning scenario, not an official shelter list: OpenStreetMap schools, places of worship, government offices and community centres that keep ",
+          "สถานการณ์เพื่อการวางแผน ไม่ใช่รายชื่อที่พักพิงทางการ: โรงเรียน ศาสนสถาน หน่วยงานราชการ และศูนย์ชุมชนจาก OpenStreetMap ที่มี",
+        )}
+        <Term id="freeboard" language={language}>{t(`${freeboard} m freeboard`, `ระยะพ้นน้ำ ${freeboard} ม.`)}</Term>
+        {t(
+          ` at the modelled peak (${shelters.method.peak_stage_m} m stage) and lie within ${shelters.method.snap_max_m} m of a road (${shelters.eligible_count} of ${shelters.candidates.length} candidates), ranked greedily by how many of the ${formatPeople(shelters.demand_people)} residents whose homes flood at the peak each adds within a ${shelters.method.threshold_m / 1000} km walk.`,
+          ` ขึ้นไปที่ระดับสูงสุดของแบบจำลอง (${shelters.method.peak_stage_m} ม.) และอยู่ห่างถนนไม่เกิน ${shelters.method.snap_max_m} ม. (${shelters.eligible_count} จาก ${shelters.candidates.length} แห่ง) จัดอันดับแบบละโมบตามจำนวนผู้อยู่อาศัยที่บ้านถูกน้ำท่วมที่ระดับสูงสุด (${formatPeople(shelters.demand_people)} คน) ซึ่งแต่ละแห่งเพิ่มความครอบคลุมได้ภายในระยะเดิน ${shelters.method.threshold_m / 1000} กม.`,
+        )}
+      </p>
       <ProvenanceNote kind="plan" confidence={shelters.confidence} reason={shelters.confidence_reason} timestamp={shelters.source_timestamp} language={language} />
+      <div className={styles.kField}>
+        <label htmlFor={sliderId}>{planSizeLabel(k, language)}</label>
+        <input id={sliderId} type="range" min={1} max={shelters.plan.length} step={1} value={k}
+          aria-valuetext={planCoverageSentence(shelters, k, language)}
+          onChange={(event) => onPlanK(Number(event.target.value))} />
+        <PlanSizeSentence shelters={shelters} k={k} language={language} />
+      </div>
       <CoverageCurve shelters={shelters} k={k} language={language} />
       <p>{t(
-        `Ranked range, not a fixed number: the first k entries are the plan for k shelters; the default k = ${knee} is the smallest plan that reaches 90% of the achievable coverage (${kneeShare}%).`,
-        `เป็นช่วงที่จัดอันดับ ไม่ใช่จำนวนตายตัว: k รายการแรกคือแผนสำหรับที่พักพิง k แห่ง ค่าเริ่มต้น k = ${knee} คือแผนที่เล็กที่สุดที่ครอบคลุมถึง 90% ของความครอบคลุมที่ทำได้ (${kneeShare}%)`,
+        `Ranked range, not a fixed number: the first k entries are the plan for k shelters. The default, k = ${knee}, is the smallest plan that reaches 90% of the most any plan can reach.`,
+        `เป็นช่วงที่จัดอันดับ ไม่ใช่จำนวนตายตัว: k รายการแรกคือแผนสำหรับที่พักพิง k แห่ง ค่าเริ่มต้น k = ${knee} คือแผนที่เล็กที่สุดที่ครอบคลุมได้ถึง 90% ของค่าสูงสุดที่แผนใด ๆ ทำได้`,
       )}</p>
-      <div className={styles.kField}>
-        <label htmlFor={sliderId}>{t(`Sites in the plan: k = ${k}`, `จำนวนแห่งในแผน: k = ${k}`)}</label>
-        <input id={sliderId} type="range" min={1} max={shelters.plan.length} step={1} value={k}
-          aria-valuetext={t(`${k} of ${shelters.plan.length} ranked sites`, `${k} จาก ${shelters.plan.length} แห่งที่จัดอันดับ`)}
-          onChange={(event) => onPlanK(Number(event.target.value))} />
-      </div>
       <div className={styles.gapCallout} role="note">
         <strong>{t("Shelter gap", "ช่องว่างของที่พักพิง")}</strong>
         <p>{t(
@@ -697,9 +852,15 @@ export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPl
         )}</p>
       </div>
       <h3>{t(`The first ${k} site${k === 1 ? "" : "s"} of the plan`, `${k} แห่งแรกของแผน`)}</h3>
+      {flagged > 0 && (
+        <p className={styles.caveat} data-testid="capacity-flag-note">{t(
+          `${flagged} of these site${flagged === 1 ? " is" : "s are"} marked “!” on the list and the map: no capacity estimate, or an estimate less than half of the residents assigned. Coverage counts who can walk there, not who fits inside.`,
+          `${flagged} แห่งในรายการนี้มีเครื่องหมาย “!” ทั้งในรายการและบนแผนที่: ไม่มีค่าประมาณความจุ หรือความจุต่ำกว่าครึ่งหนึ่งของผู้อพยพที่ได้รับ ความครอบคลุมนับผู้ที่เดินไปถึงได้ ไม่ใช่ผู้ที่พักได้จริง`,
+        )}</p>
+      )}
       <ol className={styles.planList}>
         {sites.map((site) => (
-          <PlannedSiteItem key={site.candidate.id} site={site} shelters={shelters} language={language} onShow={onShowCandidate} />
+          <PlannedSiteItem key={site.candidate.id} site={site} k={k} shelters={shelters} language={language} onShow={onShowCandidate} />
         ))}
       </ol>
       <p className={styles.muted}>{t(
@@ -709,6 +870,7 @@ export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPl
     </section>
   );
 });
+
 
 function CandidateItem({ candidate, shelters, language, onShow }: {
   candidate: ShelterCandidate;
@@ -821,7 +983,7 @@ function ReportedShelterItem({ shelter, shelters, language, onShow }: { shelter:
           </dd></div>
           <div><dt>{t("Access scenario", "สถานการณ์การเข้าถึง")}</dt><dd>
             {reportedSetStatusText(shelter, language)}.
-            {" "}<span className={styles.muted} lang="en">{shelter.access_set_note}</span>
+            {" "}<span className={styles.muted} lang={localizedText(shelter.access_set_note, language).lang}>{localizedText(shelter.access_set_note, language).text}</span>
           </dd></div>
           {shelter.notes && <div><dt>{t("Notes", "หมายเหตุ")}</dt><dd lang="en">{shelter.notes}</dd></div>}
         </dl>
@@ -870,14 +1032,17 @@ export const ReportedSheltersCard = memo(function ReportedSheltersCard({ shelter
     : t(`Shelters reported in use (${total})`, `ที่พักพิงที่มีรายงานว่าใช้จริง (${total})`);
   return (
     <section className={styles.card} aria-labelledby="mae-sai-reported-title" data-testid="reported-shelters-card">
-      <p className={styles.eyebrow}>{t("PUBLIC REPORTING · SEPTEMBER 2024", "รายงานสาธารณะ · กันยายน 2024")}</p>
+      <p className={styles.eyebrow}>{t("PUBLIC REPORTING · SEPTEMBER 2024", `รายงานสาธารณะ · กันยายน ${thaiYear(2024)}`)}</p>
       <h2 id="mae-sai-reported-title">{title}</h2>
       <p className={styles.muted}>{t(
         `Compiled from news and official updates, with sources. ${located.length} are placed on the map (stars${command > 0 ? "; a diamond marks a relief and command site" : ""}) and checked against the reconstruction; ${flooding} of them flood at the modelled peak, a flag to verify rather than a finding. ${unlocated.length} could not be located and are listed without a pin.`,
         `รวบรวมจากข่าวและรายงานทางการ พร้อมแหล่งที่มา ${located.length} แห่งแสดงบนแผนที่ (ดาว${command > 0 ? " ส่วนรูปข้าวหลามตัดคือศูนย์บัญชาการและจุดช่วยเหลือ" : ""}) และตรวจกับการจำลอง ในจำนวนนี้ ${flooding} แห่งถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง ซึ่งเป็นข้อสังเกตที่ต้องตรวจสอบ ไม่ใช่ข้อสรุป อีก ${unlocated.length} แห่งระบุตำแหน่งไม่ได้จึงแสดงเฉพาะในรายการ`,
       )}</p>
-      <ProvenanceNote kind="reported" confidence={shelters.confidence} reason={shelters.reported_status} timestamp={`reported list compiled ${shelters.reported_compiled}; ${shelters.source_timestamp}`} language={language}>
-        <span lang="en">{shelters.reported_access_set_rule}</span>
+      <ProvenanceNote kind="reported" confidence={shelters.confidence} reason={shelters.reported_status} timestamp={shelters.source_timestamp} language={language}>
+        {t(
+          "Whether the access scenario counts a site is on each site’s “Access scenario” line.",
+          "สถานที่แต่ละแห่งนับรวมในสถานการณ์การเข้าถึงหรือไม่ ดูได้ที่บรรทัด “สถานการณ์การเข้าถึง” ของแต่ละแห่ง",
+        )}
       </ProvenanceNote>
       {language === "th" && <p className={styles.muted}>ช่วงเวลา จำนวนผู้พักพิง หมายเหตุ และคำอธิบายแหล่งข้อมูลคงไว้เป็นภาษาอังกฤษตามต้นฉบับ</p>}
       <ul className={styles.reportedList}>
@@ -891,27 +1056,62 @@ export const ReportedSheltersCard = memo(function ReportedSheltersCard({ shelter
 
 type CheckManifest = Pick<TimelineManifest, "external_checks" | "stage_anchors" | "tambon_histograms" | "hand" | "pixel_area_m2" | "impassable_depth_m" | "population" | "model_coverage">;
 
+/** A calibration anchor counts as matched when the model is within this share of the reported area. */
+const ANCHOR_MATCH_SHARE = 0.1;
+
+/**
+ * What a calibration anchor tells the reader: matched by construction when the tuned stage reproduces the figure,
+ * otherwise how far the closest stage stays from it, and why when the model's smallest non-zero extent is larger.
+ */
+function calibrationText(check: ExternalCheck, manifest: CheckManifest, language: Language): string {
+  const t = translator(language);
+  const difference = checkDifference(check);
+  if (difference === null || Math.abs(difference) <= ANCHOR_MATCH_SHARE) {
+    return t(
+      "This figure was used to set the model's stage, so the agreement holds by construction and does not test the model.",
+      "ตัวเลขนี้ใช้กำหนดระดับน้ำของแบบจำลอง ค่าที่ตรงกันจึงเกิดจากการปรับแบบจำลอง ไม่ใช่การทดสอบแบบจำลอง",
+    );
+  }
+  const gapKm2 = Math.abs(check.model_km2 - check.reported_km2).toFixed(1);
+  const gapPct = Math.round(Math.abs(difference) * 100);
+  const smallest = smallestFloodedExtent(manifest);
+  const floor = smallest && smallest.km2 > check.reported_km2 ? smallest : null;
+  return t(
+    `This figure was used to set the model's stage, so it does not test the model, and even the closest stage stays ${gapKm2} km² (${gapPct}%) ${difference > 0 ? "above" : "below"} it.${floor ? ` The model cannot go lower: its smallest non-zero extent, land within ${floor.stage_m.toFixed(2)} m of the channel level, is already ${floor.km2.toFixed(1)} km².` : ""}`,
+    `ตัวเลขนี้ใช้กำหนดระดับน้ำของแบบจำลอง จึงไม่ใช่การทดสอบแบบจำลอง และแม้ที่ระดับน้ำที่ใกล้ที่สุด แบบจำลองยัง${difference > 0 ? "สูงกว่า" : "ต่ำกว่า"}ตัวเลขนี้ ${gapKm2} ตร.กม. (${gapPct}%)${floor ? ` แบบจำลองให้ค่าต่ำกว่านี้ไม่ได้ เพราะขอบเขตน้ำท่วมที่เล็กที่สุดที่ไม่เป็นศูนย์ (พื้นที่ที่สูงจากระดับร่องน้ำไม่เกิน ${floor.stage_m.toFixed(2)} ม.) ก็มีขนาด ${floor.km2.toFixed(1)} ตร.กม. แล้ว` : ""}`,
+  );
+}
+
 function ExternalCheckItem({ check, manifest, language }: { check: ExternalCheck; manifest: CheckManifest; language: Language }) {
   const t = translator(language);
   const modelKm2 = Number(check.model_km2.toFixed(1));
   const modelled = Math.round(manifest.model_coverage.modelled_km2);
   const district = Math.round(manifest.model_coverage.district_km2);
+  const matched = Math.abs(checkDifference(check) ?? 0) <= ANCHOR_MATCH_SHARE;
+  // Manifest sentences in Thai where the page knows a translation; the source's own wording is quoted, not bracketed,
+  // so its parentheses never nest inside the page's.
+  const observed = localizedText(check.observed, language);
+  const quoted = localizedText(check.reported_text, language);
+  const use = check.use ? localizedText(check.use, language) : null;
+  const modelWindow = check.model_window ? localizedText(check.model_window, language) : null;
   return (
     <li>
-      <span lang="en">{check.observed}</span>{": "}
+      <span lang={observed.lang}>{observed.text}</span>{": "}
       {t(`reported ${check.reported_km2} km²`, `รายงาน ${check.reported_km2} ตร.กม.`)}
       {check.reported_people !== undefined && t(` and ≈ ${formatPeople(check.reported_people)} people exposed`, ` และประชากรที่ได้รับผลกระทบ ≈ ${formatPeople(check.reported_people)} คน`)}
-      {" "}(<span lang={textLang(check.reported_text, "en")}>{check.reported_text}</span>){language === "en" ? "." : ""}{" "}
+      {" — “"}<span lang={quoted.lang === "en" ? textLang(quoted.text, "en") : "th"}>{quoted.text}</span>{"”"}{language === "en" ? "." : ""}{" "}
       {check.role === "calibration_anchor" ? (
         <>
-          {t(
-            `The model gives ${modelKm2} km²${check.model_stage_m !== undefined ? ` at the ${check.model_stage_m} m stage tuned to it` : ""}.`,
-            `แบบจำลองให้ค่า ${modelKm2} ตร.กม.${check.model_stage_m !== undefined ? ` ที่ระดับน้ำ ${check.model_stage_m} ม. ซึ่งปรับให้ตรงกับตัวเลขนี้` : ""}`,
-          )}{" "}
-          <span className={styles.muted}>{t(
-            "This figure was used to set the model's stage, so the agreement holds by construction and does not test the model.",
-            "ตัวเลขนี้ใช้กำหนดระดับน้ำของแบบจำลอง ค่าที่ตรงกันจึงเกิดจากการปรับแบบจำลอง ไม่ใช่การทดสอบแบบจำลอง",
-          )}{" "}<span lang="en">({check.use})</span></span>
+          {matched
+            ? t(
+              `The model gives ${modelKm2} km²${check.model_stage_m !== undefined ? ` at the ${check.model_stage_m} m stage tuned to it` : ""}.`,
+              `แบบจำลองให้ค่า ${modelKm2} ตร.กม.${check.model_stage_m !== undefined ? ` ที่ระดับน้ำ ${check.model_stage_m} ม. ซึ่งปรับให้ตรงกับตัวเลขนี้` : ""}`,
+            )
+            : t(
+              `The model gives ${modelKm2} km²${check.model_stage_m !== undefined ? ` at the ${check.model_stage_m} m stage set closest to it` : ""}.`,
+              `แบบจำลองให้ค่า ${modelKm2} ตร.กม.${check.model_stage_m !== undefined ? ` ที่ระดับน้ำ ${check.model_stage_m} ม. ซึ่งเป็นระดับที่ใกล้ตัวเลขนี้ที่สุด` : ""}`,
+            )}{" "}
+          <span className={styles.muted} data-testid="calibration-note">{calibrationText(check, manifest, language)}{use && <>{" "}<span lang={use.lang}>{use.text}</span></>}</span>
         </>
       ) : (
         <>
@@ -919,15 +1119,19 @@ function ExternalCheckItem({ check, manifest, language }: { check: ExternalCheck
             `The model gives ${modelKm2} km²${check.model_people_in_water !== undefined ? ` and ≈ ${formatPeople(check.model_people_in_water)} modelled residents in water` : ""}${check.model_stage_m !== undefined ? ` at a ${check.model_stage_m} m stage` : ""}`,
             `แบบจำลองให้ค่า ${modelKm2} ตร.กม.${check.model_people_in_water !== undefined ? ` และผู้อยู่อาศัยตามแบบจำลองในน้ำ ≈ ${formatPeople(check.model_people_in_water)} คน` : ""}${check.model_stage_m !== undefined ? ` ที่ระดับน้ำ ${check.model_stage_m} ม.` : ""}`,
           )}
-          {check.model_window && <>{" "}(<span lang="en">{check.model_window}</span>)</>}{language === "en" ? "." : ""}{" "}
+          {modelWindow && <>{" — "}<span lang={modelWindow.lang}>{modelWindow.text}</span></>}{language === "en" ? "." : ""}{" "}
           {check.model_peak_km2 !== undefined && t(
             `For reference, the modelled peak gives ${Number(check.model_peak_km2.toFixed(1))} km²${check.model_peak_people_in_water !== undefined ? ` and ≈ ${formatPeople(check.model_peak_people_in_water)} residents in water` : ""}.`,
             `เพื่อเปรียบเทียบ ระดับสูงสุดของแบบจำลองให้ค่า ${Number(check.model_peak_km2.toFixed(1))} ตร.กม.${check.model_peak_people_in_water !== undefined ? ` และผู้อยู่อาศัยในน้ำ ≈ ${formatPeople(check.model_peak_people_in_water)} คน` : ""}`,
           )}{" "}
-          <span className={styles.muted}>{t(
-            `Model figures cover the modelled part of Mae Sai district (${modelled} of ${district} km²).`,
-            `ตัวเลขแบบจำลองครอบคลุมเฉพาะส่วนที่จำลองของอำเภอแม่สาย (${modelled} จาก ${district} ตร.กม.)`,
-          )}{" "}{t("Magnitude check only, not a spatial validation.", "ใช้ตรวจขนาดเท่านั้น ไม่ใช่การยืนยันตำแหน่ง")}{" "}<span lang="en">{check.use}</span></span>
+          <span className={styles.muted}>{coverageComplete(manifest.model_coverage)
+            ? t(`Model figures cover the whole of Mae Sai district (${district} km²).`, `ตัวเลขแบบจำลองครอบคลุมทั้งอำเภอแม่สาย (${district} ตร.กม.)`)
+            : t(
+              `Model figures cover the modelled part of Mae Sai district (${modelled} of ${district} km²).`,
+              `ตัวเลขแบบจำลองครอบคลุมเฉพาะส่วนที่จำลองของอำเภอแม่สาย (${modelled} จาก ${district} ตร.กม.)`,
+            )}{" "}{use
+            ? <span lang={use.lang}>{use.text}</span>
+            : t("Magnitude check only, not a spatial validation.", "ใช้ตรวจขนาดเท่านั้น ไม่ใช่การยืนยันตำแหน่ง")}</span>
         </>
       )}
       {check.urls.map((url) => (
@@ -946,9 +1150,12 @@ export const ExternalChecks = memo(function ExternalChecks({ manifest, language 
   const checks = manifest.external_checks ?? [];
   if (checks.length === 0) return null;
   const { calibration, independent } = externalChecksByRole(checks);
+  // In Thai, say so only when some source wording has no known translation and stays in its original.
+  const untranslated = language === "th" && checks.some((check) => [check.observed, check.reported_text, check.use, check.model_window]
+    .some((value) => value && localizedText(value, language).lang !== language));
   return (
     <div className={styles.anchor}>
-      {language === "th" && <p className={styles.muted}>ชื่อผลิตภัณฑ์และข้อความอ้างอิงจากแหล่งภายนอกคงไว้เป็นภาษาต้นฉบับ</p>}
+      {untranslated && <p className={styles.muted}>ข้อความจากแหล่งภายนอกที่ยังไม่มีคำแปลคงไว้เป็นภาษาต้นฉบับ</p>}
       {calibration.length > 0 && (
         <>
           <p><strong>{t("Calibration anchor (not an independent check)", "จุดอ้างอิงที่ใช้ปรับแบบจำลอง (ไม่ใช่การตรวจสอบอิสระ)")}</strong></p>

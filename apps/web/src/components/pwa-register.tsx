@@ -35,6 +35,21 @@ interface WorkerMessage {
 export interface PwaRegisterProps {
   /** Defaults to production builds; tests may opt in explicitly. */
   enabled?: boolean;
+  /**
+   * Path prefixes on which the availability pill hides itself after `autoHideMs` (unless it is open or has focus) and
+   * shows a dismiss button, for pages whose own controls sit where the pill floats. Empty by default: every other page
+   * keeps the pill as it is.
+   */
+  autoHidePaths?: readonly string[];
+  autoHideMs?: number;
+}
+
+/** Default delay before the pill hides itself on an auto-hide page. */
+export const PWA_AUTO_HIDE_MS = 4000;
+
+/** True when `pathname` starts with one of the auto-hide path prefixes. */
+export function autoHidesOn(pathname: string | null | undefined, paths: readonly string[]): boolean {
+  return Boolean(pathname) && paths.some((prefix) => prefix.length > 0 && pathname!.startsWith(prefix));
 }
 
 const PWA_AVAILABILITY_COPY = {
@@ -68,6 +83,7 @@ const PWA_AVAILABILITY_COPY = {
     updateErrorWithCache: "Update check is unavailable. The verified saved app remains available.",
     updateErrorWithoutCache: "Update check is unavailable and no complete saved app was verified. Connect and try again.",
     notChecked: "Not checked yet",
+    dismiss: "Hide app status on this page",
   },
   th: {
     checkingConnection: "กำลังตรวจสอบการเชื่อมต่อ",
@@ -99,6 +115,7 @@ const PWA_AVAILABILITY_COPY = {
     updateErrorWithCache: "ไม่สามารถตรวจสอบการอัปเดตได้ แอปที่บันทึกและตรวจสอบแล้วยังใช้งานได้",
     updateErrorWithoutCache: "ไม่สามารถตรวจสอบการอัปเดตได้ และยังไม่มีแอปที่บันทึกไว้ครบถ้วน โปรดเชื่อมต่อและลองอีกครั้ง",
     notChecked: "ยังไม่ได้ตรวจสอบ",
+    dismiss: "ซ่อนสถานะแอปในหน้านี้",
   },
 } as const satisfies Record<Language, Record<string, string>>;
 
@@ -199,8 +216,16 @@ async function removeDevelopmentWorker(): Promise<boolean> {
   return wasControlled;
 }
 
-export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }: PwaRegisterProps = {}) {
+export function PwaRegister({
+  enabled = process.env.NODE_ENV === "production",
+  autoHidePaths = [],
+  autoHideMs = PWA_AUTO_HIDE_MS,
+}: PwaRegisterProps = {}) {
   const pathname = usePathname();
+  const autoHide = autoHidesOn(pathname, autoHidePaths);
+  /** Path on which the pill was hidden (auto or by the reader); it shows again after navigating elsewhere. */
+  const [hiddenOn, setHiddenOn] = useState<string | null>(null);
+  const [engaged, setEngaged] = useState(false);
   const defaultLanguage = EXPECTED_PROFILE === "public-production" || pathname?.startsWith("/public") ? "th" : "en";
   const [language] = useLanguage(defaultLanguage);
   const basemapHealth = useSyncExternalStore(subscribeBasemapHealth, getBasemapHealth, () => null);
@@ -396,6 +421,12 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
     };
   }, [enabled, refreshAvailability, refreshHouseholdPlanAvailability, watchInstallingWorker]);
 
+  useEffect(() => {
+    if (!enabled || !autoHide || engaged || hiddenOn === pathname) return;
+    const timer = window.setTimeout(() => setHiddenOn(pathname), autoHideMs);
+    return () => window.clearTimeout(timer);
+  }, [enabled, autoHide, engaged, hiddenOn, pathname, autoHideMs]);
+
   const checkForUpdate = useCallback(async () => {
     const registration = registrationRef.current;
     if (!registration) {
@@ -428,6 +459,7 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
   }, []);
 
   if (!enabled) return null;
+  if (autoHide && hiddenOn === pathname) return null;
 
   const copy = pwaAvailabilityCopy(language);
   const connectionLabel = online === null ? copy.checkingConnection : online ? copy.online : copy.offline;
@@ -441,11 +473,12 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
     ? mapSummary
     : pathname?.startsWith("/public") || EXPECTED_PROFILE === "public-production" ? publicSummary : appSummary;
 
-  return (
+  const panel = (
     <details
-      className={styles.panel}
+      className={autoHide ? `${styles.panel} ${styles.docked}` : styles.panel}
       data-pwa-availability="true"
       onToggle={(event) => {
+        if (autoHide) setEngaged(event.currentTarget.open);
         if (!event.currentTarget.open) return;
         refreshHouseholdPlanAvailability();
         void refreshAvailability();
@@ -506,5 +539,24 @@ export function PwaRegister({ enabled = process.env.NODE_ENV === "production" }:
         )}
       </div>
     </details>
+  );
+  if (!autoHide) return panel;
+  // Auto-hide pages: the pill fades after a few seconds and can be dismissed at once; hover or focus keeps it.
+  return (
+    <div
+      className={styles.autoHideDock}
+      data-pwa-auto-hide="true"
+      onPointerEnter={() => setEngaged(true)}
+      onPointerLeave={(event) => setEngaged(Boolean(event.currentTarget.querySelector("details[open]")))}
+      onFocus={() => setEngaged(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setEngaged(Boolean(event.currentTarget.querySelector("details[open]")));
+      }}
+    >
+      {panel}
+      <button type="button" className={styles.dismiss} aria-label={copy.dismiss} title={copy.dismiss} onClick={() => setHiddenOn(pathname)}>
+        <span aria-hidden="true">×</span>
+      </button>
+    </div>
   );
 }

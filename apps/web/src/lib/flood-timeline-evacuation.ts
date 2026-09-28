@@ -11,6 +11,7 @@ import {
   roundLikePython,
   type AccessDayStats,
   type AccessInfo,
+  type Language,
   type ReportedShelter,
   type ShelterCandidate,
   type ShelterInfo,
@@ -139,9 +140,50 @@ export interface AccessSetSummary {
 
 const CUT_CODES = NEVER_LOST_CODE; // cut codes 0..253 are level indices
 
-/** Build the per-set cumulative histograms once after the node file loads. */
-export function summarizeAccessSets(nodes: AccessNodes, access: Pick<AccessInfo, "sets" | "tambons">): AccessSetSummary[] {
+// --- Population scope: whose access is counted ------------------------------------------------------
+
+/**
+ * Which residents the access figures count: those whose home node floods at the modelled peak (the people the
+ * ranked plan is built for) or every resident snapped to a road node.
+ */
+export type AccessScope = "flooded" | "all";
+export const ACCESS_SCOPES: readonly AccessScope[] = ["flooded", "all"];
+
+/**
+ * Whether a resident node's home is wet at `stage`: the same rule as the builder's `home_wet` (a channel home is wet
+ * as soon as the stage rises; the never code never floods; otherwise code * step < stage).
+ */
+export function homeWetAt(homeCode: number, stage: number, step: number, channelCode = 0, neverCode = 255): boolean {
+  if (homeCode === neverCode || !(stage > 0)) return false;
+  return homeCode === channelCode || homeCode * step < stage;
+}
+
+/** 1 for each node whose home is wet at `stage` (e.g. the modelled peak), else 0. */
+export function floodedHomeMask(nodes: Pick<AccessNodes, "count" | "homeCode">, stage: number, step: number, channelCode = 0, neverCode = 255): Uint8Array {
+  const mask = new Uint8Array(nodes.count);
+  for (let node = 0; node < nodes.count; node += 1) mask[node] = homeWetAt(nodes.homeCode[node], stage, step, channelCode, neverCode) ? 1 : 0;
+  return mask;
+}
+
+/** Residents (all, proxy-vulnerable and everyone else) of the nodes in `mask` (every node without one). */
+export function scopeTotals(nodes: Pick<AccessNodes, "count" | "population" | "vulnerable">, mask?: Uint8Array | null): AccessGroupSums {
+  let population = 0;
+  let vulnerable = 0;
+  for (let node = 0; node < nodes.count; node += 1) {
+    if (mask && !mask[node]) continue;
+    population += nodes.population[node];
+    vulnerable += nodes.vulnerable[node];
+  }
+  return { population, vulnerable, nonVulnerable: population - vulnerable };
+}
+
+/**
+ * Build the per-set cumulative histograms once after the node file loads. With `mask`, only the nodes it marks
+ * (e.g. homes that flood at the peak) are counted.
+ */
+export function summarizeAccessSets(nodes: AccessNodes, access: Pick<AccessInfo, "sets" | "tambons">, mask?: Uint8Array | null): AccessSetSummary[] {
   const tambonCount = access.tambons.length;
+  if (mask && mask.length !== nodes.count) throw new Error("The scope mask must cover every access node");
   return access.sets.map((id, setIndex) => {
     const population = new Float64Array(CUT_CODES);
     const vulnerable = new Float64Array(CUT_CODES);
@@ -150,6 +192,7 @@ export function summarizeAccessSets(nodes: AccessNodes, access: Pick<AccessInfo,
     const never = { population: 0, vulnerable: 0, nonVulnerable: 0, tambon: new Float64Array(tambonCount) };
     const row = setIndex * nodes.count;
     for (let node = 0; node < nodes.count; node += 1) {
+      if (mask && !mask[node]) continue;
       const code = nodes.cutCodes[row + node];
       if (code === NEVER_LOST_CODE) continue;
       const people = nodes.population[node];
@@ -232,10 +275,11 @@ export function accessLostSeries(summary: AccessSetSummary, stages: ArrayLike<nu
   return out;
 }
 
-/** Resident nodes' population per subdistrict (in `access.tambons` order), for bar scales. */
-export function tambonResidents(nodes: AccessNodes, tambonCount: number): Float64Array {
+/** Resident nodes' population per subdistrict (in `access.tambons` order), for bar scales; `mask` limits the nodes. */
+export function tambonResidents(nodes: AccessNodes, tambonCount: number, mask?: Uint8Array | null): Float64Array {
   const out = new Float64Array(tambonCount);
   for (let node = 0; node < nodes.count; node += 1) {
+    if (mask && !mask[node]) continue;
     const place = nodes.tambonIndex[node] - 1;
     if (place >= 0 && place < tambonCount) out[place] += nodes.population[node];
   }
@@ -360,6 +404,73 @@ export function evacuationEquityGap(input: EquityInput): EquityGap {
   return { status: "ratio", vulnerableRate, nonVulnerableRate, ratio, band, interpretation };
 }
 
+/** How the page states the gap: the headline value and a plain sentence (empty when the value says it all). */
+export interface EquityWording { value: string; sentence: string }
+
+/** A loss rate as a percentage with two decimals ("0.18%"). */
+export const formatRate = (rate: number): string => `${(rate * 100).toFixed(2)}%`;
+/** "about N×" amount: whole numbers from 10, one decimal below. */
+const timesText = (value: number) => (value >= 10 ? String(Math.round(value)) : value.toFixed(1));
+
+/**
+ * Page wording of the Evacuation Equity Gap: a fixed two-decimal ratio and a plain comparison of the two loss rates
+ * ("about 50× less likely (0.18% vs 9.60%)"). "—" when nobody has lost access, "undefined" when only proxy-vulnerable
+ * residents have. The ratio and its rules stay those of `evacuationEquityGap`.
+ */
+export function equityWording(gap: EquityGap, language: Language): EquityWording {
+  const th = language === "th";
+  const v = gap.vulnerableRate ?? 0;
+  const o = gap.nonVulnerableRate ?? 0;
+  const pair = th ? `(${formatRate(v)} เทียบกับ ${formatRate(o)})` : `(${formatRate(v)} vs ${formatRate(o)})`;
+  switch (gap.status) {
+    case "no_vulnerable_denominator":
+      return { value: "—", sentence: th ? "คำนวณไม่ได้: ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนในขอบเขตนี้" : "Not available: no proxy-vulnerable residents are counted in this scope." };
+    case "no_non_vulnerable_denominator":
+      return { value: "—", sentence: th ? "คำนวณไม่ได้: ไม่มีผู้อยู่อาศัยกลุ่มอื่นในขอบเขตนี้" : "Not available: no other residents are counted in this scope." };
+    case "no_loss":
+      return { value: th ? "— (ยังไม่มีผู้ใดสูญเสียการเข้าถึง)" : "— (no one has lost access yet)", sentence: "" };
+    case "undefined_ratio":
+      return {
+        value: th ? "หาค่าไม่ได้" : "undefined",
+        sentence: th
+          ? `มีเพียงกลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง ${pair} จึงคำนวณอัตราส่วนไม่ได้`
+          : `Only proxy-vulnerable residents have lost access ${pair}, so the ratio cannot be computed.`,
+      };
+    default: {
+      const value = (gap.ratio ?? 0).toFixed(2);
+      if (gap.band === "higher") {
+        return { value, sentence: th
+          ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่าประมาณ ${timesText(v / o)} เท่า ${pair}`
+          : `Proxy-vulnerable residents are about ${timesText(v / o)}× more likely to lose access ${pair}.` };
+      }
+      if (gap.band === "lower") {
+        if (v === 0) {
+          return { value, sentence: th
+            ? `ยังไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง ขณะที่กลุ่มอื่นสูญเสีย ${formatRate(o)}`
+            : `No proxy-vulnerable resident has lost access, against ${formatRate(o)} of everyone else.` };
+        }
+        return { value, sentence: th
+          ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงน้อยกว่าประมาณ ${timesText(o / v)} เท่า ${pair}`
+          : `Proxy-vulnerable residents are about ${timesText(o / v)}× less likely to lose access ${pair}.` };
+      }
+      return { value, sentence: th
+        ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงใกล้เคียงกับกลุ่มอื่น ${pair}`
+        : `Proxy-vulnerable residents are about as likely as everyone else to lose access ${pair}.` };
+    }
+  }
+}
+
+/**
+ * One plain line on why the proxy points the way it does, when proxy-vulnerable residents are the less affected
+ * group (null otherwise): the proxy marks hillside and remote homes, which stay dry in this valley-floor flood.
+ */
+export function equityWhy(gap: EquityGap, language: Language): string | null {
+  if (gap.status !== "ratio" || gap.band !== "lower") return null;
+  return language === "th"
+    ? "เหตุที่เป็นเช่นนี้: ตัวแทนนี้ระบุบ้านบนที่ลาดชันหรือห่างถนน ซึ่งส่วนใหญ่อยู่บนเนินและพื้นที่ห่างไกลที่น้ำไม่ท่วม ขณะที่น้ำท่วมพื้นที่ราบริมน้ำที่คนส่วนใหญ่อาศัยอยู่"
+    : "Why it points this way here: the proxy marks homes on slopes or far from a drivable road, mostly hillside and remote homes that stay dry, while this flood covers the valley floor, where most homes are.";
+}
+
 // --- Shelter plan ---------------------------------------------------------------------------------------
 
 /** A plan size within 1 … plan length (the knee when `k` is not a whole number). */
@@ -401,6 +512,35 @@ export function planSites(shelters: Pick<ShelterInfo, "candidates" | "plan">, k:
     const load = loads[index] ?? 0;
     return { rank: index + 1, candidate, entry, load, capacity: candidate.capacity_est, shortfall: capacityShortfall(load, candidate.capacity_est) };
   });
+}
+
+/** A plan site's load is "far above" its capacity estimate from this multiple on. */
+export const FAR_OVER_CAPACITY = 2;
+
+/**
+ * Capacity warning for a plan site: "unknown" without a capacity estimate, "far_below" when the capacity estimate is
+ * less than half the residents assigned to it, else null.
+ */
+export function capacityFlag(site: Pick<PlannedShelter, "load" | "capacity">): "unknown" | "far_below" | null {
+  if (site.capacity === null) return "unknown";
+  return site.load > site.capacity && site.load >= FAR_OVER_CAPACITY * site.capacity ? "far_below" : null;
+}
+
+const wholePeople = (value: number) => Math.round(value).toLocaleString("en-US");
+
+/**
+ * Live sentence next to the plan-size slider: "k = 3: 3 sites cover 5,725 of 14,169 residents whose homes flood
+ * (40%) · late evacuation 23%", from the plan's cumulative coverage at size `k`.
+ */
+export function planCoverageSentence(shelters: Pick<ShelterInfo, "plan" | "demand_people">, k: number, language: Language): string {
+  const size = Math.min(Math.max(1, Math.round(k)), shelters.plan.length);
+  const entry = shelters.plan[size - 1];
+  if (!entry) return "";
+  const share = `${Math.round(entry.cumulative_share * 100)}%`;
+  const late = `${Math.round(entry.late_cumulative_share * 100)}%`;
+  return language === "th"
+    ? `k = ${size}: ที่พักพิง ${size} แห่งครอบคลุม ${wholePeople(entry.cumulative_demand)} จาก ${wholePeople(shelters.demand_people)} คนที่บ้านถูกน้ำท่วม (${share}) · อพยพล่าช้า ${late}`
+    : `k = ${size}: ${size} site${size === 1 ? "" : "s"} cover${size === 1 ? "s" : ""} ${wholePeople(entry.cumulative_demand)} of ${wholePeople(shelters.demand_people)} residents whose homes flood (${share}) · late evacuation ${late}`;
 }
 
 /** Share (0-1) of the achievable coverage (the full ranking's cumulative demand) that the first `k` sites reach. */

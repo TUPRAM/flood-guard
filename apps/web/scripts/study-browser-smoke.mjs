@@ -125,10 +125,30 @@ try {
   const readout = page.getByTestId("replay-readout");
   const slider = page.getByRole("slider", { name: "Replay time (hourly)" });
   const waterModel = () => page.waitForFunction(() => !document.body.innerText.includes("Preparing the water model"), undefined, { timeout: 30_000 });
+  // Imagery, water and road modes and the layer switches live in the "Map layers" drawer over the map.
+  const layersButton = page.getByRole("button", { name: "Map layers", exact: true });
+  const openLayers = async () => {
+    if ((await layersButton.getAttribute("aria-expanded")) !== "true") await layersButton.click();
+    await expect(page.locator("#mae-sai-map-layers")).toBeVisible();
+  };
   await visit(caseRoute, "Mae Sai flood, September 2024 — day by day");
   await expect(readout).toContainText("Mon 9 Sep 2024 · 12:00 ICT");
   await waterModel();
   await expect(page.getByText("Historical reconstruction for preparedness learning — not real-time, not an official warning.")).toBeVisible();
+  // Above the fold at 1440 x 1000: Play (with the window and its length), the readout and the top of the map.
+  const play = page.getByTestId("play-button");
+  await expect(play).toContainText("Play 9 → 19 Sep");
+  const fold = await page.evaluate(() => ({
+    play: document.querySelector("[data-testid='play-button']").getBoundingClientRect().bottom,
+    map: document.querySelector("[role='region'].leaflet-container, .leaflet-container").getBoundingClientRect().top,
+    height: window.innerHeight,
+  }));
+  assert(fold.play < fold.height && fold.map + 200 < fold.height, `Play and the map start above the fold: ${JSON.stringify(fold)}`);
+  await expect(page.locator("#mae-sai-map-layers")).toBeHidden();
+  await expect(page.getByTestId("map-legend")).toContainText("Water depth (model)");
+  await expect(page.getByTestId("low-confidence-legend")).toBeVisible();
+  await expect(page.getByTestId("low-confidence-evidence")).toContainText("flat or filled low ground");
+  checks.push("Play, readout and map above the fold; layer controls folded into a drawer; low-confidence water in the on-map legend and the evidence");
   await slider.fill("84");
   await expect(readout).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
   await expect(page).toHaveURL(/[?&]t=84(&|$)/);
@@ -137,6 +157,7 @@ try {
   await slider.press("ArrowLeft");
   await expect(readout).toContainText("Fri 13 Sep 2024 · 11:00 ICT");
   checks.push("case replay renders and the hourly slider moves the readout");
+  await openLayers();
   await page.getByRole("radio", { name: "First flooded (hour)" }).check();
   await expect(page.getByText("First flooded (model, local time)", { exact: true })).toBeVisible();
   await expect(page.getByText("Not yet flooded at this moment (faded)", { exact: true })).toBeVisible();
@@ -167,6 +188,7 @@ try {
   await expect(page).toHaveURL(/rm=hours/);
   await page.reload({ waitUntil: "networkidle" });
   await expect(readout).toContainText("Fri 13 Sep 2024 · 11:00 ICT");
+  await openLayers();
   await expect(page.getByRole("radio", { name: "Hours under water" })).toBeChecked();
   await expect(page.getByRole("radio", { name: "Hours cut" })).toBeChecked();
   await expect(page.getByRole("slider", { name: "Imagery comparison divider" })).toBeVisible();
@@ -174,6 +196,7 @@ try {
   await expect(page.getByText(/Link to this moment copied\.|select the link below and copy it/)).toBeVisible();
   await page.goto(`${baseUrl}${caseRoute}?t=99999&wm=flow&img=bogus&layers=zz&cmp=x,y&set=all&k=99`, { waitUntil: "networkidle" });
   await expect(readout).toContainText("Mon 9 Sep 2024 · 12:00 ICT");
+  await openLayers();
   await expect(page.getByRole("radio", { name: "Depth at this moment" })).toBeChecked();
   await expect(page.getByRole("radio", { name: /^Reported used in Sep 2024/ })).toBeChecked();
   assert.equal(await page.getByRole("slider", { name: "Imagery comparison divider" }).count(), 0, "Invalid comparison falls back to off");
@@ -206,18 +229,58 @@ try {
     await page.evaluate(() => window.__restoreImageDecode?.());
   }
   checks.push(`PNG export of the moment${(await record.count()) ? " and cancellable video recording, including cancel while preparing" : " (video hidden without MediaRecorder)"}`);
+  // Observed evidence: the VIIRS daily map for the day at or before the playhead (pixelated, deep-linked as "v"), its
+  // clear-sky comparison card, and the hourly rain chart under the stage curve.
+  await page.goto(`${baseUrl}${caseRoute}?t=158`, { waitUntil: "networkidle" });
+  await waterModel();
+  // 15 Sep 14:00: the first clear optical image after the flood is on screen, and the page says what its brown is.
+  await expect(page.getByTestId("mud-cue")).toContainText("brown = mud left by floodwater (observed)");
+  await openLayers();
+  await page.getByRole("checkbox", { name: "VIIRS daily flood map (375 m, observed)" }).check();
+  await expect(page).toHaveURL(/[?&]layers=[a-z]*v/);
+  const viirsImage = page.locator(".leaflet-fg-viirs-pane img");
+  await expect(viirsImage).toHaveCount(1);
+  await expect(viirsImage).toHaveAttribute("src", /viirs-20240915\.png$/);
+  await page.waitForFunction(() => {
+    const image = document.querySelector(".leaflet-fg-viirs-pane img");
+    return Boolean(image && image.complete && image.naturalWidth > 0);
+  });
+  assert.equal(await viirsImage.evaluate((image) => getComputedStyle(image).imageRendering), "pixelated", "VIIRS pixels are drawn square");
+  await expect(page.getByTestId("viirs-note")).toContainText("VIIRS daily flood map (observed, 375 m)");
+  await expect(page.getByTestId("viirs-legend")).toBeVisible();
+  const viirsCard = page.getByTestId("viirs-card");
+  await expect(viirsCard.getByText("not a validation of the model", { exact: false })).toBeVisible();
+  await expect(viirsCard.locator("tr[aria-current='date']")).toContainText("15 Sep");
+  await slider.fill("40");
+  await expect(viirsImage).toHaveAttribute("src", /viirs-20240910\.png$/);
+  await slider.fill("12");
+  await expect(viirsImage).toHaveCount(0);
+  await expect(page.getByTestId("viirs-note")).toContainText("no daily map");
+  await expect(page.getByTestId("rain-chart")).toBeVisible();
+  await expect(page.getByTestId("rain-now")).toContainText("MOU189");
+  checks.push("observed VIIRS daily map (day at or before the playhead, pixelated, deep-linked) with its clear-sky comparison card, and the hourly rain chart");
   // Residents, the evacuation-access scenario and shelters (all model scenarios, never "observed").
   await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
   await waterModel();
+  await openLayers();
   await page.getByRole("radio", { name: "People in flood water" }).check();
   await expect(page.getByText("People in flood water: residents per hectare (WorldPop 2020, model)", { exact: true })).toBeVisible();
   await expect(page.getByTestId("people-in-water")).toHaveText(/^\d{1,3}(,\d{3})*$/);
-  await page.getByRole("radio", { name: "All residents" }).check();
+  await page.getByRole("radio", { name: "All residents", exact: true }).check();
   await expect(page.getByText("All residents per hectare (WorldPop 2020, modelled)", { exact: true })).toBeVisible();
   await page.getByRole("radio", { name: "People in flood water" }).check();
+  await layersButton.click();
+  await expect(page.locator("#mae-sai-map-layers")).toBeHidden();
   const accessCard = page.getByTestId("access-card");
-  await expect(accessCard.getByText("not observed evacuation outcomes", { exact: false })).toBeVisible();
+  await expect(accessCard.getByText("Planning scenario, not observed evacuation outcomes", { exact: false })).toBeVisible();
   await expect(accessCard.getByTestId("access-without")).toContainText("/");
+  // Like with like: by default the card counts the residents whose homes flood at the peak, as the plan does.
+  await expect(accessCard.getByRole("radio", { name: /^Residents whose homes flood at the peak/ })).toBeChecked();
+  await expect(accessCard.getByTestId("plan-optimises")).toContainText("What the ranked plan optimises");
+  await accessCard.getByRole("radio", { name: /^All residents at road nodes/ }).check();
+  await expect(page).toHaveURL(/[?&]pop=all(&|$)/);
+  await accessCard.getByRole("radio", { name: /^Residents whose homes flood at the peak/ }).check();
+  await expect(page).toHaveURL(/[?&]pop=flooded(&|$)/);
   await expect(accessCard.getByTestId("equity-gap")).toContainText("Evacuation Equity Gap");
   await expect(accessCard.getByTestId("equity-gap")).toContainText("terrain/remoteness proxy");
   await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
@@ -225,6 +288,7 @@ try {
   await planSlider.fill("3");
   await expect(page).toHaveURL(/[?&]set=plan(&|$)/);
   await expect(page).toHaveURL(/[?&]k=3(&|$)/);
+  await expect(accessCard.getByTestId("plan-k-sentence")).toContainText(/k = 3: 3 sites cover [\d,]+ of [\d,]+ residents whose homes flood \(\d+%\) · late evacuation \d+%/);
   await expect(page.locator(".leaflet-fg-shelters-pane [class*='planBadgeIcon']")).toHaveCount(3);
   await accessCard.getByRole("checkbox", { name: /Show people cut off on the map/ }).check();
   await expect(page.locator(".leaflet-fg-cutoff-pane canvas")).toHaveCount(1);
@@ -232,6 +296,11 @@ try {
   await expect(page).toHaveURL(/[?&]layers=[a-z]*x/);
   const planCard = page.getByTestId("shelter-plan-card");
   await expect(planCard.getByText("Ranked range, not a fixed number", { exact: false })).toBeVisible();
+  await expect(planCard.getByRole("slider", { name: /^Plan size k/ })).toHaveValue("3");
+  // Desktop: the map column stays in view beside the cards (sticky), so a card's control changes a visible map.
+  await planCard.scrollIntoViewIfNeeded();
+  const mapTop = await page.evaluate(() => document.querySelector(".leaflet-container").getBoundingClientRect().top);
+  assert(mapTop >= 0 && mapTop < 200, `The map stays in view beside the plan card (top ${mapTop}px)`);
   await expect(planCard.getByText("Shelter gap", { exact: true })).toBeVisible();
   await planCard.getByRole("button", { name: /^Show plan site 1, / }).click();
   // A closing popup fades out for a moment, so each check picks the popup by its text.
@@ -246,8 +315,9 @@ try {
   await expect(popupWith("reported in use, Sep 2024")).toBeVisible();
   assert((await popupWith("reported in use, Sep 2024").locator("a[rel='noopener noreferrer']").count()) > 0, "Reported shelter popups link their sources");
   await expect(reportedCard.getByText("Not located on the map", { exact: false }).first()).toBeVisible();
-  checks.push("people in flood water and all-residents views, access scenario with set and k, cut-off heat, plan badges and sourced shelter popups");
+  checks.push("people in flood water and all-residents views, access scenario with population scope, set and k (live coverage sentence), cut-off heat, sticky map beside the cards, plan badges and sourced shelter popups");
   await page.reload({ waitUntil: "networkidle" });
+  await openLayers();
   await expect(page.getByRole("radio", { name: "People in flood water" })).toBeChecked();
   await expect(page.getByRole("radio", { name: "Ranked plan" })).toBeChecked();
   await expect(page.getByTestId("access-card").getByRole("slider", { name: /^Plan size k/ })).toHaveValue("3");

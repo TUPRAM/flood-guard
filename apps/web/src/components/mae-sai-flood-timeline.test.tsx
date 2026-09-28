@@ -7,12 +7,16 @@ import {
   ARRIVAL_RAMP,
   arrivalClasses,
   codeTimings,
+  coverageComplete,
   districtStats,
   hourlyStages,
   manifestRevision,
+  rainAt,
+  referencesNotIngested,
   roadCut,
   roadCutGroups,
   stageAt,
+  viirsReading,
   tFromDate,
   TIMELINE_MANIFEST_URL,
   type FacilityProps,
@@ -22,7 +26,22 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "@/lib/flood-timeline";
-import { facilityStatusText, Hydrograph, ImpactCard, MaeSaiFloodTimeline, RadarCheck, RouteCutsCard, TimelineLegend, WetFacilitiesCard } from "./mae-sai-flood-timeline";
+import {
+  facilityStatusText,
+  HowToRead,
+  Hydrograph,
+  ImpactCard,
+  LowConfidenceEvidence,
+  MaeSaiFloodTimeline,
+  playLabel,
+  postEventOptical,
+  RadarCheck,
+  RouteCutsCard,
+  SourcesPanel,
+  TimelineLegend,
+  WetFacilitiesCard,
+} from "./mae-sai-flood-timeline";
+import { formatDateSet, RainChart, ViirsComparisonCard, viirsMomentText } from "./mae-sai-observed-panels";
 import { pickVideoType, pngFileName, ReplayExportPanel, VIDEO_TYPES, videoReplayT } from "./mae-sai-replay-export";
 
 // Fixture paths come from the page's one manifest constant and the hrefs inside that manifest.
@@ -40,7 +59,7 @@ const derived = {
   tambonScale: Math.max(...manifest.days.flatMap((day) => Object.values(day.stats.tambon_flooded_km2)), 0.001),
 };
 const observations = manifest.observations.map((observation) => ({ observation, at: tFromDate(observation.local) }));
-const text = (html: string) => html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+const text = (html: string) => html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&#x27;/g, "'").replace(/&quot;/g, "\"").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\u00a0/g, " ");
 
 describe("Mae Sai flood replay page shell", () => {
   it("labels the replay as a historical reconstruction before any data loads", () => {
@@ -51,36 +70,117 @@ describe("Mae Sai flood replay page shell", () => {
     expect(html).toContain("Loading figures");
     expect(html).not.toMatch(/real-time (flood )?detection|live warning|\blive\b/i);
   });
+
+  it("puts Play, the readout and a 'Map layers' drawer above the map, with the controls folded away", () => {
+    const html = renderToStaticMarkup(<MaeSaiFloodTimeline />);
+    const play = html.indexOf('data-testid="play-button"');
+    const readout = html.indexOf('data-testid="replay-readout"');
+    const layers = html.indexOf('aria-controls="mae-sai-map-layers"');
+    const map = html.indexOf('role="region"');
+    expect(play).toBeGreaterThan(0);
+    expect(readout).toBeGreaterThan(play);
+    expect(layers).toBeGreaterThan(readout);
+    // Play, readout and the drawer button come before the map; the layer controls live in a hidden drawer over it.
+    expect(map).toBeGreaterThan(layers);
+    expect(html).toMatch(/<div id="mae-sai-map-layers"[^>]*hidden=""/);
+    expect(html).toMatch(/aria-expanded="false"[^>]*aria-controls="mae-sai-map-layers"/);
+    expect(text(html)).toContain("Play 9 → 19 Sep (");
+    expect(text(html)).toContain("Map layers");
+    // The shared "How to read these numbers" box sits in the hero, collapsed.
+    expect(html).toContain('data-testid="how-to-read"');
+    expect(html).not.toMatch(/<details[^>]*data-testid="how-to-read"[^>]*open/);
+    // The key facilities start hidden: the layer switch is off.
+    const facilitiesSwitch = /<label><input type="checkbox"[^>]*\/><span[^>]*><i[^>]*><\/i><\/span><span>Key facilities \(OSM\)<\/span><\/label>/.exec(html)?.[0] ?? "";
+    expect(facilitiesSwitch).not.toBe("");
+    expect(facilitiesSwitch).not.toMatch(/checked/);
+  });
+
+  it("labels the play button with the window and its length, then Pause, Play from here and Replay", () => {
+    expect(playLabel(0.5, false, "en")).toBe("Play 9 → 19 Sep (26 s)");
+    expect(playLabel(0.5, false, "th")).toBe("เล่น 9 → 19 ก.ย. (26 วินาที)");
+    expect(playLabel(3, true, "en")).toBe("Pause");
+    expect(playLabel(3, false, "en")).toBe("Play from here");
+    expect(playLabel(11, false, "en")).toBe("Replay");
+  });
+
+  it("names the first clear optical image after the flood began, so its brown areas read as flood mud", () => {
+    const after = postEventOptical("s2-20240915", manifest.observations, manifest.phases);
+    expect(after?.id).toBe("s2-20240915");
+    expect(postEventOptical("s2-20240905", manifest.observations, manifest.phases)).toBeNull();
+    expect(postEventOptical("s1-20240915", manifest.observations, manifest.phases)).toBeNull();
+    expect(postEventOptical(null, manifest.observations, manifest.phases)).toBeNull();
+    expect(postEventOptical("hillshade", manifest.observations, manifest.phases)).toBeNull();
+  });
+
+  it("explains how to read the numbers: model, observed and reported, confidence, timestamps, assumptions and terms", () => {
+    const html = renderToStaticMarkup(<HowToRead manifest={manifest} language="en" />);
+    const plain = text(html);
+    expect(plain).toContain("How to read these numbers");
+    expect(plain).toContain("Model: the blue water, impacts, access and shelter plans are model outputs");
+    expect(plain).toContain("Reported: the event narrative and the 2024 shelter list come from public reporting.");
+    expect(plain).toContain(`Confidence: ${manifest.confidence.toLowerCase() === "low" ? "low" : manifest.confidence}`);
+    expect(plain).toContain(manifest.source_timestamp);
+    expect(html).toContain('href="#mae-sai-sources"');
+    for (const term of ["Stage", "HAND", "Freeboard", "Road nodes", "T1 scenario", "Low-confidence water"]) expect(plain).toContain(term);
+    expect(plain).not.toMatch(/\blive\b|real-time detection/i);
+    const thai = text(renderToStaticMarkup(<HowToRead manifest={manifest} language="th" />));
+    expect(thai).toContain("วิธีอ่านตัวเลขเหล่านี้");
+    expect(thai).toContain("2567 (2024)");
+  });
 });
 
 describe("Mae Sai replay panels", () => {
-  it("scopes the impact figures to the modelled part of the district", () => {
+  it("scopes the impact figures to the modelled part of the district, or says the whole district is modelled", () => {
     const stats = districtStats(manifest, peakStage, roads, facilities);
     const html = text(renderToStaticMarkup(<ImpactCard manifest={manifest} stats={stats} derived={derived} language="en" />));
     const modelled = Math.round(manifest.model_coverage.modelled_km2);
     const district = Math.round(manifest.model_coverage.district_km2);
-    expect(html).toContain(`Modelled parts of the eight Mae Sai subdistricts — ${modelled} of ${district} km²`);
-    expect(html).toContain(manifest.model_coverage.reason);
+    if (coverageComplete(manifest.model_coverage)) {
+      expect(html).toContain(`All eight Mae Sai subdistricts, fully modelled — ${district} km²`);
+      expect(html).toContain(`Model coverage: ${manifest.model_coverage.reason}`);
+      expect(html).not.toMatch(/Not modelled|Modelled parts/);
+    } else {
+      expect(html).toContain(`Modelled parts of the eight Mae Sai subdistricts — ${modelled} of ${district} km²`);
+      expect(html).toContain(`Not modelled: ${manifest.model_coverage.reason}`);
+    }
     expect(html).toContain("Computed in your browser from the terrain model at this stage.");
     expect(html).toContain(`${stats.facilities_wet} / ${manifest.facilities_count.modelled}`);
-    expect(html).toContain(`${manifest.roads_not_modelled_km.toFixed(2)} km of mapped road`);
+    // Roads and facilities outside the model are mentioned only when the manifest has some.
+    expect(html.includes("km of mapped road")).toBe(manifest.roads_not_modelled_km > 0);
+    const facilitiesOutside = manifest.facilities_count.total - manifest.facilities_count.modelled;
+    expect(html.includes("outside the model (grey hollow markers)")).toBe(facilitiesOutside > 0);
     // Subdistricts under 99% coverage carry their modelled share; fully modelled ones do not.
     const partial = Object.entries(manifest.tambon_coverage).filter(([, item]) => item.modelled_km2 / item.total_km2 < 0.99);
-    expect(partial.length).toBeGreaterThan(0);
     for (const [, item] of partial) expect(html).toContain(`(${Math.round((item.modelled_km2 / item.total_km2) * 100)}% modelled)`);
-    expect(html.match(/% modelled\)/g)).toHaveLength(partial.length);
+    expect(html.match(/% modelled\)/g) ?? []).toHaveLength(partial.length);
     expect(html).not.toMatch(/\blive\b/i);
+    // The same card still names unmodelled land, roads and facilities when a revision has them.
+    const firstTambon = Object.keys(manifest.tambon_coverage)[0];
+    const partialManifest: TimelineManifest = {
+      ...manifest,
+      model_coverage: { modelled_km2: 294.4, district_km2: 305.6, reason: "The DEM tile used stops at 100°E." },
+      tambon_coverage: { ...manifest.tambon_coverage, [firstTambon]: { modelled_km2: 10, total_km2: 20 } },
+      roads_not_modelled_km: 1.83,
+      facilities_count: { total: manifest.facilities_count.total, modelled: manifest.facilities_count.total - 2 },
+    };
+    const partialHtml = text(renderToStaticMarkup(<ImpactCard manifest={partialManifest} stats={stats} derived={derived} language="en" />));
+    expect(partialHtml).toContain("Modelled parts of the eight Mae Sai subdistricts — 294 of 306 km²");
+    expect(partialHtml).toContain("Not modelled: The DEM tile used stops at 100°E.");
+    expect(partialHtml).toContain("1.83 km of mapped road");
+    expect(partialHtml).toContain("2 key facilities (OSM) are outside the model");
+    expect(partialHtml).not.toMatch(/candidate facilit/i);
+    expect(partialHtml).toContain("(50% modelled)");
   });
 
   it("uses Thai units and keeps the candidate qualifier in Thai", () => {
     const stats = districtStats(manifest, peakStage, roads, facilities);
     const html = text(renderToStaticMarkup(<ImpactCard manifest={manifest} stats={stats} derived={derived} language="th" />));
-    expect(html).toContain("สถานที่สำคัญที่เป็นไปได้ (ข้อมูล OSM)");
+    expect(html).toContain("สถานที่สำคัญ (ข้อมูล OSM)");
     expect(html).toContain("ตร.กม.");
     expect(html).toContain("กม.");
     expect(html).not.toMatch(/km²|\d km\b/);
     const legend = text(renderToStaticMarkup(<TimelineLegend language="th" unmodelledRoads unmodelledFacilities={false} />));
-    expect(legend).toContain("สถานที่สำคัญที่เป็นไปได้ (ข้อมูล OSM)");
+    expect(legend).toContain("สถานที่สำคัญ (ข้อมูล OSM)");
     expect(legend).toContain("ไม่ได้จำลอง");
   });
 
@@ -106,8 +206,42 @@ describe("Mae Sai replay panels", () => {
     expect(thai).toContain("ขอบเขตการตรวจสอบ");
   });
 
+  it("adds the low-confidence water entry to the legend and the evidence only when the manifest declares the flag", () => {
+    const withFlag = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} lowConfidence />));
+    expect(withFlag).toContain("Low-confidence water: flat or filled low ground in the elevation model");
+    const thai = text(renderToStaticMarkup(<TimelineLegend language="th" unmodelledRoads={false} unmodelledFacilities={false} lowConfidence />));
+    expect(thai).toContain("น้ำที่มีความเชื่อมั่นต่ำ: พื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง");
+    const people = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode="people" densityMax={31.33} lowConfidence />));
+    expect(people).toContain("Low-confidence water");
+    expect(text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} />))).not.toContain("Low-confidence");
+    // Evidence: the share at the modelled peak, from the manifest (14 of 88.7 km² in r3), and what it means.
+    const share = manifest.hand.low_confidence_share!;
+    const evidence = text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="en" /></dl>));
+    expect(evidence).toContain(`${share.low_confidence_km2.toFixed(1)} of the ${share.peak_flooded_km2.toFixed(1)} km² wet at the modelled peak is flat or filled low ground in the elevation model`);
+    expect(evidence).toContain(manifest.hand.low_confidence!.meaning);
+    expect(text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="th" /></dl>))).toContain(`${share.low_confidence_km2.toFixed(1)} จาก ${share.peak_flooded_km2.toFixed(1)} ตร.กม.`);
+    expect(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={{ ...manifest.hand, low_confidence_channel: null }} language="en" /></dl>)).toBe("<dl></dl>");
+  });
+
+  it("splits the legend into the on-map part (water and roads) and the marker key", () => {
+    const shelters = { reported: true, candidates: true, ineligible: false };
+    const overlay = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} shelters={shelters} cutoff part="overlay" />));
+    expect(overlay).toContain("Water depth (model)");
+    expect(overlay).toContain("Roads (model)");
+    expect(overlay).toContain("People cut off from a dry shelter (scenario)");
+    expect(overlay).not.toMatch(/Shelters|Key facilities/);
+    const symbols = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} shelters={shelters} facilities={false} part="symbols" />));
+    expect(symbols).toContain("Reported, but floods at the modelled peak (struck-through star)");
+    expect(symbols).toContain("capacity unknown or far below its load");
+    expect(symbols).not.toMatch(/Water depth|Key facilities/);
+    const empty = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} facilities={false} part="symbols" />));
+    expect(empty).toContain("No marker layers are on");
+  });
+
   it("lists facilities in water deepest first and hides the list when none are wet", () => {
     const html = renderToStaticMarkup(<WetFacilitiesCard facilities={facilities} stage={peakStage} language="en" />);
+    expect(text(html)).toContain("Key facilities (OSM) in water at this replay hour");
+    expect(text(html)).not.toMatch(/\bnow\b/);
     const peakDay = manifest.days.find((day) => day.stage_m === peakStage)!;
     expect(html.match(/<li>/g)).toHaveLength(peakDay.stats.facilities_wet);
     const depths = [...text(html).matchAll(/depth ≈ (<?\s?[\d.]+) m/g)].map((match) => Number(match[1].replace("<", "").trim()));
@@ -142,8 +276,11 @@ describe("Mae Sai replay panels", () => {
     expect(html).not.toMatch(/<text[^>]*>S[12] /);
     expect(text(html)).toContain("Sentinel-2 · 15 Sep 10:58 ICT");
     expect(text(html)).toContain("Sentinel-1 · 16 Sep 06:16 ICT");
-    // r2 scales each cell's rise by k, so the curve is the Sai main-stem reference stage, not every channel's.
-    expect(text(html)).toContain("Assumed Sai main-stem stage at the Mae Sai bridges (m) — illustrative; tributaries rise k × stage");
+    // Each cell's rise is scaled by a factor (from r2 on), so the curve is the Sai main-stem reference stage, not every
+    // channel's; the page does not call that factor "k" (k is the plan size).
+    expect(text(html)).toContain("Assumed Sai main-stem stage at the Mae Sai bridges (m) — illustrative; tributaries rise to a fraction of this level");
+    expect(text(html)).not.toContain("k ×");
+    expect(html).toMatch(/aria-label="[^"]*at this replay hour\."/);
   });
 });
 
@@ -173,6 +310,11 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
     const html = renderToStaticMarkup(<RouteCutsCard groups={groups} names={names} language="en" focused={null} onFocus={() => undefined} onReset={() => undefined} />);
     const plain = text(html);
     expect(plain).toContain("Longest-cut routes (Keep Routes Open)");
+    // Named roads and unnamed street groups are listed separately; known roads carry an English label.
+    expect(plain).toMatch(/Named roads \(\d+\)/);
+    expect(plain).toMatch(/Unnamed street groups \(top \d+\)/);
+    if (groups.some((group) => group.name === "ถนนพหลโยธิน")) expect(plain).toContain("Phahonyothin Rd (Hwy 1) (ถนนพหลโยธิน)");
+    expect(plain).not.toContain("20 Sep 00:00");
     expect(plain).toContain("Modelled, not observed closures");
     expect(html.match(/<li>/g)).toHaveLength(groups.length);
     expect(plain).toContain(`Up to ${groups[0].maxHours} h cut`);
@@ -205,7 +347,7 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
   });
 
   it("names the served data revision, which is also the manifest's own revision field", () => {
-    expect(manifestRevision()).toBe("r2");
+    expect(manifestRevision()).toBe("r3");
     expect(manifest.revision).toBe(manifestRevision());
     expect(manifestRevision("/studies/x/r9/timeline.json")).toBe("r9");
   });
@@ -218,5 +360,103 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
     expect(text(html)).toContain("Exports become available once the water model has loaded.");
     const thai = text(renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="th" waterOpacity={0.85} />));
     expect(thai).toContain("บันทึกภาพ PNG ของช่วงเวลานี้");
+  });
+});
+
+describe("Mae Sai observed evidence panels", () => {
+  const viirs = manifest.viirs_daily!;
+  const rainfall = manifest.rainfall!;
+  const dayLabels = manifest.days.map((day) => String(Number(day.date.slice(8))));
+  const noop = () => undefined;
+
+  it("tabulates VIIRS against the model in clear-sky pixels, day by day, and never calls it a validation", () => {
+    const active = viirs.days[Math.min(3, viirs.days.length - 1)];
+    const html = renderToStaticMarkup(<ViirsComparisonCard viirs={viirs} activeDate={active.date} showOnMap={false} onShowOnMap={noop} language="en" />);
+    const plain = text(html);
+    expect(plain).toContain("Observed vs modelled (VIIRS, clear sky only)");
+    expect(html.match(/<tr/g)).toHaveLength(viirs.days.length + 1);
+    expect(html.match(/aria-current="date"/g)).toHaveLength(1);
+    // A day with no clear sky shows dashes, never a zero that would read as "no flood".
+    const rows = html.split("<tr").slice(2);
+    viirs.days.forEach((day, index) => expect(rows[index].includes("—"), day.date).toBe(!(day.clear_km2 > 0)));
+    for (const day of viirs.days) {
+      expect(plain).toContain(viirsReading(day).en);
+      expect(plain).toContain(`${Math.round(day.cloud_share * 100)}%`);
+    }
+    expect(plain).toContain(viirs.caveat);
+    expect(plain).toContain(viirs.comparison_rule);
+    expect(plain).toContain("not a validation of the model");
+    expect(plain.replaceAll("not a validation", "")).not.toMatch(/validat/i);
+    expect(plain).toContain("standing water in rice paddies can read as flood water");
+    const cloudy = viirs.days.filter((day) => day.cloud_share >= 0.5).map((day) => day.date);
+    if (cloudy.length > 0) expect(plain).toContain(`Cloud hid at least half of the district on ${cloudy.length} of ${viirs.days.length} days (${formatDateSet(cloudy, "en")})`);
+    expect(html).toContain(`href="${viirs.source_url}"`);
+    expect(html).toContain('rel="noopener noreferrer"');
+    const thai = text(renderToStaticMarkup(<ViirsComparisonCard viirs={viirs} activeDate={null} showOnMap onShowOnMap={noop} language="th" />));
+    expect(thai).toContain("การสังเกตเทียบกับแบบจำลอง (VIIRS เฉพาะท้องฟ้าโปร่ง)");
+    expect(thai).toContain(viirsReading(active).th);
+    expect(formatDateSet(["2024-09-12", "2024-09-10", "2024-09-11", "2024-09-18"], "en")).toBe("10–12 Sep, 18 Sep");
+    expect(formatDateSet(["2024-09-30", "2024-10-01"], "en")).toBe("30 Sep – 1 Oct");
+  });
+
+  it("describes the VIIRS map at this moment, or why there is none, and labels its legend as observed", () => {
+    const clear = viirs.days.find((day) => day.clear_km2 > 0)!;
+    expect(viirsMomentText(clear, viirs, "en")).toContain(`VIIRS shows ${clear.viirs_flood_km2_clear.toFixed(1)} km² of flood water and the model ${clear.model_flood_km2_clear.toFixed(1)} km²`);
+    const overcast = viirs.days.find((day) => !(day.clear_km2 > 0));
+    if (overcast) expect(viirsMomentText(overcast, viirs, "en")).toContain("cloud covered the whole district, so there is no observation");
+    expect(viirsMomentText(null, viirs, "en")).toContain("No VIIRS daily map for this moment");
+    expect(viirsMomentText(null, viirs, "th")).toMatch(/[\u0E00-\u0E7F]/);
+    const legend = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} viirs={viirs} gauges />));
+    expect(legend).toContain("VIIRS daily flood map (375 m, observed)");
+    for (const [code, label] of Object.entries(viirs.legend)) if (code !== "transparent") expect(legend).toContain(label);
+    expect(legend).toContain("Purple is observed flood water; the model's water is blue.");
+    expect(legend).toContain("Hourly rain gauge (forcing, not flooding)");
+    expect(text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} />))).not.toMatch(/VIIRS|rain gauge/);
+  });
+
+  it("charts hourly rain per gauge on the replay's time axis, with only the playhead moving", () => {
+    const html = renderToStaticMarkup(<RainChart rainfall={rainfall} time={3.5} dayLabels={dayLabels} language="en" />);
+    const plain = text(html);
+    expect(html).toContain('role="img"');
+    for (const station of rainfall.stations) {
+      expect(plain).toContain(`${station.code} · rain, mm/h · total ${station.total_mm.toFixed(1)} mm · wettest hour ${station.max_hour_mm.toFixed(1)} mm`);
+      const wetHours = rainfall.hourly_mm[station.code].filter((value) => typeof value === "number" && value > 0).length;
+      const bars = new RegExp(`data-station="${station.code}"[\\s\\S]*?<path d="([^"]+)" class="[^"]*rainBar`).exec(html)![1];
+      expect(bars.match(/M/g)).toHaveLength(wetHours);
+      const now = rainAt(rainfall, station.code, 84);
+      expect(plain).toContain(`${station.code} ${now === null ? "no record" : `${now.toFixed(1)} mm`}`);
+    }
+    expect(plain).toContain("the forcing, not flooding");
+    expect(plain).toContain(rainfall.licence);
+    // Everything but the playhead and the "this hour" readout is identical at another moment.
+    const later = renderToStaticMarkup(<RainChart rainfall={rainfall} time={7.25} dayLabels={dayLabels} language="en" />);
+    const strip = (value: string) => value
+      .replace(/<line[^>]*class="[^"]*playhead[^"]*"[^>]*>(<\/line>)?/, "")
+      .replace(/<span[^>]*data-testid="rain-now"[^>]*>[\s\S]*?<\/span>/, "");
+    expect(strip(later)).toBe(strip(html));
+    expect(later).not.toBe(html);
+    const thai = text(renderToStaticMarkup(<RainChart rainfall={rainfall} time={3.5} dayLabels={dayLabels} language="th" />));
+    expect(thai).toContain("ไม่ใช่ขอบเขตน้ำท่วม");
+  });
+
+  it("lists every source, assumption and limitation from the manifest, with the observed data linked and ingested references dropped", () => {
+    const html = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="en" offlineCopy={null} />);
+    const plain = text(html);
+    expect(manifest.sources.map((source) => source.id)).toEqual(expect.arrayContaining(["viirs", "hii-rain"]));
+    for (const source of manifest.sources) {
+      expect(plain).toContain(source.name);
+      expect(plain).toContain(source.licence);
+      expect(plain).toContain(source.attribution);
+    }
+    for (const item of manifest.assumptions) expect(plain).toContain(item);
+    for (const item of manifest.limitations) expect(plain).toContain(item);
+    for (const url of [viirs.source_url, rainfall.source_url]) expect(html).toContain(`href="${url}"`);
+    expect(plain).toContain(viirs.caveat);
+    expect(plain).toContain(rainfall.note);
+    const pending = referencesNotIngested(manifest);
+    for (const reference of manifest.external_references ?? []) {
+      expect(plain.includes(reference.name), reference.name).toBe(pending.includes(reference));
+    }
+    expect(plain).toContain(`${manifest.study_id} ${manifestRevision()}`);
   });
 });

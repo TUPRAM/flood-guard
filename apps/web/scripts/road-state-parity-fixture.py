@@ -62,7 +62,8 @@ def main() -> None:
         "columns": ["hour", "stage_m", "road_km_wet", "road_km_impassable"],
     }, indent=1)
     body = ",\n".join(f"  {json.dumps(row)}" for row in rows)
-    FIXTURE.write_text(f'{header[:-2]},\n "hours": [\n{body}\n ]\n}}\n', encoding="utf-8")
+    # LF on every platform, matching the repository's eol=lf policy (Windows text mode would write CRLF).
+    FIXTURE.write_text(f'{header[:-2]},\n "hours": [\n{body}\n ]\n}}\n', encoding="utf-8", newline="\n")
     print(f"wrote {FIXTURE.relative_to(ROOT)} ({len(rows)} hours)")
 
 

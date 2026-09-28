@@ -2,18 +2,37 @@
 .page a:focus-visible, .page button:focus-visible, .page select:focus-visible, .page input:focus-visible, .page summary:focus-visible { outline: 3px solid #e8a526; outline-offset: 3px; }
 .container { max-width: 1440px; margin: auto; padding: 0 2rem; }
 
-.hero { padding: 1.6rem 0 1.4rem; max-width: 900px; }
-.breadcrumbs { display: flex; gap: .6rem; color: #5a6a80; font-size: .8rem; margin-bottom: 1.4rem; }
+.hero { padding: 1.1rem 0 1rem; max-width: 1040px; }
+.breadcrumbs { display: flex; gap: .6rem; color: #5a6a80; font-size: .8rem; margin-bottom: .8rem; }
 .breadcrumbs a { color: #2454b8; }
-.eyebrow { color: #47618c; font-size: .7rem; letter-spacing: .14em; font-weight: 700; margin: 0 0 .7rem; }
-.hero h1 { font-family: "Manrope Variable", "Noto Sans Thai Variable", sans-serif; font-size: clamp(1.9rem, 3.6vw, 3rem); letter-spacing: -.04em; line-height: 1.15; margin: 0 0 1rem; }
-.lead { font-size: 1.02rem; color: #54647c; line-height: 1.75; max-width: 760px; margin: 0 0 1rem; }
-.banner { display: inline-block; margin: 0; padding: .7rem 1rem; border: 1px solid #ead7ac; border-left: 4px solid #d18b12; border-radius: .6rem; background: #fff5df; color: #6b4410; font-size: .85rem; line-height: 1.6; }
+.eyebrow { color: #47618c; font-size: .7rem; letter-spacing: .14em; font-weight: 700; margin: 0 0 .5rem; }
+/* Thai has no capitals and its tone marks crowd when letter-spaced. */
+.page:lang(th) .eyebrow { letter-spacing: 0; }
+.hero h1 { font-family: "Manrope Variable", "Noto Sans Thai Variable", sans-serif; font-size: clamp(1.7rem, 3vw, 2.5rem); letter-spacing: -.04em; line-height: 1.15; margin: 0 0 .55rem; }
+.page:lang(th) .hero h1 { letter-spacing: -.01em; }
+.lead { font-size: .98rem; color: #54647c; line-height: 1.6; max-width: 820px; margin: 0 0 .8rem; }
+.heroNotes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .6rem 1rem; }
+.banner { display: inline-block; margin: 0; padding: .6rem 1rem; border: 1px solid #ead7ac; border-left: 4px solid #d18b12; border-radius: .6rem; background: #fff5df; color: #6b4410; font-size: .85rem; line-height: 1.55; }
+.howTo { flex: 1 1 16rem; max-width: 44rem; border: 1px solid #d5deeb; border-radius: .6rem; background: #fff; color: #3b4d68; font-size: .82rem; line-height: 1.55; }
+.howTo > summary { display: flex; align-items: center; min-height: 42px; padding: .45rem .85rem; cursor: pointer; font-weight: 700; color: #17253b; }
+.howTo[open] { padding-bottom: .8rem; }
+.howTo .list { margin: .2rem .9rem 0; }
+.glossary { display: grid; gap: .4rem; margin: .7rem .9rem 0; font-size: .78rem; }
+.glossary div { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: .6rem; }
+.glossary dt { font-weight: 700; color: #17253b; }
+.glossary dd { margin: 0; }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 390px); gap: 1.25rem; align-items: start; margin-bottom: 2rem; }
 .stage { min-width: 0; background: #fff; border: 1px solid #d5deeb; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 12px #16305806; }
 
-.toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: .9rem 1.6rem; padding: .9rem 1rem; border-bottom: 1px solid #e5eaf2; }
+/* Play, the time readout and the "Map layers" button sit directly above the map; their height is reserved from the
+   first render so nothing that loads later pushes the map down. */
+.stageBar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; min-height: 66px; padding: .65rem 1rem; border-bottom: 1px solid #e5eaf2; }
+.layersButton { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; margin-left: auto; padding: 0 .95rem; border: 1px solid #0c2740; border-radius: .6rem; background: #fff; color: #0c2740; font-size: .84rem; font-weight: 700; cursor: pointer; }
+.layersButton[aria-expanded="true"] { background: #0c2740; color: #fff; }
+.layersButton:disabled { opacity: .55; cursor: wait; }
+.layersButton span { font-size: 1rem; line-height: 1; }
+.momentLine { flex-basis: 100%; min-height: 1.35em; margin: 0; font-size: .8rem; line-height: 1.35; color: #223650; }
 .toolGroup { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem .9rem; min-width: 0; }
 .compareFields { display: flex; flex-wrap: wrap; gap: .6rem .9rem; min-width: 0; }
 .toggleButton { min-height: 40px; padding: 0 .9rem; border: 1px solid #c6d1e3; border-radius: .5rem; background: #fff; color: #17253b; font-size: .8rem; font-weight: 700; cursor: pointer; }
@@ -31,10 +50,21 @@
 .field { display: grid; gap: .3rem; min-width: 0; font-size: .74rem; font-weight: 650; color: #3b4d68; }
 .field select { max-width: 100%; min-height: 40px; padding: 0 .6rem; border: 1px solid #c6d1e3; border-radius: .5rem; background: #fff; color: #17253b; font-size: .82rem; }
 .field input[type="range"] { width: 190px; max-width: 100%; accent-color: #08519c; }
-.toggles { display: flex; flex-wrap: wrap; gap: .3rem .9rem; margin: 0; padding: 0; border: 0; font-size: .8rem; color: #3b4d68; }
-.toggles legend { float: left; margin-right: .6rem; font-size: .74rem; font-weight: 650; }
-.toggles label { display: inline-flex; align-items: center; gap: .35rem; min-height: 32px; cursor: pointer; }
-.toggles input { width: 16px; height: 16px; accent-color: #08519c; }
+.toggles { display: grid; gap: .1rem; margin: 0; padding: 0; border: 0; font-size: .82rem; color: #3b4d68; }
+.toggles legend { margin-bottom: .2rem; padding: 0; font-size: .74rem; font-weight: 650; }
+.toggles label { display: flex; align-items: center; gap: .5rem; min-height: 40px; cursor: pointer; }
+.toggles input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: #08519c; }
+.toggleSwatch { display: inline-grid; place-items: center; flex: none; width: 20px; }
+
+/* "Map layers" drawer over the map: imagery, water and road modes and layer switches, out of the way until asked for. */
+.layersPanel { position: absolute; z-index: 1100; top: 10px; right: 10px; display: grid; align-content: start; gap: .85rem; width: min(26rem, calc(100% - 20px)); max-height: calc(100% - 20px); overflow: auto; padding: .75rem .9rem 1rem; border: 1px solid #c6d1e3; border-radius: .8rem; background: rgb(255 255 255 / 97%); box-shadow: 0 12px 32px rgb(15 23 42 / 24%); }
+.layersPanel[hidden] { display: none; }
+.layersHead { display: flex; align-items: center; justify-content: space-between; gap: .6rem; color: #17253b; }
+.layersPanel .field, .layersPanel .field select { width: 100%; }
+.layersPanel .field input[type="range"] { width: 100%; }
+.layersPanel .segmented > div { width: 100%; }
+.layersPanel .segmented label { flex: 1 1 auto; }
+.layersPanel .segmented span { justify-content: center; width: 100%; min-height: 40px; padding: .25rem .6rem; text-align: center; line-height: 1.3; }
 
 .mapFrame { position: relative; height: clamp(420px, 64vh, 760px); background: #e9eef5; }
 .mapFrame .map { position: absolute; inset: 0; background: #e9eef5; }
@@ -54,24 +84,43 @@
 .compareLabel { position: absolute; z-index: 730; top: 10px; max-width: 42%; margin: 0; padding: .35rem .6rem; overflow: hidden; border-radius: .45rem; background: rgb(12 39 64 / 86%); color: #fff; font-size: .72rem; font-weight: 650; line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
 /* Sits above Leaflet's attribution, whose measured height (it wraps on narrow maps) the page keeps in --fg-attribution-h. */
 .basemapNote { position: absolute; z-index: 800; left: 10px; bottom: calc(var(--fg-attribution-h, 18px) + 8px); max-width: min(24rem, calc(100% - 20px)); margin: 0; padding: .4rem .65rem; border-radius: .45rem; background: rgb(255 255 255 / 94%); color: #3b4d68; font-size: .72rem; line-height: 1.45; box-shadow: 0 2px 10px rgb(15 23 42 / 18%); pointer-events: none; }
-/* Top-left, below Leaflet's zoom control (10px margin + two 30px buttons + borders), so the bottom-right attribution never covers it. */
-.caption { position: absolute; z-index: 800; right: 10px; top: 10px; max-width: min(22rem, calc(100% - 80px)); margin: 0; padding: .45rem .7rem; border-radius: .5rem; background: rgb(12 39 64 / 86%); color: #fff; font-size: .76rem; line-height: 1.45; pointer-events: none; }
+/* Top-right notes (imagery caption, the 15 Sep mud cue, the comparison note, the VIIRS note), clear of the zoom control
+   on the left and the attribution below. While comparing, the side labels take the top edge, so the notes start below
+   them. While a popup is open the notes and the legend step aside so they never cover it. */
+.mapNotes { position: absolute; z-index: 800; right: 10px; top: 10px; display: grid; justify-items: end; gap: 6px; max-width: min(22rem, calc(100% - 80px)); pointer-events: none; transition: opacity .2s ease; }
+.mapNotes[data-compare] { top: 52px; }
+.caption, .viirsNote, .mudCue, .compareNote { margin: 0; padding: .45rem .7rem; border-radius: .5rem; background: rgb(12 39 64 / 86%); color: #fff; font-size: .76rem; line-height: 1.45; }
+.viirsNote { border-left: 4px solid #9970ab; background: rgb(46 20 62 / 88%); font-size: .72rem; }
+.mudCue { border-left: 4px solid #b07a45; background: rgb(58 36 18 / 90%); font-size: .74rem; }
+.compareNote { border-left: 4px solid #6baed6; font-size: .72rem; }
+.mapFrame[data-popup="open"] .mapNotes, .mapFrame[data-popup="open"] .mapLegend { opacity: 0; pointer-events: none; }
+/* Compact on-map legend below the zoom control: what the active water and road modes (and any switched-on scenario or
+   observed layer) mean; the marker key folds away inside it. */
+.mapLegend { position: absolute; z-index: 840; top: 112px; left: 10px; width: max-content; max-width: min(18.5rem, calc(100% - 20px)); max-height: calc(100% - 128px - var(--fg-attribution-h, 18px)); overflow: auto; border-radius: .6rem; background: rgb(255 255 255 / 95%); box-shadow: 0 2px 10px rgb(15 23 42 / 22%); color: #3b4d68; font-size: .72rem; transition: opacity .2s ease; }
+.mapLegend > summary { display: flex; align-items: center; min-height: 34px; padding: .3rem .65rem; cursor: pointer; font-weight: 700; color: #17253b; }
+.mapLegend .legend { flex-direction: column; flex-wrap: nowrap; gap: .55rem; padding: 0 .65rem .55rem; border-top: 0; font-size: .7rem; }
+.mapLegend .legend ul { gap: .2rem .7rem; }
+.symbolKey { border-top: 1px solid #e5eaf2; }
+.symbolKey > summary { display: flex; align-items: center; min-height: 32px; padding: .25rem .65rem; cursor: pointer; font-weight: 650; color: #223650; }
+.clearSelection { position: absolute; z-index: 820; left: 50%; bottom: calc(var(--fg-attribution-h, 18px) + 8px); display: inline-flex; align-items: center; gap: .4rem; min-height: 38px; padding: 0 .85rem; transform: translateX(-50%); border: 1px solid #0c2740; border-radius: 999px; background: #fff; color: #0c2740; font-size: .78rem; font-weight: 700; box-shadow: 0 2px 10px rgb(15 23 42 / 22%); cursor: pointer; white-space: nowrap; }
+/* VIIRS pixels are ~375 m; keep them square instead of smoothing them into a false level of detail. */
+.viirsLayer { image-rendering: crisp-edges; image-rendering: pixelated; }
 .mapStatus { position: absolute; z-index: 900; top: .75rem; left: 50%; transform: translateX(-50%); margin: 0; padding: .45rem .8rem; border-radius: 999px; background: #fff; color: #17253b; font-size: .78rem; font-weight: 600; box-shadow: 0 4px 16px rgb(15 23 42 / 16%); white-space: nowrap; }
 .mapWarning { background: #fff4dd; color: #815313; white-space: normal; max-width: calc(100% - 2rem); text-align: center; }
-.tooltip { display: grid; gap: .15rem; max-width: 240px; white-space: normal; line-height: 1.45; }
+.tooltip { display: grid; gap: .15rem; min-width: 180px; max-width: 260px; white-space: normal; line-height: 1.45; }
 .tooltip strong { font-size: .76rem; }
 .tooltip [data-tone="alert"] { color: #b3261e; font-weight: 650; }
 .tooltip [data-tone="muted"] { color: #5a6a80; }
 
-.dock { padding: .9rem 1rem 1rem; border-top: 1px solid #e5eaf2; }
-.dockTop { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin-bottom: .8rem; }
+.dock { min-height: 150px; padding: .55rem 1rem .8rem; border-top: 1px solid #e5eaf2; }
 .play, .button { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: 0 1.1rem; border: 0; border-radius: .6rem; background: #0c2740; color: #fff; font-weight: 700; font-size: .86rem; cursor: pointer; }
-.play:hover, .button:hover { background: #08519c; }
+.play { background: #174ecb; box-shadow: 0 2px 8px rgb(23 78 203 / 28%); }
+.play:hover:not(:disabled), .button:hover { background: #08519c; }
+.play:disabled { opacity: .6; cursor: wait; }
 .play span { font-size: .75rem; }
-.readout { display: grid; gap: .1rem; min-width: 0; }
+.readout { display: grid; flex: 1 1 13rem; gap: .1rem; min-width: 0; }
 .readout strong { font-size: .95rem; letter-spacing: -.01em; }
-.readout span { font-size: .78rem; color: #52627a; }
-.preEvent { margin: 0 0 0 auto; font-size: .72rem; color: #5a6a80; }
+.readout span { min-height: 1.2em; font-size: .78rem; color: #52627a; }
 
 .track { position: relative; height: 44px; }
 .band { position: absolute; left: 10px; right: 10px; top: 12px; height: 26px; border-radius: .4rem; overflow: visible; }
@@ -102,10 +151,10 @@
 .range:focus-visible { outline: 3px solid #e8a526; outline-offset: 2px; border-radius: .4rem; }
 
 .days { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 2px; margin: .35rem 10px 0; }
-.days button { min-width: 0; min-height: 32px; padding: 0; border: 1px solid #d5deeb; border-radius: .35rem; background: #f7f9fc; color: #3b4d68; font-size: .74rem; font-weight: 650; cursor: pointer; }
+.days button { min-width: 0; min-height: 34px; padding: 0; border: 1px solid #d5deeb; border-radius: .35rem; background: #f7f9fc; color: #3b4d68; font-size: .74rem; font-weight: 650; cursor: pointer; }
 .days button:hover { border-color: #08519c; color: #08519c; }
 .days button[aria-pressed="true"] { background: #0c2740; border-color: #0c2740; color: #fff; }
-.hint { margin: .5rem 0 0; font-size: .7rem; color: #5a6a80; }
+.hint { margin: .45rem 0 0; font-size: .7rem; color: #5a6a80; }
 
 .hydrograph { margin: .9rem 0 0; }
 .hydrograph svg { display: block; width: 100%; height: auto; overflow: visible; }
@@ -125,7 +174,7 @@
 .playhead { stroke: #e8a526; stroke-width: 2; }
 .playDot { fill: #fff; stroke: #0c2740; stroke-width: 2.5; }
 
-.shareBar { display: grid; gap: .45rem; padding: .8rem 1rem .9rem; border-top: 1px solid #e5eaf2; }
+.shareBar { display: grid; gap: .45rem; }
 .exportPanel { display: grid; gap: .45rem; }
 .actionRow { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .7rem; }
 .secondaryButton { display: inline-flex; align-items: center; min-height: 40px; padding: 0 .9rem; border: 1px solid #0c2740; border-radius: .55rem; background: #fff; color: #0c2740; font-size: .8rem; font-weight: 700; cursor: pointer; }
@@ -137,19 +186,37 @@
 .exportStatus { min-height: 1.1em; margin: 0; font-size: .74rem; color: #3b4d68; }
 .exportStatus:empty { display: none; }
 .progress { width: min(100%, 24rem); height: 10px; accent-color: #08519c; }
+/* Live preview of the video while it records (the recording canvas itself, scaled down). */
+.videoPreview:empty { display: none; }
+.videoPreview canvas { display: block; width: min(100%, 18rem); height: auto; border-radius: .5rem; box-shadow: 0 2px 10px rgb(15 23 42 / 22%); }
 .downloadRow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: 0; font-size: .8rem; }
 .downloadLink { color: #2454b8; font-weight: 700; }
 .legend { display: flex; flex-wrap: wrap; gap: .8rem 1.8rem; padding: .9rem 1rem 1rem; border-top: 1px solid #e5eaf2; font-size: .74rem; color: #3b4d68; }
 .legend strong { display: block; margin-bottom: .35rem; font-size: .72rem; color: #17253b; }
 .legend ul { display: flex; flex-wrap: wrap; gap: .3rem .8rem; margin: 0; padding: 0; list-style: none; }
 .legend li { display: inline-flex; align-items: center; gap: .35rem; }
-.legend i { display: inline-block; width: 16px; height: 12px; border-radius: 2px; }
-.legend i.line { height: 4px; border-radius: 2px; }
-.legend i.dot { width: 11px; height: 11px; border: 2px solid; border-radius: 50%; box-shadow: 0 0 0 1px #c6d1e3; }
-.legend i.dash { height: 0; border-radius: 0; border-top: 3px dashed; background: none; }
+:is(.legend, .toggleSwatch) i { display: inline-block; flex: none; width: 16px; height: 12px; border-radius: 2px; }
+:is(.legend, .toggleSwatch) i.line { height: 4px; border-radius: 2px; }
+:is(.legend, .toggleSwatch) i.dot { width: 11px; height: 11px; border: 2px solid; border-radius: 50%; box-shadow: 0 0 0 1px #c6d1e3; }
+:is(.legend, .toggleSwatch) i.dash { height: 0; border-radius: 0; border-top: 3px dashed; background: none; }
+/* Low-confidence water: a pale, desaturated blue with a diagonal hatch, as the map draws it. */
+.legend i.lowConfidenceSwatch { background: repeating-linear-gradient(45deg, rgb(120 150 190 / 95%) 0 2px, rgb(214 222 234 / 85%) 2px 5px); box-shadow: inset 0 0 0 1px rgb(12 39 64 / 18%); }
 
 .panel { display: grid; gap: 1rem; min-width: 0; }
 .card { min-width: 0; background: #fff; border: 1px solid #d5deeb; border-radius: 1rem; padding: 1.2rem 1.25rem; box-shadow: 0 4px 12px #16305804; font-size: .86rem; line-height: 1.65; color: #3b4d68; overflow-wrap: anywhere; }
+/* Where a statement comes from: public reporting, an observation, or the model. */
+.tagReported, .tagObserved, .tagModel { display: inline-block; margin-right: .15rem; padding: 0 .38rem; border-radius: .3rem; font-size: .7rem; font-weight: 800; line-height: 1.6; }
+.tagReported { background: #fff1d6; color: #7a4a05; }
+.tagObserved { background: #f3e9df; color: #6b3f16; }
+.tagModel { background: #e7effb; color: #174ecb; }
+.cite { color: #5a6a80; font-size: .76rem; }
+.cue { padding: .45rem .6rem; border-left: 3px solid #b07a45; border-radius: .35rem; background: #faf4ee; color: #4a2f16; font-size: .8rem; }
+/* Glossary terms: dotted underline; the definition shows on hover or keyboard focus. */
+.term { position: relative; }
+.termLabel { border-bottom: 1px dotted currentColor; cursor: help; }
+.termLabel:focus-visible { outline: 2px solid #e8a526; outline-offset: 2px; border-radius: 2px; }
+.termTip { position: absolute; z-index: 60; left: 0; top: calc(100% + 6px); display: none; width: max-content; max-width: min(18rem, 70vw); padding: .45rem .6rem; border-radius: .45rem; background: #0c2740; color: #fff; font-size: .74rem; font-weight: 500; line-height: 1.45; text-align: left; white-space: normal; box-shadow: 0 6px 18px rgb(15 23 42 / 25%); }
+.term:hover .termTip, .termLabel:focus + .termTip { display: block; }
 .card h2 { margin: 0 0 .7rem; font-size: 1.05rem; letter-spacing: -.02em; color: #17253b; }
 .card h3 { margin: 1rem 0 .5rem; font-size: .82rem; color: #17253b; }
 .card p { margin: .5rem 0 0; }
@@ -178,6 +245,7 @@
 .evidence dt { color: #5a6a80; }
 .evidence dd { margin: 0; color: #223650; }
 .confidence { display: inline-block; margin-right: .3rem; padding: .05rem .4rem; border-radius: .3rem; background: #fff4dd; color: #815313; font-size: .7rem; font-weight: 800; letter-spacing: .06em; }
+.page:lang(th) .confidence { letter-spacing: 0; }
 .anchor { margin-top: .6rem; padding: .7rem .8rem; border-radius: .6rem; background: #f1ecf8; color: #3d2a5c; font-size: .78rem; }
 .anchor p:first-child { margin-top: 0; }
 .routeList { display: grid; gap: .45rem; margin: .7rem 0 0; padding: 0; list-style: none; }
@@ -203,6 +271,15 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .barPeople { background: linear-gradient(90deg, #fdb366, #b3261e) !important; }
 .kpis div.kpiWide { grid-column: 1 / -1; }
+/* Context figure (already out of reach before the flood): grey, so the flood's own effect leads. */
+.kpis div.kpiContext { background: #fff; }
+.kpis div.kpiContext dd { font-size: 1.1rem; color: #52627a; }
+.kSentence { margin: .2rem 0 0 !important; font-size: .8rem; font-weight: 600; line-height: 1.45; color: #223650; }
+.kDefault { font-weight: 500; color: #5a6a80; }
+.note { margin: .6rem 0 0 !important; padding: .5rem .65rem; border-left: 3px solid #174ecb; border-radius: .35rem; background: #eef3fb; color: #223650; font-size: .78rem; line-height: 1.5; }
+.capacityBadge { justify-self: start; display: inline-flex; align-items: baseline; gap: .35rem; padding: .15rem .45rem; border-radius: .35rem; background: #fdecea; color: #8c1d18; font-size: .74rem; font-weight: 650; }
+.capacityBadge b { display: inline-grid; place-items: center; flex: none; width: 1rem; height: 1rem; border-radius: 50%; background: #b3261e; color: #fff; font-size: .66rem; }
+.routeThai { font-weight: 500; color: #5a6a80; }
 .warningNote { margin: .6rem 0 0; padding: .55rem .7rem; border-radius: .5rem; background: #fff4dd; color: #815313; font-size: .8rem; }
 .kField { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; margin: .7rem 0 .2rem; font-size: .78rem; font-weight: 650; color: #223650; }
 .kField input[type="range"] { width: 100%; accent-color: #0b6e4f; }
@@ -225,8 +302,8 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .miniChart figcaption { margin-top: .2rem; font-size: .7rem; color: #5a6a80; }
 .lostArea { fill: #9e5cd6; opacity: .22; }
 .lostLine { fill: none; stroke: #6a1b9a; stroke-width: 1.8; stroke-linejoin: round; }
-.inlineToggle { display: inline-flex; align-items: center; gap: .45rem; min-height: 36px; margin-top: .6rem; font-size: .8rem; font-weight: 650; color: #223650; cursor: pointer; }
-.inlineToggle input { width: 16px; height: 16px; accent-color: #6a1b9a; }
+.inlineToggle { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; margin-top: .6rem; font-size: .8rem; font-weight: 650; color: #223650; cursor: pointer; }
+.inlineToggle input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: #6a1b9a; }
 .kBand { fill: #0b6e4f; opacity: .1; }
 .kneeLine { stroke: #5a6a80; stroke-width: 1; stroke-dasharray: 3 3; }
 .kneeText { fill: #3b4d68; font-size: 10px; font-weight: 700; }
@@ -267,7 +344,17 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .sourceList { display: grid; gap: .35rem; margin: 0; padding-left: 1rem; font-size: .74rem; }
 .sourceList a, .inlineLink { color: #2454b8; overflow-wrap: anywhere; }
 .inlineLink { margin-right: .4rem; }
-.provenance { margin: .6rem 0 0 !important; padding: .5rem .65rem; border: 1px solid #ecdcb4; border-radius: .5rem; background: #fffaf0; color: #5b4516; font-size: .76rem; line-height: 1.5; }
+/* One-line confidence chip per card; it opens to the reason, method notes and source dates. */
+.provenance { margin: .6rem 0 0; padding: 0 .65rem; border: 1px solid #ecdcb4; border-radius: .5rem; background: #fffaf0; color: #5b4516; font-size: .76rem; line-height: 1.5; }
+.provenance > summary { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .5rem; min-height: 36px; cursor: pointer; list-style: none; }
+.provenance > summary::-webkit-details-marker { display: none; }
+.provenance > summary::after { content: "▸"; margin-left: auto; color: #8a6a2a; font-size: .7rem; }
+.provenance[open] > summary::after { content: "▾"; }
+.provenance > p { margin: 0 0 .55rem !important; }
+.provenanceHint { color: #7a5a1a; font-size: .74rem; font-weight: 600; }
+/* Secondary explanation folded under a figure (e.g. what the Equity Gap ratio means). */
+.more { margin-top: .35rem; }
+.more > summary { display: flex; align-items: center; min-height: 32px; cursor: pointer; font-size: .76rem; font-weight: 650; color: #4a3f8f; }
 .caveat { margin: .6rem 0 0 !important; padding: .5rem .65rem; border-left: 3px solid #d19a00; border-radius: .35rem; background: #fdf8ea; color: #4a3a12; font-size: .76rem; line-height: 1.5; }
 .candidateList { display: grid; gap: .4rem; margin: .4rem 0 0; padding: 0; list-style: none; }
 .candidateList li { display: grid; gap: .1rem; padding: .5rem .65rem; border: 1px solid #d7e9e1; border-left: 4px solid #0b6e4f; border-radius: .5rem; background: #f7fcfa; font-size: .76rem; line-height: 1.45; }
@@ -277,21 +364,56 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .candidateReasons { color: #8a3a12; font-weight: 650; }
 .wetEmpty { background: rgb(96 120 148 / 43%) !important; }
 .legendNote { display: block; margin-top: .3rem; font-size: .68rem; color: #5a6a80; }
-.legend i.legendStar { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; color: #f5b700; font-size: 15px; font-style: normal; line-height: 1; text-shadow: 0 0 1px #5a3d00, 0 0 1px #5a3d00; }
-.legend i.legendStarFloods { color: #f5b700; text-shadow: 0 0 0 #b3261e, 0 0 2px #b3261e, 0 0 2px #b3261e; }
-.legend i.legendBadge { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: #0b6e4f; color: #fff; font-size: 10px; font-style: normal; font-weight: 800; }
-.legend i.cutoffRamp { width: 56px; height: 10px; background: linear-gradient(90deg, rgb(214 188 250 / 20%), rgb(170 110 225 / 50%), rgb(70 0 120 / 80%)); }
+:is(.legend, .toggleSwatch) i.legendStar { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; color: #f5b700; font-size: 15px; font-style: normal; line-height: 1; text-shadow: 0 0 1px #5a3d00, 0 0 1px #5a3d00; }
+/* A reported shelter that floods at the modelled peak: a pale star struck through, as on the map. */
+.legend i.legendStarFloods { position: relative; color: #fbe7a1; text-shadow: 0 0 1px #b3261e, 0 0 1px #b3261e; }
+.legend i.legendStarFloods::after { content: ""; position: absolute; left: 1px; right: 1px; top: 50%; height: 2px; border-radius: 1px; background: #b3261e; transform: rotate(-45deg); }
+:is(.legend, .toggleSwatch) i.legendBadge { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: #0b6e4f; color: #fff; font-size: 10px; font-style: normal; font-weight: 800; }
+.legend i.legendBadgeFlag { position: relative; }
+.legend i.legendBadgeFlag::after { content: "!"; position: absolute; top: -5px; right: -6px; display: grid; place-items: center; width: 11px; height: 11px; border-radius: 50%; background: #b3261e; color: #fff; font-size: 8px; font-weight: 800; }
+:is(.legend, .toggleSwatch) i.cutoffRamp { width: 56px; height: 10px; background: linear-gradient(90deg, rgb(214 188 250 / 20%), rgb(170 110 225 / 50%), rgb(70 0 120 / 80%)); }
+.toggleSwatch i.cutoffRamp { width: 20px; }
 
 /* Leaflet divIcon markers: the pane has no pointer events, the marker elements keep theirs. */
 .starIcon { display: grid; place-items: center; background: none; border: 0; color: #f5b700; filter: drop-shadow(0 1px 2px rgb(15 23 42 / 45%)); }
 .starIcon svg { fill: #f5b700; stroke: #5a3d00; stroke-width: 1.4; stroke-linejoin: round; }
-.starIconFloods svg { stroke: #b3261e; stroke-width: 2.2; }
+.starIconFloods svg { fill: #fbe7a1; stroke: #b3261e; stroke-width: 1.8; }
+.starIconFloods svg .slash { fill: none; stroke: #b3261e; stroke-width: 2.6; stroke-linecap: round; }
 .commandIcon { display: grid; place-items: center; background: none; border: 0; filter: drop-shadow(0 1px 2px rgb(15 23 42 / 45%)); }
 .commandIcon svg { fill: #4a3f8f; stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
 .starIcon:focus-visible, .planBadgeIcon:focus-visible, .commandIcon:focus-visible { outline: 3px solid #e8a526; outline-offset: 2px; border-radius: 50%; }
 .legend i.legendCommand { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; color: #4a3f8f; font-size: 13px; font-style: normal; line-height: 1; }
 .planBadgeIcon { display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; background: #0b6e4f; color: #fff; font: 800 12px/1 "Inter Variable", system-ui, sans-serif; box-shadow: 0 1px 4px rgb(15 23 42 / 45%); }
+/* "!" corner: capacity unknown, or far below the residents assigned. */
+.planBadgeFlag b { position: absolute; top: -7px; right: -8px; display: grid; place-items: center; width: 15px; height: 15px; border: 1.5px solid #fff; border-radius: 50%; background: #b3261e; color: #fff; font: 800 10px/1 "Inter Variable", system-ui, sans-serif; }
+.gaugeIcon { display: grid; place-items: center; background: none; border: 0; filter: drop-shadow(0 1px 2px rgb(15 23 42 / 45%)); }
+.gaugeIcon svg { fill: #1f7a8c; stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
+.gaugeIcon:focus-visible { outline: 3px solid #e8a526; outline-offset: 2px; border-radius: 50%; }
+:is(.legend, .toggleSwatch) i.legendGauge { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; }
+:is(.legend, .toggleSwatch) i.legendGauge svg { fill: #1f7a8c; stroke: #fff; stroke-width: 1.6; }
 .popupFrame :global(.leaflet-popup-content) { margin: .7rem .8rem; }
+
+/* --- Observed evidence: VIIRS daily maps and hourly rain ---------------------------------------- */
+.legend i.viirsSwatch { box-shadow: inset 0 0 0 1px rgb(12 39 64 / 22%); }
+.tableScroll { max-width: 100%; margin-top: .7rem; overflow-x: auto; }
+.viirsTable { width: 100%; border-collapse: collapse; font-size: .74rem; font-variant-numeric: tabular-nums; }
+.viirsTable th, .viirsTable td { padding: .3rem .35rem; border-bottom: 1px solid #edf0f6; text-align: right; white-space: nowrap; }
+.viirsTable thead th { color: #52627a; font-weight: 650; white-space: normal; vertical-align: bottom; }
+.viirsTable th[scope="row"], .viirsTable thead th:first-child { text-align: left; color: #17253b; }
+.viirsTable td[data-tone="observed"] { color: #5e2472; font-weight: 700; }
+.viirsTable tr[data-active] { background: #f4eef8; box-shadow: inset 3px 0 0 #9970ab; }
+.viirsReadings { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; font-size: .76rem; }
+.viirsReadings li { padding: .3rem .5rem; border-left: 3px solid #dcd0e6; border-radius: .3rem; }
+.viirsReadings li[data-active] { border-left-color: #9970ab; background: #f8f5fb; }
+.viirsReadings li[data-kind="no_observation"] { color: #5a6a80; }
+.viirsReadings strong { margin-right: .25rem; color: #17253b; }
+.rainChart { margin-top: .6rem; }
+.rainLabel { fill: #1c4f59; font-size: 10px; font-weight: 700; }
+.rainBase { stroke: #9fb3c8; stroke-width: 1; }
+.rainBar { fill: #1f7a8c; }
+.rainMissing { fill: #b8c2d0; }
+.obsList i.rainSwatch { width: 10px; height: 10px; border: 0; border-radius: 2px; background: #1f7a8c; }
+.rainNow { font-weight: 650; color: #1c4f59; font-variant-numeric: tabular-nums; }
 .popup { display: grid; gap: .2rem; font-size: .76rem; line-height: 1.45; color: #223650; }
 .popup strong { font-size: .84rem; color: #17253b; }
 .popup p { margin: 0 !important; }
@@ -306,6 +428,12 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 
 .footer { padding: 1.5rem 0 2.5rem; border-top: 1px solid #dce3ee; font-size: .78rem; line-height: 1.8; color: #607089; }
 
+/* Desktop: the map, its readout and timeline stay in view beside the analysis cards (the page header scrolls away). */
+@media (min-width: 1081px) {
+  .stage { position: sticky; top: 12px; }
+  .mapFrame { height: clamp(360px, calc(100vh - 264px), 760px); }
+  .momentLine { display: none; }
+}
 @media (max-width: 1080px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
 }
@@ -313,29 +441,41 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
   .container { padding: 0 1rem; }
   .hero { padding-top: 1.2rem; }
   .mapFrame { height: clamp(340px, 58vh, 560px); }
-  .toolbar { padding: .8rem; }
   .field, .field select { width: 100%; }
   .field input[type="range"] { width: 100%; }
-  .dock, .legend { padding-inline: .8rem; }
-  .preEvent { margin-left: 0; flex-basis: 100%; }
-  .caption { font-size: .72rem; }
+  .dock, .stageBar { padding-inline: .8rem; }
+  .play { flex: 1 1 auto; justify-content: center; }
+  .readout { flex-basis: 10rem; }
+  .lead { font-size: .92rem; line-height: 1.55; }
+  .layersButton { margin-left: 0; }
+  .caption, .mudCue, .compareNote { font-size: .7rem; }
+  .glossary div { grid-template-columns: minmax(0, 1fr); gap: 0; }
   /* The 640-unit hydrograph viewBox scales to about half size on phones; double its SVG text so it stays legible.
      The 360-unit mini charts scale far less, so they get a smaller boost that their label spacing allows. */
   .hydrograph .axisText, .hydrograph .peakText { font-size: 18px; }
+  .rainChart .rainLabel { font-size: 16px; }
   .miniChart .axisText, .miniChart .kneeText { font-size: 12px; }
   .segment { font-size: .56rem; padding: 0 .1rem; }
-  .toolbar { gap: .8rem; }
   .toolGroup, .compareFields { width: 100%; }
   .compareFields .field { flex: 1 1 100%; }
   .segmented, .segmented > div { width: 100%; }
   .segmented label { flex: 1 1 auto; }
   .segmented span { justify-content: center; width: 100%; padding: 0 .5rem; text-align: center; }
-  .shareBar { padding-inline: .8rem; }
   /* Narrow maps: side labels wrap instead of truncating, and the left one stays clear of the zoom control. */
   .compareLabel { font-size: .66rem; white-space: normal; overflow-wrap: anywhere; }
-  .days button { font-size: .66rem; }
+  /* Two rows of day chips (9–14, 15–19), each at least 44 px wide and tall enough for a finger. */
+  .days { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+  .days button { min-height: 44px; font-size: .8rem; }
   .kpis dd { font-size: 1.25rem; }
   .bars li { grid-template-columns: minmax(0, 6rem) minmax(0, 1fr) 4.2rem; }
   .reportedFacts div { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .toggles label { min-height: 36px; }
+  .toggles label { min-height: 44px; }
+  .segmented span, .layersPanel .segmented span, .card .segmented span { min-height: 44px; }
+}
+/* Touch screens have no keyboard shortcuts to hint at, and need finger-sized targets. */
+@media (hover: none) and (pointer: coarse) {
+  .hint { display: none; }
+  .days button { min-height: 44px; }
+  .linkButton, .planList .linkButton, .candidateList .linkButton { min-height: 40px; }
+  .toggles label, .inlineToggle { min-height: 44px; }
 }

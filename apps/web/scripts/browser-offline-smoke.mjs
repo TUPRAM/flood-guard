@@ -553,6 +553,12 @@ try {
   if (await page.locator("main").getByRole("alert").count() !== 0) {
     throw new Error(`The saved residents or access data failed offline: ${await page.locator("main").getByRole("alert").first().innerText()}`);
   }
+  // The observed VIIRS daily maps come from the same offline copy.
+  await page.goto(`${baseUrl}${caseReplay.route}?t=158&layers=trfv`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const image = document.querySelector(".leaflet-fg-viirs-pane img");
+    return Boolean(image && image.complete && image.naturalWidth > 0);
+  }, undefined, { timeout: 30_000 });
 
   if (externalRequests.length > 0) {
     throw new Error(`Unapproved external requests were attempted: ${externalRequests.join(", ")}`);

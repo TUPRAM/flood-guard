@@ -43,13 +43,38 @@ for (const asset of [historical.report, ...historical.assets]) verify(asset.href
 // The replay's revision is chosen only by TIMELINE_MANIFEST_URL; every asset is derived from that manifest.
 const { manifest: timeline, assets: timelineFiles } = readCaseReplayAssets(publicRoot, timelineManifestUrl());
 const timelineAssets = timelineFiles.slice(1);
-// Every file the page loads must be among the hash-verified ones: the HAND raster, imagery layers, vectors and,
-// from r2 on, the residents raster and the evacuation-access node file.
+// Every file the page loads must be among the hash-verified ones: the HAND raster, imagery layers, vectors, the
+// residents raster and the evacuation-access node file (r2 on), and the VIIRS daily flood maps (r3 on).
 const expectedTimelineAssets = [timeline.hand, ...timeline.layers, ...Object.values(timeline.vectors)];
 if (timeline.population) expectedTimelineAssets.push(timeline.population);
 if (timeline.access) expectedTimelineAssets.push(timeline.access.nodes);
+if (timeline.viirs_daily) expectedTimelineAssets.push(...timeline.viirs_daily.days);
 for (const asset of expectedTimelineAssets) {
   if (!asset?.href || !timelineAssets.some((file) => file.url === asset.href)) throw new Error(`Timeline asset is not hash-verified: ${asset?.href}`);
+}
+// VIIRS maps are pre-coloured RGBA PNGs of the declared size; each is an observation with its cloud and clear-sky figures.
+for (const day of timeline.viirs_daily?.days ?? []) {
+  const bytes = readAsset(day.href);
+  if (bytes.toString("ascii", 1, 4) !== "PNG" || bytes.readUInt32BE(16) !== day.width || bytes.readUInt32BE(20) !== day.height || bytes[25] !== 6) {
+    throw new Error(`VIIRS map is not an RGBA PNG of its declared size: ${day.href}`);
+  }
+  if (!(day.cloud_share >= 0 && day.cloud_share <= 1) || !(day.clear_km2 >= 0) || !Number.isFinite(day.t) || !day.nominal_local_time) {
+    throw new Error(`VIIRS day lacks its cloud share, clear area or nominal time: ${day.date}`);
+  }
+}
+// Hourly rain: one value (or null) per replay hour for every gauge, matching the baked totals.
+if (timeline.rainfall) {
+  const hours = timeline.days.length * 24;
+  for (const station of timeline.rainfall.stations) {
+    const series = timeline.rainfall.hourly_mm[station.code];
+    if (!Array.isArray(series) || series.length !== hours) throw new Error(`Rain gauge ${station.code} does not cover the ${hours} replay hours`);
+    const values = series.filter((value) => typeof value === "number");
+    const total = values.reduce((sum, value) => sum + value, 0);
+    if (Math.abs(total - station.total_mm) > 0.05 || Math.max(0, ...values) !== station.max_hour_mm || series.length - values.length !== station.missing_hours) {
+      throw new Error(`Rain gauge ${station.code} totals differ from its hourly record`);
+    }
+  }
+  if (!timeline.rainfall.licence || !timeline.rainfall.source_url) throw new Error("Mae Sai rainfall must carry its licence and source");
 }
 if (timeline.access) {
   const { nodes, sets } = timeline.access;

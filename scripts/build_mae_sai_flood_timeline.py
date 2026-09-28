@@ -10,7 +10,7 @@ Inputs
 * In-repo vectors: ``outputs/mae_sai_admin_context.geojson``, ``outputs/mae_sai_road_risk.geojson``,
   ``outputs/mae_sai_facilities.geojson``.
 
-Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r2/``): a HAND code raster, dated
+Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r3/``): a HAND code raster, dated
 Sentinel-1/2 image layers, a hillshade, sampled road/facility/tambon vectors and ``timeline.json``.
 
 The daily water surface is a HAND threshold reconstruction driven by illustrative stage keyframes.
@@ -20,6 +20,7 @@ It is not an observation, a validated flood extent, a real-time product or an of
 from __future__ import annotations
 
 import argparse
+from datetime import timedelta
 import hashlib
 import json
 import math
@@ -61,17 +62,21 @@ from floodguard.flood_timeline import (  # noqa: E402
     depth_factor,
 )
 import mae_sai_timeline_evacuation as evac  # noqa: E402
+import mae_sai_timeline_observations as obs  # noqa: E402
 
-OUT_REL = Path("apps/web/public/studies/mae-sai-2024-timeline/r2")
-HREF_PREFIX = "/studies/mae-sai-2024-timeline/r2/"
+OUT_REL = Path("apps/web/public/studies/mae-sai-2024-timeline/r3")
+HREF_PREFIX = "/studies/mae-sai-2024-timeline/r3/"
 SAI_REFERENCE_LONLAT = (99.8826, 20.4460)  # Sai River at the Mae Sai border bridges (main-stem reference reach).
 REPORTED_SHELTERS = Path("outputs/mae_sai_reported_shelters_2024.json")
 UTM = "EPSG:32647"
 AOI_UTM = (584400.0, 2240100.0, 608400.0, 2266100.0)  # Whole Mae Sai district plus Tachileik to the north.
 AOI_RES = 10.0
-HYDRO_LONLAT = (99.45, 20.15, 99.9995, 20.72)  # Upstream Sai/Ruak catchment inside DEM tile N20E099 (east edge 100°E).
+HYDRO_LONLAT = (99.45, 20.15, 100.15, 20.72)  # Upstream Sai catchment plus the Ruak to the east (DEM tiles N20E099 + N20E100).
+DEM_TILES = ("Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif", "Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif")
 HYDRO_RES = 30.0
 STREAM_THRESHOLD_KM2 = 25.0
+LOW_CONFIDENCE_FILL_M = 0.1  # Pits raised by more than this when filled ...
+LOW_CONFIDENCE_HAND_M = 0.1  # ... that end up within this height of their channel read as wet at any stage: low confidence.
 EDGE_OUTLET_KM2 = 1.0  # Domain-edge outlets used as HAND references (not drawn as channels).
 MERCATOR_SCALE = 1.0 / math.cos(math.radians(20.36))  # EPSG:3857 units per ground metre at Mae Sai.
 IMAGE_RES = 12.0 * MERCATOR_SCALE
@@ -128,16 +133,22 @@ def warp(src: np.ndarray, src_transform, src_crs, grid: Grid, resampling=Resampl
     return dst
 
 
-def hydrology(dem_path: Path, work: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, Grid, np.ndarray, float]:
-    """Return HAND (m), stream mask, conditioned DEM, the UTM grid, the depth factor k and the reference area."""
+def hydrology(dem_paths: list[Path], work: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, Grid, np.ndarray, float, np.ndarray]:
+    """Return HAND (m), stream mask, conditioned DEM, the UTM grid, the depth factor k, the reference area and a
+    low-confidence mask (filled depressions and flat-fallback cells)."""
     from pysheds.grid import Grid as ShedGrid
 
     bounds = transform_bounds("EPSG:4326", UTM, *HYDRO_LONLAT, densify_pts=21)
     grid = Grid(UTM, bounds, HYDRO_RES)
-    with rasterio.open(dem_path) as src:
-        win = window_from_bounds(*HYDRO_LONLAT, transform=src.transform).round_offsets().round_lengths()
-        dem = src.read(1, window=win).astype(np.float32)
-        dem_utm = warp(dem, src.window_transform(win), src.crs, grid, Resampling.bilinear, src_nodata=src.nodata)
+    from rasterio.merge import merge
+
+    sources = [rasterio.open(path) for path in dem_paths]
+    try:
+        mosaic, mosaic_transform = merge(sources, bounds=HYDRO_LONLAT, nodata=-9999.0)
+        dem_utm = warp(mosaic[0].astype(np.float32), mosaic_transform, sources[0].crs, grid, Resampling.bilinear, src_nodata=-9999.0)
+    finally:
+        for source in sources:
+            source.close()
     dem_utm = np.where(np.isfinite(dem_utm), dem_utm, -9999.0).astype(np.float32)
     tmp = work / "dem_utm30.tif"
     with rasterio.open(tmp, "w", driver="GTiff", width=grid.width, height=grid.height, count=1, dtype="float32",
@@ -151,8 +162,8 @@ def hydrology(dem_path: Path, work: Path) -> tuple[np.ndarray, np.ndarray, np.nd
     area_km2 = np.asarray(acc) * (HYDRO_RES**2) / 1e6
     stream_raster = acc * (HYDRO_RES**2) / 1e6 >= STREAM_THRESHOLD_KM2  # Keeps the pysheds Raster type.
     streams = np.asarray(stream_raster, dtype=bool)
-    # Lowland east of Mae Sai drains past the tile edge (100°E) towards the Ruak before reaching a mapped
-    # stream, which leaves HAND undefined. Reference those cells to their outlet on the domain edge instead.
+    # Cells that drain off the domain before reaching a mapped stream would have no HAND; reference them to
+    # their outlet on the domain edge instead (the domain edge lies well outside the replay area).
     nodata = dem_utm <= -9000
     edge = ndimage.binary_dilation(nodata) & ~nodata
     edge[[0, -1], :] = True
@@ -175,13 +186,13 @@ def hydrology(dem_path: Path, work: Path) -> tuple[np.ndarray, np.ndarray, np.nd
     near[max(r0 - 50, 0):r0 + 51, max(c0 - 50, 0):c0 + 51] = True
     reference_km2 = float(area_km2[streams & near].max())
     upstream = np.where(drain >= 0, area_km2.ravel()[np.clip(drain, 0, None)], np.nan).reshape(hand.shape)
-    east_outlet = edge & (np.arange(grid.width)[None, :] > grid.width // 2)
-    drains_east = np.zeros(hand.shape, dtype=bool)
-    valid_drain = drain >= 0
-    drains_east[valid_drain] = east_outlet.ravel()[drain[valid_drain]]
-    upstream[drains_east] = reference_km2  # Assume east-edge outlets feed the Ruak, a main river like the Sai.
     k = np.where(np.isfinite(hand), depth_factor(np.nan_to_num(upstream, nan=reference_km2), reference_km2), np.nan)
-    return hand, streams, np.asarray(inflated, dtype=np.float32), grid, k.astype(np.float32), reference_km2
+    # Pits filled to their spill level become dead-flat with HAND ~ 0 and look wet at any stage; flag them (and the
+    # flat-area fallback cells) as low confidence rather than hiding them.
+    filled = (conditioned - np.asarray(raw, dtype=np.float32)) > LOW_CONFIDENCE_FILL_M
+    near_zero = np.isfinite(hand) & (hand < LOW_CONFIDENCE_HAND_M)
+    low_confidence = ((filled | missing) & near_zero) & ~nodata
+    return hand, streams, conditioned, grid, k.astype(np.float32), reference_km2, low_confidence
 
 
 def hillshade(dem: np.ndarray, res: float, azimuth: float = 315.0, altitude: float = 45.0) -> np.ndarray:
@@ -299,7 +310,8 @@ def build(external: Path, out_dir: Path) -> dict:
 
     # --- Hydrology and HAND -------------------------------------------------------------
     with tempfile.TemporaryDirectory() as tmp:
-        hand30, streams30, dem30, hgrid, k30, reference_km2 = hydrology(external / "open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif", Path(tmp))
+        hand30, streams30, dem30, hgrid, k30, reference_km2, lowconf30 = hydrology(
+            [external / "open_context/copernicus_dem_glo30" / tile for tile in DEM_TILES], Path(tmp))
 
     def hand_codes(grid: Grid) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         hand = warp(np.nan_to_num(hand30, nan=-1), hgrid.transform, UTM, grid, Resampling.bilinear, src_nodata=-1)
@@ -312,11 +324,17 @@ def build(external: Path, out_dir: Path) -> dict:
 
     codes_aoi, valid_aoi, k_aoi = hand_codes(aoi)
     codes_display, _, k_display = hand_codes(water)
+    lowconf_display = warp(lowconf30.astype(np.float32), hgrid.transform, UTM, water, Resampling.nearest) > 0.5
+    lowconf_aoi = warp(lowconf30.astype(np.float32), hgrid.transform, UTM, aoi, Resampling.nearest) > 0.5
     buf = tempfile.SpooledTemporaryFile()
     k_u8 = np.clip(np.rint(k_display * 255), 1, 255).astype(np.uint8)
-    Image.fromarray(np.dstack([codes_display, k_u8, np.zeros_like(k_u8)]), mode="RGB").save(buf, "PNG", optimize=True)
+    b_u8 = np.where(lowconf_display & (codes_display != NEVER_CODE), 255, 0).astype(np.uint8)
+    Image.fromarray(np.dstack([codes_display, k_u8, b_u8]), mode="RGB").save(buf, "PNG", optimize=True)
     buf.seek(0)
     hand_record = emit("hand-codes.png", buf.read(), width=water.width, height=water.height, depth_factor_channel="G",
+                       low_confidence_channel="B",
+                       low_confidence={"rule": f"B = 255 where the terrain was raised by more than {LOW_CONFIDENCE_FILL_M} m when filling pits (or needed the flat-area routing fallback) and ends up less than {LOW_CONFIDENCE_HAND_M} m above its channel",
+                                       "meaning": "Dead-flat or filled low ground in the elevation model: HAND ~ 0, so it reads as wet at almost any stage. Real low paddies or ponds are possible, but so are elevation artefacts."},
                        depth_factor={"exponent": 0.3, "floor": 0.35, "reference_km2": round(reference_km2, 1),
                                      "reference": "Sai River main stem at the Mae Sai border bridges"})
 
@@ -514,6 +532,50 @@ def build(external: Path, out_dir: Path) -> dict:
             "road_km_impassable": km("impassable"), "road_km_wet": km("wet"), "facilities_wet": wet_fac,
             "people_in_water": round(sum(exposed.values())), "tambon_people_in_water": exposed, "access": access_stats}})
 
+    # --- VIIRS daily flood maps (NOAA/GMU, 375 m) and HII rain gauges --------------------------------
+    district_ll = [shape(f["geometry"]) for f in admin["features"]]
+    viirs_bounds = transform_bounds(UTM, "EPSG:4326", *AOI_UTM, densify_pts=21)
+    wet_cache: dict[float, np.ndarray] = {}
+
+    def model_wet_fraction(dst_transform, dst_shape, stage: float) -> np.ndarray:
+        wet = wet_cache.get(stage)
+        if wet is None:
+            c = codes_aoi.astype(int)
+            wet = ((c != CHANNEL_CODE) & (c != NEVER_CODE) & (c * HAND_STEP_M < stage)).astype(np.float32)
+            wet_cache[stage] = wet
+        out = np.zeros(dst_shape, dtype=np.float32)
+        reproject(wet, out, src_transform=aoi.transform, src_crs=UTM, dst_transform=dst_transform, dst_crs="EPSG:4326",
+                  resampling=Resampling.average)
+        return out
+
+    viirs_grid = Grid("EPSG:3857", extent_3857, 375.0 * MERCATOR_SCALE, exact=True)
+    palette = {1: (205, 210, 220, 150), 3: (60, 100, 150, 200), 4: (231, 212, 232, 210), 5: (194, 165, 207, 225),
+               6: (153, 112, 171, 235), 7: (118, 42, 131, 245)}
+    viirs_days = []
+    for day_offset in range(1, 10):  # 10-18 Sep
+        day = obs.REPLAY_START + timedelta(days=day_offset)
+        matches = sorted((external / "viirs_flood/2024_09").glob(f"WATER_COM_VIIRS_Prj_SVI_d{day:%Y%m%d}_d{day:%Y%m%d}_*_001day_090.tif.zip"))
+        if not matches:
+            continue
+        t_pass = day_offset + obs.VIIRS_OVERPASS_LOCAL_HOUR / 24
+        record, codes_v, transform_v = obs.viirs_comparison(matches[0], day, district_ll, model_wet_fraction, stage_at(t_pass), viirs_bounds)
+        classes = warp(obs.viirs_png_codes(codes_v).astype(np.float32), transform_v, "EPSG:4326", viirs_grid, Resampling.nearest)
+        classes = np.nan_to_num(classes, nan=0).astype(np.uint8)
+        rgba = np.zeros((*classes.shape, 4), dtype=np.uint8)
+        for value, colour in palette.items():
+            rgba[classes == value] = colour
+        buf = tempfile.SpooledTemporaryFile()
+        Image.fromarray(rgba, mode="RGBA").save(buf, "PNG", optimize=True)
+        buf.seek(0)
+        record.update(emit(f"viirs-{day:%Y%m%d}.png", buf.read(), width=viirs_grid.width, height=viirs_grid.height))
+        record["source_file"] = matches[0].name
+        viirs_days.append(record)
+    rain = obs.rainfall(external / "hii_rain/2024_09", 11 * 24)
+
+    peak_wet = (codes_aoi != CHANNEL_CODE) & (codes_aoi != NEVER_CODE) & (codes_aoi.astype(int) * HAND_STEP_M < max(k.stage_m for k in KEYFRAMES)) & (zones > 0)
+    low_confidence_share = {"peak_flooded_km2": round(float(peak_wet.sum()) * AOI_RES**2 / 1e6, 1),
+                            "low_confidence_km2": round(float((peak_wet & lowconf_aoi).sum()) * AOI_RES**2 / 1e6, 1)}
+
     gistda_stage = stage_at(1.0 + 18.25 / 24)
     gistda_model_km2 = round(sum(flooded_area_km2(histograms[t], gistda_stage, AOI_RES**2) for t in tambon_ids), 1)
     peak_model_km2 = max(d["stats"]["flooded_km2"] for d in days)
@@ -528,6 +590,7 @@ def build(external: Path, out_dir: Path) -> dict:
             "bounds": [[south, west], [north, east]], "display": {"width": display.width, "height": display.height},
             "s1_meta": s1_meta, "s1_anchor": anchor, "coverage": coverage,
             "reported_meta": {k: reported_doc.get(k) for k in ("status", "compiled", "access_set_rule")},
+            "viirs_days": viirs_days, "rainfall": rain, "low_confidence_share": low_confidence_share,
             "external_checks": [
                 {"id": "gistda-radarsat2-20240910", "observed": "GISTDA RADARSAT-2 flood analysis, 10 Sep 2024 18:15 (time zone not stated; assumed ICT)",
                  "reported_km2": 9.9, "reported_text": "Mae Sai 6,182 rai", "scope": "Mae Sai district",
@@ -610,6 +673,10 @@ SOURCES = [
      "timestamp": "2026-07-09", "attribution": "© OpenStreetMap contributors"},
     {"id": "cod-ab", "name": "HDX Thailand COD-AB subdistrict boundaries v01", "licence": "CC BY-IGO",
      "timestamp": "valid from 2022-01-22", "attribution": "OCHA / HDX Thailand COD-AB"},
+    {"id": "viirs", "name": "NOAA/GMU VIIRS 375 m daily flood-water fraction (10-18 Sep 2024)", "licence": "No licence stated; attribution given",
+     "timestamp": "2024-09-10 / 2024-09-18 daily", "attribution": "VIIRS flood product: NOAA JPSS / George Mason University"},
+    {"id": "hii-rain", "name": "HII ThaiWater hourly rain gauges MOU189 and DIWO", "licence": "CC BY-NC",
+     "timestamp": "2024-09-09 / 2024-09-19 hourly", "attribution": "Hydro-Informatics Institute (HII), ThaiWater"},
     {"id": "chronology", "name": "Event chronology (phases and narrative)", "licence": "Project summary text",
      "timestamp": "compiled 2026-09-27", "attribution": "FloodGuard team summary of public reporting; not independently verified in this study"},
 ]
@@ -622,14 +689,16 @@ ASSUMPTIONS = [
     "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
     "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
     "The 16 September 06:16 ICT Sentinel-1 pass constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
-    "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative.",
-    "Cells that drain off the DEM tile (east of 100°E, towards the Ruak) before meeting a mapped channel use their outlet on the tile edge as the HAND reference.",
+    "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km2, so the 18:15 knot is set to the closest level (0.1 m).",
+    "Cells that drain off the hydrology domain before meeting a mapped channel use their outlet on the domain edge as the HAND reference (the edge lies outside the replay area).",
     "Where flow routing leaves no path to a channel (large flats), HAND falls back to height above the nearest channel cell.",
-    "Stage varies along the river: each cell's water rise is scaled by k = clip((A / A_Sai) ** 0.3, 0.35, 1), where A is the upstream area of its drainage channel and A_Sai the Sai main stem at the Mae Sai bridges (downstream hydraulic geometry). Cells draining east off the tile are treated as main-river (k = 1).",
+    "Stage varies along the river: each cell's water rise is scaled by k = clip((A / A_Sai) ** 0.3, 0.35, 1), where A is the upstream area of its drainage channel and A_Sai the Sai main stem at the Mae Sai bridges (downstream hydraulic geometry). The Ruak east of Mae Sai is inside the hydrology domain (DEM tiles N20E099 + N20E100).",
     "People in water uses WorldPop 2020 (100 m, spread evenly over 10 m cells); it is modelled residential population, not the 2024 population or tourists and traders at the border market.",
     "Evacuation access uses the repo road graph and walking distance: a resident node has access when an open, dry shelter is within 2 km along roads still passable (about 30 minutes on foot); a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it. Levels are evaluated every 0.05 m of stage.",
     "Shelter candidates are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres; OSM amenity=shelter huts are excluded). A candidate is eligible only if it keeps 0.5 m freeboard at the modelled peak and a road node lies within 400 m. Ranking is greedy maximal coverage of residents whose homes are wet at the peak, within 2 km walking on normal roads (pre-emptive evacuation); late_cumulative_share repeats the check on roads still open at 1.0 m stage.",
     "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.",
+    "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
+    "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
     "Flash-flood velocity, debris and mud deposition are not modelled.",
 ]
 
@@ -638,7 +707,7 @@ def compose_manifest(result: dict) -> dict:
     """Assemble ``timeline.json`` with provenance, confidence and assumptions."""
     anchor = result["s1_anchor"]
     return {
-        "study_id": "mae-sai-2024-flood-timeline", "revision": "r2", "schema_version": 1,
+        "study_id": "mae-sai-2024-flood-timeline", "revision": "r3", "schema_version": 1,
         "generated_by": "scripts/build_mae_sai_flood_timeline.py",
         "data_mode": "historical_reconstruction", "official_warning": False, "real_time": False, "can_feed_decision_layer": False,
         "confidence": "low",
@@ -648,7 +717,7 @@ def compose_manifest(result: dict) -> dict:
         "area": {"en": "Mae Sai District, Chiang Rai, Thailand (the image footprint also covers Tachileik, Myanmar)",
                  "th": "อำเภอแม่สาย จังหวัดเชียงราย (ภาพครอบคลุมท่าขี้เหล็ก เมียนมาด้วย)"},
         "bounds": result["bounds"],
-        "hand": {**result["hand"], "step_m": HAND_STEP_M, "channel_code": CHANNEL_CODE, "never_code": NEVER_CODE,
+        "hand": {**result["hand"], "low_confidence_share": result["low_confidence_share"], "step_m": HAND_STEP_M, "channel_code": CHANNEL_CODE, "never_code": NEVER_CODE,
                  "stream_threshold_km2": STREAM_THRESHOLD_KM2},
         "impassable_depth_m": IMPASSABLE_DEPTH_M,
         "pixel_area_m2": AOI_RES**2,
@@ -656,7 +725,7 @@ def compose_manifest(result: dict) -> dict:
         "tambon_coverage": result["coverage"],
         "model_coverage": {"modelled_km2": round(sum(c["modelled_km2"] for c in result["coverage"].values()), 1),
                            "district_km2": round(sum(c["total_km2"] for c in result["coverage"].values()), 1),
-                           "reason": "The Copernicus DEM tile used stops at 100°E; district land east of it is not modelled."},
+                           "reason": "Copernicus DEM tiles N20E099 and N20E100 cover the whole district."},
         "facilities_count": result["facilities"],
         "roads_not_modelled_km": result["roads_not_modelled_km"],
         "phases": PHASES,
@@ -683,18 +752,32 @@ def compose_manifest(result: dict) -> dict:
                      "reported_status": result["reported_meta"]["status"], "reported_compiled": result["reported_meta"]["compiled"],
                      "reported_access_set_rule": result["reported_meta"]["access_set_rule"]},
         "external_checks": result["external_checks"],
+        "viirs_daily": {
+            "product": "NOAA/GMU VIIRS 375 m daily flood-water fraction composite (block 090)",
+            "source_url": "https://jpssflood.gmu.edu/",
+            "licence": "NOAA JPSS Proving Ground product; no licence stated on the site, attribution given",
+            "attribution": "VIIRS flood product: NOAA JPSS / George Mason University",
+            "legend": {"1": "cloud (no observation)", "3": "normal open water", "4": "flood water 1-24 %", "5": "flood water 25-49 %",
+                       "6": "flood water 50-74 %", "7": "flood water 75-100 %", "transparent": "clear, dry land or outside"},
+            "nominal_overpass": "Daily composite of early-afternoon passes; compared with the model at 13:30 ICT.",
+            "comparison_rule": "District only, clear-sky pixels only, permanent water excluded; VIIRS area = sum of flood fraction x pixel area; model area = modelled out-of-channel wet fraction averaged onto the same 375 m pixels.",
+            "caveat": "375 m optical data under-detects narrow, shallow, urban or vegetated flooding and sees nothing under cloud; agreement or disagreement is indicative only.",
+            "days": result["viirs_days"],
+        },
+        "rainfall": {**result["rainfall"], "source": "HII ThaiWater open data, hourly rain gauges",
+                     "source_url": "https://tiservice.hii.or.th/opendata/", "licence": "CC BY-NC (per the HII open-data catalogue)",
+                     "units": "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT", "note": "Observed rainfall (forcing), not flooding."},
         "external_references": [
-            {"name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)", "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province", "note": "Cumulative envelope; not yet overlaid."},
+            {"name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)", "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province", "note": "Season envelope (scenario per decision D3); not shown until the CC BY-SA rights record (D2) is signed."},
             {"name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)", "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"},
             {"name": "International Charter activation 912 (Typhoon Yagi, Thailand)", "url": "https://disasterscharter.org/activations/flood-in-thailand-activation-912-"},
-            {"name": "NOAA/GMU VIIRS 375 m daily flood products (block 090), 10-18 Sep 2024", "url": "https://jpssflood.gmu.edu/", "note": "Coarse daily optical evidence; not yet ingested."},
             {"name": "HII ThaiWater September 2024 Chiang Rai flood event page (rainfall and Kok River hydrographs)", "url": "https://www.thaiwater.net/uploads/contents/current/2024/FloodChiangrai_Sep2024/"}],
         "gauge_note": "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.",
         "sources": SOURCES,
         "assumptions": ASSUMPTIONS,
         "limitations": [
             "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
-            "No satellite image exists for 10-14 September over Mae Sai in these inputs; onset and peak extents are not observed.",
+            "No high-resolution satellite image exists for 10-14 September over Mae Sai in these inputs; VIIRS (375 m) was cloud-covered on 10-11 Sep and mostly cloud-covered on 12-14 Sep, so onset and peak extents are not observed.",
             "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded.",
         ],
     }

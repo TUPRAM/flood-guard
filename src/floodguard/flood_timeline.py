@@ -63,7 +63,7 @@ KEYFRAMES: tuple[StageKeyframe, ...] = (
 
 EXTRA_ANCHORS: tuple[tuple[float, float], ...] = (
     (1.0, 0.0),  # 10 Sep 00:00: the river stays in bank for the whole dry day.
-    (1.0 + 18.25 / 24, 0.12),  # 10 Sep 18:15: GISTDA RADARSAT-2 reports ~9.9 km2 flooded in Mae Sai.
+    (1.0 + 18.25 / 24, 0.1),  # 10 Sep 18:15: GISTDA RADARSAT-2 reports ~9.9 km2; 0.1 m is the model's closest level.
     (2.0 + 2 / 24, 2.5),  # 11 Sep 02:00: overnight surge into town (evacuees at shelters by 01:00).
 )
 """Sub-daily anchors (days since 9 Sep 00:00 ICT, stage m) added to the local-noon keyframes."""

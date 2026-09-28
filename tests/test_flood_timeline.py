@@ -23,7 +23,7 @@ from floodguard.flood_timeline import (
     stage_at,
 )
 
-MANIFEST = Path(__file__).resolve().parents[1] / "apps/web/public/studies/mae-sai-2024-timeline/r2/timeline.json"
+MANIFEST = Path(__file__).resolve().parents[1] / "apps/web/public/studies/mae-sai-2024-timeline/r3/timeline.json"
 
 
 def test_stage_hits_keyframes_at_local_noon_and_clamps() -> None:
@@ -31,7 +31,7 @@ def test_stage_hits_keyframes_at_local_noon_and_clamps() -> None:
         assert stage_at(index + 0.5) == pytest.approx(keyframe.stage_m)
     assert stage_at(-5) == KEYFRAMES[0].stage_m
     assert stage_at(99) == KEYFRAMES[-1].stage_m
-    assert stage_at(1.0 + 18.25 / 24) == pytest.approx(0.12)
+    assert stage_at(1.0 + 18.25 / 24) == pytest.approx(0.1)
     assert stage_at(2.0 + 2 / 24) == pytest.approx(2.5)
 
 
@@ -116,7 +116,7 @@ def test_baked_manifest_is_honest_and_consistent() -> None:
     assert peak["flooded_km2"] > 0 and peak["road_km_impassable"] > 0
     knots = manifest["stage_anchors"]
     assert all(stage_at(k["t"]) == pytest.approx(k["stage_m"]) for k in knots)
-    assert all(0 < c["modelled_km2"] <= c["total_km2"] + 0.01 for c in manifest["tambon_coverage"].values())
+    assert all(0 < c["modelled_km2"] <= c["total_km2"] + 0.05 for c in manifest["tambon_coverage"].values())  # 10 m rasterisation
     assert manifest["hand"]["depth_factor_channel"] == "G"
     assert manifest["population"]["licence"] == "CC BY 4.0"
     assert 70_000 < sum(manifest["population"]["tambon_totals"].values()) < 95_000  # WorldPop 2020 for the 8 tambons.

@@ -29,12 +29,14 @@ describe("Mae Sai replay offline inventory", () => {
     expect(assets[0].url).toBe(TIMELINE_MANIFEST_URL);
     expect(assets.slice(1).map((asset) => asset.url)).toEqual(manifestAssets(manifest).map((asset) => asset.href));
     for (const asset of assets) expect(asset.url.startsWith(manifestDirectory(TIMELINE_MANIFEST_URL))).toBe(true);
-    // r2 adds the residents raster and the access node file; both must travel with the offline copy.
-    const typed = manifest as { population?: { href: string }; access?: { nodes: { href: string } } };
+    // The residents raster, the access node file (r2 on) and the VIIRS daily maps (r3 on) travel with the offline copy.
+    const typed = manifest as { population?: { href: string }; access?: { nodes: { href: string } }; viirs_daily?: { days: { href: string }[] } };
     const urls = assets.map((asset) => asset.url);
     expect(urls).toContain(typed.population!.href);
     expect(urls).toContain(typed.access!.nodes.href);
     expect(urls.some((url) => url.endsWith(".bin"))).toBe(true);
+    expect(typed.viirs_daily!.days.length).toBeGreaterThan(0);
+    for (const day of typed.viirs_daily!.days) expect(urls).toContain(day.href);
   });
 
   it("keeps the replay data out of the blocking install and answers the page's cache request", () => {
@@ -50,8 +52,10 @@ describe("Mae Sai replay offline inventory", () => {
       "src/components/mae-sai-flood-timeline.tsx",
       "src/components/mae-sai-replay-export.tsx",
       "src/components/mae-sai-evacuation-panels.tsx",
+      "src/components/mae-sai-observed-panels.tsx",
       "src/lib/flood-timeline-evacuation.ts",
       "src/lib/flood-timeline-link.ts",
+      "src/lib/flood-timeline-copy.ts",
       "scripts/write-offline-assets.mjs",
       "scripts/offline-smoke.mjs",
       "scripts/browser-offline-smoke.mjs",

@@ -81,12 +81,46 @@
 .body button:focus-visible { outline: 3px solid #67c7bd; outline-offset: 2px; }
 .error { color: #9a3a2d; font-size: .7rem; line-height: 1.45; }
 
+/* Auto-hide pages: the pill and its dismiss button share one fixed dock. */
+.autoHideDock {
+  position: fixed;
+  z-index: 1800;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: calc(100vw - 32px);
+}
+
+.panel.docked { position: static; width: auto; max-width: min(340px, calc(100vw - 82px)); }
+
+.dismiss {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgb(7 59 76 / 16%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 9px 26px rgb(7 59 76 / 18%);
+  color: #102f3a;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dismiss:focus-visible { outline: 3px solid #67c7bd; outline-offset: 3px; }
+
 @media (max-width: 680px) {
   .panel { right: 10px; bottom: 82px; width: min(340px, calc(100vw - 20px)); }
+  .autoHideDock { right: 10px; bottom: 82px; max-width: calc(100vw - 20px); }
   .panel > summary { min-height: 44px; padding: 8px 11px; }
   .body { max-height: min(500px, calc(100dvh - 150px)); overflow-y: auto; }
 }
 
 @media print {
-  .panel { display: none; }
+  .panel, .autoHideDock { display: none; }
 }

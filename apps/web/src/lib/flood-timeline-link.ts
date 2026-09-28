@@ -12,6 +12,9 @@ export type ShelterSetChoice = "reported" | "plan";
 export const WATER_MODES: readonly WaterMode[] = ["depth", "arrival", "duration", "people", "residents"];
 export const ROAD_MODES: readonly RoadMode[] = ["state", "hours"];
 export const SHELTER_SETS: readonly ShelterSetChoice[] = ["reported", "plan"];
+/** Residents the access figures count: homes that flood at the modelled peak (default) or everyone at road nodes. */
+export type AccessScopeChoice = "flooded" | "all";
+export const ACCESS_SCOPE_CHOICES: readonly AccessScopeChoice[] = ["flooded", "all"];
 
 export interface LayerVisibility {
   tambons: boolean;
@@ -25,6 +28,10 @@ export interface LayerVisibility {
   ineligible: boolean;
   /** "People cut off" heat of resident nodes that have lost access at this stage. */
   cutoff: boolean;
+  /** Observed VIIRS daily flood map (375 m) for the day at or before the playhead. */
+  viirs: boolean;
+  /** Observed hourly rain gauges (markers with totals). */
+  gauges: boolean;
 }
 
 export interface ReplayLinkState {
@@ -43,6 +50,8 @@ export interface ReplayLinkState {
   shelterSet: ShelterSetChoice;
   /** Plan size k (1 … plan length) for the ranked-plan shelter set. */
   planK: number;
+  /** Whose walking access the access card counts. */
+  accessScope: AccessScopeChoice;
 }
 
 export interface ReplayLinkOptions {
@@ -57,11 +66,15 @@ export interface ReplayLinkOptions {
 }
 
 /** Query parameter names; kept short because the link is meant to be pasted into messages. */
-export const LINK_PARAMS = ["t", "img", "wm", "wo", "rm", "cmp", "lang", "layers", "set", "k"] as const;
+export const LINK_PARAMS = ["t", "img", "wm", "wo", "rm", "cmp", "lang", "layers", "set", "k", "pop"] as const;
 
-/** One letter per map layer in `layers=`: t r f subdistricts, roads, facilities; s c i x reported shelters, plan candidates, ineligible candidates, people cut off. */
+/**
+ * One letter per map layer in `layers=`: t r f subdistricts, roads, facilities; s c i x reported shelters, plan
+ * candidates, ineligible candidates, people cut off; v g the observed VIIRS daily flood map and the rain gauges.
+ */
 const LAYER_LETTERS: [keyof LayerVisibility, string][] = [
   ["tambons", "t"], ["roads", "r"], ["facilities", "f"], ["reported", "s"], ["candidates", "c"], ["ineligible", "i"], ["cutoff", "x"],
+  ["viirs", "v"], ["gauges", "g"],
 ];
 const LAYER_PATTERN = new RegExp(`^[${LAYER_LETTERS.map(([, letter]) => letter).join("")}]{1,${LAYER_LETTERS.length}}$`);
 
@@ -127,6 +140,9 @@ export function parseReplayLink(search: string, defaults: ReplayLinkState, optio
   const k = read("k");
   const planK = k === null || !options.maxPlanK ? null : parseWhole(k, options.maxPlanK);
   if (planK !== null && planK >= 1) state.planK = planK;
+
+  const pop = read("pop");
+  if (pop !== null && (ACCESS_SCOPE_CHOICES as readonly string[]).includes(pop)) state.accessScope = pop as AccessScopeChoice;
   return state;
 }
 
@@ -143,6 +159,7 @@ export function serializeReplayLink(state: ReplayLinkState): string {
   params.set("layers", serializeLayers(state.layers));
   params.set("set", state.shelterSet);
   params.set("k", String(Math.round(state.planK)));
+  params.set("pop", state.accessScope);
   // Commas are safe in a query string; keep "cmp=a,b" readable.
   return params.toString().replace(/%2C/gi, ",");
 }

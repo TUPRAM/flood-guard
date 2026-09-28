@@ -129,6 +129,7 @@ import {
   type ShelterSetChoice,
   type WaterMode,
 } from "@/lib/flood-timeline-link";
+import { evacuationNeed, replayFpps, tambonImpassableRoads, tambonRoadWeights, tambonVulnerable } from "@/lib/replay-fpps";
 import { useLanguage } from "@/lib/use-language";
 import {
   AccessCard,
@@ -154,6 +155,7 @@ import {
   ShelterPlanCard,
   ThemeEyebrow,
 } from "./mae-sai-evacuation-panels";
+import { PriorityCard } from "./mae-sai-priority-card";
 import { ReplayExportPanel, type ReplayExportSource } from "./mae-sai-replay-export";
 import { WorkspaceHeader } from "./workspace-header";
 
@@ -682,9 +684,10 @@ export function MaeSaiFloodTimeline() {
     ));
     const routeGroups = roadCutGroups(data.roads.features, roadCuts, 10);
     const peopleScale = Math.max(...m.days.flatMap((day) => Object.values(day.stats.tambon_people_in_water ?? {})), 1);
+    const roadWeights = tambonRoadWeights(roadProps);
     return {
       roadProps, facilityProps, names, tambonScale, observations, radar, hasUnmodelledRoads, hasUnmodelledFacilities,
-      layersById, imageryIds, compareIds, defaultSides, opticalIds, timings, arrival, roadCuts, routeGroups, stages, peopleScale,
+      layersById, imageryIds, compareIds, defaultSides, opticalIds, timings, arrival, roadCuts, routeGroups, stages, peopleScale, roadWeights,
     };
   }, [data]);
 
@@ -705,7 +708,11 @@ export function MaeSaiFloodTimeline() {
   const accessModel = useMemo(() => {
     const info = data?.manifest.access;
     if (!nodes || !info) return null;
-    return { summaries: summarizeAccessSets(nodes, info), tambonTotals: tambonResidents(nodes, info.tambons.length) };
+    return {
+      summaries: summarizeAccessSets(nodes, info),
+      tambonTotals: tambonResidents(nodes, info.tambons.length),
+      vulnerable: tambonVulnerable(nodes, info.tambons.length),
+    };
   }, [nodes, data]);
 
   const stage = manifest ? stageAt(time, manifest.stage_anchors) : 0;
@@ -726,6 +733,28 @@ export function MaeSaiFloodTimeline() {
     () => (selectedSummary && accessInfo && derived ? accessLostSeries(selectedSummary, derived.stages, accessInfo.levels) : null),
     [selectedSummary, accessInfo, derived],
   );
+  // Scenario FPPS: the five components per subdistrict at this stage and for the chosen shelter set, locked A–E rules.
+  const priorityRows = useMemo(() => {
+    const m = data?.manifest;
+    if (!m?.population || !derived || !stats) return null;
+    const need = nodes && accessInfo && selectedSetIndex >= 0
+      ? evacuationNeed(nodes, selectedSetIndex, stage, accessInfo.levels, m.hand.step_m, accessInfo.tambons.length)
+      : null;
+    return replayFpps({
+      tambonIds: Object.keys(m.tambon_coverage),
+      accessTambons: accessInfo?.tambons ?? [],
+      modelledKm2: Object.fromEntries(Object.entries(m.tambon_coverage).map(([id, coverage]) => [id, coverage.modelled_km2])),
+      floodedKm2: stats.tambon_flooded_km2,
+      residents: m.population.tambon_totals,
+      peopleInWater: stats.tambon_people_in_water ?? {},
+      need,
+      nodeResidents: accessModel?.tambonTotals ?? null,
+      vulnerable: accessModel?.vulnerable ?? null,
+      roadWeightedKm: derived.roadWeights,
+      roadWeightedImpassableKm: tambonImpassableRoads(derived.roadProps, stage, m.impassable_depth_m),
+      confidence: m.confidence,
+    });
+  }, [data, derived, stats, nodes, accessInfo, selectedSetIndex, stage, accessModel]);
   const cutoffFrame = useMemo<CutoffFrame | null>(
     () => (showCutoff && nodes && selectedSetIndex >= 0 ? { nodes, setIndex: selectedSetIndex, levelIndex: accessLevel } : null),
     [showCutoff, nodes, selectedSetIndex, accessLevel],
@@ -2044,6 +2073,22 @@ export function MaeSaiFloodTimeline() {
                   />
                 )}
 
+                {priorityRows && (
+                  <PriorityCard
+                    rows={priorityRows}
+                    names={derived.names}
+                    confidence={manifest.confidence}
+                    confidenceReason={manifest.confidence_reason}
+                    timestamp={manifest.source_timestamp}
+                    shelterLabel={shelterSet === "reported"
+                      ? t("the shelters reported in use in Sep 2024", "ที่พักพิงที่มีรายงานว่าใช้งานในเดือน ก.ย. 2024")
+                      : t(`the first ${planK} sites of the ranked plan`, `สถานที่ ${planK} แห่งแรกของแผนที่จัดลำดับ`)}
+                    moment={moment}
+                    phaseId={phase?.id ?? null}
+                    language={lang}
+                  />
+                )}
+
                 {shelterInfo && (
                   <ShelterPlanCard shelters={shelterInfo} k={planK} onPlanK={choosePlanK}
                     language={lang} onShowCandidate={showCandidateOnMap} />
@@ -2092,8 +2137,8 @@ export function MaeSaiFloodTimeline() {
           </aside>
         </div>
         <footer className={styles.footer}>{t(
-          "FloodGuard supports preparedness and rapid post-event prioritisation. This replay is a report-only reconstruction and does not feed the planning decision layer: it computes no Flood Preparedness Priority Score and assigns no action class (A–E). Card themes such as “Protect Lives Now” only name the planning theme a card relates to.",
-          "FloodGuard สนับสนุนการเตรียมพร้อมและการจัดลำดับความสำคัญอย่างรวดเร็วหลังเกิดเหตุ การย้อนดูนี้เป็นการจำลองเพื่อรายงานเท่านั้น และไม่ถูกนำไปใช้ในส่วนตัดสินใจเพื่อการวางแผน ไม่มีการคำนวณคะแนนลำดับความสำคัญด้านการเตรียมพร้อมรับน้ำท่วม (FPPS) และไม่มีการกำหนดกลุ่มการดำเนินการ (A–E) ประเด็นที่ระบุบนการ์ด เช่น “ปกป้องชีวิตทันที” บอกเพียงหัวข้อการวางแผนที่การ์ดนั้นเกี่ยวข้อง",
+          "FloodGuard supports preparedness and rapid post-event prioritisation. This replay is a historical reconstruction and does not feed the planning decision layer. Its scenario Flood Preparedness Priority Score ranks subdistricts at each moment with the locked FPPS weights and A–E rules; while confidence is low every action class is E (Monitor and Verify). Card themes such as “Protect Lives Now” only name the planning theme a card relates to.",
+          "FloodGuard สนับสนุนการเตรียมพร้อมและการจัดลำดับความสำคัญอย่างรวดเร็วหลังเกิดเหตุ การย้อนดูนี้เป็นการจำลองเหตุการณ์ในอดีต และไม่ถูกนำไปใช้ในส่วนตัดสินใจเพื่อการวางแผน คะแนนลำดับความสำคัญด้านการเตรียมพร้อมรับน้ำท่วม (FPPS) ตามสถานการณ์จำลองจัดลำดับตำบลในแต่ละช่วงเวลาด้วยน้ำหนักและกฎกลุ่ม A–E ที่โครงการกำหนดไว้ ขณะที่ความเชื่อมั่นต่ำ ทุกตำบลอยู่ในกลุ่ม E (เฝ้าระวังและตรวจสอบ) ประเด็นที่ระบุบนการ์ด เช่น “ปกป้องชีวิตทันที” บอกเพียงหัวข้อการวางแผนที่การ์ดนั้นเกี่ยวข้อง",
         )}</footer>
       </div>
     </main>

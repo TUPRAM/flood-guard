@@ -339,3 +339,63 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
   .reportedFacts div { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .toggles label { min-height: 36px; }
 }
+
+/* Scenario FPPS (priority card) */
+.fppsLegend { display: flex; flex-wrap: wrap; gap: .25rem .8rem; margin: .6rem 0 0; padding: 0; list-style: none; font-size: .72rem; color: #3b4d68; }
+.fppsLegend i, .fppsTable th i { display: inline-block; width: .7rem; height: .7rem; margin-right: .3rem; border-radius: .2rem; vertical-align: -.05rem; }
+.fppsGate { margin: .7rem 0 0 !important; padding: .55rem .7rem; border: 1px solid #ecdcb4; border-radius: .5rem; background: #fffaf0; color: #5b4516; font-size: .76rem; line-height: 1.5; }
+.fppsList { display: grid; gap: .35rem; margin: .8rem 0 0; padding: 0; list-style: none; }
+.fppsList details { border: 1px solid #e5eaf2; border-radius: .6rem; background: #f7f9fc; }
+.fppsList details[open] { background: #fff; }
+.fppsList summary { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto auto; align-items: center; gap: .3rem .55rem; min-height: 44px; padding: .45rem .6rem; cursor: pointer; list-style: none; font-size: .78rem; }
+.fppsList summary .fppsTrack { grid-column: 2 / -1; grid-row: 2; }
+.fppsList summary::-webkit-details-marker { display: none; }
+.fppsList summary:focus-visible { outline: 3px solid #e8a526; outline-offset: -3px; border-radius: .6rem; }
+.fppsList details > p, .fppsList details > table { margin: 0 .6rem .6rem; }
+.fppsRank { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 999px; background: #0c2740; color: #fff; font-size: .7rem; font-weight: 700; }
+.fppsName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; color: #17253b; }
+.fppsTrack { display: flex; height: 12px; border-radius: 999px; background: #edf1f7; overflow: hidden; }
+.fppsTrack span { display: block; height: 100%; }
+.fppsScore { text-align: right; font-size: .9rem; font-variant-numeric: tabular-nums; font-weight: 750; color: #0c2740; }
+.fppsClass { display: grid; justify-items: end; font-size: .72rem; font-weight: 700; color: #5b4516; white-space: nowrap; line-height: 1.2; }
+.fppsClass small { font-size: .64rem; font-weight: 600; color: #5a6a80; }
+.fppsTable { width: calc(100% - 1.2rem); border-collapse: collapse; font-size: .72rem; }
+.fppsTable th, .fppsTable td { padding: .3rem .25rem; border-bottom: 1px solid #edf1f7; text-align: right; vertical-align: top; font-variant-numeric: tabular-nums; }
+.fppsTable td, .fppsTable thead th { white-space: nowrap; overflow-wrap: normal; }
+.fppsTable thead th { font-weight: 650; color: #52627a; }
+.fppsTable tbody th, .fppsTable tfoot th, .fppsTable thead th:first-child { text-align: left; font-weight: 650; color: #17253b; }
+.fppsTable tbody th small { display: block; margin-top: .15rem; font-weight: 400; color: #5a6a80; line-height: 1.4; }
+.fppsTable tfoot th, .fppsTable tfoot td { border-bottom: 0; font-weight: 750; color: #0c2740; }
+
+/* Action playbook (priority card) */
+.classGuide { margin: .7rem 0 0; border: 1px solid #e5eaf2; border-radius: .6rem; background: #f7f9fc; }
+.classGuide > summary { min-height: 40px; display: flex; align-items: center; padding: .3rem .7rem; cursor: pointer; font-size: .78rem; font-weight: 650; color: #17253b; }
+.classGuide > summary:focus-visible { outline: 3px solid #e8a526; outline-offset: -3px; border-radius: .6rem; }
+.classGuide dl { display: grid; gap: .4rem; margin: 0 .7rem; }
+.classGuide dl div { padding-left: .55rem; border-left: 4px solid var(--class-colour, #94a3b8); }
+.classGuide dt { font-size: .76rem; font-weight: 700; color: #17253b; }
+.classGuide dd { margin: 0; font-size: .74rem; color: #3b4d68; line-height: 1.45; }
+.classGuide > p { margin: .5rem .7rem .6rem !important; }
+.playbook[data-class="A"], .classGuide [data-class="A"] { --class-colour: #b3261e; }
+.playbook[data-class="B"], .classGuide [data-class="B"] { --class-colour: #a86a00; }
+.playbook[data-class="C"], .classGuide [data-class="C"] { --class-colour: #7b3fb0; }
+.playbook[data-class="D"], .classGuide [data-class="D"] { --class-colour: #1f5fa8; }
+.playbook[data-class="E"], .classGuide [data-class="E"] { --class-colour: #64748b; }
+.rowActions { margin: 0 .6rem .7rem; }
+.rowActions > h3 { margin: .8rem 0 .3rem !important; }
+.rowActions > p { margin: 0 0 .5rem !important; }
+.playbook { margin-top: .5rem; padding: .55rem .65rem; border: 1px solid #e5eaf2; border-left: 4px solid var(--class-colour, #94a3b8); border-radius: .5rem; background: #fff; }
+.playbookHead { display: grid; gap: .1rem; margin: 0 !important; font-size: .78rem; line-height: 1.45; }
+.playbookHead small { font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5a6a80; }
+.playbookHead strong { color: var(--class-colour, #17253b); }
+.playbookHead span { color: #3b4d68; }
+.playbookStages { display: grid; gap: .3rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+.playbookStages > li { border: 1px solid #edf1f7; border-radius: .45rem; }
+.playbookStages > li[data-now] { border-color: var(--class-colour, #94a3b8); background: #fbfcfe; }
+.playbookStages summary { display: flex; justify-content: space-between; align-items: center; gap: .5rem; min-height: 36px; padding: .25rem .55rem; cursor: pointer; font-size: .76rem; font-weight: 650; color: #17253b; }
+.playbookStages summary:focus-visible { outline: 3px solid #e8a526; outline-offset: -3px; border-radius: .45rem; }
+.playbookStages summary em { font-style: normal; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .05rem .4rem; border-radius: 999px; background: #edf1f7; color: #3b4d68; }
+.playbookStages li[data-now] summary em { background: var(--class-colour, #64748b); color: #fff; }
+.playbookColumns { display: grid; gap: .2rem .8rem; padding: 0 .55rem .45rem; }
+.playbookColumns h4 { margin: .3rem 0 .15rem; font-size: .7rem; color: #52627a; }
+.playbookColumns ul { margin: 0; padding-left: 1.05rem; font-size: .74rem; line-height: 1.5; color: #3b4d68; }

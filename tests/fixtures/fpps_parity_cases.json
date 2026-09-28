@@ -1,0 +1,407 @@
+{
+  "generated_by": "scripts/build_fpps_parity_fixture.py",
+  "engine": "floodguard.scoring.score_subdistricts",
+  "components": [
+    "flood_likelihood_0_100",
+    "exposure_0_100",
+    "access_gap_0_100",
+    "road_criticality_0_100",
+    "vulnerability_context_0_100"
+  ],
+  "default_weights": {
+    "flood_likelihood_0_100": 0.3,
+    "exposure_0_100": 0.25,
+    "access_gap_0_100": 0.2,
+    "road_criticality_0_100": 0.15,
+    "vulnerability_context_0_100": 0.1
+  },
+  "inputs": [
+    {
+      "subdistrict_id": "case_00",
+      "subdistrict_name": "Case 00",
+      "confidence_class": "high",
+      "flood_likelihood_0_100": 90.0,
+      "exposure_0_100": 80.0,
+      "access_gap_0_100": 75.0,
+      "road_criticality_0_100": 40.0,
+      "vulnerability_context_0_100": 50.0
+    },
+    {
+      "subdistrict_id": "case_01",
+      "subdistrict_name": "Case 01",
+      "confidence_class": "low",
+      "flood_likelihood_0_100": 90.0,
+      "exposure_0_100": 80.0,
+      "access_gap_0_100": 75.0,
+      "road_criticality_0_100": 40.0,
+      "vulnerability_context_0_100": 50.0
+    },
+    {
+      "subdistrict_id": "case_02",
+      "subdistrict_name": "Case 02",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 90.0,
+      "exposure_0_100": 70.0,
+      "access_gap_0_100": 70.0,
+      "road_criticality_0_100": 40.0,
+      "vulnerability_context_0_100": 50.0
+    },
+    {
+      "subdistrict_id": "case_03",
+      "subdistrict_name": "Case 03",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 80.0,
+      "exposure_0_100": 40.0,
+      "access_gap_0_100": 60.0,
+      "road_criticality_0_100": 80.0,
+      "vulnerability_context_0_100": 30.0
+    },
+    {
+      "subdistrict_id": "case_04",
+      "subdistrict_name": "Case 04",
+      "confidence_class": "high",
+      "flood_likelihood_0_100": 80.0,
+      "exposure_0_100": 40.0,
+      "access_gap_0_100": 55.0,
+      "road_criticality_0_100": 75.0,
+      "vulnerability_context_0_100": 30.0
+    },
+    {
+      "subdistrict_id": "case_05",
+      "subdistrict_name": "Case 05",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 70.0,
+      "exposure_0_100": 66.0,
+      "access_gap_0_100": 52.0,
+      "road_criticality_0_100": 20.0,
+      "vulnerability_context_0_100": 40.0
+    },
+    {
+      "subdistrict_id": "case_06",
+      "subdistrict_name": "Case 06",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 70.0,
+      "exposure_0_100": 65.0,
+      "access_gap_0_100": 50.0,
+      "road_criticality_0_100": 20.0,
+      "vulnerability_context_0_100": 40.0
+    },
+    {
+      "subdistrict_id": "case_07",
+      "subdistrict_name": "Case 07",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 60.0,
+      "exposure_0_100": 30.0,
+      "access_gap_0_100": 30.0,
+      "road_criticality_0_100": 30.0,
+      "vulnerability_context_0_100": 90.0
+    },
+    {
+      "subdistrict_id": "case_08",
+      "subdistrict_name": "Case 08",
+      "confidence_class": "high",
+      "flood_likelihood_0_100": 10.0,
+      "exposure_0_100": 10.0,
+      "access_gap_0_100": 10.0,
+      "road_criticality_0_100": 10.0,
+      "vulnerability_context_0_100": 10.0
+    },
+    {
+      "subdistrict_id": "case_09",
+      "subdistrict_name": "Case 09",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 35.0,
+      "exposure_0_100": 35.0,
+      "access_gap_0_100": 35.0,
+      "road_criticality_0_100": 35.0,
+      "vulnerability_context_0_100": 35.0
+    },
+    {
+      "subdistrict_id": "case_10",
+      "subdistrict_name": "Case 10",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 34.99,
+      "exposure_0_100": 35.0,
+      "access_gap_0_100": 35.0,
+      "road_criticality_0_100": 35.0,
+      "vulnerability_context_0_100": 35.0
+    },
+    {
+      "subdistrict_id": "case_11",
+      "subdistrict_name": "Case 11",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 0.0,
+      "exposure_0_100": 0.0,
+      "access_gap_0_100": 0.0,
+      "road_criticality_0_100": 0.0,
+      "vulnerability_context_0_100": 0.0
+    },
+    {
+      "subdistrict_id": "case_12",
+      "subdistrict_name": "Case 12",
+      "confidence_class": "high",
+      "flood_likelihood_0_100": 100.0,
+      "exposure_0_100": 100.0,
+      "access_gap_0_100": 100.0,
+      "road_criticality_0_100": 100.0,
+      "vulnerability_context_0_100": 100.0
+    },
+    {
+      "subdistrict_id": "case_13",
+      "subdistrict_name": "Case 13",
+      "confidence_class": "medium",
+      "flood_likelihood_0_100": 12.345,
+      "exposure_0_100": 67.891,
+      "access_gap_0_100": 23.456,
+      "road_criticality_0_100": 88.8,
+      "vulnerability_context_0_100": 4.2
+    },
+    {
+      "subdistrict_id": "case_14",
+      "subdistrict_name": "Case 14",
+      "confidence_class": "high",
+      "flood_likelihood_0_100": 50.0,
+      "exposure_0_100": 90.0,
+      "access_gap_0_100": 40.0,
+      "road_criticality_0_100": 20.0,
+      "vulnerability_context_0_100": 90.0
+    }
+  ],
+  "default_outputs": [
+    {
+      "subdistrict_id": "case_00",
+      "fpps_0_100": 73.0,
+      "action_class": "A",
+      "action_reason_code": "life_safety_exposure",
+      "top_reason": "High exposure and access loss require life-safety action."
+    },
+    {
+      "subdistrict_id": "case_01",
+      "fpps_0_100": 73.0,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "top_reason": "Monitor and verify because confidence is low."
+    },
+    {
+      "subdistrict_id": "case_02",
+      "fpps_0_100": 69.5,
+      "action_class": "A",
+      "action_reason_code": "life_safety_exposure",
+      "top_reason": "High exposure and access loss require life-safety action."
+    },
+    {
+      "subdistrict_id": "case_03",
+      "fpps_0_100": 61.0,
+      "action_class": "B",
+      "action_reason_code": "critical_route_access",
+      "top_reason": "Critical routes and access loss threaten isolation."
+    },
+    {
+      "subdistrict_id": "case_04",
+      "fpps_0_100": 59.25,
+      "action_class": "B",
+      "action_reason_code": "critical_route_access",
+      "top_reason": "Critical routes and access loss threaten isolation."
+    },
+    {
+      "subdistrict_id": "case_05",
+      "fpps_0_100": 54.9,
+      "action_class": "C",
+      "action_reason_code": "essential_service_access",
+      "top_reason": "Exposure and access loss threaten essential services."
+    },
+    {
+      "subdistrict_id": "case_06",
+      "fpps_0_100": 54.25,
+      "action_class": "C",
+      "action_reason_code": "essential_service_access",
+      "top_reason": "Exposure and access loss threaten essential services."
+    },
+    {
+      "subdistrict_id": "case_07",
+      "fpps_0_100": 45.0,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is vulnerability/context (90.0/100)."
+    },
+    {
+      "subdistrict_id": "case_08",
+      "fpps_0_100": 10.0,
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "top_reason": "Monitor and verify because the priority score is low."
+    },
+    {
+      "subdistrict_id": "case_09",
+      "fpps_0_100": 35.0,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is flood likelihood (35.0/100)."
+    },
+    {
+      "subdistrict_id": "case_10",
+      "fpps_0_100": 35.0,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is exposure (35.0/100)."
+    },
+    {
+      "subdistrict_id": "case_11",
+      "fpps_0_100": 0.0,
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "top_reason": "Monitor and verify because the priority score is low."
+    },
+    {
+      "subdistrict_id": "case_12",
+      "fpps_0_100": 100.0,
+      "action_class": "A",
+      "action_reason_code": "life_safety_exposure",
+      "top_reason": "High exposure and access loss require life-safety action."
+    },
+    {
+      "subdistrict_id": "case_13",
+      "fpps_0_100": 39.11,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is road criticality (88.8/100)."
+    },
+    {
+      "subdistrict_id": "case_14",
+      "fpps_0_100": 57.5,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is exposure (90.0/100)."
+    }
+  ],
+  "alt_weights": {
+    "flood_likelihood_0_100": 2,
+    "exposure_0_100": 1,
+    "access_gap_0_100": 1,
+    "road_criticality_0_100": 0,
+    "vulnerability_context_0_100": 1
+  },
+  "alt_outputs": [
+    {
+      "subdistrict_id": "case_00",
+      "fpps_0_100": 77.0,
+      "action_class": "A",
+      "action_reason_code": "life_safety_exposure",
+      "top_reason": "High exposure and access loss require life-safety action."
+    },
+    {
+      "subdistrict_id": "case_01",
+      "fpps_0_100": 77.0,
+      "action_class": "E",
+      "action_reason_code": "low_confidence",
+      "top_reason": "Monitor and verify because confidence is low."
+    },
+    {
+      "subdistrict_id": "case_02",
+      "fpps_0_100": 74.0,
+      "action_class": "A",
+      "action_reason_code": "life_safety_exposure",
+      "top_reason": "High exposure and access loss require life-safety action."
+    },
+    {
+      "subdistrict_id": "case_03",
+      "fpps_0_100": 58.0,
+      "action_class": "B",
+      "action_reason_code": "critical_route_access",
+      "top_reason": "Critical routes and access loss threaten isolation."
+    },
+    {
+      "subdistrict_id": "case_04",
+      "fpps_0_100": 57.0,
+      "action_class": "B",
+      "action_reason_code": "critical_route_access",
+      "top_reason": "Critical routes and access loss threaten isolation."
+    },
+    {
+      "subdistrict_id": "case_05",
+      "fpps_0_100": 59.6,
+      "action_class": "C",
+      "action_reason_code": "essential_service_access",
+      "top_reason": "Exposure and access loss threaten essential services."
+    },
+    {
+      "subdistrict_id": "case_06",
+      "fpps_0_100": 59.0,
+      "action_class": "C",
+      "action_reason_code": "essential_service_access",
+      "top_reason": "Exposure and access loss threaten essential services."
+    },
+    {
+      "subdistrict_id": "case_07",
+      "fpps_0_100": 54.0,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is vulnerability/context (90.0/100)."
+    },
+    {
+      "subdistrict_id": "case_08",
+      "fpps_0_100": 10.0,
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "top_reason": "Monitor and verify because the priority score is low."
+    },
+    {
+      "subdistrict_id": "case_09",
+      "fpps_0_100": 35.0,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is flood likelihood (35.0/100)."
+    },
+    {
+      "subdistrict_id": "case_10",
+      "fpps_0_100": 35.0,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is exposure (35.0/100)."
+    },
+    {
+      "subdistrict_id": "case_11",
+      "fpps_0_100": 0.0,
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "top_reason": "Monitor and verify because the priority score is low."
+    },
+    {
+      "subdistrict_id": "case_12",
+      "fpps_0_100": 100.0,
+      "action_class": "A",
+      "action_reason_code": "life_safety_exposure",
+      "top_reason": "High exposure and access loss require life-safety action."
+    },
+    {
+      "subdistrict_id": "case_13",
+      "fpps_0_100": 24.05,
+      "action_class": "E",
+      "action_reason_code": "low_priority_score",
+      "top_reason": "Monitor and verify because the priority score is low."
+    },
+    {
+      "subdistrict_id": "case_14",
+      "fpps_0_100": 64.0,
+      "action_class": "D",
+      "action_reason_code": "resilience",
+      "top_reason": "Highest driver is exposure (90.0/100)."
+    }
+  ],
+  "recommended_actions": {
+    "en": {
+      "A": "Pre-position rescue assets, open shelters, issue targeted warnings, and coordinate medical continuity.",
+      "B": "Plan closures, detours, pumps, temporary crossings, or road-elevation priorities.",
+      "C": "Floodproof facilities, secure backup access, and activate mobile services.",
+      "D": "Prioritize drainage, canal maintenance, retention areas, green-blue infrastructure, and local drills.",
+      "E": "Monitor conditions, verify field data, and improve source confidence before escalation."
+    },
+    "th": {
+      "A": "\u0e08\u0e31\u0e14\u0e40\u0e15\u0e23\u0e35\u0e22\u0e21\u0e01\u0e33\u0e25\u0e31\u0e07\u0e0a\u0e48\u0e27\u0e22\u0e40\u0e2b\u0e25\u0e37\u0e2d \u0e40\u0e1b\u0e34\u0e14\u0e28\u0e39\u0e19\u0e22\u0e4c\u0e1e\u0e31\u0e01\u0e1e\u0e34\u0e07 \u0e2a\u0e48\u0e07\u0e04\u0e33\u0e40\u0e15\u0e37\u0e2d\u0e19\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e1e\u0e37\u0e49\u0e19\u0e17\u0e35\u0e48 \u0e41\u0e25\u0e30\u0e1b\u0e23\u0e30\u0e2a\u0e32\u0e19\u0e04\u0e27\u0e32\u0e21\u0e15\u0e48\u0e2d\u0e40\u0e19\u0e37\u0e48\u0e2d\u0e07\u0e17\u0e32\u0e07\u0e01\u0e32\u0e23\u0e41\u0e1e\u0e17\u0e22\u0e4c",
+      "B": "\u0e27\u0e32\u0e07\u0e41\u0e1c\u0e19\u0e1b\u0e34\u0e14\u0e16\u0e19\u0e19 \u0e17\u0e32\u0e07\u0e40\u0e1a\u0e35\u0e48\u0e22\u0e07 \u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e2a\u0e39\u0e1a\u0e19\u0e49\u0e33 \u0e08\u0e38\u0e14\u0e02\u0e49\u0e32\u0e21\u0e0a\u0e31\u0e48\u0e27\u0e04\u0e23\u0e32\u0e27 \u0e2b\u0e23\u0e37\u0e2d\u0e01\u0e32\u0e23\u0e22\u0e01\u0e23\u0e30\u0e14\u0e31\u0e1a\u0e16\u0e19\u0e19\u0e08\u0e38\u0e14\u0e2a\u0e33\u0e04\u0e31\u0e0d",
+      "C": "\u0e1b\u0e49\u0e2d\u0e07\u0e01\u0e31\u0e19\u0e2a\u0e16\u0e32\u0e19\u0e1a\u0e23\u0e34\u0e01\u0e32\u0e23\u0e2a\u0e33\u0e04\u0e31\u0e0d\u0e08\u0e32\u0e01\u0e19\u0e49\u0e33\u0e17\u0e48\u0e27\u0e21 \u0e08\u0e31\u0e14\u0e17\u0e32\u0e07\u0e40\u0e02\u0e49\u0e32\u0e16\u0e36\u0e07\u0e2a\u0e33\u0e23\u0e2d\u0e07 \u0e41\u0e25\u0e30\u0e40\u0e1b\u0e34\u0e14\u0e1a\u0e23\u0e34\u0e01\u0e32\u0e23\u0e40\u0e04\u0e25\u0e37\u0e48\u0e2d\u0e19\u0e17\u0e35\u0e48",
+      "D": "\u0e43\u0e2b\u0e49\u0e04\u0e27\u0e32\u0e21\u0e2a\u0e33\u0e04\u0e31\u0e0d\u0e01\u0e31\u0e1a\u0e01\u0e32\u0e23\u0e23\u0e30\u0e1a\u0e32\u0e22\u0e19\u0e49\u0e33 \u0e01\u0e32\u0e23\u0e1a\u0e33\u0e23\u0e38\u0e07\u0e23\u0e31\u0e01\u0e29\u0e32\u0e04\u0e25\u0e2d\u0e07 \u0e1e\u0e37\u0e49\u0e19\u0e17\u0e35\u0e48\u0e23\u0e31\u0e1a\u0e19\u0e49\u0e33 \u0e42\u0e04\u0e23\u0e07\u0e2a\u0e23\u0e49\u0e32\u0e07\u0e1e\u0e37\u0e49\u0e19\u0e10\u0e32\u0e19\u0e2a\u0e35\u0e40\u0e02\u0e35\u0e22\u0e27-\u0e19\u0e49\u0e33\u0e40\u0e07\u0e34\u0e19 \u0e41\u0e25\u0e30\u0e01\u0e32\u0e23\u0e0b\u0e49\u0e2d\u0e21\u0e41\u0e1c\u0e19\u0e43\u0e19\u0e1e\u0e37\u0e49\u0e19\u0e17\u0e35\u0e48",
+      "E": "\u0e15\u0e34\u0e14\u0e15\u0e32\u0e21\u0e2a\u0e16\u0e32\u0e19\u0e01\u0e32\u0e23\u0e13\u0e4c \u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e20\u0e32\u0e04\u0e2a\u0e19\u0e32\u0e21 \u0e41\u0e25\u0e30\u0e1b\u0e23\u0e31\u0e1a\u0e1b\u0e23\u0e38\u0e07\u0e04\u0e27\u0e32\u0e21\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e31\u0e48\u0e19\u0e02\u0e2d\u0e07\u0e41\u0e2b\u0e25\u0e48\u0e07\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e01\u0e48\u0e2d\u0e19\u0e22\u0e01\u0e23\u0e30\u0e14\u0e31\u0e1a\u0e01\u0e32\u0e23\u0e14\u0e33\u0e40\u0e19\u0e34\u0e19\u0e01\u0e32\u0e23"
+    }
+  }
+}

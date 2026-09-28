@@ -190,7 +190,7 @@ export function reportedSetStatusText(shelter: Pick<ReportedShelter, "lat" | "lo
   return t("Not counted in the reported-set access scenario", "ไม่นับรวมในสถานการณ์การเข้าถึงของชุดที่มีรายงาน");
 }
 
-/** Planning theme a card relates to, stated as a theme only: this replay computes no FPPS score and assigns no action class. */
+/** Planning theme a card relates to, stated as a theme only; the scenario FPPS and its action classes live in the priority card alone. */
 export function ThemeEyebrow({ prefix, theme, language }: { prefix?: string; theme: "protect_lives" | "keep_routes"; language: Language }) {
   const t = translator(language);
   const name = theme === "protect_lives" ? t("PROTECT LIVES NOW", "ปกป้องชีวิตทันที") : t("KEEP ROUTES OPEN", "รักษาเส้นทางให้สัญจรได้");
@@ -206,7 +206,7 @@ export function ThemeEyebrow({ prefix, theme, language }: { prefix?: string; the
  * text stays in its English original). `children` adds card-specific status lines before the timestamp.
  */
 export function ProvenanceNote({ kind, confidence, reason, timestamp, language, children }: {
-  kind: "access" | "plan" | "reported";
+  kind: "access" | "plan" | "reported" | "priority";
   confidence: string;
   reason?: string;
   timestamp: string;

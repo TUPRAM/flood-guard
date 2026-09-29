@@ -494,10 +494,10 @@ describe("Evacuation Equity Gap wording on the page", () => {
   const gap = (vulnerableLost: number, vulnerableTotal: number, nonVulnerableLost: number, nonVulnerableTotal: number) =>
     evacuationEquityGap({ vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal });
 
-  it("says '— (no one has lost access yet)' when both loss rates are zero, never a parity ratio", () => {
+  it("says '— (no one has lost access at this replay hour)' when both loss rates are zero, never a parity ratio", () => {
     const none = equityWording(gap(0, 100, 0, 1000), "en");
-    expect(none).toEqual({ value: "— (no one has lost access yet)", sentence: "" });
-    expect(equityWording(gap(0, 100, 0, 1000), "th").value).toBe("— (ยังไม่มีผู้ใดสูญเสียการเข้าถึง)");
+    expect(none).toEqual({ value: "— (no one has lost access at this replay hour)", sentence: "" });
+    expect(equityWording(gap(0, 100, 0, 1000), "th").value).toBe("— (ไม่มีผู้สูญเสียการเข้าถึง ณ ชั่วโมงนี้)");
   });
 
   it("states the ratio to two decimals and compares the two rates in plain words", () => {
@@ -530,7 +530,7 @@ describe("Evacuation Equity Gap wording on the page", () => {
   });
 
   it("explains why the proxy points this way only when proxy-vulnerable residents are less affected", () => {
-    expect(equityWhy(gap(1, 100, 50, 1000), "en")).toContain("hillside and remote homes that stay dry");
+    expect(equityWhy(gap(1, 100, 50, 1000), "en")).toContain("not who is more vulnerable");
     expect(equityWhy(gap(1, 100, 50, 1000), "th")).toMatch(/[฀-๿]/);
     expect(equityWhy(gap(10, 100, 20, 1000), "en")).toBeNull();
     expect(equityWhy(gap(0, 100, 0, 1000), "en")).toBeNull();

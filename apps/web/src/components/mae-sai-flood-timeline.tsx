@@ -1978,11 +1978,11 @@ export function MaeSaiFloodTimeline() {
     : null;
   const mudText = postEvent
     ? t(
-      `First clear satellite view after the flood (${formatShortDate(postEvent.local, "en")}): brown = mud left by floodwater`,
-      `ภาพดาวเทียมที่ชัดเจนภาพแรกหลังน้ำท่วม (${formatShortDate(postEvent.local, "th")}): สีน้ำตาล = โคลนที่น้ำท่วมทิ้งไว้`,
+      `First clear satellite view after the flood (${formatShortDate(postEvent.local, "en")}): brown areas are consistent with mud left by floodwater`,
+      `ภาพดาวเทียมที่ชัดเจนภาพแรกหลังน้ำท่วม (${formatShortDate(postEvent.local, "th")}): พื้นที่สีน้ำตาลสอดคล้องกับโคลนที่น้ำท่วมทิ้งไว้`,
     )
     : "";
-  const mudCue = mudText ? `${mudText} ${t("(observed)", "(การสังเกตการณ์)")}` : "";
+  const mudCue = mudText ? `${mudText} ${t("(observed image; our reading)", "(ภาพจากการสังเกตการณ์ การตีความของเรา)")}` : "";
 
   const gapText = gap
     ? t(
@@ -2697,8 +2697,8 @@ export function LowConfidenceEvidence({ hand, language }: { hand: TimelineManife
       <dt>{th ? "น้ำที่มีความเชื่อมั่นต่ำ" : "Low-confidence water"}</dt>
       <dd>
         {share && (th
-          ? `${km(share.low_confidence_km2)} จาก ${km(share.peak_flooded_km2)}\u00a0ตร.กม. ที่เปียกในช่วงระดับน้ำสูงสุดของแบบจำลองเป็นพื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง แผนที่และภาพที่ส่งออกแสดงส่วนนี้เป็นสีจางพร้อมลายเส้นทแยงในมุมมองความลึกและประชากร `
-          : `${km(share.low_confidence_km2)} of the ${km(share.peak_flooded_km2)}\u00a0km² wet at the modelled peak is flat or filled low ground in the elevation model; the map and the exports draw it paler and hatched in the depth and people views. `)}
+          ? `${km(share.low_confidence_km2)} จาก ${km(share.peak_flooded_km2)}\u00a0ตร.กม. ที่เปียกในช่วงระดับน้ำสูงสุดของแบบจำลองเป็นพื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง แผนที่และภาพที่ส่งออกแสดงส่วนนี้เป็นสีจางพร้อมลายเส้นทแยงในมุมมองความลึกและประชากร ส่วนนี้ยังนับรวมในตัวเลขพื้นที่น้ำท่วม ถนน ประชากร และการเข้าถึงทั้งหมด `
+          : `${km(share.low_confidence_km2)} of the ${km(share.peak_flooded_km2)}\u00a0km² wet at the modelled peak is flat or filled low ground in the elevation model; the map and the exports draw it paler and hatched in the depth and people views. It is still counted in every flooded-area, road, people and access figure. `)}
         {hand.low_confidence && <Localized text={hand.low_confidence.meaning} language={language} />}
       </dd>
     </div>

@@ -428,7 +428,7 @@ export function equityWording(gap: EquityGap, language: Language): EquityWording
     case "no_non_vulnerable_denominator":
       return { value: "—", sentence: th ? "คำนวณไม่ได้: ไม่มีผู้อยู่อาศัยกลุ่มอื่นในขอบเขตนี้" : "Not available: no other residents are counted in this scope." };
     case "no_loss":
-      return { value: th ? "— (ยังไม่มีผู้ใดสูญเสียการเข้าถึง)" : "— (no one has lost access yet)", sentence: "" };
+      return { value: th ? "— (ไม่มีผู้สูญเสียการเข้าถึง ณ ชั่วโมงนี้)" : "— (no one has lost access at this replay hour)", sentence: "" };
     case "undefined_ratio":
       return {
         value: th ? "หาค่าไม่ได้" : "undefined",
@@ -467,8 +467,8 @@ export function equityWording(gap: EquityGap, language: Language): EquityWording
 export function equityWhy(gap: EquityGap, language: Language): string | null {
   if (gap.status !== "ratio" || gap.band !== "lower") return null;
   return language === "th"
-    ? "เหตุที่เป็นเช่นนี้: ตัวแทนนี้ระบุบ้านบนที่ลาดชันหรือห่างถนน ซึ่งส่วนใหญ่อยู่บนเนินและพื้นที่ห่างไกลที่น้ำไม่ท่วม ขณะที่น้ำท่วมพื้นที่ราบริมน้ำที่คนส่วนใหญ่อาศัยอยู่"
-    : "Why it points this way here: the proxy marks homes on slopes or far from a drivable road, mostly hillside and remote homes that stay dry, while this flood covers the valley floor, where most homes are.";
+    ? "วิธีอ่าน: ตัวแทนนี้ระบุบ้านบนที่ลาดชันหรือห่างถนนที่รถวิ่งได้ ไม่ใช่อายุ ความพิการ หรือรายได้ ค่าที่ต่ำจึงบอกตำแหน่งของบ้านเหล่านี้เทียบกับพื้นที่ราบที่ถูกน้ำท่วม ไม่ได้บอกว่าใครเปราะบางกว่า"
+    : "How to read this: the proxy marks homes on slopes or far from a drivable road, not age, disability or income, so a low ratio says where those homes sit relative to the flooded valley floor, not who is more vulnerable.";
 }
 
 // --- Shelter plan ---------------------------------------------------------------------------------------

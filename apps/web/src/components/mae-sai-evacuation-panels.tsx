@@ -841,7 +841,7 @@ export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPl
       </div>
       <CoverageCurve shelters={shelters} k={k} language={language} />
       <p>{t(
-        `Ranked range, not a fixed number: the first k entries are the plan for k shelters. The default, k = ${knee}, is the smallest plan that reaches 90% of the most any plan can reach.`,
+        `Ranked range, not a fixed number: the first k entries are the plan for k shelters. The default, k = ${knee}, is the smallest plan that reaches 90% of what all ${shelters.plan.length} ranked sites reach.`,
         `เป็นช่วงที่จัดอันดับ ไม่ใช่จำนวนตายตัว: k รายการแรกคือแผนสำหรับที่พักพิง k แห่ง ค่าเริ่มต้น k = ${knee} คือแผนที่เล็กที่สุดที่ครอบคลุมได้ถึง 90% ของค่าสูงสุดที่แผนใด ๆ ทำได้`,
       )}</p>
       <div className={styles.gapCallout} role="note">
@@ -1098,7 +1098,7 @@ function ExternalCheckItem({ check, manifest, language }: { check: ExternalCheck
     <li>
       <span lang={observed.lang}>{observed.text}</span>{": "}
       {t(`reported ${check.reported_km2} km²`, `รายงาน ${check.reported_km2} ตร.กม.`)}
-      {check.reported_people !== undefined && t(` and ≈ ${formatPeople(check.reported_people)} people exposed`, ` และประชากรที่ได้รับผลกระทบ ≈ ${formatPeople(check.reported_people)} คน`)}
+      {check.reported_people !== undefined && t(` and ≈ ${formatPeople(check.reported_people)} people exposed`, ` และประชากรที่อยู่ในพื้นที่น้ำท่วม ≈ ${formatPeople(check.reported_people)} คน`)}
       {" — “"}<span lang={quoted.lang === "en" ? textLang(quoted.text, "en") : "th"}>{quoted.text}</span>{"”"}{language === "en" ? "." : ""}{" "}
       {check.role === "calibration_anchor" ? (
         <>

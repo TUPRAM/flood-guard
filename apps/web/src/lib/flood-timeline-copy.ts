@@ -87,7 +87,7 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
   "UNOSAT product 3991: cumulative satellite-detected water 13-19 Sep 2024 over Mae Sai District (Pleiades, RCM, TerraSAR-X, Sentinel, Landsat, PlanetScope)":
     "ผลิตภัณฑ์ UNOSAT 3991: น้ำสะสมที่ตรวจพบจากดาวเทียม 13–19 ก.ย. 2567 (2024) ในอำเภอแม่สาย (Pleiades, RCM, TerraSAR-X, Sentinel, Landsat, PlanetScope)",
   "about 70 km² flood-affected within a 305 km² analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated":
-    "พื้นที่ได้รับผลกระทบจากน้ำท่วมประมาณ 70 ตร.กม. จากพื้นที่วิเคราะห์ 305 ตร.กม. ประชากรที่ได้รับผลกระทบประมาณ 13,600 คน (WorldPop 2020) เป็นผลเบื้องต้น ยังไม่ได้ตรวจสอบภาคสนาม",
+    "พื้นที่ได้รับผลกระทบจากน้ำท่วมประมาณ 70 ตร.กม. จากพื้นที่วิเคราะห์ 305 ตร.กม. ประชากรที่อยู่ในพื้นที่น้ำท่วมประมาณ 13,600 คน (WorldPop 2020) เป็นผลเบื้องต้น ยังไม่ได้ตรวจสอบภาคสนาม",
   "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model.":
     "ใช้ตรวจขนาดในช่วงเวลาเดียวกันเท่านั้น UNOSAT เป็นการสังเกตสะสมจากดาวเทียมหลายดวง ไม่ใช่การยืนยันตำแหน่งของแบบจำลอง",
   "Largest modelled extent within 13-19 Sep ICT (the start of the UNOSAT window)":

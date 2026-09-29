@@ -246,16 +246,16 @@ describe("Evacuation access card (scenario)", () => {
     // With the ranked plan both groups lose access at the peak: a ratio, a plain comparison and why it points this way.
     const peakText = text(withoutTips(accessCard("en", "plan", shelters.knee_k, peak, "all")));
     expect(peakText).toMatch(/Evacuation Equity Gap: \d+\.\d{2} · Proxy-vulnerable residents are about [\d.]+× less likely to lose access \(\d+\.\d{2}% vs \d+\.\d{2}%\)\./);
-    expect(peakText).toContain("Why it points this way here: the proxy marks homes on slopes or far from a drivable road");
+    expect(peakText).toContain("How to read this: the proxy marks homes on slopes or far from a drivable road");
     expect(peakText).not.toMatch(/times as likely/);
     // With the reported set no proxy-vulnerable resident loses access at the peak: said in words, not as "0.00 times".
     const reported = text(withoutTips(accessCard("en", "reported", shelters.knee_k, peak, "all")));
     expect(reported).toMatch(/Evacuation Equity Gap: 0\.00 · No proxy-vulnerable resident has lost access, against \d+\.\d{2}% of everyone else\./);
     const dry = text(accessCard("en", "reported", shelters.knee_k, 0, "all"));
-    expect(dry).toContain("Evacuation Equity Gap: — (no one has lost access yet)");
-    expect(dry).not.toContain("Why it points this way here");
+    expect(dry).toContain("Evacuation Equity Gap: — (no one has lost access at this replay hour)");
+    expect(dry).not.toContain("How to read this: the proxy");
     const thai = text(accessCard("th", "reported", shelters.knee_k, 0, "all"));
-    expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ: — (ยังไม่มีผู้ใดสูญเสียการเข้าถึง)");
+    expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ: — (ไม่มีผู้สูญเสียการเข้าถึง ณ ชั่วโมงนี้)");
   });
 
   it("explains terms on hover or focus with the glossary definition as the accessible description", () => {
@@ -306,7 +306,7 @@ describe("Shelter plan and reported shelters", () => {
     const html = renderToStaticMarkup(<ShelterPlanCard shelters={shelters} k={shelters.knee_k} onPlanK={noop} language="en" onShowCandidate={noop} />);
     const plain = text(withoutTips(html));
     expect(plain).toContain("Ranked range, not a fixed number: the first k entries are the plan for k shelters");
-    expect(plain).toContain(`The default, k = ${shelters.knee_k}, is the smallest plan that reaches 90% of the most any plan can reach.`);
+    expect(plain).toContain(`The default, k = ${shelters.knee_k}, is the smallest plan that reaches 90% of what all ${shelters.plan.length} ranked sites reach.`);
     expect(plain).not.toMatch(/\(\d+%\)\.? ?$/m);
     // Same slider label and live sentence as the access card.
     expect(plain).toContain(`Plan size k = ${shelters.knee_k}`);

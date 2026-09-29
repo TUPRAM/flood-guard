@@ -4,6 +4,9 @@ import { inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 
 import {
+  namedRoadLengths,
+  rankRouteGroups,
+  roadImportance,
   ARRIVAL_PENDING_ALPHA,
   ARRIVAL_RAMP,
   arrivalClasses,
@@ -732,6 +735,43 @@ describe("Mae Sai road cut duration (Keep Routes Open)", () => {
     expect(named.bounds[1][0]).toBeCloseTo(20.41, 9);
     expect(named.bounds[1][1]).toBeCloseTo(99.91, 9);
     expect(groups[1]).toMatchObject({ name: null, classes: ["residential"], kmCut: 0.25, reopenHour: 36 });
+  });
+
+  it("ranks named roads and unnamed street groups separately by road importance x longest cut", () => {
+    const group = (key: string, name: string | null, classes: string[], maxHours: number, kmCut = 1) => ({
+      key, name, classes, maxHours, kmCut, tambons: ["A"], firstHour: 30, reopenHour: 40, pieces: [0], bounds: [[20, 99], [20.1, 99.1]] as [[number, number], [number, number]],
+    });
+    const groups = [
+      group("name:Lane", "Soi 1", ["residential"], 110),
+      group("name:Hwy 1", "ถนนพหลโยธิน", ["trunk"], 40),
+      group("name:Bypass", "ถนนเลี่ยงเมืองแม่สาย", ["primary"], 30),
+      group("class:residential|A", null, ["residential"], 110, 45),
+      group("class:tertiary|B", null, ["tertiary"], 90, 2),
+      group("class:residential|C", null, ["residential"], 20, 1),
+    ];
+    expect(roadImportance(["trunk"])).toBeGreaterThan(roadImportance(["primary"]));
+    expect(roadImportance(["primary"])).toBeGreaterThan(roadImportance(["residential"]));
+    expect(roadImportance(["unknown"])).toBe(1);
+    const ranked = rankRouteGroups(groups, { unnamedLimit: 2 });
+    // Trunk 4 x 40 h = 160 > lane 1 x 110 h = 110 > primary 3 x 30 h = 90.
+    expect(ranked.named.map((item) => item.key)).toEqual(["name:Hwy 1", "name:Lane", "name:Bypass"]);
+    // Tertiary 1.5 x 90 h = 135 > residential 1 x 110 h = 110; the third unnamed group is cut off by the limit.
+    expect(ranked.unnamed.map((item) => item.key)).toEqual(["class:tertiary|B", "class:residential|A"]);
+    expect(rankRouteGroups(groups).unnamed).toHaveLength(3);
+    // On the real data every named cut road comes before any street group, and each part is in score order.
+    const cuts = roadCollection.features.map((feature) => roadCut(feature.properties.m ? feature.properties.h : null, hourlyStages(manifest.stage_anchors), manifest.impassable_depth_m, feature.properties.k ?? 1));
+    const real = rankRouteGroups(roadCutGroups(roadCollection.features, cuts, Infinity), { unnamedLimit: 6 });
+    expect(real.named.length).toBeGreaterThan(0);
+    expect(real.named.every((item) => item.name !== null)).toBe(true);
+    expect(real.unnamed.every((item) => item.name === null)).toBe(true);
+    expect(real.unnamed.length).toBeLessThanOrEqual(6);
+    for (const part of [real.named, real.unnamed]) {
+      const scores = part.map((item) => roadImportance(item.classes) * item.maxHours);
+      expect(scores).toEqual([...scores].sort((a, b) => b - a));
+    }
+    // Total modelled length of each named road gives "km cut" its context.
+    const lengths = namedRoadLengths(roadCollection.features);
+    for (const item of real.named) expect(lengths.get(item.name!.trim())!).toBeGreaterThanOrEqual(item.kmCut - 1e-9);
   });
 
   it("projects lon/lat linearly in Web Mercator over the manifest bounds", () => {

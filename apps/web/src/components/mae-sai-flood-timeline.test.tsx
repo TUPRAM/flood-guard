@@ -19,6 +19,7 @@ import {
   viirsReading,
   tFromDate,
   TIMELINE_MANIFEST_URL,
+  type AreaGeometry,
   type FacilityProps,
   type GeoCollection,
   type LineGeometry,
@@ -26,6 +27,7 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "@/lib/flood-timeline";
+import { plainManifestText } from "@/lib/flood-timeline-copy";
 import {
   facilityStatusText,
   HowToRead,
@@ -42,7 +44,22 @@ import {
   WetFacilitiesCard,
 } from "./mae-sai-flood-timeline";
 import { formatDateSet, RainChart, ViirsComparisonCard, viirsMomentText } from "./mae-sai-observed-panels";
-import { pickVideoType, pngFileName, ReplayExportPanel, VIDEO_TYPES, videoReplayT } from "./mae-sai-replay-export";
+import {
+  exportPlaceLabels,
+  exportScaleBar,
+  pickVideoType,
+  pngFileName,
+  ReplayExportPanel,
+  VIDEO_END_CARD_SECONDS,
+  VIDEO_FORMATS,
+  VIDEO_TITLE_SECONDS,
+  VIDEO_TOTAL_SECONDS,
+  VIDEO_TYPES,
+  videoFileName,
+  videoPart,
+  videoReplayT,
+  wrapText,
+} from "./mae-sai-replay-export";
 
 // Fixture paths come from the page's one manifest constant and the hrefs inside that manifest.
 const publicRoot = resolve(import.meta.dirname, "../../public");
@@ -346,6 +363,62 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
     expect(pngFileName(0)).toBe("mae-sai-flood-2024-09-09-0000-ict.png");
   });
 
+  it("opens and closes the video with a one-second card around the 9-19 Sep replay, in portrait or 16:9", () => {
+    expect(VIDEO_TITLE_SECONDS).toBe(1);
+    expect(VIDEO_END_CARD_SECONDS).toBe(1);
+    expect(videoPart(0)).toEqual({ part: "title" });
+    expect(videoPart(0.99)).toEqual({ part: "title" });
+    expect(videoPart(1)).toEqual({ part: "replay", t: 0 });
+    expect(videoPart(1 + 7)).toEqual({ part: "replay", t: 3.5 });
+    // The last replay frame is 19 Sep 23:00, never 20 Sep 00:00, and it holds briefly before the end card.
+    const last = videoPart(VIDEO_TOTAL_SECONDS - VIDEO_END_CARD_SECONDS - 0.01);
+    expect(last.part).toBe("replay");
+    expect(last.part === "replay" && last.t).toBeLessThan(11);
+    expect(videoPart(VIDEO_TOTAL_SECONDS - 0.5)).toEqual({ part: "end" });
+    expect(videoPart(VIDEO_TOTAL_SECONDS + 0.01)).toEqual({ part: "done" });
+    expect(Math.round(VIDEO_TOTAL_SECONDS)).toBe(24);
+    expect(VIDEO_FORMATS.landscape.width).toBe(1280);
+    expect(VIDEO_FORMATS.portrait.width).toBe(720);
+    expect(videoFileName("portrait", "mp4")).toBe("mae-sai-flood-2024.mp4");
+    expect(videoFileName("landscape", "webm")).toBe("mae-sai-flood-2024-16x9.webm");
+  });
+
+  it("places orientation labels from the data: the Hwy 1 border bridge, Mae Sai town and Myanmar to the north", () => {
+    const tambonShapes = readJson<GeoCollection<AreaGeometry, TambonProps>>(manifest.vectors.tambons.href).features;
+    const labels = exportPlaceLabels(roadCollection.features, tambonShapes, manifest.bounds);
+    expect(labels.map((label) => label.kind)).toEqual(["bridge", "town", "country"]);
+    const [bridge, town, country] = labels;
+    expect(bridge.text.en).toContain("Sai River");
+    expect(town.text).toEqual({ en: "Mae Sai town", th: "ตัวเมืองแม่สาย" });
+    expect(country.text.en).toContain("MYANMAR");
+    expect(country.lat).toBeGreaterThan(bridge.lat);
+    const [[south, west], [north, east]] = manifest.bounds;
+    for (const label of labels) {
+      expect(label.lat).toBeGreaterThanOrEqual(south);
+      expect(label.lat).toBeLessThanOrEqual(north);
+      expect(label.lon).toBeGreaterThanOrEqual(west);
+      expect(label.lon).toBeLessThanOrEqual(east);
+    }
+    // The bridge is the northernmost vertex of Highway 1.
+    const hwy1 = roadCollection.features.filter((feature) => feature.properties.n?.trim() === "ถนนพหลโยธิน");
+    expect(bridge.lat).toBe(Math.max(...hwy1.flatMap((feature) => feature.geometry.coordinates.map(([, lat]) => lat))));
+    expect(exportPlaceLabels([], tambonShapes, manifest.bounds)).toEqual([]);
+  });
+
+  it("gives exported frames a round-number scale bar and wraps caption text to the panel", () => {
+    const bar = exportScaleBar(manifest.bounds, 720, 720 * 0.22);
+    expect([1, 2, 5, 10]).toContain(bar.km);
+    expect(bar.pixels).toBeLessThanOrEqual(720 * 0.22);
+    expect(bar.pixels).toBeGreaterThan(0);
+    // Doubling the frame width doubles the pixels per kilometre.
+    const wide = exportScaleBar(manifest.bounds, 1440, 1440 * 0.22);
+    expect(wide.km).toBe(bar.km);
+    expect(wide.pixels).toBeCloseTo(bar.pixels * 2, 6);
+    const measure = (value: string) => value.length * 10;
+    expect(wrapText(measure, "one two three four", 100, "en")).toEqual(["one two", "three four"]);
+    expect(wrapText(measure, "unbreakableword", 50, "en")).toEqual(["unbreakableword"]);
+  });
+
   it("names the served data revision, which is also the manifest's own revision field", () => {
     expect(manifestRevision()).toBe("r3");
     expect(manifest.revision).toBe(manifestRevision());
@@ -448,8 +521,15 @@ describe("Mae Sai observed evidence panels", () => {
       expect(plain).toContain(source.licence);
       expect(plain).toContain(source.attribution);
     }
-    for (const item of manifest.assumptions) expect(plain).toContain(item);
-    for (const item of manifest.limitations) expect(plain).toContain(item);
+    // Each manifest sentence is listed, after the page's documented plain-language clean-up (internal ids out, and
+    // the tributary factor described in words because "k" on this page is the plan size).
+    for (const item of manifest.assumptions) expect(plain).toContain(plainManifestText(item));
+    for (const item of manifest.limitations) expect(plain).toContain(plainManifestText(item));
+    const tributary = manifest.assumptions.find((item) => item.includes("k x stage"));
+    if (tributary) {
+      expect(plain).not.toContain("k x stage");
+      expect(plain).toContain("tributaries rise to a fraction of the stage");
+    }
     for (const url of [viirs.source_url, rainfall.source_url]) expect(html).toContain(`href="${url}"`);
     expect(plain).toContain(viirs.caveat);
     expect(plain).toContain(rainfall.note);
@@ -458,5 +538,23 @@ describe("Mae Sai observed evidence panels", () => {
       expect(plain.includes(reference.name), reference.name).toBe(pending.includes(reference));
     }
     expect(plain).toContain(`${manifest.study_id} ${manifestRevision()}`);
+  });
+
+  it("keeps internal ids out of the sources panel and states its explanations in Thai", () => {
+    const english = text(renderToStaticMarkup(<SourcesPanel manifest={manifest} language="en" offlineCopy={null} />));
+    const thaiHtml = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />);
+    const thai = text(thaiHtml);
+    for (const plain of [english, thai]) {
+      expect(plain).not.toMatch(/reported_2024|tha_ppp_2020|late_cumulative_share|m=false|decision D\d|\(D\d\)/);
+    }
+    // Page-authored labels are translated; manifest sentences use their Thai rendering.
+    expect(thai).not.toMatch(/\b(Travel|Residents|Units|Stations):/);
+    expect(thai).toContain("การเดินทาง: เดินบนถนนที่สัญจรได้");
+    expect(thai).toContain("สถานการณ์จำลองระดับ T1 (แบบจำลอง) ไม่ใช่ผลการอพยพที่สังเกตได้จริง");
+    expect(thai).toContain("ปริมาณฝนที่ตรวจวัดได้ (ปัจจัยที่ทำให้เกิดน้ำ) ไม่ใช่ขอบเขตน้ำท่วม");
+    expect(thai).toContain(rainfall.stations[0].name_th);
+    expect(thai).not.toContain(viirs.caveat);
+    // Source names and licences stay as published, marked as English.
+    expect(thaiHtml).toContain(`<strong lang="en">${manifest.sources[0].name}</strong>`);
   });
 });

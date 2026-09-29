@@ -346,12 +346,14 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .inlineLink { margin-right: .4rem; }
 /* One-line confidence chip per card; it opens to the reason, method notes and source dates. */
 .provenance { margin: .6rem 0 0; padding: 0 .65rem; border: 1px solid #ecdcb4; border-radius: .5rem; background: #fffaf0; color: #5b4516; font-size: .76rem; line-height: 1.5; }
-.provenance > summary { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .5rem; min-height: 36px; cursor: pointer; list-style: none; }
+.provenance > summary { display: flex; align-items: center; gap: .5rem; min-height: 36px; cursor: pointer; list-style: none; }
 .provenance > summary::-webkit-details-marker { display: none; }
-.provenance > summary::after { content: "▸"; margin-left: auto; color: #8a6a2a; font-size: .7rem; }
+.provenance > summary > .confidence { flex: none; }
+/* The hint wraps inside its own box, so the open/close arrow stays on the chip's first line at the right. */
+.provenance > summary::after { content: "▸"; flex: none; margin-left: auto; color: #8a6a2a; font-size: .7rem; }
 .provenance[open] > summary::after { content: "▾"; }
 .provenance > p { margin: 0 0 .55rem !important; }
-.provenanceHint { color: #7a5a1a; font-size: .74rem; font-weight: 600; }
+.provenanceHint { flex: 0 1 auto; min-width: 0; color: #7a5a1a; font-size: .74rem; font-weight: 600; line-height: 1.35; }
 /* Secondary explanation folded under a figure (e.g. what the Equity Gap ratio means). */
 .more { margin-top: .35rem; }
 .more > summary { display: flex; align-items: center; min-height: 32px; cursor: pointer; font-size: .76rem; font-weight: 650; color: #4a3f8f; }
@@ -468,6 +470,8 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
   .days button { min-height: 44px; font-size: .8rem; }
   .kpis dd { font-size: 1.25rem; }
   .bars li { grid-template-columns: minmax(0, 6rem) minmax(0, 1fr) 4.2rem; }
+  /* Subdistrict names wrap onto a second line instead of being cut ("Si Mueang Ch…"). */
+  .barName > span { white-space: normal; overflow-wrap: anywhere; }
   .reportedFacts div { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .toggles label { min-height: 44px; }
   .segmented span, .layersPanel .segmented span, .card .segmented span { min-height: 44px; }

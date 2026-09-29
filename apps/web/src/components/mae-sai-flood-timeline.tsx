@@ -1361,10 +1361,10 @@ export function MaeSaiFloodTimeline() {
         marker.bindPopup(() => reportedPopup(shelter), { maxWidth: 300, maxHeight: 300, className: styles.popupFrame, ...POPUP_PAN });
         popupLayers.push(marker);
         const markerTitle = () => `${command
-          ? tr("Relief and command site (2024), not a shelter", "ศูนย์บัญชาการและจุดช่วยเหลือ (2567) ไม่ใช่ที่พักพิง")
+          ? tr("Relief and command site (2024), not a shelter", `ศูนย์บัญชาการและจุดช่วยเหลือ ปี ${thaiYear(2024)} ไม่ใช่ที่พักพิง`)
           : floods
-            ? tr("Reported shelter (2024) that floods at the modelled peak", "ที่พักพิงที่มีรายงาน (2567) ซึ่งแบบจำลองระบุว่าน้ำท่วมที่ระดับสูงสุด")
-            : tr("Reported shelter (2024)", "ที่พักพิงที่มีรายงาน (2567)")}: ${reportedName(shelter, popupLanguage())}`;
+            ? tr("Reported shelter (2024) that floods at the modelled peak", `ที่พักพิงที่มีรายงาน ปี ${thaiYear(2024)} ซึ่งแบบจำลองระบุว่าน้ำท่วมที่ระดับสูงสุด`)
+            : tr("Reported shelter (2024)", `ที่พักพิงที่มีรายงาน ปี ${thaiYear(2024)}`)}: ${reportedName(shelter, popupLanguage())}`;
         hoverTip(marker, markerTitle);
         titled.push({ element: () => marker.getElement(), title: markerTitle });
         reportedMarkers.set(shelter.id, marker);
@@ -2320,7 +2320,7 @@ export function MaeSaiFloodTimeline() {
                   <span className={styles.phaseBadge} style={{ background: PHASE_COLOURS[phase.id] ?? "#cbd5e1", color: phase.id === "peak" ? "#fff" : PHASE_TEXT_DARK }}>{phase.label[lang]}</span>
                   <p data-testid="reported-narrative">
                     <strong className={styles.tagReported}>{t("Reported:", "รายงาน:")}</strong> {phase.summary[lang]}
-                    {chronology && <span className={styles.cite}> {t("Source", "ที่มา")}: <Localized text={chronology.attribution} language={lang} /> ({chronology.timestamp})</span>}
+                    {chronology && <span className={styles.cite}> {t("Source", "ที่มา")}: <Localized text={chronology.attribution} language={lang} /> (<Localized text={chronology.timestamp} language={lang} />)</span>}
                   </p>
                   {mudText && (
                     <p className={styles.cue} data-testid="mud-cue-card"><strong className={styles.tagObserved}>{t("Observed:", "การสังเกตการณ์:")}</strong> {mudText}.</p>
@@ -2575,8 +2575,9 @@ function PhaseLegend({ phases, activeId, language }: { phases: readonly Timeline
 type OfflineCopy = { cached: number; failed: number; total: number };
 
 /**
- * Sources, assumptions and limits. Manifest assumptions stay in their English original; where this revision states
- * one too simply, the page adds a bilingual note under it. Memoised: it does not depend on the replay clock.
+ * Sources, assumptions and limits. Manifest sentences are shown in Thai where the page knows a translation (source
+ * names, licences and attributions stay as published, marked English); where this revision states an assumption too
+ * simply, the page adds a bilingual note under it. Memoised: it does not depend on the replay clock.
  */
 export const SourcesPanel = memo(function SourcesPanel({ manifest, language, offlineCopy }: { manifest: TimelineManifest; language: Language; offlineCopy: OfflineCopy | null }) {
   const th = language === "th";
@@ -2591,27 +2592,33 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
       <summary>{t("Sources, assumptions and limits", "แหล่งข้อมูล สมมติฐาน และข้อจำกัด")}</summary>
       {th && <p className={styles.muted}>ชื่อแหล่งข้อมูล สัญญาอนุญาต และข้อความที่ยังไม่มีคำแปลคงไว้เป็นภาษาอังกฤษตามต้นฉบับ</p>}
       <h3>{t("Sources", "แหล่งข้อมูล")}</h3>
-      <ul className={styles.list} lang="en">
+      {/* Source names, licences and attributions stay as their publishers give them; known sentences are in Thai. */}
+      <ul className={styles.list}>
         {manifest.sources.map((source) => (
-          <li key={source.id}><strong>{source.name}</strong> — {source.licence}. {source.attribution}. <span className={styles.muted}>{source.timestamp}</span></li>
+          <li key={source.id}><strong lang="en">{source.name}</strong> — <span lang="en">{source.licence}. {source.attribution}.</span> <span className={styles.muted} lang="en">{source.timestamp}</span></li>
         ))}
         {manifest.population && (
-          <li><strong>{plainManifestText(manifest.population.source)}</strong> — {manifest.population.licence}. {manifest.population.note} <span className={styles.muted}>{manifest.population.timestamp}</span></li>
+          <li><strong lang="en">{plainManifestText(manifest.population.source)}</strong> — <span lang="en">{manifest.population.licence}.</span> <Localized text={manifest.population.note} language={language} /> <span className={styles.muted}>{manifest.population.timestamp}</span></li>
         )}
       </ul>
       {(viirs || rain) && (
         <>
           <h3>{t("Observed data shown with the model", "ข้อมูลที่สังเกตได้ซึ่งแสดงคู่กับแบบจำลอง")}</h3>
-          <ul className={styles.list} lang="en" data-testid="observed-sources">
+          <ul className={styles.list} data-testid="observed-sources">
             {viirs && (
               <li>
-                <strong>{viirs.product}</strong> — {viirs.licence}. {viirs.attribution}. {viirs.nominal_overpass} {viirs.comparison_rule} {viirs.caveat}{" "}
+                <strong lang="en">{viirs.product}</strong> — <span lang="en">{viirs.licence}. {viirs.attribution}.</span>{" "}
+                <Localized text={viirs.nominal_overpass} language={language} />{" "}
+                <Localized text={viirs.comparison_rule} language={language} />{" "}
+                <Localized text={viirs.caveat} language={language} />{" "}
                 <a href={viirs.source_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{viirs.source_url}</a>
               </li>
             )}
             {rain && (
               <li>
-                <strong>{rain.source}</strong> — {rain.licence}. {rain.note} Units: {rain.units}. Stations: {rain.stations.map((station) => `${station.code} ${station.name_en} (${station.lat.toFixed(3)}, ${station.lon.toFixed(3)}; ${station.missing_hours} missing hours)`).join("; ")}.{" "}
+                <strong lang="en">{rain.source}</strong> — <span lang="en">{rain.licence}.</span> <Localized text={rain.note} language={language} />{" "}
+                {t("Units", "หน่วย")}: <Localized text={rain.units} language={language} />{th ? " " : ". "}
+                {t("Stations", "สถานี")}: {rain.stations.map((station) => `${station.code} ${rainStationName(station, language)} (${station.lat.toFixed(3)}, ${station.lon.toFixed(3)}; ${t(`${station.missing_hours} missing hours`, `ไม่มีข้อมูล ${station.missing_hours} ชั่วโมง`)})`).join("; ")}{th ? "" : "."}{" "}
                 <a href={rain.source_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{rain.source_url}</a>
               </li>
             )}
@@ -2621,10 +2628,10 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
       {pendingReferences.length > 0 && (
         <>
           <h3>{t("Other references (not ingested)", "เอกสารอ้างอิงอื่น (ยังไม่ได้นำเข้า)")}</h3>
-          <ul className={styles.list} lang="en">
+          <ul className={styles.list}>
             {pendingReferences.map((reference) => (
               <li key={reference.url}>
-                {reference.name}{reference.note ? ` — ${reference.note}` : ""}{" "}
+                <span lang="en">{reference.name}</span>{reference.note ? <>{" — "}<Localized text={reference.note} language={language} /></> : null}{" "}
                 <a href={reference.url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{reference.url}</a>
               </li>
             ))}
@@ -2634,10 +2641,16 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
       {accessInfo && (
         <>
           <h3>{t("Evacuation access scenario", "สถานการณ์จำลองการเข้าถึงการอพยพ")}</h3>
-          <ul className={styles.list} lang="en">
-            <li>{accessInfo.scenario_tier}. {accessInfo.definition}</li>
-            <li>Travel: {accessInfo.travel_mode}; threshold {accessInfo.threshold_m} m; levels {accessInfo.levels[0]}–{accessInfo.levels.at(-1)} m every {accessLevelStep(accessInfo.levels)} m.</li>
-            <li>Residents: {formatPeople(accessInfo.totals.population)} at road nodes ({formatPeople(accessInfo.totals.vulnerable)} in the terrain/remoteness proxy group, {formatPeople(accessInfo.totals.non_vulnerable)} others).</li>
+          <ul className={styles.list}>
+            <li><Localized text={accessInfo.scenario_tier} language={language} />{th ? " " : ". "}<Localized text={accessInfo.definition} language={language} /></li>
+            <li>{t("Travel", "การเดินทาง")}: <Localized text={accessInfo.travel_mode} language={language} />{t(
+              `; threshold ${accessInfo.threshold_m} m; levels ${accessInfo.levels[0]}–${accessInfo.levels.at(-1)} m every ${accessLevelStep(accessInfo.levels)} m.`,
+              ` ระยะเกณฑ์ ${accessInfo.threshold_m} ม. ประเมินระดับน้ำ ${accessInfo.levels[0]}–${accessInfo.levels.at(-1)} ม. ทุก ${accessLevelStep(accessInfo.levels)} ม.`,
+            )}</li>
+            <li>{t(
+              `Residents: ${formatPeople(accessInfo.totals.population)} at road nodes (${formatPeople(accessInfo.totals.vulnerable)} in the terrain/remoteness proxy group, ${formatPeople(accessInfo.totals.non_vulnerable)} others).`,
+              `ผู้อยู่อาศัย: ${formatPeople(accessInfo.totals.population)} คนที่จุดถนน (กลุ่มตัวแทนความเปราะบางจากภูมิประเทศและความห่างไกล ${formatPeople(accessInfo.totals.vulnerable)} คน กลุ่มอื่น ${formatPeople(accessInfo.totals.non_vulnerable)} คน)`,
+            )}</li>
           </ul>
         </>
       )}

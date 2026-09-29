@@ -197,7 +197,7 @@ const caseHtml = readFileSync(resolve(out, caseReplay.route.slice(1), "index.htm
 for (const expected of [/Mae Sai flood, September 2024/, /not real-time, not an official warning/]) {
   if (!expected.test(caseHtml)) throw new Error(`Case-replay route lacks ${expected}`);
 }
-const caseResources = [...caseHtml.matchAll(/<(?:script|link)[^>]*(?:src|href)="([^"]+)"/gi)].map((match) => match[1]);
+const caseResources = [...caseHtml.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"/gi)].map((match) => match[1]);
 if (caseResources.some((url) => /^https?:\/\//i.test(url))) throw new Error("Case-replay route has external runtime resources");
 if (!serviceWorker.includes(`"${caseReplay.route}"`)) throw new Error("Service worker does not precache the case-replay route");
 const workerCaseReplay = serviceWorker.match(/const OPTIONAL_CASE_REPLAY = (\[[^;]*\]);/)?.[1];

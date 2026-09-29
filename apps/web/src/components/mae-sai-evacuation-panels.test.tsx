@@ -434,7 +434,8 @@ describe("Shelter plan and reported shelters", () => {
     expect(plain).toContain("not an official register");
     // The source timestamp already names the compile date: it is stated once, and the set rule lives on the access card.
     expect(plain).toContain(shelters.source_timestamp);
-    expect(plain.split(shelters.reported_compiled).length - 1).toBe(1);
+    // (Source dates such as "accessed 2026-09-27" are the sources' own and may repeat the day.)
+    expect(plain.split(`compiled ${shelters.reported_compiled}`).length - 1).toBe(1);
     expect(plain).not.toContain(plainManifestText(shelters.reported_access_set_rule));
     expect(plain).toContain("CONFIDENCE: LOW");
     // The confidence line is a one-line chip that opens to the details.
@@ -459,8 +460,8 @@ describe("Shelter plan and reported shelters", () => {
     expect(plain).toContain("Magnitude check over the same window only");
     // Said once (from the manifest), not twice; the source's own wording is quoted, so no brackets nest.
     expect(plain.match(/[Mm]agnitude check/g)).toHaveLength(1);
-    expect(plain).not.toMatch(/([^()]*([^()]*)[^()]*)/);
-    expect(plain).not.toMatch(/km2/);
+    expect(plain).not.toMatch(/\([^()]*\([^()]*\)[^()]*\)/);
+    expect(plain).not.toMatch(/\bkm2\b/);
     expect(renderToStaticMarkup(<ExternalChecks manifest={{ ...manifest, external_checks: [] }} language="en" />)).toBe("");
     // Without a "use" sentence the page states the limit itself.
     const bare = text(renderToStaticMarkup(<ExternalChecks manifest={{ ...manifest, external_checks: manifest.external_checks!.map((check) => ({ ...check, use: "" })) }} language="en" />));

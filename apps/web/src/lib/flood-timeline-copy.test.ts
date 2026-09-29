@@ -49,5 +49,32 @@ describe("Mae Sai replay copy", () => {
     const meaning = manifest.hand.low_confidence!.meaning;
     expect(localizedText(meaning, "en")).toEqual({ text: meaning, lang: "en" });
     expect(localizedText(meaning, "th").text).toMatch(THAI);
+    // Internal decision numbers ("per decision D3", "(D2)") are project bookkeeping, not reader copy.
+    expect(plainManifestText("Season envelope (scenario per decision D3); not shown until the CC BY-SA rights record (D2) is signed."))
+      .toBe("Season envelope; not shown until the CC BY-SA rights record is signed.");
+    for (const reference of manifest.external_references ?? []) {
+      if (reference.note) expect(plainManifestText(reference.note)).not.toMatch(/\bD\d+\b/);
+    }
+  });
+
+  it("has a Thai rendering of every manifest sentence the page shows in its panels", () => {
+    // Source names, licences and attributions stay as published; every sentence of explanation has a translation.
+    const access = manifest.access!;
+    const sentences = [
+      ...manifest.assumptions, ...manifest.limitations, manifest.confidence_reason, manifest.model_coverage.reason,
+      access.scenario_tier, access.definition, access.travel_mode, access.confidence_reason, access.source_timestamp,
+      manifest.shelters!.confidence_reason, manifest.shelters!.reported_status, manifest.shelters!.source_timestamp,
+      manifest.shelters!.reported_access_set_rule, ...manifest.shelters!.reported.map((shelter) => shelter.access_set_note),
+      manifest.population!.note, manifest.rainfall!.note, manifest.rainfall!.units,
+      manifest.viirs_daily!.nominal_overpass, manifest.viirs_daily!.comparison_rule, manifest.viirs_daily!.caveat,
+      ...(manifest.external_references ?? []).flatMap((reference) => (reference.note ? [reference.note] : [])),
+      ...(manifest.gauge_note ? [manifest.gauge_note] : []),
+      // The event chronology's source line under the "Reported:" narrative.
+      ...manifest.sources.filter((source) => source.id === "chronology").flatMap((source) => [source.attribution, source.timestamp]),
+    ];
+    expect(localizedText("compiled 2026-09-27", "th")).toEqual({ text: "รวบรวมเมื่อ 2026-09-27", lang: "th" });
+    expect(localizedText("compiled 2026-09-27", "en")).toEqual({ text: "compiled 2026-09-27", lang: "en" });
+    const missing = sentences.filter((sentence) => localizedText(sentence, "th").lang !== "th");
+    expect(missing).toEqual([]);
   });
 });

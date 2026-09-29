@@ -185,6 +185,19 @@ export function exportPlaceLabels(
   return labels;
 }
 
+const EARTH_RADIUS_M = 6_378_137;
+
+/**
+ * Scale bar for an export frame: the largest round length (10, 5, 2 or 1 km) no wider than `maxPixels`, and its width
+ * in pixels. The frame is linear in Web Mercator, so ground metres per pixel are taken at the frame's middle latitude.
+ */
+export function exportScaleBar(bounds: TimelineManifest["bounds"], frameWidth: number, maxPixels: number): { km: number; pixels: number } {
+  const [[south, west], [north, east]] = bounds;
+  const metresPerPixel = ((((east - west) * Math.PI) / 180) * EARTH_RADIUS_M * Math.cos((((south + north) / 2) * Math.PI) / 180)) / frameWidth;
+  const km = [10, 5, 2, 1].find((value) => (value * 1000) / metresPerPixel <= maxPixels) ?? 1;
+  return { km, pixels: (km * 1000) / metresPerPixel };
+}
+
 /** Words (Thai by dictionary segmentation where the browser supports it) and the spaces between them. */
 function textSegments(text: string, language: Language): string[] {
   if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
@@ -247,14 +260,15 @@ function copy(language: Language, manifest: Pick<TimelineManifest, "confidence" 
     noImagery: th ? "ไม่มีภาพ" : "no imagery",
     people: th ? "ผู้อยู่อาศัยตามแบบจำลองในพื้นที่น้ำท่วม ≈" : "Modelled residents in flood water ≈",
     peopleUnit: th ? "คน" : "",
-    peopleSource: th ? `(แบบจำลอง WorldPop 2020, CC BY 4.0; ไม่ใช่ประชากรปี ${thaiYear(2024)})` : "(WorldPop 2020 model, CC BY 4.0; not the 2024 population)",
+    // No brackets around the Thai year label's own "(2024)", so brackets never nest.
+    peopleSource: th ? `แบบจำลอง WorldPop 2020, CC BY 4.0 · ไม่ใช่ประชากรปี ${thaiYear(2024)}` : "(WorldPop 2020 model, CC BY 4.0; not the 2024 population)",
     notice: th
       ? `การจำลองจากแบบจำลอง — ไม่ใช่การสังเกตการณ์ · FloodGuard · ความเชื่อมั่น: ${level} · ไม่ใช่ข้อมูลเรียลไทม์หรือคำเตือนทางการ`
       : `Model reconstruction — not observed · FloodGuard · confidence: ${level} · not real-time, not an official warning`,
     legendDepth: th ? "ความลึก (แบบจำลอง)" : "Depth (model)",
     river: th ? "ร่องน้ำ" : "River",
     wet: th ? "ถนนมีน้ำ" : "Wet road",
-    cut: th ? "สัญจรไม่ได้ ≥ 0.3 ม." : "Impassable ≥ 0.3 m",
+    cut: th ? "สัญจรไม่ได้ ≥ 0.3 ม." : "Impassable ≥ 0.3 m",
     lowConfidence: th
       ? "น้ำที่มีความเชื่อมั่นต่ำ: พื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง"
       : "Low-confidence water: flat or filled low ground in the elevation model",
@@ -294,9 +308,9 @@ async function loadImage(href: string): Promise<HTMLImageElement | null> {
  * Offscreen renderer at the full AOI extent (independent of the live map view): the automatically selected optical
  * image, the reconstructed water through the same LUT painter as the map (depth mode), roads coloured by state (lon/lat
  * projected linearly in Web Mercator over the manifest bounds, like the map's rasters), subdistrict outlines, the
- * reported 2024 shelters, orientation labels, a legend and a caption carrying the moment, figures (including modelled
- * residents in flood water), the model disclaimer and source attribution. "portrait" puts the caption under the map;
- * "landscape" is 16:9 with the caption and legend beside it.
+ * reported 2024 shelters, orientation labels, a scale bar and north arrow, a legend and a caption carrying the moment,
+ * figures (including modelled residents in flood water), the model disclaimer and source attribution. "portrait" puts
+ * the caption under the map; "landscape" is 16:9 with the caption and legend beside it.
  */
 export async function createExportRenderer(
   source: ReplayExportSource,
@@ -500,6 +514,42 @@ export async function createExportRenderer(
     }
   };
 
+  // Scale bar (bottom right of the map) and a north arrow (top right), so a shared frame keeps its orientation.
+  const scaleBar = exportScaleBar(manifest.bounds, mapWidth, mapWidth * 0.22);
+  const drawOrientation = () => {
+    const right = mapWidth - 14 * scale;
+    const bottom = mapHeight - 16 * scale;
+    const left = right - scaleBar.pixels;
+    context.save();
+    context.fillStyle = "rgb(255 255 255 / 88%)";
+    context.fillRect(left - 6 * scale, bottom - 24 * scale, scaleBar.pixels + 12 * scale, 32 * scale);
+    context.fillStyle = "#0c2740";
+    context.fillRect(left, bottom - 4 * scale, scaleBar.pixels, 4 * scale);
+    context.fillRect(left, bottom - 9 * scale, 1.5 * scale, 9 * scale);
+    context.fillRect(right - 1.5 * scale, bottom - 9 * scale, 1.5 * scale, 9 * scale);
+    context.font = font(700, 10.5);
+    context.textAlign = "center";
+    context.textBaseline = "alphabetic";
+    context.fillText(`${scaleBar.km} ${text.km}`, left + scaleBar.pixels / 2, bottom - 11 * scale);
+    // North arrow: a filled triangle over "N".
+    const x = mapWidth - 26 * scale;
+    const y = 16 * scale;
+    context.fillStyle = "rgb(255 255 255 / 88%)";
+    context.beginPath();
+    context.arc(x, y + 12 * scale, 14 * scale, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#0c2740";
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + 6 * scale, y + 12 * scale);
+    context.lineTo(x - 6 * scale, y + 12 * scale);
+    context.closePath();
+    context.fill();
+    context.font = font(800, 10);
+    context.fillText("N", x, y + 23 * scale);
+    context.restore();
+  };
+
   const legendRows = 3 + (shelters.length > 0 ? 1 : 0) + (low ? 1 : 0);
   /** Legend box at (x0, y0), `boxWidth` wide: depth classes, roads, reported shelters and low-confidence water. */
   const drawLegend = (x0: number, y0: number, boxWidth: number) => {
@@ -543,14 +593,20 @@ export async function createExportRenderer(
       const present = new Set(shelters.map((shelter) => shelter.symbol));
       const symbolItems = ([["star", text.reported], ["floods", text.reportedFloods], ["command", text.command]] as const)
         .filter(([symbol]) => present.has(symbol));
-      symbolItems.forEach(([symbol, label], index) => {
-        const x = x0 + 7 * scale + index * columnWidth;
+      // Symbols and labels one after another, each label at its own width, so short sets never truncate a label.
+      context.font = font(500, 9.5);
+      const end = x0 + boxWidth - 7 * scale;
+      let x = x0 + 7 * scale;
+      for (const [symbol, label] of symbolItems) {
+        if (x + 30 * scale > end) break;
         drawSymbol(symbol, x + 6 * scale, rowY + 5 * scale, 13 * scale);
         context.fillStyle = "#17253b";
         context.font = font(500, 9.5);
         context.textAlign = "left";
-        context.fillText(fitText(context, label, columnWidth - 20 * scale), x + 15 * scale, rowY + 9 * scale);
-      });
+        const shown = fitText(context, label, end - x - 15 * scale);
+        context.fillText(shown, x + 15 * scale, rowY + 9 * scale);
+        x += 15 * scale + context.measureText(shown).width + 14 * scale;
+      }
       rowY += rowHeight;
     }
     if (low) {
@@ -600,6 +656,7 @@ export async function createExportRenderer(
     drawRoads(stage);
     drawShelters();
     drawPlaces();
+    drawOrientation();
     return latest && image ? latest.observation.label[language] : text.noImagery;
   };
 
@@ -613,7 +670,9 @@ export async function createExportRenderer(
     const people = stats.people_in_water !== undefined
       ? `${text.people} ${Math.round(stats.people_in_water).toLocaleString("en-US")}${text.peopleUnit ? ` ${text.peopleUnit}` : ""}`
       : null;
-    const sourceLine = `Source time ${manifest.source_timestamp} (UTC) · ${manifest.study_id} ${manifestRevision()} · Asia/Bangkok (ICT, UTC+7)`;
+    const sourceLine = th
+      ? `เวลาของข้อมูลต้นทาง ${manifest.source_timestamp} (UTC) · ${manifest.study_id} ${manifestRevision()} · เวลาประเทศไทย (UTC+7)`
+      : `Source time ${manifest.source_timestamp} (UTC) · ${manifest.study_id} ${manifestRevision()} · Asia/Bangkok (ICT, UTC+7)`;
 
     if (landscape) {
       // Caption panel beside the map: text wrapped to the panel, the legend at its foot.

@@ -148,6 +148,8 @@ try {
   await expect(page.getByTestId("map-legend")).toContainText("Water depth (model)");
   await expect(page.getByTestId("low-confidence-legend")).toBeVisible();
   await expect(page.getByTestId("low-confidence-evidence")).toContainText("flat or filled low ground");
+  // The 42 OpenStreetMap key facilities start hidden (the layer switch keeps them available).
+  await expect(page.locator(".leaflet-fg-facilities-pane .leaflet-interactive")).toHaveCount(0);
   checks.push("Play, readout and map above the fold; layer controls folded into a drawer; low-confidence water in the on-map legend and the evidence");
   await slider.fill("84");
   await expect(readout).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
@@ -170,6 +172,14 @@ try {
   const firstRoute = routes.getByRole("button").first();
   await firstRoute.click();
   await expect(firstRoute).toHaveAttribute("aria-pressed", "true");
+  // The selected route gets a halo (cyan under white, colours no road state uses) and a "Clear route selection" button.
+  const halo = page.locator(".leaflet-fg-highlight-pane path");
+  await expect(halo).toHaveCount(2);
+  await page.getByRole("button", { name: "Clear route selection" }).click();
+  await expect(firstRoute).toHaveAttribute("aria-pressed", "false");
+  await expect(halo).toHaveCount(0);
+  await firstRoute.click();
+  await expect(firstRoute).toHaveAttribute("aria-pressed", "true");
   await routes.getByRole("button", { name: "Show the whole area" }).click();
   checks.push("water modes (depth, first flooded, hours under water) and modelled road-cut hours with the Keep Routes Open list");
   await page.getByRole("button", { name: "Compare", exact: true }).click();
@@ -180,6 +190,9 @@ try {
   await expect(divider).toHaveAttribute("aria-valuenow", "52");
   await expect(page.getByText("◀ 5 Sep 10:58 ICT · Sentinel-2", { exact: true })).toBeVisible();
   await expect(page.getByText("15 Sep 10:58 ICT · Sentinel-2 ▶", { exact: true })).toBeVisible();
+  // While comparing, the model water is drawn faintly and the page says it is the model at the selected hour.
+  await expect(page.getByTestId("compare-note")).toContainText("30%");
+  await expect(page.getByTestId("compare-note")).toContainText("the model at the selected hour");
   await expect(page).toHaveURL(/cmp=s2-20240905,s2-20240915/);
   const clips = await page.evaluate(() => [...document.querySelectorAll(".leaflet-fg-compare-left-pane, .leaflet-fg-compare-right-pane")].map((pane) => getComputedStyle(pane).clipPath));
   assert(clips.length === 2 && clips.every((clip) => clip.startsWith("inset(")), `Swipe panes are clipped: ${JSON.stringify(clips)}`);
@@ -207,6 +220,7 @@ try {
   assert.equal(still.suggestedFilename(), "mae-sai-flood-2024-09-12-1200-ict.png");
   const record = page.getByRole("button", { name: /^Record video/ });
   if (await record.count()) {
+    await expect(page.getByRole("radio", { name: "16:9 (1280 × 720)" })).toHaveCount(1);
     await record.click();
     await expect(page.getByRole("progressbar", { name: "Recording progress" })).toBeVisible();
     await page.getByRole("button", { name: "Cancel recording" }).click();
@@ -290,6 +304,11 @@ try {
   await expect(page).toHaveURL(/[?&]k=3(&|$)/);
   await expect(accessCard.getByTestId("plan-k-sentence")).toContainText(/k = 3: 3 sites cover [\d,]+ of [\d,]+ residents whose homes flood \(\d+%\) · late evacuation \d+%/);
   await expect(page.locator(".leaflet-fg-shelters-pane [class*='planBadgeIcon']")).toHaveCount(3);
+  // Markers name themselves on hover (subdistrict outlines already did).
+  const star = page.locator(".leaflet-fg-shelters-pane [class*='starIcon']").first();
+  await star.dispatchEvent("mouseover");
+  await expect(page.locator(".leaflet-tooltip").filter({ hasText: "Reported shelter (2024)" })).toBeVisible();
+  await star.dispatchEvent("mouseout");
   await accessCard.getByRole("checkbox", { name: /Show people cut off on the map/ }).check();
   await expect(page.locator(".leaflet-fg-cutoff-pane canvas")).toHaveCount(1);
   await expect(page.getByText("People cut off from a dry shelter (scenario)", { exact: true })).toBeVisible();
@@ -309,7 +328,9 @@ try {
   await expect(popupWith("Plan rank 1 of the first 3")).toContainText("planning scenario");
   const reportedCard = page.getByTestId("reported-shelters-card");
   await expect(page.locator(".leaflet-fg-shelters-pane [class*='starIcon']").first()).toBeAttached();
-  const firstReported = reportedCard.locator("details").first();
+  // The card's first <details> is its confidence chip; the sites are the list items.
+  await expect(reportedCard.getByTestId("reported-provenance")).not.toHaveAttribute("open", "");
+  const firstReported = reportedCard.locator("li[data-role] > details").first();
   await firstReported.locator("summary").click();
   await firstReported.getByRole("button", { name: /^Show .+ on the map$/ }).click();
   await expect(popupWith("reported in use, Sep 2024")).toBeVisible();
@@ -338,6 +359,9 @@ try {
       .map((label) => label.textContent));
     assert.deepEqual(clipped, [], `Phase labels are not truncated at ${width}px`);
     await expect(page.getByRole("list", { name: "Event phases" })).toContainText("Peak");
+    const chipHeights = await page.getByRole("group", { name: "Jump to a day (local noon)" }).getByRole("button")
+      .evaluateAll((buttons) => buttons.map((button) => Math.round(button.getBoundingClientRect().height)));
+    assert(chipHeights.length === 11 && chipHeights.every((height) => height >= 40), `Day chips are finger-sized at ${width}px: ${chipHeights}`);
     if (width === 360) {
       // Offline, the basemap note must sit above Leaflet's attribution (two lines at this width), not under it.
       await context.setOffline(true);
@@ -356,7 +380,27 @@ try {
   await page.screenshot({ path: resolve(artifacts, "case-replay-mobile.png"), fullPage: true });
   // The tile route stays: this page keeps its map until the next navigation.
   await page.setViewportSize({ width: 1440, height: 1000 });
-  checks.push("case replay fits 360 and 390 px without overflow or truncated phase labels; the offline basemap note clears the attribution");
+  checks.push("case replay fits 360 and 390 px without overflow or truncated phase labels, with finger-sized day chips; the offline basemap note clears the attribution");
+  // A touch phone in Thai: no keyboard hint, Buddhist-era years with the CE year, and no letter-spacing on Thai eyebrows.
+  const touch = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
+  await touch.route("**/*", (route) => {
+    const url = new URL(route.request().url());
+    if (url.origin === new URL(baseUrl).origin) return route.continue();
+    if (url.hostname === "tile.openstreetmap.org") return route.fulfill({ status: 200, contentType: "image/png", body: blankTile });
+    return route.abort();
+  });
+  const touchPage = await touch.newPage();
+  touchPage.on("pageerror", (error) => pageErrors.push(error.message));
+  await touchPage.goto(`${baseUrl}${caseRoute}?t=84&lang=th`, { waitUntil: "networkidle" });
+  await expect(touchPage.getByTestId("replay-readout")).toContainText("พฤ. 12 ก.ย. 2567 (2024) · 12:00 น.");
+  await expect(touchPage.getByTestId("keyboard-hint")).toBeHidden();
+  const thaiEyebrow = await touchPage.evaluate(() => getComputedStyle(document.querySelector("section[aria-labelledby='mae-sai-replay-title'] p[class*='eyebrow']")).letterSpacing);
+  assert(thaiEyebrow === "normal" || thaiEyebrow === "0px", `Thai eyebrows are not letter-spaced (${thaiEyebrow})`);
+  const touchChips = await touchPage.getByRole("group", { name: "ไปยังวัน (เที่ยงวันเวลาท้องถิ่น)" }).getByRole("button")
+    .evaluateAll((buttons) => buttons.map((button) => Math.round(button.getBoundingClientRect().height)));
+  assert(touchChips.length === 11 && touchChips.every((height) => height >= 40), `Day chips are finger-sized on touch: ${touchChips}`);
+  await touch.close();
+  checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

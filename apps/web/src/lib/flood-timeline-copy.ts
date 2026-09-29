@@ -8,8 +8,9 @@ import type { Language } from "./flood-timeline";
 
 /**
  * Manifest text with internal identifiers replaced by plain words: the access-set id "reported_2024", WorldPop's
- * product code "(tha_ppp_2020)", and field names such as "late_cumulative_share", "model_coverage" or "m=false". The
- * tributary factor is described in words (the page keeps "k" for the plan size), and "km2" is written "km²".
+ * product code "(tha_ppp_2020)", field names such as "late_cumulative_share", "model_coverage" or "m=false", and the
+ * project's internal decision numbers ("per decision D3", "(D2)"). The tributary factor is described in words (the
+ * page keeps "k" for the plan size), and "km2" is written "km²".
  */
 export function plainManifestText(text: string): string {
   return text
@@ -19,6 +20,8 @@ export function plainManifestText(text: string): string {
     .replace(/\s*\(see model_coverage\)/g, "")
     .replace(/\s+are flagged m=false and\s+/g, " are ")
     .replace(/\blate_cumulative_share\b/g, "the late-evacuation share")
+    .replace(/\s*\((?:scenario )?per decision D\d+\)/g, "")
+    .replace(/\s+\(D\d+\)/g, "")
     .replace(/\bk x stage\b/g, "to a fraction of the stage")
     .replace(/\bkm2\b/g, "km²");
 }
@@ -38,6 +41,17 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ภาพรวมรายวันจากการโคจรผ่านช่วงบ่าย เทียบกับแบบจำลอง ณ เวลา 13:30 น.",
   "District only, clear-sky pixels only, permanent water excluded; VIIRS area = sum of flood fraction x pixel area; model area = modelled out-of-channel wet fraction averaged onto the same 375 m pixels.":
     "เฉพาะในอำเภอและเฉพาะพิกเซลที่ท้องฟ้าโปร่ง ไม่รวมแหล่งน้ำถาวร พื้นที่ของ VIIRS = ผลรวมของสัดส่วนน้ำท่วม × พื้นที่พิกเซล พื้นที่ของแบบจำลอง = สัดส่วนพื้นที่เปียกนอกร่องน้ำจากแบบจำลอง เฉลี่ยลงบนพิกเซล 375 ม. เดียวกัน",
+  "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT":
+    "มม. ต่อชั่วโมง ดัชนี 0 = 9 ก.ย. 00:00–01:00 น.",
+  "Season envelope; not shown until the CC BY-SA rights record is signed.":
+    "ขอบเขตน้ำตลอดฤดู ยังไม่แสดงจนกว่าจะลงนามบันทึกสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA",
+  // Evacuation access scenario (the "Sources, assumptions and limits" panel).
+  "T1 scenario (model), not observed evacuation outcomes":
+    "สถานการณ์จำลองระดับ T1 (แบบจำลอง) ไม่ใช่ผลการอพยพที่สังเกตได้จริง",
+  "A resident node loses access when no open, dry shelter of the chosen set is reachable within the threshold on roads that are still passable, having been reachable before the flood.":
+    "จุดผู้อยู่อาศัยสูญเสียการเข้าถึงเมื่อไม่มีที่พักพิงที่เปิดและแห้งของชุดที่เลือกซึ่งไปถึงได้ภายในระยะเกณฑ์บนถนนที่ยังสัญจรได้ ทั้งที่ก่อนน้ำท่วมเคยไปถึงได้",
+  "walking on passable roads (about 30 min at 4 km/h)":
+    "เดินบนถนนที่สัญจรได้ (ประมาณ 30 นาทีที่ความเร็ว 4 กม./ชม.)",
   "Observed rainfall (forcing), not flooding.":
     "ปริมาณฝนที่ตรวจวัดได้ (ปัจจัยที่ทำให้เกิดน้ำ) ไม่ใช่ขอบเขตน้ำท่วม",
   // Confidence reasons, status lines and source timestamps of the scenario cards.
@@ -132,8 +146,17 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
 /** A manifest sentence in Thai when a translation is known, otherwise the English original marked as such (ids removed). */
 export function localizedText(text: string, language: Language): { text: string; lang: Language } {
   const plain = plainManifestText(text);
-  const thai = language === "th" ? KNOWN_THAI[plain] : undefined;
+  const thai = language === "th" ? KNOWN_THAI[plain] ?? thaiPattern(plain) : undefined;
   return thai ? { text: thai, lang: "th" } : { text: plain, lang: "en" };
+}
+
+/** Short manifest phrases with a date in them, e.g. a source timestamp "compiled 2026-09-27". */
+const THAI_PATTERNS: readonly [RegExp, string][] = [
+  [/^compiled (\d{4}-\d{2}-\d{2})$/, "รวบรวมเมื่อ $1"],
+];
+function thaiPattern(text: string): string | undefined {
+  for (const [pattern, replacement] of THAI_PATTERNS) if (pattern.test(text)) return text.replace(pattern, replacement);
+  return undefined;
 }
 
 /** English (transliterated) labels for the named roads in the OpenStreetMap extract; Thai stays in brackets. */

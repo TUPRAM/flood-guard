@@ -43,6 +43,7 @@ import {
 } from "./mae-sai-flood-timeline";
 import { formatDateSet, RainChart, ViirsComparisonCard, viirsMomentText } from "./mae-sai-observed-panels";
 import { pickVideoType, pngFileName, ReplayExportPanel, VIDEO_TYPES, videoReplayT } from "./mae-sai-replay-export";
+import { plainManifestText } from "@/lib/flood-timeline-copy";
 
 // Fixture paths come from the page's one manifest constant and the hrefs inside that manifest.
 const publicRoot = resolve(import.meta.dirname, "../../public");
@@ -448,8 +449,8 @@ describe("Mae Sai observed evidence panels", () => {
       expect(plain).toContain(source.licence);
       expect(plain).toContain(source.attribution);
     }
-    for (const item of manifest.assumptions) expect(plain).toContain(item);
-    for (const item of manifest.limitations) expect(plain).toContain(item);
+    for (const item of manifest.assumptions) expect(plain).toContain(plainManifestText(item));
+    for (const item of manifest.limitations) expect(plain).toContain(plainManifestText(item));
     for (const url of [viirs.source_url, rainfall.source_url]) expect(html).toContain(`href="${url}"`);
     expect(plain).toContain(viirs.caveat);
     expect(plain).toContain(rainfall.note);

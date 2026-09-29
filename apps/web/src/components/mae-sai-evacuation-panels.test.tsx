@@ -432,9 +432,10 @@ describe("Shelter plan and reported shelters", () => {
     expect(plain).toContain("Relief command centre (not a shelter)");
     for (const shelter of shelters.reported) expect(plain).toContain(plainManifestText(shelter.access_set_note));
     expect(plain).toContain("not an official register");
-    // The source timestamp already names the compile date: it is stated once, and the set rule lives on the access card.
+    // The provenance names the compile date once; individual source records may also cite that date.
     expect(plain).toContain(shelters.source_timestamp);
-    expect(plain.split(shelters.reported_compiled).length - 1).toBe(1);
+    const provenance = html.match(/<details[^>]+data-testid="reported-provenance"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(text(provenance).split(shelters.reported_compiled).length - 1).toBe(1);
     expect(plain).not.toContain(plainManifestText(shelters.reported_access_set_rule));
     expect(plain).toContain("CONFIDENCE: LOW");
     // The confidence line is a one-line chip that opens to the details.
@@ -459,7 +460,7 @@ describe("Shelter plan and reported shelters", () => {
     expect(plain).toContain("Magnitude check over the same window only");
     // Said once (from the manifest), not twice; the source's own wording is quoted, so no brackets nest.
     expect(plain.match(/[Mm]agnitude check/g)).toHaveLength(1);
-    expect(plain).not.toMatch(/([^()]*([^()]*)[^()]*)/);
+    expect(plain).not.toMatch(/\([^()]*\([^()]*\)[^()]*\)/);
     expect(plain).not.toMatch(/km2/);
     expect(renderToStaticMarkup(<ExternalChecks manifest={{ ...manifest, external_checks: [] }} language="en" />)).toBe("");
     // Without a "use" sentence the page states the limit itself.

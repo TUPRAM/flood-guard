@@ -309,7 +309,7 @@ try {
   await expect(popupWith("Plan rank 1 of the first 3")).toContainText("planning scenario");
   const reportedCard = page.getByTestId("reported-shelters-card");
   await expect(page.locator(".leaflet-fg-shelters-pane [class*='starIcon']").first()).toBeAttached();
-  const firstReported = reportedCard.locator("details").first();
+  const firstReported = reportedCard.locator('li[data-role="shelter"] > details').first();
   await firstReported.locator("summary").click();
   await firstReported.getByRole("button", { name: /^Show .+ on the map$/ }).click();
   await expect(popupWith("reported in use, Sep 2024")).toBeVisible();

@@ -248,7 +248,7 @@ try {
   await page.goto(`${baseUrl}${caseRoute}?t=158`, { waitUntil: "networkidle" });
   await waterModel();
   // 15 Sep 14:00: the first clear optical image after the flood is on screen, and the page says what its brown is.
-  await expect(page.getByTestId("mud-cue")).toContainText("brown = mud left by floodwater (observed)");
+  await expect(page.getByTestId("mud-cue")).toContainText("brown areas are consistent with mud left by floodwater (observed image; our reading)");
   await openLayers();
   await page.getByRole("checkbox", { name: "VIIRS daily flood map (375 m, observed)" }).check();
   await expect(page).toHaveURL(/[?&]layers=[a-z]*v/);

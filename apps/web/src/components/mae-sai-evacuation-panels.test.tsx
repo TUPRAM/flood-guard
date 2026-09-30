@@ -449,7 +449,7 @@ describe("Shelter plan and reported shelters", () => {
     for (const shelter of shelters.reported) expect(thai).toContain(localizedText(shelter.access_set_note, "th").text);
   });
 
-  it("renders the independent size checks with their sources", () => {
+  it("renders the size checks with their sources", () => {
     const html = renderToStaticMarkup(<ExternalChecks manifest={manifest} language="en" />);
     for (const check of manifest.external_checks!) {
       expect(text(html)).toContain(`reported ${check.reported_km2} km²`);
@@ -468,17 +468,20 @@ describe("Shelter plan and reported shelters", () => {
     expect(bare).toContain("Magnitude check only, not a spatial validation.");
   });
 
-  it("files the GISTDA onset figure as a calibration anchor and compares UNOSAT over its own window", () => {
+  it("files the GISTDA onset figure as a calibration anchor and UNOSAT as a calibration-informed check over its own window", () => {
     const plain = text(renderToStaticMarkup(<ExternalChecks manifest={manifest} language="en" />));
     const calibration = plain.indexOf("Calibration anchor (not an independent check)");
-    const independent = plain.indexOf("Independent size checks");
+    const informed = plain.indexOf("Size checks (calibration-informed, not independent)");
     expect(calibration).toBeGreaterThanOrEqual(0);
-    expect(independent).toBeGreaterThan(calibration);
+    expect(informed).toBeGreaterThan(calibration);
+    // Nothing in r3 is independent any more, so the page must not claim an independent check.
+    expect(plain).not.toContain("Independent size checks");
     const gistda = plain.indexOf("GISTDA RADARSAT-2");
     const unosat = plain.indexOf("UNOSAT product 3991");
     expect(gistda).toBeGreaterThan(calibration);
-    expect(gistda).toBeLessThan(independent);
-    expect(unosat).toBeGreaterThan(independent);
+    expect(gistda).toBeLessThan(informed);
+    expect(unosat).toBeGreaterThan(informed);
+    expect(plain).toContain("this figure was known while the stage keyframes were tuned");
     expect(plain).toContain("time zone not stated; assumed ICT");
     // The anchor text follows the manifest: matched by construction, or how far the closest stage stays and why.
     const anchor = manifest.external_checks!.find((check) => check.role === "calibration_anchor")!;
@@ -494,7 +497,7 @@ describe("Shelter plan and reported shelters", () => {
         expect(plain).toContain(`its smallest non-zero extent, land within ${smallest.stage_m.toFixed(2)} m of the channel level, is already ${smallest.km2.toFixed(1)} km².`);
       }
     }
-    const unosatCheck = manifest.external_checks!.find((check) => check.role === "independent_magnitude_check")!;
+    const unosatCheck = manifest.external_checks!.find((check) => check.role === "calibration_informed_magnitude_check")!;
     const people = (value: number) => value.toLocaleString("en-US");
     expect(plain).toContain(`The model gives ${Number(unosatCheck.model_km2.toFixed(1))} km² and ≈ ${people(unosatCheck.model_people_in_water!)} modelled residents in water at a ${unosatCheck.model_stage_m} m stage`);
     expect(plain).toContain(unosatCheck.model_window!);
@@ -505,6 +508,7 @@ describe("Shelter plan and reported shelters", () => {
       : `Model figures cover the modelled part of Mae Sai district (${Math.round(manifest.model_coverage.modelled_km2)} of ${district} km²)`);
     const thai = text(renderToStaticMarkup(<ExternalChecks manifest={manifest} language="th" />));
     expect(thai).toContain("จุดอ้างอิงที่ใช้ปรับแบบจำลอง (ไม่ใช่การตรวจสอบอิสระ)");
+    expect(thai).toContain("การตรวจสอบขนาด (มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ)");
     expect(thai).toContain(`แบบจำลองให้ค่า ${Number(unosatCheck.model_km2.toFixed(1))} ตร.กม.`);
     // Every manifest sentence of the checks has a Thai rendering, so no "kept in the original" note is needed.
     expect(thai).toContain("ไม่ใช่การยืนยันตำแหน่งของแบบจำลอง");

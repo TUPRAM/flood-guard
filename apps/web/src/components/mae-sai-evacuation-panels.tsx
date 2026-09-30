@@ -1143,13 +1143,14 @@ function ExternalCheckItem({ check, manifest, language }: { check: ExternalCheck
 
 /**
  * External size figures, split into the calibration anchor (it set a stage knot, so the model matches it by
- * construction) and independent checks (compared over the external product's own time window where it is known).
+ * construction), calibration-informed size checks (known while tuning, so not independent) and independent checks
+ * (compared over the external product's own time window where it is known).
  */
 export const ExternalChecks = memo(function ExternalChecks({ manifest, language }: { manifest: CheckManifest; language: Language }) {
   const t = translator(language);
   const checks = manifest.external_checks ?? [];
   if (checks.length === 0) return null;
-  const { calibration, independent } = externalChecksByRole(checks);
+  const { calibration, informed, independent } = externalChecksByRole(checks);
   // In Thai, say so only when some source wording has no known translation and stays in its original.
   const untranslated = language === "th" && checks.some((check) => [check.observed, check.reported_text, check.use, check.model_window]
     .some((value) => value && localizedText(value, language).lang !== language));
@@ -1160,6 +1161,12 @@ export const ExternalChecks = memo(function ExternalChecks({ manifest, language 
         <>
           <p><strong>{t("Calibration anchor (not an independent check)", "จุดอ้างอิงที่ใช้ปรับแบบจำลอง (ไม่ใช่การตรวจสอบอิสระ)")}</strong></p>
           <ul className={styles.list}>{calibration.map((check) => <ExternalCheckItem key={check.id} check={check} manifest={manifest} language={language} />)}</ul>
+        </>
+      )}
+      {informed.length > 0 && (
+        <>
+          <p><strong>{t("Size checks (calibration-informed, not independent)", "การตรวจสอบขนาด (มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ)")}</strong></p>
+          <ul className={styles.list}>{informed.map((check) => <ExternalCheckItem key={check.id} check={check} manifest={manifest} language={language} />)}</ul>
         </>
       )}
       {independent.length > 0 && (

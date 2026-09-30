@@ -8558,14 +8558,14 @@
    "reported_km2": 70,
    "reported_people": 13600,
    "reported_text": "about 70 km2 flood-affected within a 305 km2 analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated",
-   "role": "independent_magnitude_check",
+   "role": "calibration_informed_magnitude_check",
    "model_km2": 72.2,
    "model_people_in_water": 12813,
    "model_window": "Largest modelled extent within 13-19 Sep ICT (the start of the UNOSAT window)",
    "model_stage_m": 2.65,
    "model_peak_km2": 88.704,
    "model_peak_people_in_water": 16060,
-   "use": "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model.",
+   "use": "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model. Calibration-informed, not independent: this figure was known while the stage keyframes were tuned (owner decision, 30 Sep 2026). Its people figure is an exposure estimate, a different measure from the model's residents in water.",
    "urls": [
     "https://unosat.org/products/3991"
    ]

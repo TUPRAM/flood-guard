@@ -88,8 +88,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ผลิตภัณฑ์ UNOSAT 3991: น้ำสะสมที่ตรวจพบจากดาวเทียม 13–19 ก.ย. 2567 (2024) ในอำเภอแม่สาย (Pleiades, RCM, TerraSAR-X, Sentinel, Landsat, PlanetScope)",
   "about 70 km² flood-affected within a 305 km² analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated":
     "พื้นที่ได้รับผลกระทบจากน้ำท่วมประมาณ 70 ตร.กม. จากพื้นที่วิเคราะห์ 305 ตร.กม. ประชากรที่อยู่ในพื้นที่น้ำท่วมประมาณ 13,600 คน (WorldPop 2020) เป็นผลเบื้องต้น ยังไม่ได้ตรวจสอบภาคสนาม",
-  "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model.":
-    "ใช้ตรวจขนาดในช่วงเวลาเดียวกันเท่านั้น UNOSAT เป็นการสังเกตสะสมจากดาวเทียมหลายดวง ไม่ใช่การยืนยันตำแหน่งของแบบจำลอง",
+  "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model. Calibration-informed, not independent: this figure was known while the stage keyframes were tuned (owner decision, 30 Sep 2026). Its people figure is an exposure estimate, a different measure from the model's residents in water.":
+    "ใช้ตรวจขนาดในช่วงเวลาเดียวกันเท่านั้น UNOSAT เป็นการสังเกตสะสมจากดาวเทียมหลายดวง ไม่ใช่การยืนยันตำแหน่งของแบบจำลอง ตัวเลขนี้มีส่วนในการปรับแบบจำลอง จึงไม่ใช่การตรวจสอบอิสระ เพราะทราบตัวเลขนี้แล้วขณะปรับจุดระดับน้ำ ตามมติของเจ้าของโครงการเมื่อ 30 ก.ย. 2569 ตัวเลขประชากรของ UNOSAT เป็นค่าประมาณผู้ได้รับผลกระทบ ซึ่งวัดต่างจากจำนวนผู้อยู่อาศัยในน้ำตามแบบจำลอง",
   "Largest modelled extent within 13-19 Sep ICT (the start of the UNOSAT window)":
     "ขอบเขตที่จำลองได้มากที่สุดในช่วง 13–19 ก.ย. (ต้นช่วงเวลาของ UNOSAT)",
   // Residents and low-confidence water.

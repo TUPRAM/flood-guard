@@ -130,6 +130,10 @@ def test_baked_manifest_is_honest_and_consistent() -> None:
     assert manifest["access"]["sets"][-1] == f"plan_{len(plan_ids)}"
     checks = {c["id"]: c for c in manifest["external_checks"]}
     assert {"gistda-radarsat2-20240910", "unosat-3991"} <= set(checks)
+    # Owner decision (30 Sep 2026): 3991 was known while the keyframes were tuned, so it is never labelled independent.
+    assert checks["gistda-radarsat2-20240910"]["role"] == "calibration_anchor"
+    assert checks["unosat-3991"]["role"] == "calibration_informed_magnitude_check"
+    assert "not independent" in checks["unosat-3991"]["use"]
     reported = manifest["shelters"]["reported"]
     assert reported and all(r["sources"] for r in reported)
     assert all((r["lat"] is None) == (r["model_check"] is None) for r in reported)

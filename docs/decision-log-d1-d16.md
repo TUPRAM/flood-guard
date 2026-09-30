@@ -25,9 +25,20 @@
 | D15 | Not defined in the plan files. | **Open** | — |
 | D16 | Not defined in the plan files. | **Open** | — |
 
+## Owner decisions after signing (2026-09-30)
+
+Putu gave these in the same Claude Code session, after reading the roadmap drafted from this log.
+
+| # | Decision | Effect |
+|---|---|---|
+| R1 | UNOSAT 3991 is **calibration-informed**, not independent. The 70 km² figure was known while the replay's stage keyframes were tuned. | In r3, `timeline.json` gives `unosat-3991` the role `calibration_informed_magnitude_check`. The page lists it under "Size checks (calibration-informed, not independent)". No check on the replay is labelled independent now. |
+| R2 | PR #35 (`codex/policy-mentoring`, the bilingual policy page) is **brought into the replay branch and improved**, not held. | The improvements must keep to D4 (score anchors), D6 (v1 class rules binding) and D7 (the replay is not a scored case). Any priority score shown carries its tier, its method source and its anchors. |
+| R3 | **Merge PR #34 into master**, so production carries the replay. | This replaces D9's "present from the Preview URL" once production is rebuilt from master. |
+| R4 | **Email C was sent to UNOSAT.** Putu reports it was approved. | D2 no longer waits on the licence version. The reply text is not in the repo yet; file it as `docs/provider_response_logging_guide.md` describes, and cite it from the 4009 rights record. |
+
 ## Follow-ups
 
-1. **Email C.** A person sends it to UNOSAT to confirm the CC BY-SA version for 4009.
+1. **Email C.** Sent; Putu reports it was approved (R4). File the reply.
 2. **Protocol hash.** Hash protocol v1a into `RECEIPTS.jsonl` on the `codex/thai-event-selection` lineage. That happens there, not on the replay branch.
 3. **Open items.** Supply the original wording of D5, D8, D10 and D14–D16, or record them as withdrawn.
 

@@ -231,9 +231,11 @@ export interface ShelterInfo {
 
 /**
  * How an external figure relates to the reconstruction: a calibration anchor set a stage knot (the model agrees with
- * it by construction), an independent magnitude check tests the size of the modelled extent.
+ * it by construction); a calibration-informed magnitude check compares sizes, but the figure was known while the
+ * stage keyframes were tuned, so agreement is not independent evidence; an independent magnitude check tests the size
+ * of the modelled extent against a figure that played no part in tuning.
  */
-export type ExternalCheckRole = "calibration_anchor" | "independent_magnitude_check";
+export type ExternalCheckRole = "calibration_anchor" | "calibration_informed_magnitude_check" | "independent_magnitude_check";
 
 /** Size comparison of the reconstruction with an external (observed or reported) product. */
 export interface ExternalCheck {
@@ -659,11 +661,17 @@ export function peopleInWaterStats(
 
 /**
  * External size figures split by their manifest `role`: calibration anchors (they set a stage knot, so the model
- * agrees with them by construction) and independent magnitude checks. Manifest order is kept within each group.
+ * agrees with them by construction), calibration-informed magnitude checks (known while tuning) and independent
+ * magnitude checks. Manifest order is kept within each group; an unknown role is never shown as independent.
  */
-export function externalChecksByRole(checks: readonly ExternalCheck[]): { calibration: ExternalCheck[]; independent: ExternalCheck[] } {
+export function externalChecksByRole(checks: readonly ExternalCheck[]): {
+  calibration: ExternalCheck[];
+  informed: ExternalCheck[];
+  independent: ExternalCheck[];
+} {
   return {
     calibration: checks.filter((check) => check.role === "calibration_anchor"),
+    informed: checks.filter((check) => check.role === "calibration_informed_magnitude_check"),
     independent: checks.filter((check) => check.role === "independent_magnitude_check"),
   };
 }

@@ -508,10 +508,15 @@ describe("Mae Sai replay manifest wiring", () => {
 describe("Mae Sai external checks and assumption caveats", () => {
   const checks = manifest.external_checks!;
 
-  it("groups checks by the manifest's role: calibration anchor vs independent check", () => {
-    const { calibration, independent } = externalChecksByRole(checks);
+  it("groups checks by the manifest's role: calibration anchor, calibration-informed and independent checks", () => {
+    const { calibration, informed, independent } = externalChecksByRole(checks);
     expect(calibration.map((check) => check.id)).toEqual(["gistda-radarsat2-20240910"]);
-    expect(independent.map((check) => check.id)).toEqual(["unosat-3991"]);
+    // UNOSAT 3991 was known while the stage keyframes were tuned (owner decision, 30 Sep 2026).
+    expect(informed.map((check) => check.id)).toEqual(["unosat-3991"]);
+    expect(independent).toEqual([]);
+    // A role the page does not know is never shown as independent.
+    const unknown = externalChecksByRole([{ ...checks[0], role: "something_else" as never }]);
+    expect([...unknown.calibration, ...unknown.informed, ...unknown.independent]).toEqual([]);
     expect(calibration[0].observed).toMatch(/time zone not stated; assumed ICT/);
   });
 

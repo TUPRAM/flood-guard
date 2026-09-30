@@ -429,6 +429,7 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .errorBox p { margin: 0 0 1rem; color: #52627a; }
 
 .footer { padding: 1.5rem 0 2.5rem; border-top: 1px solid #dce3ee; font-size: .78rem; line-height: 1.8; color: #607089; }
+.footer a { color: #2454b8; text-underline-offset: 3px; }
 
 /* Desktop: the map, its readout and timeline stay in view beside the analysis cards (the page header scrolls away). */
 @media (min-width: 1081px) {

@@ -146,6 +146,7 @@ import {
   type ShelterSetChoice,
   type WaterMode,
 } from "@/lib/flood-timeline-link";
+import { competitionPagesAvailable, POLICY_ROUTE } from "@/lib/policy-links";
 import { useLanguage } from "@/lib/use-language";
 import {
   AccessCard,
@@ -1896,6 +1897,25 @@ export function MaeSaiFloodTimeline() {
     </section>
   );
 
+  // The footer also shows while the data cannot load (e.g. offline before the replay was saved), so the link to the
+  // policy page, which explains FPPS and the classes, still works there.
+  const footer = (
+    <footer className={styles.footer}>
+      {t(
+        "FloodGuard supports preparedness and rapid post-event prioritisation. This replay is a report-only reconstruction and does not feed the planning decision layer: it computes no Flood Preparedness Priority Score and assigns no action class (A–E). Card themes such as “Protect Lives Now” only name the planning theme a card relates to.",
+        "FloodGuard สนับสนุนการเตรียมพร้อมและการจัดลำดับความสำคัญอย่างรวดเร็วหลังเกิดเหตุ การย้อนดูนี้เป็นการจำลองเพื่อรายงานเท่านั้น และไม่ถูกนำไปใช้ในส่วนตัดสินใจเพื่อการวางแผน ไม่มีการคำนวณคะแนนลำดับความสำคัญด้านการเตรียมพร้อมรับน้ำท่วม (FPPS) และไม่มีการกำหนดกลุ่มการดำเนินการ (A–E) ประเด็นที่ระบุบนการ์ด เช่น “ปกป้องชีวิตทันที” บอกเพียงหัวข้อการวางแผนที่การ์ดนั้นเกี่ยวข้อง",
+      )}
+      {/* /policy/ ships only with the competition build, like this page; the link is left out wherever it does not exist. */}
+      {competitionPagesAvailable() && <>
+        {" "}
+        <a href={POLICY_ROUTE} data-testid="replay-policy-link">{t(
+          "How FPPS and the A–E classes work, and why this replay assigns neither",
+          "FPPS และระดับ A–E ทำงานอย่างไร และเหตุที่การย้อนดูนี้ไม่คำนวณคะแนนและไม่กำหนดระดับ",
+        )}</a>{language === "en" ? "." : ""}
+      </>}
+    </footer>
+  );
+
   if (load.status === "error") {
     const offline = typeof navigator !== "undefined" && navigator.onLine === false;
     return (
@@ -1920,6 +1940,7 @@ export function MaeSaiFloodTimeline() {
               {t("Try again", "ลองอีกครั้ง")}
             </button>
           </div>
+          {footer}
         </div>
       </main>
     );
@@ -2462,10 +2483,7 @@ export function MaeSaiFloodTimeline() {
             )}
           </aside>
         </div>
-        <footer className={styles.footer}>{t(
-          "FloodGuard supports preparedness and rapid post-event prioritisation. This replay is a report-only reconstruction and does not feed the planning decision layer: it computes no Flood Preparedness Priority Score and assigns no action class (A–E). Card themes such as “Protect Lives Now” only name the planning theme a card relates to.",
-          "FloodGuard สนับสนุนการเตรียมพร้อมและการจัดลำดับความสำคัญอย่างรวดเร็วหลังเกิดเหตุ การย้อนดูนี้เป็นการจำลองเพื่อรายงานเท่านั้น และไม่ถูกนำไปใช้ในส่วนตัดสินใจเพื่อการวางแผน ไม่มีการคำนวณคะแนนลำดับความสำคัญด้านการเตรียมพร้อมรับน้ำท่วม (FPPS) และไม่มีการกำหนดกลุ่มการดำเนินการ (A–E) ประเด็นที่ระบุบนการ์ด เช่น “ปกป้องชีวิตทันที” บอกเพียงหัวข้อการวางแผนที่การ์ดนั้นเกี่ยวข้อง",
-        )}</footer>
+        {footer}
       </div>
     </main>
   );

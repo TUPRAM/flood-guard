@@ -122,6 +122,11 @@ function validatePublicProduction() {
   for (const route of ["/command/", "/studio/", "/policy/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
+  // Also no page below those routes (e.g. the /studio/ case replay) in the built precache list.
+  const publicCore = serviceWorker.match(/const CORE_ASSETS = (\[[^;]*\]);/)?.[1];
+  if (!publicCore) throw new Error("Public service worker has no CORE_ASSETS list.");
+  const staffCore = JSON.parse(publicCore).filter((url) => /^\/(command|studio|policy)\//.test(url));
+  if (staffCore.length > 0) throw new Error(`Public cache list contains staff pages: ${staffCore.join(", ")}`);
 }
 
 function validatePublicShell() {

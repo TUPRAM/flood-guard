@@ -3,7 +3,11 @@ const APP_PROFILE = "__APP_PROFILE__";
 const CACHE_CREATED_AT = "__CACHE_CREATED_AT__";
 const CORE_ASSETS = []; /* __PROFILE_CORE_ASSETS__ */
 const OPTIONAL_LANDING_ARTWORK = []; /* __OPTIONAL_LANDING_ARTWORK__ */
+// Opt-in bucket: the Mae Sai case replay's manifest and the files it lists (derived from the manifest at
+// build time). Saved only when the replay page asks after rendering online, never during installation.
+const OPTIONAL_CASE_REPLAY = []; /* __OPTIONAL_CASE_REPLAY__ */
 let artworkTask = null;
+let caseReplayTask = null;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -64,6 +68,15 @@ self.addEventListener("message", (event) => {
       else event.source?.postMessage(message);
     }));
   }
+  if (event.data?.type === "FLOODGUARD_CACHE_CASE_REPLAY" && APP_PROFILE === "competition") {
+    // "no-cache" revalidates against the network, so files the page has just loaded are not downloaded twice.
+    caseReplayTask ??= cacheOptionalAssets(OPTIONAL_CASE_REPLAY, "no-cache").finally(() => { caseReplayTask = null; });
+    event.waitUntil(caseReplayTask.then((result) => {
+      const message = { type: "FLOODGUARD_CASE_REPLAY_STATUS", ...result };
+      if (event.ports?.[0]) event.ports[0].postMessage(message);
+      else event.source?.postMessage(message);
+    }));
+  }
   if (event.data?.type === "FLOODGUARD_STATUS_REQUEST") {
     const message = { type: "FLOODGUARD_STATUS", cache_name: CACHE_NAME, profile: APP_PROFILE, cached_at: CACHE_CREATED_AT };
     if (event.ports?.[0]) event.ports[0].postMessage(message);
@@ -71,29 +84,37 @@ self.addEventListener("message", (event) => {
   }
 });
 
-async function cacheLandingArtwork() {
-  const result = { cached: 0, failed: 0, total: OPTIONAL_LANDING_ARTWORK.length };
+function cacheLandingArtwork() {
+  return cacheOptionalAssets(OPTIONAL_LANDING_ARTWORK, "no-store");
+}
+
+/**
+ * Save optional, build-pinned files ({ url, sha256 }) into the current cache. Each file is stored only when
+ * its SHA-256 matches this build; failures are counted and never invalidate the saved application.
+ */
+async function cacheOptionalAssets(assets, fetchCache) {
+  const result = { cached: 0, failed: 0, total: assets.length };
   try {
     if (!(await caches.keys()).includes(CACHE_NAME) || !(await competitionStillDeployed())) return result;
     const cache = await caches.open(CACHE_NAME);
-    for (const asset of OPTIONAL_LANDING_ARTWORK) {
+    for (const asset of assets) {
       if (!(await caches.keys()).includes(CACHE_NAME)) return result;
       if (await cache.match(asset.url)) { result.cached += 1; continue; }
       try {
-        const response = await fetch(asset.url, { cache: "no-store" });
-        if (!response.ok) throw new Error("Optional illustration unavailable");
+        const response = await fetch(asset.url, { cache: fetchCache });
+        if (!response.ok) throw new Error("Optional asset unavailable");
         const digest = await crypto.subtle.digest("SHA-256", await response.clone().arrayBuffer());
         const hash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-        if (hash !== asset.sha256) throw new Error("Optional illustration belongs to a different build");
+        if (hash !== asset.sha256) throw new Error("Optional asset belongs to a different build");
         if (!(await caches.keys()).includes(CACHE_NAME)) return result;
         await cache.put(asset.url, response);
         result.cached += 1;
       } catch { result.failed += 1; }
     }
-    // A public-profile downgrade must not retain a late optional-artwork task.
+    // A public-profile downgrade must not retain a late optional-asset task.
     if (!(await competitionStillDeployed())) await caches.delete(CACHE_NAME);
   } catch {
-    // Optional illustration downloads never invalidate the saved planning app.
+    // Optional downloads never invalidate the saved planning app.
   }
   return result;
 }

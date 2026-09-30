@@ -1,0 +1,895 @@
+{
+ "dataset": "Shelters reported as used in Mae Sai district during the September 2024 flood",
+ "compiled": "2026-09-27",
+ "compiled_by": "FloodGuard desk research (Thai and English news, PRD/ICC situation reports, OSM/Nominatim for locations)",
+ "status": "Reported use from public sources; not an official register. Locations are OSM matches where possible; low-confidence locations are approximate.",
+ "licence_note": "Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL).",
+ "caveats": "1) Which flood each source describes. Mae Sai flooded repeatedly: 10-13 Sep 2024 (the main event), again in early Oct 2024, then May 2025 and July 2025. Several search hits look like Sep 2024 but are not. Thai PBS World 'Four communities evacuated', The Nation 40050383 and 40053207, Bangkok Post 3076938 and Khaosod 9869431 are all from May or July 2025, so I excluded them as evidence for Sep 2024. They only suggest a recurring shelter set: municipality office, Wat Phrom Wihan, Municipal School 1 and the district hall. The Oct 2024 numbers (8-10 Oct) are included only as context for continued use.\n\n2) Where the site list comes from. The 17-site list comes from the Chiang Rai Incident Command Center (ศูนย์บัญชาการเหตุการณ์) report covering 9-15 Sep 2024. It is dated about 15 Sep 2024 and says 17 sites held 1,343 people. The 21 Sep list has 6 sites and 501 people; the 28 Sep list has 3 sites and 237 people. I read these through two media outlets that republished the ICC text: FM91 and nakornchiangrainews, which credits the Chiang Rai PR Office. I could not locate the original September pages on chiangrai.prd.go.th. The 10 Oct report on chiangrai.prd.go.th is official. A 24 Sep ICC report exists (chiangraifocus 33610) but returned 403, so it was not read.\n\n3) Sources I could not read. thaigov.go.th pages returned a Cloudflare challenge, which I did not bypass. Thairath returned 403. WebFetch returned 403 for Matichon, but a plain curl read worked.\n\n4) Occupancy numbers. These are point-in-time 'remaining' (คงค้าง) counts, not capacities. The first-night figures (34 at the municipality, 37 at Wat Phrom Wihan, as of 11 Sep 01:00) come before the 11-12 Sep peak. The peak occupancy count I found is the 9-15 Sep list (1,343 people across 17 sites); the lists run about 15 Sep, then 21 Sep, then 28 Sep. The shelters outside the town (Ko Chang, Pong Pha, Si Mueang Chum, Pong Ngam) only appear on that list and had closed by 21 Sep. No capacity figures were published for Sep 2024, except MSDHS's 50 for Baan Ua-Arthorn.\n\n5) Tambon labels. Nominatim/OSM admin tags in this area mix municipalities and tambons and are unreliable. For example, Wat Mongkhon Thammakayaram is labelled แม่ไร่ (Mae Chan) although registries say ต.โป่งงาม, อ.แม่สาย. Tambon values here come from official or registry text where available.\n\n6) Locations. OSM coverage is good for the town-centre sites: municipality office, Wat Phrom Wihan, Wat Tham Pha Chom, Wat Mueang Daeng, district office, Wat Nam Cham, Wat Chetiyaram, and the Wat Mongkhon buildings. OSM IDs were verified via Overpass (OSM base timestamp 2026-09-27T11:07Z). Coverage is poor for the eastern Ko Chang temples: Wat Pa Sang Ngam, Wat Pa Daeng and Wat San Luang have no named OSM feature. Low-confidence points are village nodes or non-OSM listings and need proper geocoding before any access analysis. Overpass rate-limited several requests (about 429s), so not every alternative spelling was tried.\n\n7) Relief sites that are not overnight shelters. The Mae Sai District Office was the incident command centre and hosted kitchens. The Pornpairin Apartment (Pa Muead Soi 2) offered free rooms to outside responders and free parking to flood victims (Matichon/Thai PBS, 11 Sep). It was not an evacuee shelter, so it is excluded. The Chiang Rai United stadium and the Chiang Rai PAO (อบจ.) school shelters from the same 11 Sep list are in Mueang Chiang Rai, not Mae Sai, and are excluded.\n\n8) Site-specific uncertainties. Wat Mueang Daeng was itself flooded and evacuated at the peak (DDPM, 12 Sep) and only became a shelter later, which matters for a day-by-day replay. The ICC lines 'วัดเจติยาราม' and 'วัดสันธาตุ' are probably one temple (my inference). The unnamed 15 Sep 'church' may or may not be the Ban Pha Hi church named on 21 Sep.\n\n9) What was not done. No data files were downloaded or saved and nothing was written to the repo. Two small helper scripts and temporary Overpass query text files were written only to the session scratchpad.",
+ "queries_tried": [
+  "WebSearch: ศูนย์พักพิงชั่วคราว แม่สาย น้ำท่วม กันยายน 2567",
+  "WebSearch: Mae Sai flood September 2024 evacuation shelter school temple evacuees",
+  "WebSearch: แม่สาย ศูนย์พักพิง วัดพรหมวิหาร เทศบาลตำบลแม่สาย อพยพ 2567",
+  "WebSearch: \"แม่สาย\" ศูนย์อพยพ น้ำท่วม 12 กันยายน 2567",
+  "WebSearch: \"ศูนย์พักพิงชั่วคราว ณ วัดพรหมวิหาร\" แม่สาย",
+  "WebSearch: วัดถ้ำผาจม ศูนย์พักพิง ผู้ประสบภัย น้ำท่วมแม่สาย กันยายน 2567",
+  "WebSearch: chiangrai.prd.go.th ศูนย์บัญชาการเหตุการณ์ รายงานสถานการณ์อุทกภัย ประจำวันที่ 15 กันยายน 2567 ศูนย์พักพิง",
+  "WebSearch: ศูนย์พักพิงเทศบาลตำบลแม่สาย ศูนย์พักพิงวัดเหมืองแดง ศูนย์พักพิงวัดถ้ำผาจม กันยายน 2567",
+  "WebSearch (prd.go.th domains): \"ศูนย์บัญชาการเหตุการณ์ฯ รายงานสถานการณ์อุทกภัย\" \"กันยายน 2567\" เชียงราย",
+  "WebSearch: ศูนย์บัญชาการเหตุการณ์ป้องกันและแก้ไขปัญหาอุทกภัย เชียงราย รายงาน ประจำวันที่ 20 กันยายน 2567 ศูนย์พักพิง แม่สาย",
+  "WebSearch: nakornchiangrainews ศูนย์พักพิง อ.แม่สาย ที่ยังเปิดศูนย์ฯ ให้บริการที่พักพิงชั่วคราว กันยายน 2567",
+  "WebSearch: \"ศูนย์พักพิงวัดพรหมวิหาร\" คงค้าง ราย กันยายน 2567",
+  "WebSearch: \"ศูนย์พักพิงวัดป่าซางงาม\" OR \"ศูนย์พักพิงวัดน้ำจำ\" OR \"ศูนย์พักพิงวัดสันธาตุ\" แม่สาย",
+  "WebSearch: วัดเหมืองแดง แม่สาย ศูนย์พักพิง ผู้ประสบภัย น้ำท่วม 2567",
+  "WebSearch: บ้านเอื้ออาทรแม่สาย ศูนย์พักพิง พม. ผู้ประสบอุทกภัย 2567",
+  "WebSearch: ที่ว่าการอำเภอแม่สาย ศูนย์ช่วยเหลือผู้ประสบภัย โรงครัวพระราชทาน กันยายน 2567",
+  "WebSearch: ศูนย์บัญชาการเหตุการณ์ส่วนหน้า แม่สาย น้ำท่วม กันยายน 2567 ตั้งอยู่",
+  "WebSearch: ย้ายศูนย์พักพิง แม่สาย น้ำท่วม 2567 ศูนย์พักพิงถูกน้ำท่วม",
+  "WebSearch: Mae Sai September 2024 flood temple shelter evacuees mud Wat Muang Daeng monks evacuated",
+  "WebSearch: Mae Sai flood September 2024 Wat Phrom Wihan shelter evacuees Paetongtarn visit",
+  "WebSearch: วัดมงคลธรรมกายาราม อำเภอแม่สาย ตำบล / วัดหิรัญญาวาส แม่สาย / วัดเจติยาราม บ้านสันธาตุ / วัดป่าแดง-วัดสันหลวง ตำบลเกาะช้าง / บ้านเอื้ออาทรแม่สาย 1 / รพ.สต.เกาะช้าง / บ้านผาฮี้",
+  "Read (curl/Python to stdout, nothing saved): Matichon 4785226; PRD 323719, 323789, 323032, 323308; Chiang Rai PRD 322918, 323590, 331243; MGR 9670000085226; FM91 36977; nakornchiangrainews 16/22/29 Sep and 9 Oct 2024; Thai PBS 344049, 344054, 344197; Naewna 828564 and 832096; Matichon 4805509; VOA; The Nation 40041457 and 40041887; ONEP culturalenvi 6105; maesaimittraphap.go.th; srimueangchum.go.th; sangkhatikan; healthserv.net; Baania",
+  "Overpass API (bbox 20.25,99.80,20.50,100.05): name regex for all candidate names; townhalls, churches and health facilities; temples and villages in the eastern sub-bbox",
+  "Nominatim search (bounded viewbox): วัดพรหมวิหาร, วัดถ้ำผาจม, วัดเหมืองแดง, สำนักงานเทศบาลตำบลแม่สาย, ที่ว่าการอำเภอแม่สาย, เทศบาลตำบลแม่สายมิตรภาพ, วัดป่าซางงาม, วัดหิรัญญาวาส, วัดสันหลวง, วัดป่าแดง, เอื้ออาทร",
+  "Nominatim reverse at 10 points to check tambon labels"
+ ],
+ "shelters": [
+  {
+   "id": "R01",
+   "name_th": "ศูนย์พักพิงเทศบาลตำบลแม่สาย (สำนักงานเทศบาลตำบลแม่สาย)",
+   "name_en": "Mae Sai Subdistrict Municipality Office shelter and relief centre",
+   "type": "government_office",
+   "tambon": "เวียงพางคำ (the OSM address puts the office in Ban Pa Yang Mai, Wiang Phang Kham; the municipality covers parts of ต.แม่สาย and ต.เวียงพางคำ)",
+   "address_or_area": "สำนักงานเทศบาลตำบลแม่สาย, ถนนเทศบาล 26, บ้านป่ายางใหม่, อ.แม่สาย (OSM/Nominatim address)",
+   "lat": 20.4265331,
+   "lon": 99.8843199,
+   "location_method": "osm_feature",
+   "location_evidence": "OSM way 371846370 'สำนักงานเทศบาลตำบลแม่สาย' / 'Maesai Municipality Office' (amenity=townhall), https://www.openstreetmap.org/way/371846370 ; coordinates are the Nominatim centroid, and the Overpass center 20.4265324, 99.8843686 agrees",
+   "location_confidence": "high",
+   "period_used": "Open by the early hours of 2024-09-11 (34 people at 01:00). Occupancy 53 on the ICC report covering 9-15 Sep (published 2024-09-16), 49 on 2024-09-21 and 41 on 2024-09-28. Still open at 87 on 2024-10-08/10 after the early-October re-flood. The municipal relief/command centre was set up in the same building on 2024-09-11.",
+   "reported_capacity_or_occupancy": "Occupancy: 34 (2024-09-11 01:00), 53 (about 2024-09-15), 49 (2024-09-21), 41 (2024-09-28), 87 (2024-10-10). Capacity was not reported for Sep 2024. A July 2025 municipal list gives about 200, which comes from a different event.",
+   "evidence_strength": "official",
+   "notes": "This was the primary municipal shelter from the first night of the Sep 2024 flood through October. Take capacity figures from the 2025 events (the July 2025 Khaosod list gives about 200) only as indicative. The same building was the municipal relief/command centre.",
+   "sources": [
+    {
+     "title": "รวมเบอร์ติดต่อ \"ขอความช่วยเหลือ-แจ้งเหตุ\" น้ำท่วม จ.เชียงราย",
+     "publisher": "Thai PBS",
+     "url": "https://www.thaipbs.or.th/news/content/344054",
+     "date": "2024-09-11",
+     "quote_or_paraphrase": "As of 01:00 on 11 Sep 2024, 34 evacuees were at the Mae Sai municipality shelter and 37 at Wat Phrom Wihan. It lists the Mae Sai flood shelters as เทศบาลตำบลแม่สาย and วัดพรหมวิหาร."
+    },
+    {
+     "title": "เปิดพิกัด 'ศูนย์พักพิง-จุดจอดรถ' ช่วยเหลือ น้ำท่วมเชียงราย",
+     "publisher": "Matichon",
+     "url": "https://www.matichon.co.th/local/news_4785226",
+     "date": "2024-09-11",
+     "quote_or_paraphrase": "Under the heading for Mae Sai flood shelters, it lists two sites: เทศบาลตำบลแม่สาย and วัดพรหมวิหาร."
+    },
+    {
+     "title": "เทศบาลแม่สายได้จัดตั้งศูนย์อำนวยการช่วยเหลือผู้ประสบภัยน้ำท่วม",
+     "publisher": "Government Public Relations Department (prd.go.th)",
+     "url": "https://www.prd.go.th/th/content/category/detail/id/37/iid/323032",
+     "date": "2024-09-11",
+     "quote_or_paraphrase": "The municipality set up a flood relief command centre in the Mae Sai municipal office building, reachable on hotline 199."
+    },
+    {
+     "title": "UPDATE สถานการณ์น้ำท่วม และการช่วยเหลือผู้ประสบภัย 13 กันยายน 2567",
+     "publisher": "Government Public Relations Department (prd.go.th)",
+     "url": "https://www.prd.go.th/th/content/page/index/id/323719",
+     "date": "2024-09-13",
+     "quote_or_paraphrase": "DDPM daily update: in Mae Sai, a local-government shelter was set up at เทศบาลตำบลแม่สาย."
+    },
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย กระทบ 9 อำเภอ 53,209 ครัวเรือน เสียชีวิต 12 ราย",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "Chiang Rai ICC report for 9-15 Sep: 17 shelters open in Mae Sai holding 1,343 people. This site had 53 people and a medical team."
+    },
+    {
+     "title": "น้ำท่วมเชียงราย กระทบพื้นที่เกษตรไปแล้ว 14,138 ไร่ และ โรงเรียนอีก 31 แห่ง",
+     "publisher": "nakornchiangrainews (credits Chiang Rai Provincial PR Office)",
+     "url": "https://nakornchiangrainews.com/flooding-in-chiang-rai-has-affected-14138-rai-of-agricultural-land-and-31-schools/",
+     "date": "2024-09-22",
+     "quote_or_paraphrase": "As of 21 Sep: 6 Mae Sai shelters with 501 people. This site had 49 remaining."
+    },
+    {
+     "title": "ข้อมูลน้ำท่วมเชียงราย 9-28 ก.ย.67 เสียชีวิต 13 เจ็บ 3 สูญหาย 1 ราย",
+     "publisher": "nakornchiangrainews (ICC data)",
+     "url": "https://nakornchiangrainews.com/flood-information-in-chiang-rai-9-28-sept-2024-13-dead-3-injured-1-missing/",
+     "date": "2024-09-29",
+     "quote_or_paraphrase": "As of 28 Sep: 3 Mae Sai shelters with 237 people. This site had 41 remaining."
+    },
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ รายงานสถานการณ์อุทกภัย และดินถล่ม ในพื้นที่จังหวัดเชียงราย ประจำวันที่ 10 ตุลาคม 2567",
+     "publisher": "Chiang Rai Provincial PR Office (chiangrai.prd.go.th)",
+     "url": "https://chiangrai.prd.go.th/th/content/category/detail/id/9/iid/331243",
+     "date": "2024-10-11",
+     "quote_or_paraphrase": "Mae Sai still had 3 shelters open, with 87 people remaining at the municipality shelter."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R02",
+   "name_th": "ศูนย์พักพิงชั่วคราว วัดพรหมวิหาร",
+   "name_en": "Wat Phrom Wihan temporary shelter",
+   "type": "temple",
+   "tambon": "เวียงพางคำ",
+   "address_or_area": "วัดพรหมวิหาร, ซอยเทศบาล 17/2, บ้านป่ายางใหม่, ต.เวียงพางคำ, อ.แม่สาย",
+   "lat": 20.4266647,
+   "lon": 99.8799546,
+   "location_method": "osm_feature",
+   "location_evidence": "OSM way 372716639 'วัดพรหมวิหาร' / 'Wat Prom Wihan' (amenity=place_of_worship, buddhist), https://www.openstreetmap.org/way/372716639 ; coordinates are the Nominatim centroid, and the Overpass center 20.4264275, 99.8799585 agrees. Tambon ต.เวียงพางคำ is confirmed by PRD.",
+   "location_confidence": "high",
+   "period_used": "Open by 2024-09-11 01:00 (37 people). The Thammanat Foundation set up a relief centre and kitchen here and trucked evacuees in on 2024-09-12. The PM visited the shelter on 2024-09-13. Occupancy 341 about 2024-09-15 and 119 on 2024-09-21. It is not in the 2024-09-28 list, so it closed between 21 and 28 Sep. It was used as an aid-distribution venue on 2024-09-28.",
+   "reported_capacity_or_occupancy": "Occupancy: 37 (2024-09-11 01:00), 341 (about 2024-09-15, the largest Mae Sai shelter that day), 119 (2024-09-21)",
+   "evidence_strength": "official",
+   "notes": "This was a core shelter from the first night. The Mae Sai Municipal School 1 (โรงเรียนเทศบาล 1 วัดพรหมวิหาร) sits in the temple grounds. A May 2025 Thai PBS World item lists 'Municipal School 1' as a separate shelter, but that is a different event. I found no Sep 2024 source that names the school separately.",
+   "sources": [
+    {
+     "title": "นายกฯ สวมกอดให้กำลังใจผู้ประสบภัย อ.แม่สาย ...",
+     "publisher": "Government Public Relations Department (prd.go.th)",
+     "url": "https://www.prd.go.th/th/content/category/detail/id/39/iid/323789",
+     "date": "2024-09-13",
+     "quote_or_paraphrase": "At 12:30 on 13 Sep 2024 the PM visited flood victims at the temporary shelter at Wat Phrom Wihan, Tambon Wiang Phang Kham, Mae Sai."
+    },
+    {
+     "title": "\"มูลนิธิธรรมนัสพรหมเผ่า\" ตั้งศูนย์บรรเทาทุกข์และโรงครัวชั่วคราว ณ วัดพรหมวิหาร อ.แม่สาย",
+     "publisher": "MGR Online",
+     "url": "https://mgronline.com/politics/detail/9670000085226",
+     "date": "2024-09-12",
+     "quote_or_paraphrase": "On 12 Sep a foundation set up a relief centre and temporary kitchen at Wat Phrom Wihan and used six-wheel trucks to move trapped residents to the shelter there."
+    },
+    {
+     "title": "รวมเบอร์ติดต่อ \"ขอความช่วยเหลือ-แจ้งเหตุ\" น้ำท่วม จ.เชียงราย",
+     "publisher": "Thai PBS",
+     "url": "https://www.thaipbs.or.th/news/content/344054",
+     "date": "2024-09-11",
+     "quote_or_paraphrase": "37 evacuees were at the Wat Phrom Wihan shelter as of 01:00 on 11 Sep 2024."
+    },
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC 9-15 Sep list: the Wat Phrom Wihan shelter held 341 people, with medical teams from Mae Sai Hospital, MCATT and others."
+    },
+    {
+     "title": "น้ำท่วมเชียงราย กระทบพื้นที่เกษตรไปแล้ว 14,138 ไร่ ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/flooding-in-chiang-rai-has-affected-14138-rai-of-agricultural-land-and-31-schools/",
+     "date": "2024-09-22",
+     "quote_or_paraphrase": "As of 21 Sep, 119 people remained at the Wat Phrom Wihan shelter."
+    },
+    {
+     "title": "Paetongtarn visits flood-hit areas in Chiang Rai",
+     "publisher": "The Nation",
+     "url": "https://www.nationthailand.com/blogs/news/general/40041887",
+     "date": "2024-09-28",
+     "quote_or_paraphrase": "The PM travelled to Phrom Wihan Temple in Mae Sai and distributed compensation to flood-hit families."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R03",
+   "name_th": "ศูนย์พักพิงวัดถ้ำผาจม",
+   "name_en": "Wat Tham Pha Chom shelter",
+   "type": "temple",
+   "tambon": "เวียงพางคำ",
+   "address_or_area": "วัดถ้ำผาจม, ถนนเทศบาล 3, ต.เวียงพางคำ, อ.แม่สาย (next to the heavily hit Tham Pha Chom / Hua Fai community)",
+   "lat": 20.4418139,
+   "lon": 99.8734839,
+   "location_method": "osm_feature",
+   "location_evidence": "OSM way 369030754 'วัดถ้ำผาจม' / 'Tham Pha Chom Temple' (amenity=place_of_worship), https://www.openstreetmap.org/way/369030754 ; coordinates are the Nominatim centroid",
+   "location_confidence": "high",
+   "period_used": "Listed on the ICC report covering 9-15 Sep with 160 people. It had 117 on 2024-09-21 and 114 on 2024-09-28, and was still open on 2024-10-08/10 (50 and 36 in two reports).",
+   "reported_capacity_or_occupancy": "Occupancy: 160 (about 2024-09-15), 117 (2024-09-21), 114 (2024-09-28). VOA (2024-09-26) quotes a monk who says about 300 came at first and about 150 were there at the time. 50 (2024-10-08) and 36 (2024-10-10).",
+   "evidence_strength": "official",
+   "notes": "The temple is next to the worst-hit riverside zone (Hua Fai / Tham Pha Chom). The community there was buried under 2-3 m of mud, but I found no report that the temple itself was flooded. The Rajabhat relief team's community kitchen was also at this temple in July 2025, which is a different event.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC 9-15 Sep list: the Wat Tham Pha Chom shelter held 160 people."
+    },
+    {
+     "title": "ผบ.ทสส. ลงพื้นที่แม่สาย เร่งช่วยผู้ประสบภัยหลังน้ำลด ชาวบ้านเศร้าหมดตัว ดินทับบ้านจมมิด",
+     "publisher": "Matichon",
+     "url": "https://www.matichon.co.th/region/news_4805509",
+     "date": "2024-09-22",
+     "quote_or_paraphrase": "Most residents of the mud-buried Tham Pha Chom community were staying in shelters, especially at nearby Wat Tham Pha Chom, where agencies delivered food daily."
+    },
+    {
+     "title": "Deadly Thai floods intensified by climate change, La Niña displace 150,000 families",
+     "publisher": "VOA",
+     "url": "https://www.voanews.com/a/deadly-thai-floods-intensified-by-climate-change-la-ni%C3%B1a-displace-150-000-families/7799976.html",
+     "date": "2024-09-26",
+     "quote_or_paraphrase": "A monk says about 300 people came to stay at the temple after the flood and about 150 were still living there."
+    },
+    {
+     "title": "ช่อง 3 เดินหน้าส่งกำลังใจพี่น้องชาวแม่สาย ลงพื้นที่ร่วมให้ความช่วยเหลือผู้ประสบอุทกภัย",
+     "publisher": "Naewna",
+     "url": "https://www.naewna.com/entertain/832096",
+     "date": "2024-09-29",
+     "quote_or_paraphrase": "Channel 3 staff visited the flood-victim shelter at Wat Tham Pha Chom, Tambon Wiang Phang Kham."
+    },
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ รายงานสถานการณ์อุทกภัย และดินถล่ม ... ประจำวันที่ 10 ตุลาคม 2567",
+     "publisher": "Chiang Rai Provincial PR Office (chiangrai.prd.go.th)",
+     "url": "https://chiangrai.prd.go.th/th/content/category/detail/id/9/iid/331243",
+     "date": "2024-10-11",
+     "quote_or_paraphrase": "The Wat Tham Pha Chom shelter was still open on 10 Oct (36-50 people across two tables)."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R04",
+   "name_th": "ศูนย์พักพิงวัดเหมืองแดง",
+   "name_en": "Wat Mueang Daeng shelter",
+   "type": "temple",
+   "tambon": "แม่สาย (Moo 2, per DDPM and DMC.tv. Nominatim labels the point เวียงพางคำ, but that tag comes from OSM admin data and is unreliable here.)",
+   "address_or_area": "วัดเหมืองแดง, ซอยเหมืองแดง 7, ชุมชนเหมืองแดง หมู่ 2 ต.แม่สาย",
+   "lat": 20.4374279,
+   "lon": 99.8922898,
+   "location_method": "osm_feature",
+   "location_evidence": "OSM way 375664608 'วัดเหมืองแดง' / 'Mueang Daeng Temple' (amenity=place_of_worship), https://www.openstreetmap.org/way/375664608",
+   "location_confidence": "high",
+   "period_used": "The temple was itself flooded and evacuated around 2024-09-11/12. Later it served as a shelter: 162 people on 2024-09-21, 82 on 2024-09-28, and 50-52 on 2024-10-08/10. It does not appear on the 17-site list covering 9-15 Sep.",
+   "reported_capacity_or_occupancy": "Occupancy: 162 (2024-09-21), 82 (2024-09-28), 52 (2024-10-08), 50 (2024-10-10)",
+   "evidence_strength": "official",
+   "notes": "The temple sits inside the heavily flooded Mueang Daeng community (flood zone 3 in the ICC's 5-zone plan). Its own monks were evacuated at the peak. It became a shelter after the water receded, probably for residents whose homes were mud-filled. Replay logic should not treat it as usable on 11-13 Sep.",
+   "sources": [
+    {
+     "title": "ปภ.ระดมกำลังเร่งช่วยเหลือพี่น้องชาวเชียงราย",
+     "publisher": "Government Public Relations Department (prd.go.th, DDPM item)",
+     "url": "https://www.prd.go.th/th/content/category/detail/id/37/iid/323308",
+     "date": "2024-09-12",
+     "quote_or_paraphrase": "DDPM used evacuation vehicles to move monks and novices of Wat Mueang Daeng and flood victims of Moo 2, Tambon Mae Sai, out of the flood."
+    },
+    {
+     "title": "น้ำท่วมเชียงราย กระทบพื้นที่เกษตรไปแล้ว 14,138 ไร่ ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/flooding-in-chiang-rai-has-affected-14138-rai-of-agricultural-land-and-31-schools/",
+     "date": "2024-09-22",
+     "quote_or_paraphrase": "As of 21 Sep, 162 people remained at the Wat Mueang Daeng shelter, with medical teams from Phaya Mengrai Hospital, MCATT and the Mae Sai health centre."
+    },
+    {
+     "title": "ข้อมูลน้ำท่วมเชียงราย 9-28 ก.ย.67 ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/flood-information-in-chiang-rai-9-28-sept-2024-13-dead-3-injured-1-missing/",
+     "date": "2024-09-29",
+     "quote_or_paraphrase": "As of 28 Sep, 82 people remained at the Wat Mueang Daeng shelter."
+    },
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ รายงานสถานการณ์อุทกภัย ... ประจำวันที่ 10 ตุลาคม 2567",
+     "publisher": "Chiang Rai Provincial PR Office",
+     "url": "https://chiangrai.prd.go.th/th/content/category/detail/id/9/iid/331243",
+     "date": "2024-10-11",
+     "quote_or_paraphrase": "The Wat Mueang Daeng shelter was still open on 10 Oct with 50-52 people."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-21",
+   "in_access_set": false,
+   "access_set_note": "The temple was itself flooded and evacuated at the peak; it served as a shelter from 21 Sep."
+  },
+  {
+   "id": "R05",
+   "name_th": "ที่ว่าการอำเภอแม่สาย (ศูนย์บัญชาการเหตุการณ์ฯ / โรงครัว)",
+   "name_en": "Mae Sai District Office (incident command centre and relief kitchens)",
+   "type": "government_office",
+   "tambon": "เวียงพางคำ",
+   "address_or_area": "ที่ว่าการอำเภอแม่สาย, ถนนพหลโยธิน, บ้านป่ายางใหม่, ต.เวียงพางคำ",
+   "lat": 20.4281122,
+   "lon": 99.8832196,
+   "location_method": "osm_feature",
+   "location_evidence": "OSM way 106085064 'ที่ว่าการอำเภอแม่สาย' / 'Mae Sai District Office' (office=government), https://www.openstreetmap.org/way/106085064",
+   "location_confidence": "high",
+   "period_used": "The incident command centre (ICC) and registration point for all rescue units opened on 2024-09-11. A Red Cross kitchen was running by 2024-09-12, and a royal (เพื่อนพึ่งภาฯ) kitchen on 2024-09-19/20.",
+   "reported_capacity_or_occupancy": null,
+   "evidence_strength": "official",
+   "notes": "This was a relief and command site, not a documented overnight shelter in Sep 2024. A May 2025 Thai PBS World item names the district conference hall as a shelter, which is a different event. Tag it as a relief/command centre, not as shelter capacity.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ ที่ว่าการอำเภอแม่สาย วางแผนเข้าช่วยเหลือผู้ประสบภัยน้ำท่วม ในพื้นที่ 5 จุดวิกฤต",
+     "publisher": "Chiang Rai Provincial PR Office (chiangrai.prd.go.th)",
+     "url": "https://chiangrai.prd.go.th/th/content/category/detail/id/9/iid/323590",
+     "date": "2024-09-12",
+     "quote_or_paraphrase": "After a meeting on 11 Sep, the ICC at the district office split the flood area into 5 zones: Hua Fai/Sai Lom Joi, Ko Sai, Mueang Daeng, Mai Lung Khon and Piyaporn. All units had to register there first."
+    },
+    {
+     "title": "กิ่งกาชาดอำเภอแม่สาย เปิดรับบริจาคข้าวสาร-สิ่งของ ช่วยผู้ประสบภัยน้ำท่วม",
+     "publisher": "Naewna",
+     "url": "https://www.naewna.com/relation/828564",
+     "date": "2024-09-12",
+     "quote_or_paraphrase": "The Mae Sai Red Cross branch set up a kitchen at the district office to feed flood victims and responders."
+    },
+    {
+     "title": "น้ำท่วมเชียงราย กระทบพื้นที่เกษตรไปแล้ว 14,138 ไร่ ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/flooding-in-chiang-rai-has-affected-14138-rai-of-agricultural-land-and-31-schools/",
+     "date": "2024-09-22",
+     "quote_or_paraphrase": "On 20 Sep the royal relief kitchen at the district office cooked 1,800 boxed meals over 2 meals."
+    }
+   ],
+   "role": "relief_command_centre",
+   "first_use": "2024-09-11",
+   "in_access_set": false,
+   "access_set_note": "Incident command centre and relief kitchens; not a documented overnight shelter in Sep 2024."
+  },
+  {
+   "id": "R06",
+   "name_th": "ศูนย์พักพิงเทศบาลตำบลแม่สายมิตรภาพ",
+   "name_en": "Mae Sai Mittraphap Subdistrict Municipality shelter",
+   "type": "government_office",
+   "tambon": "แม่สาย (the office is at Moo 9 Ban San Sai, ต.แม่สาย, per the municipality website)",
+   "address_or_area": "สำนักงานเทศบาลตำบลแม่สายมิตรภาพ หมู่ที่ 9 บ้านสันทราย ต.แม่สาย, about 5 km from the district office",
+   "lat": 20.4400387,
+   "lon": 99.9134634,
+   "location_method": "approximate_from_description",
+   "location_evidence": "No OSM feature exists for the office building. The coordinates are the OSM place=municipality label node 8193710966 'แม่สายมิตรภาพ' (https://www.openstreetmap.org/node/8193710966), which marks the municipality, not the verified office. The office address (Moo 9 Ban San Sai) comes from maesaimittraphap.go.th.",
+   "location_confidence": "low",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024 with 16 people. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 16 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "I assumed the shelter was at the municipal office because the ICC names it after the municipality. The exact building is not stated. Geocode the office properly before using it.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Mae Sai Mittraphap municipality shelter held 16 people, with a medical team from the Mae Sai health centre."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย 53,209 ครัวเรือน ได้รับผลกระทบ",
+     "publisher": "nakornchiangrainews (credits Chiang Rai PR Office)",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same 17-site ICC list appears here with this shelter."
+    },
+    {
+     "title": "ข้อมูลทั่วไป เทศบาลตำบลแม่สายมิตรภาพ",
+     "publisher": "Mae Sai Mittraphap Subdistrict Municipality",
+     "url": "https://www.maesaimittraphap.go.th/main.php?type=1",
+     "date": "accessed 2026-09-27",
+     "quote_or_paraphrase": "The office is about 5 km from the district office. A procurement notice places the office at Moo 9 Ban San Sai, Tambon Mae Sai."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R07",
+   "name_th": "ศูนย์พักพิงวัดน้ำจำ",
+   "name_en": "Wat Nam Cham shelter",
+   "type": "temple",
+   "tambon": "โป่งผา",
+   "address_or_area": "วัดน้ำจำ, บ้านน้ำจำ, ต.โป่งผา",
+   "lat": 20.3866708,
+   "lon": 99.886613,
+   "location_method": "osm_feature",
+   "location_evidence": "OSM node 4527145792 'วัดน้ำจำ' (amenity=place_of_worship, buddhist), https://www.openstreetmap.org/node/4527145792 ; Ban Nam Cham village node 2193413438 is nearby",
+   "location_confidence": "high",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 61 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "Nominatim reverse-geocoding labels this point เวียงพางคำ. The tambon here follows the medical team (รพ.สต.โป่งผา) and village directories that put Ban Nam Cham in ต.โป่งผา.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Wat Nam Cham shelter held 61 people, with a medical team from the Pong Pha health centre."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R08",
+   "name_th": "ศูนย์พักพิงหอประชุม อบต.โป่งผา",
+   "name_en": "Pong Pha SAO assembly hall shelter",
+   "type": "stadium_or_hall",
+   "tambon": "โป่งผา",
+   "address_or_area": "องค์การบริหารส่วนตำบลโป่งผา, ถนนพหลโยธิน, ต.โป่งผา",
+   "lat": 20.3785453,
+   "lon": 99.8852323,
+   "location_method": "osm_feature",
+   "location_evidence": "OSM way 372608928 'องค์การบริหารส่วนตำบลโป่งผา' (amenity=townhall, addr:subdistrict=โป่งผา), https://www.openstreetmap.org/way/372608928 . I assumed the hall is inside the SAO compound. The hall itself is not mapped separately.",
+   "location_confidence": "medium",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 61 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "Both this site and Wat Nam Cham list 61 people on the same report. That may be a coincidence or a transcription duplication in the source.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Pong Pha SAO assembly hall shelter held 61 people."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R09",
+   "name_th": "ศูนย์พักพิง รพ.สต.เกาะช้าง",
+   "name_en": "Ko Chang Subdistrict Health Promoting Hospital shelter",
+   "type": "hospital",
+   "tambon": "เกาะช้าง",
+   "address_or_area": "โรงพยาบาลส่งเสริมสุขภาพตำบลเกาะช้าง, บ้านม่วงคำ หมู่ 7 ต.เกาะช้าง (healthserv.net directory)",
+   "lat": null,
+   "lon": null,
+   "location_method": "unknown",
+   "location_evidence": "I found no named OSM feature. Overpass searches for 'เกาะช้าง' and 'ม่วงคำ' in the bbox returned only อบต.เกาะช้าง (way 372687262), which is a different site. The address comes from the healthserv.net directory. It needs geocoding, for example from the MOPH hcode registry.",
+   "location_confidence": "low",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 56 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "The ICC names this as a shelter at the health centre. It is unclear whether people slept in the health centre building or it only anchored the site.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Ko Chang health centre shelter held 56 people."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    },
+    {
+     "title": "โรงพยาบาลส่งเสริมสุขภาพตำบลเกาะช้าง แม่สาย จังหวัดเชียงราย",
+     "publisher": "healthserv.net",
+     "url": "https://healthserv.net/%E0%B8%A3%E0%B8%9E%E0%B8%AA%E0%B8%95-%E0%B8%95%E0%B8%B3%E0%B8%9A%E0%B8%A5%E0%B9%80%E0%B8%81%E0%B8%B2%E0%B8%B0%E0%B8%8A%E0%B9%89%E0%B8%B2%E0%B8%87-%E0%B9%80%E0%B8%8A%E0%B8%B5%E0%B8%A2%E0%B8%87%E0%B8%A3%E0%B8%B2%E0%B8%A2-hospd202936",
+     "date": "accessed 2026-09-27",
+     "quote_or_paraphrase": "Address: Ban Muang Kham, Moo 7, Ko Chang, Mae Sai."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R10",
+   "name_th": "ศูนย์พักพิงวัดมงคลธรรมกายาราม",
+   "name_en": "Wat Mongkhon Thammakayaram shelter",
+   "type": "temple",
+   "tambon": "โป่งงาม",
+   "address_or_area": "วัดมงคลธรรมกายาราม หมู่ที่ 1 บ้านถ้ำ ต.โป่งงาม (temple registries)",
+   "lat": 20.3256,
+   "lon": 99.892,
+   "location_method": "osm_feature",
+   "location_evidence": "16 OSM building ways all named 'วัดมงคลธรรมกายาราม' (amenity=place_of_worship), ways 1428020845-1428020860, e.g. https://www.openstreetmap.org/way/1428020845 . They cluster at 20.3249-20.3268 N, 99.8904-99.8935 E, and the given lat/lon is my rounded centroid of that cluster. There is no single temple-grounds polygon. Nominatim reverse labels the point แม่ไร่ (Mae Chan), which conflicts with registries that say ต.โป่งงาม, อ.แม่สาย, so admin tags are unreliable here.",
+   "location_confidence": "high",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 14 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "The Pong Ngam SAO Facebook page has a post headed 'ศูนย์พักพิงชั่วคราวอำเภอแม่สาย ณ วัดมงคลธรรมกายาราม ต.โป่งงาม', but I could only read its headline, not the date or body.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: this temple shelter held 14 people, with medical teams from the Pong Ngam and Ban Tham health centres."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    },
+    {
+     "title": "วัดมงคลธรรมกายาราม ต.โป่งงาม อ.แม่สาย จ.เชียงราย",
+     "publisher": "DMC.tv",
+     "url": "https://www.dmc.tv/wat/26208",
+     "date": "accessed 2026-09-27",
+     "quote_or_paraphrase": "Temple directory entry placing it in Tambon Pong Ngam, Mae Sai. This comes from a search-result listing; I did not open the page."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R11",
+   "name_th": "ศูนย์พักพิงวัดเจติยาราม / วัดสันธาตุ",
+   "name_en": "Wat Chetiyaram (Wat San That) shelter",
+   "type": "temple",
+   "tambon": "ศรีเมืองชุม",
+   "address_or_area": "วัดเจติยาราม หมู่ที่ 5 (บ้านสันธาตุ) ต.ศรีเมืองชุม",
+   "lat": 20.3677273,
+   "lon": 99.9674018,
+   "location_method": "osm_feature",
+   "location_evidence": "OSM node 2207495992 'วัดเจติยาราม(สันธาตุ)' / 'Wat Che Ti Ya Ram' (amenity=place_of_worship, buddhist), https://www.openstreetmap.org/node/2207495992 . The sangkhatikan registry puts Wat Chetiyaram at Moo 5, ต.ศรีเมืองชุม, and the Si Mueang Chum SAO site lists Moo 5 as Ban San That.",
+   "location_confidence": "high",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "The 'วัดสันธาตุ' line has 83 people (about 2024-09-15). The 'วัดเจติยาราม' line has no count.",
+   "evidence_strength": "multiple_media",
+   "notes": "This is an inference. The two ICC lines 'วัดเจติยาราม' and 'วัดสันธาตุ' are probably the same temple, whose official name is Wat Chetiyaram and local name Wat San That. The 17 listed counts add up to exactly 1,343 only if the Chetiyaram line counts zero, which supports this. A second Wat Chetiyaram exists at Ban San Na, Moo 8, ต.เกาะช้าง, so the identification is not certain.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The ICC list has two lines: 'Wat Chetiyaram' (no count, medical team from the Si Mueang Chum health centre) and 'Wat San That' (83 people)."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes both lines."
+    },
+    {
+     "title": "วัดเจติยาราม ตำบลศรีเมืองชุม อำเภอแม่สาย จังหวัดเชียงราย",
+     "publisher": "sangkhatikan.com",
+     "url": "https://www.sangkhatikan.com/wat_view.php?ID=%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B9%80%E0%B8%88%E0%B8%95%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A3%E0%B8%B2%E0%B8%A1+(%E0%B8%8A%E0%B8%A3.)",
+     "date": "accessed 2026-09-27",
+     "quote_or_paraphrase": "Wat Chetiyaram is at Moo 5, Tambon Si Mueang Chum, Mae Sai."
+    },
+    {
+     "title": "ข้อมูลตำบลศรีเมืองชุม",
+     "publisher": "Si Mueang Chum SAO",
+     "url": "https://www.srimueangchum.go.th/main.php?id=1",
+     "date": "accessed 2026-09-27",
+     "quote_or_paraphrase": "Moo 5 of Si Mueang Chum is Ban San That."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R12",
+   "name_th": "ศูนย์พักพิงวัดหิรัญญาวาส",
+   "name_en": "Wat Hiranyawat shelter",
+   "type": "temple",
+   "tambon": "เกาะช้าง",
+   "address_or_area": "วัดหิรัญญาวาส เลขที่ 147 บ้านเหมืองแดงน้อย หมู่ 8 ต.เกาะช้าง",
+   "lat": 20.428004,
+   "lon": 99.943898,
+   "location_method": "official_listing_coordinates",
+   "location_evidence": "The ONEP cultural environment register (culturalenvi.onep.go.th/site/detail/6105) lists Wat Hiranyawat at latitude 20.428004, longitude 99.943898. There is no named OSM feature. An unnamed OSM place_of_worship, way 1112594073 at 20.43549, 99.94763, lies about 0.9 km away and is not confirmed as this temple.",
+   "location_confidence": "medium",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 60 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "The temple was formerly called Wat Mueang Daeng Noi. Do not confuse it with Wat Mueang Daeng in ต.แม่สาย.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Wat Hiranyawat shelter held 60 people."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    },
+    {
+     "title": "วัดหิรัญญาวาส - สิ่งแวดล้อมศิลปกรรม",
+     "publisher": "Office of Natural Resources and Environmental Policy and Planning (ONEP)",
+     "url": "https://culturalenvi.onep.go.th/site/detail/6105",
+     "date": "accessed 2026-09-27",
+     "quote_or_paraphrase": "Register entry with lat 20.428004, lon 99.943898, Tambon Ko Chang."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R13",
+   "name_th": "ศูนย์พักพิงวัดป่าซางงาม",
+   "name_en": "Wat Pa Sang Ngam shelter",
+   "type": "temple",
+   "tambon": "เกาะช้าง",
+   "address_or_area": "วัดป่าซางงาม หมู่ 6 ต.เกาะช้าง (sangkhatikan registry, as summarised in search results)",
+   "lat": null,
+   "lon": null,
+   "location_method": "unknown",
+   "location_evidence": "Overpass and Nominatim searches for 'ซางงาม'/'ป่าซางงาม' in the Mae Sai bbox found no OSM feature. Only the tambon and village number are known, and they need geocoding.",
+   "location_confidence": "low",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 150 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "This was the second-largest temple shelter on the 15 Sep list. Other temples named Wat Pa Sang Ngam exist in Lamphun and Doi Luang, so geocode it carefully to Ko Chang, Mae Sai.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Wat Pa Sang Ngam shelter held 150 people."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R14",
+   "name_th": "ศูนย์พักพิงวัดป่าแดง",
+   "name_en": "Wat Pa Daeng shelter",
+   "type": "temple",
+   "tambon": "เกาะช้าง (probable)",
+   "address_or_area": "Possibly วัดป่าแดงหลวง, 145 บ้านป่าแดงหลวง หมู่ 11 ต.เกาะช้าง. That identification comes from a temple-registry search result and is unconfirmed.",
+   "lat": null,
+   "lon": null,
+   "location_method": "unknown",
+   "location_evidence": "There is no named OSM temple feature. An OSM village node 'บ้านป่าแดง' (13031012419, 20.43969, 99.95515) exists, but which temple is meant is unconfirmed, so I left coordinates null.",
+   "location_confidence": "low",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 80 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "The list also has a separate line for 'บ้านป่าแดง' (village), below.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Wat Pa Daeng shelter held 80 people."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R15",
+   "name_th": "ศูนย์พักพิงบ้านป่าแดง",
+   "name_en": "Ban Pa Daeng (village) shelter",
+   "type": "other",
+   "tambon": "เกาะช้าง (probable)",
+   "address_or_area": "บ้านป่าแดง (the building is not specified; probably a village hall or similar)",
+   "lat": 20.4396879,
+   "lon": 99.9551471,
+   "location_method": "approximate_from_description",
+   "location_evidence": "OSM village node 13031012419 'บ้านป่าแดง' (place=village), https://www.openstreetmap.org/node/13031012419 . This is a village point, not the building. An OSM Christian church 'คริสตจักรศรีชัยภูมิ' (way 374815115, 20.43716, 99.95948) is about 0.5 km away.",
+   "location_confidence": "low",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 70 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "Treat this as a community-level point. The Mae Sai Mittraphap municipal village list does not include Ban Pa Daeng, which supports the Ko Chang attribution, but that is still unverified.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Ban Pa Daeng shelter held 70 people."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R16",
+   "name_th": "ศูนย์พักพิงโบสถ์คริสต์บ้านผาฮี้ (15 ก.ย. ระบุเพียง 'โบสถ์คริสต์')",
+   "name_en": "Christian church shelter, Ban Pha Hi",
+   "type": "other",
+   "tambon": "โป่งงาม (Ban Pha Hi is Moo 10, ต.โป่งงาม, per the Pong Ngam SAO gallery page title)",
+   "address_or_area": "บ้านผาฮี้ หมู่ 10 ต.โป่งงาม (the church building is not mapped)",
+   "lat": 20.3613384,
+   "lon": 99.8321376,
+   "location_method": "approximate_from_description",
+   "location_evidence": "OSM village node 11757885951 'บ้านผาฮี้' (place=village), https://www.openstreetmap.org/node/11757885951 . This is a village point, not the church. Overpass found no church mapped in Ban Pha Hi.",
+   "location_confidence": "low",
+   "period_used": "The 2024-09-21 list names it as 'โบสถ์คริสต์บ้านผาฮี้' with 37 people. The ICC report covering 9-15 Sep lists an unnamed 'โบสถ์คริสต์' with 40 people, which may be the same church. It is not listed on 2024-09-28.",
+   "reported_capacity_or_occupancy": "Occupancy: 40 (unnamed church, about 2024-09-15) and 37 (Pha Hi church, 2024-09-21)",
+   "evidence_strength": "single_media",
+   "notes": "Ban Pha Hi is an Akha hill village about 10 km south-west of the Sai River flood zone. Why evacuees were housed there (for example church networks, or displaced riverside residents) is not stated. It is uncertain whether the 15 Sep church is the same one.",
+   "sources": [
+    {
+     "title": "น้ำท่วมเชียงราย กระทบพื้นที่เกษตรไปแล้ว 14,138 ไร่ ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/flooding-in-chiang-rai-has-affected-14138-rai-of-agricultural-land-and-31-schools/",
+     "date": "2024-09-22",
+     "quote_or_paraphrase": "As of 21 Sep, 37 people remained at the Ban Pha Hi church shelter."
+    },
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: a 'Christian church' shelter (not named) held 40 people."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R17",
+   "name_th": "ศูนย์พักพิงบ้านสันหลวงใต้",
+   "name_en": "Ban San Luang Tai (village) shelter",
+   "type": "other",
+   "tambon": "เกาะช้าง (probable, like Ban San Luang)",
+   "address_or_area": "บ้านสันหลวงใต้ (the building is not specified)",
+   "lat": null,
+   "lon": null,
+   "location_method": "unknown",
+   "location_evidence": "There is no OSM feature for Ban San Luang Tai. The nearest named feature is the OSM village node 'บ้านสันหลวง' (13031012417, 20.40974, 99.96759), which I did not use because 'Tai' (south) is a separate village.",
+   "location_confidence": "low",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 50 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "This is a village-level point, and the building type is unknown.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Ban San Luang Tai shelter held 50 people."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R18",
+   "name_th": "ศูนย์พักพิงวัดสันหลวง",
+   "name_en": "Wat San Luang shelter",
+   "type": "temple",
+   "tambon": "เกาะช้าง",
+   "address_or_area": "วัดสันหลวง เลขที่ 96 บ้านสันหลวง หมู่ 4 ต.เกาะช้าง (temple registry via search result)",
+   "lat": 20.4097369,
+   "lon": 99.9675875,
+   "location_method": "approximate_from_description",
+   "location_evidence": "OSM village node 13031012417 'บ้านสันหลวง' (place=village), https://www.openstreetmap.org/node/13031012417 . This is the village point. The temple itself is not in OSM by name.",
+   "location_confidence": "low",
+   "period_used": "Listed on the ICC report covering 9-15 Sep 2024. It is not listed on 2024-09-21.",
+   "reported_capacity_or_occupancy": "Occupancy: 48 (about 2024-09-15)",
+   "evidence_strength": "multiple_media",
+   "notes": "The address (Moo 4, Ko Chang) comes from a search-engine summary of the ClassStart temple book page, which I did not open directly. Treat the tambon as probable.",
+   "sources": [
+    {
+     "title": "ศูนย์บัญชาการเหตุการณ์ฯ สรุปสถานการณ์อุทกภัย เชียงราย ...",
+     "publisher": "สวพ.FM91",
+     "url": "https://www.fm91bkk.com/newsarticle/36977",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "ICC list: the Wat San Luang shelter held 48 people."
+    },
+    {
+     "title": "สรุปน้ำท่วม 7 วัน ใน จ.เชียงราย ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/summary-of-flooding-over-7-days-in-chiang-rai-province-53209-households-affected/",
+     "date": "2024-09-16",
+     "quote_or_paraphrase": "The same ICC list includes this site."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-15 or earlier",
+   "in_access_set": true,
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+  },
+  {
+   "id": "R19",
+   "name_th": "ศูนย์พักพิงบ้านเอื้ออาทรแม่สาย 1 (ในความดูแลของกระทรวง พม.)",
+   "name_en": "Baan Ua-Arthorn Mae Sai 1 housing project shelter (Ministry of Social Development and Human Security, MSDHS)",
+   "type": "other",
+   "tambon": "โป่งผา",
+   "address_or_area": "โครงการบ้านเอื้ออาทรจังหวัดเชียงราย (แม่สาย 1), ต.โป่งผา",
+   "lat": 20.382234,
+   "lon": 99.900292,
+   "location_method": "geocoded_address",
+   "location_evidence": "The coordinates come from the Baania real-estate project page for 'บ้านเอื้ออาทรจังหวัดเชียงราย (แม่สาย 1)', a commercial listing I did not verify. Nominatim reverse at this point returns the road 'ถนนบ้านน้ำจำ-บ้านสันโค้ง' (way 93038659). There is no OSM landuse or named feature for the project.",
+   "location_confidence": "low",
+   "period_used": "MSDHS had prepared it as a shelter by 2024-09-14 (capacity 50). It housed 17 people on 2024-09-21 and is not listed on 2024-09-28.",
+   "reported_capacity_or_occupancy": "Capacity 50 (MSDHS, 2024-09-14). Occupancy 17 (2024-09-21). MSDHS also prepared 'แม่สาย 2' (capacity 50), but I found no occupancy reported for it.",
+   "evidence_strength": "multiple_media",
+   "notes": "This was a shelter for vulnerable groups (elderly, disabled, children). The location is weak, so geocode it properly before use.",
+   "sources": [
+    {
+     "title": "\"วราวุธ\" ส่งทีม พม.ลงพื้นที่น้ำท่วม แก้ปัญหาเดือดร้อนกลุ่มเปราะบาง-คนชรา",
+     "publisher": "Thai PBS",
+     "url": "https://www.thaipbs.or.th/news/content/344197",
+     "date": "2024-09-14",
+     "quote_or_paraphrase": "MSDHS prepared 7 temporary shelters in Chiang Rai, including Baan Ua-Arthorn Mae Sai and Mae Sai 2 (50 people each), plus a kitchen at the Mae Sai 1/2 projects."
+    },
+    {
+     "title": "น้ำท่วมเชียงราย กระทบพื้นที่เกษตรไปแล้ว 14,138 ไร่ ...",
+     "publisher": "nakornchiangrainews",
+     "url": "https://nakornchiangrainews.com/flooding-in-chiang-rai-has-affected-14138-rai-of-agricultural-land-and-31-schools/",
+     "date": "2024-09-22",
+     "quote_or_paraphrase": "As of 21 Sep, 17 people remained at the MSDHS-run Baan Ua-Arthorn Mae Sai 1 shelter."
+    }
+   ],
+   "role": "shelter",
+   "first_use": "2024-09-14",
+   "in_access_set": false,
+   "access_set_note": "Prepared as a shelter for vulnerable groups by 14 Sep, after the peak."
+  }
+ ],
+ "access_set_rule": "The reported_2024 access set counts located sites reported as overnight shelters by 15 Sep; the command centre and sites first used after 12 Sep are shown on the map but not counted. Opening times within 10-12 Sep are not modelled."
+}

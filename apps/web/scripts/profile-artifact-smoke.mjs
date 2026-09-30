@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { relative, resolve, sep } from "node:path";
+import { readCaseReplay, timelineManifestUrl } from "./case-replay-inventory.mjs";
 import { fallbackArtworkUrls, readLandingArtwork, sceneArtworkUrls } from "./landing-artwork-inventory.mjs";
 
 const requested = process.argv[2]?.trim().toLowerCase();
@@ -20,7 +21,7 @@ if (JSON.stringify(deployment.included_surfaces) !== JSON.stringify(expectedSurf
 }
 
 const serviceWorker = readText("sw.js");
-for (const token of ["__BUILD__", "__APP_PROFILE__", "__CACHE_CREATED_AT__", "__PROFILE_CORE_ASSETS__", "__OPTIONAL_LANDING_ARTWORK__"]) {
+for (const token of ["__BUILD__", "__APP_PROFILE__", "__CACHE_CREATED_AT__", "__PROFILE_CORE_ASSETS__", "__OPTIONAL_LANDING_ARTWORK__", "__OPTIONAL_CASE_REPLAY__"]) {
   if (serviceWorker.includes(token)) throw new Error(`Finalized service worker retains ${token}`);
 }
 if (!serviceWorker.includes(`const APP_PROFILE = "${profile}"`)) throw new Error("Service worker profile is incorrect.");
@@ -81,9 +82,11 @@ function validatePublicProduction() {
     "offline-demo/mae-sai/model-evidence",
     "proposal-evidence.json",
     "proposal-evidence-assets",
+    "offline-case-replay.json",
   ]) {
     if (existsSync(resolve(out, excluded))) throw new Error(`Public profile shipped excluded artifact: ${excluded}`);
   }
+  if (!serviceWorker.includes("const OPTIONAL_CASE_REPLAY = [];")) throw new Error("Public service worker carries case-replay files.");
 
   const rootHtml = readText("index.html");
   if (!/class="[^"]*\bpublic-page\b[^"]*"/i.test(rootHtml)) throw new Error("Public root does not render the Public experience.");
@@ -155,9 +158,11 @@ function validateCompetition() {
     "studio/index.html",
     "studio/planning-evidence/index.html",
     "studio/archive/mae-sai-geoai/index.html",
+    "studio/cases/mae-sai-2024/index.html",
     "studio/studies/c2s-ms-20260915/index.html",
     "studio/studies/c2s-ms-20260915/mae-sai/index.html",
     "studies/c2s-ms-20260915/r1/manifest.json",
+    timelineManifestUrl().slice(1),
     "offline-demo/bundle.json",
     "offline-demo/mae-sai/bundle.json",
     "offline-demo/mae-sai/roads.json",
@@ -180,6 +185,19 @@ function validateCompetition() {
   }
   const coreDeclaration = serviceWorker.match(/const CORE_ASSETS = (\[[^;]*\]);/)?.[1];
   if (!coreDeclaration || JSON.parse(coreDeclaration).some((url) => url.startsWith("/landing/"))) throw new Error("Optional artwork was added to blocking installation.");
+  // The case replay: its route is precached, its data is a deferred bucket derived from its manifest.
+  const caseReplay = readCaseReplay(out);
+  const coreUrls = JSON.parse(coreDeclaration);
+  if (!coreUrls.includes(caseReplay.route)) throw new Error("The case-replay route is not precached.");
+  if (coreUrls.some((url) => url.startsWith("/studies/"))) throw new Error("Case-replay data was added to blocking installation.");
+  const workerReplay = serviceWorker.match(/const OPTIONAL_CASE_REPLAY = (\[[^;]*\]);/)?.[1];
+  if (!workerReplay || JSON.stringify(JSON.parse(workerReplay)) !== JSON.stringify(caseReplay.assets.map(({ url, sha256 }) => ({ url, sha256 })))) {
+    throw new Error("The worker's deferred case-replay files do not match the built manifest inventory.");
+  }
+  for (const asset of caseReplay.assets) {
+    const body = readFileSync(resolve(out, asset.url.slice(1)));
+    if (createHash("sha256").update(body).digest("hex") !== asset.sha256 || body.byteLength !== asset.bytes) throw new Error(`Case-replay file lacks build integrity: ${asset.url}`);
+  }
   for (const asset of artwork) {
     requirePath(asset.url.slice(1));
     const actualHash = createHash("sha256").update(readFileSync(resolve(out, asset.url.slice(1)))).digest("hex");

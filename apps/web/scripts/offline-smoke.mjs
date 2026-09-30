@@ -1,5 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
+
+import { readCaseReplay } from "./case-replay-inventory.mjs";
 
 const out = resolve(process.cwd(), "out");
 const routeFiles = ["index.html", "public/index.html", "command/index.html", "studio/index.html", "studio/planning-evidence/index.html"];
@@ -187,6 +190,32 @@ if (JSON.stringify(bundle).match(/(?:[A-Za-z]:[\\/](?:Users|home|private)[\\/]|\
   throw new Error("Offline bundle contains a private absolute path");
 }
 
+// Case replay: the route is precached with the app; its data is a deferred, opt-in bucket derived from the
+// timeline manifest at build time and verified by hash before the worker stores it.
+const caseReplay = readCaseReplay(out);
+const caseHtml = readFileSync(resolve(out, caseReplay.route.slice(1), "index.html"), "utf8");
+for (const expected of [/Mae Sai flood, September 2024/, /not real-time, not an official warning/]) {
+  if (!expected.test(caseHtml)) throw new Error(`Case-replay route lacks ${expected}`);
+}
+const caseResources = [...caseHtml.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"/gi)].map((match) => match[1]);
+if (caseResources.some((url) => /^https?:\/\//i.test(url))) throw new Error("Case-replay route has external runtime resources");
+if (!serviceWorker.includes(`"${caseReplay.route}"`)) throw new Error("Service worker does not precache the case-replay route");
+const workerCaseReplay = serviceWorker.match(/const OPTIONAL_CASE_REPLAY = (\[[^;]*\]);/)?.[1];
+if (!workerCaseReplay || JSON.stringify(JSON.parse(workerCaseReplay)) !== JSON.stringify(caseReplay.assets.map(({ url, sha256 }) => ({ url, sha256 })))) {
+  throw new Error("Service worker's deferred case-replay files do not match the manifest inventory");
+}
+const workerCore = JSON.parse(serviceWorker.match(/const CORE_ASSETS = (\[[^;]*\]);/)?.[1] ?? "[]");
+if (caseReplay.assets.some((asset) => workerCore.includes(asset.url))) throw new Error("Case-replay data was added to blocking installation");
+if (!serviceWorker.includes('"FLOODGUARD_CACHE_CASE_REPLAY"') || !serviceWorker.includes('"FLOODGUARD_CASE_REPLAY_STATUS"')) {
+  throw new Error("Service worker cannot save the case replay on request");
+}
+for (const asset of caseReplay.assets) {
+  const body = readFileSync(resolve(out, asset.url.slice(1)));
+  if (createHash("sha256").update(body).digest("hex") !== asset.sha256 || body.byteLength !== asset.bytes) {
+    throw new Error(`Case-replay file differs from its manifest: ${asset.url}`);
+  }
+}
+
 const proposalEvidencePath = resolve(out, "proposal-evidence.json");
 if (existsSync(proposalEvidencePath)) {
   const proposalEvidence = JSON.parse(readFileSync(proposalEvidencePath, "utf8"));
@@ -202,4 +231,4 @@ if (existsSync(proposalEvidencePath)) {
   }
 }
 
-console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; internal safety contracts retained and no external runtime resources`);
+console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1_048_576).toFixed(1)} MB, opt-in); internal safety contracts retained and no external runtime resources`);

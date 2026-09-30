@@ -11,10 +11,13 @@ import { StudioLibrary } from "./studio-library";
 describe("separate Studio evidence homes", () => {
   it("directs visitors to each study without borrowing Mae Sai planning status or model scores", () => {
     const html = renderToStaticMarkup(<StudioLibrary />);
-    for (const href of ["/studio/studies/c2s-ms-20260915/", "/studio/studies/c2s-ms-20260915/mae-sai/", "/studio/planning-evidence/", "/studio/archive/mae-sai-geoai/"]) {
+    for (const href of ["/studio/studies/c2s-ms-20260915/", "/studio/studies/c2s-ms-20260915/mae-sai/", "/studio/cases/mae-sai-2024/", "/studio/planning-evidence/", "/studio/archive/mae-sai-geoai/"]) {
       expect(html).toContain(`href="${href}"`);
     }
     expect(html).toContain("Local accuracy unmeasured");
+    expect(html).toContain("Model reconstruction · low confidence");
+    expect(html.indexOf("02 · CASE REPLAY")).toBeLessThan(html.indexOf("03 · GOVERNED EVIDENCE"));
+    expect(html).toContain("04 · ARCHIVE");
     expect(html).not.toMatch(/IoU|evidence-context-title|mae-sai-candidate-2024-09-15-v1/);
   });
 

@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   icons: { icon: "/floodguard-logo.png" },
 };
 
+/** Pages where the floating app-status pill would cover the page's own map and timeline controls: it hides itself there. */
+const AUTO_HIDE_AVAILABILITY_PATHS = ["/studio/cases/"] as const;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -26,5 +29,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><a className="skip-link" href="#main-content">Skip to content</a>{children}<PwaRegister /></body></html>;
+  return <html lang="en"><body><a className="skip-link" href="#main-content">Skip to content</a>{children}<PwaRegister autoHidePaths={AUTO_HIDE_AVAILABILITY_PATHS} /></body></html>;
 }

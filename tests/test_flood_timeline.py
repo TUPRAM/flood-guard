@@ -20,10 +20,11 @@ from floodguard.flood_timeline import (
     encode_hand,
     flooded_area_km2,
     road_state,
+    sentinel2_l2a_reflectance,
     stage_at,
 )
 
-MANIFEST = Path(__file__).resolve().parents[1] / "apps/web/public/studies/mae-sai-2024-timeline/r3/timeline.json"
+MANIFEST = Path(__file__).resolve().parents[1] / "apps/web/public/studies/mae-sai-2024-timeline/r4/timeline.json"
 
 
 def test_stage_hits_keyframes_at_local_noon_and_clamps() -> None:
@@ -99,6 +100,19 @@ def test_depth_factor_and_scaled_depth() -> None:
     assert depth_at_stage(codes, 2.0, np.array([0.5, 0.5])).tolist() == pytest.approx([1.0, 0.5])
 
 
+def test_sentinel2_reflectance_is_dn_over_10000_with_no_offset_subtracted() -> None:
+    dn = np.array([0, 1, 357, 592, 1000, 2500, 10000], dtype=np.uint16)
+    reflectance = sentinel2_l2a_reflectance(dn)
+    assert reflectance.dtype == np.float32
+    assert np.isnan(reflectance[0])  # DN 0 is no data.
+    assert reflectance[1:].tolist() == pytest.approx([0.0001, 0.0357, 0.0592, 0.1, 0.25, 1.0], rel=1e-6)
+    # The Earth Search files already have the baseline-04.00 offset removed. Subtracting 1000 again would turn
+    # DN 1000 into 0 and every darker pixel (vegetation red is about DN 310-360 here) into a negative reflectance.
+    assert reflectance[4] == pytest.approx(0.1) and reflectance[4] != 0.0
+    assert (reflectance[1:] > 0).all()
+    assert sentinel2_l2a_reflectance(np.array([[592.0, 0.0]])).shape == (1, 2)
+
+
 @pytest.mark.skipif(not MANIFEST.exists(), reason="baked manifest not present")
 def test_baked_manifest_is_honest_and_consistent() -> None:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
@@ -139,3 +153,5 @@ def test_baked_manifest_is_honest_and_consistent() -> None:
     assert all((r["lat"] is None) == (r["model_check"] is None) for r in reported)
     anchor = manifest["s1_anchor"]
     assert abs(anchor["reconstruction_stage_at_pass_m"] - anchor["best_fit_stage_m"]) <= 0.05
+    # The recession keyframes were tuned to that pass, so the radar comparison is never an independent check.
+    assert anchor["role"] == "calibration_informed_magnitude_check" and "not an independent check" in anchor["use"]

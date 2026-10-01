@@ -182,6 +182,7 @@ function PolicyEvidence({ language }: { language: Language }) {
   const coverage = evidence.reconstructionCoverage;
   const share = percent(evidence.reconstructionCoverageShare);
   const km2 = `${coverage.modelledKm2} ${t("of", "จาก")} ${coverage.districtKm2} ${t("km²", "ตร.กม.")}`;
+  const current = evidence.currentReplay.revision;
   const chip = t(evidence.scoreLabel.en, evidence.scoreLabel.th);
   const [superseded] = evidence.supersededLabels;
   return <article className={styles.evidenceCard} data-testid="worked-example" aria-labelledby="worked-example-title">
@@ -193,8 +194,8 @@ function PolicyEvidence({ language }: { language: Language }) {
       <h4>{t("Read this before any number", "โปรดอ่านก่อนดูตัวเลข")}</h4>
       <ul>
         <li><strong>{t("r2 reconstruction.", "การจำลองรุ่น r2")}</strong> {t(
-          `Computed on r2, which modelled ${share} of the district (${km2}): its elevation tile stopped at 100°E, leaving parts of Ko Chang and Si Mueang Chum out. r3, the current replay, covers 100%.`,
-          `คำนวณบนการจำลองรุ่น r2 ซึ่งครอบคลุม ${share} ของอำเภอ (${km2}) เพราะแผ่นข้อมูลความสูงที่ใช้สิ้นสุดที่ลองจิจูด 100°E บางส่วนของตำบลเกาะช้างและศรีเมืองชุมจึงไม่ได้จำลอง การย้อนดูปัจจุบัน (r3) ครอบคลุม 100%`,
+          `Computed on r2, which modelled ${share} of the district (${km2}): its elevation tile stopped at 100°E, leaving parts of Ko Chang and Si Mueang Chum out. ${current}, the current replay, covers 100%.`,
+          `คำนวณบนการจำลองรุ่น r2 ซึ่งครอบคลุม ${share} ของอำเภอ (${km2}) เพราะแผ่นข้อมูลความสูงที่ใช้สิ้นสุดที่ลองจิจูด 100°E บางส่วนของตำบลเกาะช้างและศรีเมืองชุมจึงไม่ได้จำลอง การย้อนดูปัจจุบัน (${current}) ครอบคลุม 100%`,
         )}</li>
         <li><strong>{t("Pre-D4 anchors.", "จุดอ้างอิงก่อน D4")}</strong> {t(
           "Its anchors (replay_fpps_anchor_v1) differ from the signed scoring frame (D4): flood saturates at 0.25 instead of 0.20; exposure mixes a share with a 5,000-person headcount instead of using the share only; vulnerability is a terrain/remoteness proxy at 0.25 instead of national P10/P90 anchors of the dependent share. Access and road criticality are defined differently too (table below).",
@@ -216,7 +217,7 @@ function PolicyEvidence({ language }: { language: Language }) {
     </p>
     <div className={styles.evidenceBottom}><b aria-hidden="true">E</b><p><strong>{t("All eight areas: Class E, monitor and verify.", "ทั้งแปดตำบล: ระดับ E ติดตามและตรวจสอบ")} {t(E_NEVER_SAFE.en, E_NEVER_SAFE.th)}</strong><br />{t("Low confidence forces E: monitor and obtain better evidence before action. These are illustrative planning estimates, not observed impacts or operational approval.", "ความเชื่อมั่นต่ำทำให้เป็นระดับ E: ติดตามและหาหลักฐานที่ดีขึ้นก่อนดำเนินการ ตัวเลขเหล่านี้เป็นค่าประมาณเพื่ออธิบายการวางแผน ไม่ใช่ผลกระทบที่ตรวจวัดหรือการอนุมัติปฏิบัติการ")}</p></div>
     <details className={`${styles.details} ${styles.studyDetails}`}><summary>{t("All eight areas, method & source", "ทั้งแปดตำบล วิธีการ และแหล่งข้อมูล")}<span aria-hidden="true">+</span></summary><div>
-      <p>{t("Reproduced once, on 29 September 2026, from the committed 28 September method and its original r2 inputs. The current replay (r3) computes no FPPS and assigns no class (D7), so these numbers are not refreshed from it; they will be replaced by D4/v1 planning-assessment results after protocol v1b is hashed.", "คำนวณซ้ำครั้งเดียวเมื่อ 29 กันยายน 2569 จากวิธีที่บันทึกไว้เมื่อ 28 กันยายน และข้อมูล r2 เดิม การย้อนดูปัจจุบัน (r3) ไม่คำนวณ FPPS และไม่กำหนดระดับ (D7) จึงไม่ได้ปรับตัวเลขเหล่านี้จาก r3 และจะแทนที่ด้วยผลการประเมินเพื่อการวางแผนตาม D4/v1 หลังบันทึกค่าแฮชของโปรโตคอล v1b")}</p>
+      <p>{t(`Reproduced once, on 29 September 2026, from the committed 28 September method and its original r2 inputs. The current replay (${current}) computes no FPPS and assigns no class (D7), so these numbers are not refreshed from it; they will be replaced by D4/v1 planning-assessment results after protocol v1b is hashed.`, `คำนวณซ้ำครั้งเดียวเมื่อ 29 กันยายน 2569 จากวิธีที่บันทึกไว้เมื่อ 28 กันยายน และข้อมูล r2 เดิม การย้อนดูปัจจุบัน (${current}) ไม่คำนวณ FPPS และไม่กำหนดระดับ (D7) จึงไม่ได้ปรับตัวเลขเหล่านี้จาก ${current} และจะแทนที่ด้วยผลการประเมินเพื่อการวางแผนตาม D4/v1 หลังบันทึกค่าแฮชของโปรโตคอล v1b`)}</p>
       <p className={styles.rankingsCaption} data-testid="worked-example-rankings-caption"><span className={styles.chip}>{chip}</span>{t("All eight are Class E because confidence is low.", "ทั้งแปดตำบลเป็นระดับ E เพราะความเชื่อมั่นต่ำ")} {t(E_NEVER_SAFE.en, E_NEVER_SAFE.th)}</p>
       <ol className={styles.rankings} aria-label={t("Pre-D4 scenario FPPS for all eight subdistricts; all Class E", "FPPS ตามสถานการณ์ก่อน D4 ทั้งแปดตำบล ทุกตำบลระดับ E")}>{evidence.rankings.map((row) => <li key={row.id}><span>{t(row.name, row.nameTh)}</span><i aria-hidden="true"><span style={{ width: `${row.score}%` }} /></i><b>{row.score.toFixed(2)}</b><span>{row.actionClass}</span></li>)}</ol>
       <dl className={styles.metadata}>
@@ -238,11 +239,11 @@ function PolicyEvidence({ language }: { language: Language }) {
 
 /** One line on the replay that is live now, which is a narrative surface (D7), not a scored case. */
 function ReplayLink({ t }: { t: Translate }) {
-  const { calibrationAnchor, calibrationInformedCheck } = POLICY_EVIDENCE.currentReplay;
+  const { calibrationAnchor, calibrationInformedCheck, revision } = POLICY_EVIDENCE.currentReplay;
   return <div className={styles.replayLink} data-testid="replay-link">
-    <p><strong>{t("Current replay (r3):", "การย้อนดูปัจจุบัน (r3):")}</strong> {t(
-      `T1 scenario model with 100% district coverage, shown beside observed VIIRS flood maps, rain gauges and satellite imagery. GISTDA’s 10 Sep flooded-area figure (about ${calibrationAnchor.reportedKm2} km²) sets a stage knot, so it is a calibration anchor, and the UNOSAT 3991 size check is calibration-informed, not independent (${calibrationInformedCheck.decision}). It computes no FPPS and assigns no class (D7).`,
-      `แบบจำลองสถานการณ์ระดับ T1 ครอบคลุมอำเภอ 100% แสดงคู่กับแผนที่น้ำท่วม VIIRS สถานีวัดฝน และภาพดาวเทียมที่สังเกตการณ์จริง ตัวเลขพื้นที่น้ำท่วมของจิสด้าวันที่ 10 ก.ย. (ประมาณ ${calibrationAnchor.reportedKm2} ตร.กม.) ใช้ปรับจุดระดับน้ำ จึงเป็นจุดอ้างอิงที่ใช้ปรับแบบจำลอง และการตรวจขนาดกับ UNOSAT 3991 มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ (${calibrationInformedCheck.decision}) การย้อนดูนี้ไม่คำนวณ FPPS และไม่กำหนดระดับ (D7)`,
+    <p><strong>{t(`Current replay (${revision}):`, `การย้อนดูปัจจุบัน (${revision}):`)}</strong> {t(
+      `T1 scenario model with 100% district coverage, shown beside observed VIIRS flood maps, rain gauges and satellite imagery. GISTDA’s 10 Sep flooded-area figure (about ${calibrationAnchor.reportedKm2} km²) sets a stage knot, so it is a calibration anchor, and the UNOSAT 3991 size check is calibration-informed, not independent (${calibrationInformedCheck.decision}). The 16 Sep Sentinel-1 radar pass was used to tune the recession, so that size comparison is calibration-informed too. It computes no FPPS and assigns no class (D7).`,
+      `แบบจำลองสถานการณ์ระดับ T1 ครอบคลุมอำเภอ 100% แสดงคู่กับแผนที่น้ำท่วม VIIRS สถานีวัดฝน และภาพดาวเทียมที่สังเกตการณ์จริง ตัวเลขพื้นที่น้ำท่วมของจิสด้าวันที่ 10 ก.ย. (ประมาณ ${calibrationAnchor.reportedKm2} ตร.กม.) ใช้ปรับจุดระดับน้ำ จึงเป็นจุดอ้างอิงที่ใช้ปรับแบบจำลอง และการตรวจขนาดกับ UNOSAT 3991 มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ (${calibrationInformedCheck.decision}) ภาพเรดาร์ Sentinel-1 วันที่ 16 ก.ย. ใช้ปรับช่วงน้ำลด การเทียบขนาดกับภาพนั้นจึงมีส่วนในการปรับแบบจำลองเช่นกัน การย้อนดูนี้ไม่คำนวณ FPPS และไม่กำหนดระดับ (D7)`,
     )}</p>
     <a href={MAE_SAI_REPLAY_ROUTE}>{t("Open the Mae Sai replay", "เปิดการย้อนดูแม่สาย")} <span aria-hidden="true">↗</span></a>
   </div>;

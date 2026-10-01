@@ -151,6 +151,26 @@ try {
   // The 42 OpenStreetMap key facilities start hidden (the layer switch keeps them available).
   await expect(page.locator(".leaflet-fg-facilities-pane .leaflet-interactive")).toHaveCount(0);
   checks.push("Play, readout and map above the fold; layer controls folded into a drawer; low-confidence water in the on-map legend and the evidence");
+  // Evidence envelope: the status and generation time, a licence per input, what was known during tuning, and the
+  // radar line labelled calibration-informed. Both boxes are closed again so the layout below is unchanged.
+  const howTo = page.getByTestId("how-to-read");
+  await howTo.locator("summary").click();
+  await expect(page.getByTestId("how-to-status")).toContainText("Status: non-operational");
+  await expect(page.getByTestId("how-to-status").getByTestId("generated-at")).toHaveText(/Data files generated: \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} ICT\./);
+  await howTo.locator("summary").click();
+  const sourcesPanel = page.getByTestId("sources-panel");
+  await sourcesPanel.locator("summary").click();
+  const licences = sourcesPanel.getByTestId("licences-by-input");
+  await expect(licences).toBeVisible();
+  for (const licence of ["CC BY-NC", "ODbL 1.0", "CC BY 4.0", "CC BY-IGO", "No licence stated by the provider", "CC BY-SA 4.0"]) await expect(licences).toContainText(licence);
+  await expect(licences.locator("li[data-shown='false']")).toHaveCount(1);
+  await expect(licences.locator("li[data-shown='false']")).toContainText("Not yet shown; rights record pending owner confirmation.");
+  await expect(sourcesPanel.getByTestId("tuning-disclosure").locator("li[data-relation='used_for_tuning']")).toHaveCount(2);
+  await expect(sourcesPanel.getByTestId("sources-footer")).toContainText("status: non-operational · Data files generated:");
+  await sourcesPanel.locator("summary").click();
+  await expect(page.getByText("Radar size comparison (Sentinel-1", { exact: false })).toContainText("calibration-informed, not an independent check");
+  await expect(page.getByText("Radar check", { exact: false })).toHaveCount(0);
+  checks.push("evidence fields on the page: non-operational status, generation time, licence per input with product 4009 not shown, tuning disclosure, calibration-informed radar line");
   await slider.fill("84");
   await expect(readout).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
   await expect(page).toHaveURL(/[?&]t=84(&|$)/);
@@ -399,8 +419,11 @@ try {
   const touchChips = await touchPage.getByRole("group", { name: "ไปยังวัน (เที่ยงวันเวลาท้องถิ่น)" }).getByRole("button")
     .evaluateAll((buttons) => buttons.map((button) => Math.round(button.getBoundingClientRect().height)));
   assert(touchChips.length === 11 && touchChips.every((height) => height >= 40), `Day chips are finger-sized on touch: ${touchChips}`);
+  await touchPage.getByTestId("how-to-read").locator("summary").click();
+  await expect(touchPage.getByTestId("how-to-status")).toContainText("สถานะ: ไม่ใช้ในการปฏิบัติการ");
+  await expect(touchPage.getByTestId("how-to-status").getByTestId("generated-at")).toHaveText(/สร้างไฟล์ข้อมูลเมื่อ \d{1,2} \S+ 25\d{2} \(20\d{2}\) \d{2}:\d{2} น\./);
   await touch.close();
-  checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips");
+  checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips, non-operational status and generation time in Thai");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

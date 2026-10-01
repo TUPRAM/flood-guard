@@ -338,7 +338,7 @@ describe("Mae Sai shelter plan and reported shelters", () => {
 
   it("marks shelter sites outside the terrain model from the manifest's m flag", () => {
     const outside = shelters.candidates.filter((candidate) => !siteModelled(candidate)).map((candidate) => candidate.id).sort();
-    // The model flag and the screening reason agree, and (with both DEM tiles in r3) the only unmodelled sites are
+    // The model flag and the screening reason agree, and (with both DEM tiles, r3 on) the only unmodelled sites are
     // those outside the replay grid itself.
     expect(outside.length).toBeGreaterThan(0);
     expect(outside).toEqual(shelters.candidates.filter((candidate) => candidate.ineligible_reasons.includes("outside_model")).map((candidate) => candidate.id).sort());

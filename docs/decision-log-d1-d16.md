@@ -43,6 +43,7 @@ Putu gave these in the same Claude Code session, after reading the roadmap draft
 2. **Protocol hash.** Hash protocol v1a into `RECEIPTS.jsonl` on the `codex/thai-event-selection` lineage. That happens there, not on the replay branch.
 3. **Open items.** Supply the original wording of D5, D8, D10 and D14–D16, or record them as withdrawn.
 4. **Rights record for 4009 (R5).** Drafted on 1 Oct 2026 as `docs/proposal_execution/rights_basis_4009_v1.json`, with a licence notice beside it. Its `owner_confirmation.status` is `pending`: both owners still have to read and confirm it. Until they do, a test keeps every 4009-derived file out of `apps/web/public`.
+5. **Replay revision r4 (roadmap P2-1).** Baked on 1 Oct 2026; it replaces r3 in the tree. The manifest keeps R1's label for UNOSAT 3991 and adds a disclosure of what was used or known during tuning: GISTDA's 10 Sep figure and the 16 Sep Sentinel-1 pass were used to set keyframes, so the Sentinel-1 size comparison is labelled calibration-informed too; the VIIRS and product 4009 comparisons were computed after the keyframes were final. It carries no FPPS and no action class (`accepted_*` null, D7) and lists product 4009 as not shown. Putu still has to review the fields and approve the revision.
 
 ## Rachmania's confirmation
 

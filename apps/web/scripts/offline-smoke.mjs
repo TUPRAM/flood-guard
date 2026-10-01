@@ -231,4 +231,4 @@ if (existsSync(proposalEvidencePath)) {
   }
 }
 
-console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1_048_576).toFixed(1)} MB, opt-in); internal safety contracts retained and no external runtime resources`);
+console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in); internal safety contracts retained and no external runtime resources`);

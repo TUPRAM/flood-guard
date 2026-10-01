@@ -1,15 +1,48 @@
 {
  "study_id": "mae-sai-2024-flood-timeline",
- "revision": "r3",
- "schema_version": 1,
+ "revision": "r4",
+ "schema_version": 2,
+ "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
+ "generated_at": "2026-10-01T20:28:00+07:00",
+ "generated_at_basis": "declared",
+ "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
+ "git_commit": null,
+ "git_commit_reason": "self_reference: a file cannot hold the hash of the commit that adds it. The input receipt identifies the bake sources by SHA-256, and git_commit_lookup names the commit.",
+ "git_commit_lookup": "git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/timeline.json",
+ "data_version": "mae-sai-2024-flood-timeline-r4",
+ "dataset_mode": "historical_reconstruction",
  "data_mode": "historical_reconstruction",
+ "operational_status": "non_operational",
  "official_warning": false,
  "real_time": false,
  "can_feed_decision_layer": false,
+ "accepted_fpps": null,
+ "accepted_action_class": null,
+ "protocol_sha256": null,
+ "protocol_sha256_reason": "not_a_protocol_case",
+ "permitted_use": "Preparedness learning, planning exercises and post-event prioritisation discussion in competition and preview builds. Not for emergency response, evacuation orders or any operational decision; not an official warning.",
+ "reason_blocked": "Not a protocol case (decision D7): the replay is a narrative surface. Protocol v1b is not hashed, so no Flood Preparedness Priority Score and no A-E action class is computed here; the accepted score and class stay null and the replay cannot feed the decision layer. Confidence is low and nothing was field-checked.",
  "confidence": "low",
- "confidence_reason": "Water extents are a terrain-model reconstruction with illustrative stages; only the late-recession size is checked against radar, and spatial agreement there is weak.",
- "source_timestamp": "2024-09-05T03:58:19Z/2024-09-15T23:16:01Z",
+ "confidence_class": "low",
+ "confidence_reason": "Water extents are a terrain-model reconstruction with illustrative stages; the late-recession size was tuned to one radar pass rather than checked independently, and spatial agreement there is weak.",
+ "confidence_basis": [
+  "Terrain: HAND on the 30 m Copernicus DSM; buildings and trees bias HAND upward in town.",
+  "Stage: illustrative keyframes shaped to the event chronology; no gauge record.",
+  "Tuning: the onset knot uses GISTDA's 10 Sep figure, the recession keyframes use the 16 Sep Sentinel-1 pass and UNOSAT 3991 was known, so no size comparison is independent.",
+  "Spatial agreement with the Sentinel-1 newly water-like area is weak (IoU 0.07).",
+  "Onset and peak extents were not observed: no high-resolution image for 10-14 Sep, and VIIRS was mostly under cloud.",
+  "Nothing was field-checked."
+ ],
+ "source_name": "FloodGuard Mae Sai September 2024 flood replay: terrain-model reconstruction with dated observations and reported facts",
+ "event_time": {
+  "start": "2024-09-09T00:00:00+07:00",
+  "end": "2024-09-20T00:00:00+07:00",
+  "timezone": "Asia/Bangkok",
+  "note": "Replay window in local time (ICT, UTC+7): 9 Sep 00:00 to 19 Sep 24:00."
+ },
+ "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
+ "source_timestamp_note": "Span of the dated event observations shown: from the Sentinel-2 image of 5 Sep 03:58 UTC to the end of the last HII rain hour (19 Sep 24:00 ICT). Sentinel-1 (6 and 15 Sep UTC) and VIIRS (10-18 Sep) fall inside it. Inputs dated outside the event (elevation 2011-2015, WorldPop 2020, boundaries 2022, OpenStreetMap 2026-07-09, reported shelters compiled 2026-09-27) are dated per evidence block and in sources.",
  "timezone": "Asia/Bangkok (ICT, UTC+7)",
  "area": {
   "en": "Mae Sai District, Chiang Rai, Thailand (the image footprint also covers Tachileik, Myanmar)",
@@ -25,8 +58,587 @@
    100.039491
   ]
  ],
+ "lanes": {
+  "SCN": "Scenario (model): computed on the reconstructed water with stated assumptions; not an observation.",
+  "REP": "Reported: public reporting compiled by the team; not an official register.",
+  "OBS": "Observed: a dated measurement or image, used as provided and shown beside the model.",
+  "CAL": "Calibration: an external figure used to tune the model, or known while it was tuned; agreement with it is not independent evidence.",
+  "SCN-ENV": "Scenario envelope: a season-long extent used as a scenario, never as an observation for a replay day.",
+  "CTX": "Context: static reference data (terrain, boundaries) with its own date.",
+  "REF": "Reference: a cited source this revision has not ingested."
+ },
+ "evidence_blocks": [
+  {
+   "id": "water_reconstruction",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "event_window_reconstruction",
+   "covers": [
+    "hand",
+    "impassable_depth_m",
+    "pixel_area_m2",
+    "stage_anchors",
+    "tambon_coverage",
+    "model_coverage",
+    "tambon_histograms",
+    "days",
+    "facilities_count",
+    "roads_not_modelled_km",
+    "vectors.roads",
+    "vectors.facilities"
+   ],
+   "source_timestamp": "Copernicus DEM (2011-2015 acquisitions); OSM roads and facilities 2026-07-09; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT",
+   "note": "HAND threshold reconstruction with illustrative stage keyframes: modelled water, road and facility impacts; not an observation."
+  },
+  {
+   "id": "residents_in_water",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "static_context",
+   "covers": [
+    "population"
+   ],
+   "source_timestamp": "WorldPop 2020 estimate",
+   "note": "Modelled 2020 residents on the reconstructed water; not the 2024 population."
+  },
+  {
+   "id": "evacuation_access",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "event_window_reconstruction",
+   "covers": [
+    "access"
+   ],
+   "source_timestamp": "OSM roads and sites 2026-07-09; WorldPop 2020; water model 2024-09-09/2024-09-19 ICT",
+   "note": "Walking access to an open, dry shelter on the reconstructed water; not observed evacuation outcomes."
+  },
+  {
+   "id": "shelter_plan",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "event_window_reconstruction",
+   "covers": [
+    "shelters"
+   ],
+   "source_timestamp": "OSM extract 2026-07-09; reconstructed peak 2024-09-12 ICT",
+   "note": "Candidate screening and ranked plan on the reconstructed peak; the reported sites inside this block sit in the reported lane."
+  },
+  {
+   "id": "reported_shelters",
+   "lane": "REP",
+   "evidence_tier": "Reported use from public sources; not an official register",
+   "temporal_relation": "post_event_compilation",
+   "covers": [
+    "shelters.reported"
+   ],
+   "source_timestamp": "reports dated 2024-09-11 to 2024-10-11; compiled 2026-09-27"
+  },
+  {
+   "id": "event_chronology",
+   "lane": "REP",
+   "evidence_tier": "Team summary of public reporting; not independently verified in this study",
+   "temporal_relation": "post_event_compilation",
+   "covers": [
+    "phases"
+   ],
+   "source_timestamp": "compiled 2026-09-27"
+  },
+  {
+   "id": "viirs_daily",
+   "lane": "OBS",
+   "evidence_tier": "Agency flood product, used as provided; unvalidated here",
+   "temporal_relation": "event_aligned",
+   "covers": [
+    "viirs_daily"
+   ],
+   "source_timestamp": "2024-09-10T13:30+07:00/2024-09-18T13:30+07:00 (daily composites, nominal pass time)",
+   "note": "375 m optical flood-water fraction; each day carries its own nominal time and cloud share."
+  },
+  {
+   "id": "sentinel2_20240905",
+   "lane": "OBS",
+   "evidence_tier": "Observed image, shown as acquired; no flood extent is derived from it",
+   "temporal_relation": "pre_event",
+   "covers": [
+    "observations[s2-20240905]",
+    "layers[s2-20240905]"
+   ],
+   "source_timestamp": "2024-09-05T03:58:19Z"
+  },
+  {
+   "id": "sentinel2_20240915",
+   "lane": "OBS",
+   "evidence_tier": "Observed image, shown as acquired; no flood extent is derived from it",
+   "temporal_relation": "event_aligned",
+   "covers": [
+    "observations[s2-20240915]",
+    "layers[s2-20240915]"
+   ],
+   "source_timestamp": "2024-09-15T03:58:15Z"
+  },
+  {
+   "id": "sentinel1_20240906",
+   "lane": "OBS",
+   "evidence_tier": "Observed image, shown as acquired; no flood extent is derived from it",
+   "temporal_relation": "pre_event",
+   "covers": [
+    "observations[s1-20240906]",
+    "layers[s1-20240906]"
+   ],
+   "source_timestamp": "2024-09-06T11:31:06Z"
+  },
+  {
+   "id": "sentinel1_20240915",
+   "lane": "OBS",
+   "evidence_tier": "Observed image, shown as acquired; no flood extent is derived from it",
+   "temporal_relation": "event_aligned",
+   "covers": [
+    "observations[s1-20240915]",
+    "layers[s1-20240915]"
+   ],
+   "source_timestamp": "2024-09-15T23:16:01Z"
+  },
+  {
+   "id": "sentinel1_change",
+   "lane": "OBS",
+   "evidence_tier": "Observed image pair shown as a colour composite; no flood extent is derived from it",
+   "temporal_relation": "pre_event_to_event_pair",
+   "covers": [
+    "layers[s1-change]"
+   ],
+   "source_timestamp": "2024-09-06T11:31:06Z/2024-09-15T23:16:01Z"
+  },
+  {
+   "id": "rainfall",
+   "lane": "OBS",
+   "evidence_tier": "Gauge record, used as provided",
+   "temporal_relation": "event_aligned",
+   "covers": [
+    "rainfall"
+   ],
+   "source_timestamp": "2024-09-09T00:00:00+07:00/2024-09-20T00:00:00+07:00 (hourly)",
+   "note": "Observed rainfall (forcing), not flooding."
+  },
+  {
+   "id": "sentinel1_size_comparison",
+   "lane": "CAL",
+   "evidence_tier": "Calibration-informed size comparison; not an independent check",
+   "temporal_relation": "event_aligned",
+   "covers": [
+    "s1_anchor"
+   ],
+   "source_timestamp": "2024-09-06T11:31:06Z/2024-09-15T23:16:01Z",
+   "note": "The recession keyframes were re-tuned to this pass."
+  },
+  {
+   "id": "gistda_onset_anchor",
+   "lane": "CAL",
+   "evidence_tier": "Calibration anchor; the model agrees with it by construction",
+   "temporal_relation": "event_aligned",
+   "covers": [
+    "external_checks[gistda-radarsat2-20240910]"
+   ],
+   "source_timestamp": "2024-09-10T18:15 (time zone not stated by GISTDA; assumed ICT)"
+  },
+  {
+   "id": "unosat_3991_size_comparison",
+   "lane": "CAL",
+   "evidence_tier": "Calibration-informed magnitude check; not an independent check",
+   "temporal_relation": "event_window_cumulative",
+   "covers": [
+    "external_checks[unosat-3991]"
+   ],
+   "source_timestamp": "2024-09-13/2024-09-19 (cumulative window)"
+  },
+  {
+   "id": "unosat_4009_season_envelope",
+   "lane": "SCN-ENV",
+   "evidence_tier": "Season envelope (scenario), used as provided; unvalidated; not shown in this revision",
+   "temporal_relation": "season_envelope",
+   "covers": [
+    "external_references[unosat-4009]"
+   ],
+   "source_timestamp": "2024-08-01/2024-10-22",
+   "season_window": "2024-08-01/2024-10-22",
+   "shown": false,
+   "note": "Never an observation for a replay day. Shown only after the owners confirm the rights record."
+  },
+  {
+   "id": "terrain_shading",
+   "lane": "CTX",
+   "evidence_tier": "Reference data",
+   "temporal_relation": "static_context",
+   "covers": [
+    "layers[hillshade]"
+   ],
+   "source_timestamp": "Copernicus DEM (2011-2015 acquisitions)"
+  },
+  {
+   "id": "subdistrict_boundaries",
+   "lane": "CTX",
+   "evidence_tier": "Reference data",
+   "temporal_relation": "static_context",
+   "covers": [
+    "vectors.tambons"
+   ],
+   "source_timestamp": "COD-AB valid from 2022-01-22"
+  },
+  {
+   "id": "other_references",
+   "lane": "REF",
+   "evidence_tier": "Cited source; not ingested in this revision",
+   "temporal_relation": "not_ingested",
+   "covers": [
+    "external_references[unosat-3969]",
+    "external_references[charter-912]",
+    "external_references[hii-event-page]"
+   ],
+   "source_timestamp": "event reports of September 2024"
+  }
+ ],
+ "exploratory_knowledge": {
+  "purpose": "Which external figures were used, or already known, while the stage keyframes and the depth factor were set. A figure used or known during tuning cannot serve as an independent check.",
+  "items": [
+   {
+    "id": "gistda-radarsat2-20240910",
+    "relation": "used_for_tuning",
+    "known_during_tuning": true,
+    "statement": "GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (9.9 km2 flooded in Mae Sai) was used on purpose to set the onset stage knot (10 Sep 18:15, 0.1 m)."
+   },
+   {
+    "id": "sentinel-1-20240916",
+    "relation": "used_for_tuning",
+    "known_during_tuning": true,
+    "statement": "The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m), so the radar size comparison is calibration-informed, not an independent check."
+   },
+   {
+    "id": "unosat-3991",
+    "relation": "known_during_tuning",
+    "known_during_tuning": true,
+    "statement": "UNOSAT 3991 (about 70 km2 over 13-19 Sep) was known while the stage keyframes were tuned, so its size comparison is calibration-informed, not independent."
+   },
+   {
+    "id": "viirs-daily",
+    "relation": "computed_after_keyframes_final",
+    "known_during_tuning": false,
+    "statement": "The VIIRS daily comparison was computed after the keyframes were final and was not used for tuning."
+   },
+   {
+    "id": "unosat-4009",
+    "relation": "computed_after_keyframes_final",
+    "known_during_tuning": false,
+    "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision."
+   }
+  ],
+  "depth_factor": "The depth factor k = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.",
+  "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed."
+ },
+ "publication_eligibility": {
+  "status": "conditional",
+  "scope": "Competition and preview builds, non-commercial, with the attributions listed in sources.",
+  "conditions": [
+   "HII rain data are CC BY-NC: the replay as a whole is for non-commercial use, and rain values stay out of any combined table or export.",
+   "The VIIRS provider states no licence: the maps are shown with attribution, and reuse beyond this page is not cleared.",
+   "OpenStreetMap-derived files (roads, facilities, shelter candidates and the access node positions) stay under ODbL 1.0: attribution and share-alike.",
+   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record."
+  ],
+  "inputs": [
+   {
+    "id": "copernicus-dem",
+    "name": "Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)",
+    "licence": "Copernicus DEM licence (free, attribution)",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Use under the Copernicus DEM licence terms, with the DLR and Airbus attribution."
+   },
+   {
+    "id": "sentinel-2",
+    "name": "Sentinel-2 L2A via Earth Search (tile 47QNC)",
+    "licence": "Copernicus Sentinel data terms (free, full and open)",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Use under the Copernicus Sentinel data terms, with the modified-data notice."
+   },
+   {
+    "id": "sentinel-1",
+    "name": "Sentinel-1A IW GRD via Copernicus Data Space Ecosystem",
+    "licence": "Copernicus Sentinel data terms (free, full and open)",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Use under the Copernicus Sentinel data terms, with the modified-data notice."
+   },
+   {
+    "id": "osm",
+    "name": "OpenStreetMap roads and candidate facilities (Geofabrik extract)",
+    "licence": "ODbL 1.0",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Attribution and share-alike: files derived from the OpenStreetMap database stay under ODbL 1.0."
+   },
+   {
+    "id": "worldpop",
+    "name": "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)",
+    "licence": "CC BY 4.0",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Attribution."
+   },
+   {
+    "id": "cod-ab",
+    "name": "HDX Thailand COD-AB subdistrict boundaries v01",
+    "licence": "CC BY-IGO",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Attribution to OCHA / HDX."
+   },
+   {
+    "id": "viirs",
+    "name": "NOAA/GMU VIIRS 375 m daily flood-water fraction (10-18 Sep 2024)",
+    "licence": "No licence stated by the provider",
+    "licence_stated": false,
+    "shown": true,
+    "terms": "Shown with attribution; reuse beyond this page is not cleared."
+   },
+   {
+    "id": "hii-rain",
+    "name": "HII ThaiWater hourly rain gauges MOU189 and DIWO",
+    "licence": "CC BY-NC",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Non-commercial use with attribution; keep rain values out of any combined table or export."
+   },
+   {
+    "id": "reported-shelters",
+    "name": "Shelters reported in use in September 2024 (FloodGuard desk research)",
+    "licence": "Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL).",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Facts quoted with their sources; coordinates matched to OpenStreetMap stay under ODbL 1.0."
+   },
+   {
+    "id": "chronology",
+    "name": "Event chronology (phases and narrative)",
+    "licence": "Project summary text",
+    "licence_stated": true,
+    "shown": true,
+    "terms": "Team summary of public reporting, shown with its compile date."
+   },
+   {
+    "id": "external-figures",
+    "name": "GISTDA 10 Sep 2024 and UNOSAT 3991 reported figures",
+    "licence": "Cited figures with links; no data copied",
+    "licence_stated": false,
+    "shown": true,
+    "terms": "Quoted as reported, with a link to each source."
+   },
+   {
+    "id": "unosat-4009",
+    "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai",
+    "licence": "CC BY-SA 4.0",
+    "licence_stated": true,
+    "shown": false,
+    "status": "Not yet shown; rights record pending owner confirmation.",
+    "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
+    "terms": "Attribution, share-alike and a change notice on every derived file; kept in its own folder."
+   }
+  ]
+ },
+ "input_sha256": [
+  {
+   "root": "external",
+   "path": "cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_20240906T113106_20240906T113131_055544_06C73C_B53D_COG.SAFE.zip",
+   "bytes": 1291994695,
+   "sha256": "023e1fb0bb60614e12ff2f043c0f64a1db2730bfc771f2028f4843898ab282e7"
+  },
+  {
+   "root": "external",
+   "path": "cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_82A9_COG.SAFE.zip",
+   "bytes": 1305373702,
+   "sha256": "e877c075a96f677a70d7e4c0e501686a9d76025b80a4edce084ace76984fbdb9"
+  },
+  {
+   "root": "external",
+   "path": "derived_context/mae_sai_2024/mae_sai_osm_multipolygons.gpkg",
+   "bytes": 3387392,
+   "sha256": "527774a66d9993b5066584ba94124f256321f9d10f6eb321179ee021ec465c0e"
+  },
+  {
+   "root": "external",
+   "path": "derived_context/mae_sai_2024/mae_sai_osm_points_full.gpkg",
+   "bytes": 237568,
+   "sha256": "55350e00d410080fae02a2382151193f9825b9343584fe9f078dadfa3c9afc0e"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/blue.tif",
+   "bytes": 218096139,
+   "sha256": "5ef3970df5afa0c0722a4a2e55e8469b00fd403fbbc9d0b52a86e6e32cd59098"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/green.tif",
+   "bytes": 224435909,
+   "sha256": "bbfead49c36db4cc569ec71504ddd103ed28513c87e354068fa823fa8c1402d1"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/red.tif",
+   "bytes": 220785832,
+   "sha256": "1a4515d50ab222e6f77b936e8285455ea249701e4563a1f3eadcd112dfd04af2"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/blue.tif",
+   "bytes": 220036077,
+   "sha256": "aa058cecc7643f0384ef363d131ea59c3ba6f415e9e1ab7d6d5ec8824d48a7a8"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/green.tif",
+   "bytes": 222041166,
+   "sha256": "36e6eae2c783f37842d3cc3c8cee5be5764b275b186c8adfbf109f21aaec8650"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/red.tif",
+   "bytes": 221362768,
+   "sha256": "dbe241cefd75a7e94f9259aeffe3b8d9b471a0c02b115db09ac38d27a0ac29d8"
+  },
+  {
+   "root": "external",
+   "path": "hii_rain/2024_09/DIWO.csv",
+   "bytes": 42320,
+   "sha256": "04795043c34a7fb91d19cf3bfc46970aa4eade8fa3c5bf2b3689a5068ded723e"
+  },
+  {
+   "root": "external",
+   "path": "hii_rain/2024_09/MOU189.csv",
+   "bytes": 45250,
+   "sha256": "402dbcddb1a2ec647e654aff52b6479a7007080e521a07e57b5368c62287f959"
+  },
+  {
+   "root": "external",
+   "path": "hii_rain/2024_09/main_0all_stn_metadata.csv",
+   "bytes": 435995,
+   "sha256": "a9260351d56bf45087e96b4f47549de8eff23fac13ffc6ca09d33615ce164a2d"
+  },
+  {
+   "root": "external",
+   "path": "hii_rain/2024_09/mou_0all_stn_metadata.csv",
+   "bytes": 86297,
+   "sha256": "30ef035d66b43fa2a857d1bac8b735fe0ff86b4983881f7bce4e4fcbaf971c83"
+  },
+  {
+   "root": "external",
+   "path": "open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif",
+   "bytes": 44909388,
+   "sha256": "8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757"
+  },
+  {
+   "root": "external",
+   "path": "open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif",
+   "bytes": 45691771,
+   "sha256": "353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf"
+  },
+  {
+   "root": "external",
+   "path": "open_context/worldpop_population/tha_ppp_2020.tif",
+   "bytes": 296024584,
+   "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240910_d20240910_4448_4448_7_001day_090.tif.zip",
+   "bytes": 1050942,
+   "sha256": "503c53ca7b52874c29222f46cb59a1966caf337323de6aff8dba5cdbc75e4851"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240911_d20240911_4448_4448_6_001day_090.tif.zip",
+   "bytes": 828349,
+   "sha256": "0219b15e4dc480381d4a43548efd46930b8b4a882a84a65063be925148477bd3"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240912_d20240912_4448_4448_8_001day_090.tif.zip",
+   "bytes": 899264,
+   "sha256": "b49b5b97a7cd485615629128f77db0e569c43b8466559aa30d689664ffbfba83"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240913_d20240913_4448_4448_8_001day_090.tif.zip",
+   "bytes": 1213390,
+   "sha256": "d0a8c0a7b0059c3f86dea15f1659e9c7c532ab7c32d663f4819a5901fc2e6921"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240914_d20240914_4448_4448_10_001day_090.tif.zip",
+   "bytes": 1157496,
+   "sha256": "efb90f889043b1fccd2c4bea604ab98f54b13ff6a02a44f2ab6d214a9e7b1d61"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240915_d20240915_4448_4448_9_001day_090.tif.zip",
+   "bytes": 1398849,
+   "sha256": "d904aa42afcafb6dcc0f67a0a57d79e84f07f3b5dd758620d74bf669e5286857"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240916_d20240916_4448_4448_9_001day_090.tif.zip",
+   "bytes": 1623213,
+   "sha256": "a83e9357d4f465a5d7aae9a16452a29604f48f3bd1d190593328f938ade0fefa"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240917_d20240917_4448_4448_9_001day_090.tif.zip",
+   "bytes": 1537175,
+   "sha256": "025123988b1b1974a0edc28ee643d68f6f831698eabc3e4a0527e71daf4a9201"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240918_d20240918_4448_4448_9_001day_090.tif.zip",
+   "bytes": 1497203,
+   "sha256": "efadba38f8780e12b26d03fc9f1405d18a0ab248fee64995214058205dbb0f54"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_access_edges.csv",
+   "bytes": 4155801,
+   "sha256": "266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_admin_context.geojson",
+   "bytes": 634775,
+   "sha256": "5cd03ca936c188d37704f5249afa87da0c687b967db8a0f9c9ebd72b27204db1"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_facilities.geojson",
+   "bytes": 30059,
+   "sha256": "5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_population_nodes.csv",
+   "bytes": 669882,
+   "sha256": "172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_reported_shelters_2024.json",
+   "bytes": 69754,
+   "sha256": "9865a3db58ec0b6991d85f5d651520838fa67121e7b411dc4b859fc666293f6d"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_road_risk.geojson",
+   "bytes": 4549976,
+   "sha256": "cd8648f8fbaabab14fdf45e9e98fff36d90902580831513be39a5dfe0af4439c"
+  }
+ ],
  "hand": {
-  "href": "/studies/mae-sai-2024-timeline/r3/hand-codes.png",
+  "href": "/studies/mae-sai-2024-timeline/r4/hand-codes.png",
   "sha256": "c787d7792f96355c786c20416f1c3c605a0d83d35c8ad1828258a550598b1147",
   "bytes": 898115,
   "width": 1610,
@@ -772,7 +1384,7 @@
  ],
  "layers": [
   {
-   "href": "/studies/mae-sai-2024-timeline/r3/hillshade.webp",
+   "href": "/studies/mae-sai-2024-timeline/r4/hillshade.webp",
    "sha256": "72dcfb2bc381f398f0e3c225b83d66429d12c009f99c6662c4cf2c5fa563da9f",
    "bytes": 156120,
    "id": "hillshade",
@@ -780,16 +1392,16 @@
    "date": null
   },
   {
-   "href": "/studies/mae-sai-2024-timeline/r3/s2-20240905.webp",
-   "sha256": "40147cebd8f50ea4d5b6cb27c23e58f3181a545481ad84f0439647b5e8fd4cac",
-   "bytes": 713912,
+   "href": "/studies/mae-sai-2024-timeline/r4/s2-20240905.webp",
+   "sha256": "8d4862e3e188f07fcfa4656b10a76c068a91ff4d5dc8244ffd7e19b3f23c8f7c",
+   "bytes": 713848,
    "id": "s2-20240905",
    "kind": "sentinel-2",
    "date": "2024-09-05T03:58:19Z",
    "scene": "S2B_47QNC_20240905_0_L2A"
   },
   {
-   "href": "/studies/mae-sai-2024-timeline/r3/s2-20240915.webp",
+   "href": "/studies/mae-sai-2024-timeline/r4/s2-20240915.webp",
    "sha256": "8a5a92a2219c739f04a02ee72aeaed63ffdbd6856db0ddd38692961847b34618",
    "bytes": 660994,
    "id": "s2-20240915",
@@ -798,7 +1410,7 @@
    "scene": "S2B_47QNC_20240915_0_L2A"
   },
   {
-   "href": "/studies/mae-sai-2024-timeline/r3/s1-20240906-vv.webp",
+   "href": "/studies/mae-sai-2024-timeline/r4/s1-20240906-vv.webp",
    "sha256": "ab87c3b4e1b9a5961dab9a8651aafebac3f68d66a5a0c07b4eab6048730a94d6",
    "bytes": 579094,
    "id": "s1-20240906",
@@ -809,7 +1421,7 @@
    "relative_orbit": 172
   },
   {
-   "href": "/studies/mae-sai-2024-timeline/r3/s1-20240915-vv.webp",
+   "href": "/studies/mae-sai-2024-timeline/r4/s1-20240915-vv.webp",
    "sha256": "71f70a4f6853fd51de8227d8a7657daf8b9a52f5fe7d549044a8b76fceef3604",
    "bytes": 569212,
    "id": "s1-20240915",
@@ -820,7 +1432,7 @@
    "relative_orbit": 135
   },
   {
-   "href": "/studies/mae-sai-2024-timeline/r3/s1-change-rgb.webp",
+   "href": "/studies/mae-sai-2024-timeline/r4/s1-change-rgb.webp",
    "sha256": "a525388efd2c4c4b5b69d7b74c51ccb4a07c83745f4e39d3b1b32f5505c28c0a",
    "bytes": 774848,
    "id": "s1-change",
@@ -830,19 +1442,19 @@
  ],
  "vectors": {
   "tambons": {
-   "href": "/studies/mae-sai-2024-timeline/r3/tambons.geojson",
+   "href": "/studies/mae-sai-2024-timeline/r4/tambons.geojson",
    "sha256": "5d1f8cd8364b443324a3a8b3ba2c8a16d2d384a149a437d15036821c272f9d69",
    "bytes": 45534,
    "features": 8
   },
   "roads": {
-   "href": "/studies/mae-sai-2024-timeline/r3/roads.geojson",
+   "href": "/studies/mae-sai-2024-timeline/r4/roads.geojson",
    "sha256": "e6529472904d65b043c051a8dedd3f92f1416cb41acdd4ea6bc3c0a737e1f7bd",
    "bytes": 712884,
    "features": 2979
   },
   "facilities": {
-   "href": "/studies/mae-sai-2024-timeline/r3/facilities.geojson",
+   "href": "/studies/mae-sai-2024-timeline/r4/facilities.geojson",
    "sha256": "7cbb45ffb3ff2c20b06c5499b1fdcd975481ba41be52d834d7664bc3ff222fcb",
    "bytes": 9841,
    "features": 42
@@ -2921,10 +3533,13 @@
   "best_fit_model_km2": 22.54,
   "iou_at_best_fit": 0.074,
   "scope": "Low-HAND zone (HAND < 6 m, channel excluded) across the full image footprint, both sides of the border.",
-  "reconstruction_stage_at_pass_m": 0.121
+  "reconstruction_stage_at_pass_m": 0.121,
+  "role": "calibration_informed_magnitude_check",
+  "source_timestamp": "2024-09-06T11:31:06Z/2024-09-15T23:16:01Z",
+  "use": "Calibration-informed, not an independent check: the recession keyframes were re-tuned to this pass (best-fit stage 0.10 m). It constrains size only, not location."
  },
  "population": {
-  "href": "/studies/mae-sai-2024-timeline/r3/population-density.png",
+  "href": "/studies/mae-sai-2024-timeline/r4/population-density.png",
   "sha256": "696649f28901b073d9ce56d00e5170e42bf31ae2410f03e61f79281c2fe11bdf",
   "bytes": 334367,
   "width": 1610,
@@ -5007,14 +5622,14 @@
    "TH570908": 5010,
    "TH570909": 7199
   },
-  "source": "WorldPop Thailand 100 m constrained 2020 (tha_ppp_2020)",
+  "source": "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)",
   "licence": "CC BY 4.0",
   "timestamp": "2020 estimate",
   "note": "Modelled residential population, not a census count or the 2024 population."
  },
  "access": {
   "nodes": {
-   "href": "/studies/mae-sai-2024-timeline/r3/access-nodes.bin",
+   "href": "/studies/mae-sai-2024-timeline/r4/access-nodes.bin",
    "sha256": "d4b84fcf9b7f1d97983b9293e7d502d329e859e9859f867219033b56ccbaa590",
    "bytes": 435840,
    "count": 13620,
@@ -8599,7 +9214,7 @@
     "model_stage_m": 0.1,
     "model_flood_km2_clear": 0.0,
     "model_flood_km2_district": 13.52,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240910.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240910.png",
     "sha256": "4ececa760798df71b83bed1a083d6068c3ecb028133ef974f18b9e772d2ed817",
     "bytes": 169,
     "width": 64,
@@ -8616,7 +9231,7 @@
     "model_stage_m": 3.219,
     "model_flood_km2_clear": 0.0,
     "model_flood_km2_district": 84.63,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240911.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240911.png",
     "sha256": "4ececa760798df71b83bed1a083d6068c3ecb028133ef974f18b9e772d2ed817",
     "bytes": 169,
     "width": 64,
@@ -8633,7 +9248,7 @@
     "model_stage_m": 3.394,
     "model_flood_km2_clear": 7.03,
     "model_flood_km2_district": 87.0,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240912.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240912.png",
     "sha256": "ccb272a6551d5b8afe4430e6cfcc2ad1055027889efb67e27cccd5bc17eb6b0a",
     "bytes": 532,
     "width": 64,
@@ -8650,7 +9265,7 @@
     "model_stage_m": 1.744,
     "model_flood_km2_clear": 9.73,
     "model_flood_km2_district": 57.18,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240913.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240913.png",
     "sha256": "102478ecc27ca9375c3b81192fdbfb44440c7f5bc78efa014af1de7ecf0fdd96",
     "bytes": 863,
     "width": 64,
@@ -8667,7 +9282,7 @@
     "model_stage_m": 0.859,
     "model_flood_km2_clear": 0.18,
     "model_flood_km2_district": 38.78,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240914.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240914.png",
     "sha256": "99b1689b3bb6fc0825ee55308792ed223f73524c2d67ab26ec28ae3c3faab452",
     "bytes": 362,
     "width": 64,
@@ -8684,7 +9299,7 @@
     "model_stage_m": 0.239,
     "model_flood_km2_clear": 19.5,
     "model_flood_km2_district": 19.62,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240915.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240915.png",
     "sha256": "368ded565d599332268c949d73d2fc57df6d528cae77e600c5b811704bc49813",
     "bytes": 1570,
     "width": 64,
@@ -8701,7 +9316,7 @@
     "model_stage_m": 0.077,
     "model_flood_km2_clear": 7.7,
     "model_flood_km2_district": 13.52,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240916.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240916.png",
     "sha256": "175bab78d1e2d3e2484dff54db06aa5a3f10eee7ca86485781fd8308bf610171",
     "bytes": 1132,
     "width": 64,
@@ -8718,7 +9333,7 @@
     "model_stage_m": 0.039,
     "model_flood_km2_clear": 0.0,
     "model_flood_km2_district": 0.0,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240917.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240917.png",
     "sha256": "a54ea6a8d36fd5616a28ec740276173735e5606f01ae8161cc4c4dd6d2960f81",
     "bytes": 932,
     "width": 64,
@@ -8735,7 +9350,7 @@
     "model_stage_m": 0.019,
     "model_flood_km2_clear": 0.0,
     "model_flood_km2_district": 0.0,
-    "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240918.png",
+    "href": "/studies/mae-sai-2024-timeline/r4/viirs-20240918.png",
     "sha256": "2ef078e3b9f068db60f9bfdcc5d18b7fa9b4748f309c86999cc53735ba51349f",
     "bytes": 797,
     "width": 64,
@@ -9309,19 +9924,23 @@
  },
  "external_references": [
   {
+   "id": "unosat-4009",
    "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)",
    "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
-   "note": "Season envelope (scenario per decision D3); not shown until the CC BY-SA rights record (D2) is signed."
+   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" on 1 Oct 2026; shown only after the owners confirm the rights record."
   },
   {
+   "id": "unosat-3969",
    "name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)",
    "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"
   },
   {
+   "id": "charter-912",
    "name": "International Charter activation 912 (Typhoon Yagi, Thailand)",
    "url": "https://disasterscharter.org/activations/flood-in-thailand-activation-912-"
   },
   {
+   "id": "hii-event-page",
    "name": "HII ThaiWater September 2024 Chiang Rai flood event page (rainfall and Kok River hydrographs)",
    "url": "https://www.thaiwater.net/uploads/contents/current/2024/FloodChiangrai_Sep2024/"
   }
@@ -9330,7 +9949,7 @@
  "sources": [
   {
    "id": "copernicus-dem",
-   "name": "Copernicus DEM GLO-30 (tile N20 E099)",
+   "name": "Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)",
    "licence": "Copernicus DEM licence (free, attribution)",
    "timestamp": "2021 release (DSM from 2011-2015 acquisitions)",
    "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"
@@ -9357,6 +9976,13 @@
    "attribution": "© OpenStreetMap contributors"
   },
   {
+   "id": "worldpop",
+   "name": "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)",
+   "licence": "CC BY 4.0",
+   "timestamp": "2020 estimate",
+   "attribution": "WorldPop (www.worldpop.org), University of Southampton"
+  },
+  {
    "id": "cod-ab",
    "name": "HDX Thailand COD-AB subdistrict boundaries v01",
    "licence": "CC BY-IGO",
@@ -9366,7 +9992,7 @@
   {
    "id": "viirs",
    "name": "NOAA/GMU VIIRS 375 m daily flood-water fraction (10-18 Sep 2024)",
-   "licence": "No licence stated; attribution given",
+   "licence": "No licence stated by the provider; attribution given",
    "timestamp": "2024-09-10 / 2024-09-18 daily",
    "attribution": "VIIRS flood product: NOAA JPSS / George Mason University"
   },
@@ -9392,7 +10018,7 @@
   "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.",
   "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
   "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
-  "The 16 September 06:16 ICT Sentinel-1 pass constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
+  "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
   "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km2, so the 18:15 knot is set to the closest level (0.1 m).",
   "Cells that drain off the hydrology domain before meeting a mapped channel use their outlet on the domain edge as the HAND reference (the edge lies outside the replay area).",
   "Where flow routing leaves no path to a channel (large flats), HAND falls back to height above the nearest channel cell.",

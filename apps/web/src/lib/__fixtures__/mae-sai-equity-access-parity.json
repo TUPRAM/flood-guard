@@ -1,6 +1,6 @@
 {
  "generated_by": "apps/web/scripts/equity-access-parity-fixture.py (scripts/mae_sai_timeline_evacuation.py lost_at and home_wet; floodguard.equity.compute_equity_gap)",
- "manifest": "/studies/mae-sai-2024-timeline/r3/timeline.json",
+ "manifest": "/studies/mae-sai-2024-timeline/r4/timeline.json",
  "access_nodes_sha256": "d4b84fcf9b7f1d97983b9293e7d502d329e859e9859f867219033b56ccbaa590",
  "scenario_tier": "T1 scenario (model), not observed evacuation outcomes",
  "vulnerable_definition": "vulnerable = terrain/remoteness proxy (homes on slopes or far from a drivable road), not age, disability or income",

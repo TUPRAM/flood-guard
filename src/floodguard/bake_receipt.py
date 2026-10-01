@@ -60,6 +60,7 @@ class InputReceipt:
             raise ReceiptError("at least one root is required")
         self._roots = {label: Path(root).resolve() for label, root in roots.items()}
         self._paths: dict[tuple[str, str], Path] = {}
+        self._hashes: dict[tuple[str, str], tuple[tuple[int, int], str]] = {}
 
     def locate(self, path: Path | str) -> tuple[str, str]:
         """Return ``(root label, POSIX path relative to that root)`` for ``path``.
@@ -99,13 +100,61 @@ class InputReceipt:
             return False
 
     def entries(self) -> list[dict[str, Any]]:
-        """Hash every recorded input: ``root``, ``path``, ``bytes`` and ``sha256``, sorted by root and path."""
+        """Hash every recorded input: ``root``, ``path``, ``bytes`` and ``sha256``, sorted by root and path.
+
+        A file is hashed again only when its size or modification time changed since the last call, so a bake can
+        put the hashes into its manifest and into its receipt without reading gigabytes twice.
+        """
         rows = []
         for (label, relative), path in sorted(self._paths.items()):
             if not path.is_file():
                 raise ReceiptError(f"recorded input is not a file: {label}:{relative}")
-            rows.append({"root": label, "path": relative, "bytes": path.stat().st_size, "sha256": sha256_file(path)})
+            stat = path.stat()
+            state = (stat.st_size, stat.st_mtime_ns)
+            cached = self._hashes.get((label, relative))
+            if cached is None or cached[0] != state:
+                cached = (state, sha256_file(path))
+                self._hashes[(label, relative)] = cached
+            rows.append({"root": label, "path": relative, "bytes": stat.st_size, "sha256": cached[1]})
         return rows
+
+
+def sha256_text_file(path: Path | str) -> str:
+    """Return the SHA-256 of a text file with CRLF read as LF, so a Windows checkout hashes like any other."""
+    return hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def source_hashes(paths: Iterable[Path | str], root: Path | str) -> list[dict[str, str]]:
+    """Return ``path`` (POSIX, relative to ``root``) and line-ending-neutral ``sha256`` for each source file, sorted.
+
+    A bake records the code that produced its bytes this way. A file cannot hold the hash of the commit that
+    adds it, so the code is identified by content instead; ``git log -1 -- <path>`` then names the commit.
+    """
+    base = Path(root).resolve()
+    rows = []
+    for path in paths:
+        resolved = Path(path).resolve()
+        try:
+            relative = resolved.relative_to(base).as_posix()
+        except ValueError as exc:
+            raise ReceiptError(f"source file lies outside the repository: {resolved.name}") from exc
+        rows.append({"path": relative, "sha256": sha256_text_file(resolved)})
+    return sorted(rows, key=lambda row: row["path"])
+
+
+def source_differences(fresh: Iterable[Mapping[str, Any]], recorded: Iterable[Mapping[str, Any]]) -> list[str]:
+    """Describe how the bake sources now differ from a recorded receipt (empty when they agree)."""
+    fresh_rows = {row["path"]: row["sha256"] for row in fresh}
+    recorded_rows = {row["path"]: row["sha256"] for row in recorded}
+    notes = []
+    for path in sorted(fresh_rows.keys() | recorded_rows.keys()):
+        if path not in recorded_rows:
+            notes.append(f"{path} is used now but is not in the recorded receipt")
+        elif path not in fresh_rows:
+            notes.append(f"{path} is in the recorded receipt but is not used now")
+        elif fresh_rows[path] != recorded_rows[path]:
+            notes.append(f"{path} changed since the recorded bake ({fresh_rows[path][:12]} now, {recorded_rows[path][:12]} recorded)")
+    return notes
 
 
 def library_versions(distributions: Iterable[str] = DEFAULT_LIBRARIES) -> dict[str, str | None]:

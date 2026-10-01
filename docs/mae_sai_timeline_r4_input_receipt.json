@@ -1,17 +1,23 @@
 {
  "schema": "floodguard.bake_input_receipt.v1",
  "study_id": "mae-sai-2024-flood-timeline",
- "revision": "r3",
+ "revision": "r4",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
  "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
- "source_timestamp": "2024-09-05T03:58:19Z/2024-09-15T23:16:01Z",
+ "generated_at": {
+  "value": "2026-10-01T20:28:00+07:00",
+  "basis": "declared"
+ },
+ "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
  "confidence": "low",
  "confidence_reason": "Confidence of the baked reconstruction, copied from timeline.json. The receipt itself is an exact file record.",
  "assumptions": [
   "Input paths are relative to the external data root (FLOODGUARD_EXTERNAL_DATA) or to the repository root; no machine path is recorded.",
   "The same inputs give the same bytes only with the same library versions: another GDAL, PROJ, WebP, zlib or pysheds build can change bytes without changing the method.",
   "The two OpenStreetMap GeoPackages under derived_context are extracts this bake cuts from the Geofabrik PBF when they are absent; a fresh extract can hash differently while holding the same features.",
-  "The receipt lists files, not their meaning: it does not make the reconstruction an observation."
+  "The receipt lists files, not their meaning: it does not make the reconstruction an observation.",
+  "generated_at is a declared value (or the newest dated input), not a clock reading; the commit that carries the revision records when the files were written.",
+  "Bake sources are hashed with CRLF read as LF, so a Windows checkout gives the same hashes."
  ],
  "official_warning": false,
  "operational_status": "non_operational",
@@ -217,9 +223,9 @@
   }
  ],
  "outputs": {
-  "folder": "apps/web/public/studies/mae-sai-2024-timeline/r3",
+  "folder": "apps/web/public/studies/mae-sai-2024-timeline/r4",
   "file_count": 22,
-  "bytes": 6093581,
+  "bytes": 6118723,
   "files": [
    {
     "name": "access-nodes.bin",
@@ -268,8 +274,8 @@
    },
    {
     "name": "s2-20240905.webp",
-    "bytes": 713912,
-    "sha256": "40147cebd8f50ea4d5b6cb27c23e58f3181a545481ad84f0439647b5e8fd4cac"
+    "bytes": 713848,
+    "sha256": "8d4862e3e188f07fcfa4656b10a76c068a91ff4d5dc8244ffd7e19b3f23c8f7c"
    },
    {
     "name": "s2-20240915.webp",
@@ -283,8 +289,8 @@
    },
    {
     "name": "timeline.json",
-    "bytes": 196294,
-    "sha256": "bf999cc329a6ae2373af24d1c971c62d5a34a3a9726e345706252a44e36561d3"
+    "bytes": 221500,
+    "sha256": "66e6985dcf0ccf560a784159e6277c9d07abde58cfaf1b71a86f5f7de0b4328a"
    },
    {
     "name": "viirs-20240910.png",
@@ -333,6 +339,40 @@
    }
   ]
  },
+ "code": [
+  {
+   "path": "packages/contracts/schemas/case-replay-timeline.schema.json",
+   "sha256": "6f043b540191471c572e1e79a7e8828da15012e5c3591a557a3bf793a3ffc156"
+  },
+  {
+   "path": "scripts/build_mae_sai_flood_timeline.py",
+   "sha256": "c587c284b451047d2cdf6c595272b3c44b569722ac826515d3b364a9630941bc"
+  },
+  {
+   "path": "scripts/mae_sai_timeline_evacuation.py",
+   "sha256": "e3df2791fbbb60ccc01114b71ccaceea3b54e8ae97cdef3040716ea81ce161cc"
+  },
+  {
+   "path": "scripts/mae_sai_timeline_observations.py",
+   "sha256": "8080895891cb8536a0e467fe9af0545e610371601b5dd00dac46f29980e973fd"
+  },
+  {
+   "path": "src/floodguard/bake_receipt.py",
+   "sha256": "ac780f3a30b014ae6ae845df9872b24430d132761c41324dc89a7f7bddba6fbf"
+  },
+  {
+   "path": "src/floodguard/evacuation_access.py",
+   "sha256": "4022c993b0ad760c4e39168c056e2808d1b116df1afc93a85b300e7e6c7df440"
+  },
+  {
+   "path": "src/floodguard/flood_timeline.py",
+   "sha256": "137eeb5df3ac23c80d0be2582d9b62b424a480bb34dccd4922721d621b034e9a"
+  },
+  {
+   "path": "src/floodguard/replay_manifest.py",
+   "sha256": "1496326e7487c83978484cbc36e563f8de7b0ee0a11568cd1e6f3372f9eb3f26"
+  }
+ ],
  "libraries": {
   "affine": "3.0.1",
   "gdal (pyogrio)": "3.12.4",

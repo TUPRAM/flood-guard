@@ -139,7 +139,7 @@ try {
   const caveat = page.getByTestId("worked-example-caveat");
   await expect(caveat).toBeVisible();
   await expect(caveat).toContainText("Computed on r2, which modelled 96.3% of the district (294.4 of 305.6 km²)");
-  await expect(caveat).toContainText("r3, the current replay, covers 100%");
+  await expect(caveat).toContainText("r4, the current replay, covers 100%");
   await expect(caveat).toContainText("flood saturates at 0.25 instead of 0.20");
   await expect(caveat).toContainText("5,000-person headcount");
   await expect(caveat).toContainText("national P10/P90 anchors of the dependent share");
@@ -172,6 +172,7 @@ try {
   await expect(frame.locator("tbody tr").nth(2)).toContainText("Pitch level: adds DDPM located shelter (walking, 30 min).");
   await expect(page.getByTestId("replay-link")).toContainText("GISTDA’s 10 Sep flooded-area figure (about 9.9 km²) sets a stage knot, so it is a calibration anchor");
   await expect(page.getByTestId("replay-link")).toContainText("UNOSAT 3991 size check is calibration-informed, not independent (R1)");
+  await expect(page.getByTestId("replay-link")).toContainText("Current replay (r4):");
   checks.push("worked example retitled, caveat before its numbers, the pre-v1b chip on every headline tile, R2 provenance, D4 table with 0.20, the five weights and the §3.4 access levels");
   await expect(page.locator("#evidence")).toContainText("3.5 m");
   await expect(page.locator("#evidence")).toContainText("12 September, 12:00 ICT");
@@ -285,7 +286,7 @@ try {
   await expect(replayPolicyLink).toHaveText("How FPPS and the A–E classes work, and why this replay assigns neither");
   await replayPolicyLink.click();
   await expect(page.locator("h1")).toContainText("From flood evidence");
-  checks.push("policy page links the r3 replay, and the replay footer links back to the policy page");
+  checks.push("policy page links the r4 replay, and the replay footer links back to the policy page");
   await context.close();
 
   const offline = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "allow" });

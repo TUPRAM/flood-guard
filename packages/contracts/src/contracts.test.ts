@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import areaDecisionSchema from "../schemas/area-decision.schema.json";
+import caseReplayTimelineSchema from "../schemas/case-replay-timeline.schema.json";
 import evidenceContextSchema from "../schemas/evidence-context.schema.json";
 import evidenceRecordSchema from "../schemas/evidence-record.schema.json";
 import evidenceStateSchema from "../schemas/evidence-state.schema.json";
@@ -221,5 +222,35 @@ describe("contract drift", () => {
       modelRegistryEntryV1Schema.properties.payload.properties.permitted_use
         .enum,
     );
+  });
+  it("keeps the case-replay manifest on the common metadata envelope, with no score and no action class", () => {
+    const replay = caseReplayTimelineSchema;
+    expect(replay.required).toEqual(
+      expect.arrayContaining([...COMMON_METADATA_FIELDS]),
+    );
+    for (const field of COMMON_METADATA_FIELDS) {
+      expect(replay.properties).toHaveProperty(field);
+    }
+    expect(OPERATIONAL_STATUSES).toContain(
+      replay.properties.operational_status.const,
+    );
+    expect(replay.properties.operational_status.const).toBe("non_operational");
+    expect(replay.properties.confidence_class.enum).toEqual(CONFIDENCE_CLASSES);
+    expect(replay.properties.official_warning.const).toBe(false);
+    // A replay is a historical reconstruction: a mode of its own, outside the status and decision records.
+    expect(DATASET_MODES).not.toContain(replay.properties.dataset_mode.const);
+    expect(replay.properties.data_mode.const).toBe(
+      replay.properties.dataset_mode.const,
+    );
+    // It carries the accepted fields only as nulls, and no action class enum at all.
+    expect(replay.properties.accepted_fpps.type).toBe("null");
+    expect(replay.properties.accepted_action_class.type).toBe("null");
+    expect(replay.properties.protocol_sha256.type).toBe("null");
+    expect(replay.properties).not.toHaveProperty("action_class");
+    expect(replay.properties).not.toHaveProperty("fpps");
+    expect(replay.$defs.evidenceBlock.required).toEqual(
+      expect.arrayContaining(["lane", "source_timestamp", "evidence_tier", "temporal_relation"]),
+    );
+    expect(replay.properties.input_sha256.minItems).toBe(1);
   });
 });

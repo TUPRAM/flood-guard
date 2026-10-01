@@ -82,9 +82,13 @@ import {
   thaiYear,
   TIMELINE_END_T,
   TIMELINE_MANIFEST_URL,
+  formatGeneratedAt,
+  licenceRows,
+  parseTimelineManifest,
   viirsDayAt,
   waterCandidates,
   type AreaGeometry,
+  type ExploratoryKnowledgeItem,
   type FacilityProps,
   type GeoCollection,
   type HourClass,
@@ -687,7 +691,7 @@ export function MaeSaiFloodTimeline() {
     const { signal } = controller;
     (async () => {
       try {
-        const manifest = await fetchJson<TimelineManifest>(TIMELINE_MANIFEST_URL, signal);
+        const manifest = parseTimelineManifest(await fetchJson<unknown>(TIMELINE_MANIFEST_URL, signal));
         loadHand(manifest, signal).then(
           (raster) => { if (!signal.aborted) setHand(raster); },
           () => { if (!signal.aborted) setHandFailed(true); },
@@ -2517,6 +2521,14 @@ export function HowToRead({ manifest, language }: { manifest: TimelineManifest |
           "Timestamps: every figure is for the replay hour shown above the map (local time, ICT, UTC+7), not for today.",
           "เวลา: ตัวเลขทุกตัวเป็นค่า ณ ชั่วโมงของการย้อนดูที่แสดงเหนือแผนที่ (เวลาประเทศไทย UTC+7) ไม่ใช่เวลาปัจจุบัน",
         )}{manifest && <> {t("Source data", "ข้อมูลต้นทาง")}: <span lang="en">{manifest.source_timestamp}</span>.</>}</li>
+        <li data-testid="how-to-status">
+          {t("Status: ", "สถานะ: ")}<strong>{t("non-operational", "ไม่ใช้ในการปฏิบัติการ")}</strong>
+          {t(
+            ". A historical reconstruction for planning and exercises; it gives no priority score and no action class.",
+            " เป็นการจำลองย้อนหลังเพื่อการวางแผนและการฝึกซ้อม ไม่ให้คะแนนลำดับความสำคัญและไม่กำหนดระดับการดำเนินการ",
+          )}
+          {manifest && <GeneratedAt manifest={manifest} language={language} lead />}
+        </li>
         <li>{t("Assumptions and limits are listed in full under ", "สมมติฐานและข้อจำกัดทั้งหมดอยู่ใน ")}<a href="#mae-sai-sources" className={styles.inlineLink} onClick={openSources}>{t("Sources, assumptions and limits", "แหล่งข้อมูล สมมติฐาน และข้อจำกัด")}</a>.</li>
       </ul>
       <dl className={styles.glossary}>
@@ -2613,12 +2625,18 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
       {/* Source names, licences and attributions stay as their publishers give them; known sentences are in Thai. */}
       <ul className={styles.list}>
         {manifest.sources.map((source) => (
-          <li key={source.id}><strong lang="en">{source.name}</strong> — <span lang="en">{source.licence}. {source.attribution}.</span> <span className={styles.muted} lang="en">{source.timestamp}</span></li>
+          <li key={source.id}>
+            <strong lang="en">{plainManifestText(source.name)}</strong> — <span lang="en">{source.licence}. {source.attribution}.</span>{" "}
+            {source.id === POPULATION_SOURCE_ID && manifest.population && <><Localized text={manifest.population.note} language={language} />{" "}</>}
+            <span className={styles.muted} lang="en">{source.timestamp}</span>
+          </li>
         ))}
-        {manifest.population && (
+        {/* Revisions before r4 list WorldPop only in the population block. */}
+        {manifest.population && !manifest.sources.some((source) => source.id === POPULATION_SOURCE_ID) && (
           <li><strong lang="en">{plainManifestText(manifest.population.source)}</strong> — <span lang="en">{manifest.population.licence}.</span> <Localized text={manifest.population.note} language={language} /> <span className={styles.muted}>{manifest.population.timestamp}</span></li>
         )}
       </ul>
+      <LicencesByInput manifest={manifest} language={language} />
       {(viirs || rain) && (
         <>
           <h3>{t("Observed data shown with the model", "ข้อมูลที่สังเกตได้ซึ่งแสดงคู่กับแบบจำลอง")}</h3>
@@ -2684,15 +2702,20 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
           );
         })}
       </ul>
+      <TuningDisclosure manifest={manifest} language={language} />
       <h3>{t("Limitations", "ข้อจำกัด")}</h3>
       <ul className={styles.list}>{manifest.limitations.map((item) => <li key={item}><Localized text={item} language={language} /></li>)}</ul>
       <p className={styles.muted}>{t(
         "Arrival, time under water and road-cut hours are counted on the replay's hourly grid: the assumed stage sampled at the start of each local hour, 9 Sep 00:00 to 19 Sep 23:00.",
         "เวลาที่เริ่มท่วม ระยะเวลาที่จมน้ำ และชั่วโมงที่ถนนถูกตัดขาด นับตามช่วงรายชั่วโมงของการย้อนดู โดยใช้ระดับน้ำสมมุติ ณ ต้นชั่วโมงเวลาท้องถิ่น ตั้งแต่ 9 ก.ย. 00:00 ถึง 19 ก.ย. 23:00",
       )}</p>
-      <p className={styles.muted}>
-        {t("Source timestamp", "เวลาของข้อมูลต้นทาง")}: {manifest.source_timestamp} · {manifest.timezone} · {manifest.study_id} {manifestRevision()} · {t("confidence", "ความเชื่อมั่น")}: {confidenceText}
+      <p className={styles.muted} data-testid="sources-footer">
+        {t("Source timestamp", "เวลาของข้อมูลต้นทาง")}: {manifest.source_timestamp} · {manifest.timezone} · {manifest.study_id} {manifestRevision()} · {t("confidence", "ความเชื่อมั่น")}: {confidenceText} · {t("status", "สถานะ")}: {t("non-operational", "ไม่ใช้ในการปฏิบัติการ")}
+        <GeneratedAt manifest={manifest} language={language} />
       </p>
+      {manifest.source_timestamp_note && (
+        <p className={styles.muted}><Localized text={manifest.source_timestamp_note} language={language} /></p>
+      )}
       {offlineCopy && (
         <p className={styles.muted}>{offlineCopy.failed === 0 && offlineCopy.cached === offlineCopy.total
           ? t(`Offline copy: this replay's ${offlineCopy.total} data files are saved on this device (the street basemap still needs internet).`, `สำเนาออฟไลน์: บันทึกไฟล์ข้อมูลของการย้อนดูนี้ ${offlineCopy.total} ไฟล์ไว้ในอุปกรณ์แล้ว (แผนที่ถนนพื้นฐานยังต้องใช้อินเทอร์เน็ต)`)
@@ -2720,6 +2743,87 @@ export function LowConfidenceEvidence({ hand, language }: { hand: TimelineManife
         {hand.low_confidence && <Localized text={hand.low_confidence.meaning} language={language} />}
       </dd>
     </div>
+  );
+}
+
+/** `sources[].id` of the residents grid; from r4 the population note is shown on that source line. */
+const POPULATION_SOURCE_ID = "worldpop";
+
+/**
+ * When the data files were generated, from the manifest's `generated_at` (a declared bake time, never a clock
+ * reading at page load). Nothing is shown for a revision without the field. `lead` starts a new sentence.
+ */
+export function GeneratedAt({ manifest, language, lead = false }: { manifest: Pick<TimelineManifest, "generated_at" | "generated_at_basis">; language: Language; lead?: boolean }) {
+  const stamp = formatGeneratedAt(manifest.generated_at, language);
+  if (!stamp) return null;
+  const th = language === "th";
+  const declared = manifest.generated_at_basis !== "newest_input_timestamp";
+  const label = declared
+    ? th ? "สร้างไฟล์ข้อมูลเมื่อ" : "Data files generated"
+    : th ? "ข้อมูลนำเข้าล่าสุดลงวันที่" : "Newest input dated";
+  return (
+    <span data-testid="generated-at">
+      {lead ? " " : " · "}{label}{th ? " " : ": "}<time dateTime={manifest.generated_at}>{stamp}</time>{lead ? (th ? "" : ".") : ""}
+    </span>
+  );
+}
+
+/**
+ * Licence and terms of every input, from `publication_eligibility` (r4 on). Names and licences stay as published;
+ * the terms and the conditions of use are shown in Thai where the page knows a translation. An input that is
+ * listed but not shown (product 4009 until its rights record is confirmed) is marked as such.
+ */
+export function LicencesByInput({ manifest, language }: { manifest: TimelineManifest; language: Language }) {
+  const eligibility = manifest.publication_eligibility;
+  if (!eligibility) return null;
+  const th = language === "th";
+  const t = (en: string, thai: string) => (th ? thai : en);
+  return (
+    <>
+      <h3>{t("Licence per input", "สัญญาอนุญาตของข้อมูลแต่ละชุด")}</h3>
+      <ul className={styles.list} data-testid="licences-by-input">
+        {licenceRows(manifest).map((row) => (
+          <li key={row.id} data-shown={row.shown}>
+            <strong lang="en">{plainManifestText(row.name)}</strong> — <span lang="en">{row.licence.replace(/\.$/, "")}.</span>{" "}
+            <Localized text={row.terms} language={language} />
+            {!row.shown && <>{" "}<strong>{row.status ? <Localized text={row.status} language={language} /> : t("Not shown on this page.", "ยังไม่แสดงในหน้านี้")}</strong></>}
+          </li>
+        ))}
+      </ul>
+      <p className={styles.muted}>{t("Conditions of use", "เงื่อนไขการใช้")}: <Localized text={eligibility.scope} language={language} /></p>
+      <ul className={styles.list} data-testid="licence-conditions">
+        {eligibility.conditions.map((item) => <li key={item}><Localized text={item} language={language} /></li>)}
+      </ul>
+    </>
+  );
+}
+
+/**
+ * Which external figures were used, or already known, while the stage keyframes were tuned (`exploratory_knowledge`,
+ * r4 on). A figure used or known during tuning is never presented as an independent check.
+ */
+export function TuningDisclosure({ manifest, language }: { manifest: TimelineManifest; language: Language }) {
+  const disclosure = manifest.exploratory_knowledge;
+  if (!disclosure) return null;
+  const th = language === "th";
+  const t = (en: string, thai: string) => (th ? thai : en);
+  const tag = (item: ExploratoryKnowledgeItem) => (item.relation === "used_for_tuning"
+    ? t("Used for tuning", "ใช้ปรับแบบจำลอง")
+    : item.relation === "known_during_tuning"
+      ? t("Known during tuning", "ทราบขณะปรับแบบจำลอง")
+      : t("Not used for tuning", "ไม่ได้ใช้ปรับแบบจำลอง"));
+  return (
+    <>
+      <h3>{t("What was known when the model was tuned", "สิ่งที่ทราบขณะปรับแบบจำลอง")}</h3>
+      <p className={styles.muted}><Localized text={disclosure.purpose} language={language} /></p>
+      <ul className={styles.list} data-testid="tuning-disclosure">
+        {disclosure.items.map((item) => (
+          <li key={item.id} data-relation={item.relation}><strong>{tag(item)}:</strong> <Localized text={item.statement} language={language} /></li>
+        ))}
+        <li><Localized text={disclosure.depth_factor} language={language} /></li>
+        <li><Localized text={disclosure.rule} language={language} /></li>
+      </ul>
+    </>
   );
 }
 
@@ -2929,7 +3033,10 @@ export function WetFacilitiesCard({ facilities, stage, language }: { facilities:
   );
 }
 
-/** Sentinel-1 size check, rendered from `s1_anchor`; its scope is the whole image footprint, not the district. */
+/**
+ * Sentinel-1 size comparison, rendered from `s1_anchor`; its scope is the whole image footprint, not the district.
+ * The recession keyframes were tuned to this pass, so the page calls it calibration-informed, never a check.
+ */
 export function RadarCheck({ manifest, radarSpan, language }: { manifest: TimelineManifest; radarSpan: string; language: Language }) {
   const th = language === "th";
   const anchor = manifest.s1_anchor;
@@ -2942,13 +3049,13 @@ export function RadarCheck({ manifest, radarSpan, language }: { manifest: Timeli
   return (
     <div className={styles.anchor}>
       <p>{th
-        ? `ตรวจสอบกับเรดาร์ (Sentinel-1, ${radarSpan}): พื้นที่ ${newlyDark} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ แบบจำลองให้ขนาดใกล้เคียงกันคือ ${modelSize} ตร.กม. ที่ระดับน้ำ ${bestStage} ม. (ระดับในการจำลองขณะดาวเทียมผ่านคือ ${passStage} ม.) ความสอดคล้องเชิงตำแหน่งต่ำ (IoU ${iou}) จึงใช้ตรวจสอบขนาดพื้นที่ได้ แต่ไม่ใช่ตำแหน่ง`
-        : `Radar check (Sentinel-1, ${radarSpan}): ${newlyDark} km² turned newly water-like. The model reaches a similar size, ${modelSize} km², at a ${bestStage} m stage; the replay's stage at that pass is ${passStage} m. Spatial agreement is weak (IoU ${iou}), so this checks size, not location.`}</p>
+        ? `เทียบขนาดกับเรดาร์ (Sentinel-1, ${radarSpan}; มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ): พื้นที่ ${newlyDark} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ แบบจำลองให้ขนาดใกล้เคียงกันคือ ${modelSize} ตร.กม. ที่ระดับน้ำ ${bestStage} ม. (ระดับในการจำลองขณะดาวเทียมผ่านคือ ${passStage} ม.) จุดกำหนดระดับน้ำช่วงน้ำลดปรับตามภาพนี้ ขนาดที่ใกล้เคียงกันจึงเป็นผลจากการปรับ ความสอดคล้องเชิงตำแหน่งต่ำ (IoU ${iou}) จึงบอกได้เพียงขนาดพื้นที่ ไม่ใช่ตำแหน่ง`
+        : `Radar size comparison (Sentinel-1, ${radarSpan}; calibration-informed, not an independent check): ${newlyDark} km² turned newly water-like. The model reaches a similar size, ${modelSize} km², at a ${bestStage} m stage; the replay's stage at that pass is ${passStage} m. The recession keyframes were tuned to this pass, so the sizes agree by construction. Spatial agreement is weak (IoU ${iou}), so this constrains size, not location.`}</p>
       <p>
-        {scope && <>{th ? "ขอบเขตการตรวจสอบ: " : "Scope: "}<span lang={scope.lang}>{scope.text}</span>{" "}</>}
+        {scope && <>{th ? "ขอบเขตการเทียบ: " : "Scope: "}<span lang={scope.lang}>{scope.text}</span>{" "}</>}
         {th
-          ? "การตรวจสอบนี้ครอบคลุมทั้งขอบเขตภาพ รวมถึงท่าขี้เหล็ก (เมียนมา) ซึ่งต่างจากตัวเลขผลกระทบระดับอำเภอด้านบน"
-          : "Unlike the district impact figures above, this check covers the whole image footprint, including Tachileik (Myanmar)."}
+          ? "การเทียบนี้ครอบคลุมทั้งขอบเขตภาพ รวมถึงท่าขี้เหล็ก (เมียนมา) ซึ่งต่างจากตัวเลขผลกระทบระดับอำเภอด้านบน"
+          : "Unlike the district impact figures above, this comparison covers the whole image footprint, including Tachileik (Myanmar)."}
       </p>
     </div>
   );

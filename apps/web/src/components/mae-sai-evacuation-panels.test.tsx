@@ -476,7 +476,7 @@ describe("Shelter plan and reported shelters", () => {
     const informed = plain.indexOf("Size checks (calibration-informed, not independent)");
     expect(calibration).toBeGreaterThanOrEqual(0);
     expect(informed).toBeGreaterThan(calibration);
-    // Nothing in r3 is independent any more, so the page must not claim an independent check.
+    // Nothing on the replay is independent any more, so the page must not claim an independent check.
     expect(plain).not.toContain("Independent size checks");
     const gistda = plain.indexOf("GISTDA RADARSAT-2");
     const unosat = plain.indexOf("UNOSAT product 3991");

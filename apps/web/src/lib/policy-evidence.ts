@@ -73,16 +73,21 @@ export const POLICY_EVIDENCE = {
   /** The replay that is live now. It is a narrative surface (D7): it computes no FPPS and assigns no class. */
   currentReplay: {
     route: "/studio/cases/mae-sai-2024/",
-    revision: "r3",
+    revision: "r4",
     coverageShare: 1,
     tier: "T1 scenario (model)",
     computesFpps: false,
     /**
-     * External size figures by their r3 manifest `role` (a unit test reads them back from r3 `timeline.json`).
+     * External size figures by their manifest `role` (a unit test reads them back from the served `timeline.json`).
      * GISTDA's reported area only sets the 10 Sep 18:15 stage knot; no GISTDA map is used.
      */
     calibrationAnchor: { id: "gistda-radarsat2-20240910", role: "calibration_anchor", reportedKm2: 9.9 },
     calibrationInformedCheck: { id: "unosat-3991", role: "calibration_informed_magnitude_check", decision: "R1" },
+    /**
+     * The 16 Sep Sentinel-1 pass was used to re-tune the recession keyframes (the manifest's `exploratory_knowledge`),
+     * so its size comparison (`s1_anchor`) is calibration-informed too.
+     */
+    recessionTuning: { id: "sentinel-1-20240916", relation: "used_for_tuning", role: "calibration_informed_magnitude_check" },
   },
   /**
    * Labels in the pinned r2 source that a later signed decision overturned. The page shows each beside the source
@@ -140,7 +145,7 @@ export const POLICY_EVIDENCE = {
   ],
   verification: {
     scoreReproduction: "Recomputed all eight rows once, on 29 Sep 2026, from the exact committed TypeScript methods and original r2 Git asset bytes.",
-    sourceSelection: "The r3 replay computes no FPPS (D7), so this example cannot be refreshed from it. It is replaced only by D4/v1 planning-assessment results after protocol v1b is hashed.",
+    sourceSelection: "The current replay (r4) computes no FPPS (D7), so this example cannot be refreshed from it. It is replaced only by D4/v1 planning-assessment results after protocol v1b is hashed.",
     generationTimestamp: "The source manifest does not record a generation time; the commit date is recorded separately.",
     scientificValidation: "Not established",
     operationalAcceptance: "Not established",

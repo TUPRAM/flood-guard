@@ -17,16 +17,34 @@ Inputs
   ``outputs/mae_sai_facilities.geojson``, ``outputs/mae_sai_access_edges.csv``,
   ``outputs/mae_sai_population_nodes.csv`` and ``outputs/mae_sai_reported_shelters_2024.json``.
 
-Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r3/``): a HAND code raster, dated
+Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r4/``): a HAND code raster, dated
 Sentinel-1/2 image layers, a hillshade, VIIRS daily maps, a residents raster, the access node file,
 sampled road/facility/tambon vectors and ``timeline.json``.
 
+Evidence fields
+---------------
+``timeline.json`` follows ``packages/contracts/schemas/case-replay-timeline.schema.json``. Besides the
+data it says what the data is: ``operational_status`` (non-operational), ``accepted_fpps`` and
+``accepted_action_class`` (both null: the replay computes no score and no action class),
+``evidence_blocks`` (lane, tier, temporal relation and source timestamp for every part),
+``exploratory_knowledge`` (which external figures were used or known while the model was tuned),
+``publication_eligibility`` (a licence per input) and ``input_sha256`` (the input receipt's hashes).
+The bake refuses to write a manifest that breaks these rules (``floodguard.replay_manifest``).
+
 Reproducibility
 ---------------
-Every bake writes an input receipt (``docs/mae_sai_timeline_r3_input_receipt.json``): the path relative
-to its root, the size and the SHA-256 of every input file the bake opened, plus library versions.
-``--verify`` bakes again into a temporary folder and compares it byte for byte with the committed
-revision folder. It never writes to that folder and exits non-zero on any difference.
+Every bake writes an input receipt (``docs/mae_sai_timeline_r4_input_receipt.json``): the path relative
+to its root, the size and the SHA-256 of every input file the bake opened, plus library versions and
+the SHA-256 of the bake's own source files. ``--verify`` bakes again into a temporary folder and
+compares it byte for byte with the committed revision folder. It never writes to that folder and
+exits non-zero on any difference.
+
+``generated_at`` is never read from the machine clock, because a clock value would make a
+byte-for-byte rebuild impossible. It is declared with ``--generated-at`` and recorded in the input
+receipt; a later bake or ``--verify`` without the argument carries the recorded value, and with no
+recorded value the bake uses the newest dated input. ``git_commit`` is null in the manifest: a file
+cannot hold the hash of the commit that adds it, so the receipt identifies the bake sources by content
+and ``git log -1 -- <file>`` names the commit.
 
 The daily water surface is a HAND threshold reconstruction driven by illustrative stage keyframes.
 It is not an observation, a validated flood extent, a real-time product or an official warning.
@@ -36,7 +54,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import math
@@ -71,9 +89,13 @@ from floodguard.bake_receipt import (  # noqa: E402
     directory_listing,
     input_differences,
     library_versions,
+    source_differences,
+    source_hashes,
     version_differences,
 )
 from floodguard.flood_timeline import (  # noqa: E402
+    DEPTH_FACTOR_EXPONENT,
+    DEPTH_FACTOR_FLOOR,
     HAND_STEP_M,
     IMPASSABLE_DEPTH_M,
     KEYFRAMES,
@@ -82,21 +104,44 @@ from floodguard.flood_timeline import (  # noqa: E402
     decode_hand,
     encode_hand,
     flooded_area_km2,
+    sentinel2_l2a_reflectance,
     stage_anchors,
     stage_at,
     road_state,
     depth_factor,
 )
+from floodguard.replay_manifest import (  # noqa: E402
+    LANES,
+    SCENARIO_TIER,
+    ReplayManifestError,
+    evidence_problems,
+    newest_timestamp,
+    normalise_timestamp,
+    schema_problems,
+)
 import mae_sai_timeline_evacuation as evac  # noqa: E402
 import mae_sai_timeline_observations as obs  # noqa: E402
 
-OUT_REL = Path("apps/web/public/studies/mae-sai-2024-timeline/r3")
-RECEIPT_REL = Path("docs/mae_sai_timeline_r3_input_receipt.json")
+REVISION = "r4"
+STUDY_ID = "mae-sai-2024-flood-timeline"
+OUT_REL = Path(f"apps/web/public/studies/mae-sai-2024-timeline/{REVISION}")
+RECEIPT_REL = Path(f"docs/mae_sai_timeline_{REVISION}_input_receipt.json")
+SCHEMA_REL = Path("packages/contracts/schemas/case-replay-timeline.schema.json")
+SCHEMA_ID = "https://floodguard.th/contracts/case-replay-timeline.schema.json"
 GENERATED_BY = "scripts/build_mae_sai_flood_timeline.py"
 Track = Callable[[Path], Path]
-HREF_PREFIX = "/studies/mae-sai-2024-timeline/r3/"
+HREF_PREFIX = f"/studies/mae-sai-2024-timeline/{REVISION}/"
+# A pixel with any visible band at or above this reflectance is left out of the display stretch. r3 wrote 0.25 but
+# applied it to (DN - 1000) / 10000, so the cut it really made was DN 3500 = 0.35; r4 keeps that cut and the same picture.
+S2_CLOUD_REFLECTANCE = 0.35
 SAI_REFERENCE_LONLAT = (99.8826, 20.4460)  # Sai River at the Mae Sai border bridges (main-stem reference reach).
 REPORTED_SHELTERS = Path("outputs/mae_sai_reported_shelters_2024.json")
+EVENT_START = "2024-09-09T00:00:00+07:00"  # Replay origin (t = 0).
+EVENT_END = "2024-09-20T00:00:00+07:00"  # End of the replay and of the last rain hour (19 Sep 24:00 ICT).
+OSM_EXTRACT_DATE = "2026-07-09"
+CHRONOLOGY_COMPILED = "2026-09-27"
+# tha_ppp_2020.tif is WorldPop's unconstrained top-down grid: every land cell in the replay area holds a positive value.
+WORLDPOP_SOURCE = "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)"
 UTM = "EPSG:32647"
 AOI_UTM = (584400.0, 2240100.0, 608400.0, 2266100.0)  # Whole Mae Sai district plus Tachileik to the north.
 AOI_RES = 10.0
@@ -123,6 +168,8 @@ S1_SCENES = {
     "s1-20240906": "S1A_IW_GRDH_1SDV_20240906T113106_20240906T113131_055544_06C73C_B53D_COG.SAFE.zip",
     "s1-20240915": "S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_82A9_COG.SAFE.zip",
 }
+S1_STAMPS = {"s1-20240906": "2024-09-06T11:31:06Z", "s1-20240915": "2024-09-15T23:16:01Z"}
+S1_PAIR = f"{S1_STAMPS['s1-20240906']}/{S1_STAMPS['s1-20240915']}"
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -250,10 +297,9 @@ def sentinel2_rgb(scene_dir: Path, grid: Grid, track: Track = untracked) -> np.n
             aoi = transform_bounds(grid.crs, src.crs, *grid.bounds, densify_pts=21)
             win = window_from_bounds(*aoi, transform=src.transform).round_offsets().round_lengths()
             win = Window(win.col_off - 8, win.row_off - 8, win.width + 16, win.height + 16)
-            dn = src.read(1, window=win).astype(np.float32)
-            # Earth Search L2A keeps raw DN with the processing-baseline 04.00 offset of -1000.
-            refl = np.where(dn > 0, (dn - 1000.0) / 10000.0, np.nan)
-            bands.append(warp(refl, src.window_transform(win), src.crs, grid))
+            dn = src.read(1, window=win)
+            # Earth Search L2A COGs already have the baseline-04.00 offset removed: reflectance = DN / 10000.
+            bands.append(warp(sentinel2_l2a_reflectance(dn), src.window_transform(win), src.crs, grid))
     return np.stack(bands)
 
 
@@ -383,7 +429,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
 
     # --- Sentinel-2 true colour -----------------------------------------------------------
     rgb = {key: sentinel2_rgb(external / "earth_search/mae_sai_2024" / scene, display, track) for key, (scene, _) in S2_SCENES.items()}
-    clear = np.all(rgb["s2-20240905"] < 0.25, axis=0)  # Stretch on cloud-free land so clouds do not darken it.
+    clear = np.all(rgb["s2-20240905"] < S2_CLOUD_REFLECTANCE, axis=0)  # Stretch on cloud-free land so clouds do not darken it.
     lo, hi = np.nanpercentile(rgb["s2-20240905"][:, clear], [1, 99.5])
     for key, (scene, stamp) in S2_SCENES.items():
         img = np.moveaxis(to_u8(rgb[key], lo, hi, gamma=0.8), 0, -1)
@@ -398,7 +444,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     for key, name in S1_SCENES.items():
         s1[key], s1_meta[key] = sentinel1_vv(track(external / "cdse/mae_sai_2024" / name), display)
     db_lo, db_hi = np.nanpercentile(s1["s1-20240906"], [2, 98])
-    s1_stamps = {"s1-20240906": "2024-09-06T11:31:06Z", "s1-20240915": "2024-09-15T23:16:01Z"}
+    s1_stamps = S1_STAMPS
     for key in S1_SCENES:
         buf = tempfile.SpooledTemporaryFile()
         write_webp(buf, to_u8(s1[key], db_lo, db_hi), quality=72)  # type: ignore[arg-type]
@@ -410,7 +456,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     buf = tempfile.SpooledTemporaryFile()
     write_webp(buf, np.dstack([pre, post, post]), quality=72)  # type: ignore[arg-type]
     buf.seek(0)
-    layers.append(emit("s1-change-rgb.webp", buf.read(), id="s1-change", kind="sentinel-1-change", date="2024-09-06T11:31:06Z/2024-09-15T23:16:01Z"))
+    layers.append(emit("s1-change-rgb.webp", buf.read(), id="s1-change", kind="sentinel-1-change", date=S1_PAIR))
 
     # --- Vectors --------------------------------------------------------------------------
     admin = json.loads(track(ROOT / "outputs/mae_sai_admin_context.geojson").read_text(encoding="utf-8"))
@@ -624,7 +670,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     return {"layers": layers, "hand": hand_record, "vectors": vectors, "days": days, "histograms": histograms,
             "bounds": [[south, west], [north, east]], "display": {"width": display.width, "height": display.height},
             "s1_meta": s1_meta, "s1_anchor": anchor, "coverage": coverage,
-            "reported_meta": {k: reported_doc.get(k) for k in ("status", "compiled", "access_set_rule")},
+            "reported_meta": {k: reported_doc.get(k) for k in ("status", "compiled", "access_set_rule", "licence_note")},
             "viirs_days": viirs_days, "rainfall": rain, "low_confidence_share": low_confidence_share,
             "external_checks": [
                 {"id": "gistda-radarsat2-20240910", "observed": "GISTDA RADARSAT-2 flood analysis, 10 Sep 2024 18:15 (time zone not stated; assumed ICT)",
@@ -697,7 +743,7 @@ OBSERVATIONS = [
 ]
 
 SOURCES = [
-    {"id": "copernicus-dem", "name": "Copernicus DEM GLO-30 (tile N20 E099)", "licence": "Copernicus DEM licence (free, attribution)",
+    {"id": "copernicus-dem", "name": "Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)", "licence": "Copernicus DEM licence (free, attribution)",
      "timestamp": "2021 release (DSM from 2011-2015 acquisitions)",
      "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"},
     {"id": "sentinel-2", "name": "Sentinel-2 L2A via Earth Search (tile 47QNC)", "licence": "Copernicus Sentinel data terms (free, full and open)",
@@ -706,9 +752,11 @@ SOURCES = [
      "timestamp": "2024-09-06 / 2024-09-15 UTC", "attribution": "Contains modified Copernicus Sentinel data [2024]"},
     {"id": "osm", "name": "OpenStreetMap roads and candidate facilities (Geofabrik extract)", "licence": "ODbL 1.0",
      "timestamp": "2026-07-09", "attribution": "© OpenStreetMap contributors"},
+    {"id": "worldpop", "name": WORLDPOP_SOURCE, "licence": "CC BY 4.0",
+     "timestamp": "2020 estimate", "attribution": "WorldPop (www.worldpop.org), University of Southampton"},
     {"id": "cod-ab", "name": "HDX Thailand COD-AB subdistrict boundaries v01", "licence": "CC BY-IGO",
      "timestamp": "valid from 2022-01-22", "attribution": "OCHA / HDX Thailand COD-AB"},
-    {"id": "viirs", "name": "NOAA/GMU VIIRS 375 m daily flood-water fraction (10-18 Sep 2024)", "licence": "No licence stated; attribution given",
+    {"id": "viirs", "name": "NOAA/GMU VIIRS 375 m daily flood-water fraction (10-18 Sep 2024)", "licence": "No licence stated by the provider; attribution given",
      "timestamp": "2024-09-10 / 2024-09-18 daily", "attribution": "VIIRS flood product: NOAA JPSS / George Mason University"},
     {"id": "hii-rain", "name": "HII ThaiWater hourly rain gauges MOU189 and DIWO", "licence": "CC BY-NC",
      "timestamp": "2024-09-09 / 2024-09-19 hourly", "attribution": "Hydro-Informatics Institute (HII), ThaiWater"},
@@ -723,7 +771,7 @@ ASSUMPTIONS = [
     "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.",
     "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
     "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
-    "The 16 September 06:16 ICT Sentinel-1 pass constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
+    "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
     "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km2, so the 18:15 knot is set to the closest level (0.1 m).",
     "Cells that drain off the hydrology domain before meeting a mapped channel use their outlet on the domain edge as the HAND reference (the edge lies outside the replay area).",
     "Where flow routing leaves no path to a channel (large flats), HAND falls back to height above the nearest channel cell.",
@@ -738,20 +786,210 @@ ASSUMPTIONS = [
 ]
 
 
-def compose_manifest(result: dict) -> dict:
-    """Assemble ``timeline.json`` with provenance, confidence and assumptions."""
-    anchor = result["s1_anchor"]
+CONFIDENCE_REASON = ("Water extents are a terrain-model reconstruction with illustrative stages; the late-recession size was tuned to "
+                     "one radar pass rather than checked independently, and spatial agreement there is weak.")
+PERMITTED_USE = ("Preparedness learning, planning exercises and post-event prioritisation discussion in competition and preview builds. "
+                 "Not for emergency response, evacuation orders or any operational decision; not an official warning.")
+REASON_BLOCKED = ("Not a protocol case (decision D7): the replay is a narrative surface. Protocol v1b is not hashed, so no Flood Preparedness "
+                  "Priority Score and no A-E action class is computed here; the accepted score and class stay null and the replay cannot feed "
+                  "the decision layer. Confidence is low and nothing was field-checked.")
+GIT_COMMIT_REASON = ("self_reference: a file cannot hold the hash of the commit that adds it. The input receipt identifies the bake sources "
+                     "by SHA-256, and git_commit_lookup names the commit.")
+GENERATED_AT_NOTES = {
+    "declared": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
+    "newest_input_timestamp": "No bake time was declared: this is the newest dated input, not the time the files were written. It is not read from the machine clock, so --verify rebuilds the same bytes.",
+}
+S1_BEST_FIT_STAGE_M = 0.10  # Stated in the assumptions and the disclosure; compose_manifest refuses to write another value.
+
+EXPLORATORY_KNOWLEDGE = {
+    "purpose": "Which external figures were used, or already known, while the stage keyframes and the depth factor were set. A figure used or known during tuning cannot serve as an independent check.",
+    "items": [
+        {"id": "gistda-radarsat2-20240910", "relation": "used_for_tuning", "known_during_tuning": True,
+         "statement": "GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (9.9 km2 flooded in Mae Sai) was used on purpose to set the onset stage knot (10 Sep 18:15, 0.1 m)."},
+        {"id": "sentinel-1-20240916", "relation": "used_for_tuning", "known_during_tuning": True,
+         "statement": "The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m), so the radar size comparison is calibration-informed, not an independent check."},
+        {"id": "unosat-3991", "relation": "known_during_tuning", "known_during_tuning": True,
+         "statement": "UNOSAT 3991 (about 70 km2 over 13-19 Sep) was known while the stage keyframes were tuned, so its size comparison is calibration-informed, not independent."},
+        {"id": "viirs-daily", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
+         "statement": "The VIIRS daily comparison was computed after the keyframes were final and was not used for tuning."},
+        {"id": "unosat-4009", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
+         "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision."},
+    ],
+    "depth_factor": (f"The depth factor k = clip((A / A_Sai) ** {DEPTH_FACTOR_EXPONENT}, {DEPTH_FACTOR_FLOOR}, 1) was added on 28 Sep 2026, when the GISTDA and "
+                     "UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure."),
+    "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.",
+}
+
+
+def publication_eligibility(reported_licence: str | None) -> dict:
+    """Licence and display status per input; product 4009 is listed because it is the next input, not because it is shown."""
+    def entry(source_id: str, terms: str, **extra) -> dict:
+        source = next(s for s in SOURCES if s["id"] == source_id)
+        return {"id": source_id, "name": source["name"], "licence": source["licence"], "licence_stated": True, "shown": True, "terms": terms, **extra}
+
     return {
-        "study_id": "mae-sai-2024-flood-timeline", "revision": "r3", "schema_version": 1,
+        "status": "conditional",
+        "scope": "Competition and preview builds, non-commercial, with the attributions listed in sources.",
+        "conditions": [
+            "HII rain data are CC BY-NC: the replay as a whole is for non-commercial use, and rain values stay out of any combined table or export.",
+            "The VIIRS provider states no licence: the maps are shown with attribution, and reuse beyond this page is not cleared.",
+            "OpenStreetMap-derived files (roads, facilities, shelter candidates and the access node positions) stay under ODbL 1.0: attribution and share-alike.",
+            "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record.",
+        ],
+        "inputs": [
+            entry("copernicus-dem", "Use under the Copernicus DEM licence terms, with the DLR and Airbus attribution."),
+            entry("sentinel-2", "Use under the Copernicus Sentinel data terms, with the modified-data notice."),
+            entry("sentinel-1", "Use under the Copernicus Sentinel data terms, with the modified-data notice."),
+            entry("osm", "Attribution and share-alike: files derived from the OpenStreetMap database stay under ODbL 1.0."),
+            entry("worldpop", "Attribution."),
+            entry("cod-ab", "Attribution to OCHA / HDX."),
+            {**entry("viirs", "Shown with attribution; reuse beyond this page is not cleared."),
+             "licence": "No licence stated by the provider", "licence_stated": False},
+            entry("hii-rain", "Non-commercial use with attribution; keep rain values out of any combined table or export."),
+            {"id": "reported-shelters", "name": "Shelters reported in use in September 2024 (FloodGuard desk research)",
+             "licence": reported_licence or "Facts with citations", "licence_stated": True, "shown": True,
+             "terms": "Facts quoted with their sources; coordinates matched to OpenStreetMap stay under ODbL 1.0."},
+            entry("chronology", "Team summary of public reporting, shown with its compile date."),
+            {"id": "external-figures", "name": "GISTDA 10 Sep 2024 and UNOSAT 3991 reported figures", "licence": "Cited figures with links; no data copied",
+             "licence_stated": False, "shown": True, "terms": "Quoted as reported, with a link to each source."},
+            {"id": "unosat-4009", "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai", "licence": "CC BY-SA 4.0",
+             "licence_stated": True, "shown": False, "status": "Not yet shown; rights record pending owner confirmation.",
+             "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
+             "terms": "Attribution, share-alike and a change notice on every derived file; kept in its own folder."},
+        ],
+    }
+
+
+def evidence_blocks(result: dict) -> list[dict]:
+    """Lane, tier, temporal relation and source timestamp for every part of the manifest (see ``floodguard.replay_manifest``)."""
+    compiled = result["reported_meta"]["compiled"]
+    viirs = result["viirs_days"]
+    s2 = {key: stamp for key, (_, stamp) in S2_SCENES.items()}
+    scenario = {"lane": "SCN", "evidence_tier": SCENARIO_TIER}
+    imagery = {"lane": "OBS", "evidence_tier": "Observed image, shown as acquired; no flood extent is derived from it"}
+    blocks = [
+        {"id": "water_reconstruction", **scenario, "temporal_relation": "event_window_reconstruction",
+         "covers": ["hand", "impassable_depth_m", "pixel_area_m2", "stage_anchors", "tambon_coverage", "model_coverage", "tambon_histograms", "days",
+                    "facilities_count", "roads_not_modelled_km", "vectors.roads", "vectors.facilities"],
+         "source_timestamp": f"Copernicus DEM (2011-2015 acquisitions); OSM roads and facilities {OSM_EXTRACT_DATE}; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT",
+         "note": "HAND threshold reconstruction with illustrative stage keyframes: modelled water, road and facility impacts; not an observation."},
+        {"id": "residents_in_water", **scenario, "temporal_relation": "static_context", "covers": ["population"],
+         "source_timestamp": "WorldPop 2020 estimate",
+         "note": "Modelled 2020 residents on the reconstructed water; not the 2024 population."},
+        {"id": "evacuation_access", **scenario, "temporal_relation": "event_window_reconstruction", "covers": ["access"],
+         "source_timestamp": f"OSM roads and sites {OSM_EXTRACT_DATE}; WorldPop 2020; water model 2024-09-09/2024-09-19 ICT",
+         "note": "Walking access to an open, dry shelter on the reconstructed water; not observed evacuation outcomes."},
+        {"id": "shelter_plan", **scenario, "temporal_relation": "event_window_reconstruction", "covers": ["shelters"],
+         "source_timestamp": f"OSM extract {OSM_EXTRACT_DATE}; reconstructed peak 2024-09-12 ICT",
+         "note": "Candidate screening and ranked plan on the reconstructed peak; the reported sites inside this block sit in the reported lane."},
+        {"id": "reported_shelters", "lane": "REP", "evidence_tier": "Reported use from public sources; not an official register",
+         "temporal_relation": "post_event_compilation", "covers": ["shelters.reported"],
+         "source_timestamp": f"reports dated 2024-09-11 to 2024-10-11; compiled {compiled}"},
+        {"id": "event_chronology", "lane": "REP", "evidence_tier": "Team summary of public reporting; not independently verified in this study",
+         "temporal_relation": "post_event_compilation", "covers": ["phases"], "source_timestamp": f"compiled {CHRONOLOGY_COMPILED}"},
+        {"id": "viirs_daily", "lane": "OBS", "evidence_tier": "Agency flood product, used as provided; unvalidated here",
+         "temporal_relation": "event_aligned", "covers": ["viirs_daily"],
+         "source_timestamp": f"{viirs[0]['nominal_local_time']}/{viirs[-1]['nominal_local_time']} (daily composites, nominal pass time)" if viirs else "no VIIRS day in this bake",
+         "note": "375 m optical flood-water fraction; each day carries its own nominal time and cloud share."},
+        {"id": "sentinel2_20240905", **imagery, "temporal_relation": "pre_event",
+         "covers": ["observations[s2-20240905]", "layers[s2-20240905]"], "source_timestamp": s2["s2-20240905"]},
+        {"id": "sentinel2_20240915", **imagery, "temporal_relation": "event_aligned",
+         "covers": ["observations[s2-20240915]", "layers[s2-20240915]"], "source_timestamp": s2["s2-20240915"]},
+        {"id": "sentinel1_20240906", **imagery, "temporal_relation": "pre_event",
+         "covers": ["observations[s1-20240906]", "layers[s1-20240906]"], "source_timestamp": S1_STAMPS["s1-20240906"]},
+        {"id": "sentinel1_20240915", **imagery, "temporal_relation": "event_aligned",
+         "covers": ["observations[s1-20240915]", "layers[s1-20240915]"], "source_timestamp": S1_STAMPS["s1-20240915"]},
+        {"id": "sentinel1_change", "lane": "OBS", "evidence_tier": "Observed image pair shown as a colour composite; no flood extent is derived from it",
+         "temporal_relation": "pre_event_to_event_pair", "covers": ["layers[s1-change]"], "source_timestamp": S1_PAIR},
+        {"id": "rainfall", "lane": "OBS", "evidence_tier": "Gauge record, used as provided", "temporal_relation": "event_aligned",
+         "covers": ["rainfall"], "source_timestamp": f"{EVENT_START}/{EVENT_END} (hourly)",
+         "note": "Observed rainfall (forcing), not flooding."},
+        {"id": "sentinel1_size_comparison", "lane": "CAL", "evidence_tier": "Calibration-informed size comparison; not an independent check",
+         "temporal_relation": "event_aligned", "covers": ["s1_anchor"], "source_timestamp": S1_PAIR,
+         "note": "The recession keyframes were re-tuned to this pass."},
+        {"id": "gistda_onset_anchor", "lane": "CAL", "evidence_tier": "Calibration anchor; the model agrees with it by construction",
+         "temporal_relation": "event_aligned", "covers": ["external_checks[gistda-radarsat2-20240910]"],
+         "source_timestamp": "2024-09-10T18:15 (time zone not stated by GISTDA; assumed ICT)"},
+        {"id": "unosat_3991_size_comparison", "lane": "CAL", "evidence_tier": "Calibration-informed magnitude check; not an independent check",
+         "temporal_relation": "event_window_cumulative", "covers": ["external_checks[unosat-3991]"],
+         "source_timestamp": "2024-09-13/2024-09-19 (cumulative window)"},
+        {"id": "unosat_4009_season_envelope", "lane": "SCN-ENV", "evidence_tier": "Season envelope (scenario), used as provided; unvalidated; not shown in this revision",
+         "temporal_relation": "season_envelope", "covers": ["external_references[unosat-4009]"], "source_timestamp": "2024-08-01/2024-10-22",
+         "season_window": "2024-08-01/2024-10-22", "shown": False,
+         "note": "Never an observation for a replay day. Shown only after the owners confirm the rights record."},
+        {"id": "terrain_shading", "lane": "CTX", "evidence_tier": "Reference data", "temporal_relation": "static_context",
+         "covers": ["layers[hillshade]"], "source_timestamp": "Copernicus DEM (2011-2015 acquisitions)"},
+        {"id": "subdistrict_boundaries", "lane": "CTX", "evidence_tier": "Reference data", "temporal_relation": "static_context",
+         "covers": ["vectors.tambons"], "source_timestamp": "COD-AB valid from 2022-01-22"},
+        {"id": "other_references", "lane": "REF", "evidence_tier": "Cited source; not ingested in this revision", "temporal_relation": "not_ingested",
+         "covers": ["external_references[unosat-3969]", "external_references[charter-912]", "external_references[hii-event-page]"],
+         "source_timestamp": "event reports of September 2024"},
+    ]
+    return blocks
+
+
+def dated_inputs(result: dict) -> list[str]:
+    """Dates of the newest content of each dated input group (the default ``generated_at`` is their maximum)."""
+    stamps = [stamp for _, stamp in S2_SCENES.values()] + list(S1_STAMPS.values()) + [EVENT_END, OSM_EXTRACT_DATE, CHRONOLOGY_COMPILED]
+    stamps += [day["nominal_local_time"] for day in result.get("viirs_days", [])]
+    if result.get("reported_meta", {}).get("compiled"):
+        stamps.append(result["reported_meta"]["compiled"])
+    return stamps
+
+
+def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_at: str | None = None) -> dict:
+    """Assemble ``timeline.json`` with provenance, confidence, evidence lanes and assumptions.
+
+    ``inputs`` are the input receipt's rows (root, path, bytes, SHA-256). ``generated_at`` is the declared bake
+    time; without it the newest dated input is used, never the machine clock.
+    """
+    anchor = result["s1_anchor"]
+    if round(anchor["best_fit_stage_m"], 2) != S1_BEST_FIT_STAGE_M:
+        raise ReplayManifestError(f"the disclosure states a Sentinel-1 best-fit stage of {S1_BEST_FIT_STAGE_M:.2f} m, but this bake found {anchor['best_fit_stage_m']} m")
+    basis = "declared" if generated_at else "newest_input_timestamp"
+    stamp = normalise_timestamp(generated_at) if generated_at else newest_timestamp(dated_inputs(result))
+    first_image = min(stamp_ for _, stamp_ in S2_SCENES.values())
+    blocks = evidence_blocks(result)
+    manifest = {
+        "study_id": STUDY_ID, "revision": REVISION, "schema_version": 2, "schema_id": SCHEMA_ID,
         "generated_by": GENERATED_BY,
-        "data_mode": "historical_reconstruction", "official_warning": False, "real_time": False, "can_feed_decision_layer": False,
-        "confidence": "low",
-        "confidence_reason": "Water extents are a terrain-model reconstruction with illustrative stages; only the late-recession size is checked against radar, and spatial agreement there is weak.",
-        "source_timestamp": "2024-09-05T03:58:19Z/2024-09-15T23:16:01Z",
+        "generated_at": stamp, "generated_at_basis": basis, "generated_at_note": GENERATED_AT_NOTES[basis],
+        "git_commit": None, "git_commit_reason": GIT_COMMIT_REASON,
+        "git_commit_lookup": f"git log -1 --format=%H -- {OUT_REL.as_posix()}/timeline.json",
+        "data_version": f"{STUDY_ID}-{REVISION}",
+        "dataset_mode": "historical_reconstruction", "data_mode": "historical_reconstruction",
+        "operational_status": "non_operational",
+        "official_warning": False, "real_time": False, "can_feed_decision_layer": False,
+        "accepted_fpps": None, "accepted_action_class": None,
+        "protocol_sha256": None, "protocol_sha256_reason": "not_a_protocol_case",
+        "permitted_use": PERMITTED_USE, "reason_blocked": REASON_BLOCKED,
+        "confidence": "low", "confidence_class": "low",
+        "confidence_reason": CONFIDENCE_REASON,
+        "confidence_basis": [
+            "Terrain: HAND on the 30 m Copernicus DSM; buildings and trees bias HAND upward in town.",
+            "Stage: illustrative keyframes shaped to the event chronology; no gauge record.",
+            "Tuning: the onset knot uses GISTDA's 10 Sep figure, the recession keyframes use the 16 Sep Sentinel-1 pass and UNOSAT 3991 was known, so no size comparison is independent.",
+            f"Spatial agreement with the Sentinel-1 newly water-like area is weak (IoU {anchor['iou_at_best_fit']:.2f}).",
+            "Onset and peak extents were not observed: no high-resolution image for 10-14 Sep, and VIIRS was mostly under cloud.",
+            "Nothing was field-checked.",
+        ],
+        "source_name": "FloodGuard Mae Sai September 2024 flood replay: terrain-model reconstruction with dated observations and reported facts",
+        "event_time": {"start": EVENT_START, "end": EVENT_END, "timezone": "Asia/Bangkok",
+                       "note": "Replay window in local time (ICT, UTC+7): 9 Sep 00:00 to 19 Sep 24:00."},
+        "source_timestamp": f"{first_image}/{normalise_utc(EVENT_END)}",
+        "source_timestamp_note": ("Span of the dated event observations shown: from the Sentinel-2 image of 5 Sep 03:58 UTC to the end of the last HII rain hour "
+                                  "(19 Sep 24:00 ICT). Sentinel-1 (6 and 15 Sep UTC) and VIIRS (10-18 Sep) fall inside it. Inputs dated outside the event "
+                                  f"(elevation 2011-2015, WorldPop 2020, boundaries 2022, OpenStreetMap {OSM_EXTRACT_DATE}, reported shelters compiled "
+                                  f"{result['reported_meta']['compiled']}) are dated per evidence block and in sources."),
         "timezone": "Asia/Bangkok (ICT, UTC+7)",
         "area": {"en": "Mae Sai District, Chiang Rai, Thailand (the image footprint also covers Tachileik, Myanmar)",
                  "th": "อำเภอแม่สาย จังหวัดเชียงราย (ภาพครอบคลุมท่าขี้เหล็ก เมียนมาด้วย)"},
         "bounds": result["bounds"],
+        "lanes": {lane: LANES[lane] for lane in dict.fromkeys(block["lane"] for block in blocks)},
+        "evidence_blocks": blocks,
+        "exploratory_knowledge": EXPLORATORY_KNOWLEDGE,
+        "publication_eligibility": publication_eligibility(result["reported_meta"].get("licence_note")),
+        "input_sha256": [dict(row) for row in (inputs or [])],
         "hand": {**result["hand"], "low_confidence_share": result["low_confidence_share"], "step_m": HAND_STEP_M, "channel_code": CHANNEL_CODE, "never_code": NEVER_CODE,
                  "stream_threshold_km2": STREAM_THRESHOLD_KM2},
         "impassable_depth_m": IMPASSABLE_DEPTH_M,
@@ -772,8 +1010,10 @@ def compose_manifest(result: dict) -> dict:
         "layers": result["layers"],
         "vectors": result["vectors"],
         "tambon_histograms": result["histograms"],
-        "s1_anchor": {**anchor, "reconstruction_stage_at_pass_m": round(stage_at(7 + 6.27 / 24), 3)},
-        "population": {**result["population"], "source": "WorldPop Thailand 100 m constrained 2020 (tha_ppp_2020)",
+        "s1_anchor": {**anchor, "reconstruction_stage_at_pass_m": round(stage_at(7 + 6.27 / 24), 3),
+                      "role": "calibration_informed_magnitude_check", "source_timestamp": S1_PAIR,
+                      "use": "Calibration-informed, not an independent check: the recession keyframes were re-tuned to this pass (best-fit stage 0.10 m). It constrains size only, not location."},
+        "population": {**result["population"], "source": WORLDPOP_SOURCE,
                        "licence": "CC BY 4.0", "timestamp": "2020 estimate",
                        "note": "Modelled residential population, not a census count or the 2024 population."},
         "access": {**result["access"], "scenario_tier": "T1 scenario (model), not observed evacuation outcomes",
@@ -803,10 +1043,11 @@ def compose_manifest(result: dict) -> dict:
                      "source_url": "https://tiservice.hii.or.th/opendata/", "licence": "CC BY-NC (per the HII open-data catalogue)",
                      "units": "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT", "note": "Observed rainfall (forcing), not flooding."},
         "external_references": [
-            {"name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)", "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province", "note": "Season envelope (scenario per decision D3); not shown until the CC BY-SA rights record (D2) is signed."},
-            {"name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)", "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"},
-            {"name": "International Charter activation 912 (Typhoon Yagi, Thailand)", "url": "https://disasterscharter.org/activations/flood-in-thailand-activation-912-"},
-            {"name": "HII ThaiWater September 2024 Chiang Rai flood event page (rainfall and Kok River hydrographs)", "url": "https://www.thaiwater.net/uploads/contents/current/2024/FloodChiangrai_Sep2024/"}],
+            {"id": "unosat-4009", "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)", "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
+             "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" on 1 Oct 2026; shown only after the owners confirm the rights record."},
+            {"id": "unosat-3969", "name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)", "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"},
+            {"id": "charter-912", "name": "International Charter activation 912 (Typhoon Yagi, Thailand)", "url": "https://disasterscharter.org/activations/flood-in-thailand-activation-912-"},
+            {"id": "hii-event-page", "name": "HII ThaiWater September 2024 Chiang Rai flood event page (rainfall and Kok River hydrographs)", "url": "https://www.thaiwater.net/uploads/contents/current/2024/FloodChiangrai_Sep2024/"}],
         "gauge_note": "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.",
         "sources": SOURCES,
         "assumptions": ASSUMPTIONS,
@@ -816,6 +1057,18 @@ def compose_manifest(result: dict) -> dict:
             "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded.",
         ],
     }
+    return manifest
+
+
+def normalise_utc(value: str) -> str:
+    """Return an ISO 8601 date-time as UTC with a ``Z`` suffix."""
+    return datetime.fromisoformat(value).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def manifest_problems(manifest: dict) -> list[str]:
+    """Evidence-contract and JSON-schema problems of a composed manifest (empty when it may be written)."""
+    schema = json.loads((ROOT / SCHEMA_REL).read_text(encoding="utf-8"))
+    return evidence_problems(manifest) + schema_problems(manifest, schema)
 
 
 RECEIPT_ASSUMPTIONS = [
@@ -823,14 +1076,41 @@ RECEIPT_ASSUMPTIONS = [
     "The same inputs give the same bytes only with the same library versions: another GDAL, PROJ, WebP, zlib or pysheds build can change bytes without changing the method.",
     "The two OpenStreetMap GeoPackages under derived_context are extracts this bake cuts from the Geofabrik PBF when they are absent; a fresh extract can hash differently while holding the same features.",
     "The receipt lists files, not their meaning: it does not make the reconstruction an observation.",
+    "generated_at is a declared value (or the newest dated input), not a clock reading; the commit that carries the revision records when the files were written.",
+    "Bake sources are hashed with CRLF read as LF, so a Windows checkout gives the same hashes.",
 ]
 
 
-def bake(external: Path, out_dir: Path) -> tuple[dict, dict, InputReceipt]:
-    """Run the whole bake into ``out_dir`` and return ``(manifest, build result, input receipt)``."""
+BAKE_SOURCES = (
+    GENERATED_BY,
+    "scripts/mae_sai_timeline_evacuation.py",
+    "scripts/mae_sai_timeline_observations.py",
+    "src/floodguard/bake_receipt.py",
+    "src/floodguard/evacuation_access.py",
+    "src/floodguard/flood_timeline.py",
+    "src/floodguard/replay_manifest.py",
+    SCHEMA_REL.as_posix(),
+)
+"""This script, the repository modules it imports and the schema the manifest must follow (a unit test checks the imports)."""
+
+
+def bake_sources() -> list[dict]:
+    """Line-ending-neutral SHA-256 of every file in :data:`BAKE_SOURCES`, for the input receipt."""
+    return source_hashes([ROOT / path for path in BAKE_SOURCES], ROOT)
+
+
+def bake(external: Path, out_dir: Path, generated_at: str | None = None) -> tuple[dict, dict, InputReceipt]:
+    """Run the whole bake into ``out_dir`` and return ``(manifest, build result, input receipt)``.
+
+    ``generated_at`` is the declared bake time (see :func:`compose_manifest`). A manifest that breaks the evidence
+    contract or the JSON schema is not written.
+    """
     receipt = InputReceipt({"external": external, "repo": ROOT})
     result = build(external, out_dir, receipt.track)
-    manifest = compose_manifest(result)
+    manifest = compose_manifest(result, inputs=receipt.entries(), generated_at=generated_at)
+    problems = manifest_problems(manifest)
+    if problems:
+        raise ReplayManifestError("timeline.json breaks its evidence contract:\n  " + "\n  ".join(problems))
     (out_dir / "timeline.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     return manifest, result, receipt
 
@@ -843,6 +1123,7 @@ def receipt_document(manifest: dict, receipt: InputReceipt, out_dir: Path) -> di
         "schema": RECEIPT_SCHEMA,
         "study_id": manifest["study_id"], "revision": manifest["revision"], "generated_by": GENERATED_BY,
         "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
+        "generated_at": {"value": manifest.get("generated_at"), "basis": manifest.get("generated_at_basis")},
         "source_timestamp": manifest["source_timestamp"],
         "confidence": manifest["confidence"],
         "confidence_reason": "Confidence of the baked reconstruction, copied from timeline.json. The receipt itself is an exact file record.",
@@ -852,6 +1133,7 @@ def receipt_document(manifest: dict, receipt: InputReceipt, out_dir: Path) -> di
         "input_count": len(inputs), "input_bytes": sum(row["bytes"] for row in inputs),
         "inputs": inputs,
         "outputs": {"folder": OUT_REL.as_posix(), "file_count": len(outputs), "bytes": sum(row["bytes"] for row in outputs), "files": outputs},
+        "code": bake_sources(),
         "libraries": library_versions(),
         "platform": {"system": platform.system(), "machine": platform.machine()},
     }
@@ -869,31 +1151,55 @@ def default_receipt_path(out_dir: Path) -> Path:
     return out_dir.parent / f"{out_dir.name}_input_receipt.json"
 
 
-def verify(external: Path, committed: Path, receipt_path: Path, work_root: Path | None = None) -> int:
+def recorded_receipt(receipt_path: Path) -> dict:
+    """The receipt written by an earlier bake, or an empty mapping when there is none."""
+    return json.loads(receipt_path.read_text(encoding="utf-8")) if receipt_path.is_file() else {}
+
+
+def resolve_generated_at(argument: str | None, recorded: dict) -> tuple[str | None, str]:
+    """Return the ``generated_at`` to bake with and where it came from.
+
+    Order: the ``--generated-at`` argument; else the value an earlier bake declared and recorded in the receipt;
+    else ``None``, which makes the bake use the newest dated input. The machine clock is never read.
+    """
+    if argument:
+        return normalise_timestamp(argument), "declared with --generated-at"
+    carried = recorded.get("generated_at") if isinstance(recorded.get("generated_at"), dict) else None
+    if carried and carried.get("basis") == "declared" and carried.get("value"):
+        return normalise_timestamp(carried["value"]), "carried from the recorded receipt (pass --generated-at to declare a new time)"
+    return None, "newest dated input (no time was declared)"
+
+
+def verify(external: Path, committed: Path, receipt_path: Path, work_root: Path | None = None, generated_at: str | None = None) -> int:
     """Bake into a temporary folder and byte-compare it with ``committed``; return 0 only when every file matches.
 
-    Nothing is written to ``committed`` or to ``receipt_path``. Differences in inputs or library versions against
-    the recorded receipt are reported to explain a mismatch; only the byte comparison decides the exit code.
+    Nothing is written to ``committed`` or to ``receipt_path``. Differences in inputs, bake sources or library
+    versions against the recorded receipt are reported to explain a mismatch; only the byte comparison decides the
+    exit code. ``generated_at`` defaults to the value recorded in the receipt.
     """
     if not committed.is_dir():
         print(f"verify: the committed folder does not exist: {committed.name}")
         return 1
+    recorded = recorded_receipt(receipt_path)
+    stamp, origin = resolve_generated_at(generated_at, recorded)
     with tempfile.TemporaryDirectory(prefix="mae-sai-timeline-verify-", dir=work_root) as tmp:
         fresh = Path(tmp) / committed.name
         if fresh.resolve() == committed.resolve():
             raise RuntimeError("--verify must never bake into the committed folder")
-        manifest, _, receipt = bake(external, fresh)
+        manifest, _, receipt = bake(external, fresh, generated_at=stamp)
         comparison = compare_directories(fresh, committed)
         document = receipt_document(manifest, receipt, fresh)
+    print(f"verify: generated_at {manifest.get('generated_at')} ({origin})")
     print(f"verify: {comparison.summary()} ({committed.name}, {document['outputs']['bytes']:,} bytes in the fresh bake)")
     for label, names in (("different bytes", comparison.different), ("committed but not baked", comparison.missing_from_fresh),
                          ("baked but not committed", comparison.extra_in_fresh)):
         for name in names:
             print(f"verify: {label}: {name}")
-    if receipt_path.is_file():
-        recorded = json.loads(receipt_path.read_text(encoding="utf-8"))
+    if recorded:
         for note in input_differences(document["inputs"], recorded.get("inputs", [])):
             print(f"verify: input note: {note}")
+        for note in source_differences(document["code"], recorded.get("code", [])):
+            print(f"verify: code note: {note}")
         for note in version_differences(document["libraries"], recorded.get("libraries", {})):
             print(f"verify: library note: {note}")
     else:
@@ -910,6 +1216,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="Folder to bake into; with --verify, the committed folder to compare against (never written).")
     parser.add_argument("--receipt", default=None,
                         help="Input receipt to write (or, with --verify, to compare with). Defaults to the committed receipt for the committed folder.")
+    parser.add_argument("--generated-at", default=None,
+                        help="Bake time to record as generated_at (ISO 8601 with a UTC offset, e.g. 2026-10-01T21:00:00+07:00). "
+                             "Without it the value in the recorded receipt is carried; with neither, the newest dated input is used. The machine clock is never read.")
     parser.add_argument("--verify", action="store_true",
                         help="Bake into a temporary folder and byte-compare with --out; exit non-zero on any difference.")
     args = parser.parse_args(argv)
@@ -918,9 +1227,11 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = Path(args.out)
     receipt_path = Path(args.receipt) if args.receipt else default_receipt_path(out_dir)
     if args.verify:
-        return verify(Path(args.external_root), out_dir, receipt_path)
-    manifest, result, receipt = bake(Path(args.external_root), out_dir)
+        return verify(Path(args.external_root), out_dir, receipt_path, generated_at=args.generated_at)
+    stamp, origin = resolve_generated_at(args.generated_at, recorded_receipt(receipt_path))
+    manifest, result, receipt = bake(Path(args.external_root), out_dir, generated_at=stamp)
     write_receipt(receipt_path, receipt_document(manifest, receipt, out_dir))
+    print(f"generated_at: {manifest.get('generated_at')} ({origin})")
     print(json.dumps(manifest["s1_anchor"], indent=1))
     for d in result["days"]:
         s = d["stats"]

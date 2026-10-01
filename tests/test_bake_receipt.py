@@ -28,13 +28,16 @@ from floodguard.bake_receipt import (
     input_differences,
     library_versions,
     sha256_file,
+    sha256_text_file,
+    source_differences,
+    source_hashes,
     version_differences,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
-COMMITTED_RECEIPT = ROOT / "docs" / "mae_sai_timeline_r3_input_receipt.json"
-COMMITTED_FOLDER = ROOT / "apps" / "web" / "public" / "studies" / "mae-sai-2024-timeline" / "r3"
+COMMITTED_RECEIPT = ROOT / "docs" / "mae_sai_timeline_r4_input_receipt.json"
+COMMITTED_FOLDER = ROOT / "apps" / "web" / "public" / "studies" / "mae-sai-2024-timeline" / "r4"
 LOCAL_PATH = re.compile(r"(?<![A-Za-z])[A-Za-z]:[\\/](?!/)|/Users/|\\Users\\|/home/|%20")
 
 # --- Recording which files Python opens --------------------------------------------------------------
@@ -202,6 +205,44 @@ def test_input_and_version_differences_explain_a_mismatch() -> None:
     assert version_differences({"numpy": "2.2.6"}, {"numpy": "2.2.6"}) == []
 
 
+def test_receipt_hashes_a_file_again_only_when_it_changed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import floodguard.bake_receipt as module
+
+    path = tmp_path / "big.tif"
+    path.write_bytes(b"first")
+    receipt = InputReceipt({"external": tmp_path})
+    receipt.track(path)
+    calls: list[str] = []
+    real = module.sha256_file
+    monkeypatch.setattr(module, "sha256_file", lambda target: calls.append(Path(target).name) or real(target))
+    first = receipt.entries()
+    assert receipt.entries() == first and calls == ["big.tif"]  # The second call reuses the hash.
+    path.write_bytes(b"second, longer")
+    changed = receipt.entries()
+    assert calls == ["big.tif", "big.tif"]
+    assert changed[0]["sha256"] == hashlib.sha256(b"second, longer").hexdigest() != first[0]["sha256"]
+
+
+def test_source_hashes_ignore_windows_line_endings_and_explain_changes(tmp_path: Path) -> None:
+    (tmp_path / "scripts").mkdir()
+    unix, windows = tmp_path / "scripts" / "a.py", tmp_path / "scripts" / "b.py"
+    unix.write_bytes(b"x = 1\ny = 2\n")
+    windows.write_bytes(b"x = 1\r\ny = 2\r\n")
+    assert sha256_text_file(unix) == sha256_text_file(windows) == hashlib.sha256(b"x = 1\ny = 2\n").hexdigest()
+    rows = source_hashes([windows, unix], tmp_path)
+    assert [row["path"] for row in rows] == ["scripts/a.py", "scripts/b.py"]  # Relative POSIX paths, sorted.
+    assert rows[0]["sha256"] == rows[1]["sha256"]
+    with pytest.raises(ReceiptError, match="outside the repository"):
+        source_hashes([tmp_path / "scripts" / "a.py"], tmp_path / "scripts" / "nested")
+    assert source_differences(rows, rows) == []
+    edited = [{"path": "scripts/a.py", "sha256": "c" * 64}, {"path": "scripts/new.py", "sha256": "d" * 64}]
+    assert source_differences(edited, rows) == [
+        f"scripts/a.py changed since the recorded bake (cccccccccccc now, {rows[0]['sha256'][:12]} recorded)",
+        "scripts/b.py is in the recorded receipt but is not used now",
+        "scripts/new.py is used now but is not in the recorded receipt",
+    ]
+
+
 # --- Stage functions report every file they open --------------------------------------------------------
 
 
@@ -245,13 +286,18 @@ def fake_bake(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         return {"days": [], "size": len(data)}
 
     monkeypatch.setattr(bake, "build", build)
-    monkeypatch.setattr(bake, "compose_manifest", lambda result: {
-        "study_id": "fake-study", "revision": "r3", "source_timestamp": "2024-09-09/2024-09-19", "confidence": "low",
-        "s1_anchor": {}, "size": result["size"]})
+    def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_at: str | None = None) -> dict:
+        basis = "declared" if generated_at else "newest_input_timestamp"
+        return {"study_id": "fake-study", "revision": "r4", "source_timestamp": "2024-09-09/2024-09-19", "confidence": "low",
+                "generated_at": generated_at or "2024-09-19T17:00:00Z", "generated_at_basis": basis,
+                "input_sha256": inputs or [], "s1_anchor": {}, "size": result["size"]}
+
+    monkeypatch.setattr(bake, "compose_manifest", compose_manifest)
+    monkeypatch.setattr(bake, "manifest_problems", lambda manifest: [])  # The fake manifest is not a replay manifest.
     work = tmp_path / "work"
     work.mkdir()
     monkeypatch.setattr(tempfile, "tempdir", str(work))  # Keep the verify bake's temporary folder inside tmp_path.
-    return bake, external, tmp_path / "published" / "r3", work
+    return bake, external, tmp_path / "published" / "r4", work
 
 
 def snapshot(folder: Path) -> dict[str, tuple[bytes, int]]:
@@ -263,11 +309,11 @@ def test_bake_writes_outputs_and_a_receipt_of_what_it_opened(fake_bake) -> None:
     assert bake.main(["--external-root", str(external), "--out", str(committed)]) == 0
     assert sorted(path.name for path in committed.iterdir()) == ["layer.bin", "timeline.json"]
     # A bake outside the repository's revision folder never touches the committed receipt.
-    receipt_path = committed.parent / "r3_input_receipt.json"
+    receipt_path = committed.parent / "r4_input_receipt.json"
     assert bake.default_receipt_path(committed) == receipt_path
     assert bake.default_receipt_path(ROOT / bake.OUT_REL) == ROOT / bake.RECEIPT_REL
     document = json.loads(receipt_path.read_text(encoding="utf-8"))
-    assert document["schema"] == RECEIPT_SCHEMA and document["revision"] == "r3"
+    assert document["schema"] == RECEIPT_SCHEMA and document["revision"] == "r4"
     assert document["inputs"] == [{"root": "external", "path": "input.bin", "bytes": 10, "sha256": sha256_file(external / "input.bin")}]
     assert (document["input_count"], document["input_bytes"]) == (1, 10)
     assert [row["name"] for row in document["outputs"]["files"]] == ["layer.bin", "timeline.json"]
@@ -277,12 +323,102 @@ def test_bake_writes_outputs_and_a_receipt_of_what_it_opened(fake_bake) -> None:
     assert document["official_warning"] is False and document["operational_status"] == "non_operational"
     assert b"\r" not in receipt_path.read_bytes()
     assert str(external) not in receipt_path.read_text(encoding="utf-8")
+    # The manifest carries the same input hashes as the receipt, and the receipt names the bake sources by content.
+    manifest = json.loads((committed / "timeline.json").read_text(encoding="utf-8"))
+    assert manifest["input_sha256"] == document["inputs"]
+    assert document["generated_at"] == {"value": "2024-09-19T17:00:00Z", "basis": "newest_input_timestamp"}
+    assert [row["path"] for row in document["code"]] == sorted(bake.BAKE_SOURCES)
+    assert all(re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) for row in document["code"])
+
+
+def test_generated_at_is_declared_once_then_carried_and_never_read_from_the_clock(fake_bake, capsys: pytest.CaptureFixture[str]) -> None:
+    bake, external, committed, _ = fake_bake
+    receipt_path = committed.parent / "r4_input_receipt.json"
+    base = ["--external-root", str(external), "--out", str(committed)]
+
+    def manifest() -> dict:
+        return json.loads((committed / "timeline.json").read_text(encoding="utf-8"))
+
+    # Declared: recorded in the manifest and in the receipt, normalised with its offset.
+    assert bake.main([*base, "--generated-at", "2026-10-01T16:10:00+07:00"]) == 0
+    assert (manifest()["generated_at"], manifest()["generated_at_basis"]) == ("2026-10-01T16:10:00+07:00", "declared")
+    assert json.loads(receipt_path.read_text(encoding="utf-8"))["generated_at"] == {"value": "2026-10-01T16:10:00+07:00", "basis": "declared"}
+    first = (committed / "timeline.json").read_bytes()
+    # A later bake without the argument carries the recorded value, so the bytes do not move.
+    capsys.readouterr()
+    assert bake.main(base) == 0
+    assert (committed / "timeline.json").read_bytes() == first
+    assert "carried from the recorded receipt" in capsys.readouterr().out
+    # --verify also carries it and passes; a different declared time is a real difference.
+    assert bake.main([*base, "--verify"]) == 0
+    assert "verify: generated_at 2026-10-01T16:10:00+07:00" in capsys.readouterr().out
+    assert bake.main([*base, "--verify", "--generated-at", "2026-10-02T09:00:00+07:00"]) == 1
+    assert "verify: different bytes: timeline.json" in capsys.readouterr().out
+    # A time without an offset is refused: the reader could not tell which clock it is on.
+    with pytest.raises(ValueError, match="UTC offset"):
+        bake.main([*base, "--generated-at", "2026-10-01T16:10:00"])
+
+    assert bake.resolve_generated_at("2026-10-01T09:10:00Z", {}) == ("2026-10-01T09:10:00Z", "declared with --generated-at")
+    assert bake.resolve_generated_at(None, {})[0] is None
+    assert bake.resolve_generated_at(None, {"generated_at": {"value": "2024-09-19T17:00:00Z", "basis": "newest_input_timestamp"}})[0] is None
+    source = (SCRIPTS / "build_mae_sai_flood_timeline.py").read_text(encoding="utf-8")
+    assert not re.search(r"datetime\.now|utcnow|time\.time\(|date\.today", source)
+
+
+def test_verify_reports_changed_bake_sources_without_failing_identical_bytes(fake_bake, capsys: pytest.CaptureFixture[str]) -> None:
+    bake, external, committed, _ = fake_bake
+    base = ["--external-root", str(external), "--out", str(committed)]
+    assert bake.main(base) == 0
+    receipt_path = committed.parent / "r4_input_receipt.json"
+    document = json.loads(receipt_path.read_text(encoding="utf-8"))
+    document["code"][0]["sha256"] = "0" * 64  # As if a bake source had been edited since the recorded bake.
+    receipt_path.write_text(json.dumps(document), encoding="utf-8")
+    capsys.readouterr()
+    assert bake.main([*base, "--verify"]) == 0
+    out = capsys.readouterr().out
+    assert f"verify: code note: {document['code'][0]['path']} changed since the recorded bake" in out and "verify: PASS" in out
+
+
+def test_bake_sources_cover_every_repository_module_the_bake_imports() -> None:
+    import ast
+
+    bake = load_bake()
+    listed = set(bake.BAKE_SOURCES)
+    assert all((ROOT / path).is_file() for path in listed)
+    assert bake.GENERATED_BY in listed and bake.SCHEMA_REL.as_posix() in listed
+    seen: set[str] = set()
+    queue = [bake.GENERATED_BY]
+    while queue:
+        path = queue.pop()
+        if path in seen:
+            continue
+        seen.add(path)
+        for node in ast.walk(ast.parse((ROOT / path).read_text(encoding="utf-8"))):
+            names = [alias.name for alias in node.names] if isinstance(node, ast.Import) else [node.module or ""] if isinstance(node, ast.ImportFrom) else []
+            for name in names:
+                if name.startswith("floodguard."):
+                    queue.append(f"src/{name.replace('.', '/')}.py")
+                elif name.startswith("mae_sai_timeline_"):
+                    queue.append(f"scripts/{name}.py")
+    assert seen <= listed, f"imported by the bake but not hashed in the receipt: {sorted(seen - listed)}"
+
+
+def test_bake_refuses_a_manifest_that_breaks_the_evidence_contract(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    bake = load_bake()
+    external = tmp_path / "external"
+    external.mkdir()
+    monkeypatch.setattr(bake, "build", lambda external_root, out_dir, track=bake.untracked: out_dir.mkdir(parents=True) or {})
+    monkeypatch.setattr(bake, "compose_manifest", lambda result, inputs=None, generated_at=None: {"study_id": "fake", "accepted_fpps": 81.2})
+    out = tmp_path / "out" / "r4"
+    with pytest.raises(ValueError, match="accepted_fpps must be null"):
+        bake.bake(external, out)
+    assert not (out / "timeline.json").exists()  # Nothing is written when the contract is broken.
 
 
 def test_verify_passes_on_identical_bytes_and_never_writes_to_the_committed_folder(fake_bake, capsys: pytest.CaptureFixture[str]) -> None:
     bake, external, committed, work = fake_bake
     assert bake.main(["--external-root", str(external), "--out", str(committed)]) == 0
-    receipt_path = committed.parent / "r3_input_receipt.json"
+    receipt_path = committed.parent / "r4_input_receipt.json"
     before, receipt_before = snapshot(committed), (receipt_path.read_bytes(), receipt_path.stat().st_mtime_ns)
     capsys.readouterr()
     assert bake.main(["--external-root", str(external), "--out", str(committed), "--verify"]) == 0
@@ -304,7 +440,9 @@ def test_verify_exits_non_zero_on_any_difference_and_still_leaves_the_folder_alo
     capsys.readouterr()
     assert bake.main(args) == 1
     out = capsys.readouterr().out
-    assert "verify: 1/2 identical" in out and "verify: different bytes: layer.bin" in out and "verify: FAIL" in out
+    # The derived layer changes, and so does the manifest, which carries the input hashes.
+    assert "verify: 0/2 identical" in out and "verify: different bytes: layer.bin" in out and "verify: FAIL" in out
+    assert "verify: different bytes: timeline.json" in out
     assert "verify: input note: external:input.bin has different bytes" in out
     assert snapshot(committed) == before
     (external / "input.bin").write_bytes(b"0123456789")
@@ -336,7 +474,7 @@ def test_bake_docstring_names_both_dem_tiles_and_the_verify_mode() -> None:
     assert not LOCAL_PATH.search(source)  # No machine path in the script.
 
 
-# --- The committed r3 receipt ---------------------------------------------------------------------------
+# --- The committed r4 receipt ---------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")
@@ -349,7 +487,7 @@ def test_committed_receipt_carries_provenance_fields_and_no_machine_path(committ
     assert b"\r" not in raw and raw.endswith(b"\n")
     assert not LOCAL_PATH.search(raw.decode("utf-8"))
     assert committed_receipt["schema"] == RECEIPT_SCHEMA
-    assert committed_receipt["study_id"] == "mae-sai-2024-flood-timeline" and committed_receipt["revision"] == "r3"
+    assert committed_receipt["study_id"] == "mae-sai-2024-flood-timeline" and committed_receipt["revision"] == "r4"
     assert committed_receipt["generated_by"] == "scripts/build_mae_sai_flood_timeline.py"
     assert committed_receipt["source_timestamp"] and committed_receipt["confidence"] == "low" and committed_receipt["assumptions"]
     assert committed_receipt["official_warning"] is False
@@ -360,6 +498,20 @@ def test_committed_receipt_carries_provenance_fields_and_no_machine_path(committ
         assert committed_receipt["libraries"].get(name), name
     # A receipt is provenance only: it carries no score and no action class.
     assert not re.search(r"fpps|action_class", raw.decode("utf-8"), re.IGNORECASE)
+
+
+def test_committed_receipt_and_manifest_agree_on_inputs_generation_time_and_bake_sources(committed_receipt: dict) -> None:
+    manifest = json.loads((COMMITTED_FOLDER / "timeline.json").read_text(encoding="utf-8"))
+    assert manifest["input_sha256"] == committed_receipt["inputs"]
+    assert committed_receipt["generated_at"] == {"value": manifest["generated_at"], "basis": manifest["generated_at_basis"]}
+    # The committed revision was baked with a declared time, so --verify and a plain re-bake carry it.
+    assert manifest["generated_at_basis"] == "declared"
+    bake = load_bake()
+    assert bake.resolve_generated_at(None, committed_receipt)[0] == manifest["generated_at"]
+    # The receipt names every bake source by content. The hashes are a record of the bake, not a gate: --verify
+    # reports a source that changed since, and only the byte comparison decides.
+    assert [row["path"] for row in committed_receipt["code"]] == sorted(bake.BAKE_SOURCES)
+    assert all(re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) for row in committed_receipt["code"])
 
 
 def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_receipt: dict) -> None:
@@ -427,7 +579,7 @@ def real_bake(tmp_path_factory: pytest.TempPathFactory) -> dict:
     bake = load_bake()
     import rasterio
 
-    out = tmp_path_factory.mktemp("mae-sai-bake") / "r3"
+    out = tmp_path_factory.mktemp("mae-sai-bake") / "r4"
     committed_before = directory_listing(COMMITTED_FOLDER)
     native: list[str] = []
     real_raster_open, real_read_dataframe = rasterio.open, pyogrio.read_dataframe
@@ -444,7 +596,10 @@ def real_bake(tmp_path_factory: pytest.TempPathFactory) -> dict:
     with pytest.MonkeyPatch.context() as patch, recorded_opens() as opened:
         patch.setattr(rasterio, "open", raster_open)
         patch.setattr(pyogrio, "read_dataframe", read_dataframe)
-        manifest, _, receipt = bake.bake(Path(external), out)
+        # generated_at is a declared value: the rebuild uses the one recorded in the committed receipt.
+        recorded = json.loads(COMMITTED_RECEIPT.read_text(encoding="utf-8"))
+        stamp, _ = bake.resolve_generated_at(None, recorded)
+        manifest, _, receipt = bake.bake(Path(external), out, generated_at=stamp)
         observed = under(opened + native, Path(external), ROOT / "outputs")
     return {"bake": bake, "external": Path(external), "out": out, "manifest": manifest, "receipt": receipt,
             "observed": observed, "committed_before": committed_before}

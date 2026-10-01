@@ -11,6 +11,7 @@ import {
   districtStats,
   hourlyStages,
   manifestRevision,
+  parseTimelineManifest,
   rainAt,
   referencesNotIngested,
   roadCut,
@@ -31,9 +32,11 @@ import { plainManifestText } from "@/lib/flood-timeline-copy";
 import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
 import {
   facilityStatusText,
+  GeneratedAt,
   HowToRead,
   Hydrograph,
   ImpactCard,
+  LicencesByInput,
   LowConfidenceEvidence,
   MaeSaiFloodTimeline,
   playLabel,
@@ -42,6 +45,7 @@ import {
   RouteCutsCard,
   SourcesPanel,
   TimelineLegend,
+  TuningDisclosure,
   WetFacilitiesCard,
 } from "./mae-sai-flood-timeline";
 import { formatDateSet, RainChart, ViirsComparisonCard, viirsMomentText } from "./mae-sai-observed-panels";
@@ -211,18 +215,26 @@ describe("Mae Sai replay panels", () => {
     expect(none).not.toMatch(/above the (modelled )?flood range/i);
   });
 
-  it("renders the radar check from data, with its footprint-wide scope", () => {
+  it("renders the radar size comparison from data as calibration-informed, with its footprint-wide scope", () => {
     const anchor = manifest.s1_anchor;
     const html = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="6 Sep → 16 Sep 06:16 ICT" language="en" />));
     expect(html).toContain(`${anchor.newly_dark_km2.toFixed(2)} km² turned newly water-like`);
     expect(html).toContain(`at a ${anchor.best_fit_stage_m.toFixed(2)} m stage`);
     expect(html).toContain(`${anchor.reconstruction_stage_at_pass_m.toFixed(3)} m`);
     expect(html).toContain(`Spatial agreement is weak (IoU ${anchor.iou_at_best_fit.toFixed(2)})`);
+    // The recession keyframes were tuned to this pass (the manifest says so), so the page never calls it a check.
+    expect(anchor.role).toBe("calibration_informed_magnitude_check");
+    expect(html).toContain("Radar size comparison (Sentinel-1, 6 Sep → 16 Sep 06:16 ICT; calibration-informed, not an independent check)");
+    expect(html).toContain("The recession keyframes were tuned to this pass, so the sizes agree by construction.");
+    expect(html).toContain("so this constrains size, not location");
+    expect(html).not.toMatch(/Radar check|this checks size/);
     expect(html).toContain(anchor.scope!);
     expect(html).toContain("including Tachileik (Myanmar)");
     const thai = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="" language="th" />));
     expect(thai).toContain("ท่าขี้เหล็ก (เมียนมา)");
-    expect(thai).toContain("ขอบเขตการตรวจสอบ");
+    expect(thai).toContain("ขอบเขตการเทียบ");
+    expect(thai).toContain("มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ");
+    expect(thai).not.toContain("ตรวจสอบกับเรดาร์");
   });
 
   it("adds the low-confidence water entry to the legend and the evidence only when the manifest declares the flag", () => {
@@ -233,7 +245,7 @@ describe("Mae Sai replay panels", () => {
     const people = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode="people" densityMax={31.33} lowConfidence />));
     expect(people).toContain("Low-confidence water");
     expect(text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} />))).not.toContain("Low-confidence");
-    // Evidence: the share at the modelled peak, from the manifest (14 of 88.7 km² in r3), and what it means.
+    // Evidence: the share at the modelled peak, from the manifest (14 of 88.7 km²), and what it means.
     const share = manifest.hand.low_confidence_share!;
     const evidence = text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="en" /></dl>));
     expect(evidence).toContain(`${share.low_confidence_km2.toFixed(1)} of the ${share.peak_flooded_km2.toFixed(1)} km² wet at the modelled peak is flat or filled low ground in the elevation model`);
@@ -423,7 +435,7 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
   });
 
   it("names the served data revision, which is also the manifest's own revision field", () => {
-    expect(manifestRevision()).toBe("r3");
+    expect(manifestRevision()).toBe("r4");
     expect(manifest.revision).toBe(manifestRevision());
     expect(manifestRevision("/studies/x/r9/timeline.json")).toBe("r9");
   });
@@ -521,7 +533,7 @@ describe("Mae Sai observed evidence panels", () => {
     const plain = text(html);
     expect(manifest.sources.map((source) => source.id)).toEqual(expect.arrayContaining(["viirs", "hii-rain"]));
     for (const source of manifest.sources) {
-      expect(plain).toContain(source.name);
+      expect(plain).toContain(plainManifestText(source.name));
       expect(plain).toContain(source.licence);
       expect(plain).toContain(source.attribution);
     }
@@ -560,5 +572,158 @@ describe("Mae Sai observed evidence panels", () => {
     expect(thai).not.toContain(viirs.caveat);
     // Source names and licences stay as published, marked as English.
     expect(thaiHtml).toContain(`<strong lang="en">${manifest.sources[0].name}</strong>`);
+  });
+});
+
+describe("Mae Sai replay evidence envelope on the page (r4)", () => {
+  const THAI = /[฀-๿]/;
+  // The r3 shape a client may still hold in its offline copy (trimmed; see the fixture's own notes).
+  const r3 = parseTimelineManifest((JSON.parse(readFileSync(resolve(import.meta.dirname, "../lib/__fixtures__/mae-sai-timeline-r3-shape.json"), "utf8")) as { manifest: unknown }).manifest);
+  /** Visible text of the element that carries `testId`, up to the first closing `tag`. */
+  const inside = (html: string, testId: string, tag: string) => text(html.slice(html.indexOf(">", html.indexOf(`data-testid="${testId}"`)) + 1).split(`</${tag}>`)[0]);
+
+  it("says the replay is non-operational and when its data files were generated, in the how-to-read box", () => {
+    const html = renderToStaticMarkup(<HowToRead manifest={manifest} language="en" />);
+    const status = inside(html, "how-to-status", "li");
+    expect(status).toContain("Status: non-operational. A historical reconstruction for planning and exercises; it gives no priority score and no action class.");
+    expect(manifest.operational_status).toBe("non_operational");
+    expect(manifest.generated_at_basis).toBe("declared");
+    expect(status).toMatch(/Data files generated: \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} ICT\.$/);
+    expect(html).toContain(`<time dateTime="${manifest.generated_at}">`);
+    // The top-level source timestamp now reaches the last rain hour and the last VIIRS day.
+    expect(text(html)).toContain(`Source data: ${manifest.source_timestamp}.`);
+    expect(Date.parse(manifest.source_timestamp.split("/")[1])).toBeGreaterThanOrEqual(Date.parse(manifest.viirs_daily!.days.at(-1)!.nominal_local_time));
+    const thai = text(renderToStaticMarkup(<HowToRead manifest={manifest} language="th" />));
+    expect(thai).toContain("สถานะ: ไม่ใช้ในการปฏิบัติการ");
+    expect(thai).toContain("ไม่ให้คะแนนลำดับความสำคัญและไม่กำหนดระดับการดำเนินการ");
+    expect(thai).toMatch(/สร้างไฟล์ข้อมูลเมื่อ \d{1,2} \S+ 25\d{2} \(20\d{2}\) \d{2}:\d{2} น\./);
+    // Before any data loads the status is still stated; only the generation time waits for the manifest.
+    const empty = text(renderToStaticMarkup(<HowToRead manifest={null} language="en" />));
+    expect(empty).toContain("Status: non-operational.");
+    expect(empty).not.toContain("Data files generated");
+  });
+
+  it("labels a generation time that was not declared as the newest input date, and shows nothing without one", () => {
+    const declared = text(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "2026-10-01T16:10:00+07:00", generated_at_basis: "declared" }} language="en" />));
+    expect(declared).toBe(" · Data files generated: 1 Oct 2026, 16:10 ICT");
+    const newest = text(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "2026-09-27T00:00:00Z", generated_at_basis: "newest_input_timestamp" }} language="en" />));
+    expect(newest).toBe(" · Newest input dated: 27 Sep 2026, 07:00 ICT");
+    const thai = text(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "2026-09-27T00:00:00Z", generated_at_basis: "newest_input_timestamp" }} language="th" lead />));
+    expect(thai).toBe(" ข้อมูลนำเข้าล่าสุดลงวันที่ 27 ก.ย. 2569 (2026) 07:00 น.");
+    expect(renderToStaticMarkup(<GeneratedAt manifest={{}} language="en" />)).toBe("");
+    expect(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "soon" }} language="th" />)).toBe("");
+  });
+
+  it("lists a licence and its terms for every input in the sources panel, with product 4009 marked as not shown", () => {
+    const html = renderToStaticMarkup(<LicencesByInput manifest={manifest} language="en" />);
+    const plain = text(html);
+    expect(plain).toContain("Licence per input");
+    const inputs = manifest.publication_eligibility!.inputs;
+    expect(inputs.length).toBeGreaterThanOrEqual(12);
+    for (const input of inputs) {
+      expect(plain, input.id).toContain(`${plainManifestText(input.name)} — ${input.licence.replace(/\.$/, "")}. `);
+      expect(plain, input.id).toContain(plainManifestText(input.terms));
+    }
+    for (const licence of ["CC BY-NC", "ODbL 1.0", "CC BY 4.0", "CC BY-IGO", "No licence stated by the provider", "CC BY-SA 4.0", "Copernicus DEM licence", "Copernicus Sentinel data terms"]) {
+      expect(plain).toContain(licence);
+    }
+    // Only product 4009 is listed without being shown; it comes last and says why.
+    expect(html.match(/data-shown="false"/g)).toHaveLength(1);
+    const last = text(html.slice(html.lastIndexOf("<li data-shown=")).split("</li>")[0]);
+    expect(last).toContain("UNOSAT/GISTDA product 4009");
+    expect(last).toContain("Not yet shown; rights record pending owner confirmation.");
+    expect(html).toContain("<strong><span lang=\"en\">Not yet shown; rights record pending owner confirmation.</span></strong>");
+    // An input that is not shown and gives no status still says so.
+    const bare = { ...manifest, publication_eligibility: { ...manifest.publication_eligibility!, inputs: inputs.map((input) => ({ ...input, status: undefined })) } };
+    expect(text(renderToStaticMarkup(<LicencesByInput manifest={bare} language="en" />))).toContain("Not shown on this page.");
+    expect(text(renderToStaticMarkup(<LicencesByInput manifest={bare} language="th" />))).toContain("ยังไม่แสดงในหน้านี้");
+    expect(plain).toContain(`Conditions of use: ${manifest.publication_eligibility!.scope}`);
+    for (const condition of manifest.publication_eligibility!.conditions) expect(plain).toContain(condition);
+    expect(plain).not.toMatch(/tha_ppp_2020|rights_basis_4009|docs\/|\.\./);
+    expect(findWordingViolations(visibleText(html), "LicencesByInput")).toEqual([]);
+
+    const thaiHtml = renderToStaticMarkup(<LicencesByInput manifest={manifest} language="th" />);
+    const thai = text(thaiHtml);
+    expect(thai).toContain("สัญญาอนุญาตของข้อมูลแต่ละชุด");
+    expect(thai).toContain("ยังไม่แสดง รอเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูล");
+    expect(thai).toContain("เงื่อนไขการใช้");
+    // Names and licences stay as published (marked English); every term and condition has a Thai rendering.
+    expect(thaiHtml).toContain('<span lang="en">CC BY-NC.</span>');
+    for (const sentence of [...inputs.map((input) => input.terms), ...manifest.publication_eligibility!.conditions, manifest.publication_eligibility!.scope]) {
+      expect(thai, sentence).not.toContain(plainManifestText(sentence));
+    }
+    expect(findWordingViolations(visibleText(thaiHtml), "LicencesByInput th")).toEqual([]);
+  });
+
+  it("states which external figures were used or known while the model was tuned", () => {
+    const html = renderToStaticMarkup(<TuningDisclosure manifest={manifest} language="en" />);
+    const plain = text(html);
+    expect(plain).toContain("What was known when the model was tuned");
+    expect(plain).toContain("Used for tuning: GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (9.9 km² flooded in Mae Sai) was used on purpose to set the onset stage knot");
+    expect(plain).toContain("Used for tuning: The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m)");
+    expect(plain).toContain("Known during tuning: UNOSAT 3991 (about 70 km² over 13-19 Sep) was known while the stage keyframes were tuned");
+    expect(plain).toContain("Not used for tuning: The VIIRS daily comparison was computed after the keyframes were final and was not used for tuning.");
+    expect(plain).toContain("Not used for tuning: The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final");
+    expect(html.match(/data-relation="used_for_tuning"/g)).toHaveLength(2);
+    expect(html.match(/data-relation="known_during_tuning"/g)).toHaveLength(1);
+    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(2);
+    expect(plain).toContain(plainManifestText(manifest.exploratory_knowledge!.rule));
+    expect(findWordingViolations(visibleText(html), "TuningDisclosure")).toEqual([]);
+    // The disclosure and the radar label agree: both call the Sentinel-1 comparison calibration-informed.
+    const radar = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="6 Sep → 16 Sep 06:16 ICT" language="en" />));
+    expect(radar).toContain("calibration-informed, not an independent check");
+    expect(plain).toContain("the radar size comparison is calibration-informed, not an independent check");
+    const thai = text(renderToStaticMarkup(<TuningDisclosure manifest={manifest} language="th" />));
+    expect(thai).toContain("สิ่งที่ทราบขณะปรับแบบจำลอง");
+    expect(thai).toContain("ใช้ปรับแบบจำลอง:");
+    expect(thai).toContain("ทราบขณะปรับแบบจำลอง:");
+    expect(thai).toContain("ไม่ได้ใช้ปรับแบบจำลอง:");
+    for (const item of manifest.exploratory_knowledge!.items) expect(thai, item.id).not.toContain(plainManifestText(item.statement));
+  });
+
+  it("puts the licences, the disclosure, the status and the generation time in the sources panel", () => {
+    const html = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="en" offlineCopy={null} />);
+    const plain = text(html);
+    expect(html).toContain('data-testid="licences-by-input"');
+    expect(html).toContain('data-testid="licence-conditions"');
+    expect(html).toContain('data-testid="tuning-disclosure"');
+    // Both elevation tiles and the residents grid are sources; the residents note sits on that line, once.
+    expect(plain).toContain("Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)");
+    expect(plain).toContain("WorldPop Thailand 100 m population 2020, unconstrained top-down — CC BY 4.0. WorldPop (www.worldpop.org), University of Southampton. Modelled residential population, not a census count or the 2024 population.");
+    expect(plain.split(manifest.population!.note)).toHaveLength(2);
+    const footer = inside(html, "sources-footer", "p");
+    expect(footer).toContain(`Source timestamp: ${manifest.source_timestamp}`);
+    expect(footer).toContain(`${manifest.study_id} r4`);
+    expect(footer).toContain("confidence: low · status: non-operational · Data files generated: ");
+    expect(plain).toContain(manifest.source_timestamp_note!);
+    const thai = text(renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />));
+    expect(thai).toContain("สถานะ: ไม่ใช้ในการปฏิบัติการ");
+    expect(thai).toContain("สร้างไฟล์ข้อมูลเมื่อ");
+    expect(thai).not.toContain(manifest.source_timestamp_note!);
+    expect(thai).toMatch(THAI);
+  });
+
+  it("still renders an r3-shaped manifest: its own sources, no licence table, no disclosure, no generation time", () => {
+    expect(r3.revision).toBe("r3");
+    const html = renderToStaticMarkup(<SourcesPanel manifest={r3} language="en" offlineCopy={null} />);
+    const plain = text(html);
+    for (const source of r3.sources) expect(plain).toContain(source.licence);
+    // r3 lists the residents grid only in its population block; the panel still shows it, once.
+    expect(r3.sources.some((source) => source.id === "worldpop")).toBe(false);
+    expect(plain.split(`${plainManifestText(r3.population!.source)} — ${r3.population!.licence}.`)).toHaveLength(2);
+    expect(html).not.toContain('data-testid="licences-by-input"');
+    expect(html).not.toContain('data-testid="tuning-disclosure"');
+    expect(html).not.toContain('data-testid="generated-at"');
+    expect(renderToStaticMarkup(<LicencesByInput manifest={r3} language="en" />)).toBe("");
+    expect(renderToStaticMarkup(<TuningDisclosure manifest={r3} language="th" />)).toBe("");
+    // The status does not depend on the revision: the replay is non-operational either way.
+    expect(plain).toContain("status: non-operational");
+    const howTo = text(renderToStaticMarkup(<HowToRead manifest={r3} language="en" />));
+    expect(howTo).toContain("Status: non-operational.");
+    expect(howTo).not.toContain("Data files generated");
+    // The radar comparison is labelled calibration-informed even when the manifest predates the label.
+    expect(r3.s1_anchor.role).toBeUndefined();
+    expect(text(renderToStaticMarkup(<RadarCheck manifest={r3} radarSpan="6 Sep → 16 Sep 06:16 ICT" language="en" />))).toContain("calibration-informed, not an independent check");
+    expect(findWordingViolations(visibleText(html), "SourcesPanel r3")).toEqual([]);
   });
 });

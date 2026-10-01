@@ -136,7 +136,8 @@ writeFileSync(
   "utf8",
 );
 
-const caseReplayMegabytes = (optionalCaseReplay.reduce((sum, asset) => sum + asset.bytes, 0) / 1_048_576).toFixed(1);
+// Decimal megabytes, the unit of the replay's 6.5 MB precache budget (case-replay-inventory.mjs).
+const caseReplayMegabytes = (optionalCaseReplay.reduce((sum, asset) => sum + asset.bytes, 0) / 1e6).toFixed(1);
 console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets, ${optionalArtwork.length} deferred illustration assets, ${optionalCaseReplay.length} deferred case-replay files (${caseReplayMegabytes} MB, opt-in); profile ${appProfile}; cache ${cacheVersion}`);
 
 function resolveAppProfile(value) {

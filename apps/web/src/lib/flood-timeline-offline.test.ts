@@ -1,15 +1,17 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  CASE_REPLAY_BUDGET_BYTES,
   CASE_REPLAY_ROUTE,
+  caseReplayBytes,
   readCaseReplayAssets,
   timelineManifestAssets,
   timelineManifestUrl,
 } from "../../scripts/case-replay-inventory.mjs";
 import { MAE_SAI_TIMELINE_ROUTE } from "../components/mae-sai-flood-timeline";
-import { manifestAssets, manifestDirectory, TIMELINE_MANIFEST_URL } from "./flood-timeline";
+import { manifestAssets, manifestDirectory, manifestRevision, TIMELINE_MANIFEST_URL } from "./flood-timeline";
 
 const webRoot = resolve(import.meta.dirname, "../..");
 const publicRoot = resolve(webRoot, "public");
@@ -37,6 +39,24 @@ describe("Mae Sai replay offline inventory", () => {
     expect(urls.some((url) => url.endsWith(".bin"))).toBe(true);
     expect(typed.viirs_daily!.days.length).toBeGreaterThan(0);
     for (const day of typed.viirs_daily!.days) expect(urls).toContain(day.href);
+  });
+
+  it("ships one revision whose precache set stays within its 6.5 MB budget", () => {
+    const { assets } = readCaseReplayAssets(publicRoot);
+    expect(CASE_REPLAY_BUDGET_BYTES).toBe(6_500_000);
+    const bytes = caseReplayBytes(assets);
+    expect(bytes).toBeLessThanOrEqual(CASE_REPLAY_BUDGET_BYTES);
+    // The set is the whole revision folder: the manifest plus every file it lists, and nothing else on disk.
+    const directory = resolve(publicRoot, manifestDirectory(TIMELINE_MANIFEST_URL).slice(1));
+    const onDisk = readdirSync(directory);
+    expect(onDisk.sort()).toEqual(assets.map((asset) => asset.url.slice(asset.url.lastIndexOf("/") + 1)).sort());
+    expect(onDisk.reduce((sum, name) => sum + statSync(resolve(directory, name)).size, 0)).toBe(bytes);
+    expect(readdirSync(resolve(directory, ".."))).toEqual([manifestRevision()]);
+    // The check fails one byte over the budget, and on a list with no measurable size.
+    expect(caseReplayBytes(assets, bytes)).toBe(bytes);
+    expect(() => caseReplayBytes(assets, bytes - 1)).toThrow(/over its \d+-byte budget/);
+    expect(() => caseReplayBytes([])).toThrow(/no measurable size/);
+    expect(() => caseReplayBytes([{ bytes: CASE_REPLAY_BUDGET_BYTES + 1 }])).toThrow(/6\.5 MB/);
   });
 
   it("keeps the replay data out of the blocking install and answers the page's cache request", () => {

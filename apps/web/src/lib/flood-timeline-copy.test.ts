@@ -50,8 +50,8 @@ describe("Mae Sai replay copy", () => {
     expect(localizedText(meaning, "en")).toEqual({ text: meaning, lang: "en" });
     expect(localizedText(meaning, "th").text).toMatch(THAI);
     // Internal decision numbers ("per decision D3", "(D2)") are project bookkeeping, not reader copy.
-    expect(plainManifestText("Season envelope (scenario per decision D3); not shown until the CC BY-SA rights record (D2) is signed."))
-      .toBe("Season envelope; not shown until the CC BY-SA rights record is signed.");
+    expect(plainManifestText("Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026; not a protocol case (decision D7)."))
+      .toBe("Season envelope. The CC BY-SA 4.0 rights decision was signed on 30 Sep 2026; not a protocol case.");
     for (const reference of manifest.external_references ?? []) {
       if (reference.note) expect(plainManifestText(reference.note)).not.toMatch(/\bD\d+\b/);
     }
@@ -71,7 +71,15 @@ describe("Mae Sai replay copy", () => {
       ...(manifest.gauge_note ? [manifest.gauge_note] : []),
       // The event chronology's source line under the "Reported:" narrative.
       ...manifest.sources.filter((source) => source.id === "chronology").flatMap((source) => [source.attribution, source.timestamp]),
+      // The evidence envelope (r4): licence terms and conditions per input, the tuning disclosure, the permitted use
+      // and what the source-timestamp span covers.
+      manifest.permitted_use!, manifest.source_timestamp_note!,
+      manifest.publication_eligibility!.scope, ...manifest.publication_eligibility!.conditions,
+      ...manifest.publication_eligibility!.inputs.flatMap((input) => [input.terms, ...(input.status ? [input.status] : [])]),
+      manifest.exploratory_knowledge!.purpose, ...manifest.exploratory_knowledge!.items.map((item) => item.statement),
+      manifest.exploratory_knowledge!.depth_factor, manifest.exploratory_knowledge!.rule,
     ];
+    expect(sentences.length).toBeGreaterThan(70);
     expect(localizedText("compiled 2026-09-27", "th")).toEqual({ text: "รวบรวมเมื่อ 2026-09-27", lang: "th" });
     expect(localizedText("compiled 2026-09-27", "en")).toEqual({ text: "compiled 2026-09-27", lang: "en" });
     const missing = sentences.filter((sentence) => localizedText(sentence, "th").lang !== "th");

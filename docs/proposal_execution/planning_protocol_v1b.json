@@ -4,17 +4,17 @@
   "title": "FloodGuard planning protocol v1b: engineering addendum",
   "protocol_kind": "declared_protocol_after_exploratory_analysis",
   "status": "incomplete_draft",
-  "status_note": "Incomplete draft written by an AI coding agent. Agents draft, humans sign. Nothing in this file is in force. It cannot be signed while any entry in open_items has status open. Until the signed file's SHA-256 is recorded in docs/proposal_execution/RECEIPTS.jsonl, no FPPS, no A-E class and no ensemble may be computed for any real unit. No receipt has been written.",
+  "status_note": "Incomplete draft written by an AI coding agent. Agents draft, humans sign. Nothing in this file is in force. It cannot be signed while any entry in open_items is open, while any parameter named by an open item is empty, or while any entry in drafter_readings awaits confirmation. Until the signed file's SHA-256 is recorded in docs/proposal_execution/RECEIPTS.jsonl, no FPPS, no A-E class and no ensemble may be computed for any real unit. No receipt has been written.",
   "drafted_on": "2026-10-01",
   "drafted_by": "AI coding agent (Claude), on the owner go-ahead R5 of 2026-10-01",
   "official_warning": false,
   "operational_status": "non_operational",
-  "purpose": "Fix the engineering parameters that the decision rules in v1a need before any score is computed: the routing corridor, the grade-join policy, closure rule v1, the facility sets and the corroboration rule, critical-link selection, the national vulnerability anchors, the ensemble grid, and the selection rules for the scenario and engine grid. Plan row G7b.",
+  "purpose": "Fix the engineering parameters that the decision rules in v1a need before any score is computed: the routing corridor, the grade-join policy, closure rule v1, the facility sets and the corroboration rule, critical-link selection, the national vulnerability anchors, the ensemble grid, the selection rules for the scenario and engine grid, and the inputs that class rule v2 needs. Plan row G7b.",
   "depends_on": {
     "v1a_path": "docs/proposal_execution/planning_protocol_v1a.json",
     "v1a_sha256": null,
-    "rule": "v1b is signed only after v1a's SHA-256 is recorded in RECEIPTS.jsonl. That value is written into v1a_sha256 before v1b is signed.",
-    "exploratory_knowledge_disclosure": "The disclosure in v1a applies to this file. Items EK-02, EK-03, EK-04 and EK-12 informed parameters set here.",
+    "rule": "v1b is signed only after v1a's SHA-256 is recorded in RECEIPTS.jsonl. That value is written into v1a_sha256 before v1b is signed. It must equal both the SHA-256 of the committed v1a file and the value in the v1a receipt line; a test and the receipt script check both.",
+    "exploratory_knowledge_disclosure": "The disclosure in v1a applies to this file. Items EK-02, EK-03, EK-04, EK-12, EK-13 and EK-R5 informed parameters set here.",
     "basis": [
       "plan 0 item 5",
       "plan 8.1 G7b"
@@ -27,9 +27,11 @@
       "sections_used": [
         "1.1",
         "1.3",
+        "2.3",
         "3.1",
         "3.4",
         "3.5",
+        "4.2",
         "5",
         "6.2",
         "6.3",
@@ -76,6 +78,7 @@
       "Any A-E class for a real unit, including would-be classes and v2 classes.",
       "Any ensemble cell."
     ],
+    "reading_status": "Drafter reading DR-B07. Plan 2.3 item 5 allows 'context, access and closure builds' before v1b. The draft adds two things to that list: the baseline critical-link ranking (E6), which the plan schedules after v1b, and the national dependent-share percentiles, which plan 3.4 says are computed in v1b. It also limits the ban to real units, as in v1a drafter reading DR-A06. The owners confirm or amend the list at signing.",
     "status_at_drafting": "None of the builds above has been run for this protocol. No value in this file comes from a new computation."
   },
   "corridor_polygon": {
@@ -90,7 +93,8 @@
     "open_items": [
       "OI-01",
       "OI-02",
-      "OI-03"
+      "OI-03",
+      "OI-09"
     ],
     "context_call": {
       "function": "floodguard.evidence_context.build_context_inputs (unchanged)",
@@ -124,6 +128,7 @@
     },
     "route_selection_rule": {
       "status": "proposed, not in the plan",
+      "rule": null,
       "proposal": "For each of the three hospitals, take the baseline fastest vehicle path on the national OSM graph from the AOI-02 boundary to the hospital way, keep its trunk and primary segments (including links), buffer them by 3 km and union the result with AOI-02. Record the path edge IDs.",
       "why_needed": "The plan names the routes as trunk and primary routes to the hospitals but does not say how a route is picked."
     },
@@ -159,6 +164,9 @@
       "file_exists_on_this_lineage": false,
       "sha256": null,
       "unit_list": null,
+      "routing_geometry": null,
+      "hospital_destinations": null,
+      "se2_blind_district": null,
       "note": "New planning frames live in resources/planning_frames/, not resources/aoi/, so load_aois still returns exactly six AOIs. The SE2 routing geometry and its hospital destinations are not specified in the plan.",
       "open_items": [
         "OI-09"
@@ -204,6 +212,7 @@
       "OI-05"
     ],
     "geometry": "Each edge is the straight segment between its two nodes, projected to EPSG:32647. Intersected length is the length of that segment inside the flood extent. Intersected fraction f is min(1, intersected length / segment length). This is the measurement used in src/floodguard/evidence_flood_scenario.py.",
+    "geometry_status": "Drafter reading DR-B02. The plan does not say how intersected length is measured or what counts as 'any intersection'. Both are taken from src/floodguard/evidence_flood_scenario.py (straight node-to-node segment in EPSG:32647; an edge is intersected when the length inside the extent is greater than 1e-6 m), so that the permissive regression can match the finals closed-edge IDs exactly. The owners confirm at signing.",
     "levels": {
       "strict": {
         "closed_when": "f >= 0.5",
@@ -214,11 +223,12 @@
         "delay_factor_k": 4
       },
       "permissive": {
-        "closed_when": "any intersection (intersected length > 0)",
+        "closed_when": "any intersection: intersected length > 1e-6 m, the threshold in src/floodguard/evidence_flood_scenario.py that the regression must reproduce",
         "delay_factor_k": 6,
         "note": "Under this level no intersected edge stays open, so the delay factor has no effect."
       }
     },
+    "delay_factor_pairing_status": "Drafter reading DR-B01. Plan 5 item 11 axis 2 lists 'strict / central / permissive, with delay penalty k = 2 / 4 / 6', and plan 5 item 2 states the delay formula only for the central level, with k = 4. The draft pairs k = 2 with strict, 4 with central and 6 with permissive, which gives the plan's 540 cells and 27 routing combinations. The other reading, k as a separate three-level axis, would give 1,620 cells. The owners confirm at signing.",
     "parameters": {
       "closed_fraction_min": 0.5,
       "length_threshold_m_by_road_class": {
@@ -245,10 +255,16 @@
         "residential",
         "unclassified"
       ],
+      "length_threshold_m": {
+        "motorway": null,
+        "residential": null,
+        "unclassified": null
+      },
       "proposal": "motorway uses the 50 m threshold; residential and unclassified use the 30 m threshold, following the grouping in src/floodguard/road_risk.py ROAD_CLASS_FACTORS.",
       "status": "proposed, not in the plan"
     },
     "delay_under_strict": {
+      "rule": null,
       "proposal": "Under strict, an edge intersected for at least 20 m with f < 0.5 is delayed with k = 2. Under central the plan's wording applies with k = 4.",
       "status": "proposed. The plan states the delay only for the central level and lists k = 2 / 4 / 6 beside strict / central / permissive."
     },
@@ -259,7 +275,8 @@
         "walking": 1824,
         "vehicle": 1738
       },
-      "result": null
+      "result": null,
+      "result_shape": "When the regression is run, result is an object: walking_closed_edges, vehicle_closed_edges, closed_edge_ids_match_exactly (true or false) and evidence_sha256 (the SHA-256 of the run output). A failing run is recorded as it is; the file cannot be signed until the match is exact."
     },
     "field_verification_priority": "Segments are ranked by residents affected x disagreement across the strict, central and permissive levels."
   },
@@ -273,7 +290,8 @@
     ],
     "status": "open",
     "open_items": [
-      "OI-06"
+      "OI-06",
+      "OI-16"
     ],
     "services": {
       "hospital": {
@@ -357,6 +375,18 @@
       "publication_level": "pitch",
       "record": "2SFCA is not promoted."
     },
+    "shelters_in_the_ensemble": {
+      "conflict": "The ensemble runs in vehicle mode only (plan 5 item 11). The corroborated and all_listed facility levels add DDPM located shelters, whose access is defined as walking, 30 minutes, and whose data is pitch-level only (plan 3.4, D8b). The plan does not say how a shelter enters a vehicle-only ensemble cell, or what a public overlay may report about cells that use pitch-level data.",
+      "mode": null,
+      "threshold_minutes": null,
+      "publication_level_of_cells_using_ddpm": null,
+      "retention_for_public_overlays": null,
+      "proposal": "Inside the ensemble, shelter access is computed by walking at 30 minutes for the shelter service only; hospital and main-road entry stay in vehicle mode. Cells that use DDPM shelters are pitch-level. For a public overlay, class retention is computed over the cells of the public facility set only, and the overlay says so.",
+      "status": "proposed, not in the plan",
+      "open_items": [
+        "OI-16"
+      ]
+    },
     "counts_in_corridor": {
       "osm_hospitals": null,
       "dga_matched_hospitals": null,
@@ -388,6 +418,7 @@
       "tie_break": "stable edge ID"
     },
     "demand_weight": "WorldPop 2020 residents at each origin node.",
+    "selection_details_status": "Drafter reading DR-B03. The plan says 'demand-weighted SPT flow' and names no demand layer and no tie-break. The draft uses WorldPop 2020 residents at each origin node and breaks ties on stable edge ID, following src/floodguard/evidence_interventions.py. The owners confirm at signing.",
     "destination_set_for_ranking": null,
     "destination_set_proposal": "The public facility set (OSM hospitals and main-road entry), vehicle mode, so the ranking does not depend on DDPM data.",
     "uses_flood_input": false,
@@ -396,7 +427,12 @@
     "desk_check": "An internal single-reviewer desk check (team member R. Ulwani) of the top 20 against imagery, OSM history and news. It is not independent expert review.",
     "ranking_output": {
       "path": null,
-      "sha256": null
+      "sha256": null,
+      "binding": null,
+      "binding_options": {
+        "bound_here": "E6 is run before signing; path and sha256 above are filled in.",
+        "bound_in_first_run_receipt": "v1b is signed with the rule alone; the ranking's SHA-256 is recorded in the receipt of the first run, before any scoring."
+      }
     }
   },
   "national_vulnerability_anchors": {
@@ -478,6 +514,7 @@
         ]
       },
       "allocation": "Each 1 km cell's counts are allocated to a tambon by the projected-area fraction of the cell inside the tambon, as in scripts/bridge_worldpop_age_access.py.",
+      "allocation_status": "Drafter reading DR-B04. The plan does not say how 1 km cells are assigned to tambons. The draft follows scripts/bridge_worldpop_age_access.py (projected-area fraction). The owners confirm at signing.",
       "unit_set": null,
       "unit_set_proposal": "Every tha_admin3 unit in Thailand with at least 100 modelled 2024 residents (the minimum-denominator rule). The number of units used and the number excluded are recorded.",
       "percentile_method": null,
@@ -500,7 +537,11 @@
     ],
     "status": "open",
     "open_items": [
-      "OI-10"
+      "OI-10",
+      "OI-12",
+      "OI-13",
+      "OI-14",
+      "OI-15"
     ],
     "proposal_reference": "Proposal section 3.6.4",
     "runs": "Full-chain reruns, vehicle mode. Walking is excluded from the ensemble because the walking access gap is 46-100 with no flood.",
@@ -513,6 +554,37 @@
           "plus (one pixel buffer)"
         ],
         "t2_lane_levels": "M1-v2: Kittler-Illingworth threshold -1 / 0 / +1 dB. Legacy mask on AOI-01 only: 1.5 / 2.25 / 3.0 dB.",
+        "one_pixel_m": {
+          "minus": 20,
+          "plus": null,
+          "vector_products": null,
+          "note": "Plan 5 item 11 gives 20 m only for the minus level ('-1 px / 20 m erosion'). It gives no distance for the plus level and none for vector agency products, which have no pixel. Confidence condition C4 in v1a uses the same two levels.",
+          "proposal": "20 m for the minus and the plus level and for every input, raster or vector. For a vector product the level is a 20 m negative or positive buffer in EPSG:32647.",
+          "status": "proposed, not in the plan",
+          "open_items": [
+            "OI-15"
+          ]
+        },
+        "t2_levels_by_input": {
+          "M1-v2": "Kittler-Illingworth threshold -1 / 0 / +1 dB",
+          "legacy 2.25 dB mask (AOI-01 only)": "1.5 / 2.25 / 3.0 dB",
+          "M1-literal": null,
+          "UN-SPIDER reproduction": null,
+          "A6-prime classifier": null
+        },
+        "a6_prime_extent_threshold": null,
+        "t2_levels_note": "The plan defines the T2 levels for M1-v2 and the legacy mask only. M1-literal, the UN-SPIDER reproduction and the A6-prime classifier are also flood inputs of case O1. The A6-prime classifier outputs a probability, and the plan gives no threshold that turns it into an extent (plan 4.2 A5 says only 'A6-prime thresholded').",
+        "t2_levels_proposal": {
+          "M1-literal": "Otsu threshold -1 / 0 / +1 dB",
+          "UN-SPIDER reproduction": "minus / as-provided / plus one pixel on the output extent; the ratio 1.25 is not tuned",
+          "A6-prime classifier": "calibrated probability threshold 0.4 / 0.5 / 0.6",
+          "a6_prime_extent_threshold": "0.5 on the isotonic-calibrated probability, fixed on GEOID development tiles before any Mae Sai run"
+        },
+        "t2_levels_status": "proposed, not in the plan",
+        "open_items": [
+          "OI-14",
+          "OI-15"
+        ],
         "count": 3
       },
       {
@@ -522,6 +594,7 @@
           "central (k = 4)",
           "permissive (k = 6)"
         ],
+        "levels_status": "The pairing of k with the three levels is drafter reading DR-B01.",
         "count": 3
       },
       {
@@ -538,6 +611,12 @@
         "levels": [
           "WorldPop 2020",
           "2024-rescaled demand"
+        ],
+        "rescale_formula": null,
+        "rescale_formula_proposal": "Within each 1 km cell of the WorldPop 2024 grid, multiply every 2020 100 m count by the ratio of the cell's 2024 total (the sum of the 20 age bands) to the sum of the 2020 100 m counts inside the cell. A cell whose 2020 sum is zero keeps zero, and the 2024 residents it leaves out are reported as unallocated.",
+        "rescale_formula_status": "proposed, not in the plan. The plan says only 'population vintage axis via 2024/2020 1 km rescale'.",
+        "open_items": [
+          "OI-13"
         ],
         "count": 2
       },
@@ -569,6 +648,17 @@
       "Class rule v1 and v2.",
       "Terrain / remoteness proxy in place of the age-based vulnerability, case O1 only."
     ],
+    "one_at_a_time_status": "Drafter reading DR-B05. Plan 5 item 11 lists the terrain proxy under axis 4, beside the two anchor levels, but the 540-cell count (3 x 3 x 3 x 2 x 2 x 5) leaves no room for it as a core level. The draft runs it one at a time, on O1 only. The owners confirm at signing.",
+    "terrain_remoteness_proxy": {
+      "definition": null,
+      "anchor": null,
+      "note": "The proxy is an ensemble level and the S8 cell, and the plan gives it no definition and no anchor.",
+      "proposal": "The definition already in src/floodguard/mae_sai_context.py: a WorldPop cell is proxy-vulnerable when its sampled slope is at least 8 degrees or its nearest drivable OSM road is at least 750 m away. Component value: 100 x clip(proxy-vulnerable share of the unit's residents / anchor, 0, 1). No anchor is proposed: the replay used 0.25 with its results in view (v1a disclosure items EK-R1 and EK-R5), so the owners choose it.",
+      "status": "proposed, not in the plan",
+      "open_items": [
+        "OI-12"
+      ]
+    },
     "per_tambon_outputs": [
       "Median and range of people losing 30-minute access.",
       "Median and range of EED and EER.",
@@ -600,8 +690,10 @@
     ],
     "status": "open",
     "open_items": [
+      "OI-06",
       "OI-07",
-      "OI-10"
+      "OI-10",
+      "OI-17"
     ],
     "labels": "Scenario cells are SCN (or SCN-ENV when the base is SE1). Engine cells are ENG. Neither is ever counted as observed.",
     "selection_principle": "Links, nodes and facilities are picked by a rule that uses baseline information only. No cell is picked by its outcome, and every cell is reported.",
@@ -629,7 +721,8 @@
           "O2"
         ],
         "perturbation": "Fail the top 3 pre-ranked critical links per tambon.",
-        "selection_rule": "The three highest-ranked links of the baseline critical-link ranking whose edge lies in the tambon. Ties break on stable edge ID.",
+        "selection_rule": "The three highest-ranked links of the baseline critical-link ranking whose edge lies in the tambon. An edge that crosses a tambon boundary belongs to the tambon that holds its midpoint. Ties break on stable edge ID.",
+        "selection_rule_status": "Drafter reading DR-B06. The plan says 'the top-3 pre-ranked critical links per tambon' and does not say how a link is assigned to a tambon. The draft assigns it by where the edge lies, and by the midpoint for an edge that crosses a boundary. The owners confirm at signing.",
         "parameters": {
           "links_per_tambon": 3
         }
@@ -666,7 +759,22 @@
           "SE1"
         ],
         "perturbation": "A temporary shelter at the predeclared add_destination node in each A or B tambon.",
-        "selection_rule": "The add_destination rule of src/floodguard/evidence_interventions.py: the demand node ranked first by residents without 30-minute access, then finite baseline person-minutes, resident count and stable node ID. The node is determined per tambon from the baseline context before scoring; which tambons receive the cell is decided by their SE1 class after scoring."
+        "selection_rule": "The add_destination rule of src/floodguard/evidence_interventions.py: the demand node ranked first by residents without 30-minute access, then finite baseline person-minutes, resident count and stable node ID. The node is determined per tambon from the baseline context before scoring; which tambons receive the cell is decided by their SE1 class after scoring.",
+        "add_destination_nodes": {
+          "path": null,
+          "sha256": null,
+          "binding": null,
+          "binding_options": {
+            "bound_here": "The per-tambon node list is built from the E4 context before signing; path and sha256 are filled in.",
+            "bound_in_first_run_receipt": "v1b is signed with the rule alone; the node list's SHA-256 is recorded in the receipt of the first run, before any scoring."
+          }
+        },
+        "class_used_for_selection": null,
+        "class_used_for_selection_proposal": "The binding v1 scenario class of the SE1 reference cell. A tambon receives the cell when that class is A or B.",
+        "note": "Plan 6.3 wants nodes fixed before any scoring, and the plan gives no slot for the node list. The plan says 'each A/B tambon' without saying which class rule or which ensemble cell decides.",
+        "open_items": [
+          "OI-17"
+        ]
       },
       {
         "id": "S6",
@@ -691,10 +799,7 @@
         ],
         "perturbation": "Age-based vulnerability versus the terrain / remoteness proxy.",
         "selection_rule": "No selection: both.",
-        "note": "Plan 6.2 names O2 as the base; plan 3.4 and the signed frame restrict the terrain proxy to O1. This draft follows 3.4. O1 and O2 share the same eight-tambon frame.",
-        "open_items": [
-          "OI-10"
-        ]
+        "note": "Drafter reading DR-B08. Plan 6.2 names O2 as the base; plan 3.4 and the signed frame restrict the terrain proxy to O1. This draft follows 3.4. O1 and O2 share the same eight-tambon frame. The owners confirm at signing."
       },
       {
         "id": "S9",
@@ -746,6 +851,32 @@
     "cut_lines": {
       "5": "S5 and S9 (2SFCA at 10 percent only)."
     }
+  },
+  "class_rule_v2_inputs": {
+    "basis": [
+      "plan 3.5",
+      "D6",
+      "v1a class_rules.v2"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-18"
+    ],
+    "note": "v1a class_rules.v2 names inputs that depend on v1b. The plan does not define them. Each definition is empty until an owner decides. The proposals are the drafting agent's, and the numbers in them (100 residents, 10 percent) have no data behind them.",
+    "trigger_B_isolation": {
+      "definition": null,
+      "proposal": "A top-20 link of the case's baseline critical-link ranking that intersects the flood extent is closed on its own. The trigger fires when at least 500 of the unit's residents who had a baseline vehicle route to a hospital or a main-road entry lose every such route."
+    },
+    "trigger_C_serving_facility": {
+      "definition": null,
+      "proposal": "A facility serves a unit when it is the baseline-nearest facility of its kind, by vehicle travel time, for at least 100 of the unit's residents. 'Inside the extent' means the facility point, or the centroid of its footprint, is inside the flood extent. 'Uniquely located' follows facility_sets.shelter_location_rule."
+    },
+    "trigger_D_recurrence_flag": {
+      "definition": null,
+      "proposal": "The flag is set when at least 10 percent of the unit's non-permanent-water land has JRC Global Surface Water occurrence of at least 25 percent. If GISTDA Repeated Flood Areas is obtained, the same land-share test is applied to that layer instead.",
+      "note": "The 25 percent occurrence threshold is in v1a. The land share that turns pixels into a unit flag is not in the plan. JRC tiles for parts of the cases are not on disk (downloads DL-1 and DL-2)."
+    },
+    "status_of_proposals": "proposed, not in the plan"
   },
   "inputs_on_disk_check": {
     "checked_on": "2026-10-01",
@@ -811,7 +942,9 @@
       "required_by_v1b_parameters": false,
       "required_before": "the first SE2 run and any v2 class D output",
       "listed_in_prep_pack": true,
-      "approved": null
+      "approved": null,
+      "approved_by": null,
+      "approved_on": null
     },
     {
       "id": "DL-2",
@@ -824,7 +957,9 @@
       "required_before": "any JRC sensitivity note or v2 class D output for O1, O2 or SE1",
       "listed_in_prep_pack": false,
       "note": "Found by the drafting agent from tile bounds; the owners confirm the need.",
-      "approved": null
+      "approved": null,
+      "approved_by": null,
+      "approved_on": null
     },
     {
       "id": "DL-3",
@@ -836,7 +971,9 @@
       "required_by_v1b_parameters": false,
       "required_before": "only if the owners want a terrain layer for SE2",
       "listed_in_prep_pack": true,
-      "approved": null
+      "approved": null,
+      "approved_by": null,
+      "approved_on": null
     },
     {
       "id": "DL-4",
@@ -848,7 +985,9 @@
       "required_by_v1b_parameters": false,
       "required_before": "the UN-SPIDER reproduction, if the fallback is chosen",
       "listed_in_prep_pack": false,
-      "approved": null
+      "approved": null,
+      "approved_by": null,
+      "approved_on": null
     }
   ],
   "downloads_not_needed": [
@@ -863,15 +1002,22 @@
       "produced_by": "E0 context spike (build the vehicle context once with the corrected call), then E4 build_planning_context.py.",
       "who": "AI coding agent with Putu",
       "download_needed": false,
+      "parameter_pointers": [
+        "/corridor_polygon/geometry_file/path",
+        "/corridor_polygon/geometry_file/sha256"
+      ],
       "status": "open"
     },
     {
       "id": "OI-02",
-      "parameter": "corridor_polygon.route_selection_rule",
+      "parameter": "corridor_polygon.route_selection_rule.rule",
       "what_is_missing": "The rule that picks the trunk and primary routes to the three hospitals. The plan does not state one; a proposal is in the file.",
       "produced_by": "An owner decision at signing; the E0 spike records the resulting path edge IDs.",
       "who": "Putu",
       "download_needed": false,
+      "parameter_pointers": [
+        "/corridor_polygon/route_selection_rule/rule"
+      ],
       "status": "open"
     },
     {
@@ -881,6 +1027,15 @@
       "produced_by": "E0 context spike.",
       "who": "AI coding agent with Putu",
       "download_needed": false,
+      "parameter_pointers": [
+        "/corridor_polygon/e0_spike_record/hospital_count",
+        "/corridor_polygon/e0_spike_record/within_routing_context_for_named_ways",
+        "/corridor_polygon/e0_spike_record/edge_count",
+        "/corridor_polygon/e0_spike_record/wall_time_minutes",
+        "/corridor_polygon/e0_spike_record/peak_ram_gib",
+        "/corridor_polygon/e0_spike_record/grade_split_count",
+        "/corridor_polygon/e0_spike_record/baseline_vehicle_no_route_share"
+      ],
       "status": "open"
     },
     {
@@ -890,15 +1045,28 @@
       "produced_by": "E4: build_planning_context.py and the new grade_join.py.",
       "who": "AI coding agent with Putu",
       "download_needed": false,
+      "parameter_pointers": [
+        "/grade_join_policy/coincidence_tolerance_m",
+        "/grade_join_policy/join_log/path",
+        "/grade_join_policy/join_log/sha256",
+        "/grade_join_policy/join_log/join_count"
+      ],
       "status": "open"
     },
     {
       "id": "OI-05",
-      "parameter": "closure_rule_v1.unassigned_road_classes, closure_rule_v1.delay_under_strict and closure_rule_v1.regression.result",
+      "parameter": "closure_rule_v1.unassigned_road_classes.length_threshold_m, closure_rule_v1.delay_under_strict.rule and closure_rule_v1.regression.result",
       "what_is_missing": "Owner confirmation of two points the plan leaves unstated (length thresholds for motorway, residential and unclassified; the delay rule under the strict level), and the regression result showing that the permissive level reproduces the finals closed-edge IDs (1,824 walking / 1,738 vehicle).",
       "produced_by": "An owner decision at signing, and E3 closure_rules.py for the regression.",
       "who": "Putu decides; AI coding agent runs the regression",
       "download_needed": false,
+      "parameter_pointers": [
+        "/closure_rule_v1/unassigned_road_classes/length_threshold_m/motorway",
+        "/closure_rule_v1/unassigned_road_classes/length_threshold_m/residential",
+        "/closure_rule_v1/unassigned_road_classes/length_threshold_m/unclassified",
+        "/closure_rule_v1/delay_under_strict/rule",
+        "/closure_rule_v1/regression/result"
+      ],
       "status": "open"
     },
     {
@@ -908,16 +1076,29 @@
       "produced_by": "Owner decision for the two definitions; E4 context build for the counts and IDs.",
       "who": "Putu decides; AI coding agent with Putu builds",
       "download_needed": false,
+      "parameter_pointers": [
+        "/facility_sets/services/main_road_entry/definition",
+        "/facility_sets/sets/1/shelter_match_distance_m",
+        "/facility_sets/counts_in_corridor/osm_hospitals",
+        "/facility_sets/counts_in_corridor/dga_matched_hospitals",
+        "/facility_sets/counts_in_corridor/located_ddpm_shelters",
+        "/facility_sets/counts_in_corridor/corroborated_shelters",
+        "/facility_sets/mae_sai_hospital_osm_id"
+      ],
       "status": "open"
     },
     {
       "id": "OI-07",
-      "parameter": "critical_link_selection.destination_set_for_ranking and critical_link_selection.ranking_output",
+      "parameter": "critical_link_selection.destination_set_for_ranking and critical_link_selection.ranking_output.binding",
       "what_is_missing": "The destination set used for the ranking (a proposal is in the file) and the baseline ranking output with its SHA-256, from which the top 20, the S3 links per tambon and the S3b bridge edges are read.",
       "produced_by": "Owner decision for the destination set; E6 critical_links.py on the E4 context. E6 uses no flood input.",
       "who": "Putu decides; AI coding agent, reviewed by Rachmania",
       "download_needed": false,
-      "note": "Plan row G7b lists only E0 and E4 as dependencies, and schedules E6 after v1b. Plan 6.3 says links and nodes are fixed before any scoring. The owners choose: either run E6 before signing and bind the list's SHA-256 here, or sign with the rule alone and bind the list's SHA-256 in the first run receipt.",
+      "note": "Plan row G7b lists only E0 and E4 as dependencies, and schedules E6 after v1b. Plan 6.3 says links and nodes are fixed before any scoring. The owners choose and record the choice in ranking_output.binding: bound_here (run E6 before signing and fill in path and sha256) or bound_in_first_run_receipt (sign with the rule alone; the ranking's SHA-256 goes into the first run receipt, before any scoring).",
+      "parameter_pointers": [
+        "/critical_link_selection/destination_set_for_ranking",
+        "/critical_link_selection/ranking_output/binding"
+      ],
       "status": "open"
     },
     {
@@ -928,25 +1109,50 @@
       "who": "AI coding agent, reviewed by Putu",
       "download_needed": false,
       "download_note": "Inputs are on disk: the 2024 1 km age rasters under Project Support/FloodGuard/open-data and COD-AB under FloodGuard_external_data.",
+      "parameter_pointers": [
+        "/national_vulnerability_anchors/values/P5",
+        "/national_vulnerability_anchors/values/P10",
+        "/national_vulnerability_anchors/values/P75",
+        "/national_vulnerability_anchors/values/P90",
+        "/national_vulnerability_anchors/values/P95",
+        "/national_vulnerability_anchors/method/unit_set",
+        "/national_vulnerability_anchors/method/percentile_method",
+        "/national_vulnerability_anchors/output_receipt/path",
+        "/national_vulnerability_anchors/output_receipt/sha256",
+        "/national_vulnerability_anchors/output_receipt/unit_count",
+        "/national_vulnerability_anchors/output_receipt/excluded_unit_count"
+      ],
       "status": "open"
     },
     {
       "id": "OI-09",
-      "parameter": "corridor_polygon.se2_frame",
+      "parameter": "corridor_polygon.se2_frame (sha256, unit_list, routing_geometry, hospital_destinations, se2_blind_district)",
       "what_is_missing": "The pf-07 Mueang Chiang Rai planning frame: file, SHA-256, tambon list, and the SE2 routing geometry and hospital destinations. Also the district picked for SE2-blind by the population rule.",
       "produced_by": "P1 (frame and national COD-AB crosswalk) and the SE2-blind population ranking, computed before any overlay.",
       "who": "Rachmania for the frame; AI coding agent for the population ranking",
       "download_needed": false,
       "download_note": "The frame needs no download. JRC tile 90E_20N (DL-1) is needed later for the JRC sensitivity note and the v2 recurrence fallback in SE2.",
+      "parameter_pointers": [
+        "/corridor_polygon/se2_frame/sha256",
+        "/corridor_polygon/se2_frame/unit_list",
+        "/corridor_polygon/se2_frame/routing_geometry",
+        "/corridor_polygon/se2_frame/hospital_destinations",
+        "/corridor_polygon/se2_frame/se2_blind_district"
+      ],
       "status": "open"
     },
     {
       "id": "OI-10",
-      "parameter": "ensemble_grid.headline_rule.reference_cell, scenario_engine_grid S3b k, S8 base and E3 selection rule",
-      "what_is_missing": "Owner confirmation of four points the plan leaves unstated or states two ways: the reference cell for class retention, k for S3b, the base case for S8, and the selection rule for E3. Proposals are in the file.",
+      "parameter": "ensemble_grid.headline_rule.reference_cell, scenario_engine_grid S3b k and E3 selection rule",
+      "what_is_missing": "Owner decisions on three points the plan leaves unstated: the reference cell for class retention, k for S3b, and the selection rule for E3. Proposals are in the file. The base case of S8, which an earlier draft listed here, is filled in and is drafter reading DR-B08.",
       "produced_by": "An owner decision at signing. No computation.",
       "who": "Putu, with Rachmania as method co-signer",
       "download_needed": false,
+      "parameter_pointers": [
+        "/ensemble_grid/headline_rule/reference_cell",
+        "/scenario_engine_grid/cells/3/parameters/k",
+        "/scenario_engine_grid/cells/13/selection_rule"
+      ],
       "status": "open"
     },
     {
@@ -956,7 +1162,180 @@
       "produced_by": "Signing v1a (planning_protocol_v1_signing.md).",
       "who": "Putu and Rachmania",
       "download_needed": false,
+      "parameter_pointers": [
+        "/depends_on/v1a_sha256"
+      ],
       "status": "open"
+    },
+    {
+      "id": "OI-12",
+      "parameter": "ensemble_grid.terrain_remoteness_proxy (definition and anchor)",
+      "what_is_missing": "The definition of the terrain / remoteness proxy and its anchor. The proxy is a one-at-a-time ensemble level and the S8 cell, and the plan defines neither. A proposal for the definition is in the file; no anchor is proposed.",
+      "produced_by": "An owner decision at signing. No computation.",
+      "who": "Putu, with Rachmania as method co-signer",
+      "download_needed": false,
+      "parameter_pointers": [
+        "/ensemble_grid/terrain_remoteness_proxy/definition",
+        "/ensemble_grid/terrain_remoteness_proxy/anchor"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "OI-13",
+      "parameter": "ensemble_grid.core_axes[population_vintage].rescale_formula",
+      "what_is_missing": "The formula for '2024-rescaled demand'. The plan says only '2024/2020 1 km rescale'. A proposal is in the file.",
+      "produced_by": "An owner decision at signing. No computation.",
+      "who": "Putu, with Rachmania as method co-signer",
+      "download_needed": false,
+      "parameter_pointers": [
+        "/ensemble_grid/core_axes/3/rescale_formula"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "OI-14",
+      "parameter": "ensemble_grid.core_axes[flood_input_single_state].t2_levels_by_input and a6_prime_extent_threshold",
+      "what_is_missing": "The three flood-state levels for M1-literal, the UN-SPIDER reproduction and the A6-prime classifier, and the threshold that turns the A6-prime probability into an extent. The plan defines the levels for M1-v2 and the legacy mask only. Proposals are in the file.",
+      "produced_by": "An owner decision at signing. The A6-prime threshold must be fixed without any Mae Sai result in view.",
+      "who": "Rachmania for the GeoAI lane; Putu confirms",
+      "download_needed": false,
+      "parameter_pointers": [
+        "/ensemble_grid/core_axes/0/t2_levels_by_input/M1-literal",
+        "/ensemble_grid/core_axes/0/t2_levels_by_input/UN-SPIDER reproduction",
+        "/ensemble_grid/core_axes/0/t2_levels_by_input/A6-prime classifier",
+        "/ensemble_grid/core_axes/0/a6_prime_extent_threshold"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "OI-15",
+      "parameter": "ensemble_grid.core_axes[flood_input_single_state].one_pixel_m",
+      "what_is_missing": "What 'one pixel' is in metres for the plus level and for vector agency products. The plan gives 20 m for the minus level only. Confidence condition C4 in v1a depends on it. A proposal (20 m throughout) is in the file.",
+      "produced_by": "An owner decision at signing. No computation.",
+      "who": "Putu",
+      "download_needed": false,
+      "parameter_pointers": [
+        "/ensemble_grid/core_axes/0/one_pixel_m/plus",
+        "/ensemble_grid/core_axes/0/one_pixel_m/vector_products"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "OI-16",
+      "parameter": "facility_sets.shelters_in_the_ensemble",
+      "what_is_missing": "How DDPM shelters enter a vehicle-only ensemble: the travel mode and threshold for the shelter service inside the ensemble, the publication level of cells that use DDPM data, and how class retention is computed for a public overlay. A proposal is in the file.",
+      "produced_by": "An owner decision at signing. No computation.",
+      "who": "Putu, with Rachmania as method co-signer",
+      "download_needed": false,
+      "parameter_pointers": [
+        "/facility_sets/shelters_in_the_ensemble/mode",
+        "/facility_sets/shelters_in_the_ensemble/threshold_minutes",
+        "/facility_sets/shelters_in_the_ensemble/publication_level_of_cells_using_ddpm",
+        "/facility_sets/shelters_in_the_ensemble/retention_for_public_overlays"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "OI-17",
+      "parameter": "scenario_engine_grid S5 (add_destination_nodes and class_used_for_selection)",
+      "what_is_missing": "A slot for the per-tambon add_destination node list, which plan 6.3 wants fixed before any scoring, and the class that decides which tambons count as 'A or B'. The owners record in add_destination_nodes.binding whether the list is bound here or in the first run receipt.",
+      "produced_by": "Owner decision; the node list comes from the E4 context and uses no flood input.",
+      "who": "Putu decides; AI coding agent builds the list",
+      "download_needed": false,
+      "parameter_pointers": [
+        "/scenario_engine_grid/cells/5/add_destination_nodes/binding",
+        "/scenario_engine_grid/cells/5/class_used_for_selection"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "OI-18",
+      "parameter": "class_rule_v2_inputs",
+      "what_is_missing": "Definitions that class rule v2 needs and the plan does not give: when a critical link 'isolates' residents of a unit, which facility 'serves' a unit, and how JRC occurrence of at least 25 percent becomes a flag for a whole unit. Proposals are in the file.",
+      "produced_by": "An owner decision at signing. No computation.",
+      "who": "Putu, with Rachmania as method co-signer",
+      "download_needed": false,
+      "download_note": "The JRC fallback itself needs tiles that are not on disk (DL-1, DL-2). The definition does not.",
+      "parameter_pointers": [
+        "/class_rule_v2_inputs/trigger_B_isolation/definition",
+        "/class_rule_v2_inputs/trigger_C_serving_facility/definition",
+        "/class_rule_v2_inputs/trigger_D_recurrence_flag/definition"
+      ],
+      "status": "open"
+    }
+  ],
+  "drafter_readings": [
+    {
+      "id": "DR-B01",
+      "where": "closure_rule_v1.levels (delay_factor_k) and ensemble_grid passability axis",
+      "pointer": "/closure_rule_v1/delay_factor_pairing_status",
+      "plan_says": "'strict / central / permissive, with delay penalty k = 2 / 4 / 6'; the delay formula is stated for central only, with k = 4.",
+      "draft_says": "k = 2 with strict, 4 with central, 6 with permissive: one axis of three levels.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-B02",
+      "where": "closure_rule_v1.geometry and levels.permissive.closed_when",
+      "pointer": "/closure_rule_v1/geometry_status",
+      "plan_says": "No statement of how intersected length is measured or what 'any intersection' means.",
+      "draft_says": "Straight node-to-node segment in EPSG:32647; intersected when the length inside the extent is greater than 1e-6 m, as in the finals code.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-B03",
+      "where": "critical_link_selection.demand_weight and parameters.tie_break",
+      "pointer": "/critical_link_selection/selection_details_status",
+      "plan_says": "'Demand-weighted SPT flow'. No demand layer and no tie-break named.",
+      "draft_says": "WorldPop 2020 residents at each origin node; ties break on stable edge ID.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-B04",
+      "where": "national_vulnerability_anchors.method.allocation",
+      "pointer": "/national_vulnerability_anchors/method/allocation_status",
+      "plan_says": "No statement of how 1 km cells are assigned to tambons.",
+      "draft_says": "By the projected-area fraction of the cell inside the tambon.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-B05",
+      "where": "ensemble_grid.one_at_a_time (terrain proxy)",
+      "pointer": "/ensemble_grid/one_at_a_time_status",
+      "plan_says": "Terrain proxy listed under axis 4, O1 only; core grid of 540 cells.",
+      "draft_says": "Run one at a time on O1, outside the 540-cell core grid.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-B06",
+      "where": "scenario_engine_grid S3.selection_rule",
+      "pointer": "/scenario_engine_grid/cells/2/selection_rule_status",
+      "plan_says": "'Top-3 pre-ranked critical links per tambon'. No rule for assigning a link to a tambon.",
+      "draft_says": "A link belongs to the tambon where its edge lies; a boundary-crossing edge goes by its midpoint.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-B07",
+      "where": "blinding.may_run_before_v1b_is_in_force",
+      "pointer": "/blinding/reading_status",
+      "plan_says": "Context, access and closure builds may run before v1b.",
+      "draft_says": "Also allows the baseline critical-link ranking (E6) and the national percentiles; the ban covers real units.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-B08",
+      "where": "scenario_engine_grid S8.base",
+      "pointer": "/scenario_engine_grid/cells/8/note",
+      "plan_says": "Plan 6.2 names O2 as the base; plan 3.4 restricts the terrain proxy to O1.",
+      "draft_says": "Base case O1.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
     }
   ],
   "dependencies_that_do_not_block_signing": [
@@ -971,14 +1350,16 @@
       "plan 2.2 G22"
     ],
     "rules": [
-      "While status is incomplete_draft, open items are closed by editing this file; each closure records the value, the producing run and its receipt or output SHA-256.",
-      "When every open item is closed the status becomes draft_for_signature, and the signers may amend and sign.",
+      "While status is incomplete_draft, open items are closed by editing this file. In one edit: fill in every parameter the item lists in parameter_pointers, set the item's status to closed and add its closure (the value, the producing run and its receipt or output SHA-256).",
+      "A closed item with an empty parameter is refused by the tests, and a file with status draft_for_signature or signed that has an empty parameter is refused by the schema.",
+      "When every open item is closed and every section's status is fixed, the status becomes draft_for_signature, and the signers may amend and sign.",
+      "At signing, every entry in drafter_readings is set to confirmed or amended. An amended entry is also listed in signature_block.amendments_at_signing, and the parameter it points to is edited to match.",
       "After the signed file's SHA-256 is recorded in RECEIPTS.jsonl, this file is not edited again.",
       "Any later change needs planning_protocol_v2 with a written reason. Every run is reported."
     ],
     "status_values": {
       "incomplete_draft": "At least one open item is open. Cannot be signed.",
-      "draft_for_signature": "Every open item is closed. Not in force.",
+      "draft_for_signature": "Every open item is closed and every parameter it names is filled in. Not in force.",
       "signed": "Set by the signers in the same edit that fills the signature block. In force only once the SHA-256 of that committed file is in RECEIPTS.jsonl."
     },
     "receipt": {
@@ -988,17 +1369,19 @@
     }
   },
   "assumptions": [
-    "Parameters marked as proposals are the drafting agent's reading of a point the plan leaves unstated. They carry no authority until an owner confirms them.",
+    "Parameters marked as proposals are the drafting agent's reading of a point the plan leaves unstated; their slots are empty and each is named by an open item. Values that are filled in but do not come from the plan are listed in drafter_readings. Neither kind carries authority until an owner confirms it.",
     "Counts quoted from the plan (shelter rows, closed-edge counts, hospital distances) were verified by the plan's authors, not re-run for this draft.",
-    "The on-disk check covers file presence and, for the age rasters, the manifest SHA-256 and byte sizes. Raster contents were not opened."
+    "The on-disk check covers file presence and, for the age rasters, the manifest SHA-256 and byte sizes. Raster contents were not opened.",
+    "The open-item list was extended after review from 11 to 18 items. It covers every empty parameter in this file; a test checks that. It cannot show that no further unstated choice remains, and the signers add any they find."
   ],
   "signature_block": {
     "kind": "team_governance_signature",
-    "note": "Not an independent review. The signers fill their own entry; nobody fills an entry for someone else. This file cannot be signed while it is an incomplete draft.",
+    "note": "Not an independent review. The two signers are different people. Each signer fills their own entry; nobody fills an entry for someone else. This file cannot be signed while it is an incomplete draft.",
     "attestations_required": [
-      "Every open item is closed and I have read each closure.",
-      "No FPPS, A-E class or ensemble has been computed for a real unit under this protocol before signing.",
-      "v1a_sha256 above equals the value recorded in RECEIPTS.jsonl."
+      "Every open item is closed, every parameter it names is filled in, and I have read each closure.",
+      "Every entry in drafter_readings is marked confirmed or amended.",
+      "No FPPS, A-E class or ensemble has been computed for a real unit since the plan date (2026-09-26) other than the items in the v1a exploratory-knowledge disclosure.",
+      "v1a_sha256 above equals the SHA-256 of the committed v1a file and the value recorded in RECEIPTS.jsonl."
     ],
     "signers": [
       {

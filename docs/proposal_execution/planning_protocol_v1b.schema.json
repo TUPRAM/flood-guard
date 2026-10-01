@@ -2,13 +2,991 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://floodguard.th/proposal-execution/planning-protocol-v1b.schema.json",
   "title": "FloodGuard planning protocol v1b (engineering addendum)",
-  "description": "Shape of docs/proposal_execution/planning_protocol_v1b.json. While any open item is open the status must be incomplete_draft. A signed file has no open item, both signatures and the recorded v1a SHA-256. The file never records its own SHA-256.",
+  "description": "Shape of docs/proposal_execution/planning_protocol_v1b.json. While any open item is open the status must be incomplete_draft. A file with status draft_for_signature or signed has no open item, every section fixed and every parameter that an open item names filled in ($defs/fixed_parameters). A signed file also has both signatures, by two different named signers, every drafter reading confirmed or amended and the recorded v1a SHA-256. The file never records its own SHA-256.",
   "type": "object",
   "additionalProperties": false,
+  "$defs": {
+    "signer": {
+      "type": "object",
+      "required": [
+        "role",
+        "required_signer",
+        "action",
+        "signed_by",
+        "signed_at_utc",
+        "attestation"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "owner",
+            "method_co_signer"
+          ]
+        },
+        "required_signer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "enum": [
+            "signs",
+            "co-signs"
+          ]
+        },
+        "signed_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "signed_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        "attestation": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "bound_output": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "binding"
+      ],
+      "properties": {
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "binding": {
+          "enum": [
+            null,
+            "bound_here",
+            "bound_in_first_run_receipt"
+          ]
+        }
+      },
+      "if": {
+        "properties": {
+          "binding": {
+            "const": "bound_here"
+          }
+        },
+        "required": [
+          "binding"
+        ]
+      },
+      "then": {
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fixed_parameters": {
+      "description": "Every parameter that an open item names is present and not null. Generated from the parameter_pointers of the open items; a test checks that the two stay in step.",
+      "type": "object",
+      "required": [
+        "corridor_polygon",
+        "grade_join_policy",
+        "closure_rule_v1",
+        "facility_sets",
+        "critical_link_selection",
+        "national_vulnerability_anchors",
+        "ensemble_grid",
+        "scenario_engine_grid",
+        "depends_on",
+        "class_rule_v2_inputs"
+      ],
+      "properties": {
+        "corridor_polygon": {
+          "type": "object",
+          "required": [
+            "geometry_file",
+            "route_selection_rule",
+            "e0_spike_record",
+            "se2_frame"
+          ],
+          "properties": {
+            "geometry_file": {
+              "type": "object",
+              "required": [
+                "path",
+                "sha256"
+              ],
+              "properties": {
+                "path": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "sha256": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "route_selection_rule": {
+              "type": "object",
+              "required": [
+                "rule"
+              ],
+              "properties": {
+                "rule": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "e0_spike_record": {
+              "type": "object",
+              "required": [
+                "hospital_count",
+                "within_routing_context_for_named_ways",
+                "edge_count",
+                "wall_time_minutes",
+                "peak_ram_gib",
+                "grade_split_count",
+                "baseline_vehicle_no_route_share"
+              ],
+              "properties": {
+                "hospital_count": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "within_routing_context_for_named_ways": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "edge_count": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "wall_time_minutes": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "peak_ram_gib": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "grade_split_count": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "baseline_vehicle_no_route_share": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "se2_frame": {
+              "type": "object",
+              "required": [
+                "sha256",
+                "unit_list",
+                "routing_geometry",
+                "hospital_destinations",
+                "se2_blind_district"
+              ],
+              "properties": {
+                "sha256": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "unit_list": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "routing_geometry": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "hospital_destinations": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "se2_blind_district": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "grade_join_policy": {
+          "type": "object",
+          "required": [
+            "coincidence_tolerance_m",
+            "join_log"
+          ],
+          "properties": {
+            "coincidence_tolerance_m": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "join_log": {
+              "type": "object",
+              "required": [
+                "path",
+                "sha256",
+                "join_count"
+              ],
+              "properties": {
+                "path": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "sha256": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "join_count": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "closure_rule_v1": {
+          "type": "object",
+          "required": [
+            "unassigned_road_classes",
+            "delay_under_strict",
+            "regression"
+          ],
+          "properties": {
+            "unassigned_road_classes": {
+              "type": "object",
+              "required": [
+                "length_threshold_m"
+              ],
+              "properties": {
+                "length_threshold_m": {
+                  "type": "object",
+                  "required": [
+                    "motorway",
+                    "residential",
+                    "unclassified"
+                  ],
+                  "properties": {
+                    "motorway": {
+                      "not": {
+                        "type": "null"
+                      }
+                    },
+                    "residential": {
+                      "not": {
+                        "type": "null"
+                      }
+                    },
+                    "unclassified": {
+                      "not": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "delay_under_strict": {
+              "type": "object",
+              "required": [
+                "rule"
+              ],
+              "properties": {
+                "rule": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "regression": {
+              "type": "object",
+              "required": [
+                "result"
+              ],
+              "properties": {
+                "result": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "facility_sets": {
+          "type": "object",
+          "required": [
+            "services",
+            "sets",
+            "counts_in_corridor",
+            "mae_sai_hospital_osm_id",
+            "shelters_in_the_ensemble"
+          ],
+          "properties": {
+            "services": {
+              "type": "object",
+              "required": [
+                "main_road_entry"
+              ],
+              "properties": {
+                "main_road_entry": {
+                  "type": "object",
+                  "required": [
+                    "definition"
+                  ],
+                  "properties": {
+                    "definition": {
+                      "not": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "sets": {
+              "type": "array",
+              "prefixItems": [
+                true,
+                {
+                  "type": "object",
+                  "required": [
+                    "shelter_match_distance_m"
+                  ],
+                  "properties": {
+                    "shelter_match_distance_m": {
+                      "not": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              ],
+              "minItems": 2
+            },
+            "counts_in_corridor": {
+              "type": "object",
+              "required": [
+                "osm_hospitals",
+                "dga_matched_hospitals",
+                "located_ddpm_shelters",
+                "corroborated_shelters"
+              ],
+              "properties": {
+                "osm_hospitals": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "dga_matched_hospitals": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "located_ddpm_shelters": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "corroborated_shelters": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "mae_sai_hospital_osm_id": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "shelters_in_the_ensemble": {
+              "type": "object",
+              "required": [
+                "mode",
+                "threshold_minutes",
+                "publication_level_of_cells_using_ddpm",
+                "retention_for_public_overlays"
+              ],
+              "properties": {
+                "mode": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "threshold_minutes": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "publication_level_of_cells_using_ddpm": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "retention_for_public_overlays": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "critical_link_selection": {
+          "type": "object",
+          "required": [
+            "destination_set_for_ranking",
+            "ranking_output"
+          ],
+          "properties": {
+            "destination_set_for_ranking": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "ranking_output": {
+              "type": "object",
+              "required": [
+                "binding"
+              ],
+              "properties": {
+                "binding": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "national_vulnerability_anchors": {
+          "type": "object",
+          "required": [
+            "values",
+            "method",
+            "output_receipt"
+          ],
+          "properties": {
+            "values": {
+              "type": "object",
+              "required": [
+                "P5",
+                "P10",
+                "P75",
+                "P90",
+                "P95"
+              ],
+              "properties": {
+                "P5": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "P10": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "P75": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "P90": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "P95": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "method": {
+              "type": "object",
+              "required": [
+                "unit_set",
+                "percentile_method"
+              ],
+              "properties": {
+                "unit_set": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "percentile_method": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "output_receipt": {
+              "type": "object",
+              "required": [
+                "path",
+                "sha256",
+                "unit_count",
+                "excluded_unit_count"
+              ],
+              "properties": {
+                "path": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "sha256": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "unit_count": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "excluded_unit_count": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ensemble_grid": {
+          "type": "object",
+          "required": [
+            "headline_rule",
+            "terrain_remoteness_proxy",
+            "core_axes"
+          ],
+          "properties": {
+            "headline_rule": {
+              "type": "object",
+              "required": [
+                "reference_cell"
+              ],
+              "properties": {
+                "reference_cell": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "terrain_remoteness_proxy": {
+              "type": "object",
+              "required": [
+                "definition",
+                "anchor"
+              ],
+              "properties": {
+                "definition": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "anchor": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "core_axes": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "object",
+                  "required": [
+                    "t2_levels_by_input",
+                    "a6_prime_extent_threshold",
+                    "one_pixel_m"
+                  ],
+                  "properties": {
+                    "t2_levels_by_input": {
+                      "type": "object",
+                      "required": [
+                        "M1-literal",
+                        "UN-SPIDER reproduction",
+                        "A6-prime classifier"
+                      ],
+                      "properties": {
+                        "M1-literal": {
+                          "not": {
+                            "type": "null"
+                          }
+                        },
+                        "UN-SPIDER reproduction": {
+                          "not": {
+                            "type": "null"
+                          }
+                        },
+                        "A6-prime classifier": {
+                          "not": {
+                            "type": "null"
+                          }
+                        }
+                      }
+                    },
+                    "a6_prime_extent_threshold": {
+                      "not": {
+                        "type": "null"
+                      }
+                    },
+                    "one_pixel_m": {
+                      "type": "object",
+                      "required": [
+                        "plus",
+                        "vector_products"
+                      ],
+                      "properties": {
+                        "plus": {
+                          "not": {
+                            "type": "null"
+                          }
+                        },
+                        "vector_products": {
+                          "not": {
+                            "type": "null"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                true,
+                true,
+                {
+                  "type": "object",
+                  "required": [
+                    "rescale_formula"
+                  ],
+                  "properties": {
+                    "rescale_formula": {
+                      "not": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              ],
+              "minItems": 4
+            }
+          }
+        },
+        "scenario_engine_grid": {
+          "type": "object",
+          "required": [
+            "cells"
+          ],
+          "properties": {
+            "cells": {
+              "type": "array",
+              "prefixItems": [
+                true,
+                true,
+                true,
+                {
+                  "type": "object",
+                  "required": [
+                    "parameters"
+                  ],
+                  "properties": {
+                    "parameters": {
+                      "type": "object",
+                      "required": [
+                        "k"
+                      ],
+                      "properties": {
+                        "k": {
+                          "not": {
+                            "type": "null"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                true,
+                {
+                  "type": "object",
+                  "required": [
+                    "add_destination_nodes",
+                    "class_used_for_selection"
+                  ],
+                  "properties": {
+                    "add_destination_nodes": {
+                      "type": "object",
+                      "required": [
+                        "binding"
+                      ],
+                      "properties": {
+                        "binding": {
+                          "not": {
+                            "type": "null"
+                          }
+                        }
+                      }
+                    },
+                    "class_used_for_selection": {
+                      "not": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                {
+                  "type": "object",
+                  "required": [
+                    "selection_rule"
+                  ],
+                  "properties": {
+                    "selection_rule": {
+                      "not": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              ],
+              "minItems": 14
+            }
+          }
+        },
+        "depends_on": {
+          "type": "object",
+          "required": [
+            "v1a_sha256"
+          ],
+          "properties": {
+            "v1a_sha256": {
+              "not": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        "class_rule_v2_inputs": {
+          "type": "object",
+          "required": [
+            "trigger_B_isolation",
+            "trigger_C_serving_facility",
+            "trigger_D_recurrence_flag"
+          ],
+          "properties": {
+            "trigger_B_isolation": {
+              "type": "object",
+              "required": [
+                "definition"
+              ],
+              "properties": {
+                "definition": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "trigger_C_serving_facility": {
+              "type": "object",
+              "required": [
+                "definition"
+              ],
+              "properties": {
+                "definition": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "trigger_D_recurrence_flag": {
+              "type": "object",
+              "required": [
+                "definition"
+              ],
+              "properties": {
+                "definition": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sections_fixed": {
+      "properties": {
+        "corridor_polygon": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        },
+        "grade_join_policy": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        },
+        "closure_rule_v1": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        },
+        "facility_sets": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        },
+        "critical_link_selection": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        },
+        "national_vulnerability_anchors": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        },
+        "ensemble_grid": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        },
+        "scenario_engine_grid": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        },
+        "class_rule_v2_inputs": {
+          "properties": {
+            "status": {
+              "const": "fixed"
+            }
+          }
+        }
+      }
+    },
+    "acceptance": {
+      "description": "Plan acceptance values that must hold before signing: at least 4 hospitals in the context, the three named hospital ways inside the routing context, baseline no-route share of at most 10 percent, and an exact match in the permissive closure regression.",
+      "properties": {
+        "corridor_polygon": {
+          "properties": {
+            "e0_spike_record": {
+              "properties": {
+                "hospital_count": {
+                  "minimum": 4
+                },
+                "within_routing_context_for_named_ways": {
+                  "const": true
+                },
+                "baseline_vehicle_no_route_share": {
+                  "maximum": 0.1
+                }
+              }
+            }
+          }
+        },
+        "closure_rule_v1": {
+          "properties": {
+            "regression": {
+              "properties": {
+                "result": {
+                  "properties": {
+                    "closed_edge_ids_match_exactly": {
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "required": [
     "assumptions",
     "blinding",
     "change_control",
+    "class_rule_v2_inputs",
     "closure_rule_v1",
     "corridor_polygon",
     "critical_link_selection",
@@ -18,6 +996,7 @@
     "downloads_requiring_owner_approval",
     "drafted_by",
     "drafted_on",
+    "drafter_readings",
     "ensemble_grid",
     "facility_sets",
     "grade_join_policy",
@@ -106,77 +1085,53 @@
           "maxItems": 2,
           "prefixItems": [
             {
-              "properties": {
-                "role": {
-                  "const": "owner"
+              "allOf": [
+                {
+                  "$ref": "#/$defs/signer"
                 },
-                "action": {
-                  "const": "signs"
+                {
+                  "properties": {
+                    "role": {
+                      "const": "owner"
+                    },
+                    "action": {
+                      "const": "signs"
+                    },
+                    "required_signer": {
+                      "pattern": "Putu"
+                    },
+                    "signed_by": {
+                      "pattern": "Putu"
+                    }
+                  }
                 }
-              }
+              ]
             },
             {
-              "properties": {
-                "role": {
-                  "const": "method_co_signer"
+              "allOf": [
+                {
+                  "$ref": "#/$defs/signer"
                 },
-                "action": {
-                  "const": "co-signs"
+                {
+                  "properties": {
+                    "role": {
+                      "const": "method_co_signer"
+                    },
+                    "action": {
+                      "const": "co-signs"
+                    },
+                    "required_signer": {
+                      "pattern": "Rachmania"
+                    },
+                    "signed_by": {
+                      "pattern": "Rachmania"
+                    }
+                  }
                 }
-              }
+              ]
             }
           ],
-          "items": {
-            "type": "object",
-            "required": [
-              "role",
-              "required_signer",
-              "action",
-              "signed_by",
-              "signed_at_utc",
-              "attestation"
-            ],
-            "properties": {
-              "role": {
-                "enum": [
-                  "owner",
-                  "method_co_signer"
-                ]
-              },
-              "required_signer": {
-                "type": "string",
-                "minLength": 1
-              },
-              "action": {
-                "enum": [
-                  "signs",
-                  "co-signs"
-                ]
-              },
-              "signed_by": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "minLength": 1
-              },
-              "signed_at_utc": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
-              },
-              "attestation": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "minLength": 1
-              }
-            },
-            "additionalProperties": false
-          }
+          "items": false
         },
         "amendments_at_signing": {
           "type": "array",
@@ -378,6 +1333,70 @@
             }
           },
           "additionalProperties": false
+        },
+        "e0_spike_record": {
+          "type": "object",
+          "required": [
+            "hospital_count",
+            "within_routing_context_for_named_ways",
+            "edge_count",
+            "wall_time_minutes",
+            "peak_ram_gib",
+            "grade_split_count",
+            "baseline_vehicle_no_route_share"
+          ],
+          "properties": {
+            "hospital_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "within_routing_context_for_named_ways": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "edge_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "wall_time_minutes": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "peak_ram_gib": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "grade_split_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "baseline_vehicle_no_route_share": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
         }
       }
     },
@@ -525,6 +1544,46 @@
             "raster_minimum_polygon_px"
           ],
           "properties": {}
+        },
+        "regression": {
+          "type": "object",
+          "required": [
+            "rule",
+            "expected_closed_edges",
+            "result"
+          ],
+          "properties": {
+            "result": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "required": [
+                "walking_closed_edges",
+                "vehicle_closed_edges",
+                "closed_edge_ids_match_exactly",
+                "evidence_sha256"
+              ],
+              "properties": {
+                "walking_closed_edges": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "vehicle_closed_edges": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "closed_edge_ids_match_exactly": {
+                  "type": "boolean"
+                },
+                "evidence_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
         }
       }
     },
@@ -603,6 +1662,9 @@
         },
         "uses_flood_input": {
           "const": false
+        },
+        "ranking_output": {
+          "$ref": "#/$defs/bound_output"
         }
       }
     },
@@ -830,8 +1892,42 @@
                   "null"
                 ],
                 "minLength": 1
+              },
+              "add_destination_nodes": {
+                "$ref": "#/$defs/bound_output"
               }
             }
+          }
+        }
+      }
+    },
+    "class_rule_v2_inputs": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
           }
         }
       }
@@ -857,7 +1953,9 @@
           "approximate_size",
           "needed_for",
           "required_by_v1b_parameters",
-          "approved"
+          "approved",
+          "approved_by",
+          "approved_on"
         ],
         "properties": {
           "id": {
@@ -892,6 +1990,50 @@
               "boolean",
               "null"
             ]
+          },
+          "approved_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          },
+          "approved_on": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          }
+        },
+        "if": {
+          "properties": {
+            "approved": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "approved"
+          ]
+        },
+        "then": {
+          "properties": {
+            "approved_by": {
+              "type": "string"
+            },
+            "approved_on": {
+              "type": "string"
+            }
+          }
+        },
+        "else": {
+          "properties": {
+            "approved_by": {
+              "type": "null"
+            },
+            "approved_on": {
+              "type": "null"
+            }
           }
         }
       }
@@ -914,6 +2056,7 @@
           "produced_by",
           "who",
           "download_needed",
+          "parameter_pointers",
           "status"
         ],
         "properties": {
@@ -947,6 +2090,15 @@
           "note": {
             "type": "string",
             "minLength": 1
+          },
+          "parameter_pointers": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^/"
+            }
           },
           "status": {
             "enum": [
@@ -1006,6 +2158,55 @@
             ]
           }
         }
+      }
+    },
+    "drafter_readings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "where",
+          "pointer",
+          "plan_says",
+          "draft_says",
+          "outcome_sensitive",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^DR-B[0-9]{2}$"
+          },
+          "where": {
+            "type": "string",
+            "minLength": 1
+          },
+          "pointer": {
+            "type": "string",
+            "pattern": "^/"
+          },
+          "plan_says": {
+            "type": "string",
+            "minLength": 1
+          },
+          "draft_says": {
+            "type": "string",
+            "minLength": 1
+          },
+          "outcome_sensitive": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "awaiting_owner_confirmation",
+              "confirmed",
+              "amended"
+            ]
+          }
+        },
+        "additionalProperties": false
       }
     },
     "dependencies_that_do_not_block_signing": {
@@ -1138,6 +2339,90 @@
             }
           }
         ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "draft_for_signature",
+              "signed"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/fixed_parameters"
+          },
+          {
+            "$ref": "#/$defs/sections_fixed"
+          },
+          {
+            "$ref": "#/$defs/acceptance"
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "incomplete_draft",
+              "draft_for_signature"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "drafter_readings": {
+            "items": {
+              "properties": {
+                "status": {
+                  "const": "awaiting_owner_confirmation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "signed"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "drafter_readings": {
+            "items": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "confirmed",
+                    "amended"
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     }
   ]

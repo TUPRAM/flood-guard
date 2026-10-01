@@ -4,7 +4,7 @@
   "title": "FloodGuard planning protocol v1a: decision rules",
   "protocol_kind": "declared_protocol_after_exploratory_analysis",
   "status": "draft_for_signature",
-  "status_note": "Draft written by an AI coding agent for the owners' signature. Agents draft, humans sign. Nothing in this file is in force. It takes effect only when both signers have filled the signature block, the file is committed, and the SHA-256 of the committed file is recorded in docs/proposal_execution/RECEIPTS.jsonl. No receipt has been written.",
+  "status_note": "Draft written by an AI coding agent for the owners' signature. Agents draft, humans sign. Nothing in this file is in force. It takes effect only when both signers have filled the signature block, every entry in drafter_readings is marked confirmed or amended, the file is committed, and the SHA-256 of the committed file is recorded in docs/proposal_execution/RECEIPTS.jsonl. No receipt has been written.",
   "drafted_on": "2026-10-01",
   "drafted_by": "AI coding agent (Claude), on the owner go-ahead R5 of 2026-10-01",
   "official_warning": false,
@@ -15,7 +15,7 @@
     "does_not_cover": [
       "The accepted lane: accepted_fpps and accepted_action_class stay null and tier T4 stays locked.",
       "The nine SHA-bound finals modules listed in scripts/build_mae_sai_finals.py, which are not edited.",
-      "Engineering parameters (corridor polygon, grade joins, closure parameters, facility sets, critical links, national anchors, ensemble grid, scenario and engine grid). Those are in planning_protocol_v1b.json."
+      "Engineering parameters (corridor polygon, grade joins, closure parameters, facility sets, critical links, national anchors, ensemble grid, scenario and engine grid, class rule v2 inputs). Those are in planning_protocol_v1b.json."
     ],
     "basis": [
       "plan 0",
@@ -78,7 +78,8 @@
       "committed": true,
       "read_from": "branch claude/mae-sai-r4 at commit ec6c014 (replay lineage). The file is not on this lineage and was not copied.",
       "signed_on": "2026-09-30",
-      "signed_by": "Putu and Rachmania. Putu approved in a Claude Code session on behalf of both; Rachmania has not signed that file directly."
+      "signed_by": "Putu and Rachmania. Putu approved in a Claude Code session on behalf of both; Rachmania has not signed that file directly.",
+      "working_copy_note": "On 2026-10-01 the working copy of the log on that branch had one uncommitted follow-up line, about the draft 4009 rights record. The SHA-256 here is of the committed file at ec6c014. If the log is committed again before signing, the signers update this hash and read_from."
     },
     "scoring_module": {
       "name": "src/floodguard/scoring.py",
@@ -187,7 +188,7 @@
         "name": "Scenario",
         "admission": "Real context plus a declared perturbation or assumption, including SCN-ENV (4009 season union treated as simultaneous) and assumed completions.",
         "feeds_fpps": "yes, scenario lane",
-        "max_confidence": "scenario confidence: rule v1 with the recency condition replaced by the scenario declaration",
+        "max_confidence": "scenario confidence: rule v1 with the recency condition replaced by the scenario declaration. How condition C1 applies to a T1 row is not stated in the plan; see confidence_rule_v1.scenario_rows.",
         "class_behaviour": "Scenario classes, never merged with observed and counted only in the SCN column.",
         "display": "Hatched chip: Scenario: what-if (name)."
       },
@@ -215,7 +216,7 @@
         "tier": "T4",
         "lane": null,
         "name": "Qualified",
-        "admission": "Human-reviewed dated reference, hold-out, calibration and label receipt. Not pursued in this release.",
+        "admission": "Human-reviewed dated reference, frozen hold-out, calibration and label receipt. Not pursued in this release.",
         "feeds_fpps": "accepted lane only",
         "max_confidence": "high",
         "class_behaviour": "accepted_fpps populated. Locked.",
@@ -229,7 +230,8 @@
       "No class above E without derived medium confidence, or a declared scenario confidence in the SCN lanes.",
       "The temporal honesty assertion in guardrails holds."
     ],
-    "no_assumed_components_in_obs_or_scn": "No FPPS component is assumed at 0, 50 or 100 in the OBS or SCN-ENV lanes. Assumed completions exist only as T1 assumed-completion arithmetic and are labelled as such (plan 1.2)."
+    "no_assumed_components_in_obs_or_scn": "No FPPS component is assumed at 0, 50 or 100 in the OBS or SCN lanes. Assumed completions exist only as T1 assumed-completion arithmetic and are labelled as such (plan 1.2).",
+    "no_assumed_components_status": "Drafter reading DR-A05. Plan 1.2 forbids assumed components in 'the OBS or SCN lanes' and, in the next sentence, keeps assumed completions as T1 arithmetic; T1 is the scenario tier. The draft reads this as: no case row and no scenario cell in OBS, SCN or SCN-ENV carries an assumed component; assumed-completion arithmetic is a separate table, labelled as such, and is never a case row or a scenario cell. An earlier draft narrowed the rule to 'OBS or SCN-ENV'; the plan's wording is restored here. The owners confirm or amend the reading at signing."
   },
   "date_rule": {
     "basis": [
@@ -252,11 +254,13 @@
         "temporal_relation": "season_window",
         "lane": "SCN-ENV",
         "use": "scenario only",
-        "reason": "No per-patch dates, Field_Validation=0, and a span from 1 Aug 2024 into October 2024. It fails the recency condition."
+        "reason": "No per-patch dates, Field_Validation=0, and a span from 1 Aug 2024 into October 2024. It fails the recency condition.",
+        "date_span_status": "Drafter reading DR-A10. The layer name gives 1 Aug to 12 Oct 2024. Plan 0 item 1 says the union spans 1 Aug to 22 Oct and plan 4.1 says '1 Aug-12/22 Oct'; the decision log calls it the Aug-Oct accumulated layer. The draft records the layer name as it is in the package. Whichever end date is right, the layer is a season window and fails the recency condition. The owners confirm at signing."
       },
       "layer_22_oct": {
         "layer": "CHIANGRAI_20241022_FloodExtent",
-        "temporal_relation": "event_aligned for case O2 only",
+        "temporal_relation": "event_aligned",
+        "temporal_relation_scope": "Case O2 only (reference date 22 Oct 2024). Against a September reference date (cases O1 and O4) the same layer is dated_other.",
         "case": "O2",
         "case_reference_date": "2024-10-22",
         "label": "late-season residual water, 22 Oct 2024",
@@ -316,7 +320,8 @@
         "condition": "Unit residents are at least 100.",
         "threshold": {
           "unit_residents_min": 100
-        }
+        },
+        "note": "A unit below this threshold also falls under guardrail GR1, which decides the class. See guardrails GR1_minimum_denominators.precedence."
       },
       {
         "id": "C7_baseline_no_route",
@@ -334,7 +339,28 @@
       }
     ],
     "low": "Otherwise.",
-    "basis_record": "Every row records pass, fail or by_construction for each condition and lists failed_conditions.",
+    "scenario_rows": {
+      "applies_to": "Tier T1 rows (lanes SCN and SCN-ENV).",
+      "plan_text": [
+        "Plan 3.3, tier table, T1 maximum confidence: 'scenario confidence' (rule v1 with the recency condition replaced by the scenario declaration).",
+        "Plan 3.3, rule v1, condition 1: Tier T3, or T2 passing the skill condition.",
+        "Plan 3.3, invariants: no class above E without derived medium (or declared scenario) confidence."
+      ],
+      "gap": "Read literally, condition C1 fails for every T1 row, so every SE1, SE2 and S1-S9 scenario row is low confidence and class E. That contradicts the case design in plan 6, which expects scenario classes above E. The plan does not say how C1 applies to a T1 row, and it calls scenario confidence both derived and declared.",
+      "rule": [
+        "Scenario confidence is derived, not declared. It is rule v1 with two substitutions.",
+        "C1 is evaluated on the base flood input of the scenario. It is satisfied, and recorded as by_scenario_declaration, when the base input is an agency product used as provided: the 4009 accumulated layer for SCN-ENV rows, and the 4009 22 Oct layer for scenario cells built on O2. It fails when the base input is an own T2 candidate that does not pass the T2 skill condition.",
+        "C2 is replaced by the scenario declaration and recorded as by_scenario_declaration.",
+        "C3 to C8 are evaluated exactly as for an observed row.",
+        "The row carries confidence_class medium or low, because the scoring module accepts only high, medium and low, together with confidence_kind scenario. It is displayed as scenario confidence and is never shown or counted as observed confidence."
+      ],
+      "rule_status": "Drafter reading DR-A07, not in the plan. This is the most outcome-sensitive reading in this file: it decides whether any scenario row can have a class above E. The owners confirm it, or replace it with one of the alternatives, before signing.",
+      "alternatives": [
+        "Literal: C1 fails for every T1 row and every scenario class is E.",
+        "Declared: each scenario cell states its confidence in v1b, and C1 to C8 are not evaluated for it."
+      ]
+    },
+    "basis_record": "Every row records pass, fail, by_construction or by_scenario_declaration for each condition and lists failed_conditions. The value by_scenario_declaration exists only under drafter reading DR-A07.",
     "vocabulary": [
       "high",
       "medium",
@@ -377,7 +403,7 @@
     "local_path": "<external_data_workspace>/geoid_flood/sample/sample/geoid-flood/EMSR712-3/",
     "unit": "tile ID (the integer after EMSR712-3-)",
     "rule": "Sort the 29 tile IDs in ascending numeric order. The first 15 are development tiles. The remaining 14 are test tiles.",
-    "rule_status": "The plan says 29 tiles by tile ID, 15 dev / 14 test, and gives no list. This ordering rule is the drafting agent's reading. The owners confirm or amend it at signing.",
+    "rule_status": "Drafter reading DR-A01. The plan says 29 tiles by tile ID, 15 dev / 14 test, and gives no list. This ordering rule is the drafting agent's reading. The owners confirm or amend it at signing.",
     "development_tile_ids": [
       9,
       10,
@@ -452,7 +478,8 @@
           0.1,
           0.3
         ],
-        "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 5 of 8 Mae Sai tambons. It was chosen after seeing the data.",
+        "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 5 of 8 Mae Sai tambons, as stated in plan 3.4. It was chosen after seeing the data. The per-tambon envelope shares kept from that analysis show 6 of the 8 above 0.05, not 5. The owners check the count and correct this sentence before signing.",
+        "anchor_disclosure_status": "Drafter reading DR-A11. The count is quoted from plan 3.4 and does not match the retained shares (disclosure items EK-05 and EK-R3). The disclosure itself, that 0.20 was chosen after seeing the data, is not in doubt.",
         "permanent_water": {
           "source": "ESA WorldCover 2021 v200",
           "class": 80,
@@ -466,7 +493,7 @@
         "headcount_anchor": null,
         "density_anchor": null,
         "population_source": "WorldPop 2020 100 m (tha_ppp_2020.tif)",
-        "population_vintage_axis": "2024/2020 1 km rescale, as an ensemble axis",
+        "population_vintage_axis": "2024/2020 1 km rescale, as an ensemble axis. The plan gives no formula; it is open item OI-13 in v1b.",
         "note": "Same semantics as src/floodguard/evidence_flood_scenario.py (cell-centre rule). A density anchor is rejected because it is independent of the flood."
       },
       "access_gap_0_100": {
@@ -509,7 +536,7 @@
           "national_P10": null,
           "national_P90": null
         },
-        "anchor_values_status": "Not computed. They are computed once in v1b from the national tambon distribution of the WorldPop 2024 1 km dependent share, before any case scoring.",
+        "anchor_values_status": "Not computed. They are computed once in v1b from the national tambon distribution of the WorldPop 2024 1 km dependent share, before any case scoring. This file never carries the values; they are recorded in planning_protocol_v1b.json.",
         "anchor_sensitivity": {
           "lower": "national_P5",
           "upper": "national_P95"
@@ -519,7 +546,8 @@
           "cases": [
             "O1"
           ],
-          "reason": "The local DEM does not cover Rim Kok."
+          "reason": "The local DEM does not cover Rim Kok.",
+          "definition": "Not defined in the plan. The definition and its anchor are open item OI-12 in v1b."
         },
         "source": "WorldPop Global2 R2025A v1, 2024, 1 km constrained age counts",
         "caveat": "Modelled 1 km age composition applied to 2020 100 m counts; not observed; within-cell composition assumed uniform."
@@ -528,7 +556,7 @@
     "leave_one_component_out": {
       "required_on_every_row": true,
       "rule": "For each of the five components, report an FPPS with that component's weight set to 0 and the other four weights renormalised to sum to 1, and the v1 class of that FPPS.",
-      "rule_status": "The plan requires a leave-one-component-out FPPS and class on every row and does not say how the remaining weights are treated. Renormalisation follows scoring.validate_weights. The owners confirm or amend it at signing."
+      "rule_status": "Drafter reading DR-A02. The plan requires a leave-one-component-out FPPS and class on every row and does not say how the remaining weights are treated. Renormalisation follows scoring.validate_weights. The owners confirm or amend it at signing."
     },
     "weight_presets": {
       "source": "src/floodguard/sensitivity.py WEIGHT_SCENARIOS",
@@ -697,6 +725,24 @@
         "D": "FPPS is at least 35 AND the recurrence flag is set. The flag uses GISTDA Repeated Flood Areas if obtained; otherwise JRC occurrence of at least 25 percent outside permanent water. Being inside both 4009 layers does not count, because that is the same season.",
         "E": "Low confidence OR exposure below 10 OR FPPS below 35."
       },
+      "evaluation": {
+        "order": [
+          "E",
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "rule": "Triggers are evaluated in the order E, A, B, C, D. The first trigger that matches gives the v2 class.",
+        "otherwise": "no_v2_trigger",
+        "otherwise_meaning": "A unit with FPPS of at least 35, exposure of at least 10 and medium or scenario confidence that meets none of A to D gets no v2 letter. It is reported as 'no v2 trigger met', counted as its own category, and counted as a class change against v1 in the v1 / v2 comparison.",
+        "rule_status": "Drafter reading DR-A08, not in the plan. The plan lists the five triggers with no order and no fallback, so a unit where both the B and the C trigger fire, or one where none fires, has no defined v2 class. E is placed first because of the invariant that no class above E exists without medium or scenario confidence; A to D then follow the v1 order. The owners confirm or amend it at signing.",
+        "alternatives": [
+          "When no trigger matches, fall back to the v1 class.",
+          "When no trigger matches, fall back to D.",
+          "When no trigger matches, fall back to E."
+        ]
+      },
       "parameters": {
         "national_dependent_share_percentile": "P75",
         "critical_link_rank_max": 20,
@@ -707,10 +753,11 @@
       },
       "reason_code_mapping": "v2 triggers map to the existing essential_service_access reason code plus a trigger_evidence field. No new reason code is added for v2.",
       "depends_on_v1b": [
-        "national P75 dependent share",
-        "critical-link ranking",
-        "uniquely located DDPM shelters",
-        "recurrence layer"
+        "national P75 dependent share (v1b national_vulnerability_anchors)",
+        "critical-link ranking (v1b critical_link_selection)",
+        "uniquely located DDPM shelters (v1b facility_sets.shelter_location_rule)",
+        "the definitions of 'isolates', 'serving the unit' and the unit-level recurrence flag (v1b class_rule_v2_inputs, open item OI-18)",
+        "recurrence layer (GISTDA Repeated Flood Areas if obtained, otherwise JRC occurrence)"
       ]
     },
     "because_v1_is_binding": "CLAIMS.md and the Q&A bank carry a table: Where our class rules approximate section 5.2.",
@@ -724,6 +771,12 @@
         "unit_residents_min_for_class": 100,
         "group_min_for_ratio": 50
       },
+      "precedence": "GR1 decides the class, ahead of confidence condition C6. A unit with fewer than 100 residents has no binding class (reason insufficient_denominator), no would-be class and no v2 class. Its confidence is still recorded as low, with C6 in failed_conditions.",
+      "precedence_status": "Drafter reading DR-A09, not in the plan. Plan 2.3 item 1 says such a unit gets no class. Plan 3.3 condition 6 makes it low confidence, which the v1 rule turns into class E. Plan 5 item 10 lists 'denominator' among the non-evidence conditions for which a would-be class is shown in Command. The owners confirm which of these applies.",
+      "enforcement": {
+        "status": "not_built",
+        "note": "To be enforced by planning_assessment.py and verify_planning_assessment.py (plan task E8). Neither exists on this lineage. Required before any scoring."
+      },
       "basis": [
         "plan 2.3 item 1",
         "plan 1.3 MVP-06"
@@ -731,7 +784,11 @@
     },
     {
       "id": "GR2_no_max_normalisation",
-      "rule": "The verifier rejects batch-scaled components. The planning frame uses its own anchor version IDs, declared in a new docs/model_contract.md section 2c; section 2b's density exposure and fpps_flood_anchor_v1 apply to the GeoAI runner only.",
+      "rule": "The planning verifier must reject batch-scaled components. The planning frame uses its own anchor version IDs, to be declared in a new docs/model_contract.md section 2c; section 2b's density exposure and fpps_flood_anchor_v1 apply to the GeoAI runner only.",
+      "enforcement": {
+        "status": "not_built",
+        "note": "verify_planning_assessment.py and docs/model_contract.md section 2c do not exist on this lineage. Required before any scoring."
+      },
       "basis": [
         "plan 2.3 item 2",
         "docs/model_contract.md 2b"
@@ -739,7 +796,11 @@
     },
     {
       "id": "GR3_lane_purity",
-      "rule": "The five components of a row come from one flood input, one routing context and one closure rule. The verifier checks the input hashes. The overlay discloses that one flood input drives 4 of 5 components (90% of weight).",
+      "rule": "The five components of a row come from one flood input, one routing context and one closure rule. The planning verifier must check the input hashes. The overlay discloses that one flood input drives 4 of 5 components (90% of weight).",
+      "enforcement": {
+        "status": "not_built",
+        "note": "The verifier and its input-hash check do not exist on this lineage. Required before any scoring."
+      },
       "basis": [
         "plan 2.3 item 3"
       ]
@@ -747,6 +808,10 @@
     {
       "id": "GR4_no_self_validation",
       "rule": "The product that drives a lane may not be the agreement reference for any detector in that lane. Cross-input comparison is symmetric divergence only.",
+      "enforcement": {
+        "status": "not_built",
+        "note": "A rule for how comparisons are designed. No automated check exists. Required before the divergence study A5."
+      },
       "basis": [
         "plan 2.3 item 4",
         "plan 4.2 A5"
@@ -755,7 +820,13 @@
     {
       "id": "GR5_blinding",
       "rule": "Context, access and closure builds may run before v1b is in force. No FPPS, no A-E class and no ensemble may be computed for any real unit until the signed v1b's SHA-256 is recorded in RECEIPTS.jsonl. The grid, nodes, links, anchors and case list are fixed before any scoring.",
-      "status_at_drafting": "No planning-tier FPPS, class or ensemble was computed while drafting this file.",
+      "rule_status": "Drafter reading DR-A06. Plan 2.3 item 5 forbids computing any FPPS, class or ensemble before the v1b receipt, with no qualifier. The words 'for any real unit' were added by the drafting agent because the existing test suite scores synthetic fixtures on every run (tests/test_scoring.py). The reading does not excuse the replay computation of 28 Sep 2026, which scored real tambons after the plan date; that is disclosed in item EK-R1. The owners confirm or amend the wording at signing.",
+      "status_at_drafting": "No FPPS, class or ensemble was computed while drafting or revising this file. One computation for real tambons was made after the plan date on another lineage; see known_departure.",
+      "known_departure": "Disclosure item EK-R1: scenario FPPS and score-implied classes for the eight Mae Sai tambons were computed on the replay lineage on 28 Sep 2026, two days after the plan adopted this rule.",
+      "enforcement": {
+        "status": "partly_in_place",
+        "note": "tests/test_planning_protocol.py checks that the two protocol files state no score, class or component value for a real unit outside the disclosure, and that no receipt names a draft. Nothing technical stops a script from computing a score: the rule binds people and agents."
+      },
       "basis": [
         "plan 2.3 item 5",
         "plan 0 item 5",
@@ -771,6 +842,10 @@
         "pitch",
         "public"
       ],
+      "enforcement": {
+        "status": "not_built",
+        "note": "rights.py and the verifier's public-write check do not exist on this lineage. Required before any overlay is written under apps/web/public/."
+      },
       "basis": [
         "plan 2.3 item 6",
         "plan 0 item 6",
@@ -781,6 +856,10 @@
     {
       "id": "GR7_temporal_honesty",
       "rule": "No row whose temporal_relation is not event_aligned may carry the label OBS together with a binding class above E.",
+      "enforcement": {
+        "status": "not_built",
+        "note": "To be asserted by the verifier. Required before any scoring."
+      },
       "basis": [
         "plan 2.3 item 7",
         "D3"
@@ -793,6 +872,10 @@
         "class_retention_min": 0.6
       },
       "fallback_text": "no class met the stability rule; shown as unstable: verify",
+      "enforcement": {
+        "status": "not_built",
+        "note": "To be applied by uncertainty_ensemble.py (plan task E10). Required before any class is headlined."
+      },
       "basis": [
         "plan 2.3 item 8",
         "plan 5 item 11"
@@ -800,7 +883,11 @@
     },
     {
       "id": "GR9_ait_mbrsc_guard",
-      "rule": "A pre-commit test fails if any committed script reads AIT-VAP001 or MBRSC paths without a recorded grant receipt. No AIT or MBRSC number appears in committed code or on any public surface.",
+      "rule": "A pre-commit test must fail if any committed script reads AIT-VAP001 or MBRSC paths without a recorded grant receipt. No AIT or MBRSC number appears in committed code or on any public surface.",
+      "enforcement": {
+        "status": "not_built",
+        "note": "No pre-commit or CI test of this kind exists on this lineage. The existing AIT tests check the processing_allowed=false invariant of the AIT candidate record only. Required with plan task A1."
+      },
       "basis": [
         "plan 2.3 item 9",
         "plan 0 item 3"
@@ -939,10 +1026,12 @@
         "id": "H1",
         "priority": "stretch",
         "frame": "Hat Yai AOI-03",
-        "case_reference_date": null,
+        "case_reference_date": "2025-11-24",
+        "case_reference_date_status": "Drafter reading DR-A12, not in the plan. The plan gives H1 no reference date, but the OBS lane requires one. H1 is treated as self-dated, like O2, on its post-event Sentinel-1 acquisition, 2025-11-23T23:03:09Z (24 Nov 2025 local time), recorded in docs/proposal_execution/hat_yai_transfer.md. That acquisition is not the event peak. H1 is forced to class E whatever the date. The owners confirm or amend it at signing.",
         "flood_inputs": [
           "own raw 20 m candidate"
         ],
+        "input_acquisition": "Sentinel-1, 2025-11-11T23:03:09Z (pre) and 2025-11-23T23:03:09Z (post)",
         "lane": "OBS",
         "tier": "T2",
         "note": "Urban stress test. Forced E. No model-performance claim. Cut first if late."
@@ -971,9 +1060,10 @@
       "plan 8.1 G7a",
       "plan 2.3 item 8"
     ],
-    "rule": "The demo tambon is the highest-FPPS headline-eligible unit in the SCN-ENV lane of case SE1. If no unit is headline-eligible, it is the highest-FPPS unit, shown as unstable: verify.",
+    "rule": "The demo tambon is the highest-FPPS headline-eligible unit in the SCN-ENV lane of case SE1. If no unit is headline-eligible, it is the highest-FPPS unit, shown as unstable: verify. FPPS here is the value of the reference cell fixed in v1b (ensemble_grid.headline_rule.reference_cell).",
+    "rule_status": "Drafter reading DR-A04. Plan 7.4 says 'highest-FPPS headline-eligible unit in SCN-ENV' and names no case and no ensemble cell. SCN-ENV also holds SE2 and SE2-blind. The draft restricts the rule to SE1, because the live demo in plan 7.4 opens on the brief for the SE1 frame and SE2 is shown later with its selection disclosure, and it takes FPPS from the reference cell. The owners confirm or amend it at signing.",
     "tie_break": "Lowest subdistrict_id.",
-    "tie_break_status": "Not in the plan. Added by the drafting agent so the rule is deterministic; the owners confirm or amend it at signing.",
+    "tie_break_status": "Drafter reading DR-A03. Not in the plan. Added by the drafting agent so the rule is deterministic; the owners confirm or amend it at signing.",
     "scripts_use_placeholders_until": "2026-10-23",
     "note": "The demo tambon is not chosen by hand and is not chosen for its class."
   },
@@ -1097,6 +1187,116 @@
       "needed": "The owners supply the original wording or record the decision as withdrawn."
     }
   ],
+  "drafter_readings": [
+    {
+      "id": "DR-A01",
+      "where": "geoid_split.rule",
+      "pointer": "/geoid_split/rule_status",
+      "plan_says": "29 tiles by tile ID, 15 development and 14 test. No list.",
+      "draft_says": "Tile IDs sorted ascending; the first 15 (9-33) are development, the last 14 (35-50) are test.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A02",
+      "where": "scoring_frame.leave_one_component_out.rule",
+      "pointer": "/scoring_frame/leave_one_component_out/rule_status",
+      "plan_says": "A leave-one-component-out FPPS and class on every row. Weight handling not stated.",
+      "draft_says": "The dropped component's weight is set to 0 and the other four are renormalised to sum to 1.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A03",
+      "where": "demo_tambon_rule.tie_break",
+      "pointer": "/demo_tambon_rule/tie_break_status",
+      "plan_says": "No tie-break.",
+      "draft_says": "Lowest subdistrict_id.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A04",
+      "where": "demo_tambon_rule.rule",
+      "pointer": "/demo_tambon_rule/rule_status",
+      "plan_says": "Highest-FPPS headline-eligible unit in SCN-ENV. No case and no ensemble cell named.",
+      "draft_says": "Restricted to case SE1, with FPPS taken from the v1b reference cell.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A05",
+      "where": "evidence_tier_model.no_assumed_components_in_obs_or_scn",
+      "pointer": "/evidence_tier_model/no_assumed_components_status",
+      "plan_says": "No assumed component in the OBS or SCN lanes; assumed completions only as T1 arithmetic.",
+      "draft_says": "No case row or scenario cell in OBS, SCN or SCN-ENV carries an assumed component; assumed-completion arithmetic is a separate labelled table.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A06",
+      "where": "guardrails GR5_blinding.rule",
+      "pointer": "/guardrails/4/rule_status",
+      "plan_says": "No FPPS, class or ensemble before the v1b receipt. No qualifier.",
+      "draft_says": "Adds 'for any real unit', so that the existing fixture tests are not a breach.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A07",
+      "where": "confidence_rule_v1.scenario_rows",
+      "pointer": "/confidence_rule_v1/scenario_rows/rule_status",
+      "plan_says": "Condition C1 needs tier T3 or a skill-passing T2. Scenario rows are tier T1. Scenario confidence is called both derived and declared.",
+      "draft_says": "For T1 rows C1 is judged on the base flood input and C2 is replaced by the scenario declaration; scenario confidence is derived.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A08",
+      "where": "class_rules.v2.evaluation",
+      "pointer": "/class_rules/v2/evaluation/rule_status",
+      "plan_says": "Five triggers, no evaluation order and no fallback.",
+      "draft_says": "Order E, A, B, C, D; first match wins; a unit that matches none is reported as 'no v2 trigger met'.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A09",
+      "where": "guardrails GR1_minimum_denominators.precedence",
+      "pointer": "/guardrails/0/precedence_status",
+      "plan_says": "Fewer than 100 residents: 'no class' (2.3 item 1), low confidence and so class E (3.3), and a would-be class shown for denominator failures (5 item 10).",
+      "draft_says": "GR1 wins: no binding class, no would-be class, no v2 class; confidence is still recorded as low.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A10",
+      "where": "date_rule.product_4009.accumulated_layer",
+      "pointer": "/date_rule/product_4009/accumulated_layer/date_span_status",
+      "plan_says": "The union spans 1 Aug to 22 Oct (plan 0) or '1 Aug-12/22 Oct' (plan 4.1); the decisions say Aug-Oct.",
+      "draft_says": "Records the layer name CHIANGRAI_20240801_20241012_AccumulatedFlood as it is in the package.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A11",
+      "where": "scoring_frame.components.flood_likelihood_0_100.anchor_disclosure",
+      "pointer": "/scoring_frame/components/flood_likelihood_0_100/anchor_disclosure_status",
+      "plan_says": "The 0.05 anchor saturated in 5 of 8 tambons.",
+      "draft_says": "Quotes the plan's count and states that the retained shares show 6 of 8 above 0.05.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-A12",
+      "where": "case_portfolio.cases H1.case_reference_date",
+      "pointer": "/case_portfolio/cases/7/case_reference_date_status",
+      "plan_says": "H1 is in the OBS lane with no reference date.",
+      "draft_says": "Self-dated on the post-event acquisition: 2025-11-24.",
+      "outcome_sensitive": false,
+      "status": "awaiting_owner_confirmation"
+    }
+  ],
   "exploratory_knowledge_disclosure": {
     "basis": [
       "plan 8.1 G7a",
@@ -1104,10 +1304,16 @@
       "plan 6.3",
       "plan 10.1 R2 and R3",
       "R1",
-      "R5"
+      "R5",
+      "plan 2.3 item 5"
     ],
     "statement": "This protocol was written after exploratory analysis. The items below are results the team had already seen that could have informed a rule. Several include scores or classes for the real Mae Sai tambons. The rules are therefore not blind to outcomes, and no output of this protocol may be described as preregistered or confirmatory.",
     "completeness": "Listed by the drafting agent from the plan, the plan-session scratchpad, this lineage and the items the owner supplied for the replay lineage. The signers add anything else they have seen before signing.",
+    "flag_definitions": {
+      "real_tambon_scores_or_classes_seen": "True when an FPPS or an A-E class (binding, would-be or score-implied) for a real tambon was seen, or when a cited source computes one.",
+      "real_tambon_component_values_seen": "True when a value of one of the five components, or of the share that feeds it directly, was seen for a real tambon.",
+      "guard_status": "protocol_rule: the guard is a rule declared in this protocol; it binds later work and nothing checks it automatically yet. control_missing: the guard also names a test, verifier, annotation or retirement that does not exist on this lineage; guard_gaps lists what is missing, and it must be in place before any scoring."
+    },
     "items": [
       {
         "id": "EK-01",
@@ -1115,6 +1321,7 @@
         "title": "Gap-1 external-extent chains (old chain) for the eight Mae Sai tambons",
         "what_was_seen": "Exploratory closure, routing, component and scorer runs for the eight Mae Sai tambons under three external extents (the 4009 accumulated layer, the 4009 22 Oct layer and the AIT 14 Sep extent), three destination sets and four normalisation frames (absolute share, density anchor, district max-normalised, pooled max-normalised), with confidence assumed medium and missing components completed at 0, 50 and 100. FPPS values and A-E classes for the real tambons were seen. The plan summarises the envelope result as: under an absolute frame the accumulated envelope gives B, D and E (Ko Chang isolation), and A and C appeared only through max-normalisation artefacts. The chain read the AIT extent before any permission decision; no AIT-derived result is recorded in this file (guardrail GR9). Those results exist only in the uncommitted scratch files.",
         "real_tambon_scores_or_classes_seen": true,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-09-26",
         "locations": [
           {
@@ -1146,14 +1353,19 @@
           "date_rule.product_4009 (envelope as scenario only)"
         ],
         "could_bias": "Frames and component definitions could have been chosen because they give a fuller spread of classes, or because they keep a known tambon in a known class.",
-        "guard": "Every cell of every case is reported whatever it shows. Scenario and engine classes are never counted as observed. The class coverage table is reported per lane, observed first. Leave-one-component-out and the 0.10/0.30 anchor runs are reported for every row. v1 class thresholds are the unchanged code. The old-chain numbers are not reused: every value is recomputed under this protocol after v1b is in force."
+        "guard": "Every cell of every case is reported whatever it shows. Scenario and engine classes are never counted as observed. The class coverage table is reported per lane, observed first. Leave-one-component-out and the 0.10/0.30 anchor runs are reported for every row. v1 class thresholds are the unchanged code. The old-chain numbers are not reused: every value is recomputed under this protocol after v1b is in force.",
+        "guard_status": "control_missing",
+        "guard_gaps": [
+          "No verifier exists yet to check that every cell is reported and that scenario and engine classes are kept out of the observed column (plan task E8)."
+        ]
       },
       {
         "id": "EK-02",
         "lineage": "scoring_lineage",
         "title": "Gap-1 closure-rule sensitivity on the district graph",
-        "what_was_seen": "Access gap and road criticality per Mae Sai tambon, and closed-edge counts, under four closure variants (any positive length, fraction at least 0.5, 10 m erosion, bridges excluded) for two external extents: the 4009 accumulated layer and the AIT extent. No AIT-derived result is recorded here.",
+        "what_was_seen": "Access gap and road criticality per Mae Sai tambon, and closed-edge counts, under four closure variants (any positive length, fraction at least 0.5, 10 m erosion, bridges excluded) for two external extents: the 4009 accumulated layer and the AIT extent. These are component values for the real tambons. No FPPS or class was computed in this run. No AIT-derived result is recorded here.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-09-26",
         "locations": [
           {
@@ -1167,14 +1379,19 @@
           "v1b ensemble_grid flood-state axis (minus / as-provided / plus one pixel)"
         ],
         "could_bias": "A closure rule could be picked because it produces a preferred access gap or road criticality for a known tambon.",
-        "guard": "All three closure levels are run and reported as an ensemble axis. The headline-stability rule hides classes that do not survive the axis. A regression test ties the permissive level to the unchanged finals rule."
+        "guard": "All three closure levels are run and reported as an ensemble axis. The headline-stability rule hides classes that do not survive the axis. A regression test must tie the permissive level to the unchanged finals rule before the closure rule is used.",
+        "guard_status": "control_missing",
+        "guard_gaps": [
+          "The regression test that ties the permissive level to the finals closed-edge IDs is not written (v1b open item OI-05, plan task E3)."
+        ]
       },
       {
         "id": "EK-03",
         "lineage": "scoring_lineage",
         "title": "Gap-4 closure sweeps and network probes on the AOI-01 finals context",
-        "what_was_seen": "On the AOI-01 finals context: 30,180 residents 'newly unreachable' under the any-intersection rule fell to 3,257 under a 50%-of-edge rule, while 2,044 residents sit inside the candidate; 62% of cut edges close on less than 20 m; the walking access gap is 46-100 with no flood; one hospital sits in the frame and the next three are 27-33 km away; one access run takes 0.56-0.65 s on about 40k edges.",
+        "what_was_seen": "On the AOI-01 finals context: 30,180 residents 'newly unreachable' under the any-intersection rule fell to 3,257 under a 50%-of-edge rule, while 2,044 residents sit inside the candidate; 62% of cut edges close on less than 20 m; the walking access gap is 46-100 with no flood; one hospital sits in the frame and the next three are 27-33 km away; one access run takes 0.56-0.65 s on about 40k edges. The walking access-gap range is a component value for the real tambons.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-09-26",
         "locations": [
           {
@@ -1196,7 +1413,9 @@
           "confidence_rule_v1 C7_baseline_no_route and C8_hospital"
         ],
         "could_bias": "Closure and routing parameters were chosen knowing how much access loss each produced on the AOI-01 context.",
-        "guard": "The parameters are fixed in v1b before any FPPS. Strict, central and permissive levels are all reported. The newly-lost count applies only to people with baseline access."
+        "guard": "The parameters are fixed in v1b before any FPPS. Strict, central and permissive levels are all reported. The newly-lost count applies only to people with baseline access.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-04",
@@ -1204,6 +1423,7 @@
         "title": "Decision-engine sweeps on the legacy Mae Sai decision lane",
         "what_was_seen": "Reruns of the legacy Mae Sai ADM3 decision lane under flood-severity, bridge-failure and facility perturbations, the five weight presets, three flood-likelihood sources and age dependent shares for six Mae Sai tambons. Classes and rank changes for the real tambons were seen, including which perturbations reach B and C. The committed candidate sensitivity tool was also run with 0/50/100 completions.",
         "real_tambon_scores_or_classes_seen": true,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-09-25 to 2026-09-26",
         "locations": [
           {
@@ -1229,14 +1449,17 @@
           "v1b scenario_engine_grid (S3, S4, S8 and the E3 counterfactual)"
         ],
         "could_bias": "Scenario cells could be designed to land on a wanted class because the team had seen which perturbations do so.",
-        "guard": "Scenario and engine cells are labelled SCN or ENG and never counted as observed. Selection rules for links, nodes and facilities are fixed in v1b before scoring. E3 is labelled synthetic."
+        "guard": "Scenario and engine cells are labelled SCN or ENG and never counted as observed. Selection rules for links, nodes and facilities are fixed in v1b before scoring. E3 is labelled synthetic.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-05",
         "lineage": "scoring_lineage",
         "title": "Flood-anchor saturation",
-        "what_was_seen": "With the 0.05 flooded-share anchor of fpps_flood_anchor_v1, the flood-likelihood term was at its ceiling in 5 of 8 Mae Sai tambons under the 4009 envelope (figure as stated in plan 3.4). The per-tambon envelope flooded-area shares were in view when 0.20 was chosen, so the team also knew roughly which tambons stay at the ceiling under 0.20.",
-        "real_tambon_scores_or_classes_seen": false,
+        "what_was_seen": "With the 0.05 flooded-share anchor of fpps_flood_anchor_v1, the flood-likelihood term was at its ceiling in 5 of 8 Mae Sai tambons under the 4009 envelope, as plan 3.4 states. The per-tambon envelope flooded-area shares kept in the scratch file whatif.py (57.97, 47.01, 14.65, 51.66, 30.74 and 10.30 percent, with two tambons below 1 percent) put 6 of the 8 above 0.05 and 4 of the 8 above 0.20, so the plan's count looks one short. These shares were in view when 0.20 was chosen, so the team also knew which tambons stay at the ceiling under 0.20. The same scratch file runs the scorer; the scores it printed are described in item EK-04.",
+        "real_tambon_scores_or_classes_seen": true,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-09-25 to 2026-09-26",
         "locations": [
           {
@@ -1260,7 +1483,9 @@
           "scoring_frame.components.flood_likelihood_0_100.anchor_sensitivity_one_at_a_time (0.10, 0.30)"
         ],
         "could_bias": "The anchor sets how the eight tambons spread on the component with the largest weight. It was chosen with their flooded shares in view.",
-        "guard": "The anchor disclosure travels with every flood-likelihood value. The 0.10 and 0.30 runs are reported for every case. The same anchor applies to every case and lane. Leave-one-component-out shows each row without the flood term. Any change needs a v2."
+        "guard": "The anchor disclosure must travel with every flood-likelihood value. The 0.10 and 0.30 runs are reported for every case. The same anchor applies to every case and lane. Leave-one-component-out shows each row without the flood term. Any change needs a v2.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-06",
@@ -1268,6 +1493,7 @@
         "title": "All-tile GEOID diagnostic and the committed GEOID radar benchmark",
         "what_was_seen": "An exploratory single-date diagnostic on all 29 EMSR712-3 tiles, with IoU moving from 0.161 to 0.455 between threshold variants. Separately, the committed GEOID radar benchmark recorded that the M2 method abstained on all 29 tiles (0 of 1,421 windows).",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
         "seen_on": "2026-09-25",
         "locations": [
           {
@@ -1292,7 +1518,9 @@
           "M1-v2 design (Kittler-Illingworth threshold, speckle filter, bidirectional change)"
         ],
         "could_bias": "The skill bar sits below a figure already seen on these tiles, and the test tiles are not unseen.",
-        "guard": "The split is by tile ID and is fixed here before M1-v2 tuning. Tuning uses development tiles only and the config is bound by SHA before any Mae Sai run. The required statement names the earlier diagnostic. The result is called agreement with a same-pass CEMS map. A T2 class above E also needs the Mae Sai abstention, coverage and recency conditions."
+        "guard": "The split is by tile ID and is fixed here before M1-v2 tuning. Tuning uses development tiles only and the config is bound by SHA before any Mae Sai run. The required statement names the earlier diagnostic. The result is called agreement with a same-pass CEMS map. A T2 class above E also needs the Mae Sai abstention, coverage and recency conditions.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-07",
@@ -1300,6 +1528,7 @@
         "title": "Mae Sai radar diagnosis",
         "what_was_seen": "Why threshold change detection failed at the 16 Sep pass: all 81 of 81 windows abstained with between-class variance fractions of 0.598-0.651 against the 0.72 gate (a unimodal Gaussian gives about 0.637); no Sentinel-1 pass between 6 Sep 11:31 and 15 Sep 23:16 UTC; the legacy ramp showed lift 0.98 on its own calibration window; darkening-change AUC against the 4009 envelope of 0.421; the pilot grid misses about 80% of the envelope inside AOI-01. Figures computed against AIT or MBRSC products were also seen and are not recorded here.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
         "seen_on": "2026-09-24 to 2026-09-26",
         "locations": [
           {
@@ -1320,7 +1549,9 @@
           "M1-v2 design"
         ],
         "could_bias": "The T2 conditions and the v2 detector design were shaped by what failed at Mae Sai, so v2 is not an independent method.",
-        "guard": "M1-literal is run as written and reported. v2 is tuned only on GEOID development tiles. Mae Sai validation Level 2 stays blocked. Containment inside 4009 is labelled plausibility, not validation. By rule no FloodGuard model is promoted."
+        "guard": "M1-literal is run as written and reported. v2 is tuned only on GEOID development tiles. Mae Sai validation Level 2 stays blocked. Containment inside 4009 is labelled plausibility, not validation. By rule no FloodGuard model is promoted.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-08",
@@ -1328,6 +1559,7 @@
         "title": "UN-SPIDER approximation on the local Sentinel-1 pair",
         "what_was_seen": "A recommended-practice approximation on the 3/15 Sep same-track pair found about 0.24-0.52 square kilometres of residual water at the 16 Sep 06:16 ICT pass.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
         "seen_on": "2026-09-25",
         "locations": [
           {
@@ -1346,14 +1578,17 @@
           "t2_skill_bar.declared_unable_to_meet (UN-SPIDER)"
         ],
         "could_bias": "O1 was framed knowing that the own-detector lane is likely to show only E.",
-        "guard": "O1 is reported whatever it shows. Would-be classes go to the verification queue with a skill caption. The lane is presented as the fail-closed behaviour the proposal promised."
+        "guard": "O1 is reported whatever it shows. Would-be classes go to the verification queue with a skill caption. The lane is presented as the fail-closed behaviour the proposal promised.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-09",
         "lineage": "scoring_lineage",
         "title": "Province-wide envelope overlay used for case selection",
-        "what_was_seen": "Flooded-area share and flooded-resident share under the 4009 accumulated layer for the Chiang Rai tambons in its analysis extent (124 tambons; flooded-resident share median 3.1%, 75th percentile 17.7%, maximum 85.2% at Rim Kok).",
+        "what_was_seen": "Flooded-area share and flooded-resident share under the 4009 accumulated layer for the Chiang Rai tambons in its analysis extent (124 tambons; flooded-resident share median 3.1%, 75th percentile 17.7%, maximum 85.2% at Rim Kok). These shares feed the flood-likelihood and exposure components directly.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-09-25",
         "locations": [
           {
@@ -1374,7 +1609,9 @@
           "scoring_frame.components.flood_likelihood_0_100.anchor"
         ],
         "could_bias": "SE2 was chosen where A or C is most likely. It is not a random case.",
-        "guard": "The case-selection disclosure is part of this file. SE2-blind is chosen by population before any overlay. SE2-dist shows all 124 tambons. Any A or C from SE2 is marked envelope scenario, outcome-aware case selection."
+        "guard": "The case-selection disclosure is part of this file. SE2-blind is chosen by population before any overlay. SE2-dist shows all 124 tambons. Any A or C from SE2 is marked envelope scenario, outcome-aware case selection.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-10",
@@ -1382,6 +1619,7 @@
         "title": "Mae Sai age and access sensitivity run",
         "what_was_seen": "A mixed-vintage scenario run on AOI-01 in which the 30-minute access-loss differences between age groups had bounds that include zero, with 4.0958 square kilometres lacking age-source support.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
         "seen_on": "2026-09-23",
         "locations": [
           {
@@ -1400,7 +1638,9 @@
           "guardrails GR1_minimum_denominators (50 per group)"
         ],
         "could_bias": "The equity rule was written knowing that the earlier contrast did not differ from zero, so it may be stricter or looser than a blind rule.",
-        "guard": "The rule and the fixed sentence are declared here before any planning-tier equity output. Both denominators and the bounds are always shown."
+        "guard": "The rule and the fixed sentence are declared here before any planning-tier equity output. Both denominators and the bounds are always shown.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-11",
@@ -1408,6 +1648,7 @@
         "title": "Legacy Mae Sai priority lane and finals candidate",
         "what_was_seen": "The committed legacy priority file holds max-normalised FPPS values and classes for the Mae Sai tambons, including a class A for Ko Chang that is an artefact of max-normalised exposure. The finals candidate lane holds the any-intersection access-loss figures.",
         "real_tambon_scores_or_classes_seen": true,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-07 to 2026-09",
         "locations": [
           {
@@ -1427,7 +1668,12 @@
           "scoring_frame.components.exposure_0_100 (share-only)"
         ],
         "could_bias": "Familiarity with the legacy ranking could pull choices toward reproducing it.",
-        "guard": "The legacy figures are retired from live surfaces and annotated as superseded. The demo tambon is picked by rule. No legacy value is an input to any case."
+        "guard": "The legacy figures must be retired from live surfaces and the committed legacy file annotated as superseded before any planning output is shown (plan 1.5 and 7.3). Neither has been done on this lineage. The demo tambon is picked by rule. No legacy value is an input to any case.",
+        "guard_status": "control_missing",
+        "guard_gaps": [
+          "The legacy figures are still on a live surface: 53.65 appears in apps/web/public/offline-demo/mae-sai/ (areas.json, bundle.json, public-areas.json, public-bundle.json) on this lineage.",
+          "outputs/planning_v1/ does not exist, and the committed legacy geojson has no superseded annotation."
+        ]
       },
       {
         "id": "EK-12",
@@ -1435,6 +1681,7 @@
         "title": "Facility and shelter probes",
         "what_was_seen": "The DDPM Mae Sai district file has 27 rows and 6,050 listed places; ten rows share one coordinate (500 places). OSM hospital extraction showed which hospitals fall inside candidate routing frames.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
         "seen_on": "2026-09-25 to 2026-09-26",
         "locations": [
           {
@@ -1454,24 +1701,57 @@
           "confidence_rule_v1 C8_hospital"
         ],
         "could_bias": "The facility rules were written knowing which records they remove.",
-        "guard": "The facility axis reports the public, corroborated and all-listed sets. Shelters are labelled listed, operating status unverified."
+        "guard": "The facility axis reports the public, corroborated and all-listed sets. Shelters are labelled listed, operating status unverified.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
+      },
+      {
+        "id": "EK-13",
+        "lineage": "scoring_lineage",
+        "title": "Hat Yai closure-threshold sweep",
+        "what_was_seen": "On the Hat Yai AOI-03 candidate, which is case H1, closed-segment counts and newly lost hospital access at 15, 30 and 60 minutes were computed for walking and modelled-vehicle modes under four closure rules: any positive overlap, at least 20 m, at least 50 m, and at least 20 m with mapped bridges and tunnels left open. Walking 30-minute loss fell from about 9,940 residents under any overlap to about 6,825 at 20 m and about 374 at 50 m; modelled-vehicle loss fell from about 23,105 to about 11,100 and about 2,128. The committed note concludes that the consequence figure is not robust to the closure-length assumption. No FPPS or class was computed.",
+        "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
+        "seen_on": "2026-09-23 to 2026-09-24",
+        "locations": [
+          {
+            "kind": "repo_path",
+            "value": "docs/proposal_execution/hat_yai_transfer.md and scripts/hat_yai_transfer_sensitivity.py",
+            "committed": true
+          },
+          {
+            "kind": "external_path",
+            "value": "Project Support/FloodGuard/research-runs/2026-09-23-hat-yai-transfer-closure-v1/",
+            "committed": false
+          }
+        ],
+        "informed_parameters": [
+          "v1b closure_rule_v1.parameters (the 20 m delay floor and the 50 m length threshold)",
+          "v1b closure_rule_v1.levels (strict / central / permissive as a reported axis)",
+          "case_portfolio.cases H1"
+        ],
+        "could_bias": "The 20 m and 50 m values in closure rule v1 are the two thresholds already tried on Hat Yai, where the team saw how much access loss each one produces. H1 would be run with thresholds chosen in view of its own results.",
+        "guard": "H1 is forced to class E and carries no model-performance claim. All three closure levels are reported for every case. The thresholds are fixed in v1b for every case before any scoring and cannot change without a v2.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-R1",
         "lineage": "replay_lineage_master",
-        "title": "Scenario FPPS for all eight Mae Sai tambons on the replay (pre-D4 anchors)",
-        "what_was_seen": "Commit 2e5a099 (branch claude/mae-sai-fpps-priority-playbook, 28 Sep 2026) computed scenario FPPS for all eight Mae Sai tambons on the r2 reconstruction with pre-D4 anchors (replay_fpps_anchor_v1: flood 0.25, exposure share plus a 5,000-person headcount, terrain proxy 0.25). The scores (89.34 down to 31.27, all class E) are shown, labelled as a superseded historical example, on the /policy/ page on master. They were seen before v1a and v1b.",
+        "title": "Scenario FPPS and score-implied classes for all eight Mae Sai tambons on the replay (pre-D4 anchors)",
+        "what_was_seen": "Commit 2e5a099 (branch claude/mae-sai-fpps-priority-playbook, 28 Sep 2026) computed scenario FPPS for all eight Mae Sai tambons on the r2 reconstruction with pre-D4 anchors (replay_fpps_anchor_v1: flood 0.25, exposure share plus a 5,000-person headcount, terrain proxy 0.25). The scores ran from 89.34 down to 31.27. The binding class of every tambon was E, by the low-confidence rule. The same commit also reran the class rule at medium confidence and showed the result for each tambon as a 'score implies' class: apps/web/src/lib/replay-fpps.ts sets score_implied_class, mae-sai-priority-card.tsx renders it with the playbook of that class, and replay-fpps.test.ts asserts that the top-ranked tambon's implied class is one of A to D. So the team has seen would-be A-D classes for real Mae Sai tambons under the v1 thresholds. This file does not record which class each tambon was shown; the signers add it if they recall it. The computation is dated 28 Sep 2026, two days after the plan (26 Sep 2026) adopted the rule that no FPPS, class or ensemble is computed before the v1b receipt. It was made on the replay lineage, outside the planning tier, and it is recorded here as a departure from that rule. The eight scores, each with class E, are shown on the /policy/ page on master as a superseded historical example; the score-implied classes are not shown there. All of this was seen before v1a and v1b.",
         "real_tambon_scores_or_classes_seen": true,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-09-28",
         "locations": [
           {
             "kind": "commit",
-            "value": "2e5a099 (master lineage, not on this branch): apps/web/src/lib/replay-fpps.ts, apps/web/src/lib/fpps.ts",
+            "value": "2e5a099: apps/web/src/lib/replay-fpps.ts, apps/web/src/lib/replay-fpps.test.ts, apps/web/src/components/mae-sai-priority-card.tsx, apps/web/src/lib/fpps.ts. The commit object is in the local repository; on 2026-10-01 it was not an ancestor of origin/master and no local branch contained it.",
             "committed": true
           },
           {
             "kind": "surface",
-            "value": "/policy/ page on master (PR #36, merge 92d7451)",
+            "value": "/policy/ page on master (PR #36, merge 92d7451): apps/web/src/lib/policy-evidence.ts lists the eight scores with class E as a historical worked example.",
             "committed": true
           }
         ],
@@ -1479,10 +1759,17 @@
           "scoring_frame.components.flood_likelihood_0_100.anchor",
           "scoring_frame.components.exposure_0_100 (share-only, no headcount)",
           "scoring_frame.components.vulnerability_context_0_100 (terrain proxy demoted to a sensitivity axis on O1)",
+          "class_rules.v1.would_be_class",
+          "class_rules.v1 (thresholds kept unchanged, with the would-be classes of real tambons in view)",
+          "guardrails GR5_blinding (the wording 'for any real unit', drafter reading DR-A06)",
           "demo_tambon_rule"
         ],
-        "could_bias": "The team has seen a full ranking of the eight tambons under different anchors. Anchor, weight or rule choices could drift toward or away from that ranking, and readers could mistake the superseded scores for protocol outputs.",
-        "guard": "The D4 anchors apply identically to every case. The replay is not a scored case (D7, R2). The superseded scores stay labelled with their tier, method source and anchors, and are never shown beside protocol outputs as if comparable. No new FPPS is computed until v1b is in force."
+        "could_bias": "The team has seen a full ranking of the eight tambons, and a would-be class for each, under different anchors. Anchor, weight, class-rule or demo-tambon choices could drift toward or away from that picture, and readers could mistake the superseded scores for protocol outputs.",
+        "guard": "The D4 anchors apply identically to every case. The replay is not a scored case (D7, R2). The superseded scores must stay labelled with their tier, method source and anchors, and are never shown beside protocol outputs as if comparable. The would-be class rule is fixed here before any planning-tier class exists. No new FPPS is computed until v1b is in force.",
+        "guard_status": "control_missing",
+        "guard_gaps": [
+          "The labelling of the superseded scores lives on the master lineage (apps/web/src/lib/policy-evidence.ts). No test on this lineage checks it."
+        ]
       },
       {
         "id": "EK-R2",
@@ -1490,6 +1777,7 @@
         "title": "Replay stage keyframes tuned with agency figures in view",
         "what_was_seen": "The replay's stage keyframes were tuned with the GISTDA 10 Sep figure (calibration anchor), the Sentinel-1 16 Sep pass and UNOSAT 3991 (70 square kilometres) in view. Owner decision R1 records this as calibration-informed.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
         "seen_on": "2026-09-27 to 2026-09-30",
         "locations": [
           {
@@ -1508,14 +1796,17 @@
           "guardrails GR4_no_self_validation"
         ],
         "could_bias": "If the replay's modelled extent were used as a flood input or as a check on a detector, the comparison would be circular, because the reconstruction was tuned to the same agency figures.",
-        "guard": "The replay reconstruction is not a flood input to any case in this protocol. No check on the replay is labelled independent. Adding it as an input would need a v2 with a written reason."
+        "guard": "The replay reconstruction is not a flood input to any case in this protocol. No check on the replay is labelled independent. Adding it as an input would need a v2 with a written reason.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-R3",
         "lineage": "replay_lineage_master",
         "title": "Offline comparison of the replay's modelled peak with the 4009 envelope",
-        "what_was_seen": "An offline comparison of the replay's modelled peak with the 4009 accumulated envelope in Mae Sai district (IoU about 0.48; per-tambon 0.38-0.74) and the per-tambon envelope shares (Mae Sai 0.58, Si Mueang Chum 0.52, Ko Chang 0.47, Ban Dai 0.31, Pong Pha 0.15, Pong Ngam 0.10) were seen on 30 Sep 2026, before this protocol. D4 was adopted on the same day; the order within the day is not recorded, so the shares are treated as seen before the anchor was fixed.",
+        "what_was_seen": "An offline comparison of the replay's modelled peak with the 4009 accumulated envelope in Mae Sai district (IoU about 0.48; per-tambon 0.38-0.74) and the per-tambon envelope shares (Mae Sai 0.58, Si Mueang Chum 0.52, Ko Chang 0.47, Ban Dai 0.31, Pong Pha 0.15, Pong Ngam 0.10) were seen on 30 Sep 2026, before this protocol. D4 was adopted on the same day; the order within the day is not recorded, so the shares are treated as seen before the anchor was fixed. The envelope share is the direct input to the flood-likelihood component, so these are component-level values for the real tambons.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": true,
         "seen_on": "2026-09-30",
         "locations": [
           {
@@ -1531,7 +1822,9 @@
           "guardrails GR8_headline_stability"
         ],
         "could_bias": "The envelope share is the input to the flood-likelihood term for SE1, so the team knows roughly how that term will rank the tambons before scoring. The IoU could be misread as validation of either product.",
-        "guard": "The flood anchor and its sensitivity values were signed in D4 and cannot change without a v2. The 0.10 and 0.30 runs and leave-one-component-out are reported for every row. The comparison is symmetric divergence between two non-independent products and is never called accuracy or validation."
+        "guard": "The flood anchor and its sensitivity values were signed in D4 and cannot change without a v2. The 0.10 and 0.30 runs and leave-one-component-out are reported for every row. The comparison is symmetric divergence between two non-independent products and is never called accuracy or validation.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       },
       {
         "id": "EK-R4",
@@ -1539,6 +1832,7 @@
         "title": "VIIRS daily flood and Sentinel-2 15 Sep water comparisons",
         "what_was_seen": "Comparisons of the replay with the VIIRS daily flood product and with Sentinel-2 15 Sep water were seen.",
         "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
         "seen_on": "2026-09-27 to 2026-09-30",
         "locations": [
           {
@@ -1552,7 +1846,40 @@
           "evidence_tier_model T2"
         ],
         "could_bias": "Knowing where other sensors showed water on and around 15 Sep could shape expectations for the own-detector lane or tempt the team to add a favourable input.",
-        "guard": "The list of flood inputs per case is closed in case_portfolio. VIIRS and Sentinel-2 water are not flood inputs to any case. Adding one needs a v2 with a written reason, and every run is reported."
+        "guard": "The list of flood inputs per case is closed in case_portfolio. VIIRS and Sentinel-2 water are not flood inputs to any case. Adding one needs a v2 with a written reason, and every run is reported.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
+      },
+      {
+        "id": "EK-R5",
+        "lineage": "replay_lineage_master",
+        "title": "Replay evacuation access, shelter plan and Evacuation Equity Gap",
+        "what_was_seen": "Commit d942cb0 (28 Sep 2026), now on master, added to the Mae Sai replay: the river stage at which each road node loses a dry shelter within a 2 km walk (about 30 minutes on foot), with nodes that had no access before flooding coded separately; residents losing access by stage, for the shelters reported in use in 2024 and for ranked shelter plans; a greedy shelter-siting plan over OSM public buildings (knee at 8 sites) with capacity estimates and a shelter-gap figure; and an Evacuation Equity Gap computed with the floodguard.equity rules, in which 'vulnerable' is the repository's terrain/remoteness proxy (homes on slopes of 8 degrees or more, or 750 m or more from a drivable road). The figures are district-wide and by stage, on a modelled reconstruction, and are labelled T1 scenario. No FPPS or class is part of these panels.",
+        "real_tambon_scores_or_classes_seen": false,
+        "real_tambon_component_values_seen": false,
+        "seen_on": "2026-09-28 to 2026-09-30",
+        "locations": [
+          {
+            "kind": "commit",
+            "value": "d942cb0 (master lineage, not on this branch): scripts/mae_sai_timeline_evacuation.py, src/floodguard/evacuation_access.py, apps/web/src/components/mae-sai-evacuation-panels.tsx",
+            "committed": true
+          },
+          {
+            "kind": "surface",
+            "value": "Mae Sai replay on master: /studio/cases/mae-sai-2024/, access, equity and shelter panels",
+            "committed": true
+          }
+        ],
+        "informed_parameters": [
+          "scoring_frame.components.access_gap_0_100 (walking 30 minutes to shelters; only people with baseline access are counted)",
+          "equity_statement_rule",
+          "scoring_frame.components.vulnerability_context_0_100.terrain_remoteness_proxy and v1b open item OI-12",
+          "v1b facility_sets (shelter sets, two-step access)"
+        ],
+        "could_bias": "The team has seen how walking access to shelters, a shelter plan and a terrain-proxy equity ratio behave in Mae Sai on a modelled flood. The access-gap definition, the equity statement rule and the terrain-proxy definition could be shaped toward or away from those results.",
+        "guard": "The replay is not a case and not a flood input (D7). The protocol's equity comparisons are age-based, with the denominator and sign-retention rules declared here. The terrain proxy is a sensitivity axis on O1 only, and its definition must be fixed in v1b before any scoring. Replay figures stay labelled T1 scenario and are not shown as protocol outputs.",
+        "guard_status": "protocol_rule",
+        "guard_gaps": []
       }
     ],
     "parameters_with_no_identified_exploratory_input": {
@@ -1562,7 +1889,7 @@
         "confidence_rule_v1 C3_coverage (0.80) and C4_input_uncertainty (15 points)",
         "confidence_rule_v1 C7_baseline_no_route (0.10)",
         "guardrails GR8_headline_stability (0.60) and equity sign retention (0.60)",
-        "guardrails GR1_minimum_denominators (100 and 50)",
+        "guardrails GR1_minimum_denominators, unit minimum (100)",
         "class_rules.v2.parameters (top 20, 500 residents, JRC 25 percent, exposure floor 10)"
       ]
     }
@@ -1575,6 +1902,7 @@
     ],
     "rules": [
       "Before signing, the signers may amend this draft. Each amendment is listed in signature_block.amendments_at_signing.",
+      "At signing, every entry in drafter_readings is set to confirmed or amended. An amended entry is also listed in signature_block.amendments_at_signing, and the rule it points to is edited to match.",
       "After the signed file's SHA-256 is recorded in RECEIPTS.jsonl, this file is not edited again.",
       "Any later change to a rule, anchor, threshold, case or flood input needs a new file, planning_protocol_v2, with a written reason for each change and the outputs the change affects.",
       "Every run is reported, including runs made under a superseded protocol and runs whose result is unwelcome.",
@@ -1594,15 +1922,17 @@
     "The plan file whose SHA-256 is in source_documents is the owner-approved plan.",
     "The decision log read on 2026-10-01 reflects the signed decisions; Rachmania's direct confirmation line in that file is empty.",
     "Scratchpad locations exist on one machine only and may be lost; the plan text is the durable record of those results.",
-    "Replay-lineage items EK-R1 to EK-R4 are stated as supplied by the owner's session; the drafting agent verified only that commit 2e5a099 exists and is dated 2026-09-28."
+    "Item EK-R1 was checked against commit 2e5a099 (replay-fpps.ts, replay-fpps.test.ts, mae-sai-priority-card.tsx) and against apps/web/src/lib/policy-evidence.ts on origin/master. Item EK-R5 was checked against commit d942cb0. Items EK-R2 to EK-R4 are stated as supplied by the owner's session and were not checked.",
+    "Enforcement statuses and guard gaps describe this lineage (base commit 96fab6e plus this branch) on 2026-10-01. Controls that exist only on another lineage are not counted."
   ],
   "signature_block": {
     "kind": "team_governance_signature",
-    "note": "Not an independent review. The signers fill their own entry; nobody fills an entry for someone else.",
+    "note": "Not an independent review. The two signers are different people. Each signer fills their own entry; nobody fills an entry for someone else.",
     "attestations_required": [
-      "I have read every section of this file and the exploratory-knowledge disclosure, and I have added anything else I had seen that could have informed a rule.",
-      "No planning-tier FPPS, A-E class or ensemble has been computed for a real unit since the plan date other than the items disclosed here.",
-      "I have stated whether any M1-v2 tuning on GEOID tiles has already been run."
+      "I have read every section of this file, the exploratory-knowledge disclosure and every entry in drafter_readings, and I have added anything else I had seen that could have informed a rule.",
+      "No FPPS, A-E class or ensemble has been computed for a real unit since the plan date (2026-09-26) other than the items disclosed here.",
+      "I have stated whether any M1-v2 tuning on GEOID tiles has already been run.",
+      "Every entry in drafter_readings is marked confirmed or amended."
     ],
     "signers": [
       {

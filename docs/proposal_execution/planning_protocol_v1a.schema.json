@@ -2,9 +2,62 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://floodguard.th/proposal-execution/planning-protocol-v1a.schema.json",
   "title": "FloodGuard planning protocol v1a (decision rules)",
-  "description": "Shape of docs/proposal_execution/planning_protocol_v1a.json. A draft has empty signatures; a signed file has both filled. The file never records its own SHA-256.",
+  "description": "Shape of docs/proposal_execution/planning_protocol_v1a.json. A draft has empty signatures and every drafter reading awaiting confirmation; a signed file has both signatures filled, by two different named signers, and every drafter reading confirmed or amended. The file never records its own SHA-256.",
   "type": "object",
   "additionalProperties": false,
+  "$defs": {
+    "signer": {
+      "type": "object",
+      "required": [
+        "role",
+        "required_signer",
+        "action",
+        "signed_by",
+        "signed_at_utc",
+        "attestation"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "owner",
+            "method_co_signer"
+          ]
+        },
+        "required_signer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "enum": [
+            "signs",
+            "co-signs"
+          ]
+        },
+        "signed_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "signed_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        "attestation": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
   "required": [
     "assumptions",
     "case_portfolio",
@@ -15,6 +68,7 @@
     "demo_tambon_rule",
     "drafted_by",
     "drafted_on",
+    "drafter_readings",
     "equity_statement_rule",
     "evidence_tier_model",
     "exploratory_knowledge_disclosure",
@@ -108,77 +162,53 @@
           "maxItems": 2,
           "prefixItems": [
             {
-              "properties": {
-                "role": {
-                  "const": "owner"
+              "allOf": [
+                {
+                  "$ref": "#/$defs/signer"
                 },
-                "action": {
-                  "const": "signs"
+                {
+                  "properties": {
+                    "role": {
+                      "const": "owner"
+                    },
+                    "action": {
+                      "const": "signs"
+                    },
+                    "required_signer": {
+                      "pattern": "Putu"
+                    },
+                    "signed_by": {
+                      "pattern": "Putu"
+                    }
+                  }
                 }
-              }
+              ]
             },
             {
-              "properties": {
-                "role": {
-                  "const": "method_co_signer"
+              "allOf": [
+                {
+                  "$ref": "#/$defs/signer"
                 },
-                "action": {
-                  "const": "co-signs"
+                {
+                  "properties": {
+                    "role": {
+                      "const": "method_co_signer"
+                    },
+                    "action": {
+                      "const": "co-signs"
+                    },
+                    "required_signer": {
+                      "pattern": "Rachmania"
+                    },
+                    "signed_by": {
+                      "pattern": "Rachmania"
+                    }
+                  }
                 }
-              }
+              ]
             }
           ],
-          "items": {
-            "type": "object",
-            "required": [
-              "role",
-              "required_signer",
-              "action",
-              "signed_by",
-              "signed_at_utc",
-              "attestation"
-            ],
-            "properties": {
-              "role": {
-                "enum": [
-                  "owner",
-                  "method_co_signer"
-                ]
-              },
-              "required_signer": {
-                "type": "string",
-                "minLength": 1
-              },
-              "action": {
-                "enum": [
-                  "signs",
-                  "co-signs"
-                ]
-              },
-              "signed_by": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "minLength": 1
-              },
-              "signed_at_utc": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
-              },
-              "attestation": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "minLength": 1
-              }
-            },
-            "additionalProperties": false
-          }
+          "items": false
         },
         "amendments_at_signing": {
           "type": "array",
@@ -507,7 +537,8 @@
               "type": "object",
               "required": [
                 "lane",
-                "use"
+                "use",
+                "temporal_relation"
               ],
               "properties": {
                 "lane": {
@@ -515,6 +546,9 @@
                 },
                 "use": {
                   "const": "scenario only"
+                },
+                "temporal_relation": {
+                  "const": "season_window"
                 }
               }
             },
@@ -522,7 +556,8 @@
               "type": "object",
               "required": [
                 "case",
-                "case_reference_date"
+                "case_reference_date",
+                "temporal_relation"
               ],
               "properties": {
                 "case": {
@@ -530,6 +565,13 @@
                 },
                 "case_reference_date": {
                   "const": "2024-10-22"
+                },
+                "temporal_relation": {
+                  "enum": [
+                    "event_aligned",
+                    "dated_other",
+                    "season_window"
+                  ]
                 }
               }
             }
@@ -541,12 +583,13 @@
       "type": "object",
       "required": [
         "basis",
-        "version",
-        "uses_ensemble_output",
-        "rights_are_an_input",
         "high",
-        "medium_requires_all",
         "low",
+        "medium_requires_all",
+        "rights_are_an_input",
+        "scenario_rows",
+        "uses_ensemble_output",
+        "version",
         "vocabulary"
       ],
       "properties": {
@@ -595,6 +638,31 @@
             "medium",
             "low"
           ]
+        },
+        "scenario_rows": {
+          "type": "object",
+          "required": [
+            "applies_to",
+            "plan_text",
+            "gap",
+            "rule",
+            "rule_status",
+            "alternatives"
+          ],
+          "properties": {
+            "rule": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "rule_status": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         }
       }
     },
@@ -989,10 +1057,11 @@
           "type": "object",
           "required": [
             "binding",
-            "version",
+            "evaluation",
+            "parameters",
             "role",
             "triggers",
-            "parameters"
+            "version"
           ],
           "properties": {
             "binding": {
@@ -1033,6 +1102,41 @@
                 }
               },
               "additionalProperties": false
+            },
+            "evaluation": {
+              "type": "object",
+              "required": [
+                "order",
+                "rule",
+                "otherwise",
+                "otherwise_meaning",
+                "rule_status"
+              ],
+              "properties": {
+                "order": {
+                  "type": "array",
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": [
+                      "A",
+                      "B",
+                      "C",
+                      "D",
+                      "E"
+                    ]
+                  }
+                },
+                "rule": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "otherwise": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
             }
           }
         }
@@ -1047,6 +1151,7 @@
         "required": [
           "id",
           "rule",
+          "enforcement",
           "basis"
         ],
         "properties": {
@@ -1065,6 +1170,27 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "enforcement": {
+            "type": "object",
+            "required": [
+              "status",
+              "note"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "in_place",
+                  "partly_in_place",
+                  "not_built"
+                ]
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
           }
         }
       }
@@ -1168,6 +1294,23 @@
                   "T3",
                   "T4"
                 ]
+              }
+            },
+            "if": {
+              "properties": {
+                "lane": {
+                  "const": "OBS"
+                }
+              },
+              "required": [
+                "lane"
+              ]
+            },
+            "then": {
+              "properties": {
+                "case_reference_date": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -1285,6 +1428,55 @@
         "additionalProperties": false
       }
     },
+    "drafter_readings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "where",
+          "pointer",
+          "plan_says",
+          "draft_says",
+          "outcome_sensitive",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^DR-A[0-9]{2}$"
+          },
+          "where": {
+            "type": "string",
+            "minLength": 1
+          },
+          "pointer": {
+            "type": "string",
+            "pattern": "^/"
+          },
+          "plan_says": {
+            "type": "string",
+            "minLength": 1
+          },
+          "draft_says": {
+            "type": "string",
+            "minLength": 1
+          },
+          "outcome_sensitive": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "awaiting_owner_confirmation",
+              "confirmed",
+              "amended"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
     "exploratory_knowledge_disclosure": {
       "type": "object",
       "required": [
@@ -1314,11 +1506,14 @@
               "title",
               "what_was_seen",
               "real_tambon_scores_or_classes_seen",
+              "real_tambon_component_values_seen",
               "seen_on",
               "locations",
               "informed_parameters",
               "could_bias",
-              "guard"
+              "guard",
+              "guard_status",
+              "guard_gaps"
             ],
             "properties": {
               "id": {
@@ -1340,6 +1535,9 @@
                 "minLength": 1
               },
               "real_tambon_scores_or_classes_seen": {
+                "type": "boolean"
+              },
+              "real_tambon_component_values_seen": {
                 "type": "boolean"
               },
               "seen_on": {
@@ -1395,9 +1593,46 @@
               "guard": {
                 "type": "string",
                 "minLength": 1
+              },
+              "guard_status": {
+                "enum": [
+                  "protocol_rule",
+                  "control_missing"
+                ]
+              },
+              "guard_gaps": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "if": {
+              "properties": {
+                "guard_status": {
+                  "const": "control_missing"
+                }
+              },
+              "required": [
+                "guard_status"
+              ]
+            },
+            "then": {
+              "properties": {
+                "guard_gaps": {
+                  "minItems": 1
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "guard_gaps": {
+                  "maxItems": 0
+                }
+              }
+            }
           }
         }
       }
@@ -1464,6 +1699,61 @@
                       "type": "string"
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "draft_for_signature"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "drafter_readings": {
+            "items": {
+              "properties": {
+                "status": {
+                  "const": "awaiting_owner_confirmation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "signed"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "drafter_readings": {
+            "items": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "confirmed",
+                    "amended"
+                  ]
                 }
               }
             }

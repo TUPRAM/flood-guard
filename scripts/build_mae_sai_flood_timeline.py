@@ -3,15 +3,30 @@
 
 Inputs
 ------
-* External rasters (kept outside Git), under ``--external-root`` or ``FLOODGUARD_EXTERNAL_DATA``:
-  - ``open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif``
+* External files (kept outside Git), under ``--external-root`` or ``FLOODGUARD_EXTERNAL_DATA``:
+  - ``open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif`` and
+    ``..._N20_00_E100_00_DEM.tif`` (both tiles: the east tile covers the Ruak and the east of the district)
   - ``earth_search/mae_sai_2024/S2B_47QNC_{20240905,20240915}_0_L2A/{red,green,blue}.tif``
-  - ``cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_*_COG.SAFE.zip`` (6 and 15 September 2024)
-* In-repo vectors: ``outputs/mae_sai_admin_context.geojson``, ``outputs/mae_sai_road_risk.geojson``,
-  ``outputs/mae_sai_facilities.geojson``.
+  - ``cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_*_COG.SAFE.zip`` (6 and 15 September 2024 UTC)
+  - ``open_context/worldpop_population/tha_ppp_2020.tif``
+  - ``derived_context/mae_sai_2024/mae_sai_osm_{multipolygons,points_full}.gpkg`` (cut from
+    ``open_context/osm_geofabrik/thailand-latest.osm.pbf`` by this script when they are absent)
+  - ``viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d*_001day_090.tif.zip`` (10 to 18 September 2024)
+  - ``hii_rain/2024_09/{MOU189,DIWO}.csv`` and the two ``*_0all_stn_metadata.csv`` station lists
+* In-repo files: ``outputs/mae_sai_admin_context.geojson``, ``outputs/mae_sai_road_risk.geojson``,
+  ``outputs/mae_sai_facilities.geojson``, ``outputs/mae_sai_access_edges.csv``,
+  ``outputs/mae_sai_population_nodes.csv`` and ``outputs/mae_sai_reported_shelters_2024.json``.
 
 Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r3/``): a HAND code raster, dated
-Sentinel-1/2 image layers, a hillshade, sampled road/facility/tambon vectors and ``timeline.json``.
+Sentinel-1/2 image layers, a hillshade, VIIRS daily maps, a residents raster, the access node file,
+sampled road/facility/tambon vectors and ``timeline.json``.
+
+Reproducibility
+---------------
+Every bake writes an input receipt (``docs/mae_sai_timeline_r3_input_receipt.json``): the path relative
+to its root, the size and the SHA-256 of every input file the bake opened, plus library versions.
+``--verify`` bakes again into a temporary folder and compares it byte for byte with the committed
+revision folder. It never writes to that folder and exits non-zero on any difference.
 
 The daily water surface is a HAND threshold reconstruction driven by illustrative stage keyframes.
 It is not an observation, a validated flood extent, a real-time product or an official warning.
@@ -20,12 +35,14 @@ It is not an observation, a validated flood extent, a real-time product or an of
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from datetime import timedelta
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
+import platform
 import re
 import sys
 import tempfile
@@ -47,6 +64,15 @@ from shapely.ops import substring, transform as shp_transform
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from floodguard.bake_receipt import (  # noqa: E402
+    RECEIPT_SCHEMA,
+    InputReceipt,
+    compare_directories,
+    directory_listing,
+    input_differences,
+    library_versions,
+    version_differences,
+)
 from floodguard.flood_timeline import (  # noqa: E402
     HAND_STEP_M,
     IMPASSABLE_DEPTH_M,
@@ -65,6 +91,9 @@ import mae_sai_timeline_evacuation as evac  # noqa: E402
 import mae_sai_timeline_observations as obs  # noqa: E402
 
 OUT_REL = Path("apps/web/public/studies/mae-sai-2024-timeline/r3")
+RECEIPT_REL = Path("docs/mae_sai_timeline_r3_input_receipt.json")
+GENERATED_BY = "scripts/build_mae_sai_flood_timeline.py"
+Track = Callable[[Path], Path]
 HREF_PREFIX = "/studies/mae-sai-2024-timeline/r3/"
 SAI_REFERENCE_LONLAT = (99.8826, 20.4460)  # Sai River at the Mae Sai border bridges (main-stem reference reach).
 REPORTED_SHELTERS = Path("outputs/mae_sai_reported_shelters_2024.json")
@@ -98,6 +127,11 @@ S1_SCENES = {
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def untracked(path: Path) -> Path:
+    """Default ``track`` callback: open the input without recording it."""
+    return path
 
 
 class Grid:
@@ -209,10 +243,10 @@ def to_u8(values: np.ndarray, lo: float, hi: float, gamma: float = 1.0) -> np.nd
     return np.nan_to_num(scaled * 255, nan=0).astype(np.uint8)
 
 
-def sentinel2_rgb(scene_dir: Path, grid: Grid) -> np.ndarray:
+def sentinel2_rgb(scene_dir: Path, grid: Grid, track: Track = untracked) -> np.ndarray:
     bands = []
     for name in ("red", "green", "blue"):
-        with rasterio.open(scene_dir / f"{name}.tif") as src:
+        with rasterio.open(track(scene_dir / f"{name}.tif")) as src:
             aoi = transform_bounds(grid.crs, src.crs, *grid.bounds, densify_pts=21)
             win = window_from_bounds(*aoi, transform=src.transform).round_offsets().round_lengths()
             win = Window(win.col_off - 8, win.row_off - 8, win.width + 16, win.height + 16)
@@ -293,7 +327,8 @@ def s1_anchor(codes: np.ndarray, pre_db: np.ndarray, post_db: np.ndarray, pixel_
             "scope": "Low-HAND zone (HAND < 6 m, channel excluded) across the full image footprint, both sides of the border."}
 
 
-def build(external: Path, out_dir: Path) -> dict:
+def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
+    """Bake every asset into ``out_dir``. ``track`` is called with each input file as it is opened."""
     out_dir.mkdir(parents=True, exist_ok=True)
     to_utm = Transformer.from_crs("EPSG:4326", UTM, always_xy=True).transform
     to_ll = Transformer.from_crs(UTM, "EPSG:4326", always_xy=True).transform
@@ -311,7 +346,7 @@ def build(external: Path, out_dir: Path) -> dict:
     # --- Hydrology and HAND -------------------------------------------------------------
     with tempfile.TemporaryDirectory() as tmp:
         hand30, streams30, dem30, hgrid, k30, reference_km2, lowconf30 = hydrology(
-            [external / "open_context/copernicus_dem_glo30" / tile for tile in DEM_TILES], Path(tmp))
+            [track(external / "open_context/copernicus_dem_glo30" / tile) for tile in DEM_TILES], Path(tmp))
 
     def hand_codes(grid: Grid) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         hand = warp(np.nan_to_num(hand30, nan=-1), hgrid.transform, UTM, grid, Resampling.bilinear, src_nodata=-1)
@@ -347,7 +382,7 @@ def build(external: Path, out_dir: Path) -> dict:
     layers.append(emit("hillshade.webp", buf.read(), id="hillshade", kind="terrain", date=None))
 
     # --- Sentinel-2 true colour -----------------------------------------------------------
-    rgb = {key: sentinel2_rgb(external / "earth_search/mae_sai_2024" / scene, display) for key, (scene, _) in S2_SCENES.items()}
+    rgb = {key: sentinel2_rgb(external / "earth_search/mae_sai_2024" / scene, display, track) for key, (scene, _) in S2_SCENES.items()}
     clear = np.all(rgb["s2-20240905"] < 0.25, axis=0)  # Stretch on cloud-free land so clouds do not darken it.
     lo, hi = np.nanpercentile(rgb["s2-20240905"][:, clear], [1, 99.5])
     for key, (scene, stamp) in S2_SCENES.items():
@@ -361,7 +396,7 @@ def build(external: Path, out_dir: Path) -> dict:
     s1: dict[str, np.ndarray] = {}
     s1_meta: dict[str, dict] = {}
     for key, name in S1_SCENES.items():
-        s1[key], s1_meta[key] = sentinel1_vv(external / "cdse/mae_sai_2024" / name, display)
+        s1[key], s1_meta[key] = sentinel1_vv(track(external / "cdse/mae_sai_2024" / name), display)
     db_lo, db_hi = np.nanpercentile(s1["s1-20240906"], [2, 98])
     s1_stamps = {"s1-20240906": "2024-09-06T11:31:06Z", "s1-20240915": "2024-09-15T23:16:01Z"}
     for key in S1_SCENES:
@@ -378,7 +413,7 @@ def build(external: Path, out_dir: Path) -> dict:
     layers.append(emit("s1-change-rgb.webp", buf.read(), id="s1-change", kind="sentinel-1-change", date="2024-09-06T11:31:06Z/2024-09-15T23:16:01Z"))
 
     # --- Vectors --------------------------------------------------------------------------
-    admin = json.loads((ROOT / "outputs/mae_sai_admin_context.geojson").read_text(encoding="utf-8"))
+    admin = json.loads(track(ROOT / "outputs/mae_sai_admin_context.geojson").read_text(encoding="utf-8"))
     tambon_ids = [f["properties"]["subdistrict_id"] for f in admin["features"]]
     zones = rasterize(((shape(f["geometry"]).__class__(shp_transform(to_utm, shape(f["geometry"]))), i + 1) for i, f in enumerate(admin["features"])),
                       out_shape=aoi.shape, transform=aoi.transform, fill=0, dtype="uint8")
@@ -391,7 +426,7 @@ def build(external: Path, out_dir: Path) -> dict:
          "properties": {"id": f["properties"]["subdistrict_id"], "en": f["properties"]["subdistrict_name"], "th": f["properties"]["subdistrict_name_th"]}}
         for f in admin["features"]]}
 
-    roads_src = json.loads((ROOT / "outputs/mae_sai_road_risk.geojson").read_text(encoding="utf-8"))
+    roads_src = json.loads(track(ROOT / "outputs/mae_sai_road_risk.geojson").read_text(encoding="utf-8"))
     road_features = []
     for f in roads_src["features"]:
         props = f["properties"]
@@ -416,7 +451,7 @@ def build(external: Path, out_dir: Path) -> dict:
                                                  **({"n": props["road_name"]} if props.get("road_name") and cls in ROAD_CLASSES[:4] else {})}})
     roads = {"type": "FeatureCollection", "features": road_features}
 
-    fac_src = json.loads((ROOT / "outputs/mae_sai_facilities.geojson").read_text(encoding="utf-8"))
+    fac_src = json.loads(track(ROOT / "outputs/mae_sai_facilities.geojson").read_text(encoding="utf-8"))
     facility_features = []
     for f in fac_src["features"]:
         x, y = to_utm(*f["geometry"]["coordinates"][:2])
@@ -430,7 +465,7 @@ def build(external: Path, out_dir: Path) -> dict:
     facilities = {"type": "FeatureCollection", "features": facility_features}
 
     # --- Population (WorldPop 2020) -------------------------------------------------------
-    coarse_pop, pop10 = evac.population_grid(external / "open_context/worldpop_population/tha_ppp_2020.tif", aoi)
+    coarse_pop, pop10 = evac.population_grid(track(external / "open_context/worldpop_population/tha_ppp_2020.tif"), aoi)
     pop_hist = {tid: np.round(np.bincount(codes_aoi[zones == i + 1], weights=pop10[zones == i + 1], minlength=256), 1).tolist()
                 for i, tid in enumerate(tambon_ids)}
     density, density_cap = evac.density_codes(coarse_pop, aoi, water)
@@ -443,20 +478,20 @@ def build(external: Path, out_dir: Path) -> dict:
 
     # --- Evacuation access and shelter plan ---------------------------------------------------
     peak_stage = max(k.stage_m for k in KEYFRAMES)
-    graph = evac.build_graph(ROOT, to_utm, codes_aoi, k_aoi, aoi)
+    graph = evac.build_graph(ROOT, to_utm, codes_aoi, k_aoi, aoi, track)
     osm_dir = external / "derived_context/mae_sai_2024"
     polygons_path, points_path = osm_dir / "mae_sai_osm_multipolygons.gpkg", osm_dir / "mae_sai_osm_points_full.gpkg"
     if not polygons_path.exists() or not points_path.exists():
         import pyogrio
-        pbf = external / "open_context/osm_geofabrik/thailand-latest.osm.pbf"
+        pbf = track(external / "open_context/osm_geofabrik/thailand-latest.osm.pbf")
         bbox = transform_bounds(UTM, "EPSG:4326", *AOI_UTM, densify_pts=21)
         pyogrio.read_dataframe(pbf, layer="multipolygons", bbox=bbox).to_file(polygons_path, driver="GPKG")
         pyogrio.read_dataframe(pbf, layer="points", bbox=bbox).to_file(points_path, driver="GPKG")
     import pyogrio
-    sites = evac.shelter_candidates(pyogrio.read_dataframe(polygons_path), pyogrio.read_dataframe(points_path),
-                                    ROOT / "outputs/mae_sai_facilities.geojson", to_utm)
+    sites = evac.shelter_candidates(pyogrio.read_dataframe(track(polygons_path)), pyogrio.read_dataframe(track(points_path)),
+                                    track(ROOT / "outputs/mae_sai_facilities.geojson"), to_utm)
     evac.evaluate_sites(sites, graph, codes_aoi, k_aoi, aoi, peak_stage, valid_aoi)
-    reported_doc = json.loads((ROOT / REPORTED_SHELTERS).read_text(encoding="utf-8")) if (ROOT / REPORTED_SHELTERS).exists() else {"shelters": []}
+    reported_doc = json.loads(track(ROOT / REPORTED_SHELTERS).read_text(encoding="utf-8")) if (ROOT / REPORTED_SHELTERS).exists() else {"shelters": []}
     reported_all = reported_doc["shelters"]
     located = [r for r in reported_all if r.get("lat") is not None and r.get("lon") is not None]
     for r in located:
@@ -558,7 +593,7 @@ def build(external: Path, out_dir: Path) -> dict:
         if not matches:
             continue
         t_pass = day_offset + obs.VIIRS_OVERPASS_LOCAL_HOUR / 24
-        record, codes_v, transform_v = obs.viirs_comparison(matches[0], day, district_ll, model_wet_fraction, stage_at(t_pass), viirs_bounds)
+        record, codes_v, transform_v = obs.viirs_comparison(track(matches[0]), day, district_ll, model_wet_fraction, stage_at(t_pass), viirs_bounds)
         classes = warp(obs.viirs_png_codes(codes_v).astype(np.float32), transform_v, "EPSG:4326", viirs_grid, Resampling.nearest)
         classes = np.nan_to_num(classes, nan=0).astype(np.uint8)
         rgba = np.zeros((*classes.shape, 4), dtype=np.uint8)
@@ -570,7 +605,7 @@ def build(external: Path, out_dir: Path) -> dict:
         record.update(emit(f"viirs-{day:%Y%m%d}.png", buf.read(), width=viirs_grid.width, height=viirs_grid.height))
         record["source_file"] = matches[0].name
         viirs_days.append(record)
-    rain = obs.rainfall(external / "hii_rain/2024_09", 11 * 24)
+    rain = obs.rainfall(external / "hii_rain/2024_09", 11 * 24, track)
 
     peak_wet = (codes_aoi != CHANNEL_CODE) & (codes_aoi != NEVER_CODE) & (codes_aoi.astype(int) * HAND_STEP_M < max(k.stage_m for k in KEYFRAMES)) & (zones > 0)
     low_confidence_share = {"peak_flooded_km2": round(float(peak_wet.sum()) * AOI_RES**2 / 1e6, 1),
@@ -708,7 +743,7 @@ def compose_manifest(result: dict) -> dict:
     anchor = result["s1_anchor"]
     return {
         "study_id": "mae-sai-2024-flood-timeline", "revision": "r3", "schema_version": 1,
-        "generated_by": "scripts/build_mae_sai_flood_timeline.py",
+        "generated_by": GENERATED_BY,
         "data_mode": "historical_reconstruction", "official_warning": False, "real_time": False, "can_feed_decision_layer": False,
         "confidence": "low",
         "confidence_reason": "Water extents are a terrain-model reconstruction with illustrative stages; only the late-recession size is checked against radar, and spatial agreement there is weak.",
@@ -783,22 +818,115 @@ def compose_manifest(result: dict) -> dict:
     }
 
 
-def main() -> None:
+RECEIPT_ASSUMPTIONS = [
+    "Input paths are relative to the external data root (FLOODGUARD_EXTERNAL_DATA) or to the repository root; no machine path is recorded.",
+    "The same inputs give the same bytes only with the same library versions: another GDAL, PROJ, WebP, zlib or pysheds build can change bytes without changing the method.",
+    "The two OpenStreetMap GeoPackages under derived_context are extracts this bake cuts from the Geofabrik PBF when they are absent; a fresh extract can hash differently while holding the same features.",
+    "The receipt lists files, not their meaning: it does not make the reconstruction an observation.",
+]
+
+
+def bake(external: Path, out_dir: Path) -> tuple[dict, dict, InputReceipt]:
+    """Run the whole bake into ``out_dir`` and return ``(manifest, build result, input receipt)``."""
+    receipt = InputReceipt({"external": external, "repo": ROOT})
+    result = build(external, out_dir, receipt.track)
+    manifest = compose_manifest(result)
+    (out_dir / "timeline.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    return manifest, result, receipt
+
+
+def receipt_document(manifest: dict, receipt: InputReceipt, out_dir: Path) -> dict:
+    """Assemble the input receipt for a finished bake in ``out_dir``."""
+    inputs = receipt.entries()
+    outputs = directory_listing(out_dir)
+    return {
+        "schema": RECEIPT_SCHEMA,
+        "study_id": manifest["study_id"], "revision": manifest["revision"], "generated_by": GENERATED_BY,
+        "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
+        "source_timestamp": manifest["source_timestamp"],
+        "confidence": manifest["confidence"],
+        "confidence_reason": "Confidence of the baked reconstruction, copied from timeline.json. The receipt itself is an exact file record.",
+        "assumptions": RECEIPT_ASSUMPTIONS,
+        "official_warning": False, "operational_status": "non_operational", "can_feed_decision_layer": False,
+        "roots": {"external": "FLOODGUARD_EXTERNAL_DATA or --external-root (kept outside Git)", "repo": "repository root"},
+        "input_count": len(inputs), "input_bytes": sum(row["bytes"] for row in inputs),
+        "inputs": inputs,
+        "outputs": {"folder": OUT_REL.as_posix(), "file_count": len(outputs), "bytes": sum(row["bytes"] for row in outputs), "files": outputs},
+        "libraries": library_versions(),
+        "platform": {"system": platform.system(), "machine": platform.machine()},
+    }
+
+
+def write_receipt(path: Path, document: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(document, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+
+
+def default_receipt_path(out_dir: Path) -> Path:
+    """The committed receipt for the committed revision folder; a sibling file for any other output folder."""
+    if out_dir.resolve() == (ROOT / OUT_REL).resolve():
+        return ROOT / RECEIPT_REL
+    return out_dir.parent / f"{out_dir.name}_input_receipt.json"
+
+
+def verify(external: Path, committed: Path, receipt_path: Path, work_root: Path | None = None) -> int:
+    """Bake into a temporary folder and byte-compare it with ``committed``; return 0 only when every file matches.
+
+    Nothing is written to ``committed`` or to ``receipt_path``. Differences in inputs or library versions against
+    the recorded receipt are reported to explain a mismatch; only the byte comparison decides the exit code.
+    """
+    if not committed.is_dir():
+        print(f"verify: the committed folder does not exist: {committed.name}")
+        return 1
+    with tempfile.TemporaryDirectory(prefix="mae-sai-timeline-verify-", dir=work_root) as tmp:
+        fresh = Path(tmp) / committed.name
+        if fresh.resolve() == committed.resolve():
+            raise RuntimeError("--verify must never bake into the committed folder")
+        manifest, _, receipt = bake(external, fresh)
+        comparison = compare_directories(fresh, committed)
+        document = receipt_document(manifest, receipt, fresh)
+    print(f"verify: {comparison.summary()} ({committed.name}, {document['outputs']['bytes']:,} bytes in the fresh bake)")
+    for label, names in (("different bytes", comparison.different), ("committed but not baked", comparison.missing_from_fresh),
+                         ("baked but not committed", comparison.extra_in_fresh)):
+        for name in names:
+            print(f"verify: {label}: {name}")
+    if receipt_path.is_file():
+        recorded = json.loads(receipt_path.read_text(encoding="utf-8"))
+        for note in input_differences(document["inputs"], recorded.get("inputs", [])):
+            print(f"verify: input note: {note}")
+        for note in version_differences(document["libraries"], recorded.get("libraries", {})):
+            print(f"verify: library note: {note}")
+    else:
+        print("verify: no recorded input receipt to compare with")
+    print("verify: PASS" if comparison.matches else "verify: FAIL")
+    return 0 if comparison.matches else 1
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--external-root", default=os.environ.get("FLOODGUARD_EXTERNAL_DATA"),
                         help="Folder holding the external rasters (or set FLOODGUARD_EXTERNAL_DATA).")
-    parser.add_argument("--out", default=str(ROOT / OUT_REL))
-    args = parser.parse_args()
+    parser.add_argument("--out", default=str(ROOT / OUT_REL),
+                        help="Folder to bake into; with --verify, the committed folder to compare against (never written).")
+    parser.add_argument("--receipt", default=None,
+                        help="Input receipt to write (or, with --verify, to compare with). Defaults to the committed receipt for the committed folder.")
+    parser.add_argument("--verify", action="store_true",
+                        help="Bake into a temporary folder and byte-compare with --out; exit non-zero on any difference.")
+    args = parser.parse_args(argv)
     if not args.external_root:
         parser.error("--external-root or FLOODGUARD_EXTERNAL_DATA is required")
-    result = build(Path(args.external_root), Path(args.out))
-    manifest = compose_manifest(result)
-    (Path(args.out) / "timeline.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    out_dir = Path(args.out)
+    receipt_path = Path(args.receipt) if args.receipt else default_receipt_path(out_dir)
+    if args.verify:
+        return verify(Path(args.external_root), out_dir, receipt_path)
+    manifest, result, receipt = bake(Path(args.external_root), out_dir)
+    write_receipt(receipt_path, receipt_document(manifest, receipt, out_dir))
     print(json.dumps(manifest["s1_anchor"], indent=1))
     for d in result["days"]:
         s = d["stats"]
         print(d["date"], d["phase"], d["stage_m"], s["flooded_km2"], s["road_km_impassable"], s["road_km_wet"], s["facilities_wet"])
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

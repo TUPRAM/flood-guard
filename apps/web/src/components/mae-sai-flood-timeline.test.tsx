@@ -28,6 +28,7 @@ import {
   type TimelineManifest,
 } from "@/lib/flood-timeline";
 import { plainManifestText } from "@/lib/flood-timeline-copy";
+import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
 import {
   facilityStatusText,
   HowToRead,
@@ -85,7 +86,8 @@ describe("Mae Sai flood replay page shell", () => {
     expect(html).toContain("Historical reconstruction for preparedness learning — not real-time, not an official warning.");
     expect(html).toContain('href="/studio/"');
     expect(html).toContain("Loading figures");
-    expect(html).not.toMatch(/real-time (flood )?detection|live warning|\blive\b/i);
+    // The shared replay wording lint: no affirmative real-time, live, forecast or warning wording.
+    expect(findWordingViolations(visibleText(html), "page shell")).toEqual([]);
   });
 
   it("puts Play, the readout and a 'Map layers' drawer above the map, with the controls folded away", () => {
@@ -139,7 +141,7 @@ describe("Mae Sai flood replay page shell", () => {
     expect(plain).toContain(manifest.source_timestamp);
     expect(html).toContain('href="#mae-sai-sources"');
     for (const term of ["Stage", "HAND", "Freeboard", "Road nodes", "T1 scenario", "Low-confidence water"]) expect(plain).toContain(term);
-    expect(plain).not.toMatch(/\blive\b|real-time detection/i);
+    expect(findWordingViolations(visibleText(html), "HowToRead")).toEqual([]);
     const thai = text(renderToStaticMarkup(<HowToRead manifest={manifest} language="th" />));
     expect(thai).toContain("วิธีอ่านตัวเลขเหล่านี้");
     expect(thai).toContain("2567 (2024)");
@@ -170,7 +172,7 @@ describe("Mae Sai replay panels", () => {
     const partial = Object.entries(manifest.tambon_coverage).filter(([, item]) => item.modelled_km2 / item.total_km2 < 0.99);
     for (const [, item] of partial) expect(html).toContain(`(${Math.round((item.modelled_km2 / item.total_km2) * 100)}% modelled)`);
     expect(html.match(/% modelled\)/g) ?? []).toHaveLength(partial.length);
-    expect(html).not.toMatch(/\blive\b/i);
+    expect(findWordingViolations(html, "ImpactCard")).toEqual([]);
     // The same card still names unmodelled land, roads and facilities when a revision has them.
     const firstTambon = Object.keys(manifest.tambon_coverage)[0];
     const partialManifest: TimelineManifest = {
@@ -337,7 +339,8 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
     expect(plain).toContain(`Up to ${groups[0].maxHours} h cut`);
     expect(plain).toMatch(/First cut \d{1,2} Sep \d{2}:00 → reopened/);
     expect(plain).not.toContain("Show the whole area");
-    expect(plain.replaceAll("not observed", "")).not.toMatch(/observed|real-time|\blive\b/i);
+    expect(plain.replaceAll("not observed", "")).not.toMatch(/observed/i);
+    expect(findWordingViolations(visibleText(html), "RouteCutsCard")).toEqual([]);
     expect(plain).toContain("THEME: KEEP ROUTES OPEN · NO ACTION CLASS ASSIGNED");
     expect(plain).not.toMatch(/ACTION CLASS [A-E]\b/);
     const thai = text(renderToStaticMarkup(<RouteCutsCard groups={groups} names={names} language="th" focused={groups[0].key} onFocus={() => undefined} onReset={() => undefined} />));
@@ -459,7 +462,8 @@ describe("Mae Sai observed evidence panels", () => {
     expect(plain).toContain(viirs.caveat);
     expect(plain).toContain(viirs.comparison_rule);
     expect(plain).toContain("not a validation of the model");
-    expect(plain.replaceAll("not a validation", "")).not.toMatch(/validat/i);
+    // "not a validation" is an allowlisted negation; any other validation or accuracy wording is a finding.
+    expect(findWordingViolations(visibleText(html), "ViirsComparisonCard")).toEqual([]);
     expect(plain).toContain("standing water in rice paddies can read as flood water");
     const cloudy = viirs.days.filter((day) => day.cloud_share >= 0.5).map((day) => day.date);
     if (cloudy.length > 0) expect(plain).toContain(`Cloud hid at least half of the district on ${cloudy.length} of ${viirs.days.length} days (${formatDateSet(cloudy, "en")})`);

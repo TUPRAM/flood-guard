@@ -33,6 +33,7 @@ import {
   tambonResidents,
 } from "@/lib/flood-timeline-evacuation";
 import { localizedText, plainManifestText } from "@/lib/flood-timeline-copy";
+import { findWordingViolations } from "@/lib/replay-wording-lint";
 import {
   AccessCard,
   AccessChart,
@@ -83,8 +84,9 @@ const radioChecked = (html: string, name: string, value: string) => {
   return Boolean(tag && /\schecked(=""|\s|\/|>)/.test(tag));
 };
 const noop = () => undefined;
-// Model outputs may say "not observed"; they must never present themselves as observed or live.
-const unsafeClaim = (value: string) => /\b(observed|real-time|live)\b/i.test(value.replaceAll(/not observed|not an? (official )?warning/gi, ""));
+// Model outputs may say "not observed"; they must never present themselves as observed, and they must pass the shared
+// replay wording lint (no affirmative real-time, live, forecast, warning or validation wording).
+const unsafeClaim = (value: string) => /\bobserved\b/i.test(value.replaceAll(/not observed/gi, "")) || findWordingViolations(value).length > 0;
 
 function accessCard(language: "en" | "th", set: "reported" | "plan", k = shelters.knee_k, stage = peak, scope: "flooded" | "all" = "all") {
   const index = access.sets.indexOf(set === "reported" ? REPORTED_SET_ID : planSetId(k));

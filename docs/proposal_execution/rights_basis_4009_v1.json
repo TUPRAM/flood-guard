@@ -1,0 +1,126 @@
+{
+  "schema": "floodguard.rights_basis_4009.v1",
+  "record_id": "rights_basis_4009_v1",
+  "record_status": "draft_pending_owner_confirmation",
+  "rights_basis_kind": "public_licence_with_signed_owner_decision",
+  "source": "UNOSAT and GISTDA water extents, 1 August to 22 October 2024, Chiang Rai Province, Thailand (UNOSAT product 4009, event code FL20240912THA)",
+  "source_edition": "hdx_file_geodatabase_zip",
+  "source_timestamp": "2024-08-01/2024-10-22",
+  "product": {
+    "unosat_product_id": "4009",
+    "event_code": "FL20240912THA",
+    "product_url": "https://unosat.org/products/4009",
+    "analysis_credit_as_published": "Analysis: GISTDA and refined by UNOSAT",
+    "layer_in_scope": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+    "layer_attributes_checked": {
+      "Field_Validation": 0,
+      "Sensor_Date": "2024-10-22",
+      "EventCode": "FL20240912THA"
+    },
+    "basis": "Layer name and attributes read from the archive on 2026-10-01; the analysis credit comes from the UNOSAT product 4009 metadata saved by the team on 2026-09-21."
+  },
+  "hdx": {
+    "dataset_id": "287af09d-7ffd-44c8-8602-f96d6e8375f0",
+    "dataset_url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
+    "licence_as_listed": "cc-by-sa",
+    "licence_version_listed": null,
+    "archived": true,
+    "metadata_last_modified": "2026-02-17",
+    "basis": "HDX package metadata saved by the team on 2026-09-21; not fetched again for this record."
+  },
+  "archive": {
+    "file_name": "FL20240912THA_GDB.zip",
+    "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+    "bytes": 27977189,
+    "root": "FLOODGUARD_EXTERNAL_DATA",
+    "relative_path": "unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip",
+    "kept_outside_git": true,
+    "hash_computed_on": "2026-10-01"
+  },
+  "licence": {
+    "name": "CC BY-SA 4.0",
+    "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+    "spdx_id": "CC-BY-SA-4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
+    "version_basis": "Signed decision D2. HDX lists \"cc-by-sa\" without a version.",
+    "notes": [
+      "HDX lists the licence as \"cc-by-sa\" and gives no version.",
+      "UNOSAT replied to the team's email with exactly: \"we approve the use\" (relayed by Putu on 2026-10-01).",
+      "The reply names no licence version and no credit wording, so derived layers ship under CC BY-SA 4.0 as signed in D2.",
+      "If UNOSAT later names a different version or credit wording, update this record, the notice file and every attribution."
+    ]
+  },
+  "provider_reply": {
+    "provider": "UNOSAT",
+    "quote": "we approve the use",
+    "relayed_by": "Putu",
+    "relayed_on": "2026-10-01",
+    "original_message_in_repo": false,
+    "names_licence_version": false,
+    "names_credit_wording": false,
+    "filing_guide": "docs/provider_response_logging_guide.md",
+    "note": "The rights in this record rest on the public CC BY-SA licence and decision D2. The reply adds no rights beyond them; no missing right is inferred from it."
+  },
+  "required_attribution_text": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+  "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+  "change_notice": {
+    "template": "Changed by FloodGuard: clipped to Mae Sai district ({clip_geometry}); geometry repaired ({repair_method}; {repair_count} parts repaired); reprojected from {source_crs} to {target_crs}; rasterised to {cell_size_m} m cells. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "steps": [
+      {"id": "clip", "text": "Clip to Mae Sai district."},
+      {"id": "geometry_repair", "text": "Repair invalid geometry (for example make_valid) and record how many parts were repaired."},
+      {"id": "reprojection", "text": "Reproject from the source coordinate system to the stated target coordinate system."},
+      {"id": "rasterisation", "text": "Rasterise to the stated cell size."}
+    ]
+  },
+  "use_in_this_track": [
+    "read the Chiang Rai accumulated-water layer from the archive kept outside Git",
+    "clip, repair, reproject and rasterise it for Mae Sai district",
+    "show the result as a 2024 season envelope scenario layer (SCN-ENV) with its own credit and change notice",
+    "compare the illustrative replay model with the envelope as a plausibility comparison"
+  ],
+  "limitations": [
+    "Field_Validation=0: the product is preliminary and was not checked in the field. FloodGuard did not check it either.",
+    "The third-party satellite imagery that UNOSAT and GISTDA used to make the product is not relicensed by this record.",
+    "The HDX dataset is archived (metadata last modified 2026-02-17).",
+    "The accumulated layer's name ends 20241012, while the product text runs to 22 October 2024.",
+    "Decision D3: the accumulated layer is a scenario envelope only (SCN-ENV). It is never an observation for a single day.",
+    "The original UNOSAT message is not in the repository. File it as docs/provider_response_logging_guide.md describes.",
+    "This record does not cover use as machine-learning labels or as a qualified reference.",
+    "No file derived from product 4009 goes into public web files until both owners confirm this record."
+  ],
+  "assumptions": [
+    "CC BY-SA 4.0 is the version that applies, because HDX lists none and UNOSAT's reply names none (decision D2).",
+    "The archive on disk is the file HDX distributed; its SHA-256 and size match the team's checksum record of 2026-09-21."
+  ],
+  "confidence": "medium",
+  "confidence_reason": "The archive hash and size are verified and D2 is signed, but neither HDX nor UNOSAT's reply names the licence version or a credit wording.",
+  "decision_refs": [
+    {"id": "D2", "summary": "Rights record for UNOSAT/GISTDA product 4009 under CC BY-SA 4.0, with attribution, ShareAlike and a change notice."},
+    {"id": "D3", "summary": "The August to October accumulated layer is scenario-only (SCN-ENV), never an observation for a replay day."},
+    {"id": "R4", "summary": "Email C was sent; UNOSAT replied \"we approve the use\" (relayed by Putu, 1 Oct 2026)."}
+  ],
+  "decision_log": "docs/decision-log-d1-d16.md",
+  "signed_decision": {
+    "decision": "D2",
+    "outcome": "Adopted, signed by both",
+    "signed_on": "2026-09-30",
+    "signers": ["Putu", "Rachmania"],
+    "how_recorded": "The decision log says Putu approved the draft in a Claude Code session on behalf of both signers, and that Rachmania has not signed the log file directly."
+  },
+  "owner_confirmation": {
+    "status": "pending",
+    "required_from": ["Putu", "Rachmania"],
+    "confirmed_by": [],
+    "confirmed_on": null,
+    "note": "This file transcribes signed decision D2. The owners have not yet confirmed the transcription.",
+    "how_to_confirm": "Both owners read this file and the notice. Then set status to confirmed, list both names in confirmed_by, set confirmed_on (YYYY-MM-DD), set record_status to confirmed, set signed_by_human and human_rights_clearance to true, and remove the draft status lines from the notice file, all in one commit."
+  },
+  "signed_by_human": false,
+  "human_rights_clearance": false,
+  "licence_notice_file": "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
+  "not_legal_advice": true,
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false
+}

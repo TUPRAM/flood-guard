@@ -42,6 +42,7 @@ Putu gave these in the same Claude Code session, after reading the roadmap draft
 1. **Email C.** Sent; UNOSAT replied "we approve the use" (R4). File the original message.
 2. **Protocol hash.** Hash protocol v1a into `RECEIPTS.jsonl` on the `codex/thai-event-selection` lineage. That happens there, not on the replay branch.
 3. **Open items.** Supply the original wording of D5, D8, D10 and D14–D16, or record them as withdrawn.
+4. **Rights record for 4009 (R5).** Drafted on 1 Oct 2026 as `docs/proposal_execution/rights_basis_4009_v1.json`, with a licence notice beside it. Its `owner_confirmation.status` is `pending`: both owners still have to read and confirm it. Until they do, a test keeps every 4009-derived file out of `apps/web/public`.
 
 ## Rachmania's confirmation
 

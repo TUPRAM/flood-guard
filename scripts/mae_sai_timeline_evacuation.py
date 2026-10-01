@@ -151,10 +151,13 @@ def sample_road(codes: np.ndarray, kgrid: np.ndarray, grid, xs: np.ndarray, ys: 
     return round(h, 2), round(min(k_eq, 1.0), 4)
 
 
-def build_graph(root: Path, to_utm, codes: np.ndarray, kgrid: np.ndarray, aoi) -> dict:
-    """Load the repo road graph, attach closure stages and population nodes."""
-    edges = pd.read_csv(root / "outputs/mae_sai_access_edges.csv")
-    pop = pd.read_csv(root / "outputs/mae_sai_population_nodes.csv")
+def build_graph(root: Path, to_utm, codes: np.ndarray, kgrid: np.ndarray, aoi, track=lambda path: path) -> dict:
+    """Load the repo road graph, attach closure stages and population nodes.
+
+    ``track`` is called with each input file as it is opened (the bake records them in its input receipt).
+    """
+    edges = pd.read_csv(track(root / "outputs/mae_sai_access_edges.csv"))
+    pop = pd.read_csv(track(root / "outputs/mae_sai_population_nodes.csv"))
     ids = pd.Index(pd.unique(pd.concat([edges["from_node"], edges["to_node"], pop["node_id"]])))
     lonlat = np.array([node_lonlat(n) for n in ids])
     xy = np.array([to_utm(lon, lat) for lon, lat in lonlat])

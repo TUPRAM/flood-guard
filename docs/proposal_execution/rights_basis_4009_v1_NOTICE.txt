@@ -1,0 +1,110 @@
+FloodGuard Thailand
+Licence notice for layers derived from UNOSAT product 4009
+Rights record: docs/proposal_execution/rights_basis_4009_v1.json
+
+STATUS: DRAFT. The project owners have not yet confirmed the rights record.
+Until both owners confirm it, FloodGuard publishes no layer derived from
+product 4009.
+
+1. Source
+   UNOSAT and GISTDA water extents, 1 August to 22 October 2024,
+   Chiang Rai Province, Thailand.
+   UNOSAT product 4009, event code FL20240912THA.
+   Product page: https://unosat.org/products/4009
+   HDX dataset 287af09d-7ffd-44c8-8602-f96d6e8375f0:
+   https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province
+   Archive: FL20240912THA_GDB.zip, 27,977,189 bytes
+   SHA-256: 1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85
+
+2. Credit
+   UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009
+
+3. Licence
+   Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+   https://creativecommons.org/licenses/by-sa/4.0/
+   Legal code: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+   HDX lists the licence as "cc-by-sa" without a version. UNOSAT replied to the
+   team's email with "we approve the use" and named no version, so FloodGuard
+   uses version 4.0 as its owners decided (decision D2).
+
+4. ShareAlike
+   Each layer or table that FloodGuard derives from product 4009 is shared
+   under the same licence, CC BY-SA 4.0. You may copy, share and adapt it if
+   you give the credit above, link to the licence, say what you changed and
+   share your version under the same licence.
+
+5. Changes made by FloodGuard (change notice)
+   Each derived file states its own values for these four steps:
+   - clipped to Mae Sai district
+   - invalid geometry repaired, with the number of parts repaired
+   - reprojected from the source coordinate system to the stated one
+   - rasterised to the stated cell size
+
+6. Limits
+   - The product is preliminary and was not checked in the field
+     (Field_Validation=0). FloodGuard did not check it either.
+   - It shows water accumulated over the 2024 season. FloodGuard uses it only
+     as a scenario envelope, never as an observation for a single day.
+   - The accumulated layer's name ends 20241012, while the product text runs
+     to 22 October 2024.
+   - The third-party satellite imagery used to make the product is not
+     relicensed by this notice.
+   - The HDX dataset is archived (metadata last modified 2026-02-17).
+   - UNOSAT and GISTDA do not endorse FloodGuard or its use of the product.
+   - This notice is not legal advice and not an official warning.
+
+--------------------------------------------------------------------------------
+
+FloodGuard Thailand
+ประกาศสัญญาอนุญาตสำหรับชั้นข้อมูลที่ดัดแปลงจากผลิตภัณฑ์ UNOSAT หมายเลข 4009
+บันทึกสิทธิ์: docs/proposal_execution/rights_basis_4009_v1.json
+
+สถานะ: ฉบับร่าง เจ้าของโครงการยังไม่ได้ยืนยันบันทึกสิทธิ์ฉบับนี้
+FloodGuard จะไม่เผยแพร่ชั้นข้อมูลใดที่ดัดแปลงจากผลิตภัณฑ์ 4009
+จนกว่าเจ้าของโครงการทั้งสองคนจะยืนยัน
+
+1. แหล่งข้อมูล
+   ขอบเขตน้ำของ UNOSAT และ GISTDA ระหว่างวันที่ 1 สิงหาคม ถึง 22 ตุลาคม 2567 (2024)
+   จังหวัดเชียงราย ประเทศไทย
+   ผลิตภัณฑ์ UNOSAT หมายเลข 4009 รหัสเหตุการณ์ FL20240912THA
+   หน้าผลิตภัณฑ์: https://unosat.org/products/4009
+   ชุดข้อมูล HDX 287af09d-7ffd-44c8-8602-f96d6e8375f0:
+   https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province
+   ไฟล์: FL20240912THA_GDB.zip ขนาด 27,977,189 ไบต์
+   SHA-256: 1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85
+
+2. การให้เครดิต
+   UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009
+
+3. สัญญาอนุญาต
+   Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+   https://creativecommons.org/licenses/by-sa/4.0/
+   ข้อความทางกฎหมาย: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+   HDX ระบุสัญญาอนุญาตว่า "cc-by-sa" โดยไม่ระบุรุ่น UNOSAT ตอบอีเมลของทีมว่า
+   "we approve the use" และไม่ได้ระบุรุ่น FloodGuard จึงใช้รุ่น 4.0
+   ตามที่เจ้าของโครงการตัดสินใจไว้ (ข้อตัดสินใจ D2)
+
+4. การอนุญาตแบบเดียวกัน (ShareAlike)
+   ชั้นข้อมูลหรือตารางทุกชิ้นที่ FloodGuard ดัดแปลงจากผลิตภัณฑ์ 4009
+   เผยแพร่ภายใต้สัญญาอนุญาตเดียวกัน คือ CC BY-SA 4.0
+   ท่านคัดลอก แบ่งปัน และดัดแปลงได้ หากให้เครดิตตามข้างต้น ใส่ลิงก์ไปยังสัญญาอนุญาต
+   ระบุสิ่งที่ท่านเปลี่ยนแปลง และเผยแพร่ผลงานของท่านภายใต้สัญญาอนุญาตเดียวกัน
+
+5. สิ่งที่ FloodGuard เปลี่ยนแปลง (ประกาศการเปลี่ยนแปลง)
+   ไฟล์ที่ดัดแปลงแต่ละไฟล์ระบุค่าของตนเองสำหรับสี่ขั้นตอนนี้:
+   - ตัดให้เหลือเฉพาะอำเภอแม่สาย
+   - ซ่อมรูปทรงเรขาคณิตที่ไม่ถูกต้อง พร้อมจำนวนส่วนที่ซ่อม
+   - แปลงระบบพิกัดจากระบบของแหล่งข้อมูลเป็นระบบที่ระบุไว้
+   - แปลงเป็นข้อมูลราสเตอร์ตามขนาดเซลล์ที่ระบุไว้
+
+6. ข้อจำกัด
+   - ผลิตภัณฑ์นี้เป็นข้อมูลเบื้องต้นและยังไม่ได้ตรวจสอบในพื้นที่จริง
+     (Field_Validation=0) FloodGuard ก็ไม่ได้ตรวจสอบเช่นกัน
+   - ข้อมูลแสดงน้ำสะสมตลอดฤดูกาลปี 2567 (2024) FloodGuard ใช้เป็นกรอบสถานการณ์สมมติเท่านั้น
+     ไม่ใช้เป็นข้อมูลสังเกตการณ์ของวันใดวันหนึ่ง
+   - ชื่อชั้นข้อมูลน้ำสะสมลงท้ายด้วย 20241012
+     แต่คำอธิบายผลิตภัณฑ์ครอบคลุมถึงวันที่ 22 ตุลาคม 2567 (2024)
+   - ประกาศนี้ไม่ได้ให้สิทธิ์ใหม่ในภาพถ่ายดาวเทียมของบุคคลที่สามที่ใช้จัดทำผลิตภัณฑ์
+   - ชุดข้อมูล HDX ถูกจัดเก็บถาวรแล้ว (ข้อมูลกำกับแก้ไขล่าสุด 17 กุมภาพันธ์ 2569 (2026))
+   - UNOSAT และ GISTDA ไม่ได้รับรอง FloodGuard หรือการใช้ผลิตภัณฑ์นี้ของ FloodGuard
+   - ประกาศนี้ไม่ใช่คำแนะนำทางกฎหมาย และไม่ใช่การเตือนภัยอย่างเป็นทางการ

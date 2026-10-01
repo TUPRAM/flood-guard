@@ -100,7 +100,8 @@ export function SupportingSections() {
           <a href="#main-content" className={styles.brand}>FloodGuard<span aria-hidden="true">.</span></a>
           <p>Historical planning demonstration. Not an official warning system.</p>
         </div>
-        <nav aria-label="Footer workspaces">
+        <nav aria-label="Footer navigation">
+          <a href="/policy/">Policy &amp; methods</a>
           <a href="/public/">Public</a>
           <a href="/command/">Planning</a>
           <a href="/studio/">Studio</a>

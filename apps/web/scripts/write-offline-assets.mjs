@@ -43,6 +43,7 @@ const coreAssets = appProfile === "public-production"
   ? publicCoreAssets
   : [
       ...publicCoreAssets,
+      "/policy/",
       "/command/",
       "/studio/",
       "/studio/planning-evidence/",
@@ -79,6 +80,7 @@ const versionedFiles = [
   resolve(out, "offline-demo", "mae-sai", "public-bundle.json"),
   resolve(out, "offline-demo", "mae-sai", "public-areas.json"),
   ...(appProfile === "competition" ? [
+    resolve(out, "policy", "index.html"),
     resolve(out, "command", "index.html"),
     resolve(out, "studio", "index.html"),
     resolve(out, "studio", "planning-evidence", "index.html"),
@@ -147,6 +149,7 @@ function resolveAppProfile(value) {
 function prunePublicProductionOutput() {
   const excluded = [
     "landing",
+    "policy",
     "command",
     "studio",
     "studies",

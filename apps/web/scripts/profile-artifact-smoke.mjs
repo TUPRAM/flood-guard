@@ -66,6 +66,7 @@ function validatePublicProduction() {
   }
   for (const excluded of [
     "landing",
+    "policy",
     "command",
     "studio",
     "studies",
@@ -95,7 +96,7 @@ function validatePublicProduction() {
       throw new Error(`Public root is missing the ${tab} navigation item.`);
     }
   }
-  if (/data-fg-landing|href="\/command\/?"|href="\/studio\/?"/i.test(rootHtml)) {
+  if (/data-fg-landing|href="\/command\/?"|href="\/studio\/?"|href="\/policy\/?"/i.test(rootHtml)) {
     throw new Error("Public root retains competition or staff navigation.");
   }
   for (const forbidden of [
@@ -118,9 +119,14 @@ function validatePublicProduction() {
     if (hit) throw new Error(`Public profile contains staff-only sentinel ${JSON.stringify(forbidden)} in ${hit}`);
     if (serviceWorker.includes(forbidden)) throw new Error(`Public service-worker cache inventory contains ${forbidden}`);
   }
-  for (const route of ["/command/", "/studio/"]) {
+  for (const route of ["/command/", "/studio/", "/policy/"]) {
     if (serviceWorker.includes(`"${route}"`)) throw new Error(`Public cache list contains staff route ${route}`);
   }
+  // Also no page below those routes (e.g. the /studio/ case replay) in the built precache list.
+  const publicCore = serviceWorker.match(/const CORE_ASSETS = (\[[^;]*\]);/)?.[1];
+  if (!publicCore) throw new Error("Public service worker has no CORE_ASSETS list.");
+  const staffCore = JSON.parse(publicCore).filter((url) => /^\/(command|studio|policy)\//.test(url));
+  if (staffCore.length > 0) throw new Error(`Public cache list contains staff pages: ${staffCore.join(", ")}`);
 }
 
 function validatePublicShell() {
@@ -154,6 +160,7 @@ function validateCompetition() {
     throw new Error("Competition deployment policy is incorrect.");
   }
   for (const required of [
+    "policy/index.html",
     "command/index.html",
     "studio/index.html",
     "studio/planning-evidence/index.html",
@@ -171,8 +178,8 @@ function validateCompetition() {
   ]) requirePath(required);
   const rootHtml = readText("index.html");
   if (!/data-fg-landing/i.test(rootHtml)) throw new Error("Competition artwork landing is missing.");
-  for (const route of ["public", "command", "studio"]) {
-    if (!rootHtml.includes(`href="/${route}/"`)) throw new Error(`Landing omits the ${route} workspace link.`);
+  for (const route of ["public", "command", "studio", "policy"]) {
+    if (!rootHtml.includes(`href="/${route}/"`)) throw new Error(`Landing omits the ${route} link.`);
   }
   const artwork = readLandingArtwork(out);
   const expectedArtworkUrls = [...fallbackArtworkUrls, ...sceneArtworkUrls(readJson("landing/floodguard-v2/scene-manifest.json"))].sort();
@@ -203,7 +210,7 @@ function validateCompetition() {
     const actualHash = createHash("sha256").update(readFileSync(resolve(out, asset.url.slice(1)))).digest("hex");
     if (actualHash !== asset.sha256 || statSync(resolve(out, asset.url.slice(1))).size !== asset.bytes) throw new Error(`Landing art lacks versioned integrity: ${asset.url}`);
   }
-  for (const route of ["/", "/public/", "/command/", "/studio/"]) {
+  for (const route of ["/", "/public/", "/command/", "/studio/", "/policy/"]) {
     if (!serviceWorker.includes(`"${route}"`)) throw new Error(`Competition cache list omits ${route}`);
   }
   const bundle = readJson("offline-demo/mae-sai/bundle.json");

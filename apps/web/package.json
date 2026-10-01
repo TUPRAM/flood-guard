@@ -17,6 +17,7 @@
     "test:offline": "node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs",
     "test:csp": "node scripts/csp-smoke.mjs",
     "test:studies": "node scripts/verify-study-assets.mjs && node scripts/study-browser-smoke.mjs",
+    "test:policy": "node scripts/policy-browser-smoke.mjs",
     "test:live-api": "node scripts/live-api-smoke.mjs",
     "qa:visual": "node scripts/capture-visual-qa.mjs"
   },

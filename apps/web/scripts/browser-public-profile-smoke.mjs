@@ -163,13 +163,14 @@ try {
   await assertLocalAreaSelection(page);
   await assertCompactPublicShell(page);
   await exercisePublicPages(page);
-  if (await page.locator('a[href^="/command"], a[href^="/studio"]').count()) {
-    throw new Error("Public profile root exposes a staff-surface link.");
+  if (await page.locator('a[href^="/command"], a[href^="/studio"], a[href^="/policy"]').count()) {
+    throw new Error("Public profile root exposes a competition-only link.");
   }
   const commandResponse = await context.request.get(`${baseUrl}/command/`);
   const studioResponse = await context.request.get(`${baseUrl}/studio/`);
-  if (commandResponse.status() !== 404 || studioResponse.status() !== 404) {
-    throw new Error(`Public profile staff routes did not return 404: ${commandResponse.status()}, ${studioResponse.status()}`);
+  const policyResponse = await context.request.get(`${baseUrl}/policy/`);
+  if (commandResponse.status() !== 404 || studioResponse.status() !== 404 || policyResponse.status() !== 404) {
+    throw new Error(`Public profile competition-only routes did not return 404: ${commandResponse.status()}, ${studioResponse.status()}, ${policyResponse.status()}`);
   }
 
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
@@ -189,6 +190,7 @@ try {
   if (cacheAudit.keys.length !== 1) throw new Error(`Public profile installed ${cacheAudit.keys.length} FloodGuard caches.`);
   if (cacheAudit.urls.some((url) => url.startsWith("/landing/"))) throw new Error("Public cache includes landing artwork.");
   for (const forbidden of [
+    "/policy/",
     "/command/",
     "/studio/",
     "/offline-demo/bundle.json",

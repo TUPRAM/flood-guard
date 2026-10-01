@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { geometry, openingPlateSource, plateSource, sceneAnchor, sceneFromId, scenes, story } from "@/lib/landing-v1/story";
 import { LandingExperience } from "./landing-experience";
 import { ChapterNav, Header, SceneFrame } from "./scene-frame";
+import { SupportingSections } from "./supporting-sections";
 
 const text = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 const frame = (id: string) => renderToStaticMarkup(<SceneFrame scene={sceneFromId(id)!} />);
@@ -150,6 +151,17 @@ describe("server-rendered landing scenes", () => {
 });
 
 describe("chapter and motion controls", () => {
+  it("links the policy explanation from the landing header and footer, outside workspace choices", () => {
+    const header = renderToStaticMarkup(<Header />);
+    expect(header).toMatch(/<nav[^>]+aria-label="Main navigation"[\s\S]*href="\/policy\/"/);
+    const support = renderToStaticMarkup(<SupportingSections />);
+    const footer = support.match(/<footer\b[\s\S]*?<\/footer>/)?.[0] ?? "";
+    expect(footer).toContain('href="/policy/"');
+    const workspaces = support.match(/<section id="workspaces"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(workspaces.match(/Open workspace/g)).toHaveLength(3);
+    expect(workspaces).not.toContain('href="/policy/"');
+  });
+
   it("keeps four named chapter links current across microstates and gives every next step a real destination", () => {
     for (const scene of scenes.slice(1)) {
       const html = renderToStaticMarkup(<ChapterNav scene={scene} />);

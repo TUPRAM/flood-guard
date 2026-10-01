@@ -10,7 +10,7 @@ import fallbackStyles from "./fallback-scene.module.css";
 export function Header({ motion, onMotion }: { motion?: boolean; onMotion?: () => void }) {
   return <header className={styles.header}>
     <a href="#top" className={styles.brand} aria-label="FloodGuard home">FloodGuard<span aria-hidden="true">.</span></a>
-    <nav className={styles.headerLinks} aria-label="Main navigation"><a href="#story-everyday">The story</a><a href="#evidence">Evidence</a><a href="#workspaces">Workspaces</a></nav>
+    <nav className={styles.headerLinks} aria-label="Main navigation"><a href="#story-everyday">The story</a><a href="#evidence">Evidence</a><a href="#workspaces">Workspaces</a><a className={styles.policyLink} href="/policy/">Policy</a></nav>
     <a className={styles.headerCta} href="/command/">Planning demo <span aria-hidden="true">↗</span></a>
     {onMotion && <button className={styles.motion} type="button" aria-pressed={motion} onClick={onMotion}>{motion ? "Motion reduced" : "Reduce motion"}</button>}
   </header>;

@@ -308,6 +308,32 @@ try {
   const accessCard = page.getByTestId("access-card");
   await expect(accessCard.getByText("Planning scenario, not observed evacuation outcomes", { exact: false })).toBeVisible();
   await expect(accessCard.getByTestId("access-without")).toContainText("/");
+  // Both shelter sets side by side, each counted both ways with its own baseline; no single headline ranks them.
+  const comparison = accessCard.getByTestId("set-comparison");
+  await expect(comparison.getByTestId("set-comparison-label")).toContainText("T1 scenario (model)");
+  await expect(comparison.getByTestId("set-comparison-label")).toContainText("No single figure ranks the sets");
+  await expect(comparison.getByTestId("set-comparison-label")).toContainText("Hours from illustrative stage keyframes, not observed.");
+  await expect(comparison.getByTestId("compare-reported-all-baseline")).toHaveText("34,525 of 81,799");
+  await expect(comparison.getByTestId("compare-reported-all-lost")).toHaveText("7,086 of 34,525 (21%)");
+  await expect(comparison.getByTestId("compare-reported-flooded-baseline")).toHaveText("5,698 of 14,169");
+  await expect(comparison.getByTestId("compare-reported-flooded-keeping")).toHaveText("299");
+  await expect(comparison.getByTestId("compare-reported-all-cutoff")).toContainText("Not reached in this replay");
+  await expect(comparison.getByTestId("compare-plan-all-baseline")).toHaveText("24,910 of 81,799");
+  await expect(comparison.getByTestId("compare-plan-all-lost")).toHaveText("13,429 of 24,910 (54%)");
+  await expect(comparison.getByTestId("compare-plan-flooded-baseline")).toHaveText("7,580 of 14,169");
+  await expect(comparison.getByTestId("compare-plan-flooded-keeping")).toHaveText("460");
+  await expect(comparison.getByTestId("compare-plan-flooded-cutoff")).toHaveText("10 Sep 23:00");
+  // The plan's table leads with its cut-off hour and explains its loss at the peak.
+  const planRows = await comparison.getByTestId("set-compare-plan").locator("tbody tr th").allInnerTexts();
+  assert(planRows.length === 4 && planRows[0].startsWith("Modelled access cut-off hour"), `The plan leads with the cut-off hour: ${planRows[0]}`);
+  const reportedRows = await comparison.getByTestId("set-compare-reported").locator("tbody tr th").allInnerTexts();
+  assert(reportedRows[0].startsWith("Had a shelter of this set within reach before the flood") && reportedRows[3].startsWith("Modelled access cut-off hour"),
+    `The reported set is read baseline first, cut-off hour last: ${reportedRows.join(" | ")}`);
+  await expect(comparison.getByTestId("plan-reading")).toContainText("it does not grade the choice of sites");
+  await expect(comparison.getByTestId("set-compare-reported")).toHaveAttribute("data-selected", "");
+  assert.equal(await accessCard.locator("[data-tone]").count(), 0, "The access card has no alert-toned headline figure");
+  const accessText = await accessCard.innerText();
+  assert(!/better plan|best plan|worse than|outperform|last safe departure/i.test(accessText), "The access card ranks no shelter set and names no safe departure time");
   // Like with like: by default the card counts the residents whose homes flood at the peak, as the plan does.
   await expect(accessCard.getByRole("radio", { name: /^Residents whose homes flood at the peak/ })).toBeChecked();
   await expect(accessCard.getByTestId("plan-optimises")).toContainText("What the ranked plan optimises");
@@ -317,6 +343,10 @@ try {
   await expect(page).toHaveURL(/[?&]pop=flooded(&|$)/);
   await expect(accessCard.getByTestId("equity-gap")).toContainText("Evacuation Equity Gap");
   await expect(accessCard.getByTestId("equity-gap")).toContainText("terrain/remoteness proxy");
+  // The equity gap is never printed as "0.00": with the reported set no proxy-vulnerable resident has lost access.
+  await expect(accessCard.getByTestId("equity-gap")).toContainText("no proxy-vulnerable resident has lost access");
+  await expect(accessCard.getByTestId("equity-gap")).not.toContainText("Evacuation Equity Gap: 0.00");
+  await expect(accessCard.getByTestId("equity-label")).toContainText("Vulnerable = terrain/remoteness proxy");
   await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
   const planSlider = accessCard.getByRole("slider", { name: /^Plan size k/ });
   await planSlider.fill("3");
@@ -356,7 +386,12 @@ try {
   await expect(popupWith("reported in use, Sep 2024")).toBeVisible();
   assert((await popupWith("reported in use, Sep 2024").locator("a[rel='noopener noreferrer']").count()) > 0, "Reported shelter popups link their sources");
   await expect(reportedCard.getByText("Not located on the map", { exact: false }).first()).toBeVisible();
+  // The comparison follows the plan size, and the chosen set carries the "shown on the map" marker.
+  await expect(comparison.getByTestId("set-compare-plan")).toHaveAttribute("data-selected", "");
+  await expect(comparison.getByTestId("set-compare-plan").locator("caption")).toContainText("Ranked plan, first 3 sites");
+  await expect(comparison.getByTestId("compare-plan-all-baseline")).toHaveText("17,794 of 81,799");
   checks.push("people in flood water and all-residents views, access scenario with population scope, set and k (live coverage sentence), cut-off heat, sticky map beside the cards, plan badges and sourced shelter popups");
+  checks.push("shelter sets side by side: both denominators, own baseline and share, modelled access cut-off hour (leading for the plan), no ranking headline, equity never printed as 0.00");
   await page.reload({ waitUntil: "networkidle" });
   await openLayers();
   await expect(page.getByRole("radio", { name: "People in flood water" })).toBeChecked();
@@ -365,6 +400,15 @@ try {
   await expect(page.getByRole("checkbox", { name: "People cut off (scenario)" })).toBeChecked();
   checks.push("deep link restores the residents view, shelter set, plan size and cut-off layer");
   await page.screenshot({ path: resolve(artifacts, "case-replay-desktop.png"), fullPage: true });
+  // Before the water rises nobody has lost access: no ratio is shown, and the card says why.
+  await page.goto(`${baseUrl}${caseRoute}?t=0`, { waitUntil: "networkidle" });
+  await waterModel();
+  const dryEquity = page.getByTestId("access-card").getByTestId("equity-gap");
+  await expect(dryEquity).toHaveAttribute("data-reason", "no_loss");
+  await expect(dryEquity).toContainText("Evacuation Equity Gap: no ratio shown");
+  await expect(dryEquity).toContainText("No one in either group has lost access at this replay hour");
+  await expect(page.getByTestId("access-card").getByTestId("compare-reported-all-lost")).toHaveText("0 of 34,525 (0%)");
+  checks.push("equity gap gives no ratio, with the reason, before anyone has lost access");
   for (const width of [360, 390]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
@@ -419,11 +463,24 @@ try {
   const touchChips = await touchPage.getByRole("group", { name: "ไปยังวัน (เที่ยงวันเวลาท้องถิ่น)" }).getByRole("button")
     .evaluateAll((buttons) => buttons.map((button) => Math.round(button.getBoundingClientRect().height)));
   assert(touchChips.length === 11 && touchChips.every((height) => height >= 40), `Day chips are finger-sized on touch: ${touchChips}`);
+  // The shelter-set comparison in Thai: same figures, the hours label, and no letter-spacing on Thai text.
+  const thaiComparison = touchPage.getByTestId("access-card").getByTestId("set-comparison");
+  await expect(thaiComparison.getByTestId("set-comparison-label")).toContainText("ไม่มีตัวเลขใดตัวเลขเดียวที่ใช้จัดอันดับชุดที่พักพิง");
+  await expect(thaiComparison.getByTestId("set-comparison-label")).toContainText("ชั่วโมงมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่ค่าที่สังเกตได้");
+  await expect(thaiComparison.getByTestId("compare-reported-all-lost")).toHaveText("7,086 จาก 34,525 (21%)");
+  await expect(thaiComparison.getByTestId("compare-plan-flooded-cutoff")).toHaveText("10 ก.ย. 23:00 น.");
+  await expect(touchPage.getByTestId("access-card").getByTestId("equity-gap")).toContainText("ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง");
+  const thaiSpacing = await touchPage.getByTestId("access-card").evaluate((card) => [...card.querySelectorAll("p, th, td, caption, legend, h2, h3, small, strong, span")]
+    .filter((element) => /[\u0E00-\u0E7F]/.test(element.textContent ?? "") && !["normal", "0px"].includes(getComputedStyle(element).letterSpacing))
+    .map((element) => `${element.tagName}: ${getComputedStyle(element).letterSpacing}`));
+  assert.deepEqual(thaiSpacing, [], "Thai text on the access card is not letter-spaced");
+  const thaiOverflow = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert(thaiOverflow <= 1, `The Thai case replay does not overflow at 390 px (${thaiOverflow}px)`);
   await touchPage.getByTestId("how-to-read").locator("summary").click();
   await expect(touchPage.getByTestId("how-to-status")).toContainText("สถานะ: ไม่ใช้ในการปฏิบัติการ");
   await expect(touchPage.getByTestId("how-to-status").getByTestId("generated-at")).toHaveText(/สร้างไฟล์ข้อมูลเมื่อ \d{1,2} \S+ 25\d{2} \(20\d{2}\) \d{2}:\d{2} น\./);
   await touch.close();
-  checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips, non-operational status and generation time in Thai");
+  checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips, non-operational status and generation time in Thai, shelter-set comparison in Thai without letter-spacing or overflow");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

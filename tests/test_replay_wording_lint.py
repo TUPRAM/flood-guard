@@ -72,7 +72,7 @@ def ids(findings) -> list[str]:
 # --- The shared rules ---------------------------------------------------------------------------------
 
 
-def test_rules_cover_the_six_banned_groups_of_the_replay_roadmap() -> None:
+def test_rules_cover_the_six_banned_groups_and_the_shelter_comparison_rules() -> None:
     assert RULES.rule_ids == (
         "real_time", "live", "forecast", "warning",  # affirmative real-time, live, forecast or warning
         "validation_as_agreement",  # validated, validation or accuracy used for agreement
@@ -80,6 +80,8 @@ def test_rules_cover_the_six_banned_groups_of_the_replay_roadmap() -> None:
         "september_extent",  # "September extent", "GISTDA's map"
         "return_period",  # 25-year, 100-year
         "road_schedule",  # schedule or closure plan for modelled roads
+        "set_ranking",  # a shelter set or plan called better, best or worse (P2-4)
+        "safe_departure",  # the modelled cut-off hour presented as a safe time to leave (P2-4)
     )
     assert len(RULES.allow) >= 8
 

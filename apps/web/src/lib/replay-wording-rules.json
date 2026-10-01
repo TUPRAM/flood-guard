@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.replay_wording_rules.v1",
-  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
+  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets or present a modelled hour as a safe time to leave. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
   "how_it_works": [
     "Text is normalised first: web addresses are removed, runs of white space become one space, curly apostrophes become straight ones and non-breaking hyphens become plain hyphens.",
     "Each pattern in allow is then removed, in order. They are explicit negations such as 'not a forecast'. A new negation needs a new entry here; a plain 'not' somewhere in the sentence is not enough.",
@@ -144,6 +144,18 @@
       "pattern": "(?<![A-Za-z0-9_])(?:re)?schedul[a-z]*|(?<![A-Za-z0-9_])closure plans?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])cut-off lists?(?![A-Za-z0-9_])|ตารางปิดถนน|แผนปิดถนน|กำหนดการปิดถนน",
       "message": "Modelled road inundation is not a schedule or a closure plan. Say 'modelled road inundation by hour'.",
       "bad": ["Road closure schedule", "Closure plan for Phahonyothin Road", "Cut-off list by subdistrict", "ตารางปิดถนนรายชั่วโมง"]
+    },
+    {
+      "id": "set_ranking",
+      "pattern": "(?<![A-Za-z0-9_])(?:better|best|worse|worst|winning|superior|inferior) (?:shelter )?(?:plan|set)s?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:plan|set|shelters) (?:is|are|performs?|does|do|looks?) (?:better|worse|best|worst)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])outperform[a-z]*|แผนจัดอันดับที่ดีกว่า|แผนจัดอันดับดีกว่า|แผนดีกว่า|ชุดที่พักพิงที่ดีกว่า|ชุดที่ดีกว่า|ดีกว่าที่พักพิงที่ใช้จริง",
+      "message": "The shelter sets are not ranked. Give both denominators (all residents, and residents whose homes flood) and do not call a plan or a set better, best or worse.",
+      "bad": ["The ranked plan is the better plan", "The plan outperforms the shelters used in 2024", "The best set of shelters for Mae Sai", "The plan performs better at the peak", "แผนจัดอันดับดีกว่าที่พักพิงที่ใช้จริงในปี 2567"]
+    },
+    {
+      "id": "safe_departure",
+      "pattern": "(?<![A-Za-z0-9_])last safe (?:departure|time|hour|moment|chance)s?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])safe (?:departure|evacuation) (?:time|hour|window)s?(?![A-Za-z0-9_])|เวลาออกเดินทางที่ปลอดภัย|เวลาอพยพที่ปลอดภัย",
+      "message": "The access cut-off hour is a modelled hour from illustrative stage keyframes, not a safe time to leave. Say 'modelled access cut-off hour'.",
+      "bad": ["Last safe departure: 10 Sep 22:00", "The last safe hour to leave is 22:00", "Safe departure window ends at 22:00", "เวลาออกเดินทางที่ปลอดภัยครั้งสุดท้าย 22:00 น."]
     }
   ],
   "mixed": [
@@ -153,6 +165,9 @@
     {"text": "ไม่ใช่ข้อมูลเรียลไทม์ แต่เป็นคำเตือนน้ำท่วม", "rules": ["warning"]},
     {"text": "See https://example.org/real-time-forecast/validation for the live warning.", "rules": ["live", "warning"]},
     {"text": "Field_Validation=0, unvalidated, invalid geometry repaired, official_warning: false", "rules": []},
-    {"text": "Modelled, not observed closures. First cut 11 Sep 02:00, reopened 13 Sep 06:00.", "rules": []}
+    {"text": "Modelled, not observed closures. First cut 11 Sep 02:00, reopened 13 Sep 06:00.", "rules": []},
+    {"text": "No single figure ranks the sets. Modelled access cut-off hour: 10 Sep 22:00. Hours from illustrative stage keyframes, not observed.", "rules": []},
+    {"text": "The smallest plan that gets most of the benefit; it does not grade the choice of sites.", "rules": []},
+    {"text": "The plan is better: its last safe departure is 23:00.", "rules": ["safe_departure", "set_ranking"]}
   ]
 }

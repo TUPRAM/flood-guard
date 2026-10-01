@@ -2,9 +2,11 @@
  * Parity of the browser's access and Evacuation Equity Gap logic with Python.
  *
  * The expected values come from `apps/web/scripts/equity-access-parity-fixture.py`, which runs the Python builder
- * (`lost_at`, `home_wet`) and `floodguard.equity.compute_equity_gap` on the served manifest's access node file.
- * A changed threshold, rounding rule or level step on either side fails here. Everything is a T1 scenario on a
- * modelled flood; "vulnerable" is the terrain/remoteness proxy.
+ * (`lost_at`, `home_wet`), `floodguard.replay_equity.replay_equity_gap` (the replay's equity rule with its null
+ * reasons) and `floodguard.shelter_set_comparison.shelter_set_summary` on the served manifest's access node file.
+ * A changed threshold, rounding rule, level step, group-size limit or cut-off share on either side fails here.
+ * Everything is a T1 scenario on a modelled flood; hours come from illustrative stage keyframes, not observed;
+ * "vulnerable" is the terrain/remoteness proxy.
  */
 
 import { createHash } from "node:crypto";
@@ -17,21 +19,39 @@ import {
   accessLevelIndex,
   accessLevelStep,
   accessSnapshot,
+  CUTOFF_COVERAGE_SHARE,
+  EQUITY_MIN_GROUP,
   evacuationEquityGap,
   floodedHomeMask,
   homeWetAt,
   nodeLostAccess,
   parseAccessNodes,
   scopeTotals,
+  shelterSetComparison,
   summarizeAccessSets,
   type EquityGap,
+  type EquityNullReason,
 } from "./flood-timeline-evacuation";
 
 type Band = "higher" | "lower" | "similar" | null;
+type Reason = EquityNullReason | null;
 /** vulnerable lost, vulnerable total, other lost, other total, then the Python results. */
-type EquityRow = [number, number, number, number, number | null, number | null, number | null, Band, string];
+type EquityRow = [number, number, number, number, number | null, number | null, number | null, Band, string, Reason];
 /** level index, people lost, vulnerable lost, other lost, then the Python results. */
-type LevelRow = [number, number, number, number, number | null, number | null, number | null, Band, string];
+type LevelRow = [number, number, number, number, number | null, number | null, number | null, Band, string, Reason];
+/** One shelter set counted for one scope by Python's `shelter_set_summary`. */
+interface ComparisonGroup {
+  set: string;
+  scope: "all" | "flooded";
+  residents: number;
+  baseline: number;
+  vulnerable_baseline: number;
+  at_peak: { keeping: number; lost: number; lost_share: number | null; vulnerable_lost: number };
+  cutoff_status: "reached" | "not_reached" | "no_baseline";
+  cutoff_hour: number | null;
+  /** hour, keeping, lost, lost share */
+  hours: [number, number, number, number | null][];
+}
 interface AccessGroup {
   set: string;
   scope: "all" | "flooded";
@@ -57,11 +77,16 @@ interface ParityFixture {
   lost_cases: [number, boolean[]][];
   home_codes: number[];
   home_wet_cases: [number, boolean[]][];
+  equity_minimum_group: number;
+  equity_null_reasons: string[];
   equity_columns: string[];
   equity_edge_cases: { case: string; row: EquityRow }[];
   equity_random_cases: EquityRow[];
   access_level_columns: string[];
   access: AccessGroup[];
+  cutoff_coverage_share: number;
+  set_comparison_hour_columns: string[];
+  set_comparison: ComparisonGroup[];
 }
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
@@ -73,8 +98,8 @@ const shelters = manifest.shelters!;
 const nodeBytes = new Uint8Array(readFileSync(publicFile(access.nodes.href)));
 const nodes = parseAccessNodes(nodeBytes, access);
 
-/** What Python reports for a gap: both rates, the ratio, the band its wording states and the wording itself. */
-const pythonView = (gap: EquityGap) => [gap.vulnerableRate, gap.nonVulnerableRate, gap.ratio, gap.band, gap.interpretation];
+/** What Python reports for a gap: both rates, the ratio, the band, the wording and the reason a ratio is withheld. */
+const pythonView = (gap: EquityGap) => [gap.vulnerableRate, gap.nonVulnerableRate, gap.ratio, gap.band, gap.interpretation, gap.reason];
 const gapOf = ([vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal]: readonly [number, number, number, number, ...unknown[]]) =>
   evacuationEquityGap({ vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal });
 const edgeCase = (name: string) => {
@@ -90,7 +115,10 @@ describe("Equity and access parity fixture", () => {
     expect(createHash("sha256").update(nodeBytes).digest("hex")).toBe(fixture.access_nodes_sha256);
     expect(fixture.peak_stage_m).toBe(shelters.method.peak_stage_m);
     expect(fixture.level_step_m).toBe(accessLevelStep(access.levels));
-    expect(fixture.generated_by).toContain("floodguard.equity.compute_equity_gap");
+    expect(fixture.generated_by).toContain("floodguard.replay_equity.replay_equity_gap");
+    expect(fixture.generated_by).toContain("floodguard.shelter_set_comparison.shelter_set_summary");
+    expect(fixture.equity_minimum_group).toBe(EQUITY_MIN_GROUP);
+    expect(fixture.cutoff_coverage_share).toBe(CUTOFF_COVERAGE_SHARE);
   });
 
   it("labels its figures as a T1 scenario with a proxy for vulnerability, a confidence, a timestamp and assumptions", () => {
@@ -100,6 +128,8 @@ describe("Equity and access parity fixture", () => {
     expect(fixture.confidence).toBe("low");
     expect(fixture.source_timestamp).toBe(access.source_timestamp);
     expect(fixture.assumptions.length).toBeGreaterThanOrEqual(3);
+    expect(fixture.assumptions.join(" ")).toContain("Hours come from illustrative stage keyframes, not observed");
+    expect(fixture.assumptions.join(" ")).toContain("the shelter sets are not ranked");
     expect(fixture.official_warning).toBe(false);
     // The fixture holds access figures only: no priority score and no action class.
     expect(JSON.stringify(Object.keys(fixture))).not.toMatch(/fpps|action_class/i);
@@ -145,10 +175,10 @@ describe("Access level and lost-access parity with the Python builder", () => {
   });
 });
 
-describe("Evacuation Equity Gap parity with floodguard.equity", () => {
-  it("gives Python's rates, ratio, band and wording on the hand-picked rule cases", () => {
-    expect(fixture.equity_columns.slice(4)).toEqual(["vulnerable_rate", "non_vulnerable_rate", "ratio", "band", "interpretation"]);
-    expect(fixture.equity_edge_cases.length).toBeGreaterThanOrEqual(30);
+describe("Evacuation Equity Gap parity with floodguard.replay_equity", () => {
+  it("gives Python's rates, ratio, band, wording and reason on the hand-picked rule cases", () => {
+    expect(fixture.equity_columns.slice(4)).toEqual(["vulnerable_rate", "non_vulnerable_rate", "ratio", "band", "interpretation", "reason"]);
+    expect(fixture.equity_edge_cases.length).toBeGreaterThanOrEqual(40);
     for (const { case: name, row } of fixture.equity_edge_cases) expect(pythonView(gapOf(row)), name).toEqual(row.slice(4));
   });
 
@@ -174,6 +204,40 @@ describe("Evacuation Equity Gap parity with floodguard.equity", () => {
     expect(edgeCase("only vulnerable loss").slice(6, 8)).toEqual([null, null]);
     expect(edgeCase("no vulnerable residents").slice(4, 8)).toEqual([null, 0.1, null, null]);
     expect(edgeCase("no other residents").slice(4, 8)).toEqual([0.1, null, null, null]);
+  });
+
+  it("withholds the ratio with reason no_loss when neither group has lost access, as Python does", () => {
+    for (const name of ["no loss in either group", "no loss, both groups large", "no loss, groups of exactly 50", "both rates round to zero"]) {
+      const row = edgeCase(name);
+      expect(row.slice(4), name).toEqual([0, 0, null, null, "Equity gap not computed: neither group has lost access.", "no_loss"]);
+      expect(gapOf(row), name).toMatchObject({ status: "no_loss", reason: "no_loss", ratio: null, band: null });
+    }
+  });
+
+  it("withholds the ratio with reason insufficient_group_denominator below 50 residents per group, as Python does", () => {
+    expect(fixture.equity_null_reasons).toEqual(["insufficient_group_denominator", "no_loss", "undefined_ratio"]);
+    const tooSmall = [
+      "vulnerable group of 49.99", "vulnerable group of 49 ", "other group of 49", "both groups too small", "one resident in the vulnerable group",
+      "too small and no loss", "too small and only vulnerable loss", "no vulnerable residents", "no vulnerable residents and no other loss",
+      "no other residents", "no residents at all",
+    ];
+    for (const name of tooSmall) {
+      const row = edgeCase(name);
+      expect(Math.min(row[1], row[3]), name).toBeLessThan(EQUITY_MIN_GROUP);
+      expect(row.slice(6), name).toEqual([null, null, "Equity gap not computed: a group has fewer than 50 residents.", "insufficient_group_denominator"]);
+      expect(gapOf(row), name).toMatchObject({ status: "insufficient_group_denominator", reason: "insufficient_group_denominator", ratio: null, band: null });
+    }
+    // Exactly 50 residents is enough: a ratio is given.
+    expect(edgeCase("vulnerable group of exactly 50").slice(6)).toEqual([2, "higher", "Vulnerable residents are 2 times more likely to lose access.", null]);
+    expect(edgeCase("other group of exactly 50").slice(6)).toEqual([0.5, "lower", "Vulnerable residents are 0.5 times as likely to lose access.", null]);
+    // Every reason in the fixture is one the page knows, and it is null exactly when there is a ratio.
+    const rows = [...fixture.equity_edge_cases.map((item) => item.row), ...fixture.equity_random_cases, ...fixture.access.flatMap((group) => group.levels)];
+    for (const row of rows) {
+      expect(row[9] === null).toBe(row[6] !== null);
+      if (row[9] !== null) expect(fixture.equity_null_reasons).toContain(row[9]);
+    }
+    const reasons = new Set(fixture.equity_edge_cases.map((item) => item.row[9]));
+    expect([...reasons]).toEqual(expect.arrayContaining([null, "insufficient_group_denominator", "no_loss", "undefined_ratio"]));
   });
 
   it("gives Python's result on 150 reproducible inputs with fractional residents", () => {
@@ -240,6 +304,10 @@ describe("Access loss and equity parity on the served node file (T1 scenario)", 
       }
     }
     expect(compared).toBe(fixture.access.length * access.levels.length);
+    // On the served data, before the water rises nobody has lost access: the reason is no_loss, not a ratio of 1.
+    for (const group of fixture.access) {
+      expect(group.levels[0].slice(6), `${group.set}/${group.scope}`).toEqual([null, null, "Equity gap not computed: neither group has lost access.", "no_loss"]);
+    }
   });
 
   it("reproduces the baked keyframe figures, so the fixture and the manifest agree", () => {
@@ -249,6 +317,76 @@ describe("Access loss and equity parity on the served node file (T1 scenario)", 
         const row = group.levels[accessLevelIndex(day.stage_m, access.levels)];
         expect(roundLikePython(row[1], 0), `${day.date} ${set}`).toBe(baked.people_lost_access);
       }
+    }
+  });
+});
+
+describe("Shelter set comparison parity with floodguard.shelter_set_comparison (T1 scenario)", () => {
+  const stages = hourlyStages(manifest.stage_anchors);
+  const scoped = {
+    all: { summaries: summarizeAccessSets(nodes, access, null), totals: scopeTotals(nodes, null) },
+    flooded: (() => {
+      const mask = floodedHomeMask(nodes, shelters.method.peak_stage_m, manifest.hand.step_m, manifest.hand.channel_code, manifest.hand.never_code);
+      return { summaries: summarizeAccessSets(nodes, access, mask), totals: scopeTotals(nodes, mask) };
+    })(),
+  };
+  const compare = (group: ComparisonGroup, stage: number) =>
+    shelterSetComparison(scoped[group.scope].summaries[access.sets.indexOf(group.set)], scoped[group.scope].totals, stage, stages, access.levels);
+
+  it("covers every shelter set of the manifest, counted for all residents and for flooded homes", () => {
+    expect(fixture.set_comparison.map((group) => `${group.set}/${group.scope}`)).toEqual(access.sets.flatMap((set) => [`${set}/all`, `${set}/flooded`]));
+    expect(fixture.set_comparison_hour_columns).toEqual(["hour", "keeping", "lost", "lost_share"]);
+    const hours = fixture.set_comparison[0].hours.map(([hour]) => hour);
+    // Before the flood, the rise, the peak and the recession are all sampled.
+    expect(hours).toEqual(expect.arrayContaining([0, 46, 47, 58, 84, 263]));
+  });
+
+  it("gives Python's baseline, residents keeping access, newly lost and share at the modelled peak", () => {
+    for (const group of fixture.set_comparison) {
+      const label = `${group.set}/${group.scope}`;
+      const row = compare(group, fixture.peak_stage_m);
+      expect(row.residents, label).toBeCloseTo(group.residents, 6);
+      expect(row.baseline, label).toBeCloseTo(group.baseline, 6);
+      expect(row.keeping, label).toBeCloseTo(group.at_peak.keeping, 6);
+      expect(row.lost, label).toBeCloseTo(group.at_peak.lost, 6);
+      expect(row.lostShare, label).toBe(group.at_peak.lost_share);
+      expect(row.vulnerableBaseline, label).toBeCloseTo(group.vulnerable_baseline, 6);
+      expect(row.vulnerableLost, label).toBeCloseTo(group.at_peak.vulnerable_lost, 6);
+    }
+  });
+
+  it("gives Python's modelled access cut-off hour for every set and scope", () => {
+    const statuses = new Set<string>();
+    for (const group of fixture.set_comparison) {
+      const { cutoff } = compare(group, fixture.peak_stage_m);
+      expect([cutoff.status, cutoff.hour], `${group.set}/${group.scope}`).toEqual([group.cutoff_status, group.cutoff_hour]);
+      statuses.add(group.cutoff_status);
+    }
+    // Both outcomes occur on the served data.
+    expect([...statuses]).toEqual(expect.arrayContaining(["reached", "not_reached"]));
+  });
+
+  it("gives Python's figures at the sampled replay hours, from before the flood to the recession", () => {
+    let compared = 0;
+    for (const group of fixture.set_comparison) {
+      for (const [hour, keeping, lost, share] of group.hours) {
+        const row = compare(group, stages[hour]);
+        const label = `${group.set}/${group.scope} hour ${hour}`;
+        expect(row.keeping, label).toBeCloseTo(keeping, 6);
+        expect(row.lost, label).toBeCloseTo(lost, 6);
+        expect(row.lostShare, label).toBe(share);
+        compared += 1;
+      }
+    }
+    expect(compared).toBe(fixture.set_comparison.length * fixture.set_comparison[0].hours.length);
+  });
+
+  it("agrees with the access rows of the same fixture, so the two Python paths say the same", () => {
+    for (const group of fixture.access) {
+      const twin = fixture.set_comparison.find((item) => item.set === group.set && item.scope === group.scope)!;
+      const peakLevel = accessLevelIndex(fixture.peak_stage_m, access.levels);
+      expect(twin.at_peak.lost, `${group.set}/${group.scope}`).toBeCloseTo(group.levels[peakLevel][1], 6);
+      expect(twin.baseline + group.no_baseline_access, `${group.set}/${group.scope}`).toBeCloseTo(group.totals.population, 6);
     }
   });
 });

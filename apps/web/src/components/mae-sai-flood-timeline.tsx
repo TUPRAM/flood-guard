@@ -132,6 +132,7 @@ import {
   reportedShelterCheck,
   reportedSiteRole,
   scopeTotals,
+  shelterSetComparison,
   siteModelled,
   summarizeAccessSets,
   tambonResidents,
@@ -846,6 +847,17 @@ export function MaeSaiFloodTimeline() {
     () => (selectedSummary && accessInfo && derived ? accessLostSeries(selectedSummary, derived.stages, accessInfo.levels) : null),
     [selectedSummary, accessInfo, derived],
   );
+  // The reported set and the chosen plan size, each counted for both scopes: the access card shows them side by side.
+  const setComparisons = useMemo(() => {
+    if (!accessModel || !accessInfo || !derived) return null;
+    const both = (setId: string) => {
+      const index = accessInfo.sets.indexOf(setId);
+      if (index < 0) return null;
+      const counted = (model: typeof accessModel.all) => shelterSetComparison(model.summaries[index], model.totals, stage, derived.stages, accessInfo.levels);
+      return { all: counted(accessModel.all), flooded: counted(accessModel.flooded) };
+    };
+    return { reported: both(REPORTED_SET_ID), plan: both(planSetId(planK)) };
+  }, [accessModel, accessInfo, derived, stage, planK]);
   const scopeMask = scoped?.mask ?? null;
   const cutoffFrame = useMemo<CutoffFrame | null>(
     () => (showCutoff && nodes && selectedSetIndex >= 0 ? { nodes, setIndex: selectedSetIndex, levelIndex: accessLevel, mask: scopeMask, scope: accessScope } : null),
@@ -2395,6 +2407,7 @@ export function MaeSaiFloodTimeline() {
                     scopeTotals={scoped?.totals ?? null}
                     allResidents={accessModel?.all.totals.population ?? accessInfo.totals.population}
                     floodedResidents={accessModel?.flooded.totals.population ?? shelterInfo.demand_people}
+                    comparison={setComparisons}
                     language={lang}
                     status={accessNodes.status === "error" || (accessModel && selectedSetIndex < 0) ? "error" : accessModel ? "ready" : "loading"}
                   />

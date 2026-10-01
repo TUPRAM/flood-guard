@@ -16,7 +16,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-import { ExternalChecks, PeopleInWaterCard, ReportedSheltersCard, ShelterPlanCard } from "@/components/mae-sai-evacuation-panels";
+import { AccessCard, ExternalChecks, PeopleInWaterCard, ReportedSheltersCard, ShelterPlanCard } from "@/components/mae-sai-evacuation-panels";
 import {
   HowToRead,
   Hydrograph,
@@ -46,6 +46,18 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "./flood-timeline";
+import {
+  accessLostSeries,
+  accessSnapshot,
+  floodedHomeMask,
+  parseAccessNodes,
+  planSetId,
+  REPORTED_SET_ID,
+  scopeTotals,
+  shelterSetComparison,
+  summarizeAccessSets,
+  tambonResidents,
+} from "./flood-timeline-evacuation";
 import {
   describeWordingFindings,
   findWordingViolations,
@@ -129,7 +141,38 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
   const viirs = manifest.viirs_daily!;
   const noop = () => undefined;
   const panel = (name: string, node: React.ReactElement) => ({ name: `${name} (${language})`, html: renderToStaticMarkup(node) });
+  // The access card with its side-by-side shelter-set comparison, as the page builds it from the node file.
+  const access = manifest.access!;
+  const shelters = manifest.shelters!;
+  const nodes = parseAccessNodes(new Uint8Array(readFileSync(resolve(publicRoot, access.nodes.href.replace(/^\//, "")))), access);
+  const mask = floodedHomeMask(nodes, shelters.method.peak_stage_m, manifest.hand.step_m, manifest.hand.channel_code, manifest.hand.never_code);
+  const scopes = {
+    all: { summaries: summarizeAccessSets(nodes, access), totals: scopeTotals(nodes) },
+    flooded: { summaries: summarizeAccessSets(nodes, access, mask), totals: scopeTotals(nodes, mask) },
+  };
+  const bothScopes = (setId: string, stage: number) => {
+    const index = access.sets.indexOf(setId);
+    return {
+      all: shelterSetComparison(scopes.all.summaries[index], scopes.all.totals, stage, stages, access.levels),
+      flooded: shelterSetComparison(scopes.flooded.summaries[index], scopes.flooded.totals, stage, stages, access.levels),
+    };
+  };
+  const accessCard = (set: "reported" | "plan", stage: number) => {
+    const summary = scopes.flooded.summaries[access.sets.indexOf(set === "reported" ? REPORTED_SET_ID : planSetId(shelters.knee_k))];
+    return (
+      <AccessCard access={access} shelters={shelters} snapshot={accessSnapshot(summary, stage, access.levels)}
+        series={accessLostSeries(summary, stages, access.levels)} time={3.5} names={names}
+        tambonTotals={tambonResidents(nodes, access.tambons.length, mask)} shelterSet={set} planK={shelters.knee_k}
+        onShelterSet={noop} onPlanK={noop} showCutoff={false} onShowCutoff={noop} scope="flooded" onScope={noop}
+        scopeTotals={scopes.flooded.totals} allResidents={scopes.all.totals.population} floodedResidents={scopes.flooded.totals.population}
+        comparison={{ reported: bothScopes(REPORTED_SET_ID, stage), plan: bothScopes(planSetId(shelters.knee_k), stage) }}
+        language={language} status="ready" />
+    );
+  };
   return [
+    panel("AccessCard reported, peak", accessCard("reported", peak)),
+    panel("AccessCard plan, peak", accessCard("plan", peak)),
+    panel("AccessCard plan, before the flood", accessCard("plan", 0)),
     panel("HowToRead", <HowToRead manifest={manifest} language={language} />),
     panel("ImpactCard", <ImpactCard manifest={manifest} stats={stats} derived={derived} language={language} />),
     panel("TimelineLegend", <TimelineLegend language={language} unmodelledRoads unmodelledFacilities />),
@@ -165,7 +208,7 @@ function corpus(): { source: string; text: string }[] {
 const lint = (items: { source: string; text: string }[]) => items.flatMap(({ source, text }) => findWordingViolations(text, source));
 
 describe("Replay wording rules (shared with Python)", () => {
-  it("cover the six banned groups of the replay roadmap", () => {
+  it("cover the six banned groups of the replay roadmap and the shelter-comparison rules", () => {
     expect(ruleIds).toEqual([
       "real_time", "live", "forecast", "warning", // affirmative real-time, live, forecast or warning
       "validation_as_agreement", // validated, validation or accuracy used for agreement
@@ -173,6 +216,8 @@ describe("Replay wording rules (shared with Python)", () => {
       "september_extent", // "September extent", "GISTDA's map"
       "return_period", // 25-year, 100-year
       "road_schedule", // schedule or closure plan for modelled roads
+      "set_ranking", // a shelter set or plan called better, best or worse (P2-4)
+      "safe_departure", // the modelled cut-off hour presented as a safe time to leave (P2-4)
     ]);
     expect(new Set(REPLAY_WORDING_RULES.allow.map((item) => item.id)).size).toBe(REPLAY_WORDING_RULES.allow.length);
   });
@@ -222,7 +267,13 @@ describe("Replay wording lint: current text", () => {
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(35);
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(41);
+    // The access card is linted with both shelter sets side by side, at the peak and before the flood.
+    const accessText = items.filter((item) => item.source.startsWith("AccessCard")).map((item) => item.text).join(" ");
+    expect(accessText).toContain("Modelled access cut-off hour");
+    expect(accessText).toContain("No single figure ranks the sets");
+    expect(accessText).toContain("no ratio shown");
+    expect(accessText).toContain("ไม่แสดงอัตราส่วน");
     // The corpus really holds the standing disclaimer in both languages, export caption included.
     const all = items.map((item) => item.text).join("\n");
     expect(all).toContain("not real-time, not an official warning");

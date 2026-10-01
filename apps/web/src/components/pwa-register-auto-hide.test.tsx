@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/studio/cases/mae-sai-2024/" }));
 
-import { autoHidesOn, PWA_AUTO_HIDE_MS, PwaRegister, pwaAvailabilityCopy } from "./pwa-register";
+import { autoHidesOn, pillStaysHidden, PWA_AUTO_HIDE_MS, PwaRegister, pwaAvailabilityCopy } from "./pwa-register";
 
 describe("PwaRegister auto-hide option", () => {
   it("matches only the listed path prefixes", () => {
@@ -22,6 +22,23 @@ describe("PwaRegister auto-hide option", () => {
     expect(html).toContain('data-pwa-availability="true"');
     expect(html).toContain(`aria-label="${pwaAvailabilityCopy("en").dismiss}"`);
     expect(pwaAvailabilityCopy("th").dismiss).not.toMatch(/[A-Za-z]/);
+  });
+
+  it("brings a hidden pill back when the connection status changes, or after navigating elsewhere", () => {
+    const page = "/studio/cases/mae-sai-2024/";
+    // Never hidden: it shows.
+    expect(pillStaysHidden(null, page, true)).toBe(false);
+    // Hidden while online: it stays hidden until the page goes offline, then returns.
+    const hiddenOnline = { path: page, online: true };
+    expect(pillStaysHidden(hiddenOnline, page, true)).toBe(true);
+    expect(pillStaysHidden(hiddenOnline, page, false)).toBe(false);
+    // Hidden again while offline: it stays hidden until the connection comes back.
+    const hiddenOffline = { path: page, online: false };
+    expect(pillStaysHidden(hiddenOffline, page, false)).toBe(true);
+    expect(pillStaysHidden(hiddenOffline, page, true)).toBe(false);
+    // As before, navigating to another page shows it again.
+    expect(pillStaysHidden(hiddenOnline, "/studio/cases/other/", true)).toBe(false);
+    expect(pillStaysHidden(hiddenOnline, null, true)).toBe(false);
   });
 
   it("keeps the pill unchanged where the option does not apply", () => {

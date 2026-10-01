@@ -22,12 +22,6 @@ import {
   ARRIVAL_RAMP,
   arrivalClasses,
   assumptionCaveat,
-  buildArrivalLut,
-  buildDepthLut,
-  buildDurationLut,
-  buildFactorDepthLut,
-  buildPeopleLut,
-  buildResidentsLut,
   CHANNEL_RGBA,
   codeTimings,
   coverageComplete,
@@ -41,7 +35,6 @@ import {
   depthFactorKeys,
   districtStats,
   DURATION_CLASSES,
-  FACTOR_LUT_SIZE,
   facilitiesInWater,
   facilityDepth,
   facilityWet,
@@ -63,8 +56,6 @@ import {
   manifestRevision,
   namedRoadLengths,
   observationGap,
-  paintDepth,
-  paintLowConfidence,
   peopleKeys,
   phaseAt,
   projectToFrame,
@@ -151,6 +142,19 @@ import {
   type ShelterSetChoice,
   type WaterMode,
 } from "@/lib/flood-timeline-link";
+import { popupFit } from "@/lib/flood-timeline-layout";
+import {
+  drawnWaterMode,
+  hatchesLowConfidence,
+  paintWaterPlan,
+  residentsPendingText,
+  WATER_LEGEND_COPY,
+  waterPaintPlan,
+  type ResidentsGrid,
+  type ResidentsPending,
+  type WaterGrid,
+  type WaterTimings,
+} from "@/lib/flood-timeline-water";
 import { competitionPagesAvailable, POLICY_ROUTE } from "@/lib/policy-links";
 import { useLanguage } from "@/lib/use-language";
 import {
@@ -224,15 +228,12 @@ interface ReplayData {
  * HAND codes, optional depth-factor painter keys (`code | factor << 8`), the cells that can ever be wet, and (when the
  * manifest declares a low-confidence channel) the low-confidence cells among them with their hatch stripes.
  */
-interface HandRaster {
-  codes: Uint8Array;
-  factorKeys: Uint16Array | null;
-  candidates: Uint32Array;
+interface HandRaster extends WaterGrid {
   lowCells: Uint32Array | null;
   lowStripes: Uint8Array | null;
 }
 /** Residents on the water grid: density codes, people painter keys (`code | density << 8`), inhabited cells, colours per code. */
-interface PeopleRaster { density: Uint8Array; keys: Uint16Array; inhabited: Uint32Array; colours: Uint32Array }
+type PeopleRaster = ResidentsGrid;
 type LoadState = { status: "loading" } | { status: "error" } | { status: "ready"; data: ReplayData };
 type ObservationEntry = { observation: TimelineObservation; at: number };
 type AsyncPart<T> = { status: "loading" } | { status: "error" } | { status: "ready"; value: T } | { status: "absent" };
@@ -574,8 +575,12 @@ const DEFAULT_LAYERS: LayerVisibility = {
 };
 /** Water opacity while the imagery swipe is on, so the two images stay comparable under the model water. */
 const COMPARE_WATER_OPACITY = 0.3;
-/** Popups pan clear of the zoom control and the imagery notes (top) and of the attribution and legend (bottom). */
-const POPUP_PAN = { autoPan: true, autoPanPaddingTopLeft: [56, 96] as [number, number], autoPanPaddingBottomRight: [24, 48] as [number, number] };
+/** Popup body widths on a wide map; `popupFit` narrows them and sets the height and the pan paddings per map size. */
+const POPUP_WIDTH = { reported: 300, candidate: 290, gauge: 280 } as const;
+/** While a popup is open the map may pan this far (as a share of the replay area) past it, so a popup near the edge fits. */
+const POPUP_BOUNDS_PAD = 2;
+/** The map's usual panning limit around the replay area. */
+const MAP_BOUNDS_PAD = 0.35;
 /** Rain gauge marker: a small drop, so it never reads as a shelter or facility symbol. */
 const GAUGE_PATH = "M12 2.5C9 7 5.5 10.6 5.5 14.6a6.5 6.5 0 0 0 13 0C18.5 10.6 15 7 12 2.5z";
 const GAUGE_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="${GAUGE_PATH}"/></svg>`;
@@ -612,16 +617,34 @@ export function postEventOptical(
   return tFromDate(observation.local) >= tFromLocalDate(onset.start) ? observation : null;
 }
 
-/** Play button label: the whole window and its length at the start, "Play from here" mid-way, "Replay" at the end. */
+/**
+ * Play button label: the whole window and its length at the start, "Play from here" mid-way, "Replay" at the end.
+ * The seconds keep a non-breaking space before their unit, so a narrow button breaks the label before the bracket.
+ */
 export function playLabel(time: number, playing: boolean, language: Language): string {
   const th = language === "th";
   if (playing) return th ? "หยุดชั่วคราว" : "Pause";
   if (time >= TIMELINE_END_T - 1e-6) return th ? "เล่นอีกครั้ง" : "Replay";
   if (time <= START_T + 1e-6) {
     const seconds = Math.round((TIMELINE_END_T - time) * SECONDS_PER_DAY);
-    return th ? `เล่น 9 → 19 ก.ย. (${seconds} วินาที)` : `Play 9 → 19 Sep (${seconds} s)`;
+    return th ? `เล่น 9 → 19 ก.ย. (${seconds}\u00a0วินาที)` : `Play 9 → 19 Sep (${seconds}\u00a0s)`;
   }
   return th ? "เล่นต่อจากตรงนี้" : "Play from here";
+}
+
+/**
+ * Every label the Play button can show in a language. The button reserves the width of the widest one, so switching
+ * between Play and Pause never changes its width and nothing beside it moves.
+ */
+export function playLabels(language: Language): string[] {
+  // Up to the default start the label gives the seconds left, which differ by the hour.
+  const opening = Array.from({ length: Math.round(START_T * 24) + 1 }, (_, hour) => playLabel(hour / 24, false, language));
+  return [...new Set([
+    ...opening,
+    playLabel((START_T + TIMELINE_END_T) / 2, false, language),
+    playLabel(TIMELINE_END_T, false, language),
+    playLabel(START_T, true, language),
+  ])];
 }
 
 export function MaeSaiFloodTimeline() {
@@ -678,6 +701,7 @@ export function MaeSaiFloodTimeline() {
   const controllerRef = useRef<MapController | null>(null);
   const shareField = useRef<HTMLInputElement | null>(null);
   const layersButton = useRef<HTMLButtonElement | null>(null);
+  const layersPanel = useRef<HTMLDivElement | null>(null);
   const lastLinkWrite = useRef(0);
 
   const moveTo = useCallback((value: number) => {
@@ -922,6 +946,12 @@ export function MaeSaiFloodTimeline() {
     return () => window.clearTimeout(timer);
   }, [linkReady, linkState]);
 
+  // Opening the "Map layers" drawer moves keyboard focus into it (it sits after the map and its markers in the page
+  // order); closing it hands focus back to the button (see `closeLayers`).
+  useEffect(() => {
+    if (layersOpen) layersPanel.current?.focus();
+  }, [layersOpen]);
+
   useEffect(() => {
     if (share.status === "manual") shareField.current?.select();
     if (share.status !== "copied") return;
@@ -964,6 +994,7 @@ export function MaeSaiFloodTimeline() {
     let resizeTimer: number | undefined;
     let resizeObserver: ResizeObserver | undefined;
     let attributionObserver: ResizeObserver | undefined;
+    let footObserver: ResizeObserver | undefined;
     const timers = new Set<number>();
     const frames = new Set<number>();
 
@@ -983,9 +1014,16 @@ export function MaeSaiFloodTimeline() {
         attributionObserver.observe(attributionElement);
         syncAttribution();
       }
-      if (frameElement) {
-        map.on("popupopen", () => { frameElement.dataset.popup = "open"; });
-        map.on("popupclose", () => { delete frameElement.dataset.popup; });
+      // The note and button stack above the attribution: the legend and the popups keep clear of its measured height.
+      const footElement = frameElement?.querySelector<HTMLElement>("[data-map-foot]") ?? null;
+      if (footElement && frameElement) {
+        const syncFoot = () => {
+          const height = Math.ceil(footElement.offsetHeight);
+          frameElement.style.setProperty("--fg-foot-h", `${height > 0 ? height + 8 : 0}px`);
+        };
+        footObserver = new ResizeObserver(syncFoot);
+        footObserver.observe(footElement);
+        syncFoot();
       }
       const bounds = L.latLngBounds(m.bounds);
       const fit = () => {
@@ -993,8 +1031,50 @@ export function MaeSaiFloodTimeline() {
         map.fitBounds(bounds, { padding: [6, 6], animate: false });
         map.setMinZoom(Math.max(8, map.getZoom() - 1.5));
       };
-      map.setMaxBounds(bounds.pad(0.35));
+      const usualBounds = bounds.pad(MAP_BOUNDS_PAD);
+      map.setMaxBounds(usualBounds);
       fit();
+      // Popups: the notes and the legend step aside while one is open. At the fitted zoom the usual panning limit
+      // would pull the map back and leave a popup near the edge cut off, so the limit is wider while a popup is open.
+      let openPopups = 0;
+      let boundsWidened = false;
+      map.on("autopanstart", () => {
+        if (boundsWidened) return;
+        boundsWidened = true;
+        map.setMaxBounds(bounds.pad(POPUP_BOUNDS_PAD));
+      });
+      map.on("popupopen", () => {
+        openPopups += 1;
+        if (frameElement) frameElement.dataset.popup = "open";
+      });
+      map.on("popupclose", () => {
+        openPopups = Math.max(0, openPopups - 1);
+        if (frameElement && openPopups === 0) delete frameElement.dataset.popup;
+        if (disposed) return;
+        // Another popup may open in the same tick (a click on a second marker): restore the limit only if none did.
+        const timer = window.setTimeout(() => {
+          timers.delete(timer);
+          if (disposed || openPopups > 0 || !boundsWidened) return;
+          boundsWidened = false;
+          map.setMaxBounds(usualBounds);
+        }, 0);
+        timers.add(timer);
+      });
+      /** Size a layer's popup for the map as it is right now, then build its content. */
+      const fitted = (layer: Layer, preferredWidth: number, content: () => HTMLElement) => () => {
+        const popup = layer.getPopup();
+        if (popup) {
+          const size = map.getSize();
+          const footHeight = footElement?.offsetHeight ?? 0;
+          Object.assign(popup.options, popupFit({
+            mapWidth: size.x,
+            mapHeight: size.y,
+            preferredWidth,
+            bottomReserved: (attributionElement?.offsetHeight ?? 0) + (footHeight > 0 ? footHeight + 8 : 0),
+          }));
+        }
+        return content();
+      };
 
       for (const [name, zIndex] of [
         ["fg-imagery", 250], ["fg-compare-left", 251], ["fg-compare-right", 252], ["fg-water", 350], ["fg-viirs", 355], ["fg-cutoff", 360],
@@ -1112,54 +1192,29 @@ export function MaeSaiFloodTimeline() {
         };
       }
       /**
-       * Paint through the shared LUT path: one key array, one LUT, one set of cells, buffers reused between paints.
-       * The residents view paints inhabited cells instead of wet-able ones, so the canvas is cleared when the cell set changes.
-       * In the depth and people views, wet low-confidence cells (filled or dead-flat low ground) are then washed out and hatched.
+       * Paint through the shared plan (`waterPaintPlan`): one key array, one LUT, one set of cells, buffers reused
+       * between paints. The residents view paints inhabited cells instead of wet-able ones, so the canvas is cleared
+       * when the cell set changes. Wet low-confidence cells are washed out and hatched in every view that draws water.
        */
+      const waterTimings: WaterTimings = { arrivalHour: analysis.timings.arrivalHour, hoursUnder: analysis.timings.hoursUnder, arrival: analysis.arrival };
       const paintWater = (layer: WaterLayer, raster: HandRaster, frame: MapFrame) => {
-        let keys: Uint8Array | Uint16Array = raster.codes;
-        let cells = raster.candidates;
-        let size = 256;
-        let build: (out: Uint32Array) => Uint32Array;
-        const people = frame.people;
-        if (frame.waterMode === "people" && people) {
-          keys = people.keys;
-          size = FACTOR_LUT_SIZE;
-          build = (out) => buildPeopleLut(frame.stage, m.hand.step_m, people.colours, LITTLE_ENDIAN, out);
-        } else if (frame.waterMode === "residents" && people) {
-          keys = people.density;
-          cells = people.inhabited;
-          build = (out) => buildResidentsLut(people.colours, out);
-        } else if (frame.waterMode === "arrival") {
-          build = (out) => buildArrivalLut(analysis.timings.arrivalHour, analysis.arrival, frame.hour, LITTLE_ENDIAN, out);
-        } else if (frame.waterMode === "duration") {
-          build = (out) => buildDurationLut(analysis.timings.hoursUnder, LITTLE_ENDIAN, out);
-        } else if (raster.factorKeys) {
-          keys = raster.factorKeys;
-          size = FACTOR_LUT_SIZE;
-          build = (out) => buildFactorDepthLut(frame.stage, m.hand.step_m, LITTLE_ENDIAN, out);
-        } else {
-          build = (out) => buildDepthLut(frame.stage, m.hand.step_m, LITTLE_ENDIAN, out);
-        }
-        const low = (frame.waterMode === "depth" || frame.waterMode === "people") && raster.lowCells && raster.lowStripes
-          ? { cells: raster.lowCells, stripes: raster.lowStripes }
-          : null;
+        const plan = waterPaintPlan(frame.waterMode, frame, raster, frame.people, waterTimings, m.hand.step_m, LITTLE_ENDIAN);
+        const size = plan.lutSize;
         const spare = layer.spares.get(size) ?? new Uint32Array(size);
-        const lut = build(spare);
-        if (layer.lastKeys === keys && layer.lastCandidates === cells && layer.lastLow === (low !== null) && lutEquals(layer.lastLut, lut)) {
+        const lut = plan.buildLut(spare);
+        if (layer.lastKeys === plan.keys && layer.lastCandidates === plan.cells && layer.lastLow === (plan.low !== null) && lutEquals(layer.lastLut, lut)) {
           layer.spares.set(size, spare);
           return;
         }
-        if (layer.lastCandidates !== cells) layer.pixels.fill(0);
-        paintDepth(keys, cells, lut, layer.pixels);
-        if (low) paintLowConfidence(low.cells, low.stripes, layer.pixels, LITTLE_ENDIAN);
-        layer.lastLow = low !== null;
+        if (layer.lastCandidates !== plan.cells) layer.pixels.fill(0);
+        paintWaterPlan(plan, lut, layer.pixels, LITTLE_ENDIAN);
+        layer.lastLow = plan.low !== null;
         layer.context.putImageData(layer.image, 0, 0);
         if (layer.lastLut && layer.lastLut.length === size) layer.spares.set(size, layer.lastLut);
         else layer.spares.delete(size);
         layer.lastLut = lut;
-        layer.lastKeys = keys;
-        layer.lastCandidates = cells;
+        layer.lastKeys = plan.keys;
+        layer.lastCandidates = plan.cells;
       };
 
       // --- "People cut off": resident nodes that lost access, drawn as population-weighted blobs on a canvas
@@ -1297,6 +1352,12 @@ export function MaeSaiFloodTimeline() {
         L.geoJSON(replay.roads as unknown as Parameters<typeof L.geoJSON>[0], unmodelledRoadOptions),
       ]);
       let highlight: LayerGroup | null = null;
+      /** The "open this site's popup when the map settles" handler of the last "Show on the map", while it waits. */
+      let pendingPopup: (() => void) | null = null;
+      const cancelPendingPopup = () => {
+        if (pendingPopup) map.off("moveend", pendingPopup);
+        pendingPopup = null;
+      };
 
       const facilities: FacilityEntry[] = [];
       const facilityRenderer = L.svg({ pane: "fg-facilities" });
@@ -1375,7 +1436,7 @@ export function MaeSaiFloodTimeline() {
           riseOnHover: true,
           zIndexOffset: 2000,
         });
-        marker.bindPopup(() => reportedPopup(shelter), { maxWidth: 300, maxHeight: 300, className: styles.popupFrame, ...POPUP_PAN });
+        marker.bindPopup(fitted(marker, POPUP_WIDTH.reported, () => reportedPopup(shelter)), { className: styles.popupFrame, autoPan: true });
         popupLayers.push(marker);
         const markerTitle = () => `${command
           ? tr("Relief and command site (2024), not a shelter", `ศูนย์บัญชาการและจุดช่วยเหลือ ปี ${thaiYear(2024)} ไม่ใช่ที่พักพิง`)
@@ -1462,7 +1523,7 @@ export function MaeSaiFloodTimeline() {
             (eligible ? eligibleGroup : ineligibleGroup).addLayer(layer);
             hoverTip(layer, () => `${eligible ? tr("Eligible shelter candidate", "สถานที่ที่เข้าเกณฑ์") : tr("Candidate, not eligible", "สถานที่ที่ไม่เข้าเกณฑ์")}: ${candidateTitle(candidate, popupLanguage())}`, -6);
           }
-          layer.bindPopup(() => candidatePopup(candidate), { maxWidth: 290, className: styles.popupFrame, ...POPUP_PAN });
+          layer.bindPopup(fitted(layer, POPUP_WIDTH.candidate, () => candidatePopup(candidate)), { className: styles.popupFrame, autoPan: true });
           candidatePopups.push(layer);
           candidateMarkers.set(candidate.id, layer);
         }
@@ -1513,7 +1574,7 @@ export function MaeSaiFloodTimeline() {
           riseOnHover: true,
           attribution: RAIN_CREDIT,
         });
-        marker.bindPopup(() => {
+        marker.bindPopup(fitted(marker, POPUP_WIDTH.gauge, () => {
           const lang = popupLanguage();
           const lines: PopupLine[] = [
             { text: rainStationName(station, lang), tone: "title" },
@@ -1525,7 +1586,7 @@ export function MaeSaiFloodTimeline() {
             { text: `${tr("Source", "แหล่งข้อมูล")}: `, value: { text: `${rain!.source} (${rain!.licence})`, lang: "en" }, tone: "muted" },
           ];
           return popupElement(lines, [{ href: rain!.source_url, text: rain!.source_url }]);
-        }, { maxWidth: 280, className: styles.popupFrame, ...POPUP_PAN });
+        }), { className: styles.popupFrame, autoPan: true });
         popupLayers.push(marker);
         const gaugeTitle = () => `${tr("Rain gauge (observed)", "สถานีวัดฝน (ตรวจวัดจริง)")}: ${station.code} ${rainStationName(station, popupLanguage())}`;
         hoverTip(marker, gaugeTitle);
@@ -1641,6 +1702,7 @@ export function MaeSaiFloodTimeline() {
           }
         },
         focusRoads(group, instant) {
+          cancelPendingPopup();
           highlight?.remove();
           highlight = null;
           if (!group) {
@@ -1676,8 +1738,19 @@ export function MaeSaiFloodTimeline() {
           highlight = null;
           const group = kind === "reported" ? reportedGroup : [planGroup, eligibleGroup, ineligibleGroup].find((item) => item.hasLayer(layer));
           if (group) setGroup(group, true);
+          // The popup opens once the map has settled on the site: opened during the move, its auto-pan would be
+          // worked out from the old view and could leave it outside the map.
+          cancelPendingPopup();
+          map.closePopup();
+          map.stop();
+          const open = () => {
+            pendingPopup = null;
+            layer.openPopup();
+            refreshTitles();
+          };
+          pendingPopup = open;
+          map.once("moveend", open);
           map.setView(layer.getLatLng(), Math.max(map.getZoom(), 15), { animate: !instant });
-          layer.openPopup();
           refreshTitles();
         },
         setViirs(day) {
@@ -1727,6 +1800,7 @@ export function MaeSaiFloodTimeline() {
       for (const frame of frames) cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
       attributionObserver?.disconnect();
+      footObserver?.disconnect();
       controllerRef.current = null;
       setMapReady(false);
       mounted?.stop();
@@ -2054,7 +2128,11 @@ export function MaeSaiFloodTimeline() {
     ] as [WaterMode, string][] : []),
   ];
   const residentsMode = waterMode === "people" || waterMode === "residents";
-  const legendWaterMode = residentsMode && !peopleRaster ? "depth" : waterMode;
+  // The legend names the view the map draws: a resident view shows water depth until the residents raster is ready.
+  const legendWaterMode = drawnWaterMode(waterMode, peopleRaster !== null);
+  const residentsPending: ResidentsPending = residentsMode && legendWaterMode !== waterMode
+    ? population.status === "error" ? "error" : "loading"
+    : null;
   const residentsStatus = residentsMode && manifest?.population
     ? population.status === "error"
       ? t("The residents layer could not be loaded; the map shows water depth instead.", "โหลดชั้นข้อมูลผู้อยู่อาศัยไม่สำเร็จ แผนที่จึงแสดงความลึกของน้ำแทน")
@@ -2086,7 +2164,8 @@ export function MaeSaiFloodTimeline() {
     viirs: showViirs ? viirsInfo : null,
     gauges: showGauges && !!rainfall,
     facilities: showFacilities,
-    lowConfidence: !!lowConfidence && !!hand?.lowCells && (legendWaterMode === "depth" || legendWaterMode === "people"),
+    lowConfidence: !!lowConfidence && !!hand?.lowCells && hatchesLowConfidence(legendWaterMode),
+    residentsPending,
   };
   const chronology = manifest?.sources.find((source) => source.id === "chronology") ?? null;
   // One-line "this moment" summary under the readout; phones show it because the story card sits far below the map.
@@ -2114,30 +2193,26 @@ export function MaeSaiFloodTimeline() {
           <section className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}>
             <div className={styles.stageBar}>
               <button type="button" className={styles.play} onClick={togglePlay} aria-keyshortcuts="Space" disabled={!manifest || !derived} data-testid="play-button">
-                <span aria-hidden="true">{playing ? "❚❚" : "▶"}</span>
-                {playLabel(time, playing, lang)}
+                <span aria-hidden="true" className={styles.playIcon}>{playing ? "❚❚" : "▶"}</span>
+                {/* `data-labels` holds every label the button can show; the style sheet uses it to reserve their width. */}
+                <span className={styles.playText} data-labels={playLabels(lang).join("\n")}>{playLabel(time, playing, lang)}</span>
               </button>
               <div className={styles.readout} data-testid="replay-readout">
                 <strong>{manifest ? moment : t("Loading the replay…", "กำลังโหลดการย้อนดูเหตุการณ์…")}</strong>
-                <span>{manifest ? `${phaseLabel} · ${stageText}` : "\u00a0"}</span>
+                <span title={manifest ? `${phaseLabel} · ${stageText}` : undefined}>{manifest ? `${phaseLabel} · ${stageText}` : "\u00a0"}</span>
               </div>
               <button ref={layersButton} type="button" className={styles.layersButton} aria-expanded={layersOpen} aria-controls="mae-sai-map-layers"
-                onClick={() => setLayersOpen((value) => !value)} disabled={!derived}>
+                onClick={() => setLayersOpen((value) => !value)} disabled={!derived}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && layersOpen) setLayersOpen(false);
+                }}>
                 <span aria-hidden="true">≡</span>{t("Map layers", "ชั้นแผนที่")}
               </button>
-              <p className={styles.momentLine} data-testid="moment-line">{momentLine || "\u00a0"}</p>
+              <p className={styles.momentLine} data-testid="moment-line" title={momentLine || undefined}>{momentLine || "\u00a0"}</p>
             </div>
 
             <div className={styles.mapFrame}>
               <div ref={mapElement} className={styles.map} role="region" aria-label={t("Map of Mae Sai with imagery, reconstructed water, roads, shelters and key facilities", "แผนที่แม่สายพร้อมภาพดาวเทียม น้ำที่จำลอง ถนน ที่พักพิง และสถานที่สำคัญ")} />
-              {manifest && (
-                <div className={styles.mapNotes} data-compare={comparing || undefined}>
-                  {!comparing && <p className={styles.caption} data-testid="imagery-caption">{caption}</p>}
-                  {mudCue && <p className={styles.mudCue} data-testid="mud-cue">{mudCue}</p>}
-                  {compareNote && <p className={styles.compareNote} data-testid="compare-note">{compareNote}</p>}
-                  {viirsNote && <p className={styles.viirsNote} data-testid="viirs-note">{viirsNote}</p>}
-                </div>
-              )}
               {comparing && sides && mapReady && (
                 <>
                   {/* A side narrower than ~15 % has no room for its label; the divider's value text still names both images. */}
@@ -2171,31 +2246,48 @@ export function MaeSaiFloodTimeline() {
               {mapReady && !handFailed && hand && residentsStatus && (
                 <p className={`${styles.mapStatus}${population.status === "error" ? ` ${styles.mapWarning}` : ""}`} role={population.status === "error" ? "alert" : "status"}>{residentsStatus}</p>
               )}
-              {mapReady && focusedRoute && (
-                <button type="button" className={styles.clearSelection} onClick={resetRouteFocus}>
-                  <span aria-hidden="true">✕</span> {t("Clear route selection", "ล้างเส้นทางที่เลือก")}
-                </button>
-              )}
-              {mapReady && (basemapIssue || !online) && (
-                <p className={styles.basemapNote} role="status" data-testid="basemap-note">{online
-                  ? t(
-                    "The street basemap could not load; it needs an internet connection. Imagery, the water model and roads still show from this device.",
-                    "โหลดแผนที่ถนนพื้นฐานไม่ได้ เนื่องจากต้องใช้อินเทอร์เน็ต ภาพดาวเทียม แบบจำลองน้ำ และถนนยังแสดงจากอุปกรณ์นี้ได้",
-                  )
-                  : t(
-                    "Offline: the street basemap is online-only. Imagery, the water model and roads still show from this device.",
-                    "ออฟไลน์: แผนที่ถนนพื้นฐานใช้ได้เฉพาะเมื่อออนไลน์ ภาพดาวเทียม แบบจำลองน้ำ และถนนยังแสดงจากอุปกรณ์นี้ได้",
-                  )}</p>
-              )}
-              <details className={styles.mapLegend} open={legendOpen} onToggle={(event) => setLegendChoice(event.currentTarget.open)} data-testid="map-legend">
-                <summary>{t("Legend", "คำอธิบายสัญลักษณ์")}</summary>
-                <TimelineLegend {...legendProps} part="overlay" />
-                <details className={styles.symbolKey}>
-                  <summary>{t("Map symbols", "สัญลักษณ์บนแผนที่")}</summary>
-                  <TimelineLegend {...legendProps} part="symbols" />
+              {/* Everything drawn over the map besides the drawer: on phones one column, so the notes, the legend and the
+                  bottom stack can never overlap; on wide maps each keeps its own corner. */}
+              <div className={styles.mapOverlay}>
+                <div className={styles.mapNotes} data-compare={comparing || undefined} data-testid="map-notes">
+                  {manifest && (
+                    <>
+                      {!comparing && <p className={styles.caption} data-testid="imagery-caption">{caption}</p>}
+                      {mudCue && <p className={styles.mudCue} data-testid="mud-cue">{mudCue}</p>}
+                      {compareNote && <p className={styles.compareNote} data-testid="compare-note">{compareNote}</p>}
+                      {viirsNote && <p className={styles.viirsNote} data-testid="viirs-note">{viirsNote}</p>}
+                    </>
+                  )}
+                </div>
+                <details className={styles.mapLegend} open={legendOpen} onToggle={(event) => setLegendChoice(event.currentTarget.open)} data-testid="map-legend">
+                  <summary>{t("Legend", "คำอธิบายสัญลักษณ์")}</summary>
+                  <TimelineLegend {...legendProps} part="overlay" />
+                  <details className={styles.symbolKey}>
+                    <summary>{t("Map symbols", "สัญลักษณ์บนแผนที่")}</summary>
+                    <TimelineLegend {...legendProps} part="symbols" />
+                  </details>
                 </details>
-              </details>
-              <div id="mae-sai-map-layers" className={styles.layersPanel} hidden={!layersOpen} role="group" aria-label={t("Map layers", "ชั้นแผนที่")}
+                {/* One stack above the attribution: the basemap note over the "Clear route selection" button. */}
+                <div className={styles.mapFoot} data-map-foot="" data-testid="map-foot">
+                  {mapReady && (basemapIssue || !online) && (
+                    <p className={styles.basemapNote} role="status" data-testid="basemap-note">{online
+                      ? t(
+                        "The street basemap could not load; it needs an internet connection. Imagery, the water model and roads still show from this device.",
+                        "โหลดแผนที่ถนนพื้นฐานไม่ได้ เนื่องจากต้องใช้อินเทอร์เน็ต ภาพดาวเทียม แบบจำลองน้ำ และถนนยังแสดงจากอุปกรณ์นี้ได้",
+                      )
+                      : t(
+                        "Offline: the street basemap is online-only. Imagery, the water model and roads still show from this device.",
+                        "ออฟไลน์: แผนที่ถนนพื้นฐานใช้ได้เฉพาะเมื่อออนไลน์ ภาพดาวเทียม แบบจำลองน้ำ และถนนยังแสดงจากอุปกรณ์นี้ได้",
+                      )}</p>
+                  )}
+                  {mapReady && focusedRoute && (
+                    <button type="button" className={styles.clearSelection} onClick={resetRouteFocus} data-testid="clear-route">
+                      <span aria-hidden="true">✕</span> {t("Clear route selection", "ล้างเส้นทางที่เลือก")}
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div id="mae-sai-map-layers" ref={layersPanel} tabIndex={-1} className={styles.layersPanel} hidden={!layersOpen} role="group" aria-label={t("Map layers", "ชั้นแผนที่")}
                 onKeyDown={(event) => {
                   if (event.key !== "Escape") return;
                   event.stopPropagation();
@@ -2491,7 +2583,7 @@ export function MaeSaiFloodTimeline() {
                           ? t("Copying is not available here; select the link below and copy it.", "คัดลอกอัตโนมัติไม่ได้ในเบราว์เซอร์นี้ เลือกลิงก์ด้านล่างแล้วคัดลอกเอง")
                           : ""}
                     </p>
-                    <ReplayExportPanel source={exportSource} time={time} language={lang} waterOpacity={waterOpacity} />
+                    <ReplayExportPanel source={exportSource} time={time} language={lang} waterOpacity={waterOpacity} waterMode={waterMode} />
                   </div>
                 </section>
 
@@ -2751,8 +2843,8 @@ export function LowConfidenceEvidence({ hand, language }: { hand: TimelineManife
       <dt>{th ? "น้ำที่มีความเชื่อมั่นต่ำ" : "Low-confidence water"}</dt>
       <dd>
         {share && (th
-          ? `${km(share.low_confidence_km2)} จาก ${km(share.peak_flooded_km2)}\u00a0ตร.กม. ที่เปียกในช่วงระดับน้ำสูงสุดของแบบจำลองเป็นพื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง แผนที่และภาพที่ส่งออกแสดงส่วนนี้เป็นสีจางพร้อมลายเส้นทแยงในมุมมองความลึกและประชากร ส่วนนี้ยังนับรวมในตัวเลขพื้นที่น้ำท่วม ถนน ประชากร และการเข้าถึงทั้งหมด `
-          : `${km(share.low_confidence_km2)} of the ${km(share.peak_flooded_km2)}\u00a0km² wet at the modelled peak is flat or filled low ground in the elevation model; the map and the exports draw it paler and hatched in the depth and people views. It is still counted in every flooded-area, road, people and access figure. `)}
+          ? `${km(share.low_confidence_km2)} จาก ${km(share.peak_flooded_km2)}\u00a0ตร.กม. ที่เปียกในช่วงระดับน้ำสูงสุดของแบบจำลองเป็นพื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง แผนที่และภาพที่ส่งออกแสดงส่วนนี้เป็นสีจางพร้อมลายเส้นทแยงในทุกมุมมองที่แสดงน้ำ (ความลึก เวลาที่เริ่มท่วม จำนวนชั่วโมงที่จมน้ำ และประชากรในพื้นที่น้ำท่วม) ส่วนนี้ยังนับรวมในตัวเลขพื้นที่น้ำท่วม ถนน ประชากร และการเข้าถึงทั้งหมด `
+          : `${km(share.low_confidence_km2)} of the ${km(share.peak_flooded_km2)}\u00a0km² wet at the modelled peak is flat or filled low ground in the elevation model; the map and the exports draw it paler and hatched in every view that shows water (depth, first flooded, hours under water and people in flood water). It is still counted in every flooded-area, road, people and access figure. `)}
         {hand.low_confidence && <Localized text={hand.low_confidence.meaning} language={language} />}
       </dd>
     </div>
@@ -3081,12 +3173,13 @@ function LowConfidenceSwatch() {
 
 /**
  * Map legend. `part` "overlay" is the compact on-map legend for what is drawn at this moment (the active water and
- * road modes, low-confidence water, and the scenario or observed layers the reader switched on); "symbols" is the
- * marker key (key facilities, shelters, gauges); the default draws both.
+ * road modes, low-confidence water in every view that shows water, and the scenario or observed layers the reader
+ * switched on); "symbols" is the marker key (key facilities, shelters, gauges); the default draws both. `waterMode`
+ * is the view the map draws (`drawnWaterMode`), which is water depth while a resident view waits for its raster.
  */
 export function TimelineLegend({
   language, unmodelledRoads, unmodelledFacilities, waterMode = "depth", roadMode = "state", arrival = [], densityMax, shelters, cutoff = false,
-  viirs = null, gauges = false, facilities = true, lowConfidence = false, part = "all",
+  viirs = null, gauges = false, facilities = true, lowConfidence = false, residentsPending = null, part = "all",
 }: {
   language: Language;
   unmodelledRoads: boolean;
@@ -3110,16 +3203,19 @@ export function TimelineLegend({
   gauges?: boolean;
   /** The key facilities (OSM) layer is shown. */
   facilities?: boolean;
-  /** Low-confidence water is drawn (the manifest declares its channel and the view is depth or people). */
+  /** Low-confidence water is drawn (the manifest declares its channel and the view shows water). */
   lowConfidence?: boolean;
+  /**
+   * A resident view is chosen but its raster is still loading or failed, so `waterMode` here is the depth view the
+   * map draws meanwhile; the legend says so.
+   */
+  residentsPending?: ResidentsPending;
   part?: "overlay" | "symbols" | "all";
 }) {
   const th = language === "th";
   const channel = <li><i style={{ background: rgbaCss(CHANNEL_RGBA) }} />{th ? "ร่องน้ำ/แม่น้ำ (น้ำตลอดเวลา)" : "River channel (always water)"}</li>;
   const lowConfidenceItem = lowConfidence && (
-    <li data-testid="low-confidence-legend"><LowConfidenceSwatch />{th
-      ? "น้ำที่มีความเชื่อมั่นต่ำ: พื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง"
-      : "Low-confidence water: flat or filled low ground in the elevation model"}</li>
+    <li data-testid="low-confidence-legend"><LowConfidenceSwatch />{WATER_LEGEND_COPY.lowConfidence[language]}</li>
   );
   const residentsView = (waterMode === "people" || waterMode === "residents") && densityMax !== undefined;
   const anyShelter = shelters && (shelters.reported || shelters.candidates || shelters.ineligible);
@@ -3134,31 +3230,34 @@ export function TimelineLegend({
         </div>
       ) : waterMode === "arrival" ? (
         <div>
-          <strong>{th ? "เวลาที่เริ่มท่วม (แบบจำลอง เวลาท้องถิ่น)" : "First flooded (model, local time)"}</strong>
+          <strong>{WATER_LEGEND_COPY.arrivalTitle[language]}</strong>
           <ul>
             {arrival.map((item) => <li key={item.from}><i style={{ background: rgbaCss(item.rgba) }} />{formatHourSpan(item.from, item.to, language)}</li>)}
             {arrival.length > 0 && (
-              <li><i style={{ background: rgbaCss([...arrival[0].rgba.slice(0, 3), ARRIVAL_PENDING_ALPHA]) }} />{th ? "ยังไม่ท่วม ณ ช่วงเวลานี้ (จาง)" : "Not yet flooded at this moment (faded)"}</li>
+              <li><i style={{ background: rgbaCss([...arrival[0].rgba.slice(0, 3), ARRIVAL_PENDING_ALPHA]) }} />{WATER_LEGEND_COPY.arrivalPending[language]}</li>
             )}
             {channel}
+            {lowConfidenceItem}
           </ul>
         </div>
       ) : waterMode === "duration" ? (
         <div>
-          <strong>{th ? "จำนวนชั่วโมงที่จมน้ำ 9–19 ก.ย. (แบบจำลอง)" : "Hours under water, 9–19 Sep (model)"}</strong>
+          <strong>{WATER_LEGEND_COPY.durationTitle[language]}</strong>
           <ul>
             {DURATION_CLASSES.map((item) => <li key={item.min}><i style={{ background: rgbaCss(item.rgba) }} />{item.label[language]}</li>)}
             {channel}
+            {lowConfidenceItem}
           </ul>
         </div>
       ) : (
         <div>
-          <strong>{th ? "ความลึกของน้ำ (แบบจำลอง)" : "Water depth (model)"}</strong>
+          <strong>{WATER_LEGEND_COPY.depthTitle[language]}</strong>
           <ul>
             {DEPTH_CLASSES.map((item) => <li key={item.label}><i style={{ background: rgbaCss(item.rgba) }} />{item.label.replace(" m", th ? "\u00a0ม." : "\u00a0m")}</li>)}
             <li><i style={{ background: rgbaCss(CHANNEL_RGBA) }} />{th ? "ร่องน้ำ/แม่น้ำ" : "River channel"}</li>
             {lowConfidenceItem}
           </ul>
+          {residentsPending && <p className={styles.legendPending} data-testid="legend-residents-pending">{residentsPendingText(residentsPending, language)}</p>}
         </div>
       ))}
       {overlay && (

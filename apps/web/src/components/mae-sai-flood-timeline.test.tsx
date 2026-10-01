@@ -28,7 +28,9 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "@/lib/flood-timeline";
-import { plainManifestText } from "@/lib/flood-timeline-copy";
+import { plainManifestText, STANDALONE_K } from "@/lib/flood-timeline-copy";
+import type { WaterMode } from "@/lib/flood-timeline-link";
+import { residentsPendingText } from "@/lib/flood-timeline-water";
 import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
 import {
   facilityStatusText,
@@ -40,6 +42,7 @@ import {
   LowConfidenceEvidence,
   MaeSaiFloodTimeline,
   playLabel,
+  playLabels,
   postEventOptical,
   RadarCheck,
   RouteCutsCard,
@@ -52,6 +55,7 @@ import { formatDateSet, RainChart, ViirsComparisonCard, viirsMomentText } from "
 import {
   exportPlaceLabels,
   exportScaleBar,
+  exportViewText,
   pickVideoType,
   pngFileName,
   ReplayExportPanel,
@@ -119,11 +123,46 @@ describe("Mae Sai flood replay page shell", () => {
   });
 
   it("labels the play button with the window and its length, then Pause, Play from here and Replay", () => {
-    expect(playLabel(0.5, false, "en")).toBe("Play 9 → 19 Sep (26 s)");
-    expect(playLabel(0.5, false, "th")).toBe("เล่น 9 → 19 ก.ย. (26 วินาที)");
+    expect(playLabel(0.5, false, "en")).toBe("Play 9 → 19 Sep (26\u00a0s)");
+    expect(playLabel(0.5, false, "th")).toBe("เล่น 9 → 19 ก.ย. (26\u00a0วินาที)");
     expect(playLabel(3, true, "en")).toBe("Pause");
     expect(playLabel(3, false, "en")).toBe("Play from here");
     expect(playLabel(11, false, "en")).toBe("Replay");
+  });
+
+  it("reserves the width of every Play label, so the button and the bar never reflow between Play and Pause", () => {
+    for (const language of ["en", "th"] as const) {
+      const labels = playLabels(language);
+      // Every label the button can show over the replay, playing or not, is among the reserved ones.
+      for (let hour = 0; hour <= 264; hour += 1) {
+        expect(labels, `${language} hour ${hour}`).toContain(playLabel(hour / 24, false, language));
+        expect(labels, `${language} hour ${hour}`).toContain(playLabel(hour / 24, true, language));
+      }
+      expect(new Set(labels).size).toBe(labels.length);
+    }
+    expect(playLabels("en")).toEqual(expect.arrayContaining(["Pause", "Replay", "Play from here", "Play 9 → 19 Sep (26\u00a0s)"]));
+    // The button carries them for the style sheet; its visible text is the one current label.
+    const html = renderToStaticMarkup(<MaeSaiFloodTimeline />);
+    const button = /<button[^>]*data-testid="play-button"[^>]*>([\s\S]*?)<\/button>/.exec(html)![1];
+    const reserved = /data-labels="([^"]*)"/.exec(button)![1].split("\n");
+    expect(reserved).toEqual(playLabels("en"));
+    expect(text(button).replace(/[▶❚]/g, "").trim()).toBe(playLabel(0.5, false, "en").replace(/\u00a0/g, " "));
+  });
+
+  it("keeps the notes, the legend and the bottom stack in one overlay, and makes the drawer focusable", () => {
+    const html = renderToStaticMarkup(<MaeSaiFloodTimeline />);
+    const notes = html.indexOf('data-testid="map-notes"');
+    const legend = html.indexOf('data-testid="map-legend"');
+    const foot = html.indexOf('data-testid="map-foot"');
+    const drawer = html.indexOf('id="mae-sai-map-layers"');
+    expect(notes).toBeGreaterThan(0);
+    // Reading order: notes, legend, then the stack that holds the basemap note and "Clear route selection".
+    expect(legend).toBeGreaterThan(notes);
+    expect(foot).toBeGreaterThan(legend);
+    expect(drawer).toBeGreaterThan(foot);
+    expect(html).toMatch(/<div[^>]*data-map-foot=""[^>]*data-testid="map-foot"><\/div>/);
+    // The drawer can take focus when it opens (it is not a tab stop itself), and is labelled as a group.
+    expect(html).toMatch(/<div id="mae-sai-map-layers" tabindex="-1"[^>]*role="group"[^>]*aria-label="Map layers"/);
   });
 
   it("names the first clear optical image after the flood began, so its brown areas read as flood mud", () => {
@@ -245,6 +284,17 @@ describe("Mae Sai replay panels", () => {
     const people = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode="people" densityMax={31.33} lowConfidence />));
     expect(people).toContain("Low-confidence water");
     expect(text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} />))).not.toContain("Low-confidence");
+    // First flooded and hours under water hatch the same cells, so their legends carry the same entry.
+    const classes = arrivalClasses(codeTimings(hourlyStages(manifest.stage_anchors), manifest.hand.step_m, manifest.hand.never_code).arrivalHour, ARRIVAL_RAMP, manifest.hand.channel_code);
+    for (const waterMode of ["arrival", "duration"] as const) {
+      const html = renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} lowConfidence part="overlay" />);
+      expect(html, waterMode).toContain('data-testid="low-confidence-legend"');
+      expect(text(html), waterMode).toContain("Low-confidence water: flat or filled low ground in the elevation model");
+      const thaiMode = text(renderToStaticMarkup(<TimelineLegend language="th" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} lowConfidence part="overlay" />));
+      expect(thaiMode, waterMode).toContain("น้ำที่มีความเชื่อมั่นต่ำ");
+      expect(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} part="overlay" />), waterMode)
+        .not.toContain("low-confidence-legend");
+    }
     // Evidence: the share at the modelled peak, from the manifest (14 of 88.7 km²), and what it means.
     const share = manifest.hand.low_confidence_share!;
     const evidence = text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="en" /></dl>));
@@ -252,6 +302,30 @@ describe("Mae Sai replay panels", () => {
     expect(evidence).toContain(manifest.hand.low_confidence!.meaning);
     expect(text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="th" /></dl>))).toContain(`${share.low_confidence_km2.toFixed(1)} จาก ${share.peak_flooded_km2.toFixed(1)} ตร.กม.`);
     expect(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={{ ...manifest.hand, low_confidence_channel: null }} language="en" /></dl>)).toBe("<dl></dl>");
+    // The evidence names every view that is hatched, not only depth and people.
+    expect(evidence).toContain("paler and hatched in every view that shows water (depth, first flooded, hours under water and people in flood water)");
+    expect(evidence).toContain("It is still counted in every flooded-area, road, people and access figure.");
+    expect(text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="th" /></dl>))).toContain("ในทุกมุมมองที่แสดงน้ำ (ความลึก เวลาที่เริ่มท่วม จำนวนชั่วโมงที่จมน้ำ และประชากรในพื้นที่น้ำท่วม)");
+  });
+
+  it("says in the legend that the map shows water depth while a resident view waits for its raster", () => {
+    // The page passes the view the map draws (depth) and why; the legend must not show the residents key meanwhile.
+    for (const language of ["en", "th"] as const) {
+      for (const pending of ["loading", "error"] as const) {
+        const html = renderToStaticMarkup(<TimelineLegend language={language} unmodelledRoads={false} unmodelledFacilities={false} waterMode="depth" densityMax={31.33} lowConfidence residentsPending={pending} part="overlay" />);
+        const plain = text(html);
+        expect(html).toContain('data-testid="legend-residents-pending"');
+        expect(plain).toContain(residentsPendingText(pending, language));
+        expect(plain).toContain(language === "th" ? "ความลึกของน้ำ (แบบจำลอง)" : "Water depth (model)");
+        expect(plain).not.toMatch(/residents per hectare|คนต่อเฮกตาร์/);
+        expect(html).toContain('data-testid="low-confidence-legend"');
+      }
+    }
+    // Once the raster is ready the page passes the resident view and no pending state: the residents key, no notice.
+    const ready = renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode="people" densityMax={31.33} lowConfidence part="overlay" />);
+    expect(ready).not.toContain("legend-residents-pending");
+    expect(text(ready)).toContain("People in flood water: residents per hectare");
+    expect(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} part="overlay" />)).not.toContain("legend-residents-pending");
   });
 
   it("splits the legend into the on-map part (water and roads) and the marker key", () => {
@@ -449,6 +523,25 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
     const thai = text(renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="th" waterOpacity={0.85} />));
     expect(thai).toContain("บันทึกภาพ PNG ของช่วงเวลานี้");
   });
+
+  it("says which water view the PNG and the video draw: the view on the map, or water depth for the resident views", () => {
+    expect(exportViewText("depth", "en")).toBe("The PNG and the video show water depth (model), as on the map.");
+    expect(exportViewText("arrival", "en")).toBe("The PNG and the video show the first flooded hour (model), as on the map.");
+    expect(exportViewText("duration", "en")).toBe("The PNG and the video show hours under water (model), as on the map.");
+    for (const mode of ["people", "residents"] as const) {
+      expect(exportViewText(mode, "en")).toBe("The PNG and the video show water depth (model); the resident views are not exported.");
+      expect(exportViewText(mode, "th")).toContain("มุมมองผู้อยู่อาศัยไม่ถูกส่งออก");
+    }
+    for (const mode of ["depth", "arrival", "duration", "people", "residents"] as WaterMode[]) {
+      expect(exportViewText(mode, "th")).not.toMatch(/[A-Za-z]{4,}/);
+      expect(exportViewText(mode, "th")).toContain("(แบบจำลอง)");
+    }
+    const panel = renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="en" waterOpacity={0.85} waterMode="arrival" />);
+    expect(panel).toContain('data-testid="export-view"');
+    expect(text(panel)).toContain(exportViewText("arrival", "en"));
+    // Without the prop the panel exports (and says) water depth, as before.
+    expect(text(renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="en" waterOpacity={0.85} />))).toContain(exportViewText("depth", "en"));
+  });
 });
 
 describe("Mae Sai observed evidence panels", () => {
@@ -546,6 +639,15 @@ describe("Mae Sai observed evidence panels", () => {
       expect(plain).not.toContain("k x stage");
       expect(plain).toContain("tributaries rise to a fraction of the stage");
     }
+    // The depth factor is named in words and written f; no standalone "k" (the plan size) is left in the panel.
+    expect(manifest.assumptions.some((item) => STANDALONE_K.test(item))).toBe(true);
+    expect(plain).toContain("scaled by the depth factor f = clip(");
+    expect(plain).toContain("the exported depth factor f makes h + 0.3/f equal the earliest sample closure");
+    expect(plain).toContain("The depth factor f = clip(");
+    expect(plain).not.toMatch(STANDALONE_K);
+    const thaiPanel = text(renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />));
+    expect(thaiPanel).toContain("ตัวคูณความลึก f = clip(");
+    expect(thaiPanel).not.toMatch(STANDALONE_K);
     for (const url of [viirs.source_url, rainfall.source_url]) expect(html).toContain(`href="${url}"`);
     expect(plain).toContain(viirs.caveat);
     expect(plain).toContain(rainfall.note);

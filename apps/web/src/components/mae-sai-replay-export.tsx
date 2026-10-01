@@ -3,23 +3,25 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import {
-  buildDepthLut,
-  buildFactorDepthLut,
+  ARRIVAL_PENDING_ALPHA,
+  ARRIVAL_RAMP,
+  arrivalClasses,
   CHANNEL_RGBA,
+  codeTimings,
   coverageComplete,
   dateFromT,
   DEPTH_CLASSES,
   districtStats,
-  FACTOR_LUT_SIZE,
+  DURATION_CLASSES,
+  formatHourSpan,
   formatMoment,
   formatShortDate,
   hourIndex,
+  hourlyStages,
   latestObservation,
   lutEquals,
   manifestRevision,
   mercatorY,
-  paintDepth,
-  paintLowConfidence,
   phaseAt,
   projectToFrame,
   rgbaCss,
@@ -39,6 +41,8 @@ import {
   type TimelineManifest,
 } from "@/lib/flood-timeline";
 import { reportedShelterCheck, reportedSiteRole } from "@/lib/flood-timeline-evacuation";
+import type { WaterMode } from "@/lib/flood-timeline-link";
+import { exportWaterMode, paintWaterPlan, WATER_LEGEND_COPY, waterPaintPlan, type WaterGrid, type WaterTimings } from "@/lib/flood-timeline-water";
 
 import styles from "./mae-sai-flood-timeline.module.css";
 
@@ -269,9 +273,7 @@ function copy(language: Language, manifest: Pick<TimelineManifest, "confidence" 
     river: th ? "ร่องน้ำ" : "River",
     wet: th ? "ถนนมีน้ำ" : "Wet road",
     cut: th ? "สัญจรไม่ได้ ≥ 0.3 ม." : "Impassable ≥ 0.3 m",
-    lowConfidence: th
-      ? "น้ำที่มีความเชื่อมั่นต่ำ: พื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง"
-      : "Low-confidence water: flat or filled low ground in the elevation model",
+    lowConfidence: WATER_LEGEND_COPY.lowConfidence[language],
     reported: th ? `ที่พักพิงที่มีรายงาน ${thaiYear(2024)}` : "Shelter reported, 2024",
     reportedFloods: th ? "…ท่วมที่ระดับสูงสุดของแบบจำลอง" : "…floods at the model peak",
     command: th ? "ศูนย์บัญชาการ (ไม่ใช่ที่พักพิง)" : "Command site (not a shelter)",
@@ -305,16 +307,18 @@ async function loadImage(href: string): Promise<HTMLImageElement | null> {
 }
 
 /**
- * Offscreen renderer at the full AOI extent (independent of the live map view): the automatically selected optical
- * image, the reconstructed water through the same LUT painter as the map (depth mode), roads coloured by state (lon/lat
- * projected linearly in Web Mercator over the manifest bounds, like the map's rasters), subdistrict outlines, the
- * reported 2024 shelters, orientation labels, a scale bar and north arrow, a legend and a caption carrying the moment,
- * figures (including modelled residents in flood water), the model disclaimer and source attribution. "portrait" puts
- * the caption under the map; "landscape" is 16:9 with the caption and legend beside it.
+ * Offscreen renderer at the full AOI extent (independent of the map's pan and zoom): the automatically selected
+ * optical image, the reconstructed water through the same paint plan as the map (`waterPaintPlan`: depth, first
+ * flooded or hours under water, with low-confidence water washed out and hatched in each), roads coloured by state
+ * (lon/lat projected linearly in Web Mercator over the manifest bounds, like the map's rasters), subdistrict outlines,
+ * the reported 2024 shelters, orientation labels, a scale bar and north arrow, a legend and a caption carrying the
+ * moment, figures (including modelled residents in flood water), the model disclaimer and source attribution.
+ * "portrait" puts the caption under the map; "landscape" is 16:9 with the caption and legend beside it. `waterMode`
+ * is the view on the page; the two resident views are exported as water depth (`exportWaterMode`).
  */
 export async function createExportRenderer(
   source: ReplayExportSource,
-  { width, language, waterOpacity, format = "portrait" }: { width: number; language: Language; waterOpacity: number; format?: VideoFormat },
+  { width, language, waterOpacity, format = "portrait", waterMode = "depth" }: { width: number; language: Language; waterOpacity: number; format?: VideoFormat; waterMode?: WaterMode },
 ): Promise<ExportRenderer> {
   const { manifest, hand } = source;
   const th = language === "th";
@@ -351,7 +355,7 @@ export async function createExportRenderer(
       if (image) images.set(observation.id, image);
     }));
 
-  // Water: the same packed-LUT painter as the map, at the HAND grid resolution.
+  // Water: the same paint plan as the map (same LUTs, same low-confidence hatch), at the HAND grid resolution.
   const waterCanvas = document.createElement("canvas");
   waterCanvas.width = manifest.hand.width;
   waterCanvas.height = manifest.hand.height;
@@ -359,21 +363,33 @@ export async function createExportRenderer(
   if (!waterContext) throw new Error("Canvas is unavailable");
   const waterImage = waterContext.createImageData(waterCanvas.width, waterCanvas.height);
   const waterPixels = new Uint32Array(waterImage.data.buffer);
-  const keys = hand.factorKeys ?? hand.codes;
-  const lutSize = hand.factorKeys ? FACTOR_LUT_SIZE : 256;
+  const mode = exportWaterMode(waterMode);
   // Low-confidence water is washed out and hatched as on the map, only when the manifest declares its channel.
-  const low = manifest.hand.low_confidence_channel && hand.lowCells && hand.lowStripes ? { cells: hand.lowCells, stripes: hand.lowStripes } : null;
+  const declared = Boolean(manifest.hand.low_confidence_channel);
+  const grid: WaterGrid = {
+    codes: hand.codes, factorKeys: hand.factorKeys, candidates: hand.candidates,
+    lowCells: declared ? hand.lowCells ?? null : null, lowStripes: declared ? hand.lowStripes ?? null : null,
+  };
+  const hatched = Boolean(grid.lowCells && grid.lowStripes);
+  // First flooded and hours under water are counted on the replay's hourly grid, exactly as on the page.
+  const codeTiming = codeTimings(hourlyStages(manifest.stage_anchors), manifest.hand.step_m, manifest.hand.never_code);
+  const timings: WaterTimings = {
+    arrivalHour: codeTiming.arrivalHour,
+    hoursUnder: codeTiming.hoursUnder,
+    arrival: arrivalClasses(codeTiming.arrivalHour, ARRIVAL_RAMP, manifest.hand.channel_code),
+  };
   let lastLut: Uint32Array | null = null;
-  let spareLut: Uint32Array = new Uint32Array(lutSize);
-  const paintWater = (stage: number) => {
-    const lut = hand.factorKeys
-      ? buildFactorDepthLut(stage, manifest.hand.step_m, LITTLE_ENDIAN, spareLut)
-      : buildDepthLut(stage, manifest.hand.step_m, LITTLE_ENDIAN, spareLut);
-    if (lutEquals(lastLut, lut)) return;
-    paintDepth(keys, hand.candidates, lut, waterPixels);
-    if (low) paintLowConfidence(low.cells, low.stripes, waterPixels, LITTLE_ENDIAN);
+  let spareLut: Uint32Array | null = null;
+  const paintWater = (stage: number, hour: number) => {
+    const plan = waterPaintPlan(mode, { stage, hour }, grid, null, timings, manifest.hand.step_m, LITTLE_ENDIAN);
+    const lut = plan.buildLut(spareLut && spareLut.length === plan.lutSize ? spareLut : new Uint32Array(plan.lutSize));
+    if (lutEquals(lastLut, lut)) {
+      spareLut = lut;
+      return;
+    }
+    paintWaterPlan(plan, lut, waterPixels, LITTLE_ENDIAN);
     waterContext.putImageData(waterImage, 0, 0);
-    spareLut = lastLut ?? new Uint32Array(lutSize);
+    spareLut = lastLut;
     lastLut = lut;
   };
 
@@ -550,30 +566,85 @@ export async function createExportRenderer(
     context.restore();
   };
 
-  const legendRows = 3 + (shelters.length > 0 ? 1 : 0) + (low ? 1 : 0);
-  /** Legend box at (x0, y0), `boxWidth` wide: depth classes, roads, reported shelters and low-confidence water. */
+  // Legend of the water view that is drawn. Depth keeps one row of equal columns; the first-flooded and
+  // hours-under-water classes have longer labels and flow over as many rows as they need.
+  type Swatch = { colour: string; label: string };
+  const river: Swatch = { colour: rgbaCss(CHANNEL_RGBA), label: text.river };
+  const waterLegend: { title: string; items: Swatch[]; columns: boolean } = mode === "arrival"
+    ? {
+      title: WATER_LEGEND_COPY.arrivalTitle[language],
+      items: [
+        ...timings.arrival.map((item) => ({ colour: rgbaCss(item.rgba), label: formatHourSpan(item.from, item.to, language) })),
+        ...(timings.arrival.length > 0 ? [{ colour: rgbaCss([...timings.arrival[0].rgba.slice(0, 3), ARRIVAL_PENDING_ALPHA]), label: WATER_LEGEND_COPY.arrivalPending[language] }] : []),
+        river,
+      ],
+      columns: false,
+    }
+    : mode === "duration"
+      ? { title: WATER_LEGEND_COPY.durationTitle[language], items: [...DURATION_CLASSES.map((item) => ({ colour: rgbaCss(item.rgba), label: item.label[language] })), river], columns: false }
+      : { title: text.legendDepth, items: [...DEPTH_CLASSES.map((item) => ({ colour: rgbaCss(item.rgba), label: item.label.replace(" m", "") })), river], columns: true };
+  /** The water items laid out in rows that fit a legend box `boxWidth` wide. */
+  const waterRows = (boxWidth: number): Swatch[][] => {
+    if (waterLegend.columns) return [waterLegend.items];
+    context.font = font(500, 9.5);
+    const inner = boxWidth - 14 * scale;
+    const rows: Swatch[][] = [[]];
+    let used = 0;
+    for (const item of waterLegend.items) {
+      const itemWidth = Math.min(inner, 15 * scale + context.measureText(item.label).width + 10 * scale);
+      if (used > 0 && used + itemWidth > inner) {
+        rows.push([]);
+        used = 0;
+      }
+      rows[rows.length - 1].push(item);
+      used += itemWidth;
+    }
+    return rows;
+  };
+  const legendRowCount = (boxWidth: number) => 2 + waterRows(boxWidth).length + (shelters.length > 0 ? 1 : 0) + (hatched ? 1 : 0);
+  /** Height of the legend box for a box `boxWidth` wide. */
+  const legendHeightFor = (boxWidth: number) => (8 + 18 * legendRowCount(boxWidth)) * scale;
+  /** Legend box at (x0, y0), `boxWidth` wide: the water view's classes, roads, reported shelters and low-confidence water. */
   const drawLegend = (x0: number, y0: number, boxWidth: number) => {
     const rowHeight = 18 * scale;
-    const boxHeight = (8 + 18 * legendRows) * scale;
+    const rows = waterRows(boxWidth);
+    const boxHeight = legendHeightFor(boxWidth);
     context.fillStyle = "rgb(255 255 255 / 90%)";
     context.fillRect(x0, y0, boxWidth, boxHeight);
     context.fillStyle = "#17253b";
     context.font = font(700, 10.5);
     context.textBaseline = "alphabetic";
     context.textAlign = "left";
-    context.fillText(text.legendDepth, x0 + 7 * scale, y0 + 14 * scale);
+    context.fillText(fitText(context, waterLegend.title, boxWidth - 14 * scale), x0 + 7 * scale, y0 + 14 * scale);
     context.font = font(500, 9.5);
     let rowY = y0 + 20 * scale;
-    const items = [...DEPTH_CLASSES.map((item) => ({ colour: rgbaCss(item.rgba), label: item.label.replace(" m", "") })), { colour: rgbaCss(CHANNEL_RGBA), label: text.river }];
-    const itemWidth = (boxWidth - 14 * scale) / items.length;
-    items.forEach((item, index) => {
-      const x = x0 + 7 * scale + index * itemWidth;
-      context.fillStyle = item.colour;
-      context.fillRect(x, rowY, 12 * scale, 10 * scale);
-      context.fillStyle = "#17253b";
-      context.fillText(fitText(context, item.label, itemWidth - 16 * scale), x + 15 * scale, rowY + 9 * scale);
-    });
-    rowY += rowHeight;
+    for (const row of rows) {
+      if (waterLegend.columns) {
+        const itemWidth = (boxWidth - 14 * scale) / row.length;
+        row.forEach((item, index) => {
+          const x = x0 + 7 * scale + index * itemWidth;
+          context.fillStyle = item.colour;
+          context.fillRect(x, rowY, 12 * scale, 10 * scale);
+          context.fillStyle = "#17253b";
+          context.fillText(fitText(context, item.label, itemWidth - 16 * scale), x + 15 * scale, rowY + 9 * scale);
+        });
+      } else {
+        const end = x0 + boxWidth - 7 * scale;
+        let x = x0 + 7 * scale;
+        for (const item of row) {
+          context.fillStyle = item.colour;
+          context.fillRect(x, rowY, 12 * scale, 10 * scale);
+          context.strokeStyle = "rgb(12 39 64 / 22%)";
+          context.lineWidth = Math.max(1, scale * 0.6);
+          context.strokeRect(x, rowY, 12 * scale, 10 * scale);
+          context.fillStyle = "#17253b";
+          const shown = fitText(context, item.label, Math.max(0, end - x - 15 * scale));
+          context.fillText(shown, x + 15 * scale, rowY + 9 * scale);
+          x += 15 * scale + context.measureText(shown).width + 10 * scale;
+        }
+      }
+      rowY += rowHeight;
+    }
     const roadItems = [{ style: EXPORT_ROAD_STYLES.wet, label: text.wet }, { style: EXPORT_ROAD_STYLES.impassable, label: text.cut }];
     const columnWidth = (boxWidth - 14 * scale) / 3;
     roadItems.forEach((item, index) => {
@@ -609,7 +680,7 @@ export async function createExportRenderer(
       }
       rowY += rowHeight;
     }
-    if (low) {
+    if (hatched) {
       // Hatched pale-blue swatch, then the label.
       const x = x0 + 7 * scale;
       const size = { w: 12 * scale, h: 10 * scale };
@@ -634,7 +705,6 @@ export async function createExportRenderer(
     }
     return boxHeight;
   };
-  const legendHeight = (8 + 18 * legendRows) * scale;
 
   /** Map part of a frame: imagery, water, outlines, roads, shelters and labels. */
   const opticalObservations = manifest.observations.filter((observation) => images.has(observation.id));
@@ -648,7 +718,7 @@ export async function createExportRenderer(
       context.imageSmoothingQuality = "high";
       context.drawImage(image, 0, 0, mapWidth, mapHeight);
     }
-    paintWater(stage);
+    paintWater(stage, hourIndex(t));
     context.globalAlpha = waterOpacity;
     context.drawImage(waterCanvas, 0, 0, mapWidth, mapHeight);
     context.globalAlpha = 1;
@@ -705,7 +775,7 @@ export async function createExportRenderer(
       }
       block(`${text.imagery}: ${imagery}`, 500, 12, "#e3ebf5", 6);
       block(text.notice, 650, 12.5, "#ffd98a", 6);
-      const legendY = canvasHeight0 - legendHeight - 70 * scale;
+      const legendY = canvasHeight0 - legendHeightFor(inner) - 70 * scale;
       if (y < legendY) drawLegend(left, legendY, inner);
       y = canvasHeight0 - 58 * scale;
       block(text.credits, 400, 10.5, "#b9c6d8", 2);
@@ -713,7 +783,7 @@ export async function createExportRenderer(
       return;
     }
 
-    drawLegend(8 * scale, mapHeight - legendHeight - 8 * scale, 380 * scale);
+    drawLegend(8 * scale, mapHeight - legendHeightFor(380 * scale) - 8 * scale, 380 * scale);
     // Caption band under the map.
     const left = 14 * scale;
     const right = mapWidth - 14 * scale;
@@ -851,17 +921,33 @@ function triggerDownload(url: string, name: string) {
   anchor.remove();
 }
 
+/** One line under the export buttons: which water view the PNG and the video draw for the view on the page. */
+export function exportViewText(waterMode: WaterMode, language: Language): string {
+  const th = language === "th";
+  const drawn = exportWaterMode(waterMode);
+  const view = drawn === "arrival"
+    ? th ? "เวลาที่เริ่มท่วม" : "the first flooded hour"
+    : drawn === "duration"
+      ? th ? "จำนวนชั่วโมงที่จมน้ำ" : "hours under water"
+      : th ? "ความลึกของน้ำ" : "water depth";
+  const sameAsMap = drawn === waterMode;
+  if (th) return sameAsMap ? `ภาพ PNG และวิดีโอแสดง${view} (แบบจำลอง) เหมือนบนแผนที่` : `ภาพ PNG และวิดีโอแสดง${view} (แบบจำลอง) มุมมองผู้อยู่อาศัยไม่ถูกส่งออก`;
+  return sameAsMap ? `The PNG and the video show ${view} (model), as on the map.` : `The PNG and the video show ${view} (model); the resident views are not exported.`;
+}
+
 /**
  * "Save PNG of this moment" and "Record video" controls. Both render offscreen at the full AOI extent; the video
  * (portrait or 16:9) opens and closes with a one-second card, shows a live preview while it records, and downloads
  * itself when done. The video controls are hidden when the browser cannot record a canvas.
  */
-export function ReplayExportPanel({ source, time, language, waterOpacity }: {
+export function ReplayExportPanel({ source, time, language, waterOpacity, waterMode = "depth" }: {
   /** Null until the water model is ready; exports are disabled until then. */
   source: ReplayExportSource | null;
   time: number;
   language: Language;
   waterOpacity: number;
+  /** The water view on the page; the exports draw the same view, or water depth for the two resident views. */
+  waterMode?: WaterMode;
 }) {
   const th = language === "th";
   const t = (en: string, thai: string) => (th ? thai : en);
@@ -896,7 +982,7 @@ export function ReplayExportPanel({ source, time, language, waterOpacity }: {
     if (still.status === "done") revoke(still.url);
     setStill({ status: "working" });
     try {
-      const renderer = await createExportRenderer(source, { width: PNG_WIDTH, language, waterOpacity });
+      const renderer = await createExportRenderer(source, { width: PNG_WIDTH, language, waterOpacity, waterMode });
       renderer.draw(hourIndex(time) / 24);
       const blob = await new Promise<Blob | null>((resolve) => renderer.canvas.toBlob(resolve, "image/png"));
       if (!mountedRef.current) return;
@@ -924,7 +1010,7 @@ export function ReplayExportPanel({ source, time, language, waterOpacity }: {
     const abandoned = () => pending.cancelled || !mountedRef.current;
     let renderer: ExportRenderer;
     try {
-      renderer = await createExportRenderer(source, { width: VIDEO_FORMATS[shape].width, language, waterOpacity, format: shape });
+      renderer = await createExportRenderer(source, { width: VIDEO_FORMATS[shape].width, language, waterOpacity, format: shape, waterMode });
     } catch {
       if (abandoned()) return;
       cancelRef.current = null;
@@ -1135,6 +1221,7 @@ export function ReplayExportPanel({ source, time, language, waterOpacity }: {
           <a href={still.url} download={still.name} className={styles.downloadLink}>{t("Save the PNG again", "บันทึกภาพ PNG อีกครั้ง")}</a>
         </p>
       )}
+      <p className={styles.muted} data-testid="export-view">{exportViewText(waterMode, language)}</p>
       <p className={styles.exportStatus} role="status" aria-live="polite">{[stillMessage, videoMessage].filter(Boolean).join(" ")}</p>
       {!source && <p className={styles.muted}>{t("Exports become available once the water model has loaded.", "ส่งออกได้เมื่อโหลดแบบจำลองน้ำเสร็จแล้ว")}</p>}
     </div>

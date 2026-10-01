@@ -9,8 +9,9 @@ import type { Language } from "./flood-timeline";
 /**
  * Manifest text with internal identifiers replaced by plain words: the access-set id "reported_2024", WorldPop's
  * product code "(tha_ppp_2020)", field names such as "late_cumulative_share", "model_coverage" or "m=false", and the
- * project's internal decision numbers ("per decision D3", "(D2)", "(decision D7)"). The tributary factor is described in words (the
- * page keeps "k" for the plan size), and "km2" is written "km²".
+ * project's internal decision numbers ("per decision D3", "(D2)", "(decision D7)"). On this page "k" is the plan
+ * size, so the manifest's symbol for the depth factor is never shown: the factor is named in words and written "f"
+ * where a formula needs a symbol ("depth factor f = clip(…)", "h + 0.3/f"). "km2" is written "km²".
  */
 export function plainManifestText(text: string): string {
   return text
@@ -23,8 +24,16 @@ export function plainManifestText(text: string): string {
     .replace(/\s*\((?:scenario )?per decision D\d+\)/g, "")
     .replace(/\s+\((?:decision )?D\d+\)/g, "")
     .replace(/\bk x stage\b/g, "to a fraction of the stage")
+    .replace(/\b(depth factor) k\b/gi, "$1 f")
+    .replace(/\bthe exported k\b/g, "the exported depth factor f")
+    .replace(/\bscaled by k\b/g, "scaled by the depth factor f")
+    .replace(/\bk = clip\(/g, "depth factor f = clip(")
+    .replace(/(\d)\/k\b/g, "$1/f")
     .replace(/\bkm2\b/g, "km²");
 }
+
+/** A standalone "k" (the plan-size symbol) in a piece of text; the Sources panel must show none from the manifest. */
+export const STANDALONE_K = /(?<![A-Za-z0-9_])k(?![A-Za-z0-9_])/;
 
 export const KNOWN_THAI: Readonly<Record<string, string>> = {
   "Copernicus DEM tiles N20E099 and N20E100 cover the whole district.":
@@ -106,8 +115,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ระดับน้ำคือระดับสมมุติของลำน้ำหลักแม่น้ำสายที่สะพานแม่สาย ลำน้ำสาขาสูงขึ้นเพียงบางส่วนของระดับนี้ (ดูสมมติฐานถัดไป) ระดับน้ำจริงยังแตกต่างกันไปในแต่ละช่วงลำน้ำ",
   "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.":
     "ร่องน้ำคือช่องที่มีพื้นที่รับน้ำด้านเหนือน้ำอย่างน้อย 25 ตร.กม. บน Copernicus DSM ความละเอียด 30 ม. อาคารและต้นไม้ใน DSM ทำให้ค่า HAND ในเขตเมืองสูงกว่าจริง",
-  "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.":
-    "ถนนสัญจรไม่ได้เมื่อความลึกจำลองถึง 0.3 ม. ที่จุดตัวอย่างใดก็ตามซึ่งห่างกันทุก 10 ม. ตามถนนช่วงละ 120 ม. (ใช้ตัวคูณความลึกรายจุด ค่า k ที่ส่งออกทำให้ h + 0.3/k เท่ากับเวลาที่จุดตัวอย่างแรกถูกปิด) ไม่นับจุดตัวอย่างในร่องน้ำบนสะพาน",
+  "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported depth factor f makes h + 0.3/f equal the earliest sample closure); river-channel samples on bridges are ignored.":
+    "ถนนสัญจรไม่ได้เมื่อความลึกจำลองถึง 0.3 ม. ที่จุดตัวอย่างใดก็ตามซึ่งห่างกันทุก 10 ม. ตามถนนช่วงละ 120 ม. (ใช้ตัวคูณความลึกรายจุด ตัวคูณความลึก f ที่ส่งออกทำให้ h + 0.3/f เท่ากับเวลาที่จุดตัวอย่างแรกถูกปิด) ไม่นับจุดตัวอย่างในร่องน้ำบนสะพาน",
   "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.":
     "ถนนช่วงที่ค่า HAND ต่ำสุดเกิน 4 ม. ไม่ถูกน้ำท่วมภายใต้จุดกำหนดระดับน้ำเหล่านี้จึงไม่แสดง ยกเว้นทางหลวงสายหลัก ถนนสายหลัก และถนนสายรอง",
   "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.":
@@ -118,8 +127,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ช่องที่น้ำไหลออกนอกขอบเขตการคำนวณทางอุทกวิทยาก่อนถึงร่องน้ำในแผนที่ ใช้จุดทางออกที่ขอบเขตนั้นเป็นจุดอ้างอิงของ HAND (ขอบเขตนี้อยู่นอกพื้นที่การย้อนดู)",
   "Where flow routing leaves no path to a channel (large flats), HAND falls back to height above the nearest channel cell.":
     "ในพื้นที่ที่การคำนวณทิศทางการไหลไม่พบเส้นทางไปยังร่องน้ำ (พื้นที่ราบกว้าง) ค่า HAND ใช้ความสูงเหนือช่องร่องน้ำที่ใกล้ที่สุดแทน",
-  "Stage varies along the river: each cell's water rise is scaled by k = clip((A / A_Sai) ** 0.3, 0.35, 1), where A is the upstream area of its drainage channel and A_Sai the Sai main stem at the Mae Sai bridges (downstream hydraulic geometry). The Ruak east of Mae Sai is inside the hydrology domain (DEM tiles N20E099 + N20E100).":
-    "ระดับน้ำแปรผันตามลำน้ำ: การสูงขึ้นของน้ำในแต่ละช่องคูณด้วย k = clip((A / A_Sai) ** 0.3, 0.35, 1) โดย A คือพื้นที่รับน้ำด้านเหนือน้ำของร่องน้ำของช่องนั้น และ A_Sai คือค่าของลำน้ำหลักแม่น้ำสายที่สะพานแม่สาย (เรขาคณิตชลศาสตร์ด้านท้ายน้ำ) แม่น้ำรวกทางตะวันออกของแม่สายอยู่ในขอบเขตการคำนวณทางอุทกวิทยา (แผ่นข้อมูล DEM N20E099 + N20E100)",
+  "Stage varies along the river: each cell's water rise is scaled by the depth factor f = clip((A / A_Sai) ** 0.3, 0.35, 1), where A is the upstream area of its drainage channel and A_Sai the Sai main stem at the Mae Sai bridges (downstream hydraulic geometry). The Ruak east of Mae Sai is inside the hydrology domain (DEM tiles N20E099 + N20E100).":
+    "ระดับน้ำแปรผันตามลำน้ำ: การสูงขึ้นของน้ำในแต่ละช่องคูณด้วยตัวคูณความลึก f = clip((A / A_Sai) ** 0.3, 0.35, 1) โดย A คือพื้นที่รับน้ำด้านเหนือน้ำของร่องน้ำของช่องนั้น และ A_Sai คือค่าของลำน้ำหลักแม่น้ำสายที่สะพานแม่สาย (เรขาคณิตชลศาสตร์ด้านท้ายน้ำ) แม่น้ำรวกทางตะวันออกของแม่สายอยู่ในขอบเขตการคำนวณทางอุทกวิทยา (แผ่นข้อมูล DEM N20E099 + N20E100)",
   "People in water uses WorldPop 2020 (100 m, spread evenly over 10 m cells); it is modelled residential population, not the 2024 population or tourists and traders at the border market.":
     "ประชากรในพื้นที่น้ำท่วมใช้ WorldPop 2020 (100 ม. กระจายเท่ากันลงในช่อง 10 ม.) เป็นประชากรที่อยู่อาศัยตามแบบจำลอง ไม่ใช่ประชากรปี 2567 (2024) หรือนักท่องเที่ยวและผู้ค้าที่ตลาดชายแดน",
   "Evacuation access uses the repo road graph and walking distance: a resident node has access when an open, dry shelter is within 2 km along roads still passable (about 30 minutes on foot); a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it. Levels are evaluated every 0.05 m of stage.":
@@ -192,8 +201,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "การเทียบกับ VIIRS รายวันคำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง",
   "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision.":
     "การเทียบกับผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง ผลิตภัณฑ์ 4009 ยังไม่แสดงในข้อมูลรุ่นนี้",
-  "The depth factor k = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.":
-    "ตัวคูณความลึก k = clip((A / A_Sai) ** 0.3, 0.35, 1) เพิ่มเข้ามาเมื่อ 28 ก.ย. 2569 ซึ่งขณะนั้นทราบตัวเลขของ GISTDA และ UNOSAT 3991 แล้ว เลขชี้กำลังและค่าต่ำสุดเป็นไปตามหลักประมาณของเรขาคณิตชลศาสตร์ ประวัติการสร้างข้อมูลไม่มีบันทึกว่าปรับให้เข้ากับตัวเลขภายนอกใด",
+  "The depth factor f = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.":
+    "ตัวคูณความลึก f = clip((A / A_Sai) ** 0.3, 0.35, 1) เพิ่มเข้ามาเมื่อ 28 ก.ย. 2569 ซึ่งขณะนั้นทราบตัวเลขของ GISTDA และ UNOSAT 3991 แล้ว เลขชี้กำลังและค่าต่ำสุดเป็นไปตามหลักประมาณของเรขาคณิตชลศาสตร์ ประวัติการสร้างข้อมูลไม่มีบันทึกว่าปรับให้เข้ากับตัวเลขภายนอกใด",
   "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.":
     "นับจากนี้จะไม่ปรับจุดกำหนดระดับน้ำ ตัวคูณความลึก หรือข้อมูลภูมิประเทศให้เข้ากับ VIIRS หรือผลิตภัณฑ์ 4009 หากมีการปรับ การเทียบนั้นจะถูกระบุใหม่ว่ามีส่วนในการปรับแบบจำลอง",
   // Sentences of revision r3 that r4 reworded, kept for a client that still holds the r3 manifest in its offline copy.

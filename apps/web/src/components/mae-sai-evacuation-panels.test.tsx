@@ -444,6 +444,9 @@ describe("Evacuation access card (scenario)", () => {
     expect(html).toContain(`role="tooltip" id="${id}"`);
     expect(text(html)).toContain("Points on the OpenStreetMap road network");
     expect(text(accessCard("en", "reported"))).toContain("Points on the OpenStreetMap road network");
+    // Closed until the pointer or the focus reaches the term; the page opens it (and Escape closes it) from then on.
+    expect(html).not.toContain("data-open");
+    expect(html).toMatch(/<span role="tooltip" id="[^"]+" class="[^"]*termTip[^"]*">/);
   });
 
   it("reports loading and failure honestly instead of showing zeros", () => {

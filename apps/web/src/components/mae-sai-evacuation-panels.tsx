@@ -5,7 +5,7 @@
  * Every figure here is a model scenario on the reconstructed flood (T1), never an observation.
  */
 
-import { memo, useId, useState, type ReactNode } from "react";
+import { memo, useId, useLayoutEffect, useReducer, useRef, useState, type ReactNode } from "react";
 
 import {
   checkDifference,
@@ -55,6 +55,7 @@ import {
   type ReportedCheck,
   type SetComparison,
 } from "@/lib/flood-timeline-evacuation";
+import { TIP_CLOSED, tipOpen, tipReducer, tooltipShift } from "@/lib/flood-timeline-layout";
 import type { AccessScopeChoice, ShelterSetChoice } from "@/lib/flood-timeline-link";
 
 import styles from "./mae-sai-flood-timeline.module.css";
@@ -288,16 +289,54 @@ export const occupancyText = (shelter: Pick<ReportedShelter, "reported_capacity_
 
 export const reportedName = (shelter: Pick<ReportedShelter, "name_en" | "name_th">, language: Language) => (language === "th" ? shelter.name_th : shelter.name_en);
 
+/** Left and right edges (viewport px) a tooltip must stay between: the viewport, narrowed by every clipping ancestor. */
+function horizontalClip(element: HTMLElement): [number, number] {
+  let left = 0;
+  let right = document.documentElement.clientWidth;
+  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
+    if (getComputedStyle(node).overflowX === "visible") continue;
+    const box = node.getBoundingClientRect();
+    left = Math.max(left, box.left);
+    right = Math.min(right, box.right);
+  }
+  return [left, right];
+}
+
 /**
  * A technical term with its short definition on hover or keyboard focus (the definition is also the term's
- * accessible description). Definitions come from the page glossary, which "How to read these numbers" lists in full.
+ * accessible description). Escape closes the definition without moving the pointer or the focus, and the box is
+ * moved sideways so it never leaves the viewport. Definitions come from the page glossary, which "How to read these
+ * numbers" lists in full.
  */
 export function Term({ id, language, children }: { id: GlossaryId; language: Language; children: ReactNode }) {
   const tipId = useId();
+  const tip = useRef<HTMLSpanElement | null>(null);
+  const [state, dispatch] = useReducer(tipReducer, TIP_CLOSED);
+  const open = tipOpen(state);
+  useLayoutEffect(() => {
+    const element = tip.current;
+    if (!open || !element) return;
+    const place = () => {
+      element.style.setProperty("--fg-tip-shift", "0px");
+      const box = element.getBoundingClientRect();
+      const [left, right] = horizontalClip(element);
+      element.style.setProperty("--fg-tip-shift", `${tooltipShift(box.left - left, box.right - left, right - left)}px`);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dispatch("escape");
+    };
+    place();
+    window.addEventListener("resize", place);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("resize", place);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, language]);
   return (
-    <span className={styles.term}>
-      <span className={styles.termLabel} tabIndex={0} aria-describedby={tipId}>{children}</span>
-      <span role="tooltip" id={tipId} className={styles.termTip}>{GLOSSARY[id].definition[language]}</span>
+    <span className={styles.term} onPointerEnter={() => dispatch("enter")} onPointerLeave={() => dispatch("leave")}>
+      <span className={styles.termLabel} tabIndex={0} aria-describedby={tipId} onFocus={() => dispatch("focus")} onBlur={() => dispatch("blur")}>{children}</span>
+      <span ref={tip} role="tooltip" id={tipId} className={styles.termTip} data-open={open || undefined}>{GLOSSARY[id].definition[language]}</span>
     </span>
   );
 }

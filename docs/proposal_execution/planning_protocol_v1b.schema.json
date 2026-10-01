@@ -1,0 +1,1144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/proposal-execution/planning-protocol-v1b.schema.json",
+  "title": "FloodGuard planning protocol v1b (engineering addendum)",
+  "description": "Shape of docs/proposal_execution/planning_protocol_v1b.json. While any open item is open the status must be incomplete_draft. A signed file has no open item, both signatures and the recorded v1a SHA-256. The file never records its own SHA-256.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "assumptions",
+    "blinding",
+    "change_control",
+    "closure_rule_v1",
+    "corridor_polygon",
+    "critical_link_selection",
+    "dependencies_that_do_not_block_signing",
+    "depends_on",
+    "downloads_not_needed",
+    "downloads_requiring_owner_approval",
+    "drafted_by",
+    "drafted_on",
+    "ensemble_grid",
+    "facility_sets",
+    "grade_join_policy",
+    "inputs_on_disk_check",
+    "national_vulnerability_anchors",
+    "official_warning",
+    "open_items",
+    "operational_status",
+    "protocol_id",
+    "protocol_kind",
+    "purpose",
+    "scenario_engine_grid",
+    "schema",
+    "signature_block",
+    "source_documents",
+    "status",
+    "status_note",
+    "title"
+  ],
+  "properties": {
+    "protocol_kind": {
+      "const": "declared_protocol_after_exploratory_analysis"
+    },
+    "status_note": {
+      "type": "string",
+      "minLength": 1
+    },
+    "drafted_on": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "drafted_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "official_warning": {
+      "const": false
+    },
+    "operational_status": {
+      "const": "non_operational"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "signature_block": {
+      "type": "object",
+      "required": [
+        "kind",
+        "note",
+        "attestations_required",
+        "signers",
+        "amendments_at_signing"
+      ],
+      "properties": {
+        "kind": {
+          "const": "team_governance_signature"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attestations_required": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "signers": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "properties": {
+                "role": {
+                  "const": "owner"
+                },
+                "action": {
+                  "const": "signs"
+                }
+              }
+            },
+            {
+              "properties": {
+                "role": {
+                  "const": "method_co_signer"
+                },
+                "action": {
+                  "const": "co-signs"
+                }
+              }
+            }
+          ],
+          "items": {
+            "type": "object",
+            "required": [
+              "role",
+              "required_signer",
+              "action",
+              "signed_by",
+              "signed_at_utc",
+              "attestation"
+            ],
+            "properties": {
+              "role": {
+                "enum": [
+                  "owner",
+                  "method_co_signer"
+                ]
+              },
+              "required_signer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "action": {
+                "enum": [
+                  "signs",
+                  "co-signs"
+                ]
+              },
+              "signed_by": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              },
+              "signed_at_utc": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+              },
+              "attestation": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "amendments_at_signing": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "change_control": {
+      "type": "object",
+      "required": [
+        "basis",
+        "rules",
+        "status_values",
+        "receipt"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status_values": {
+          "type": "object"
+        },
+        "receipt": {
+          "type": "object",
+          "required": [
+            "file",
+            "procedure",
+            "note"
+          ],
+          "properties": {
+            "file": {
+              "const": "docs/proposal_execution/RECEIPTS.jsonl"
+            },
+            "procedure": {
+              "const": "docs/proposal_execution/planning_protocol_v1_signing.md"
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "schema": {
+      "const": "floodguard.planning_protocol.v1b"
+    },
+    "protocol_id": {
+      "const": "planning_protocol_v1b"
+    },
+    "status": {
+      "enum": [
+        "incomplete_draft",
+        "draft_for_signature",
+        "signed"
+      ]
+    },
+    "depends_on": {
+      "type": "object",
+      "required": [
+        "basis",
+        "v1a_path",
+        "v1a_sha256",
+        "rule"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "v1a_path": {
+          "const": "docs/proposal_execution/planning_protocol_v1a.json"
+        },
+        "v1a_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "source_documents": {
+      "type": "object",
+      "required": [
+        "restructuring_plan_v2",
+        "decision_log"
+      ],
+      "properties": {}
+    },
+    "blinding": {
+      "type": "object",
+      "required": [
+        "basis",
+        "may_run_before_v1b_is_in_force",
+        "may_not_run_before_v1b_is_in_force",
+        "status_at_drafting"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "corridor_polygon": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items",
+        "context_call",
+        "construction",
+        "acceptance",
+        "geometry_file",
+        "e0_spike_record"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          }
+        },
+        "construction": {
+          "type": "object",
+          "required": [
+            "base",
+            "buffer_m",
+            "hospital_destinations"
+          ],
+          "properties": {
+            "buffer_m": {
+              "const": 3000
+            }
+          }
+        },
+        "geometry_file": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "grade_join_policy": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items",
+        "signed_decision_text",
+        "rules",
+        "coincidence_tolerance_m",
+        "join_log"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          }
+        }
+      }
+    },
+    "closure_rule_v1": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items",
+        "version",
+        "levels",
+        "parameters",
+        "regression"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          }
+        },
+        "version": {
+          "const": "closure_rule_v1"
+        },
+        "levels": {
+          "type": "object",
+          "required": [
+            "strict",
+            "central",
+            "permissive"
+          ],
+          "properties": {
+            "strict": {
+              "type": "object",
+              "required": [
+                "closed_when",
+                "delay_factor_k"
+              ],
+              "properties": {
+                "closed_when": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "delay_factor_k": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "central": {
+              "type": "object",
+              "required": [
+                "closed_when",
+                "delay_factor_k"
+              ],
+              "properties": {
+                "closed_when": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "delay_factor_k": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "permissive": {
+              "type": "object",
+              "required": [
+                "closed_when",
+                "delay_factor_k"
+              ],
+              "properties": {
+                "closed_when": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "delay_factor_k": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "parameters": {
+          "type": "object",
+          "required": [
+            "closed_fraction_min",
+            "length_threshold_m_by_road_class",
+            "bridge_culvert_closed_fraction_min",
+            "delay_min_intersected_length_m",
+            "delay_formula",
+            "raster_minimum_polygon_px"
+          ],
+          "properties": {}
+        }
+      }
+    },
+    "facility_sets": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items",
+        "services",
+        "shelter_location_rule",
+        "sets",
+        "two_step_access"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          }
+        },
+        "sets": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3
+        }
+      }
+    },
+    "critical_link_selection": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items",
+        "rule",
+        "parameters",
+        "uses_flood_input",
+        "ranking_output"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          }
+        },
+        "uses_flood_input": {
+          "const": false
+        }
+      }
+    },
+    "national_vulnerability_anchors": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items",
+        "definition",
+        "computed",
+        "values",
+        "inputs",
+        "download_needed",
+        "method"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          }
+        },
+        "values": {
+          "type": "object",
+          "required": [
+            "P5",
+            "P10",
+            "P75",
+            "P90",
+            "P95"
+          ],
+          "properties": {
+            "P5": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "P10": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "P75": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "P90": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "P95": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "download_needed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ensemble_grid": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items",
+        "core_axes",
+        "core_cells_per_lane",
+        "routing_combinations_per_lane",
+        "one_at_a_time",
+        "headline_rule"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          }
+        },
+        "core_axes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "axis",
+              "levels",
+              "count"
+            ],
+            "properties": {
+              "axis": {
+                "type": "string",
+                "minLength": 1
+              },
+              "levels": {
+                "type": "array",
+                "minItems": 1
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "core_cells_per_lane": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "routing_combinations_per_lane": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "scenario_engine_grid": {
+      "type": "object",
+      "required": [
+        "basis",
+        "status",
+        "open_items",
+        "labels",
+        "selection_principle",
+        "cells"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "enum": [
+            "open",
+            "fixed"
+          ]
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          }
+        },
+        "cells": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "base",
+              "perturbation",
+              "selection_rule"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "base": {
+                "type": "array"
+              },
+              "perturbation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "selection_rule": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "inputs_on_disk_check": {
+      "type": "object",
+      "required": [
+        "checked_on",
+        "present",
+        "absent"
+      ],
+      "properties": {}
+    },
+    "downloads_requiring_owner_approval": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "dataset",
+          "file",
+          "source",
+          "approximate_size",
+          "needed_for",
+          "required_by_v1b_parameters",
+          "approved"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^DL-[0-9]+$"
+          },
+          "dataset": {
+            "type": "string",
+            "minLength": 1
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "approximate_size": {
+            "type": "string",
+            "minLength": 1
+          },
+          "needed_for": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required_by_v1b_parameters": {
+            "type": "boolean"
+          },
+          "approved": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "downloads_not_needed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "open_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "parameter",
+          "what_is_missing",
+          "produced_by",
+          "who",
+          "download_needed",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^OI-[0-9]{2}$"
+          },
+          "parameter": {
+            "type": "string",
+            "minLength": 1
+          },
+          "what_is_missing": {
+            "type": "string",
+            "minLength": 1
+          },
+          "produced_by": {
+            "type": "string",
+            "minLength": 1
+          },
+          "who": {
+            "type": "string",
+            "minLength": 1
+          },
+          "download_needed": {
+            "type": "boolean"
+          },
+          "download_note": {
+            "type": "string",
+            "minLength": 1
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "open",
+              "closed"
+            ]
+          },
+          "closure": {
+            "type": "object",
+            "required": [
+              "closed_on",
+              "closed_by",
+              "value_or_location",
+              "evidence_sha256"
+            ],
+            "properties": {
+              "closed_on": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              "closed_by": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value_or_location": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence_sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false,
+        "if": {
+          "properties": {
+            "status": {
+              "const": "closed"
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "closure"
+          ]
+        },
+        "else": {
+          "not": {
+            "required": [
+              "closure"
+            ]
+          }
+        }
+      }
+    },
+    "dependencies_that_do_not_block_signing": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "open_items": {
+            "contains": {
+              "properties": {
+                "status": {
+                  "const": "open"
+                }
+              },
+              "required": [
+                "status"
+              ]
+            }
+          }
+        },
+        "required": [
+          "open_items"
+        ]
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "incomplete_draft"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "status": {
+            "enum": [
+              "draft_for_signature",
+              "signed"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "incomplete_draft",
+              "draft_for_signature"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "signature_block": {
+            "properties": {
+              "signers": {
+                "items": {
+                  "properties": {
+                    "signed_by": {
+                      "type": "null"
+                    },
+                    "signed_at_utc": {
+                      "type": "null"
+                    },
+                    "attestation": {
+                      "type": "null"
+                    }
+                  }
+                }
+              },
+              "amendments_at_signing": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "signed"
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "properties": {
+              "signature_block": {
+                "properties": {
+                  "signers": {
+                    "items": {
+                      "properties": {
+                        "signed_by": {
+                          "type": "string"
+                        },
+                        "signed_at_utc": {
+                          "type": "string"
+                        },
+                        "attestation": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "depends_on": {
+                "properties": {
+                  "v1a_sha256": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

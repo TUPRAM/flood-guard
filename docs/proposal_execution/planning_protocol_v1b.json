@@ -1,0 +1,1023 @@
+{
+  "schema": "floodguard.planning_protocol.v1b",
+  "protocol_id": "planning_protocol_v1b",
+  "title": "FloodGuard planning protocol v1b: engineering addendum",
+  "protocol_kind": "declared_protocol_after_exploratory_analysis",
+  "status": "incomplete_draft",
+  "status_note": "Incomplete draft written by an AI coding agent. Agents draft, humans sign. Nothing in this file is in force. It cannot be signed while any entry in open_items has status open. Until the signed file's SHA-256 is recorded in docs/proposal_execution/RECEIPTS.jsonl, no FPPS, no A-E class and no ensemble may be computed for any real unit. No receipt has been written.",
+  "drafted_on": "2026-10-01",
+  "drafted_by": "AI coding agent (Claude), on the owner go-ahead R5 of 2026-10-01",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "purpose": "Fix the engineering parameters that the decision rules in v1a need before any score is computed: the routing corridor, the grade-join policy, closure rule v1, the facility sets and the corroboration rule, critical-link selection, the national vulnerability anchors, the ensemble grid, and the selection rules for the scenario and engine grid. Plan row G7b.",
+  "depends_on": {
+    "v1a_path": "docs/proposal_execution/planning_protocol_v1a.json",
+    "v1a_sha256": null,
+    "rule": "v1b is signed only after v1a's SHA-256 is recorded in RECEIPTS.jsonl. That value is written into v1a_sha256 before v1b is signed.",
+    "exploratory_knowledge_disclosure": "The disclosure in v1a applies to this file. Items EK-02, EK-03, EK-04 and EK-12 informed parameters set here.",
+    "basis": [
+      "plan 0 item 5",
+      "plan 8.1 G7b"
+    ]
+  },
+  "source_documents": {
+    "restructuring_plan_v2": {
+      "name": "FloodGuard_Restructuring_Plan_v2.md",
+      "sha256": "495efafed4d73f8be22e9f49b5c05892c3f600f7d59fc99e52ada1b1daa049b6",
+      "sections_used": [
+        "1.1",
+        "1.3",
+        "3.1",
+        "3.4",
+        "3.5",
+        "5",
+        "6.2",
+        "6.3",
+        "8.1 rows G7b, E0, E2-E6, P1",
+        "9"
+      ]
+    },
+    "pre_monday_prep": {
+      "name": "FloodGuard_Pre-Monday_Prep.md",
+      "sha256": "53719fe3c69cdddd0059ab56acbe79f3be1d6d37b1953b761cb94e41b79c9555",
+      "sections_used": [
+        "3"
+      ]
+    },
+    "decision_log": {
+      "name": "docs/decision-log-d1-d16.md",
+      "sha256": "2c64fa479573c8eb1d6ac50a8e1d9c5e77e609c336f2352e52b2f05c8804b21e",
+      "decisions_used": [
+        "D4",
+        "D8b",
+        "D12",
+        "D13"
+      ]
+    },
+    "base_commit": {
+      "branch": "codex/thai-event-selection",
+      "commit": "96fab6e60f7aac35fc153b21c89f5c71c755af22"
+    }
+  },
+  "blinding": {
+    "basis": [
+      "plan 2.3 item 5",
+      "plan 6.3"
+    ],
+    "may_run_before_v1b_is_in_force": [
+      "Context builds (E0 spike, E4).",
+      "Closure builds and the regression against the finals closed-edge IDs (E3).",
+      "Baseline and disrupted access builds (E5).",
+      "The baseline critical-link ranking, which uses no flood input (E6).",
+      "The national dependent-share percentiles, which are constants for all of Thailand and not a score for any unit."
+    ],
+    "may_not_run_before_v1b_is_in_force": [
+      "Any FPPS for a real unit.",
+      "Any A-E class for a real unit, including would-be classes and v2 classes.",
+      "Any ensemble cell."
+    ],
+    "status_at_drafting": "None of the builds above has been run for this protocol. No value in this file comes from a new computation."
+  },
+  "corridor_polygon": {
+    "basis": [
+      "plan 1.1",
+      "plan 0 item 7",
+      "plan 3.1 P2",
+      "plan 5 item 1",
+      "plan 8.1 E0 and E4"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-01",
+      "OI-02",
+      "OI-03"
+    ],
+    "context_call": {
+      "function": "floodguard.evidence_context.build_context_inputs (unchanged)",
+      "aoi_geometry": "Union of the eight Mae Sai tambons TH570901-906, 908 and 909.",
+      "routing_geometry": "The corridor polygon defined below.",
+      "reporting_geometry": "Union of the Thai COD-AB ADM3 polygons that intersect the corridor polygon. It is not the eight tambons, because build_context_inputs limits demand, destinations and road segments to the reporting geometry.",
+      "tambon_attribution": "Done downstream of the context build."
+    },
+    "construction": {
+      "base": "resources/aoi/aoi-02_mae_sai_district.geojson",
+      "base_sha256": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+      "plus": "3 km buffers along the trunk and primary routes from AOI-02 to three hospitals",
+      "buffer_m": 3000,
+      "hospital_destinations": [
+        {
+          "name": "Mae Chan hospital",
+          "osm_way": 447735125
+        },
+        {
+          "name": "Chiang Saen hospital",
+          "osm_way": 527539157
+        },
+        {
+          "name": "Mae Fa Luang hospital",
+          "osm_way": 549948901
+        }
+      ],
+      "distance_note": "The three hospitals are 27-33 km from Mae Sai.",
+      "boundary_source": "HDX Thailand COD-AB, layer tha_admin3, <external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip (SHA-256 09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8)",
+      "road_source": "OpenStreetMap Thailand extract already on disk"
+    },
+    "route_selection_rule": {
+      "status": "proposed, not in the plan",
+      "proposal": "For each of the three hospitals, take the baseline fastest vehicle path on the national OSM graph from the AOI-02 boundary to the hospital way, keep its trunk and primary segments (including links), buffer them by 3 km and union the result with AOI-02. Record the path edge IDs.",
+      "why_needed": "The plan names the routes as trunk and primary routes to the hospitals but does not say how a route is picked."
+    },
+    "rejected_alternative": "A full 35 km disc (about 8,700 square kilometres): roughly 10-16 times AOI-02's edge count; AOI-06 at about 1,000 square kilometres already cost 16.6 minutes and 4.39 GiB.",
+    "tolerance": "TH570902 and TH570909 have 0.99999 coverage and are treated as full under a declared tolerance of at least 0.999.",
+    "acceptance": {
+      "hospitals_in_context_min": 4,
+      "ways_within_routing_context": [
+        447735125,
+        527539157,
+        549948901
+      ],
+      "baseline_vehicle_no_route_share_max": 0.1,
+      "pii_whitelist_test": true,
+      "load_aois_still_returns": 6
+    },
+    "compute_window": "Builds run serially in a declared compute window with no concurrent SNAP jobs.",
+    "geometry_file": {
+      "path": null,
+      "sha256": null
+    },
+    "e0_spike_record": {
+      "hospital_count": null,
+      "within_routing_context_for_named_ways": null,
+      "edge_count": null,
+      "wall_time_minutes": null,
+      "peak_ram_gib": null,
+      "grade_split_count": null,
+      "baseline_vehicle_no_route_share": null
+    },
+    "se2_frame": {
+      "planning_frame_file": "resources/planning_frames/pf-07_mueang_chiang_rai.geojson",
+      "file_exists_on_this_lineage": false,
+      "sha256": null,
+      "unit_list": null,
+      "note": "New planning frames live in resources/planning_frames/, not resources/aoi/, so load_aois still returns exactly six AOIs. The SE2 routing geometry and its hospital destinations are not specified in the plan.",
+      "open_items": [
+        "OI-09"
+      ]
+    }
+  },
+  "grade_join_policy": {
+    "basis": [
+      "D13",
+      "plan 3.1 P2",
+      "plan 5 item 1"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-04"
+    ],
+    "signed_decision_text": "D13: Endpoint-only coincident joins in grade_join.py are logged. The finals contract is unchanged.",
+    "rules": [
+      "A join is made only where the endpoints of two road segments coincide. No join is made at a mid-segment crossing.",
+      "Every join is logged with its provenance: the two source way IDs, the node IDs, the coordinate and the rule version.",
+      "The 20 reviewed AOI-01 junctions are reused as they are.",
+      "The finals contract and the nine SHA-bound finals modules are unchanged. The finals rule that proximity never creates a join still holds for the finals path."
+    ],
+    "module": "src/floodguard/grade_join.py (new; does not exist on this lineage)",
+    "coincidence_tolerance_m": null,
+    "coincidence_tolerance_proposal": "0 m: identical OSM coordinates at 1e-7 degree precision.",
+    "join_log": {
+      "path": null,
+      "sha256": null,
+      "join_count": null
+    }
+  },
+  "closure_rule_v1": {
+    "version": "closure_rule_v1",
+    "basis": [
+      "plan 5 item 2",
+      "plan 3.1 P3",
+      "plan 2.2 G34",
+      "plan 5 item 11 axis 2"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-05"
+    ],
+    "geometry": "Each edge is the straight segment between its two nodes, projected to EPSG:32647. Intersected length is the length of that segment inside the flood extent. Intersected fraction f is min(1, intersected length / segment length). This is the measurement used in src/floodguard/evidence_flood_scenario.py.",
+    "levels": {
+      "strict": {
+        "closed_when": "f >= 0.5",
+        "delay_factor_k": 2
+      },
+      "central": {
+        "closed_when": "f >= 0.5 OR intersected length >= L(road class); bridges and culverts close at f >= 0.25",
+        "delay_factor_k": 4
+      },
+      "permissive": {
+        "closed_when": "any intersection (intersected length > 0)",
+        "delay_factor_k": 6,
+        "note": "Under this level no intersected edge stays open, so the delay factor has no effect."
+      }
+    },
+    "parameters": {
+      "closed_fraction_min": 0.5,
+      "length_threshold_m_by_road_class": {
+        "trunk": 50,
+        "primary": 50,
+        "secondary": 50,
+        "tertiary": 30,
+        "local": 30
+      },
+      "bridge_culvert_closed_fraction_min": 0.25,
+      "bridge_culvert_tags": [
+        "bridge=yes",
+        "tunnel=culvert",
+        "culvert=*"
+      ],
+      "delay_min_intersected_length_m": 20,
+      "delay_formula": "travel time x (1 + k x f), for edges that are intersected for at least 20 m and are not closed",
+      "raster_minimum_polygon_px": 5,
+      "raster_minimum_polygon_note": "For T2 rasters, polygons under 5 pixels are dropped before intersection."
+    },
+    "unassigned_road_classes": {
+      "classes": [
+        "motorway",
+        "residential",
+        "unclassified"
+      ],
+      "proposal": "motorway uses the 50 m threshold; residential and unclassified use the 30 m threshold, following the grouping in src/floodguard/road_risk.py ROAD_CLASS_FACTORS.",
+      "status": "proposed, not in the plan"
+    },
+    "delay_under_strict": {
+      "proposal": "Under strict, an edge intersected for at least 20 m with f < 0.5 is delayed with k = 2. Under central the plan's wording applies with k = 4.",
+      "status": "proposed. The plan states the delay only for the central level and lists k = 2 / 4 / 6 beside strict / central / permissive."
+    },
+    "closure_is_an_assumption": "Every output carries closure_basis: modelled_from_<input>. A flood intersection does not prove a road closure.",
+    "regression": {
+      "rule": "The permissive level on the AOI-01 finals context reproduces the finals closed-edge IDs exactly.",
+      "expected_closed_edges": {
+        "walking": 1824,
+        "vehicle": 1738
+      },
+      "result": null
+    },
+    "field_verification_priority": "Segments are ranked by residents affected x disagreement across the strict, central and permissive levels."
+  },
+  "facility_sets": {
+    "basis": [
+      "plan 5 item 11 axis 3",
+      "plan 1.3 MVP-05 and MVP-10",
+      "plan 3.1 P2",
+      "plan 2.2 G32 and G33",
+      "D8b"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-06"
+    ],
+    "services": {
+      "hospital": {
+        "source": "OSM hospitals inside the routing context",
+        "mode": "vehicle",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 30
+      },
+      "main_road_entry": {
+        "source": "OSM trunk and primary network",
+        "mode": "vehicle",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 15,
+        "definition": null,
+        "definition_proposal": "The destination is the nearest node on a trunk or primary edge (including links) inside the routing context."
+      },
+      "ddpm_located_shelter": {
+        "source": "DDPM listed shelters, dpm-gd002_final2.csv (open-data 2026-09-21)",
+        "mode": "walking",
+        "thresholds_minutes": [
+          15,
+          30,
+          60
+        ],
+        "access_gap_threshold_minutes": 30,
+        "publication_level": "pitch",
+        "label": "listed, operating status unverified",
+        "capacity_status": "listed_planned_unverified"
+      }
+    },
+    "shelter_location_rule": {
+      "rule": "A coordinate shared by at least 3 rows is flagged location_unverified and those rows are excluded.",
+      "shared_coordinate_rows_min": 3,
+      "mae_sai_counts_from_plan": {
+        "listed_rows": 27,
+        "listed_places": 6050,
+        "located_rows": 17,
+        "located_places": 5550,
+        "unlocated_places": 500
+      }
+    },
+    "pii_rule": "The DDPM file has coordinator-name and phone columns. Columns are read through a whitelist, and a test asserts that output keys are a subset of the whitelist.",
+    "sets": [
+      {
+        "id": "public",
+        "members": "OSM hospitals and main-road entry.",
+        "publication_level": "public"
+      },
+      {
+        "id": "corroborated",
+        "members": "OSM hospitals matched to a DGA health-facility record within 150 m, and DDPM located shelters matched to an OSM building or amenity.",
+        "label": "corroborated, not confirmed-open",
+        "hospital_match_distance_m": 150,
+        "shelter_match_distance_m": null,
+        "shelter_match_distance_proposal": "150 m, the same as for hospitals.",
+        "dga_source": "Project Support/FloodGuard/open-data/2026-09-21/healthcare/thailand_health_facilities_th.geojson"
+      },
+      {
+        "id": "all_listed",
+        "members": "Every OSM hospital in the routing context, main-road entry, and every located DDPM shelter."
+      }
+    ],
+    "identity_rule": "Supplied and separately extracted OSM facilities never merge automatically (existing build_context_inputs behaviour).",
+    "two_step_access": {
+      "method": "Binary 2SFCA at 15, 30 and 60 minutes on the located DDPM rows.",
+      "participation_percent": [
+        5,
+        10,
+        25
+      ],
+      "label": "listed planned capacity; scenario",
+      "fpps_input": false,
+      "publication_level": "pitch",
+      "record": "2SFCA is not promoted."
+    },
+    "counts_in_corridor": {
+      "osm_hospitals": null,
+      "dga_matched_hospitals": null,
+      "located_ddpm_shelters": null,
+      "corroborated_shelters": null
+    },
+    "mae_sai_hospital_osm_id": null
+  },
+  "critical_link_selection": {
+    "basis": [
+      "plan 5 item 3",
+      "plan 3.1 P4",
+      "plan 3.5",
+      "plan 6.2 S3 and S3b"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-07"
+    ],
+    "rule": [
+      "Rank baseline vehicle edges by demand-weighted shortest-path-tree flow.",
+      "Add graph bridges (Tarjan) to cover the all-routes-lost case.",
+      "Fully reroute only the top 200 ranked edges.",
+      "Output the top 20 per case, each with a bridge flag and an in-extent flag."
+    ],
+    "parameters": {
+      "full_reroute_top_n": 200,
+      "output_top_n": 20,
+      "tie_break": "stable edge ID"
+    },
+    "demand_weight": "WorldPop 2020 residents at each origin node.",
+    "destination_set_for_ranking": null,
+    "destination_set_proposal": "The public facility set (OSM hospitals and main-road entry), vehicle mode, so the ranking does not depend on DDPM data.",
+    "uses_flood_input": false,
+    "no_example_figure": "No example figure is quoted before the run.",
+    "reuse": "Ranking pattern of src/floodguard/evidence_interventions.py select_interventions (stable IDs break ties; no scenario outcome tunes the selection).",
+    "desk_check": "An internal single-reviewer desk check (team member R. Ulwani) of the top 20 against imagery, OSM history and news. It is not independent expert review.",
+    "ranking_output": {
+      "path": null,
+      "sha256": null
+    }
+  },
+  "national_vulnerability_anchors": {
+    "basis": [
+      "D4",
+      "plan 3.4",
+      "plan 3.5",
+      "plan 5 item 11 axis 4",
+      "plan 8.1 E2"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-08"
+    ],
+    "definition": "Percentiles, across Thai tambons, of the dependent share: residents aged 0-14 plus residents aged 60 and over, divided by all residents, from the WorldPop 2024 1 km age counts.",
+    "computed": "Once, in v1b, before any case scoring. The values are constants for every case and lane.",
+    "values": {
+      "P5": null,
+      "P10": null,
+      "P75": null,
+      "P90": null,
+      "P95": null
+    },
+    "uses": {
+      "P10_P90": "Default anchors of the vulnerability component (v1a scoring_frame).",
+      "P5_P95": "Anchor sensitivity axis.",
+      "P75": "Class rule v2 trigger A (dependent-share concentration)."
+    },
+    "inputs": {
+      "age_rasters": {
+        "product": "WorldPop Global2 R2025A v1, Thailand, 2024, constrained total-sex age counts, 30 arc-second (about 1 km), 1km_ua",
+        "files": "20 files: tha_t_{00,01,05,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90}_2024_CN_1km_R2025A_UA_v1.tif",
+        "total_bytes": 51593135,
+        "manifest": "Project Support/FloodGuard/open-data/2026-09-23-worldpop-age-2024-r2025a-1km-ua/acquisition_manifest.json",
+        "manifest_sha256": "f7a169877177a374bc461724dcb93b6ec96d76451347cd2e98dc2fc7b0f8356c",
+        "manifest_status": "PASS",
+        "under_FloodGuard_external_data": false,
+        "on_disk": true,
+        "source_url_pattern": "https://data.worldpop.org/GIS/AgeSex_structures/Global_2015_2030/R2025A/2024/THA/v1/1km_ua/constrained/tha_t_{band}_2024_CN_1km_R2025A_UA_v1.tif",
+        "acquired_by": "scripts/acquire_worldpop_age.py --year 2024 --resolution 1km (2026-09-23)",
+        "rights": "Public catalog says CC BY 4.0. Public derivatives require purpose-specific review."
+      },
+      "tambon_boundaries": {
+        "product": "HDX Thailand COD-AB, layer tha_admin3 (valid on 2022-01-22)",
+        "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip",
+        "sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+        "under_FloodGuard_external_data": true,
+        "on_disk": true
+      }
+    },
+    "download_needed": false,
+    "method": {
+      "age_groups": {
+        "children_0_14": [
+          "00",
+          "01",
+          "05",
+          "10"
+        ],
+        "older_adults_60_plus": [
+          "60",
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90"
+        ],
+        "other_15_59": [
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55"
+        ]
+      },
+      "allocation": "Each 1 km cell's counts are allocated to a tambon by the projected-area fraction of the cell inside the tambon, as in scripts/bridge_worldpop_age_access.py.",
+      "unit_set": null,
+      "unit_set_proposal": "Every tha_admin3 unit in Thailand with at least 100 modelled 2024 residents (the minimum-denominator rule). The number of units used and the number excluded are recorded.",
+      "percentile_method": null,
+      "percentile_method_proposal": "Unweighted across tambons, linear interpolation between order statistics.",
+      "module": "src/floodguard/normalisation.py (new; does not exist on this lineage)"
+    },
+    "output_receipt": {
+      "path": null,
+      "sha256": null,
+      "unit_count": null,
+      "excluded_unit_count": null
+    },
+    "caveat": "Modelled 1 km age composition; not observed. Mixed vintages are disclosed: 2020 demand, 2024 age, 2022 boundaries, 2026 OSM."
+  },
+  "ensemble_grid": {
+    "basis": [
+      "plan 5 item 11",
+      "plan 2.3 item 8",
+      "plan 8.4"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-10"
+    ],
+    "proposal_reference": "Proposal section 3.6.4",
+    "runs": "Full-chain reruns, vehicle mode. Walking is excluded from the ensemble because the walking access gap is 46-100 with no flood.",
+    "core_axes": [
+      {
+        "axis": "flood_input_single_state",
+        "levels": [
+          "minus (one pixel / 20 m erosion)",
+          "as-provided",
+          "plus (one pixel buffer)"
+        ],
+        "t2_lane_levels": "M1-v2: Kittler-Illingworth threshold -1 / 0 / +1 dB. Legacy mask on AOI-01 only: 1.5 / 2.25 / 3.0 dB.",
+        "count": 3
+      },
+      {
+        "axis": "passability",
+        "levels": [
+          "strict (k = 2)",
+          "central (k = 4)",
+          "permissive (k = 6)"
+        ],
+        "count": 3
+      },
+      {
+        "axis": "facilities",
+        "levels": [
+          "public",
+          "corroborated",
+          "all_listed"
+        ],
+        "count": 3
+      },
+      {
+        "axis": "population_vintage",
+        "levels": [
+          "WorldPop 2020",
+          "2024-rescaled demand"
+        ],
+        "count": 2
+      },
+      {
+        "axis": "vulnerability_anchors",
+        "levels": [
+          "national P10 / P90",
+          "national P5 / P95"
+        ],
+        "count": 2
+      },
+      {
+        "axis": "weights",
+        "levels": [
+          "default",
+          "access_heavy",
+          "exposure_heavy",
+          "road_heavy",
+          "vulnerability_heavy"
+        ],
+        "count": 5
+      }
+    ],
+    "core_cells_per_lane": 540,
+    "routing_combinations_per_lane": 27,
+    "routing_combinations_note": "Only the 3 x 3 x 3 combinations of flood state, passability and facilities need full access runs.",
+    "one_at_a_time": [
+      "Flood-likelihood anchor 0.10 and 0.30.",
+      "Class rule v1 and v2.",
+      "Terrain / remoteness proxy in place of the age-based vulnerability, case O1 only."
+    ],
+    "per_tambon_outputs": [
+      "Median and range of people losing 30-minute access.",
+      "Median and range of EED and EER.",
+      "Best and worst rank.",
+      "Percent of runs keeping the class.",
+      "The axis with the largest swing."
+    ],
+    "headline_rule": {
+      "class_retention_min": 0.6,
+      "over": "the single-state ensemble",
+      "fallback_text": "no class met the stability rule; shown as unstable: verify",
+      "reference_cell": null,
+      "reference_cell_proposal": "Retention is the share of the 540 core cells whose v1 class equals the class of the default cell: as-provided flood state, central passability, public facilities, WorldPop 2020, P10 / P90 anchors, default weights."
+    },
+    "confidence_rule_independence": "Confidence rule v1 uses no ensemble output.",
+    "declared_cuts": {
+      "already_cut": "Walking-mode ensemble cells.",
+      "cut_line_6": "Population-vintage and vulnerability-anchor axes (540 to 135 cells).",
+      "cut_line_8": "Corroborated facility level (public and all-listed stay).",
+      "never_cut": "Weight presets."
+    },
+    "reporting": "All cells of every lane are reported."
+  },
+  "scenario_engine_grid": {
+    "basis": [
+      "plan 6.2",
+      "plan 6.3",
+      "D8b"
+    ],
+    "status": "open",
+    "open_items": [
+      "OI-07",
+      "OI-10"
+    ],
+    "labels": "Scenario cells are SCN (or SCN-ENV when the base is SE1). Engine cells are ENG. Neither is ever counted as observed.",
+    "selection_principle": "Links, nodes and facilities are picked by a rule that uses baseline information only. No cell is picked by its outcome, and every cell is reported.",
+    "cells": [
+      {
+        "id": "S1",
+        "base": [
+          "SE1"
+        ],
+        "perturbation": "Flood-state axis: minus / as-provided / plus one pixel.",
+        "selection_rule": "No selection: all three levels."
+      },
+      {
+        "id": "S2",
+        "base": [
+          "O2",
+          "SE1"
+        ],
+        "perturbation": "Closure strict / central / permissive.",
+        "selection_rule": "No selection: all three levels."
+      },
+      {
+        "id": "S3",
+        "base": [
+          "O2"
+        ],
+        "perturbation": "Fail the top 3 pre-ranked critical links per tambon.",
+        "selection_rule": "The three highest-ranked links of the baseline critical-link ranking whose edge lies in the tambon. Ties break on stable edge ID.",
+        "parameters": {
+          "links_per_tambon": 3
+        }
+      },
+      {
+        "id": "S3b",
+        "base": [
+          "O2"
+        ],
+        "perturbation": "Fail the top-k bridge edges only (OSM bridge=yes on the shortest-path-tree union).",
+        "selection_rule": "The k highest-ranked bridge edges of the baseline ranking.",
+        "parameters": {
+          "k": null
+        },
+        "k_proposal": "3 per tambon, to match S3.",
+        "open_items": [
+          "OI-10"
+        ]
+      },
+      {
+        "id": "S4",
+        "base": [
+          "O2"
+        ],
+        "perturbation": "Mae Sai Hospital unavailable.",
+        "selection_rule": "The facility is named in the plan. Its OSM ID is recorded from the E4 context.",
+        "open_items": [
+          "OI-06"
+        ]
+      },
+      {
+        "id": "S5",
+        "base": [
+          "SE1"
+        ],
+        "perturbation": "A temporary shelter at the predeclared add_destination node in each A or B tambon.",
+        "selection_rule": "The add_destination rule of src/floodguard/evidence_interventions.py: the demand node ranked first by residents without 30-minute access, then finite baseline person-minutes, resident count and stable node ID. The node is determined per tambon from the baseline context before scoring; which tambons receive the cell is decided by their SE1 class after scoring."
+      },
+      {
+        "id": "S6",
+        "base": [
+          "all cases"
+        ],
+        "perturbation": "The five weight presets.",
+        "selection_rule": "No selection: all five."
+      },
+      {
+        "id": "S7",
+        "base": [
+          "O2"
+        ],
+        "perturbation": "Derived confidence versus forced-low confidence.",
+        "selection_rule": "No selection: both."
+      },
+      {
+        "id": "S8",
+        "base": [
+          "O1"
+        ],
+        "perturbation": "Age-based vulnerability versus the terrain / remoteness proxy.",
+        "selection_rule": "No selection: both.",
+        "note": "Plan 6.2 names O2 as the base; plan 3.4 and the signed frame restrict the terrain proxy to O1. This draft follows 3.4. O1 and O2 share the same eight-tambon frame.",
+        "open_items": [
+          "OI-10"
+        ]
+      },
+      {
+        "id": "S9",
+        "base": [
+          "O2"
+        ],
+        "perturbation": "2SFCA participation 5 / 10 / 25 percent.",
+        "selection_rule": "No selection: all three. Pitch level only (D8b)."
+      },
+      {
+        "id": "S-RP",
+        "base": [],
+        "perturbation": "25-year versus 100-year return period.",
+        "selection_rule": "Not attempted: no return-period layer. Reported as extended target not attempted."
+      },
+      {
+        "id": "E1",
+        "base": [
+          "fixture FG-TB-001 to FG-TB-005"
+        ],
+        "perturbation": "Synthetic fixture.",
+        "selection_rule": "tests/fixtures/sample_population.csv as asserted in tests/test_scoring.py. The five fixture units cover classes A-E, with the fifth forced to E by low confidence."
+      },
+      {
+        "id": "E2",
+        "base": [
+          "boundary grid"
+        ],
+        "perturbation": "Synthetic rows at the class boundaries.",
+        "selection_rule": "FPPS exactly 35; exposure / access gap 70 / 70; road criticality / access gap 75 / 55; exposure / access gap 65 / 50; each boundary at +/-0.01; all components 0; all components 100.",
+        "parameters": {
+          "boundary_offset": 0.01
+        }
+      },
+      {
+        "id": "E3",
+        "base": [
+          "real O2 rows"
+        ],
+        "perturbation": "A minimal perturbation of one real row, labelled synthetic, to show a counterfactual class C.",
+        "selection_rule": null,
+        "selection_rule_proposal": "Take the O2 unit with the highest exposure component. Raise the single component that is furthest below the class C thresholds to the threshold value, and no other. Label the row synthetic.",
+        "note": "The plan gives only an example that names a tambon and a value; that example was written with exploratory rows in view (v1a disclosure item EK-04).",
+        "open_items": [
+          "OI-10"
+        ]
+      }
+    ],
+    "cut_lines": {
+      "5": "S5 and S9 (2SFCA at 10 percent only)."
+    }
+  },
+  "inputs_on_disk_check": {
+    "checked_on": "2026-10-01",
+    "external_data_workspace": "C:/Users/iputu/Documents/FloodGuard_external_data",
+    "present": [
+      {
+        "input": "WorldPop 2020 100 m national",
+        "path": "<external_data_workspace>/open_context/worldpop_population/tha_ppp_2020.tif"
+      },
+      {
+        "input": "HDX COD-AB national admin boundaries",
+        "path": "<external_data_workspace>/open_context/hdx_cod_ab/tha_admin_boundaries.gdb.zip"
+      },
+      {
+        "input": "OSM Thailand extract",
+        "path": "<external_data_workspace>/open_context/osm_geofabrik/thailand-latest.osm.pbf"
+      },
+      {
+        "input": "ESA WorldCover 2021 v200 tile N18E099 (18-21 N, 99-102 E; covers every Chiang Rai case)",
+        "path": "<external_data_workspace>/open_context/esa_worldcover/ESA_WorldCover_10m_2021_v200_N18E099_Map.tif"
+      },
+      {
+        "input": "Copernicus DEM GLO-30 tiles N20 E099 and N20 E100",
+        "path": "<external_data_workspace>/open_context/copernicus_dem_glo30/"
+      },
+      {
+        "input": "JRC Global Surface Water occurrence and seasonality, tile 90E_30N (20-30 N, 90-100 E)",
+        "path": "<external_data_workspace>/open_context/jrc_global_surface_water/"
+      },
+      {
+        "input": "JRC Global Surface Water occurrence and seasonality, tile 100E_20N (10-20 N, 100-110 E)",
+        "path": "<external_data_workspace>/jrc_gsw/ayutthaya_2024/"
+      },
+      {
+        "input": "GEOID-Flood sample EMSR712-3 (29 tiles; no DEM)",
+        "path": "<external_data_workspace>/geoid_flood/sample/"
+      }
+    ],
+    "present_outside_external_data_workspace": [
+      {
+        "input": "WorldPop 2024 1 km age counts (20 bands, 51,593,135 bytes)",
+        "path": "C:/Users/iputu/Documents/Project Support/FloodGuard/open-data/2026-09-23-worldpop-age-2024-r2025a-1km-ua/"
+      },
+      {
+        "input": "UNOSAT/GISTDA product 4009 package, DDPM shelters, DGA health facilities",
+        "path": "C:/Users/iputu/Documents/Project Support/FloodGuard/open-data/2026-09-21/"
+      }
+    ],
+    "absent": [
+      "JRC Global Surface Water tile 90E_20N (10-20 N, 90-100 E): needed south of 20 N, where SE2 lies.",
+      "JRC Global Surface Water tile 100E_30N (20-30 N, 100-110 E): needed for the strip of Mae Sai district east of 100 E (AOI-02 reaches about 100.04 E).",
+      "Copernicus DEM GLO-30 tile N19 E099."
+    ]
+  },
+  "downloads_requiring_owner_approval": [
+    {
+      "id": "DL-1",
+      "dataset": "JRC Global Surface Water v1.4 (2021), occurrence, tile 90E_20N; seasonality tile optional",
+      "file": "occurrence_90E_20Nv1_4_2021.tif (and seasonality_90E_20Nv1_4_2021.tif)",
+      "source": "JRC Global Surface Water download page, https://global-surface-water.appspot.com/download (same product as the tiles on disk)",
+      "approximate_size": "about 70-100 MB for occurrence and about 30 MB for seasonality, judging by the 90E_30N tiles on disk; the prep pack says a few hundred MB in total",
+      "needed_for": "The JRC sensitivity note on permanent water (D4) and the JRC fallback for the class rule v2 recurrence trigger, for SE2, SE2-dist and SE2-blind south of 20 N.",
+      "required_by_v1b_parameters": false,
+      "required_before": "the first SE2 run and any v2 class D output",
+      "listed_in_prep_pack": true,
+      "approved": null
+    },
+    {
+      "id": "DL-2",
+      "dataset": "JRC Global Surface Water v1.4 (2021), occurrence, tile 100E_30N; seasonality tile optional",
+      "file": "occurrence_100E_30Nv1_4_2021.tif (and seasonality_100E_30Nv1_4_2021.tif)",
+      "source": "JRC Global Surface Water download page, https://global-surface-water.appspot.com/download",
+      "approximate_size": "about 70-100 MB for occurrence and about 30 MB for seasonality",
+      "needed_for": "The same two uses for the part of the eight Mae Sai tambons east of 100 E.",
+      "required_by_v1b_parameters": false,
+      "required_before": "any JRC sensitivity note or v2 class D output for O1, O2 or SE1",
+      "listed_in_prep_pack": false,
+      "note": "Found by the drafting agent from tile bounds; the owners confirm the need.",
+      "approved": null
+    },
+    {
+      "id": "DL-3",
+      "dataset": "Copernicus DEM GLO-30, tile N19 E099",
+      "file": "Copernicus_DSM_COG_10_N19_00_E099_00_DEM.tif",
+      "source": "AWS open data bucket copernicus-dem-30m (same source as the N20 tiles on disk)",
+      "approximate_size": "about 40-60 MB",
+      "needed_for": "Slope / terrain masks and HAND south of 20 N. Not used by any v1b parameter, because the terrain proxy is restricted to O1.",
+      "required_by_v1b_parameters": false,
+      "required_before": "only if the owners want a terrain layer for SE2",
+      "listed_in_prep_pack": true,
+      "approved": null
+    },
+    {
+      "id": "DL-4",
+      "dataset": "Sentinel-1 GRD, 18 Sep 2024 pass on the same track as 6 Sep (D12 fallback)",
+      "file": "one Sentinel-1 IW GRD SAFE",
+      "source": "Copernicus Data Space Ecosystem (CDSE); needs a login",
+      "approximate_size": "about 1.3 GB",
+      "needed_for": "The UN-SPIDER extra dates, only if nobody has an existing Google Earth Engine account.",
+      "required_by_v1b_parameters": false,
+      "required_before": "the UN-SPIDER reproduction, if the fallback is chosen",
+      "listed_in_prep_pack": false,
+      "approved": null
+    }
+  ],
+  "downloads_not_needed": [
+    "National vulnerability anchors: the WorldPop 2024 1 km age rasters and the national COD-AB boundaries are already on disk. The age rasters are under Project Support/FloodGuard/open-data, not under FloodGuard_external_data; the plan lists both locations as read-only raw data.",
+    "E0 spike and E4 context build: OSM, COD-AB and WorldPop 2020 are on disk."
+  ],
+  "open_items": [
+    {
+      "id": "OI-01",
+      "parameter": "corridor_polygon.geometry_file",
+      "what_is_missing": "The corridor polygon itself: a GeoJSON file and its SHA-256.",
+      "produced_by": "E0 context spike (build the vehicle context once with the corrected call), then E4 build_planning_context.py.",
+      "who": "AI coding agent with Putu",
+      "download_needed": false,
+      "status": "open"
+    },
+    {
+      "id": "OI-02",
+      "parameter": "corridor_polygon.route_selection_rule",
+      "what_is_missing": "The rule that picks the trunk and primary routes to the three hospitals. The plan does not state one; a proposal is in the file.",
+      "produced_by": "An owner decision at signing; the E0 spike records the resulting path edge IDs.",
+      "who": "Putu",
+      "download_needed": false,
+      "status": "open"
+    },
+    {
+      "id": "OI-03",
+      "parameter": "corridor_polygon.e0_spike_record",
+      "what_is_missing": "The recorded spike values: hospital count (at least 4), within_routing_context for ways 447735125, 527539157 and 549948901, edge count, wall time, peak RAM, grade-split count and baseline no-route share (at most 10 percent).",
+      "produced_by": "E0 context spike.",
+      "who": "AI coding agent with Putu",
+      "download_needed": false,
+      "status": "open"
+    },
+    {
+      "id": "OI-04",
+      "parameter": "grade_join_policy.coincidence_tolerance_m and grade_join_policy.join_log",
+      "what_is_missing": "The coincidence tolerance (proposal: 0 m) and the logged join list with its SHA-256 and count.",
+      "produced_by": "E4: build_planning_context.py and the new grade_join.py.",
+      "who": "AI coding agent with Putu",
+      "download_needed": false,
+      "status": "open"
+    },
+    {
+      "id": "OI-05",
+      "parameter": "closure_rule_v1.unassigned_road_classes, closure_rule_v1.delay_under_strict and closure_rule_v1.regression.result",
+      "what_is_missing": "Owner confirmation of two points the plan leaves unstated (length thresholds for motorway, residential and unclassified; the delay rule under the strict level), and the regression result showing that the permissive level reproduces the finals closed-edge IDs (1,824 walking / 1,738 vehicle).",
+      "produced_by": "An owner decision at signing, and E3 closure_rules.py for the regression.",
+      "who": "Putu decides; AI coding agent runs the regression",
+      "download_needed": false,
+      "status": "open"
+    },
+    {
+      "id": "OI-06",
+      "parameter": "facility_sets.services.main_road_entry.definition, facility_sets.sets[corroborated].shelter_match_distance_m, facility_sets.counts_in_corridor and facility_sets.mae_sai_hospital_osm_id",
+      "what_is_missing": "The main-road entry definition and the shelter match distance (proposals are in the file), the facility counts in the corridor context, the DGA match result, and the OSM ID of Mae Sai Hospital for scenario S4.",
+      "produced_by": "Owner decision for the two definitions; E4 context build for the counts and IDs.",
+      "who": "Putu decides; AI coding agent with Putu builds",
+      "download_needed": false,
+      "status": "open"
+    },
+    {
+      "id": "OI-07",
+      "parameter": "critical_link_selection.destination_set_for_ranking and critical_link_selection.ranking_output",
+      "what_is_missing": "The destination set used for the ranking (a proposal is in the file) and the baseline ranking output with its SHA-256, from which the top 20, the S3 links per tambon and the S3b bridge edges are read.",
+      "produced_by": "Owner decision for the destination set; E6 critical_links.py on the E4 context. E6 uses no flood input.",
+      "who": "Putu decides; AI coding agent, reviewed by Rachmania",
+      "download_needed": false,
+      "note": "Plan row G7b lists only E0 and E4 as dependencies, and schedules E6 after v1b. Plan 6.3 says links and nodes are fixed before any scoring. The owners choose: either run E6 before signing and bind the list's SHA-256 here, or sign with the rule alone and bind the list's SHA-256 in the first run receipt.",
+      "status": "open"
+    },
+    {
+      "id": "OI-08",
+      "parameter": "national_vulnerability_anchors.values, national_vulnerability_anchors.method.unit_set and national_vulnerability_anchors.method.percentile_method",
+      "what_is_missing": "The five percentile values (P5, P10, P75, P90, P95), the tambon set and the percentile method (proposals are in the file), and an output receipt with unit counts.",
+      "produced_by": "E2: the national-anchor step of the new normalisation.py, run once.",
+      "who": "AI coding agent, reviewed by Putu",
+      "download_needed": false,
+      "download_note": "Inputs are on disk: the 2024 1 km age rasters under Project Support/FloodGuard/open-data and COD-AB under FloodGuard_external_data.",
+      "status": "open"
+    },
+    {
+      "id": "OI-09",
+      "parameter": "corridor_polygon.se2_frame",
+      "what_is_missing": "The pf-07 Mueang Chiang Rai planning frame: file, SHA-256, tambon list, and the SE2 routing geometry and hospital destinations. Also the district picked for SE2-blind by the population rule.",
+      "produced_by": "P1 (frame and national COD-AB crosswalk) and the SE2-blind population ranking, computed before any overlay.",
+      "who": "Rachmania for the frame; AI coding agent for the population ranking",
+      "download_needed": false,
+      "download_note": "The frame needs no download. JRC tile 90E_20N (DL-1) is needed later for the JRC sensitivity note and the v2 recurrence fallback in SE2.",
+      "status": "open"
+    },
+    {
+      "id": "OI-10",
+      "parameter": "ensemble_grid.headline_rule.reference_cell, scenario_engine_grid S3b k, S8 base and E3 selection rule",
+      "what_is_missing": "Owner confirmation of four points the plan leaves unstated or states two ways: the reference cell for class retention, k for S3b, the base case for S8, and the selection rule for E3. Proposals are in the file.",
+      "produced_by": "An owner decision at signing. No computation.",
+      "who": "Putu, with Rachmania as method co-signer",
+      "download_needed": false,
+      "status": "open"
+    },
+    {
+      "id": "OI-11",
+      "parameter": "depends_on.v1a_sha256",
+      "what_is_missing": "The SHA-256 of the signed v1a as recorded in RECEIPTS.jsonl.",
+      "produced_by": "Signing v1a (planning_protocol_v1_signing.md).",
+      "who": "Putu and Rachmania",
+      "download_needed": false,
+      "status": "open"
+    }
+  ],
+  "dependencies_that_do_not_block_signing": [
+    "rights_basis_4009_v1.json (plan row G6): until the owners confirm it, 4009-lineage overlays stay at the local or pitch level. It sets publication_eligibility, not a v1b parameter.",
+    "M1-v2 configuration (A3, target Wed 7 Oct 2026): the T2 flood-state axis is declared relative to the fixed threshold, so the axis does not wait for it.",
+    "GISTDA / AIT permission (cut-off Sat 10 Oct 2026): case O4 exists only if permission arrives.",
+    "Downloads DL-1 to DL-4."
+  ],
+  "change_control": {
+    "basis": [
+      "plan 2.3 item 5",
+      "plan 2.2 G22"
+    ],
+    "rules": [
+      "While status is incomplete_draft, open items are closed by editing this file; each closure records the value, the producing run and its receipt or output SHA-256.",
+      "When every open item is closed the status becomes draft_for_signature, and the signers may amend and sign.",
+      "After the signed file's SHA-256 is recorded in RECEIPTS.jsonl, this file is not edited again.",
+      "Any later change needs planning_protocol_v2 with a written reason. Every run is reported."
+    ],
+    "status_values": {
+      "incomplete_draft": "At least one open item is open. Cannot be signed.",
+      "draft_for_signature": "Every open item is closed. Not in force.",
+      "signed": "Set by the signers in the same edit that fills the signature block. In force only once the SHA-256 of that committed file is in RECEIPTS.jsonl."
+    },
+    "receipt": {
+      "file": "docs/proposal_execution/RECEIPTS.jsonl",
+      "procedure": "docs/proposal_execution/planning_protocol_v1_signing.md",
+      "note": "This file never records its own SHA-256. Whether it is in force is read from RECEIPTS.jsonl, not from this file."
+    }
+  },
+  "assumptions": [
+    "Parameters marked as proposals are the drafting agent's reading of a point the plan leaves unstated. They carry no authority until an owner confirms them.",
+    "Counts quoted from the plan (shelter rows, closed-edge counts, hospital distances) were verified by the plan's authors, not re-run for this draft.",
+    "The on-disk check covers file presence and, for the age rasters, the manifest SHA-256 and byte sizes. Raster contents were not opened."
+  ],
+  "signature_block": {
+    "kind": "team_governance_signature",
+    "note": "Not an independent review. The signers fill their own entry; nobody fills an entry for someone else. This file cannot be signed while it is an incomplete draft.",
+    "attestations_required": [
+      "Every open item is closed and I have read each closure.",
+      "No FPPS, A-E class or ensemble has been computed for a real unit under this protocol before signing.",
+      "v1a_sha256 above equals the value recorded in RECEIPTS.jsonl."
+    ],
+    "signers": [
+      {
+        "role": "owner",
+        "required_signer": "Putu (I Putu Pramana Putra)",
+        "action": "signs",
+        "signed_by": null,
+        "signed_at_utc": null,
+        "attestation": null
+      },
+      {
+        "role": "method_co_signer",
+        "required_signer": "Rachmania (Rachmania Ulwani)",
+        "action": "co-signs",
+        "signed_by": null,
+        "signed_at_utc": null,
+        "attestation": null
+      }
+    ],
+    "amendments_at_signing": []
+  }
+}

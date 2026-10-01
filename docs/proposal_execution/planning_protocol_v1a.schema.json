@@ -1,0 +1,1475 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/proposal-execution/planning-protocol-v1a.schema.json",
+  "title": "FloodGuard planning protocol v1a (decision rules)",
+  "description": "Shape of docs/proposal_execution/planning_protocol_v1a.json. A draft has empty signatures; a signed file has both filled. The file never records its own SHA-256.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "assumptions",
+    "case_portfolio",
+    "change_control",
+    "class_rules",
+    "confidence_rule_v1",
+    "date_rule",
+    "demo_tambon_rule",
+    "drafted_by",
+    "drafted_on",
+    "equity_statement_rule",
+    "evidence_tier_model",
+    "exploratory_knowledge_disclosure",
+    "geoid_split",
+    "guardrails",
+    "official_warning",
+    "open_decisions",
+    "operational_status",
+    "protocol_id",
+    "protocol_kind",
+    "purpose",
+    "schedule_note",
+    "schema",
+    "scope",
+    "scoring_frame",
+    "signature_block",
+    "signed_decisions",
+    "source_documents",
+    "status",
+    "status_note",
+    "t2_skill_bar",
+    "title",
+    "wording"
+  ],
+  "properties": {
+    "protocol_kind": {
+      "const": "declared_protocol_after_exploratory_analysis"
+    },
+    "status_note": {
+      "type": "string",
+      "minLength": 1
+    },
+    "drafted_on": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "drafted_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "official_warning": {
+      "const": false
+    },
+    "operational_status": {
+      "const": "non_operational"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "signature_block": {
+      "type": "object",
+      "required": [
+        "kind",
+        "note",
+        "attestations_required",
+        "signers",
+        "amendments_at_signing"
+      ],
+      "properties": {
+        "kind": {
+          "const": "team_governance_signature"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attestations_required": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "signers": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "properties": {
+                "role": {
+                  "const": "owner"
+                },
+                "action": {
+                  "const": "signs"
+                }
+              }
+            },
+            {
+              "properties": {
+                "role": {
+                  "const": "method_co_signer"
+                },
+                "action": {
+                  "const": "co-signs"
+                }
+              }
+            }
+          ],
+          "items": {
+            "type": "object",
+            "required": [
+              "role",
+              "required_signer",
+              "action",
+              "signed_by",
+              "signed_at_utc",
+              "attestation"
+            ],
+            "properties": {
+              "role": {
+                "enum": [
+                  "owner",
+                  "method_co_signer"
+                ]
+              },
+              "required_signer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "action": {
+                "enum": [
+                  "signs",
+                  "co-signs"
+                ]
+              },
+              "signed_by": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              },
+              "signed_at_utc": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+              },
+              "attestation": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "amendments_at_signing": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "change_control": {
+      "type": "object",
+      "required": [
+        "basis",
+        "rules",
+        "status_values",
+        "receipt"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status_values": {
+          "type": "object"
+        },
+        "receipt": {
+          "type": "object",
+          "required": [
+            "file",
+            "procedure",
+            "note"
+          ],
+          "properties": {
+            "file": {
+              "const": "docs/proposal_execution/RECEIPTS.jsonl"
+            },
+            "procedure": {
+              "const": "docs/proposal_execution/planning_protocol_v1_signing.md"
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "schema": {
+      "const": "floodguard.planning_protocol.v1a"
+    },
+    "protocol_id": {
+      "const": "planning_protocol_v1a"
+    },
+    "status": {
+      "enum": [
+        "draft_for_signature",
+        "signed"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "basis",
+        "covers",
+        "does_not_cover"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "wording": {
+      "type": "object",
+      "required": [
+        "basis",
+        "required_description",
+        "never_used",
+        "standard_4009_sentence"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_description": {
+          "const": "declared protocol after exploratory analysis"
+        },
+        "never_used": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "source_documents": {
+      "type": "object",
+      "required": [
+        "restructuring_plan_v2",
+        "decision_log",
+        "scoring_module",
+        "base_commit"
+      ],
+      "properties": {
+        "restructuring_plan_v2": {
+          "type": "object",
+          "required": [
+            "name",
+            "sha256"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "decision_log": {
+          "type": "object",
+          "required": [
+            "name",
+            "sha256"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "scoring_module": {
+          "type": "object",
+          "required": [
+            "name",
+            "sha256"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    },
+    "schedule_note": {
+      "type": "object",
+      "required": [
+        "basis",
+        "plan_dates",
+        "actual"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "evidence_tier_model": {
+      "type": "object",
+      "required": [
+        "basis",
+        "version",
+        "lanes",
+        "tiers",
+        "invariants_at_every_tier"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "lanes": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": [
+              "lane",
+              "name",
+              "definition",
+              "may_claim",
+              "may_not_claim"
+            ],
+            "properties": {
+              "lane": {
+                "enum": [
+                  "OBS",
+                  "SCN",
+                  "SCN-ENV",
+                  "ENG"
+                ]
+              },
+              "may_claim": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "may_not_claim": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "tiers": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "required": [
+              "tier",
+              "lane",
+              "name",
+              "admission",
+              "feeds_fpps",
+              "max_confidence",
+              "class_behaviour",
+              "display"
+            ],
+            "properties": {
+              "tier": {
+                "enum": [
+                  "T0",
+                  "T1",
+                  "T2",
+                  "T3",
+                  "T4"
+                ]
+              },
+              "lane": {
+                "enum": [
+                  "OBS",
+                  "SCN",
+                  "ENG",
+                  null
+                ]
+              }
+            }
+          }
+        },
+        "invariants_at_every_tier": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "date_rule": {
+      "type": "object",
+      "required": [
+        "basis",
+        "recency_window_days",
+        "rule",
+        "temporal_relation_values",
+        "product_4009"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "recency_window_days": {
+          "const": 3
+        },
+        "product_4009": {
+          "type": "object",
+          "required": [
+            "accumulated_layer",
+            "layer_22_oct"
+          ],
+          "properties": {
+            "accumulated_layer": {
+              "type": "object",
+              "required": [
+                "lane",
+                "use"
+              ],
+              "properties": {
+                "lane": {
+                  "const": "SCN-ENV"
+                },
+                "use": {
+                  "const": "scenario only"
+                }
+              }
+            },
+            "layer_22_oct": {
+              "type": "object",
+              "required": [
+                "case",
+                "case_reference_date"
+              ],
+              "properties": {
+                "case": {
+                  "const": "O2"
+                },
+                "case_reference_date": {
+                  "const": "2024-10-22"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "confidence_rule_v1": {
+      "type": "object",
+      "required": [
+        "basis",
+        "version",
+        "uses_ensemble_output",
+        "rights_are_an_input",
+        "high",
+        "medium_requires_all",
+        "low",
+        "vocabulary"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "version": {
+          "const": "confidence_rule_v1"
+        },
+        "uses_ensemble_output": {
+          "const": false
+        },
+        "rights_are_an_input": {
+          "const": false
+        },
+        "medium_requires_all": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "condition"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "condition": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "vocabulary": {
+          "const": [
+            "high",
+            "medium",
+            "low"
+          ]
+        }
+      }
+    },
+    "t2_skill_bar": {
+      "type": "object",
+      "required": [
+        "basis",
+        "rule",
+        "conditions",
+        "declared_unable_to_meet",
+        "evaluated_by_the_rule"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "geoid_split": {
+      "type": "object",
+      "required": [
+        "basis",
+        "rule",
+        "development_tile_ids",
+        "test_tile_ids",
+        "required_statement"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "development_tile_ids": {
+          "type": "array",
+          "minItems": 15,
+          "maxItems": 15,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer"
+          }
+        },
+        "test_tile_ids": {
+          "type": "array",
+          "minItems": 14,
+          "maxItems": 14,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "scoring_frame": {
+      "type": "object",
+      "required": [
+        "basis",
+        "version",
+        "signed_decision_text",
+        "formula",
+        "weights",
+        "components",
+        "leave_one_component_out",
+        "weight_presets"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "weights": {
+          "type": "object",
+          "required": [
+            "flood_likelihood_0_100",
+            "exposure_0_100",
+            "access_gap_0_100",
+            "road_criticality_0_100",
+            "vulnerability_context_0_100"
+          ],
+          "properties": {
+            "flood_likelihood_0_100": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "exposure_0_100": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "access_gap_0_100": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "road_criticality_0_100": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "vulnerability_context_0_100": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "components": {
+          "type": "object",
+          "required": [
+            "flood_likelihood_0_100",
+            "exposure_0_100",
+            "access_gap_0_100",
+            "road_criticality_0_100",
+            "vulnerability_context_0_100"
+          ],
+          "properties": {
+            "flood_likelihood_0_100": {
+              "type": "object",
+              "required": [
+                "definition",
+                "anchor",
+                "anchor_sensitivity_one_at_a_time",
+                "anchor_disclosure",
+                "permanent_water"
+              ],
+              "properties": {
+                "anchor": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                },
+                "anchor_sensitivity_one_at_a_time": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "anchor_disclosure": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "permanent_water": {
+                  "type": "object",
+                  "required": [
+                    "source",
+                    "class",
+                    "applies_to",
+                    "sensitivity_note"
+                  ],
+                  "properties": {
+                    "class": {
+                      "const": 80
+                    }
+                  }
+                }
+              }
+            },
+            "exposure_0_100": {
+              "type": "object",
+              "required": [
+                "definition",
+                "kind",
+                "headcount_anchor"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "share_only"
+                },
+                "headcount_anchor": {
+                  "type": "null"
+                }
+              }
+            },
+            "access_gap_0_100": {
+              "type": "object",
+              "required": [
+                "definition",
+                "public_level_services"
+              ],
+              "properties": {}
+            },
+            "road_criticality_0_100": {
+              "type": "object",
+              "required": [
+                "definition"
+              ],
+              "properties": {}
+            },
+            "vulnerability_context_0_100": {
+              "type": "object",
+              "required": [
+                "definition",
+                "lower_anchor",
+                "upper_anchor",
+                "anchor_values",
+                "anchor_sensitivity",
+                "terrain_remoteness_proxy"
+              ],
+              "properties": {
+                "lower_anchor": {
+                  "const": "national_P10"
+                },
+                "upper_anchor": {
+                  "const": "national_P90"
+                },
+                "anchor_values": {
+                  "type": "object",
+                  "required": [
+                    "national_P10",
+                    "national_P90"
+                  ],
+                  "properties": {
+                    "national_P10": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "national_P90": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "leave_one_component_out": {
+          "type": "object",
+          "required": [
+            "required_on_every_row",
+            "rule"
+          ],
+          "properties": {
+            "required_on_every_row": {
+              "const": true
+            }
+          }
+        },
+        "weight_presets": {
+          "type": "object",
+          "required": [
+            "source",
+            "raw_values_before_normalisation"
+          ],
+          "properties": {}
+        }
+      }
+    },
+    "class_rules": {
+      "type": "object",
+      "required": [
+        "basis",
+        "signed_decision_text",
+        "v1",
+        "v2"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "v1": {
+          "type": "object",
+          "required": [
+            "binding",
+            "version",
+            "source",
+            "rules",
+            "class_names",
+            "reason_codes"
+          ],
+          "properties": {
+            "binding": {
+              "const": true
+            },
+            "source": {
+              "type": "object",
+              "required": [
+                "path",
+                "function",
+                "sha256"
+              ],
+              "properties": {
+                "path": {
+                  "const": "src/floodguard/scoring.py"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            },
+            "rules": {
+              "type": "array",
+              "minItems": 5,
+              "maxItems": 5,
+              "items": {
+                "type": "object",
+                "required": [
+                  "class",
+                  "combine",
+                  "conditions"
+                ],
+                "properties": {
+                  "class": {
+                    "enum": [
+                      "A",
+                      "B",
+                      "C",
+                      "D",
+                      "E"
+                    ]
+                  },
+                  "combine": {
+                    "enum": [
+                      "any",
+                      "all",
+                      "otherwise"
+                    ]
+                  },
+                  "conditions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "field",
+                        "operator",
+                        "value"
+                      ],
+                      "properties": {
+                        "field": {
+                          "enum": [
+                            "confidence_class",
+                            "fpps_0_100",
+                            "flood_likelihood_0_100",
+                            "exposure_0_100",
+                            "access_gap_0_100",
+                            "road_criticality_0_100",
+                            "vulnerability_context_0_100"
+                          ]
+                        },
+                        "operator": {
+                          "enum": [
+                            "==",
+                            "<",
+                            ">="
+                          ]
+                        },
+                        "value": {
+                          "type": [
+                            "number",
+                            "string"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "v2": {
+          "type": "object",
+          "required": [
+            "binding",
+            "version",
+            "role",
+            "triggers",
+            "parameters"
+          ],
+          "properties": {
+            "binding": {
+              "const": false
+            },
+            "role": {
+              "const": "predeclared secondary axis"
+            },
+            "triggers": {
+              "type": "object",
+              "required": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E"
+              ],
+              "properties": {
+                "A": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "B": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "C": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "D": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "E": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+    "guardrails": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "rule",
+          "basis"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^GR[1-9]_[a-z_]+$"
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 1
+          },
+          "basis": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "equity_statement_rule": {
+      "type": "object",
+      "required": [
+        "basis",
+        "ratio_null_when",
+        "gap_sentence_requires",
+        "otherwise_fixed_sentence"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "case_portfolio": {
+      "type": "object",
+      "required": [
+        "basis",
+        "signed_decision_text",
+        "reporting_rule",
+        "cases",
+        "case_selection_disclosure"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "cases": {
+          "type": "array",
+          "minItems": 8,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "priority",
+              "frame",
+              "case_reference_date",
+              "flood_inputs",
+              "lane",
+              "tier"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "priority": {
+                "enum": [
+                  "MUST",
+                  "SHOULD",
+                  "conditional",
+                  "stretch"
+                ]
+              },
+              "frame": {
+                "type": "string",
+                "minLength": 1
+              },
+              "case_reference_date": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              "flood_inputs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "lane": {
+                "enum": [
+                  "OBS",
+                  "SCN",
+                  "SCN-ENV",
+                  "ENG"
+                ]
+              },
+              "tier": {
+                "enum": [
+                  "T0",
+                  "T1",
+                  "T2",
+                  "T3",
+                  "T4"
+                ]
+              }
+            }
+          }
+        },
+        "case_selection_disclosure": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "demo_tambon_rule": {
+      "type": "object",
+      "required": [
+        "basis",
+        "rule"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "signed_decisions": {
+      "type": "object",
+      "required": [
+        "source",
+        "adopted",
+        "owner_decisions_after_signing"
+      ],
+      "properties": {
+        "adopted": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "binds_protocol",
+              "effect"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^D[0-9]{1,2}b?$"
+              },
+              "binds_protocol": {
+                "type": "boolean"
+              },
+              "effect": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "owner_decisions_after_signing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "effect"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^R[0-9]$"
+              },
+              "effect": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "open_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "text",
+          "needed"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^D[0-9]{1,2}$"
+          },
+          "status": {
+            "const": "open"
+          },
+          "text": {
+            "const": "undefined in the plan files"
+          },
+          "needed": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "exploratory_knowledge_disclosure": {
+      "type": "object",
+      "required": [
+        "basis",
+        "statement",
+        "completeness",
+        "items",
+        "parameters_with_no_identified_exploratory_input"
+      ],
+      "properties": {
+        "basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "lineage",
+              "title",
+              "what_was_seen",
+              "real_tambon_scores_or_classes_seen",
+              "seen_on",
+              "locations",
+              "informed_parameters",
+              "could_bias",
+              "guard"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^EK-(R)?[0-9]{1,2}$"
+              },
+              "lineage": {
+                "enum": [
+                  "scoring_lineage",
+                  "replay_lineage_master"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "what_was_seen": {
+                "type": "string",
+                "minLength": 1
+              },
+              "real_tambon_scores_or_classes_seen": {
+                "type": "boolean"
+              },
+              "seen_on": {
+                "type": "string",
+                "minLength": 1
+              },
+              "locations": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "value",
+                    "committed"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "scratch_path",
+                        "repo_path",
+                        "external_path",
+                        "commit",
+                        "plan_reference",
+                        "surface",
+                        "decision",
+                        "session_record"
+                      ]
+                    },
+                    "value": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "committed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "informed_parameters": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "could_bias": {
+                "type": "string",
+                "minLength": 1
+              },
+              "guard": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "draft_for_signature"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "signature_block": {
+            "properties": {
+              "signers": {
+                "items": {
+                  "properties": {
+                    "signed_by": {
+                      "type": "null"
+                    },
+                    "signed_at_utc": {
+                      "type": "null"
+                    },
+                    "attestation": {
+                      "type": "null"
+                    }
+                  }
+                }
+              },
+              "amendments_at_signing": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "signed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "signature_block": {
+            "properties": {
+              "signers": {
+                "items": {
+                  "properties": {
+                    "signed_by": {
+                      "type": "string"
+                    },
+                    "signed_at_utc": {
+                      "type": "string"
+                    },
+                    "attestation": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

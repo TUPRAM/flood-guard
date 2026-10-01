@@ -34,11 +34,12 @@ Putu gave these in the same Claude Code session, after reading the roadmap draft
 | R1 | UNOSAT 3991 is **calibration-informed**, not independent. The 70 km² figure was known while the replay's stage keyframes were tuned. | In r3, `timeline.json` gives `unosat-3991` the role `calibration_informed_magnitude_check`. The page lists it under "Size checks (calibration-informed, not independent)". No check on the replay is labelled independent now. |
 | R2 | PR #35 (`codex/policy-mentoring`, the bilingual policy page) is **brought into the replay branch and improved**, not held. | The improvements must keep to D4 (score anchors), D6 (v1 class rules binding) and D7 (the replay is not a scored case). Any priority score shown carries its tier, its method source and its anchors. |
 | R3 | **Merge PR #34 into master**, so production carries the replay. | This replaces D9's "present from the Preview URL" once production is rebuilt from master. |
-| R4 | **Email C was sent to UNOSAT.** Putu reports it was approved. | D2 no longer waits on the licence version. The reply text is not in the repo yet; file it as `docs/provider_response_logging_guide.md` describes, and cite it from the 4009 rights record. |
+| R4 | **Email C was sent to UNOSAT.** UNOSAT replied "we approve the use" (relayed by Putu, 1 Oct 2026). | D2 no longer waits on the email. The reply names no licence version and no credit wording, so 4009 derivatives ship under CC BY-SA 4.0 as signed in D2, with the credit "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009". The original message is not in the repo; file it as `docs/provider_response_logging_guide.md` describes. |
+| R5 | **Go-ahead of 1 Oct 2026** (Putu). Merge PR #36. Draft protocol v1a and v1b for signature. Draft the 4009 rights record. Start the replay roadmap. Review the open dependency updates. | PR #36 is merged (92d7451). The protocol drafts are not in force until both owners sign them and the hashes are in `RECEIPTS.jsonl`. No 4009 layer reaches master until the owners confirm the rights record. |
 
 ## Follow-ups
 
-1. **Email C.** Sent; Putu reports it was approved (R4). File the reply.
+1. **Email C.** Sent; UNOSAT replied "we approve the use" (R4). File the original message.
 2. **Protocol hash.** Hash protocol v1a into `RECEIPTS.jsonl` on the `codex/thai-event-selection` lineage. That happens there, not on the replay branch.
 3. **Open items.** Supply the original wording of D5, D8, D10 and D14–D16, or record them as withdrawn.
 

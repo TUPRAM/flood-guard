@@ -547,7 +547,11 @@ try {
   // The residents raster and the access node file come from the same offline copy.
   await page.goto(`${baseUrl}${caseReplay.route}?t=84&wm=people&set=plan&k=3&layers=trfscx`, { waitUntil: "domcontentloaded" });
   await page.getByTestId("people-in-water").waitFor({ state: "visible", timeout: 30_000 });
-  await page.getByTestId("access-lost").waitFor({ state: "visible", timeout: 30_000 });
+  await page.getByTestId("set-comparison").waitFor({ state: "visible", timeout: 30_000 });
+  // The shelter-set comparison is computed from the saved node file: the plan of 3 reaches 17,794 residents before the flood.
+  if ((await page.getByTestId("compare-plan-all-baseline").innerText()).replace(/\s+/g, " ").trim() !== "17,794 of 81,799") {
+    throw new Error(`The saved access node file gives an unexpected plan baseline: ${await page.getByTestId("compare-plan-all-baseline").innerText()}`);
+  }
   await page.getByText("People in flood water: residents per hectare (WorldPop 2020, model)", { exact: true }).waitFor({ state: "visible" });
   await page.waitForFunction(() => !/Preparing the (residents layer|access scenario)/.test(document.body.innerText), undefined, { timeout: 30_000 });
   if (await page.locator("main").getByRole("alert").count() !== 0) {

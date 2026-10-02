@@ -82,6 +82,7 @@ import {
   type RoadProps,
   type TimelineManifest,
 } from "./flood-timeline";
+import { findWordingViolations } from "./replay-wording-lint";
 
 // Every fixture path comes from the page's one manifest constant and the hrefs inside that manifest.
 const publicRoot = resolve(import.meta.dirname, "../../public");
@@ -856,7 +857,9 @@ describe("Mae Sai observed evidence: VIIRS daily flood maps and rain gauges", ()
   it("reads each day's clear-sky comparison plainly, disagreement included, and never as a validation", () => {
     for (const day of viirs.days) {
       const reading = viirsReading(day);
-      expect(reading.en, day.date).not.toMatch(/validat|confirm|accura/i);
+      expect(reading.en, day.date).not.toMatch(/confirm/i);
+      // Validation and accuracy wording is the shared replay wording lint's job, in both languages.
+      expect(findWordingViolations(`${reading.en} ${reading.th}`, day.date)).toEqual([]);
       expect(reading.th).toMatch(/[฀-๿]/);
       if (!(day.clear_km2 > 0)) expect(reading.kind).toBe("no_observation");
     }

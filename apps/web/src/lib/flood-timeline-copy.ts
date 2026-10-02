@@ -9,8 +9,9 @@ import type { Language } from "./flood-timeline";
 /**
  * Manifest text with internal identifiers replaced by plain words: the access-set id "reported_2024", WorldPop's
  * product code "(tha_ppp_2020)", field names such as "late_cumulative_share", "model_coverage" or "m=false", and the
- * project's internal decision numbers ("per decision D3", "(D2)"). The tributary factor is described in words (the
- * page keeps "k" for the plan size), and "km2" is written "km²".
+ * project's internal decision numbers ("per decision D3", "(D2)", "(decision D7)"). On this page "k" is the plan
+ * size, so the manifest's symbol for the depth factor is never shown: the factor is named in words and written "f"
+ * where a formula needs a symbol ("depth factor f = clip(…)", "h + 0.3/f"). "km2" is written "km²".
  */
 export function plainManifestText(text: string): string {
   return text
@@ -21,20 +22,28 @@ export function plainManifestText(text: string): string {
     .replace(/\s+are flagged m=false and\s+/g, " are ")
     .replace(/\blate_cumulative_share\b/g, "the late-evacuation share")
     .replace(/\s*\((?:scenario )?per decision D\d+\)/g, "")
-    .replace(/\s+\(D\d+\)/g, "")
+    .replace(/\s+\((?:decision )?D\d+\)/g, "")
     .replace(/\bk x stage\b/g, "to a fraction of the stage")
+    .replace(/\b(depth factor) k\b/gi, "$1 f")
+    .replace(/\bthe exported k\b/g, "the exported depth factor f")
+    .replace(/\bscaled by k\b/g, "scaled by the depth factor f")
+    .replace(/\bk = clip\(/g, "depth factor f = clip(")
+    .replace(/(\d)\/k\b/g, "$1/f")
     .replace(/\bkm2\b/g, "km²");
 }
+
+/** A standalone "k" (the plan-size symbol) in a piece of text; the Sources panel must show none from the manifest. */
+export const STANDALONE_K = /(?<![A-Za-z0-9_])k(?![A-Za-z0-9_])/;
 
 export const KNOWN_THAI: Readonly<Record<string, string>> = {
   "Copernicus DEM tiles N20E099 and N20E100 cover the whole district.":
     "แผ่นข้อมูล Copernicus DEM N20E099 และ N20E100 ครอบคลุมพื้นที่ทั้งอำเภอ",
   "Low-HAND zone (HAND < 6 m, channel excluded) across the full image footprint, both sides of the border.":
     "พื้นที่ HAND ต่ำ (HAND < 6 ม. ไม่รวมร่องน้ำ) ทั่วทั้งขอบเขตภาพ ทั้งสองฝั่งชายแดน",
-  "Water extents are a terrain-model reconstruction with illustrative stages; only the late-recession size is checked against radar, and spatial agreement there is weak.":
-    "ขอบเขตน้ำจำลองจากแบบจำลองภูมิประเทศด้วยระดับน้ำสมมุติ ตรวจสอบกับเรดาร์ได้เฉพาะขนาดพื้นที่ช่วงน้ำลด และตำแหน่งยังสอดคล้องกันน้อย",
+  "Water extents are a terrain-model reconstruction with illustrative stages; the late-recession size was tuned to one radar pass rather than checked independently, and spatial agreement there is weak.":
+    "ขอบเขตน้ำจำลองจากแบบจำลองภูมิประเทศด้วยระดับน้ำสมมุติ ขนาดพื้นที่ช่วงท้ายของน้ำลดปรับตามภาพเรดาร์หนึ่งภาพ ไม่ได้ตรวจสอบอย่างอิสระ และตำแหน่งยังสอดคล้องกันน้อย",
   "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.":
-    "ไม่พบข้อมูลระดับน้ำแม่น้ำสายรายชั่วโมงที่เปิดเผยสำหรับเดือน ก.ย. 2567 (2024) (สถานี MYA004 ของ สสน. ติดตั้งปี 2568 สถานี Kh.50 ของกรมชลประทานปิดแล้ว และระบบเตือนภัยบ้านแม่สายของกรมทรัพยากรน้ำยังไม่ได้ยืนยัน) ค่าระดับน้ำจึงยังเป็นค่าเพื่อการอธิบาย",
+    "ไม่พบข้อมูลระดับน้ำแม่น้ำสายรายชั่วโมงที่เปิดเผยสำหรับเดือน ก.ย. 2567 (2024) (สถานี MYA004 ของ สสน. ติดตั้งปี 2568 (2025) สถานี Kh.50 ของกรมชลประทานปิดแล้ว และระบบเตือนภัยบ้านแม่สายของกรมทรัพยากรน้ำยังไม่ได้ยืนยัน) ค่าระดับน้ำจึงยังเป็นค่าเพื่อการอธิบาย",
   "375 m optical data under-detects narrow, shallow, urban or vegetated flooding and sees nothing under cloud; agreement or disagreement is indicative only.":
     "ข้อมูลเชิงแสงความละเอียด 375 ม. ตรวจพบน้ำท่วมที่แคบ ตื้น อยู่ในเมือง หรืออยู่ใต้พืชพรรณได้น้อยกว่าจริง และมองไม่เห็นพื้นที่ใต้เมฆ ความสอดคล้องหรือความต่างจึงเป็นเพียงข้อบ่งชี้",
   "Daily composite of early-afternoon passes; compared with the model at 13:30 ICT.":
@@ -43,8 +52,6 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "เฉพาะในอำเภอและเฉพาะพิกเซลที่ท้องฟ้าโปร่ง ไม่รวมแหล่งน้ำถาวร พื้นที่ของ VIIRS = ผลรวมของสัดส่วนน้ำท่วม × พื้นที่พิกเซล พื้นที่ของแบบจำลอง = สัดส่วนพื้นที่เปียกนอกร่องน้ำจากแบบจำลอง เฉลี่ยลงบนพิกเซล 375 ม. เดียวกัน",
   "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT":
     "มม. ต่อชั่วโมง ดัชนี 0 = 9 ก.ย. 00:00–01:00 น.",
-  "Season envelope; not shown until the CC BY-SA rights record is signed.":
-    "ขอบเขตน้ำตลอดฤดู ยังไม่แสดงจนกว่าจะลงนามบันทึกสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA",
   // Evacuation access scenario (the "Sources, assumptions and limits" panel).
   "T1 scenario (model), not observed evacuation outcomes":
     "สถานการณ์จำลองระดับ T1 (แบบจำลอง) ไม่ใช่ผลการอพยพที่สังเกตได้จริง",
@@ -89,7 +96,7 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
   "about 70 km² flood-affected within a 305 km² analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated":
     "พื้นที่ได้รับผลกระทบจากน้ำท่วมประมาณ 70 ตร.กม. จากพื้นที่วิเคราะห์ 305 ตร.กม. ประชากรที่อยู่ในพื้นที่น้ำท่วมประมาณ 13,600 คน (WorldPop 2020) เป็นผลเบื้องต้น ยังไม่ได้ตรวจสอบภาคสนาม",
   "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model. Calibration-informed, not independent: this figure was known while the stage keyframes were tuned (owner decision, 30 Sep 2026). Its people figure is an exposure estimate, a different measure from the model's residents in water.":
-    "ใช้ตรวจขนาดในช่วงเวลาเดียวกันเท่านั้น UNOSAT เป็นการสังเกตสะสมจากดาวเทียมหลายดวง ไม่ใช่การยืนยันตำแหน่งของแบบจำลอง ตัวเลขนี้มีส่วนในการปรับแบบจำลอง จึงไม่ใช่การตรวจสอบอิสระ เพราะทราบตัวเลขนี้แล้วขณะปรับจุดระดับน้ำ ตามมติของเจ้าของโครงการเมื่อ 30 ก.ย. 2569 ตัวเลขประชากรของ UNOSAT เป็นค่าประมาณผู้ได้รับผลกระทบ ซึ่งวัดต่างจากจำนวนผู้อยู่อาศัยในน้ำตามแบบจำลอง",
+    "ใช้ตรวจขนาดในช่วงเวลาเดียวกันเท่านั้น UNOSAT เป็นการสังเกตสะสมจากดาวเทียมหลายดวง ไม่ใช่การยืนยันตำแหน่งของแบบจำลอง ตัวเลขนี้มีส่วนในการปรับแบบจำลอง จึงไม่ใช่การตรวจสอบอิสระ เพราะทราบตัวเลขนี้แล้วขณะปรับจุดระดับน้ำ ตามมติของเจ้าของโครงการเมื่อ 30 ก.ย. 2569 (2026) ตัวเลขประชากรของ UNOSAT เป็นค่าประมาณผู้ได้รับผลกระทบ ซึ่งวัดต่างจากจำนวนผู้อยู่อาศัยในน้ำตามแบบจำลอง",
   "Largest modelled extent within 13-19 Sep ICT (the start of the UNOSAT window)":
     "ขอบเขตที่จำลองได้มากที่สุดในช่วง 13–19 ก.ย. (ต้นช่วงเวลาของ UNOSAT)",
   // Residents and low-confidence water.
@@ -106,20 +113,20 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ระดับน้ำคือระดับสมมุติของลำน้ำหลักแม่น้ำสายที่สะพานแม่สาย ลำน้ำสาขาสูงขึ้นเพียงบางส่วนของระดับนี้ (ดูสมมติฐานถัดไป) ระดับน้ำจริงยังแตกต่างกันไปในแต่ละช่วงลำน้ำ",
   "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.":
     "ร่องน้ำคือช่องที่มีพื้นที่รับน้ำด้านเหนือน้ำอย่างน้อย 25 ตร.กม. บน Copernicus DSM ความละเอียด 30 ม. อาคารและต้นไม้ใน DSM ทำให้ค่า HAND ในเขตเมืองสูงกว่าจริง",
-  "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.":
-    "ถนนสัญจรไม่ได้เมื่อความลึกจำลองถึง 0.3 ม. ที่จุดตัวอย่างใดก็ตามซึ่งห่างกันทุก 10 ม. ตามถนนช่วงละ 120 ม. (ใช้ตัวคูณความลึกรายจุด ค่า k ที่ส่งออกทำให้ h + 0.3/k เท่ากับเวลาที่จุดตัวอย่างแรกถูกปิด) ไม่นับจุดตัวอย่างในร่องน้ำบนสะพาน",
+  "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported depth factor f makes h + 0.3/f equal the earliest sample closure); river-channel samples on bridges are ignored.":
+    "ถนนสัญจรไม่ได้เมื่อความลึกจำลองถึง 0.3 ม. ที่จุดตัวอย่างใดก็ตามซึ่งห่างกันทุก 10 ม. ตามถนนช่วงละ 120 ม. (ใช้ตัวคูณความลึกรายจุด ตัวคูณความลึก f ที่ส่งออกทำให้ h + 0.3/f เท่ากับเวลาที่จุดตัวอย่างแรกถูกปิด) ไม่นับจุดตัวอย่างในร่องน้ำบนสะพาน",
   "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.":
     "ถนนช่วงที่ค่า HAND ต่ำสุดเกิน 4 ม. ไม่ถูกน้ำท่วมภายใต้จุดกำหนดระดับน้ำเหล่านี้จึงไม่แสดง ยกเว้นทางหลวงสายหลัก ถนนสายหลัก และถนนสายรอง",
-  "The 16 September 06:16 ICT Sentinel-1 pass constrains the size of the late-recession extent only; the two radar passes use different orbit directions.":
-    "ภาพ Sentinel-1 วันที่ 16 กันยายน 06:16 น. ใช้กำหนดขนาดของขอบเขตน้ำช่วงท้ายของการลดลงเท่านั้น ภาพเรดาร์ทั้งสองภาพถ่ายจากทิศทางวงโคจรต่างกัน",
+  "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.":
+    "จุดกำหนดระดับน้ำช่วงน้ำลดปรับใหม่ตามภาพ Sentinel-1 วันที่ 16 กันยายน 06:16 น. (ระดับน้ำที่เข้ากันดีที่สุด 0.10 ม.) การเทียบกับเรดาร์นี้จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ ภาพนี้ใช้กำหนดขนาดของขอบเขตน้ำช่วงท้ายของการลดลงเท่านั้น และภาพเรดาร์ทั้งสองภาพถ่ายจากทิศทางวงโคจรต่างกัน",
   "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km² flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km², so the 18:15 knot is set to the closest level (0.1 m).":
     "ช่วงเริ่มท่วมปรับตามตัวเลขจาก RADARSAT-2 ของ GISTDA ณ 10 ก.ย. 18:15 น. (น้ำท่วมในแม่สายประมาณ 9.9 ตร.กม.) และรายงานน้ำหลากในช่วงกลางคืน จุดกำหนด 11 ก.ย. 02:00 น. (2.5 ม.) เป็นค่าเพื่อการอธิบาย ขอบเขตน้ำท่วมที่เล็กที่สุดที่ไม่เป็นศูนย์ของแบบจำลอง (พื้นที่ราบที่สูงจากระดับร่องน้ำไม่เกิน 5 ซม.) เกิน 9.9 ตร.กม. อยู่แล้ว จุดกำหนด 18:15 น. จึงตั้งไว้ที่ระดับที่ใกล้ที่สุด (0.1 ม.)",
   "Cells that drain off the hydrology domain before meeting a mapped channel use their outlet on the domain edge as the HAND reference (the edge lies outside the replay area).":
     "ช่องที่น้ำไหลออกนอกขอบเขตการคำนวณทางอุทกวิทยาก่อนถึงร่องน้ำในแผนที่ ใช้จุดทางออกที่ขอบเขตนั้นเป็นจุดอ้างอิงของ HAND (ขอบเขตนี้อยู่นอกพื้นที่การย้อนดู)",
   "Where flow routing leaves no path to a channel (large flats), HAND falls back to height above the nearest channel cell.":
     "ในพื้นที่ที่การคำนวณทิศทางการไหลไม่พบเส้นทางไปยังร่องน้ำ (พื้นที่ราบกว้าง) ค่า HAND ใช้ความสูงเหนือช่องร่องน้ำที่ใกล้ที่สุดแทน",
-  "Stage varies along the river: each cell's water rise is scaled by k = clip((A / A_Sai) ** 0.3, 0.35, 1), where A is the upstream area of its drainage channel and A_Sai the Sai main stem at the Mae Sai bridges (downstream hydraulic geometry). The Ruak east of Mae Sai is inside the hydrology domain (DEM tiles N20E099 + N20E100).":
-    "ระดับน้ำแปรผันตามลำน้ำ: การสูงขึ้นของน้ำในแต่ละช่องคูณด้วย k = clip((A / A_Sai) ** 0.3, 0.35, 1) โดย A คือพื้นที่รับน้ำด้านเหนือน้ำของร่องน้ำของช่องนั้น และ A_Sai คือค่าของลำน้ำหลักแม่น้ำสายที่สะพานแม่สาย (เรขาคณิตชลศาสตร์ด้านท้ายน้ำ) แม่น้ำรวกทางตะวันออกของแม่สายอยู่ในขอบเขตการคำนวณทางอุทกวิทยา (แผ่นข้อมูล DEM N20E099 + N20E100)",
+  "Stage varies along the river: each cell's water rise is scaled by the depth factor f = clip((A / A_Sai) ** 0.3, 0.35, 1), where A is the upstream area of its drainage channel and A_Sai the Sai main stem at the Mae Sai bridges (downstream hydraulic geometry). The Ruak east of Mae Sai is inside the hydrology domain (DEM tiles N20E099 + N20E100).":
+    "ระดับน้ำแปรผันตามลำน้ำ: การสูงขึ้นของน้ำในแต่ละช่องคูณด้วยตัวคูณความลึก f = clip((A / A_Sai) ** 0.3, 0.35, 1) โดย A คือพื้นที่รับน้ำด้านเหนือน้ำของร่องน้ำของช่องนั้น และ A_Sai คือค่าของลำน้ำหลักแม่น้ำสายที่สะพานแม่สาย (เรขาคณิตชลศาสตร์ด้านท้ายน้ำ) แม่น้ำรวกทางตะวันออกของแม่สายอยู่ในขอบเขตการคำนวณทางอุทกวิทยา (แผ่นข้อมูล DEM N20E099 + N20E100)",
   "People in water uses WorldPop 2020 (100 m, spread evenly over 10 m cells); it is modelled residential population, not the 2024 population or tourists and traders at the border market.":
     "ประชากรในพื้นที่น้ำท่วมใช้ WorldPop 2020 (100 ม. กระจายเท่ากันลงในช่อง 10 ม.) เป็นประชากรที่อยู่อาศัยตามแบบจำลอง ไม่ใช่ประชากรปี 2567 (2024) หรือนักท่องเที่ยวและผู้ค้าที่ตลาดชายแดน",
   "Evacuation access uses the repo road graph and walking distance: a resident node has access when an open, dry shelter is within 2 km along roads still passable (about 30 minutes on foot); a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it. Levels are evaluated every 0.05 m of stage.":
@@ -141,6 +148,81 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ตัวเลขครอบคลุมเฉพาะส่วนที่จำลองของ 8 ตำบลในอำเภอแม่สาย ถนนและสถานที่นอกแบบจำลองไม่นับรวม",
   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.":
     "หลุมที่ถูกถมและพื้นที่ราบเรียบในแบบจำลองความสูงที่สูงจากร่องน้ำไม่ถึง 0.1 ม. (ระบุไว้ในช่อง B ของภาพ) จะแสดงว่าเปียกแทบทุกระดับน้ำ จึงแสดงเป็นน้ำที่มีความเชื่อมั่นต่ำ",
+  // Evidence envelope (r4): permitted use and what the source-timestamp span covers.
+  "Preparedness learning, planning exercises and post-event prioritisation discussion in competition and preview builds. Not for emergency response, evacuation orders or any operational decision; not an official warning.":
+    "ใช้เพื่อการเรียนรู้ด้านการเตรียมพร้อม การฝึกซ้อมวางแผน และการหารือจัดลำดับความสำคัญหลังเกิดเหตุ ในรุ่นสำหรับการแข่งขันและรุ่นทดลองเท่านั้น ไม่ใช้สำหรับการรับมือเหตุฉุกเฉิน คำสั่งอพยพ หรือการตัดสินใจเชิงปฏิบัติการใด ๆ และไม่ใช่คำเตือนทางการ",
+  "Span of the dated event observations shown: from the Sentinel-2 image of 5 Sep 03:58 UTC to the end of the last HII rain hour (19 Sep 24:00 ICT). Sentinel-1 (6 and 15 Sep UTC) and VIIRS (10-18 Sep) fall inside it. Inputs dated outside the event (elevation 2011-2015, WorldPop 2020, boundaries 2022, OpenStreetMap 2026-07-09, reported shelters compiled 2026-09-27) are dated per evidence block and in sources.":
+    "ช่วงเวลาของข้อมูลสังเกตการณ์ของเหตุการณ์ที่แสดง: ตั้งแต่ภาพ Sentinel-2 วันที่ 5 ก.ย. 03:58 UTC ถึงสิ้นชั่วโมงสุดท้ายของข้อมูลฝน สสน. (19 ก.ย. 24:00 น.) ภาพ Sentinel-1 (6 และ 15 ก.ย. ตามเวลา UTC) และ VIIRS (10–18 ก.ย.) อยู่ในช่วงนี้ ข้อมูลนำเข้าที่ลงวันที่นอกช่วงเหตุการณ์ (ความสูงภูมิประเทศ 2011–2015, WorldPop 2020, ขอบเขตการปกครอง 2022, OpenStreetMap 2026-07-09, ที่พักพิงที่มีรายงานรวบรวมเมื่อ 2026-09-27) ระบุวันที่ไว้ในแต่ละส่วนของหลักฐานและในรายการแหล่งข้อมูล",
+  // Licence per input: terms, conditions of use and the status of product 4009.
+  "Use under the Copernicus DEM licence terms, with the DLR and Airbus attribution.":
+    "ใช้ตามเงื่อนไขสัญญาอนุญาต Copernicus DEM พร้อมแสดงที่มาของ DLR และ Airbus",
+  "Use under the Copernicus Sentinel data terms, with the modified-data notice.":
+    "ใช้ตามเงื่อนไขข้อมูล Copernicus Sentinel พร้อมข้อความแจ้งว่าข้อมูลถูกดัดแปลง",
+  "Attribution and share-alike: files derived from the OpenStreetMap database stay under ODbL 1.0.":
+    "ต้องแสดงที่มาและอนุญาตแบบเดียวกัน: ไฟล์ที่ได้จากฐานข้อมูล OpenStreetMap ยังอยู่ภายใต้ ODbL 1.0",
+  "Attribution.": "ต้องแสดงที่มา",
+  "Attribution to OCHA / HDX.": "ต้องแสดงที่มาว่า OCHA / HDX",
+  "Shown with attribution; reuse beyond this page is not cleared.":
+    "แสดงพร้อมที่มา การนำไปใช้ต่อนอกหน้านี้ยังไม่ได้รับอนุญาต",
+  "Non-commercial use with attribution; keep rain values out of any combined table or export.":
+    "ใช้ได้เฉพาะที่ไม่ใช่เชิงพาณิชย์พร้อมแสดงที่มา ไม่นำค่าฝนไปรวมในตารางหรือไฟล์ส่งออกรวม",
+  "Facts quoted with their sources; coordinates matched to OpenStreetMap stay under ODbL 1.0.":
+    "ข้อเท็จจริงที่อ้างพร้อมแหล่งที่มา พิกัดที่จับคู่กับ OpenStreetMap ยังอยู่ภายใต้ ODbL 1.0",
+  "Team summary of public reporting, shown with its compile date.":
+    "สรุปรายงานสาธารณะโดยทีมงาน แสดงพร้อมวันที่รวบรวม",
+  "Quoted as reported, with a link to each source.":
+    "อ้างตามที่รายงาน พร้อมลิงก์ไปยังแต่ละแหล่ง",
+  "Attribution, share-alike and a change notice on every derived file; kept in its own folder.":
+    "ไฟล์ที่ได้จากข้อมูลนี้ทุกไฟล์ต้องแสดงที่มา อนุญาตแบบเดียวกัน และระบุสิ่งที่เปลี่ยนแปลง โดยเก็บไว้ในโฟลเดอร์ของตนเอง",
+  "Not yet shown; rights record pending owner confirmation.":
+    "ยังไม่แสดง รอเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูล",
+  "Competition and preview builds, non-commercial, with the attributions listed in sources.":
+    "ใช้ในรุ่นสำหรับการแข่งขันและรุ่นทดลอง ไม่ใช่เชิงพาณิชย์ พร้อมแสดงที่มาตามรายการแหล่งข้อมูล",
+  "HII rain data are CC BY-NC: the replay as a whole is for non-commercial use, and rain values stay out of any combined table or export.":
+    "ข้อมูลฝนของ สสน. ใช้สัญญาอนุญาต CC BY-NC การย้อนดูทั้งหมดจึงใช้ได้เฉพาะที่ไม่ใช่เชิงพาณิชย์ และไม่นำค่าฝนไปรวมในตารางหรือไฟล์ส่งออกรวม",
+  "The VIIRS provider states no licence: the maps are shown with attribution, and reuse beyond this page is not cleared.":
+    "ผู้ให้บริการ VIIRS ไม่ได้ระบุสัญญาอนุญาต แผนที่จึงแสดงพร้อมที่มา และการนำไปใช้ต่อนอกหน้านี้ยังไม่ได้รับอนุญาต",
+  "OpenStreetMap-derived files (roads, facilities, shelter candidates and the access node positions) stay under ODbL 1.0: attribution and share-alike.":
+    "ไฟล์ที่ได้จาก OpenStreetMap (ถนน สถานที่สำคัญ สถานที่ที่อาจใช้เป็นที่พักพิง และตำแหน่งจุดถนน) ยังอยู่ภายใต้ ODbL 1.0 ต้องแสดงที่มาและอนุญาตแบบเดียวกัน",
+  "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record.":
+    "ผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA (CC BY-SA 4.0) ยังไม่แสดง จะแสดงได้หลังจากเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลแล้วเท่านั้น",
+  // Licence wording the project wrote itself. Published licence names ("CC BY 4.0", "ODbL 1.0") stay as published.
+  "Project summary text": "ข้อความสรุปของโครงการ",
+  "Cited figures with links; no data copied": "ตัวเลขที่อ้างอิงพร้อมลิงก์ ไม่ได้คัดลอกข้อมูล",
+  "Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)":
+    "ข้อเท็จจริงพร้อมการอ้างอิง พิกัดที่ได้จาก OSM © ผู้ร่วมสร้าง OpenStreetMap (ODbL)",
+  "Facts with citations": "ข้อเท็จจริงพร้อมการอ้างอิง",
+  "No licence stated by the provider": "ผู้ให้บริการไม่ได้ระบุสัญญาอนุญาต",
+  "No licence stated by the provider; attribution given": "ผู้ให้บริการไม่ได้ระบุสัญญาอนุญาต จึงแสดงที่มาไว้",
+  "NOAA JPSS Proving Ground product; no licence stated on the site, attribution given":
+    "ผลิตภัณฑ์ของ NOAA JPSS Proving Ground เว็บไซต์ไม่ได้ระบุสัญญาอนุญาต จึงแสดงที่มาไว้",
+  "Copernicus DEM licence (free, attribution)": "สัญญาอนุญาต Copernicus DEM (ใช้ได้โดยไม่มีค่าใช้จ่าย ต้องแสดงที่มา)",
+  "Copernicus Sentinel data terms (free, full and open)": "เงื่อนไขข้อมูล Copernicus Sentinel (ใช้ได้โดยไม่มีค่าใช้จ่าย ครบถ้วนและเปิดกว้าง)",
+  "CC BY-NC (per the HII open-data catalogue)": "CC BY-NC (ตามบัญชีข้อมูลเปิดของ สสน.)",
+  // What was used, or already known, while the model was tuned.
+  "Which external figures were used, or already known, while the stage keyframes and the depth factor were set. A figure used or known during tuning cannot serve as an independent check.":
+    "ตัวเลขจากภายนอกใดบ้างที่ใช้หรือทราบอยู่แล้วขณะกำหนดจุดระดับน้ำและตัวคูณความลึก ตัวเลขที่ใช้หรือทราบขณะปรับแบบจำลองไม่อาจนับเป็นการตรวจสอบอิสระ",
+  "GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (9.9 km² flooded in Mae Sai) was used on purpose to set the onset stage knot (10 Sep 18:15, 0.1 m).":
+    "ตัวเลขจาก RADARSAT-2 ของ GISTDA ณ 10 ก.ย. 18:15 น. (น้ำท่วมในแม่สาย 9.9 ตร.กม.) ถูกนำมาใช้โดยตั้งใจเพื่อกำหนดจุดระดับน้ำช่วงเริ่มท่วม (10 ก.ย. 18:15 น., 0.1 ม.)",
+  "The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m), so the radar size comparison is calibration-informed, not an independent check.":
+    "ภาพ Sentinel-1 วันที่ 16 ก.ย. 06:16 น. ถูกใช้ปรับจุดกำหนดระดับน้ำช่วงน้ำลดใหม่ (ระดับน้ำที่เข้ากันดีที่สุด 0.10 ม.) การเทียบขนาดกับเรดาร์จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ",
+  "UNOSAT 3991 (about 70 km² over 13-19 Sep) was known while the stage keyframes were tuned, so its size comparison is calibration-informed, not independent.":
+    "ทราบตัวเลขของ UNOSAT 3991 (ประมาณ 70 ตร.กม. ในช่วง 13–19 ก.ย.) อยู่แล้วขณะปรับจุดกำหนดระดับน้ำ การเทียบขนาดกับตัวเลขนี้จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ",
+  "The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03) that also moved the 10 Sep 18:15 knot from 0.12 m to 0.1 m, the model's closest level to GISTDA's figure. The build history does not record which came first within that change, so the comparison is not presented as an independent check.":
+    "การเทียบกับ VIIRS รายวันไม่ได้ใช้ปรับแบบจำลอง การเทียบนี้คำนวณครั้งแรกในการแก้ไขเมื่อ 29 ก.ย. 2569 (2026) (commit 129ff03) ซึ่งเป็นการแก้ไขเดียวกับที่ย้ายจุดกำหนดระดับน้ำ 10 ก.ย. 18:15 น. จาก 0.12 ม. เป็น 0.1 ม. อันเป็นระดับของแบบจำลองที่ใกล้ตัวเลขของ GISTDA ที่สุด ประวัติการสร้างข้อมูลไม่ได้บันทึกว่าขั้นตอนใดเกิดก่อนในการแก้ไขนั้น จึงไม่นำการเทียบนี้มาแสดงเป็นการตรวจสอบอิสระ",
+  "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision.":
+    "การเทียบกับผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง ผลิตภัณฑ์ 4009 ยังไม่แสดงในข้อมูลรุ่นนี้",
+  "The depth factor f = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.":
+    "ตัวคูณความลึก f = clip((A / A_Sai) ** 0.3, 0.35, 1) เพิ่มเข้ามาเมื่อ 28 ก.ย. 2569 (2026) ซึ่งขณะนั้นทราบตัวเลขของ GISTDA และ UNOSAT 3991 แล้ว เลขชี้กำลังและค่าต่ำสุดเป็นไปตามหลักประมาณของเรขาคณิตชลศาสตร์ ประวัติการสร้างข้อมูลไม่มีบันทึกว่าปรับให้เข้ากับตัวเลขภายนอกใด",
+  "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.":
+    "นับจากนี้จะไม่ปรับจุดกำหนดระดับน้ำ ตัวคูณความลึก หรือข้อมูลภูมิประเทศให้เข้ากับ VIIRS หรือผลิตภัณฑ์ 4009 หากมีการปรับ การเทียบนั้นจะถูกระบุใหม่ว่ามีส่วนในการปรับแบบจำลอง",
+  // Sentences of revision r3 that r4 reworded, kept for a client that still holds the r3 manifest in its offline copy.
+  "Water extents are a terrain-model reconstruction with illustrative stages; only the late-recession size is checked against radar, and spatial agreement there is weak.":
+    "ขอบเขตน้ำจำลองจากแบบจำลองภูมิประเทศด้วยระดับน้ำสมมุติ ตรวจสอบกับเรดาร์ได้เฉพาะขนาดพื้นที่ช่วงน้ำลด และตำแหน่งยังสอดคล้องกันน้อย",
+  "The 16 September 06:16 ICT Sentinel-1 pass constrains the size of the late-recession extent only; the two radar passes use different orbit directions.":
+    "ภาพ Sentinel-1 วันที่ 16 กันยายน 06:16 น. ใช้กำหนดขนาดของขอบเขตน้ำช่วงท้ายของการลดลงเท่านั้น ภาพเรดาร์ทั้งสองภาพถ่ายจากทิศทางวงโคจรต่างกัน",
+  "Season envelope; not shown until the CC BY-SA rights record is signed.":
+    "ขอบเขตน้ำตลอดฤดู ยังไม่แสดงจนกว่าจะลงนามบันทึกสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA",
 };
 
 /** A manifest sentence in Thai when a translation is known, otherwise the English original marked as such (ids removed). */
@@ -150,12 +232,38 @@ export function localizedText(text: string, language: Language): { text: string;
   return thai ? { text: thai, lang: "th" } : { text: plain, lang: "en" };
 }
 
-/** Short manifest phrases with a date in them, e.g. a source timestamp "compiled 2026-09-27". */
-const THAI_PATTERNS: readonly [RegExp, string][] = [
-  [/^compiled (\d{4}-\d{2}-\d{2})$/, "รวบรวมเมื่อ $1"],
+const THAI_MONTHS: Readonly<Record<string, string>> = {
+  Jan: "ม.ค.", Feb: "ก.พ.", Mar: "มี.ค.", Apr: "เม.ย.", May: "พ.ค.", Jun: "มิ.ย.", Jul: "ก.ค.", Aug: "ส.ค.", Sep: "ก.ย.", Oct: "ต.ค.", Nov: "พ.ย.", Dec: "ธ.ค.",
+};
+/** A manifest date such as "30 Sep 2026": day, English month abbreviation and CE year. */
+const DATE = "(\\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \\d{4})";
+/** "30 Sep 2026" as "30 ก.ย. 2569 (2026)": the Buddhist-era year with the CE year in brackets, as everywhere on the page. */
+export function thaiManifestDate(text: string): string {
+  const [day, month, year] = text.split(" ");
+  return `${day} ${THAI_MONTHS[month] ?? month} ${Number(year) + 543} (${year})`;
+}
+
+/**
+ * Manifest sentences whose dates (or quoted words) come from a record at bake time, e.g. a source timestamp
+ * "compiled 2026-09-27" or the status of product 4009, which the bake reads from the rights record: pending today,
+ * and confirmed with a date once the owners confirm it.
+ */
+const THAI_PATTERNS: readonly [RegExp, (match: RegExpMatchArray) => string][] = [
+  [/^compiled (\d{4}-\d{2}-\d{2})$/, (m) => `รวบรวมเมื่อ ${m[1]}`],
+  [new RegExp(`^Season envelope\\. The CC BY-SA 4\\.0 rights decision was signed on ${DATE} and UNOSAT replied "([^"]+)" \\(relayed by a project owner on ${DATE}\\); shown only after the owners confirm the rights record\\.$`),
+    (m) => `ขอบเขตน้ำตลอดฤดู มติเรื่องสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA 4.0 ลงนามเมื่อ ${thaiManifestDate(m[1])} และ UNOSAT ตอบว่า "${m[2]}" (เจ้าของโครงการแจ้งคำตอบนี้ต่อทีมเมื่อ ${thaiManifestDate(m[3])}) จะแสดงหลังจากเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลแล้วเท่านั้น`],
+  [new RegExp(`^Season envelope\\. The CC BY-SA 4\\.0 rights decision was signed on ${DATE} and UNOSAT replied "([^"]+)" \\(relayed by a project owner on ${DATE}\\); the owners confirmed the rights record on ${DATE}\\. Not shown in this revision\\.$`),
+    (m) => `ขอบเขตน้ำตลอดฤดู มติเรื่องสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA 4.0 ลงนามเมื่อ ${thaiManifestDate(m[1])} และ UNOSAT ตอบว่า "${m[2]}" (เจ้าของโครงการแจ้งคำตอบนี้ต่อทีมเมื่อ ${thaiManifestDate(m[3])}) เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[4])} ยังไม่แสดงในข้อมูลรุ่นนี้`],
+  [new RegExp(`^Not shown in this revision; the owners confirmed the rights record on ${DATE}\\.$`),
+    (m) => `ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[1])}`],
+  [new RegExp(`^UNOSAT/GISTDA product 4009 \\(CC BY-SA 4\\.0\\) is not shown in this revision; the owners confirmed the rights record on ${DATE}\\.$`),
+    (m) => `ผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA (CC BY-SA 4.0) ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[1])}`],
 ];
 function thaiPattern(text: string): string | undefined {
-  for (const [pattern, replacement] of THAI_PATTERNS) if (pattern.test(text)) return text.replace(pattern, replacement);
+  for (const [pattern, render] of THAI_PATTERNS) {
+    const match = text.match(pattern);
+    if (match) return render(match);
+  }
   return undefined;
 }
 

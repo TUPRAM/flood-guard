@@ -5,7 +5,7 @@
  * Every figure here is a model scenario on the reconstructed flood (T1), never an observation.
  */
 
-import { memo, useId, useState, type ReactNode } from "react";
+import { memo, useId, useLayoutEffect, useReducer, useRef, useState, type ReactNode } from "react";
 
 import {
   checkDifference,
@@ -35,6 +35,7 @@ import {
   candidateReasons,
   capacityFlag,
   countedInReportedSet,
+  EQUITY_MIN_GROUP,
   equityWhy,
   equityWording,
   evacuationEquityGap,
@@ -46,11 +47,15 @@ import {
   reportedShelterCheck,
   reportedSiteCounts,
   reportedSiteRole,
+  type AccessCutoff,
   type AccessGroupSums,
+  type AccessScope,
   type AccessSnapshot,
   type PlannedShelter,
   type ReportedCheck,
+  type SetComparison,
 } from "@/lib/flood-timeline-evacuation";
+import { TIP_CLOSED, tipOpen, tipReducer, tooltipShift } from "@/lib/flood-timeline-layout";
 import type { AccessScopeChoice, ShelterSetChoice } from "@/lib/flood-timeline-link";
 
 import styles from "./mae-sai-flood-timeline.module.css";
@@ -284,16 +289,54 @@ export const occupancyText = (shelter: Pick<ReportedShelter, "reported_capacity_
 
 export const reportedName = (shelter: Pick<ReportedShelter, "name_en" | "name_th">, language: Language) => (language === "th" ? shelter.name_th : shelter.name_en);
 
+/** Left and right edges (viewport px) a tooltip must stay between: the viewport, narrowed by every clipping ancestor. */
+function horizontalClip(element: HTMLElement): [number, number] {
+  let left = 0;
+  let right = document.documentElement.clientWidth;
+  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
+    if (getComputedStyle(node).overflowX === "visible") continue;
+    const box = node.getBoundingClientRect();
+    left = Math.max(left, box.left);
+    right = Math.min(right, box.right);
+  }
+  return [left, right];
+}
+
 /**
  * A technical term with its short definition on hover or keyboard focus (the definition is also the term's
- * accessible description). Definitions come from the page glossary, which "How to read these numbers" lists in full.
+ * accessible description). Escape closes the definition without moving the pointer or the focus, and the box is
+ * moved sideways so it never leaves the viewport. Definitions come from the page glossary, which "How to read these
+ * numbers" lists in full.
  */
 export function Term({ id, language, children }: { id: GlossaryId; language: Language; children: ReactNode }) {
   const tipId = useId();
+  const tip = useRef<HTMLSpanElement | null>(null);
+  const [state, dispatch] = useReducer(tipReducer, TIP_CLOSED);
+  const open = tipOpen(state);
+  useLayoutEffect(() => {
+    const element = tip.current;
+    if (!open || !element) return;
+    const place = () => {
+      element.style.setProperty("--fg-tip-shift", "0px");
+      const box = element.getBoundingClientRect();
+      const [left, right] = horizontalClip(element);
+      element.style.setProperty("--fg-tip-shift", `${tooltipShift(box.left - left, box.right - left, right - left)}px`);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dispatch("escape");
+    };
+    place();
+    window.addEventListener("resize", place);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("resize", place);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, language]);
   return (
-    <span className={styles.term}>
-      <span className={styles.termLabel} tabIndex={0} aria-describedby={tipId}>{children}</span>
-      <span role="tooltip" id={tipId} className={styles.termTip}>{GLOSSARY[id].definition[language]}</span>
+    <span className={styles.term} onPointerEnter={() => dispatch("enter")} onPointerLeave={() => dispatch("leave")}>
+      <span className={styles.termLabel} tabIndex={0} aria-describedby={tipId} onFocus={() => dispatch("focus")} onBlur={() => dispatch("blur")}>{children}</span>
+      <span ref={tip} role="tooltip" id={tipId} className={styles.termTip} data-open={open || undefined}>{GLOSSARY[id].definition[language]}</span>
     </span>
   );
 }
@@ -463,7 +506,10 @@ export function AccessChart({ series, time, language, label }: { series: Float64
         <line x1={x(time * 24)} x2={x(time * 24)} y1={margin.top - 6} y2={y(0)} className={styles.playhead} />
         <circle cx={x(time * 24)} cy={y(series[now] ?? 0)} r={4.5} className={styles.playDot} />
       </svg>
-      <figcaption>{t("People who lost walking access to a dry shelter (scenario), 9–19 Sep, local days", "ผู้ที่สูญเสียการเดินถึงที่พักพิงที่แห้ง (สถานการณ์จำลอง) 9–19 ก.ย. ตามวันท้องถิ่น")}</figcaption>
+      <figcaption>{t(
+        "People who lost walking access to a dry shelter (T1 scenario, model), 9–19 Sep, local days. Hours from illustrative stage keyframes, not observed.",
+        "ผู้ที่สูญเสียการเดินถึงที่พักพิงที่แห้ง (สถานการณ์จำลองระดับ T1 แบบจำลอง) 9–19 ก.ย. ตามวันท้องถิ่น ชั่วโมงมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่ค่าที่สังเกตได้",
+      )}</figcaption>
     </figure>
   );
 }
@@ -488,15 +534,130 @@ function PlanSizeSentence({ shelters, k, language }: { shelters: ShelterInfo; k:
   );
 }
 
+/** The two shelter sets the access card puts side by side: the reported sites and the first k sites of the ranked plan. */
+export interface ShelterSetComparisons { reported: SetComparison | null; plan: SetComparison | null }
+
+/** The label every scenario hour on the access card carries. */
+export const hoursLabel = (language: Language): string => translator(language)(
+  "Hours from illustrative stage keyframes, not observed.",
+  "ชั่วโมงมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่ค่าที่สังเกตได้",
+);
+
+/** The modelled access cut-off hour as local replay time ("10 Sep 22:00"), or why the set has none. */
+export function cutoffText(cutoff: AccessCutoff, language: Language): string {
+  const t = translator(language);
+  if (cutoff.status === "reached") return formatHourStamp(cutoff.hour, language);
+  if (cutoff.status === "no_baseline") {
+    return t("None: no resident of this group has a shelter of this set within reach", "ไม่มี: ไม่มีผู้อยู่อาศัยกลุ่มนี้ที่มีที่พักพิงของชุดนี้ในระยะเดิน");
+  }
+  return t(
+    "Not reached in this replay: at least half keep access at every hour",
+    "ไม่ถึงเกณฑ์ในการย้อนดูนี้: อย่างน้อยครึ่งหนึ่งยังเดินถึงได้ทุกชั่วโมง",
+  );
+}
+
+const COMPARISON_SCOPES: readonly AccessScope[] = ["all", "flooded"];
+
 /**
- * Evacuation access at this stage for the chosen shelter set and population scope: who lost walking access to a dry
- * shelter because of the flood (the headline), who was already out of reach before it (context), per subdistrict,
- * the Evacuation Equity Gap and the replay curve. The default scope counts the residents whose homes flood at the
- * modelled peak, the same people the ranked plan is built for, so the reported set and the plan compare like with like.
+ * One shelter set counted both ways (all residents at road nodes, and residents whose homes flood at the modelled
+ * peak): within reach before the flood, still within reach at this replay hour, newly lost with the set's own baseline
+ * as denominator, and the modelled access cut-off hour. The ranked plan is built for evacuating before the flood, so
+ * its table leads with the cut-off hour and a note explains its loss at the peak. No row ranks the sets.
+ */
+export function SetComparisonTable({ kind, title, comparison, selected, language }: {
+  kind: "reported" | "plan";
+  title: string;
+  comparison: SetComparison;
+  /** Whether this is the set the map, the chart and the subdistrict bars show. */
+  selected: boolean;
+  language: Language;
+}) {
+  const t = translator(language);
+  const cell = (name: string, scope: AccessScope) => `compare-${kind}-${scope}-${name}`;
+  const rows: Record<"baseline" | "keeping" | "lost" | "cutoff", ReactNode> = {
+    baseline: (
+      <tr key="baseline">
+        <th scope="row">{t("Had a shelter of this set within reach before the flood", "มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม")}</th>
+        {COMPARISON_SCOPES.map((scope) => (
+          <td key={scope} data-testid={cell("baseline", scope)}>
+            {formatPeople(comparison[scope].baseline)}<small> {t(`of ${formatPeople(comparison[scope].residents)}`, `จาก ${formatPeople(comparison[scope].residents)}`)}</small>
+          </td>
+        ))}
+      </tr>
+    ),
+    keeping: (
+      <tr key="keeping">
+        <th scope="row">{t("Still have one at this replay hour", "ยังเดินถึงได้ ณ ชั่วโมงนี้ของการย้อนดู")}</th>
+        {COMPARISON_SCOPES.map((scope) => <td key={scope} data-testid={cell("keeping", scope)}>{formatPeople(comparison[scope].keeping)}</td>)}
+      </tr>
+    ),
+    lost: (
+      <tr key="lost">
+        <th scope="row">
+          {t("Newly lost because of the flood", "สูญเสียการเข้าถึงเพราะน้ำท่วม")}
+          <small>{t("Out of those within reach before it", "จากผู้ที่เคยอยู่ในระยะเดินก่อนน้ำท่วม")}</small>
+        </th>
+        {COMPARISON_SCOPES.map((scope) => {
+          const { lost, baseline, lostShare } = comparison[scope];
+          return (
+            <td key={scope} data-testid={cell("lost", scope)}>
+              {lostShare === null ? "—" : <>
+                {formatPeople(lost)}<small> {t(`of ${formatPeople(baseline)} (${percent(lostShare)})`, `จาก ${formatPeople(baseline)} (${percent(lostShare)})`)}</small>
+              </>}
+            </td>
+          );
+        })}
+      </tr>
+    ),
+    cutoff: (
+      <tr key="cutoff" data-lead={kind === "plan" ? "" : undefined}>
+        <th scope="row">
+          {t("Modelled access cut-off hour", "ชั่วโมงที่การเข้าถึงถูกตัดตามแบบจำลอง")}
+          <small>{t(
+            "First replay hour when fewer than half of those within reach before the flood still have access",
+            "ชั่วโมงแรกของการย้อนดูที่ผู้ยังเดินถึงได้เหลือไม่ถึงครึ่งของผู้ที่เคยอยู่ในระยะเดินก่อนน้ำท่วม",
+          )}</small>
+        </th>
+        {COMPARISON_SCOPES.map((scope) => <td key={scope} data-testid={cell("cutoff", scope)}>{cutoffText(comparison[scope].cutoff, language)}</td>)}
+      </tr>
+    ),
+  };
+  const order: (keyof typeof rows)[] = kind === "plan" ? ["cutoff", "baseline", "keeping", "lost"] : ["baseline", "keeping", "lost", "cutoff"];
+  return (
+    <div className={styles.setCompare} data-testid={`set-compare-${kind}`} data-selected={selected ? "" : undefined}>
+      <table>
+        <caption>
+          {title}
+          {selected && <span className={styles.setShown} data-testid="set-shown"> · {t("shown on the map and in the chart", "แสดงบนแผนที่และในกราฟ")}</span>}
+        </caption>
+        <thead>
+          <tr>
+            <td />
+            <th scope="col">{t("All residents at road nodes", "ผู้อยู่อาศัยทั้งหมดที่จุดถนน")}</th>
+            <th scope="col">{t("Residents whose homes flood at the peak", "ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุด")}</th>
+          </tr>
+        </thead>
+        <tbody>{order.map((name) => rows[name])}</tbody>
+      </table>
+      {kind === "plan" && (
+        <p className={styles.muted} data-testid="plan-reading">{t(
+          "How to read the plan: it is built for evacuating before the water rises, on normal roads, so its cut-off hour comes first. The loss at the modelled peak counts residents who are still at home by then; it does not grade the choice of sites.",
+          "วิธีอ่านแผน: แผนนี้ออกแบบสำหรับการอพยพก่อนน้ำขึ้น บนถนนสภาพปกติ จึงแสดงชั่วโมงที่การเข้าถึงถูกตัดเป็นอันดับแรก การสูญเสียที่ระดับน้ำสูงสุดของแบบจำลองนับผู้ที่ยังอยู่บ้านในขณะนั้น ไม่ได้ใช้ตัดสินการเลือกสถานที่",
+        )}</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Evacuation access for the chosen shelter set and population scope. The card first puts the reported set and the
+ * ranked plan side by side, each counted both ways (all residents at road nodes, and residents whose homes flood at
+ * the modelled peak), with no single headline that ranks them. Below that, for the chosen set and scope: who is
+ * without a shelter per subdistrict, the Evacuation Equity Gap (or why no ratio is shown) and the replay curve.
  */
 export function AccessCard({
   access, shelters, snapshot, series, time, names, tambonTotals, shelterSet, planK, onShelterSet, onPlanK, showCutoff, onShowCutoff,
-  scope, onScope, scopeTotals, allResidents, floodedResidents, language, status,
+  scope, onScope, scopeTotals, allResidents, floodedResidents, comparison, language, status,
 }: {
   access: AccessInfo;
   shelters: ShelterInfo;
@@ -518,15 +679,18 @@ export function AccessCard({
   scopeTotals: AccessGroupSums | null;
   allResidents: number;
   floodedResidents: number;
+  /** The reported set and the chosen plan size, each counted for both scopes at this replay hour; null until the node file is read. */
+  comparison: ShelterSetComparisons | null;
   language: Language;
   status: "loading" | "ready" | "error";
 }) {
   const t = translator(language);
   const sliderId = useId();
   const distanceKm = access.threshold_m / 1000;
+  const planTitle = t(`Ranked plan, first ${planK} site${planK === 1 ? "" : "s"}`, `แผนจัดอันดับ ${planK} แห่งแรก`);
   const setLabel = shelterSet === "reported"
     ? t("Shelters reported used in Sep 2024", "ที่พักพิงที่มีรายงานว่าใช้จริงในเดือน ก.ย. 2567 (2024)")
-    : t(`Ranked plan, first ${planK} site${planK === 1 ? "" : "s"}`, `แผนจัดอันดับ ${planK} แห่งแรก`);
+    : planTitle;
   const totals = scopeTotals ?? (scope === "all"
     ? { population: access.totals.population, vulnerable: access.totals.vulnerable, nonVulnerable: access.totals.non_vulnerable }
     : null);
@@ -546,9 +710,14 @@ export function AccessCard({
     ? t("residents at road nodes whose homes flood at the modelled peak", "ผู้อยู่อาศัยที่จุดถนนซึ่งบ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง")
     : t("all residents at road nodes", "ผู้อยู่อาศัยทั้งหมดที่จุดถนน");
   const total = totals ? formatPeople(totals.population) : "…";
+  // Residents of each group with a shelter of the set within reach before the flood (the second denominator shown).
+  const reachBefore = snapshot && totals
+    ? { vulnerable: Math.max(0, totals.vulnerable - snapshot.never.vulnerable), nonVulnerable: Math.max(0, totals.nonVulnerable - snapshot.never.nonVulnerable) }
+    : null;
+  const reportedTitle = t(`Shelters reported used in Sep 2024 (${counted} sites counted)`, `ที่พักพิงที่มีรายงานว่าใช้จริงในเดือน ก.ย. 2567 (2024) (นับ ${counted} แห่ง)`);
   return (
     <section className={styles.card} aria-labelledby="mae-sai-access-title" data-testid="access-card">
-      <p className={styles.eyebrow}>{t("SCENARIO (T1 MODEL) · EVACUATION ACCESS", "สถานการณ์จำลอง (T1) · การเข้าถึงการอพยพ")}</p>
+      <p className={styles.eyebrow}>{t("T1 SCENARIO (MODEL) · EVACUATION ACCESS", "สถานการณ์จำลองระดับ T1 (แบบจำลอง) · การเข้าถึงการอพยพ")}</p>
       <h2 id="mae-sai-access-title">{t("Walking access to a dry shelter (scenario)", "การเดินถึงที่พักพิงที่แห้ง (สถานการณ์จำลอง)")}</h2>
       <p className={styles.muted}>
         {t("Planning scenario, not observed evacuation outcomes (", "สถานการณ์เพื่อการวางแผน ไม่ใช่ผลการอพยพที่สังเกตได้จริง (")}
@@ -589,7 +758,7 @@ export function AccessCard({
         </div>
       )}
       <fieldset className={styles.segmented} data-testid="access-scope">
-        <legend>{t("Residents counted", "ผู้อยู่อาศัยที่นับ")}</legend>
+        <legend>{t("Residents counted in the equity gap, the subdistrict bars, the chart and the map", "ผู้อยู่อาศัยที่นับในช่องว่างความเท่าเทียม แถบรายตำบล กราฟ และแผนที่")}</legend>
         <div>
           <label>
             <input type="radio" name="mae-sai-access-scope" value="flooded" checked={scope === "flooded"} onChange={() => onScope("flooded")} />
@@ -602,8 +771,8 @@ export function AccessCard({
         </div>
       </fieldset>
       <p className={styles.note} data-testid="plan-optimises">{t(
-        `What the ranked plan optimises: sites that as many as possible of the ${formatPeople(shelters.demand_people)} residents whose homes flood at the modelled peak can walk to before the water rises (roads normal). It does not try to serve every resident at a road node, so counted against all residents it can look worse than the shelters used in 2024.`,
-        `สิ่งที่แผนจัดอันดับมุ่งให้ดีที่สุด: สถานที่ที่ผู้อยู่อาศัย ${formatPeople(shelters.demand_people)} คนซึ่งบ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลองเดินไปถึงได้มากที่สุดก่อนน้ำขึ้น (ถนนปกติ) แผนไม่ได้มุ่งให้บริการผู้อยู่อาศัยทุกคนที่จุดถนน เมื่อนับเทียบกับผู้อยู่อาศัยทั้งหมดจึงอาจดูแย่กว่าที่พักพิงที่ใช้จริงในปี 2567 (2024)`,
+        `What the ranked plan optimises: sites that as many as possible of the ${formatPeople(shelters.demand_people)} residents whose homes flood at the modelled peak can walk to before the water rises (roads normal). It does not try to serve every resident at a road node, which is why the two ways of counting below give different pictures of it.`,
+        `สิ่งที่แผนจัดอันดับมุ่งให้ดีที่สุด: สถานที่ที่ผู้อยู่อาศัย ${formatPeople(shelters.demand_people)} คนซึ่งบ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลองเดินไปถึงได้มากที่สุดก่อนน้ำขึ้น (ถนนปกติ) แผนไม่ได้มุ่งให้บริการผู้อยู่อาศัยทุกคนที่จุดถนน การนับสองแบบด้านล่างจึงให้ภาพของแผนที่ต่างกัน`,
       )}</p>
       {shelterSet === "reported" && (
         <p className={styles.caveat} data-testid="reported-set-caveat">
@@ -624,42 +793,51 @@ export function AccessCard({
         <p className={styles.muted} role="status">{t("Preparing the access scenario…", "กำลังเตรียมสถานการณ์การเข้าถึง…")}</p>
       ) : (
         <>
-          <dl className={styles.kpis}>
-            <div className={styles.kpiWide}>
-              <dt>{t("Lost walking access because of the flood, at this replay hour", "สูญเสียการเดินถึงที่พักพิงเพราะน้ำท่วม ณ ชั่วโมงนี้ของการย้อนดู")}</dt>
-              <dd data-tone="alert" data-testid="access-lost">{formatPeople(snapshot.lost.population)}<small> {t(`of ${total}`, `จาก ${total}`)}</small></dd>
+          {comparison && (comparison.reported || comparison.plan) && (
+            <div data-testid="set-comparison">
+              <h3>{t("The two shelter sets side by side", "ชุดที่พักพิงสองชุดเทียบกัน")}</h3>
+              <p className={styles.muted} data-testid="set-comparison-label">{t(
+                "T1 scenario (model). Each set is counted two ways: all residents at road nodes, and residents whose homes flood at the modelled peak. No single figure ranks the sets; read both columns.",
+                "สถานการณ์จำลองระดับ T1 (แบบจำลอง) แต่ละชุดนับสองแบบ: ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง ไม่มีตัวเลขใดตัวเลขเดียวที่ใช้จัดอันดับชุดที่พักพิง ควรอ่านทั้งสองคอลัมน์",
+              )}{" "}{hoursLabel(language)}</p>
+              {comparison.reported && (
+                <SetComparisonTable kind="reported" title={reportedTitle} comparison={comparison.reported} selected={shelterSet === "reported"} language={language} />
+              )}
+              {comparison.plan && (
+                <SetComparisonTable kind="plan" title={planTitle} comparison={comparison.plan} selected={shelterSet === "plan"} language={language} />
+              )}
             </div>
-            <div className={`${styles.kpiWide} ${styles.kpiContext}`}>
-              <dt>{t(
-                `Already more than ${distanceKm} km from a shelter of this set before the flood`,
-                `อยู่ห่างที่พักพิงของชุดนี้เกิน ${distanceKm} กม. ตั้งแต่ก่อนน้ำท่วม`,
-              )}</dt>
-              <dd data-testid="access-never">{formatPeople(snapshot.never.population)}<small> {t(`of ${total}`, `จาก ${total}`)}</small></dd>
-            </div>
-          </dl>
+          )}
           <p className={styles.muted} data-testid="access-without">{t(
-            `No dry shelter of this set within a ${distanceKm} km walk at this replay hour, both groups together: ${formatPeople(without)} / ${total}.`,
-            `ไม่มีที่พักพิงที่แห้งของชุดนี้ในระยะเดิน ${distanceKm} กม. ณ ชั่วโมงนี้ของการย้อนดู รวมทั้งสองกลุ่ม: ${formatPeople(without)} / ${total}`,
+            `${setLabel}, ${scopeText}: ${formatPeople(without)} / ${total} have no dry shelter of this set within a ${distanceKm} km walk at this replay hour (${formatPeople(snapshot.lost.population)} lost it because of the flood; ${formatPeople(snapshot.never.population)} were already out of reach before it). Modelled residents (WorldPop 2020).`,
+            `${setLabel} ${scopeText}: ${formatPeople(without)} / ${total} คนไม่มีที่พักพิงที่แห้งของชุดนี้ในระยะเดิน ${distanceKm} กม. ณ ชั่วโมงนี้ของการย้อนดู (${formatPeople(snapshot.lost.population)} คนสูญเสียเพราะน้ำท่วม ${formatPeople(snapshot.never.population)} คนอยู่นอกระยะตั้งแต่ก่อนน้ำท่วม) ผู้อยู่อาศัยตามแบบจำลอง (WorldPop 2020)`,
           )}</p>
-          <p className={styles.muted}>{setLabel} · {scopeText} · {t("modelled residents (WorldPop 2020)", "ผู้อยู่อาศัยตามแบบจำลอง (WorldPop 2020)")}</p>
           {gap && wording && (
-            <div className={styles.equity} data-testid="equity-gap">
+            <div className={styles.equity} data-testid="equity-gap" data-reason={gap.reason ?? undefined}>
               <p>
                 <strong>{t("Evacuation Equity Gap", "ช่องว่างความเท่าเทียมในการอพยพ")}: {wording.value}</strong>
                 {wording.sentence && <>{" · "}<span>{wording.sentence}</span></>}
               </p>
               {why && <p data-testid="equity-why">{why}</p>}
-              {gap.vulnerableRate !== null && gap.nonVulnerableRate !== null && (
-                <p className={styles.muted}>{t(
-                  `Proxy-vulnerable residents who lost access: ${formatPeople(snapshot.lost.vulnerable)} of ${formatPeople(totals.vulnerable)}; everyone else: ${formatPeople(snapshot.lost.nonVulnerable)} of ${formatPeople(totals.nonVulnerable)}.`,
-                  `กลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง: ${formatPeople(snapshot.lost.vulnerable)} จาก ${formatPeople(totals.vulnerable)} คน กลุ่มอื่น: ${formatPeople(snapshot.lost.nonVulnerable)} จาก ${formatPeople(totals.nonVulnerable)} คน`,
+              {reachBefore && totals.vulnerable >= 0.5 && reachBefore.vulnerable < 0.5 && (
+                <p data-testid="equity-no-baseline">{t(
+                  "No proxy-vulnerable resident counted here had a shelter of this set within reach before the flood, so none could lose it.",
+                  "ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนที่นับในที่นี้มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม จึงไม่มีผู้ใดสูญเสียการเข้าถึงได้",
                 )}</p>
               )}
+              <p className={styles.muted} data-testid="equity-counts">{t(
+                `Proxy-vulnerable residents who lost access: ${formatPeople(snapshot.lost.vulnerable)} of ${formatPeople(totals.vulnerable)} counted (${formatPeople(reachBefore?.vulnerable ?? 0)} had a shelter of this set within reach before the flood); everyone else: ${formatPeople(snapshot.lost.nonVulnerable)} of ${formatPeople(totals.nonVulnerable)} (${formatPeople(reachBefore?.nonVulnerable ?? 0)} within reach before the flood).`,
+                `กลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง: ${formatPeople(snapshot.lost.vulnerable)} จาก ${formatPeople(totals.vulnerable)} คนที่นับ (${formatPeople(reachBefore?.vulnerable ?? 0)} คนมีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม) กลุ่มอื่น: ${formatPeople(snapshot.lost.nonVulnerable)} จาก ${formatPeople(totals.nonVulnerable)} คน (${formatPeople(reachBefore?.nonVulnerable ?? 0)} คนอยู่ในระยะเดินก่อนน้ำท่วม)`,
+              )}</p>
+              <p className={styles.muted} data-testid="equity-label">{t(
+                "T1 scenario (model). Vulnerable = terrain/remoteness proxy.",
+                "สถานการณ์จำลองระดับ T1 (แบบจำลอง) กลุ่มเปราะบาง = ตัวแทนจากภูมิประเทศและความห่างไกล",
+              )}{" "}{hoursLabel(language)}</p>
               <details className={styles.more}>
                 <summary>{t("What the ratio and “vulnerable” mean", "อัตราส่วนและ “กลุ่มเปราะบาง” หมายถึงอะไร")}</summary>
                 <p className={styles.muted}>{t(
-                "Ratio of loss rates (vulnerable ÷ everyone else), two decimals; above 1.20 means vulnerable residents are more likely to lose access, below 0.80 less likely. “Vulnerable” is this repository's terrain/remoteness proxy (homes on slopes of 8° or more, or 750 m or more from a drivable road), not demographic vulnerability such as age, disability or income.",
-                "อัตราส่วนของอัตราการสูญเสีย (กลุ่มเปราะบาง ÷ กลุ่มอื่น) ทศนิยมสองตำแหน่ง มากกว่า 1.20 หมายถึงกลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.80 หมายถึงน้อยกว่า “กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (บ้านบนความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่ความเปราะบางทางประชากร เช่น อายุ ความพิการ หรือรายได้",
+                `Ratio of loss rates (vulnerable ÷ everyone else), two decimals; above 1.20 means vulnerable residents are more likely to lose access, below 0.80 less likely. Each rate divides the residents who lost access by all residents counted in that group, including those with no shelter of this set within reach before the flood. No ratio is shown when a group has fewer than ${EQUITY_MIN_GROUP} residents, when no one has lost access, or when only proxy-vulnerable residents have (the ratio would divide by zero). “Vulnerable” is this repository's terrain/remoteness proxy (homes on slopes of 8° or more, or 750 m or more from a drivable road), not demographic vulnerability such as age, disability or income.`,
+                `อัตราส่วนของอัตราการสูญเสีย (กลุ่มเปราะบาง ÷ กลุ่มอื่น) ทศนิยมสองตำแหน่ง มากกว่า 1.20 หมายถึงกลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.80 หมายถึงน้อยกว่า แต่ละอัตราคือผู้ที่สูญเสียการเข้าถึงหารด้วยผู้อยู่อาศัยทั้งหมดที่นับในกลุ่มนั้น รวมผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม ไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีผู้อยู่อาศัยน้อยกว่า ${EQUITY_MIN_GROUP} คน เมื่อไม่มีผู้ใดสูญเสียการเข้าถึง หรือเมื่อมีเพียงกลุ่มเปราะบางตามตัวแทนที่สูญเสีย (อัตราส่วนจะหารด้วยศูนย์) “กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (บ้านบนความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่ความเปราะบางทางประชากร เช่น อายุ ความพิการ หรือรายได้`,
                 )}</p>
               </details>
             </div>

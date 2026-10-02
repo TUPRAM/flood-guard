@@ -1,0 +1,1632 @@
+{
+ "fixture": "An r3-shaped Mae Sai replay manifest, for the reader tests: a client may still hold this shape in its offline copy.",
+ "source": "apps/web/public/studies/mae-sai-2024-timeline/r3/timeline.json at commit 9a27bee (the last commit that shipped r3)",
+ "trimmed": [
+  "tambon_histograms and population.tambon_histograms: first subdistrict only",
+  "days: first 3 of 11",
+  "shelters.candidates: first 2; shelters.plan: first 2; shelters.reported: first 1, with its first source",
+  "viirs_daily.days: first 2 of 9",
+  "rainfall.hourly_mm: first 24 hours per gauge"
+ ],
+ "note": "Every other field is unchanged. The files its hrefs name are no longer in the tree; tests must not read them.",
+ "manifest": {
+  "study_id": "mae-sai-2024-flood-timeline",
+  "revision": "r3",
+  "schema_version": 1,
+  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
+  "data_mode": "historical_reconstruction",
+  "official_warning": false,
+  "real_time": false,
+  "can_feed_decision_layer": false,
+  "confidence": "low",
+  "confidence_reason": "Water extents are a terrain-model reconstruction with illustrative stages; only the late-recession size is checked against radar, and spatial agreement there is weak.",
+  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-15T23:16:01Z",
+  "timezone": "Asia/Bangkok (ICT, UTC+7)",
+  "area": {
+   "en": "Mae Sai District, Chiang Rai, Thailand (the image footprint also covers Tachileik, Myanmar)",
+   "th": "อำเภอแม่สาย จังหวัดเชียงราย (ภาพครอบคลุมท่าขี้เหล็ก เมียนมาด้วย)"
+  },
+  "bounds": [
+   [
+    20.255543,
+    99.808141
+   ],
+   [
+    20.491672,
+    100.039491
+   ]
+  ],
+  "hand": {
+   "href": "/studies/mae-sai-2024-timeline/r3/hand-codes.png",
+   "sha256": "c787d7792f96355c786c20416f1c3c605a0d83d35c8ad1828258a550598b1147",
+   "bytes": 898115,
+   "width": 1610,
+   "height": 1753,
+   "depth_factor_channel": "G",
+   "low_confidence_channel": "B",
+   "low_confidence": {
+    "rule": "B = 255 where the terrain was raised by more than 0.1 m when filling pits (or needed the flat-area routing fallback) and ends up less than 0.1 m above its channel",
+    "meaning": "Dead-flat or filled low ground in the elevation model: HAND ~ 0, so it reads as wet at almost any stage. Real low paddies or ponds are possible, but so are elevation artefacts."
+   },
+   "depth_factor": {
+    "exponent": 0.3,
+    "floor": 0.35,
+    "reference_km2": 876.9,
+    "reference": "Sai River main stem at the Mae Sai border bridges"
+   },
+   "low_confidence_share": {
+    "peak_flooded_km2": 88.7,
+    "low_confidence_km2": 14.0
+   },
+   "step_m": 0.05,
+   "channel_code": 0,
+   "never_code": 255,
+   "stream_threshold_km2": 25.0
+  },
+  "impassable_depth_m": 0.3,
+  "pixel_area_m2": 100.0,
+  "stage_anchors": [
+   {
+    "t": 0.5,
+    "stage_m": 0.0
+   },
+   {
+    "t": 1.0,
+    "stage_m": 0.0
+   },
+   {
+    "t": 1.5,
+    "stage_m": 0.1
+   },
+   {
+    "t": 1.760417,
+    "stage_m": 0.1
+   },
+   {
+    "t": 2.083333,
+    "stage_m": 2.5
+   },
+   {
+    "t": 2.5,
+    "stage_m": 3.2
+   },
+   {
+    "t": 3.5,
+    "stage_m": 3.5
+   },
+   {
+    "t": 4.5,
+    "stage_m": 1.8
+   },
+   {
+    "t": 5.5,
+    "stage_m": 0.9
+   },
+   {
+    "t": 6.5,
+    "stage_m": 0.25
+   },
+   {
+    "t": 7.5,
+    "stage_m": 0.08
+   },
+   {
+    "t": 8.5,
+    "stage_m": 0.04
+   },
+   {
+    "t": 9.5,
+    "stage_m": 0.02
+   },
+   {
+    "t": 10.5,
+    "stage_m": 0.0
+   }
+  ],
+  "tambon_coverage": {
+   "TH570901": {
+    "modelled_km2": 21.56,
+    "total_km2": 21.56
+   },
+   "TH570902": {
+    "modelled_km2": 44.34,
+    "total_km2": 44.34
+   },
+   "TH570903": {
+    "modelled_km2": 47.42,
+    "total_km2": 47.41
+   },
+   "TH570904": {
+    "modelled_km2": 43.62,
+    "total_km2": 43.62
+   },
+   "TH570905": {
+    "modelled_km2": 41.89,
+    "total_km2": 41.89
+   },
+   "TH570906": {
+    "modelled_km2": 30.34,
+    "total_km2": 30.34
+   },
+   "TH570908": {
+    "modelled_km2": 33.78,
+    "total_km2": 33.78
+   },
+   "TH570909": {
+    "modelled_km2": 42.61,
+    "total_km2": 42.61
+   }
+  },
+  "model_coverage": {
+   "modelled_km2": 305.6,
+   "district_km2": 305.6,
+   "reason": "Copernicus DEM tiles N20E099 and N20E100 cover the whole district."
+  },
+  "facilities_count": {
+   "total": 42,
+   "modelled": 42
+  },
+  "roads_not_modelled_km": 0.0,
+  "phases": [
+   {
+    "id": "dry",
+    "start": "2024-09-09",
+    "end": "2024-09-09",
+    "label": {
+     "en": "Dry / normal",
+     "th": "ช่วงปกติ"
+    },
+    "summary": {
+     "en": "Normal conditions in Mae Sai. Northern Thailand had seen heavy rain since mid-August, but the Sai River stayed within safe levels.",
+     "th": "สภาพในแม่สายยังปกติ ภาคเหนือมีฝนตกหนักต่อเนื่องตั้งแต่กลางเดือนสิงหาคม แต่แม่น้ำสายยังอยู่ในระดับปลอดภัย"
+    }
+   },
+   {
+    "id": "onset",
+    "start": "2024-09-10",
+    "end": "2024-09-10",
+    "label": {
+     "en": "Onset",
+     "th": "เริ่มท่วม"
+    },
+    "summary": {
+     "en": "Torrential rain from the remnants of Typhoon Yagi. The Sai River rose fast and overflowed into homes and the border market during the night.",
+     "th": "ฝนตกหนักมากจากอิทธิพลที่เหลือของพายุไต้ฝุ่นยางิ แม่น้ำสายเพิ่มระดับอย่างรวดเร็วและล้นเข้าบ้านเรือนและตลาดชายแดนในช่วงกลางคืน"
+    }
+   },
+   {
+    "id": "peak",
+    "start": "2024-09-11",
+    "end": "2024-09-12",
+    "label": {
+     "en": "Peak",
+     "th": "ระดับสูงสุด"
+    },
+    "summary": {
+     "en": "The worst flash flooding. Very swift, deep water submerged ground floors; power was cut, hundreds of residents were stranded on rooftops and rescue boats struggled against the current.",
+     "th": "ช่วงน้ำท่วมฉับพลันรุนแรงที่สุด กระแสน้ำเชี่ยวและลึกจนท่วมชั้นล่างของอาคาร ไฟฟ้าถูกตัด ประชาชนหลายร้อยคนติดอยู่บนหลังคา และเรือกู้ภัยฝ่ากระแสน้ำได้ยาก"
+    }
+   },
+   {
+    "id": "receding",
+    "start": "2024-09-13",
+    "end": "2024-09-15",
+    "label": {
+     "en": "Receding",
+     "th": "น้ำลด"
+    },
+    "summary": {
+     "en": "Rain eased and the Sai River fell gradually. Main roads reopened to heavy vehicles while low-lying plains stayed under water.",
+     "th": "ฝนเริ่มซาและระดับแม่น้ำสายค่อย ๆ ลดลง ถนนสายหลักเริ่มให้รถขนาดใหญ่สัญจรได้ แต่พื้นที่ราบลุ่มต่ำยังมีน้ำท่วมขัง"
+    }
+   },
+   {
+    "id": "gone",
+    "start": "2024-09-16",
+    "end": "2024-09-19",
+    "label": {
+     "en": "Mostly receded",
+     "th": "น้ำลดเกือบหมด"
+    },
+    "summary": {
+     "en": "UNOSAT monitoring reported that most remaining surface water had disappeared or shrunk sharply by 19 September.",
+     "th": "การติดตามของ UNOSAT รายงานว่าน้ำผิวดินที่เหลือส่วนใหญ่หายไปหรือลดลงอย่างมากภายในวันที่ 19 กันยายน"
+    }
+   }
+  ],
+  "days": [
+   {
+    "date": "2024-09-09",
+    "index": 0,
+    "phase": "dry",
+    "stage_m": 0.0,
+    "stats": {
+     "flooded_km2": 0.0,
+     "tambon_flooded_km2": {
+      "TH570901": 0.0,
+      "TH570902": 0.0,
+      "TH570903": 0.0,
+      "TH570904": 0.0,
+      "TH570905": 0.0,
+      "TH570906": 0.0,
+      "TH570908": 0.0,
+      "TH570909": 0.0
+     },
+     "road_km_impassable": 0.0,
+     "road_km_wet": 0.0,
+     "facilities_wet": 0,
+     "people_in_water": 0,
+     "tambon_people_in_water": {
+      "TH570901": 0.0,
+      "TH570902": 0.0,
+      "TH570903": 0.0,
+      "TH570904": 0.0,
+      "TH570905": 0.0,
+      "TH570906": 0.0,
+      "TH570908": 0.0,
+      "TH570909": 0.0
+     },
+     "access": {
+      "reported_2024": {
+       "people_lost_access": 0,
+       "vulnerable_lost": 0.0,
+       "non_vulnerable_lost": 0.0
+      },
+      "plan_8": {
+       "people_lost_access": 0,
+       "vulnerable_lost": 0.0,
+       "non_vulnerable_lost": 0.0
+      }
+     }
+    }
+   },
+   {
+    "date": "2024-09-10",
+    "index": 1,
+    "phase": "onset",
+    "stage_m": 0.1,
+    "stats": {
+     "flooded_km2": 13.555,
+     "tambon_flooded_km2": {
+      "TH570901": 2.378,
+      "TH570902": 0.049,
+      "TH570903": 2.788,
+      "TH570904": 2.57,
+      "TH570905": 2.194,
+      "TH570906": 0.145,
+      "TH570908": 2.902,
+      "TH570909": 0.529
+     },
+     "road_km_impassable": 0.0,
+     "road_km_wet": 36.15,
+     "facilities_wet": 0,
+     "people_in_water": 2667,
+     "tambon_people_in_water": {
+      "TH570901": 1220.0,
+      "TH570902": 5.8,
+      "TH570903": 277.0,
+      "TH570904": 422.6,
+      "TH570905": 305.5,
+      "TH570906": 18.4,
+      "TH570908": 361.7,
+      "TH570909": 56.0
+     },
+     "access": {
+      "reported_2024": {
+       "people_lost_access": 0,
+       "vulnerable_lost": 0.0,
+       "non_vulnerable_lost": 0.0
+      },
+      "plan_8": {
+       "people_lost_access": 0,
+       "vulnerable_lost": 0.0,
+       "non_vulnerable_lost": 0.0
+      }
+     }
+    }
+   },
+   {
+    "date": "2024-09-11",
+    "index": 2,
+    "phase": "peak",
+    "stage_m": 3.2,
+    "stats": {
+     "flooded_km2": 83.389,
+     "tambon_flooded_km2": {
+      "TH570901": 9.051,
+      "TH570902": 1.375,
+      "TH570903": 15.188,
+      "TH570904": 11.704,
+      "TH570905": 21.327,
+      "TH570906": 0.657,
+      "TH570908": 19.533,
+      "TH570909": 4.554
+     },
+     "road_km_impassable": 149.45,
+     "road_km_wet": 26.7,
+     "facilities_wet": 4,
+     "people_in_water": 14992,
+     "tambon_people_in_water": {
+      "TH570901": 5554.6,
+      "TH570902": 175.2,
+      "TH570903": 1613.5,
+      "TH570904": 1786.5,
+      "TH570905": 3173.9,
+      "TH570906": 91.0,
+      "TH570908": 2190.1,
+      "TH570909": 407.0
+     },
+     "access": {
+      "reported_2024": {
+       "people_lost_access": 6651,
+       "vulnerable_lost": 0.0,
+       "non_vulnerable_lost": 6650.5
+      },
+      "plan_8": {
+       "people_lost_access": 12959,
+       "vulnerable_lost": 319.9,
+       "non_vulnerable_lost": 12638.9
+      }
+     }
+    }
+   }
+  ],
+  "observations": [
+   {
+    "id": "s2-20240905",
+    "sensor": "Sentinel-2B MSI L2A",
+    "kind": "optical",
+    "utc": "2024-09-05T03:58:19Z",
+    "local": "2024-09-05T10:58:19+07:00",
+    "label": {
+     "en": "Sentinel-2 true colour · 5 Sep (pre-event)",
+     "th": "Sentinel-2 สีจริง · 5 ก.ย. (ก่อนเกิดเหตุ)"
+    }
+   },
+   {
+    "id": "s1-20240906",
+    "sensor": "Sentinel-1A IW GRD VV",
+    "kind": "radar",
+    "utc": "2024-09-06T11:31:06Z",
+    "local": "2024-09-06T18:31:06+07:00",
+    "label": {
+     "en": "Sentinel-1 radar · 6 Sep (pre-event)",
+     "th": "Sentinel-1 เรดาร์ · 6 ก.ย. (ก่อนเกิดเหตุ)"
+    },
+    "pass": "ascending",
+    "relative_orbit": 172
+   },
+   {
+    "id": "s2-20240915",
+    "sensor": "Sentinel-2B MSI L2A",
+    "kind": "optical",
+    "utc": "2024-09-15T03:58:15Z",
+    "local": "2024-09-15T10:58:15+07:00",
+    "label": {
+     "en": "Sentinel-2 true colour · 15 Sep (partly cloudy)",
+     "th": "Sentinel-2 สีจริง · 15 ก.ย. (มีเมฆบางส่วน)"
+    }
+   },
+   {
+    "id": "s1-20240915",
+    "sensor": "Sentinel-1A IW GRD VV",
+    "kind": "radar",
+    "utc": "2024-09-15T23:16:01Z",
+    "local": "2024-09-16T06:16:01+07:00",
+    "label": {
+     "en": "Sentinel-1 radar · 16 Sep 06:16 ICT",
+     "th": "Sentinel-1 เรดาร์ · 16 ก.ย. 06:16 น."
+    },
+    "pass": "descending",
+    "relative_orbit": 135
+   }
+  ],
+  "layers": [
+   {
+    "href": "/studies/mae-sai-2024-timeline/r3/hillshade.webp",
+    "sha256": "72dcfb2bc381f398f0e3c225b83d66429d12c009f99c6662c4cf2c5fa563da9f",
+    "bytes": 156120,
+    "id": "hillshade",
+    "kind": "terrain",
+    "date": null
+   },
+   {
+    "href": "/studies/mae-sai-2024-timeline/r3/s2-20240905.webp",
+    "sha256": "40147cebd8f50ea4d5b6cb27c23e58f3181a545481ad84f0439647b5e8fd4cac",
+    "bytes": 713912,
+    "id": "s2-20240905",
+    "kind": "sentinel-2",
+    "date": "2024-09-05T03:58:19Z",
+    "scene": "S2B_47QNC_20240905_0_L2A"
+   },
+   {
+    "href": "/studies/mae-sai-2024-timeline/r3/s2-20240915.webp",
+    "sha256": "8a5a92a2219c739f04a02ee72aeaed63ffdbd6856db0ddd38692961847b34618",
+    "bytes": 660994,
+    "id": "s2-20240915",
+    "kind": "sentinel-2",
+    "date": "2024-09-15T03:58:15Z",
+    "scene": "S2B_47QNC_20240915_0_L2A"
+   },
+   {
+    "href": "/studies/mae-sai-2024-timeline/r3/s1-20240906-vv.webp",
+    "sha256": "ab87c3b4e1b9a5961dab9a8651aafebac3f68d66a5a0c07b4eab6048730a94d6",
+    "bytes": 579094,
+    "id": "s1-20240906",
+    "kind": "sentinel-1",
+    "date": "2024-09-06T11:31:06Z",
+    "scene": "S1A_IW_GRDH_1SDV_20240906T113106_20240906T113131_055544_06C73C_B53D_COG.SAFE",
+    "pass": "ascending",
+    "relative_orbit": 172
+   },
+   {
+    "href": "/studies/mae-sai-2024-timeline/r3/s1-20240915-vv.webp",
+    "sha256": "71f70a4f6853fd51de8227d8a7657daf8b9a52f5fe7d549044a8b76fceef3604",
+    "bytes": 569212,
+    "id": "s1-20240915",
+    "kind": "sentinel-1",
+    "date": "2024-09-15T23:16:01Z",
+    "scene": "S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_82A9_COG.SAFE",
+    "pass": "descending",
+    "relative_orbit": 135
+   },
+   {
+    "href": "/studies/mae-sai-2024-timeline/r3/s1-change-rgb.webp",
+    "sha256": "a525388efd2c4c4b5b69d7b74c51ccb4a07c83745f4e39d3b1b32f5505c28c0a",
+    "bytes": 774848,
+    "id": "s1-change",
+    "kind": "sentinel-1-change",
+    "date": "2024-09-06T11:31:06Z/2024-09-15T23:16:01Z"
+   }
+  ],
+  "vectors": {
+   "tambons": {
+    "href": "/studies/mae-sai-2024-timeline/r3/tambons.geojson",
+    "sha256": "5d1f8cd8364b443324a3a8b3ba2c8a16d2d384a149a437d15036821c272f9d69",
+    "bytes": 45534,
+    "features": 8
+   },
+   "roads": {
+    "href": "/studies/mae-sai-2024-timeline/r3/roads.geojson",
+    "sha256": "e6529472904d65b043c051a8dedd3f92f1416cb41acdd4ea6bc3c0a737e1f7bd",
+    "bytes": 712884,
+    "features": 2979
+   },
+   "facilities": {
+    "href": "/studies/mae-sai-2024-timeline/r3/facilities.geojson",
+    "sha256": "7cbb45ffb3ff2c20b06c5499b1fdcd975481ba41be52d834d7664bc3ff222fcb",
+    "bytes": 9841,
+    "features": 42
+   }
+  },
+  "tambon_histograms": {
+   "TH570901": [
+    2684,
+    23777,
+    1741,
+    1970,
+    1826,
+    1606,
+    1349,
+    1581,
+    1688,
+    1535,
+    1516,
+    1400,
+    1343,
+    1247,
+    1198,
+    1624,
+    1268,
+    1226,
+    1322,
+    1245,
+    1342,
+    1286,
+    1061,
+    990,
+    899,
+    794,
+    779,
+    735,
+    746,
+    794,
+    944,
+    839,
+    753,
+    756,
+    789,
+    901,
+    962,
+    838,
+    835,
+    763,
+    770,
+    849,
+    754,
+    672,
+    650,
+    573,
+    1106,
+    824,
+    778,
+    793,
+    1182,
+    998,
+    900,
+    1051,
+    960,
+    1255,
+    1132,
+    1065,
+    897,
+    940,
+    1034,
+    1164,
+    992,
+    901,
+    1181,
+    872,
+    964,
+    1012,
+    1050,
+    1106,
+    1757,
+    1170,
+    1159,
+    2599,
+    1357,
+    1194,
+    1240,
+    1073,
+    1058,
+    937,
+    1110,
+    983,
+    923,
+    857,
+    796,
+    740,
+    778,
+    797,
+    694,
+    655,
+    656,
+    3256,
+    1057,
+    880,
+    813,
+    826,
+    802,
+    735,
+    672,
+    624,
+    1052,
+    868,
+    750,
+    766,
+    842,
+    976,
+    788,
+    684,
+    2084,
+    958,
+    846,
+    789,
+    757,
+    1071,
+    925,
+    851,
+    792,
+    700,
+    697,
+    763,
+    641,
+    603,
+    577,
+    668,
+    582,
+    606,
+    578,
+    518,
+    615,
+    569,
+    654,
+    571,
+    544,
+    522,
+    509,
+    470,
+    469,
+    511,
+    536,
+    603,
+    517,
+    472,
+    431,
+    390,
+    344,
+    367,
+    306,
+    279,
+    322,
+    259,
+    226,
+    249,
+    553,
+    317,
+    288,
+    313,
+    283,
+    257,
+    283,
+    384,
+    293,
+    254,
+    264,
+    228,
+    239,
+    258,
+    227,
+    218,
+    214,
+    199,
+    202,
+    178,
+    187,
+    186,
+    223,
+    202,
+    168,
+    180,
+    490,
+    225,
+    197,
+    173,
+    177,
+    183,
+    265,
+    206,
+    370,
+    218,
+    211,
+    197,
+    178,
+    160,
+    167,
+    141,
+    148,
+    136,
+    143,
+    133,
+    148,
+    160,
+    144,
+    128,
+    110,
+    125,
+    728,
+    214,
+    158,
+    139,
+    148,
+    138,
+    146,
+    119,
+    104,
+    169,
+    105,
+    114,
+    104,
+    113,
+    109,
+    105,
+    184,
+    151,
+    136,
+    248,
+    157,
+    245,
+    194,
+    491,
+    261,
+    226,
+    216,
+    199,
+    205,
+    210,
+    217,
+    207,
+    179,
+    194,
+    226,
+    182,
+    196,
+    202,
+    179,
+    142,
+    163,
+    148,
+    148,
+    150,
+    122,
+    125,
+    128,
+    2165,
+    554,
+    391,
+    169,
+    27014
+   ]
+  },
+  "s1_anchor": {
+   "threshold_db_dn": 41.17,
+   "newly_dark_km2": 23.57,
+   "best_fit_stage_m": 0.1,
+   "best_fit_model_km2": 22.54,
+   "iou_at_best_fit": 0.074,
+   "scope": "Low-HAND zone (HAND < 6 m, channel excluded) across the full image footprint, both sides of the border.",
+   "reconstruction_stage_at_pass_m": 0.121
+  },
+  "population": {
+   "href": "/studies/mae-sai-2024-timeline/r3/population-density.png",
+   "sha256": "696649f28901b073d9ce56d00e5170e42bf31ae2410f03e61f79281c2fe11bdf",
+   "bytes": 334367,
+   "width": 1610,
+   "height": 1753,
+   "encoding": "code = round(254 * ln(1 + p) / ln(1 + max_per_ha)); p = people per hectare",
+   "max_per_ha": 31.33,
+   "tambon_histograms": {
+    "TH570901": [
+     208.9,
+     1220.0,
+     94.1,
+     88.5,
+     92.4,
+     72.2,
+     73.2,
+     75.3,
+     103.5,
+     88.7,
+     116.8,
+     88.5,
+     85.5,
+     79.0,
+     78.6,
+     100.1,
+     82.1,
+     76.3,
+     82.1,
+     77.6,
+     81.5,
+     74.6,
+     66.5,
+     55.7,
+     60.3,
+     57.6,
+     52.9,
+     51.7,
+     55.4,
+     48.9,
+     72.7,
+     56.6,
+     47.6,
+     55.0,
+     47.8,
+     87.6,
+     99.9,
+     67.6,
+     70.7,
+     63.0,
+     59.2,
+     68.0,
+     57.3,
+     50.4,
+     54.2,
+     58.0,
+     60.3,
+     65.9,
+     67.9,
+     66.4,
+     61.3,
+     67.1,
+     64.3,
+     64.3,
+     60.1,
+     64.2,
+     69.9,
+     63.1,
+     65.5,
+     63.7,
+     65.7,
+     62.8,
+     64.3,
+     62.6,
+     61.3,
+     50.6,
+     61.4,
+     65.1,
+     58.9,
+     68.6,
+     90.2,
+     69.4,
+     62.8,
+     276.2,
+     83.1,
+     65.9,
+     74.2,
+     66.1,
+     82.0,
+     60.3,
+     78.5,
+     62.7,
+     63.6,
+     62.2,
+     52.2,
+     47.7,
+     56.8,
+     60.6,
+     50.9,
+     50.8,
+     46.2,
+     125.4,
+     56.9,
+     54.2,
+     47.9,
+     44.5,
+     51.3,
+     45.4,
+     45.2,
+     44.4,
+     48.4,
+     48.6,
+     45.8,
+     44.3,
+     51.3,
+     45.2,
+     42.0,
+     42.1,
+     90.0,
+     55.2,
+     51.6,
+     52.7,
+     47.0,
+     56.2,
+     56.3,
+     49.1,
+     40.2,
+     41.5,
+     41.7,
+     47.2,
+     39.9,
+     36.2,
+     38.9,
+     43.7,
+     40.0,
+     43.0,
+     39.5,
+     34.6,
+     35.5,
+     36.1,
+     50.3,
+     47.0,
+     55.2,
+     43.4,
+     42.1,
+     39.7,
+     36.0,
+     43.9,
+     41.2,
+     43.2,
+     35.9,
+     34.6,
+     32.7,
+     29.1,
+     27.0,
+     27.9,
+     31.6,
+     25.5,
+     27.7,
+     23.4,
+     20.0,
+     21.1,
+     33.4,
+     22.6,
+     21.1,
+     23.8,
+     24.0,
+     19.0,
+     24.2,
+     24.4,
+     23.3,
+     19.0,
+     21.8,
+     17.7,
+     19.6,
+     19.9,
+     19.0,
+     18.3,
+     18.9,
+     19.4,
+     18.1,
+     15.5,
+     18.0,
+     19.7,
+     20.3,
+     16.3,
+     14.8,
+     17.2,
+     33.7,
+     16.4,
+     16.1,
+     13.7,
+     14.8,
+     14.6,
+     19.3,
+     14.8,
+     25.8,
+     15.7,
+     17.7,
+     15.8,
+     15.8,
+     11.0,
+     13.9,
+     12.1,
+     13.1,
+     10.2,
+     11.5,
+     10.0,
+     12.0,
+     12.2,
+     12.1,
+     11.7,
+     8.6,
+     10.0,
+     50.5,
+     17.1,
+     11.9,
+     13.2,
+     12.0,
+     10.9,
+     12.5,
+     10.7,
+     9.6,
+     9.6,
+     7.4,
+     10.4,
+     8.3,
+     9.3,
+     6.9,
+     9.5,
+     15.1,
+     14.4,
+     12.3,
+     19.5,
+     13.9,
+     22.8,
+     16.6,
+     49.6,
+     26.1,
+     21.2,
+     21.3,
+     18.1,
+     19.8,
+     20.3,
+     19.1,
+     20.1,
+     18.2,
+     17.8,
+     24.9,
+     19.0,
+     21.1,
+     20.3,
+     18.5,
+     14.6,
+     17.9,
+     16.4,
+     15.5,
+     16.7,
+     12.9,
+     13.5,
+     14.3,
+     228.4,
+     57.3,
+     43.0,
+     18.7,
+     5290.9
+    ]
+   },
+   "tambon_totals": {
+    "TH570901": 17721,
+    "TH570902": 8917,
+    "TH570903": 6702,
+    "TH570904": 9300,
+    "TH570905": 7169,
+    "TH570906": 19345,
+    "TH570908": 5010,
+    "TH570909": 7199
+   },
+   "source": "WorldPop Thailand 100 m constrained 2020 (tha_ppp_2020)",
+   "licence": "CC BY 4.0",
+   "timestamp": "2020 estimate",
+   "note": "Modelled residential population, not a census count or the 2024 population."
+  },
+  "access": {
+   "nodes": {
+    "href": "/studies/mae-sai-2024-timeline/r3/access-nodes.bin",
+    "sha256": "d4b84fcf9b7f1d97983b9293e7d502d329e859e9859f867219033b56ccbaa590",
+    "bytes": 435840,
+    "count": 13620,
+    "layout": [
+     {
+      "name": "lon",
+      "dtype": "float32",
+      "offset": 0
+     },
+     {
+      "name": "lat",
+      "dtype": "float32",
+      "offset": 54480
+     },
+     {
+      "name": "population",
+      "dtype": "float32",
+      "offset": 108960
+     },
+     {
+      "name": "vulnerable_population",
+      "dtype": "float32",
+      "offset": 163440
+     },
+     {
+      "name": "tambon_index",
+      "dtype": "uint8",
+      "offset": 217920,
+      "note": "1-based index into access.tambons; 0 = none"
+     },
+     {
+      "name": "home_code",
+      "dtype": "uint8",
+      "offset": 231540,
+      "note": "effective HAND code at the node"
+     },
+     {
+      "name": "home_k",
+      "dtype": "uint8",
+      "offset": 245160,
+      "note": "depth factor * 255"
+     },
+     {
+      "name": "cut_codes",
+      "dtype": "uint8",
+      "offset": 258780,
+      "shape": [
+       13,
+       13620
+      ],
+      "note": "set-major; index into access.levels where the node first loses access; 254 never; 255 no baseline access"
+     }
+    ]
+   },
+   "levels": [
+    0.0,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    1.0,
+    1.05,
+    1.1,
+    1.15,
+    1.2,
+    1.25,
+    1.3,
+    1.35,
+    1.4,
+    1.45,
+    1.5,
+    1.55,
+    1.6,
+    1.65,
+    1.7,
+    1.75,
+    1.8,
+    1.85,
+    1.9,
+    1.95,
+    2.0,
+    2.05,
+    2.1,
+    2.15,
+    2.2,
+    2.25,
+    2.3,
+    2.35,
+    2.4,
+    2.45,
+    2.5,
+    2.55,
+    2.6,
+    2.65,
+    2.7,
+    2.75,
+    2.8,
+    2.85,
+    2.9,
+    2.95,
+    3.0,
+    3.05,
+    3.1,
+    3.15,
+    3.2,
+    3.25,
+    3.3,
+    3.35,
+    3.4,
+    3.45,
+    3.5,
+    3.55,
+    3.6,
+    3.65,
+    3.7,
+    3.75,
+    3.8,
+    3.85,
+    3.9,
+    3.95,
+    4.0
+   ],
+   "threshold_m": 2000.0,
+   "travel_mode": "walking on passable roads (about 30 min at 4 km/h)",
+   "tambons": [
+    "TH570901",
+    "TH570902",
+    "TH570903",
+    "TH570904",
+    "TH570905",
+    "TH570906",
+    "TH570908",
+    "TH570909"
+   ],
+   "sets": [
+    "reported_2024",
+    "plan_1",
+    "plan_2",
+    "plan_3",
+    "plan_4",
+    "plan_5",
+    "plan_6",
+    "plan_7",
+    "plan_8",
+    "plan_9",
+    "plan_10",
+    "plan_11",
+    "plan_12"
+   ],
+   "totals": {
+    "population": 81799,
+    "vulnerable": 7151.6,
+    "non_vulnerable": 74646.9
+   },
+   "scenario_tier": "T1 scenario (model), not observed evacuation outcomes",
+   "confidence": "low",
+   "confidence_reason": "Built on the reconstructed water, WorldPop 2020 residents at road nodes, an OSM road graph with assumed walking access and shelters assumed open for the whole replay.",
+   "source_timestamp": "OSM roads and sites 2026-07-09; WorldPop 2020; water model 2024-09-09/2024-09-19 ICT",
+   "definition": "A resident node loses access when no open, dry shelter of the chosen set is reachable within the threshold on roads that are still passable, having been reachable before the flood."
+  },
+  "shelters": {
+   "candidates": [
+    {
+     "id": "C001",
+     "kind": "worship",
+     "name": "วัดถ้ำปลา",
+     "lon": 99.863965,
+     "lat": 20.329773,
+     "source": "OSM relation/6666702",
+     "footprint_m2": 0,
+     "capacity_est": null,
+     "h": null,
+     "k": 1.0,
+     "freeboard_m": null,
+     "snap_m": 21,
+     "eligible": true,
+     "ineligible_reasons": [],
+     "m": true,
+     "high_ground": true
+    },
+    {
+     "id": "C002",
+     "kind": "worship",
+     "name": "มูลนิธิกวงเม้งแม่สาย",
+     "lon": 99.884614,
+     "lat": 20.436535,
+     "source": "OSM way/106085171",
+     "footprint_m2": 916,
+     "capacity_est": 130,
+     "h": null,
+     "k": 1.0,
+     "freeboard_m": null,
+     "snap_m": 19,
+     "eligible": true,
+     "ineligible_reasons": [],
+     "m": true,
+     "high_ground": true
+    }
+   ],
+   "plan": [
+    {
+     "marginal_demand": 2955.8,
+     "cumulative_demand": 2955.8,
+     "cumulative_share": 0.2086,
+     "candidate_id": "C050",
+     "loads": [
+      2956
+     ],
+     "late_cumulative_share": 0.1128
+    },
+    {
+     "marginal_demand": 1988.6,
+     "cumulative_demand": 4944.4,
+     "cumulative_share": 0.349,
+     "candidate_id": "C007",
+     "loads": [
+      2430,
+      2515
+     ],
+     "late_cumulative_share": 0.183
+    }
+   ],
+   "knee_k": 8,
+   "demand_people": 14169,
+   "uncoverable_people": 5743,
+   "eligible_count": 95,
+   "reported": [
+    {
+     "id": "R01",
+     "name_en": "Mae Sai Subdistrict Municipality Office shelter and relief centre",
+     "name_th": "ศูนย์พักพิงเทศบาลตำบลแม่สาย (สำนักงานเทศบาลตำบลแม่สาย)",
+     "type": "government_office",
+     "tambon": "เวียงพางคำ (the OSM address puts the office in Ban Pa Yang Mai, Wiang Phang Kham; the municipality covers parts of ต.แม่สาย and ต.เวียงพางคำ)",
+     "lon": 99.8843199,
+     "lat": 20.4265331,
+     "location_method": "osm_feature",
+     "location_evidence": "OSM way 371846370 'สำนักงานเทศบาลตำบลแม่สาย' / 'Maesai Municipality Office' (amenity=townhall), https://www.openstreetmap.org/way/371846370 ; coordinates are the Nominatim centroid, and the Overpass center 20.4265324, 99.8843686 agrees",
+     "location_confidence": "high",
+     "period_used": "Open by the early hours of 2024-09-11 (34 people at 01:00). Occupancy 53 on the ICC report covering 9-15 Sep (published 2024-09-16), 49 on 2024-09-21 and 41 on 2024-09-28. Still open at 87 on 2024-10-08/10 after the early-October re-flood. The municipal relief/command centre was set up in the same building on 2024-09-11.",
+     "evidence_strength": "official",
+     "sources": [
+      {
+       "title": "รวมเบอร์ติดต่อ \"ขอความช่วยเหลือ-แจ้งเหตุ\" น้ำท่วม จ.เชียงราย",
+       "publisher": "Thai PBS",
+       "url": "https://www.thaipbs.or.th/news/content/344054",
+       "date": "2024-09-11",
+       "quote_or_paraphrase": "As of 01:00 on 11 Sep 2024, 34 evacuees were at the Mae Sai municipality shelter and 37 at Wat Phrom Wihan. It lists the Mae Sai flood shelters as เทศบาลตำบลแม่สาย and วัดพรหมวิหาร."
+      }
+     ],
+     "notes": "This was the primary municipal shelter from the first night of the Sep 2024 flood through October. Take capacity figures from the 2025 events (the July 2025 Khaosod list gives about 200) only as indicative. The same building was the municipal relief/command centre.",
+     "reported_capacity_or_occupancy": "Occupancy: 34 (2024-09-11 01:00), 53 (about 2024-09-15), 49 (2024-09-21), 41 (2024-09-28), 87 (2024-10-10). Capacity was not reported for Sep 2024. A July 2025 municipal list gives about 200, which comes from a different event.",
+     "role": "shelter",
+     "first_use": "2024-09-15 or earlier",
+     "in_access_set": true,
+     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+     "model_check": {
+      "h": null,
+      "k": 1.0,
+      "freeboard_m": null,
+      "snap_m": 41,
+      "m": true,
+      "high_ground": true,
+      "floods_at_modelled_peak": false
+     }
+    }
+   ],
+   "method": {
+    "evacuation_stage_m": 0.0,
+    "late_evacuation_stage_m": 1.0,
+    "threshold_m": 2000.0,
+    "freeboard_m": 0.5,
+    "peak_stage_m": 3.5,
+    "m2_per_person": 3.5,
+    "usable_floor_share": 0.5,
+    "max_plan_sites": 30,
+    "snap_max_m": 400.0
+   },
+   "confidence": "low",
+   "confidence_reason": "Candidates are OSM public buildings with sparse footprints; eligibility and coverage use the reconstructed peak and walking distance, not site surveys.",
+   "source_timestamp": "OSM extract 2026-07-09; reported shelters compiled 2026-09-27 from reports dated 2024-09-11 to 2024-10-11",
+   "reported_status": "Reported use from public sources; not an official register. Locations are OSM matches where possible; low-confidence locations are approximate.",
+   "reported_compiled": "2026-09-27",
+   "reported_access_set_rule": "The reported_2024 access set counts located sites reported as overnight shelters by 15 Sep; the command centre and sites first used after 12 Sep are shown on the map but not counted. Opening times within 10-12 Sep are not modelled."
+  },
+  "external_checks": [
+   {
+    "id": "gistda-radarsat2-20240910",
+    "observed": "GISTDA RADARSAT-2 flood analysis, 10 Sep 2024 18:15 (time zone not stated; assumed ICT)",
+    "reported_km2": 9.9,
+    "reported_text": "Mae Sai 6,182 rai",
+    "scope": "Mae Sai district",
+    "role": "calibration_anchor",
+    "model_km2": 13.6,
+    "model_stage_m": 0.1,
+    "use": "Calibration anchor for the 10 Sep 18:15 knot, not an independent check.",
+    "urls": [
+     "https://gistda.or.th/news_view.php?n_id=8072&lang=TH",
+     "https://mgronline.com/science/detail/9670000084814"
+    ]
+   },
+   {
+    "id": "unosat-3991",
+    "observed": "UNOSAT product 3991: cumulative satellite-detected water 13-19 Sep 2024 over Mae Sai District (Pleiades, RCM, TerraSAR-X, Sentinel, Landsat, PlanetScope)",
+    "reported_km2": 70,
+    "reported_people": 13600,
+    "reported_text": "about 70 km2 flood-affected within a 305 km2 analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated",
+    "role": "calibration_informed_magnitude_check",
+    "model_km2": 72.2,
+    "model_people_in_water": 12813,
+    "model_window": "Largest modelled extent within 13-19 Sep ICT (the start of the UNOSAT window)",
+    "model_stage_m": 2.65,
+    "model_peak_km2": 88.704,
+    "model_peak_people_in_water": 16060,
+    "use": "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model. Calibration-informed, not independent: this figure was known while the stage keyframes were tuned (owner decision, 30 Sep 2026). Its people figure is an exposure estimate, a different measure from the model's residents in water.",
+    "urls": [
+     "https://unosat.org/products/3991"
+    ]
+   }
+  ],
+  "viirs_daily": {
+   "product": "NOAA/GMU VIIRS 375 m daily flood-water fraction composite (block 090)",
+   "source_url": "https://jpssflood.gmu.edu/",
+   "licence": "NOAA JPSS Proving Ground product; no licence stated on the site, attribution given",
+   "attribution": "VIIRS flood product: NOAA JPSS / George Mason University",
+   "legend": {
+    "1": "cloud (no observation)",
+    "3": "normal open water",
+    "4": "flood water 1-24 %",
+    "5": "flood water 25-49 %",
+    "6": "flood water 50-74 %",
+    "7": "flood water 75-100 %",
+    "transparent": "clear, dry land or outside"
+   },
+   "nominal_overpass": "Daily composite of early-afternoon passes; compared with the model at 13:30 ICT.",
+   "comparison_rule": "District only, clear-sky pixels only, permanent water excluded; VIIRS area = sum of flood fraction x pixel area; model area = modelled out-of-channel wet fraction averaged onto the same 375 m pixels.",
+   "caveat": "375 m optical data under-detects narrow, shallow, urban or vegetated flooding and sees nothing under cloud; agreement or disagreement is indicative only.",
+   "days": [
+    {
+     "date": "2024-09-10",
+     "nominal_local_time": "2024-09-10T13:30+07:00",
+     "t": 1.5625,
+     "cloud_share": 1.0,
+     "clear_km2": 0.0,
+     "viirs_flood_km2_clear": 0.0,
+     "model_stage_m": 0.1,
+     "model_flood_km2_clear": 0.0,
+     "model_flood_km2_district": 13.52,
+     "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240910.png",
+     "sha256": "4ececa760798df71b83bed1a083d6068c3ecb028133ef974f18b9e772d2ed817",
+     "bytes": 169,
+     "width": 64,
+     "height": 70,
+     "source_file": "WATER_COM_VIIRS_Prj_SVI_d20240910_d20240910_4448_4448_7_001day_090.tif.zip"
+    },
+    {
+     "date": "2024-09-11",
+     "nominal_local_time": "2024-09-11T13:30+07:00",
+     "t": 2.5625,
+     "cloud_share": 1.0,
+     "clear_km2": 0.0,
+     "viirs_flood_km2_clear": 0.0,
+     "model_stage_m": 3.219,
+     "model_flood_km2_clear": 0.0,
+     "model_flood_km2_district": 84.63,
+     "href": "/studies/mae-sai-2024-timeline/r3/viirs-20240911.png",
+     "sha256": "4ececa760798df71b83bed1a083d6068c3ecb028133ef974f18b9e772d2ed817",
+     "bytes": 169,
+     "width": 64,
+     "height": 70,
+     "source_file": "WATER_COM_VIIRS_Prj_SVI_d20240911_d20240911_4448_4448_6_001day_090.tif.zip"
+    }
+   ]
+  },
+  "rainfall": {
+   "stations": [
+    {
+     "code": "MOU189",
+     "name_en": "Tham Luang - Khun Nam Nang Non NP office (Pong Pha)",
+     "name_th": "อุทยานแห่งชาติถ้ำหลวง-ขุนน้ำนางนอน (โป่งผา)",
+     "lat": 20.38133,
+     "lon": 99.86719,
+     "total_mm": 465.6,
+     "max_hour_mm": 28.6,
+     "missing_hours": 0
+    },
+    {
+     "code": "DIWO",
+     "name_en": "Wiang Phang Kham Subdistrict Municipality",
+     "name_th": "เทศบาลตำบลเวียงพางคำ",
+     "lat": 20.403551,
+     "lon": 99.88573,
+     "total_mm": 230.6,
+     "max_hour_mm": 16.6,
+     "missing_hours": 0
+    }
+   ],
+   "hourly_mm": {
+    "MOU189": [
+     0.0,
+     0.4,
+     0.6,
+     0.0,
+     8.4,
+     1.4,
+     3.4,
+     3.6,
+     2.8,
+     3.4,
+     8.6,
+     5.8,
+     3.6,
+     1.6,
+     0.2,
+     0.2,
+     0.6,
+     0.8,
+     1.6,
+     0.4,
+     0.6,
+     10.6,
+     5.6,
+     2.0
+    ],
+    "DIWO": [
+     0.0,
+     0.4,
+     0.4,
+     0.2,
+     4.4,
+     0.4,
+     2.0,
+     3.0,
+     2.4,
+     1.0,
+     5.4,
+     3.8,
+     2.0,
+     0.4,
+     0.2,
+     0.0,
+     0.2,
+     0.6,
+     1.0,
+     0.2,
+     0.6,
+     7.2,
+     2.0,
+     0.2
+    ]
+   },
+   "source": "HII ThaiWater open data, hourly rain gauges",
+   "source_url": "https://tiservice.hii.or.th/opendata/",
+   "licence": "CC BY-NC (per the HII open-data catalogue)",
+   "units": "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT",
+   "note": "Observed rainfall (forcing), not flooding."
+  },
+  "external_references": [
+   {
+    "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)",
+    "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
+    "note": "Season envelope (scenario per decision D3); not shown until the CC BY-SA rights record (D2) is signed."
+   },
+   {
+    "name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)",
+    "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"
+   },
+   {
+    "name": "International Charter activation 912 (Typhoon Yagi, Thailand)",
+    "url": "https://disasterscharter.org/activations/flood-in-thailand-activation-912-"
+   },
+   {
+    "name": "HII ThaiWater September 2024 Chiang Rai flood event page (rainfall and Kok River hydrographs)",
+    "url": "https://www.thaiwater.net/uploads/contents/current/2024/FloodChiangrai_Sep2024/"
+   }
+  ],
+  "gauge_note": "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.",
+  "sources": [
+   {
+    "id": "copernicus-dem",
+    "name": "Copernicus DEM GLO-30 (tile N20 E099)",
+    "licence": "Copernicus DEM licence (free, attribution)",
+    "timestamp": "2021 release (DSM from 2011-2015 acquisitions)",
+    "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"
+   },
+   {
+    "id": "sentinel-2",
+    "name": "Sentinel-2 L2A via Earth Search (tile 47QNC)",
+    "licence": "Copernicus Sentinel data terms (free, full and open)",
+    "timestamp": "2024-09-05 / 2024-09-15",
+    "attribution": "Contains modified Copernicus Sentinel data [2024]"
+   },
+   {
+    "id": "sentinel-1",
+    "name": "Sentinel-1A IW GRD via Copernicus Data Space Ecosystem",
+    "licence": "Copernicus Sentinel data terms (free, full and open)",
+    "timestamp": "2024-09-06 / 2024-09-15 UTC",
+    "attribution": "Contains modified Copernicus Sentinel data [2024]"
+   },
+   {
+    "id": "osm",
+    "name": "OpenStreetMap roads and candidate facilities (Geofabrik extract)",
+    "licence": "ODbL 1.0",
+    "timestamp": "2026-07-09",
+    "attribution": "© OpenStreetMap contributors"
+   },
+   {
+    "id": "cod-ab",
+    "name": "HDX Thailand COD-AB subdistrict boundaries v01",
+    "licence": "CC BY-IGO",
+    "timestamp": "valid from 2022-01-22",
+    "attribution": "OCHA / HDX Thailand COD-AB"
+   },
+   {
+    "id": "viirs",
+    "name": "NOAA/GMU VIIRS 375 m daily flood-water fraction (10-18 Sep 2024)",
+    "licence": "No licence stated; attribution given",
+    "timestamp": "2024-09-10 / 2024-09-18 daily",
+    "attribution": "VIIRS flood product: NOAA JPSS / George Mason University"
+   },
+   {
+    "id": "hii-rain",
+    "name": "HII ThaiWater hourly rain gauges MOU189 and DIWO",
+    "licence": "CC BY-NC",
+    "timestamp": "2024-09-09 / 2024-09-19 hourly",
+    "attribution": "Hydro-Informatics Institute (HII), ThaiWater"
+   },
+   {
+    "id": "chronology",
+    "name": "Event chronology (phases and narrative)",
+    "licence": "Project summary text",
+    "timestamp": "compiled 2026-09-27",
+    "attribution": "FloodGuard team summary of public reporting; not independently verified in this study"
+   }
+  ],
+  "assumptions": [
+   "Daily water surfaces are a HAND (height above nearest drainage) threshold reconstruction, not observations.",
+   "Stage keyframes (metres above the mapped channel) are illustrative values shaped to the event chronology; no gauge record was used. The stage is held at 0 through 9 Sep and rises through the night of 10 Sep.",
+   "The stage is the assumed Sai main-stem level at the Mae Sai bridges; tributaries rise k x stage (see the next assumption). Real water levels still differed reach by reach.",
+   "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.",
+   "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
+   "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
+   "The 16 September 06:16 ICT Sentinel-1 pass constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
+   "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km2, so the 18:15 knot is set to the closest level (0.1 m).",
+   "Cells that drain off the hydrology domain before meeting a mapped channel use their outlet on the domain edge as the HAND reference (the edge lies outside the replay area).",
+   "Where flow routing leaves no path to a channel (large flats), HAND falls back to height above the nearest channel cell.",
+   "Stage varies along the river: each cell's water rise is scaled by k = clip((A / A_Sai) ** 0.3, 0.35, 1), where A is the upstream area of its drainage channel and A_Sai the Sai main stem at the Mae Sai bridges (downstream hydraulic geometry). The Ruak east of Mae Sai is inside the hydrology domain (DEM tiles N20E099 + N20E100).",
+   "People in water uses WorldPop 2020 (100 m, spread evenly over 10 m cells); it is modelled residential population, not the 2024 population or tourists and traders at the border market.",
+   "Evacuation access uses the repo road graph and walking distance: a resident node has access when an open, dry shelter is within 2 km along roads still passable (about 30 minutes on foot); a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it. Levels are evaluated every 0.05 m of stage.",
+   "Shelter candidates are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres; OSM amenity=shelter huts are excluded). A candidate is eligible only if it keeps 0.5 m freeboard at the modelled peak and a road node lies within 400 m. Ranking is greedy maximal coverage of residents whose homes are wet at the peak, within 2 km walking on normal roads (pre-emptive evacuation); late_cumulative_share repeats the check on roads still open at 1.0 m stage.",
+   "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.",
+   "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
+   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
+   "Flash-flood velocity, debris and mud deposition are not modelled."
+  ],
+  "limitations": [
+   "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
+   "No high-resolution satellite image exists for 10-14 September over Mae Sai in these inputs; VIIRS (375 m) was cloud-covered on 10-11 Sep and mostly cloud-covered on 12-14 Sep, so onset and peak extents are not observed.",
+   "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded."
+  ]
+ }
+}

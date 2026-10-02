@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 import { expect } from "@playwright/test";
@@ -131,6 +131,278 @@ try {
     if ((await layersButton.getAttribute("aria-expanded")) !== "true") await layersButton.click();
     await expect(page.locator("#mae-sai-map-layers")).toBeVisible();
   };
+  // What sits over the map, by name. A box counts only while it is shown (the notes and the legend fade out while a
+  // popup is open); the checks below compare the shown boxes pairwise and against the map frame.
+  const MAP_BOXES = {
+    zoom: ".leaflet-control-zoom",
+    notes: "[data-testid='map-notes']",
+    legend: "[data-testid='map-legend']",
+    "basemap note": "[data-testid='basemap-note']",
+    "clear route": "[data-testid='clear-route']",
+    attribution: ".leaflet-control-attribution",
+    popup: ".leaflet-popup",
+    "left label": "[data-testid='compare-label-left']",
+    "right label": "[data-testid='compare-label-right']",
+    "divider handle": "[data-testid='compare-handle']",
+  };
+  const mapLayout = (target = page) => target.evaluate((selectors) => {
+    const frame = document.querySelector("[class*='mapFrame']").getBoundingClientRect();
+    const boxes = Object.entries(selectors).flatMap(([name, selector]) => {
+      const element = document.querySelector(selector);
+      if (!element) return [];
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      if (box.width === 0 || box.height === 0 || style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.05) return [];
+      return [{ name, left: box.left, top: box.top, right: box.right, bottom: box.bottom }];
+    });
+    const overlapping = [];
+    const outside = [];
+    for (const [index, a] of boxes.entries()) {
+      if (a.left < frame.left - 0.5 || a.right > frame.right + 0.5 || a.top < frame.top - 0.5 || a.bottom > frame.bottom + 0.5) outside.push(a.name);
+      for (const b of boxes.slice(index + 1)) {
+        const across = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const down = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        if (across > 0.5 && down > 0.5) overlapping.push(`${a.name} over ${b.name} (${Math.round(across)} x ${Math.round(down)} px)`);
+      }
+    }
+    return { shown: boxes.map((box) => box.name), overlapping, outside };
+  }, MAP_BOXES);
+  /**
+   * Exactly the boxes named in `expected` are shown, none of them overlap, and all lie inside the map frame. Fades and
+   * map pans take a moment, so the settled state is what counts: the check polls until it holds.
+   */
+  const expectClearMap = async (expected, label, target = page) => {
+    let layout;
+    await expect.poll(async () => {
+      layout = await mapLayout(target);
+      const problems = [
+        ...expected.filter((name) => !layout.shown.includes(name)).map((name) => `${name} is missing`),
+        ...layout.shown.filter((name) => !expected.includes(name)).map((name) => `${name} should not be shown`),
+        ...layout.overlapping,
+        ...layout.outside.map((name) => `${name} leaves the map frame`),
+      ];
+      return problems.join("; ");
+    }, { message: `${label}: ${expected.join(", ")} on the map, clear of each other and inside the frame`, timeout: 8000 }).toBe("");
+    return layout;
+  };
+  /**
+   * Where the map sits and the sizes of the bar above it; none may change when a label changes. The map's place is
+   * given as the page position of the map-and-cards row plus the map's offset inside its own column, because that
+   * column is sticky on desktop and its page position follows the scroll.
+   */
+  const stageGeometry = (target = page) => target.evaluate(() => {
+    const round = (value) => Math.round(value * 10) / 10;
+    const map = document.querySelector("[class*='mapFrame']");
+    const bar = document.querySelector("[class*='stageBar']");
+    const column = map.parentElement;
+    const row = column.parentElement;
+    const button = document.querySelector("[data-testid='play-button']").getBoundingClientRect();
+    const layers = document.querySelector("[aria-controls='mae-sai-map-layers']").getBoundingClientRect();
+    return {
+      mapTop: round(row.getBoundingClientRect().top + window.scrollY + map.getBoundingClientRect().top - column.getBoundingClientRect().top),
+      barHeight: round(bar.getBoundingClientRect().height),
+      playWidth: round(button.width),
+      playHeight: round(button.height),
+      layersLeft: round(layers.left),
+    };
+  });
+  /** Play, then pause: the map does not move, and the Play button and the bar keep their size. */
+  const expectSteadyPlay = async (label, target = page) => {
+    const button = target.getByTestId("play-button");
+    const before = await stageGeometry(target);
+    const idleLabel = (await button.innerText()).trim();
+    await button.click();
+    await expect(button).toContainText(/Pause|หยุดชั่วคราว/);
+    const during = await stageGeometry(target);
+    await button.click();
+    await expect(button).not.toContainText(/Pause|หยุดชั่วคราว/);
+    const after = await stageGeometry(target);
+    assert.deepEqual(during, before, `${label}: pressing Play moves nothing (${idleLabel} -> Pause)`);
+    assert.deepEqual(after, before, `${label}: pressing Pause moves nothing`);
+    return before;
+  };
+  /** Keyboard only: the drawer takes focus when it opens, Tab lands on its first control, Escape hands focus back. */
+  const expectDrawerFocus = async (label) => {
+    const drawer = page.locator("#mae-sai-map-layers");
+    await expect(drawer).toBeHidden();
+    await layersButton.focus();
+    await page.keyboard.press("Enter");
+    await expect(drawer).toBeVisible();
+    await expect(drawer).toBeFocused();
+    await page.keyboard.press("Tab");
+    const reached = await page.evaluate(() => {
+      const active = document.activeElement;
+      return { inside: Boolean(active && active !== document.body && document.querySelector("#mae-sai-map-layers").contains(active)), tag: active?.tagName, text: active?.textContent?.trim() };
+    });
+    assert(reached.inside && reached.tag === "BUTTON" && reached.text === "Close", `${label}: Tab from the opened drawer reaches its first control (${JSON.stringify(reached)})`);
+    await page.keyboard.press("Escape");
+    await expect(drawer).toBeHidden();
+    await expect(layersButton).toBeFocused();
+    // Once focus has left the drawer, Escape still closes it, from Play and from the timeline slider, and leaves
+    // focus where the reader is.
+    for (const [name, target] of [["Play", page.getByTestId("play-button")], ["the timeline slider", page.locator("input[type='range'][class*='range']")]]) {
+      await layersButton.focus();
+      await page.keyboard.press("Enter");
+      await expect(drawer).toBeVisible();
+      await target.focus();
+      await expect(drawer, `${label}: the drawer stays open when focus moves to ${name}`).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(drawer, `${label}: Escape closes the drawer while focus is on ${name}`).toBeHidden();
+      await expect(target, `${label}: focus stays on ${name}`).toBeFocused();
+    }
+  };
+  /** Thai text nodes of the page that are letter-spaced (none may be): Thai has no capitals and its tone marks crowd. */
+  const spacedThai = (target = page) => target.evaluate(() => {
+    const walker = document.createTreeWalker(document.querySelector("main"), NodeFilter.SHOW_TEXT);
+    const found = new Set();
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const element = node.parentElement;
+      if (!element || !/[\u0E00-\u0E7F]/.test(node.textContent ?? "") || element.getClientRects().length === 0) continue;
+      const spacing = getComputedStyle(element).letterSpacing;
+      if (!["normal", "0px"].includes(spacing)) found.add(`${element.tagName}.${String(element.className).split(" ")[0]}: ${spacing} "${(node.textContent ?? "").trim().slice(0, 24)}"`);
+    }
+    return [...found];
+  });
+  /**
+   * The time readout over every replay hour: no line of it is cut (scrollWidth within clientWidth), the bar keeps one
+   * height and the map one place. Returns the widest line and the room it had.
+   */
+  const expectWholeReadout = async (label) => {
+    const range = page.locator("input[type='range'][class*='range']");
+    const seen = { widest: 0, room: Infinity, cut: [], barHeights: new Set(), mapTops: new Set() };
+    for (let hour = 0; hour <= 264; hour += 1) {
+      await range.fill(String(hour));
+      // The width the text needs is measured on the text itself (a range), because scrollWidth never reads below
+      // clientWidth and a nowrap line with an ellipsis reports no overflow in some engines.
+      const state = await page.evaluate(() => [...document.querySelectorAll("[data-testid='replay-readout'] > *")].map((line) => {
+        const range = document.createRange();
+        range.selectNodeContents(line);
+        return { text: line.textContent, need: Math.ceil(Math.max(range.getBoundingClientRect().width, line.scrollWidth > line.clientWidth ? line.scrollWidth : 0)), room: line.clientWidth };
+      }));
+      for (const line of state) {
+        seen.widest = Math.max(seen.widest, line.need);
+        seen.room = Math.min(seen.room, line.room);
+        if (line.need > line.room) seen.cut.push(`hour ${hour}: "${line.text}" needs ${line.need} px, has ${line.room}`);
+      }
+      const geometry = await stageGeometry();
+      seen.barHeights.add(geometry.barHeight);
+      seen.mapTops.add(geometry.mapTop);
+    }
+    assert.deepEqual(seen.cut.slice(0, 5), [], `${label}: the time readout is never cut`);
+    assert.deepEqual([seen.barHeights.size, seen.mapTops.size], [1, 1], `${label}: the bar and the map keep their place over the whole replay`);
+    return seen;
+  };
+  /** Every glossary term: its definition opens on focus inside the viewport, and Escape closes it with focus kept. */
+  const expectTooltips = async (label) => {
+    const terms = page.locator("[class*='termLabel']");
+    const count = await terms.count();
+    assert(count >= 3, `${label}: the page has glossary terms (${count})`);
+    let checked = 0;
+    for (let index = 0; index < count; index += 1) {
+      const term = terms.nth(index);
+      if (!(await term.isVisible())) continue;
+      await term.focus();
+      const tip = term.locator("xpath=following-sibling::*[@role='tooltip']");
+      await expect(tip).toBeVisible();
+      const box = await tip.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, viewport: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth - window.innerWidth };
+      });
+      assert(box.left >= 0 && box.right <= box.viewport, `${label}: tooltip ${index} stays inside the viewport (${JSON.stringify(box)})`);
+      assert(box.scroll <= 1, `${label}: tooltip ${index} adds no horizontal scroll (${box.scroll}px)`);
+      await page.keyboard.press("Escape");
+      await expect(tip).toBeHidden();
+      await expect(term).toBeFocused();
+      checked += 1;
+    }
+    assert(checked >= 3, `${label}: glossary tooltips were checked (${checked})`);
+    await page.evaluate(() => document.activeElement?.blur());
+    return checked;
+  };
+  /**
+   * Save the PNG of this moment and measure the low-confidence hatch in it. The HAND raster's flag channel says which
+   * cells are low-confidence and the hatch rule ((x + y) mod 6 < 2) says which of them lie on a stripe; the export is
+   * sampled on a stripe and between stripes, in low-confidence water and, as a control, in ordinary water.
+   */
+  const exportedHatch = async () => {
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Save PNG of this moment" }).click()]);
+    const png = readFileSync(await download.path()).toString("base64");
+    const measured = await page.evaluate(async (base64) => {
+      const pixels = async (blob) => {
+        const bitmap = await createImageBitmap(blob, { colorSpaceConversion: "none", premultiplyAlpha: "none" });
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        context.drawImage(bitmap, 0, 0);
+        return context.getImageData(0, 0, bitmap.width, bitmap.height);
+      };
+      const manifestUrl = performance.getEntriesByType("resource").map((entry) => entry.name).find((name) => name.endsWith("/timeline.json"));
+      const manifest = await (await fetch(manifestUrl)).json();
+      const hand = await pixels(await (await fetch(manifest.hand.href)).blob());
+      const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+      const shot = await pixels(new Blob([bytes], { type: "image/png" }));
+      // Portrait export: the map fills the full width from the top, with the HAND grid's aspect; the caption is below.
+      const mapHeight = Math.round((shot.width * hand.height) / hand.width);
+      const sx = shot.width / hand.width;
+      const sy = mapHeight / hand.height;
+      const cell = (x, y) => (y * hand.width + x) * 4;
+      const low = (x, y) => hand.data[cell(x, y) + 2] >= 128;
+      // Shallow ground that is not the channel: wet at the replay's peak whatever its depth factor.
+      const shallow = (x, y) => hand.data[cell(x, y)] >= 1 && hand.data[cell(x, y)] <= 6;
+      const colour = (x, y) => {
+        const px = Math.min(shot.width - 1, Math.max(0, Math.round(x * sx - 0.5)));
+        const py = Math.min(mapHeight - 1, Math.max(0, Math.round((y + 0.5) * sy - 0.5)));
+        const at = (py * shot.width + px) * 4;
+        return [shot.data[at], shot.data[at + 1], shot.data[at + 2], px, py];
+      };
+      const contrasts = { low: [], ordinary: [] };
+      for (let y = 0; y < hand.height; y += 1) {
+        for (let x = (6 - (y % 6)) % 6; x + 5 < hand.width; x += 6) {
+          let lowRun = true;
+          let ordinaryRun = true;
+          for (let step = 0; step < 6; step += 1) {
+            if (!shallow(x + step, y)) lowRun = ordinaryRun = false;
+            else if (low(x + step, y)) ordinaryRun = false;
+            else lowRun = false;
+          }
+          if (!lowRun && !ordinaryRun) continue;
+          // Cells x and x + 1 are the stripe (sampled on their shared edge), x + 2 … x + 5 the wash between stripes.
+          const stripe = colour(x + 1, y);
+          const between = colour(x + 4, y);
+          // The legend box covers the bottom-left corner of the map.
+          if (stripe[4] > mapHeight - 340 && stripe[3] < 820) continue;
+          (lowRun ? contrasts.low : contrasts.ordinary).push(Math.abs(stripe[0] - between[0]) + Math.abs(stripe[1] - between[1]) + Math.abs(stripe[2] - between[2]));
+        }
+      }
+      const median = (values) => (values.length ? [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] : null);
+      return {
+        size: [shot.width, shot.height], mapHeight,
+        low: { samples: contrasts.low.length, median: median(contrasts.low) },
+        ordinary: { samples: contrasts.ordinary.length, median: median(contrasts.ordinary) },
+      };
+    }, png);
+    return { name: download.suggestedFilename(), ...measured };
+  };
+  const expectHatchedExport = async (label) => {
+    const hatch = await exportedHatch();
+    assert(hatch.low.samples > 500 && hatch.ordinary.samples > 500, `${label}: enough water was sampled in the exported PNG (${JSON.stringify(hatch)})`);
+    assert(hatch.low.median >= 24 && hatch.low.median >= 4 * (hatch.ordinary.median + 2),
+      `${label}: low-confidence water is hatched in the exported PNG and ordinary water is not (${JSON.stringify(hatch)})`);
+    return hatch;
+  };
+  /** The availability pill has hidden itself; it returns when the page goes offline, and again when it reconnects. */
+  const expectPillReturns = async (label) => {
+    const pill = page.locator("[data-pwa-auto-hide='true']");
+    await expect(pill, `${label}: the availability pill hides itself on this page`).toHaveCount(0, { timeout: 12_000 });
+    await context.setOffline(true);
+    await expect(pill, `${label}: the pill returns when the page goes offline`).toBeVisible();
+    await expect(pill).toContainText("Offline");
+    await expect(pill, `${label}: the returned pill hides itself again`).toHaveCount(0, { timeout: 12_000 });
+    await context.setOffline(false);
+    await expect(pill, `${label}: the pill returns when the connection comes back`).toBeVisible();
+    await expect(pill).toContainText("Online");
+  };
   await visit(caseRoute, "Mae Sai flood, September 2024 — day by day");
   await expect(readout).toContainText("Mon 9 Sep 2024 · 12:00 ICT");
   await waterModel();
@@ -151,6 +423,66 @@ try {
   // The 42 OpenStreetMap key facilities start hidden (the layer switch keeps them available).
   await expect(page.locator(".leaflet-fg-facilities-pane .leaflet-interactive")).toHaveCount(0);
   checks.push("Play, readout and map above the fold; layer controls folded into a drawer; low-confidence water in the on-map legend and the evidence");
+  // Keyboard and layout fixes at 1440 px: the drawer takes focus, tooltips close on Escape, Play to Pause moves nothing.
+  await expectDrawerFocus("1440 px");
+  const desktopTips = await expectTooltips("1440 px");
+  const desktopStage = await expectSteadyPlay("1440 px");
+  assert.equal(desktopStage.barHeight, 66, `The desktop bar keeps its height (${JSON.stringify(desktopStage)})`);
+  await expectClearMap(["zoom", "notes", "legend", "attribution"], "1440 px");
+  checks.push(`desktop: opening "Map layers" moves focus into the drawer, Tab reaches its first control and Escape returns focus, and Escape closes it from Play and the slider too; ${desktopTips} glossary tooltips close on Escape; Play to Pause moves nothing`);
+  // The narrow end of the two-column layout (a 1366 x 768 laptop at 125 % is 1093 x 614): Play, the whole time readout
+  // and "Map layers" share one row at every replay hour, in English and in Thai, and no Thai text is letter-spaced.
+  const narrowDesktop = [];
+  for (const width of [1081, 1100, 1240]) {
+    for (const language of ["en", "th"]) {
+      await page.setViewportSize({ width, height: 614 });
+      await page.goto(`${baseUrl}${caseRoute}?t=84&lang=${language}`, { waitUntil: "networkidle" });
+      await waterModel();
+      const columns = await page.evaluate(() => getComputedStyle(document.querySelector("[class*='layout']")).gridTemplateColumns.split(" ").length);
+      assert.equal(columns, 2, `${width} px is in the two-column layout`);
+      const readoutState = await expectWholeReadout(`${width} px (${language})`);
+      const bar = await stageGeometry();
+      assert.equal(bar.barHeight, 66, `${width} px (${language}): the bar keeps its one-row height (${JSON.stringify(bar)})`);
+      // Headless Chromium draws no scrollbar; a classic one takes 17 px of the same viewport.
+      assert(readoutState.room - readoutState.widest >= 17, `${width} px (${language}): the readout keeps room for a scrollbar (${readoutState.widest} px in ${readoutState.room} px)`);
+      if (language === "th") assert.deepEqual(await spacedThai(), [], `${width} px: no Thai text is letter-spaced`);
+      narrowDesktop.push(`${width} px ${language}: widest line ${readoutState.widest} px in ${readoutState.room} px`);
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`${baseUrl}${caseRoute}?lang=th`, { waitUntil: "networkidle" });
+  await waterModel();
+  assert.deepEqual(await spacedThai(), [], "1440 px: no Thai text is letter-spaced (title, readout and header sub-label included)");
+  // The language choice is remembered, so the page is set back to English before the checks below.
+  await page.goto(`${baseUrl}${caseRoute}?lang=en`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}${caseRoute}`, { waitUntil: "networkidle" });
+  await expect(readout).toContainText("Mon 9 Sep 2024 · 12:00 ICT");
+  await waterModel();
+  checks.push(`narrow two-column desktop: the time readout is whole at all 265 replay hours on one 66 px row (${narrowDesktop.join("; ")}); no Thai text node is letter-spaced`);
+  // Evidence envelope: the status and generation time, a licence per input, what was known during tuning, and the
+  // radar line labelled calibration-informed. Both boxes are closed again so the layout below is unchanged.
+  const howTo = page.getByTestId("how-to-read");
+  await howTo.locator("summary").click();
+  await expect(page.getByTestId("how-to-status")).toContainText("Status: non-operational");
+  await expect(page.getByTestId("how-to-status").getByTestId("generated-at")).toHaveText(/Data files generated: \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} ICT\./);
+  await howTo.locator("summary").click();
+  const sourcesPanel = page.getByTestId("sources-panel");
+  await sourcesPanel.locator("summary").click();
+  const licences = sourcesPanel.getByTestId("licences-by-input");
+  await expect(licences).toBeVisible();
+  for (const licence of ["CC BY-NC", "ODbL 1.0", "CC BY 4.0", "CC BY-IGO", "No licence stated by the provider", "CC BY-SA 4.0"]) await expect(licences).toContainText(licence);
+  await expect(licences.locator("li[data-shown='false']")).toHaveCount(1);
+  await expect(licences.locator("li[data-shown='false']")).toContainText(/Not yet shown; rights record pending owner confirmation\.|Not shown in this revision; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\./);
+  await expect(sourcesPanel.getByTestId("tuning-disclosure").locator("li[data-relation='used_for_tuning']")).toHaveCount(2);
+  await expect(sourcesPanel.getByTestId("sources-footer")).toContainText("status: non-operational · Data files generated:");
+  // "k" is the plan size on this page: the sources name the depth factor in words and write it f.
+  const sourcesText = await sourcesPanel.innerText();
+  assert(sourcesText.includes("scaled by the depth factor f = clip(") && sourcesText.includes("the exported depth factor f makes h + 0.3/f"), "The sources panel names the depth factor f");
+  assert(!/(?<![A-Za-z0-9_])k(?![A-Za-z0-9_])/.test(sourcesText), "The sources panel shows no standalone k");
+  await sourcesPanel.locator("summary").click();
+  await expect(page.getByText("Radar size comparison (Sentinel-1", { exact: false })).toContainText("calibration-informed, not an independent check");
+  await expect(page.getByText("Radar check", { exact: false })).toHaveCount(0);
+  checks.push("evidence fields on the page: non-operational status, generation time, licence per input with product 4009 not shown, tuning disclosure, calibration-informed radar line; depth factor written f, never k");
   await slider.fill("84");
   await expect(readout).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
   await expect(page).toHaveURL(/[?&]t=84(&|$)/);
@@ -163,8 +495,10 @@ try {
   await page.getByRole("radio", { name: "First flooded (hour)" }).check();
   await expect(page.getByText("First flooded (model, local time)", { exact: true })).toBeVisible();
   await expect(page.getByText("Not yet flooded at this moment (faded)", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("map-legend").getByTestId("low-confidence-legend")).toBeVisible();
   await page.getByRole("radio", { name: "Hours under water" }).check();
   await expect(page.getByText("Hours under water, 9–19 Sep (model)", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("map-legend").getByTestId("low-confidence-legend")).toBeVisible();
   await page.getByRole("radio", { name: "Hours cut" }).check();
   await expect(page.getByText("Roads — hours impassable ≥ 0.3 m (model)", { exact: true })).toBeVisible();
   const routes = page.locator("section[aria-labelledby='mae-sai-route-cuts-title']");
@@ -181,7 +515,7 @@ try {
   await firstRoute.click();
   await expect(firstRoute).toHaveAttribute("aria-pressed", "true");
   await routes.getByRole("button", { name: "Show the whole area" }).click();
-  checks.push("water modes (depth, first flooded, hours under water) and modelled road-cut hours with the Keep Routes Open list");
+  checks.push("water modes (depth, first flooded, hours under water), each with the low-confidence legend entry, and modelled road-cut hours with the Keep Routes Open list");
   await page.getByRole("button", { name: "Compare", exact: true }).click();
   const divider = page.getByRole("slider", { name: "Imagery comparison divider" });
   await expect(divider).toHaveAttribute("aria-valuenow", "50");
@@ -218,6 +552,19 @@ try {
   await slider.fill("84");
   const [still] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Save PNG of this moment" }).click()]);
   assert.equal(still.suggestedFilename(), "mae-sai-flood-2024-09-12-1200-ict.png");
+  // The export draws the view on the map. Low-confidence water is hatched in it in the depth view and, as on the map,
+  // in the first-flooded and hours-under-water views.
+  await expect(page.getByTestId("export-view")).toHaveText("The PNG and the video show water depth (model), as on the map.");
+  const hatches = { depth: await expectHatchedExport("depth view") };
+  await openLayers();
+  await page.getByRole("radio", { name: "First flooded (hour)" }).check();
+  await expect(page.getByTestId("export-view")).toHaveText("The PNG and the video show the first flooded hour (model), as on the map.");
+  hatches.arrival = await expectHatchedExport("first-flooded view");
+  await page.getByRole("radio", { name: "Hours under water" }).check();
+  await expect(page.getByTestId("export-view")).toHaveText("The PNG and the video show hours under water (model), as on the map.");
+  hatches.duration = await expectHatchedExport("hours-under-water view");
+  await page.getByRole("radio", { name: "Depth at this moment" }).check();
+  checks.push(`low-confidence hatch in the exported PNG, stripe against wash (ordinary water as control): ${Object.entries(hatches).map(([view, hatch]) => `${view} ${hatch.low.median} (${hatch.ordinary.median})`).join(", ")}`);
   const record = page.getByRole("button", { name: /^Record video/ });
   if (await record.count()) {
     await expect(page.getByRole("radio", { name: "16:9 (1280 × 720)" })).toHaveCount(1);
@@ -273,6 +620,27 @@ try {
   await expect(page.getByTestId("rain-chart")).toBeVisible();
   await expect(page.getByTestId("rain-now")).toContainText("MOU189");
   checks.push("observed VIIRS daily map (day at or before the playhead, pixelated, deep-linked) with its clear-sky comparison card, and the hourly rain chart");
+  // While the residents raster is still loading, a resident view draws water depth, and the legend says exactly that.
+  let releaseResidents;
+  const residentsHeld = new Promise((release) => { releaseResidents = release; });
+  await page.route("**/population-density.png", async (route) => {
+    await residentsHeld;
+    await route.continue();
+  });
+  await page.goto(`${baseUrl}${caseRoute}?t=84&wm=people`, { waitUntil: "domcontentloaded" });
+  await expect(readout).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
+  await waterModel();
+  const pendingLegend = page.getByTestId("map-legend");
+  await expect(pendingLegend.getByTestId("legend-residents-pending")).toHaveText("The residents layer is still loading, so the map shows water depth until it is ready.");
+  await expect(pendingLegend).toContainText("Water depth (model)");
+  await expect(pendingLegend).not.toContainText("residents per hectare");
+  await expect(pendingLegend.getByTestId("low-confidence-legend")).toBeVisible();
+  releaseResidents();
+  await expect(pendingLegend).toContainText("People in flood water: residents per hectare (WorldPop 2020, model)");
+  await expect(pendingLegend.getByTestId("legend-residents-pending")).toHaveCount(0);
+  await expect(pendingLegend).not.toContainText("Water depth (model)");
+  await page.unroute("**/population-density.png");
+  checks.push("the legend shows water depth, and says why, while the residents raster is loading; it switches with the map when the raster is ready");
   // Residents, the evacuation-access scenario and shelters (all model scenarios, never "observed").
   await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
   await waterModel();
@@ -288,6 +656,32 @@ try {
   const accessCard = page.getByTestId("access-card");
   await expect(accessCard.getByText("Planning scenario, not observed evacuation outcomes", { exact: false })).toBeVisible();
   await expect(accessCard.getByTestId("access-without")).toContainText("/");
+  // Both shelter sets side by side, each counted both ways with its own baseline; no single headline ranks them.
+  const comparison = accessCard.getByTestId("set-comparison");
+  await expect(comparison.getByTestId("set-comparison-label")).toContainText("T1 scenario (model)");
+  await expect(comparison.getByTestId("set-comparison-label")).toContainText("No single figure ranks the sets");
+  await expect(comparison.getByTestId("set-comparison-label")).toContainText("Hours from illustrative stage keyframes, not observed.");
+  await expect(comparison.getByTestId("compare-reported-all-baseline")).toHaveText("34,525 of 81,799");
+  await expect(comparison.getByTestId("compare-reported-all-lost")).toHaveText("7,086 of 34,525 (21%)");
+  await expect(comparison.getByTestId("compare-reported-flooded-baseline")).toHaveText("5,698 of 14,169");
+  await expect(comparison.getByTestId("compare-reported-flooded-keeping")).toHaveText("299");
+  await expect(comparison.getByTestId("compare-reported-all-cutoff")).toContainText("Not reached in this replay");
+  await expect(comparison.getByTestId("compare-plan-all-baseline")).toHaveText("24,910 of 81,799");
+  await expect(comparison.getByTestId("compare-plan-all-lost")).toHaveText("13,429 of 24,910 (54%)");
+  await expect(comparison.getByTestId("compare-plan-flooded-baseline")).toHaveText("7,580 of 14,169");
+  await expect(comparison.getByTestId("compare-plan-flooded-keeping")).toHaveText("460");
+  await expect(comparison.getByTestId("compare-plan-flooded-cutoff")).toHaveText("10 Sep 23:00");
+  // The plan's table leads with its cut-off hour and explains its loss at the peak.
+  const planRows = await comparison.getByTestId("set-compare-plan").locator("tbody tr th").allInnerTexts();
+  assert(planRows.length === 4 && planRows[0].startsWith("Modelled access cut-off hour"), `The plan leads with the cut-off hour: ${planRows[0]}`);
+  const reportedRows = await comparison.getByTestId("set-compare-reported").locator("tbody tr th").allInnerTexts();
+  assert(reportedRows[0].startsWith("Had a shelter of this set within reach before the flood") && reportedRows[3].startsWith("Modelled access cut-off hour"),
+    `The reported set is read baseline first, cut-off hour last: ${reportedRows.join(" | ")}`);
+  await expect(comparison.getByTestId("plan-reading")).toContainText("it does not grade the choice of sites");
+  await expect(comparison.getByTestId("set-compare-reported")).toHaveAttribute("data-selected", "");
+  assert.equal(await accessCard.locator("[data-tone]").count(), 0, "The access card has no alert-toned headline figure");
+  const accessText = await accessCard.innerText();
+  assert(!/better plan|best plan|worse than|outperform|last safe departure/i.test(accessText), "The access card ranks no shelter set and names no safe departure time");
   // Like with like: by default the card counts the residents whose homes flood at the peak, as the plan does.
   await expect(accessCard.getByRole("radio", { name: /^Residents whose homes flood at the peak/ })).toBeChecked();
   await expect(accessCard.getByTestId("plan-optimises")).toContainText("What the ranked plan optimises");
@@ -297,6 +691,10 @@ try {
   await expect(page).toHaveURL(/[?&]pop=flooded(&|$)/);
   await expect(accessCard.getByTestId("equity-gap")).toContainText("Evacuation Equity Gap");
   await expect(accessCard.getByTestId("equity-gap")).toContainText("terrain/remoteness proxy");
+  // The equity gap is never printed as "0.00": with the reported set no proxy-vulnerable resident has lost access.
+  await expect(accessCard.getByTestId("equity-gap")).toContainText("no proxy-vulnerable resident has lost access");
+  await expect(accessCard.getByTestId("equity-gap")).not.toContainText("Evacuation Equity Gap: 0.00");
+  await expect(accessCard.getByTestId("equity-label")).toContainText("Vulnerable = terrain/remoteness proxy");
   await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
   const planSlider = accessCard.getByRole("slider", { name: /^Plan size k/ });
   await planSlider.fill("3");
@@ -336,7 +734,12 @@ try {
   await expect(popupWith("reported in use, Sep 2024")).toBeVisible();
   assert((await popupWith("reported in use, Sep 2024").locator("a[rel='noopener noreferrer']").count()) > 0, "Reported shelter popups link their sources");
   await expect(reportedCard.getByText("Not located on the map", { exact: false }).first()).toBeVisible();
+  // The comparison follows the plan size, and the chosen set carries the "shown on the map" marker.
+  await expect(comparison.getByTestId("set-compare-plan")).toHaveAttribute("data-selected", "");
+  await expect(comparison.getByTestId("set-compare-plan").locator("caption")).toContainText("Ranked plan, first 3 sites");
+  await expect(comparison.getByTestId("compare-plan-all-baseline")).toHaveText("17,794 of 81,799");
   checks.push("people in flood water and all-residents views, access scenario with population scope, set and k (live coverage sentence), cut-off heat, sticky map beside the cards, plan badges and sourced shelter popups");
+  checks.push("shelter sets side by side: both denominators, own baseline and share, modelled access cut-off hour (leading for the plan), no ranking headline, equity never printed as 0.00");
   await page.reload({ waitUntil: "networkidle" });
   await openLayers();
   await expect(page.getByRole("radio", { name: "People in flood water" })).toBeChecked();
@@ -345,6 +748,15 @@ try {
   await expect(page.getByRole("checkbox", { name: "People cut off (scenario)" })).toBeChecked();
   checks.push("deep link restores the residents view, shelter set, plan size and cut-off layer");
   await page.screenshot({ path: resolve(artifacts, "case-replay-desktop.png"), fullPage: true });
+  // Before the water rises nobody has lost access: no ratio is shown, and the card says why.
+  await page.goto(`${baseUrl}${caseRoute}?t=0`, { waitUntil: "networkidle" });
+  await waterModel();
+  const dryEquity = page.getByTestId("access-card").getByTestId("equity-gap");
+  await expect(dryEquity).toHaveAttribute("data-reason", "no_loss");
+  await expect(dryEquity).toContainText("Evacuation Equity Gap: no ratio shown");
+  await expect(dryEquity).toContainText("No one in either group has lost access at this replay hour");
+  await expect(page.getByTestId("access-card").getByTestId("compare-reported-all-lost")).toHaveText("0 of 34,525 (0%)");
+  checks.push("equity gap gives no ratio, with the reason, before anyone has lost access");
   for (const width of [360, 390]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
@@ -362,25 +774,104 @@ try {
     const chipHeights = await page.getByRole("group", { name: "Jump to a day (local noon)" }).getByRole("button")
       .evaluateAll((buttons) => buttons.map((button) => Math.round(button.getBoundingClientRect().height)));
     assert(chipHeights.length === 11 && chipHeights.every((height) => height >= 40), `Day chips are finger-sized at ${width}px: ${chipHeights}`);
-    if (width === 360) {
-      // Offline, the basemap note must sit above Leaflet's attribution (two lines at this width), not under it.
-      await context.setOffline(true);
-      await page.getByTestId("basemap-note").waitFor({ state: "visible" });
-      const overlap = await page.evaluate(() => {
-        const note = document.querySelector("[data-testid='basemap-note']").getBoundingClientRect();
-        const credit = document.querySelector(".leaflet-control-attribution").getBoundingClientRect();
-        const across = Math.min(note.right, credit.right) - Math.max(note.left, credit.left);
-        const down = Math.min(note.bottom, credit.bottom) - Math.max(note.top, credit.top);
-        return across > 0 && down > 0 ? Math.round(down * 10) / 10 : 0;
+    const noScroll = async (state) => {
+      const scroll = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      assert(scroll <= 1, `No horizontal scroll at ${width}px ${state} (${scroll}px)`);
+    };
+    const at = `${width} px`;
+    await waterModel();
+    // The bar above the map is a fixed grid: Play to Pause, and every hour of the replay, leave the map where it is.
+    const steady = await expectSteadyPlay(at);
+    const barHeights = new Set();
+    const mapTops = new Set();
+    for (let hour = 0; hour <= 264; hour += 12) {
+      await slider.fill(String(hour));
+      const geometry = await stageGeometry();
+      barHeights.add(geometry.barHeight);
+      mapTops.add(geometry.mapTop);
+    }
+    assert.deepEqual([[...barHeights], [...mapTops]], [[steady.barHeight], [steady.mapTop]], `The bar and the map keep their place over the whole replay at ${at}`);
+    await expectDrawerFocus(at);
+    await expectTooltips(at);
+    await noScroll("after the tooltips");
+    // The availability pill hides itself here and returns when the connection status changes.
+    await expectPillReturns(at);
+    // 15 Sep 14:00 with the VIIRS layer: the imagery caption, the mud cue and the VIIRS note are all on the map.
+    await page.goto(`${baseUrl}${caseRoute}?t=158&layers=trscv`, { waitUntil: "networkidle" });
+    await waterModel();
+    await expect(page.getByTestId("viirs-note")).toBeVisible();
+    await expect(page.getByTestId("mud-cue")).toBeVisible();
+    await expectClearMap(["zoom", "notes", "legend", "attribution"], `${at}, three notes`);
+    // The imagery swipe: both side labels (they wrap here), the divider's handle, the notes, the legend and the zoom
+    // control are clear of each other, with one note and with three, in English and in Thai.
+    for (const [query, state] of [["?t=84&cmp=s2-20240905,s2-20240915", "swipe"], ["?t=158&layers=trscv&cmp=s2-20240905,s2-20240915", "swipe with three notes"],
+      ["?t=84&cmp=s2-20240905,s2-20240915&lang=th", "swipe in Thai"]]) {
+      await page.goto(`${baseUrl}${caseRoute}${query}`, { waitUntil: "networkidle" });
+      await waterModel();
+      await expect(page.getByTestId("compare-note")).toBeVisible();
+      const swipe = await expectClearMap(["zoom", "notes", "legend", "attribution", "left label", "right label", "divider handle"], `${at}, ${state}`);
+      const edges = await page.evaluate(() => {
+        const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+        const frame = box("[class*='mapFrame']");
+        return { labelLeft: Math.round(box("[data-testid='compare-label-left']").left - frame.left), zoomRight: Math.round(box(".leaflet-control-zoom").right - frame.left) };
       });
-      await context.setOffline(false);
-      assert.equal(overlap, 0, `The basemap note overlaps the map attribution by ${overlap}px at ${width}px`);
+      assert(edges.labelLeft >= edges.zoomRight + 4, `${at}, ${state}: the left label keeps clear of the zoom control (${JSON.stringify(edges)})`);
+      assert(swipe.shown.includes("notes"), `${at}, ${state}: the comparison note is on the map`);
+      await noScroll(state);
+    }
+    // Back to English (the language choice is remembered) for the checks below.
+    await page.goto(`${baseUrl}${caseRoute}?t=158&layers=trscv&lang=en`, { waitUntil: "networkidle" });
+    await waterModel();
+    // Offline with a route selected: the basemap note and "Clear route selection" share one stack above the attribution.
+    await context.setOffline(true);
+    await page.getByTestId("basemap-note").waitFor({ state: "visible" });
+    await expect(page.getByTestId("basemap-note")).toContainText("Offline: the street basemap is online-only.");
+    const phoneRoute = page.locator("section[aria-labelledby='mae-sai-route-cuts-title']").getByRole("button").first();
+    await phoneRoute.click();
+    await expect(phoneRoute).toHaveAttribute("aria-pressed", "true");
+    await expectClearMap(["zoom", "notes", "legend", "basemap note", "clear route", "attribution"], `${at}, offline with a route selected`);
+    const stack = await page.evaluate(() => {
+      const note = document.querySelector("[data-testid='basemap-note']");
+      const clear = document.querySelector("[data-testid='clear-route']");
+      return { sameStack: note.parentElement === clear.parentElement, noteAbove: note.getBoundingClientRect().bottom <= clear.getBoundingClientRect().top };
+    });
+    assert(stack.sameStack && stack.noteAbove, `The basemap note and "Clear route selection" share one stack at ${at}`);
+    // The open legend takes the notes' place on a phone, still clear of the stack below it.
+    await page.getByTestId("map-legend").locator("> summary").click();
+    await expectClearMap(["zoom", "legend", "basemap note", "clear route", "attribution"], `${at}, legend open (the notes step aside)`);
+    await page.getByTestId("map-legend").locator("> summary").click();
+    await noScroll("offline with a route selected");
+    // Popups: a reported shelter (its long text scrolls inside the popup) and a ranked plan site. Each stays inside
+    // the map, clear of the zoom buttons, the basemap note and the attribution; notes and legend step aside.
+    const reportedSite = page.getByTestId("reported-shelters-card").locator("li[data-role] > details").first();
+    await reportedSite.locator("summary").click();
+    await reportedSite.getByRole("button", { name: /^Show .+ on the map$/ }).click();
+    await expect(page.locator(".leaflet-popup-content").filter({ hasText: "reported in use, Sep 2024" })).toBeVisible();
+    await expectClearMap(["zoom", "basemap note", "attribution", "popup"], `${at}, reported-shelter popup (notes and legend step aside)`);
+    const popupScroll = await page.locator(".leaflet-popup-content").filter({ hasText: "reported in use, Sep 2024" }).evaluate((element) => ({
+      height: Math.round(element.getBoundingClientRect().height), content: element.scrollHeight, overflow: getComputedStyle(element).overflowY,
+    }));
+    assert(popupScroll.height <= 300 && (popupScroll.content <= popupScroll.height + 1 || popupScroll.overflow === "auto"),
+      `A popup taller than the map allows scrolls inside itself at ${at} (${JSON.stringify(popupScroll)})`);
+    await page.getByTestId("shelter-plan-card").getByRole("button", { name: /^Show plan site 1, / }).click();
+    await expect(page.locator(".leaflet-popup-content").filter({ hasText: "Plan rank 1 of the first" })).toBeVisible();
+    await expectClearMap(["zoom", "basemap note", "attribution", "popup"], `${at}, plan-site popup (notes and legend step aside)`);
+    await noScroll("with a popup open");
+    await context.setOffline(false);
+    if (width === 360) {
+      // The PNG is drawn off screen at its own size, so one phone width is enough: hatch pixels in the first-flooded view.
+      await page.goto(`${baseUrl}${caseRoute}?t=84&wm=arrival`, { waitUntil: "networkidle" });
+      await waterModel();
+      await expect(page.getByTestId("export-view")).toHaveText("The PNG and the video show the first flooded hour (model), as on the map.");
+      await expectHatchedExport(`first-flooded view at ${at}`);
     }
   }
+  await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
   await page.screenshot({ path: resolve(artifacts, "case-replay-mobile.png"), fullPage: true });
   // The tile route stays: this page keeps its map until the next navigation.
   await page.setViewportSize({ width: 1440, height: 1000 });
-  checks.push("case replay fits 360 and 390 px without overflow or truncated phase labels, with finger-sized day chips; the offline basemap note clears the attribution");
+  checks.push("case replay fits 360 and 390 px without overflow or truncated phase labels, with finger-sized day chips");
+  checks.push("phones (360 and 390 px): Play to Pause and every replay hour move the map by 0 px; nothing overlaps among zoom buttons, notes, legend, basemap note, clear-route, attribution and popups, all inside the map, nor among the swipe's side labels, its handle, the notes, the legend and the zoom buttons (English and Thai, one note and three); no horizontal scroll; Tab reaches the drawer and Escape closes it from Play and the slider; tooltips stay in the viewport and close on Escape; hatch pixels in the first-flooded PNG; the availability pill returns when the page goes offline");
   // A touch phone in Thai: no keyboard hint, Buddhist-era years with the CE year, and no letter-spacing on Thai eyebrows.
   const touch = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
   await touch.route("**/*", (route) => {
@@ -399,8 +890,25 @@ try {
   const touchChips = await touchPage.getByRole("group", { name: "ไปยังวัน (เที่ยงวันเวลาท้องถิ่น)" }).getByRole("button")
     .evaluateAll((buttons) => buttons.map((button) => Math.round(button.getBoundingClientRect().height)));
   assert(touchChips.length === 11 && touchChips.every((height) => height >= 40), `Day chips are finger-sized on touch: ${touchChips}`);
+  // The shelter-set comparison in Thai: same figures, the hours label, and no letter-spacing on Thai text.
+  const thaiComparison = touchPage.getByTestId("access-card").getByTestId("set-comparison");
+  await expect(thaiComparison.getByTestId("set-comparison-label")).toContainText("ไม่มีตัวเลขใดตัวเลขเดียวที่ใช้จัดอันดับชุดที่พักพิง");
+  await expect(thaiComparison.getByTestId("set-comparison-label")).toContainText("ชั่วโมงมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่ค่าที่สังเกตได้");
+  await expect(thaiComparison.getByTestId("compare-reported-all-lost")).toHaveText("7,086 จาก 34,525 (21%)");
+  await expect(thaiComparison.getByTestId("compare-plan-flooded-cutoff")).toHaveText("10 ก.ย. 23:00 น.");
+  await expect(touchPage.getByTestId("access-card").getByTestId("equity-gap")).toContainText("ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง");
+  const thaiSpacing = await touchPage.getByTestId("access-card").evaluate((card) => [...card.querySelectorAll("p, th, td, caption, legend, h2, h3, small, strong, span")]
+    .filter((element) => /[\u0E00-\u0E7F]/.test(element.textContent ?? "") && !["normal", "0px"].includes(getComputedStyle(element).letterSpacing))
+    .map((element) => `${element.tagName}: ${getComputedStyle(element).letterSpacing}`));
+  assert.deepEqual(thaiSpacing, [], "Thai text on the access card is not letter-spaced");
+  assert.deepEqual(await spacedThai(touchPage), [], "No Thai text node on the page is letter-spaced at 390 px (title, readout and header sub-label included)");
+  const thaiOverflow = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert(thaiOverflow <= 1, `The Thai case replay does not overflow at 390 px (${thaiOverflow}px)`);
+  await touchPage.getByTestId("how-to-read").locator("summary").click();
+  await expect(touchPage.getByTestId("how-to-status")).toContainText("สถานะ: ไม่ใช้ในการปฏิบัติการ");
+  await expect(touchPage.getByTestId("how-to-status").getByTestId("generated-at")).toHaveText(/สร้างไฟล์ข้อมูลเมื่อ \d{1,2} \S+ 25\d{2} \(20\d{2}\) \d{2}:\d{2} น\./);
   await touch.close();
-  checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips");
+  checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips, non-operational status and generation time in Thai, shelter-set comparison in Thai without letter-spacing or overflow");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

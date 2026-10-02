@@ -98,14 +98,17 @@ def viirs_png_codes(codes: np.ndarray) -> np.ndarray:
     return out
 
 
-def rainfall(folder: Path, hours: int) -> dict:
-    """Hourly rain (mm) per station for the replay hours (index 0 = 9 Sep 00:00 ICT, the hour ending at +1 h)."""
+def rainfall(folder: Path, hours: int, track=lambda path: path) -> dict:
+    """Hourly rain (mm) per station for the replay hours (index 0 = 9 Sep 00:00 ICT, the hour ending at +1 h).
+
+    ``track`` is called with each input file as it is opened (the bake records them in its input receipt).
+    """
     meta: dict[str, dict] = {}
     for catalog, name in (("mou", "mou_0all_stn_metadata.csv"), ("main", "main_0all_stn_metadata.csv")):
         path = folder / name
         if not path.exists():
             continue
-        with path.open(encoding="utf-8-sig", errors="replace") as handle:
+        with track(path).open(encoding="utf-8-sig", errors="replace") as handle:
             for row in csv.DictReader(handle):
                 code = row.get("Station_Code")
                 if code in RAIN_STATIONS:
@@ -117,7 +120,7 @@ def rainfall(folder: Path, hours: int) -> dict:
         if not path.exists():
             continue
         values: list[float | None] = [None] * hours
-        with path.open(encoding="utf-8-sig", errors="replace") as handle:
+        with track(path).open(encoding="utf-8-sig", errors="replace") as handle:
             for row in csv.DictReader(handle):
                 try:  # The monthly files repeat their header line; skip anything that is not a data row.
                     stamp = datetime.strptime(row["measure_datetime"], "%Y-%m-%d %H:%M:%S")

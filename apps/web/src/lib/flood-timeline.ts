@@ -14,7 +14,7 @@ export interface Localized { en: string; th: string }
  * vectors) is read from this manifest, and the offline cache inventory and the study-integrity
  * check derive their file lists from it at build time.
  */
-export const TIMELINE_MANIFEST_URL = "/studies/mae-sai-2024-timeline/r3/timeline.json";
+export const TIMELINE_MANIFEST_URL = "/studies/mae-sai-2024-timeline/r4/timeline.json";
 
 /** Directory of a manifest URL (with trailing slash); every asset the manifest lists must live under it. */
 export function manifestDirectory(manifestUrl: string = TIMELINE_MANIFEST_URL): string {
@@ -22,7 +22,7 @@ export function manifestDirectory(manifestUrl: string = TIMELINE_MANIFEST_URL): 
 }
 
 /**
- * Data revision the page serves: the manifest's directory name (e.g. "r3"). Tests assert that it equals the manifest's
+ * Data revision the page serves: the manifest's directory name (e.g. "r4"). Tests assert that it equals the manifest's
  * own `revision` field, so the label and the served files cannot drift apart.
  */
 export function manifestRevision(manifestUrl: string = TIMELINE_MANIFEST_URL): string {
@@ -259,7 +259,7 @@ export interface ExternalCheck {
   urls: string[];
 }
 
-export interface ExternalReference { name: string; url: string; note?: string }
+export interface ExternalReference { name: string; url: string; note?: string; id?: string }
 
 /**
  * One NOAA/GMU VIIRS daily flood map, clipped to the replay bounds: an observation (375 m optical, daily composite
@@ -296,6 +296,8 @@ export interface ViirsDaily {
   nominal_overpass: string;
   comparison_rule: string;
   caveat: string;
+  /** Which fields of each day are model output placed beside the agency product (later r4 bakes). */
+  model_fields?: { names: string[]; evidence_tier: string; note: string };
   days: ViirsDay[];
 }
 
@@ -383,6 +385,10 @@ export interface TimelineManifest {
     iou_at_best_fit: number;
     scope?: string;
     reconstruction_stage_at_pass_m: number;
+    /** From r4: the recession keyframes were tuned to this pass, so the comparison is calibration-informed. */
+    role?: ExternalCheckRole;
+    use?: string;
+    source_timestamp?: string;
   };
   sources: TimelineSource[];
   assumptions: string[];
@@ -400,6 +406,164 @@ export interface TimelineManifest {
   viirs_daily?: ViirsDaily;
   /** Observed hourly rain at nearby gauges (forcing, not flooding); absent before r3. */
   rainfall?: Rainfall;
+  // --- Evidence envelope (r4 on). Every field is optional so that an r3-shaped manifest, which a client may still
+  // hold in its offline cache, is read too; `parseTimelineManifest` fills the defaults that revision implies. ---
+  schema_version?: number;
+  /** Declared bake time (ISO 8601 with an offset), or the newest dated input; never a machine-clock reading. */
+  generated_at?: string;
+  generated_at_basis?: "declared" | "newest_input_timestamp";
+  generated_at_note?: string;
+  /** Null in a committed manifest: a file cannot hold the hash of the commit that adds it. */
+  git_commit?: string | null;
+  git_commit_reason?: string;
+  data_version?: string;
+  /** Same value as `data_mode`, which stays as an alias. */
+  dataset_mode?: string;
+  operational_status?: "non_operational";
+  can_feed_decision_layer?: false;
+  /** Always null: the replay computes no priority score and assigns no action class. */
+  accepted_fpps?: null;
+  accepted_action_class?: null;
+  protocol_sha256?: null;
+  protocol_sha256_reason?: string;
+  permitted_use?: string;
+  reason_blocked?: string;
+  /** Mirrors `confidence`. */
+  confidence_class?: string;
+  confidence_basis?: string[];
+  source_name?: string;
+  event_time?: { start: string; end: string; timezone: string; note?: string };
+  /** What the top-level `source_timestamp` span covers, and which inputs are dated elsewhere. */
+  source_timestamp_note?: string;
+  lanes?: Partial<Record<EvidenceLane, string>>;
+  evidence_blocks?: EvidenceBlock[];
+  exploratory_knowledge?: ExploratoryKnowledge;
+  publication_eligibility?: PublicationEligibility;
+  input_sha256?: InputHash[];
+}
+
+/** Evidence lane of a manifest block: scenario (model), observed, calibration, season envelope, reported, context, reference. */
+export type EvidenceLane = "SCN" | "OBS" | "CAL" | "SCN-ENV" | "REP" | "CTX" | "REF";
+
+/** Lane, tier, temporal relation and source timestamp of one part of the manifest (`covers` lists its paths). */
+export interface EvidenceBlock {
+  id: string;
+  covers: string[];
+  lane: EvidenceLane;
+  evidence_tier: string;
+  temporal_relation: string;
+  source_timestamp: string;
+  note?: string;
+  season_window?: string;
+  shown?: boolean;
+  /**
+   * Paths inside the covered content that hold T1 scenario (model) values placed beside it for comparison, e.g.
+   * "viirs_daily.days[].model_flood_km2_clear". They are not in this block's lane.
+   */
+  scenario_fields?: string[];
+}
+
+/** An external figure and whether it was used, or already known, while the stage keyframes were tuned. */
+export interface ExploratoryKnowledgeItem {
+  id: string;
+  /** "not_used_for_tuning": not used, and the build history does not record whether it was known at the time. */
+  relation: "used_for_tuning" | "known_during_tuning" | "computed_after_keyframes_final" | "not_used_for_tuning";
+  /** Null only where the build history does not record the order (relation "not_used_for_tuning"). */
+  known_during_tuning: boolean | null;
+  statement: string;
+}
+export interface ExploratoryKnowledge { purpose: string; items: ExploratoryKnowledgeItem[]; depth_factor: string; rule: string }
+
+/** Licence and display status of one input. `shown: false` means the input is listed but not on the page. */
+export interface PublicationInput {
+  id: string;
+  name: string;
+  licence: string;
+  licence_stated: boolean;
+  shown: boolean;
+  terms: string;
+  status?: string;
+  rights_record?: string;
+}
+export interface PublicationEligibility { status: string; scope: string; conditions: string[]; inputs: PublicationInput[] }
+export interface InputHash { root: string; path: string; bytes: number; sha256: string }
+
+export class TimelineManifestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TimelineManifestError";
+  }
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+const MANIFEST_TEXT_KEYS = ["study_id", "revision", "confidence", "confidence_reason", "source_timestamp", "timezone"] as const;
+const MANIFEST_LIST_KEYS = ["stage_anchors", "phases", "days", "observations", "layers", "sources", "assumptions", "limitations"] as const;
+const MANIFEST_OBJECT_KEYS = ["area", "hand", "vectors", "tambon_histograms", "tambon_coverage", "model_coverage", "s1_anchor"] as const;
+
+/**
+ * Read a fetched manifest. It accepts the r4 shape (with the evidence envelope) and the r3 shape that a client may
+ * still hold in its offline cache, and returns one shape for the page: `dataset_mode`, `confidence_class`,
+ * `operational_status` and the null `accepted_*` fields are filled in when an older manifest lacks them.
+ *
+ * It refuses, with a `TimelineManifestError`, a document that is not a replay manifest, and one that claims what the
+ * replay must never claim: an official alert, a current (not historical) product, an operational status, a feed
+ * into the decision layer, or an accepted priority score or action class.
+ */
+export function parseTimelineManifest(value: unknown): TimelineManifest {
+  if (!isRecord(value)) throw new TimelineManifestError("The replay manifest is not an object.");
+  for (const key of MANIFEST_TEXT_KEYS) {
+    if (typeof value[key] !== "string" || !value[key]) throw new TimelineManifestError(`The replay manifest lacks ${key}.`);
+  }
+  for (const key of MANIFEST_LIST_KEYS) {
+    if (!Array.isArray(value[key])) throw new TimelineManifestError(`The replay manifest lacks the ${key} list.`);
+  }
+  for (const key of MANIFEST_OBJECT_KEYS) {
+    if (!isRecord(value[key])) throw new TimelineManifestError(`The replay manifest lacks ${key}.`);
+  }
+  if ((value.stage_anchors as unknown[]).length === 0 || (value.days as unknown[]).length === 0) {
+    throw new TimelineManifestError("The replay manifest has no stage anchors or no days.");
+  }
+  if (value.official_warning !== false || value.real_time !== false) {
+    throw new TimelineManifestError("The replay manifest must be marked as historical and as not an official warning.");
+  }
+  if (value.accepted_fpps != null || value.accepted_action_class != null) {
+    throw new TimelineManifestError("The replay manifest carries an accepted score or action class; the replay shows neither.");
+  }
+  if (value.operational_status !== undefined && value.operational_status !== "non_operational") {
+    throw new TimelineManifestError("The replay manifest must be non-operational.");
+  }
+  if (value.can_feed_decision_layer !== undefined && value.can_feed_decision_layer !== false) {
+    throw new TimelineManifestError("The replay manifest must not feed the decision layer.");
+  }
+  const mode = typeof value.dataset_mode === "string" ? value.dataset_mode : value.data_mode;
+  if (typeof mode !== "string" || !mode) throw new TimelineManifestError("The replay manifest lacks dataset_mode.");
+  if (typeof value.data_mode === "string" && value.data_mode !== mode) throw new TimelineManifestError("data_mode must mirror dataset_mode.");
+  const confidenceClass = typeof value.confidence_class === "string" ? value.confidence_class : value.confidence;
+  if (confidenceClass !== value.confidence) throw new TimelineManifestError("confidence_class must mirror confidence.");
+  return {
+    ...value,
+    dataset_mode: mode,
+    data_mode: mode,
+    confidence_class: confidenceClass,
+    operational_status: "non_operational",
+    can_feed_decision_layer: false,
+    accepted_fpps: null,
+    accepted_action_class: null,
+  } as unknown as TimelineManifest;
+}
+
+/** Evidence blocks whose `covers` name `path` exactly (for example "access" or "external_checks[unosat-3991]"). */
+export function evidenceBlocksFor(manifest: Pick<TimelineManifest, "evidence_blocks">, path: string): EvidenceBlock[] {
+  return (manifest.evidence_blocks ?? []).filter((block) => block.covers.includes(path));
+}
+
+/**
+ * Licence rows for the Sources panel: the manifest's `publication_eligibility.inputs` (r4 on), with the inputs that
+ * are listed but not shown last. An older manifest has none; its licences stay on the source lines.
+ */
+export function licenceRows(manifest: Pick<TimelineManifest, "publication_eligibility">): PublicationInput[] {
+  const rows = manifest.publication_eligibility?.inputs ?? [];
+  return [...rows.filter((row) => row.shown), ...rows.filter((row) => !row.shown)];
 }
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
@@ -994,6 +1158,19 @@ export function formatMoment(t: number, language: Language): string {
 export function formatShortDate(input: string, language: Language): string {
   const p = ictParts(input.length === 10 ? Date.parse(`${input}T00:00:00+07:00`) : Date.parse(input));
   return `${p.day} ${MONTHS[language][p.month]}`;
+}
+
+/**
+ * "1 Oct 2026, 16:10 ICT" / "1 ต.ค. 2569 (2026) 16:10 น." for a manifest's `generated_at`; null when the manifest
+ * has none (r3) or the value is not a date.
+ */
+export function formatGeneratedAt(input: string | undefined, language: Language): string | null {
+  const ms = input ? Date.parse(input) : Number.NaN;
+  if (Number.isNaN(ms)) return null;
+  const p = ictParts(ms);
+  return language === "th"
+    ? `${p.day} ${MONTHS.th[p.month]} ${thaiYear(p.year)} ${pad2(p.hour)}:${pad2(p.minute)} น.`
+    : `${p.day} ${MONTHS.en[p.month]} ${p.year}, ${pad2(p.hour)}:${pad2(p.minute)} ICT`;
 }
 
 /** "16 Sep 06:16" style local stamp for an observation. */

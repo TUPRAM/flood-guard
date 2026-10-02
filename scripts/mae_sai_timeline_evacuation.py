@@ -126,7 +126,7 @@ def sample_eff(codes: np.ndarray, kgrid: np.ndarray, grid, xs: np.ndarray, ys: n
     usable = (c != CHANNEL_CODE) & (c != NEVER_CODE)
     if not usable.any():
         return None, 1.0
-    i = int(np.argmin(np.where(usable, c, 999)))
+    i = int(np.argmin(np.where(usable, c.astype(np.int32), 999)))
     return round(float(c[i]) * HAND_STEP_M, 2), round(float(k[i]), 3)
 
 
@@ -151,10 +151,13 @@ def sample_road(codes: np.ndarray, kgrid: np.ndarray, grid, xs: np.ndarray, ys: 
     return round(h, 2), round(min(k_eq, 1.0), 4)
 
 
-def build_graph(root: Path, to_utm, codes: np.ndarray, kgrid: np.ndarray, aoi) -> dict:
-    """Load the repo road graph, attach closure stages and population nodes."""
-    edges = pd.read_csv(root / "outputs/mae_sai_access_edges.csv")
-    pop = pd.read_csv(root / "outputs/mae_sai_population_nodes.csv")
+def build_graph(root: Path, to_utm, codes: np.ndarray, kgrid: np.ndarray, aoi, track=lambda path: path) -> dict:
+    """Load the repo road graph, attach closure stages and population nodes.
+
+    ``track`` is called with each input file as it is opened (the bake records them in its input receipt).
+    """
+    edges = pd.read_csv(track(root / "outputs/mae_sai_access_edges.csv"))
+    pop = pd.read_csv(track(root / "outputs/mae_sai_population_nodes.csv"))
     ids = pd.Index(pd.unique(pd.concat([edges["from_node"], edges["to_node"], pop["node_id"]])))
     lonlat = np.array([node_lonlat(n) for n in ids])
     xy = np.array([to_utm(lon, lat) for lon, lat in lonlat])

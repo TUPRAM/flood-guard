@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve, sep } from "node:path";
-import { readCaseReplayAssets, timelineManifestUrl } from "./case-replay-inventory.mjs";
+import { CASE_REPLAY_BUDGET_BYTES, caseReplayBytes, manifestDirectory, readCaseReplayAssets, timelineManifestUrl } from "./case-replay-inventory.mjs";
 
 const root = resolve(import.meta.dirname, "../../..");
 const publicRoot = resolve(root, "apps/web/public");
@@ -41,10 +41,25 @@ if (index.chips.length !== 111 || pngs.size !== 2147) throw new Error("Incomplet
 const historical = JSON.parse(readAsset("/studies/mae-sai-geoai/2026-07-30-r1/manifest.json"));
 for (const asset of [historical.report, ...historical.assets]) verify(asset.href, asset.sha256, asset.bytes);
 // The replay's revision is chosen only by TIMELINE_MANIFEST_URL; every asset is derived from that manifest.
-const { manifest: timeline, assets: timelineFiles } = readCaseReplayAssets(publicRoot, timelineManifestUrl());
+const timelineUrl = timelineManifestUrl();
+const { manifest: timeline, assets: timelineFiles } = readCaseReplayAssets(publicRoot, timelineUrl);
 const timelineAssets = timelineFiles.slice(1);
+// Precache budget: the manifest plus every file it lists must fit in 6.5 MB (throws when over).
+const timelineBytes = caseReplayBytes(timelineFiles, CASE_REPLAY_BUDGET_BYTES);
+// One revision ships: the study folder holds the served revision only, and that folder holds nothing the manifest
+// does not list (an unlisted file would ship without a hash and outside the budget).
+const timelineDirectory = resolve(publicRoot, manifestDirectory(timelineUrl).slice(1));
+const timelineRevision = timelineDirectory.split(sep).at(-1);
+const timelineRevisions = readdirSync(resolve(timelineDirectory, ".."));
+if (timelineRevisions.length !== 1 || timelineRevisions[0] !== timelineRevision) {
+  throw new Error(`Exactly one Mae Sai timeline revision may ship (${timelineRevision}); found: ${timelineRevisions.join(", ")}`);
+}
+const timelineListed = new Set(timelineFiles.map((file) => file.url.slice(file.url.lastIndexOf("/") + 1)));
+for (const entry of readdirSync(timelineDirectory, { withFileTypes: true })) {
+  if (!entry.isFile() || !timelineListed.has(entry.name)) throw new Error(`Mae Sai timeline file is not listed in its manifest: ${entry.name}`);
+}
 // Every file the page loads must be among the hash-verified ones: the HAND raster, imagery layers, vectors, the
-// residents raster and the evacuation-access node file (r2 on), and the VIIRS daily flood maps (r3 on).
+// residents raster and the evacuation-access node file (r2 on), and the VIIRS daily flood maps (r3 on). The evidence envelope (r4 on) is checked below.
 const expectedTimelineAssets = [timeline.hand, ...timeline.layers, ...Object.values(timeline.vectors)];
 if (timeline.population) expectedTimelineAssets.push(timeline.population);
 if (timeline.access) expectedTimelineAssets.push(timeline.access.nodes);
@@ -89,6 +104,20 @@ if (timeline.population && (timeline.population.width !== timeline.hand.width ||
 if (timeline.real_time !== false || timeline.official_warning !== false || !timeline.confidence || !timeline.source_timestamp) {
   throw new Error("Mae Sai timeline must declare confidence, source timestamp and non-real-time, non-warning status");
 }
+// Evidence envelope: no score, no action class, non-operational, a generation time, input hashes, and a lane and a
+// source timestamp for every evidence block. The full contract is the JSON schema, checked by pytest.
+if (timeline.accepted_fpps !== null || timeline.accepted_action_class !== null || timeline.operational_status !== "non_operational"
+  || timeline.can_feed_decision_layer !== false || timeline.revision !== timelineRevision) {
+  throw new Error("Mae Sai timeline must be non-operational, with null accepted score and class, and name its own revision");
+}
+if (Number.isNaN(Date.parse(timeline.generated_at)) || !Array.isArray(timeline.input_sha256) || timeline.input_sha256.length === 0
+  || !timeline.input_sha256.every((input) => /^[a-f0-9]{64}$/.test(input.sha256) && typeof input.path === "string")) {
+  throw new Error("Mae Sai timeline must carry generated_at and the SHA-256 of every input");
+}
+if (!Array.isArray(timeline.evidence_blocks) || timeline.evidence_blocks.length === 0
+  || !timeline.evidence_blocks.every((block) => block.lane && block.source_timestamp && block.evidence_tier && block.temporal_relation)) {
+  throw new Error("Every Mae Sai evidence block must carry its lane, tier, temporal relation and source timestamp");
+}
 
 // Windows newline conversion must not change a hash-bound artifact on checkout.
 const entries = execFileSync("git", ["ls-files", "--stage", "-z", "apps/web/public/studies"], { cwd: root, encoding: "utf8" }).split("\0").filter(Boolean);
@@ -99,4 +128,4 @@ for (const entry of entries) {
   const actual = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
   if (actual !== blobId) throw new Error(`Git changes exact study bytes or has stale staged content: ${path}`);
 }
-console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets and ${entries.length} byte-identical Git blobs.`);
+console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets (${timeline.revision}, ${timelineBytes} of ${CASE_REPLAY_BUDGET_BYTES} budget bytes) and ${entries.length} byte-identical Git blobs.`);

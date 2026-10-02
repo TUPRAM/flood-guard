@@ -33,6 +33,9 @@ DEPTH_FACTOR_FLOOR = 0.35
 IMPASSABLE_DEPTH_M = 0.3
 """Depth at which a road segment is treated as impassable for ordinary vehicles."""
 
+SENTINEL2_L2A_QUANTIFICATION = 10000.0
+"""Sentinel-2 L2A surface reflectance = DN / 10000 for the Earth Search COGs used here; see :func:`sentinel2_l2a_reflectance`."""
+
 Phase = Literal["dry", "onset", "peak", "receding", "gone"]
 RoadState = Literal["dry", "wet", "impassable"]
 
@@ -88,6 +91,19 @@ def stage_at(t_days: float, keyframes: Sequence[StageKeyframe] = KEYFRAMES,
     """
     knots = stage_anchors(keyframes, extra)
     return float(np.interp(t_days, [t for t, _ in knots], [v for _, v in knots]))
+
+
+def sentinel2_l2a_reflectance(dn: np.ndarray) -> np.ndarray:
+    """Return surface reflectance for Sentinel-2 L2A digital numbers from Earth Search; DN 0 (no data) becomes NaN.
+
+    Processing baseline 04.00 added 1000 to every L2A digital number. The Earth Search ``sentinel-2-l2a`` COGs
+    on disk already have that offset removed, so reflectance is ``DN / 10000`` and nothing is subtracted here.
+    Checked on the two Mae Sai scenes (5 and 15 Sep 2024, tile 47QNC): inside the replay area 75% and 48% of
+    the valid red values are below 1000, and red over dense vegetation has a median of about 310-320, which
+    would be a negative reflectance if the offset were still in the data.
+    """
+    values = np.asarray(dn, dtype=np.float32)
+    return np.where(values > 0, values / np.float32(SENTINEL2_L2A_QUANTIFICATION), np.nan).astype(np.float32)
 
 
 def encode_hand(hand_m: np.ndarray, channel: np.ndarray, valid: np.ndarray) -> np.ndarray:

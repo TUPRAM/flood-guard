@@ -9,15 +9,20 @@ import { resolve, sep } from "node:path";
  * src/lib/flood-timeline.ts. This module reads that constant and derives every file from the manifest it
  * names, so the build, the service worker and the checks never carry their own list of revision paths.
  *
- * Budget policy: the replay data (about 5 MB of imagery, a HAND raster and vectors) is NOT part of the
- * blocking service-worker installation. It is an opt-in bucket, like the landing artwork: the replay page
- * asks the worker to keep it after the replay has rendered online, and the worker stores each file only
- * when its SHA-256 matches this build's manifest. The street basemap stays online-only.
+ * Budget policy: the replay data (6.1 MB in revision r4: imagery, a HAND raster, vectors and the manifest) is
+ * NOT part of the blocking service-worker installation. It is an opt-in bucket, like the landing artwork: the
+ * replay page asks the worker to keep it after the replay has rendered online, and the worker stores each file
+ * only when its SHA-256 matches this build's manifest. The street basemap stays online-only.
+ *
+ * One revision ships, and its precache set (the manifest plus every file it lists) must stay within
+ * `CASE_REPLAY_BUDGET_BYTES`. Export files for download are measured separately and are not in this set.
  */
 
 export const CASE_REPLAY_ROUTE = "/studio/cases/mae-sai-2024/";
 export const caseReplayInventory = "/offline-case-replay.json";
 export const CASE_REPLAY_POLICY = "optional_after_replay_render";
+/** Budget of the replay's precache set: 6.5 MB (decimal megabytes), manifest included. */
+export const CASE_REPLAY_BUDGET_BYTES = 6_500_000;
 const webRoot = resolve(import.meta.dirname, "..");
 const SHA256 = /^[a-f0-9]{64}$/;
 const SAFE_URL = /^\/[A-Za-z0-9._/-]+$/;
@@ -85,11 +90,21 @@ export function readCaseReplayAssets(root, manifestUrl = timelineManifestUrl()) 
   return { manifest, assets };
 }
 
+/** Total size of a replay asset list; throws when it exceeds the precache budget. */
+export function caseReplayBytes(assets, budget = CASE_REPLAY_BUDGET_BYTES) {
+  const bytes = assets.reduce((sum, asset) => sum + asset.bytes, 0);
+  if (!Number.isSafeInteger(bytes) || bytes <= 0) throw new Error("Case-replay precache set has no measurable size.");
+  if (bytes > budget) {
+    throw new Error(`Case-replay precache set is ${bytes} bytes, over its ${budget}-byte budget (${(budget / 1e6).toFixed(1)} MB).`);
+  }
+  return bytes;
+}
+
 /** Build step: verify the replay files in `out` and write the deferred inventory next to the other offline lists. */
 export function collectCaseReplay(out) {
   const manifestUrl = timelineManifestUrl();
   const { assets } = readCaseReplayAssets(out, manifestUrl);
-  const bytes = assets.reduce((sum, asset) => sum + asset.bytes, 0);
+  const bytes = caseReplayBytes(assets);
   writeFileSync(
     resolve(out, caseReplayInventory.slice(1)),
     `${JSON.stringify({ policy: CASE_REPLAY_POLICY, route: CASE_REPLAY_ROUTE, manifest: manifestUrl, bytes, assets }, null, 2)}\n`,
@@ -114,7 +129,7 @@ export function readCaseReplay(out) {
     }
     urls.add(asset.url);
   }
-  if (inventory.bytes !== inventory.assets.reduce((sum, asset) => sum + asset.bytes, 0)) {
+  if (inventory.bytes !== caseReplayBytes(inventory.assets)) {
     throw new Error("Case-replay inventory byte total is inconsistent.");
   }
   return inventory;

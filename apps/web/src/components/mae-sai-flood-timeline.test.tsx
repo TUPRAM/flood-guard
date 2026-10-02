@@ -11,8 +11,10 @@ import {
   districtStats,
   hourlyStages,
   manifestRevision,
+  parseTimelineManifest,
   rainAt,
   referencesNotIngested,
+  rgbaCss,
   roadCut,
   roadCutGroups,
   stageAt,
@@ -27,26 +29,34 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "@/lib/flood-timeline";
-import { plainManifestText } from "@/lib/flood-timeline-copy";
+import { plainManifestText, STANDALONE_K } from "@/lib/flood-timeline-copy";
+import type { WaterMode } from "@/lib/flood-timeline-link";
+import { lowConfidenceKey, residentsPendingText } from "@/lib/flood-timeline-water";
+import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
 import {
   facilityStatusText,
+  GeneratedAt,
   HowToRead,
   Hydrograph,
   ImpactCard,
+  LicencesByInput,
   LowConfidenceEvidence,
   MaeSaiFloodTimeline,
   playLabel,
+  playLabels,
   postEventOptical,
   RadarCheck,
   RouteCutsCard,
   SourcesPanel,
   TimelineLegend,
+  TuningDisclosure,
   WetFacilitiesCard,
 } from "./mae-sai-flood-timeline";
 import { formatDateSet, RainChart, ViirsComparisonCard, viirsMomentText } from "./mae-sai-observed-panels";
 import {
   exportPlaceLabels,
   exportScaleBar,
+  exportViewText,
   pickVideoType,
   pngFileName,
   ReplayExportPanel,
@@ -85,7 +95,8 @@ describe("Mae Sai flood replay page shell", () => {
     expect(html).toContain("Historical reconstruction for preparedness learning — not real-time, not an official warning.");
     expect(html).toContain('href="/studio/"');
     expect(html).toContain("Loading figures");
-    expect(html).not.toMatch(/real-time (flood )?detection|live warning|\blive\b/i);
+    // The shared replay wording lint: no affirmative real-time, live, forecast or warning wording.
+    expect(findWordingViolations(visibleText(html), "page shell")).toEqual([]);
   });
 
   it("puts Play, the readout and a 'Map layers' drawer above the map, with the controls folded away", () => {
@@ -113,11 +124,46 @@ describe("Mae Sai flood replay page shell", () => {
   });
 
   it("labels the play button with the window and its length, then Pause, Play from here and Replay", () => {
-    expect(playLabel(0.5, false, "en")).toBe("Play 9 → 19 Sep (26 s)");
-    expect(playLabel(0.5, false, "th")).toBe("เล่น 9 → 19 ก.ย. (26 วินาที)");
+    expect(playLabel(0.5, false, "en")).toBe("Play 9 → 19 Sep (26\u00a0s)");
+    expect(playLabel(0.5, false, "th")).toBe("เล่น 9 → 19 ก.ย. (26\u00a0วินาที)");
     expect(playLabel(3, true, "en")).toBe("Pause");
     expect(playLabel(3, false, "en")).toBe("Play from here");
     expect(playLabel(11, false, "en")).toBe("Replay");
+  });
+
+  it("reserves the width of every Play label, so the button and the bar never reflow between Play and Pause", () => {
+    for (const language of ["en", "th"] as const) {
+      const labels = playLabels(language);
+      // Every label the button can show over the replay, playing or not, is among the reserved ones.
+      for (let hour = 0; hour <= 264; hour += 1) {
+        expect(labels, `${language} hour ${hour}`).toContain(playLabel(hour / 24, false, language));
+        expect(labels, `${language} hour ${hour}`).toContain(playLabel(hour / 24, true, language));
+      }
+      expect(new Set(labels).size).toBe(labels.length);
+    }
+    expect(playLabels("en")).toEqual(expect.arrayContaining(["Pause", "Replay", "Play from here", "Play 9 → 19 Sep (26\u00a0s)"]));
+    // The button carries them for the style sheet; its visible text is the one current label.
+    const html = renderToStaticMarkup(<MaeSaiFloodTimeline />);
+    const button = /<button[^>]*data-testid="play-button"[^>]*>([\s\S]*?)<\/button>/.exec(html)![1];
+    const reserved = /data-labels="([^"]*)"/.exec(button)![1].split("\n");
+    expect(reserved).toEqual(playLabels("en"));
+    expect(text(button).replace(/[▶❚]/g, "").trim()).toBe(playLabel(0.5, false, "en").replace(/\u00a0/g, " "));
+  });
+
+  it("keeps the notes, the legend and the bottom stack in one overlay, and makes the drawer focusable", () => {
+    const html = renderToStaticMarkup(<MaeSaiFloodTimeline />);
+    const notes = html.indexOf('data-testid="map-notes"');
+    const legend = html.indexOf('data-testid="map-legend"');
+    const foot = html.indexOf('data-testid="map-foot"');
+    const drawer = html.indexOf('id="mae-sai-map-layers"');
+    expect(notes).toBeGreaterThan(0);
+    // Reading order: notes, legend, then the stack that holds the basemap note and "Clear route selection".
+    expect(legend).toBeGreaterThan(notes);
+    expect(foot).toBeGreaterThan(legend);
+    expect(drawer).toBeGreaterThan(foot);
+    expect(html).toMatch(/<div[^>]*data-map-foot=""[^>]*data-testid="map-foot"><\/div>/);
+    // The drawer can take focus when it opens (it is not a tab stop itself), and is labelled as a group.
+    expect(html).toMatch(/<div id="mae-sai-map-layers" tabindex="-1"[^>]*role="group"[^>]*aria-label="Map layers"/);
   });
 
   it("names the first clear optical image after the flood began, so its brown areas read as flood mud", () => {
@@ -139,7 +185,7 @@ describe("Mae Sai flood replay page shell", () => {
     expect(plain).toContain(manifest.source_timestamp);
     expect(html).toContain('href="#mae-sai-sources"');
     for (const term of ["Stage", "HAND", "Freeboard", "Road nodes", "T1 scenario", "Low-confidence water"]) expect(plain).toContain(term);
-    expect(plain).not.toMatch(/\blive\b|real-time detection/i);
+    expect(findWordingViolations(visibleText(html), "HowToRead")).toEqual([]);
     const thai = text(renderToStaticMarkup(<HowToRead manifest={manifest} language="th" />));
     expect(thai).toContain("วิธีอ่านตัวเลขเหล่านี้");
     expect(thai).toContain("2567 (2024)");
@@ -170,7 +216,7 @@ describe("Mae Sai replay panels", () => {
     const partial = Object.entries(manifest.tambon_coverage).filter(([, item]) => item.modelled_km2 / item.total_km2 < 0.99);
     for (const [, item] of partial) expect(html).toContain(`(${Math.round((item.modelled_km2 / item.total_km2) * 100)}% modelled)`);
     expect(html.match(/% modelled\)/g) ?? []).toHaveLength(partial.length);
-    expect(html).not.toMatch(/\blive\b/i);
+    expect(findWordingViolations(html, "ImpactCard")).toEqual([]);
     // The same card still names unmodelled land, roads and facilities when a revision has them.
     const firstTambon = Object.keys(manifest.tambon_coverage)[0];
     const partialManifest: TimelineManifest = {
@@ -209,18 +255,26 @@ describe("Mae Sai replay panels", () => {
     expect(none).not.toMatch(/above the (modelled )?flood range/i);
   });
 
-  it("renders the radar check from data, with its footprint-wide scope", () => {
+  it("renders the radar size comparison from data as calibration-informed, with its footprint-wide scope", () => {
     const anchor = manifest.s1_anchor;
     const html = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="6 Sep → 16 Sep 06:16 ICT" language="en" />));
     expect(html).toContain(`${anchor.newly_dark_km2.toFixed(2)} km² turned newly water-like`);
     expect(html).toContain(`at a ${anchor.best_fit_stage_m.toFixed(2)} m stage`);
     expect(html).toContain(`${anchor.reconstruction_stage_at_pass_m.toFixed(3)} m`);
     expect(html).toContain(`Spatial agreement is weak (IoU ${anchor.iou_at_best_fit.toFixed(2)})`);
+    // The recession keyframes were tuned to this pass (the manifest says so), so the page never calls it a check.
+    expect(anchor.role).toBe("calibration_informed_magnitude_check");
+    expect(html).toContain("Radar size comparison (Sentinel-1, 6 Sep → 16 Sep 06:16 ICT; calibration-informed, not an independent check)");
+    expect(html).toContain("The recession keyframes were tuned to this pass, so the sizes agree by construction.");
+    expect(html).toContain("so this constrains size, not location");
+    expect(html).not.toMatch(/Radar check|this checks size/);
     expect(html).toContain(anchor.scope!);
     expect(html).toContain("including Tachileik (Myanmar)");
     const thai = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="" language="th" />));
     expect(thai).toContain("ท่าขี้เหล็ก (เมียนมา)");
-    expect(thai).toContain("ขอบเขตการตรวจสอบ");
+    expect(thai).toContain("ขอบเขตการเทียบ");
+    expect(thai).toContain("มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ");
+    expect(thai).not.toContain("ตรวจสอบกับเรดาร์");
   });
 
   it("adds the low-confidence water entry to the legend and the evidence only when the manifest declares the flag", () => {
@@ -231,13 +285,63 @@ describe("Mae Sai replay panels", () => {
     const people = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode="people" densityMax={31.33} lowConfidence />));
     expect(people).toContain("Low-confidence water");
     expect(text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} />))).not.toContain("Low-confidence");
-    // Evidence: the share at the modelled peak, from the manifest (14 of 88.7 km² in r3), and what it means.
+    // First flooded and hours under water hatch the same cells, so their legends carry the same entry.
+    const classes = arrivalClasses(codeTimings(hourlyStages(manifest.stage_anchors), manifest.hand.step_m, manifest.hand.never_code).arrivalHour, ARRIVAL_RAMP, manifest.hand.channel_code);
+    for (const waterMode of ["arrival", "duration"] as const) {
+      const html = renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} lowConfidence part="overlay" />);
+      expect(html, waterMode).toContain('data-testid="low-confidence-legend"');
+      expect(text(html), waterMode).toContain("Low-confidence water: flat or filled low ground in the elevation model");
+      const thaiMode = text(renderToStaticMarkup(<TimelineLegend language="th" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} lowConfidence part="overlay" />));
+      expect(thaiMode, waterMode).toContain("น้ำที่มีความเชื่อมั่นต่ำ");
+      expect(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} part="overlay" />), waterMode)
+        .not.toContain("low-confidence-legend");
+    }
+    // The key is drawn in the colours the map gives low-confidence water in that view: blue for depth, purple for the
+    // first-flooded and hours-under-water views. A fixed blue key would match no hatched area there.
+    const swatch = (html: string) => html.match(/<i class="[^"]*lowConfidenceSwatch[^"]*"[^>]*>/)?.[0] ?? "";
+    const gradient = (waterMode: WaterMode) => {
+      const key = lowConfidenceKey(waterMode, classes);
+      return `repeating-linear-gradient(45deg, ${rgbaCss(key.stripe)} 0 2px, ${rgbaCss(key.wash)} 2px 5px)`;
+    };
+    const keys = new Set<string>();
+    for (const waterMode of ["depth", "arrival", "duration"] as const) {
+      const html = renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} lowConfidence part="overlay" />);
+      expect(swatch(html), waterMode).toContain(`data-view="${waterMode}"`);
+      expect(swatch(html), waterMode).toContain(`style="background:${gradient(waterMode)}"`);
+      keys.add(gradient(waterMode));
+    }
+    expect(keys.size).toBe(3);
+    // Evidence: the share at the modelled peak, from the manifest (14 of 88.7 km²), and what it means.
     const share = manifest.hand.low_confidence_share!;
     const evidence = text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="en" /></dl>));
     expect(evidence).toContain(`${share.low_confidence_km2.toFixed(1)} of the ${share.peak_flooded_km2.toFixed(1)} km² wet at the modelled peak is flat or filled low ground in the elevation model`);
     expect(evidence).toContain(manifest.hand.low_confidence!.meaning);
     expect(text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="th" /></dl>))).toContain(`${share.low_confidence_km2.toFixed(1)} จาก ${share.peak_flooded_km2.toFixed(1)} ตร.กม.`);
     expect(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={{ ...manifest.hand, low_confidence_channel: null }} language="en" /></dl>)).toBe("<dl></dl>");
+    // The evidence names every view that is hatched, not only depth and people.
+    expect(evidence).toContain("paler and hatched in every view that shows water (depth, first flooded, hours under water and people in flood water)");
+    expect(evidence).toContain("It is still counted in every flooded-area, road, people and access figure.");
+    expect(text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="th" /></dl>))).toContain("ในทุกมุมมองที่แสดงน้ำ (ความลึก เวลาที่เริ่มท่วม จำนวนชั่วโมงที่จมน้ำ และประชากรในพื้นที่น้ำท่วม)");
+  });
+
+  it("says in the legend that the map shows water depth while a resident view waits for its raster", () => {
+    // The page passes the view the map draws (depth) and why; the legend must not show the residents key meanwhile.
+    for (const language of ["en", "th"] as const) {
+      for (const pending of ["loading", "error"] as const) {
+        const html = renderToStaticMarkup(<TimelineLegend language={language} unmodelledRoads={false} unmodelledFacilities={false} waterMode="depth" densityMax={31.33} lowConfidence residentsPending={pending} part="overlay" />);
+        const plain = text(html);
+        expect(html).toContain('data-testid="legend-residents-pending"');
+        expect(plain).toContain(residentsPendingText(pending, language));
+        expect(plain).toContain(language === "th" ? "ความลึกของน้ำ (แบบจำลอง)" : "Water depth (model)");
+        expect(plain).not.toMatch(/residents per hectare|คนต่อเฮกตาร์/);
+        expect(html).toContain('data-testid="low-confidence-legend"');
+      }
+    }
+    // Once the raster is ready the page passes the resident view and no pending state: the residents key, no notice.
+    const ready = renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode="people" densityMax={31.33} lowConfidence part="overlay" />);
+    expect(ready).not.toContain("legend-residents-pending");
+    expect(text(ready)).toContain("People in flood water: residents per hectare");
+    expect(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} part="overlay" />)).not.toContain("legend-residents-pending");
   });
 
   it("splits the legend into the on-map part (water and roads) and the marker key", () => {
@@ -337,7 +441,8 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
     expect(plain).toContain(`Up to ${groups[0].maxHours} h cut`);
     expect(plain).toMatch(/First cut \d{1,2} Sep \d{2}:00 → reopened/);
     expect(plain).not.toContain("Show the whole area");
-    expect(plain.replaceAll("not observed", "")).not.toMatch(/observed|real-time|\blive\b/i);
+    expect(plain.replaceAll("not observed", "")).not.toMatch(/observed/i);
+    expect(findWordingViolations(visibleText(html), "RouteCutsCard")).toEqual([]);
     expect(plain).toContain("THEME: KEEP ROUTES OPEN · NO ACTION CLASS ASSIGNED");
     expect(plain).not.toMatch(/ACTION CLASS [A-E]\b/);
     const thai = text(renderToStaticMarkup(<RouteCutsCard groups={groups} names={names} language="th" focused={groups[0].key} onFocus={() => undefined} onReset={() => undefined} />));
@@ -420,7 +525,7 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
   });
 
   it("names the served data revision, which is also the manifest's own revision field", () => {
-    expect(manifestRevision()).toBe("r3");
+    expect(manifestRevision()).toBe("r4");
     expect(manifest.revision).toBe(manifestRevision());
     expect(manifestRevision("/studies/x/r9/timeline.json")).toBe("r9");
   });
@@ -433,6 +538,25 @@ describe("Mae Sai replay water modes, route cuts and exports", () => {
     expect(text(html)).toContain("Exports become available once the water model has loaded.");
     const thai = text(renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="th" waterOpacity={0.85} />));
     expect(thai).toContain("บันทึกภาพ PNG ของช่วงเวลานี้");
+  });
+
+  it("says which water view the PNG and the video draw: the view on the map, or water depth for the resident views", () => {
+    expect(exportViewText("depth", "en")).toBe("The PNG and the video show water depth (model), as on the map.");
+    expect(exportViewText("arrival", "en")).toBe("The PNG and the video show the first flooded hour (model), as on the map.");
+    expect(exportViewText("duration", "en")).toBe("The PNG and the video show hours under water (model), as on the map.");
+    for (const mode of ["people", "residents"] as const) {
+      expect(exportViewText(mode, "en")).toBe("The PNG and the video show water depth (model); the resident views are not exported.");
+      expect(exportViewText(mode, "th")).toContain("มุมมองผู้อยู่อาศัยไม่ถูกส่งออก");
+    }
+    for (const mode of ["depth", "arrival", "duration", "people", "residents"] as WaterMode[]) {
+      expect(exportViewText(mode, "th")).not.toMatch(/[A-Za-z]{4,}/);
+      expect(exportViewText(mode, "th")).toContain("(แบบจำลอง)");
+    }
+    const panel = renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="en" waterOpacity={0.85} waterMode="arrival" />);
+    expect(panel).toContain('data-testid="export-view"');
+    expect(text(panel)).toContain(exportViewText("arrival", "en"));
+    // Without the prop the panel exports (and says) water depth, as before.
+    expect(text(renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="en" waterOpacity={0.85} />))).toContain(exportViewText("depth", "en"));
   });
 });
 
@@ -459,7 +583,8 @@ describe("Mae Sai observed evidence panels", () => {
     expect(plain).toContain(viirs.caveat);
     expect(plain).toContain(viirs.comparison_rule);
     expect(plain).toContain("not a validation of the model");
-    expect(plain.replaceAll("not a validation", "")).not.toMatch(/validat/i);
+    // "not a validation" is an allowlisted negation; any other validation or accuracy wording is a finding.
+    expect(findWordingViolations(visibleText(html), "ViirsComparisonCard")).toEqual([]);
     expect(plain).toContain("standing water in rice paddies can read as flood water");
     const cloudy = viirs.days.filter((day) => day.cloud_share >= 0.5).map((day) => day.date);
     if (cloudy.length > 0) expect(plain).toContain(`Cloud hid at least half of the district on ${cloudy.length} of ${viirs.days.length} days (${formatDateSet(cloudy, "en")})`);
@@ -517,7 +642,7 @@ describe("Mae Sai observed evidence panels", () => {
     const plain = text(html);
     expect(manifest.sources.map((source) => source.id)).toEqual(expect.arrayContaining(["viirs", "hii-rain"]));
     for (const source of manifest.sources) {
-      expect(plain).toContain(source.name);
+      expect(plain).toContain(plainManifestText(source.name));
       expect(plain).toContain(source.licence);
       expect(plain).toContain(source.attribution);
     }
@@ -530,6 +655,15 @@ describe("Mae Sai observed evidence panels", () => {
       expect(plain).not.toContain("k x stage");
       expect(plain).toContain("tributaries rise to a fraction of the stage");
     }
+    // The depth factor is named in words and written f; no standalone "k" (the plan size) is left in the panel.
+    expect(manifest.assumptions.some((item) => STANDALONE_K.test(item))).toBe(true);
+    expect(plain).toContain("scaled by the depth factor f = clip(");
+    expect(plain).toContain("the exported depth factor f makes h + 0.3/f equal the earliest sample closure");
+    expect(plain).toContain("The depth factor f = clip(");
+    expect(plain).not.toMatch(STANDALONE_K);
+    const thaiPanel = text(renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />));
+    expect(thaiPanel).toContain("ตัวคูณความลึก f = clip(");
+    expect(thaiPanel).not.toMatch(STANDALONE_K);
     for (const url of [viirs.source_url, rainfall.source_url]) expect(html).toContain(`href="${url}"`);
     expect(plain).toContain(viirs.caveat);
     expect(plain).toContain(rainfall.note);
@@ -556,5 +690,179 @@ describe("Mae Sai observed evidence panels", () => {
     expect(thai).not.toContain(viirs.caveat);
     // Source names and licences stay as published, marked as English.
     expect(thaiHtml).toContain(`<strong lang="en">${manifest.sources[0].name}</strong>`);
+  });
+});
+
+describe("Mae Sai replay evidence envelope on the page (r4)", () => {
+  const THAI = /[฀-๿]/;
+  // The r3 shape a client may still hold in its offline copy (trimmed; see the fixture's own notes).
+  const r3 = parseTimelineManifest((JSON.parse(readFileSync(resolve(import.meta.dirname, "../lib/__fixtures__/mae-sai-timeline-r3-shape.json"), "utf8")) as { manifest: unknown }).manifest);
+  /** Visible text of the element that carries `testId`, up to the first closing `tag`. */
+  const inside = (html: string, testId: string, tag: string) => text(html.slice(html.indexOf(">", html.indexOf(`data-testid="${testId}"`)) + 1).split(`</${tag}>`)[0]);
+
+  it("says the replay is non-operational and when its data files were generated, in the how-to-read box", () => {
+    const html = renderToStaticMarkup(<HowToRead manifest={manifest} language="en" />);
+    const status = inside(html, "how-to-status", "li");
+    expect(status).toContain("Status: non-operational. A historical reconstruction for planning and exercises; it gives no priority score and no action class.");
+    expect(manifest.operational_status).toBe("non_operational");
+    expect(manifest.generated_at_basis).toBe("declared");
+    expect(status).toMatch(/Data files generated: \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} ICT\.$/);
+    expect(html).toContain(`<time dateTime="${manifest.generated_at}">`);
+    // The top-level source timestamp now reaches the last rain hour and the last VIIRS day.
+    expect(text(html)).toContain(`Source data: ${manifest.source_timestamp}.`);
+    expect(Date.parse(manifest.source_timestamp.split("/")[1])).toBeGreaterThanOrEqual(Date.parse(manifest.viirs_daily!.days.at(-1)!.nominal_local_time));
+    const thai = text(renderToStaticMarkup(<HowToRead manifest={manifest} language="th" />));
+    expect(thai).toContain("สถานะ: ไม่ใช้ในการปฏิบัติการ");
+    expect(thai).toContain("ไม่ให้คะแนนลำดับความสำคัญและไม่กำหนดระดับการดำเนินการ");
+    expect(thai).toMatch(/สร้างไฟล์ข้อมูลเมื่อ \d{1,2} \S+ 25\d{2} \(20\d{2}\) \d{2}:\d{2} น\./);
+    // Before any data loads the status is still stated; only the generation time waits for the manifest.
+    const empty = text(renderToStaticMarkup(<HowToRead manifest={null} language="en" />));
+    expect(empty).toContain("Status: non-operational.");
+    expect(empty).not.toContain("Data files generated");
+  });
+
+  it("labels a generation time that was not declared as the newest input date, and shows nothing without one", () => {
+    const declared = text(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "2026-10-01T16:10:00+07:00", generated_at_basis: "declared" }} language="en" />));
+    expect(declared).toBe(" · Data files generated: 1 Oct 2026, 16:10 ICT");
+    const newest = text(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "2026-09-27T00:00:00Z", generated_at_basis: "newest_input_timestamp" }} language="en" />));
+    expect(newest).toBe(" · Newest input dated: 27 Sep 2026, 07:00 ICT");
+    const thai = text(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "2026-09-27T00:00:00Z", generated_at_basis: "newest_input_timestamp" }} language="th" lead />));
+    expect(thai).toBe(" ข้อมูลนำเข้าล่าสุดลงวันที่ 27 ก.ย. 2569 (2026) 07:00 น.");
+    expect(renderToStaticMarkup(<GeneratedAt manifest={{}} language="en" />)).toBe("");
+    expect(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "soon" }} language="th" />)).toBe("");
+  });
+
+  it("lists a licence and its terms for every input in the sources panel, with product 4009 marked as not shown", () => {
+    const html = renderToStaticMarkup(<LicencesByInput manifest={manifest} language="en" />);
+    const plain = text(html);
+    expect(plain).toContain("Licence per input");
+    const inputs = manifest.publication_eligibility!.inputs;
+    expect(inputs.length).toBeGreaterThanOrEqual(12);
+    for (const input of inputs) {
+      expect(plain, input.id).toContain(`${plainManifestText(input.name)} — ${input.licence.replace(/\.$/, "")}. `);
+      expect(plain, input.id).toContain(plainManifestText(input.terms));
+    }
+    for (const licence of ["CC BY-NC", "ODbL 1.0", "CC BY 4.0", "CC BY-IGO", "No licence stated by the provider", "CC BY-SA 4.0", "Copernicus DEM licence", "Copernicus Sentinel data terms"]) {
+      expect(plain).toContain(licence);
+    }
+    // Only product 4009 is listed without being shown; it comes last and says why.
+    expect(html.match(/data-shown="false"/g)).toHaveLength(1);
+    const last = text(html.slice(html.lastIndexOf("<li data-shown=")).split("</li>")[0]);
+    expect(last).toContain("UNOSAT/GISTDA product 4009");
+    // The status sentence follows the rights record: pending, or confirmed on a date. Either way nothing of 4009 is shown.
+    const status4009 = /Not yet shown; rights record pending owner confirmation\.|Not shown in this revision; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\./;
+    expect(last).toMatch(status4009);
+    expect(html).toMatch(new RegExp(`<strong><span lang="en">(?:${status4009.source})</span></strong>`));
+    // An input that is not shown and gives no status still says so.
+    const bare = { ...manifest, publication_eligibility: { ...manifest.publication_eligibility!, inputs: inputs.map((input) => ({ ...input, status: undefined })) } };
+    expect(text(renderToStaticMarkup(<LicencesByInput manifest={bare} language="en" />))).toContain("Not shown on this page.");
+    expect(text(renderToStaticMarkup(<LicencesByInput manifest={bare} language="th" />))).toContain("ยังไม่แสดงในหน้านี้");
+    expect(plain).toContain(`Conditions of use: ${manifest.publication_eligibility!.scope}`);
+    for (const condition of manifest.publication_eligibility!.conditions) expect(plain).toContain(condition);
+    expect(plain).not.toMatch(/tha_ppp_2020|rights_basis_4009|docs\/|\.\./);
+    expect(findWordingViolations(visibleText(html), "LicencesByInput")).toEqual([]);
+
+    const thaiHtml = renderToStaticMarkup(<LicencesByInput manifest={manifest} language="th" />);
+    const thai = text(thaiHtml);
+    expect(thai).toContain("สัญญาอนุญาตของข้อมูลแต่ละชุด");
+    expect(thai).toMatch(/ยังไม่แสดง รอเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูล|ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ/);
+    expect(thai).toContain("เงื่อนไขการใช้");
+    // Names and published licence names stay as published (marked English); every term and condition has a Thai
+    // rendering, and so has the licence wording the project wrote itself.
+    expect(thaiHtml).toContain('<span lang="en" data-licence="">CC BY-NC.</span>');
+    expect(thaiHtml).toContain('<span lang="en" data-licence="">CC BY-SA 4.0.</span>');
+    const published = /^(CC BY|ODbL)/;
+    const written = inputs.map((input) => input.licence.replace(/\.$/, "")).filter((licence) => !published.test(licence));
+    expect(written).toEqual(expect.arrayContaining(["Project summary text", "Cited figures with links; no data copied", "No licence stated by the provider",
+      "Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)"]));
+    for (const licence of written) {
+      expect(thai, licence).not.toContain(licence);
+      expect(html, licence).toContain(`<span lang="en" data-licence="">${licence.replaceAll("&", "&amp;")}.</span>`);
+    }
+    expect(thai).toContain("ข้อความสรุปของโครงการ");
+    expect(thai).toContain("ผู้ให้บริการไม่ได้ระบุสัญญาอนุญาต");
+    expect(thai).toContain("ตัวเลขที่อ้างอิงพร้อมลิงก์ ไม่ได้คัดลอกข้อมูล");
+    // A Thai licence phrase takes no Latin full stop.
+    expect(thaiHtml).toContain('<span lang="th" data-licence="">ข้อความสรุปของโครงการ</span>');
+    for (const sentence of [...inputs.map((input) => input.terms), ...manifest.publication_eligibility!.conditions, manifest.publication_eligibility!.scope]) {
+      expect(thai, sentence).not.toContain(plainManifestText(sentence));
+    }
+    expect(findWordingViolations(visibleText(thaiHtml), "LicencesByInput th")).toEqual([]);
+  });
+
+  it("states which external figures were used or known while the model was tuned", () => {
+    const html = renderToStaticMarkup(<TuningDisclosure manifest={manifest} language="en" />);
+    const plain = text(html);
+    expect(plain).toContain("What was known when the model was tuned");
+    expect(plain).toContain("Used for tuning: GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (9.9 km² flooded in Mae Sai) was used on purpose to set the onset stage knot");
+    expect(plain).toContain("Used for tuning: The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m)");
+    expect(plain).toContain("Known during tuning: UNOSAT 3991 (about 70 km² over 13-19 Sep) was known while the stage keyframes were tuned");
+    // VIIRS: only what the build history supports. The comparison and the last stage-knot edit are in one commit.
+    expect(plain).toContain("Not used for tuning: The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03)");
+    expect(plain).toContain("The build history does not record which came first within that change, so the comparison is not presented as an independent check.");
+    expect(plain).not.toContain("The VIIRS daily comparison was computed after the keyframes were final");
+    expect(plain).toContain("Not used for tuning: The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final");
+    expect(html.match(/data-relation="used_for_tuning"/g)).toHaveLength(2);
+    expect(html.match(/data-relation="known_during_tuning"/g)).toHaveLength(1);
+    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(1);
+    expect(html.match(/data-relation="not_used_for_tuning"/g)).toHaveLength(1);
+    expect(plain).toContain(plainManifestText(manifest.exploratory_knowledge!.rule));
+    expect(findWordingViolations(visibleText(html), "TuningDisclosure")).toEqual([]);
+    // The disclosure and the radar label agree: both call the Sentinel-1 comparison calibration-informed.
+    const radar = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="6 Sep → 16 Sep 06:16 ICT" language="en" />));
+    expect(radar).toContain("calibration-informed, not an independent check");
+    expect(plain).toContain("the radar size comparison is calibration-informed, not an independent check");
+    const thai = text(renderToStaticMarkup(<TuningDisclosure manifest={manifest} language="th" />));
+    expect(thai).toContain("สิ่งที่ทราบขณะปรับแบบจำลอง");
+    expect(thai).toContain("ใช้ปรับแบบจำลอง:");
+    expect(thai).toContain("ทราบขณะปรับแบบจำลอง:");
+    expect(thai).toContain("ไม่ได้ใช้ปรับแบบจำลอง:");
+    for (const item of manifest.exploratory_knowledge!.items) expect(thai, item.id).not.toContain(plainManifestText(item.statement));
+  });
+
+  it("puts the licences, the disclosure, the status and the generation time in the sources panel", () => {
+    const html = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="en" offlineCopy={null} />);
+    const plain = text(html);
+    expect(html).toContain('data-testid="licences-by-input"');
+    expect(html).toContain('data-testid="licence-conditions"');
+    expect(html).toContain('data-testid="tuning-disclosure"');
+    // Both elevation tiles and the residents grid are sources; the residents note sits on that line, once.
+    expect(plain).toContain("Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)");
+    expect(plain).toContain("WorldPop Thailand 100 m population 2020, unconstrained top-down — CC BY 4.0. WorldPop (www.worldpop.org), University of Southampton. Modelled residential population, not a census count or the 2024 population.");
+    expect(plain.split(manifest.population!.note)).toHaveLength(2);
+    const footer = inside(html, "sources-footer", "p");
+    expect(footer).toContain(`Source timestamp: ${manifest.source_timestamp}`);
+    expect(footer).toContain(`${manifest.study_id} r4`);
+    expect(footer).toContain("confidence: low · status: non-operational · Data files generated: ");
+    expect(plain).toContain(manifest.source_timestamp_note!);
+    const thai = text(renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />));
+    expect(thai).toContain("สถานะ: ไม่ใช้ในการปฏิบัติการ");
+    expect(thai).toContain("สร้างไฟล์ข้อมูลเมื่อ");
+    expect(thai).not.toContain(manifest.source_timestamp_note!);
+    expect(thai).toMatch(THAI);
+  });
+
+  it("still renders an r3-shaped manifest: its own sources, no licence table, no disclosure, no generation time", () => {
+    expect(r3.revision).toBe("r3");
+    const html = renderToStaticMarkup(<SourcesPanel manifest={r3} language="en" offlineCopy={null} />);
+    const plain = text(html);
+    for (const source of r3.sources) expect(plain).toContain(source.licence);
+    // r3 lists the residents grid only in its population block; the panel still shows it, once.
+    expect(r3.sources.some((source) => source.id === "worldpop")).toBe(false);
+    expect(plain.split(`${plainManifestText(r3.population!.source)} — ${r3.population!.licence}.`)).toHaveLength(2);
+    expect(html).not.toContain('data-testid="licences-by-input"');
+    expect(html).not.toContain('data-testid="tuning-disclosure"');
+    expect(html).not.toContain('data-testid="generated-at"');
+    expect(renderToStaticMarkup(<LicencesByInput manifest={r3} language="en" />)).toBe("");
+    expect(renderToStaticMarkup(<TuningDisclosure manifest={r3} language="th" />)).toBe("");
+    // The status does not depend on the revision: the replay is non-operational either way.
+    expect(plain).toContain("status: non-operational");
+    const howTo = text(renderToStaticMarkup(<HowToRead manifest={r3} language="en" />));
+    expect(howTo).toContain("Status: non-operational.");
+    expect(howTo).not.toContain("Data files generated");
+    // The radar comparison is labelled calibration-informed even when the manifest predates the label.
+    expect(r3.s1_anchor.role).toBeUndefined();
+    expect(text(renderToStaticMarkup(<RadarCheck manifest={r3} radarSpan="6 Sep → 16 Sep 06:16 ICT" language="en" />))).toContain("calibration-informed, not an independent check");
+    expect(findWordingViolations(visibleText(html), "SourcesPanel r3")).toEqual([]);
   });
 });

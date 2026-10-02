@@ -9,7 +9,7 @@
 /* Thai has no capitals and its tone marks crowd when letter-spaced. */
 .page:lang(th) .eyebrow { letter-spacing: 0; }
 .hero h1 { font-family: "Manrope Variable", "Noto Sans Thai Variable", sans-serif; font-size: clamp(1.7rem, 3vw, 2.5rem); letter-spacing: -.04em; line-height: 1.15; margin: 0 0 .55rem; }
-.page:lang(th) .hero h1 { letter-spacing: -.01em; }
+.page:lang(th) .hero h1 { letter-spacing: 0; }
 .lead { font-size: .98rem; color: #54647c; line-height: 1.6; max-width: 820px; margin: 0 0 .8rem; }
 .heroNotes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .6rem 1rem; }
 .banner { display: inline-block; margin: 0; padding: .6rem 1rem; border: 1px solid #ead7ac; border-left: 4px solid #d18b12; border-radius: .6rem; background: #fff5df; color: #6b4410; font-size: .85rem; line-height: 1.55; }
@@ -26,13 +26,14 @@
 .stage { min-width: 0; background: #fff; border: 1px solid #d5deeb; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 12px #16305806; }
 
 /* Play, the time readout and the "Map layers" button sit directly above the map; their height is reserved from the
-   first render so nothing that loads later pushes the map down. */
+   first render so nothing that loads later pushes the map down, and no label change (Play to Pause, a longer phase
+   name, another hour) may change the bar's height or move the controls beside it. */
 .stageBar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; min-height: 66px; padding: .65rem 1rem; border-bottom: 1px solid #e5eaf2; }
 .layersButton { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; margin-left: auto; padding: 0 .95rem; border: 1px solid #0c2740; border-radius: .6rem; background: #fff; color: #0c2740; font-size: .84rem; font-weight: 700; cursor: pointer; }
 .layersButton[aria-expanded="true"] { background: #0c2740; color: #fff; }
 .layersButton:disabled { opacity: .55; cursor: wait; }
 .layersButton span { font-size: 1rem; line-height: 1; }
-.momentLine { flex-basis: 100%; min-height: 1.35em; margin: 0; font-size: .8rem; line-height: 1.35; color: #223650; }
+.momentLine { flex-basis: 100%; height: 1.35em; margin: 0; overflow: hidden; font-size: .8rem; line-height: 1.35; color: #223650; text-overflow: ellipsis; white-space: nowrap; }
 .toolGroup { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem .9rem; min-width: 0; }
 .compareFields { display: flex; flex-wrap: wrap; gap: .6rem .9rem; min-width: 0; }
 .toggleButton { min-height: 40px; padding: 0 .9rem; border: 1px solid #c6d1e3; border-radius: .5rem; background: #fff; color: #17253b; font-size: .8rem; font-weight: 700; cursor: pointer; }
@@ -59,6 +60,9 @@
 /* "Map layers" drawer over the map: imagery, water and road modes and layer switches, out of the way until asked for. */
 .layersPanel { position: absolute; z-index: 1100; top: 10px; right: 10px; display: grid; align-content: start; gap: .85rem; width: min(26rem, calc(100% - 20px)); max-height: calc(100% - 20px); overflow: auto; padding: .75rem .9rem 1rem; border: 1px solid #c6d1e3; border-radius: .8rem; background: rgb(255 255 255 / 97%); box-shadow: 0 12px 32px rgb(15 23 42 / 24%); }
 .layersPanel[hidden] { display: none; }
+/* Opening the drawer moves focus to it (it is a labelled group), so the next Tab lands on its first control. */
+.layersPanel:focus { outline: none; }
+.layersPanel:focus-visible { outline: 3px solid #e8a526; outline-offset: -3px; }
 .layersHead { display: flex; align-items: center; justify-content: space-between; gap: .6rem; color: #17253b; }
 .layersPanel .field, .layersPanel .field select { width: 100%; }
 .layersPanel .field input[type="range"] { width: 100%; }
@@ -82,13 +86,21 @@
 .compareDivider:focus-visible .compareHandle { outline: 3px solid #e8a526; outline-offset: 2px; }
 /* Inline max-width keeps each label on its own side of the divider; the left one also clears the zoom control. */
 .compareLabel { position: absolute; z-index: 730; top: 10px; max-width: 42%; margin: 0; padding: .35rem .6rem; overflow: hidden; border-radius: .45rem; background: rgb(12 39 64 / 86%); color: #fff; font-size: .72rem; font-weight: 650; line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
-/* Sits above Leaflet's attribution, whose measured height (it wraps on narrow maps) the page keeps in --fg-attribution-h. */
-.basemapNote { position: absolute; z-index: 800; left: 10px; bottom: calc(var(--fg-attribution-h, 18px) + 8px); max-width: min(24rem, calc(100% - 20px)); margin: 0; padding: .4rem .65rem; border-radius: .45rem; background: rgb(255 255 255 / 94%); color: #3b4d68; font-size: .72rem; line-height: 1.45; box-shadow: 0 2px 10px rgb(15 23 42 / 18%); pointer-events: none; }
+/* Everything drawn over the map except the "Map layers" drawer. The box itself lets every click through to the map.
+   On wide maps the notes, the legend and the bottom stack each keep a corner; on phones they are one column (see the
+   narrow-screen rules below), so they cannot overlap whatever their sizes. */
+.mapOverlay { position: absolute; inset: 0; pointer-events: none; }
+/* Bottom stack: the basemap note over the "Clear route selection" button, above Leaflet's attribution, whose measured
+   height (it wraps on narrow maps) the page keeps in --fg-attribution-h. The page also measures this stack
+   (--fg-foot-h), and the legend and the map popups keep clear of it. */
+.mapFoot { position: absolute; z-index: 820; left: 10px; right: 10px; bottom: calc(var(--fg-attribution-h, 18px) + 8px); display: flex; flex-direction: column; align-items: flex-start; gap: 6px; pointer-events: none; }
+.basemapNote { max-width: min(24rem, 100%); margin: 0; padding: .4rem .65rem; border-radius: .45rem; background: rgb(255 255 255 / 94%); color: #3b4d68; font-size: .72rem; line-height: 1.45; box-shadow: 0 2px 10px rgb(15 23 42 / 18%); }
 /* Top-right notes (imagery caption, the 15 Sep mud cue, the comparison note, the VIIRS note), clear of the zoom control
    on the left and the attribution below. While comparing, the side labels take the top edge, so the notes start below
-   them. While a popup is open the notes and the legend step aside so they never cover it. */
+   them: below their measured height (--fg-compare-labels-h), which grows when a label wraps. While a popup is open
+   the notes and the legend step aside so they never cover it. */
 .mapNotes { position: absolute; z-index: 800; right: 10px; top: 10px; display: grid; justify-items: end; gap: 6px; max-width: min(22rem, calc(100% - 80px)); pointer-events: none; transition: opacity .2s ease; }
-.mapNotes[data-compare] { top: 52px; }
+.mapNotes[data-compare] { top: max(52px, calc(18px + var(--fg-compare-labels-h, 0px))); }
 .caption, .viirsNote, .mudCue, .compareNote { margin: 0; padding: .45rem .7rem; border-radius: .5rem; background: rgb(12 39 64 / 86%); color: #fff; font-size: .76rem; line-height: 1.45; }
 .viirsNote { border-left: 4px solid #9970ab; background: rgb(46 20 62 / 88%); font-size: .72rem; }
 .mudCue { border-left: 4px solid #b07a45; background: rgb(58 36 18 / 90%); font-size: .74rem; }
@@ -96,13 +108,15 @@
 .mapFrame[data-popup="open"] .mapNotes, .mapFrame[data-popup="open"] .mapLegend { opacity: 0; pointer-events: none; }
 /* Compact on-map legend below the zoom control: what the active water and road modes (and any switched-on scenario or
    observed layer) mean; the marker key folds away inside it. */
-.mapLegend { position: absolute; z-index: 840; top: 112px; left: 10px; width: max-content; max-width: min(18.5rem, calc(100% - 20px)); max-height: calc(100% - 128px - var(--fg-attribution-h, 18px)); overflow: auto; border-radius: .6rem; background: rgb(255 255 255 / 95%); box-shadow: 0 2px 10px rgb(15 23 42 / 22%); color: #3b4d68; font-size: .72rem; transition: opacity .2s ease; }
+.mapLegend { position: absolute; z-index: 840; top: 112px; left: 10px; width: max-content; max-width: min(18.5rem, calc(100% - 20px)); max-height: calc(100% - 128px - var(--fg-attribution-h, 18px) - var(--fg-foot-h, 0px)); overflow: auto; border-radius: .6rem; background: rgb(255 255 255 / 95%); box-shadow: 0 2px 10px rgb(15 23 42 / 22%); color: #3b4d68; font-size: .72rem; pointer-events: auto; transition: opacity .2s ease; }
 .mapLegend > summary { display: flex; align-items: center; min-height: 34px; padding: .3rem .65rem; cursor: pointer; font-weight: 700; color: #17253b; }
 .mapLegend .legend { flex-direction: column; flex-wrap: nowrap; gap: .55rem; padding: 0 .65rem .55rem; border-top: 0; font-size: .7rem; }
 .mapLegend .legend ul { gap: .2rem .7rem; }
 .symbolKey { border-top: 1px solid #e5eaf2; }
 .symbolKey > summary { display: flex; align-items: center; min-height: 32px; padding: .25rem .65rem; cursor: pointer; font-weight: 650; color: #223650; }
-.clearSelection { position: absolute; z-index: 820; left: 50%; bottom: calc(var(--fg-attribution-h, 18px) + 8px); display: inline-flex; align-items: center; gap: .4rem; min-height: 38px; padding: 0 .85rem; transform: translateX(-50%); border: 1px solid #0c2740; border-radius: 999px; background: #fff; color: #0c2740; font-size: .78rem; font-weight: 700; box-shadow: 0 2px 10px rgb(15 23 42 / 22%); cursor: pointer; white-space: nowrap; }
+.clearSelection { align-self: center; display: inline-flex; align-items: center; gap: .4rem; max-width: 100%; min-height: 38px; padding: 0 .85rem; border: 1px solid #0c2740; border-radius: 999px; background: #fff; color: #0c2740; font-size: .78rem; font-weight: 700; box-shadow: 0 2px 10px rgb(15 23 42 / 22%); cursor: pointer; pointer-events: auto; white-space: nowrap; }
+/* A resident view was chosen but its raster is not ready: the legend shows water depth, as the map does, and says why. */
+.legendPending { max-width: 16rem; margin: .4rem 0 0; color: #815313; font-size: .68rem; font-weight: 600; line-height: 1.4; }
 /* VIIRS pixels are ~375 m; keep them square instead of smoothing them into a false level of detail. */
 .viirsLayer { image-rendering: crisp-edges; image-rendering: pixelated; }
 .mapStatus { position: absolute; z-index: 900; top: .75rem; left: 50%; transform: translateX(-50%); margin: 0; padding: .45rem .8rem; border-radius: 999px; background: #fff; color: #17253b; font-size: .78rem; font-weight: 600; box-shadow: 0 4px 16px rgb(15 23 42 / 16%); white-space: nowrap; }
@@ -114,12 +128,21 @@
 
 .dock { min-height: 150px; padding: .55rem 1rem .8rem; border-top: 1px solid #e5eaf2; }
 .play, .button { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: 0 1.1rem; border: 0; border-radius: .6rem; background: #0c2740; color: #fff; font-weight: 700; font-size: .86rem; cursor: pointer; }
-.play { background: #174ecb; box-shadow: 0 2px 8px rgb(23 78 203 / 28%); }
+.play { flex: none; justify-content: center; background: #174ecb; box-shadow: 0 2px 8px rgb(23 78 203 / 28%); }
 .play:hover:not(:disabled), .button:hover { background: #08519c; }
 .play:disabled { opacity: .6; cursor: wait; }
-.play span { font-size: .75rem; }
+.playIcon { flex: none; width: 1.1rem; font-size: .75rem; text-align: center; }
+/* The label sits over an invisible, zero-height copy of every label the button can show (one per line), so the
+   button is always as wide as its widest label and never changes width between Play and Pause. */
+.playText { display: inline-grid; justify-items: start; }
+.playText::after { content: attr(data-labels); height: 0; overflow: hidden; visibility: hidden; white-space: pre; }
+/* The time readout is never cut: every layout gives it room for its longest text in both languages (the narrow
+   two-column desktop narrows the cards column for it, phones give it its own row; the browser check measures every
+   replay hour). The ellipsis and the titles are a last resort for a much larger text size. */
 .readout { display: grid; flex: 1 1 13rem; gap: .1rem; min-width: 0; }
+.readout strong, .readout span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .readout strong { font-size: .95rem; letter-spacing: -.01em; }
+.page:lang(th) .readout strong { letter-spacing: 0; }
 .readout span { min-height: 1.2em; font-size: .78rem; color: #52627a; }
 
 .track { position: relative; height: 44px; }
@@ -199,7 +222,8 @@
 :is(.legend, .toggleSwatch) i.line { height: 4px; border-radius: 2px; }
 :is(.legend, .toggleSwatch) i.dot { width: 11px; height: 11px; border: 2px solid; border-radius: 50%; box-shadow: 0 0 0 1px #c6d1e3; }
 :is(.legend, .toggleSwatch) i.dash { height: 0; border-radius: 0; border-top: 3px dashed; background: none; }
-/* Low-confidence water: a pale, desaturated blue with a diagonal hatch, as the map draws it. */
+/* Low-confidence water: a diagonal hatch over a pale wash. The colours come from the view that is drawn (the page
+   sets them inline from the function that colours the map); the blue here is only the fallback. */
 .legend i.lowConfidenceSwatch { background: repeating-linear-gradient(45deg, rgb(120 150 190 / 95%) 0 2px, rgb(214 222 234 / 85%) 2px 5px); box-shadow: inset 0 0 0 1px rgb(12 39 64 / 18%); }
 
 .panel { display: grid; gap: 1rem; min-width: 0; }
@@ -211,13 +235,17 @@
 .tagModel { background: #e7effb; color: #174ecb; }
 .cite { color: #5a6a80; font-size: .76rem; }
 .cue { padding: .45rem .6rem; border-left: 3px solid #b07a45; border-radius: .35rem; background: #faf4ee; color: #4a2f16; font-size: .8rem; }
-/* Glossary terms: dotted underline; the definition shows on hover or keyboard focus. */
+/* Glossary terms: dotted underline; the definition shows on hover or keyboard focus and closes on Escape. The page
+   moves the box sideways (--fg-tip-shift) so it stays inside the viewport. */
 .term { position: relative; }
 .termLabel { border-bottom: 1px dotted currentColor; cursor: help; }
 .termLabel:focus-visible { outline: 2px solid #e8a526; outline-offset: 2px; border-radius: 2px; }
-.termTip { position: absolute; z-index: 60; left: 0; top: calc(100% + 6px); display: none; width: max-content; max-width: min(18rem, 70vw); padding: .45rem .6rem; border-radius: .45rem; background: #0c2740; color: #fff; font-size: .74rem; font-weight: 500; line-height: 1.45; text-align: left; white-space: normal; box-shadow: 0 6px 18px rgb(15 23 42 / 25%); }
-.term:hover .termTip, .termLabel:focus + .termTip { display: block; }
+.termTip { position: absolute; z-index: 60; left: var(--fg-tip-shift, 0px); top: calc(100% + 6px); display: none; width: max-content; max-width: min(18rem, calc(100vw - 2rem)); padding: .45rem .6rem; border-radius: .45rem; background: #0c2740; color: #fff; font-size: .74rem; font-weight: 500; letter-spacing: 0; line-height: 1.45; text-align: left; text-transform: none; white-space: normal; box-shadow: 0 6px 18px rgb(15 23 42 / 25%); }
+.termTip[data-open] { display: block; }
+/* Bridges the gap between the term and its definition, so the pointer can move onto the definition. */
+.termTip::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; height: 6px; }
 .card h2 { margin: 0 0 .7rem; font-size: 1.05rem; letter-spacing: -.02em; color: #17253b; }
+.page:lang(th) .card h2 { letter-spacing: 0; }
 .card h3 { margin: 1rem 0 .5rem; font-size: .82rem; color: #17253b; }
 .card p { margin: .5rem 0 0; }
 .card .eyebrow { margin-bottom: .4rem; }
@@ -287,6 +315,21 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .card .segmented > div { width: 100%; }
 .card .segmented label { flex: 1 1 auto; }
 .card .segmented span { justify-content: center; width: 100%; min-height: 40px; padding: .3rem .6rem; line-height: 1.3; text-align: center; }
+/* Shelter sets side by side: one table per set, both ways of counting as columns; no row is styled as a winner. */
+.setCompare { margin-top: .6rem; padding: .55rem .65rem .6rem; border: 1px solid #e0e7f1; border-radius: .6rem; background: #f7f9fc; }
+.setCompare[data-selected] { border-color: #b9c8de; background: #fff; box-shadow: inset 3px 0 0 #0c2740; }
+.setCompare table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: .76rem; font-variant-numeric: tabular-nums; }
+.setCompare caption { padding-bottom: .3rem; text-align: left; font-size: .8rem; font-weight: 700; line-height: 1.4; color: #0c2740; }
+.setCompare .setShown { font-weight: 600; color: #52627a; }
+.setCompare thead td { width: 38%; }
+.setCompare th, .setCompare td { padding: .35rem .3rem; border-top: 1px solid #e5eaf2; vertical-align: top; line-height: 1.4; overflow-wrap: anywhere; }
+.setCompare thead th, .setCompare thead td { border-top: 0; vertical-align: bottom; font-size: .7rem; font-weight: 650; color: #52627a; text-align: left; }
+.setCompare tbody th { text-align: left; font-weight: 600; color: #3b4d68; }
+.setCompare tbody th small { display: block; margin-top: .1rem; font-size: .68rem; font-weight: 500; color: #5a6a80; }
+.setCompare tbody td { font-weight: 700; color: #0c2740; }
+.setCompare tbody td small { display: block; font-size: .7rem; font-weight: 600; color: #5a6a80; }
+.setCompare tbody tr[data-lead] th, .setCompare tbody tr[data-lead] td { border-top: 0; background: #eef3fb; }
+.setCompare > p { margin: .45rem 0 0; }
 .equity { margin-top: .8rem; padding: .7rem .8rem; border: 1px solid #e3dcf2; border-left: 4px solid #6a3d9a; border-radius: .6rem; background: #f8f5fd; }
 .equity p { margin: .3rem 0 0; }
 .equity p:first-child { margin-top: 0; color: #2e1f47; }
@@ -437,6 +480,14 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
   .mapFrame { height: clamp(360px, calc(100vh - 264px), 760px); }
   .momentLine { display: none; }
 }
+/* The narrow end of the two-column layout (a 1366 px laptop at 125 % is 1093 px wide): the cards column narrows to
+   as little as 300 px and the bar tightens, so that Play, the whole time readout and "Map layers" share one row.
+   The longest readout ("Thu 19 Sep 2024 · end of day (24:00 ICT)", about 300 px in either language) then has about
+   325 px even with a 17 px scrollbar; from 1240 px the usual column and spacing give it more than that. */
+@media (min-width: 1081px) and (max-width: 1239px) {
+  .layout { grid-template-columns: minmax(0, 1fr) clamp(300px, calc(100vw - 790px), 390px); gap: .75rem; }
+  .stageBar { gap: .5rem; padding-inline: .75rem; }
+}
 @media (max-width: 1080px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
 }
@@ -447,10 +498,30 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
   .field, .field select { width: 100%; }
   .field input[type="range"] { width: 100%; }
   .dock, .stageBar { padding-inline: .8rem; }
-  .play { flex: 1 1 auto; justify-content: center; }
-  .readout { flex-basis: 10rem; }
+  /* The bar is a fixed grid on phones: Play and "Map layers" on one row, the moment under them, then two reserved
+     lines for the summary. No row depends on the length of a label, so the map below never moves. */
+  .stageBar { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "play layers" "readout readout" "moment moment"; gap: .45rem .6rem; }
+  .play { grid-area: play; height: 48px; min-height: 0; padding: 0 .6rem; font-size: .8rem; line-height: 1.2; }
+  /* The long opening label may take two lines inside the fixed-height button. */
+  .playText { display: block; min-width: 0; text-align: left; }
+  .playText::after { display: none; }
+  .layersButton { grid-area: layers; height: 48px; min-height: 0; margin-left: 0; padding: 0 .7rem; }
+  .readout { grid-area: readout; }
+  .momentLine { grid-area: moment; display: -webkit-box; height: 2.7em; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; }
   .lead { font-size: .92rem; line-height: 1.55; }
-  .layersButton { margin-left: 0; }
+  /* One column over the map: the notes (right of the zoom control), the legend chip under them, and the bottom stack
+     above the attribution. The notes give way first when the map is short; an open legend takes their place. */
+  .mapOverlay { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 10px calc(var(--fg-attribution-h, 18px) + 8px); }
+  .mapNotes { position: static; flex: 0 1 auto; align-self: flex-end; align-content: start; min-height: 96px; max-width: calc(100% - 56px); overflow: hidden; }
+  /* Comparing: the notes start below the wrapped side labels (the column starts 10 px down, as the labels do) and end
+     6 px above the divider's handle, which sits at half the map's height and is 34 px tall. A note that does not fit
+     in that height is left out whole, never cut in mid-sentence: the wrapping column puts it beside the first one,
+     outside the box, where the overflow hides it. The comparison note comes first, so it is the one that stays. */
+  .mapNotes[data-compare] { display: flex; flex-flow: column wrap; align-items: flex-end; align-content: flex-start; min-height: 0; margin-top: max(42px, calc(8px + var(--fg-compare-labels-h, 0px))); max-height: calc(var(--fg-frame-h) / 2 - 33px - max(42px, calc(8px + var(--fg-compare-labels-h, 0px)))); }
+  .mapLegend { position: static; flex: 0 1 auto; min-height: 34px; max-width: 100%; max-height: none; }
+  .mapOverlay:has(> .mapLegend[open]) > .mapNotes { display: none; }
+  .mapOverlay:has(> .mapLegend[open]) > .mapLegend { margin-top: 102px; }
+  .mapFoot { position: static; flex: none; align-self: stretch; margin-top: auto; }
   .caption, .mudCue, .compareNote { font-size: .7rem; }
   .glossary div { grid-template-columns: minmax(0, 1fr); gap: 0; }
   /* The 640-unit hydrograph viewBox scales to about half size on phones; double its SVG text so it stays legible.

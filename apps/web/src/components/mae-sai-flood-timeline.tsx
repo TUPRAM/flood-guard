@@ -22,12 +22,6 @@ import {
   ARRIVAL_RAMP,
   arrivalClasses,
   assumptionCaveat,
-  buildArrivalLut,
-  buildDepthLut,
-  buildDurationLut,
-  buildFactorDepthLut,
-  buildPeopleLut,
-  buildResidentsLut,
   CHANNEL_RGBA,
   codeTimings,
   coverageComplete,
@@ -41,7 +35,6 @@ import {
   depthFactorKeys,
   districtStats,
   DURATION_CLASSES,
-  FACTOR_LUT_SIZE,
   facilitiesInWater,
   facilityDepth,
   facilityWet,
@@ -63,8 +56,6 @@ import {
   manifestRevision,
   namedRoadLengths,
   observationGap,
-  paintDepth,
-  paintLowConfidence,
   peopleKeys,
   phaseAt,
   projectToFrame,
@@ -82,9 +73,13 @@ import {
   thaiYear,
   TIMELINE_END_T,
   TIMELINE_MANIFEST_URL,
+  formatGeneratedAt,
+  licenceRows,
+  parseTimelineManifest,
   viirsDayAt,
   waterCandidates,
   type AreaGeometry,
+  type ExploratoryKnowledgeItem,
   type FacilityProps,
   type GeoCollection,
   type HourClass,
@@ -128,6 +123,7 @@ import {
   reportedShelterCheck,
   reportedSiteRole,
   scopeTotals,
+  shelterSetComparison,
   siteModelled,
   summarizeAccessSets,
   tambonResidents,
@@ -146,6 +142,20 @@ import {
   type ShelterSetChoice,
   type WaterMode,
 } from "@/lib/flood-timeline-link";
+import { COMPARE_LABEL_GAP_PX, COMPARE_LABEL_MIN_PX, compareLabelRoom, popupFit, ZOOM_CLEARANCE_PX } from "@/lib/flood-timeline-layout";
+import {
+  drawnWaterMode,
+  hatchesLowConfidence,
+  lowConfidenceKey,
+  paintWaterPlan,
+  residentsPendingText,
+  WATER_LEGEND_COPY,
+  waterPaintPlan,
+  type ResidentsGrid,
+  type ResidentsPending,
+  type WaterGrid,
+  type WaterTimings,
+} from "@/lib/flood-timeline-water";
 import { competitionPagesAvailable, POLICY_ROUTE } from "@/lib/policy-links";
 import { useLanguage } from "@/lib/use-language";
 import {
@@ -219,15 +229,12 @@ interface ReplayData {
  * HAND codes, optional depth-factor painter keys (`code | factor << 8`), the cells that can ever be wet, and (when the
  * manifest declares a low-confidence channel) the low-confidence cells among them with their hatch stripes.
  */
-interface HandRaster {
-  codes: Uint8Array;
-  factorKeys: Uint16Array | null;
-  candidates: Uint32Array;
+interface HandRaster extends WaterGrid {
   lowCells: Uint32Array | null;
   lowStripes: Uint8Array | null;
 }
 /** Residents on the water grid: density codes, people painter keys (`code | density << 8`), inhabited cells, colours per code. */
-interface PeopleRaster { density: Uint8Array; keys: Uint16Array; inhabited: Uint32Array; colours: Uint32Array }
+type PeopleRaster = ResidentsGrid;
 type LoadState = { status: "loading" } | { status: "error" } | { status: "ready"; data: ReplayData };
 type ObservationEntry = { observation: TimelineObservation; at: number };
 type AsyncPart<T> = { status: "loading" } | { status: "error" } | { status: "ready"; value: T } | { status: "absent" };
@@ -569,8 +576,12 @@ const DEFAULT_LAYERS: LayerVisibility = {
 };
 /** Water opacity while the imagery swipe is on, so the two images stay comparable under the model water. */
 const COMPARE_WATER_OPACITY = 0.3;
-/** Popups pan clear of the zoom control and the imagery notes (top) and of the attribution and legend (bottom). */
-const POPUP_PAN = { autoPan: true, autoPanPaddingTopLeft: [56, 96] as [number, number], autoPanPaddingBottomRight: [24, 48] as [number, number] };
+/** Popup body widths on a wide map; `popupFit` narrows them and sets the height and the pan paddings per map size. */
+const POPUP_WIDTH = { reported: 300, candidate: 290, gauge: 280 } as const;
+/** While a popup is open the map may pan this far (as a share of the replay area) past it, so a popup near the edge fits. */
+const POPUP_BOUNDS_PAD = 2;
+/** The map's usual panning limit around the replay area. */
+const MAP_BOUNDS_PAD = 0.35;
 /** Rain gauge marker: a small drop, so it never reads as a shelter or facility symbol. */
 const GAUGE_PATH = "M12 2.5C9 7 5.5 10.6 5.5 14.6a6.5 6.5 0 0 0 13 0C18.5 10.6 15 7 12 2.5z";
 const GAUGE_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="${GAUGE_PATH}"/></svg>`;
@@ -607,16 +618,34 @@ export function postEventOptical(
   return tFromDate(observation.local) >= tFromLocalDate(onset.start) ? observation : null;
 }
 
-/** Play button label: the whole window and its length at the start, "Play from here" mid-way, "Replay" at the end. */
+/**
+ * Play button label: the whole window and its length at the start, "Play from here" mid-way, "Replay" at the end.
+ * The seconds keep a non-breaking space before their unit, so a narrow button breaks the label before the bracket.
+ */
 export function playLabel(time: number, playing: boolean, language: Language): string {
   const th = language === "th";
   if (playing) return th ? "หยุดชั่วคราว" : "Pause";
   if (time >= TIMELINE_END_T - 1e-6) return th ? "เล่นอีกครั้ง" : "Replay";
   if (time <= START_T + 1e-6) {
     const seconds = Math.round((TIMELINE_END_T - time) * SECONDS_PER_DAY);
-    return th ? `เล่น 9 → 19 ก.ย. (${seconds} วินาที)` : `Play 9 → 19 Sep (${seconds} s)`;
+    return th ? `เล่น 9 → 19 ก.ย. (${seconds}\u00a0วินาที)` : `Play 9 → 19 Sep (${seconds}\u00a0s)`;
   }
   return th ? "เล่นต่อจากตรงนี้" : "Play from here";
+}
+
+/**
+ * Every label the Play button can show in a language. The button reserves the width of the widest one, so switching
+ * between Play and Pause never changes its width and nothing beside it moves.
+ */
+export function playLabels(language: Language): string[] {
+  // Up to the default start the label gives the seconds left, which differ by the hour.
+  const opening = Array.from({ length: Math.round(START_T * 24) + 1 }, (_, hour) => playLabel(hour / 24, false, language));
+  return [...new Set([
+    ...opening,
+    playLabel((START_T + TIMELINE_END_T) / 2, false, language),
+    playLabel(TIMELINE_END_T, false, language),
+    playLabel(START_T, true, language),
+  ])];
 }
 
 export function MaeSaiFloodTimeline() {
@@ -673,6 +702,7 @@ export function MaeSaiFloodTimeline() {
   const controllerRef = useRef<MapController | null>(null);
   const shareField = useRef<HTMLInputElement | null>(null);
   const layersButton = useRef<HTMLButtonElement | null>(null);
+  const layersPanel = useRef<HTMLDivElement | null>(null);
   const lastLinkWrite = useRef(0);
 
   const moveTo = useCallback((value: number) => {
@@ -687,7 +717,7 @@ export function MaeSaiFloodTimeline() {
     const { signal } = controller;
     (async () => {
       try {
-        const manifest = await fetchJson<TimelineManifest>(TIMELINE_MANIFEST_URL, signal);
+        const manifest = parseTimelineManifest(await fetchJson<unknown>(TIMELINE_MANIFEST_URL, signal));
         loadHand(manifest, signal).then(
           (raster) => { if (!signal.aborted) setHand(raster); },
           () => { if (!signal.aborted) setHandFailed(true); },
@@ -842,6 +872,17 @@ export function MaeSaiFloodTimeline() {
     () => (selectedSummary && accessInfo && derived ? accessLostSeries(selectedSummary, derived.stages, accessInfo.levels) : null),
     [selectedSummary, accessInfo, derived],
   );
+  // The reported set and the chosen plan size, each counted for both scopes: the access card shows them side by side.
+  const setComparisons = useMemo(() => {
+    if (!accessModel || !accessInfo || !derived) return null;
+    const both = (setId: string) => {
+      const index = accessInfo.sets.indexOf(setId);
+      if (index < 0) return null;
+      const counted = (model: typeof accessModel.all) => shelterSetComparison(model.summaries[index], model.totals, stage, derived.stages, accessInfo.levels);
+      return { all: counted(accessModel.all), flooded: counted(accessModel.flooded) };
+    };
+    return { reported: both(REPORTED_SET_ID), plan: both(planSetId(planK)) };
+  }, [accessModel, accessInfo, derived, stage, planK]);
   const scopeMask = scoped?.mask ?? null;
   const cutoffFrame = useMemo<CutoffFrame | null>(
     () => (showCutoff && nodes && selectedSetIndex >= 0 ? { nodes, setIndex: selectedSetIndex, levelIndex: accessLevel, mask: scopeMask, scope: accessScope } : null),
@@ -906,6 +947,12 @@ export function MaeSaiFloodTimeline() {
     return () => window.clearTimeout(timer);
   }, [linkReady, linkState]);
 
+  // Opening the "Map layers" drawer moves keyboard focus into it (it sits after the map and its markers in the page
+  // order); closing it hands focus back to the button (see `closeLayers`).
+  useEffect(() => {
+    if (layersOpen) layersPanel.current?.focus();
+  }, [layersOpen]);
+
   useEffect(() => {
     if (share.status === "manual") shareField.current?.select();
     if (share.status !== "copied") return;
@@ -948,6 +995,7 @@ export function MaeSaiFloodTimeline() {
     let resizeTimer: number | undefined;
     let resizeObserver: ResizeObserver | undefined;
     let attributionObserver: ResizeObserver | undefined;
+    let footObserver: ResizeObserver | undefined;
     const timers = new Set<number>();
     const frames = new Set<number>();
 
@@ -967,9 +1015,16 @@ export function MaeSaiFloodTimeline() {
         attributionObserver.observe(attributionElement);
         syncAttribution();
       }
-      if (frameElement) {
-        map.on("popupopen", () => { frameElement.dataset.popup = "open"; });
-        map.on("popupclose", () => { delete frameElement.dataset.popup; });
+      // The note and button stack above the attribution: the legend and the popups keep clear of its measured height.
+      const footElement = frameElement?.querySelector<HTMLElement>("[data-map-foot]") ?? null;
+      if (footElement && frameElement) {
+        const syncFoot = () => {
+          const height = Math.ceil(footElement.offsetHeight);
+          frameElement.style.setProperty("--fg-foot-h", `${height > 0 ? height + 8 : 0}px`);
+        };
+        footObserver = new ResizeObserver(syncFoot);
+        footObserver.observe(footElement);
+        syncFoot();
       }
       const bounds = L.latLngBounds(m.bounds);
       const fit = () => {
@@ -977,8 +1032,50 @@ export function MaeSaiFloodTimeline() {
         map.fitBounds(bounds, { padding: [6, 6], animate: false });
         map.setMinZoom(Math.max(8, map.getZoom() - 1.5));
       };
-      map.setMaxBounds(bounds.pad(0.35));
+      const usualBounds = bounds.pad(MAP_BOUNDS_PAD);
+      map.setMaxBounds(usualBounds);
       fit();
+      // Popups: the notes and the legend step aside while one is open. At the fitted zoom the usual panning limit
+      // would pull the map back and leave a popup near the edge cut off, so the limit is wider while a popup is open.
+      let openPopups = 0;
+      let boundsWidened = false;
+      map.on("autopanstart", () => {
+        if (boundsWidened) return;
+        boundsWidened = true;
+        map.setMaxBounds(bounds.pad(POPUP_BOUNDS_PAD));
+      });
+      map.on("popupopen", () => {
+        openPopups += 1;
+        if (frameElement) frameElement.dataset.popup = "open";
+      });
+      map.on("popupclose", () => {
+        openPopups = Math.max(0, openPopups - 1);
+        if (frameElement && openPopups === 0) delete frameElement.dataset.popup;
+        if (disposed) return;
+        // Another popup may open in the same tick (a click on a second marker): restore the limit only if none did.
+        const timer = window.setTimeout(() => {
+          timers.delete(timer);
+          if (disposed || openPopups > 0 || !boundsWidened) return;
+          boundsWidened = false;
+          map.setMaxBounds(usualBounds);
+        }, 0);
+        timers.add(timer);
+      });
+      /** Size a layer's popup for the map as it is right now, then build its content. */
+      const fitted = (layer: Layer, preferredWidth: number, content: () => HTMLElement) => () => {
+        const popup = layer.getPopup();
+        if (popup) {
+          const size = map.getSize();
+          const footHeight = footElement?.offsetHeight ?? 0;
+          Object.assign(popup.options, popupFit({
+            mapWidth: size.x,
+            mapHeight: size.y,
+            preferredWidth,
+            bottomReserved: (attributionElement?.offsetHeight ?? 0) + (footHeight > 0 ? footHeight + 8 : 0),
+          }));
+        }
+        return content();
+      };
 
       for (const [name, zIndex] of [
         ["fg-imagery", 250], ["fg-compare-left", 251], ["fg-compare-right", 252], ["fg-water", 350], ["fg-viirs", 355], ["fg-cutoff", 360],
@@ -1096,54 +1193,29 @@ export function MaeSaiFloodTimeline() {
         };
       }
       /**
-       * Paint through the shared LUT path: one key array, one LUT, one set of cells, buffers reused between paints.
-       * The residents view paints inhabited cells instead of wet-able ones, so the canvas is cleared when the cell set changes.
-       * In the depth and people views, wet low-confidence cells (filled or dead-flat low ground) are then washed out and hatched.
+       * Paint through the shared plan (`waterPaintPlan`): one key array, one LUT, one set of cells, buffers reused
+       * between paints. The residents view paints inhabited cells instead of wet-able ones, so the canvas is cleared
+       * when the cell set changes. Wet low-confidence cells are washed out and hatched in every view that draws water.
        */
+      const waterTimings: WaterTimings = { arrivalHour: analysis.timings.arrivalHour, hoursUnder: analysis.timings.hoursUnder, arrival: analysis.arrival };
       const paintWater = (layer: WaterLayer, raster: HandRaster, frame: MapFrame) => {
-        let keys: Uint8Array | Uint16Array = raster.codes;
-        let cells = raster.candidates;
-        let size = 256;
-        let build: (out: Uint32Array) => Uint32Array;
-        const people = frame.people;
-        if (frame.waterMode === "people" && people) {
-          keys = people.keys;
-          size = FACTOR_LUT_SIZE;
-          build = (out) => buildPeopleLut(frame.stage, m.hand.step_m, people.colours, LITTLE_ENDIAN, out);
-        } else if (frame.waterMode === "residents" && people) {
-          keys = people.density;
-          cells = people.inhabited;
-          build = (out) => buildResidentsLut(people.colours, out);
-        } else if (frame.waterMode === "arrival") {
-          build = (out) => buildArrivalLut(analysis.timings.arrivalHour, analysis.arrival, frame.hour, LITTLE_ENDIAN, out);
-        } else if (frame.waterMode === "duration") {
-          build = (out) => buildDurationLut(analysis.timings.hoursUnder, LITTLE_ENDIAN, out);
-        } else if (raster.factorKeys) {
-          keys = raster.factorKeys;
-          size = FACTOR_LUT_SIZE;
-          build = (out) => buildFactorDepthLut(frame.stage, m.hand.step_m, LITTLE_ENDIAN, out);
-        } else {
-          build = (out) => buildDepthLut(frame.stage, m.hand.step_m, LITTLE_ENDIAN, out);
-        }
-        const low = (frame.waterMode === "depth" || frame.waterMode === "people") && raster.lowCells && raster.lowStripes
-          ? { cells: raster.lowCells, stripes: raster.lowStripes }
-          : null;
+        const plan = waterPaintPlan(frame.waterMode, frame, raster, frame.people, waterTimings, m.hand.step_m, LITTLE_ENDIAN);
+        const size = plan.lutSize;
         const spare = layer.spares.get(size) ?? new Uint32Array(size);
-        const lut = build(spare);
-        if (layer.lastKeys === keys && layer.lastCandidates === cells && layer.lastLow === (low !== null) && lutEquals(layer.lastLut, lut)) {
+        const lut = plan.buildLut(spare);
+        if (layer.lastKeys === plan.keys && layer.lastCandidates === plan.cells && layer.lastLow === (plan.low !== null) && lutEquals(layer.lastLut, lut)) {
           layer.spares.set(size, spare);
           return;
         }
-        if (layer.lastCandidates !== cells) layer.pixels.fill(0);
-        paintDepth(keys, cells, lut, layer.pixels);
-        if (low) paintLowConfidence(low.cells, low.stripes, layer.pixels, LITTLE_ENDIAN);
-        layer.lastLow = low !== null;
+        if (layer.lastCandidates !== plan.cells) layer.pixels.fill(0);
+        paintWaterPlan(plan, lut, layer.pixels, LITTLE_ENDIAN);
+        layer.lastLow = plan.low !== null;
         layer.context.putImageData(layer.image, 0, 0);
         if (layer.lastLut && layer.lastLut.length === size) layer.spares.set(size, layer.lastLut);
         else layer.spares.delete(size);
         layer.lastLut = lut;
-        layer.lastKeys = keys;
-        layer.lastCandidates = cells;
+        layer.lastKeys = plan.keys;
+        layer.lastCandidates = plan.cells;
       };
 
       // --- "People cut off": resident nodes that lost access, drawn as population-weighted blobs on a canvas
@@ -1281,6 +1353,12 @@ export function MaeSaiFloodTimeline() {
         L.geoJSON(replay.roads as unknown as Parameters<typeof L.geoJSON>[0], unmodelledRoadOptions),
       ]);
       let highlight: LayerGroup | null = null;
+      /** The "open this site's popup when the map settles" handler of the last "Show on the map", while it waits. */
+      let pendingPopup: (() => void) | null = null;
+      const cancelPendingPopup = () => {
+        if (pendingPopup) map.off("moveend", pendingPopup);
+        pendingPopup = null;
+      };
 
       const facilities: FacilityEntry[] = [];
       const facilityRenderer = L.svg({ pane: "fg-facilities" });
@@ -1359,7 +1437,7 @@ export function MaeSaiFloodTimeline() {
           riseOnHover: true,
           zIndexOffset: 2000,
         });
-        marker.bindPopup(() => reportedPopup(shelter), { maxWidth: 300, maxHeight: 300, className: styles.popupFrame, ...POPUP_PAN });
+        marker.bindPopup(fitted(marker, POPUP_WIDTH.reported, () => reportedPopup(shelter)), { className: styles.popupFrame, autoPan: true });
         popupLayers.push(marker);
         const markerTitle = () => `${command
           ? tr("Relief and command site (2024), not a shelter", `ศูนย์บัญชาการและจุดช่วยเหลือ ปี ${thaiYear(2024)} ไม่ใช่ที่พักพิง`)
@@ -1446,7 +1524,7 @@ export function MaeSaiFloodTimeline() {
             (eligible ? eligibleGroup : ineligibleGroup).addLayer(layer);
             hoverTip(layer, () => `${eligible ? tr("Eligible shelter candidate", "สถานที่ที่เข้าเกณฑ์") : tr("Candidate, not eligible", "สถานที่ที่ไม่เข้าเกณฑ์")}: ${candidateTitle(candidate, popupLanguage())}`, -6);
           }
-          layer.bindPopup(() => candidatePopup(candidate), { maxWidth: 290, className: styles.popupFrame, ...POPUP_PAN });
+          layer.bindPopup(fitted(layer, POPUP_WIDTH.candidate, () => candidatePopup(candidate)), { className: styles.popupFrame, autoPan: true });
           candidatePopups.push(layer);
           candidateMarkers.set(candidate.id, layer);
         }
@@ -1497,7 +1575,7 @@ export function MaeSaiFloodTimeline() {
           riseOnHover: true,
           attribution: RAIN_CREDIT,
         });
-        marker.bindPopup(() => {
+        marker.bindPopup(fitted(marker, POPUP_WIDTH.gauge, () => {
           const lang = popupLanguage();
           const lines: PopupLine[] = [
             { text: rainStationName(station, lang), tone: "title" },
@@ -1509,7 +1587,7 @@ export function MaeSaiFloodTimeline() {
             { text: `${tr("Source", "แหล่งข้อมูล")}: `, value: { text: `${rain!.source} (${rain!.licence})`, lang: "en" }, tone: "muted" },
           ];
           return popupElement(lines, [{ href: rain!.source_url, text: rain!.source_url }]);
-        }, { maxWidth: 280, className: styles.popupFrame, ...POPUP_PAN });
+        }), { className: styles.popupFrame, autoPan: true });
         popupLayers.push(marker);
         const gaugeTitle = () => `${tr("Rain gauge (observed)", "สถานีวัดฝน (ตรวจวัดจริง)")}: ${station.code} ${rainStationName(station, popupLanguage())}`;
         hoverTip(marker, gaugeTitle);
@@ -1625,6 +1703,7 @@ export function MaeSaiFloodTimeline() {
           }
         },
         focusRoads(group, instant) {
+          cancelPendingPopup();
           highlight?.remove();
           highlight = null;
           if (!group) {
@@ -1660,8 +1739,19 @@ export function MaeSaiFloodTimeline() {
           highlight = null;
           const group = kind === "reported" ? reportedGroup : [planGroup, eligibleGroup, ineligibleGroup].find((item) => item.hasLayer(layer));
           if (group) setGroup(group, true);
+          // The popup opens once the map has settled on the site: opened during the move, its auto-pan would be
+          // worked out from the old view and could leave it outside the map.
+          cancelPendingPopup();
+          map.closePopup();
+          map.stop();
+          const open = () => {
+            pendingPopup = null;
+            layer.openPopup();
+            refreshTitles();
+          };
+          pendingPopup = open;
+          map.once("moveend", open);
           map.setView(layer.getLatLng(), Math.max(map.getZoom(), 15), { animate: !instant });
-          layer.openPopup();
           refreshTitles();
         },
         setViirs(day) {
@@ -1711,6 +1801,7 @@ export function MaeSaiFloodTimeline() {
       for (const frame of frames) cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
       attributionObserver?.disconnect();
+      footObserver?.disconnect();
       controllerRef.current = null;
       setMapReady(false);
       mounted?.stop();
@@ -2038,7 +2129,11 @@ export function MaeSaiFloodTimeline() {
     ] as [WaterMode, string][] : []),
   ];
   const residentsMode = waterMode === "people" || waterMode === "residents";
-  const legendWaterMode = residentsMode && !peopleRaster ? "depth" : waterMode;
+  // The legend names the view the map draws: a resident view shows water depth until the residents raster is ready.
+  const legendWaterMode = drawnWaterMode(waterMode, peopleRaster !== null);
+  const residentsPending: ResidentsPending = residentsMode && legendWaterMode !== waterMode
+    ? population.status === "error" ? "error" : "loading"
+    : null;
   const residentsStatus = residentsMode && manifest?.population
     ? population.status === "error"
       ? t("The residents layer could not be loaded; the map shows water depth instead.", "โหลดชั้นข้อมูลผู้อยู่อาศัยไม่สำเร็จ แผนที่จึงแสดงความลึกของน้ำแทน")
@@ -2070,7 +2165,8 @@ export function MaeSaiFloodTimeline() {
     viirs: showViirs ? viirsInfo : null,
     gauges: showGauges && !!rainfall,
     facilities: showFacilities,
-    lowConfidence: !!lowConfidence && !!hand?.lowCells && (legendWaterMode === "depth" || legendWaterMode === "people"),
+    lowConfidence: !!lowConfidence && !!hand?.lowCells && hatchesLowConfidence(legendWaterMode),
+    residentsPending,
   };
   const chronology = manifest?.sources.find((source) => source.id === "chronology") ?? null;
   // One-line "this moment" summary under the readout; phones show it because the story card sits far below the map.
@@ -2095,46 +2191,38 @@ export function MaeSaiFloodTimeline() {
       <div className={styles.container}>
         {intro}
         <div className={styles.layout}>
-          <section className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}>
+          {/* Escape closes the "Map layers" drawer from anywhere in this section (the map, the legend, Play, the
+              timeline), leaving focus where the reader is. Inside the drawer its own handler runs first and hands
+              focus back to the button. */}
+          <section className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && layersOpen) setLayersOpen(false);
+            }}>
             <div className={styles.stageBar}>
               <button type="button" className={styles.play} onClick={togglePlay} aria-keyshortcuts="Space" disabled={!manifest || !derived} data-testid="play-button">
-                <span aria-hidden="true">{playing ? "❚❚" : "▶"}</span>
-                {playLabel(time, playing, lang)}
+                <span aria-hidden="true" className={styles.playIcon}>{playing ? "❚❚" : "▶"}</span>
+                {/* `data-labels` holds every label the button can show; the style sheet uses it to reserve their width. */}
+                <span className={styles.playText} data-labels={playLabels(lang).join("\n")}>{playLabel(time, playing, lang)}</span>
               </button>
               <div className={styles.readout} data-testid="replay-readout">
-                <strong>{manifest ? moment : t("Loading the replay…", "กำลังโหลดการย้อนดูเหตุการณ์…")}</strong>
-                <span>{manifest ? `${phaseLabel} · ${stageText}` : "\u00a0"}</span>
+                <strong title={manifest ? moment : undefined}>{manifest ? moment : t("Loading the replay…", "กำลังโหลดการย้อนดูเหตุการณ์…")}</strong>
+                <span title={manifest ? `${phaseLabel} · ${stageText}` : undefined}>{manifest ? `${phaseLabel} · ${stageText}` : "\u00a0"}</span>
               </div>
               <button ref={layersButton} type="button" className={styles.layersButton} aria-expanded={layersOpen} aria-controls="mae-sai-map-layers"
-                onClick={() => setLayersOpen((value) => !value)} disabled={!derived}>
+                onClick={() => setLayersOpen((value) => !value)} disabled={!derived}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && layersOpen) setLayersOpen(false);
+                }}>
                 <span aria-hidden="true">≡</span>{t("Map layers", "ชั้นแผนที่")}
               </button>
-              <p className={styles.momentLine} data-testid="moment-line">{momentLine || "\u00a0"}</p>
+              <p className={styles.momentLine} data-testid="moment-line" title={momentLine || undefined}>{momentLine || "\u00a0"}</p>
             </div>
 
             <div className={styles.mapFrame}>
               <div ref={mapElement} className={styles.map} role="region" aria-label={t("Map of Mae Sai with imagery, reconstructed water, roads, shelters and key facilities", "แผนที่แม่สายพร้อมภาพดาวเทียม น้ำที่จำลอง ถนน ที่พักพิง และสถานที่สำคัญ")} />
-              {manifest && (
-                <div className={styles.mapNotes} data-compare={comparing || undefined}>
-                  {!comparing && <p className={styles.caption} data-testid="imagery-caption">{caption}</p>}
-                  {mudCue && <p className={styles.mudCue} data-testid="mud-cue">{mudCue}</p>}
-                  {compareNote && <p className={styles.compareNote} data-testid="compare-note">{compareNote}</p>}
-                  {viirsNote && <p className={styles.viirsNote} data-testid="viirs-note">{viirsNote}</p>}
-                </div>
-              )}
               {comparing && sides && mapReady && (
                 <>
-                  {/* A side narrower than ~15 % has no room for its label; the divider's value text still names both images. */}
-                  {comparePct >= 15 && (
-                    <p className={`${styles.compareLabel} ${styles.compareLabelLeft}`} style={{ right: `calc(${100 - comparePct}% + 16px)`, maxWidth: `max(0px, min(42%, calc(${comparePct}% - 72px)))` }}>
-                      ◀ {sideLabel(sides[0], compareLeft)}
-                    </p>
-                  )}
-                  {comparePct <= 85 && (
-                    <p className={`${styles.compareLabel} ${styles.compareLabelRight}`} style={{ left: `calc(${comparePct}% + 16px)`, maxWidth: `max(0px, min(42%, calc(${100 - comparePct}% - 26px)))` }}>
-                      {sideLabel(sides[1], compareRight)} ▶
-                    </p>
-                  )}
+                  <CompareLabels pct={comparePct} left={`◀ ${sideLabel(sides[0], compareLeft)}`} right={`${sideLabel(sides[1], compareRight)} ▶`} />
                   <CompareDivider
                     pct={comparePct}
                     onChange={setComparePct}
@@ -2155,31 +2243,49 @@ export function MaeSaiFloodTimeline() {
               {mapReady && !handFailed && hand && residentsStatus && (
                 <p className={`${styles.mapStatus}${population.status === "error" ? ` ${styles.mapWarning}` : ""}`} role={population.status === "error" ? "alert" : "status"}>{residentsStatus}</p>
               )}
-              {mapReady && focusedRoute && (
-                <button type="button" className={styles.clearSelection} onClick={resetRouteFocus}>
-                  <span aria-hidden="true">✕</span> {t("Clear route selection", "ล้างเส้นทางที่เลือก")}
-                </button>
-              )}
-              {mapReady && (basemapIssue || !online) && (
-                <p className={styles.basemapNote} role="status" data-testid="basemap-note">{online
-                  ? t(
-                    "The street basemap could not load; it needs an internet connection. Imagery, the water model and roads still show from this device.",
-                    "โหลดแผนที่ถนนพื้นฐานไม่ได้ เนื่องจากต้องใช้อินเทอร์เน็ต ภาพดาวเทียม แบบจำลองน้ำ และถนนยังแสดงจากอุปกรณ์นี้ได้",
-                  )
-                  : t(
-                    "Offline: the street basemap is online-only. Imagery, the water model and roads still show from this device.",
-                    "ออฟไลน์: แผนที่ถนนพื้นฐานใช้ได้เฉพาะเมื่อออนไลน์ ภาพดาวเทียม แบบจำลองน้ำ และถนนยังแสดงจากอุปกรณ์นี้ได้",
-                  )}</p>
-              )}
-              <details className={styles.mapLegend} open={legendOpen} onToggle={(event) => setLegendChoice(event.currentTarget.open)} data-testid="map-legend">
-                <summary>{t("Legend", "คำอธิบายสัญลักษณ์")}</summary>
-                <TimelineLegend {...legendProps} part="overlay" />
-                <details className={styles.symbolKey}>
-                  <summary>{t("Map symbols", "สัญลักษณ์บนแผนที่")}</summary>
-                  <TimelineLegend {...legendProps} part="symbols" />
+              {/* Everything drawn over the map besides the drawer: on phones one column, so the notes, the legend and the
+                  bottom stack can never overlap; on wide maps each keeps its own corner. */}
+              <div className={styles.mapOverlay}>
+                <div className={styles.mapNotes} data-compare={comparing || undefined} data-testid="map-notes">
+                  {manifest && (
+                    <>
+                      {!comparing && <p className={styles.caption} data-testid="imagery-caption">{caption}</p>}
+                      {/* While comparing, the comparison note leads: on a phone the notes end above the divider's handle. */}
+                      {compareNote && <p className={styles.compareNote} data-testid="compare-note">{compareNote}</p>}
+                      {mudCue && <p className={styles.mudCue} data-testid="mud-cue">{mudCue}</p>}
+                      {viirsNote && <p className={styles.viirsNote} data-testid="viirs-note">{viirsNote}</p>}
+                    </>
+                  )}
+                </div>
+                <details className={styles.mapLegend} open={legendOpen} onToggle={(event) => setLegendChoice(event.currentTarget.open)} data-testid="map-legend">
+                  <summary>{t("Legend", "คำอธิบายสัญลักษณ์")}</summary>
+                  <TimelineLegend {...legendProps} part="overlay" />
+                  <details className={styles.symbolKey}>
+                    <summary>{t("Map symbols", "สัญลักษณ์บนแผนที่")}</summary>
+                    <TimelineLegend {...legendProps} part="symbols" />
+                  </details>
                 </details>
-              </details>
-              <div id="mae-sai-map-layers" className={styles.layersPanel} hidden={!layersOpen} role="group" aria-label={t("Map layers", "ชั้นแผนที่")}
+                {/* One stack above the attribution: the basemap note over the "Clear route selection" button. */}
+                <div className={styles.mapFoot} data-map-foot="" data-testid="map-foot">
+                  {mapReady && (basemapIssue || !online) && (
+                    <p className={styles.basemapNote} role="status" data-testid="basemap-note">{online
+                      ? t(
+                        "The street basemap could not load; it needs an internet connection. Imagery, the water model and roads still show from this device.",
+                        "โหลดแผนที่ถนนพื้นฐานไม่ได้ เนื่องจากต้องใช้อินเทอร์เน็ต ภาพดาวเทียม แบบจำลองน้ำ และถนนยังแสดงจากอุปกรณ์นี้ได้",
+                      )
+                      : t(
+                        "Offline: the street basemap is online-only. Imagery, the water model and roads still show from this device.",
+                        "ออฟไลน์: แผนที่ถนนพื้นฐานใช้ได้เฉพาะเมื่อออนไลน์ ภาพดาวเทียม แบบจำลองน้ำ และถนนยังแสดงจากอุปกรณ์นี้ได้",
+                      )}</p>
+                  )}
+                  {mapReady && focusedRoute && (
+                    <button type="button" className={styles.clearSelection} onClick={resetRouteFocus} data-testid="clear-route">
+                      <span aria-hidden="true">✕</span> {t("Clear route selection", "ล้างเส้นทางที่เลือก")}
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div id="mae-sai-map-layers" ref={layersPanel} tabIndex={-1} className={styles.layersPanel} hidden={!layersOpen} role="group" aria-label={t("Map layers", "ชั้นแผนที่")}
                 onKeyDown={(event) => {
                   if (event.key !== "Escape") return;
                   event.stopPropagation();
@@ -2391,6 +2497,7 @@ export function MaeSaiFloodTimeline() {
                     scopeTotals={scoped?.totals ?? null}
                     allResidents={accessModel?.all.totals.population ?? accessInfo.totals.population}
                     floodedResidents={accessModel?.flooded.totals.population ?? shelterInfo.demand_people}
+                    comparison={setComparisons}
                     language={lang}
                     status={accessNodes.status === "error" || (accessModel && selectedSetIndex < 0) ? "error" : accessModel ? "ready" : "loading"}
                   />
@@ -2474,7 +2581,7 @@ export function MaeSaiFloodTimeline() {
                           ? t("Copying is not available here; select the link below and copy it.", "คัดลอกอัตโนมัติไม่ได้ในเบราว์เซอร์นี้ เลือกลิงก์ด้านล่างแล้วคัดลอกเอง")
                           : ""}
                     </p>
-                    <ReplayExportPanel source={exportSource} time={time} language={lang} waterOpacity={waterOpacity} />
+                    <ReplayExportPanel source={exportSource} time={time} language={lang} waterOpacity={waterOpacity} waterMode={waterMode} />
                   </div>
                 </section>
 
@@ -2517,6 +2624,14 @@ export function HowToRead({ manifest, language }: { manifest: TimelineManifest |
           "Timestamps: every figure is for the replay hour shown above the map (local time, ICT, UTC+7), not for today.",
           "เวลา: ตัวเลขทุกตัวเป็นค่า ณ ชั่วโมงของการย้อนดูที่แสดงเหนือแผนที่ (เวลาประเทศไทย UTC+7) ไม่ใช่เวลาปัจจุบัน",
         )}{manifest && <> {t("Source data", "ข้อมูลต้นทาง")}: <span lang="en">{manifest.source_timestamp}</span>.</>}</li>
+        <li data-testid="how-to-status">
+          {t("Status: ", "สถานะ: ")}<strong>{t("non-operational", "ไม่ใช้ในการปฏิบัติการ")}</strong>
+          {t(
+            ". A historical reconstruction for planning and exercises; it gives no priority score and no action class.",
+            " เป็นการจำลองย้อนหลังเพื่อการวางแผนและการฝึกซ้อม ไม่ให้คะแนนลำดับความสำคัญและไม่กำหนดระดับการดำเนินการ",
+          )}
+          {manifest && <GeneratedAt manifest={manifest} language={language} lead />}
+        </li>
         <li>{t("Assumptions and limits are listed in full under ", "สมมติฐานและข้อจำกัดทั้งหมดอยู่ใน ")}<a href="#mae-sai-sources" className={styles.inlineLink} onClick={openSources}>{t("Sources, assumptions and limits", "แหล่งข้อมูล สมมติฐาน และข้อจำกัด")}</a>.</li>
       </ul>
       <dl className={styles.glossary}>
@@ -2528,6 +2643,58 @@ export function HowToRead({ manifest, language }: { manifest: TimelineManifest |
   );
 }
 
+
+/**
+ * Side labels of the imagery swipe, each on its own side of the divider; the left one keeps clear of the zoom control.
+ * On a narrow map the labels wrap, so the taller one's height (--fg-compare-labels-h) and the map's height
+ * (--fg-frame-h) are measured for the style sheet: the notes start below the labels and stop above the divider's
+ * handle. A side with too little room has no label; the divider's value text still names both images.
+ */
+function CompareLabels({ pct, left, right }: { pct: number; left: string; right: string }) {
+  const leftLabel = useRef<HTMLParagraphElement>(null);
+  const rightLabel = useRef<HTMLParagraphElement>(null);
+  const [frameWidth, setFrameWidth] = useState<number | null>(null);
+  const room = frameWidth === null ? null : compareLabelRoom(frameWidth, pct);
+  const showLeft = pct >= 15 && (room === null || room.left >= COMPARE_LABEL_MIN_PX);
+  const showRight = pct <= 85 && (room === null || room.right >= COMPARE_LABEL_MIN_PX);
+  useEffect(() => {
+    const labels = [leftLabel.current, rightLabel.current].filter((label): label is HTMLParagraphElement => label !== null);
+    const frame = (labels[0] ?? null)?.parentElement ?? null;
+    if (!frame) return;
+    const sync = () => {
+      frame.style.setProperty("--fg-compare-labels-h", `${Math.ceil(Math.max(0, ...labels.map((label) => label.offsetHeight)))}px`);
+      frame.style.setProperty("--fg-frame-h", `${frame.clientHeight}px`);
+      setFrameWidth(frame.clientWidth);
+    };
+    sync();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(sync);
+    for (const label of labels) observer.observe(label);
+    observer.observe(frame);
+    return () => {
+      observer.disconnect();
+      frame.style.removeProperty("--fg-compare-labels-h");
+      frame.style.removeProperty("--fg-frame-h");
+    };
+  }, [showLeft, showRight]);
+  const gap = COMPARE_LABEL_GAP_PX;
+  return (
+    <>
+      {showLeft && (
+        <p ref={leftLabel} className={`${styles.compareLabel} ${styles.compareLabelLeft}`} data-testid="compare-label-left"
+          style={{ right: `calc(${100 - pct}% + ${gap.divider}px)`, maxWidth: `max(0px, min(42%, calc(${pct}% - ${gap.divider + ZOOM_CLEARANCE_PX}px)))` }}>
+          {left}
+        </p>
+      )}
+      {showRight && (
+        <p ref={rightLabel} className={`${styles.compareLabel} ${styles.compareLabelRight}`} data-testid="compare-label-right"
+          style={{ left: `calc(${pct}% + ${gap.divider}px)`, maxWidth: `max(0px, min(42%, calc(${100 - pct}% - ${gap.divider + gap.edge}px)))` }}>
+          {right}
+        </p>
+      )}
+    </>
+  );
+}
 
 /** Focusable vertical divider for the imagery swipe: pointer drag, arrow keys (Shift for 10 %), Home and End. */
 function CompareDivider({ pct, onChange, label, valueText }: { pct: number; onChange: (pct: number) => void; label: string; valueText: string }) {
@@ -2571,7 +2738,7 @@ function CompareDivider({ pct, onChange, label, valueText }: { pct: number; onCh
       }}
       onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)}
     >
-      <span className={styles.compareHandle} aria-hidden="true">‹ ›</span>
+      <span className={styles.compareHandle} aria-hidden="true" data-testid="compare-handle">‹ ›</span>
     </div>
   );
 }
@@ -2608,24 +2775,31 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
   return (
     <details className={styles.card} data-testid="sources-panel" id="mae-sai-sources">
       <summary>{t("Sources, assumptions and limits", "แหล่งข้อมูล สมมติฐาน และข้อจำกัด")}</summary>
-      {th && <p className={styles.muted}>ชื่อแหล่งข้อมูล สัญญาอนุญาต และข้อความที่ยังไม่มีคำแปลคงไว้เป็นภาษาอังกฤษตามต้นฉบับ</p>}
+      {th && <p className={styles.muted}>ชื่อแหล่งข้อมูล ชื่อสัญญาอนุญาตตามที่ผู้เผยแพร่กำหนด ข้อความแสดงที่มา และข้อความที่ยังไม่มีคำแปลคงไว้เป็นภาษาอังกฤษตามต้นฉบับ</p>}
       <h3>{t("Sources", "แหล่งข้อมูล")}</h3>
-      {/* Source names, licences and attributions stay as their publishers give them; known sentences are in Thai. */}
+      {/* Source names, published licence names and attributions stay as their publishers give them; licence wording
+          the project wrote itself and known sentences are in Thai. */}
       <ul className={styles.list}>
         {manifest.sources.map((source) => (
-          <li key={source.id}><strong lang="en">{source.name}</strong> — <span lang="en">{source.licence}. {source.attribution}.</span> <span className={styles.muted} lang="en">{source.timestamp}</span></li>
+          <li key={source.id}>
+            <strong lang="en">{plainManifestText(source.name)}</strong> — <LicenceText text={source.licence} language={language} />{" "}<span lang="en">{source.attribution}.</span>{" "}
+            {source.id === POPULATION_SOURCE_ID && manifest.population && <><Localized text={manifest.population.note} language={language} />{" "}</>}
+            <span className={styles.muted} lang="en">{source.timestamp}</span>
+          </li>
         ))}
-        {manifest.population && (
-          <li><strong lang="en">{plainManifestText(manifest.population.source)}</strong> — <span lang="en">{manifest.population.licence}.</span> <Localized text={manifest.population.note} language={language} /> <span className={styles.muted}>{manifest.population.timestamp}</span></li>
+        {/* Revisions before r4 list WorldPop only in the population block. */}
+        {manifest.population && !manifest.sources.some((source) => source.id === POPULATION_SOURCE_ID) && (
+          <li><strong lang="en">{plainManifestText(manifest.population.source)}</strong> — <LicenceText text={manifest.population.licence} language={language} /> <Localized text={manifest.population.note} language={language} /> <span className={styles.muted}>{manifest.population.timestamp}</span></li>
         )}
       </ul>
+      <LicencesByInput manifest={manifest} language={language} />
       {(viirs || rain) && (
         <>
           <h3>{t("Observed data shown with the model", "ข้อมูลที่สังเกตได้ซึ่งแสดงคู่กับแบบจำลอง")}</h3>
           <ul className={styles.list} data-testid="observed-sources">
             {viirs && (
               <li>
-                <strong lang="en">{viirs.product}</strong> — <span lang="en">{viirs.licence}. {viirs.attribution}.</span>{" "}
+                <strong lang="en">{viirs.product}</strong> — <LicenceText text={viirs.licence} language={language} />{" "}<span lang="en">{viirs.attribution}.</span>{" "}
                 <Localized text={viirs.nominal_overpass} language={language} />{" "}
                 <Localized text={viirs.comparison_rule} language={language} />{" "}
                 <Localized text={viirs.caveat} language={language} />{" "}
@@ -2634,7 +2808,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
             )}
             {rain && (
               <li>
-                <strong lang="en">{rain.source}</strong> — <span lang="en">{rain.licence}.</span> <Localized text={rain.note} language={language} />{" "}
+                <strong lang="en">{rain.source}</strong> — <LicenceText text={rain.licence} language={language} /> <Localized text={rain.note} language={language} />{" "}
                 {t("Units", "หน่วย")}: <Localized text={rain.units} language={language} />{th ? " " : ". "}
                 {t("Stations", "สถานี")}: {rain.stations.map((station) => `${station.code} ${rainStationName(station, language)} (${station.lat.toFixed(3)}, ${station.lon.toFixed(3)}; ${t(`${station.missing_hours} missing hours`, `ไม่มีข้อมูล ${station.missing_hours} ชั่วโมง`)})`).join("; ")}{th ? "" : "."}{" "}
                 <a href={rain.source_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{rain.source_url}</a>
@@ -2684,15 +2858,20 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
           );
         })}
       </ul>
+      <TuningDisclosure manifest={manifest} language={language} />
       <h3>{t("Limitations", "ข้อจำกัด")}</h3>
       <ul className={styles.list}>{manifest.limitations.map((item) => <li key={item}><Localized text={item} language={language} /></li>)}</ul>
       <p className={styles.muted}>{t(
         "Arrival, time under water and road-cut hours are counted on the replay's hourly grid: the assumed stage sampled at the start of each local hour, 9 Sep 00:00 to 19 Sep 23:00.",
         "เวลาที่เริ่มท่วม ระยะเวลาที่จมน้ำ และชั่วโมงที่ถนนถูกตัดขาด นับตามช่วงรายชั่วโมงของการย้อนดู โดยใช้ระดับน้ำสมมุติ ณ ต้นชั่วโมงเวลาท้องถิ่น ตั้งแต่ 9 ก.ย. 00:00 ถึง 19 ก.ย. 23:00",
       )}</p>
-      <p className={styles.muted}>
-        {t("Source timestamp", "เวลาของข้อมูลต้นทาง")}: {manifest.source_timestamp} · {manifest.timezone} · {manifest.study_id} {manifestRevision()} · {t("confidence", "ความเชื่อมั่น")}: {confidenceText}
+      <p className={styles.muted} data-testid="sources-footer">
+        {t("Source timestamp", "เวลาของข้อมูลต้นทาง")}: {manifest.source_timestamp} · {manifest.timezone} · {manifest.study_id} {manifestRevision()} · {t("confidence", "ความเชื่อมั่น")}: {confidenceText} · {t("status", "สถานะ")}: {t("non-operational", "ไม่ใช้ในการปฏิบัติการ")}
+        <GeneratedAt manifest={manifest} language={language} />
       </p>
+      {manifest.source_timestamp_note && (
+        <p className={styles.muted}><Localized text={manifest.source_timestamp_note} language={language} /></p>
+      )}
       {offlineCopy && (
         <p className={styles.muted}>{offlineCopy.failed === 0 && offlineCopy.cached === offlineCopy.total
           ? t(`Offline copy: this replay's ${offlineCopy.total} data files are saved on this device (the street basemap still needs internet).`, `สำเนาออฟไลน์: บันทึกไฟล์ข้อมูลของการย้อนดูนี้ ${offlineCopy.total} ไฟล์ไว้ในอุปกรณ์แล้ว (แผนที่ถนนพื้นฐานยังต้องใช้อินเทอร์เน็ต)`)
@@ -2715,11 +2894,93 @@ export function LowConfidenceEvidence({ hand, language }: { hand: TimelineManife
       <dt>{th ? "น้ำที่มีความเชื่อมั่นต่ำ" : "Low-confidence water"}</dt>
       <dd>
         {share && (th
-          ? `${km(share.low_confidence_km2)} จาก ${km(share.peak_flooded_km2)}\u00a0ตร.กม. ที่เปียกในช่วงระดับน้ำสูงสุดของแบบจำลองเป็นพื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง แผนที่และภาพที่ส่งออกแสดงส่วนนี้เป็นสีจางพร้อมลายเส้นทแยงในมุมมองความลึกและประชากร ส่วนนี้ยังนับรวมในตัวเลขพื้นที่น้ำท่วม ถนน ประชากร และการเข้าถึงทั้งหมด `
-          : `${km(share.low_confidence_km2)} of the ${km(share.peak_flooded_km2)}\u00a0km² wet at the modelled peak is flat or filled low ground in the elevation model; the map and the exports draw it paler and hatched in the depth and people views. It is still counted in every flooded-area, road, people and access figure. `)}
+          ? `${km(share.low_confidence_km2)} จาก ${km(share.peak_flooded_km2)}\u00a0ตร.กม. ที่เปียกในช่วงระดับน้ำสูงสุดของแบบจำลองเป็นพื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง แผนที่และภาพที่ส่งออกแสดงส่วนนี้เป็นสีจางพร้อมลายเส้นทแยงในทุกมุมมองที่แสดงน้ำ (ความลึก เวลาที่เริ่มท่วม จำนวนชั่วโมงที่จมน้ำ และประชากรในพื้นที่น้ำท่วม) ส่วนนี้ยังนับรวมในตัวเลขพื้นที่น้ำท่วม ถนน ประชากร และการเข้าถึงทั้งหมด `
+          : `${km(share.low_confidence_km2)} of the ${km(share.peak_flooded_km2)}\u00a0km² wet at the modelled peak is flat or filled low ground in the elevation model; the map and the exports draw it paler and hatched in every view that shows water (depth, first flooded, hours under water and people in flood water). It is still counted in every flooded-area, road, people and access figure. `)}
         {hand.low_confidence && <Localized text={hand.low_confidence.meaning} language={language} />}
       </dd>
     </div>
+  );
+}
+
+/** `sources[].id` of the residents grid; from r4 the population note is shown on that source line. */
+const POPULATION_SOURCE_ID = "worldpop";
+
+/**
+ * When the data files were generated, from the manifest's `generated_at` (a declared bake time, never a clock
+ * reading at page load). Nothing is shown for a revision without the field. `lead` starts a new sentence.
+ */
+export function GeneratedAt({ manifest, language, lead = false }: { manifest: Pick<TimelineManifest, "generated_at" | "generated_at_basis">; language: Language; lead?: boolean }) {
+  const stamp = formatGeneratedAt(manifest.generated_at, language);
+  if (!stamp) return null;
+  const th = language === "th";
+  const declared = manifest.generated_at_basis !== "newest_input_timestamp";
+  const label = declared
+    ? th ? "สร้างไฟล์ข้อมูลเมื่อ" : "Data files generated"
+    : th ? "ข้อมูลนำเข้าล่าสุดลงวันที่" : "Newest input dated";
+  return (
+    <span data-testid="generated-at">
+      {lead ? " " : " · "}{label}{th ? " " : ": "}<time dateTime={manifest.generated_at}>{stamp}</time>{lead ? (th ? "" : ".") : ""}
+    </span>
+  );
+}
+
+/**
+ * Licence and terms of every input, from `publication_eligibility` (r4 on). Names and published licence names
+ * ("CC BY 4.0", "ODbL 1.0") stay as published; licence wording the project wrote itself ("Project summary text",
+ * "No licence stated by the provider"), the terms and the conditions of use are shown in Thai. An input that is
+ * listed but not shown (product 4009 until its rights record is confirmed) is marked as such.
+ */
+export function LicencesByInput({ manifest, language }: { manifest: TimelineManifest; language: Language }) {
+  const eligibility = manifest.publication_eligibility;
+  if (!eligibility) return null;
+  const th = language === "th";
+  const t = (en: string, thai: string) => (th ? thai : en);
+  return (
+    <>
+      <h3>{t("Licence per input", "สัญญาอนุญาตของข้อมูลแต่ละชุด")}</h3>
+      <ul className={styles.list} data-testid="licences-by-input">
+        {licenceRows(manifest).map((row) => (
+          <li key={row.id} data-shown={row.shown}>
+            <strong lang="en">{plainManifestText(row.name)}</strong> — <LicenceText text={row.licence} language={language} />{" "}
+            <Localized text={row.terms} language={language} />
+            {!row.shown && <>{" "}<strong>{row.status ? <Localized text={row.status} language={language} /> : t("Not shown on this page.", "ยังไม่แสดงในหน้านี้")}</strong></>}
+          </li>
+        ))}
+      </ul>
+      <p className={styles.muted}>{t("Conditions of use", "เงื่อนไขการใช้")}: <Localized text={eligibility.scope} language={language} /></p>
+      <ul className={styles.list} data-testid="licence-conditions">
+        {eligibility.conditions.map((item) => <li key={item}><Localized text={item} language={language} /></li>)}
+      </ul>
+    </>
+  );
+}
+
+/**
+ * Which external figures were used, or already known, while the stage keyframes were tuned (`exploratory_knowledge`,
+ * r4 on). A figure used or known during tuning is never presented as an independent check.
+ */
+export function TuningDisclosure({ manifest, language }: { manifest: TimelineManifest; language: Language }) {
+  const disclosure = manifest.exploratory_knowledge;
+  if (!disclosure) return null;
+  const th = language === "th";
+  const t = (en: string, thai: string) => (th ? thai : en);
+  const tag = (item: ExploratoryKnowledgeItem) => (item.relation === "used_for_tuning"
+    ? t("Used for tuning", "ใช้ปรับแบบจำลอง")
+    : item.relation === "known_during_tuning"
+      ? t("Known during tuning", "ทราบขณะปรับแบบจำลอง")
+      : t("Not used for tuning", "ไม่ได้ใช้ปรับแบบจำลอง"));
+  return (
+    <>
+      <h3>{t("What was known when the model was tuned", "สิ่งที่ทราบขณะปรับแบบจำลอง")}</h3>
+      <p className={styles.muted}><Localized text={disclosure.purpose} language={language} /></p>
+      <ul className={styles.list} data-testid="tuning-disclosure">
+        {disclosure.items.map((item) => (
+          <li key={item.id} data-relation={item.relation}><strong>{tag(item)}:</strong> <Localized text={item.statement} language={language} /></li>
+        ))}
+        <li><Localized text={disclosure.depth_factor} language={language} /></li>
+        <li><Localized text={disclosure.rule} language={language} /></li>
+      </ul>
+    </>
   );
 }
 
@@ -2727,6 +2988,15 @@ export function LowConfidenceEvidence({ hand, language }: { hand: TimelineManife
 function Localized({ text, language }: { text: string; language: Language }) {
   const value = localized(text, language);
   return <span lang={value.lang}>{value.text}</span>;
+}
+
+/**
+ * A licence as the manifest gives it. A published licence name has no translation and is shown as published,
+ * marked English and closed with a full stop; wording the project wrote itself has a Thai rendering.
+ */
+function LicenceText({ text, language }: { text: string; language: Language }) {
+  const value = localized(text.replace(/\.$/, ""), language);
+  return <span lang={value.lang} data-licence="">{value.text}{value.lang === "th" ? "" : "."}</span>;
 }
 
 type ReplayDerived = {
@@ -2929,7 +3199,10 @@ export function WetFacilitiesCard({ facilities, stage, language }: { facilities:
   );
 }
 
-/** Sentinel-1 size check, rendered from `s1_anchor`; its scope is the whole image footprint, not the district. */
+/**
+ * Sentinel-1 size comparison, rendered from `s1_anchor`; its scope is the whole image footprint, not the district.
+ * The recession keyframes were tuned to this pass, so the page calls it calibration-informed, never a check.
+ */
 export function RadarCheck({ manifest, radarSpan, language }: { manifest: TimelineManifest; radarSpan: string; language: Language }) {
   const th = language === "th";
   const anchor = manifest.s1_anchor;
@@ -2942,31 +3215,39 @@ export function RadarCheck({ manifest, radarSpan, language }: { manifest: Timeli
   return (
     <div className={styles.anchor}>
       <p>{th
-        ? `ตรวจสอบกับเรดาร์ (Sentinel-1, ${radarSpan}): พื้นที่ ${newlyDark} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ แบบจำลองให้ขนาดใกล้เคียงกันคือ ${modelSize} ตร.กม. ที่ระดับน้ำ ${bestStage} ม. (ระดับในการจำลองขณะดาวเทียมผ่านคือ ${passStage} ม.) ความสอดคล้องเชิงตำแหน่งต่ำ (IoU ${iou}) จึงใช้ตรวจสอบขนาดพื้นที่ได้ แต่ไม่ใช่ตำแหน่ง`
-        : `Radar check (Sentinel-1, ${radarSpan}): ${newlyDark} km² turned newly water-like. The model reaches a similar size, ${modelSize} km², at a ${bestStage} m stage; the replay's stage at that pass is ${passStage} m. Spatial agreement is weak (IoU ${iou}), so this checks size, not location.`}</p>
+        ? `เทียบขนาดกับเรดาร์ (Sentinel-1, ${radarSpan}; มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ): พื้นที่ ${newlyDark} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ แบบจำลองให้ขนาดใกล้เคียงกันคือ ${modelSize} ตร.กม. ที่ระดับน้ำ ${bestStage} ม. (ระดับในการจำลองขณะดาวเทียมผ่านคือ ${passStage} ม.) จุดกำหนดระดับน้ำช่วงน้ำลดปรับตามภาพนี้ ขนาดที่ใกล้เคียงกันจึงเป็นผลจากการปรับ ความสอดคล้องเชิงตำแหน่งต่ำ (IoU ${iou}) จึงบอกได้เพียงขนาดพื้นที่ ไม่ใช่ตำแหน่ง`
+        : `Radar size comparison (Sentinel-1, ${radarSpan}; calibration-informed, not an independent check): ${newlyDark} km² turned newly water-like. The model reaches a similar size, ${modelSize} km², at a ${bestStage} m stage; the replay's stage at that pass is ${passStage} m. The recession keyframes were tuned to this pass, so the sizes agree by construction. Spatial agreement is weak (IoU ${iou}), so this constrains size, not location.`}</p>
       <p>
-        {scope && <>{th ? "ขอบเขตการตรวจสอบ: " : "Scope: "}<span lang={scope.lang}>{scope.text}</span>{" "}</>}
+        {scope && <>{th ? "ขอบเขตการเทียบ: " : "Scope: "}<span lang={scope.lang}>{scope.text}</span>{" "}</>}
         {th
-          ? "การตรวจสอบนี้ครอบคลุมทั้งขอบเขตภาพ รวมถึงท่าขี้เหล็ก (เมียนมา) ซึ่งต่างจากตัวเลขผลกระทบระดับอำเภอด้านบน"
-          : "Unlike the district impact figures above, this check covers the whole image footprint, including Tachileik (Myanmar)."}
+          ? "การเทียบนี้ครอบคลุมทั้งขอบเขตภาพ รวมถึงท่าขี้เหล็ก (เมียนมา) ซึ่งต่างจากตัวเลขผลกระทบระดับอำเภอด้านบน"
+          : "Unlike the district impact figures above, this comparison covers the whole image footprint, including Tachileik (Myanmar)."}
       </p>
     </div>
   );
 }
 
-/** Swatch of low-confidence water: a pale, hatched version of the water colour. */
-function LowConfidenceSwatch() {
-  return <i className={styles.lowConfidenceSwatch} aria-hidden="true" />;
+/**
+ * Swatch of low-confidence water in the view that is drawn: the stripe and the wash the map gives that view's colours
+ * (`lowConfidenceKey`), so the key is blue in the depth view and purple-grey in the first-flooded view, as the map is.
+ */
+function LowConfidenceSwatch({ waterMode, arrival }: { waterMode: WaterMode; arrival: readonly HourClass[] }) {
+  const key = lowConfidenceKey(waterMode, arrival);
+  return (
+    <i className={styles.lowConfidenceSwatch} aria-hidden="true" data-view={waterMode}
+      style={{ background: `repeating-linear-gradient(45deg, ${rgbaCss(key.stripe)} 0 2px, ${rgbaCss(key.wash)} 2px 5px)` }} />
+  );
 }
 
 /**
  * Map legend. `part` "overlay" is the compact on-map legend for what is drawn at this moment (the active water and
- * road modes, low-confidence water, and the scenario or observed layers the reader switched on); "symbols" is the
- * marker key (key facilities, shelters, gauges); the default draws both.
+ * road modes, low-confidence water in every view that shows water, and the scenario or observed layers the reader
+ * switched on); "symbols" is the marker key (key facilities, shelters, gauges); the default draws both. `waterMode`
+ * is the view the map draws (`drawnWaterMode`), which is water depth while a resident view waits for its raster.
  */
 export function TimelineLegend({
   language, unmodelledRoads, unmodelledFacilities, waterMode = "depth", roadMode = "state", arrival = [], densityMax, shelters, cutoff = false,
-  viirs = null, gauges = false, facilities = true, lowConfidence = false, part = "all",
+  viirs = null, gauges = false, facilities = true, lowConfidence = false, residentsPending = null, part = "all",
 }: {
   language: Language;
   unmodelledRoads: boolean;
@@ -2990,16 +3271,19 @@ export function TimelineLegend({
   gauges?: boolean;
   /** The key facilities (OSM) layer is shown. */
   facilities?: boolean;
-  /** Low-confidence water is drawn (the manifest declares its channel and the view is depth or people). */
+  /** Low-confidence water is drawn (the manifest declares its channel and the view shows water). */
   lowConfidence?: boolean;
+  /**
+   * A resident view is chosen but its raster is still loading or failed, so `waterMode` here is the depth view the
+   * map draws meanwhile; the legend says so.
+   */
+  residentsPending?: ResidentsPending;
   part?: "overlay" | "symbols" | "all";
 }) {
   const th = language === "th";
   const channel = <li><i style={{ background: rgbaCss(CHANNEL_RGBA) }} />{th ? "ร่องน้ำ/แม่น้ำ (น้ำตลอดเวลา)" : "River channel (always water)"}</li>;
   const lowConfidenceItem = lowConfidence && (
-    <li data-testid="low-confidence-legend"><LowConfidenceSwatch />{th
-      ? "น้ำที่มีความเชื่อมั่นต่ำ: พื้นที่ต่ำที่ราบเรียบหรือถูกถมในแบบจำลองความสูง"
-      : "Low-confidence water: flat or filled low ground in the elevation model"}</li>
+    <li data-testid="low-confidence-legend"><LowConfidenceSwatch waterMode={waterMode} arrival={arrival} />{WATER_LEGEND_COPY.lowConfidence[language]}</li>
   );
   const residentsView = (waterMode === "people" || waterMode === "residents") && densityMax !== undefined;
   const anyShelter = shelters && (shelters.reported || shelters.candidates || shelters.ineligible);
@@ -3014,31 +3298,34 @@ export function TimelineLegend({
         </div>
       ) : waterMode === "arrival" ? (
         <div>
-          <strong>{th ? "เวลาที่เริ่มท่วม (แบบจำลอง เวลาท้องถิ่น)" : "First flooded (model, local time)"}</strong>
+          <strong>{WATER_LEGEND_COPY.arrivalTitle[language]}</strong>
           <ul>
             {arrival.map((item) => <li key={item.from}><i style={{ background: rgbaCss(item.rgba) }} />{formatHourSpan(item.from, item.to, language)}</li>)}
             {arrival.length > 0 && (
-              <li><i style={{ background: rgbaCss([...arrival[0].rgba.slice(0, 3), ARRIVAL_PENDING_ALPHA]) }} />{th ? "ยังไม่ท่วม ณ ช่วงเวลานี้ (จาง)" : "Not yet flooded at this moment (faded)"}</li>
+              <li><i style={{ background: rgbaCss([...arrival[0].rgba.slice(0, 3), ARRIVAL_PENDING_ALPHA]) }} />{WATER_LEGEND_COPY.arrivalPending[language]}</li>
             )}
             {channel}
+            {lowConfidenceItem}
           </ul>
         </div>
       ) : waterMode === "duration" ? (
         <div>
-          <strong>{th ? "จำนวนชั่วโมงที่จมน้ำ 9–19 ก.ย. (แบบจำลอง)" : "Hours under water, 9–19 Sep (model)"}</strong>
+          <strong>{WATER_LEGEND_COPY.durationTitle[language]}</strong>
           <ul>
             {DURATION_CLASSES.map((item) => <li key={item.min}><i style={{ background: rgbaCss(item.rgba) }} />{item.label[language]}</li>)}
             {channel}
+            {lowConfidenceItem}
           </ul>
         </div>
       ) : (
         <div>
-          <strong>{th ? "ความลึกของน้ำ (แบบจำลอง)" : "Water depth (model)"}</strong>
+          <strong>{WATER_LEGEND_COPY.depthTitle[language]}</strong>
           <ul>
             {DEPTH_CLASSES.map((item) => <li key={item.label}><i style={{ background: rgbaCss(item.rgba) }} />{item.label.replace(" m", th ? "\u00a0ม." : "\u00a0m")}</li>)}
             <li><i style={{ background: rgbaCss(CHANNEL_RGBA) }} />{th ? "ร่องน้ำ/แม่น้ำ" : "River channel"}</li>
             {lowConfidenceItem}
           </ul>
+          {residentsPending && <p className={styles.legendPending} data-testid="legend-residents-pending">{residentsPendingText(residentsPending, language)}</p>}
         </div>
       ))}
       {overlay && (

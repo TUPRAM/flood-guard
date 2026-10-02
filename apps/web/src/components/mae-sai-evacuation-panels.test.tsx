@@ -29,10 +29,13 @@ import {
   reportedShelterCheck,
   reportedSiteCounts,
   scopeTotals,
+  shelterSetComparison,
   summarizeAccessSets,
   tambonResidents,
+  type AccessGroupSums,
 } from "@/lib/flood-timeline-evacuation";
 import { localizedText, plainManifestText } from "@/lib/flood-timeline-copy";
+import { findWordingViolations } from "@/lib/replay-wording-lint";
 import {
   AccessCard,
   AccessChart,
@@ -40,6 +43,7 @@ import {
   capacityFlagText,
   capacityText,
   CoverageCurve,
+  cutoffText,
   ExternalChecks,
   freeboardText,
   indefiniteArticle,
@@ -49,6 +53,7 @@ import {
   PeopleInWaterCard,
   reportedCheckText,
   ReportedSheltersCard,
+  SetComparisonTable,
   ShelterPlanCard,
   Term,
 } from "./mae-sai-evacuation-panels";
@@ -83,19 +88,38 @@ const radioChecked = (html: string, name: string, value: string) => {
   return Boolean(tag && /\schecked(=""|\s|\/|>)/.test(tag));
 };
 const noop = () => undefined;
-// Model outputs may say "not observed"; they must never present themselves as observed or live.
-const unsafeClaim = (value: string) => /\b(observed|real-time|live)\b/i.test(value.replaceAll(/not observed|not an? (official )?warning/gi, ""));
+// Model outputs may say "not observed"; they must never present themselves as observed, and they must pass the shared
+// replay wording lint (no affirmative real-time, live, forecast, warning or validation wording).
+const unsafeClaim = (value: string) => /\bobserved\b/i.test(value.replaceAll(/not observed/gi, "")) || findWordingViolations(value).length > 0;
 
-function accessCard(language: "en" | "th", set: "reported" | "plan", k = shelters.knee_k, stage = peak, scope: "flooded" | "all" = "all") {
+const replayStages = hourlyStages(manifest.stage_anchors);
+/** One shelter set counted for both scopes at `stage`, as the page passes it to the access card. */
+const bothScopes = (setId: string, stage: number) => {
+  const index = access.sets.indexOf(setId);
+  const counted = (model: (typeof scoped)["all"]) => shelterSetComparison(model.summaries[index], model.totals, stage, replayStages, access.levels);
+  return { all: counted(scoped.all), flooded: counted(scoped.flooded) };
+};
+const comparisons = (k: number, stage: number) => ({ reported: bothScopes(REPORTED_SET_ID, stage), plan: bothScopes(planSetId(k), stage) });
+const people = (value: number) => Math.round(value).toLocaleString("en-US");
+/** Text of the element with `testId` (tags stripped). */
+const cellText = (html: string, testId: string) => {
+  const match = new RegExp(`data-testid="${testId}"[^>]*>(.*?)</(?:td|p|div)>`, "s").exec(html);
+  if (!match) throw new Error(`No element with data-testid ${testId}`);
+  return text(match[1]).trim();
+};
+
+function accessCard(
+  language: "en" | "th", set: "reported" | "plan", k = shelters.knee_k, stage = peak, scope: "flooded" | "all" = "all", totals?: AccessGroupSums,
+) {
   const index = access.sets.indexOf(set === "reported" ? REPORTED_SET_ID : planSetId(k));
   const model = scoped[scope];
   const summary = model.summaries[index];
   return renderToStaticMarkup(
     <AccessCard access={access} shelters={shelters} snapshot={accessSnapshot(summary, stage, access.levels)}
-      series={accessLostSeries(summary, hourlyStages(manifest.stage_anchors), access.levels)} time={3.5} names={names}
+      series={accessLostSeries(summary, replayStages, access.levels)} time={3.5} names={names}
       tambonTotals={model.tambonTotals} shelterSet={set} planK={k} onShelterSet={noop} onPlanK={noop} showCutoff={false}
-      onShowCutoff={noop} scope={scope} onScope={noop} scopeTotals={model.totals} allResidents={scoped.all.totals.population}
-      floodedResidents={scoped.flooded.totals.population} language={language} status="ready" />,
+      onShowCutoff={noop} scope={scope} onScope={noop} scopeTotals={totals ?? model.totals} allResidents={scoped.all.totals.population}
+      floodedResidents={scoped.flooded.totals.population} comparison={comparisons(k, stage)} language={language} status="ready" />,
   );
 }
 
@@ -133,30 +157,134 @@ describe("People in flood water card", () => {
 });
 
 describe("Evacuation access card (scenario)", () => {
-  it("splits people without a dry shelter into lost during the flood and never within reach, and labels it a scenario", () => {
+  it("puts the two shelter sets side by side with both denominators, in the agreed order, and labels it a scenario", () => {
+    const html = accessCard("en", "reported");
+    const plain = text(html);
+    expect(plain).toContain("Walking access to a dry shelter (scenario)");
+    expect(plain).toContain("T1 SCENARIO (MODEL) · EVACUATION ACCESS");
+    expect(plain).toContain("not observed evacuation outcomes");
+    // The eight figures of the roadmap critic, each with its own denominator.
+    expect(cellText(html, "compare-reported-all-baseline")).toBe("34,525 of 81,799");
+    expect(cellText(html, "compare-reported-all-lost")).toBe("7,086 of 34,525 (21%)");
+    expect(cellText(html, "compare-reported-flooded-baseline")).toBe("5,698 of 14,169");
+    expect(cellText(html, "compare-reported-flooded-keeping")).toBe("299");
+    expect(cellText(html, "compare-plan-all-baseline")).toBe("24,910 of 81,799");
+    expect(cellText(html, "compare-plan-all-lost")).toBe("13,429 of 24,910 (54%)");
+    expect(cellText(html, "compare-plan-flooded-baseline")).toBe("7,580 of 14,169");
+    expect(cellText(html, "compare-plan-flooded-keeping")).toBe("460");
+    // Newly lost uses the set's own baseline as denominator, never the scope total.
+    expect(cellText(html, "compare-reported-flooded-lost")).toBe("5,400 of 5,698 (95%)");
+    expect(cellText(html, "compare-plan-flooded-lost")).toBe("7,120 of 7,580 (94%)");
+    // Reported set: within reach before the flood, keeping access, newly lost, then the cut-off hour.
+    const at = (testId: string) => html.indexOf(`data-testid="${testId}"`);
+    const reportedOrder = ["baseline", "keeping", "lost", "cutoff"].map((row) => at(`compare-reported-all-${row}`));
+    expect(reportedOrder.every((position) => position > 0)).toBe(true);
+    expect([...reportedOrder].sort((a, b) => a - b)).toEqual(reportedOrder);
+    // Both columns are always present: all residents first, then residents whose homes flood.
+    expect(at("compare-reported-all-baseline")).toBeLessThan(at("compare-reported-flooded-baseline"));
+    expect(html.match(/<th scope="col">All residents at road nodes<\/th><th scope="col">Residents whose homes flood at the peak<\/th>/g)).toHaveLength(2);
+    // The set shown on the map is marked; that is the only difference between the two tables' frames.
+    expect(html).toMatch(/data-testid="set-compare-reported" data-selected=""/);
+    expect(html).not.toMatch(/data-testid="set-compare-plan" data-selected/);
+    expect(accessCard("en", "plan")).toMatch(/data-testid="set-compare-plan" data-selected=""/);
+    expect(plain).toContain(`Shelters reported used in Sep 2024 (${reportedSiteCounts(shelters).counted} sites counted) · shown on the map and in the chart`);
+    expect(plain).not.toContain("Plan size k");
+    expect(plain).not.toMatch(/\bnow\b/);
+    expect(unsafeClaim(plain)).toBe(false);
+  });
+
+  it("leads the ranked plan with its cut-off hour and explains its loss at the peak instead of presenting it as failure", () => {
+    const html = accessCard("en", "plan");
+    const plain = text(html);
+    const at = (testId: string) => html.indexOf(`data-testid="${testId}"`);
+    const planOrder = ["cutoff", "baseline", "keeping", "lost"].map((row) => at(`compare-plan-all-${row}`));
+    expect(planOrder.every((position) => position > 0)).toBe(true);
+    expect([...planOrder].sort((a, b) => a - b)).toEqual(planOrder);
+    expect(html).toMatch(/<tr data-lead="">/);
+    expect(html.match(/data-lead=""/g)).toHaveLength(1);
+    // Hours are replay hours from the illustrative stage keyframes.
+    expect(cellText(html, "compare-plan-flooded-cutoff")).toBe("10 Sep 23:00");
+    expect(cellText(html, "compare-plan-all-cutoff")).toBe("11 Sep 10:00");
+    expect(cellText(html, "compare-reported-flooded-cutoff")).toBe("10 Sep 22:00");
+    expect(cellText(html, "compare-reported-all-cutoff")).toBe("Not reached in this replay: at least half keep access at every hour");
+    expect(plain).toContain("Modelled access cut-off hour First replay hour when fewer than half of those within reach before the flood still have access");
+    expect(plain).toContain("Newly lost because of the flood Out of those within reach before it");
+    expect(cellText(html, "set-comparison-label")).toBe(
+      "T1 scenario (model). Each set is counted two ways: all residents at road nodes, and residents whose homes flood at the modelled peak. No single figure ranks the sets; read both columns. Hours from illustrative stage keyframes, not observed.",
+    );
+    expect(cellText(html, "plan-reading")).toBe(
+      "How to read the plan: it is built for evacuating before the water rises, on normal roads, so its cut-off hour comes first. The loss at the modelled peak counts residents who are still at home by then; it does not grade the choice of sites.",
+    );
+    // The reported set gets no such note: its sites were in use during the flood.
+    expect(html.match(/data-testid="plan-reading"/g)).toHaveLength(1);
+    expect(unsafeClaim(plain)).toBe(false);
+  });
+
+  it("has no headline that ranks the sets and no winner wording, in either language", () => {
+    for (const set of ["reported", "plan"] as const) {
+      for (const scope of ["all", "flooded"] as const) {
+        const html = accessCard("en", set, shelters.knee_k, peak, scope);
+        const plain = text(html);
+        // No alert-toned hero figure and no KPI tile: every figure sits in a table row with its denominator.
+        expect(html).not.toContain("data-tone=");
+        expect(html).not.toContain('data-testid="access-lost"');
+        expect(plain).not.toMatch(/better|best|worse|worst|outperform|winner|beats|superior|fail(s|ed|ure)?\b|last safe departure/i);
+        const thai = text(accessCard("th", set, shelters.knee_k, peak, scope));
+        expect(thai).not.toMatch(/ดีกว่า|แย่กว่า|ดีที่สุดคือ|ชนะ|ล้มเหลว|ออกเดินทางอย่างปลอดภัย/);
+        expect(findWordingViolations(plain)).toEqual([]);
+        expect(findWordingViolations(thai)).toEqual([]);
+      }
+    }
+    // The comparison does not depend on the chosen scope or set: only the marker moves.
+    const strip = (html: string) => /data-testid="set-comparison">(.*?)<p class="[^"]*" data-testid="access-without"/s.exec(html)![1].replace(/ data-selected=""/g, "").replace(/<span[^>]*data-testid="set-shown"[^>]*>.*?<\/span>/g, "");
+    expect(strip(accessCard("en", "reported", shelters.knee_k, peak, "all"))).toBe(strip(accessCard("en", "plan", shelters.knee_k, peak, "flooded")));
+  });
+
+  it("renders the comparison in Thai with the same figures and the hours label", () => {
+    const html = accessCard("th", "plan");
+    const plain = text(html);
+    expect(plain).toContain("สถานการณ์จำลองระดับ T1 (แบบจำลอง) · การเข้าถึงการอพยพ");
+    expect(plain).toContain("ชุดที่พักพิงสองชุดเทียบกัน");
+    expect(plain).toContain("ไม่มีตัวเลขใดตัวเลขเดียวที่ใช้จัดอันดับชุดที่พักพิง");
+    expect(plain).toContain("ชั่วโมงมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่ค่าที่สังเกตได้");
+    expect(cellText(html, "compare-reported-all-baseline")).toBe("34,525 จาก 81,799");
+    expect(cellText(html, "compare-plan-all-lost")).toBe("13,429 จาก 24,910 (54%)");
+    expect(cellText(html, "compare-plan-flooded-cutoff")).toBe("10 ก.ย. 23:00 น.");
+    expect(cellText(html, "compare-reported-all-cutoff")).toBe("ไม่ถึงเกณฑ์ในการย้อนดูนี้: อย่างน้อยครึ่งหนึ่งยังเดินถึงได้ทุกชั่วโมง");
+    expect(cellText(html, "plan-reading")).toContain("วิธีอ่านแผน: แผนนี้ออกแบบสำหรับการอพยพก่อนน้ำขึ้น");
+    expect(plain).toContain("ผู้อยู่อาศัยทั้งหมดที่จุดถนน");
+    expect(plain).toContain("ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุด");
+    expect(plain).toContain("แสดงบนแผนที่และในกราฟ");
+  });
+
+  it("words a missing cut-off hour and a set nobody can reach, and shows a dash for a share without a baseline", () => {
+    expect(cutoffText({ status: "reached", hour: 46 }, "en")).toBe("10 Sep 22:00");
+    expect(cutoffText({ status: "reached", hour: 46 }, "th")).toBe("10 ก.ย. 22:00 น.");
+    expect(cutoffText({ status: "not_reached", hour: null }, "en")).toContain("Not reached in this replay");
+    expect(cutoffText({ status: "no_baseline", hour: null }, "en")).toBe("None: no resident of this group has a shelter of this set within reach");
+    expect(cutoffText({ status: "no_baseline", hour: null }, "th")).toContain("ไม่มีผู้อยู่อาศัยกลุ่มนี้");
+    const none = { residents: 120, baseline: 0, keeping: 0, lost: 0, lostShare: null, vulnerableBaseline: 0, vulnerableLost: 0, cutoff: { status: "no_baseline", hour: null } } as const;
+    const html = renderToStaticMarkup(<SetComparisonTable kind="reported" title="A set" comparison={{ all: none, flooded: none }} selected={false} language="en" />);
+    expect(cellText(html, "compare-reported-all-baseline")).toBe("0 of 120");
+    expect(cellText(html, "compare-reported-all-lost")).toBe("—");
+    expect(cellText(html, "compare-reported-all-cutoff")).toContain("None: no resident of this group");
+    expect(html).not.toContain("data-selected");
+    expect(html).not.toContain("plan-reading");
+  });
+
+  it("states who is without a shelter for the chosen set and scope as context, after the comparison", () => {
     const summary = summaries[access.sets.indexOf(REPORTED_SET_ID)];
     const snapshot = accessSnapshot(summary, peak, access.levels);
     const html = accessCard("en", "reported");
     const plain = text(html);
-    expect(plain).toContain("Walking access to a dry shelter (scenario)");
-    expect(plain).toContain("not observed evacuation outcomes");
-    expect(plain).toContain(`${Math.round(snapshot.lost.population + snapshot.never.population).toLocaleString("en-US")} / ${access.totals.population.toLocaleString("en-US")}`);
-    // The flood's own effect is the hero figure; residents already out of reach are grey context after it.
-    const hero = html.indexOf('data-testid="access-lost"');
-    const context = html.indexOf('data-testid="access-never"');
-    expect(hero).toBeGreaterThan(0);
-    expect(context).toBeGreaterThan(hero);
-    expect(plain).toContain(`Lost walking access because of the flood, at this replay hour ${Math.round(snapshot.lost.population).toLocaleString("en-US")} of ${access.totals.population.toLocaleString("en-US")}`);
-    expect(plain).toContain(`Already more than 2 km from a shelter of this set before the flood ${Math.round(snapshot.never.population).toLocaleString("en-US")}`);
-    expect(html).toMatch(/data-tone="alert" data-testid="access-lost"/);
-    expect(html).not.toMatch(/data-tone="[a-z]+" data-testid="access-never"/);
-    expect(plain).not.toMatch(/\bnow\b/);
+    expect(html.indexOf('data-testid="access-without"')).toBeGreaterThan(html.indexOf('data-testid="set-compare-plan"'));
+    expect(cellText(html, "access-without")).toBe(
+      `Shelters reported used in Sep 2024, all residents at road nodes: ${people(snapshot.lost.population + snapshot.never.population)} / ${people(access.totals.population)} have no dry shelter of this set within a 2 km walk at this replay hour (${people(snapshot.lost.population)} lost it because of the flood; ${people(snapshot.never.population)} were already out of reach before it). Modelled residents (WorldPop 2020).`,
+    );
     expect(plain).toContain("Evacuation Equity Gap");
     expect(plain).toContain("terrain/remoteness proxy");
     expect(plain).toContain("not demographic vulnerability");
-    expect(plain).toContain("Shelters reported used in Sep 2024");
-    expect(plain).not.toContain("Plan size k");
-    expect(unsafeClaim(plain)).toBe(false);
+    expect(text(accessCard("th", "reported"))).toContain("คนไม่มีที่พักพิงที่แห้งของชุดนี้ในระยะเดิน 2 กม. ณ ชั่วโมงนี้ของการย้อนดู");
   });
 
   it("states the scenario's confidence and source timestamps, and what the reported set assumes", () => {
@@ -214,48 +342,99 @@ describe("Evacuation access card (scenario)", () => {
     expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ");
   });
 
-  it("counts the residents whose homes flood at the peak by default, so the reported set and the plan compare like with like", () => {
+  it("lets the scope choose who the equity gap, the bars, the chart and the map count, without changing the comparison", () => {
     const flooded = scoped.flooded.totals.population;
     expect(Math.abs(flooded - shelters.demand_people)).toBeLessThan(1);
-    const people = (value: number) => Math.round(value).toLocaleString("en-US");
     for (const set of ["reported", "plan"] as const) {
       const html = accessCard("en", set, shelters.knee_k, peak, "flooded");
       const plain = text(html);
       expect(radioChecked(html, "mae-sai-access-scope", "flooded")).toBe(true);
       expect(radioChecked(html, "mae-sai-access-scope", "all")).toBe(false);
+      expect(plain).toContain("Residents counted in the equity gap, the subdistrict bars, the chart and the map");
       expect(plain).toContain(`Residents whose homes flood at the peak (${people(flooded)})`);
       expect(plain).toContain(`All residents at road nodes (${people(access.totals.population)})`);
       expect(plain).toContain(`What the ranked plan optimises: sites that as many as possible of the ${people(shelters.demand_people)} residents whose homes flood at the modelled peak can walk to before the water rises`);
+      expect(plain).toContain("which is why the two ways of counting below give different pictures of it.");
       const summary = scoped.flooded.summaries[access.sets.indexOf(set === "reported" ? REPORTED_SET_ID : planSetId(shelters.knee_k))];
       const snapshot = accessSnapshot(summary, peak, access.levels);
-      expect(plain).toContain(`${people(snapshot.lost.population)} of ${people(flooded)}`);
-      expect(plain).toContain("residents at road nodes whose homes flood at the modelled peak");
-      expect(plain).not.toContain(`/ ${people(access.totals.population)}`);
+      const context = cellText(html, "access-without");
+      expect(context).toContain("residents at road nodes whose homes flood at the modelled peak");
+      expect(context).toContain(`${people(snapshot.lost.population + snapshot.never.population)} / ${people(flooded)} have no dry shelter`);
+      expect(context).not.toContain(`/ ${people(access.totals.population)}`);
     }
     // Before the flood, the plan's scoped "already out of reach" is the demand minus the plan's own coverage.
-    const dry = text(accessCard("en", "plan", shelters.knee_k, 0, "flooded"));
+    const dry = accessCard("en", "plan", shelters.knee_k, 0, "flooded");
     const coverage = shelters.plan[shelters.knee_k - 1].cumulative_demand;
-    expect(dry).toContain(`Already more than 2 km from a shelter of this set before the flood ${people(shelters.demand_people - coverage)}`);
+    expect(cellText(dry, "access-without")).toContain(`(0 lost it because of the flood; ${people(shelters.demand_people - coverage)} were already out of reach before it)`);
+    // Before the flood nobody is newly lost, and the cut-off hour is already known for the whole replay.
+    expect(cellText(dry, "compare-plan-flooded-lost")).toBe(`0 of ${people(coverage)} (0%)`);
+    expect(cellText(dry, "compare-plan-flooded-keeping")).toBe(people(coverage));
+    expect(cellText(dry, "compare-plan-flooded-cutoff")).toBe("10 Sep 23:00");
     // The other scope counts everyone at a road node.
     const all = accessCard("en", "reported", shelters.knee_k, peak, "all");
     expect(radioChecked(all, "mae-sai-access-scope", "all")).toBe(true);
-    expect(text(all)).toContain(`of ${people(access.totals.population)}`);
+    expect(cellText(all, "access-without")).toContain(`/ ${people(access.totals.population)} have no dry shelter`);
   });
 
-  it("words the Equity Gap plainly, says why the proxy points this way, and shows a dash before anyone loses access", () => {
+  it("words the Equity Gap plainly, never as 0.00, and says why the proxy points this way", () => {
     // With the ranked plan both groups lose access at the peak: a ratio, a plain comparison and why it points this way.
     const peakText = text(withoutTips(accessCard("en", "plan", shelters.knee_k, peak, "all")));
     expect(peakText).toMatch(/Evacuation Equity Gap: \d+\.\d{2} · Proxy-vulnerable residents are about [\d.]+× less likely to lose access \(\d+\.\d{2}% vs \d+\.\d{2}%\)\./);
     expect(peakText).toContain("How to read this: the proxy marks homes on slopes or far from a drivable road");
     expect(peakText).not.toMatch(/times as likely/);
-    // With the reported set no proxy-vulnerable resident loses access at the peak: said in words, not as "0.00 times".
-    const reported = text(withoutTips(accessCard("en", "reported", shelters.knee_k, peak, "all")));
-    expect(reported).toMatch(/Evacuation Equity Gap: 0\.00 · No proxy-vulnerable resident has lost access, against \d+\.\d{2}% of everyone else\./);
-    const dry = text(accessCard("en", "reported", shelters.knee_k, 0, "all"));
-    expect(dry).toContain("Evacuation Equity Gap: — (no one has lost access at this replay hour)");
+    // Both denominators of each group: all residents counted, and those within reach before the flood.
+    expect(peakText).toContain("Proxy-vulnerable residents who lost access: 320 of 7,152 counted (373 had a shelter of this set within reach before the flood); everyone else: 13,109 of 74,647 (24,537 within reach before the flood).");
+    expect(peakText).toContain("T1 scenario (model). Vulnerable = terrain/remoteness proxy. Hours from illustrative stage keyframes, not observed.");
+    // With the reported set no proxy-vulnerable resident loses access at the peak: said in words, never "0.00".
+    const reportedHtml = accessCard("en", "reported", shelters.knee_k, peak, "all");
+    const reported = text(withoutTips(reportedHtml));
+    expect(reported).toMatch(/Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, \d+\.\d{2}% of everyone else have\./);
+    expect(reported).not.toContain("Evacuation Equity Gap: 0.00");
+    expect(reported).toContain("Proxy-vulnerable residents who lost access: 0 of 7,152 counted (2,440 had a shelter of this set within reach before the flood); everyone else: 7,086 of 74,647 (32,085 within reach before the flood).");
+    expect(reportedHtml).not.toContain("data-reason=");
+    expect(reportedHtml).not.toContain("equity-no-baseline");
+    const thaiPeak = text(accessCard("th", "reported", shelters.knee_k, peak, "all"));
+    expect(thaiPeak).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง · ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นสูญเสียการเข้าถึง");
+    // "ยังไม่มี" ("not yet") would imply the loss is about to happen.
+    expect(thaiPeak).not.toContain("ยังไม่มีผู้อยู่อาศัยกลุ่มเปราะบาง");
+    expect(thaiPeak).toContain("สถานการณ์จำลองระดับ T1 (แบบจำลอง) กลุ่มเปราะบาง = ตัวแทนจากภูมิประเทศและความห่างไกล");
+  });
+
+  it("shows no ratio and says why when no one has lost access (reason no_loss)", () => {
+    const html = accessCard("en", "reported", shelters.knee_k, 0, "all");
+    const dry = text(html);
+    expect(html).toContain('data-testid="equity-gap" data-reason="no_loss"');
+    expect(dry).toContain("Evacuation Equity Gap: no ratio shown · No one in either group has lost access at this replay hour, so there are no loss rates to compare.");
+    expect(dry).not.toMatch(/Evacuation Equity Gap: (—|1\.00|0\.00)/);
     expect(dry).not.toContain("How to read this: the proxy");
     const thai = text(accessCard("th", "reported", shelters.knee_k, 0, "all"));
-    expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ: — (ไม่มีผู้สูญเสียการเข้าถึง ณ ชั่วโมงนี้)");
+    expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่แสดงอัตราส่วน · ไม่มีผู้ใดในทั้งสองกลุ่มสูญเสียการเข้าถึง ณ ชั่วโมงนี้ของการย้อนดู จึงไม่มีอัตราการสูญเสียให้เปรียบเทียบ");
+  });
+
+  it("shows no ratio and says why when a group has fewer than 50 residents (reason insufficient_group_denominator)", () => {
+    const small: AccessGroupSums = { population: 14_169, vulnerable: 26.5, nonVulnerable: 14_142.5 };
+    const html = accessCard("en", "plan", shelters.knee_k, peak, "flooded", small);
+    const plain = text(html);
+    expect(html).toContain('data-testid="equity-gap" data-reason="insufficient_group_denominator"');
+    expect(plain).toContain("Evacuation Equity Gap: no ratio shown · The proxy-vulnerable group has 26 residents in this count, fewer than the 50 a ratio needs in each group.");
+    expect(plain).not.toContain("How to read this: the proxy");
+    expect(plain).toContain("No ratio is shown when a group has fewer than 50 residents, when no one has lost access, or when only proxy-vulnerable residents have");
+    const thai = text(accessCard("th", "plan", shelters.knee_k, peak, "flooded", small));
+    expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่แสดงอัตราส่วน · กลุ่มเปราะบางตามตัวแทนมีผู้อยู่อาศัยในการนับนี้ 26 คน น้อยกว่า 50 คนที่ต้องมีในแต่ละกลุ่มจึงจะแสดงอัตราส่วนได้");
+    // On the served data both scopes have at least 50 residents in each group, so the rule does not hide a ratio today.
+    for (const scope of ["all", "flooded"] as const) {
+      expect(scoped[scope].totals.vulnerable).toBeGreaterThanOrEqual(50);
+      expect(scoped[scope].totals.nonVulnerable).toBeGreaterThanOrEqual(50);
+    }
+  });
+
+  it("says so when no proxy-vulnerable resident could lose access because none was within reach before the flood", () => {
+    // Reported set, residents whose homes flood: the proxy-vulnerable group is counted but none had a reported shelter in reach.
+    const html = accessCard("en", "reported", shelters.knee_k, peak, "flooded");
+    const plain = text(html);
+    expect(cellText(html, "equity-no-baseline")).toBe("No proxy-vulnerable resident counted here had a shelter of this set within reach before the flood, so none could lose it.");
+    expect(plain).toMatch(/Proxy-vulnerable residents who lost access: 0 of 103 counted \(0 had a shelter of this set within reach before the flood\)/);
+    expect(text(accessCard("th", "reported", shelters.knee_k, peak, "flooded"))).toContain("จึงไม่มีผู้ใดสูญเสียการเข้าถึงได้");
   });
 
   it("explains terms on hover or focus with the glossary definition as the accessible description", () => {
@@ -265,22 +444,28 @@ describe("Evacuation access card (scenario)", () => {
     expect(html).toContain(`role="tooltip" id="${id}"`);
     expect(text(html)).toContain("Points on the OpenStreetMap road network");
     expect(text(accessCard("en", "reported"))).toContain("Points on the OpenStreetMap road network");
+    // Closed until the pointer or the focus reaches the term; the page opens it (and Escape closes it) from then on.
+    expect(html).not.toContain("data-open");
+    expect(html).toMatch(/<span role="tooltip" id="[^"]+" class="[^"]*termTip[^"]*">/);
   });
 
   it("reports loading and failure honestly instead of showing zeros", () => {
     const loading = text(renderToStaticMarkup(
       <AccessCard access={access} shelters={shelters} snapshot={null} series={null} time={0} names={names} tambonTotals={null}
         shelterSet="reported" planK={8} onShelterSet={noop} onPlanK={noop} showCutoff={false} onShowCutoff={noop}
-        scope="flooded" onScope={noop} scopeTotals={null} allResidents={access.totals.population} floodedResidents={shelters.demand_people} language="en" status="loading" />,
+        scope="flooded" onScope={noop} scopeTotals={null} allResidents={access.totals.population} floodedResidents={shelters.demand_people} comparison={null} language="en" status="loading" />,
     ));
     expect(loading).toContain("Preparing the access scenario");
     const failed = text(renderToStaticMarkup(
       <AccessCard access={access} shelters={shelters} snapshot={null} series={null} time={0} names={names} tambonTotals={null}
         shelterSet="reported" planK={8} onShelterSet={noop} onPlanK={noop} showCutoff={false} onShowCutoff={noop}
-        scope="flooded" onScope={noop} scopeTotals={null} allResidents={access.totals.population} floodedResidents={shelters.demand_people} language="en" status="error" />,
+        scope="flooded" onScope={noop} scopeTotals={null} allResidents={access.totals.population} floodedResidents={shelters.demand_people} comparison={null} language="en" status="error" />,
     ));
     expect(failed).toContain("could not be loaded");
     expect(failed).not.toMatch(/Evacuation Equity Gap/);
+    // No comparison table is drawn from nothing.
+    expect(loading).not.toContain("side by side");
+    expect(failed).not.toContain("side by side");
   });
 
   it("draws the replay curve of people who lost access with the playhead", () => {
@@ -367,20 +552,23 @@ describe("Shelter plan and reported shelters", () => {
     expect(html.match(/>Show on map</g)).toHaveLength(eligibleOutside + ineligible);
     expect(text(html)).toContain(`Eligible, not in the first ${shelters.knee_k} (${eligibleOutside})`);
     expect(text(html)).toContain(`Not eligible (${ineligible})`);
-    const items = html.split("<li").slice(1);
-    const unmodelled = shelters.candidates.filter((candidate) => !candidate.m).map((candidate) => candidate.id);
-    expect(unmodelled.length).toBeGreaterThan(0);
-    expect(unmodelled.every((id) => shelters.candidates.find((item) => item.id === id)!.ineligible_reasons.includes("outside_model"))).toBe(true);
-    for (const id of unmodelled) {
-      const candidate = shelters.candidates.find((item) => item.id === id)!;
-      const title = candidateTitle(candidate, "en").replaceAll("&", "&amp;");
-      const item = text(items.find((entry) => entry.includes(title))!);
-      expect(item).toContain("Outside the terrain model (no flood result)");
-      expect(item).toContain("Not modelled: the site lies outside the terrain model");
-      expect(item).not.toContain("High ground");
-      expect(item).not.toContain("keeps less than");
-    }
-    const thai = text(renderToStaticMarkup(<OtherCandidatesList shelters={shelters} k={3} language="th" onShowCandidate={noop} />));
+    // The bake cuts OpenStreetMap to the replay area, so every candidate of the served revision lies inside the terrain
+    // model. The outside-model wording is still the page's answer for a revision that has such a site, so it is
+    // exercised on a copy with one ineligible candidate moved outside the model.
+    expect(shelters.candidates.filter((candidate) => !candidate.m)).toEqual([]);
+    expect(shelters.candidates.some((candidate) => candidate.ineligible_reasons.includes("outside_model"))).toBe(false);
+    const moved = shelters.candidates.find((candidate) => !candidate.eligible)!;
+    const outside = { ...moved, m: false, h: null, freeboard_m: null, high_ground: false, ineligible_reasons: ["outside_model", "no_road_within_400m"] };
+    const withOutside = { ...shelters, candidates: shelters.candidates.map((candidate) => (candidate.id === moved.id ? outside : candidate)) };
+    const outsideHtml = renderToStaticMarkup(<OtherCandidatesList shelters={withOutside} k={shelters.knee_k} language="en" onShowCandidate={noop} />);
+    const title = candidateTitle(outside, "en").replaceAll("&", "&amp;");
+    const item = text(outsideHtml.split("<li").slice(1).find((entry) => entry.includes(title))!);
+    expect(item).toContain("Outside the terrain model (no flood result)");
+    expect(item).toContain("Not modelled: the site lies outside the terrain model");
+    expect(item).not.toContain("High ground");
+    expect(item).not.toContain("keeps less than");
+    expect(text(html)).not.toContain("Outside the terrain model");
+    const thai = text(renderToStaticMarkup(<OtherCandidatesList shelters={withOutside} k={3} language="th" onShowCandidate={noop} />));
     expect(thai).toContain("อยู่นอกแบบจำลองภูมิประเทศ");
     expect(unsafeClaim(text(html))).toBe(false);
   });
@@ -474,7 +662,7 @@ describe("Shelter plan and reported shelters", () => {
     const informed = plain.indexOf("Size checks (calibration-informed, not independent)");
     expect(calibration).toBeGreaterThanOrEqual(0);
     expect(informed).toBeGreaterThan(calibration);
-    // Nothing in r3 is independent any more, so the page must not claim an independent check.
+    // Nothing on the replay is independent any more, so the page must not claim an independent check.
     expect(plain).not.toContain("Independent size checks");
     const gistda = plain.indexOf("GISTDA RADARSAT-2");
     const unosat = plain.indexOf("UNOSAT product 3991");

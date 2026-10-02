@@ -1,0 +1,406 @@
+{
+ "schema": "floodguard.bake_input_receipt.v1",
+ "study_id": "mae-sai-2024-flood-timeline",
+ "revision": "r4",
+ "generated_by": "scripts/build_mae_sai_flood_timeline.py",
+ "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
+ "generated_at": {
+  "value": "2026-10-02T11:16:00+07:00",
+  "basis": "declared"
+ },
+ "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
+ "confidence": "low",
+ "confidence_reason": "Confidence of the baked reconstruction, copied from timeline.json. The receipt itself is an exact file record.",
+ "assumptions": [
+  "Input paths are relative to the external data root (FLOODGUARD_EXTERNAL_DATA) or to the repository root; no machine path is recorded.",
+  "The same inputs give the same bytes only with the same library versions: another GDAL, PROJ, WebP, zlib or pysheds build can change bytes without changing the method.",
+  "The OpenStreetMap input is the Geofabrik PBF itself: the bake reads the replay area's multipolygons and points from it on every run and keeps no derived cache, so no intermediate file stands between the receipt and the result.",
+  "The receipt lists files, not their meaning: it does not make the reconstruction an observation.",
+  "generated_at is a declared value (or the newest dated input), not a clock reading; a bake that changes any output file must declare a new one, and the commit that carries the revision records when the files were written.",
+  "Bake sources are hashed with CRLF read as LF, so a Windows checkout gives the same hashes."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "can_feed_decision_layer": false,
+ "roots": {
+  "external": "FLOODGUARD_EXTERNAL_DATA or --external-root (kept outside Git)",
+  "repo": "repository root"
+ },
+ "input_count": 32,
+ "input_bytes": 4657730495,
+ "inputs": [
+  {
+   "root": "external",
+   "path": "cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_20240906T113106_20240906T113131_055544_06C73C_B53D_COG.SAFE.zip",
+   "bytes": 1291994695,
+   "sha256": "023e1fb0bb60614e12ff2f043c0f64a1db2730bfc771f2028f4843898ab282e7"
+  },
+  {
+   "root": "external",
+   "path": "cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_82A9_COG.SAFE.zip",
+   "bytes": 1305373702,
+   "sha256": "e877c075a96f677a70d7e4c0e501686a9d76025b80a4edce084ace76984fbdb9"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/blue.tif",
+   "bytes": 218096139,
+   "sha256": "5ef3970df5afa0c0722a4a2e55e8469b00fd403fbbc9d0b52a86e6e32cd59098"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/green.tif",
+   "bytes": 224435909,
+   "sha256": "bbfead49c36db4cc569ec71504ddd103ed28513c87e354068fa823fa8c1402d1"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/red.tif",
+   "bytes": 220785832,
+   "sha256": "1a4515d50ab222e6f77b936e8285455ea249701e4563a1f3eadcd112dfd04af2"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/blue.tif",
+   "bytes": 220036077,
+   "sha256": "aa058cecc7643f0384ef363d131ea59c3ba6f415e9e1ab7d6d5ec8824d48a7a8"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/green.tif",
+   "bytes": 222041166,
+   "sha256": "36e6eae2c783f37842d3cc3c8cee5be5764b275b186c8adfbf109f21aaec8650"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/red.tif",
+   "bytes": 221362768,
+   "sha256": "dbe241cefd75a7e94f9259aeffe3b8d9b471a0c02b115db09ac38d27a0ac29d8"
+  },
+  {
+   "root": "external",
+   "path": "hii_rain/2024_09/DIWO.csv",
+   "bytes": 42320,
+   "sha256": "04795043c34a7fb91d19cf3bfc46970aa4eade8fa3c5bf2b3689a5068ded723e"
+  },
+  {
+   "root": "external",
+   "path": "hii_rain/2024_09/MOU189.csv",
+   "bytes": 45250,
+   "sha256": "402dbcddb1a2ec647e654aff52b6479a7007080e521a07e57b5368c62287f959"
+  },
+  {
+   "root": "external",
+   "path": "hii_rain/2024_09/main_0all_stn_metadata.csv",
+   "bytes": 435995,
+   "sha256": "a9260351d56bf45087e96b4f47549de8eff23fac13ffc6ca09d33615ce164a2d"
+  },
+  {
+   "root": "external",
+   "path": "hii_rain/2024_09/mou_0all_stn_metadata.csv",
+   "bytes": 86297,
+   "sha256": "30ef035d66b43fa2a857d1bac8b735fe0ff86b4983881f7bce4e4fcbaf971c83"
+  },
+  {
+   "root": "external",
+   "path": "open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif",
+   "bytes": 44909388,
+   "sha256": "8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757"
+  },
+  {
+   "root": "external",
+   "path": "open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif",
+   "bytes": 45691771,
+   "sha256": "353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf"
+  },
+  {
+   "root": "external",
+   "path": "open_context/osm_geofabrik/thailand-latest.osm.pbf",
+   "bytes": 325044304,
+   "sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1"
+  },
+  {
+   "root": "external",
+   "path": "open_context/worldpop_population/tha_ppp_2020.tif",
+   "bytes": 296024584,
+   "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240910_d20240910_4448_4448_7_001day_090.tif.zip",
+   "bytes": 1050942,
+   "sha256": "503c53ca7b52874c29222f46cb59a1966caf337323de6aff8dba5cdbc75e4851"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240911_d20240911_4448_4448_6_001day_090.tif.zip",
+   "bytes": 828349,
+   "sha256": "0219b15e4dc480381d4a43548efd46930b8b4a882a84a65063be925148477bd3"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240912_d20240912_4448_4448_8_001day_090.tif.zip",
+   "bytes": 899264,
+   "sha256": "b49b5b97a7cd485615629128f77db0e569c43b8466559aa30d689664ffbfba83"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240913_d20240913_4448_4448_8_001day_090.tif.zip",
+   "bytes": 1213390,
+   "sha256": "d0a8c0a7b0059c3f86dea15f1659e9c7c532ab7c32d663f4819a5901fc2e6921"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240914_d20240914_4448_4448_10_001day_090.tif.zip",
+   "bytes": 1157496,
+   "sha256": "efb90f889043b1fccd2c4bea604ab98f54b13ff6a02a44f2ab6d214a9e7b1d61"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240915_d20240915_4448_4448_9_001day_090.tif.zip",
+   "bytes": 1398849,
+   "sha256": "d904aa42afcafb6dcc0f67a0a57d79e84f07f3b5dd758620d74bf669e5286857"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240916_d20240916_4448_4448_9_001day_090.tif.zip",
+   "bytes": 1623213,
+   "sha256": "a83e9357d4f465a5d7aae9a16452a29604f48f3bd1d190593328f938ade0fefa"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240917_d20240917_4448_4448_9_001day_090.tif.zip",
+   "bytes": 1537175,
+   "sha256": "025123988b1b1974a0edc28ee643d68f6f831698eabc3e4a0527e71daf4a9201"
+  },
+  {
+   "root": "external",
+   "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240918_d20240918_4448_4448_9_001day_090.tif.zip",
+   "bytes": 1497203,
+   "sha256": "efadba38f8780e12b26d03fc9f1405d18a0ab248fee64995214058205dbb0f54"
+  },
+  {
+   "root": "repo",
+   "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+   "bytes": 8170,
+   "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_access_edges.csv",
+   "bytes": 4155801,
+   "sha256": "266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_admin_context.geojson",
+   "bytes": 634775,
+   "sha256": "5cd03ca936c188d37704f5249afa87da0c687b967db8a0f9c9ebd72b27204db1"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_facilities.geojson",
+   "bytes": 30059,
+   "sha256": "5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_population_nodes.csv",
+   "bytes": 669882,
+   "sha256": "172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_reported_shelters_2024.json",
+   "bytes": 69754,
+   "sha256": "9865a3db58ec0b6991d85f5d651520838fa67121e7b411dc4b859fc666293f6d"
+  },
+  {
+   "root": "repo",
+   "path": "outputs/mae_sai_road_risk.geojson",
+   "bytes": 4549976,
+   "sha256": "cd8648f8fbaabab14fdf45e9e98fff36d90902580831513be39a5dfe0af4439c"
+  }
+ ],
+ "outputs": {
+  "folder": "apps/web/public/studies/mae-sai-2024-timeline/r4",
+  "file_count": 22,
+  "bytes": 6117804,
+  "files": [
+   {
+    "name": "access-nodes.bin",
+    "bytes": 435840,
+    "sha256": "d4b84fcf9b7f1d97983b9293e7d502d329e859e9859f867219033b56ccbaa590"
+   },
+   {
+    "name": "facilities.geojson",
+    "bytes": 9841,
+    "sha256": "7cbb45ffb3ff2c20b06c5499b1fdcd975481ba41be52d834d7664bc3ff222fcb"
+   },
+   {
+    "name": "hand-codes.png",
+    "bytes": 898115,
+    "sha256": "c787d7792f96355c786c20416f1c3c605a0d83d35c8ad1828258a550598b1147"
+   },
+   {
+    "name": "hillshade.webp",
+    "bytes": 156120,
+    "sha256": "72dcfb2bc381f398f0e3c225b83d66429d12c009f99c6662c4cf2c5fa563da9f"
+   },
+   {
+    "name": "population-density.png",
+    "bytes": 334367,
+    "sha256": "696649f28901b073d9ce56d00e5170e42bf31ae2410f03e61f79281c2fe11bdf"
+   },
+   {
+    "name": "roads.geojson",
+    "bytes": 712884,
+    "sha256": "e6529472904d65b043c051a8dedd3f92f1416cb41acdd4ea6bc3c0a737e1f7bd"
+   },
+   {
+    "name": "s1-20240906-vv.webp",
+    "bytes": 579094,
+    "sha256": "ab87c3b4e1b9a5961dab9a8651aafebac3f68d66a5a0c07b4eab6048730a94d6"
+   },
+   {
+    "name": "s1-20240915-vv.webp",
+    "bytes": 569212,
+    "sha256": "71f70a4f6853fd51de8227d8a7657daf8b9a52f5fe7d549044a8b76fceef3604"
+   },
+   {
+    "name": "s1-change-rgb.webp",
+    "bytes": 774848,
+    "sha256": "a525388efd2c4c4b5b69d7b74c51ccb4a07c83745f4e39d3b1b32f5505c28c0a"
+   },
+   {
+    "name": "s2-20240905.webp",
+    "bytes": 713848,
+    "sha256": "8d4862e3e188f07fcfa4656b10a76c068a91ff4d5dc8244ffd7e19b3f23c8f7c"
+   },
+   {
+    "name": "s2-20240915.webp",
+    "bytes": 660994,
+    "sha256": "8a5a92a2219c739f04a02ee72aeaed63ffdbd6856db0ddd38692961847b34618"
+   },
+   {
+    "name": "tambons.geojson",
+    "bytes": 45534,
+    "sha256": "5d1f8cd8364b443324a3a8b3ba2c8a16d2d384a149a437d15036821c272f9d69"
+   },
+   {
+    "name": "timeline.json",
+    "bytes": 220581,
+    "sha256": "0ffa560810638680dd328d10b168e4e66f0c2f6b8719b5ecc8f7cb42ca584b9e"
+   },
+   {
+    "name": "viirs-20240910.png",
+    "bytes": 169,
+    "sha256": "4ececa760798df71b83bed1a083d6068c3ecb028133ef974f18b9e772d2ed817"
+   },
+   {
+    "name": "viirs-20240911.png",
+    "bytes": 169,
+    "sha256": "4ececa760798df71b83bed1a083d6068c3ecb028133ef974f18b9e772d2ed817"
+   },
+   {
+    "name": "viirs-20240912.png",
+    "bytes": 532,
+    "sha256": "ccb272a6551d5b8afe4430e6cfcc2ad1055027889efb67e27cccd5bc17eb6b0a"
+   },
+   {
+    "name": "viirs-20240913.png",
+    "bytes": 863,
+    "sha256": "102478ecc27ca9375c3b81192fdbfb44440c7f5bc78efa014af1de7ecf0fdd96"
+   },
+   {
+    "name": "viirs-20240914.png",
+    "bytes": 362,
+    "sha256": "99b1689b3bb6fc0825ee55308792ed223f73524c2d67ab26ec28ae3c3faab452"
+   },
+   {
+    "name": "viirs-20240915.png",
+    "bytes": 1570,
+    "sha256": "368ded565d599332268c949d73d2fc57df6d528cae77e600c5b811704bc49813"
+   },
+   {
+    "name": "viirs-20240916.png",
+    "bytes": 1132,
+    "sha256": "175bab78d1e2d3e2484dff54db06aa5a3f10eee7ca86485781fd8308bf610171"
+   },
+   {
+    "name": "viirs-20240917.png",
+    "bytes": 932,
+    "sha256": "a54ea6a8d36fd5616a28ec740276173735e5606f01ae8161cc4c4dd6d2960f81"
+   },
+   {
+    "name": "viirs-20240918.png",
+    "bytes": 797,
+    "sha256": "2ef078e3b9f068db60f9bfdcc5d18b7fa9b4748f309c86999cc53735ba51349f"
+   }
+  ]
+ },
+ "code": [
+  {
+   "path": "packages/contracts/schemas/case-replay-timeline.schema.json",
+   "sha256": "49b1b11eef49cbdf3491ec6cad9343abd5e240f9e69ed5798bd10cc45c8de767"
+  },
+  {
+   "path": "scripts/build_mae_sai_flood_timeline.py",
+   "sha256": "f4c5cc41b352d5e065c1e3e2814b6b2b02ca476e489617d1123698df47614dca"
+  },
+  {
+   "path": "scripts/mae_sai_timeline_evacuation.py",
+   "sha256": "a8cc549ca738c4b0c3a3d1d69c9aaf3a586aa23ed3b76efd186a1e2b01e39ca7"
+  },
+  {
+   "path": "scripts/mae_sai_timeline_observations.py",
+   "sha256": "8080895891cb8536a0e467fe9af0545e610371601b5dd00dac46f29980e973fd"
+  },
+  {
+   "path": "src/floodguard/bake_receipt.py",
+   "sha256": "ac780f3a30b014ae6ae845df9872b24430d132761c41324dc89a7f7bddba6fbf"
+  },
+  {
+   "path": "src/floodguard/evacuation_access.py",
+   "sha256": "4022c993b0ad760c4e39168c056e2808d1b116df1afc93a85b300e7e6c7df440"
+  },
+  {
+   "path": "src/floodguard/flood_timeline.py",
+   "sha256": "137eeb5df3ac23c80d0be2582d9b62b424a480bb34dccd4922721d621b034e9a"
+  },
+  {
+   "path": "src/floodguard/replay_manifest.py",
+   "sha256": "7495c3d24dfa1d921f7808e4ec88ca24e143a1940ed11a0b5ae01acffc7d3528"
+  },
+  {
+   "path": "src/floodguard/rights_basis.py",
+   "sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23"
+  }
+ ],
+ "libraries": {
+  "affine": "3.0.1",
+  "gdal (pyogrio)": "3.12.4",
+  "gdal (rasterio)": "3.10.3",
+  "geos (rasterio)": "3.13.0",
+  "geos (shapely)": "3.13.1",
+  "numba": "0.67.0",
+  "numpy": "2.2.6",
+  "pandas": "3.0.6",
+  "pillow": "12.3.0",
+  "proj (pyproj)": "9.5.1",
+  "proj (rasterio)": "9.6.0",
+  "pyogrio": "0.13.0",
+  "pyproj": "3.7.2",
+  "pysheds": "0.5",
+  "python": "3.11.8",
+  "rasterio": "1.4.4",
+  "scipy": "1.17.1",
+  "shapely": "2.1.2",
+  "webp (pillow)": "1.6.0",
+  "zlib (pillow)": "1.3.1.zlib-ng"
+ },
+ "platform": {
+  "system": "Windows",
+  "machine": "AMD64"
+ }
+}

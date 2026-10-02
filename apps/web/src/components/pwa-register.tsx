@@ -37,8 +37,10 @@ export interface PwaRegisterProps {
   enabled?: boolean;
   /**
    * Path prefixes on which the availability pill hides itself after `autoHideMs` (unless it is open or has focus) and
-   * shows a dismiss button, for pages whose own controls sit where the pill floats. Empty by default: every other page
-   * keeps the pill as it is.
+   * shows a dismiss button, for pages whose own controls sit where the pill floats. A hidden pill comes back when its
+   * status changes (the connection drops or returns, the app becomes saved for offline use, an update is waiting),
+   * shows the new status for one display period, then hides itself again. Empty by default: every other page keeps
+   * the pill as it is.
    */
   autoHidePaths?: readonly string[];
   autoHideMs?: number;
@@ -46,6 +48,39 @@ export interface PwaRegisterProps {
 
 /** Default delay before the pill hides itself on an auto-hide page. */
 export const PWA_AUTO_HIDE_MS = 4000;
+
+/** Where the pill was hidden (by its timer or by the reader), and the status it showed at that moment. */
+export interface HiddenPill {
+  path: string | null;
+  /** `pillStatus` when the pill was hidden. */
+  status: string;
+}
+
+/**
+ * What the pill has to say, as one comparable value: the connection (`navigator.onLine`: true online, false offline,
+ * null before the first check), whether the app is saved for offline use, and whether an update is waiting. These are
+ * the things its summary line and its update button change with.
+ */
+export function pillStatus(online: boolean | null, appSaved: boolean, updateWaiting: boolean): string {
+  return [online === null ? "checking" : online ? "online" : "offline", appSaved ? "saved" : "not-saved", updateWaiting ? "update-waiting" : "current"].join("|");
+}
+
+/**
+ * True while a hidden pill stays hidden: the reader is still on the page it was hidden on and the pill would say what
+ * it said when it was hidden. Any change of status brings it back, as does navigating elsewhere.
+ */
+export function pillStaysHidden(hidden: HiddenPill | null, pathname: string | null, status: string): boolean {
+  return hidden !== null && hidden.path === pathname && hidden.status === status;
+}
+
+/**
+ * The hidden record to keep: itself while it still applies, otherwise null. Forgetting a record that no longer
+ * applies matters when the status flips back within one display period (offline, then online again two seconds
+ * later): the pill then shows the restored status for its full period instead of vanishing at once.
+ */
+export function keepHidden(hidden: HiddenPill | null, pathname: string | null, status: string): HiddenPill | null {
+  return pillStaysHidden(hidden, pathname, status) ? hidden : null;
+}
 
 /** True when `pathname` starts with one of the auto-hide path prefixes. */
 export function autoHidesOn(pathname: string | null | undefined, paths: readonly string[]): boolean {
@@ -223,8 +258,8 @@ export function PwaRegister({
 }: PwaRegisterProps = {}) {
   const pathname = usePathname();
   const autoHide = autoHidesOn(pathname, autoHidePaths);
-  /** Path on which the pill was hidden (auto or by the reader); it shows again after navigating elsewhere. */
-  const [hiddenOn, setHiddenOn] = useState<string | null>(null);
+  /** Where the pill was hidden (auto or by the reader) and its status then; see `pillStaysHidden`. */
+  const [hidden, setHidden] = useState<HiddenPill | null>(null);
   const [engaged, setEngaged] = useState(false);
   const defaultLanguage = EXPECTED_PROFILE === "public-production" || pathname?.startsWith("/public") ? "th" : "en";
   const [language] = useLanguage(defaultLanguage);
@@ -232,6 +267,11 @@ export function PwaRegister({
   const [online, setOnline] = useState<boolean | null>(null);
   const [cacheState, setCacheState] = useState<CacheState>("checking");
   const [updateState, setUpdateState] = useState<UpdateState>("current");
+  const status = pillStatus(online, cacheState === "ready", updateState === "available");
+  // A record that no longer applies is forgotten while rendering (state adjusted from other state, no effect needed),
+  // so a status that flips back gets its own display period.
+  if (keepHidden(hidden, pathname, status) !== hidden) setHidden(null);
+  const pillHidden = autoHide && pillStaysHidden(hidden, pathname, status);
   const [householdPlanAvailable, setHouseholdPlanAvailable] = useState(false);
   const [cachedSnapshotAt, setCachedSnapshotAt] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<string | null>(null);
@@ -421,11 +461,12 @@ export function PwaRegister({
     };
   }, [enabled, refreshAvailability, refreshHouseholdPlanAvailability, watchInstallingWorker]);
 
+  // The display period starts again whenever the status changes.
   useEffect(() => {
-    if (!enabled || !autoHide || engaged || hiddenOn === pathname) return;
-    const timer = window.setTimeout(() => setHiddenOn(pathname), autoHideMs);
+    if (!enabled || !autoHide || engaged || pillHidden) return;
+    const timer = window.setTimeout(() => setHidden({ path: pathname, status }), autoHideMs);
     return () => window.clearTimeout(timer);
-  }, [enabled, autoHide, engaged, hiddenOn, pathname, autoHideMs]);
+  }, [enabled, autoHide, engaged, pillHidden, pathname, status, autoHideMs]);
 
   const checkForUpdate = useCallback(async () => {
     const registration = registrationRef.current;
@@ -459,7 +500,7 @@ export function PwaRegister({
   }, []);
 
   if (!enabled) return null;
-  if (autoHide && hiddenOn === pathname) return null;
+  if (pillHidden) return null;
 
   const copy = pwaAvailabilityCopy(language);
   const connectionLabel = online === null ? copy.checkingConnection : online ? copy.online : copy.offline;
@@ -541,7 +582,8 @@ export function PwaRegister({
     </details>
   );
   if (!autoHide) return panel;
-  // Auto-hide pages: the pill fades after a few seconds and can be dismissed at once; hover or focus keeps it.
+  // Auto-hide pages: the pill hides after a few seconds and can be dismissed at once; hover or focus keeps it. It
+  // returns when its status changes (connection, saved for offline use, update waiting).
   return (
     <div
       className={styles.autoHideDock}
@@ -554,7 +596,11 @@ export function PwaRegister({
       }}
     >
       {panel}
-      <button type="button" className={styles.dismiss} aria-label={copy.dismiss} title={copy.dismiss} onClick={() => setHiddenOn(pathname)}>
+      <button type="button" className={styles.dismiss} aria-label={copy.dismiss} title={copy.dismiss} onClick={() => {
+        // The dock unmounts under the pointer, so no leave or blur event will clear "engaged".
+        setEngaged(false);
+        setHidden({ path: pathname, status });
+      }}>
         <span aria-hidden="true">×</span>
       </button>
     </div>

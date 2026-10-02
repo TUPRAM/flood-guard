@@ -1,0 +1,189 @@
+{
+  "schema": "floodguard.replay_wording_rules.v1",
+  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets or present a modelled hour as a safe time to leave. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
+  "how_it_works": [
+    "Text is normalised first: web addresses are removed, runs of white space become one space, curly apostrophes become straight ones, and non-breaking hyphens, figure dashes, en dashes and minus signs become plain hyphens.",
+    "Each pattern in allow is then removed, in order. They are explicit negations such as 'not a forecast'. A new negation needs a new entry here; a plain 'not' somewhere in the sentence is not enough.",
+    "Whatever still matches a pattern in rules is a finding.",
+    "Patterns are case-insensitive regular expressions that mean the same in JavaScript (flags iu) and in Python (re.IGNORECASE). Word edges are written as (?<![A-Za-z0-9_]) and (?![A-Za-z0-9_]) because \\b treats Thai letters differently in the two engines.",
+    "Each Thai rule lists the common renderings of the banned claim, not one spelling: a translator's wording of a banned English claim must fail too. A Thai denial needs its own allow entry, as in English."
+  ],
+  "thai_terms_review": "The Thai terms and denials were widened on 2 Oct 2026 (ตามเวลาจริง, คาดการณ์, ทำนาย, แม่นยำ, ยืนยันแล้ว, ผ่านการตรวจสอบ, ประกาศเตือน, คาบการเกิดซ้ำ, Thai digits). The Thai language reviewer has not signed the list off yet (roadmap H12, due 22 Oct 2026).",
+  "allow": [
+    {
+      "id": "not_real_time_or_warning",
+      "pattern": "(?<![A-Za-z0-9_])not (?:a |an )?real-time(?: product| detector)? or (?:a |an )?(?:official )?warning(?![A-Za-z0-9_])",
+      "why": "The page's standing disclaimer in its 'not A or B' form: one 'not' covers both. After a comma or 'and' the warning needs its own 'not' (the two entries below then remove each half).",
+      "ok": [
+        "Historical reconstruction for preparedness learning - not real-time, not an official warning.",
+        "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
+        "Historical reconstruction and planning scenarios, not real-time and not an official warning.",
+        "It is a model, not real-time or a warning."
+      ]
+    },
+    {
+      "id": "not_real_time",
+      "pattern": "(?<![A-Za-z0-9_])not (?:a |an )?real-time(?: product| detector)?(?![A-Za-z0-9_])",
+      "why": "A plain denial of real-time status.",
+      "ok": ["The replay is not real-time.", "This is not a real-time product."]
+    },
+    {
+      "id": "not_forecast_or_warning",
+      "pattern": "(?<![A-Za-z0-9_])(?:not|never|nor) (?:a |an )?(?:official )?(?:forecast|warning|flood alert)(?![A-Za-z0-9_])",
+      "why": "A plain denial of being a forecast or a warning.",
+      "ok": [
+        "T1 scenario (model) replay of a reconstructed 2024 event; not a forecast, not an observed closure record, not an official warning.",
+        "This notice is not legal advice and not an official warning.",
+        "It is not an observation of who was cut off, and not a warning.",
+        "The replay is not a flood alert."
+      ]
+    },
+    {
+      "id": "not_validation",
+      "pattern": "(?<![A-Za-z0-9_])(?:not|never) (?:a |an )?(?:spatial )?validation(?![A-Za-z0-9_])",
+      "why": "Comparisons are agreement or plausibility checks; saying so is allowed.",
+      "ok": [
+        "It is a size check where VIIRS could see, not a validation of the model.",
+        "Magnitude check only, not a spatial validation.",
+        "It is a coarse size check, never a validation.",
+        "Season envelope comparison (scenario; plausibility, not validation)"
+      ]
+    },
+    {
+      "id": "not_validated",
+      "pattern": "(?<![A-Za-z0-9_])not (?:field-)?validated(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])did not validate(?![A-Za-z0-9_])",
+      "why": "The standard product 4009 and UNOSAT 3991 caveats. 'unvalidated' and the attribute name 'Field_Validation' need no entry: they do not start with a word edge.",
+      "ok": [
+        "about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated",
+        "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it."
+      ]
+    },
+    {
+      "id": "th_not_real_time_or_warning",
+      "pattern": "ไม่ใช่(?:ข้อมูล|ผลิตภัณฑ์|แผนที่|ระบบ)?(?:แบบ)?(?:เรียลไทม์|ตามเวลาจริง)(?: ?หรือ ?(?:ไม่ใช่)?(?:คำเตือน|การเตือนภัย|ประกาศเตือนภัย|ประกาศเตือน|การแจ้งเตือน)(?:อย่างเป็นทางการ|ทางการ)?)?",
+      "why": "Thai form of the standing disclaimer. One denial covers a warning only after หรือ (or); after และ (and) the warning needs its own ไม่ใช่.",
+      "ok": [
+        "การจำลองย้อนหลังเพื่อการเรียนรู้ด้านการเตรียมพร้อม — ไม่ใช่ข้อมูลเรียลไทม์ และไม่ใช่คำเตือนอย่างเป็นทางการ",
+        "การจำลองจากแบบจำลอง ไม่ใช่การสังเกตการณ์ · ไม่ใช่ข้อมูลเรียลไทม์หรือคำเตือนทางการ",
+        "ไม่ใช่ผลิตภัณฑ์เรียลไทม์หรือคำเตือนทางการ ใช้เพื่อการเรียนรู้ด้านการเตรียมพร้อม",
+        "ไม่ใช่แผนที่ตามเวลาจริง และไม่ใช่ประกาศเตือนภัย"
+      ]
+    },
+    {
+      "id": "th_not_warning",
+      "pattern": "ไม่ใช่(?:คำเตือน|การเตือนภัย|ประกาศเตือนภัย|ประกาศเตือน|การแจ้งเตือน)(?:อย่างเป็นทางการ|ทางการ)?",
+      "why": "Thai denial of being a warning.",
+      "ok": ["ประกาศนี้ไม่ใช่คำแนะนำทางกฎหมาย และไม่ใช่การเตือนภัยอย่างเป็นทางการ", "ไม่ใช่คำเตือนทางการ"]
+    },
+    {
+      "id": "th_not_forecast",
+      "pattern": "ไม่ใช่(?:การ|ค่า|ผล)?(?:พยากรณ์|คาดการณ์|ทำนาย)",
+      "why": "Thai denial of being a forecast or a prediction.",
+      "ok": ["สถานการณ์จำลอง ไม่ใช่การพยากรณ์", "เป็นการจำลองย้อนหลัง ไม่ใช่การคาดการณ์น้ำท่วม", "ไม่ใช่การทำนายระดับน้ำ"]
+    },
+    {
+      "id": "th_not_validation",
+      "pattern": "ไม่ใช่การ(?:ยืนยัน|ตรวจสอบ)ความถูกต้อง|ไม่ใช่(?:ค่า|การวัด)?ความแม่นยำ",
+      "why": "Thai form of 'not a validation' and 'not an accuracy'.",
+      "ok": ["เป็นการตรวจขนาดเฉพาะส่วนที่ VIIRS มองเห็น ไม่ใช่การยืนยันความถูกต้องของแบบจำลอง", "ค่านี้บอกความสอดคล้อง ไม่ใช่ความแม่นยำ"]
+    },
+    {
+      "id": "th_not_verified",
+      "pattern": "(?:ยัง)?ไม่(?:ได้)?(?:ผ่านการ(?:ตรวจสอบ|ยืนยัน)|ยืนยันแล้ว)",
+      "why": "Thai denial of having been checked or confirmed ('not yet verified').",
+      "ok": ["ผลเบื้องต้น ยังไม่ผ่านการตรวจสอบภาคสนาม", "ข้อมูลนี้ยังไม่ได้ผ่านการยืนยัน"]
+    },
+    {
+      "id": "th_named_warning_station",
+      "pattern": "ระบบเตือนภัยบ้านแม่สายของกรมทรัพยากรน้ำ",
+      "why": "Names another agency's early-warning station, which the replay says it could not verify. It claims no warning.",
+      "ok": ["สถานี Kh.50 ของกรมชลประทานปิดแล้ว และระบบเตือนภัยบ้านแม่สายของกรมทรัพยากรน้ำยังไม่ได้ยืนยัน"]
+    }
+  ],
+  "rules": [
+    {
+      "id": "real_time",
+      "pattern": "(?<![A-Za-z0-9_])real[- ]?time(?![A-Za-z0-9_])|เรียลไทม์|เวลาจริง|แบบทันที",
+      "message": "The replay is a historical reconstruction. Do not call it real-time.",
+      "bad": ["Real-time flood map of Mae Sai", "Water levels update in realtime", "A real–time view of the Sai River", "แผนที่น้ำท่วมแบบเรียลไทม์", "แผนที่น้ำท่วมตามเวลาจริง", "ข้อมูลระดับน้ำแบบทันที"]
+    },
+    {
+      "id": "live",
+      "pattern": "(?<![A-Za-z0-9_])live(?![A-Za-z0-9_])|ข้อมูลสด|ถ่ายทอดสด",
+      "message": "Nothing on the replay is live. Reword, including the verb ('where people live' can be 'where people have homes').",
+      "bad": ["Live water level at the border bridge", "ข้อมูลสดระดับน้ำแม่น้ำสาย"]
+    },
+    {
+      "id": "forecast",
+      "pattern": "(?<![A-Za-z0-9_])(?:forecast|nowcast)[a-z]*|พยากรณ์|คาดการณ์|ทำนาย",
+      "message": "The replay reconstructs a past event. It is not a forecast.",
+      "bad": ["Flood forecast for 12 September", "Forecasted water depth", "พยากรณ์น้ำท่วมแม่สาย", "คาดการณ์น้ำท่วม", "แบบจำลองทำนายระดับน้ำ"]
+    },
+    {
+      "id": "warning",
+      "pattern": "(?<![A-Za-z0-9_])warnings?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:flood|evacuation|emergency|weather|early|official) alerts?(?![A-Za-z0-9_])|เตือน",
+      "message": "FloodGuard is not an official warning system. Do not present text as a warning or an alert.",
+      "bad": ["Flood warning for Mae Sai subdistrict", "Flood alert for the border market", "คำเตือนน้ำท่วมสำหรับตำบลแม่สาย", "ระบบแจ้งเตือนน้ำท่วม", "ประกาศเตือน", "เตือนน้ำท่วมตำบลเวียงพางคำ"]
+    },
+    {
+      "id": "validation_as_agreement",
+      "pattern": "(?<![A-Za-z0-9_])(?:validat|accura)[a-z]*|แม่นยำ|ความถูกต้อง|ยืนยันแล้ว|ผ่านการตรวจสอบ|ผ่านการยืนยัน",
+      "message": "Agreement with another data set is not validation or accuracy. Say 'agreement', 'size check' or 'plausibility'.",
+      "bad": ["The model is validated against VIIRS", "Validation against the season envelope", "Model accuracy: 0.48", "ความแม่นยำของแบบจำลอง 48%", "แบบจำลองแม่นยำ 48%", "ขอบเขตน้ำยืนยันแล้วด้วยภาพดาวเทียม", "แบบจำลองผ่านการตรวจสอบกับ VIIRS"]
+    },
+    {
+      "id": "precision_recall",
+      "pattern": "(?<![A-Za-z0-9_])(?:precision|recall)(?![A-Za-z0-9_])|ค่าความระลึก|ค่าความเที่ยง",
+      "message": "Product 4009 is a season envelope, not a reference. Use 'share of modelled water inside the envelope' and 'share of the envelope reached by the model'.",
+      "bad": ["Precision 0.605 against product 4009", "Recall of the envelope: 0.704"]
+    },
+    {
+      "id": "september_extent",
+      "pattern": "(?<![A-Za-z0-9_])September extent(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])GISTDA(?:'s)? map(?![A-Za-z0-9_])|ขอบเขตน้ำเดือนกันยายน|แผนที่ของ GISTDA",
+      "message": "Product 4009 is a 2024 season envelope from UNOSAT and GISTDA. It is not the September extent and not GISTDA's map.",
+      "bad": ["Compared with the September extent", "Overlay of GISTDA's map", "The GISTDA map shows the town under water", "ขอบเขตน้ำเดือนกันยายนจากดาวเทียม"]
+    },
+    {
+      "id": "return_period",
+      "pattern": "(?<![A-Za-z0-9_])(?:25|100)[- ]?(?:year|yr)s?(?![A-Za-z0-9_])|รอบ ?(?:25|100|๒๕|๑๐๐) ?ปี|(?:25|100|๒๕|๑๐๐) ?ปีต่อครั้ง|คาบการเกิดซ้ำ|รอบการเกิดซ้ำ|คาบอุบัติซ้ำ",
+      "message": "Stage levels are illustrative what-if levels, not return periods.",
+      "bad": ["A 100-year flood level", "25-year design stage", "100 yr flood", "ระดับน้ำรอบ 100 ปี", "คาบการเกิดซ้ำ 100 ปี", "น้ำท่วมรอบ ๑๐๐ ปี", "น้ำท่วมขนาด ๒๕ ปีต่อครั้ง"]
+    },
+    {
+      "id": "road_schedule",
+      "pattern": "(?<![A-Za-z0-9_])(?:re)?schedul[a-z]*|(?<![A-Za-z0-9_])closure plans?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])cut-off lists?(?![A-Za-z0-9_])|ตารางปิดถนน|แผนปิดถนน|กำหนดการปิดถนน",
+      "message": "Modelled road inundation is not a schedule or a closure plan. Say 'modelled road inundation by hour'.",
+      "bad": ["Road closure schedule", "Closure plan for Phahonyothin Road", "Cut-off list by subdistrict", "ตารางปิดถนนรายชั่วโมง"]
+    },
+    {
+      "id": "set_ranking",
+      "pattern": "(?<![A-Za-z0-9_])(?:better|best|worse|worst|winning|superior|inferior) (?:shelter )?(?:plan|set)s?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:plan|set|shelters) (?:is|are|performs?|does|do|looks?) (?:the )?(?:better|worse|best|worst)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])outperform[a-z]*|แผนจัดอันดับที่ดีกว่า|แผนจัดอันดับดีกว่า|แผนดีกว่า|ชุดที่พักพิงที่ดีกว่า|ชุดที่ดีกว่า|ดีกว่าที่พักพิงที่ใช้จริง",
+      "message": "The shelter sets are not ranked. Give both denominators (all residents, and residents whose homes flood) and do not call a plan or a set better, best or worse.",
+      "bad": ["The ranked plan is the better plan", "The plan outperforms the shelters used in 2024", "The best set of shelters for Mae Sai", "The plan performs better at the peak", "The plan is the better option", "แผนจัดอันดับดีกว่าที่พักพิงที่ใช้จริงในปี 2567"]
+    },
+    {
+      "id": "safe_departure",
+      "pattern": "(?<![A-Za-z0-9_])last safe (?:departure|time|hour|moment|chance)s?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])safe (?:departure|evacuation) (?:time|hour|window)s?(?![A-Za-z0-9_])|เวลาออกเดินทางที่ปลอดภัย|เวลาอพยพที่ปลอดภัย",
+      "message": "The access cut-off hour is a modelled hour from illustrative stage keyframes, not a safe time to leave. Say 'modelled access cut-off hour'.",
+      "bad": ["Last safe departure: 10 Sep 22:00", "The last safe hour to leave is 22:00", "Safe departure window ends at 22:00", "เวลาออกเดินทางที่ปลอดภัยครั้งสุดท้าย 22:00 น."]
+    }
+  ],
+  "mixed": [
+    {"text": "This is not a forecast. It is a live forecast of the Sai River.", "rules": ["live", "forecast"]},
+    {"text": "Not an official warning, but treat it as a warning.", "rules": ["warning"]},
+    {"text": "Not a validation of the model; accuracy is 0.48.", "rules": ["validation_as_agreement"]},
+    {"text": "ไม่ใช่ข้อมูลเรียลไทม์ แต่เป็นคำเตือนน้ำท่วม", "rules": ["warning"]},
+    {"text": "not real-time, warning: flooding expected", "rules": ["warning"]},
+    {"text": "This is not real-time and an official warning", "rules": ["warning"]},
+    {"text": "ไม่ใช่ข้อมูลเรียลไทม์และคำเตือนอย่างเป็นทางการ", "rules": ["warning"]},
+    {"text": "ไม่ใช่การพยากรณ์ แต่คาดการณ์ว่าน้ำจะท่วมตลาด", "rules": ["forecast"]},
+    {"text": "ยังไม่ผ่านการตรวจสอบภาคสนาม แต่แบบจำลองแม่นยำ", "rules": ["validation_as_agreement"]},
+    {"text": "Rain fell on 10–14 Sep; the 25–50 % class is flood water, and 2025 years is not a period.", "rules": []},
+    {"text": "See https://example.org/real-time-forecast/validation for the live warning.", "rules": ["live", "warning"]},
+    {"text": "Field_Validation=0, unvalidated, invalid geometry repaired, official_warning: false", "rules": []},
+    {"text": "Modelled, not observed closures. First cut 11 Sep 02:00, reopened 13 Sep 06:00.", "rules": []},
+    {"text": "No single figure ranks the sets. Modelled access cut-off hour: 10 Sep 22:00. Hours from illustrative stage keyframes, not observed.", "rules": []},
+    {"text": "The smallest plan that gets most of the benefit; it does not grade the choice of sites.", "rules": []},
+    {"text": "The plan is better: its last safe departure is 23:00.", "rules": ["safe_departure", "set_ranking"]}
+  ]
+}

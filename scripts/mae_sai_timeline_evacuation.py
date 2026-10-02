@@ -126,7 +126,7 @@ def sample_eff(codes: np.ndarray, kgrid: np.ndarray, grid, xs: np.ndarray, ys: n
     usable = (c != CHANNEL_CODE) & (c != NEVER_CODE)
     if not usable.any():
         return None, 1.0
-    i = int(np.argmin(np.where(usable, c, 999)))
+    i = int(np.argmin(np.where(usable, c.astype(np.int32), 999)))
     return round(float(c[i]) * HAND_STEP_M, 2), round(float(k[i]), 3)
 
 

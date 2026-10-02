@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T16:10:00+07:00",
+ "generated_at": "2026-10-02T16:46:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -314,7 +314,7 @@
    "source_timestamp": "2024-08-01/2024-10-22",
    "season_window": "2024-08-01/2024-10-22",
    "shown": false,
-   "note": "Never an observation for a replay day. Shown only after the owners confirm the rights record."
+   "note": "Never an observation for a replay day. Not shown in this revision; the owners confirmed the rights record on 2 Oct 2026."
   },
   {
    "id": "terrain_shading",
@@ -410,7 +410,7 @@
    "HII rain data are CC BY-NC: the replay as a whole is for non-commercial use, and rain values stay out of any combined table or export.",
    "The VIIRS provider states no licence: the maps are shown with attribution, and reuse beyond this page is not cleared.",
    "OpenStreetMap-derived files (roads, facilities, shelter candidates and the access node positions) stay under ODbL 1.0: attribution and share-alike.",
-   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record."
+   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown in this revision; the owners confirmed the rights record on 2 Oct 2026."
   ],
   "inputs": [
    {
@@ -507,7 +507,7 @@
     "licence": "CC BY-SA 4.0",
     "licence_stated": true,
     "shown": false,
-    "status": "Not yet shown; rights record pending owner confirmation.",
+    "status": "Not shown in this revision; the owners confirmed the rights record on 2 Oct 2026.",
     "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
     "terms": "Attribution, share-alike and a change notice on every derived file; kept in its own folder."
    }
@@ -691,8 +691,8 @@
   {
    "root": "repo",
    "path": "docs/proposal_execution/rights_basis_4009_v1.json",
-   "bytes": 8036,
-   "sha256": "8f0660c059cdfc5257a23a3577496fa364f61ca3afb6f96806fdb727c3a21e9e"
+   "bytes": 8170,
+   "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
   },
   {
    "root": "repo",
@@ -10164,7 +10164,7 @@
     "id": "shelter_plan_reported_2024",
     "name": "shelter_plan_reported_2024.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv",
-    "sha256": "2156130df19d61fb94b6117e9c7a400064a0d8ca68d24c6bb3a7f571b2fdc710",
+    "sha256": "dc461d1a1e67e66b3f41d26f2b69e2649f5491dfae4366edd4037df449ba7a7d",
     "bytes": 28398,
     "media_type": "text/csv",
     "title": {
@@ -10188,7 +10188,7 @@
     "id": "shelter_plan_k",
     "name": "shelter_plan_k.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv",
-    "sha256": "b61263f2b2d854cea4cf4a38277210a542d4a92faec865d7510a411d48b3890e",
+    "sha256": "c819d67cdb34e3c648e4f00bbe1d6cfede2cb1ab0f93b6a71f96a9a40c21874a",
     "bytes": 13604,
     "media_type": "text/csv",
     "title": {
@@ -10211,7 +10211,7 @@
     "id": "shelter_plan_capacitated",
     "name": "shelter_plan_capacitated.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv",
-    "sha256": "093a5b12ecdd4f7db5a56b65ddb4cb2c965929dcf5bd85b0d77e9ebe3ca6db59",
+    "sha256": "bd25570b0047b5965317fe84b22bd166fd210ddfada8b6ce281e1a1eb3b78c7e",
     "bytes": 19081,
     "media_type": "text/csv",
     "title": {
@@ -10234,7 +10234,7 @@
     "id": "shelter_sites",
     "name": "shelter_sites.geojson",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_sites.geojson",
-    "sha256": "aa317d51646c0de392714151ad4e432ee3ffa659ed0e3add3b04683e962af54e",
+    "sha256": "140ab1656fc8fb31c07dc8da8f82134ccf4af34e81d3b888c0247eb45268b99e",
     "bytes": 99373,
     "media_type": "application/geo+json",
     "title": {
@@ -10258,7 +10258,7 @@
     "id": "modelled_road_inundation_by_hour",
     "name": "modelled_road_inundation_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv",
-    "sha256": "e070403092736853eafd82f9c3dfbf8e69a22dce4b503b0d3478acb4e32bf452",
+    "sha256": "3eecd999c5621a32ca2bc25244cc71f841e96381d438c736627ff595eee038b3",
     "bytes": 346104,
     "media_type": "text/csv",
     "title": {
@@ -10281,7 +10281,7 @@
     "id": "modelled_access_loss_by_hour",
     "name": "modelled_access_loss_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_access_loss_by_hour.csv",
-    "sha256": "22f99a5dfe67c06ab946648bdd52d3ef82cd07d936f6686713f5ce0634151cf8",
+    "sha256": "bc79ce25ca9f1fa213eb77b1c24071eb9c7bad94d650f3b1f212569e349c7abf",
     "bytes": 241197,
     "media_type": "text/csv",
     "title": {
@@ -10306,7 +10306,7 @@
     "id": "shelter_candidate_verification_sheet",
     "name": "shelter_candidate_verification_sheet.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv",
-    "sha256": "fd4c7a2bbb3769cf4f0078b2e17ed2129645cada0fa8192d3bcd7a363f0837ab",
+    "sha256": "d13ed32aa7c8049aeed02398020276ce7a885515ae4f1d51b7a0b00fc7eb516e",
     "bytes": 31025,
     "media_type": "text/csv",
     "title": {
@@ -10328,7 +10328,7 @@
     "id": "readme_licences",
     "name": "README_licences.txt",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt",
-    "sha256": "dc9786eadf74a9e090fe60089d15d357a358723a4a0bda24a9879af50a77c6a9",
+    "sha256": "69b8acb7ae36c931edb35c76ff43eb58c658d9fd1f0f19717efcef58de671a44",
     "bytes": 25842,
     "media_type": "text/plain",
     "title": {
@@ -11274,7 +11274,7 @@
    "id": "unosat-4009",
    "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)",
    "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
-   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); shown only after the owners confirm the rights record."
+   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); the owners confirmed the rights record on 2 Oct 2026. Not shown in this revision."
   },
   {
    "id": "unosat-3969",

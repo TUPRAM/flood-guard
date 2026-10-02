@@ -2,9 +2,8 @@ FloodGuard Thailand
 Licence notice for layers derived from UNOSAT product 4009
 Rights record: docs/proposal_execution/rights_basis_4009_v1.json
 
-STATUS: DRAFT. The project owners have not yet confirmed the rights record.
-Until both owners confirm it, FloodGuard publishes no layer derived from
-product 4009.
+STATUS: CONFIRMED. Both project owners confirmed the rights record on
+2 October 2026.
 
 1. Source
    UNOSAT and GISTDA water extents, 1 August to 22 October 2024,
@@ -59,9 +58,8 @@ FloodGuard Thailand
 ประกาศสัญญาอนุญาตสำหรับชั้นข้อมูลที่ดัดแปลงจากผลิตภัณฑ์ UNOSAT หมายเลข 4009
 บันทึกสิทธิ์: docs/proposal_execution/rights_basis_4009_v1.json
 
-สถานะ: ฉบับร่าง เจ้าของโครงการยังไม่ได้ยืนยันบันทึกสิทธิ์ฉบับนี้
-FloodGuard จะไม่เผยแพร่ชั้นข้อมูลใดที่ดัดแปลงจากผลิตภัณฑ์ 4009
-จนกว่าเจ้าของโครงการทั้งสองคนจะยืนยัน
+สถานะ: เจ้าของโครงการทั้งสองคนยืนยันบันทึกสิทธิ์ฉบับนี้
+เมื่อวันที่ 2 ตุลาคม 2569 (2026)
 
 1. แหล่งข้อมูล
    ขอบเขตน้ำของ UNOSAT และ GISTDA ระหว่างวันที่ 1 สิงหาคม ถึง 22 ตุลาคม 2567 (2024)

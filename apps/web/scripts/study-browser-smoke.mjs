@@ -473,7 +473,7 @@ try {
   await expect(licences).toBeVisible();
   for (const licence of ["CC BY-NC", "ODbL 1.0", "CC BY 4.0", "CC BY-IGO", "No licence stated by the provider", "CC BY-SA 4.0"]) await expect(licences).toContainText(licence);
   await expect(licences.locator("li[data-shown='false']")).toHaveCount(1);
-  await expect(licences.locator("li[data-shown='false']")).toContainText("Not yet shown; rights record pending owner confirmation.");
+  await expect(licences.locator("li[data-shown='false']")).toContainText(/Not yet shown; rights record pending owner confirmation\.|Not shown in this revision; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\./);
   await expect(sourcesPanel.getByTestId("tuning-disclosure").locator("li[data-relation='used_for_tuning']")).toHaveCount(2);
   await expect(sourcesPanel.getByTestId("sources-footer")).toContainText("status: non-operational · Data files generated:");
   // "k" is the plan size on this page: the sources name the depth factor in words and write it f.

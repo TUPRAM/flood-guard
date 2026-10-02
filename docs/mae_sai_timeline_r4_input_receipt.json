@@ -5,7 +5,7 @@
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
  "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
  "generated_at": {
-  "value": "2026-10-02T16:10:00+07:00",
+  "value": "2026-10-02T16:46:00+07:00",
   "basis": "declared"
  },
  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
@@ -27,7 +27,7 @@
   "repo": "repository root"
  },
  "input_count": 36,
- "input_bytes": 4787176592,
+ "input_bytes": 4787176726,
  "inputs": [
   {
    "root": "external",
@@ -206,8 +206,8 @@
   {
    "root": "repo",
    "path": "docs/proposal_execution/rights_basis_4009_v1.json",
-   "bytes": 8036,
-   "sha256": "8f0660c059cdfc5257a23a3577496fa364f61ca3afb6f96806fdb727c3a21e9e"
+   "bytes": 8170,
+   "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
   },
   {
    "root": "repo",
@@ -249,7 +249,7 @@
  "outputs": {
   "folder": "apps/web/public/studies/mae-sai-2024-timeline/r4",
   "file_count": 30,
-  "bytes": 6973467,
+  "bytes": 6973554,
   "files": [
    {
     "name": "access-nodes.bin",
@@ -259,42 +259,42 @@
    {
     "name": "exports/modelled_access_loss_by_hour.csv",
     "bytes": 241197,
-    "sha256": "22f99a5dfe67c06ab946648bdd52d3ef82cd07d936f6686713f5ce0634151cf8"
+    "sha256": "bc79ce25ca9f1fa213eb77b1c24071eb9c7bad94d650f3b1f212569e349c7abf"
    },
    {
     "name": "exports/modelled_road_inundation_by_hour.csv",
     "bytes": 346104,
-    "sha256": "e070403092736853eafd82f9c3dfbf8e69a22dce4b503b0d3478acb4e32bf452"
+    "sha256": "3eecd999c5621a32ca2bc25244cc71f841e96381d438c736627ff595eee038b3"
    },
    {
     "name": "exports/README_licences.txt",
     "bytes": 25842,
-    "sha256": "dc9786eadf74a9e090fe60089d15d357a358723a4a0bda24a9879af50a77c6a9"
+    "sha256": "69b8acb7ae36c931edb35c76ff43eb58c658d9fd1f0f19717efcef58de671a44"
    },
    {
     "name": "exports/shelter_candidate_verification_sheet.csv",
     "bytes": 31025,
-    "sha256": "fd4c7a2bbb3769cf4f0078b2e17ed2129645cada0fa8192d3bcd7a363f0837ab"
+    "sha256": "d13ed32aa7c8049aeed02398020276ce7a885515ae4f1d51b7a0b00fc7eb516e"
    },
    {
     "name": "exports/shelter_plan_capacitated.csv",
     "bytes": 19081,
-    "sha256": "093a5b12ecdd4f7db5a56b65ddb4cb2c965929dcf5bd85b0d77e9ebe3ca6db59"
+    "sha256": "bd25570b0047b5965317fe84b22bd166fd210ddfada8b6ce281e1a1eb3b78c7e"
    },
    {
     "name": "exports/shelter_plan_k.csv",
     "bytes": 13604,
-    "sha256": "b61263f2b2d854cea4cf4a38277210a542d4a92faec865d7510a411d48b3890e"
+    "sha256": "c819d67cdb34e3c648e4f00bbe1d6cfede2cb1ab0f93b6a71f96a9a40c21874a"
    },
    {
     "name": "exports/shelter_plan_reported_2024.csv",
     "bytes": 28398,
-    "sha256": "2156130df19d61fb94b6117e9c7a400064a0d8ca68d24c6bb3a7f571b2fdc710"
+    "sha256": "dc461d1a1e67e66b3f41d26f2b69e2649f5491dfae4366edd4037df449ba7a7d"
    },
    {
     "name": "exports/shelter_sites.geojson",
     "bytes": 99373,
-    "sha256": "aa317d51646c0de392714151ad4e432ee3ffa659ed0e3add3b04683e962af54e"
+    "sha256": "140ab1656fc8fb31c07dc8da8f82134ccf4af34e81d3b888c0247eb45268b99e"
    },
    {
     "name": "facilities.geojson",
@@ -353,8 +353,8 @@
    },
    {
     "name": "timeline.json",
-    "bytes": 271620,
-    "sha256": "313a762036dd8839d738560839e20016f84c64a227a279dbacb80cd3aedf2742"
+    "bytes": 271707,
+    "sha256": "1d970f8f07ffd6dfcf6a2dd205ea6327287ae59fd64024f89b51649dfcc108e2"
    },
    {
     "name": "viirs-20240910.png",

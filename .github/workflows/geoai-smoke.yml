@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Install Python 3.12
@@ -33,7 +33,7 @@ jobs:
           --junitxml=.tmp/proposal-evidence/geoai-real-smoke.xml
       - name: Upload small public-safe proof artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: geoai-real-smoke-evidence
           path: |

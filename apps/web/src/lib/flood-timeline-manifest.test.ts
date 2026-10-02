@@ -105,7 +105,9 @@ describe("Mae Sai replay manifest reader: the served revision (r4 shape)", () =>
     expect(licences["sentinel-2"]).toMatch(/Copernicus Sentinel data terms/);
     expect(rows.find((row) => row.id === "viirs")!.licence_stated).toBe(false);
     expect(rows.filter((row) => !row.shown).map((row) => row.id)).toEqual(["unosat-4009"]);
-    expect(rows.at(-1)).toMatchObject({ id: "unosat-4009", status: "Not yet shown; rights record pending owner confirmation." });
+    // The status follows the rights record (pending, or confirmed on a date); the input stays unshown either way.
+    expect(rows.at(-1)).toMatchObject({ id: "unosat-4009" });
+    expect(rows.at(-1)?.status).toMatch(/Not yet shown; rights record pending owner confirmation\.|Not shown in this revision; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\./);
     // Every listed source has a licence row.
     for (const source of manifest.sources) expect(rows.some((row) => row.id === source.id), source.id).toBe(true);
     // The sources name both elevation tiles and the residents grid.

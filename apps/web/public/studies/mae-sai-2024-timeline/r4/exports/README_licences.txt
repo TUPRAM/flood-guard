@@ -9,7 +9,7 @@
 # confidence_reason_th: ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
 # lanes: REP, SCN
 # source_timestamp: OpenStreetMap extract 2026-07-09; WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT
-# generated_at: 2026-10-02T16:10:00+07:00
+# generated_at: 2026-10-02T16:46:00+07:00
 # generated_by: scripts/build_mae_sai_flood_timeline.py
 # study: mae-sai-2024-flood-timeline r4
 # accepted: accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
@@ -23,7 +23,7 @@
 # assumption_1_th: น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้
 # assumption_2: Hours are replay hours on an hourly grid: hour 0 is 9 Sep 2024 00:00 ICT (UTC+7) and hour 263 is 19 Sep 2024 23:00; the assumed stage is sampled at the start of each hour.
 # assumption_2_th: ชั่วโมงคือชั่วโมงของการย้อนดูแบบรายชั่วโมง ชั่วโมง 0 คือ 9 ก.ย. 2567 (2024) 00:00 น. เวลาประเทศไทย (UTC+7) และชั่วโมง 263 คือ 19 ก.ย. 2567 (2024) 23:00 น. ใช้ระดับน้ำสมมุติ ณ ต้นชั่วโมง
-# input_receipt: docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=a27437c70c58170194ab3c7581e7756e6a104ca984c8f3d27fccfa92c2e4bdf0
+# input_receipt: docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=9d903b33a8d66a82025d373ee1603f738c593299d4146b2c6f71355f3b3d3d1f
 # git_commit: null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt
 
 FLOODGUARD MAE SAI SEPTEMBER 2024 REPLAY: EXPORT PACK
@@ -53,43 +53,43 @@ who fits; a footprint estimate can be too low where buildings are unmapped.
 shelter_plan_reported_2024.csv
   Shelters reported in use in Mae Sai in September 2024, with a model check of each located site (not an official register)
   ที่พักพิงที่มีรายงานว่าใช้ในแม่สายเดือนกันยายน 2567 (2024) พร้อมผลเทียบกับแบบจำลองของสถานที่ที่ระบุตำแหน่งได้ (ไม่ใช่ทะเบียนทางการ)
-  28,398 bytes; 19 rows; 35 provenance lines before the column header; SHA-256 2156130df19d61fb94b6117e9c7a400064a0d8ca68d24c6bb3a7f571b2fdc710
+  28,398 bytes; 19 rows; 35 provenance lines before the column header; SHA-256 dc461d1a1e67e66b3f41d26f2b69e2649f5491dfae4366edd4037df449ba7a7d
   Lanes: REP, SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); Shelters reported in use in September 2024 (FloodGuard desk research) (Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)).
 
 shelter_plan_k.csv
   Modelled shelter coverage ranking, sites 1 to N: a plan of any size is its first rows (candidates to verify)
   การจัดอันดับความครอบคลุมของที่พักพิงตามแบบจำลอง ลำดับ 1 ถึง N แผนขนาดใดก็ตามคือแถวแรกตามจำนวนนั้น (สถานที่ที่ควรตรวจสอบ)
-  13,604 bytes; 12 rows; 38 provenance lines before the column header; SHA-256 b61263f2b2d854cea4cf4a38277210a542d4a92faec865d7510a411d48b3890e
+  13,604 bytes; 12 rows; 38 provenance lines before the column header; SHA-256 c819d67cdb34e3c648e4f00bbe1d6cfede2cb1ab0f93b6a71f96a9a40c21874a
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020) (CC BY 4.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)).
 
 shelter_plan_capacitated.csv
   Capacity-aware shelter ranking under two capacity bounds: who fits (candidates to verify)
   การจัดอันดับที่พักพิงแบบคิดความจุภายใต้ขอบเขตล่างและขอบเขตบน: รองรับได้กี่คน (สถานที่ที่ควรตรวจสอบ)
-  19,081 bytes; 25 rows; 39 provenance lines before the column header; SHA-256 093a5b12ecdd4f7db5a56b65ddb4cb2c965929dcf5bd85b0d77e9ebe3ca6db59
+  19,081 bytes; 25 rows; 39 provenance lines before the column header; SHA-256 bd25570b0047b5965317fe84b22bd166fd210ddfada8b6ce281e1a1eb3b78c7e
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020) (CC BY 4.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)).
 
 shelter_sites.geojson
   Shelter sites as points: every modelled candidate and every located site reported in use in September 2024
   ตำแหน่งที่พักพิงแบบจุด: สถานที่ที่เป็นไปได้ทุกแห่งตามแบบจำลอง และสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) ที่ระบุตำแหน่งได้
-  99,373 bytes; 128 features; SHA-256 aa317d51646c0de392714151ad4e432ee3ffa659ed0e3add3b04683e962af54e
+  99,373 bytes; 128 features; SHA-256 140ab1656fc8fb31c07dc8da8f82134ccf4af34e81d3b888c0247eb45268b99e
   Lanes: SCN, REP. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020) (CC BY 4.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)); Shelters reported in use in September 2024 (FloodGuard desk research) (Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)).
 
 modelled_road_inundation_by_hour.csv
   Modelled road inundation by hour, one row per OpenStreetMap way (modelled, not observed)
   ถนนที่น้ำท่วมตามแบบจำลองรายชั่วโมง หนึ่งแถวต่อหนึ่งเส้นทางใน OpenStreetMap (ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้)
-  346,104 bytes; 3,478 rows; 39 provenance lines before the column header; SHA-256 e070403092736853eafd82f9c3dfbf8e69a22dce4b503b0d3478acb4e32bf452
+  346,104 bytes; 3,478 rows; 39 provenance lines before the column header; SHA-256 3eecd999c5621a32ca2bc25244cc71f841e96381d438c736627ff595eee038b3
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)); HDX Thailand COD-AB subdistrict boundaries v01 (CC BY-IGO).
 
 modelled_access_loss_by_hour.csv
   Modelled loss of walking access to a shelter by hour, one row per subdistrict and replay hour
   การสูญเสียการเข้าถึงที่พักพิงด้วยการเดินตามแบบจำลองรายชั่วโมง หนึ่งแถวต่อตำบลและชั่วโมงของการย้อนดู
-  241,197 bytes; 2,112 rows; 38 provenance lines before the column header; SHA-256 22f99a5dfe67c06ab946648bdd52d3ef82cd07d936f6686713f5ce0634151cf8
+  241,197 bytes; 2,112 rows; 38 provenance lines before the column header; SHA-256 bc79ce25ca9f1fa213eb77b1c24071eb9c7bad94d650f3b1f212569e349c7abf
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020) (CC BY 4.0); HDX Thailand COD-AB subdistrict boundaries v01 (CC BY-IGO); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)); Shelters reported in use in September 2024 (FloodGuard desk research) (Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)).
 
 shelter_candidate_verification_sheet.csv
   Shelter-candidate verification sheet: a blank checklist for a local checker (no check has been conducted)
   แบบตรวจสอบสถานที่ที่อาจใช้เป็นที่พักพิง: รายการตรวจที่ยังว่างสำหรับผู้ตรวจสอบในพื้นที่ (ยังไม่มีการตรวจสอบ)
-  31,025 bytes; 95 rows; 47 provenance lines before the column header; SHA-256 fd4c7a2bbb3769cf4f0078b2e17ed2129645cada0fa8192d3bcd7a363f0837ab
+  31,025 bytes; 95 rows; 47 provenance lines before the column header; SHA-256 d13ed32aa7c8049aeed02398020276ce7a885515ae4f1d51b7a0b00fc7eb516e
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)).
 
 3. LICENCE AND ATTRIBUTION / สัญญาอนุญาตและการแสดงที่มา

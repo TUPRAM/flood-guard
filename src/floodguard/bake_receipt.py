@@ -212,12 +212,14 @@ def _native_versions() -> dict[str, str | None]:
 
 
 def directory_listing(folder: Path | str) -> list[dict[str, Any]]:
-    """Return ``name``, ``bytes`` and ``sha256`` for every file under ``folder`` (POSIX relative names, sorted)."""
+    """Return ``name``, ``bytes`` and ``sha256`` for every file under ``folder`` (POSIX relative names, sorted).
+
+    The names are sorted as text, so the listing is the same on every platform: sorting the paths themselves would
+    put ``LICENSE`` after ``envelope.png`` on Windows (which compares paths without case) and before it elsewhere.
+    """
     root = Path(folder)
-    rows = []
-    for path in sorted(p for p in root.rglob("*") if p.is_file()):
-        rows.append({"name": path.relative_to(root).as_posix(), "bytes": path.stat().st_size, "sha256": sha256_file(path)})
-    return rows
+    files = {path.relative_to(root).as_posix(): path for path in root.rglob("*") if path.is_file()}
+    return [{"name": name, "bytes": files[name].stat().st_size, "sha256": sha256_file(files[name])} for name in sorted(files)]
 
 
 @dataclass(frozen=True)

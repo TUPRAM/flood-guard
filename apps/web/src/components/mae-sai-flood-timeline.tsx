@@ -67,12 +67,15 @@ import {
   roadCutClassIndex,
   roadCutGroups,
   roadState,
+  s2CrosscheckAt,
+  s2CrosscheckDate,
   stageAt,
   tFromDate,
   tFromLocalDate,
   thaiYear,
   TIMELINE_END_T,
   TIMELINE_MANIFEST_URL,
+  formatFileSize,
   formatGeneratedAt,
   licenceRows,
   parseTimelineManifest,
@@ -80,6 +83,7 @@ import {
   waterCandidates,
   type AreaGeometry,
   type ExploratoryKnowledgeItem,
+  type ExportFile,
   type FacilityProps,
   type GeoCollection,
   type HourClass,
@@ -92,6 +96,7 @@ import {
   type RoadProps,
   type RoadState,
   type ReportedShelter,
+  type SeasonEnvelopeBlock,
   type ShelterCandidate,
   type ShelterInfo,
   type TambonProps,
@@ -104,6 +109,17 @@ import {
 } from "@/lib/flood-timeline";
 import { GLOSSARY, GLOSSARY_ORDER, localizedText, plainManifestText, roadNameText } from "@/lib/flood-timeline-copy";
 import {
+  ENVELOPE_COPY,
+  envelopeCells,
+  envelopeCredit,
+  envelopeHatch,
+  paintEnvelope,
+  parseSeasonEnvelopeDocument,
+  seasonEnvelopeDrawn,
+  shippableEnvelope,
+  type SeasonEnvelopeDocument,
+} from "@/lib/flood-timeline-envelope";
+import {
   accessLevelIndex,
   accessLevelStep,
   accessLostSeries,
@@ -113,6 +129,8 @@ import {
   capacityFlag,
   clampPlanK,
   cutoffWeight,
+  EQUITY_MIN_GROUP,
+  equityRuleSentence,
   floodedHomeMask,
   nodeLostAccess,
   osmReference,
@@ -186,8 +204,18 @@ import {
   Term,
   ThemeEyebrow,
 } from "./mae-sai-evacuation-panels";
-import { RainChart, rainStationName, ViirsComparisonCard, ViirsLegend, viirsMomentText } from "./mae-sai-observed-panels";
-import { DIAMOND_PATH, ReplayExportPanel, STAR_PATH, STAR_SLASH_PATH, type ReplayExportSource } from "./mae-sai-replay-export";
+import { followingViirsDay, RainChart, rainStationName, s2SensitivityText, Sentinel2Evidence, ViirsComparisonCard, ViirsLegend, viirsMomentText } from "./mae-sai-observed-panels";
+import { DIAMOND_PATH, ReplayExportPanel, STAR_PATH, STAR_SLASH_PATH, type ExportEnvelope, type ReplayExportSource } from "./mae-sai-replay-export";
+import {
+  SeasonEnvelopeCaption,
+  SeasonEnvelopeChip,
+  SeasonEnvelopeLegend,
+  SeasonEnvelopeSources,
+  SeasonEnvelopeSwatch,
+  envelopeFailure,
+  settledSeasonEnvelope,
+  type SeasonEnvelopeState,
+} from "./mae-sai-season-envelope";
 import { WorkspaceHeader } from "./workspace-header";
 
 import styles from "./mae-sai-flood-timeline.module.css";
@@ -290,6 +318,11 @@ interface MapController {
   setViirs: (day: Pick<ViirsDay, "href" | "date"> | null) => void;
   /** Show or hide the rain-gauge markers. */
   setGauges: (visible: boolean) => void;
+  /**
+   * Draw the season envelope (its cells on the water grid), hatched, with `credit` in the map credits; null hides it
+   * and takes its credit away. It takes no replay time: no day or hour selects the layer.
+   */
+  setEnvelope: (cells: Uint32Array | null, credit: string) => void;
   /** Re-render the content of any open tooltip or popup (stage, plan size or language changed). */
   refreshTooltips: () => void;
 }
@@ -435,6 +468,21 @@ async function loadPopulation(manifest: TimelineManifest, signal: AbortSignal): 
   return raster.data;
 }
 
+/**
+ * The season envelope's two files, each loaded on its own: the statistics file (refused by
+ * `parseSeasonEnvelopeDocument` when it is not what the manifest names) and the cells of the 1-bit raster on the water
+ * grid. The comparison needs the statistics only, so a raster that is missing or on another grid withholds the layer
+ * and nothing else.
+ */
+function loadSeasonEnvelope(manifest: TimelineManifest, block: SeasonEnvelopeBlock, signal: AbortSignal): { statistics: Promise<SeasonEnvelopeDocument>; raster: Promise<Uint32Array> } {
+  return {
+    statistics: fetchJson<unknown>(block.files.statistics.href, signal).then((value) => parseSeasonEnvelopeDocument(value, block)),
+    raster: fetchBytes(block.files.raster.href, signal)
+      .then((bytes) => (typeof DecompressionStream === "function" ? decodePng(bytes, inflateZlib) : decodeWithCanvas(bytes)))
+      .then((decoded) => envelopeCells(decoded, manifest.hand.width, manifest.hand.height)),
+  };
+}
+
 /** Resident nodes and their per-set cut codes, parsed per the manifest layout. */
 async function loadAccessNodes(manifest: TimelineManifest, signal: AbortSignal): Promise<AccessNodes> {
   const access = manifest.access!;
@@ -573,6 +621,7 @@ function layerSpan(layer: TimelineLayer | undefined, language: Language): string
 /** The 42 OpenStreetMap key facilities start hidden (the layer toggle keeps them available) to keep the town readable. */
 const DEFAULT_LAYERS: LayerVisibility = {
   tambons: true, roads: true, facilities: false, reported: true, candidates: true, ineligible: false, cutoff: false, viirs: false, gauges: false,
+  envelope: false,
 };
 /** Water opacity while the imagery swipe is on, so the two images stay comparable under the model water. */
 const COMPARE_WATER_OPACITY = 0.3;
@@ -675,6 +724,9 @@ export function MaeSaiFloodTimeline() {
   const [showCutoff, setShowCutoff] = useState(DEFAULT_LAYERS.cutoff);
   const [showViirs, setShowViirs] = useState(DEFAULT_LAYERS.viirs);
   const [showGauges, setShowGauges] = useState(DEFAULT_LAYERS.gauges);
+  /** The season envelope's own toggle. Nothing but this toggle (and a shared link's `layers=`) turns the layer on. */
+  const [showEnvelope, setShowEnvelope] = useState(DEFAULT_LAYERS.envelope);
+  const [envelope, setEnvelope] = useState<SeasonEnvelopeState>({ status: "absent" });
   const [shelterSet, setShelterSet] = useState<ShelterSetChoice>("reported");
   const [accessScope, setAccessScope] = useState<AccessScopeChoice>("flooded");
   const [planK, setPlanK] = useState(1);
@@ -690,7 +742,7 @@ export function MaeSaiFloodTimeline() {
   const [linkReady, setLinkReady] = useState(false);
   const [share, setShare] = useState<{ status: "idle" | "copied" | "manual"; url: string }>({ status: "idle", url: "" });
   const [basemapIssue, setBasemapIssue] = useState(false);
-  const [offlineCopy, setOfflineCopy] = useState<{ cached: number; failed: number; total: number } | null>(null);
+  const [offlineCopy, setOfflineCopy] = useState<OfflineCopy | null>(null);
   const [focusedRoute, setFocusedRoute] = useState<string | null>(null);
 
   const timeRef = useRef(START_T);
@@ -735,6 +787,20 @@ export function MaeSaiFloodTimeline() {
             () => { if (!signal.aborted) setAccessNodes({ status: "error" }); },
           );
         } else setAccessNodes({ status: "absent" });
+        // The season envelope ships only with its label, caption, licence and credit; its files load on their own.
+        const envelopeBlock = shippableEnvelope(manifest);
+        if (envelopeBlock) {
+          setEnvelope({ status: "loading", block: envelopeBlock });
+          const { statistics, raster } = loadSeasonEnvelope(manifest, envelopeBlock, signal);
+          // The comparison is shown as soon as the statistics have loaded, whatever becomes of the raster.
+          statistics.then(
+            (document) => { if (!signal.aborted) setEnvelope((current) => (current.status === "loading" ? { ...current, document } : current)); },
+            () => undefined,
+          );
+          void Promise.allSettled([statistics, raster]).then(([statisticsResult, rasterResult]) => {
+            if (!signal.aborted) setEnvelope(settledSeasonEnvelope(envelopeBlock, statisticsResult, rasterResult));
+          });
+        } else setEnvelope({ status: "absent" });
         const [roads, facilities, tambons] = await Promise.all([
           fetchJson<ReplayData["roads"]>(manifest.vectors.roads.href, signal),
           fetchJson<ReplayData["facilities"]>(manifest.vectors.facilities.href, signal),
@@ -765,6 +831,7 @@ export function MaeSaiFloodTimeline() {
         setShowCutoff(link.layers.cutoff);
         setShowViirs(link.layers.viirs && Boolean(manifest.viirs_daily));
         setShowGauges(link.layers.gauges && Boolean(manifest.rainfall));
+        setShowEnvelope(link.layers.envelope && envelopeBlock !== null);
         setShelterSet(link.shelterSet);
         setAccessScope(link.accessScope);
         setPlanK(manifest.shelters ? clampPlanK(link.planK, manifest.shelters) : 1);
@@ -892,6 +959,13 @@ export function MaeSaiFloodTimeline() {
   const rainfall = manifest?.rainfall ?? null;
   // At most nine days to scan; the day object is stable, so the map and the card update only when the day changes.
   const viirsDay = viirsInfo ? viirsDayAt(time, viirsInfo.days) : null;
+  // The Sentinel-2 water check is one observation of one day (15 Sep): it is on show while the playhead is on that day,
+  // beside that day's VIIRS map (whatever VIIRS day the playhead itself is on).
+  const s2Check = s2CrosscheckAt(time, manifest?.s2_crosscheck);
+  const s2Date = s2Check ? s2CrosscheckDate(s2Check) : null;
+  const s2ViirsDay = s2Date ? viirsInfo?.days.find((day) => day.date === s2Date) ?? null : null;
+  // The next clear VIIRS day the manifest names: a day later the observation is smaller than the model.
+  const s2NextViirsDay = s2Check ? followingViirsDay(s2Check, viirsInfo) : null;
   const latestOptical = manifest ? latestObservation(time, manifest.observations, "optical") : null;
   const latestOpticalId = latestOptical?.observation.id ?? null;
   const resolveImagery = useCallback(
@@ -905,6 +979,7 @@ export function MaeSaiFloodTimeline() {
   const compareRight = compareOn && sides ? resolveImagery(sides[1]) : null;
   const comparing = compareOn && sides !== null;
 
+  const envelopeFailed = envelope.status === "error";
   const linkState = useMemo<ReplayLinkState>(() => ({
     hour,
     imagery,
@@ -916,13 +991,14 @@ export function MaeSaiFloodTimeline() {
     layers: {
       tambons: showTambons, roads: showRoads, facilities: showFacilities,
       reported: showReported, candidates: showCandidates, ineligible: showIneligible, cutoff: showCutoff,
-      viirs: showViirs, gauges: showGauges,
+      // A layer that could not be loaded is not on the map, so a shared link does not ask for it.
+      viirs: showViirs, gauges: showGauges, envelope: showEnvelope && !envelopeFailed,
     },
     shelterSet,
     planK,
     accessScope,
   }), [hour, imagery, waterMode, waterOpacity, roadMode, comparing, sides, language, showTambons, showRoads, showFacilities,
-    showReported, showCandidates, showIneligible, showCutoff, showViirs, showGauges, shelterSet, planK, accessScope]);
+    showReported, showCandidates, showIneligible, showCutoff, showViirs, showGauges, showEnvelope, envelopeFailed, shelterSet, planK, accessScope]);
 
   useEffect(() => {
     languageRef.current = language;
@@ -970,11 +1046,17 @@ export function MaeSaiFloodTimeline() {
       const worker = registration.active;
       if (!active || !worker) return;
       channel = new MessageChannel();
-      channel.port1.onmessage = (event: MessageEvent<{ type?: string; cached?: number; failed?: number; total?: number }>) => {
+      channel.port1.onmessage = (event: MessageEvent<{
+        type?: string; cached?: number; failed?: number; total?: number; exports_cached?: number; exports_failed?: number; exports_total?: number;
+      }>) => {
         channel?.port1.close();
         const result = event.data;
         if (!active || result?.type !== "FLOODGUARD_CASE_REPLAY_STATUS") return;
-        setOfflineCopy({ cached: result.cached ?? 0, failed: result.failed ?? 0, total: result.total ?? 0 });
+        // The download files are counted apart from the replay's own data (their own list and budget).
+        setOfflineCopy({
+          cached: result.cached ?? 0, failed: result.failed ?? 0, total: result.total ?? 0,
+          exports: { cached: result.exports_cached ?? 0, failed: result.exports_failed ?? 0, total: result.exports_total ?? 0 },
+        });
       };
       worker.postMessage({ type: "FLOODGUARD_CACHE_CASE_REPLAY" }, [channel.port2]);
     }).catch(() => undefined);
@@ -1078,7 +1160,7 @@ export function MaeSaiFloodTimeline() {
       };
 
       for (const [name, zIndex] of [
-        ["fg-imagery", 250], ["fg-compare-left", 251], ["fg-compare-right", 252], ["fg-water", 350], ["fg-viirs", 355], ["fg-cutoff", 360],
+        ["fg-imagery", 250], ["fg-compare-left", 251], ["fg-compare-right", 252], ["fg-water", 350], ["fg-envelope", 352], ["fg-viirs", 355], ["fg-cutoff", 360],
         ["fg-tambons", 380], ["fg-highlight", 390], ["fg-roads", 400], ["fg-facilities", 450], ["fg-gauges", 455], ["fg-shelters", 460],
       ] as const) {
         const pane = map.createPane(name);
@@ -1564,6 +1646,35 @@ export function MaeSaiFloodTimeline() {
         }
       };
 
+      // --- Season envelope (scenario, SCN-ENV): its cells on the water grid, hatched on a canvas of its own above the
+      // water. The hatch is repainted after a zoom, in whole raster cells: its stripes keep about the same width on
+      // screen up to two screen pixels per cell and are four cells wide closer in (`envelopeHatch`). Nothing here reads
+      // the replay time: the layer is on or off by its own toggle only.
+      let envelopeLayer: {
+        overlay: ImageOverlay; context: CanvasRenderingContext2D; image: ImageData; pixels: Uint32Array; cells: Uint32Array; credit: string; hatchKey: string;
+      } | null = null;
+      const paintEnvelopeLayer = () => {
+        if (!envelopeLayer) return;
+        const west = map.latLngToLayerPoint(bounds.getNorthWest()).x;
+        const east = map.latLngToLayerPoint(bounds.getSouthEast()).x;
+        const hatch = envelopeHatch(Math.abs(east - west) / m.hand.width);
+        const key = `${hatch.period}:${hatch.dark}:${hatch.light}`;
+        if (key === envelopeLayer.hatchKey) return;
+        paintEnvelope(envelopeLayer.cells, m.hand.width, envelopeLayer.pixels, hatch, LITTLE_ENDIAN);
+        envelopeLayer.context.putImageData(envelopeLayer.image, 0, 0);
+        envelopeLayer.hatchKey = key;
+      };
+      const createEnvelopeLayer = (cells: Uint32Array, credit: string) => {
+        const element = document.createElement("canvas");
+        element.width = m.hand.width;
+        element.height = m.hand.height;
+        const target = element.getContext("2d");
+        if (!target) return null;
+        const image = target.createImageData(element.width, element.height);
+        const overlay = createCanvasOverlay(L, element, bounds, { pane: "fg-envelope", opacity: 1, className: styles.envelopeLayer, attribution: credit });
+        return { overlay, context: target, image, pixels: new Uint32Array(image.data.buffer), cells, credit, hatchKey: "" };
+      };
+
       // --- Rain gauges (observed forcing): small drops with a popup of each station's record.
       const gaugeGroup = L.layerGroup();
       const rain: Rainfall | null = m.rainfall ?? null;
@@ -1780,6 +1891,29 @@ export function MaeSaiFloodTimeline() {
           setGroup(gaugeGroup, visible);
           refreshTitles();
         },
+        setEnvelope(cells, credit) {
+          if (!cells) {
+            if (envelopeLayer && map.hasLayer(envelopeLayer.overlay)) {
+              envelopeLayer.overlay.remove();
+              map.off("zoomend", paintEnvelopeLayer);
+            }
+            return;
+          }
+          if (envelopeLayer && (envelopeLayer.cells !== cells || envelopeLayer.credit !== credit)) {
+            if (map.hasLayer(envelopeLayer.overlay)) {
+              envelopeLayer.overlay.remove();
+              map.off("zoomend", paintEnvelopeLayer);
+            }
+            envelopeLayer = null;
+          }
+          envelopeLayer ??= createEnvelopeLayer(cells, credit);
+          if (!envelopeLayer) return;
+          if (!map.hasLayer(envelopeLayer.overlay)) {
+            envelopeLayer.overlay.addTo(map);
+            map.on("zoomend", paintEnvelopeLayer);
+          }
+          paintEnvelopeLayer();
+        },
         refreshTooltips() {
           refreshTooltips();
           refreshTitles();
@@ -1847,6 +1981,29 @@ export function MaeSaiFloodTimeline() {
   useEffect(() => {
     if (mapReady) controllerRef.current?.setGauges(showGauges);
   }, [mapReady, showGauges]);
+
+  // The season envelope is drawn while its toggle is on and its files have loaded; the replay time plays no part.
+  const envelopeOnMap = envelope.status === "ready" && seasonEnvelopeDrawn(showEnvelope, true) ? envelope : null;
+  useEffect(() => {
+    if (mapReady) controllerRef.current?.setEnvelope(envelopeOnMap ? envelopeOnMap.cells : null, envelopeCredit(envelopeOnMap?.block, envelopeOnMap !== null) ?? "");
+  }, [mapReady, envelopeOnMap]);
+  const exportEnvelope = useMemo<ExportEnvelope | null>(
+    () => (envelopeOnMap
+      ? { cells: envelopeOnMap.cells, credit: envelopeOnMap.block.credit, licence: envelopeOnMap.block.licence, licence_url: envelopeOnMap.block.licence_url }
+      : null),
+    [envelopeOnMap],
+  );
+  // The caption under the map takes room from the map, not from the timeline: its height is given to the style sheet,
+  // which subtracts it from the map on wide screens, where the stage is sticky and must keep fitting the window.
+  const stageElement = useRef<HTMLElement | null>(null);
+  const setEnvelopeCaptionHeight = useCallback((height: number) => {
+    const stage = stageElement.current;
+    if (!stage) return;
+    if (height > 0) stage.style.setProperty("--fg-envelope-caption-h", `${height}px`);
+    else stage.style.removeProperty("--fg-envelope-caption-h");
+  }, []);
+  // A link (or the toggle, before the files failed) asked for the layer and it cannot be drawn: say so by the map.
+  const envelopeMapFailure = showEnvelope ? envelopeFailure(envelope, language) : null;
 
   useEffect(() => {
     if (mapReady) controllerRef.current?.refreshTooltips();
@@ -2025,6 +2182,7 @@ export function MaeSaiFloodTimeline() {
               setHand(null);
               setPopulation({ status: "loading" });
               setAccessNodes({ status: "loading" });
+              setEnvelope({ status: "absent" });
               setLinkReady(false);
               setReloadKey((key) => key + 1);
             }}>
@@ -2164,6 +2322,7 @@ export function MaeSaiFloodTimeline() {
     cutoff: showCutoff && !!accessInfo,
     viirs: showViirs ? viirsInfo : null,
     gauges: showGauges && !!rainfall,
+    envelope: envelopeOnMap !== null,
     facilities: showFacilities,
     lowConfidence: !!lowConfidence && !!hand?.lowCells && hatchesLowConfidence(legendWaterMode),
     residentsPending,
@@ -2194,7 +2353,7 @@ export function MaeSaiFloodTimeline() {
           {/* Escape closes the "Map layers" drawer from anywhere in this section (the map, the legend, Play, the
               timeline), leaving focus where the reader is. Inside the drawer its own handler runs first and hands
               focus back to the button. */}
-          <section className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}
+          <section ref={stageElement} className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}
             onKeyDown={(event) => {
               if (event.key === "Escape" && layersOpen) setLayersOpen(false);
             }}>
@@ -2265,8 +2424,12 @@ export function MaeSaiFloodTimeline() {
                     <TimelineLegend {...legendProps} part="symbols" />
                   </details>
                 </details>
-                {/* One stack above the attribution: the basemap note over the "Clear route selection" button. */}
+                {/* One stack above the attribution: the scenario chip of the season envelope, the basemap note and the
+                    "Clear route selection" button. The chip sits here, not among the notes: on a phone the notes give
+                    way to the comparison labels and to an open legend, and the layer must never be on the map unlabelled. */}
                 <div className={styles.mapFoot} data-map-foot="" data-testid="map-foot">
+                  {envelopeOnMap && <SeasonEnvelopeChip envelope={envelopeOnMap.block} language={lang} />}
+                  {mapReady && envelopeMapFailure && <p className={styles.basemapNote} role="status" data-testid="envelope-failed-map">{envelopeMapFailure}</p>}
                   {mapReady && (basemapIssue || !online) && (
                     <p className={styles.basemapNote} role="status" data-testid="basemap-note">{online
                       ? t(
@@ -2365,8 +2528,19 @@ export function MaeSaiFloodTimeline() {
                   {viirsInfo && layerToggle(showViirs, setShowViirs, t("VIIRS daily flood map (375 m, observed)", "แผนที่น้ำท่วมรายวัน VIIRS (375 ม. สังเกตการณ์)"), <i style={{ background: rgbaCss([118, 42, 131, 245]) }} />)}
                   {rainfall && layerToggle(showGauges, setShowGauges, t("Rain gauges (observed)", "สถานีวัดฝน (ตรวจวัดจริง)"), <i className={styles.legendGauge}><svg viewBox="0 0 24 24" width="14" height="14" focusable="false"><path d={GAUGE_PATH} /></svg></i>)}
                 </fieldset>
+                {/* The season envelope is a scenario layer of its own: its toggle sits apart from the layers that follow the
+                    replay hour, and no day or hour switches it. Without its label, licence and credit there is no toggle. */}
+                {(envelope.status === "loading" || envelope.status === "ready") && (
+                  <fieldset className={styles.toggles} data-testid="envelope-toggle">
+                    <legend>{t("Scenario layer (not tied to the replay hour)", "ชั้นข้อมูลสถานการณ์จำลอง (ไม่ผูกกับชั่วโมงของการย้อนดู)")}</legend>
+                    {layerToggle(showEnvelope, setShowEnvelope, ENVELOPE_COPY.toggle[lang], <SeasonEnvelopeSwatch />)}
+                    {showEnvelope && envelope.status === "loading" && <p className={styles.muted} role="status">{ENVELOPE_COPY.loading[lang]}</p>}
+                  </fieldset>
+                )}
+                {envelopeFailed && <p className={styles.muted} data-testid="envelope-failed">{envelopeFailure(envelope, lang)}</p>}
               </div>
             </div>
+            {envelopeOnMap && <SeasonEnvelopeCaption envelope={envelopeOnMap.block} language={lang} onHeight={setEnvelopeCaptionHeight} />}
 
             <div className={styles.dock}>
               {manifest && derived && (
@@ -2505,7 +2679,8 @@ export function MaeSaiFloodTimeline() {
 
                 {shelterInfo && (
                   <ShelterPlanCard shelters={shelterInfo} k={planK} onPlanK={choosePlanK}
-                    language={lang} onShowCandidate={showCandidateOnMap} />
+                    language={lang} onShowCandidate={showCandidateOnMap}
+                    verificationSheet={manifest.exports?.files.find((file) => file.id === shelterInfo.verification?.sheet) ?? null} />
                 )}
 
                 {shelterInfo && (
@@ -2529,6 +2704,7 @@ export function MaeSaiFloodTimeline() {
                     {viirsInfo && (
                       <div data-testid="viirs-evidence"><dt>{t("VIIRS (observed)", "VIIRS (สังเกตการณ์)")}</dt><dd>{viirsMomentText(viirsDay, viirsInfo, lang)}</dd></div>
                     )}
+                    {s2Check && <Sentinel2Evidence check={s2Check} viirsDay={s2ViirsDay} nextViirsDay={s2NextViirsDay} language={lang} />}
                     {rainfall && (
                       <div><dt>{t("Rain (observed)", "ฝน (ตรวจวัดจริง)")}</dt><dd>{t(
                         `Hourly rain at ${rainfall.stations.length} HII gauges is charted under the stage curve; it is the forcing, not a measure of flooding.`,
@@ -2553,11 +2729,11 @@ export function MaeSaiFloodTimeline() {
                     )}
                   </dl>
                   <RadarCheck manifest={manifest} radarSpan={radarSpan} language={lang} />
-                  <ExternalChecks manifest={manifest} language={lang} />
+                  <ExternalChecks manifest={manifest} language={lang} envelope={envelope} names={derived.names} />
                 </section>
 
                 {viirsInfo && (
-                  <ViirsComparisonCard viirs={viirsInfo} activeDate={viirsDay?.date ?? null} showOnMap={showViirs} onShowOnMap={setShowViirs} language={lang} />
+                  <ViirsComparisonCard viirs={viirsInfo} activeDate={viirsDay?.date ?? null} showOnMap={showViirs} onShowOnMap={setShowViirs} language={lang} s2={s2Check} />
                 )}
 
                 <section className={styles.card} aria-labelledby="mae-sai-share-title">
@@ -2581,11 +2757,11 @@ export function MaeSaiFloodTimeline() {
                           ? t("Copying is not available here; select the link below and copy it.", "คัดลอกอัตโนมัติไม่ได้ในเบราว์เซอร์นี้ เลือกลิงก์ด้านล่างแล้วคัดลอกเอง")
                           : ""}
                     </p>
-                    <ReplayExportPanel source={exportSource} time={time} language={lang} waterOpacity={waterOpacity} waterMode={waterMode} />
+                    <ReplayExportPanel source={exportSource} time={time} language={lang} waterOpacity={waterOpacity} waterMode={waterMode} envelope={exportEnvelope} />
                   </div>
                 </section>
 
-                <SourcesPanel manifest={manifest} language={lang} offlineCopy={offlineCopy} />
+                <SourcesPanel manifest={manifest} language={lang} offlineCopy={offlineCopy} envelope={envelope} />
               </>
             )}
           </aside>
@@ -2615,6 +2791,12 @@ export function HowToRead({ manifest, language }: { manifest: TimelineManifest |
           "Model: the blue water, impacts, access and shelter plans are model outputs from an assumed river level. Observed: satellite images, VIIRS daily flood maps and rain gauges. Reported: the event narrative and the 2024 shelter list come from public reporting.",
           "แบบจำลอง: น้ำสีน้ำเงิน ผลกระทบ การเข้าถึง และแผนที่พักพิง มาจากแบบจำลองที่ใช้ระดับน้ำสมมุติ การสังเกตการณ์: ภาพดาวเทียม แผนที่น้ำท่วมรายวัน VIIRS และสถานีวัดฝน รายงาน: เรื่องราวเหตุการณ์และรายชื่อที่พักพิงปี 2567 (2024) มาจากรายงานสาธารณะ",
         )}</li>
+        {shippableEnvelope(manifest) && (
+          <li data-testid="how-to-envelope">{t(
+            "Scenario envelope: the hatched 2024 season envelope (UNOSAT and GISTDA product 4009) is water mapped at some time from August to October 2024. It has its own switch under “Map layers” and is not an observation for any replay day.",
+            "ขอบเขตสถานการณ์จำลอง: ขอบเขตน้ำตลอดฤดูปี 2567 (2024) ที่แสดงเป็นลายเส้นทแยง (ผลิตภัณฑ์ 4009 ของ UNOSAT และ GISTDA) คือน้ำที่ทำแผนที่ไว้ในช่วงใดช่วงหนึ่งตั้งแต่สิงหาคมถึงตุลาคม 2567 (2024) เปิดปิดได้เองใน “ชั้นแผนที่” และไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู",
+          )}</li>
+        )}
         <li>
           {t("Confidence: ", "ความเชื่อมั่น: ")}<strong>{!manifest || manifest.confidence.toLowerCase() === "low" ? t("low", "ต่ำ") : manifest.confidence}</strong>
           {manifest && <>{" — "}<Localized text={manifest.confidence_reason} language={language} /></>}
@@ -2757,14 +2939,96 @@ function PhaseLegend({ phases, activeId, language }: { phases: readonly Timeline
   );
 }
 
-type OfflineCopy = { cached: number; failed: number; total: number };
+/** What the service worker saved: the replay's data files and, counted apart, the download files of the export pack. */
+export type OfflineCopy = { cached: number; failed: number; total: number; exports?: { cached: number; failed: number; total: number } };
+
+const pick2 = (pair: [string, string], language: Language) => pair[language === "th" ? 1 : 0];
+const EXPORT_KINDS: Record<ExportFile["media_type"], [string, string]> = {
+  "text/csv": ["CSV table", "ตาราง CSV"],
+  "application/geo+json": ["GeoJSON map layer", "ชั้นข้อมูลแผนที่ GeoJSON"],
+  "text/plain": ["text file", "ไฟล์ข้อความ"],
+};
+
+/** Which evidence lanes a download file holds: model only, or reported facts beside a model check. */
+function exportLaneText(file: Pick<ExportFile, "lanes">, language: Language): string {
+  const reported = file.lanes.includes("REP");
+  const model = file.lanes.includes("SCN");
+  if (reported && model) return language === "th" ? "ข้อมูลตามรายงานคู่กับผลเทียบจากแบบจำลอง" : "reported facts beside a model check";
+  if (reported) return language === "th" ? "ข้อมูลตามรายงาน" : "reported facts";
+  return language === "th" ? "ค่าจากแบบจำลอง" : "modelled";
+}
+
+/**
+ * Download links of the export pack (r4 on): tables and one map layer for spreadsheet and GIS users. Each link says
+ * what the file holds, with its kind, size and lanes; the file name is the name the download is saved under (the panel
+ * shows no internal id). The standing sentence says the tables are modelled, not observed.
+ * The files come from the same origin, so a saved replay still serves them without a connection. Renders nothing for
+ * a manifest without a pack.
+ */
+export function ExportDownloads({ manifest, language, offlineCopy }: { manifest: TimelineManifest; language: Language; offlineCopy: OfflineCopy | null }) {
+  const pack = manifest.exports;
+  if (!pack || pack.files.length === 0) return null;
+  const th = language === "th";
+  const t = (en: string, thai: string) => (th ? thai : en);
+  const saved = offlineCopy?.exports;
+  const confidence = pack.confidence.toLowerCase() === "low" ? t("low", "ต่ำ") : pack.confidence;
+  return (
+    <>
+      <h3 id="mae-sai-downloads">{t("Download the tables (for spreadsheets and GIS)", "ดาวน์โหลดตาราง (สำหรับโปรแกรมตารางคำนวณและ GIS)")}</h3>
+      <p className={styles.note} data-testid="export-tier">
+        <strong>{t("T1 scenario (model): modelled, not observed.", "สถานการณ์จำลองระดับ T1 (แบบจำลอง): ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้")}</strong>{" "}
+        {t(
+          "The tables come from this replay of a reconstructed 2024 event and are for preparedness planning and exercises. Their hours come from illustrative stage keyframes. They are not a forecast, not an observed closure record and not an official warning, and they are non-operational: no priority score and no action class is computed.",
+          "ตารางมาจากการย้อนดูเหตุการณ์ปี 2567 (2024) ที่จำลองขึ้นใหม่ ใช้เพื่อการวางแผนเตรียมความพร้อมและการฝึกซ้อม ชั่วโมงในตารางมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ตารางไม่ใช่การพยากรณ์ ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง และไม่ใช่การเตือนภัยอย่างเป็นทางการ ไม่ใช้ในการปฏิบัติการ และไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการ",
+        )}
+      </p>
+      <ul className={styles.list} data-testid="export-files">
+        {pack.files.map((file) => (
+          <li key={file.id}>
+            <a href={file.href} download={file.name} className={styles.inlineLink} data-testid={`export-${file.id}`}>{file.title[language]}</a>
+            <span className={styles.muted}>
+              ({pick2(EXPORT_KINDS[file.media_type], language)}, {formatFileSize(file.bytes)}
+              {file.rows != null && file.header_lines != null ? t(`, ${file.rows.toLocaleString("en-US")} rows`, ` ${file.rows.toLocaleString("en-US")} แถว`) : ""}
+              {file.rows != null && file.header_lines == null ? t(`, ${file.rows.toLocaleString("en-US")} points`, ` ${file.rows.toLocaleString("en-US")} จุด`) : ""}
+              {th ? " " : "; "}{exportLaneText(file, language)})
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className={styles.muted} data-testid="export-reading">{t(
+        "Each CSV is UTF-8 with a byte-order mark, so the Thai text opens correctly in Excel. It starts with provenance lines (what the table is and is not, its timestamps, confidence, assumptions and licence), and its second line gives their number; then comes the column header, in English with the Thai label in brackets. In QGIS or pandas, skip that number of lines. The GeoJSON layer carries the same fields in its metadata.",
+        "ไฟล์ CSV ทุกไฟล์เข้ารหัสแบบ UTF-8 พร้อมเครื่องหมาย BOM ข้อความภาษาไทยจึงเปิดใน Excel ได้ถูกต้อง แต่ละไฟล์เริ่มด้วยบรรทัดข้อมูลกำกับ (ตารางคืออะไรและไม่ใช่อะไร เวลาของข้อมูล ความเชื่อมั่น สมมติฐาน และสัญญาอนุญาต) โดยบรรทัดที่สองบอกจำนวนบรรทัดดังกล่าว จากนั้นเป็นหัวคอลัมน์ภาษาอังกฤษพร้อมคำอธิบายภาษาไทยในวงเล็บ ใน QGIS หรือ pandas ให้ข้ามบรรทัดตามจำนวนนั้น ส่วนชั้นข้อมูล GeoJSON มีข้อมูลกำกับเดียวกันอยู่ในส่วน metadata",
+      )}</p>
+      <p className={styles.muted} data-testid="export-licence">{t(
+        `Licence: every file is derived from OpenStreetMap and is under ${pack.licence} (attribution and share-alike); README_licences.txt lists the attributions to keep. One licence lineage per file: no rain values and nothing from a source without a stated licence is in any table.`,
+        `สัญญาอนุญาต: ทุกไฟล์ดัดแปลงจาก OpenStreetMap และใช้สัญญาอนุญาต ${pack.licence} (ต้องแสดงที่มาและเผยแพร่งานดัดแปลงภายใต้สัญญาอนุญาตเดียวกัน) ไฟล์ README_licences.txt ระบุข้อความแสดงที่มาที่ต้องคงไว้ แต่ละไฟล์มีสายสัญญาอนุญาตเดียว ไม่มีค่าปริมาณฝนและไม่มีข้อมูลจากแหล่งที่ไม่ระบุสัญญาอนุญาตในตารางใด`,
+      )}</p>
+      <p className={styles.muted} data-testid="export-footer">
+        {t("Confidence", "ความเชื่อมั่น")}: {confidence} · {t("source timestamp", "เวลาของข้อมูลต้นทาง")}: <Localized text={pack.source_timestamp} language={language} /> · {t(
+          `${pack.files.length} files, ${formatFileSize(pack.bytes)} in all`, `${pack.files.length} ไฟล์ รวม ${formatFileSize(pack.bytes)}`)}
+        <GeneratedAt manifest={manifest} language={language} />
+      </p>
+      {saved && saved.total > 0 && (
+        <p className={styles.muted} data-testid="export-offline">{saved.failed === 0 && saved.cached === saved.total
+          ? t(`Offline copy: the ${saved.total} download files are saved on this device too, so these links work without a connection.`, `สำเนาออฟไลน์: บันทึกไฟล์ดาวน์โหลด ${saved.total} ไฟล์ไว้ในอุปกรณ์แล้วเช่นกัน ลิงก์เหล่านี้จึงใช้ได้แม้ไม่มีการเชื่อมต่อ`)
+          : t(`Offline copy incomplete: ${saved.cached} of ${saved.total} download files saved on this device.`, `สำเนาออฟไลน์ยังไม่ครบ: บันทึกไฟล์ดาวน์โหลดแล้ว ${saved.cached} จาก ${saved.total} ไฟล์`)}</p>
+      )}
+    </>
+  );
+}
 
 /**
  * Sources, assumptions and limits. Manifest sentences are shown in Thai where the page knows a translation (source
  * names, licences and attributions stay as published, marked English); where this revision states an assumption too
  * simply, the page adds a bilingual note under it. Memoised: it does not depend on the replay clock.
  */
-export const SourcesPanel = memo(function SourcesPanel({ manifest, language, offlineCopy }: { manifest: TimelineManifest; language: Language; offlineCopy: OfflineCopy | null }) {
+export const SourcesPanel = memo(function SourcesPanel({ manifest, language, offlineCopy, envelope = { status: "absent" } }: {
+  manifest: TimelineManifest;
+  language: Language;
+  offlineCopy: OfflineCopy | null;
+  /** The season envelope as the page holds it (its block, and its statistics file once loaded). */
+  envelope?: SeasonEnvelopeState;
+}) {
   const th = language === "th";
   const t = (en: string, thai: string) => (th ? thai : en);
   const accessInfo = manifest.access ?? null;
@@ -2772,6 +3036,8 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
   const pendingReferences = referencesNotIngested(manifest);
   const viirs = manifest.viirs_daily ?? null;
   const rain = manifest.rainfall ?? null;
+  const s2 = manifest.s2_crosscheck ?? null;
+  const s2Confidence = s2 ? (s2.confidence.toLowerCase() === "low" ? t("low", "ต่ำ") : s2.confidence) : "";
   return (
     <details className={styles.card} data-testid="sources-panel" id="mae-sai-sources">
       <summary>{t("Sources, assumptions and limits", "แหล่งข้อมูล สมมติฐาน และข้อจำกัด")}</summary>
@@ -2793,7 +3059,9 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
         )}
       </ul>
       <LicencesByInput manifest={manifest} language={language} />
-      {(viirs || rain) && (
+      <SeasonEnvelopeSources envelope={envelope} language={language} />
+      <ExportDownloads manifest={manifest} language={language} offlineCopy={offlineCopy} />
+      {(viirs || rain || s2) && (
         <>
           <h3>{t("Observed data shown with the model", "ข้อมูลที่สังเกตได้ซึ่งแสดงคู่กับแบบจำลอง")}</h3>
           <ul className={styles.list} data-testid="observed-sources">
@@ -2804,6 +3072,21 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
                 <Localized text={viirs.comparison_rule} language={language} />{" "}
                 <Localized text={viirs.caveat} language={language} />{" "}
                 <a href={viirs.source_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{viirs.source_url}</a>
+              </li>
+            )}
+            {s2 && (
+              <li data-testid="s2-source">
+                <strong lang="en">{s2.product}</strong> — <LicenceText text={s2.licence} language={language} />{" "}<span lang="en">{s2.attribution}.</span>{" "}
+                {t("Water check (water or saturated mud)", "การตรวจน้ำ (น้ำหรือโคลนอิ่มน้ำ)")}:{" "}
+                <Localized text={s2.index} language={language} />{" "}
+                <Localized text={s2.water_rule} language={language} />{" "}
+                <Localized text={s2.clear_rule} language={language} />{" "}
+                <Localized text={s2.permanent_water_rule} language={language} />{" "}
+                <Localized text={s2.comparison_rule} language={language} />{" "}
+                <Localized text={s2.caveat} language={language} />{" "}
+                {s2SensitivityText(s2, language)}{" "}
+                {t("Confidence", "ความเชื่อมั่น")}: {s2Confidence} — <Localized text={s2.confidence_reason} language={language} />{" "}
+                <span className={styles.muted} lang="en">{s2.scenes.map((scene) => scene.source_timestamp).join(" / ")}</span>
               </li>
             )}
             {rain && (
@@ -2842,6 +3125,10 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
             <li>{t(
               `Residents: ${formatPeople(accessInfo.totals.population)} at road nodes (${formatPeople(accessInfo.totals.vulnerable)} in the terrain/remoteness proxy group, ${formatPeople(accessInfo.totals.non_vulnerable)} others).`,
               `ผู้อยู่อาศัย: ${formatPeople(accessInfo.totals.population)} คนที่จุดถนน (กลุ่มตัวแทนความเปราะบางจากภูมิประเทศและความห่างไกล ${formatPeople(accessInfo.totals.vulnerable)} คน กลุ่มอื่น ${formatPeople(accessInfo.totals.non_vulnerable)} คน)`,
+            )}</li>
+            <li data-testid="sources-equity-rule">{t(
+              `Evacuation Equity Gap: the two groups are compared on one rate. ${equityRuleSentence("en")} The gap is the proxy group's rate ÷ the others' rate. The residents counted above are context, not the denominator, and no ratio is shown when a group has fewer than ${EQUITY_MIN_GROUP} residents within reach before the flood or when no one has lost access.`,
+              `ช่องว่างความเท่าเทียมในการอพยพ: เปรียบเทียบสองกลุ่มด้วยอัตราเดียวกัน ${equityRuleSentence("th")} ช่องว่างคืออัตราของกลุ่มตัวแทน ÷ อัตราของกลุ่มอื่น จำนวนผู้อยู่อาศัยที่นับข้างต้นเป็นข้อมูลประกอบ ไม่ใช่ตัวหาร และไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมน้อยกว่า ${EQUITY_MIN_GROUP} คน หรือเมื่อไม่มีผู้ใดสูญเสียการเข้าถึง`,
             )}</li>
           </ul>
         </>
@@ -2928,7 +3215,8 @@ export function GeneratedAt({ manifest, language, lead = false }: { manifest: Pi
  * Licence and terms of every input, from `publication_eligibility` (r4 on). Names and published licence names
  * ("CC BY 4.0", "ODbL 1.0") stay as published; licence wording the project wrote itself ("Project summary text",
  * "No licence stated by the provider"), the terms and the conditions of use are shown in Thai. An input that is
- * listed but not shown (product 4009 until its rights record is confirmed) is marked as such.
+ * listed but not shown is marked as such; an input shown under a condition of its own (product 4009, a season
+ * envelope scenario layer) carries its status sentence.
  */
 export function LicencesByInput({ manifest, language }: { manifest: TimelineManifest; language: Language }) {
   const eligibility = manifest.publication_eligibility;
@@ -2944,6 +3232,7 @@ export function LicencesByInput({ manifest, language }: { manifest: TimelineMani
             <strong lang="en">{plainManifestText(row.name)}</strong> — <LicenceText text={row.licence} language={language} />{" "}
             <Localized text={row.terms} language={language} />
             {!row.shown && <>{" "}<strong>{row.status ? <Localized text={row.status} language={language} /> : t("Not shown on this page.", "ยังไม่แสดงในหน้านี้")}</strong></>}
+            {row.shown && row.status && <>{" "}<Localized text={row.status} language={language} /></>}
           </li>
         ))}
       </ul>
@@ -3247,7 +3536,7 @@ function LowConfidenceSwatch({ waterMode, arrival }: { waterMode: WaterMode; arr
  */
 export function TimelineLegend({
   language, unmodelledRoads, unmodelledFacilities, waterMode = "depth", roadMode = "state", arrival = [], densityMax, shelters, cutoff = false,
-  viirs = null, gauges = false, facilities = true, lowConfidence = false, residentsPending = null, part = "all",
+  viirs = null, gauges = false, envelope = false, facilities = true, lowConfidence = false, residentsPending = null, part = "all",
 }: {
   language: Language;
   unmodelledRoads: boolean;
@@ -3269,6 +3558,8 @@ export function TimelineLegend({
   viirs?: Pick<ViirsDaily, "legend"> | null;
   /** The rain-gauge markers are shown. */
   gauges?: boolean;
+  /** The season envelope (a scenario layer, hatched) is shown. */
+  envelope?: boolean;
   /** The key facilities (OSM) layer is shown. */
   facilities?: boolean;
   /** Low-confidence water is drawn (the manifest declares its channel and the view shows water). */
@@ -3360,6 +3651,7 @@ export function TimelineLegend({
         </div>
       )}
       {overlay && viirs && <ViirsLegend viirs={viirs} language={language} />}
+      {overlay && envelope && <SeasonEnvelopeLegend language={language} />}
       {symbols && facilities && (
         <div>
           <strong>{th ? "สถานที่สำคัญ (ข้อมูล OSM)" : "Key facilities (OSM)"}</strong>

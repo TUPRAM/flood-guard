@@ -21,12 +21,17 @@ from floodguard.replay_manifest import (
     LANES,
     REQUIRED_KEYS,
     SCENARIO_TIER,
+    SHELTER_SUBBLOCK_LANES,
     ReplayManifestError,
+    capacity_plan_problems,
     evidence_problems,
     newest_timestamp,
     normalise_timestamp,
     schema_problems,
     score_or_class_keys,
+    season_envelope_problems,
+    shelter_plan_problems,
+    sweep_or_listed_capacity_keys,
     uncovered_blocks,
 )
 from floodguard.rights_basis import load_rights_basis, owner_confirmed, unconfirmed_product_citations
@@ -308,7 +313,8 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     for name in ("water_reconstruction", "residents_in_water", "evacuation_access", "shelter_plan"):
         assert (lane(name), blocks[name]["evidence_tier"]) == ("SCN", SCENARIO_TIER), name
     # VIIRS, Sentinel-1, Sentinel-2 and rain are observed, each with its own timestamp.
-    observed = ("viirs_daily", "sentinel2_20240905", "sentinel2_20240915", "sentinel1_20240906", "sentinel1_20240915", "sentinel1_change", "rainfall")
+    observed = ("viirs_daily", "sentinel2_20240905", "sentinel2_20240915", "sentinel2_water_check", "sentinel1_20240906", "sentinel1_20240915",
+                "sentinel1_change", "rainfall")
     assert all(lane(name) == "OBS" for name in observed)
     # The model figures placed beside each VIIRS day are named as scenario values, not filed as the agency's.
     model_fields = sorted({key for day in manifest["viirs_daily"]["days"] for key in day if key.startswith("model_")})
@@ -317,7 +323,8 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     assert SCENARIO_TIER in blocks["viirs_daily"]["note"] and "not part of the agency product" in blocks["viirs_daily"]["note"]
     assert sorted(manifest["viirs_daily"]["model_fields"]["names"]) == model_fields
     assert manifest["viirs_daily"]["model_fields"]["evidence_tier"] == SCENARIO_TIER
-    assert not any("scenario_fields" in block for block in blocks.values() if block["id"] != "viirs_daily")
+    # Only the two observed blocks that place model figures beside an observation name scenario fields.
+    assert sorted(block["id"] for block in blocks.values() if "scenario_fields" in block) == ["sentinel2_water_check", "viirs_daily"]
     assert len({blocks[name]["source_timestamp"] for name in observed}) == len(observed)
     assert blocks["sentinel2_20240915"]["source_timestamp"] == "2024-09-15T03:58:15Z"
     assert blocks["sentinel1_20240915"]["source_timestamp"] == "2024-09-15T23:16:01Z"
@@ -329,10 +336,14 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     assert "Calibration anchor" in blocks["gistda_onset_anchor"]["evidence_tier"]
     assert "not an independent check" in blocks["sentinel1_size_comparison"]["evidence_tier"]
     assert "not an independent check" in blocks["unosat_3991_size_comparison"]["evidence_tier"]
-    # Product 4009 is a season envelope scenario and is not shown.
+    # Product 4009 is a season envelope scenario, shown from this revision as a layer of its own: the block covers the
+    # layer and its comparison, and neither sits in an observed lane.
     envelope = blocks["unosat_4009_season_envelope"]
-    assert (envelope["lane"], envelope["temporal_relation"], envelope["shown"]) == ("SCN-ENV", "season_envelope", False)
-    assert envelope["season_window"] == "2024-08-01/2024-10-22"
+    assert (envelope["lane"], envelope["temporal_relation"], envelope["shown"]) == ("SCN-ENV", "season_envelope", True)
+    assert envelope["season_window"] == "2024-08-01/2024-10-22" == envelope["source_timestamp"]
+    assert envelope["covers"] == ["season_envelope", "external_checks[unosat-4009-season-envelope]"]
+    assert envelope["note"].startswith("Never an observation for a replay day.")
+    assert "scenario_fields" not in envelope  # The manifest holds no figure of the comparison to name.
     # Reported facts are never filed as observed or as model output.
     assert lane("reported_shelters") == lane("event_chronology") == "REP"
     assert not any(block["lane"] == "OBS" and block["temporal_relation"] == "season_envelope" for block in blocks.values())
@@ -377,11 +388,16 @@ def test_sources_name_both_dem_tiles_worldpop_and_a_licence_for_every_input(mani
         assert source_id in inputs, source_id
         if source_id != "viirs":
             assert inputs[source_id]["licence"] == source["licence"], source_id
-    # Product 4009 is listed but not shown, and nothing from it is among the baked files.
-    assert inputs["unosat-4009"]["shown"] is False
+    # Product 4009 is shown, as a season envelope scenario layer: its source line carries the credit, and its derived
+    # files sit in one folder of their own, named for the product.
+    assert inputs["unosat-4009"]["shown"] is True
     assert (ROOT / inputs["unosat-4009"]["rights_record"]).resolve() == RIGHTS_RECORD.resolve()
-    assert [row["id"] for row in eligibility["inputs"] if not row["shown"]] == ["unosat-4009"]
-    assert not [name for name in (path.name for path in manifest_path().parent.rglob("*")) if "4009" in name]
+    assert [row["id"] for row in eligibility["inputs"] if not row["shown"]] == []
+    assert sources["unosat-4009"]["attribution"] == "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"
+    assert sources["unosat-4009"]["licence"] == "CC BY-SA 4.0" and "no date per patch" in sources["unosat-4009"]["timestamp"]
+    folder = manifest_path().parent
+    derived = sorted(name for name in (path.relative_to(folder).as_posix() for path in folder.rglob("*")) if "4009" in name)
+    assert derived == ["unosat4009", "unosat4009/LICENSE", "unosat4009/envelope.json", "unosat4009/envelope.png"]
     assert eligibility["status"] == "conditional" and any("CC BY-NC" in line for line in eligibility["conditions"])
 
 
@@ -396,31 +412,36 @@ def test_product_4009_status_is_the_rights_records_status(manifest: dict) -> Non
     assert row["sha256"] == hashlib.sha256(RIGHTS_RECORD.read_bytes()).hexdigest(), stale
     entry = next(item for item in manifest["publication_eligibility"]["inputs"] if item["id"] == "unosat-4009")
     block = next(item for item in manifest["evidence_blocks"] if item["id"] == "unosat_4009_season_envelope")
-    reference = next(item for item in manifest["external_references"] if item["id"] == "unosat-4009")
+    # The product is ingested now, so it is no longer among the references; its rights note sits on its own block.
+    assert [item["id"] for item in manifest["external_references"]] == ["unosat-3969", "charter-912", "hii-event-page"]
+    note = manifest["season_envelope"]["rights_note"]
     condition = next(line for line in manifest["publication_eligibility"]["conditions"] if "product 4009" in line)
     assert entry["licence"] == record["licence"]["name"] == "CC BY-SA 4.0"
-    if owner_confirmed(record):
-        confirmed = "the owners confirmed the rights record on"
-        assert entry["status"].startswith("Not shown in this revision;") and confirmed in entry["status"], stale
-        assert confirmed in block["note"] and confirmed in reference["note"] and confirmed in condition, stale
-        assert "pending" not in entry["status"]
-    else:
-        assert entry["status"] == "Not yet shown; rights record pending owner confirmation.", stale
-        assert block["note"].endswith("Shown only after the owners confirm the rights record."), stale
-        assert "only after the owners confirm the rights record" in reference["note"] and "is signed" not in reference["note"], stale
-        assert condition.endswith("it may appear only after the owners confirm the rights record."), stale
-        # While the record is unconfirmed the manifest names no file for the product and marks nothing of it as shown.
-        assert unconfirmed_product_citations(manifest) == []
+    # The product is shown only because the record says confirmed: a manifest that shows it beside an unconfirmed
+    # record would be refused, and the committed one must not exist in that state.
+    assert owner_confirmed(record), "product 4009 files are published while its rights record is not confirmed"
+    assert unconfirmed_product_citations(manifest) != []  # The same manifest would break the gate of an unconfirmed record.
+    confirmed = "the owners confirmed the rights record on 2 Oct 2026"
+    assert entry["status"] == f"Shown as a season envelope scenario layer; {confirmed}.", stale
+    assert block["note"] == f"Never an observation for a replay day. Shown as a scenario layer with its own toggle, credit and change notice; {confirmed}.", stale
+    assert condition == ("UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is shown as a season envelope scenario layer: its derived files keep "
+                         f"their own folder, credit, licence and change notice; {confirmed}."), stale
+    assert confirmed in note and note.endswith("Shown from this revision as a scenario layer."), stale
+    for text in (entry["status"], block["note"], condition, note):
+        assert "pending" not in text and "not shown" not in text.lower()
     # What the record supports about UNOSAT's reply: its words and the day they were relayed, not the day UNOSAT wrote.
-    assert "signed on 30 Sep 2026" in reference["note"] and f'"{record["provider_reply"]["quote"]}"' in reference["note"]
+    assert "signed on 30 Sep 2026" in note and f'"{record["provider_reply"]["quote"]}"' in note
     assert record["provider_reply"]["relayed_on"] == "2026-10-01" and record["provider_reply"]["original_message_in_repo"] is False
-    assert '"we approve the use" (relayed by a project owner on 1 Oct 2026)' in reference["note"]
-    assert not __import__("re").search(r'approve the use" on \d', reference["note"])
+    assert '"we approve the use" (relayed by a project owner on 1 Oct 2026)' in note
+    assert not __import__("re").search(r'approve the use" on \d', note)
+    # The files derived from the product name the record they were baked from, by path and by hash.
+    document = json.loads((manifest_path().parent / "unosat4009" / "envelope.json").read_text(encoding="utf-8"))
+    assert document["rights_record"] == {"path": RIGHTS_RECORD.relative_to(ROOT).as_posix(), "sha256": row["sha256"], "confirmed_on": "2026-10-02"}, stale
 
 
 def test_input_hashes_are_the_receipts_and_name_no_machine_path(manifest: dict) -> None:
     rows = manifest["input_sha256"]
-    assert len(rows) == 32 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
+    assert len(rows) == 37 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
     for row in rows:
         assert row["root"] in ("external", "repo") and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) and row["bytes"] > 0
     receipt = json.loads((ROOT / "docs" / f"mae_sai_timeline_{manifest['revision']}_input_receipt.json").read_text(encoding="utf-8"))
@@ -443,6 +464,17 @@ def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manif
     assert items["unosat-3991"]["relation"] == "known_during_tuning" and "70 km2" in items["unosat-3991"]["statement"]
     assert (items["unosat-4009"]["relation"], items["unosat-4009"]["known_during_tuning"]) == ("computed_after_keyframes_final", False)
     assert "was not used for tuning" in items["unosat-4009"]["statement"]
+    # The recorded rule: nothing is tuned to product 4009 afterwards, or the figure becomes a calibration figure.
+    assert ("Recorded rule: no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is "
+            "relabelled as calibration.") in items["unosat-4009"]["statement"]
+    assert "not shown" not in items["unosat-4009"]["statement"]
+    # The Sentinel-2 water check entered the bake after the last keyframe change. The images had been on the page, and
+    # the statement says so rather than claiming the scenes were unseen.
+    s2 = items["sentinel-2-water-check"]
+    assert (s2["relation"], s2["known_during_tuning"]) == ("computed_after_keyframes_final", False)
+    assert "was not used for tuning" in s2["statement"] and "commit 129ff03 of 29 Sep 2026" in s2["statement"]
+    assert "they were seen while the keyframes were set, but no water area had been derived from them" in s2["statement"]
+    assert "the Sentinel-2 water check" in disclosure["rule"]
     # VIIRS: the build history shows the comparison and the last stage-knot edit in one change (commit 129ff03), so the
     # manifest claims only what that supports: not used for tuning, order within the change not recorded.
     viirs = items["viirs-daily"]
@@ -456,10 +488,570 @@ def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manif
     anchor = manifest["s1_anchor"]
     assert anchor["role"] == "calibration_informed_magnitude_check" and round(anchor["best_fit_stage_m"], 2) == 0.10
     roles = {check["id"]: check["role"] for check in manifest["external_checks"]}
-    assert roles == {"gistda-radarsat2-20240910": "calibration_anchor", "unosat-3991": "calibration_informed_magnitude_check"}
+    assert roles == {"gistda-radarsat2-20240910": "calibration_anchor", "unosat-3991": "calibration_informed_magnitude_check",
+                     "unosat-4009-season-envelope": "season_envelope_plausibility"}
     assert not re.search(r'"role": "independent', manifest_path().read_text(encoding="utf-8"))
     assert "tuned to one radar pass rather than checked independently" in manifest["confidence_reason"]
     assert any("re-tuned to the 16 September 06:16 ICT Sentinel-1 pass" in line and "not an independent check" in line for line in manifest["assumptions"])
     # The quoted UNOSAT 3991 wording is unchanged from r3 (its exact source wording could not be checked on disk).
     unosat = next(check for check in manifest["external_checks"] if check["id"] == "unosat-3991")
     assert unosat["reported_text"] == "about 70 km2 flood-affected within a 305 km2 analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated"
+
+
+# --- Season envelope (UNOSAT/GISTDA product 4009, SCN-ENV; roadmap P2-2 and P2-3) -----------------------------
+
+
+def numbers(value, path: str = "$") -> list[str]:
+    """Paths of every number (not a boolean) inside ``value``."""
+    if isinstance(value, bool):
+        return []
+    if isinstance(value, (int, float)):
+        return [path]
+    if isinstance(value, dict):
+        return [found for key, item in value.items() for found in numbers(item, f"{path}.{key}")]
+    if isinstance(value, list):
+        return [found for index, item in enumerate(value) for found in numbers(item, f"{path}[{index}]")]
+    return []
+
+
+def test_season_envelope_block_names_three_files_and_holds_no_figure(manifest: dict, schema: dict) -> None:
+    block = manifest["season_envelope"]
+    assert season_envelope_problems(manifest) == []
+    assert (block["id"], block["lane"], block["shown"], block["day_independent"]) == ("unosat-4009", "SCN-ENV", True, True)
+    assert block["label"] == "Scenario (SCN-ENV): 2024 season envelope"
+    assert block["caption"] == ("UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product "
+                                "is described to 22 Oct); includes August and early-October water; not an observation for any replay day. Clipped to "
+                                "Mae Sai district and rasterised to the replay grid by FloodGuard.")
+    assert (block["licence"], block["credit"], block["map_credit"]) == (
+        "CC BY-SA 4.0", "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009", "UNOSAT and GISTDA \u00b7 CC BY-SA 4.0")
+    # The caption under the map shows this sentence whenever the layer is visible.
+    assert block["standard_sentence"] == ("Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided "
+                                          "under CC BY-SA 4.0. FloodGuard did not validate it.")
+    assert block["source_timestamp"] == block["season_window"] == "2024-08-01/2024-10-22"
+    assert block["confidence"] == "low" and block["confidence_reason"] and len(block["assumptions"]) == 2
+    # Three files in one folder of their own, each named by address, hash and size and by nothing else.
+    folder = manifest_path().parent
+    assert sorted(block["files"]) == ["licence", "raster", "statistics"]
+    for key, name in (("raster", "envelope.png"), ("statistics", "envelope.json"), ("licence", "LICENSE")):
+        record = block["files"][key]
+        assert sorted(record) == ["bytes", "href", "sha256"]
+        data = (folder / "unosat4009" / name).read_bytes()
+        assert record["href"].endswith(f"/{manifest['revision']}/unosat4009/{name}")
+        assert (record["bytes"], record["sha256"]) == (len(data), __import__("hashlib").sha256(data).hexdigest()), name
+    # No figure derived from the product is in timeline.json: the block and its check hold no number but the file sizes.
+    assert numbers(block, "season_envelope") == [f"season_envelope.files.{key}.bytes" for key in ("raster", "statistics", "licence")]
+    check = next(item for item in manifest["external_checks"] if item["role"] == "season_envelope_plausibility")
+    assert numbers(check, "check") == ["check.statistics.bytes"]
+    assert check["statistics"] == block["files"]["statistics"]
+    assert check["title"] == "Season envelope comparison (scenario; plausibility, not validation)"
+    assert check["use"].startswith("Plausibility against a season envelope, not a validation.")
+    assert check["tuning_rule"] == "No keyframe or elevation change is tuned to product 4009 afterwards; if one is, this comparison is relabelled as calibration."
+    assert not any(key in check for key in ("reported_km2", "model_km2", "model_people_in_water", "reported_text"))
+    # The envelope is never filed as the observed side of a check: the key says what the model is compared with.
+    assert "observed" not in check and check["compared_with"].startswith("UNOSAT and GISTDA product 4009: accumulated water, August to October 2024")
+    assert check["compared_with"].endswith("a scenario layer, not an observation for any replay day")
+    assert all("observed" in item for item in manifest["external_checks"] if item is not check)
+    # The manifest text never states an area or a share of the envelope (the statistics file does).
+    document = json.loads((folder / "unosat4009" / "envelope.json").read_text(encoding="utf-8"))
+    flat = json.dumps({key: value for key, value in manifest.items() if key != "input_sha256"}, ensure_ascii=False)
+    for value in (document["area"]["district_km2"], document["comparison"]["district"][0]["agreement_iou"],
+                  document["comparison"]["district"][0]["envelope_km2"], document["comparison"]["residents"]["residents_in_envelope"]):
+        assert not re.search(rf"(?<![0-9.]){re.escape(str(value))}(?![0-9])", flat), value
+    # Never among the day observations, the replay layers or the export files.
+    dated = json.dumps([manifest["layers"], manifest["observations"], manifest["days"], manifest["viirs_daily"], manifest["phases"]])
+    assert not re.search(r"4009|envelope|unosat4009", dated, re.IGNORECASE)
+    assert not re.search(r"unosat4009|envelope", json.dumps(manifest["exports"]), re.IGNORECASE)
+    assert schema_problems(manifest, schema) == []
+
+
+def test_season_envelope_rules_refuse_a_figure_a_day_or_a_missing_credit(manifest: dict, schema: dict) -> None:
+    def broken(change) -> list[str]:
+        document = copy.deepcopy(manifest)
+        change(document)
+        return season_envelope_problems(document)
+
+    check_index = next(index for index, item in enumerate(manifest["external_checks"]) if item["role"] == "season_envelope_plausibility")
+    href = manifest["season_envelope"]["files"]["raster"]["href"]
+    # A figure derived from the product has no place in the manifest: not in the block, not in the check.
+    assert broken(lambda d: d["season_envelope"].update(district_km2=77.7)) == [
+        "season_envelope.district_km2 is a number: every figure derived from the product belongs in its statistics file"]
+    assert broken(lambda d: d["season_envelope"]["files"]["raster"].update(width=1610)) == [
+        "season_envelope.files.raster must give href, sha256 and bytes, and nothing else",
+        "season_envelope.files.raster.width is a number: every figure derived from the product belongs in its statistics file"]
+    assert broken(lambda d: d["external_checks"][check_index].update(agreement_iou=0.48)) == [
+        "external_checks[unosat-4009-season-envelope].agreement_iou is a number: every figure derived from the product belongs in its statistics file"]
+    assert broken(lambda d: d["external_checks"][check_index].update(use="Agreement with the season envelope.")) == [
+        "external_checks[unosat-4009-season-envelope].use must say that the comparison is not a validation"]
+    # Never a day observation: no layer, observation, day or VIIRS day may name one of its files.
+    assert broken(lambda d: d["layers"].append({"id": "season", "kind": "sentinel-2", "date": "2024-09-12", "href": href})) == [
+        "layers names a file of the season envelope: it is never a day observation, a replay layer or an export file"]
+    assert broken(lambda d: d["days"][3].update(envelope=href)) == [
+        "days names a file of the season envelope: it is never a day observation, a replay layer or an export file"]
+    assert broken(lambda d: d["exports"]["files"].append({"href": href})) == [
+        "exports names a file of the season envelope: it is never a day observation, a replay layer or an export file"]
+    # Without its label, credit or licence the layer does not ship.
+    assert broken(lambda d: d["season_envelope"].update(credit=" ")) == ["season_envelope lacks credit"]
+    assert broken(lambda d: d["season_envelope"].pop("label")) == ["season_envelope lacks label"]
+    assert broken(lambda d: d["season_envelope"].update(map_credit="UNOSAT and GISTDA")) == ["season_envelope.map_credit must name the licence"]
+    # A credit that names the licence and nobody, or only one of the holders, credits nobody: the layer does not ship.
+    assert broken(lambda d: d["season_envelope"].update(map_credit="CC BY-SA 4.0")) == [
+        "season_envelope.map_credit must name the holders of the product, as the credit begins"]
+    assert broken(lambda d: d["season_envelope"].update(map_credit="GISTDA \u00b7 CC BY-SA 4.0")) == [
+        "season_envelope.map_credit must name the holders of the product, as the credit begins"]
+    # Nor does it ship without the sentence that says the agency extent is preliminary and was not validated.
+    assert broken(lambda d: d["season_envelope"].pop("standard_sentence")) == ["season_envelope lacks standard_sentence"]
+    assert broken(lambda d: d["season_envelope"].update(standard_sentence="Agency extent, used as provided.")) == [
+        "season_envelope.standard_sentence must say that FloodGuard did not validate the product"]
+    # The comparison names the envelope under compared_with, never under observed.
+    name_rule = ["external_checks[unosat-4009-season-envelope] must name the envelope under compared_with, never under observed: it is a scenario layer"]
+    assert broken(lambda d: d["external_checks"][check_index].update(observed="UNOSAT and GISTDA product 4009")) == name_rule
+    assert broken(lambda d: d["external_checks"][check_index].pop("compared_with")) == name_rule
+    assert broken(lambda d: d["season_envelope"].update(lane="OBS")) == ["season_envelope must sit in lane SCN-ENV"]
+    assert broken(lambda d: d["season_envelope"].update(day_independent=False)) == ["season_envelope must be marked shown and day_independent"]
+    assert broken(lambda d: d["season_envelope"]["files"].pop("licence")) != []
+    # Its evidence block: one, in the envelope lane, marked shown, with the season window.
+    block_index = next(index for index, item in enumerate(manifest["evidence_blocks"]) if "season_envelope" in item["covers"])
+    assert broken(lambda d: d["evidence_blocks"][block_index].update(lane="OBS")) == [
+        "one evidence block in lane SCN-ENV must cover season_envelope, marked shown, with a season_window"]
+    assert broken(lambda d: d["evidence_blocks"][block_index].update(shown=False)) != []
+    # A comparison without an envelope, or an envelope without its comparison, is refused too.
+    assert broken(lambda d: d.pop("season_envelope")) == [
+        "external_checks[unosat-4009-season-envelope] compares with a season envelope the manifest does not carry"]
+    assert broken(lambda d: d["external_checks"].pop(check_index)) == ["exactly one external check must carry the role season_envelope_plausibility"]
+    # A manifest without any of it (an earlier revision) has nothing to check.
+    assert season_envelope_problems(minimal_manifest()) == []
+    # The schema says the same about the block and the check.
+    def schema_broken(change) -> list[str]:
+        document = copy.deepcopy(manifest)
+        change(document)
+        return schema_problems(document, schema)
+
+    assert any("district_km2" in line for line in schema_broken(lambda d: d["season_envelope"].update(district_km2=77.7)))
+    assert schema_broken(lambda d: d["season_envelope"]["files"]["raster"].update(width=1610)) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(licence="CC BY 4.0")) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(label="2024 season envelope")) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(caption="Accumulated water, August to October 2024.")) != []
+    assert any("standard_sentence" in line for line in schema_broken(lambda d: d["season_envelope"].pop("standard_sentence")))
+    assert schema_broken(lambda d: d["season_envelope"].update(standard_sentence="Agency extent, used as provided.")) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(map_credit="CC BY-SA 4.0")) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(map_credit="UNOSAT and GISTDA")) != []
+    assert schema_broken(lambda d: d["external_checks"][check_index].update(observed="UNOSAT and GISTDA product 4009")) != []
+    assert schema_broken(lambda d: d["external_checks"][check_index].pop("compared_with")) != []
+    assert schema_broken(lambda d: d["external_checks"][0].pop("observed")) != []
+    assert schema_broken(lambda d: d["external_checks"][check_index].update(reported_km2=77.7)) != []
+    assert schema_broken(lambda d: d["external_checks"][check_index].update(role="independent_magnitude_check")) != []
+    assert schema_broken(lambda d: d["external_checks"][0].pop("model_km2")) != []
+
+
+# --- Capacity-aware shelter plan and what-if levels (roadmap P2-9, C-1) ---------------------------------------
+
+
+def test_capacity_aware_plan_and_robustness_have_their_own_scenario_blocks(manifest: dict) -> None:
+    blocks = {block["id"]: block for block in manifest["evidence_blocks"]}
+    for name, covers, relation in (("capacity_aware_plan", "shelters.capacitated", "event_window_reconstruction"),
+                                   ("plan_robustness", "shelters.robustness", "what_if_levels")):
+        block = blocks[name]
+        assert (block["lane"], block["evidence_tier"], block["temporal_relation"]) == ("SCN", SCENARIO_TIER, relation), name
+        assert block["covers"] == [covers] and block["source_timestamp"], name
+    assert "Candidates to verify, not a list of sites to open" in blocks["capacity_aware_plan"]["note"]
+    assert "not return periods" in blocks["plan_robustness"]["note"]
+    for key in ("capacitated", "robustness"):
+        part = manifest["shelters"][key]
+        assert part["scenario_tier"] == SCENARIO_TIER and part["confidence"] == "low"
+        assert part["confidence_reason"] and part["source_timestamp"] and part["assumptions"]
+    # A block that names a missing child is reported, so the two blocks cannot outlive their content.
+    broken = copy.deepcopy(manifest)
+    del broken["shelters"]["robustness"]
+    assert "shelters.robustness (named by an evidence block but absent)" in uncovered_blocks(broken)
+
+
+def conducted_check(manifest: dict) -> dict:
+    """A made-up conducted local check for the committed manifest's first two eligible candidates (no real check exists)."""
+    check = manifest["shelters"]["verification"]
+    first, second = [site["id"] for site in manifest["shelters"]["candidates"] if site["eligible"]][:2]
+    label = "Checked by a DDPM officer on 2026-10-09; not an official shelter register"
+    return {"status": "conducted", "label_template": check["label_template"], "sheet": check["sheet"],
+            "candidate_set_sha256": check["candidate_set_sha256"], "candidates_listed": check["candidates_listed"],
+            "statement": "A local check of 2 of the candidates was returned. It is reported by role and is not an official shelter register.",
+            "confidence": "low", "confidence_reason": "One local check per site, reported by role and not audited by the project team.",
+            "assumptions": ["Each row is what one local checker reported for one candidate; it is not an official shelter register.",
+                            "The plans were computed without this check."],
+            "source_timestamp": "checks dated 2026-10-09/2026-10-09", "imported_on": "2026-10-20", "returned_file_sha256": "a" * 64,
+            "counts": {"checked": 2, "usable_yes": 1, "usable_no": 1, "with_verified_capacity": 1},
+            "checked": [{"candidate_id": first, "usable_as_shelter": True, "verified_capacity": 150, "checked_by_role": "ddpm_officer",
+                         "checked_on": "2026-10-09", "access_notes_given": True, "label": label},
+                        {"candidate_id": second, "usable_as_shelter": False, "verified_capacity": None, "checked_by_role": "ddpm_officer",
+                         "checked_on": "2026-10-09", "access_notes_given": False, "label": label}]}
+
+
+def test_shelter_sub_blocks_each_need_their_own_evidence_block_in_their_lane(manifest: dict) -> None:
+    assert shelter_plan_problems(manifest) == []
+    assert dict(SHELTER_SUBBLOCK_LANES) == {"capacitated": "SCN", "robustness": "SCN", "reported": "REP", "verification": "REP"}
+    # "shelters" is covered as a whole, so the general coverage rule cannot see a missing sub-block: this rule does.
+    for block_id, child, lane in (("capacity_aware_plan", "capacitated", "SCN"), ("plan_robustness", "robustness", "SCN"),
+                                  ("reported_shelters", "reported", "REP"), ("shelter_candidate_check", "verification", "REP")):
+        broken = copy.deepcopy(manifest)
+        broken["evidence_blocks"] = [block for block in broken["evidence_blocks"] if block["id"] != block_id]
+        assert evidence_problems(broken) == []
+        assert shelter_plan_problems(broken) == [f"no evidence block names shelters.{child}: it needs its own block in lane {lane}"]
+    # A local check filed as an observation, or a capacity plan filed as reported, is refused.
+    for block_id, wrong, message in (("shelter_candidate_check", "OBS", "shelters.verification must sit in lane REP, not OBS"),
+                                     ("shelter_candidate_check", "SCN", "shelters.verification must sit in lane REP, not SCN"),
+                                     ("capacity_aware_plan", "REP", "shelters.capacitated must sit in lane SCN, not REP")):
+        broken = copy.deepcopy(manifest)
+        next(block for block in broken["evidence_blocks"] if block["id"] == block_id)["lane"] = wrong
+        assert message in shelter_plan_problems(broken)
+    # A manifest without a shelter plan has nothing to check.
+    assert shelter_plan_problems({key: value for key, value in manifest.items() if key != "shelters"}) == []
+
+
+def test_capacity_figures_that_do_not_add_up_stop_the_bake(manifest: dict) -> None:
+    plan = manifest["shelters"]["capacitated"]
+    assert capacity_plan_problems(plan) == []
+
+    def problems(change) -> list[str]:
+        broken = copy.deepcopy(plan)
+        change(broken)
+        return capacity_plan_problems(broken)
+
+    row = plan["plan"][0]
+    assert problems(lambda p: p["plan"][0]["upper"].update(load=row["upper"]["capacity"] + 1)) == [
+        f"shelters.capacitated.plan[0].upper: load {row['upper']['capacity'] + 1} is above capacity {row['upper']['capacity']}",
+        "shelters.capacitated.plan[0].upper: served must grow by the site's load"]
+    assert problems(lambda p: p["plan"][0]["lower"].update(overflow=0)) == [
+        "shelters.capacitated.plan[0].lower: overflow must equal demand_people - served"]
+    more = plan["coverage_plan"][1]["upper"]["served"] + 5
+    found = problems(lambda p: p["coverage_plan"][1]["lower"].update(served=more, overflow=plan["demand_people"] - more))
+    assert "shelters.capacitated.coverage_plan[1]: the lower bound serves more residents than the upper bound" in found
+    assert "shelters.capacitated.coverage_plan[1].lower: served must grow by the site's load" in found
+    assert problems(lambda p: p["all_eligible"]["upper"].update(overflow=1)) == [
+        "shelters.capacitated.all_eligible.upper: overflow must equal demand_people - served"]
+    assert problems(lambda p: p["all_eligible"]["lower"].update(served=p["all_eligible"]["lower"]["capacity"] + 1))[0].startswith(
+        "shelters.capacitated.all_eligible.lower: served ")
+    assert problems(lambda p: p["plan"][2].pop("upper")) == ["shelters.capacitated.plan[2].upper must give capacity, load, served, overflow in whole residents"]
+    assert problems(lambda p: p.update(demand_people=14169.5)) == ["shelters.capacitated.demand_people must be a whole number of residents"]
+    assert capacity_plan_problems([]) == ["shelters.capacitated is not an object"]
+    # The same breaks reach the bake through shelter_plan_problems.
+    broken = copy.deepcopy(manifest)
+    broken["shelters"]["capacitated"]["plan"][0]["lower"]["overflow"] = 0
+    assert shelter_plan_problems(broken) == ["shelters.capacitated.plan[0].lower: overflow must equal demand_people - served"]
+
+
+def test_no_participation_share_and_no_listed_capacity_is_published(manifest: dict, schema: dict) -> None:
+    assert sweep_or_listed_capacity_keys(manifest) == []
+    for key in ("participation_share", "participation_sweep_pct", "ddpm_listed_capacity", "listed_capacity", "ListedCapacities"):
+        for place in ("capacitated", "robustness"):
+            broken = copy.deepcopy(manifest)
+            broken["shelters"][place][key] = 0.25
+            assert shelter_plan_problems(broken) == [
+                f"$.shelters.{place}.{key} names a participation share or a listed capacity: the replay publishes neither"]
+        broken = copy.deepcopy(manifest)
+        broken["shelters"]["capacitated"]["plan"][0][key] = 100
+        assert any(key in line for line in shelter_plan_problems(broken))
+        assert any(line.startswith("shelters/capacitated/plan/0") for line in schema_problems(broken, schema))  # The schema allows no extra key in a row.
+    broken = copy.deepcopy(manifest)
+    broken["shelters"]["capacitated"]["sweep"] = [5, 10, 25]
+    assert any(line.startswith("shelters/capacitated") and "sweep" in line for line in schema_problems(broken, schema))
+    broken = copy.deepcopy(manifest)
+    broken["shelters"]["capacitated"]["all_eligible"]["checked_capacity"] = 1
+    assert any(line.startswith("shelters/capacitated/all_eligible") for line in schema_problems(broken, schema))
+    # Values and prose may name the DDPM (a checker's role code, the source of another layer's figures): only keys are data.
+    assert sweep_or_listed_capacity_keys({"checked_by_role": "ddpm_officer", "note": "the DDPM shelter list"}) == []
+
+
+def test_a_conducted_local_check_is_published_with_confidence_reason_and_assumptions(manifest: dict, schema: dict) -> None:
+    published = copy.deepcopy(manifest)
+    published["shelters"]["verification"] = conducted_check(manifest)
+    assert schema_problems(published, schema) == [] and shelter_plan_problems(published) == [] and evidence_problems(published) == []
+    for key in ("confidence", "confidence_reason", "assumptions", "source_timestamp"):
+        broken = copy.deepcopy(published)
+        del broken["shelters"]["verification"][key]
+        assert f"shelters.verification is a conducted check and lacks {key}" in shelter_plan_problems(broken), key
+        assert any(line.startswith("shelters/verification") and key in line for line in schema_problems(broken, schema)), key
+    broken = copy.deepcopy(published)
+    broken["shelters"]["verification"]["assumptions"] = []
+    assert "shelters.verification is a conducted check and lacks assumptions" in shelter_plan_problems(broken)
+    # Free text is never published: a row with notes is refused by the schema.
+    broken = copy.deepcopy(published)
+    broken["shelters"]["verification"]["checked"][0]["access_notes"] = "Paved road to the gate"
+    assert any(line.startswith("shelters/verification/checked/0") for line in schema_problems(broken, schema))
+    # The committed manifest states no result: the check was not conducted.
+    committed = manifest["shelters"]["verification"]
+    if committed["status"] == "not_conducted":
+        assert committed["checked"] == [] and "confidence" not in committed
+
+
+def test_capacity_aware_plan_never_loads_a_site_beyond_capacity_and_its_arithmetic_holds(manifest: dict) -> None:
+    shelters = manifest["shelters"]
+    plan = shelters["capacitated"]
+    demand = plan["demand_people"]
+    assert demand == shelters["demand_people"]  # The same residents as the coverage ranking: homes that flood at the peak.
+    candidates = {candidate["id"]: candidate for candidate in shelters["candidates"]}
+    estimate = "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified"
+    assert plan["capacity_basis"] == {"estimate": estimate, "unknown": "unknown"}
+    for rows in (plan["plan"], plan["coverage_plan"]):
+        assert rows and len({row["candidate_id"] for row in rows}) == len(rows)
+        for position, row in enumerate(rows, start=1):
+            candidate = candidates[row["candidate_id"]]
+            assert candidate["eligible"] and row["capacity_est"] == candidate["capacity_est"]
+            known = candidate["capacity_est"] is not None
+            assert row["capacity_basis"] == (estimate if known else "unknown")
+            assert row["upper_capacity_basis"] in (("estimate",) if known else ("kind_median", "all_kinds_median"))
+            assert row["lower"]["capacity"] == (candidate["capacity_est"] if known else 0)
+            if known:
+                assert row["upper"]["capacity"] == candidate["capacity_est"]
+            elif row["upper_capacity_basis"] == "kind_median":
+                assert row["upper"]["capacity"] == plan["kind_median_capacity"][candidate["kind"]]
+            else:
+                assert row["upper"]["capacity"] == plan["all_kinds_median_capacity"]
+            for key in ("lower", "upper"):
+                bound = row[key]
+                assert 0 <= bound["load"] <= bound["capacity"], (row["candidate_id"], key)  # Load never exceeds capacity.
+                assert bound["overflow"] == demand - bound["served"]  # overflow = demand - served.
+                assert bound["served"] == sum(item[key]["load"] for item in rows[:position])  # Nested: a running total.
+            assert row["lower"]["served"] <= row["upper"]["served"]  # Lower bound <= upper bound.
+    # The medians come from the candidates' own estimates (every candidate with one, eligible or not).
+    by_kind: dict[str, list[int]] = {}
+    for candidate in shelters["candidates"]:
+        if candidate["capacity_est"] is not None:
+            by_kind.setdefault(candidate["kind"], []).append(candidate["capacity_est"])
+    median = lambda values: sorted(values)[len(values) // 2] if len(values) % 2 else sum(sorted(values)[len(values) // 2 - 1:len(values) // 2 + 1]) // 2  # noqa: E731
+    assert plan["kind_median_capacity"] == {kind: median(values) for kind, values in sorted(by_kind.items())}
+    assert plan["all_kinds_median_capacity"] == median([value for values in by_kind.values() for value in values])
+    # The coverage ranking is counted row for row, in its own order.
+    assert [row["candidate_id"] for row in plan["coverage_plan"]] == [entry["candidate_id"] for entry in shelters["plan"]]
+    assert all("within_reach" in row for row in plan["plan"]) and not any("within_reach" in row for row in plan["coverage_plan"])
+    assert all(row["upper"]["served"] <= row["within_reach"] <= demand - shelters["uncoverable_people"] for row in plan["plan"])
+    # Every eligible candidate together is the ceiling of any plan.
+    everything = plan["all_eligible"]
+    assert everything["sites"] == shelters["eligible_count"] and everything["within_reach"] == demand - shelters["uncoverable_people"]
+    for key in ("lower", "upper"):
+        assert everything[key]["overflow"] == demand - everything[key]["served"]
+        assert everything[key]["served"] <= everything[key]["capacity"]
+        assert max(row[key]["served"] for rows in (plan["plan"], plan["coverage_plan"]) for row in rows) <= everything[key]["served"]
+    assert everything["lower"]["served"] <= everything["upper"]["served"] < demand
+
+
+def test_capacity_aware_plan_states_the_roadmap_example_and_its_caveats(manifest: dict) -> None:
+    shelters = manifest["shelters"]
+    plan = shelters["capacitated"]
+    k = shelters["knee_k"]
+    # The site the nearest-site rule overloads: 79 places, about 2,430 residents assigned in the default plan.
+    first = plan["coverage_plan"][0]
+    assert (first["capacity_est"], shelters["plan"][k - 1]["loads"][0]) == (79, 2430)
+    assert first["upper"] == {"capacity": 79, "load": 79, "served": 79, "overflow": shelters["demand_people"] - 79}
+    # With capacity counted, the default plan's sites hold far fewer residents than can walk to them.
+    assert plan["coverage_plan"][k - 1]["upper"]["served"] < 0.2 * shelters["plan"][k - 1]["cumulative_demand"]
+    # Neither bound is a limit on who fits: the block says so where the bounds are defined and among its assumptions.
+    assert set(plan["bounds"]) == {"lower", "upper", "note"} and "Neither is a limit on who fits" in plan["bounds"]["note"]
+    assert "more residents may fit than the upper bound gives" in plan["bounds"]["note"]
+    assert any(line.startswith("Neither bound is a limit on who fits") for line in plan["assumptions"])
+    assert any("Neither is a limit on who fits" in line for line in manifest["assumptions"])
+    text = " ".join([plan["demand_basis"], plan["method"], *plan["bounds"].values(), *plan["assumptions"]])
+    for phrase in ("T1 scenario (model)", "an upper bound", "many people stay with relatives", "unverified", "candidates to verify",
+                   "not a list of sites to open", "different source", "overflow = demand_people - served", "counts as 0", "median"):
+        assert phrase in text, phrase
+    # No participation sweep, no listed capacity and no score: only footprint estimates and their medians.
+    flat = json.dumps(plan).lower()
+    assert "participation" not in flat and "listed_capacity" not in flat
+    assert score_or_class_keys(plan) == []
+    assert any("capacity-aware plan" in line and "candidates to verify" in line for line in manifest["assumptions"])
+
+
+def test_plan_robustness_repeats_the_ranking_at_what_if_levels_not_return_periods(manifest: dict) -> None:
+    shelters = manifest["shelters"]
+    robustness = shelters["robustness"]
+    assert robustness["label"] == "What-if levels around an illustrative peak, not return periods."
+    stages = robustness["stages"]
+    assert [stage["stage_m"] for stage in stages] == [2.5, 3.5, 4.0]
+    assert [stage["modelled_peak"] for stage in stages] == [False, True, False]
+    peak = stages[1]
+    assert peak["stage_m"] == shelters["method"]["peak_stage_m"]
+    # The peak row is the plan the replay shows.
+    assert peak["plan"] == [entry["candidate_id"] for entry in shelters["plan"]]
+    assert (peak["demand_people"], peak["eligible_count"], peak["uncoverable_people"], peak["knee_k"]) == (
+        shelters["demand_people"], shelters["eligible_count"], shelters["uncoverable_people"], shelters["knee_k"])
+    assert peak["cumulative_demand"] == [int(entry["cumulative_demand"] + 0.5) for entry in shelters["plan"]]  # Halves up, as the page rounds.
+    # Residents whose homes flood at each level (roadmap C-1).
+    assert [stage["demand_people"] for stage in stages] == [10333, 14169, 16069]
+    eligible = {candidate["id"] for candidate in shelters["candidates"]}
+    for stage in stages:
+        assert len(set(stage["plan"])) == len(stage["plan"]) == len(stage["cumulative_demand"]) and set(stage["plan"]) <= eligible
+        assert stage["cumulative_demand"] == sorted(stage["cumulative_demand"])  # Nested plans: coverage only grows.
+        assert stage["cumulative_demand"][-1] <= stage["demand_people"] - stage["uncoverable_people"]
+        assert 1 <= stage["knee_k"] <= len(stage["plan"])
+    # A higher level floods more homes and can only remove candidates.
+    assert stages[0]["eligible_count"] >= stages[1]["eligible_count"] >= stages[2]["eligible_count"]
+    # The robust core for k sites: among the first k at every level, in the order of the replay's plan.
+    core = robustness["core_by_k"]
+    assert len(core) == len(shelters["plan"])
+    for k, sites in enumerate(core, start=1):
+        heads = [set(stage["plan"][:k]) for stage in stages]
+        assert sites == [site for site in peak["plan"][:k] if all(site in head for head in heads)]
+    assert core[shelters["knee_k"] - 1], "the default plan has no site that holds at every level"
+    text = json.dumps(robustness)
+    assert not re.search(r"\b(?:25|100)[- ]?year", text) and "return period" not in text.replace("not return periods", "")
+    assert score_or_class_keys(robustness) == []
+
+
+# --- Sentinel-2 water check, 15 Sep (roadmap P2-7) -------------------------------------------------------------
+
+S2_READING = ("The larger observed area is consistent with water or saturated mud left after the river fell; "
+              "the terrain-only model cannot hold water once the river level drops.")
+S2_FOLLOWING_DAY_READING = ("A day later the VIIRS map shows less flood water than the model in its clear pixels, so the larger area on the "
+                            "day of the scene is consistent with saturated mud or short-lived water rather than lasting ponding.")
+
+
+def test_sentinel2_water_check_is_observed_with_its_model_figures_named_as_scenario(manifest: dict) -> None:
+    check = manifest["s2_crosscheck"]
+    block = next(item for item in manifest["evidence_blocks"] if item["id"] == "sentinel2_water_check")
+    assert (block["lane"], block["temporal_relation"], block["covers"]) == ("OBS", "pre_event_to_event_pair", ["s2_crosscheck"])
+    assert "water or saturated mud" in block["evidence_tier"] and "unvalidated" in block["evidence_tier"]
+    assert block["source_timestamp"] == check["source_timestamp"] == "2024-09-05T03:58:19Z/2024-09-15T03:58:15Z"
+    # Every model figure inside the block is named as a scenario field; nothing else carries a model_ key.
+    assert block["scenario_fields"] == ["s2_crosscheck.model_at_event_scene", "s2_crosscheck.sensitivity[].model_agreement_iou"]
+    assert check["model_fields"]["paths"] == [path.removeprefix("s2_crosscheck.") for path in block["scenario_fields"]]
+    assert check["model_fields"]["evidence_tier"] == SCENARIO_TIER and SCENARIO_TIER in block["note"] and "indicative" in block["note"]
+    assert all(key.startswith("model_") for key in check["model_at_event_scene"])
+    for part in (check["change"], *check["scenes"]):
+        assert not any(key.startswith("model_") for key in part)
+    assert all([key for key in row if key.startswith("model_")] == ["model_agreement_iou"] for row in check["sensitivity"])
+    # Timestamp, confidence, assumptions and a caveat (AGENTS.md), and each scene dated on its own.
+    assert check["confidence"] == "low" and check["confidence_reason"] and len(check["assumptions"]) >= 4
+    assert [(scene["id"], scene["role"], scene["source_timestamp"], scene["local_time"]) for scene in check["scenes"]] == [
+        ("s2-20240905", "pre_event", "2024-09-05T03:58:19Z", "2024-09-05T10:58:19+07:00"),
+        ("s2-20240915", "event", "2024-09-15T03:58:15Z", "2024-09-15T10:58:15+07:00")]
+    observations = {item["id"]: item for item in manifest["observations"]}
+    for scene in check["scenes"]:
+        assert (observations[scene["id"]]["utc"], observations[scene["id"]]["local"]) == (scene["source_timestamp"], scene["local_time"])
+    assert check["model_at_event_scene"]["model_local_time"] == "2024-09-15T10:58:15+07:00"
+    assert "not a flood extent" in check["caveat"] and "indicative only" in check["caveat"] and "saturated mud" in check["caveat"]
+    # No score, no action class, and nothing from product 4009 or a land-cover map.
+    assert score_or_class_keys(check) == []
+    flat = json.dumps(check).lower()
+    assert "4009" not in flat and "unosat" not in flat and "worldcover" not in flat and "envelope" not in flat
+    # The licence is the Sentinel-2 source's own.
+    source = next(item for item in manifest["sources"] if item["id"] == "sentinel-2")
+    assert (check["licence"], check["attribution"]) == (source["licence"], source["attribution"])
+    # A manifest whose block loses its evidence entry, or gains a model figure outside the named paths, is refused.
+    broken = copy.deepcopy(manifest)
+    broken["evidence_blocks"] = [item for item in broken["evidence_blocks"] if item["id"] != "sentinel2_water_check"]
+    assert "no evidence block covers s2_crosscheck" in evidence_problems(broken)
+
+
+def test_sentinel2_water_check_says_consistent_with_and_labels_the_comparison_indicative(manifest: dict) -> None:
+    check = manifest["s2_crosscheck"]
+    assert check["label"] == "water or saturated mud" and check["comparison"] == "indicative"
+    assert check["reading"] == S2_READING
+    text = " ".join(str(value) for value in jsonable_strings(check))
+    assert not re.search(r"explain", text, re.IGNORECASE)  # "is consistent with", never "explains".
+    assert not re.search(r"\b(?:proves?|confirms?|caused by|because of)\b", text, re.IGNORECASE)
+    assert "flood extent" not in text.replace("not a flood extent", "")
+    # No land-cover map is an input, so nothing says what kind of land the water lies on.
+    assert not re.search(r"on fields|cropland|padd(?:y|ies)|farmland", text, re.IGNORECASE)
+    assert any("No land-cover map is an input" in line for line in check["assumptions"])
+    # The next clear VIIRS day cuts against lasting ponding, and the block says so instead of leaving 15 Sep alone.
+    following = check["following_day"]
+    assert following == {"viirs_date": "2024-09-16", "reading": S2_FOLLOWING_DAY_READING}
+    day = next(item for item in manifest["viirs_daily"]["days"] if item["date"] == following["viirs_date"])
+    assert day["clear_km2"] > 0 and day["viirs_flood_km2_clear"] < day["model_flood_km2_clear"]
+    # The limitation and the assumption are in the manifest's own lists.
+    limitation = next(line for line in manifest["limitations"] if line.startswith("No ponding or storage after the river falls: the terrain-only model"))
+    assert "on fields" not in limitation and limitation.endswith("left behind after the river falls is not reconstructed.")
+    assert any(line.startswith("No ponding or storage after the river falls: the terrain-only model") for line in manifest["limitations"])
+    assert any("Sentinel-2 water check" in line and "indicative" in line and "water or saturated mud" in line for line in manifest["assumptions"])
+    # Rules: reflectance scaling with nothing subtracted, the dropped scene classes, the permanent-water rule in use.
+    assert "digital number / 10000, nothing subtracted" in check["index"] and "(green - swir16) / (green + swir16)" in check["index"]
+    for needle in ("no data (0)", "cloud shadow (3)", "cloud (8, 9)", "thin cirrus (10)"):
+        assert needle in check["clear_rule"], needle
+    assert "drainage-channel cells are left out on both dates" in check["permanent_water_rule"] and "No land-cover map is used" in check["permanent_water_rule"]
+    assert (check["threshold"], check["resolution_m"]) == (0.0, 20.0)
+
+
+def jsonable_strings(value) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [text for item in value.values() for text in jsonable_strings(item)]
+    if isinstance(value, list):
+        return [text for item in value for text in jsonable_strings(item)]
+    return []
+
+
+def test_sentinel2_water_check_arithmetic_holds_and_matches_the_models_own_figures(manifest: dict) -> None:
+    from floodguard.flood_timeline import flooded_area_km2, stage_at
+
+    check = manifest["s2_crosscheck"]
+    pre, event = check["scenes"]
+    district = check["district_km2"]
+    assert district == pytest.approx(manifest["model_coverage"]["district_km2"], abs=0.5)  # Rasterised on the 10 m grid.
+    for scene in (pre, event):
+        assert scene["clear_share"] == pytest.approx(scene["clear_km2"] / district, abs=0.001)
+        assert 0 < scene["water_km2"] < scene["clear_km2"] <= district
+        # The class areas add up to the district, and the clear area is the kept classes (minus pixels without data).
+        assert sum(scene["scl_class_km2"].values()) == pytest.approx(district, abs=0.1)
+        dropped = sum(scene["scl_class_km2"].get(name, 0) for name in ("no_data", "cloud_shadow", "cloud_medium_probability", "cloud_high_probability", "thin_cirrus"))
+        assert scene["clear_km2"] == pytest.approx(district - dropped, abs=0.1)
+    # The scene after the river fell is the cloudier one and still shows far more water or saturated mud.
+    assert event["clear_share"] < pre["clear_share"] and event["water_km2"] > 2 * pre["water_km2"]
+    change = check["change"]
+    assert (change["pre_event_scene"], change["event_scene"]) == (pre["id"], event["id"])
+    assert change["both_clear_km2"] <= min(pre["clear_km2"], event["clear_km2"])
+    assert change["event_water_km2"] <= event["water_km2"] and change["pre_event_water_km2"] <= pre["water_km2"]
+    # new = event - (water on both dates); no longer = pre - (water on both dates).
+    assert change["new_water_km2"] - change["no_longer_water_km2"] == pytest.approx(change["event_water_km2"] - change["pre_event_water_km2"], abs=0.02)
+    assert 0 < change["new_water_km2"] <= change["event_water_km2"]
+    # The model beside it: the stage at the acquisition time, its out-of-channel area, and the overlap ratios.
+    model = check["model_at_event_scene"]
+    t = 6 + (10 + 58 / 60 + 15 / 3600) / 24  # 15 Sep 10:58:15 ICT, in days since 9 Sep 00:00 ICT.
+    assert model["model_t"] == pytest.approx(t, abs=1e-4) and model["model_stage_m"] == pytest.approx(stage_at(t), abs=5e-4)
+    histogram_km2 = sum(flooded_area_km2(histogram, stage_at(t), manifest["pixel_area_m2"]) for histogram in manifest["tambon_histograms"].values())
+    assert model["model_flood_km2_district"] == pytest.approx(histogram_km2, abs=0.02)  # The same cells as every flooded-area figure.
+    assert model["model_flood_km2_clear"] <= model["model_flood_km2_district"]
+    # The model where both scenes are clear: the figure to set beside the new water, which is counted in the same cells.
+    assert 0 < model["model_flood_km2_both_clear"] <= model["model_flood_km2_clear"]
+    assert change["new_water_km2"] > model["model_flood_km2_both_clear"]  # "The larger observed area" holds for the new water too.
+    assert model["model_union_km2"] == pytest.approx(event["water_km2"] + model["model_flood_km2_clear"] - model["model_overlap_km2"], abs=0.02)
+    assert model["model_agreement_iou"] == pytest.approx(model["model_overlap_km2"] / model["model_union_km2"], abs=0.002)
+    assert model["model_share_of_observed_water_reached"] == pytest.approx(model["model_overlap_km2"] / event["water_km2"], abs=0.002)
+    assert model["model_share_inside_observed_water"] == pytest.approx(model["model_overlap_km2"] / model["model_flood_km2_clear"], abs=0.002)
+    # The reading speaks of "the larger observed area": both observations of 15 Sep exceed the model in their own clear pixels.
+    assert event["water_km2"] > model["model_flood_km2_clear"]
+    viirs = next(day for day in manifest["viirs_daily"]["days"] if day["date"] == "2024-09-15")
+    assert viirs["viirs_flood_km2_clear"] > viirs["model_flood_km2_clear"]
+    # Agreement in place is weak, which is why the comparison is only indicative.
+    assert model["model_agreement_iou"] < 0.3
+    # Stricter rules never find more, and the weak agreement does not depend on the rule.
+    strict, tenth, fifth = check["sensitivity"]
+    assert [row["id"] for row in check["sensitivity"]] == ["strict_clear", "threshold_0_1", "threshold_0_2"]
+    assert strict["event_clear_share"] < event["clear_share"] and strict["pre_event_clear_share"] < pre["clear_share"]
+    assert (tenth["event_clear_share"], fifth["event_clear_share"]) == (event["clear_share"], event["clear_share"])
+    assert event["water_km2"] >= strict["event_water_km2"] and event["water_km2"] >= tenth["event_water_km2"] >= fifth["event_water_km2"]
+    assert pre["water_km2"] >= tenth["pre_event_water_km2"] >= fifth["pre_event_water_km2"]
+    assert all(row["event_water_km2"] > 2 * row["pre_event_water_km2"] and row["model_agreement_iou"] < 0.3 for row in check["sensitivity"])
+
+
+def test_sentinel2_water_check_validates_against_the_schema_and_bad_wording_is_refused(manifest: dict, schema: dict) -> None:
+    assert schema_problems(manifest, schema) == []
+
+    def problems(change) -> list[str]:
+        document = copy.deepcopy(manifest)
+        change(document["s2_crosscheck"])
+        return schema_problems(document, schema)
+
+    assert any("reading" in line for line in problems(lambda check: check.update(reading="Standing water on fields explains the larger observed area.")))
+    assert any("reading" in line for line in problems(lambda check: check.update(reading="Standing water on fields accounts for the gap.")))
+    assert any("reading" in line for line in problems(lambda check: check.update(reading="Water standing on fields is consistent with the larger area.")))
+    assert any("reading" in line for line in problems(lambda check: check.update(reading="Flooded cropland is consistent with the larger area.")))
+    assert any("following_day" in line for line in problems(lambda check: check["following_day"].update(reading="The next day explains it.")))
+    assert any("following_day" in line for line in problems(lambda check: check["following_day"].update(model_flood_km2_clear=7.7)))
+    assert any("following_day" in line for line in problems(lambda check: check["following_day"].pop("viirs_date")))
+    assert problems(lambda check: check.pop("following_day")) == []  # Optional: present only when the next clear day supports it.
+    assert problems(lambda check: check["model_at_event_scene"].pop("model_flood_km2_both_clear"))
+    assert any("comparison" in line for line in problems(lambda check: check.update(comparison="validation")))
+    assert any("label" in line for line in problems(lambda check: check.update(label="flood water")))
+    assert problems(lambda check: check["model_at_event_scene"].update(observed_km2=1.0))  # Only model_ keys beside the observation.
+    assert problems(lambda check: check["scenes"][1].update(model_flood_km2=1.0))  # No model figure inside an observed scene.
+    assert problems(lambda check: check["scenes"][1].pop("source_timestamp"))  # Each scene carries its own timestamp.
+    assert problems(lambda check: check.pop("caveat")) and problems(lambda check: check.pop("confidence")) and problems(lambda check: check.pop("assumptions"))
+    assert problems(lambda check: check.update(accepted_fpps=None))  # No extra keys, score fields least of all.

@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T11:16:00+07:00",
+ "generated_at": "2026-10-02T20:59:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -124,6 +124,28 @@
    "note": "Candidate screening and ranked plan on the reconstructed peak; the reported sites inside this block sit in the reported lane."
   },
   {
+   "id": "capacity_aware_plan",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "event_window_reconstruction",
+   "covers": [
+    "shelters.capacitated"
+   ],
+   "source_timestamp": "OSM extract 2026-07-09 (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT",
+   "note": "Who fits where under two capacity bounds, on the reconstructed peak. Demand is every resident of a home that floods at the peak; capacity is an unverified footprint estimate. Candidates to verify, not a list of sites to open."
+  },
+  {
+   "id": "plan_robustness",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "what_if_levels",
+   "covers": [
+    "shelters.robustness"
+   ],
+   "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; what-if design stages around the illustrative 2024-09-12 ICT peak",
+   "note": "The coverage ranking repeated at what-if levels around an illustrative peak, not return periods."
+  },
+  {
    "id": "reported_shelters",
    "lane": "REP",
    "evidence_tier": "Reported use from public sources; not an official register",
@@ -132,6 +154,17 @@
     "shelters.reported"
    ],
    "source_timestamp": "reports dated 2024-09-11 to 2024-10-11; compiled 2026-09-27"
+  },
+  {
+   "id": "shelter_candidate_check",
+   "lane": "REP",
+   "evidence_tier": "Local check reported by role; not an official shelter register",
+   "temporal_relation": "post_event_compilation",
+   "covers": [
+    "shelters.verification"
+   ],
+   "source_timestamp": "not conducted: no verification sheet had been returned when these files were generated",
+   "note": "No verification sheet has been returned: the local check of the shelter candidates was not conducted. Every capacity is an unverified estimate and every site is a candidate to verify on the ground."
   },
   {
    "id": "event_chronology",
@@ -180,6 +213,21 @@
     "layers[s2-20240915]"
    ],
    "source_timestamp": "2024-09-15T03:58:15Z"
+  },
+  {
+   "id": "sentinel2_water_check",
+   "lane": "OBS",
+   "evidence_tier": "Optical water index on observed images, clear pixels only: water or saturated mud; unvalidated here",
+   "temporal_relation": "pre_event_to_event_pair",
+   "covers": [
+    "s2_crosscheck"
+   ],
+   "source_timestamp": "2024-09-05T03:58:19Z/2024-09-15T03:58:15Z",
+   "scenario_fields": [
+    "s2_crosscheck.model_at_event_scene",
+    "s2_crosscheck.sensitivity[].model_agreement_iou"
+   ],
+   "note": "MNDWI above 0 on the clear pixels of two Sentinel-2 L2A scenes; each scene carries its own acquisition time and clear share. model_at_event_scene and the model_ field of each sensitivity row are T1 scenario (model) values computed for the comparison, which is indicative only."
   },
   {
    "id": "sentinel1_20240906",
@@ -258,15 +306,16 @@
   {
    "id": "unosat_4009_season_envelope",
    "lane": "SCN-ENV",
-   "evidence_tier": "Season envelope (scenario), used as provided; unvalidated; not shown in this revision",
+   "evidence_tier": "Season envelope (scenario), used as provided; unvalidated",
    "temporal_relation": "season_envelope",
    "covers": [
-    "external_references[unosat-4009]"
+    "season_envelope",
+    "external_checks[unosat-4009-season-envelope]"
    ],
    "source_timestamp": "2024-08-01/2024-10-22",
    "season_window": "2024-08-01/2024-10-22",
-   "shown": false,
-   "note": "Never an observation for a replay day. Not shown in this revision; the owners confirmed the rights record on 2 Oct 2026."
+   "shown": true,
+   "note": "Never an observation for a replay day. Shown as a scenario layer with its own toggle, credit and change notice; the owners confirmed the rights record on 2 Oct 2026."
   },
   {
    "id": "terrain_shading",
@@ -299,6 +348,17 @@
     "external_references[hii-event-page]"
    ],
    "source_timestamp": "event reports of September 2024"
+  },
+  {
+   "id": "export_pack",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "event_window_reconstruction",
+   "covers": [
+    "exports"
+   ],
+   "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT",
+   "note": "Download files written from the modelled blocks above; each file names its own lanes. The reported-shelter table and the reported points of the site layer repeat reported facts (block reported_shelters) beside a model check."
   }
  ],
  "exploratory_knowledge": {
@@ -332,11 +392,17 @@
     "id": "unosat-4009",
     "relation": "computed_after_keyframes_final",
     "known_during_tuning": false,
-    "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision."
+    "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning. Recorded rule: no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is relabelled as calibration."
+   },
+   {
+    "id": "sentinel-2-water-check",
+    "relation": "computed_after_keyframes_final",
+    "known_during_tuning": false,
+    "statement": "The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not used for tuning: the last keyframe change is commit 129ff03 of 29 Sep 2026, and the check entered the bake on 2 Oct 2026. The two true-colour images have been on the page since the first revision, so they were seen while the keyframes were set, but no water area had been derived from them."
    }
   ],
   "depth_factor": "The depth factor k = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.",
-  "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed."
+  "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS, the Sentinel-2 water check or product 4009 from here on; if one is, that comparison is relabelled calibration-informed."
  },
  "publication_eligibility": {
   "status": "conditional",
@@ -345,7 +411,7 @@
    "HII rain data are CC BY-NC: the replay as a whole is for non-commercial use, and rain values stay out of any combined table or export.",
    "The VIIRS provider states no licence: the maps are shown with attribution, and reuse beyond this page is not cleared.",
    "OpenStreetMap-derived files (roads, facilities, shelter candidates and the access node positions) stay under ODbL 1.0: attribution and share-alike.",
-   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown in this revision; the owners confirmed the rights record on 2 Oct 2026."
+   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is shown as a season envelope scenario layer: its derived files keep their own folder, credit, licence and change notice; the owners confirmed the rights record on 2 Oct 2026."
   ],
   "inputs": [
    {
@@ -441,8 +507,8 @@
     "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai",
     "licence": "CC BY-SA 4.0",
     "licence_stated": true,
-    "shown": false,
-    "status": "Not shown in this revision; the owners confirmed the rights record on 2 Oct 2026.",
+    "shown": true,
+    "status": "Shown as a season envelope scenario layer; the owners confirmed the rights record on 2 Oct 2026.",
     "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
     "terms": "Attribution, share-alike and a change notice on every derived file; kept in its own folder."
    }
@@ -481,6 +547,18 @@
   },
   {
    "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/scl.tif",
+   "bytes": 3345372,
+   "sha256": "c33c2de5e59fbb9768776b7449f9193c3843aae51460a3085cfc5cf4c152de3e"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/swir16.tif",
+   "bytes": 61345276,
+   "sha256": "24d39dba72cf3f6cd700af6a2506d3c4893e31f52681fe38655be3c4b2c0747f"
+  },
+  {
+   "root": "external",
    "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/blue.tif",
    "bytes": 220036077,
    "sha256": "aa058cecc7643f0384ef363d131ea59c3ba6f415e9e1ab7d6d5ec8824d48a7a8"
@@ -496,6 +574,18 @@
    "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/red.tif",
    "bytes": 221362768,
    "sha256": "dbe241cefd75a7e94f9259aeffe3b8d9b471a0c02b115db09ac38d27a0ac29d8"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/scl.tif",
+   "bytes": 3465002,
+   "sha256": "ce119a84f064e8e712ccfc450721350ab91852a6962ae8b8bf83a8fe05b3366f"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/swir16.tif",
+   "bytes": 61284543,
+   "sha256": "67929ca9285acf1254578f9d550aa9907abde160b7b5c625a434184708a31da2"
   },
   {
    "root": "external",
@@ -544,6 +634,12 @@
    "path": "open_context/worldpop_population/tha_ppp_2020.tif",
    "bytes": 296024584,
    "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+  },
+  {
+   "root": "external",
+   "path": "unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip",
+   "bytes": 27977189,
+   "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85"
   },
   {
    "root": "external",
@@ -632,8 +728,8 @@
   {
    "root": "repo",
    "path": "outputs/mae_sai_reported_shelters_2024.json",
-   "bytes": 69754,
-   "sha256": "9865a3db58ec0b6991d85f5d651520838fa67121e7b411dc4b859fc666293f6d"
+   "bytes": 75792,
+   "sha256": "674d95881b857916f65f864e555a1b20f815a25bd9c43e2d475fc0c8f2d00d35"
   },
   {
    "root": "repo",
@@ -8153,6 +8249,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8226,6 +8323,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8292,6 +8390,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8351,6 +8450,7 @@
     "first_use": "2024-09-21",
     "in_access_set": false,
     "access_set_note": "The temple was itself flooded and evacuated at the peak; it served as a shelter from 21 Sep.",
+    "access_set_note_th": "วัดถูกน้ำท่วมและต้องอพยพในช่วงระดับน้ำสูงสุด แล้วจึงใช้เป็นที่พักพิงตั้งแต่ 21 ก.ย.",
     "model_check": {
      "h": 7.35,
      "k": 1.0,
@@ -8403,6 +8503,7 @@
     "first_use": "2024-09-11",
     "in_access_set": false,
     "access_set_note": "Incident command centre and relief kitchens; not a documented overnight shelter in Sep 2024.",
+    "access_set_note_th": "ศูนย์บัญชาการเหตุการณ์และโรงครัว ไม่มีหลักฐานว่าใช้เป็นที่พักค้างคืนในเดือน ก.ย. 2567 (2024)",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8455,6 +8556,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": 6.2,
      "k": 1.0,
@@ -8500,6 +8602,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8545,6 +8648,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8597,6 +8701,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": null
    },
    {
@@ -8641,6 +8746,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8700,6 +8806,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": 10.2,
      "k": 0.712,
@@ -8752,6 +8859,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8797,6 +8905,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": null
    },
    {
@@ -8834,6 +8943,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": null
    },
    {
@@ -8871,6 +8981,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8916,6 +9027,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8961,6 +9073,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": null
    },
    {
@@ -8998,6 +9111,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": 10.75,
      "k": 1.0,
@@ -9043,6 +9157,7 @@
     "first_use": "2024-09-14",
     "in_access_set": false,
     "access_set_note": "Prepared as a shelter for vulnerable groups by 14 Sep, after the peak.",
+    "access_set_note_th": "เตรียมเป็นที่พักพิงสำหรับกลุ่มเปราะบางภายใน 14 ก.ย. หลังช่วงระดับน้ำสูงสุด",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -9054,6 +9169,960 @@
     }
    }
   ],
+  "capacitated": {
+   "scenario_tier": "T1 scenario (model)",
+   "confidence": "low",
+   "confidence_reason": "Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; demand is a modelled upper bound; nothing was checked on the ground.",
+   "source_timestamp": "OSM extract 2026-07-09 (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT",
+   "demand_basis": "Every resident of a home that floods at the modelled peak (WorldPop 2020 residents at road nodes). An upper bound on shelter demand: many people stay with relatives or on an upper floor.",
+   "capacity_basis": {
+    "estimate": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+    "unknown": "unknown"
+   },
+   "bounds": {
+    "lower": "An unknown capacity counts as 0.",
+    "upper": "An unknown capacity takes the median estimate of the same site kind (kind_median), or the median of every estimate when no site of that kind has one (all_kinds_median). Medians use every candidate with an estimate.",
+    "note": "The bounds differ only in what a site without a mapped footprint is assumed to hold. Neither is a limit on who fits: a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are unmapped, so more residents may fit than the upper bound gives."
+   },
+   "method": "Residents are assigned to eligible sites within the walking limit on normal roads without exceeding a site's capacity, serving as many as possible (a maximum flow, solved in thousandths of a resident and published in whole residents). The capacity-aware ranking adds, at each step, the site that lets the most additional residents fit under the upper bound; it stops at the plan-size limit or when a site adds less than 0.5% of demand. Both bounds use that one site order, and a site's load is the number it adds when it joins. coverage_plan counts the existing coverage ranking the same way. overflow = demand_people - served.",
+   "assumptions": [
+    "T1 scenario (model) on the reconstructed peak; not an observation of who sheltered where.",
+    "Demand is every resident of a home that floods at the modelled peak, an upper bound: many people stay with relatives or on an upper floor.",
+    "Capacity is an unverified estimate from mapped building footprints (footprint x 0.5 usable share / 3.5 m2 per person, Sphere); most candidates have no mapped footprint.",
+    "The sites are candidates to verify on the ground, not a list of sites to open.",
+    "The planning overlay's shelter-capacity figures use listed capacities from a different source (DDPM); none of those values is used or published here, so the two sets of figures differ.",
+    "Everyone is assumed to walk before the water rises (normal roads) and to accept any site within the limit; households are not kept together.",
+    "Neither bound is a limit on who fits: both count a site with a mapped footprint at its estimate, which is too low where buildings are unmapped."
+   ],
+   "demand_people": 14169,
+   "max_plan_sites": 30,
+   "min_gain_share": 0.005,
+   "kind_median_capacity": {
+    "government": 81,
+    "school": 253,
+    "worship": 76
+   },
+   "all_kinds_median_capacity": 80,
+   "plan": [
+    {
+     "candidate_id": "C006",
+     "capacity_est": 984,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 1109,
+     "lower": {
+      "capacity": 984,
+      "load": 984,
+      "served": 984,
+      "overflow": 13185
+     },
+     "upper": {
+      "capacity": 984,
+      "load": 984,
+      "served": 984,
+      "overflow": 13185
+     }
+    },
+    {
+     "candidate_id": "C007",
+     "capacity_est": 306,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 2772,
+     "lower": {
+      "capacity": 306,
+      "load": 306,
+      "served": 1290,
+      "overflow": 12879
+     },
+     "upper": {
+      "capacity": 306,
+      "load": 306,
+      "served": 1290,
+      "overflow": 12879
+     }
+    },
+    {
+     "candidate_id": "C010",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 2772,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 1290,
+      "overflow": 12879
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 253,
+      "served": 1543,
+      "overflow": 12626
+     }
+    },
+    {
+     "candidate_id": "C073",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 3110,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 1290,
+      "overflow": 12879
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 253,
+      "served": 1796,
+      "overflow": 12373
+     }
+    },
+    {
+     "candidate_id": "C038",
+     "capacity_est": 212,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3110,
+     "lower": {
+      "capacity": 212,
+      "load": 212,
+      "served": 1502,
+      "overflow": 12667
+     },
+     "upper": {
+      "capacity": 212,
+      "load": 212,
+      "served": 2008,
+      "overflow": 12161
+     }
+    },
+    {
+     "candidate_id": "C029",
+     "capacity_est": 240,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3283,
+     "lower": {
+      "capacity": 240,
+      "load": 173,
+      "served": 1675,
+      "overflow": 12494
+     },
+     "upper": {
+      "capacity": 240,
+      "load": 173,
+      "served": 2181,
+      "overflow": 11988
+     }
+    },
+    {
+     "candidate_id": "C017",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 3283,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 1675,
+      "overflow": 12494
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 130,
+      "served": 2311,
+      "overflow": 11858
+     }
+    },
+    {
+     "candidate_id": "C002",
+     "capacity_est": 130,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3283,
+     "lower": {
+      "capacity": 130,
+      "load": 130,
+      "served": 1805,
+      "overflow": 12364
+     },
+     "upper": {
+      "capacity": 130,
+      "load": 130,
+      "served": 2441,
+      "overflow": 11728
+     }
+    },
+    {
+     "candidate_id": "C008",
+     "capacity_est": 121,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3283,
+     "lower": {
+      "capacity": 121,
+      "load": 121,
+      "served": 1926,
+      "overflow": 12243
+     },
+     "upper": {
+      "capacity": 121,
+      "load": 121,
+      "served": 2562,
+      "overflow": 11607
+     }
+    },
+    {
+     "candidate_id": "C011",
+     "capacity_est": 110,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3502,
+     "lower": {
+      "capacity": 110,
+      "load": 110,
+      "served": 2036,
+      "overflow": 12133
+     },
+     "upper": {
+      "capacity": 110,
+      "load": 110,
+      "served": 2672,
+      "overflow": 11497
+     }
+    },
+    {
+     "candidate_id": "C068",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 3526,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2036,
+      "overflow": 12133
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 109,
+      "served": 2781,
+      "overflow": 11388
+     }
+    },
+    {
+     "candidate_id": "C070",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 3617,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2036,
+      "overflow": 12133
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 100,
+      "served": 2881,
+      "overflow": 11288
+     }
+    },
+    {
+     "candidate_id": "C025",
+     "capacity_est": 88,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3655,
+     "lower": {
+      "capacity": 88,
+      "load": 88,
+      "served": 2124,
+      "overflow": 12045
+     },
+     "upper": {
+      "capacity": 88,
+      "load": 88,
+      "served": 2969,
+      "overflow": 11200
+     }
+    },
+    {
+     "candidate_id": "C047",
+     "capacity_est": 84,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3655,
+     "lower": {
+      "capacity": 84,
+      "load": 84,
+      "served": 2208,
+      "overflow": 11961
+     },
+     "upper": {
+      "capacity": 84,
+      "load": 84,
+      "served": 3053,
+      "overflow": 11116
+     }
+    },
+    {
+     "candidate_id": "C107",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 4342,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2208,
+      "overflow": 11961
+     },
+     "upper": {
+      "capacity": 81,
+      "load": 81,
+      "served": 3134,
+      "overflow": 11035
+     }
+    },
+    {
+     "candidate_id": "C026",
+     "capacity_est": 79,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 4342,
+     "lower": {
+      "capacity": 79,
+      "load": 79,
+      "served": 2287,
+      "overflow": 11882
+     },
+     "upper": {
+      "capacity": 79,
+      "load": 79,
+      "served": 3213,
+      "overflow": 10956
+     }
+    },
+    {
+     "candidate_id": "C049",
+     "capacity_est": 79,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 6476,
+     "lower": {
+      "capacity": 79,
+      "load": 79,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 79,
+      "load": 79,
+      "served": 3292,
+      "overflow": 10877
+     }
+    },
+    {
+     "candidate_id": "C020",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6476,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3368,
+      "overflow": 10801
+     }
+    },
+    {
+     "candidate_id": "C071",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6611,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3444,
+      "overflow": 10725
+     }
+    },
+    {
+     "candidate_id": "C072",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6834,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3520,
+      "overflow": 10649
+     }
+    },
+    {
+     "candidate_id": "C074",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6834,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3596,
+      "overflow": 10573
+     }
+    },
+    {
+     "candidate_id": "C083",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6999,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3672,
+      "overflow": 10497
+     }
+    },
+    {
+     "candidate_id": "C084",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 7460,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3748,
+      "overflow": 10421
+     }
+    },
+    {
+     "candidate_id": "C085",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 7633,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3824,
+      "overflow": 10345
+     }
+    },
+    {
+     "candidate_id": "C094",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 8063,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3900,
+      "overflow": 10269
+     }
+    }
+   ],
+   "coverage_plan": [
+    {
+     "candidate_id": "C049",
+     "capacity_est": 79,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "lower": {
+      "capacity": 79,
+      "load": 79,
+      "served": 79,
+      "overflow": 14090
+     },
+     "upper": {
+      "capacity": 79,
+      "load": 79,
+      "served": 79,
+      "overflow": 14090
+     }
+    },
+    {
+     "candidate_id": "C007",
+     "capacity_est": 306,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "lower": {
+      "capacity": 306,
+      "load": 306,
+      "served": 385,
+      "overflow": 13784
+     },
+     "upper": {
+      "capacity": 306,
+      "load": 306,
+      "served": 385,
+      "overflow": 13784
+     }
+    },
+    {
+     "candidate_id": "C107",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 385,
+      "overflow": 13784
+     },
+     "upper": {
+      "capacity": 81,
+      "load": 81,
+      "served": 466,
+      "overflow": 13703
+     }
+    },
+    {
+     "candidate_id": "C084",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 385,
+      "overflow": 13784
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 542,
+      "overflow": 13627
+     }
+    },
+    {
+     "candidate_id": "C094",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 385,
+      "overflow": 13784
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 618,
+      "overflow": 13551
+     }
+    },
+    {
+     "candidate_id": "C011",
+     "capacity_est": 110,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "lower": {
+      "capacity": 110,
+      "load": 110,
+      "served": 495,
+      "overflow": 13674
+     },
+     "upper": {
+      "capacity": 110,
+      "load": 110,
+      "served": 728,
+      "overflow": 13441
+     }
+    },
+    {
+     "candidate_id": "C072",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 495,
+      "overflow": 13674
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 804,
+      "overflow": 13365
+     }
+    },
+    {
+     "candidate_id": "C073",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 495,
+      "overflow": 13674
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 253,
+      "served": 1057,
+      "overflow": 13112
+     }
+    },
+    {
+     "candidate_id": "C050",
+     "capacity_est": 62,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "lower": {
+      "capacity": 62,
+      "load": 62,
+      "served": 557,
+      "overflow": 13612
+     },
+     "upper": {
+      "capacity": 62,
+      "load": 62,
+      "served": 1119,
+      "overflow": 13050
+     }
+    },
+    {
+     "candidate_id": "C085",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 557,
+      "overflow": 13612
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 1195,
+      "overflow": 12974
+     }
+    },
+    {
+     "candidate_id": "C083",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 557,
+      "overflow": 13612
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 1271,
+      "overflow": 12898
+     }
+    },
+    {
+     "candidate_id": "C071",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 557,
+      "overflow": 13612
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 1347,
+      "overflow": 12822
+     }
+    }
+   ],
+   "all_eligible": {
+    "sites": 95,
+    "sites_with_estimate": 42,
+    "within_reach": 8426,
+    "lower": {
+     "capacity": 7342,
+     "served": 2673,
+     "overflow": 11496
+    },
+    "upper": {
+     "capacity": 14228,
+     "served": 4149,
+     "overflow": 10020
+    }
+   }
+  },
+  "robustness": {
+   "scenario_tier": "T1 scenario (model)",
+   "label": "What-if levels around an illustrative peak, not return periods.",
+   "confidence": "low",
+   "confidence_reason": "The peak stage is illustrative (no gauge record); the levels show how the ranking moves if it were lower or higher.",
+   "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; what-if design stages around the illustrative 2024-09-12 ICT peak",
+   "method": "At each level the demand is the residents whose homes are wet at that level and a candidate is eligible if it keeps its freeboard there; the same greedy coverage ranking is then repeated. core_by_k[k - 1] lists the sites among the first k at every level (the robust core for a plan of k sites).",
+   "assumptions": [
+    "The levels are what-if stages around the illustrative 3.5 m peak, not return periods and not observed levels.",
+    "Reach is the same 2 km walk on normal roads at every level; only the demand and the eligible sites change.",
+    "A site in the robust core is still a candidate to verify on the ground."
+   ],
+   "stages": [
+    {
+     "stage_m": 2.5,
+     "modelled_peak": false,
+     "demand_people": 10333,
+     "eligible_count": 95,
+     "uncoverable_people": 4276,
+     "knee_k": 8,
+     "plan": [
+      "C025",
+      "C049",
+      "C107",
+      "C011",
+      "C094",
+      "C084",
+      "C050",
+      "C072",
+      "C073",
+      "C085",
+      "C083",
+      "C071"
+     ],
+     "cumulative_demand": [
+      2336,
+      3768,
+      4276,
+      4604,
+      4844,
+      5071,
+      5284,
+      5480,
+      5660,
+      5765,
+      5869,
+      5963
+     ]
+    },
+    {
+     "stage_m": 3.5,
+     "modelled_peak": true,
+     "demand_people": 14169,
+     "eligible_count": 95,
+     "uncoverable_people": 5743,
+     "knee_k": 8,
+     "plan": [
+      "C049",
+      "C007",
+      "C107",
+      "C084",
+      "C094",
+      "C011",
+      "C072",
+      "C073",
+      "C050",
+      "C085",
+      "C083",
+      "C071"
+     ],
+     "cumulative_demand": [
+      2956,
+      4944,
+      5725,
+      6196,
+      6626,
+      7001,
+      7336,
+      7580,
+      7815,
+      7988,
+      8154,
+      8267
+     ]
+    },
+    {
+     "stage_m": 4.0,
+     "modelled_peak": false,
+     "demand_people": 16069,
+     "eligible_count": 94,
+     "uncoverable_people": 7189,
+     "knee_k": 7,
+     "plan": [
+      "C049",
+      "C007",
+      "C084",
+      "C094",
+      "C073",
+      "C011",
+      "C072",
+      "C050",
+      "C085",
+      "C083",
+      "C071",
+      "C022"
+     ],
+     "cumulative_demand": [
+      3472,
+      5664,
+      6191,
+      6687,
+      7164,
+      7553,
+      7905,
+      8148,
+      8350,
+      8535,
+      8649,
+      8732
+     ]
+    }
+   ],
+   "core_by_k": [
+    [],
+    [
+     "C049"
+    ],
+    [
+     "C049"
+    ],
+    [
+     "C049"
+    ],
+    [
+     "C049",
+     "C094"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072",
+     "C073",
+     "C050"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072",
+     "C073",
+     "C050",
+     "C085"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072",
+     "C073",
+     "C050",
+     "C085",
+     "C083"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072",
+     "C073",
+     "C050",
+     "C085",
+     "C083",
+     "C071"
+    ]
+   ]
+  },
+  "verification": {
+   "status": "not_conducted",
+   "label_template": "Checked by <role> on <date>; not an official shelter register",
+   "sheet": "shelter_candidate_verification_sheet",
+   "candidate_set_sha256": "728655fd042e631241f5527a906ea7456380127bc9ed0de4aa6a461867cc7bb8",
+   "candidates_listed": 95,
+   "statement": "No verification sheet has been returned: the local check of the shelter candidates was not conducted. Every capacity is an unverified estimate and every site is a candidate to verify on the ground.",
+   "checked": []
+  },
   "method": {
    "evacuation_stage_m": 0.0,
    "late_evacuation_stage_m": 1.0,
@@ -9071,6 +10140,222 @@
   "reported_status": "Reported use from public sources; not an official register. Locations are OSM matches where possible; low-confidence locations are approximate.",
   "reported_compiled": "2026-09-27",
   "reported_access_set_rule": "The reported_2024 access set counts located sites reported as overnight shelters by 15 Sep; the command centre and sites first used after 12 Sep are shown on the map but not counted. Opening times within 10-12 Sep are not modelled."
+ },
+ "exports": {
+  "scenario_tier": "T1 scenario (model)",
+  "tier": "T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null",
+  "confidence": "low",
+  "confidence_reason": "The tables come from a terrain-model reconstruction with illustrative stages, WorldPop 2020 residents, OpenStreetMap roads and sites, and unverified capacity estimates; nothing was checked on the ground.",
+  "purpose": "Tables and one map layer for spreadsheet and GIS users, written from the modelled blocks of this manifest: modelled, not observed. Not a forecast, not an observed closure record and not an official warning.",
+  "licence": "ODbL 1.0",
+  "licence_rule": "One licence lineage per file: every file is OpenStreetMap-derived (ODbL 1.0, attribution and share-alike) with attribution-only inputs. No file holds rain values (CC BY-NC) or anything from a source without a stated licence.",
+  "header": {
+   "csv": "UTF-8 with a byte-order mark and LF line ends. Each file starts with provenance lines (first cell starts with #) and then the column header; header_lines of each file gives their number. Header cells are the English key and the Thai label in brackets.",
+   "geojson": "The same provenance fields sit in a top-level metadata member, before the features.",
+   "why_in_the_file": "A sidecar file is lost when a table is forwarded on its own, so the tier, the confidence, the timestamps, the assumptions and the licence travel inside each file."
+  },
+  "offline": "Saved with the replay's offline copy; outside the replay's precache budget, under a budget of their own.",
+  "assumptions": [
+   "Every table is a T1 scenario (model) on the reconstructed water; the reported-shelter table adds reported facts, kept apart in their own columns.",
+   "Hours are replay hours on the hourly grid (hour 0 = 9 Sep 2024 00:00 ICT); the assumed stage is sampled at the start of each hour.",
+   "The modelled road table lists one row per OpenStreetMap way of the classes the replay models; the legacy candidate columns of the source road file are not carried.",
+   "Bridge decks are not modelled: a row flagged as a bridge reflects the ground at its approaches, and its hours are best read as unknown.",
+   "No listed capacity from a shelter register, no occupancy count and no personal data is in any file."
+  ],
+  "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT",
+  "folder": "/studies/mae-sai-2024-timeline/r4/exports/",
+  "file_count": 8,
+  "bytes": 804624,
+  "files": [
+   {
+    "id": "shelter_plan_reported_2024",
+    "name": "shelter_plan_reported_2024.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv",
+    "sha256": "7ef215cee658efcb2eebba5dd6ea1ff64dd51b70499b533cb5799665ee3a1957",
+    "bytes": 28398,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Shelters reported in use in Mae Sai in September 2024, with a model check of each located site (not an official register)",
+     "th": "ที่พักพิงที่มีรายงานว่าใช้ในแม่สายเดือนกันยายน 2567 (2024) พร้อมผลเทียบกับแบบจำลองของสถานที่ที่ระบุตำแหน่งได้ (ไม่ใช่ทะเบียนทางการ)"
+    },
+    "lanes": [
+     "REP",
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "reported-shelters",
+     "copernicus-dem"
+    ],
+    "rows": 19,
+    "header_lines": 35
+   },
+   {
+    "id": "shelter_plan_k",
+    "name": "shelter_plan_k.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv",
+    "sha256": "f64730e22ad2e1e52ad86de83d931cd23bddf97aa7666d7b2a3c4ff74d918de3",
+    "bytes": 13604,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Modelled shelter coverage ranking, sites 1 to N: a plan of any size is its first rows (candidates to verify)",
+     "th": "การจัดอันดับความครอบคลุมของที่พักพิงตามแบบจำลอง ลำดับ 1 ถึง N แผนขนาดใดก็ตามคือแถวแรกตามจำนวนนั้น (สถานที่ที่ควรตรวจสอบ)"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "worldpop",
+     "copernicus-dem"
+    ],
+    "rows": 12,
+    "header_lines": 38
+   },
+   {
+    "id": "shelter_plan_capacitated",
+    "name": "shelter_plan_capacitated.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv",
+    "sha256": "4a5c51510325917dac9cecc3c579e9a6436f1fc94ad1f2fe24cfbd5dc8b17b6b",
+    "bytes": 19081,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Capacity-aware shelter ranking under two capacity bounds: who fits (candidates to verify)",
+     "th": "การจัดอันดับที่พักพิงแบบคิดความจุภายใต้ขอบเขตล่างและขอบเขตบน: รองรับได้กี่คน (สถานที่ที่ควรตรวจสอบ)"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "worldpop",
+     "copernicus-dem"
+    ],
+    "rows": 25,
+    "header_lines": 39
+   },
+   {
+    "id": "shelter_sites",
+    "name": "shelter_sites.geojson",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_sites.geojson",
+    "sha256": "fb8ecc04f67f597475431378ffff75f5258a0c91922df3bde104a7a79eb80b03",
+    "bytes": 99373,
+    "media_type": "application/geo+json",
+    "title": {
+     "en": "Shelter sites as points: every modelled candidate and every located site reported in use in September 2024",
+     "th": "ตำแหน่งที่พักพิงแบบจุด: สถานที่ที่เป็นไปได้ทุกแห่งตามแบบจำลอง และสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) ที่ระบุตำแหน่งได้"
+    },
+    "lanes": [
+     "SCN",
+     "REP"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "worldpop",
+     "copernicus-dem",
+     "reported-shelters"
+    ],
+    "rows": 128
+   },
+   {
+    "id": "modelled_road_inundation_by_hour",
+    "name": "modelled_road_inundation_by_hour.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv",
+    "sha256": "0452131a8cc92684a2bc6aaf0b7363ac4365aeef43dbbfec258f9e252b310414",
+    "bytes": 346104,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Modelled road inundation by hour, one row per OpenStreetMap way (modelled, not observed)",
+     "th": "ถนนที่น้ำท่วมตามแบบจำลองรายชั่วโมง หนึ่งแถวต่อหนึ่งเส้นทางใน OpenStreetMap (ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้)"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "copernicus-dem",
+     "cod-ab"
+    ],
+    "rows": 3478,
+    "header_lines": 39
+   },
+   {
+    "id": "modelled_access_loss_by_hour",
+    "name": "modelled_access_loss_by_hour.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_access_loss_by_hour.csv",
+    "sha256": "f994204dad5e3939577e0a404ec8016f91b08f0bd14806699ee3feba71648212",
+    "bytes": 241197,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Modelled loss of walking access to a shelter by hour, one row per subdistrict and replay hour",
+     "th": "การสูญเสียการเข้าถึงที่พักพิงด้วยการเดินตามแบบจำลองรายชั่วโมง หนึ่งแถวต่อตำบลและชั่วโมงของการย้อนดู"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "worldpop",
+     "cod-ab",
+     "copernicus-dem",
+     "reported-shelters"
+    ],
+    "rows": 2112,
+    "header_lines": 38
+   },
+   {
+    "id": "shelter_candidate_verification_sheet",
+    "name": "shelter_candidate_verification_sheet.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv",
+    "sha256": "cc9ee005b2630103c7a0645ced95a4d88756b040e50481fd1d7422f3dc138bcd",
+    "bytes": 31025,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Shelter-candidate verification sheet: a blank checklist for a local checker (no check has been conducted)",
+     "th": "แบบตรวจสอบสถานที่ที่อาจใช้เป็นที่พักพิง: รายการตรวจที่ยังว่างสำหรับผู้ตรวจสอบในพื้นที่ (ยังไม่มีการตรวจสอบ)"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "copernicus-dem"
+    ],
+    "rows": 95,
+    "header_lines": 47
+   },
+   {
+    "id": "readme_licences",
+    "name": "README_licences.txt",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt",
+    "sha256": "ae45d16fd682cc5c3eeadf3c76cef197aabe18ea73b1d58f8b681ec083d66736",
+    "bytes": 25842,
+    "media_type": "text/plain",
+    "title": {
+     "en": "Licences, attributions and reading notes of the export pack (read this first)",
+     "th": "สัญญาอนุญาต การแสดงที่มา และข้อควรรู้ในการอ่านชุดไฟล์ส่งออก (โปรดอ่านก่อน)"
+    },
+    "lanes": [
+     "REP",
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "reported-shelters",
+     "copernicus-dem",
+     "worldpop",
+     "cod-ab"
+    ]
+   }
+  ]
  },
  "external_checks": [
   {
@@ -9105,8 +10390,74 @@
    "urls": [
     "https://unosat.org/products/3991"
    ]
+  },
+  {
+   "id": "unosat-4009-season-envelope",
+   "compared_with": "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct); a scenario layer, not an observation for any replay day",
+   "role": "season_envelope_plausibility",
+   "title": "Season envelope comparison (scenario; plausibility, not validation)",
+   "scope": "Mae Sai district",
+   "statistics": {
+    "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.json",
+    "sha256": "19360178c60b61b48fccea3741da57e61cf1ffee5fb9b2c86af76842c1ed5d27",
+    "bytes": 16008
+   },
+   "use": "Plausibility against a season envelope, not a validation. The envelope also holds August and early-October water and the modelled peak is illustrative, so the figures say where the two differ, not which one is right.",
+   "tuning_rule": "No keyframe or elevation change is tuned to product 4009 afterwards; if one is, this comparison is relabelled as calibration.",
+   "urls": [
+    "https://unosat.org/products/4009",
+    "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province"
+   ]
   }
  ],
+ "season_envelope": {
+  "id": "unosat-4009",
+  "lane": "SCN-ENV",
+  "evidence_tier": "Season envelope (scenario), used as provided; unvalidated",
+  "shown": true,
+  "label": "Scenario (SCN-ENV): 2024 season envelope",
+  "caption": "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct); includes August and early-October water; not an observation for any replay day. Clipped to Mae Sai district and rasterised to the replay grid by FloodGuard.",
+  "standard_sentence": "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+  "day_independent": true,
+  "day_rule": "The layer has its own toggle: no replay day selects it, and it is not among the day observations.",
+  "temporal_relation": "season_envelope",
+  "season_window": "2024-08-01/2024-10-22",
+  "source_timestamp": "2024-08-01/2024-10-22",
+  "licence": "CC BY-SA 4.0",
+  "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+  "map_credit": "UNOSAT and GISTDA · CC BY-SA 4.0",
+  "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
+  "rights_note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); the owners confirmed the rights record on 2 Oct 2026. Shown from this revision as a scenario layer.",
+  "confidence": "low",
+  "confidence_reason": "A preliminary agency product that was not checked in the field, set beside an illustrative model: the envelope spans August to October with no date per patch, and the modelled stages come from no gauge record.",
+  "assumptions": [
+   "The 2024 season envelope (UNOSAT/GISTDA product 4009) is a scenario layer with its own toggle: accumulated water from August to October 2024, never an observation for a replay day. Setting the modelled water beside it is a plausibility comparison, not a validation.",
+   "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated."
+  ],
+  "urls": [
+   "https://unosat.org/products/4009",
+   "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province"
+  ],
+  "files_rule": "Derived files keep their own folder and licence. This manifest names them by address, hash and size only; every figure derived from the product is in the statistics file.",
+  "files": {
+   "raster": {
+    "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.png",
+    "sha256": "148f0a41fb078e2d51ac443a7eda386edd7ad311338bd8121b17a84f7fd2831f",
+    "bytes": 16947
+   },
+   "statistics": {
+    "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.json",
+    "sha256": "19360178c60b61b48fccea3741da57e61cf1ffee5fb9b2c86af76842c1ed5d27",
+    "bytes": 16008
+   },
+   "licence": {
+    "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/LICENSE",
+    "sha256": "17168099bae77b9fc0d5f024cf69414281f399109d305fb8eb848af162926c13",
+    "bytes": 13180
+   }
+  }
+ },
  "viirs_daily": {
   "product": "NOAA/GMU VIIRS 375 m daily flood-water fraction composite (block 090)",
   "source_url": "https://jpssflood.gmu.edu/",
@@ -9288,6 +10639,145 @@
     "source_file": "WATER_COM_VIIRS_Prj_SVI_d20240918_d20240918_4448_4448_9_001day_090.tif.zip"
    }
   ]
+ },
+ "s2_crosscheck": {
+  "product": "Sentinel-2B MSI Level-2A via Earth Search (tile 47QNC): green band (B03), short-wave infrared band (B11) and scene classification (SCL)",
+  "licence": "Copernicus Sentinel data terms (free, full and open)",
+  "attribution": "Contains modified Copernicus Sentinel data [2024]",
+  "label": "water or saturated mud",
+  "confidence": "low",
+  "confidence_reason": "One index threshold on two partly cloudy scenes, with no field check: a positive index also flags saturated mud and wet sediment, the scene classification can miss thin cloud and cloud shadow, and the ground under cloud was not seen.",
+  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-15T03:58:15Z",
+  "index": "MNDWI = (green - swir16) / (green + swir16) on surface reflectance (digital number / 10000, nothing subtracted). The 10 m green band is averaged onto the 20 m grid of the short-wave infrared band.",
+  "water_rule": "A clear pixel counts as water or saturated mud when its MNDWI is above 0.",
+  "clear_rule": "A pixel is clear when its scene classification is not no data (0), cloud shadow (3), cloud (8, 9) or thin cirrus (10), and both bands hold data.",
+  "permanent_water_rule": "Mapped drainage-channel cells are left out on both dates: the same out-of-channel rule as the model's flooded area. No land-cover map is used, so ponds and reservoirs count on both dates; the new-water figure leaves them out.",
+  "scope": "The eight Mae Sai subdistricts, on the replay's 10 m grid.",
+  "comparison": "indicative",
+  "comparison_rule": "The model figures are the modelled out-of-channel water at the acquisition time of the 15 Sep scene, counted in the pixels that scene saw clearly. The overlap ratio says how far the two areas coincide, not which one is right.",
+  "caveat": "A positive MNDWI also flags saturated mud and wet sediment, so the area is water or saturated mud, not a flood extent. The scene classification can miss thin cloud and cloud shadow, and cloud hid part of the district on both dates. The comparison with the model is indicative only.",
+  "reading": "The larger observed area is consistent with water or saturated mud left after the river fell; the terrain-only model cannot hold water once the river level drops.",
+  "model_fields": {
+   "paths": [
+    "model_at_event_scene",
+    "sensitivity[].model_agreement_iou"
+   ],
+   "evidence_tier": "T1 scenario (model)",
+   "note": "Model output on the reconstructed water, placed beside the observation for comparison; not part of the Sentinel-2 data."
+  },
+  "assumptions": [
+   "Reflectance = digital number / 10000 for the Earth Search L2A files, which already have the baseline-04.00 offset removed.",
+   "An MNDWI above 0 is read as water or saturated mud. The threshold was not tuned and nothing was checked on the ground; the sensitivity rows give 0.1 and 0.2.",
+   "Clear pixels follow the provider's scene classification. Unclassified and dark pixels are kept; the strict_clear sensitivity row drops them.",
+   "New water needs both dates clear. Water already there on 5 Sep, before the flood, is not counted as new.",
+   "The model is sampled at the acquisition time of the 15 Sep scene. No keyframe was tuned to this check.",
+   "No land-cover map is an input, so the check does not say what kind of land the water or saturated mud lies on."
+  ],
+  "resolution_m": 20.0,
+  "threshold": 0.0,
+  "district_km2": 305.56,
+  "permanent_water_km2": 1.93,
+  "scenes": [
+   {
+    "id": "s2-20240905",
+    "role": "pre_event",
+    "scene": "S2B_47QNC_20240905_0_L2A",
+    "source_timestamp": "2024-09-05T03:58:19Z",
+    "local_time": "2024-09-05T10:58:19+07:00",
+    "clear_km2": 262.85,
+    "clear_share": 0.86,
+    "water_km2": 13.77,
+    "scl_class_km2": {
+     "dark_area": 0.06,
+     "cloud_shadow": 9.86,
+     "vegetation": 201.36,
+     "not_vegetated": 45.61,
+     "water": 5.94,
+     "unclassified": 9.88,
+     "cloud_medium_probability": 16.71,
+     "cloud_high_probability": 16.14
+    }
+   },
+   {
+    "id": "s2-20240915",
+    "role": "event",
+    "scene": "S2B_47QNC_20240915_0_L2A",
+    "source_timestamp": "2024-09-15T03:58:15Z",
+    "local_time": "2024-09-15T10:58:15+07:00",
+    "clear_km2": 185.96,
+    "clear_share": 0.609,
+    "water_km2": 36.79,
+    "scl_class_km2": {
+     "dark_area": 0.0,
+     "cloud_shadow": 17.71,
+     "vegetation": 111.46,
+     "not_vegetated": 51.53,
+     "water": 17.27,
+     "unclassified": 5.68,
+     "cloud_medium_probability": 28.94,
+     "cloud_high_probability": 71.77,
+     "thin_cirrus": 1.17
+    }
+   }
+  ],
+  "change": {
+   "pre_event_scene": "s2-20240905",
+   "event_scene": "s2-20240915",
+   "both_clear_km2": 177.29,
+   "event_water_km2": 36.14,
+   "pre_event_water_km2": 11.31,
+   "new_water_km2": 25.3,
+   "no_longer_water_km2": 0.47
+  },
+  "model_at_event_scene": {
+   "model_local_time": "2024-09-15T10:58:15+07:00",
+   "model_t": 6.4571,
+   "model_stage_m": 0.278,
+   "model_flood_km2_district": 21.44,
+   "model_flood_km2_clear": 18.02,
+   "model_flood_km2_both_clear": 17.86,
+   "model_overlap_km2": 7.34,
+   "model_union_km2": 47.47,
+   "model_agreement_iou": 0.155,
+   "model_share_of_observed_water_reached": 0.2,
+   "model_share_inside_observed_water": 0.407
+  },
+  "sensitivity": [
+   {
+    "id": "strict_clear",
+    "rule": "Only scene-classification classes 4 (vegetation), 5 (not vegetated) and 6 (water) count as clear.",
+    "event_clear_share": 0.59,
+    "event_water_km2": 35.36,
+    "pre_event_clear_share": 0.828,
+    "pre_event_water_km2": 10.08,
+    "new_water_km2": 21.66,
+    "model_agreement_iou": 0.157
+   },
+   {
+    "id": "threshold_0_1",
+    "rule": "A clear pixel counts when MNDWI > 0.1.",
+    "event_clear_share": 0.609,
+    "event_water_km2": 33.23,
+    "pre_event_clear_share": 0.86,
+    "pre_event_water_km2": 11.6,
+    "new_water_km2": 23.33,
+    "model_agreement_iou": 0.158
+   },
+   {
+    "id": "threshold_0_2",
+    "rule": "A clear pixel counts when MNDWI > 0.2.",
+    "event_clear_share": 0.609,
+    "event_water_km2": 30.26,
+    "pre_event_clear_share": 0.86,
+    "pre_event_water_km2": 9.82,
+    "new_water_km2": 21.72,
+    "model_agreement_iou": 0.16
+   }
+  ],
+  "following_day": {
+   "viirs_date": "2024-09-16",
+   "reading": "A day later the VIIRS map shows less flood water than the model in its clear pixels, so the larger area on the day of the scene is consistent with saturated mud or short-lived water rather than lasting ponding."
+  }
  },
  "rainfall": {
   "stations": [
@@ -9854,12 +11344,6 @@
  },
  "external_references": [
   {
-   "id": "unosat-4009",
-   "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)",
-   "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
-   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); the owners confirmed the rights record on 2 Oct 2026. Not shown in this revision."
-  },
-  {
    "id": "unosat-3969",
    "name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)",
    "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"
@@ -9939,6 +11423,13 @@
    "licence": "Project summary text",
    "timestamp": "compiled 2026-09-27",
    "attribution": "FloodGuard team summary of public reporting; not independently verified in this study"
+  },
+  {
+   "id": "unosat-4009",
+   "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai",
+   "licence": "CC BY-SA 4.0",
+   "timestamp": "2024-08-01 / 2024-10-22 (season envelope; no date per patch)",
+   "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"
   }
  ],
  "assumptions": [
@@ -9947,6 +11438,7 @@
   "The stage is the assumed Sai main-stem level at the Mae Sai bridges; tributaries rise k x stage (see the next assumption). Real water levels still differed reach by reach.",
   "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.",
   "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
+  "Bridge decks are not modelled: a bridge's road state reflects the ground at its approaches and beside it, so a raised deck can stay passable while the model shows the way impassable. Read a bridge's impassable hours as unknown.",
   "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
   "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
   "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km2, so the 18:15 knot is set to the closest level (0.1 m).",
@@ -9957,13 +11449,20 @@
   "Evacuation access uses the repo road graph and walking distance: a resident node has access when an open, dry shelter is within 2 km along roads still passable (about 30 minutes on foot); a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it. Levels are evaluated every 0.05 m of stage.",
   "Shelter candidates are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres; OSM amenity=shelter huts are excluded). A candidate is eligible only if it keeps 0.5 m freeboard at the modelled peak and a road node lies within 400 m. Ranking is greedy maximal coverage of residents whose homes are wet at the peak, within 2 km walking on normal roads (pre-emptive evacuation); late_cumulative_share repeats the check on roads still open at 1.0 m stage.",
   "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.",
+  "The capacity-aware plan assigns residents of homes that flood at the modelled peak to eligible sites within the 2 km walk without exceeding a site's capacity. It gives two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). Demand is an upper bound (many people stay with relatives) and the sites are candidates to verify.",
+  "The two capacity bounds differ only in what a site without a mapped footprint is assumed to hold. Neither is a limit on who fits: a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are unmapped.",
+  "Plan robustness repeats the coverage ranking at 2.5 m, 3.5 m and 4.0 m: what-if levels around an illustrative peak, not return periods.",
   "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
-  "Flash-flood velocity, debris and mud deposition are not modelled."
+  "Flash-flood velocity, debris and mud deposition are not modelled.",
+  "The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes, inside the district and outside mapped channels; its comparison with the model is indicative.",
+  "The 2024 season envelope (UNOSAT/GISTDA product 4009) is a scenario layer with its own toggle: accumulated water from August to October 2024, never an observation for a replay day. Setting the modelled water beside it is a plausibility comparison, not a validation.",
+  "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated."
  ],
  "limitations": [
   "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
   "No high-resolution satellite image exists for 10-14 September over Mae Sai in these inputs; VIIRS (375 m) was cloud-covered on 10-11 Sep and mostly cloud-covered on 12-14 Sep, so onset and peak extents are not observed.",
-  "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded."
+  "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded.",
+  "No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level drops below it, so water or saturated mud left behind after the river falls is not reconstructed."
  ]
 }

@@ -189,6 +189,9 @@ def test_compare_directories_reports_identical_different_missing_and_extra_files
     listing = directory_listing(committed)
     assert [row["name"] for row in listing] == ["a.png", "b.json", "only-committed.txt", "sub/c.bin"]
     assert listing[0] == {"name": "a.png", "bytes": 3, "sha256": sha256_file(committed / "a.png")}
+    # Names are sorted as text, the same on every platform: an upper-case name comes first, whatever the file system does.
+    mixed = write_tree(tmp_path / "mixed", {"folder/envelope.png": b"p", "folder/LICENSE": b"l", "folder/envelope.json": b"j", "README.txt": b"r", "a.bin": b"a"})
+    assert [row["name"] for row in directory_listing(mixed)] == ["README.txt", "a.bin", "folder/LICENSE", "folder/envelope.json", "folder/envelope.png"]
 
 
 def test_input_and_version_differences_explain_a_mismatch() -> None:
@@ -517,15 +520,17 @@ def test_bake_docstring_names_both_dem_tiles_and_the_verify_mode() -> None:
     docstring = source.split('"""')[1]
     assert "N20_00_E099_00_DEM.tif" in docstring and "N20_00_E100_00_DEM.tif" in docstring
     for needle in ("tha_ppp_2020.tif", "viirs_flood", "hii_rain", "mae_sai_access_edges.csv", "--verify", "input receipt",
-                   "thailand-latest.osm.pbf", "rights_basis_4009_v1.json"):
+                   "thailand-latest.osm.pbf", "rights_basis_4009_v1.json", "{red,green,blue,swir16,scl}.tif",
+                   "unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip", "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+                   "mae_sai_timeline_unosat4009.py", "unosat4009/"):
         assert needle in docstring, needle
     assert not LOCAL_PATH.search(source)  # No machine path in the script.
 
 
 def test_product_4009_wording_follows_the_rights_record() -> None:
-    """The manifest's four sentences about product 4009 come from the rights record, pending or confirmed.
+    """The manifest's sentences about product 4009 come from the rights record, and exist only for a confirmed one.
 
-    The confirmed sentences are the ones ``flood-timeline-copy.test.ts`` renders in Thai; keep the two in step.
+    The sentences are the ones ``flood-timeline-copy.test.ts`` renders in Thai; keep the two in step.
     """
     from floodguard.rights_basis import load_rights_basis, owner_confirmed
 
@@ -536,25 +541,138 @@ def test_product_4009_wording_follows_the_rights_record() -> None:
     assert status["confirmed"] is owner_confirmed(record)
     assert (status["signed_on"], status["reply_quote"], status["reply_relayed_on"], status["licence"]) == ("2026-09-30", "we approve the use", "2026-10-01", "CC BY-SA 4.0")
     assert status["record"] == "docs/proposal_execution/rights_basis_4009_v1.json"
+    assert (status["credit"], status["licence_url"]) == ("UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009", "https://creativecommons.org/licenses/by-sa/4.0/")
     reply = 'The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied "we approve the use" (relayed by a project owner on 1 Oct 2026)'
-    pending = bake.rights_wording({**status, "confirmed": False, "confirmed_on": None})
-    assert pending == {
-        "status": "Not yet shown; rights record pending owner confirmation.",
-        "condition": "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record.",
-        "block_note": "Never an observation for a replay day. Shown only after the owners confirm the rights record.",
-        "reference_note": f"Season envelope (scenario per decision D3). {reply}; shown only after the owners confirm the rights record.",
-    }
     confirmed = bake.rights_wording({**status, "confirmed": True, "confirmed_on": "2026-10-09"})
     assert confirmed == {
-        "status": "Not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
-        "condition": "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
-        "block_note": "Never an observation for a replay day. Not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
-        "reference_note": f"Season envelope (scenario per decision D3). {reply}; the owners confirmed the rights record on 9 Oct 2026. Not shown in this revision.",
+        "status": "Shown as a season envelope scenario layer; the owners confirmed the rights record on 9 Oct 2026.",
+        "condition": ("UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is shown as a season envelope scenario layer: its derived files keep their own "
+                      "folder, credit, licence and change notice; the owners confirmed the rights record on 9 Oct 2026."),
+        "block_note": ("Never an observation for a replay day. Shown as a scenario layer with its own toggle, credit and change notice; "
+                       "the owners confirmed the rights record on 9 Oct 2026."),
+        "rights_note": f"Season envelope (scenario per decision D3). {reply}; the owners confirmed the rights record on 9 Oct 2026. Shown from this revision as a scenario layer.",
     }
-    # Neither wording says when UNOSAT wrote its reply (the original message is not filed), and neither shows the product.
-    for wording in (pending, confirmed):
-        assert not re.search(r'approve the use" on \d', wording["reference_note"])
-        assert bake.publication_eligibility(None, {**status, "confirmed": wording is confirmed, "confirmed_on": "2026-10-09"})["inputs"][-1]["shown"] is False
+    # The wording does not say when UNOSAT wrote its reply (the original message is not filed).
+    assert not re.search(r'approve the use" on \d', confirmed["rights_note"])
+    assert bake.publication_eligibility(None, {**status, "confirmed": True, "confirmed_on": "2026-10-09"})["inputs"][-1]["shown"] is True
+    # There is no wording for an unconfirmed record: the product is shown only when the owners have confirmed it.
+    with pytest.raises(ValueError, match="shown only when the owners have confirmed its rights record"):
+        bake.rights_wording({**status, "confirmed": False, "confirmed_on": None})
+    with pytest.raises(ValueError, match="shown only when the owners have confirmed its rights record"):
+        bake.publication_eligibility(None, {**status, "confirmed": False, "confirmed_on": None})
+
+
+def test_bake_stops_before_anything_else_when_the_rights_record_is_not_confirmed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """GATE: the product 4009 files are baked only because the rights record says confirmed.
+
+    With the record seeded as pending in a test copy, the bake refuses at once: it opens no external input, creates
+    no output folder and writes no file.
+    """
+    from floodguard.rights_basis import RightsNotConfirmedError, load_rights_basis
+
+    bake = load_bake()
+    record = json.loads((ROOT / "docs" / "proposal_execution" / "rights_basis_4009_v1.json").read_text(encoding="utf-8"))
+    record["owner_confirmation"].update(status="pending", confirmed_by=[], confirmed_on=None)
+    record.update(record_status="draft_pending_owner_confirmation", signed_by_human=False, human_rights_clearance=False)
+    pending = tmp_path / "rights_basis_4009_v1.json"
+    pending.write_text(json.dumps(record), encoding="utf-8")
+    load_rights_basis(pending)  # A valid record, only not confirmed.
+    monkeypatch.setattr(bake, "RIGHTS_RECORD", pending)
+    external = tmp_path / "external"  # Empty: the bake must stop before it looks for any input.
+    external.mkdir()
+    out = tmp_path / "out" / "r4"
+    with recorded_opens() as opened:
+        with pytest.raises(RightsNotConfirmedError, match="not confirmed by the owners.*must stay out of public files"):
+            bake.build(external, out)
+    assert not out.exists() and not (tmp_path / "out").exists()
+    assert under(opened, external) == set()
+    # The manifest check refuses the committed manifest beside that record too: it names the product's files and shows it.
+    manifest = json.loads((COMMITTED_FOLDER / "timeline.json").read_text(encoding="utf-8"))
+    problems = bake.manifest_problems(manifest)
+    assert any("cites product 4009 and names a file" in line for line in problems)
+    assert any("must carry shown: false while the rights record is unconfirmed" in line for line in problems)
+    # With the confirmed record back in place the same manifest holds.
+    monkeypatch.setattr(bake, "RIGHTS_RECORD", ROOT / "docs" / "proposal_execution" / "rights_basis_4009_v1.json")
+    assert bake.manifest_problems(manifest) == []
+
+
+def s2_check_figures() -> dict:
+    """Figures of a Sentinel-2 water check as the observation stage returns them (made-up values)."""
+    scene = {"clear_km2": 10.0, "clear_share": 0.5, "water_km2": 2.0, "scl_class_km2": {"vegetation": 10.0, "cloud_high_probability": 10.0}}
+    return {
+        "resolution_m": 20.0, "threshold": 0.0, "district_km2": 20.0, "permanent_water_km2": 0.1,
+        "scenes": {"pre_event": dict(scene, water_km2=1.0), "event": dict(scene)},
+        "change": {"both_clear_km2": 8.0, "event_water_km2": 1.8, "pre_event_water_km2": 0.9, "new_water_km2": 1.0, "no_longer_water_km2": 0.1},
+        "model_at_event_scene": {"model_t": 6.4571, "model_stage_m": 0.278, "model_flood_km2_district": 1.5, "model_flood_km2_clear": 1.0,
+                                 "model_flood_km2_both_clear": 0.9, "model_overlap_km2": 0.5, "model_union_km2": 2.5, "model_agreement_iou": 0.2,
+                                 "model_share_of_observed_water_reached": 0.25, "model_share_inside_observed_water": 0.5},
+        "sensitivity": [{"id": "strict_clear", "rule": "stricter", "event_clear_share": 0.4, "event_water_km2": 1.9, "pre_event_clear_share": 0.4,
+                         "pre_event_water_km2": 0.9, "new_water_km2": 0.9, "model_agreement_iou": 0.2}],
+    }
+
+
+def test_sentinel2_block_dates_each_scene_and_refuses_an_unnamed_model_field() -> None:
+    """Model output inside the observed block sits only where the evidence block names it as scenario fields."""
+    bake = load_bake()
+    block = bake.s2_crosscheck_block(s2_check_figures())
+    assert [(scene["id"], scene["role"], scene["source_timestamp"], scene["local_time"]) for scene in block["scenes"]] == [
+        ("s2-20240905", "pre_event", "2024-09-05T03:58:19Z", "2024-09-05T10:58:19+07:00"),
+        ("s2-20240915", "event", "2024-09-15T03:58:15Z", "2024-09-15T10:58:15+07:00")]
+    assert block["source_timestamp"] == bake.S2_CHECK_PAIR == "2024-09-05T03:58:19Z/2024-09-15T03:58:15Z"
+    assert block["model_at_event_scene"]["model_local_time"] == "2024-09-15T10:58:15+07:00"
+    assert (block["label"], block["comparison"], block["confidence"]) == ("water or saturated mud", "indicative", "low")
+    assert "consistent with" in block["reading"] and "explain" not in block["reading"].lower()
+    # No land-cover map is an input, so the reading names no land cover; without VIIRS rows it says nothing about the next day.
+    assert "on fields" not in block["reading"] and "following_day" not in block
+    assert any("No land-cover map is an input" in line for line in block["assumptions"])
+    assert bake.model_key_paths(block) == sorted([
+        "model_at_event_scene", "model_fields", "sensitivity[].model_agreement_iou",
+        *(f"model_at_event_scene.{key}" for key in block["model_at_event_scene"])])
+    assert bake.S2_MODEL_PATHS == ("model_at_event_scene", "sensitivity[].model_agreement_iou")
+    # The replay's acquisition time of the 15 Sep scene, in days since 9 Sep 00:00 ICT.
+    assert bake.replay_days("2024-09-15T03:58:15Z") == pytest.approx(6 + (10 + 58 / 60 + 15 / 3600) / 24)
+    assert bake.replay_days(bake.EVENT_START) == 0.0
+    # A model figure placed among the observed figures stops the bake: the evidence block would file it as observed.
+    for part in ("change", "scenes"):
+        figures = s2_check_figures()
+        target = figures[part] if part == "change" else figures[part]["event"]
+        target["model_flood_km2"] = 1.0
+        with pytest.raises(ValueError, match="model fields the evidence block does not name"):
+            bake.s2_crosscheck_block(figures)
+    figures = s2_check_figures()
+    figures["sensitivity"][0]["model_flood_km2_clear"] = 1.0
+    with pytest.raises(ValueError, match=r"sensitivity\[\]\.model_flood_km2_clear"):
+        bake.s2_crosscheck_block(figures)
+    # And an observed figure may not hide inside the model part.
+    figures = s2_check_figures()
+    figures["model_at_event_scene"]["water_km2"] = 2.0
+    with pytest.raises(ValueError, match="not named as model output"):
+        bake.s2_crosscheck_block(figures)
+
+
+def test_sentinel2_block_adds_the_next_clear_viirs_day_only_when_it_shows_less_than_the_model() -> None:
+    bake = load_bake()
+
+    def day(date: str, clear: float, viirs: float, model: float) -> dict:
+        return {"date": date, "nominal_local_time": f"{date}T13:30:00+07:00", "clear_km2": clear, "viirs_flood_km2_clear": viirs,
+                "model_flood_km2_clear": model}
+
+    event = "2024-09-15T10:58:15+07:00"
+    days = [day("2024-09-14", 5.9, 0.0, 0.18), day("2024-09-15", 292.2, 46.17, 19.5), day("2024-09-16", 234.9, 3.28, 7.7), day("2024-09-17", 202.5, 3.68, 0.0)]
+    # The day after the scene, not the scene's own day and not an earlier one.
+    assert bake.following_viirs_day(days, event)["date"] == "2024-09-16"
+    assert bake.following_viirs_day(list(reversed(days)), event)["date"] == "2024-09-16"  # Whatever the order of the rows.
+    block = bake.s2_crosscheck_block(s2_check_figures(), days)
+    assert block["following_day"] == {"viirs_date": "2024-09-16", "reading": bake.S2_FOLLOWING_DAY_READING}
+    reading = block["following_day"]["reading"]
+    assert "consistent with" in reading and "rather than lasting ponding" in reading and "explain" not in reading.lower()
+    assert bake.model_key_paths(block["following_day"]) == []  # It holds no model figure: those stay in viirs_daily.
+    # A wholly cloudy next day is skipped: the first day that saw the district decides.
+    cloudy = [day("2024-09-16", 0.0, 0.0, 0.0), day("2024-09-17", 202.5, 3.68, 0.0)]
+    assert bake.following_viirs_day(cloudy, event)["date"] == "2024-09-17"
+    assert "following_day" not in bake.s2_crosscheck_block(s2_check_figures(), cloudy)  # VIIRS shows more than the model there.
+    assert "following_day" not in bake.s2_crosscheck_block(s2_check_figures(), [day("2024-09-16", 234.9, 7.7, 7.7)])  # Not less.
+    assert bake.following_viirs_day(days[:2], event) is None and "following_day" not in bake.s2_crosscheck_block(s2_check_figures(), days[:2])
 
 
 def test_bake_reads_openstreetmap_from_the_pbf_and_keeps_no_derived_cache() -> None:
@@ -622,6 +740,18 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
     count = lambda pattern: sum(1 for path in paths if re.search(pattern, path))  # noqa: E731
     assert count(r"copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E(099|100)_00_DEM\.tif$") == 2  # Both DEM tiles.
     assert count(r"S2B_47QNC_202409(05|15)_0_L2A/(red|green|blue)\.tif$") == 6
+    # The Sentinel-2 water check also reads the short-wave infrared band and the scene classification of both scenes.
+    assert count(r"S2B_47QNC_202409(05|15)_0_L2A/(swir16|scl)\.tif$") == 4
+    assert count(r"S2B_47QNC_") == 10
+    # No land-cover map is an input. Of the UNOSAT products the bake opens one file, the product 4009 archive (it reads one
+    # layer of it, the season envelope), beside the product's rights record.
+    assert count(r"worldcover|land.?cover") == 0
+    assert [path for path in paths if path.startswith("unosat/")] == ["unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip"]
+    assert sorted(path for path in paths if "4009" in path) == ["docs/proposal_execution/rights_basis_4009_v1.json",
+                                                               "unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip"]
+    archive = next(row for row in inputs if row["path"].startswith("unosat/"))
+    record = json.loads((ROOT / "docs" / "proposal_execution" / "rights_basis_4009_v1.json").read_text(encoding="utf-8"))
+    assert (archive["bytes"], archive["sha256"]) == (record["archive"]["bytes"], record["archive"]["sha256"])
     assert count(r"cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_.*\.SAFE\.zip$") == 2
     assert count(r"worldpop_population/tha_ppp_2020\.tif$") == 1
     # OpenStreetMap is identified by the extract itself, never by a derived cache.
@@ -634,7 +764,7 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
                            "outputs/mae_sai_access_edges.csv", "outputs/mae_sai_admin_context.geojson", "outputs/mae_sai_facilities.geojson",
                            "outputs/mae_sai_population_nodes.csv", "outputs/mae_sai_reported_shelters_2024.json",
                            "outputs/mae_sai_road_risk.geojson"]
-    assert len(inputs) == 32
+    assert len(inputs) == 37
 
 
 def test_committed_receipt_matches_the_in_repo_inputs_and_the_committed_revision(committed_receipt: dict) -> None:
@@ -646,7 +776,12 @@ def test_committed_receipt_matches_the_in_repo_inputs_and_the_committed_revision
     assert outputs["folder"] == COMMITTED_FOLDER.relative_to(ROOT).as_posix()
     listing = directory_listing(COMMITTED_FOLDER)
     assert outputs["files"] == listing  # The receipt describes exactly the committed revision, byte for byte.
-    assert outputs["file_count"] == len(listing) == 22
+    assert outputs["file_count"] == len(listing) == 33
+    # 22 files the page loads, the 8 download files of the export pack and the 3 files of the season envelope (its raster,
+    # its statistics and its licence notice), which the receipt lists like any other output.
+    exported = [row["name"] for row in listing if row["name"].startswith("exports/")]
+    assert len(exported) == 8 and all(name.count("/") == 1 for name in exported)
+    assert [row["name"] for row in listing if row["name"].startswith("unosat4009/")] == ["unosat4009/LICENSE", "unosat4009/envelope.json", "unosat4009/envelope.png"]
     assert outputs["bytes"] == sum(row["bytes"] for row in listing)
 
 
@@ -725,4 +860,4 @@ def test_the_real_bake_reproduces_the_committed_bytes_with_the_recorded_librarie
         pytest.skip(f"library versions differ from the recorded receipt, so bytes may differ: {drift}")
     comparison = compare_directories(real_bake["out"], COMMITTED_FOLDER)
     assert comparison.matches, (comparison.summary(), comparison.different, comparison.missing_from_fresh, comparison.extra_in_fresh)
-    assert comparison.summary() == "22/22 identical"
+    assert comparison.summary() == "33/33 identical"  # The export pack and the season envelope's files are rebuilt byte for byte too.

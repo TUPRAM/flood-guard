@@ -286,6 +286,18 @@ def test_gate_no_public_4009_files_while_the_record_is_unconfirmed(record: dict)
     assert manifests, "the replay manifest was not found"
     if owner_confirmed(record):
         require_owner_confirmation(record)
+        # Confirmed: the derived files may be public, in one folder of their own, with their licence notice beside them.
+        relative = sorted(path.relative_to(PUBLIC_ROOT).as_posix() for path in files)  # Path order differs by platform.
+        assert relative == [f"studies/mae-sai-2024-timeline/r4/{PUBLIC_DERIVATIVE_FOLDER}/{name}" for name in ("LICENSE", "envelope.json", "envelope.png")]
+        licence = (PUBLIC_ROOT / relative[0]).read_text(encoding="utf-8")
+        for needle in (ATTRIBUTION, record["licence"]["name"], record["licence"]["url"], record["licence"]["legal_code_url"],
+                       "Changed by FloodGuard: clipped to Mae Sai district", ARCHIVE_SHA256):
+            assert needle in licence, needle
+        # The same files beside an unconfirmed record would break the gate: they are allowed only because the record says confirmed.
+        pending = pending_copy(record)
+        assert owner_confirmed(pending) is False
+        for path in manifests:
+            assert unconfirmed_product_citations(json.loads(path.read_text(encoding="utf-8"))) != []
         return
     listed = ", ".join(path.relative_to(PUBLIC_ROOT).as_posix() for path in files)
     assert files == [], f"product 4009 files are public while the rights record is still pending: {listed}"

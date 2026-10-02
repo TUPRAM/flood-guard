@@ -8,8 +8,8 @@ const workerSource = readFileSync(new URL("../public/sw.js", import.meta.url), "
 const illustrationUrl = "/landing/floodguard-v1/plates/w0-768.webp";
 const hash = (body) => createHash("sha256").update(body).digest("hex");
 
-function workerHarness({ version = "000000000001", profile = "competition", illustration = "approved image", illustrationUrls = [illustrationUrl], shared, caseReplay = {} } = {}) {
-  const state = shared ?? { stores: new Map(), deployed: profile, requests: [], illustration, responseGate: null, replayBodies: { ...caseReplay }, fetchModes: {} };
+function workerHarness({ version = "000000000001", profile = "competition", illustration = "approved image", illustrationUrls = [illustrationUrl], shared, caseReplay = {}, caseReplayExports = {} } = {}) {
+  const state = shared ?? { stores: new Map(), deployed: profile, requests: [], illustration, responseGate: null, replayBodies: { ...caseReplay, ...caseReplayExports }, fetchModes: {}, offline: false };
   const listeners = new Map();
   const messages = [];
   const pathname = (request) => new URL(typeof request === "string" ? request : request.url, "https://floodguard.test").pathname;
@@ -17,6 +17,8 @@ function workerHarness({ version = "000000000001", profile = "competition", illu
     if (init?.cache && typeof request === "string") request = { url: request, cache: init.cache };
     const path = pathname(request);
     state.requests.push(path);
+    // Without a connection every fetch rejects, as a browser's does.
+    if (state.offline) throw new TypeError("Failed to fetch");
     if (path === "/deployment-profile.json") return Response.json({ profile: state.deployed });
     if (path === "/offline-assets.json") return Response.json(["/_next/static/app.js"]);
     if (state.replayBodies && Object.hasOwn(state.replayBodies, path)) {
@@ -56,6 +58,7 @@ function workerHarness({ version = "000000000001", profile = "competition", illu
     .replaceAll("__CACHE_CREATED_AT__", "2026-09-15T00:00:00.000Z")
     .replace("const CORE_ASSETS = []; /* __PROFILE_CORE_ASSETS__ */", 'const CORE_ASSETS = ["/", "/deployment-profile.json"];')
     .replace("const OPTIONAL_CASE_REPLAY = []; /* __OPTIONAL_CASE_REPLAY__ */", `const OPTIONAL_CASE_REPLAY = ${JSON.stringify(profile === "competition" ? Object.entries(caseReplay).map(([url, body]) => ({ url, sha256: hash(body) })) : [])};`)
+    .replace("const OPTIONAL_CASE_REPLAY_EXPORTS = []; /* __OPTIONAL_CASE_REPLAY_EXPORTS__ */", `const OPTIONAL_CASE_REPLAY_EXPORTS = ${JSON.stringify(profile === "competition" ? Object.entries(caseReplayExports).map(([url, body]) => ({ url, sha256: hash(body) })) : [])};`)
     .replace("const OPTIONAL_LANDING_ARTWORK = []; /* __OPTIONAL_LANDING_ARTWORK__ */", `const OPTIONAL_LANDING_ARTWORK = ${JSON.stringify(profile === "competition" ? illustrationUrls.map((url) => ({ url, sha256: hash(illustration) })) : [])};`);
   runInNewContext(source, {
     self: {
@@ -153,14 +156,14 @@ test("the case replay is saved only when the replay asks, hash-checked and never
   assert.ok(Object.keys(replay).every((url) => !worker.state.requests.includes(url)));
   worker.state.replayBodies["/studies/case/r9/hand-codes.png"] = "raster from another build";
   await worker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
-  assert.deepEqual({ ...worker.messages.at(-1) }, { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 1, failed: 1, total: 2 });
+  assert.deepEqual({ ...worker.messages.at(-1) }, { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 1, failed: 1, total: 2, exports_cached: 0, exports_failed: 0, exports_total: 0 });
   const cache = worker.state.stores.get(worker.cacheName);
   assert.ok(cache.has("/studies/case/r9/timeline.json"));
   assert.ok(!cache.has("/studies/case/r9/hand-codes.png"));
   assert.equal(worker.state.fetchModes["/studies/case/r9/timeline.json"], "no-cache");
   worker.state.replayBodies["/studies/case/r9/hand-codes.png"] = "raster";
   await worker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
-  assert.deepEqual({ ...worker.messages.at(-1) }, { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 2, failed: 0, total: 2 });
+  assert.deepEqual({ ...worker.messages.at(-1) }, { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 2, failed: 0, total: 2, exports_cached: 0, exports_failed: 0, exports_total: 0 });
   assert.equal(worker.state.requests.filter((url) => url === "/studies/case/r9/timeline.json").length, 1);
   assert.ok(!worker.state.requests.includes(illustrationUrl), "The replay request does not pull landing artwork.");
 
@@ -169,4 +172,78 @@ test("the case replay is saved only when the replay asks, hash-checked and never
   await publicWorker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
   assert.equal(publicWorker.messages.length, 0);
   assert.ok(Object.keys(replay).every((url) => !publicWorker.state.requests.includes(url)));
+});
+
+test("the replay's export pack is saved with the replay, counted apart from its data and hash-checked", async () => {
+  const replay = { "/studies/case/r9/timeline.json": "manifest", "/studies/case/r9/hand-codes.png": "raster" };
+  const pack = { "/studies/case/r9/exports/modelled_road_inundation_by_hour.csv": "roads", "/studies/case/r9/exports/README_licences.txt": "readme" };
+  const worker = workerHarness({ caseReplay: replay, caseReplayExports: pack });
+  await worker.dispatch("install");
+  // Neither list is part of the blocking installation.
+  assert.ok([...Object.keys(replay), ...Object.keys(pack)].every((url) => !worker.state.requests.includes(url)));
+  worker.state.replayBodies["/studies/case/r9/exports/README_licences.txt"] = "readme from another build";
+  await worker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  // A download file that fails its hash is counted under exports_*: the replay's own count stays complete.
+  assert.deepEqual({ ...worker.messages.at(-1) }, { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 2, failed: 0, total: 2, exports_cached: 1, exports_failed: 1, exports_total: 2 });
+  const cache = worker.state.stores.get(worker.cacheName);
+  assert.ok(cache.has("/studies/case/r9/exports/modelled_road_inundation_by_hour.csv"));
+  assert.ok(!cache.has("/studies/case/r9/exports/README_licences.txt"));
+  worker.state.replayBodies["/studies/case/r9/exports/README_licences.txt"] = "readme";
+  await worker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.deepEqual({ ...worker.messages.at(-1) }, { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 2, failed: 0, total: 2, exports_cached: 2, exports_failed: 0, exports_total: 2 });
+  // The replay data is saved first, the pack after it.
+  const order = worker.state.requests.filter((url) => url.startsWith("/studies/case/r9/"));
+  assert.ok(order.indexOf("/studies/case/r9/hand-codes.png") < order.indexOf("/studies/case/r9/exports/modelled_road_inundation_by_hour.csv"));
+  assert.equal(worker.state.fetchModes["/studies/case/r9/exports/modelled_road_inundation_by_hour.csv"], "no-cache");
+
+  const publicWorker = workerHarness({ profile: "public-production", caseReplay: replay, caseReplayExports: pack });
+  await publicWorker.dispatch("install");
+  await publicWorker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.equal(publicWorker.messages.length, 0);
+  assert.ok(Object.keys(pack).every((url) => !publicWorker.state.requests.includes(url)));
+});
+
+test("a saved replay opened without a connection reports what is saved, not zero", async () => {
+  const replay = { "/studies/case/r9/timeline.json": "manifest", "/studies/case/r9/hand-codes.png": "raster" };
+  const pack = { "/studies/case/r9/exports/modelled_road_inundation_by_hour.csv": "roads", "/studies/case/r9/exports/README_licences.txt": "readme" };
+  const complete = { type: "FLOODGUARD_CASE_REPLAY_STATUS", cached: 2, failed: 0, total: 2, exports_cached: 2, exports_failed: 0, exports_total: 2 };
+  const worker = workerHarness({ caseReplay: replay, caseReplayExports: pack });
+  await worker.dispatch("install");
+  await worker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.deepEqual({ ...worker.messages.at(-1) }, complete);
+  // The page asks again on every load. Offline, the profile check rejects: the answer is still the saved count.
+  worker.state.offline = true;
+  const before = worker.state.requests.length;
+  await worker.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.deepEqual({ ...worker.messages.at(-1) }, complete);
+  assert.equal(worker.messages.at(-1).exports_cached, worker.messages.at(-1).exports_total);
+  // Nothing but the profile check was tried, and the cache was not changed.
+  assert.deepEqual([...new Set(worker.state.requests.slice(before))], ["/deployment-profile.json"]);
+  const cache = worker.state.stores.get(worker.cacheName);
+  assert.ok([...Object.keys(replay), ...Object.keys(pack)].every((url) => cache.has(url)));
+
+  // A replay that was only partly saved says so offline, with the true count and no failure invented.
+  const partial = workerHarness({ caseReplay: replay, caseReplayExports: pack });
+  await partial.dispatch("install");
+  partial.state.replayBodies["/studies/case/r9/exports/README_licences.txt"] = "readme from another build";
+  await partial.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  partial.state.offline = true;
+  await partial.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.deepEqual({ ...partial.messages.at(-1) }, { ...complete, exports_cached: 1 });
+
+  // Never saved (the replay was not opened online): zero of each, and nothing is fetched or stored offline.
+  const fresh = workerHarness({ caseReplay: replay, caseReplayExports: pack });
+  await fresh.dispatch("install");
+  fresh.state.offline = true;
+  await fresh.dispatch("message", { type: "FLOODGUARD_CACHE_CASE_REPLAY" });
+  assert.deepEqual({ ...fresh.messages.at(-1) }, { ...complete, cached: 0, exports_cached: 0 });
+  assert.ok(Object.keys(replay).every((url) => !fresh.state.stores.get(fresh.cacheName).has(url)));
+
+  // The landing artwork answers the same way.
+  const artwork = workerHarness();
+  await artwork.dispatch("install");
+  await artwork.dispatch("message", { type: "FLOODGUARD_CACHE_LANDING_ARTWORK" });
+  artwork.state.offline = true;
+  await artwork.dispatch("message", { type: "FLOODGUARD_CACHE_LANDING_ARTWORK" });
+  assert.deepEqual({ ...artwork.messages.at(-1) }, { type: "FLOODGUARD_LANDING_ARTWORK_STATUS", cached: 1, failed: 0, total: 1 });
 });

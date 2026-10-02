@@ -21,8 +21,8 @@ const layers: Pick<TimelineLayer, "id" | "kind" | "date">[] = [
 ];
 const choices = imageryChoices(layers);
 const options: ReplayLinkOptions = { maxHour: 264, imageryIds: choices, compareIds: choices.filter((id) => id !== "none"), maxPlanK: 12 };
-const allLayers = { tambons: true, roads: true, facilities: true, reported: true, candidates: true, ineligible: true, cutoff: true, viirs: true, gauges: true };
-const noLayers = { tambons: false, roads: false, facilities: false, reported: false, candidates: false, ineligible: false, cutoff: false, viirs: false, gauges: false };
+const allLayers = { tambons: true, roads: true, facilities: true, reported: true, candidates: true, ineligible: true, cutoff: true, viirs: true, gauges: true, envelope: true };
+const noLayers = { tambons: false, roads: false, facilities: false, reported: false, candidates: false, ineligible: false, cutoff: false, viirs: false, gauges: false, envelope: false };
 const defaults: ReplayLinkState = {
   hour: 12,
   imagery: "auto",
@@ -73,12 +73,14 @@ describe("Mae Sai replay deep links", () => {
     expect(query).toBe("t=12&img=auto&wm=depth&wo=85&rm=state&cmp=s2-20240905,s2-20240915&lang=en&layers=tf&set=reported&k=8&pop=flooded");
     expect(serializeReplayLink(defaults)).not.toContain("cmp=");
     expect(serializeReplayLink(defaults)).toContain("layers=trfsc");
-    expect(serializeReplayLink({ ...defaults, layers: allLayers, shelterSet: "plan", planK: 4 })).toContain("layers=trfscixvg&set=plan&k=4");
+    expect(serializeReplayLink({ ...defaults, layers: allLayers, shelterSet: "plan", planK: 4 })).toContain("layers=trfscixvge&set=plan&k=4");
     // Whose access the card counts: homes that flood at the peak (default) or all residents at road nodes.
     expect(serializeReplayLink({ ...defaults, accessScope: "all" })).toContain("&pop=all");
     // The observed VIIRS map and the rain gauges have their own letters.
     expect(serializeReplayLink({ ...defaults, layers: { ...noLayers, viirs: true } })).toContain("layers=v&");
     expect(serializeReplayLink({ ...defaults, layers: { ...noLayers, roads: true, gauges: true } })).toContain("layers=rg&");
+    // The season envelope (a scenario layer) has a letter of its own.
+    expect(serializeReplayLink({ ...defaults, layers: { ...noLayers, envelope: true } })).toContain("layers=e&");
     expect(serializeReplayLink({ ...defaults, layers: noLayers })).toContain("layers=none");
   });
 
@@ -88,7 +90,7 @@ describe("Mae Sai replay deep links", () => {
       "t=265", "t=-1", "t=3.5", "t=abc", "t=", "t=999999",
       "img=s2-20990101", "img=", "wm=flow", "wo=101", "wo=-5", "wo=0.5", "rm=closed",
       "cmp=s2-20240905", "cmp=none,s2-20240905", "cmp=a,b,c", "cmp=",
-      "lang=fr", "layers=z", "layers=tt", "layers=trfz", "layers=trfscixx", "layers=vv", "layers=trfscixvgv", "layers=",
+      "lang=fr", "layers=z", "layers=tt", "layers=trfz", "layers=trfscixx", "layers=vv", "layers=trfscixvgv", "layers=ee", "layers=trfscixvgee", "layers=",
       "set=all", "set=", "k=0", "k=13", "k=2.5", "k=-1", "k=",
       "pop=", "pop=everyone", "pop=FLOODED",
     ];
@@ -112,6 +114,28 @@ describe("Mae Sai replay deep links", () => {
     const snapshot = JSON.stringify(defaults);
     parseReplayLink("layers=r&t=5", defaults, options);
     expect(JSON.stringify(defaults)).toBe(snapshot);
+  });
+
+  it("turns the season envelope on only through its own layer letter, at any hour and with any imagery", () => {
+    // No replay hour selects the envelope: for every hour of the replay a link without the letter leaves it off, and a
+    // link with the letter leaves it on, whatever the hour. It is not an imagery choice either.
+    expect(choices.some((id) => /envelope|4009|unosat/i.test(id))).toBe(false);
+    for (let hour = 0; hour <= options.maxHour; hour += 1) {
+      for (const imagery of choices) {
+        expect(parseReplayLink(`t=${hour}&img=${imagery}`, defaults, options).layers.envelope, `t=${hour} img=${imagery}`).toBe(false);
+        expect(parseReplayLink(`t=${hour}&img=${imagery}&layers=trv`, defaults, options).layers.envelope).toBe(false);
+      }
+      const on = parseReplayLink(`t=${hour}&layers=re`, defaults, options);
+      expect(on.layers).toEqual({ ...noLayers, roads: true, envelope: true });
+      expect(on.hour).toBe(hour);
+    }
+    // A link written before the layer existed keeps its letters and leaves the envelope off.
+    expect(parseReplayLink("layers=trfscixvg", defaults, options).layers.envelope).toBe(false);
+    // The hour of a link never changes with the envelope, and the envelope never changes the hour that is written.
+    const withEnvelope = serializeReplayLink({ ...defaults, hour: 84, layers: { ...defaults.layers, envelope: true } });
+    const without = serializeReplayLink({ ...defaults, hour: 84 });
+    expect(new URLSearchParams(withEnvelope).get("t")).toBe(new URLSearchParams(without).get("t"));
+    expect(new URLSearchParams(withEnvelope).get("img")).toBe("auto");
   });
 
   it("replaces its own parameters and keeps unrelated ones", () => {

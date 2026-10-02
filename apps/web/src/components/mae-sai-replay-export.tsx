@@ -40,6 +40,9 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "@/lib/flood-timeline";
+import {
+  ENVELOPE_COPY, ENVELOPE_RGBA, envelopeExportCredit, envelopeExportCreditParts, envelopeHatch, paintEnvelope, type EnvelopeExportCredit,
+} from "@/lib/flood-timeline-envelope";
 import { reportedShelterCheck, reportedSiteRole } from "@/lib/flood-timeline-evacuation";
 import type { WaterMode } from "@/lib/flood-timeline-link";
 import { exportWaterMode, lowConfidenceKey, paintWaterPlan, WATER_LEGEND_COPY, waterPaintPlan, type WaterGrid, type WaterTimings } from "@/lib/flood-timeline-water";
@@ -132,6 +135,26 @@ export interface ReplayExportSource {
    * hatch, present only when the manifest declares the low-confidence channel.
    */
   hand: { codes: Uint8Array; factorKeys: Uint16Array | null; candidates: Uint32Array; lowCells?: Uint32Array | null; lowStripes?: Uint8Array | null };
+}
+
+/**
+ * The 2024 season envelope as the exports draw it: the cells of its raster on the water grid and what the frame must
+ * say of it (the product's full credit, its licence and the licence's address). The page passes it only while the
+ * layer is visible on the map; null leaves the layer, its legend entry and its credit out of the PNG and the video.
+ */
+export interface ExportEnvelope extends EnvelopeExportCredit { cells: Uint32Array }
+
+/** Standing credits of every exported frame. */
+export const EXPORT_CREDITS = "Contains modified Copernicus Sentinel data 2024 · © OpenStreetMap contributors · Copernicus DEM © DLR e.V., Airbus DS · WorldPop";
+
+/**
+ * Credits drawn into an exported PNG or video frame: the standing credits and, while the season envelope is visible,
+ * the envelope's own credit (`envelopeExportCredit`: the product's full attribution, the licence with its address and
+ * what FloodGuard changed). An exported picture is shared without the page, so the short map credit is not enough for
+ * it. The envelope's credit is wrapped onto as many lines as it needs and is never cut to fit.
+ */
+export function exportCreditLines(envelope: EnvelopeExportCredit | null | undefined, language: Language): string[] {
+  return envelope ? [EXPORT_CREDITS, envelopeExportCredit(envelope, language)] : [EXPORT_CREDITS];
 }
 
 export interface ExportRenderer {
@@ -277,7 +300,8 @@ function copy(language: Language, manifest: Pick<TimelineManifest, "confidence" 
     reported: th ? `ที่พักพิงที่มีรายงาน ${thaiYear(2024)}` : "Shelter reported, 2024",
     reportedFloods: th ? "…ท่วมที่ระดับสูงสุดของแบบจำลอง" : "…floods at the model peak",
     command: th ? "ศูนย์บัญชาการ (ไม่ใช่ที่พักพิง)" : "Command site (not a shelter)",
-    credits: "Contains modified Copernicus Sentinel data 2024 · © OpenStreetMap contributors · Copernicus DEM © DLR e.V., Airbus DS · WorldPop",
+    credits: EXPORT_CREDITS,
+    envelope: ENVELOPE_COPY.exportLegend[language],
   };
 }
 
@@ -314,11 +338,16 @@ async function loadImage(href: string): Promise<HTMLImageElement | null> {
  * the reported 2024 shelters, orientation labels, a scale bar and north arrow, a legend and a caption carrying the
  * moment, figures (including modelled residents in flood water), the model disclaimer and source attribution.
  * "portrait" puts the caption under the map; "landscape" is 16:9 with the caption and legend beside it. `waterMode`
- * is the view on the page; the two resident views are exported as water depth (`exportWaterMode`).
+ * is the view on the page; the two resident views are exported as water depth (`exportWaterMode`). With `envelope`
+ * (the season envelope, while it is visible on the map) the frame also draws the envelope hatched over the water, a
+ * legend entry for it and its credit (full attribution, licence and change note) under the standing credits; the
+ * legend entry and the credit wrap onto further lines and are never cut. Without it none of the three appears.
  */
 export async function createExportRenderer(
   source: ReplayExportSource,
-  { width, language, waterOpacity, format = "portrait", waterMode = "depth" }: { width: number; language: Language; waterOpacity: number; format?: VideoFormat; waterMode?: WaterMode },
+  { width, language, waterOpacity, format = "portrait", waterMode = "depth", envelope = null }: {
+    width: number; language: Language; waterOpacity: number; format?: VideoFormat; waterMode?: WaterMode; envelope?: ExportEnvelope | null;
+  },
 ): Promise<ExportRenderer> {
   const { manifest, hand } = source;
   const th = language === "th";
@@ -331,10 +360,10 @@ export async function createExportRenderer(
   const scale = landscape ? canvasHeight0 / 720 : width / VIDEO_WIDTH;
   const mapHeight = landscape ? canvasHeight0 : even(width * aspect);
   const mapWidth = landscape ? even(mapHeight / aspect) : canvasWidth;
-  const band = landscape ? 0 : even(186 * scale);
+  const font = (weight: number, size: number) => `${weight} ${size * scale}px ${FONT_STACK}`;
+  const creditLines = exportCreditLines(envelope, language);
   const canvas = document.createElement("canvas");
   canvas.width = canvasWidth;
-  canvas.height = landscape ? canvasHeight0 : mapHeight + band;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is unavailable");
   const text = copy(language, manifest);
@@ -344,6 +373,16 @@ export async function createExportRenderer(
       document.fonts.load(`400 16px "Noto Sans Thai Variable"`, "ก"),
     ]).catch(() => undefined);
   }
+  // The envelope's credit goes under the standing credits, wrapped to the caption's width (measured once the fonts have
+  // loaded): the caption band of the portrait frame, and the room kept at the foot of the 16:9 panel, grow by its lines.
+  const captionWidth = landscape ? canvasWidth - mapWidth - 44 * scale : mapWidth - 28 * scale;
+  context.font = font(400, 10.5);
+  const envelopeCreditRows = creditLines.length > 1 ? wrapText((part) => context.measureText(part).width, creditLines[1], captionWidth, language) : [];
+  const extraCredit = landscape
+    ? envelopeCreditRows.length * 10.5 * 1.32 + (envelopeCreditRows.length > 0 ? 2 : 0)
+    : envelopeCreditRows.length * 16;
+  const band = landscape ? 0 : even((186 + extraCredit) * scale);
+  canvas.height = landscape ? canvasHeight0 : mapHeight + band;
 
   // Imagery: the optical scenes that Auto mode can select.
   const images = new Map<string, HTMLImageElement>();
@@ -392,6 +431,19 @@ export async function createExportRenderer(
     spareLut = lastLut;
     lastLut = lut;
   };
+
+  // Season envelope (scenario): its own canvas on the water grid, hatched like the map's layer at this frame's scale.
+  let envelopeCanvas: HTMLCanvasElement | null = null;
+  if (envelope) {
+    envelopeCanvas = document.createElement("canvas");
+    envelopeCanvas.width = manifest.hand.width;
+    envelopeCanvas.height = manifest.hand.height;
+    const envelopeContext = envelopeCanvas.getContext("2d");
+    if (!envelopeContext) throw new Error("Canvas is unavailable");
+    const envelopeImage = envelopeContext.createImageData(envelopeCanvas.width, envelopeCanvas.height);
+    paintEnvelope(envelope.cells, envelopeCanvas.width, new Uint32Array(envelopeImage.data.buffer), envelopeHatch(mapWidth / envelopeCanvas.width), LITTLE_ENDIAN);
+    envelopeContext.putImageData(envelopeImage, 0, 0);
+  }
 
   const project = (lon: number, lat: number) => projectToFrame(lon, lat, manifest.bounds, mapWidth, mapHeight);
 
@@ -490,8 +542,6 @@ export async function createExportRenderer(
   const drawShelters = () => {
     for (const shelter of shelters) drawSymbol(shelter.symbol, shelter.x, shelter.y, 15 * scale);
   };
-
-  const font = (weight: number, size: number) => `${weight} ${size * scale}px ${FONT_STACK}`;
 
   // Place labels: white text with a dark halo so it reads over imagery and water.
   const places = exportPlaceLabels(source.roads.features, source.tambons?.features ?? [], manifest.bounds).map((label) => {
@@ -601,13 +651,23 @@ export async function createExportRenderer(
     }
     return rows;
   };
-  const legendRowCount = (boxWidth: number) => 2 + waterRows(boxWidth).length + (shelters.length > 0 ? 1 : 0) + (hatched ? 1 : 0);
+  /**
+   * The envelope's legend label on as many rows as it needs for a box `boxWidth` wide. It is wrapped, never cut: its
+   * end ("not an observation for any replay day") is the one statement of that in the exported picture.
+   */
+  const envelopeLegendRows = (boxWidth: number) => {
+    if (!envelope) return [];
+    context.font = font(500, 9.5);
+    return wrapText((part) => context.measureText(part).width, text.envelope, boxWidth - 30 * scale, language);
+  };
+  const legendRowCount = (boxWidth: number) => 2 + waterRows(boxWidth).length + (shelters.length > 0 ? 1 : 0) + (hatched ? 1 : 0) + envelopeLegendRows(boxWidth).length;
   /** Height of the legend box for a box `boxWidth` wide. */
   const legendHeightFor = (boxWidth: number) => (8 + 18 * legendRowCount(boxWidth)) * scale;
-  /** Legend box at (x0, y0), `boxWidth` wide: the water view's classes, roads, reported shelters and low-confidence water. */
+  /** Legend box at (x0, y0), `boxWidth` wide: the water view's classes, roads, reported shelters, low-confidence water and the season envelope. */
   const drawLegend = (x0: number, y0: number, boxWidth: number) => {
     const rowHeight = 18 * scale;
     const rows = waterRows(boxWidth);
+    const envelopeRows = envelopeLegendRows(boxWidth);
     const boxHeight = legendHeightFor(boxWidth);
     context.fillStyle = "rgb(255 255 255 / 90%)";
     context.fillRect(x0, y0, boxWidth, boxHeight);
@@ -705,6 +765,41 @@ export async function createExportRenderer(
       context.fillStyle = "#17253b";
       context.font = font(500, 9.5);
       context.fillText(fitText(context, text.lowConfidence, boxWidth - 30 * scale), x + 15 * scale, rowY + 9 * scale);
+      rowY += rowHeight;
+    }
+    if (envelope) {
+      // Hatched swatch of the season envelope (dark stripe, yellow edge, faint wash; stripes run "\"), then the label.
+      const x = x0 + 7 * scale;
+      const size = { w: 12 * scale, h: 10 * scale };
+      context.fillStyle = "#fff";
+      context.fillRect(x, rowY, size.w, size.h);
+      context.fillStyle = rgbaCss(ENVELOPE_RGBA.wash);
+      context.fillRect(x, rowY, size.w, size.h);
+      context.save();
+      context.beginPath();
+      context.rect(x, rowY, size.w, size.h);
+      context.clip();
+      for (let offset = -size.h; offset < size.w; offset += 5 * scale) {
+        context.strokeStyle = rgbaCss(ENVELOPE_RGBA.dark);
+        context.lineWidth = Math.max(1, 1.6 * scale);
+        context.beginPath();
+        context.moveTo(x + offset, rowY);
+        context.lineTo(x + offset + size.h, rowY + size.h);
+        context.stroke();
+        context.strokeStyle = rgbaCss(ENVELOPE_RGBA.light);
+        context.lineWidth = Math.max(1, scale);
+        context.beginPath();
+        context.moveTo(x + offset + 1.6 * scale, rowY);
+        context.lineTo(x + offset + 1.6 * scale + size.h, rowY + size.h);
+        context.stroke();
+      }
+      context.restore();
+      context.strokeStyle = "rgb(12 39 64 / 22%)";
+      context.lineWidth = Math.max(1, scale * 0.6);
+      context.strokeRect(x, rowY, size.w, size.h);
+      context.fillStyle = "#17253b";
+      context.font = font(500, 9.5);
+      envelopeRows.forEach((row, index) => context.fillText(row, x + 15 * scale, rowY + 9 * scale + index * rowHeight));
     }
     return boxHeight;
   };
@@ -725,6 +820,8 @@ export async function createExportRenderer(
     context.globalAlpha = waterOpacity;
     context.drawImage(waterCanvas, 0, 0, mapWidth, mapHeight);
     context.globalAlpha = 1;
+    // The season envelope is drawn over the water, hatched, at full strength: it is a layer of its own, not water of this hour.
+    if (envelopeCanvas) context.drawImage(envelopeCanvas, 0, 0, mapWidth, mapHeight);
     drawOutlines();
     drawRoads(stage);
     drawShelters();
@@ -778,10 +875,11 @@ export async function createExportRenderer(
       }
       block(`${text.imagery}: ${imagery}`, 500, 12, "#e3ebf5", 6);
       block(text.notice, 650, 12.5, "#ffd98a", 6);
-      const legendY = canvasHeight0 - legendHeightFor(inner) - 70 * scale;
+      const legendY = canvasHeight0 - legendHeightFor(inner) - (70 + extraCredit) * scale;
       if (y < legendY) drawLegend(left, legendY, inner);
-      y = canvasHeight0 - 58 * scale;
-      block(text.credits, 400, 10.5, "#b9c6d8", 2);
+      y = canvasHeight0 - (58 + extraCredit) * scale;
+      // `block` wraps each credit to the panel; the envelope's rows were counted above with the same width and font.
+      for (const credit of creditLines) block(credit, 400, 10.5, "#b9c6d8", 2);
       block(sourceLine, 400, 10, "#9fb0c6", 0);
       return;
     }
@@ -819,8 +917,10 @@ export async function createExportRenderer(
     }
     line(126, `${text.imagery}: ${imagery}`, 500, 11.5, "#e3ebf5");
     line(145, text.notice, 650, 12, "#ffd98a");
-    line(163, text.credits, 400, 10.5, "#b9c6d8");
-    line(179, sourceLine, 400, 10, "#9fb0c6");
+    line(163, creditLines[0], 400, 10.5, "#b9c6d8");
+    // The envelope's credit, already wrapped to the band's width: one row each, none cut.
+    envelopeCreditRows.forEach((row, index) => line(179 + index * 16, row, 400, 10.5, "#b9c6d8"));
+    line(179 + extraCredit, sourceLine, 400, 10, "#9fb0c6");
   };
 
   /** A card over a dimmed frame: centred, wrapped lines. */
@@ -886,7 +986,7 @@ export async function createExportRenderer(
           : "Water, roads and residents in flood water are model outputs; the satellite images are observed. Sources, assumptions and limits are on the FloodGuard replay page.",
         weight: 500, size: 12.5, colour: "#e3ebf5", gap: 12,
       },
-      { value: text.credits, weight: 400, size: 10.5, colour: "#b9c6d8", gap: 4 },
+      ...creditLines.map((credit) => ({ value: credit, weight: 400, size: 10.5, colour: "#b9c6d8", gap: 4 })),
       { value: `${manifest.study_id} ${manifestRevision()} · ${th ? "ความเชื่อมั่น" : "confidence"}: ${text.level}`, weight: 400, size: 10.5, colour: "#9fb0c6" },
     ]);
   };
@@ -943,7 +1043,7 @@ export function exportViewText(waterMode: WaterMode, language: Language): string
  * (portrait or 16:9) opens and closes with a one-second card, shows a live preview while it records, and downloads
  * itself when done. The video controls are hidden when the browser cannot record a canvas.
  */
-export function ReplayExportPanel({ source, time, language, waterOpacity, waterMode = "depth" }: {
+export function ReplayExportPanel({ source, time, language, waterOpacity, waterMode = "depth", envelope = null }: {
   /** Null until the water model is ready; exports are disabled until then. */
   source: ReplayExportSource | null;
   time: number;
@@ -951,6 +1051,8 @@ export function ReplayExportPanel({ source, time, language, waterOpacity, waterM
   waterOpacity: number;
   /** The water view on the page; the exports draw the same view, or water depth for the two resident views. */
   waterMode?: WaterMode;
+  /** The season envelope while its layer is visible on the map: the exports then draw it, with its legend entry and credit. */
+  envelope?: ExportEnvelope | null;
 }) {
   const th = language === "th";
   const t = (en: string, thai: string) => (th ? thai : en);
@@ -985,7 +1087,7 @@ export function ReplayExportPanel({ source, time, language, waterOpacity, waterM
     if (still.status === "done") revoke(still.url);
     setStill({ status: "working" });
     try {
-      const renderer = await createExportRenderer(source, { width: PNG_WIDTH, language, waterOpacity, waterMode });
+      const renderer = await createExportRenderer(source, { width: PNG_WIDTH, language, waterOpacity, waterMode, envelope });
       renderer.draw(hourIndex(time) / 24);
       const blob = await new Promise<Blob | null>((resolve) => renderer.canvas.toBlob(resolve, "image/png"));
       if (!mountedRef.current) return;
@@ -1013,7 +1115,7 @@ export function ReplayExportPanel({ source, time, language, waterOpacity, waterM
     const abandoned = () => pending.cancelled || !mountedRef.current;
     let renderer: ExportRenderer;
     try {
-      renderer = await createExportRenderer(source, { width: VIDEO_FORMATS[shape].width, language, waterOpacity, format: shape, waterMode });
+      renderer = await createExportRenderer(source, { width: VIDEO_FORMATS[shape].width, language, waterOpacity, format: shape, waterMode, envelope });
     } catch {
       if (abandoned()) return;
       cancelRef.current = null;
@@ -1225,6 +1327,18 @@ export function ReplayExportPanel({ source, time, language, waterOpacity, waterM
         </p>
       )}
       <p className={styles.muted} data-testid="export-view">{exportViewText(waterMode, language)}</p>
+      {envelope && (
+        <p className={styles.muted} data-testid="export-envelope">{t(
+          "The season envelope (scenario) is on the map, so the PNG and the video draw it hatched, with its legend entry, its full credit, its licence and a note of what FloodGuard changed.",
+          "ขอบเขตน้ำตลอดฤดู (สถานการณ์จำลอง) แสดงอยู่บนแผนที่ ภาพ PNG และวิดีโอจึงวาดขอบเขตนี้เป็นลายเส้นทแยง พร้อมคำอธิบายสัญลักษณ์ เครดิตฉบับเต็ม สัญญาอนุญาต และหมายเหตุว่า FloodGuard เปลี่ยนแปลงสิ่งใด",
+        )}</p>
+      )}
+      <p className={styles.muted} data-testid="export-credits">
+        {t("Credits drawn into the PNG and the video", "เครดิตที่วาดลงในภาพ PNG และวิดีโอ")}: <span lang="en">{EXPORT_CREDITS}</span>
+        {envelope && (
+          <span data-testid="export-envelope-credit">{" · "}<span lang="en">{envelopeExportCreditParts(envelope, language).published}</span>{" · "}{envelopeExportCreditParts(envelope, language).change}</span>
+        )}
+      </p>
       <p className={styles.exportStatus} role="status" aria-live="polite">{[stillMessage, videoMessage].filter(Boolean).join(" ")}</p>
       {!source && <p className={styles.muted}>{t("Exports become available once the water model has loaded.", "ส่งออกได้เมื่อโหลดแบบจำลองน้ำเสร็จแล้ว")}</p>}
     </div>

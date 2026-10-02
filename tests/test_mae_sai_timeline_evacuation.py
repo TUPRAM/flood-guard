@@ -417,3 +417,143 @@ def test_population_grid_keeps_density_and_density_codes_stay_in_range(tmp_path:
     assert density.dtype == np.uint8 and density.max() <= 254 and cap == pytest.approx(9.9, abs=0.15)
     empty, empty_cap = evac.density_codes(np.zeros((20, 20)), aoi, water)
     assert not empty.any() and empty_cap == 1.0
+
+
+# --- Capacity-aware plan and what-if levels ----------------------------------------------------------------
+
+
+def capacity_fixture(population: list[float] | None = None) -> tuple[list[dict], dict]:
+    """The plan fixture with site kinds and capacity estimates, plus one more ineligible site that only sets a median."""
+    sites, _, graph = plan_fixture()
+    if population is not None:
+        graph["pop"] = graph["pop"].assign(total_population=population)
+    details = {"C001": ("school", 60), "C002": ("school", 200), "C003": ("worship", None)}
+    for site in sites:
+        site["kind"], site["capacity_est"] = details[site["id"]]
+    sites.append({"id": "C004", "node": 4, "flood_stage": 0.0, "eligible": False, "kind": "worship", "capacity_est": 20})
+    return sites, graph
+
+
+def test_whole_people_rounds_halves_up_so_running_totals_keep_their_steps() -> None:
+    assert [evac.whole_people(value) for value in (0.0, 0.49, 0.5, 1.5, 2.5, 2.4999, 180.5)] == [0, 0, 1, 2, 3, 2, 181]
+    # Adding a whole number commutes with the rounding, which keeps a step within its whole capacity.
+    assert all(evac.whole_people(value + 79) - evac.whole_people(value) == 79 for value in (0.5, 1.5, 2.5, 10.49))
+
+
+def test_capacity_aware_plan_counts_who_fits_under_both_bounds() -> None:
+    sites, graph = capacity_fixture()
+    result = evac.capacity_aware_plan(sites, graph, PEAK_STAGE_M, ["C001", "C003"])
+    estimate, unknown = evac.CAPACITY_ESTIMATE_BASIS, evac.CAPACITY_UNKNOWN_BASIS
+    assert (estimate, unknown) == ("OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified", "unknown")
+    assert result["demand_people"] == 190  # Every resident of a home that is wet at the peak.
+    # Medians use every candidate with an estimate, eligible or not: schools (60, 200), worship (20).
+    assert result["kind_median_capacity"] == {"school": 130, "worship": 20}
+    assert result["all_kinds_median_capacity"] == 60
+    first = {"candidate_id": "C001", "capacity_est": 60, "capacity_basis": estimate, "upper_capacity_basis": "estimate",
+             "lower": {"capacity": 60, "load": 60, "served": 60, "overflow": 130},
+             "upper": {"capacity": 60, "load": 60, "served": 60, "overflow": 130}}
+    # The second site has no mapped footprint: nobody in the lower bound, the worship median of 20 in the upper one.
+    second = {"candidate_id": "C003", "capacity_est": None, "capacity_basis": unknown, "upper_capacity_basis": "kind_median",
+              "lower": {"capacity": 0, "load": 0, "served": 60, "overflow": 130},
+              "upper": {"capacity": 20, "load": 20, "served": 80, "overflow": 110}}
+    assert result["coverage_plan"] == [first, second]
+    assert result["plan"] == [{**first, "within_reach": 150}, {**second, "within_reach": 180}]
+    assert result["all_eligible"] == {"sites": 2, "sites_with_estimate": 1, "within_reach": 180,
+                                      "lower": {"capacity": 60, "served": 60, "overflow": 130},
+                                      "upper": {"capacity": 80, "served": 80, "overflow": 110}}
+    # 150 residents can walk to the first site (the coverage ranking's figure); 60 fit. No score, no action class.
+    assert not {"fpps", "action_class", "accepted_fpps", "accepted_action_class"} & set(result)
+
+
+def test_capacity_aware_plan_publishes_whole_residents_that_add_up() -> None:
+    sites, graph = capacity_fixture([100.4, 50.3, 30.5, 20.0, 10.2])
+    sites[0]["capacity_est"] = 200  # Room for everyone in reach of the first site (150.7 residents).
+    sites[2]["capacity_est"] = 40
+    result = evac.capacity_aware_plan(sites, graph, PEAK_STAGE_M, ["C001", "C003"])
+    assert result["demand_people"] == 191  # 191.4
+    for rows in (result["plan"], result["coverage_plan"]):
+        for key in ("lower", "upper"):
+            assert [row[key]["served"] for row in rows] == [151, 181]  # 150.7, then 181.2
+            assert [row[key]["load"] for row in rows] == [151, 30]  # The loads of the first k rows add up to served.
+            assert [row[key]["overflow"] for row in rows] == [40, 10]  # overflow = demand - served
+            assert all(row[key]["load"] <= row[key]["capacity"] for row in rows)
+    # The ranking follows capacity, not reach: with the larger site second in the given order, the count still works.
+    reverse = evac.capacity_aware_plan(sites, graph, PEAK_STAGE_M, ["C003", "C001"])
+    assert [row["candidate_id"] for row in reverse["coverage_plan"]] == ["C003", "C001"]
+    assert [row["upper"]["served"] for row in reverse["coverage_plan"]] == [31, 181]
+    assert [row["candidate_id"] for row in reverse["plan"]] == ["C001", "C003"]
+
+
+def test_capacity_aware_plan_is_nested_and_respects_capacity_on_a_crowded_site() -> None:
+    sites, graph = capacity_fixture([2430.0, 50.0, 30.0, 20.0, 10.0])
+    sites[0]["capacity_est"] = 79  # The nearest-site rule would send about 2,430 residents to a site with 79 places.
+    result = evac.capacity_aware_plan(sites, graph, PEAK_STAGE_M, ["C001", "C003"])
+    assert result["coverage_plan"][0]["upper"] == {"capacity": 79, "load": 79, "served": 79, "overflow": 2441}
+    for rows in (result["plan"], result["coverage_plan"]):
+        for position, row in enumerate(rows, start=1):
+            for key in ("lower", "upper"):
+                assert row[key]["load"] <= row[key]["capacity"]
+                assert row[key]["served"] == sum(item[key]["load"] for item in rows[:position])
+                assert row[key]["overflow"] == result["demand_people"] - row[key]["served"]
+            assert row["lower"]["served"] <= row["upper"]["served"]
+    # No eligible site at all: an empty plan and the whole demand as overflow.
+    for site in sites:
+        site["eligible"] = False
+    empty = evac.capacity_aware_plan(sites, graph, PEAK_STAGE_M, [])
+    assert empty["plan"] == [] and empty["coverage_plan"] == []
+    assert empty["all_eligible"]["upper"] == {"capacity": 0, "served": 0, "overflow": 2520}
+
+
+def what_if_fixture() -> tuple[list[dict], dict, np.ndarray, np.ndarray, SimpleNamespace]:
+    """The plan fixture's road on a terrain grid, with three sites whose freeboard depends on the stage.
+
+    C001 stands at 4.5 m (eligible at every level), C002 on ground that never floods, C003 at 3.1 m (eligible at
+    2.5 m only). The home at node 3 is wet from 3.0 m and the home at node 4 from 3.75 m.
+    """
+    _, _, graph = plan_fixture()
+    aoi = grid()
+    codes = np.full(aoi.shape, NEVER_CODE, dtype=np.uint8)
+    k = np.ones(aoi.shape, dtype=np.float32)
+    graph["xy"] = np.array([[105.0 + 150.0 * index, 505.0] for index in range(6)] + [[905.0, 105.0]])
+    graph["home_code"] = np.array([10, 20, 60, 75, 10], dtype=np.uint8)
+
+    def block(node: int, code: int) -> None:
+        x, y = graph["xy"][node]
+        col, row = int(x // aoi.res), int((aoi.bounds[3] - y) // aoi.res)
+        codes[row - 2:row + 3, col - 2:col + 3] = code
+
+    block(0, 90)
+    block(2, 62)
+    sites = [{"id": f"C00{index}", "x": float(graph["xy"][node][0]), "y": float(graph["xy"][node][1])}
+             for index, node in ((1, 0), (2, 5), (3, 2))]
+    evac.evaluate_sites(sites, graph, codes, k, aoi, PEAK_STAGE_M)
+    return sites, graph, codes, k, aoi
+
+
+def test_what_if_plans_repeat_the_ranking_at_levels_around_the_peak() -> None:
+    assert evac.WHAT_IF_STAGES_M == (2.5, 3.5, 4.0)
+    sites, graph, codes, k, aoi = what_if_fixture()
+    before = json.dumps(sites, sort_keys=True)
+    result = evac.what_if_plans(sites, graph, codes, k, aoi, None, evac.WHAT_IF_STAGES_M, PEAK_STAGE_M, ["C001", "C002"])
+    assert json.dumps(sites, sort_keys=True) == before  # The peak evaluation of the sites is left as it was.
+    low, peak, high = result["stages"]
+    # 2.5 m: three eligible sites, homes at nodes 1, 2 and 6 are wet; the first site covers all that can be covered.
+    assert low == {"stage_m": 2.5, "modelled_peak": False, "demand_people": 160, "eligible_count": 3, "uncoverable_people": 10,
+                   "knee_k": 1, "plan": ["C001"], "cumulative_demand": [150]}
+    # 3.5 m (the replay's peak): C003 is under water, the home at node 3 is wet too.
+    assert peak == {"stage_m": 3.5, "modelled_peak": True, "demand_people": 190, "eligible_count": 2, "uncoverable_people": 10,
+                    "knee_k": 2, "plan": ["C001", "C002"], "cumulative_demand": [150, 180]}
+    # 4.0 m: the home at node 4 joins the demand.
+    assert high == {"stage_m": 4.0, "modelled_peak": False, "demand_people": 210, "eligible_count": 2, "uncoverable_people": 10,
+                    "knee_k": 2, "plan": ["C001", "C002"], "cumulative_demand": [150, 200]}
+    # Within each level the plans are nested (a list prefix), and the core holds the sites chosen at every level.
+    assert result["core_by_k"] == [["C001"], ["C001"]]
+    assert not {"fpps", "action_class"} & set(result)
+
+
+def test_what_if_plans_refuse_a_peak_that_is_missing_or_ranked_differently() -> None:
+    sites, graph, codes, k, aoi = what_if_fixture()
+    with pytest.raises(ValueError, match="must include the modelled peak"):
+        evac.what_if_plans(sites, graph, codes, k, aoi, None, (2.5, 4.0), PEAK_STAGE_M, ["C001", "C002"])
+    with pytest.raises(ValueError, match="differs from the plan the replay shows"):
+        evac.what_if_plans(sites, graph, codes, k, aoi, None, evac.WHAT_IF_STAGES_M, PEAK_STAGE_M, ["C002", "C001"])

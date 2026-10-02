@@ -19,6 +19,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "apps" / "web" / "scripts" / "equity-access-parity-fixture.py"
 FIXTURE = ROOT / "apps" / "web" / "src" / "lib" / "__fixtures__" / "mae-sai-equity-access-parity.json"
+TOO_SMALL = "Equity gap not computed: a group has fewer than 50 residents with a shelter within reach before the flood."
+NO_LOSS = "Equity gap not computed: neither group has lost access."
 
 
 @pytest.fixture(scope="module")
@@ -64,7 +66,7 @@ def test_edge_cases_pin_both_band_limits_and_every_undefined_result(generator) -
 def test_edge_cases_cover_both_null_reasons_of_the_replay_rule(generator) -> None:
     rows = edge_rows(generator)
     no_loss = [None, None, "Equity gap not computed: neither group has lost access.", "no_loss"]
-    too_small = [None, None, "Equity gap not computed: a group has fewer than 50 residents.", "insufficient_group_denominator"]
+    too_small = [None, None, TOO_SMALL, "insufficient_group_denominator"]
     # Nobody has lost access: no ratio (never the 1.0 that floodguard.equity states), with the reason.
     for name in ("no loss in either group", "no loss, both groups large", "no loss, groups of exactly 50"):
         assert rows[name][4:] == [0.0, 0.0, *no_loss], name
@@ -75,11 +77,13 @@ def test_edge_cases_cover_both_null_reasons_of_the_replay_rule(generator) -> Non
     assert rows["small loss in both large groups"][4:] == [0.0001, 0.0, 3.479, "higher", "Vulnerable residents are 3.48 times more likely to lose access.", None]
     assert rows["only the non-vulnerable rate rounds to zero"][6:8] == [1250.0, "higher"]
     assert rows["small vulnerable loss only, large groups"][6:] == [None, None, "Equity gap ratio undefined because vulnerable loss exists while non-vulnerable loss is zero.", "undefined_ratio"]
-    # A group below 50 residents: no ratio, with the reason, whatever was lost.
+    # A group below 50 residents within reach before the flood: no ratio, with the reason, whatever was lost.
     for name in ("vulnerable group of 49.99 (too small)", "vulnerable group of 49 (too small)", "other group of 49 (too small)",
                  "both groups too small", "one resident in the vulnerable group", "too small and no loss (group size is the reason)",
                  "too small and only vulnerable loss (group size is the reason)", "no vulnerable residents", "no other residents",
-                 "no residents at all", "no vulnerable residents and no other loss"):
+                 "no residents at all", "no vulnerable residents and no other loss",
+                 "nobody in the vulnerable group within reach (the default view)",
+                 "27 vulnerable residents within reach, all lost (too small)"):
         assert rows[name][6:] == too_small, name
         assert min(rows[name][1], rows[name][3]) < 50, name
     # Exactly 50 is enough.
@@ -94,11 +98,54 @@ def test_fixture_records_the_null_rule_and_no_ratio_before_the_water_rises() -> 
     assert fixture["equity_minimum_group"] == 50
     assert fixture["equity_null_reasons"] == ["insufficient_group_denominator", "no_loss", "undefined_ratio"]
     assert fixture["equity_columns"][-1] == "reason" and fixture["access_level_columns"][-1] == "reason"
+    assert fixture["equity_denominator"] == "within_reach_before_flood"
+    assert fixture["equity_columns"][:4] == ["vulnerable_lost", "vulnerable_within_reach", "non_vulnerable_lost", "non_vulnerable_within_reach"]
     for group in fixture["access"]:
-        # Level 0 is the state before the flood: nobody has lost access, so there is no ratio to state.
-        assert group["levels"][0][6:] == [None, None, "Equity gap not computed: neither group has lost access.", "no_loss"]
+        reach = group["within_reach"]
+        if min(reach["vulnerable"], reach["non_vulnerable"]) < 50:
+            # The group-size rule comes first, so the reason is the same at every level.
+            assert {row[9] for row in group["levels"]} == {"insufficient_group_denominator"}
+        else:
+            # Level 0 is the state before the flood: nobody has lost access, so there is no ratio to state.
+            assert group["levels"][0][6:] == [None, None, NO_LOSS, "no_loss"]
         for row in group["levels"]:
             assert (row[9] is None) == (row[6] is not None)
+
+
+def test_fixture_divides_by_the_residents_within_reach_before_the_flood() -> None:
+    """Owner decision R8, option B: lost / within reach before the flood, never lost / all residents counted."""
+    fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    by_key = {(group["set"], group["scope"]): group for group in fixture["access"]}
+    peak = round(fixture["peak_stage_m"] / fixture["level_step_m"])
+    for group in fixture["access"]:
+        reach, totals = group["within_reach"], group["totals"]
+        assert reach["population"] + group["no_baseline_access"] == pytest.approx(totals["population"], abs=1e-6)
+        assert reach["vulnerable"] <= totals["vulnerable"] and reach["non_vulnerable"] <= totals["non_vulnerable"]
+        for row in group["levels"]:
+            # Columns: level, people lost, vulnerable lost, other lost, vulnerable rate, other rate, ...
+            for lost, within, rate in ((row[2], reach["vulnerable"], row[4]), (row[3], reach["non_vulnerable"], row[5])):
+                assert lost <= within + 1e-6
+                assert rate == (None if within == 0 else round(lost / within, 4))
+    # Plan of 8 sites at the 3.5 m peak, all residents: 320 of 373 against 13,109 of 24,537, about 1.6 ("higher").
+    plan = by_key[("plan_8", "all")]
+    assert (round(plan["within_reach"]["vulnerable"]), round(plan["within_reach"]["non_vulnerable"])) == (373, 24537)
+    assert (round(plan["totals"]["vulnerable"]), round(plan["totals"]["non_vulnerable"])) == (7152, 74647)
+    row = plan["levels"][peak]
+    assert (round(row[2]), round(row[3])) == (320, 13109)
+    assert row[4:] == [0.8577, 0.5342, 1.606, "higher", "Vulnerable residents are 1.61 times more likely to lose access.", None]
+    # Reported 2024 set, all residents: none of the 2,440 proxy-vulnerable residents within reach lost access.
+    reported = by_key[("reported_2024", "all")]
+    assert round(reported["within_reach"]["vulnerable"]) == 2440
+    assert (reported["levels"][peak][2], reported["levels"][peak][6], reported["levels"][peak][7]) == (0.0, 0.0, "lower")
+    # The default view (reported set, residents whose homes flood): 103 proxy-vulnerable residents counted, none of
+    # them within reach of a reported site before the flood, so no ratio at any level.
+    default = by_key[("reported_2024", "flooded")]
+    assert (default["within_reach"]["vulnerable"], round(default["totals"]["vulnerable"])) == (0.0, 103)
+    assert default["levels"][peak][4:] == [None, 0.9476, None, None, TOO_SMALL, "insufficient_group_denominator"]
+    # Among residents whose homes flood the default plan has 27 proxy-vulnerable residents within reach: too few.
+    wet_plan = by_key[("plan_8", "flooded")]
+    assert round(wet_plan["within_reach"]["vulnerable"]) == 27
+    assert wet_plan["levels"][peak][6:] == [None, None, TOO_SMALL, "insufficient_group_denominator"]
 
 
 def test_fixture_holds_the_shelter_set_comparison_for_every_set_and_scope() -> None:

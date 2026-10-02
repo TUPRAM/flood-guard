@@ -5,7 +5,7 @@
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
  "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
  "generated_at": {
-  "value": "2026-10-02T11:16:00+07:00",
+  "value": "2026-10-02T20:59:00+07:00",
   "basis": "declared"
  },
  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
@@ -26,8 +26,8 @@
   "external": "FLOODGUARD_EXTERNAL_DATA or --external-root (kept outside Git)",
   "repo": "repository root"
  },
- "input_count": 32,
- "input_bytes": 4657730495,
+ "input_count": 37,
+ "input_bytes": 4815153915,
  "inputs": [
   {
    "root": "external",
@@ -61,6 +61,18 @@
   },
   {
    "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/scl.tif",
+   "bytes": 3345372,
+   "sha256": "c33c2de5e59fbb9768776b7449f9193c3843aae51460a3085cfc5cf4c152de3e"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/swir16.tif",
+   "bytes": 61345276,
+   "sha256": "24d39dba72cf3f6cd700af6a2506d3c4893e31f52681fe38655be3c4b2c0747f"
+  },
+  {
+   "root": "external",
    "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/blue.tif",
    "bytes": 220036077,
    "sha256": "aa058cecc7643f0384ef363d131ea59c3ba6f415e9e1ab7d6d5ec8824d48a7a8"
@@ -76,6 +88,18 @@
    "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/red.tif",
    "bytes": 221362768,
    "sha256": "dbe241cefd75a7e94f9259aeffe3b8d9b471a0c02b115db09ac38d27a0ac29d8"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/scl.tif",
+   "bytes": 3465002,
+   "sha256": "ce119a84f064e8e712ccfc450721350ab91852a6962ae8b8bf83a8fe05b3366f"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/swir16.tif",
+   "bytes": 61284543,
+   "sha256": "67929ca9285acf1254578f9d550aa9907abde160b7b5c625a434184708a31da2"
   },
   {
    "root": "external",
@@ -124,6 +148,12 @@
    "path": "open_context/worldpop_population/tha_ppp_2020.tif",
    "bytes": 296024584,
    "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+  },
+  {
+   "root": "external",
+   "path": "unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip",
+   "bytes": 27977189,
+   "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85"
   },
   {
    "root": "external",
@@ -212,8 +242,8 @@
   {
    "root": "repo",
    "path": "outputs/mae_sai_reported_shelters_2024.json",
-   "bytes": 69754,
-   "sha256": "9865a3db58ec0b6991d85f5d651520838fa67121e7b411dc4b859fc666293f6d"
+   "bytes": 75792,
+   "sha256": "674d95881b857916f65f864e555a1b20f815a25bd9c43e2d475fc0c8f2d00d35"
   },
   {
    "root": "repo",
@@ -224,13 +254,53 @@
  ],
  "outputs": {
   "folder": "apps/web/public/studies/mae-sai-2024-timeline/r4",
-  "file_count": 22,
-  "bytes": 6117804,
+  "file_count": 33,
+  "bytes": 7024748,
   "files": [
    {
     "name": "access-nodes.bin",
     "bytes": 435840,
     "sha256": "d4b84fcf9b7f1d97983b9293e7d502d329e859e9859f867219033b56ccbaa590"
+   },
+   {
+    "name": "exports/README_licences.txt",
+    "bytes": 25842,
+    "sha256": "ae45d16fd682cc5c3eeadf3c76cef197aabe18ea73b1d58f8b681ec083d66736"
+   },
+   {
+    "name": "exports/modelled_access_loss_by_hour.csv",
+    "bytes": 241197,
+    "sha256": "f994204dad5e3939577e0a404ec8016f91b08f0bd14806699ee3feba71648212"
+   },
+   {
+    "name": "exports/modelled_road_inundation_by_hour.csv",
+    "bytes": 346104,
+    "sha256": "0452131a8cc92684a2bc6aaf0b7363ac4365aeef43dbbfec258f9e252b310414"
+   },
+   {
+    "name": "exports/shelter_candidate_verification_sheet.csv",
+    "bytes": 31025,
+    "sha256": "cc9ee005b2630103c7a0645ced95a4d88756b040e50481fd1d7422f3dc138bcd"
+   },
+   {
+    "name": "exports/shelter_plan_capacitated.csv",
+    "bytes": 19081,
+    "sha256": "4a5c51510325917dac9cecc3c579e9a6436f1fc94ad1f2fe24cfbd5dc8b17b6b"
+   },
+   {
+    "name": "exports/shelter_plan_k.csv",
+    "bytes": 13604,
+    "sha256": "f64730e22ad2e1e52ad86de83d931cd23bddf97aa7666d7b2a3c4ff74d918de3"
+   },
+   {
+    "name": "exports/shelter_plan_reported_2024.csv",
+    "bytes": 28398,
+    "sha256": "7ef215cee658efcb2eebba5dd6ea1ff64dd51b70499b533cb5799665ee3a1957"
+   },
+   {
+    "name": "exports/shelter_sites.geojson",
+    "bytes": 99373,
+    "sha256": "fb8ecc04f67f597475431378ffff75f5258a0c91922df3bde104a7a79eb80b03"
    },
    {
     "name": "facilities.geojson",
@@ -289,8 +359,23 @@
    },
    {
     "name": "timeline.json",
-    "bytes": 220581,
-    "sha256": "0ffa560810638680dd328d10b168e4e66f0c2f6b8719b5ecc8f7cb42ca584b9e"
+    "bytes": 276766,
+    "sha256": "c40c7f49f1b4ac04e2feacd4b6e3421bd313f786808a3c2bee7f403d13a1256b"
+   },
+   {
+    "name": "unosat4009/LICENSE",
+    "bytes": 13180,
+    "sha256": "17168099bae77b9fc0d5f024cf69414281f399109d305fb8eb848af162926c13"
+   },
+   {
+    "name": "unosat4009/envelope.json",
+    "bytes": 16008,
+    "sha256": "19360178c60b61b48fccea3741da57e61cf1ffee5fb9b2c86af76842c1ed5d27"
+   },
+   {
+    "name": "unosat4009/envelope.png",
+    "bytes": 16947,
+    "sha256": "148f0a41fb078e2d51ac443a7eda386edd7ad311338bd8121b17a84f7fd2831f"
    },
    {
     "name": "viirs-20240910.png",
@@ -342,39 +427,59 @@
  "code": [
   {
    "path": "packages/contracts/schemas/case-replay-timeline.schema.json",
-   "sha256": "49b1b11eef49cbdf3491ec6cad9343abd5e240f9e69ed5798bd10cc45c8de767"
+   "sha256": "2ccd93029435c61f49ce1974fcad870c3b173d71ace621e83a1d905d1de3d068"
   },
   {
    "path": "scripts/build_mae_sai_flood_timeline.py",
-   "sha256": "f4c5cc41b352d5e065c1e3e2814b6b2b02ca476e489617d1123698df47614dca"
+   "sha256": "d009f0fcba42d72ac07ce17414234e3a48507b848eeabafbbaad6cc47e208d27"
   },
   {
    "path": "scripts/mae_sai_timeline_evacuation.py",
-   "sha256": "a8cc549ca738c4b0c3a3d1d69c9aaf3a586aa23ed3b76efd186a1e2b01e39ca7"
+   "sha256": "afd6f230f6edfb71ff89abf59deacd308405da4582a8b68afa1f3bb50fa35858"
   },
   {
    "path": "scripts/mae_sai_timeline_observations.py",
-   "sha256": "8080895891cb8536a0e467fe9af0545e610371601b5dd00dac46f29980e973fd"
+   "sha256": "982c050075274c206347d9efd082a0cd3fdb277b639c90e6052ab26e3480671d"
+  },
+  {
+   "path": "scripts/mae_sai_timeline_unosat4009.py",
+   "sha256": "a43658e8ea80a065353740885bb820b53b626ef17a530e16201091749a4149ce"
   },
   {
    "path": "src/floodguard/bake_receipt.py",
-   "sha256": "ac780f3a30b014ae6ae845df9872b24430d132761c41324dc89a7f7bddba6fbf"
+   "sha256": "c3bb1003506d383ae7f8fef142edec00692265f65a75b3e096ffef5eb8886765"
   },
   {
    "path": "src/floodguard/evacuation_access.py",
-   "sha256": "4022c993b0ad760c4e39168c056e2808d1b116df1afc93a85b300e7e6c7df440"
+   "sha256": "49e8984feebce22f0bab012d9a835a96fcfc7a834ebcd0c7058ae1d405766b42"
   },
   {
    "path": "src/floodguard/flood_timeline.py",
    "sha256": "137eeb5df3ac23c80d0be2582d9b62b424a480bb34dccd4922721d621b034e9a"
   },
   {
+   "path": "src/floodguard/optical_water_check.py",
+   "sha256": "bc637371ada38fb4c6579a8454d5a9d18cb0a828bc2ab2d63ea305bdd3417f45"
+  },
+  {
+   "path": "src/floodguard/replay_exports.py",
+   "sha256": "138b7080dbd7744e25dc3c57b17b770c37170013e49330d214627245398b232a"
+  },
+  {
    "path": "src/floodguard/replay_manifest.py",
-   "sha256": "7495c3d24dfa1d921f7808e4ec88ca24e143a1940ed11a0b5ae01acffc7d3528"
+   "sha256": "e3010699995edad780ca941f47e2ee1fc3552e92b76246cba883023e45804a30"
   },
   {
    "path": "src/floodguard/rights_basis.py",
    "sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23"
+  },
+  {
+   "path": "src/floodguard/season_envelope.py",
+   "sha256": "680c9b2e7d06a8fffd8f6ed2aeccc46328dc272fbc3bf5eabd40a5bbc436b6f3"
+  },
+  {
+   "path": "src/floodguard/shelter_validation.py",
+   "sha256": "67bb5a988574e9c6de2f3b096962653b67a996e3a89d263629a2725041443ead"
   }
  ],
  "libraries": {

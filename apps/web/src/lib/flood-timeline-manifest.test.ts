@@ -9,11 +9,13 @@ import {
   licenceRows,
   manifestRevision,
   parseTimelineManifest,
+  SEASON_ENVELOPE_ROLE,
   TIMELINE_MANIFEST_URL,
   TimelineManifestError,
   type EvidenceLane,
 } from "./flood-timeline";
 import { localizedText } from "./flood-timeline-copy";
+import { shippableEnvelope } from "./flood-timeline-envelope";
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
 const served = (): Record<string, unknown> => JSON.parse(readFileSync(resolve(publicRoot, TIMELINE_MANIFEST_URL.slice(1)), "utf8")) as Record<string, unknown>;
@@ -84,8 +86,14 @@ describe("Mae Sai replay manifest reader: the served revision (r4 shape)", () =>
     for (const path of ["s1_anchor", "external_checks[gistda-radarsat2-20240910]", "external_checks[unosat-3991]"]) expect(lane(path), path).toEqual(["CAL"]);
     expect(manifest.s1_anchor.role).toBe("calibration_informed_magnitude_check");
     expect(externalChecksByRole(manifest.external_checks!).independent).toEqual([]);
-    // Product 4009 is a season envelope scenario and is not shown.
-    expect(evidenceBlocksFor(manifest, "external_references[unosat-4009]")[0]).toMatchObject({ lane: "SCN-ENV", shown: false, season_window: "2024-08-01/2024-10-22" });
+    // Product 4009 is a season envelope scenario: shown as a layer of its own, with its comparison in the same lane.
+    expect(evidenceBlocksFor(manifest, "season_envelope")[0]).toMatchObject({ lane: "SCN-ENV", shown: true, season_window: "2024-08-01/2024-10-22", temporal_relation: "season_envelope" });
+    expect(lane("external_checks[unosat-4009-season-envelope]")).toEqual(["SCN-ENV"]);
+    // The comparison is listed among the external checks under its own role, never as an independent check.
+    const byRole = externalChecksByRole(manifest.external_checks!);
+    expect(byRole.envelope.map((check) => check.id)).toEqual(["unosat-4009-season-envelope"]);
+    expect(byRole.envelope[0].role).toBe(SEASON_ENVELOPE_ROLE);
+    expect([...byRole.calibration, ...byRole.informed, ...byRole.independent].some((check) => /4009/.test(check.id))).toBe(false);
     expect(evidenceBlocksFor(manifest, "no_such_block")).toEqual([]);
   });
 
@@ -104,15 +112,56 @@ describe("Mae Sai replay manifest reader: the served revision (r4 shape)", () =>
     expect(licences["sentinel-1"]).toMatch(/Copernicus Sentinel data terms/);
     expect(licences["sentinel-2"]).toMatch(/Copernicus Sentinel data terms/);
     expect(rows.find((row) => row.id === "viirs")!.licence_stated).toBe(false);
-    expect(rows.filter((row) => !row.shown).map((row) => row.id)).toEqual(["unosat-4009"]);
-    // The status follows the rights record (pending, or confirmed on a date); the input stays unshown either way.
-    expect(rows.at(-1)).toMatchObject({ id: "unosat-4009" });
-    expect(rows.at(-1)?.status).toMatch(/Not yet shown; rights record pending owner confirmation\.|Not shown in this revision; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\./);
+    // Every input is shown. Product 4009 is shown as a season envelope scenario layer, and says when its rights record was confirmed.
+    expect(rows.filter((row) => !row.shown).map((row) => row.id)).toEqual([]);
+    expect(rows.at(-1)).toMatchObject({ id: "unosat-4009", shown: true });
+    expect(rows.at(-1)?.status).toMatch(/^Shown as a season envelope scenario layer; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\.$/);
     // Every listed source has a licence row.
     for (const source of manifest.sources) expect(rows.some((row) => row.id === source.id), source.id).toBe(true);
     // The sources name both elevation tiles and the residents grid.
     expect(manifest.sources.find((source) => source.id === "copernicus-dem")!.name).toMatch(/N20 E099 and N20 E100/);
     expect(manifest.sources.find((source) => source.id === "worldpop")!.name).toBe(manifest.population!.source);
+  });
+
+  it("carries the season envelope as a scenario block that names three files and holds no figure", () => {
+    const envelope = manifest.season_envelope!;
+    expect(shippableEnvelope(manifest)).toBe(envelope);
+    expect(envelope).toMatchObject({
+      id: "unosat-4009", lane: "SCN-ENV", shown: true, day_independent: true, temporal_relation: "season_envelope",
+      label: "Scenario (SCN-ENV): 2024 season envelope", licence: "CC BY-SA 4.0",
+      credit: "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009", map_credit: "UNOSAT and GISTDA · CC BY-SA 4.0",
+    });
+    expect(envelope.caption).toBe("UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct); includes August and early-October water; not an observation for any replay day. Clipped to Mae Sai district and rasterised to the replay grid by FloodGuard.");
+    // Three files in a folder of their own, each named by address, hash and size only.
+    expect(Object.keys(envelope.files).sort()).toEqual(["licence", "raster", "statistics"]);
+    for (const file of Object.values(envelope.files)) {
+      expect(Object.keys(file).sort()).toEqual(["bytes", "href", "sha256"]);
+      expect(file.href).toMatch(/\/unosat4009\/(envelope\.png|envelope\.json|LICENSE)$/);
+    }
+    // No figure derived from the product is in the manifest: the block and its check hold no number but the file sizes.
+    const numbers = (value: unknown, path: string): string[] => (typeof value === "number"
+      ? [path]
+      : value && typeof value === "object" ? Object.entries(value).flatMap(([key, item]) => numbers(item, `${path}.${key}`)) : []);
+    expect(numbers(envelope, "season_envelope").sort()).toEqual(["season_envelope.files.licence.bytes", "season_envelope.files.raster.bytes", "season_envelope.files.statistics.bytes"]);
+    const check = externalChecksByRole(manifest.external_checks!).envelope[0];
+    expect(numbers(check, "check")).toEqual(["check.statistics.bytes"]);
+    expect(check.statistics).toEqual(envelope.files.statistics);
+    expect(check.title).toBe("Season envelope comparison (scenario; plausibility, not validation)");
+    expect(check.use).toMatch(/^Plausibility against a season envelope, not a validation\./);
+    // It is never among the day observations: not a layer, not an observation, not a day and not a VIIRS day.
+    const dated = JSON.stringify([manifest.layers, manifest.observations, manifest.days, manifest.viirs_daily, manifest.phases]);
+    expect(dated).not.toMatch(/unosat4009|4009|envelope/i);
+    // Its source line and its licence row carry the credit and the licence.
+    expect(manifest.sources.find((source) => source.id === "unosat-4009")).toMatchObject({ licence: "CC BY-SA 4.0", attribution: envelope.credit });
+    // A block without its label, credit or licence does not ship: the page then shows no toggle, layer or comparison.
+    for (const broken of [
+      { ...envelope, label: "2024 season envelope" }, { ...envelope, caption: "Accumulated water, August to October 2024." },
+      { ...envelope, credit: "" }, { ...envelope, map_credit: "UNOSAT and GISTDA" }, { ...envelope, licence: "CC BY 4.0" },
+      { ...envelope, lane: "OBS" }, { ...envelope, shown: false }, { ...envelope, day_independent: false },
+      { ...envelope, files: { ...envelope.files, licence: undefined } },
+    ]) expect(shippableEnvelope({ season_envelope: broken as never })).toBeNull();
+    expect(shippableEnvelope({})).toBeNull();
+    expect(shippableEnvelope(null)).toBeNull();
   });
 
   it("states what was used or known while the model was tuned, in step with the labels", () => {
@@ -124,6 +173,8 @@ describe("Mae Sai replay manifest reader: the served revision (r4 shape)", () =>
     expect(items["viirs-daily"]).toMatchObject({ relation: "not_used_for_tuning", known_during_tuning: null });
     expect(items["viirs-daily"].statement).toContain("commit 129ff03");
     expect(items["unosat-4009"]).toMatchObject({ relation: "computed_after_keyframes_final", known_during_tuning: false });
+    // The recorded rule: nothing is tuned to product 4009 afterwards, or the comparison becomes a calibration figure.
+    expect(items["unosat-4009"].statement).toContain("no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is relabelled as calibration");
     expect(manifest.s1_anchor.use).toMatch(/not an independent check/);
     expect(manifest.confidence_reason).toMatch(/tuned to one radar pass rather than checked independently/);
   });
@@ -187,6 +238,9 @@ describe("Mae Sai replay manifest reader: an r3-shaped manifest from a client's 
     expect(licenceRows(manifest)).toEqual([]);
     expect(manifest.exploratory_knowledge).toBeUndefined();
     expect(manifest.s1_anchor.role).toBeUndefined();
+    // r3 carries no season envelope: no toggle, no layer and no comparison group for it.
+    expect(shippableEnvelope(manifest)).toBeNull();
+    expect(externalChecksByRole(manifest.external_checks!).envelope).toEqual([]);
     // The input object is not changed.
     const input = r3();
     parseTimelineManifest(input);

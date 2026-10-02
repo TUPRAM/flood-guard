@@ -32,6 +32,11 @@ export interface LayerVisibility {
   viirs: boolean;
   /** Observed hourly rain gauges (markers with totals). */
   gauges: boolean;
+  /**
+   * The 2024 season envelope (a scenario layer, hatched). It is a layer of its own: the hour in `t` never turns it
+   * on or off, and it is not an imagery choice.
+   */
+  envelope: boolean;
 }
 
 export interface ReplayLinkState {
@@ -70,11 +75,12 @@ export const LINK_PARAMS = ["t", "img", "wm", "wo", "rm", "cmp", "lang", "layers
 
 /**
  * One letter per map layer in `layers=`: t r f subdistricts, roads, facilities; s c i x reported shelters, plan
- * candidates, ineligible candidates, people cut off; v g the observed VIIRS daily flood map and the rain gauges.
+ * candidates, ineligible candidates, people cut off; v g the observed VIIRS daily flood map and the rain gauges;
+ * e the 2024 season envelope (scenario).
  */
 const LAYER_LETTERS: [keyof LayerVisibility, string][] = [
   ["tambons", "t"], ["roads", "r"], ["facilities", "f"], ["reported", "s"], ["candidates", "c"], ["ineligible", "i"], ["cutoff", "x"],
-  ["viirs", "v"], ["gauges", "g"],
+  ["viirs", "v"], ["gauges", "g"], ["envelope", "e"],
 ];
 const LAYER_PATTERN = new RegExp(`^[${LAYER_LETTERS.map(([, letter]) => letter).join("")}]{1,${LAYER_LETTERS.length}}$`);
 

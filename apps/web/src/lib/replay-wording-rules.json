@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.replay_wording_rules.v1",
-  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets or present a modelled hour as a safe time to leave. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
+  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets, present a modelled hour as a safe time to leave, tell the reader which shelters to open or state the equity rates over all residents counted. Text about the 2024 season envelope (UNOSAT and GISTDA product 4009) must not speak of precision, recall, accuracy, a validated model or corroboration, must not say that the model is too low or too high (or that it under- or overestimates), and must not call the envelope observed. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
   "how_it_works": [
     "Text is normalised first: web addresses are removed, runs of white space become one space, curly apostrophes become straight ones, and non-breaking hyphens, figure dashes, en dashes and minus signs become plain hyphens.",
     "Each pattern in allow is then removed, in order. They are explicit negations such as 'not a forecast'. A new negation needs a new entry here; a plain 'not' somewhere in the sentence is not enough.",
@@ -8,7 +8,7 @@
     "Patterns are case-insensitive regular expressions that mean the same in JavaScript (flags iu) and in Python (re.IGNORECASE). Word edges are written as (?<![A-Za-z0-9_]) and (?![A-Za-z0-9_]) because \\b treats Thai letters differently in the two engines.",
     "Each Thai rule lists the common renderings of the banned claim, not one spelling: a translator's wording of a banned English claim must fail too. A Thai denial needs its own allow entry, as in English."
   ],
-  "thai_terms_review": "The Thai terms and denials were widened on 2 Oct 2026 (ตามเวลาจริง, คาดการณ์, ทำนาย, แม่นยำ, ยืนยันแล้ว, ผ่านการตรวจสอบ, ประกาศเตือน, คาบการเกิดซ้ำ, Thai digits). The Thai language reviewer has not signed the list off yet (roadmap H12, due 22 Oct 2026).",
+  "thai_terms_review": "The Thai terms and denials were widened on 2 Oct 2026 (ตามเวลาจริง, คาดการณ์, ทำนาย, แม่นยำ, ยืนยันแล้ว, ผ่านการตรวจสอบ, ประกาศเตือน, คาบการเกิดซ้ำ, Thai digits), and again the same day for the shelter and road rules (ศูนย์พักพิง, ศูนย์อพยพ, ตารางเวลาปิดถนน, แผนการปิดถนน) and for the season-envelope rules (ประเมินต่ำเกินไป, สูงกว่าความเป็นจริง, ขอบเขตน้ำตลอดฤดูที่สังเกต; ยืนยันผล and รับรองผล no longer match the start of ผลิตภัณฑ์). The Thai language reviewer has not signed the list off yet (roadmap H12, due 22 Oct 2026).",
   "allow": [
     {
       "id": "not_real_time_or_warning",
@@ -94,6 +94,31 @@
       "ok": ["ผลเบื้องต้น ยังไม่ผ่านการตรวจสอบภาคสนาม", "ข้อมูลนี้ยังไม่ได้ผ่านการยืนยัน"]
     },
     {
+      "id": "not_sites_to_open",
+      "pattern": "(?<![A-Za-z0-9_])(?:not|never) (?:a |an )?(?:list of )?(?:shelters|sites) to (?:be )?open(?:ed)?(?![A-Za-z0-9_])|ไม่ใช่(?:รายชื่อ|รายการ)?(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)ที่(?:ต้อง|ควร)เปิด",
+      "why": "The standing caveat of the shelter plans: the sites are candidates to verify, and the text says they are not a list to open.",
+      "ok": [
+        "Candidates to verify, not a list of sites to open.",
+        "The sites are candidates to verify on the ground, not a list of sites to open.",
+        "These are candidates to check, never shelters to open.",
+        "Candidates to verify, not a list of sites to be opened.",
+        "เป็นสถานที่ที่ควรตรวจสอบ ไม่ใช่รายชื่อที่พักพิงที่ต้องเปิด",
+        "เป็นสถานที่ที่ควรตรวจสอบ ไม่ใช่รายชื่อศูนย์พักพิงที่ต้องเปิด"
+      ]
+    },
+    {
+      "id": "th_not_return_period",
+      "pattern": "ไม่ใช่(?:ระดับน้ำตาม|ระดับตาม)?(?:คาบการเกิดซ้ำ|รอบการเกิดซ้ำ|คาบอุบัติซ้ำ)",
+      "why": "Thai denial that the what-if levels are return periods. The English 'not return periods' needs no entry: the rule flags only a named period such as '100-year'.",
+      "ok": ["ระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดที่ใช้เพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ", "ระดับเหล่านี้ไม่ใช่ระดับน้ำตามรอบการเกิดซ้ำ"]
+    },
+    {
+      "id": "dsm_bias_assumption",
+      "pattern": "(?<![A-Za-z0-9_])modelled water and residents in town are likely underestimated(?![A-Za-z0-9_])",
+      "why": "The disclosed terrain bias (roadmap P2-3): the 30 m surface model raises the ground in built-up areas. It states a known bias of an input, in these exact words; it is not a verdict drawn from the comparison with the season envelope. Any other wording of 'the model underestimates' is a finding.",
+      "ok": ["The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated."]
+    },
+    {
       "id": "th_named_warning_station",
       "pattern": "ระบบเตือนภัยบ้านแม่สายของกรมทรัพยากรน้ำ",
       "why": "Names another agency's early-warning station, which the replay says it could not verify. It claims no warning.",
@@ -138,6 +163,24 @@
       "bad": ["Precision 0.605 against product 4009", "Recall of the envelope: 0.704"]
     },
     {
+      "id": "corroboration",
+      "pattern": "(?<![A-Za-z0-9_])corroborat[a-z]*|หลักฐานยืนยัน|ช่วยยืนยัน|ยืนยันผล(?!ิต)|รับรองผล(?!ิต)",
+      "message": "A season envelope does not corroborate the model, and the model does not corroborate the envelope: the envelope holds water from the whole season. Say what share of one lies inside the other.",
+      "bad": ["The envelope corroborates the low-confidence water", "Corroboration share: 59%", "Product 4009 is corroborating evidence for the modelled peak", "ขอบเขตน้ำตลอดฤดูช่วยยืนยันแบบจำลอง", "เป็นหลักฐานยืนยันผลของแบบจำลอง", "ขอบเขตน้ำตลอดฤดูยืนยันผลของแบบจำลอง", "ผลิตภัณฑ์นี้รับรองผลการจำลอง"]
+    },
+    {
+      "id": "envelope_verdict",
+      "pattern": "(?<![A-Za-z0-9_])(?:models?|reconstruction|modelled (?:water|extent|peak|area))(?: [a-z0-9-]+){0,6}? (?:(?:is|are|was|were|looks?|reads?|seems?|runs?) (?:[a-z]+ ){0,2}?too (?:low|high|small|large|little|much)|(?:over|under)-?(?:estimat|predict|stat)[a-z]*)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:over|under)-?(?:estimat|predict)[a-z]* (?:[a-z0-9-]+ ){0,4}?by the (?:model|reconstruction)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:over|under)-?predict[a-z]*|แบบจำลอง(?:ให้ค่า|ให้ผล|ประเมิน(?:ค่า)?|ประมาณ(?:ค่า|การ)?|คำนวณ)?(?:ไว้|ได้)?(?:ต่ำ|สูง|น้อย|มาก)(?:เกินไป|เกินจริง|กว่าความเป็นจริง|กว่าจริง)|น้ำจากแบบจำลอง[^ .]{0,40}?(?:ต่ำ|สูง|น้อย|มาก)(?:เกินไป|เกินจริง)",
+      "message": "The comparison with the season envelope says where the model and the envelope differ, not that the model is too low or too high, or that it under- or overestimates a place: the envelope also holds August and early-October water and the modelled peak is illustrative.",
+      "bad": ["The model is too low in town", "The model is likely too high in Ban Dai", "Ban Dai and Pong Pha are over-predicted", "The reconstruction underpredicts the town", "The model underestimates the town against the envelope", "Modelled water in town is too low", "The modelled extent in Ban Dai is too large", "The model overestimates Ban Dai", "The town is underestimated by the model", "The model clearly over-estimates Pong Pha", "แบบจำลองต่ำเกินไปในเขตเมือง", "แบบจำลองให้ค่าสูงเกินไปในตำบลบ้านด้าย", "แบบจำลองประเมินต่ำเกินไปในเขตเมือง", "แบบจำลองประเมินไว้สูงกว่าความเป็นจริงในตำบลโป่งผา", "น้ำจากแบบจำลองในเขตเมืองน้อยเกินไป"]
+    },
+    {
+      "id": "envelope_as_observation",
+      "pattern": "(?<![A-Za-z0-9_])envelope(?: (?:water|extent|layer))? (?:(?:is|was|were|are) )?observed(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])envelope(?: (?:water|extent|layer))? (?:is|was|as) an observation(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])observed (?:season[- ])?envelope(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])observed (?:water|extent|flood) (?:of|in|from) (?:the )?(?:season )?envelope(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])4009 (?:is|was|shows?|gives?) (?:the |an? )?observ(?:ed|ation)[a-z]*|ขอบเขตน้ำตลอดฤดู(?:ที่)?(?:สังเกต|ตรวจวัด|ตรวจพบ)|การสังเกตการณ์ขอบเขตน้ำตลอดฤดู",
+      "message": "The season envelope is a scenario layer: water mapped at some time from August to October 2024, with no date per patch. Do not call it observed, or an observation; say 'mapped at some time in the season'.",
+      "bad": ["the envelope observed in September", "The season envelope was observed on 12 Sep", "The observed envelope covers the town", "Observed water of the season envelope: 77.7 km²", "Product 4009 is the observed flood extent", "The envelope is an observation of the peak", "ขอบเขตน้ำตลอดฤดูที่สังเกตได้ในเดือนกันยายน"]
+    },
+    {
       "id": "september_extent",
       "pattern": "(?<![A-Za-z0-9_])September extent(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])GISTDA(?:'s)? map(?![A-Za-z0-9_])|ขอบเขตน้ำเดือนกันยายน|แผนที่ของ GISTDA",
       "message": "Product 4009 is a 2024 season envelope from UNOSAT and GISTDA. It is not the September extent and not GISTDA's map.",
@@ -151,9 +194,9 @@
     },
     {
       "id": "road_schedule",
-      "pattern": "(?<![A-Za-z0-9_])(?:re)?schedul[a-z]*|(?<![A-Za-z0-9_])closure plans?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])cut-off lists?(?![A-Za-z0-9_])|ตารางปิดถนน|แผนปิดถนน|กำหนดการปิดถนน",
+      "pattern": "(?<![A-Za-z0-9_])(?:re)?schedul[a-z]*|(?<![A-Za-z0-9_])timetabl[a-z]*|(?<![A-Za-z0-9_])closure plans?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])cut-off lists?(?![A-Za-z0-9_])|ตาราง(?:เวลา)?(?:การ)?ปิดถนน|แผน(?:การ)?ปิดถนน|กำหนดการปิดถนน",
       "message": "Modelled road inundation is not a schedule or a closure plan. Say 'modelled road inundation by hour'.",
-      "bad": ["Road closure schedule", "Closure plan for Phahonyothin Road", "Cut-off list by subdistrict", "ตารางปิดถนนรายชั่วโมง"]
+      "bad": ["Road closure schedule", "Closure plan for Phahonyothin Road", "Cut-off list by subdistrict", "Road closure timetable by hour", "Timetables of road closures", "ตารางปิดถนนรายชั่วโมง", "ตารางเวลาปิดถนน", "แผนการปิดถนน", "ตารางการปิดถนนรายชั่วโมง"]
     },
     {
       "id": "set_ranking",
@@ -166,9 +209,23 @@
       "pattern": "(?<![A-Za-z0-9_])last safe (?:departure|time|hour|moment|chance)s?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])safe (?:departure|evacuation) (?:time|hour|window)s?(?![A-Za-z0-9_])|เวลาออกเดินทางที่ปลอดภัย|เวลาอพยพที่ปลอดภัย",
       "message": "The access cut-off hour is a modelled hour from illustrative stage keyframes, not a safe time to leave. Say 'modelled access cut-off hour'.",
       "bad": ["Last safe departure: 10 Sep 22:00", "The last safe hour to leave is 22:00", "Safe departure window ends at 22:00", "เวลาออกเดินทางที่ปลอดภัยครั้งสุดท้าย 22:00 น."]
+    },
+    {
+      "id": "shelter_directive",
+      "pattern": "(?<![A-Za-z0-9_])open(?:ing)? (?:(?:the|these|those|all|first|following|next|top|[0-9]+) ){1,4}(?:shelters?|sites?)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])open(?:ing)? (?:shelters|sites)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) to (?:be )?open(?:ed)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) (?:that )?(?:must|should|need to|needs to|have to|has to|ought to) (?:be )?open(?:ed)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:must|should|need to|needs to|have to|has to|ought to) open (?:(?:the|these|those|all|first|following|next|top|[0-9]+) ){0,4}(?:shelters?|sites?)(?![A-Za-z0-9_])|เปิด(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)(?:ทั้ง)?เหล่านี้|(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)ที่(?:ต้อง|ควร)เปิด|(?:ต้อง|ควร)เปิด(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)",
+      "message": "The shelter plans list candidates to verify on the ground. Do not tell the reader which shelters to open; say 'candidates to verify'.",
+      "bad": ["Open these shelters first", "The 8 shelters to open in Mae Sai", "The district must open 8 shelters", "Sites that should be opened before the peak", "The tambon should open the first 8 sites", "Shelters to be opened: C049", "Open shelters C049 and C007 first", "Open the first 8 sites of the plan", "Opening all 12 sites covers the town", "เปิดที่พักพิงเหล่านี้ก่อนน้ำมา", "ที่พักพิงที่ต้องเปิด 8 แห่ง", "อำเภอควรเปิดที่พักพิง 8 แห่ง", "ควรเปิดสถานที่ 8 แห่งแรก", "เปิดศูนย์พักพิงเหล่านี้", "ศูนย์อพยพที่ควรเปิดก่อน"]
+    },
+    {
+      "id": "equity_denominator",
+      "pattern": "(?<![A-Za-z0-9_])divid(?:e|es|ed|ing) (?:[a-z-]+ ){0,8}by all (?:the )?residents(?![A-Za-z0-9_])|หารด้วยผู้อยู่อาศัยทั้งหมด",
+      "message": "Each group's loss rate divides by its residents who had a shelter within reach before the flood (owner decision R8, option B), not by all residents counted. All residents counted may be shown beside the rate as context.",
+      "bad": ["Each rate divides the residents who lost access by all residents counted in that group", "The loss rate is divided by all the residents of the group", "แต่ละอัตราคือผู้ที่สูญเสียการเข้าถึงหารด้วยผู้อยู่อาศัยทั้งหมดที่นับในกลุ่มนั้น"]
     }
   ],
   "mixed": [
+    {"text": "Each rate divides the residents of a group who lost access by the residents of that group who had a shelter within reach before the flood, not by all residents counted.", "rules": []},
+    {"text": "T1 scenario (model). The gap divides the lost residents by all residents counted in the group.", "rules": ["equity_denominator"]},
     {"text": "This is not a forecast. It is a live forecast of the Sai River.", "rules": ["live", "forecast"]},
     {"text": "Not an official warning, but treat it as a warning.", "rules": ["warning"]},
     {"text": "Not a validation of the model; accuracy is 0.48.", "rules": ["validation_as_agreement"]},
@@ -181,9 +238,31 @@
     {"text": "Rain fell on 10–14 Sep; the 25–50 % class is flood water, and 2025 years is not a period.", "rules": []},
     {"text": "See https://example.org/real-time-forecast/validation for the live warning.", "rules": ["live", "warning"]},
     {"text": "Field_Validation=0, unvalidated, invalid geometry repaired, official_warning: false", "rules": []},
+    {"text": "Plausibility against a season envelope, not a validation. 59% of the low-confidence modelled water lies inside the envelope, against 61% of the other modelled water.", "rules": []},
+    {"text": "Season envelope comparison (scenario; plausibility, not validation): recall 0.70, which corroborates the model.", "rules": ["corroboration", "precision_recall"]},
+    {"text": "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.", "rules": []},
+    {"text": "Envelope water the modelled peak does not reach is largest in Ko Chang; the comparison does not say which of the two is right.", "rules": []},
+    {"text": "Agreement 0.48 with product 4009: the model is too low in town and its accuracy is 60%.", "rules": ["envelope_verdict", "validation_as_agreement"]},
+    {"text": "UNOSAT and GISTDA product 4009, the September extent, validated against GISTDA's map.", "rules": ["september_extent", "validation_as_agreement"]},
     {"text": "Modelled, not observed closures. First cut 11 Sep 02:00, reopened 13 Sep 06:00.", "rules": []},
     {"text": "No single figure ranks the sets. Modelled access cut-off hour: 10 Sep 22:00. Hours from illustrative stage keyframes, not observed.", "rules": []},
     {"text": "The smallest plan that gets most of the benefit; it does not grade the choice of sites.", "rules": []},
-    {"text": "The plan is better: its last safe departure is 23:00.", "rules": ["safe_departure", "set_ranking"]}
+    {"text": "The plan is better: its last safe departure is 23:00.", "rules": ["safe_departure", "set_ranking"]},
+    {"text": "Candidates to verify, not a list of sites to open. Open these shelters first.", "rules": ["shelter_directive"]},
+    {"text": "A resident node has access when an open, dry shelter is within 2 km; roads still open at a 1 m stage; opening times are not modelled.", "rules": []},
+    {"text": "Every shelter is assumed open for the whole replay; a shelter that is open and dry counts; the hall opens at 08:00.", "rules": []},
+    {"text": "จุดผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่เปิดและแห้งภายใน 2 กม. ไม่ได้จำลองเวลาเปิดของสถานที่", "rules": []},
+    {"text": "Candidates to verify, not a list of sites to be opened. The tambon should open the first 8 sites.", "rules": ["shelter_directive"]},
+    {"text": "Modelled road inundation by hour, not a timetable.", "rules": ["road_schedule"]},
+    {"text": "ไม่ใช่คาบการเกิดซ้ำ แต่เป็นระดับน้ำรอบ 100 ปี", "rules": ["return_period"]},
+    {"text": "What-if levels around an illustrative peak, not return periods. Sites chosen at 2.5 m, 3.5 m and 4.0 m form the robust core.", "rules": []},
+    {"text": "The model underestimates the town; the 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.", "rules": ["envelope_verdict"]},
+    {"text": "แบบจำลองพื้นผิวความละเอียด 30 ม. ทำให้ระดับพื้นดินในเขตสิ่งปลูกสร้างสูงกว่าจริง น้ำจากแบบจำลองและจำนวนผู้อยู่อาศัยในน้ำในเขตเมืองจึงน่าจะต่ำกว่าความเป็นจริง", "rules": []},
+    {"text": "Where the two differ most: modelled water outside the envelope is largest in Ban Dai. The model and the envelope differ; neither is too low.", "rules": []},
+    {"text": "UNOSAT และ GISTDA ไม่ได้รับรองผลิตภัณฑ์นี้ และไม่ได้รับรอง FloodGuard หรือการใช้ผลิตภัณฑ์นี้ของ FloodGuard", "rules": []},
+    {"text": "ขอบเขตน้ำตลอดฤดูยืนยันผลการจำลอง", "rules": ["corroboration"]},
+    {"text": "Scenario (SCN-ENV): 2024 season envelope; not an observation for any replay day. The envelope is never an observation; VIIRS is observed.", "rules": []},
+    {"text": "ขอบเขตน้ำตลอดฤดูปี 2567 (2024) (สถานการณ์จำลอง ไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู)", "rules": []},
+    {"text": "Not an observation for any replay day, yet the envelope observed in September shows the town under water.", "rules": ["envelope_as_observation"]}
   ]
 }

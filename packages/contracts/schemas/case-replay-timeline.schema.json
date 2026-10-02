@@ -289,16 +289,323 @@
       "required": ["nodes", "levels", "sets", "scenario_tier", "confidence", "confidence_reason", "source_timestamp"],
       "properties": { "nodes": { "$ref": "#/$defs/hashedAsset" } }
     },
-    "shelters": { "type": "object", "required": ["candidates", "plan", "reported", "confidence", "confidence_reason", "source_timestamp"] },
+    "shelters": {
+      "type": "object",
+      "required": ["candidates", "plan", "reported", "capacitated", "robustness", "verification", "confidence", "confidence_reason", "source_timestamp"],
+      "properties": {
+        "capacitated": {
+          "description": "Capacity-aware shelter plan (T1 scenario): who fits where under two capacity bounds. Whole residents; overflow = demand_people - served. Candidates to verify, never a list of sites to open. No other key is allowed: no participation share and no listed capacity from a shelter register.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scenario_tier", "confidence", "confidence_reason", "source_timestamp", "assumptions", "demand_people", "demand_basis",
+            "capacity_basis", "bounds", "method", "max_plan_sites", "min_gain_share", "kind_median_capacity", "all_kinds_median_capacity",
+            "plan", "coverage_plan", "all_eligible"
+          ],
+          "properties": {
+            "scenario_tier": { "const": "T1 scenario (model)" },
+            "confidence": { "const": "low" },
+            "confidence_reason": { "type": "string", "minLength": 1 },
+            "source_timestamp": { "type": "string", "minLength": 1 },
+            "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "demand_people": { "type": "integer", "minimum": 0 },
+            "demand_basis": { "type": "string", "minLength": 1 },
+            "capacity_basis": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["estimate", "unknown"],
+              "properties": {
+                "estimate": { "const": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified" },
+                "unknown": { "const": "unknown" }
+              }
+            },
+            "bounds": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["lower", "upper", "note"],
+              "properties": {
+                "lower": { "type": "string", "minLength": 1 },
+                "upper": { "type": "string", "minLength": 1 },
+                "note": { "description": "Neither bound is a limit on who fits; the note says why.", "type": "string", "pattern": "[Nn]either is a limit" }
+              }
+            },
+            "method": { "type": "string", "minLength": 1 },
+            "max_plan_sites": { "description": "The capacity-aware ranking holds at most this many sites.", "type": "integer", "minimum": 1 },
+            "min_gain_share": { "description": "The ranking ends when the next site adds less than this share of demand.", "type": "number", "minimum": 0, "maximum": 1 },
+            "kind_median_capacity": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+            "all_kinds_median_capacity": { "type": ["integer", "null"], "minimum": 0 },
+            "plan": {
+              "description": "The capacity-aware ranking; the first k rows are the plan for k sites.",
+              "type": "array",
+              "minItems": 1,
+              "items": { "allOf": [{ "$ref": "#/$defs/capacityRow" }], "required": ["within_reach"] }
+            },
+            "coverage_plan": {
+              "description": "The coverage ranking (shelters.plan) counted with capacity, row for row.",
+              "type": "array",
+              "items": { "$ref": "#/$defs/capacityRow" }
+            },
+            "all_eligible": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["sites", "sites_with_estimate", "within_reach", "lower", "upper"],
+              "properties": {
+                "sites": { "type": "integer", "minimum": 0 },
+                "sites_with_estimate": { "type": "integer", "minimum": 0 },
+                "within_reach": { "type": "integer", "minimum": 0 },
+                "lower": { "$ref": "#/$defs/capacityTotal" },
+                "upper": { "$ref": "#/$defs/capacityTotal" }
+              }
+            }
+          }
+        },
+        "robustness": {
+          "description": "The coverage ranking repeated at what-if design stages around the illustrative peak (T1 scenario). The stages are not return periods.",
+          "type": "object",
+          "required": ["scenario_tier", "label", "confidence", "confidence_reason", "source_timestamp", "assumptions", "method", "stages", "core_by_k"],
+          "properties": {
+            "scenario_tier": { "const": "T1 scenario (model)" },
+            "label": { "const": "What-if levels around an illustrative peak, not return periods." },
+            "confidence": { "const": "low" },
+            "confidence_reason": { "type": "string", "minLength": 1 },
+            "source_timestamp": { "type": "string", "minLength": 1 },
+            "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "method": { "type": "string", "minLength": 1 },
+            "stages": {
+              "type": "array",
+              "minItems": 2,
+              "contains": { "type": "object", "properties": { "modelled_peak": { "const": true } }, "required": ["modelled_peak"] },
+              "minContains": 1,
+              "maxContains": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["stage_m", "modelled_peak", "demand_people", "eligible_count", "uncoverable_people", "knee_k", "plan", "cumulative_demand"],
+                "properties": {
+                  "stage_m": { "type": "number", "exclusiveMinimum": 0 },
+                  "modelled_peak": { "type": "boolean" },
+                  "demand_people": { "type": "integer", "minimum": 0 },
+                  "eligible_count": { "type": "integer", "minimum": 0 },
+                  "uncoverable_people": { "type": "integer", "minimum": 0 },
+                  "knee_k": { "type": ["integer", "null"], "minimum": 1 },
+                  "plan": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^C[0-9]{3}$" } },
+                  "cumulative_demand": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
+                }
+              }
+            },
+            "core_by_k": {
+              "description": "core_by_k[k - 1]: the sites among the first k at every stage.",
+              "type": "array",
+              "items": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^C[0-9]{3}$" } }
+            }
+          }
+        },
+        "verification": {
+          "description": "Local check of the shelter candidates through the verification sheet. not_conducted until a sheet is returned and imported; a conducted check is reported by role and is never an official shelter register. A conducted check carries its confidence, the reason for it and its assumptions. Free-text notes are never published: only whether a note was given.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "label_template", "sheet", "candidate_set_sha256", "candidates_listed", "statement", "checked"],
+          "properties": {
+            "status": { "enum": ["not_conducted", "conducted"] },
+            "label_template": { "const": "Checked by <role> on <date>; not an official shelter register" },
+            "sheet": { "description": "Id of the blank sheet in exports.files.", "type": "string", "minLength": 1 },
+            "candidate_set_sha256": { "$ref": "#/$defs/sha256" },
+            "candidates_listed": { "type": "integer", "minimum": 0 },
+            "statement": { "type": "string", "minLength": 1 },
+            "confidence": { "enum": ["low", "medium", "high"] },
+            "confidence_reason": { "type": "string", "minLength": 1 },
+            "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "source_timestamp": { "type": "string", "minLength": 1 },
+            "imported_on": { "type": "string", "format": "date" },
+            "returned_file_sha256": { "$ref": "#/$defs/sha256" },
+            "counts": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["checked", "usable_yes", "usable_no", "with_verified_capacity"],
+              "properties": {
+                "checked": { "type": "integer", "minimum": 1 },
+                "usable_yes": { "type": "integer", "minimum": 0 },
+                "usable_no": { "type": "integer", "minimum": 0 },
+                "with_verified_capacity": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "checked": {
+              "description": "Whitelisted columns only: no name of a person, no phone number, no ID number and no free text.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["candidate_id", "usable_as_shelter", "verified_capacity", "checked_by_role", "checked_on", "access_notes_given", "label"],
+                "properties": {
+                  "candidate_id": { "type": "string", "pattern": "^C[0-9]{3}$" },
+                  "usable_as_shelter": { "type": "boolean" },
+                  "verified_capacity": { "type": ["integer", "null"], "minimum": 0 },
+                  "checked_by_role": {
+                    "enum": ["ddpm_officer", "local_government_officer", "village_leader", "site_staff", "project_team", "other_local_contact"]
+                  },
+                  "checked_on": { "type": "string", "format": "date" },
+                  "access_notes_given": { "type": "boolean" },
+                  "label": { "type": "string", "pattern": "^Checked by .+ on [0-9]{4}-[0-9]{2}-[0-9]{2}; not an official shelter register$" }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "status": { "const": "not_conducted" } } },
+              "then": { "properties": { "checked": { "maxItems": 0 } }, "not": { "anyOf": [{ "required": ["counts"] }, { "required": ["returned_file_sha256"] }] } },
+              "else": {
+                "properties": { "checked": { "minItems": 1 } },
+                "required": ["confidence", "confidence_reason", "assumptions", "source_timestamp", "imported_on", "returned_file_sha256", "counts"]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "exports": {
+      "description": "Export pack for spreadsheet and GIS users (T1 scenario tables, modelled and not observed). The files are downloads: they are hashed here but are not part of the replay's precache set. One licence lineage per file (OpenStreetMap-derived, ODbL 1.0).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_tier", "tier", "confidence", "confidence_reason", "source_timestamp", "purpose", "licence", "licence_rule", "header", "offline",
+        "assumptions", "folder", "file_count", "bytes", "files"
+      ],
+      "properties": {
+        "scenario_tier": { "const": "T1 scenario (model)" },
+        "tier": {
+          "const": "T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null"
+        },
+        "confidence": { "const": "low" },
+        "confidence_reason": { "type": "string", "minLength": 1 },
+        "source_timestamp": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "licence": { "const": "ODbL 1.0" },
+        "licence_rule": { "type": "string", "minLength": 1 },
+        "header": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["csv", "geojson", "why_in_the_file"],
+          "properties": {
+            "csv": { "type": "string", "minLength": 1 },
+            "geojson": { "type": "string", "minLength": 1 },
+            "why_in_the_file": { "type": "string", "minLength": 1 }
+          }
+        },
+        "offline": { "type": "string", "minLength": 1 },
+        "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "folder": { "type": "string", "pattern": "^/studies/[A-Za-z0-9._/-]+/exports/$" },
+        "file_count": { "type": "integer", "minimum": 1 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "allOf": [{ "$ref": "#/$defs/hashedAsset" }],
+            "type": "object",
+            "required": ["id", "name", "media_type", "title", "lanes", "licence", "source_ids"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              "name": {
+                "description": "A modelled table is named for what it is (modelled road inundation, modelled access loss); the pattern below refuses the banned names.",
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+\\.(csv|geojson|txt)$",
+                "not": { "pattern": "schedule|closure|cut[-_]?off" }
+              },
+              "href": { "type": "string", "pattern": "/exports/[A-Za-z0-9_]+\\.(csv|geojson|txt)$" },
+              "media_type": { "enum": ["text/csv", "application/geo+json", "text/plain"] },
+              "title": { "$ref": "#/$defs/localized" },
+              "lanes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["SCN", "REP"] } },
+              "licence": { "const": "ODbL 1.0" },
+              "source_ids": {
+                "description": "Sources the file derives from. The rain gauges, the VIIRS maps and product 4009 never feed an export.",
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "contains": { "const": "osm" },
+                "items": { "enum": ["osm", "worldpop", "cod-ab", "copernicus-dem", "reported-shelters"] }
+              },
+              "rows": { "type": "integer", "minimum": 0 },
+              "header_lines": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
     "external_checks": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "observed", "role", "use", "urls"],
+        "required": ["id", "role", "use", "urls"],
         "properties": {
           "role": {
-            "description": "No external figure is labelled independent while it was used, or known, during tuning.",
-            "enum": ["calibration_anchor", "calibration_informed_magnitude_check"]
+            "description": "No external figure is labelled independent while it was used, or known, during tuning. season_envelope_plausibility sets the model beside a season envelope (lane SCN-ENV): a plausibility comparison, not a validation, whose figures live in the envelope's own statistics file.",
+            "enum": ["calibration_anchor", "calibration_informed_magnitude_check", "season_envelope_plausibility"]
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "role": { "const": "season_envelope_plausibility" } } },
+            "then": {
+              "description": "The comparison with a season envelope names its statistics file and holds no figure: no reported or modelled area, people or stage. What the model is compared with is named under compared_with; the key observed is refused, because the envelope is a scenario layer and never the observed side of a check.",
+              "additionalProperties": false,
+              "required": ["id", "compared_with", "role", "title", "scope", "statistics", "use", "urls"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "compared_with": { "type": "string", "minLength": 1 },
+                "role": { "const": "season_envelope_plausibility" },
+                "title": { "type": "string", "pattern": "plausibility, not validation" },
+                "scope": { "type": "string", "minLength": 1 },
+                "statistics": { "$ref": "#/$defs/fileReference" },
+                "use": { "type": "string", "pattern": "not a validation" },
+                "tuning_rule": { "type": "string", "minLength": 1 },
+                "urls": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^https://" } }
+              }
+            },
+            "else": { "required": ["observed", "reported_km2", "reported_text", "model_km2"] }
+          }
+        ]
+      }
+    },
+    "season_envelope": {
+      "description": "A season-long agency extent shown as a scenario layer (lane SCN-ENV), never as an observation for a replay day. Its files keep their own folder and licence; the manifest names them by address, hash and size only, and holds no figure derived from the product.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "lane", "evidence_tier", "shown", "label", "caption", "standard_sentence", "day_independent", "day_rule", "temporal_relation", "season_window",
+        "source_timestamp", "licence", "licence_url", "credit", "map_credit", "rights_record", "confidence", "confidence_reason", "assumptions", "urls",
+        "files_rule", "files"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "lane": { "const": "SCN-ENV" },
+        "evidence_tier": { "type": "string", "minLength": 1 },
+        "shown": { "const": true },
+        "label": { "type": "string", "pattern": "^Scenario \\(SCN-ENV\\)" },
+        "caption": { "type": "string", "pattern": "not an observation for any replay day" },
+        "standard_sentence": { "description": "Shown in the caption under the map whenever the layer is visible: the product is preliminary, used as provided, and FloodGuard did not validate it.", "type": "string", "pattern": "did not validate" },
+        "day_independent": { "description": "No replay day selects the layer; it has a toggle of its own.", "const": true },
+        "day_rule": { "type": "string", "minLength": 1 },
+        "temporal_relation": { "const": "season_envelope" },
+        "season_window": { "type": "string", "minLength": 1 },
+        "source_timestamp": { "type": "string", "minLength": 1 },
+        "licence": { "const": "CC BY-SA 4.0" },
+        "licence_url": { "type": "string", "pattern": "^https://" },
+        "credit": { "type": "string", "minLength": 1 },
+        "map_credit": { "description": "Added to the map credit whenever the layer is visible: the holders the credit begins with, and the licence. An exported PNG or video carries the full credit, the licence and a change note instead.", "type": "string", "pattern": "^[^·]*[A-Za-z][^·]*· CC BY-SA 4\\.0$" },
+        "rights_record": { "type": "string", "minLength": 1 },
+        "rights_note": { "type": "string", "minLength": 1 },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "confidence_reason": { "type": "string", "minLength": 1 },
+        "assumptions": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "urls": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^https://" } },
+        "files_rule": { "type": "string", "minLength": 1 },
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["raster", "statistics", "licence"],
+          "properties": {
+            "raster": { "$ref": "#/$defs/fileReference" },
+            "statistics": { "$ref": "#/$defs/fileReference" },
+            "licence": { "$ref": "#/$defs/fileReference" }
           }
         }
       }
@@ -323,6 +630,150 @@
           "items": {
             "allOf": [{ "$ref": "#/$defs/hashedAsset" }],
             "required": ["date", "nominal_local_time", "t", "cloud_share", "clear_km2"]
+          }
+        }
+      }
+    },
+    "s2_crosscheck": {
+      "description": "Sentinel-2 water check: water or saturated mud (MNDWI above 0) on the clear pixels of a scene before the flood and of the first scene after the river fell, with the model placed beside the later scene. The scene and change figures are observed (lane OBS); model_at_event_scene and the model_ field of each sensitivity row are T1 scenario (model) values, which the evidence block lists as scenario_fields. The comparison is indicative.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product", "licence", "attribution", "label", "confidence", "confidence_reason", "source_timestamp", "index", "water_rule", "clear_rule",
+        "permanent_water_rule", "scope", "comparison", "comparison_rule", "caveat", "reading", "model_fields", "assumptions", "resolution_m",
+        "threshold", "district_km2", "permanent_water_km2", "scenes", "change", "model_at_event_scene", "sensitivity"
+      ],
+      "properties": {
+        "product": { "type": "string", "minLength": 1 },
+        "licence": { "type": "string", "minLength": 1 },
+        "attribution": { "type": "string", "minLength": 1 },
+        "label": { "const": "water or saturated mud" },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "confidence_reason": { "type": "string", "minLength": 1 },
+        "source_timestamp": {
+          "description": "Acquisition times of the two scenes, earlier/later, in UTC; each scene repeats its own.",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z/\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "index": { "type": "string", "minLength": 1 },
+        "water_rule": { "type": "string", "minLength": 1 },
+        "clear_rule": { "type": "string", "minLength": 1 },
+        "permanent_water_rule": { "type": "string", "minLength": 1 },
+        "scope": { "type": "string", "minLength": 1 },
+        "comparison": { "description": "The comparison with the model is indicative, never a validation.", "const": "indicative" },
+        "comparison_rule": { "type": "string", "minLength": 1 },
+        "caveat": { "type": "string", "minLength": 1 },
+        "reading": {
+          "description": "What the observation is consistent with. It states no cause, and no land cover: no land-cover map is an input.",
+          "type": "string",
+          "pattern": "consistent with",
+          "not": { "pattern": "[Ee]xplain|on fields|paddy|cropland" }
+        },
+        "following_day": {
+          "description": "Present when the next VIIRS day with clear sky (viirs_daily.days, by date) shows less flood water than the model: what that is consistent with for the day of the scene. The figures stay in viirs_daily.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["viirs_date", "reading"],
+          "properties": {
+            "viirs_date": { "type": "string", "format": "date" },
+            "reading": { "type": "string", "pattern": "consistent with", "not": { "pattern": "[Ee]xplain|on fields|paddy|cropland" } }
+          }
+        },
+        "model_fields": {
+          "description": "Which parts of the block are model output placed beside the observation (the evidence block lists them as scenario_fields).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paths", "evidence_tier", "note"],
+          "properties": {
+            "paths": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "evidence_tier": { "const": "T1 scenario (model)" },
+            "note": { "type": "string", "minLength": 1 }
+          }
+        },
+        "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "resolution_m": { "type": "number", "exclusiveMinimum": 0 },
+        "threshold": { "type": "number" },
+        "district_km2": { "type": "number", "exclusiveMinimum": 0 },
+        "permanent_water_km2": { "type": "number", "minimum": 0 },
+        "scenes": {
+          "description": "The scene before the flood, then the event scene. With nothing clear a water area is null: not observed, which is not zero.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "role", "scene", "source_timestamp", "local_time", "clear_km2", "clear_share", "water_km2", "scl_class_km2"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "role": { "enum": ["pre_event", "event"] },
+              "scene": { "type": "string", "minLength": 1 },
+              "source_timestamp": { "type": "string", "format": "date-time" },
+              "local_time": { "type": "string", "format": "date-time" },
+              "clear_km2": { "type": "number", "minimum": 0 },
+              "clear_share": { "type": "number", "minimum": 0, "maximum": 1 },
+              "water_km2": { "type": ["number", "null"], "minimum": 0 },
+              "scl_class_km2": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } }
+            }
+          }
+        },
+        "change": {
+          "description": "Water or saturated mud where both scenes are clear: on each date, new on the event date, and no longer there.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pre_event_scene", "event_scene", "both_clear_km2", "event_water_km2", "pre_event_water_km2", "new_water_km2", "no_longer_water_km2"],
+          "properties": {
+            "pre_event_scene": { "type": "string", "minLength": 1 },
+            "event_scene": { "type": "string", "minLength": 1 },
+            "both_clear_km2": { "type": "number", "minimum": 0 },
+            "event_water_km2": { "type": ["number", "null"], "minimum": 0 },
+            "pre_event_water_km2": { "type": ["number", "null"], "minimum": 0 },
+            "new_water_km2": { "type": ["number", "null"], "minimum": 0 },
+            "no_longer_water_km2": { "type": ["number", "null"], "minimum": 0 }
+          }
+        },
+        "model_at_event_scene": {
+          "description": "T1 scenario (model): the modelled out-of-channel water at the acquisition time of the event scene, in the district, in the pixels the scene saw clearly and in the pixels both scenes saw clearly (the figure to set beside change.new_water_km2), and how far it coincides with the observed area. Every key starts with model_.",
+          "type": "object",
+          "additionalProperties": false,
+          "propertyNames": { "pattern": "^model_" },
+          "required": [
+            "model_local_time", "model_t", "model_stage_m", "model_flood_km2_district", "model_flood_km2_clear", "model_flood_km2_both_clear",
+            "model_overlap_km2", "model_union_km2", "model_agreement_iou", "model_share_of_observed_water_reached",
+            "model_share_inside_observed_water"
+          ],
+          "properties": {
+            "model_local_time": { "type": "string", "format": "date-time" },
+            "model_t": { "type": "number", "minimum": 0 },
+            "model_stage_m": { "type": "number", "minimum": 0 },
+            "model_flood_km2_district": { "type": "number", "minimum": 0 },
+            "model_flood_km2_clear": { "type": "number", "minimum": 0 },
+            "model_flood_km2_both_clear": { "type": "number", "minimum": 0 },
+            "model_overlap_km2": { "type": "number", "minimum": 0 },
+            "model_union_km2": { "type": "number", "minimum": 0 },
+            "model_agreement_iou": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "model_share_of_observed_water_reached": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "model_share_inside_observed_water": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+          }
+        },
+        "sensitivity": {
+          "description": "The same figures under a stricter clear rule and under stricter thresholds.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "rule", "event_clear_share", "event_water_km2", "pre_event_clear_share", "pre_event_water_km2", "new_water_km2", "model_agreement_iou"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              "rule": { "type": "string", "minLength": 1 },
+              "event_clear_share": { "type": "number", "minimum": 0, "maximum": 1 },
+              "event_water_km2": { "type": ["number", "null"], "minimum": 0 },
+              "pre_event_clear_share": { "type": "number", "minimum": 0, "maximum": 1 },
+              "pre_event_water_km2": { "type": ["number", "null"], "minimum": 0 },
+              "new_water_km2": { "type": ["number", "null"], "minimum": 0 },
+              "model_agreement_iou": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+            }
           }
         }
       }
@@ -378,6 +829,61 @@
         "bytes": { "type": "integer", "minimum": 1 }
       }
     },
+    "fileReference": {
+      "description": "A file named by address, SHA-256 and size, and by nothing else.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["href", "sha256", "bytes"],
+      "properties": {
+        "href": { "type": "string", "pattern": "^/studies/[A-Za-z0-9._/-]+$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "capacityBound": {
+      "description": "One capacity bound of a plan row: the site's capacity under that bound, the residents it adds (load, never above capacity), the running total served and overflow = demand_people - served.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capacity", "load", "served", "overflow"],
+      "properties": {
+        "capacity": { "type": "integer", "minimum": 0 },
+        "load": { "type": "integer", "minimum": 0 },
+        "served": { "type": "integer", "minimum": 0 },
+        "overflow": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "capacityTotal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capacity", "served", "overflow"],
+      "properties": {
+        "capacity": { "type": "integer", "minimum": 0 },
+        "served": { "type": "integer", "minimum": 0 },
+        "overflow": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "capacityRow": {
+      "description": "One site of a ranking counted with capacity. No other key is allowed: no participation share and no listed capacity.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "capacity_est", "capacity_basis", "upper_capacity_basis", "lower", "upper"],
+      "properties": {
+        "candidate_id": { "type": "string", "pattern": "^C[0-9]{3}$" },
+        "capacity_est": { "type": ["integer", "null"], "minimum": 1 },
+        "capacity_basis": { "enum": ["OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified", "unknown"] },
+        "upper_capacity_basis": { "enum": ["estimate", "kind_median", "all_kinds_median", "none"] },
+        "within_reach": { "type": "integer", "minimum": 0 },
+        "lower": { "$ref": "#/$defs/capacityBound" },
+        "upper": { "$ref": "#/$defs/capacityBound" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "capacity_est": { "type": "null" } } },
+          "then": { "properties": { "capacity_basis": { "const": "unknown" }, "lower": { "properties": { "capacity": { "const": 0 }, "load": { "const": 0 } } } } },
+          "else": { "properties": { "capacity_basis": { "const": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified" }, "upper_capacity_basis": { "const": "estimate" } } }
+        }
+      ]
+    },
     "lane": {
       "description": "SCN scenario (model); OBS observed; CAL calibration (used or known during tuning); SCN-ENV season envelope scenario; REP reported; CTX static context; REF cited, not ingested.",
       "enum": ["SCN", "OBS", "CAL", "SCN-ENV", "REP", "CTX", "REF"]
@@ -407,7 +913,8 @@
             "season_envelope",
             "post_event_compilation",
             "static_context",
-            "not_ingested"
+            "not_ingested",
+            "what_if_levels"
           ]
         },
         "source_timestamp": { "type": "string", "minLength": 1 },

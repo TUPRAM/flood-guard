@@ -209,12 +209,23 @@ if (caseReplay.assets.some((asset) => workerCore.includes(asset.url))) throw new
 if (!serviceWorker.includes('"FLOODGUARD_CACHE_CASE_REPLAY"') || !serviceWorker.includes('"FLOODGUARD_CASE_REPLAY_STATUS"')) {
   throw new Error("Service worker cannot save the case replay on request");
 }
-for (const asset of caseReplay.assets) {
+for (const asset of [...caseReplay.assets, ...caseReplay.exports.assets]) {
   const body = readFileSync(resolve(out, asset.url.slice(1)));
   if (createHash("sha256").update(body).digest("hex") !== asset.sha256 || body.byteLength !== asset.bytes) {
     throw new Error(`Case-replay file differs from its manifest: ${asset.url}`);
   }
 }
+// The export pack (download files) is a second deferred list with its own byte total: never in the blocking
+// installation, never in the replay's precache set, and saved by the same request as the replay data.
+const workerCaseReplayExports = serviceWorker.match(/const OPTIONAL_CASE_REPLAY_EXPORTS = (\[[^;]*\]);/)?.[1];
+if (!workerCaseReplayExports || JSON.stringify(JSON.parse(workerCaseReplayExports)) !== JSON.stringify(caseReplay.exports.assets.map(({ url, sha256 }) => ({ url, sha256 })))) {
+  throw new Error("Service worker's case-replay export files do not match the manifest inventory");
+}
+if (caseReplay.exports.assets.length === 0) throw new Error("The case replay ships no export pack");
+if (caseReplay.exports.assets.some((asset) => workerCore.includes(asset.url) || caseReplay.assets.some((data) => data.url === asset.url))) {
+  throw new Error("A case-replay export file was added to blocking installation or to the replay's precache set");
+}
+if (caseReplay.exports.bytes > caseReplay.exports.budget_bytes) throw new Error("The case-replay export pack is over its budget");
 
 const proposalEvidencePath = resolve(out, "proposal-evidence.json");
 if (existsSync(proposalEvidencePath)) {
@@ -231,4 +242,4 @@ if (existsSync(proposalEvidencePath)) {
   }
 }
 
-console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in); internal safety contracts retained and no external runtime resources`);
+console.log(`offline smoke: ${routeFiles.length} polished routes and ${requiredPublicAssets.length} core assets verified; case replay route precached with ${caseReplay.assets.length} deferred data files (${(caseReplay.bytes / 1e6).toFixed(1)} MB, opt-in) and ${caseReplay.exports.assets.length} export files (${(caseReplay.exports.bytes / 1e6).toFixed(2)} MB of a ${(caseReplay.exports.budget_bytes / 1e6).toFixed(1)} MB export budget); internal safety contracts retained and no external runtime resources`);

@@ -119,6 +119,15 @@
 .legendPending { max-width: 16rem; margin: .4rem 0 0; color: #815313; font-size: .68rem; font-weight: 600; line-height: 1.4; }
 /* VIIRS pixels are ~375 m; keep them square instead of smoothing them into a false level of detail. */
 .viirsLayer { image-rendering: crisp-edges; image-rendering: pixelated; }
+/* Season envelope (scenario): a chip on the map and a caption under it while the layer is visible. The chip carries the
+   same hatched key as the legend, so the layer is named by its pattern, not by a colour alone. It sits in the bottom
+   stack (.mapFoot), which is never clipped or hidden: the notes column gives way on phones, the chip must not. */
+.envelopeChip { display: inline-flex; align-items: center; gap: .4rem; margin: 0; padding: .4rem .65rem; border-left: 4px solid #ffcc00; border-radius: .5rem; background: rgb(38 30 0 / 90%); color: #fff; font-size: .72rem; font-weight: 700; line-height: 1.4; }
+.envelopeSwatch { display: inline-block; flex: none; width: 16px; height: 12px; border-radius: 2px; background-color: #fff; box-shadow: inset 0 0 0 1px rgb(12 39 64 / 30%); }
+/* The layer's canvas: the hatch is repainted per zoom in whole raster cells, so plain smoothing is enough. */
+.envelopeLayer { image-rendering: auto; }
+.envelopeCaption { margin: 0; padding: .55rem .9rem; border-top: 1px solid #f0e3ad; background: #fffaf0; color: #3d3210; font-size: .76rem; line-height: 1.5; }
+.envelopeCaption a { color: inherit; font-weight: 650; }
 .mapStatus { position: absolute; z-index: 900; top: .75rem; left: 50%; transform: translateX(-50%); margin: 0; padding: .45rem .8rem; border-radius: 999px; background: #fff; color: #17253b; font-size: .78rem; font-weight: 600; box-shadow: 0 4px 16px rgb(15 23 42 / 16%); white-space: nowrap; }
 .mapWarning { background: #fff4dd; color: #815313; white-space: normal; max-width: calc(100% - 2rem); text-align: center; }
 .tooltip { display: grid; gap: .15rem; min-width: 180px; max-width: 260px; white-space: normal; line-height: 1.45; }
@@ -365,6 +374,22 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .planList .linkButton { justify-self: start; min-height: 28px; padding: 0; }
 .planRank { flex: none; display: inline-grid; place-items: center; min-width: 1.45rem; height: 1.45rem; border-radius: 50%; background: #0b6e4f; color: #fff; font-size: .7rem; font-weight: 800; }
 .shortfall { color: #b3261e; }
+/* Capacity-aware view and what-if levels inside the plan card: the same table as the set comparison, no row styled as a winner. */
+.capacityAware, .whatIf { margin-top: 1rem; padding-top: .2rem; border-top: 1px solid #e5eaf2; }
+.capacityAware .setCompare thead td { width: 44%; }
+.whatIf .setCompare thead td { width: 37%; }
+/* A note under a column heading: the heading's own size, never the browser's "smaller" (9.3 px under a .7rem heading). */
+.whatIf .setCompare thead th small, .capacityAware .setCompare thead th small { display: block; font-size: 1em; font-weight: 600; }
+.capacitySites { margin-top: .6rem; font-size: .78rem; }
+.capacitySites > summary { min-height: 28px; cursor: pointer; font-weight: 700; color: #17253b; }
+.capacitySites .routeFigures { color: #223650; }
+.capacityCaveats { margin: .6rem 0 0; padding: .5rem .65rem .5rem 1.6rem; border-left: 3px solid #d19a00; border-radius: .35rem; background: #fdf8ea; color: #4a3a12; font-size: .76rem; line-height: 1.5; }
+.capacityCaveats li + li { margin-top: .2rem; }
+.robustBadge { justify-self: start; display: inline-flex; padding: .12rem .45rem; border-radius: .35rem; background: #e3f1ea; color: #0a5a41; font-size: .72rem; font-weight: 650; }
+/* What a local checker reported for a site; "no" is marked because the ranking above still lists the site. */
+.checkBadge { justify-self: start; display: block; padding: .15rem .45rem; border-radius: .35rem; background: #eef3fb; color: #223650; font-size: .74rem; font-weight: 600; line-height: 1.45; }
+.checkBadge[data-usable="no"] { background: #fdecea; color: #8c1d18; }
+.checkBadge .muted { font-size: inherit; font-weight: 500; color: inherit; }
 .reportedList { display: grid; gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; }
 .reportedList > li { border: 1px solid #ecdfb8; border-left: 4px solid #d19a00; border-radius: .5rem; background: #fffbef; }
 .reportedList details { padding: .5rem .7rem; font-size: .78rem; line-height: 1.5; }
@@ -477,7 +502,10 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 /* Desktop: the map, its readout and timeline stay in view beside the analysis cards (the page header scrolls away). */
 @media (min-width: 1081px) {
   .stage { position: sticky; top: 12px; }
-  .mapFrame { height: clamp(360px, calc(100vh - 264px), 760px); }
+  /* While the season envelope's caption is shown under the map, the map gives up the caption's measured height
+     (--fg-envelope-caption-h), so the sticky stage still ends inside the window and the timeline's day buttons stay
+     in view. The map may then go below 360 px, but never below 220 px (a 615 px tall window then still has room to spare). */
+  .mapFrame { height: clamp(max(220px, calc(360px - var(--fg-envelope-caption-h, 0px))), calc(100vh - 264px - var(--fg-envelope-caption-h, 0px)), 760px); }
   .momentLine { display: none; }
 }
 /* The narrow end of the two-column layout (a 1366 px laptop at 125 % is 1093 px wide): the cards column narrows to

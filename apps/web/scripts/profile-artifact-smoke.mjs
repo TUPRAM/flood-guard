@@ -21,7 +21,7 @@ if (JSON.stringify(deployment.included_surfaces) !== JSON.stringify(expectedSurf
 }
 
 const serviceWorker = readText("sw.js");
-for (const token of ["__BUILD__", "__APP_PROFILE__", "__CACHE_CREATED_AT__", "__PROFILE_CORE_ASSETS__", "__OPTIONAL_LANDING_ARTWORK__", "__OPTIONAL_CASE_REPLAY__"]) {
+for (const token of ["__BUILD__", "__APP_PROFILE__", "__CACHE_CREATED_AT__", "__PROFILE_CORE_ASSETS__", "__OPTIONAL_LANDING_ARTWORK__", "__OPTIONAL_CASE_REPLAY__", "__OPTIONAL_CASE_REPLAY_EXPORTS__"]) {
   if (serviceWorker.includes(token)) throw new Error(`Finalized service worker retains ${token}`);
 }
 if (!serviceWorker.includes(`const APP_PROFILE = "${profile}"`)) throw new Error("Service worker profile is incorrect.");
@@ -87,7 +87,9 @@ function validatePublicProduction() {
   ]) {
     if (existsSync(resolve(out, excluded))) throw new Error(`Public profile shipped excluded artifact: ${excluded}`);
   }
-  if (!serviceWorker.includes("const OPTIONAL_CASE_REPLAY = [];")) throw new Error("Public service worker carries case-replay files.");
+  if (!serviceWorker.includes("const OPTIONAL_CASE_REPLAY = [];") || !serviceWorker.includes("const OPTIONAL_CASE_REPLAY_EXPORTS = [];")) {
+    throw new Error("Public service worker carries case-replay files.");
+  }
 
   const rootHtml = readText("index.html");
   if (!/class="[^"]*\bpublic-page\b[^"]*"/i.test(rootHtml)) throw new Error("Public root does not render the Public experience.");
@@ -201,7 +203,11 @@ function validateCompetition() {
   if (!workerReplay || JSON.stringify(JSON.parse(workerReplay)) !== JSON.stringify(caseReplay.assets.map(({ url, sha256 }) => ({ url, sha256 })))) {
     throw new Error("The worker's deferred case-replay files do not match the built manifest inventory.");
   }
-  for (const asset of caseReplay.assets) {
+  const workerExports = serviceWorker.match(/const OPTIONAL_CASE_REPLAY_EXPORTS = (\[[^;]*\]);/)?.[1];
+  if (!workerExports || JSON.stringify(JSON.parse(workerExports)) !== JSON.stringify(caseReplay.exports.assets.map(({ url, sha256 }) => ({ url, sha256 })))) {
+    throw new Error("The worker's case-replay export files do not match the built manifest inventory.");
+  }
+  for (const asset of [...caseReplay.assets, ...caseReplay.exports.assets]) {
     const body = readFileSync(resolve(out, asset.url.slice(1)));
     if (createHash("sha256").update(body).digest("hex") !== asset.sha256 || body.byteLength !== asset.bytes) throw new Error(`Case-replay file lacks build integrity: ${asset.url}`);
   }

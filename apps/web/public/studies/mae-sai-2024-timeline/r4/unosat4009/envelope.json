@@ -1,0 +1,363 @@
+{
+ "schema": "floodguard.season_envelope.v1",
+ "id": "unosat-4009",
+ "study_id": "mae-sai-2024-flood-timeline",
+ "revision": "r4",
+ "generated_by": "scripts/mae_sai_timeline_unosat4009.py",
+ "generated_at": "2026-10-02T20:59:00+07:00",
+ "lane": "SCN-ENV",
+ "evidence_tier": "Season envelope (scenario), used as provided; unvalidated",
+ "temporal_relation": "season_envelope",
+ "season_window": "2024-08-01/2024-10-22",
+ "source_timestamp": "2024-08-01/2024-10-22",
+ "not_an_observation_for_any_replay_day": true,
+ "label": "Scenario (SCN-ENV): 2024 season envelope",
+ "caption": "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct); includes August and early-October water; not an observation for any replay day. Clipped to Mae Sai district and rasterised to the replay grid by FloodGuard.",
+ "standard_sentence": "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+ "source": {
+  "name": "UNOSAT and GISTDA water extents, 1 August to 22 October 2024, Chiang Rai Province, Thailand (UNOSAT product 4009, event code FL20240912THA)",
+  "product_url": "https://unosat.org/products/4009",
+  "dataset_url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
+  "event_code": "FL20240912THA",
+  "layer": "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+  "layer_name_ends": "2024-10-12",
+  "product_described_to": "2024-10-22",
+  "field_validation": 0,
+  "archive": {
+   "file_name": "FL20240912THA_GDB.zip",
+   "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85",
+   "bytes": 27977189
+  }
+ },
+ "licence": {
+  "name": "CC BY-SA 4.0",
+  "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+  "spdx_id": "CC-BY-SA-4.0",
+  "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+ },
+ "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+ "map_credit": "UNOSAT and GISTDA · CC BY-SA 4.0",
+ "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+ "other_inputs_note": "envelope.json also holds figures that come from the open data below. Each keeps its own credit and licence: give these credits as well when you reuse the file. The licence and the credit above cover what comes from product 4009. This is a caution, not legal advice.",
+ "other_inputs": [
+  {
+   "id": "copernicus-dem",
+   "name": "Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)",
+   "licence": "Copernicus DEM licence (free, attribution)",
+   "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA",
+   "timestamp": "2021 release (DSM from 2011-2015 acquisitions)",
+   "used_for": "The modelled water set beside the envelope: model_stage_m, model_km2, model_only_km2, the overlap, the union and the three ratios, the low-confidence areas and on_mapped_channels_km2. Model output on a terrain model (T1 scenario), not an observation."
+  },
+  {
+   "id": "worldpop",
+   "name": "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)",
+   "licence": "CC BY 4.0",
+   "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+   "timestamp": "2020 estimate",
+   "used_for": "residents_in_envelope, residents_in_envelope_replay_rule and model_residents_in_water: modelled population estimates for 2020, not a census count."
+  },
+  {
+   "id": "cod-ab",
+   "name": "HDX Thailand COD-AB subdistrict boundaries v01",
+   "licence": "CC BY-IGO",
+   "attribution": "OCHA / HDX Thailand COD-AB",
+   "timestamp": "valid from 2022-01-22",
+   "used_for": "The district clip, the subdistrict ids, tambon_km2 and share_of_tambon."
+  }
+ ],
+ "rights_record": {
+  "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+  "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+  "confirmed_on": "2026-10-02"
+ },
+ "change_notice": "Changed by FloodGuard: clipped to Mae Sai district (the eight subdistricts of HDX Thailand COD-AB v01); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:3857; rasterised to about 15 m cells. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+ "changes": {
+  "clip_geometry": "the eight subdistricts of HDX Thailand COD-AB v01",
+  "repair": {
+   "method": "make_valid",
+   "source_parts": 896,
+   "source_parts_invalid": 42,
+   "parts_meeting_district": 86,
+   "parts_repaired": 3,
+   "note": "Only the polygon parts whose bounding box meets Mae Sai district are repaired and clipped; parts_repaired counts the invalid ones among them."
+  },
+  "source_crs": "EPSG:4326",
+  "raster_crs": "EPSG:3857",
+  "statistics_crs": "EPSG:32647"
+ },
+ "raster": {
+  "file": "envelope.png",
+  "sha256": "148f0a41fb078e2d51ac443a7eda386edd7ad311338bd8121b17a84f7fd2831f",
+  "bytes": 16947,
+  "width": 1610,
+  "height": 1753,
+  "bit_depth": 1,
+  "encoding": "1 = inside the season envelope, 0 = outside; a cell is inside when its centre is",
+  "crs": "EPSG:3857",
+  "bounds": [
+   [
+    20.255543,
+    99.808141
+   ],
+   [
+    20.491672,
+    100.039491
+   ]
+  ],
+  "cell_size_m": 15.0,
+  "grid": "The replay's water grid (same size and bounds as the modelled water raster)."
+ },
+ "area": {
+  "grid": "Counted on the replay's 10 m grid, a cell counting when its centre is inside the clipped layer.",
+  "district_km2": 77.74,
+  "district_vector_km2": 77.73,
+  "on_mapped_channels_km2": 1.45,
+  "by_tambon": {
+   "TH570901": {
+    "envelope_km2": 12.498,
+    "tambon_km2": 21.56,
+    "share_of_tambon": 0.58
+   },
+   "TH570902": {
+    "envelope_km2": 0.0,
+    "tambon_km2": 44.34,
+    "share_of_tambon": 0.0
+   },
+   "TH570903": {
+    "envelope_km2": 22.292,
+    "tambon_km2": 47.41,
+    "share_of_tambon": 0.47
+   },
+   "TH570904": {
+    "envelope_km2": 6.392,
+    "tambon_km2": 43.62,
+    "share_of_tambon": 0.147
+   },
+   "TH570905": {
+    "envelope_km2": 21.641,
+    "tambon_km2": 41.89,
+    "share_of_tambon": 0.517
+   },
+   "TH570906": {
+    "envelope_km2": 0.145,
+    "tambon_km2": 30.34,
+    "share_of_tambon": 0.005
+   },
+   "TH570908": {
+    "envelope_km2": 10.382,
+    "tambon_km2": 33.78,
+    "share_of_tambon": 0.307
+   },
+   "TH570909": {
+    "envelope_km2": 4.388,
+    "tambon_km2": 42.61,
+    "share_of_tambon": 0.103
+   }
+  }
+ },
+ "comparison": {
+  "role": "season_envelope_plausibility",
+  "title": "Season envelope comparison (scenario; plausibility, not validation)",
+  "use": "Plausibility against a season envelope, not a validation. The envelope also holds August and early-October water and the modelled peak is illustrative, so the figures say where the two differ, not which one is right.",
+  "scope": "The eight Mae Sai subdistricts.",
+  "rule": "Both masks are counted on the replay's 10 m grid inside the eight Mae Sai subdistricts and outside mapped drainage channels, the rule of every flooded area in the replay. agreement_iou is the overlap divided by the union; containment_model_in_envelope is the share of the modelled water inside the envelope; containment_envelope_in_model is the share of the envelope the modelled water reaches.",
+  "change_notice": "Changed by FloodGuard: clipped to Mae Sai district (the eight subdistricts of HDX Thailand COD-AB v01); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:32647; rasterised to 10 m cells. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0. The cells were then counted, and compared with the replay's modelled water, to make this table.",
+  "model_fields": {
+   "evidence_tier": "T1 scenario (model)",
+   "note": "model_stage_m, model_km2, model_only_km2, model_residents_in_water and the low-confidence areas are model output on the reconstructed water; envelope_km2, envelope_only_km2 and the two counts of residents in the envelope come from the season envelope; the overlap and the three ratios use both."
+  },
+  "district": [
+   {
+    "id": "modelled_peak",
+    "model_stage_m": 3.5,
+    "model_extent": "The modelled peak (illustrative stage, 12 Sep 2024)",
+    "model_km2": 88.7,
+    "envelope_km2": 76.29,
+    "overlap_km2": 53.7,
+    "union_km2": 111.29,
+    "model_only_km2": 35.0,
+    "envelope_only_km2": 22.59,
+    "agreement_iou": 0.483,
+    "containment_model_in_envelope": 0.605,
+    "containment_envelope_in_model": 0.704
+   },
+   {
+    "id": "largest_extent_13_19_sep",
+    "model_stage_m": 2.65,
+    "model_extent": "Largest modelled extent within 13-19 Sep ICT",
+    "model_km2": 72.23,
+    "envelope_km2": 76.29,
+    "overlap_km2": 46.62,
+    "union_km2": 101.9,
+    "model_only_km2": 25.62,
+    "envelope_only_km2": 29.67,
+    "agreement_iou": 0.457,
+    "containment_model_in_envelope": 0.645,
+    "containment_envelope_in_model": 0.611
+   }
+  ],
+  "by_tambon_stage": "modelled_peak",
+  "by_tambon": [
+   {
+    "tambon_id": "TH570901",
+    "model_km2": 9.67,
+    "envelope_km2": 12.23,
+    "overlap_km2": 6.62,
+    "union_km2": 15.28,
+    "model_only_km2": 3.05,
+    "envelope_only_km2": 5.61,
+    "agreement_iou": 0.433,
+    "containment_model_in_envelope": 0.685,
+    "containment_envelope_in_model": 0.541
+   },
+   {
+    "tambon_id": "TH570902",
+    "model_km2": 1.58,
+    "envelope_km2": 0.0,
+    "overlap_km2": 0.0,
+    "union_km2": 1.58,
+    "model_only_km2": 1.58,
+    "envelope_only_km2": 0.0,
+    "agreement_iou": 0.0,
+    "containment_model_in_envelope": 0.0,
+    "containment_envelope_in_model": null
+   },
+   {
+    "tambon_id": "TH570903",
+    "model_km2": 15.95,
+    "envelope_km2": 21.91,
+    "overlap_km2": 10.36,
+    "union_km2": 27.5,
+    "model_only_km2": 5.59,
+    "envelope_only_km2": 11.55,
+    "agreement_iou": 0.377,
+    "containment_model_in_envelope": 0.65,
+    "containment_envelope_in_model": 0.473
+   },
+   {
+    "tambon_id": "TH570904",
+    "model_km2": 12.53,
+    "envelope_km2": 6.32,
+    "overlap_km2": 5.38,
+    "union_km2": 13.47,
+    "model_only_km2": 7.15,
+    "envelope_only_km2": 0.94,
+    "agreement_iou": 0.399,
+    "containment_model_in_envelope": 0.429,
+    "containment_envelope_in_model": 0.851
+   },
+   {
+    "tambon_id": "TH570905",
+    "model_km2": 23.0,
+    "envelope_km2": 21.2,
+    "overlap_km2": 17.48,
+    "union_km2": 26.72,
+    "model_only_km2": 5.52,
+    "envelope_only_km2": 3.72,
+    "agreement_iou": 0.654,
+    "containment_model_in_envelope": 0.76,
+    "containment_envelope_in_model": 0.825
+   },
+   {
+    "tambon_id": "TH570906",
+    "model_km2": 0.72,
+    "envelope_km2": 0.13,
+    "overlap_km2": 0.08,
+    "union_km2": 0.78,
+    "model_only_km2": 0.65,
+    "envelope_only_km2": 0.06,
+    "agreement_iou": 0.098,
+    "containment_model_in_envelope": 0.106,
+    "containment_envelope_in_model": 0.571
+   },
+   {
+    "tambon_id": "TH570908",
+    "model_km2": 20.41,
+    "envelope_km2": 10.15,
+    "overlap_km2": 9.89,
+    "union_km2": 20.67,
+    "model_only_km2": 10.52,
+    "envelope_only_km2": 0.26,
+    "agreement_iou": 0.478,
+    "containment_model_in_envelope": 0.485,
+    "containment_envelope_in_model": 0.974
+   },
+   {
+    "tambon_id": "TH570909",
+    "model_km2": 4.85,
+    "envelope_km2": 4.35,
+    "overlap_km2": 3.9,
+    "union_km2": 5.29,
+    "model_only_km2": 0.95,
+    "envelope_only_km2": 0.45,
+    "agreement_iou": 0.736,
+    "containment_model_in_envelope": 0.804,
+    "containment_envelope_in_model": 0.897
+   }
+  ],
+  "disagreement": {
+   "minimum_km2": 0.5,
+   "envelope_water_the_model_lacks": [
+    "TH570903",
+    "TH570901",
+    "TH570905"
+   ],
+   "modelled_water_outside_the_envelope": [
+    "TH570908",
+    "TH570904",
+    "TH570903"
+   ]
+  },
+  "low_confidence": {
+   "model_stage": "modelled_peak",
+   "low_confidence_model_km2": 14.02,
+   "other_model_km2": 74.69,
+   "share_inside_envelope_low_confidence": 0.593,
+   "share_inside_envelope_other": 0.608
+  },
+  "land_cover": {
+   "computed": false,
+   "reason": "Not computed: no land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland."
+  },
+  "residents": {
+   "residents_in_envelope": 17927,
+   "residents_in_envelope_replay_rule": 17344,
+   "model_residents_in_water": 16060,
+   "model_stage": "modelled_peak",
+   "source": "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)",
+   "scope": "District total only.",
+   "rule": "WorldPop 2020 cells (about 100 m) whose centre lies inside the clipped envelope, inside the eight subdistricts: the exposure definition stated for the planning overlay. Modelled estimates, not a census count and not the 2024 population.",
+   "replay_rule": "Residents on envelope cells outside mapped channels, inside the eight subdistricts: the replay's exposure rule (WorldPop 2020 spread evenly over 10 m cells), the rule of model_residents_in_water. Modelled estimates, not a census count and not the 2024 population.",
+   "rules_note": "The two counts of residents inside the envelope differ because the rules differ (whole 100 m cells by their centre, against 10 m cells with mapped channels left out). Set residents_in_envelope_replay_rule, not residents_in_envelope, beside model_residents_in_water."
+  },
+  "tuning": {
+   "relation": "computed_after_keyframes_final",
+   "statement": "The comparison was computed after the stage keyframes were final and was not used for tuning.",
+   "rule": "No keyframe or elevation change is tuned to product 4009 afterwards; if one is, this comparison is relabelled as calibration."
+  }
+ },
+ "confidence": "low",
+ "confidence_reason": "A preliminary agency product that was not checked in the field, set beside an illustrative model: the envelope spans August to October with no date per patch, and the modelled stages come from no gauge record.",
+ "assumptions": [
+  "The envelope is used as provided: a preliminary agency product that was not checked in the field (Field_Validation=0). FloodGuard did not validate it.",
+  "The envelope holds water mapped at some time from August to October 2024, with no date per patch. It includes August and early-October water, so it is not the water of 9 to 19 September.",
+  "The modelled peak is illustrative (no gauge record), so the comparison says where the two differ, not which one is right.",
+  "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.",
+  "Both masks are counted on the replay's 10 m grid inside the eight Mae Sai subdistricts and outside mapped drainage channels, the rule of every flooded area in the replay.",
+  "Residents are WorldPop 2020 modelled estimates, counted by two rules that the file names (100 m cells by their centre, and the replay's 10 m cells with mapped channels left out): not a census count and not the 2024 population.",
+  "No land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland.",
+  "The comparison was computed after the stage keyframes were final and was not used for tuning."
+ ],
+ "limitations": [
+  "Not an observation for any replay day: the layer has no date per patch and no replay day selects it.",
+  "The layer's name ends 12 October 2024, while the product is described to 22 October 2024.",
+  "The third-party satellite imagery UNOSAT and GISTDA used to make the product is not relicensed by these files.",
+  "UNOSAT and GISTDA do not endorse FloodGuard or its use of the product.",
+  "Not an official warning and not legal advice; for preparedness learning and planning exercises only."
+ ],
+ "official_warning": false,
+ "operational_status": "non_operational",
+ "can_feed_decision_layer": false,
+ "not_legal_advice": true
+}

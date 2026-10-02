@@ -6,6 +6,10 @@ const OPTIONAL_LANDING_ARTWORK = []; /* __OPTIONAL_LANDING_ARTWORK__ */
 // Opt-in bucket: the Mae Sai case replay's manifest and the files it lists (derived from the manifest at
 // build time). Saved only when the replay page asks after rendering online, never during installation.
 const OPTIONAL_CASE_REPLAY = []; /* __OPTIONAL_CASE_REPLAY__ */
+// The replay's export pack: tables and one map layer to download, listed apart from the replay data and counted
+// against a budget of their own. Saved after the replay data, on the same request, so a download link on a
+// saved replay still answers without a connection.
+const OPTIONAL_CASE_REPLAY_EXPORTS = []; /* __OPTIONAL_CASE_REPLAY_EXPORTS__ */
 let artworkTask = null;
 let caseReplayTask = null;
 
@@ -69,8 +73,7 @@ self.addEventListener("message", (event) => {
     }));
   }
   if (event.data?.type === "FLOODGUARD_CACHE_CASE_REPLAY" && APP_PROFILE === "competition") {
-    // "no-cache" revalidates against the network, so files the page has just loaded are not downloaded twice.
-    caseReplayTask ??= cacheOptionalAssets(OPTIONAL_CASE_REPLAY, "no-cache").finally(() => { caseReplayTask = null; });
+    caseReplayTask ??= cacheCaseReplay().finally(() => { caseReplayTask = null; });
     event.waitUntil(caseReplayTask.then((result) => {
       const message = { type: "FLOODGUARD_CASE_REPLAY_STATUS", ...result };
       if (event.ports?.[0]) event.ports[0].postMessage(message);
@@ -89,13 +92,37 @@ function cacheLandingArtwork() {
 }
 
 /**
+ * Save the case replay's data, then its export pack. The replay's own counts (cached, failed, total) describe the
+ * data the page needs; the export pack is reported apart (exports_*), so a failed download file never makes the
+ * replay look incomplete.
+ */
+async function cacheCaseReplay() {
+  // "no-cache" revalidates against the network, so files the page has just loaded are not downloaded twice.
+  const result = await cacheOptionalAssets(OPTIONAL_CASE_REPLAY, "no-cache");
+  const pack = await cacheOptionalAssets(OPTIONAL_CASE_REPLAY_EXPORTS, "no-cache");
+  return { ...result, exports_cached: pack.cached, exports_failed: pack.failed, exports_total: pack.total };
+}
+
+/**
  * Save optional, build-pinned files ({ url, sha256 }) into the current cache. Each file is stored only when
  * its SHA-256 matches this build; failures are counted and never invalidate the saved application.
+ *
+ * Without a connection the deployment profile cannot be re-checked and nothing can be fetched. The request then
+ * reports what this build's cache already holds and changes nothing: a fully saved replay opened offline must not
+ * read as "0 of N files saved".
  */
 async function cacheOptionalAssets(assets, fetchCache) {
   const result = { cached: 0, failed: 0, total: assets.length };
   try {
-    if (!(await caches.keys()).includes(CACHE_NAME) || !(await competitionStillDeployed())) return result;
+    if (!(await caches.keys()).includes(CACHE_NAME)) return result;
+    let deployed;
+    try {
+      deployed = await competitionStillDeployed();
+    } catch {
+      result.cached = await countSavedAssets(assets);
+      return result;
+    }
+    if (!deployed) return result;
     const cache = await caches.open(CACHE_NAME);
     for (const asset of assets) {
       if (!(await caches.keys()).includes(CACHE_NAME)) return result;
@@ -117,6 +144,16 @@ async function cacheOptionalAssets(assets, fetchCache) {
     // Optional downloads never invalidate the saved planning app.
   }
   return result;
+}
+
+/** How many of the listed files this build's cache already holds. Reads only: nothing is fetched or stored. */
+async function countSavedAssets(assets) {
+  const cache = await caches.open(CACHE_NAME);
+  let saved = 0;
+  for (const asset of assets) {
+    if (await cache.match(asset.url)) saved += 1;
+  }
+  return saved;
 }
 
 async function competitionStillDeployed() {

@@ -15,6 +15,9 @@ import {
   checkDifference,
   coverageComplete,
   externalChecksByRole,
+  isSeasonEnvelopeCheck,
+  SEASON_ENVELOPE_ROLE,
+  sizeChecks,
   rainAt,
   rainSummary,
   referencesNotIngested,
@@ -119,7 +122,7 @@ describe("Mae Sai flood timeline logic", () => {
     const anchors = manifest.stage_anchors;
     const gistda = anchors.find((anchor) => Math.abs(anchor.t - (1 + 18.25 / 24)) < 1e-5)!;
     const surge = anchors.find((anchor) => Math.abs(anchor.t - (2 + 2 / 24)) < 1e-5)!;
-    const onsetCheck = manifest.external_checks!.find((check) => check.id.startsWith("gistda"))!;
+    const onsetCheck = sizeChecks(manifest.external_checks).find((check) => check.id.startsWith("gistda"))!;
     // The 18:15 knot is the stage the manifest's GISTDA check reports; the 02:00 knot is the illustrative surge.
     expect(gistda.stage_m).toBe(onsetCheck.model_stage_m);
     expect(surge.stage_m).toBe(2.5);
@@ -180,7 +183,7 @@ describe("Mae Sai flood timeline logic", () => {
     expect(peopleInWater(toy, 0.11, 0.05)).toBe(12);
     expect(peopleInWater(toy, 99, 0.05)).toBe(12);
     expect(() => peopleInWater([1, 2], 1, 0.05)).toThrow();
-    const unosat = manifest.external_checks?.find((check) => check.id.startsWith("unosat"));
+    const unosat = sizeChecks(manifest.external_checks).find((check) => check.id.startsWith("unosat"));
     const peak = Math.max(...manifest.days.map((day) => day.stage_m));
     expect(unosat?.model_peak_people_in_water).toBe(peopleInWaterStats(population, peak, manifest.hand.step_m).people_in_water);
     expect(unosat?.model_peak_km2).toBe(districtStats(manifest, peak, roads, facilities).flooded_km2);
@@ -507,17 +510,26 @@ describe("Mae Sai replay manifest wiring", () => {
 });
 
 describe("Mae Sai external checks and assumption caveats", () => {
-  const checks = manifest.external_checks!;
+  const checks = sizeChecks(manifest.external_checks);
 
-  it("groups checks by the manifest's role: calibration anchor, calibration-informed and independent checks", () => {
-    const { calibration, informed, independent } = externalChecksByRole(checks);
+  it("groups checks by the manifest's role: calibration anchor, calibration-informed and independent checks, and the season-envelope comparison", () => {
+    const { calibration, informed, independent, envelope } = externalChecksByRole(manifest.external_checks!);
     expect(calibration.map((check) => check.id)).toEqual(["gistda-radarsat2-20240910"]);
     // UNOSAT 3991 was known while the stage keyframes were tuned (owner decision, 30 Sep 2026).
     expect(informed.map((check) => check.id)).toEqual(["unosat-3991"]);
     expect(independent).toEqual([]);
+    // The comparison with the season envelope has a group of its own: a scenario, plausibility and not validation.
+    expect(envelope.map((check) => check.id)).toEqual(["unosat-4009-season-envelope"]);
+    expect(envelope[0].role).toBe(SEASON_ENVELOPE_ROLE);
+    expect(isSeasonEnvelopeCheck(envelope[0])).toBe(true);
+    expect(checks.some(isSeasonEnvelopeCheck)).toBe(false);
+    // Whatever else an entry says, that role is never listed as an independent check, a calibration anchor or a size check.
+    const dressed = externalChecksByRole([{ ...checks[1], id: "dressed-up", role: SEASON_ENVELOPE_ROLE } as never]);
+    expect([...dressed.calibration, ...dressed.informed, ...dressed.independent]).toEqual([]);
+    expect(dressed.envelope.map((check) => check.id)).toEqual(["dressed-up"]);
     // A role the page does not know is never shown as independent.
     const unknown = externalChecksByRole([{ ...checks[0], role: "something_else" as never }]);
-    expect([...unknown.calibration, ...unknown.informed, ...unknown.independent]).toEqual([]);
+    expect([...unknown.calibration, ...unknown.informed, ...unknown.independent, ...unknown.envelope]).toEqual([]);
     expect(calibration[0].observed).toMatch(/time zone not stated; assumed ICT/);
   });
 
@@ -926,7 +938,7 @@ describe("Mae Sai observed evidence: VIIRS daily flood maps and rain gauges", ()
     const justAbove = districtStats(manifest, smallest.stage_m + 1e-6, [], []).flooded_km2;
     expect(smallest.km2).toBeCloseTo(justAbove, 2);
     expect(districtStats(manifest, smallest.stage_m, [], []).flooded_km2).toBe(0);
-    const gistda = manifest.external_checks!.find((check) => check.id.startsWith("gistda"))!;
+    const gistda = sizeChecks(manifest.external_checks).find((check) => check.id.startsWith("gistda"))!;
     expect(checkDifference(gistda)).toBeCloseTo((gistda.model_km2 - gistda.reported_km2) / gistda.reported_km2, 12);
     // No stage gives a non-zero extent below the smallest one, so an anchor under it cannot be matched from below.
     if (smallest.km2 > gistda.reported_km2) expect(gistda.model_km2).toBeGreaterThanOrEqual(roundLikePython(smallest.km2, 1));

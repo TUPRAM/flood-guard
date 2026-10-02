@@ -7,6 +7,7 @@ import {
   coverageComplete,
   districtStats,
   hourlyStages,
+  sizeChecks,
   smallestFloodedExtent,
   TIMELINE_MANIFEST_URL,
   type FacilityProps,
@@ -18,8 +19,10 @@ import {
 import {
   accessLostSeries,
   accessSnapshot,
+  capacityAwareView,
   capacityFlag,
   floodedHomeMask,
+  overCapacitySites,
   parseAccessNodes,
   planCoverageSentence,
   planSites,
@@ -28,6 +31,7 @@ import {
   reportedSetExclusions,
   reportedShelterCheck,
   reportedSiteCounts,
+  robustCore,
   scopeTotals,
   shelterSetComparison,
   summarizeAccessSets,
@@ -40,6 +44,9 @@ import {
   AccessCard,
   AccessChart,
   candidateTitle,
+  CapacityAwareBlock,
+  capacityBoundsText,
+  capacityCaveats,
   capacityFlagText,
   capacityText,
   CoverageCurve,
@@ -56,6 +63,8 @@ import {
   SetComparisonTable,
   ShelterPlanCard,
   Term,
+  timesOver,
+  WhatIfBlock,
 } from "./mae-sai-evacuation-panels";
 import { TimelineLegend } from "./mae-sai-flood-timeline";
 
@@ -376,28 +385,63 @@ describe("Evacuation access card (scenario)", () => {
     expect(cellText(all, "access-without")).toContain(`/ ${people(access.totals.population)} have no dry shelter`);
   });
 
-  it("words the Equity Gap plainly, never as 0.00, and says why the proxy points this way", () => {
-    // With the ranked plan both groups lose access at the peak: a ratio, a plain comparison and why it points this way.
-    const peakText = text(withoutTips(accessCard("en", "plan", shelters.knee_k, peak, "all")));
-    expect(peakText).toMatch(/Evacuation Equity Gap: \d+\.\d{2} · Proxy-vulnerable residents are about [\d.]+× less likely to lose access \(\d+\.\d{2}% vs \d+\.\d{2}%\)\./);
-    expect(peakText).toContain("How to read this: the proxy marks homes on slopes or far from a drivable road");
+  it("states the equity rule in one sentence, then the ratio, then both counts per group (R8, option B)", () => {
+    // Ranked plan of 8, all residents, at the peak: 320 of 373 against 13,109 of 24,537 within reach before the flood.
+    const peakHtml = accessCard("en", "plan", shelters.knee_k, peak, "all");
+    const peakText = text(withoutTips(peakHtml));
+    expect(peakText).toContain("Evacuation Equity Gap: 1.61 · Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.6× more likely to lose it (85.77% vs 53.42%).");
+    expect(cellText(peakHtml, "equity-rule")).toBe("What is compared. Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
+    // Both counts of each group: lost out of those within reach before the flood, and all residents counted as context.
+    expect(cellText(peakHtml, "equity-counts")).toBe(
+      "Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted). Everyone else: 13,109 lost of 24,537 within reach before the flood (74,647 residents counted).",
+    );
+    // The earlier denominator (all residents counted) read "less likely"; nothing on the card divides by it now.
+    expect(peakText).not.toMatch(/less likely to lose (?:access|it) \(/);
+    // No sentence prints a rate without naming the residents it divides by.
+    expect(peakText).not.toMatch(/Proxy-vulnerable residents are about|of everyone else have\./);
+    expect(peakText).not.toMatch(/320 of 7,152|13,109 of 74,647|all residents counted in that group/);
     expect(peakText).not.toMatch(/times as likely/);
-    // Both denominators of each group: all residents counted, and those within reach before the flood.
-    expect(peakText).toContain("Proxy-vulnerable residents who lost access: 320 of 7,152 counted (373 had a shelter of this set within reach before the flood); everyone else: 13,109 of 74,647 (24,537 within reach before the flood).");
+    expect(cellText(peakHtml, "equity-why")).toBe(
+      "How to read this: the proxy marks homes on slopes or far from a drivable road, not age, disability or income, and the ratio counts only residents who had a shelter of this set within reach before the flood. So a high ratio says where those homes sit relative to the flooded valley floor, not who is more vulnerable.",
+    );
     expect(peakText).toContain("T1 scenario (model). Vulnerable = terrain/remoteness proxy. Hours from illustrative stage keyframes, not observed.");
-    // With the reported set no proxy-vulnerable resident loses access at the peak: said in words, never "0.00".
+    // Reading order inside the block: the ratio, the rule, the counts, how to read it, the labels.
+    const at = (testId: string) => peakHtml.indexOf(`data-testid="${testId}"`);
+    const order = ["equity-gap", "equity-rule", "equity-counts", "equity-why", "equity-label"].map(at);
+    expect(order.every((position) => position > 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(peakHtml).not.toContain("data-reason=");
+    // The detail text names the same denominator and the same minimum.
+    expect(peakText).toContain("Each rate divides the residents of a group who lost access by the residents of that group who had a shelter of this set within reach before the flood.");
+    expect(peakText).toContain("No ratio is shown when a group has fewer than 50 residents within reach before the flood, when no one has lost access, or when only proxy-vulnerable residents have");
+    expect(findWordingViolations(peakText)).toEqual([]);
+  });
+
+  it("words the Equity Gap plainly, never as 0.00, when no proxy-vulnerable resident within reach has lost access", () => {
+    // Reported set, all residents, at the peak: none of the 2,440 proxy-vulnerable residents within reach lost access.
     const reportedHtml = accessCard("en", "reported", shelters.knee_k, peak, "all");
     const reported = text(withoutTips(reportedHtml));
-    expect(reported).toMatch(/Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, \d+\.\d{2}% of everyone else have\./);
+    expect(reported).toContain("Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, 22.08% of everyone else who had a shelter within reach before the flood have lost it.");
     expect(reported).not.toContain("Evacuation Equity Gap: 0.00");
-    expect(reported).toContain("Proxy-vulnerable residents who lost access: 0 of 7,152 counted (2,440 had a shelter of this set within reach before the flood); everyone else: 7,086 of 74,647 (32,085 within reach before the flood).");
+    expect(cellText(reportedHtml, "equity-counts")).toBe(
+      "Proxy-vulnerable: 0 lost of 2,440 within reach before the flood (7,152 residents counted). Everyone else: 7,086 lost of 32,085 within reach before the flood (74,647 residents counted).",
+    );
+    expect(cellText(reportedHtml, "equity-why")).toContain("So a low ratio says where those homes sit relative to the flooded valley floor");
     expect(reportedHtml).not.toContain("data-reason=");
-    expect(reportedHtml).not.toContain("equity-no-baseline");
-    const thaiPeak = text(accessCard("th", "reported", shelters.knee_k, peak, "all"));
-    expect(thaiPeak).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง · ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นสูญเสียการเข้าถึง");
+    const thaiHtml = accessCard("th", "reported", shelters.knee_k, peak, "all");
+    const thaiPeak = text(thaiHtml);
+    expect(thaiPeak).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง · ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมสูญเสียการเข้าถึง 22.08%");
     // "ยังไม่มี" ("not yet") would imply the loss is about to happen.
     expect(thaiPeak).not.toContain("ยังไม่มีผู้อยู่อาศัยกลุ่มเปราะบาง");
     expect(thaiPeak).toContain("สถานการณ์จำลองระดับ T1 (แบบจำลอง) กลุ่มเปราะบาง = ตัวแทนจากภูมิประเทศและความห่างไกล");
+    expect(cellText(thaiHtml, "equity-rule")).toBe("สิ่งที่นำมาเปรียบเทียบ: ในบรรดาผู้อยู่อาศัยของแต่ละกลุ่มที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม สัดส่วนของผู้ที่สูญเสียการเข้าถึง");
+    expect(cellText(thaiHtml, "equity-counts")).toBe(
+      "กลุ่มเปราะบางตามตัวแทน: สูญเสีย 0 จาก 2,440 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 7,152 คน) กลุ่มอื่น: สูญเสีย 7,086 จาก 32,085 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 74,647 คน)",
+    );
+    const thaiPlan = text(accessCard("th", "plan", shelters.knee_k, peak, "all"));
+    expect(thaiPlan).toContain("ช่องว่างความเท่าเทียมในการอพยพ: 1.61 · ในกลุ่มผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่ากลุ่มอื่นประมาณ 1.6 เท่า (85.77% เทียบกับ 53.42%)");
+    expect(thaiPlan).toContain("ค่าที่สูงจึงบอกตำแหน่งของบ้านเหล่านั้นเทียบกับพื้นที่ราบที่ถูกน้ำท่วม");
+    expect(findWordingViolations(thaiPlan)).toEqual([]);
   });
 
   it("shows no ratio and says why when no one has lost access (reason no_loss)", () => {
@@ -407,34 +451,60 @@ describe("Evacuation access card (scenario)", () => {
     expect(dry).toContain("Evacuation Equity Gap: no ratio shown · No one in either group has lost access at this replay hour, so there are no loss rates to compare.");
     expect(dry).not.toMatch(/Evacuation Equity Gap: (—|1\.00|0\.00)/);
     expect(dry).not.toContain("How to read this: the proxy");
+    // The rule and the counts stay, so the reader sees who could lose access.
+    expect(cellText(html, "equity-rule")).toContain("Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
+    expect(cellText(html, "equity-counts")).toContain("Proxy-vulnerable: 0 lost of 2,440 within reach before the flood (7,152 residents counted).");
     const thai = text(accessCard("th", "reported", shelters.knee_k, 0, "all"));
     expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่แสดงอัตราส่วน · ไม่มีผู้ใดในทั้งสองกลุ่มสูญเสียการเข้าถึง ณ ชั่วโมงนี้ของการย้อนดู จึงไม่มีอัตราการสูญเสียให้เปรียบเทียบ");
   });
 
-  it("shows no ratio and says why when a group has fewer than 50 residents (reason insufficient_group_denominator)", () => {
-    const small: AccessGroupSums = { population: 14_169, vulnerable: 26.5, nonVulnerable: 14_142.5 };
-    const html = accessCard("en", "plan", shelters.knee_k, peak, "flooded", small);
+  it("shows no ratio in the default view, and says in plain words that no proxy-vulnerable resident was within reach", () => {
+    // The default view: the reported set, residents whose homes flood. 103 proxy-vulnerable residents are counted and
+    // none had a reported shelter within reach before the flood, so the group has no loss rate.
+    for (const stage of [peak, 0]) {
+      const html = accessCard("en", "reported", shelters.knee_k, stage, "flooded");
+      const plain = text(html);
+      expect(html).toContain('data-testid="equity-gap" data-reason="insufficient_group_denominator"');
+      expect(plain).toContain(
+        "Evacuation Equity Gap: no ratio shown · No proxy-vulnerable resident counted here had a shelter within reach before the flood, so none could lose it. A ratio needs at least 50 such residents in each group.",
+      );
+      expect(cellText(html, "equity-counts")).toMatch(/^Proxy-vulnerable: 0 lost of 0 within reach before the flood \(103 residents counted\)\. Everyone else: [\d,]+ lost of 5,698 within reach before the flood \(14,067 residents counted\)\.$/);
+      expect(plain).not.toContain("How to read this: the proxy");
+      expect(plain).not.toMatch(/Evacuation Equity Gap: (—|\d)/);
+      expect(findWordingViolations(plain)).toEqual([]);
+    }
+    expect(cellText(accessCard("en", "reported", shelters.knee_k, peak, "flooded"), "equity-counts")).toContain("Everyone else: 5,400 lost of 5,698");
+    const thai = text(accessCard("th", "reported", shelters.knee_k, peak, "flooded"));
+    expect(thai).toContain(
+      "ช่องว่างความเท่าเทียมในการอพยพ: ไม่แสดงอัตราส่วน · ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนที่นับในที่นี้มีที่พักพิงในระยะเดินตั้งแต่ก่อนน้ำท่วม จึงไม่มีผู้ใดในกลุ่มนี้สูญเสียการเข้าถึงได้ การแสดงอัตราส่วนต้องมีผู้อยู่อาศัยเช่นนี้อย่างน้อยกลุ่มละ 50 คน",
+    );
+    expect(thai).toContain("กลุ่มเปราะบางตามตัวแทน: สูญเสีย 0 จาก 0 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 103 คน)");
+    expect(findWordingViolations(thai)).toEqual([]);
+  });
+
+  it("shows no ratio and names the group when fewer than 50 of its residents were within reach (reason insufficient_group_denominator)", () => {
+    // Ranked plan of 8, residents whose homes flood: 27 of the 103 proxy-vulnerable residents had a site within reach.
+    const html = accessCard("en", "plan", shelters.knee_k, peak, "flooded");
     const plain = text(html);
     expect(html).toContain('data-testid="equity-gap" data-reason="insufficient_group_denominator"');
-    expect(plain).toContain("Evacuation Equity Gap: no ratio shown · The proxy-vulnerable group has 26 residents in this count, fewer than the 50 a ratio needs in each group.");
+    expect(plain).toContain("Evacuation Equity Gap: no ratio shown · Only 27 proxy-vulnerable residents had a shelter within reach before the flood, fewer than the 50 a ratio needs in each group.");
+    expect(cellText(html, "equity-counts")).toBe(
+      "Proxy-vulnerable: 27 lost of 27 within reach before the flood (103 residents counted). Everyone else: 7,094 lost of 7,553 within reach before the flood (14,067 residents counted).",
+    );
     expect(plain).not.toContain("How to read this: the proxy");
-    expect(plain).toContain("No ratio is shown when a group has fewer than 50 residents, when no one has lost access, or when only proxy-vulnerable residents have");
-    const thai = text(accessCard("th", "plan", shelters.knee_k, peak, "flooded", small));
-    expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่แสดงอัตราส่วน · กลุ่มเปราะบางตามตัวแทนมีผู้อยู่อาศัยในการนับนี้ 26 คน น้อยกว่า 50 คนที่ต้องมีในแต่ละกลุ่มจึงจะแสดงอัตราส่วนได้");
-    // On the served data both scopes have at least 50 residents in each group, so the rule does not hide a ratio today.
+    expect(plain).toContain("No ratio is shown when a group has fewer than 50 residents within reach before the flood, when no one has lost access, or when only proxy-vulnerable residents have");
+    const thai = text(accessCard("th", "plan", shelters.knee_k, peak, "flooded"));
+    expect(thai).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่แสดงอัตราส่วน · กลุ่มเปราะบางตามตัวแทนมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม 27 คน น้อยกว่า 50 คนที่ต้องมีในแต่ละกลุ่มจึงจะแสดงอัตราส่วนได้");
+    expect(thai).toContain("ไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมน้อยกว่า 50 คน");
+    // The residents counted are enough in both scopes; it is the residents within reach that fall short.
     for (const scope of ["all", "flooded"] as const) {
       expect(scoped[scope].totals.vulnerable).toBeGreaterThanOrEqual(50);
       expect(scoped[scope].totals.nonVulnerable).toBeGreaterThanOrEqual(50);
     }
-  });
-
-  it("says so when no proxy-vulnerable resident could lose access because none was within reach before the flood", () => {
-    // Reported set, residents whose homes flood: the proxy-vulnerable group is counted but none had a reported shelter in reach.
-    const html = accessCard("en", "reported", shelters.knee_k, peak, "flooded");
-    const plain = text(html);
-    expect(cellText(html, "equity-no-baseline")).toBe("No proxy-vulnerable resident counted here had a shelter of this set within reach before the flood, so none could lose it.");
-    expect(plain).toMatch(/Proxy-vulnerable residents who lost access: 0 of 103 counted \(0 had a shelter of this set within reach before the flood\)/);
-    expect(text(accessCard("th", "reported", shelters.knee_k, peak, "flooded"))).toContain("จึงไม่มีผู้ใดสูญเสียการเข้าถึงได้");
+    // No plan size reaches 50 proxy-vulnerable residents among those whose homes flood: the default scope never shows a ratio.
+    for (let k = 1; k <= shelters.plan.length; k += 1) {
+      expect(accessCard("en", "plan", k, peak, "flooded"), `plan of ${k}`).toContain('data-reason="insufficient_group_denominator"');
+    }
   });
 
   it("explains terms on hover or focus with the glossary definition as the accessible description", () => {
@@ -639,7 +709,8 @@ describe("Shelter plan and reported shelters", () => {
 
   it("renders the size checks with their sources", () => {
     const html = renderToStaticMarkup(<ExternalChecks manifest={manifest} language="en" />);
-    for (const check of manifest.external_checks!) {
+    expect(sizeChecks(manifest.external_checks).map((check) => check.id)).toEqual(["gistda-radarsat2-20240910", "unosat-3991"]);
+    for (const check of sizeChecks(manifest.external_checks)) {
       expect(text(html)).toContain(`reported ${check.reported_km2} km²`);
       expect(text(html)).toContain(`${Number(check.model_km2.toFixed(1))} km²`);
       for (const url of check.urls) expect(html).toContain(`href="${url.replaceAll("&", "&amp;")}"`);
@@ -654,6 +725,11 @@ describe("Shelter plan and reported shelters", () => {
     // Without a "use" sentence the page states the limit itself.
     const bare = text(renderToStaticMarkup(<ExternalChecks manifest={{ ...manifest, external_checks: manifest.external_checks!.map((check) => ({ ...check, use: "" })) }} language="en" />));
     expect(bare).toContain("Magnitude check only, not a spatial validation.");
+    // The comparison with the season envelope is not a size check: without the envelope's own files the page shows
+    // nothing of it, and it never appears under a size-check heading.
+    expect(manifest.external_checks!.some((check) => check.role === "season_envelope_plausibility")).toBe(true);
+    expect(plain).not.toMatch(/Season envelope|product 4009|undefined|NaN/);
+    expect(text(renderToStaticMarkup(<ExternalChecks manifest={manifest} language="en" envelope={{ status: "absent" }} />))).toBe(plain);
   });
 
   it("files the GISTDA onset figure as a calibration anchor and UNOSAT as a calibration-informed check over its own window", () => {
@@ -672,7 +748,7 @@ describe("Shelter plan and reported shelters", () => {
     expect(plain).toContain("this figure was known while the stage keyframes were tuned");
     expect(plain).toContain("time zone not stated; assumed ICT");
     // The anchor text follows the manifest: matched by construction, or how far the closest stage stays and why.
-    const anchor = manifest.external_checks!.find((check) => check.role === "calibration_anchor")!;
+    const anchor = sizeChecks(manifest.external_checks).find((check) => check.role === "calibration_anchor")!;
     const gap = Math.abs(anchor.model_km2 - anchor.reported_km2);
     if (gap / anchor.reported_km2 <= 0.1) {
       expect(plain).toContain("agreement holds by construction and does not test the model");
@@ -685,7 +761,7 @@ describe("Shelter plan and reported shelters", () => {
         expect(plain).toContain(`its smallest non-zero extent, land within ${smallest.stage_m.toFixed(2)} m of the channel level, is already ${smallest.km2.toFixed(1)} km².`);
       }
     }
-    const unosatCheck = manifest.external_checks!.find((check) => check.role === "calibration_informed_magnitude_check")!;
+    const unosatCheck = sizeChecks(manifest.external_checks).find((check) => check.role === "calibration_informed_magnitude_check")!;
     const people = (value: number) => value.toLocaleString("en-US");
     expect(plain).toContain(`The model gives ${Number(unosatCheck.model_km2.toFixed(1))} km² and ≈ ${people(unosatCheck.model_people_in_water!)} modelled residents in water at a ${unosatCheck.model_stage_m} m stage`);
     expect(plain).toContain(unosatCheck.model_window!);
@@ -731,5 +807,176 @@ describe("Map legend for residents, shelters and the cut-off heat", () => {
     // Without a density raster the residents views fall back to the depth legend.
     const fallback = text(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode="people" />));
     expect(fallback).toContain("Water depth (model)");
+  });
+});
+
+describe("Capacity-aware view and what-if levels on the shelter plan card", () => {
+  const k = shelters.knee_k;
+  const card = (language: "en" | "th", size = k, data = shelters) =>
+    renderToStaticMarkup(<ShelterPlanCard shelters={data} k={size} onPlanK={noop} language={language} onShowCandidate={noop} />);
+
+  it("shows who fits beside the existing plan, under both bounds, with overflow = demand − fit", () => {
+    const html = card("en");
+    const view = capacityAwareView(shelters, k)!;
+    // The existing plan and its numbers stay: the coverage sentence, the list and the nearest-site loads.
+    const plain = text(withoutTips(html));
+    expect(plain).toContain(planCoverageSentence(shelters, k, "en"));
+    expect(plain).toContain("Assigned ≈ 2,430 residents in an 8-site plan");
+    // The capacity-aware block comes after the plan list, inside the same card.
+    expect(html.indexOf('data-testid="capacity-aware"')).toBeGreaterThan(html.indexOf("Loads assign each covered resident"));
+    expect(plain).toContain("If capacity counts: who fits (two bounds)");
+    expect(plain).toContain("Lower bound: a site with no capacity estimate holds nobody. Upper bound: it holds the median estimate of its site kind.");
+    for (const [name, part] of [["coverage", view.coverage], ["ranked", view.ranked], ["full", view.full], ["all", view.allEligible]] as const) {
+      for (const bound of ["lower", "upper"] as const) {
+        expect(cellText(html, `capacity-${name}-${bound}`), `${name} ${bound}`).toBe(`${people(part[bound].served)} overflow ${people(part[bound].overflow)}`);
+        expect(part[bound].served + part[bound].overflow).toBe(shelters.demand_people);
+      }
+    }
+    expect(cellText(html, "capacity-coverage-lower")).toBe("495 overflow 13,674");
+    expect(cellText(html, "capacity-coverage-upper")).toBe("1,057 overflow 13,112");
+    expect(plain).toContain("The first 8 sites of the plan above Ranked by who can walk there · 7,580 within the walk");
+    expect(plain).toContain("The first 8 sites of the capacity-aware ranking");
+    expect(plain).toContain("All 25 sites of the capacity-aware ranking The ranking ends when the next site adds less than 0.5% of demand");
+    expect(plain).toContain("Every eligible candidate (95) 42 with a capacity estimate");
+    expect(cellText(html, "capacity-aware-sentence")).toBe(
+      "Reading for k = 8: 7,580 residents can walk to the first 8 sites of the plan above, and the capacity estimates hold 495 to 1,057 of them. That leaves 13,112 to 13,674 of the 14,169 without a place.",
+    );
+    expect(plain).toContain("Residents who fit, of the 14,169 whose homes flood at the peak (overflow = demand − fit)");
+    // Confidence, reason and source timestamp of the block's own figures.
+    const provenance = /data-testid="capacity-provenance".*?<\/details>/s.exec(html)![0];
+    expect(text(provenance)).toContain("CONFIDENCE: LOW");
+    expect(text(provenance)).toContain(shelters.capacitated!.confidence_reason);
+    expect(text(provenance)).toContain(shelters.capacitated!.source_timestamp);
+  });
+
+  it("states the six caveats in English and Thai and never tells the reader which shelters to open", () => {
+    const english = text(/data-testid="capacity-caveats".*?<\/ul>/s.exec(card("en"))![0]);
+    for (const phrase of [
+      "T1 scenario (model)",
+      "Demand is every resident of a home that floods at the modelled peak. That is an upper bound: many people stay with relatives",
+      "Capacity is an unverified estimate from mapped building footprints",
+      "53 of the 95 eligible candidates have no footprint to estimate from",
+      "Neither bound is a limit on who fits.",
+      "More residents may fit than the upper bound gives, and fewer than the lower bound if a site turns out unusable.",
+      "candidates to verify on the ground, not a list of sites to open",
+      "The planning overlay's listed-capacity figures come from a different source",
+    ]) expect(english).toContain(phrase);
+    expect(capacityCaveats(shelters, "en")).toHaveLength(6);
+    // The column headings say what each bound assumes, so "upper bound" is not read as the most that can fit.
+    expect(card("en")).toContain('data-testid="capacity-bound-lower">Lower bound<small>a site with no footprint holds nobody</small></th>');
+    expect(card("en")).toContain('data-testid="capacity-bound-upper">Upper bound<small>a site with no footprint holds a typical size; not a maximum</small></th>');
+    expect(card("th")).toContain('data-testid="capacity-bound-upper">ขอบเขตบน<small>สถานที่ที่ไม่มีขอบเขตอาคารรับได้ตามขนาดทั่วไป ไม่ใช่ค่าสูงสุด</small></th>');
+    expect(shelters.capacitated!.bounds.note).toContain("Neither is a limit on who fits");
+    const thai = text(/data-testid="capacity-caveats".*?<\/ul>/s.exec(card("th"))![0]);
+    for (const phrase of [
+      "สถานการณ์จำลองระดับ T1 (แบบจำลอง)",
+      "เป็นค่าขอบเขตบน เพราะหลายคนไปพักกับญาติ",
+      "ยังไม่ได้ตรวจสอบ",
+      "ทั้งสองขอบเขตไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้",
+      "สถานที่ที่ควรตรวจสอบในพื้นที่ ไม่ใช่รายชื่อสถานที่ที่ต้องเปิด",
+      "มาจากแหล่งข้อมูลอื่น",
+    ]) expect(thai).toContain(phrase);
+    for (const language of ["en", "th"] as const) {
+      for (const size of [1, 3, k, shelters.plan.length]) {
+        const html = card(language, size);
+        expect(findWordingViolations(text(html)), `${language} k=${size}`).toEqual([]);
+        expect(text(html)).not.toMatch(/open these shelters|shelters to open|เปิดที่พักพิงเหล่านี้/i);
+        // No listed capacity from another source, no participation sweep, no score and no action class.
+        expect(text(html)).not.toMatch(/participation|FPPS score|ACTION CLASS [A-E]\b/i);
+      }
+    }
+    // The Thai card carries no English sentence of the new blocks.
+    const thaiCard = text(card("th"));
+    for (const english of ["If capacity counts", "Lower bound", "Upper bound", "overflow", "Robust core", "What-if levels", "capacity-aware ranking"]) {
+      expect(thaiCard, english).not.toContain(english);
+    }
+    expect(thaiCard).toContain("เมื่อคิดความจุด้วย: รองรับได้กี่คน (สองขอบเขต)");
+    expect(thaiCard).toContain("อ่านที่ k = 8: ผู้อยู่อาศัย 7,580 คนเดินไปถึง 8 แห่งของแผนด้านบนได้ และค่าประมาณความจุรองรับได้ 495 ถึง 1,057 คน จึงเหลือ 13,112 ถึง 13,674 คนจาก 14,169 คนที่ไม่มีที่รองรับ");
+    expect(thaiCard).toContain("495 ไม่มีที่รองรับ 13,674");
+  });
+
+  it("flags the plan sites assigned more residents than their capacity estimate holds", () => {
+    const html = card("en");
+    const sites = planSites(shelters, k);
+    const over = overCapacitySites(sites);
+    expect(over.length).toBe(3);
+    expect(html.match(/<li[^>]*data-over-capacity=""/g)?.length ?? 0).toBe(over.length);
+    // The site with capacity 79 carrying about 2,430 residents: flagged on its row and named in the note.
+    expect(text(html)).toContain("Capacity far below its load: ≈ 79 places for ≈ 2,430 residents assigned");
+    expect(cellText(html, "over-capacity-note")).toBe(
+      `3 of the first 8 sites of the plan above are assigned more residents than their capacity estimate holds. Largest gap: ${candidateTitle(over[0].candidate, "en")}, ≈ 79 places for ≈ 2,430 residents assigned (about 31 times the estimate).`,
+    );
+    expect(timesOver(2430, 79)).toBe("31");
+    expect(timesOver(150, 100)).toBe("1.5");
+    expect(cellText(card("th"), "over-capacity-note")).toContain("รองรับได้ ≈ 79 คน แต่ได้รับผู้อพยพ ≈ 2,430 คน (ประมาณ 31 เท่าของค่าประมาณ)");
+    // One site: the sentence reads naturally and still names the gap.
+    expect(cellText(card("en", 1), "over-capacity-note")).toMatch(/^The first site of the plan above is assigned more residents than its capacity estimate holds\. Largest gap: /);
+    expect(cellText(card("en", 1), "capacity-aware-sentence")).toContain("can walk to the first site of the plan above");
+    // Nobody over capacity: no note.
+    const roomy = { ...shelters, candidates: shelters.candidates.map((candidate) => ({ ...candidate, capacity_est: candidate.capacity_est === null ? null : 99999 })) };
+    expect(card("en", k, roomy)).not.toContain('data-testid="over-capacity-note"');
+  });
+
+  it("lists the capacity-aware ranking's sites with load against capacity and the capacity basis", () => {
+    const html = card("en");
+    const list = /data-testid="capacity-ranking-sites".*?<\/details>/s.exec(html)![0];
+    const rows = shelters.capacitated!.plan.slice(0, k);
+    expect(list.match(/<li[\s>]/g)!.length).toBe(rows.length);
+    expect(text(list)).toContain("The first 8 sites of the capacity-aware ranking (candidates to verify)");
+    const byId = new Map(shelters.candidates.map((candidate) => [candidate.id, candidate]));
+    for (const row of rows) {
+      const candidate = byId.get(row.candidate_id)!;
+      expect(text(list)).toContain(candidateTitle(candidate, "en"));
+      expect(text(list)).toContain(capacityBoundsText(row, candidate.kind, "en"));
+      expect(text(list)).toContain(`Assigned ${people(row.lower.load)} of ${people(row.lower.capacity)} places (lower bound) · ${people(row.upper.load)} of ${people(row.upper.capacity)} (upper bound)`);
+    }
+    expect(list.match(/data-capacity-basis="unknown"/g)!.length).toBe(rows.filter((row) => row.capacity_est === null).length);
+    const known = rows.find((row) => row.capacity_est !== null)!;
+    const unknown = rows.find((row) => row.capacity_est === null)!;
+    expect(capacityBoundsText(known, "school", "en")).toBe(`Capacity ≈ ${people(known.capacity_est!)} places in both bounds: OpenStreetMap footprint × 0.5 ÷ 3.5 m² per person (Sphere), unverified`);
+    expect(capacityBoundsText(unknown, "school", "en")).toBe("Capacity unknown (no mapped building footprint): 0 in the lower bound, 253 in the upper bound, the median estimate of its site kind (school)");
+    expect(capacityBoundsText({ ...unknown, upper_capacity_basis: "all_kinds_median" }, "community", "en")).toContain("the median of every estimate, because no site of its kind has one");
+    expect(capacityBoundsText(unknown, "school", "th")).toBe("ไม่ทราบความจุ (ไม่มีขอบเขตอาคารในแผนที่): ขอบเขตล่างนับเป็น 0 ขอบเขตบนใช้ 253 คน ตามค่ามัธยฐานของค่าประมาณของสถานที่ประเภทเดียวกัน (โรงเรียน)");
+    expect(capacityBoundsText(known, "school", "th")).toContain("ยังไม่ได้ตรวจสอบ");
+  });
+
+  it("shows the what-if levels, labelled as not return periods, and badges the robust core", () => {
+    const html = card("en");
+    const block = /data-testid="what-if-levels".*$/s.exec(html)![0];
+    expect(cellText(block, "what-if-label")).toBe("T1 scenario (model) What-if levels around an illustrative peak, not return periods.");
+    expect(text(block)).toContain("The 3.5 m peak of this replay is illustrative (no gauge record), so the ranking is repeated with the peak at 2.5 m and 4.0 m");
+    expect([cellText(block, "what-if-demand-2.5"), cellText(block, "what-if-demand-3.5"), cellText(block, "what-if-demand-4.0")]).toEqual(["10,333", "14,169", "16,069"]);
+    expect([cellText(block, "what-if-covered-2.5"), cellText(block, "what-if-covered-3.5"), cellText(block, "what-if-covered-4.0")]).toEqual(["5,480 53%", "7,580 53%", "8,148 51%"]);
+    expect(text(block)).toContain("3.5 m (this replay)");
+    const core = robustCore(shelters, k);
+    expect(core.length).toBe(5);
+    expect(cellText(block, "robust-core-sentence")).toBe(
+      "5 of the first 8 sites of the plan above are among the first 8 at every level: the robust core, marked in the list above. A site in the robust core is still a candidate to verify.",
+    );
+    expect(html.match(/data-testid="robust-core"/g)!.length).toBe(core.length);
+    expect(html.match(/<li[^>]*data-robust-core=""/g)!.length).toBe(core.length);
+    expect(text(html)).toContain("Robust core: also among the first 8 sites at 2.5 m and 4.0 m");
+    // One site: nothing holds at every level, and the card says so.
+    const one = card("en", 1);
+    expect(one).not.toContain('data-testid="robust-core"');
+    expect(cellText(one, "robust-core-sentence")).toBe("The first site of the plan above is not the first site at every level, so a plan this small has no robust core.");
+    const thai = card("th");
+    expect(cellText(thai, "what-if-label")).toBe("สถานการณ์จำลองระดับ T1 (แบบจำลอง) ระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดที่ใช้เพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ");
+    expect(text(thai)).toContain("แกนที่คงทน: อยู่ใน 8 แห่งแรกที่ระดับ 2.5 ม. และ 4.0 ม. ด้วย");
+    expect(text(thai)).toContain("3.5 ม. (การย้อนดูนี้)");
+    for (const language of ["en", "th"] as const) expect(text(card(language))).not.toMatch(/\b(?:25|100)[- ]?year|รอบ ?(?:25|100) ?ปี/i);
+    const provenance = /data-testid="robustness-provenance".*?<\/details>/s.exec(html)![0];
+    expect(text(provenance)).toContain(shelters.robustness!.source_timestamp);
+  });
+
+  it("renders the card without the new blocks for a manifest baked before they existed", () => {
+    const older = { ...shelters, capacitated: undefined, robustness: undefined };
+    const html = card("en", k, older);
+    expect(html).toContain('data-testid="shelter-plan-card"');
+    expect(html).not.toContain('data-testid="capacity-aware"');
+    expect(html).not.toContain('data-testid="what-if-levels"');
+    expect(html).not.toContain('data-testid="robust-core"');
+    expect(renderToStaticMarkup(<CapacityAwareBlock shelters={older} k={k} language="en" onShowCandidate={noop} />)).toBe("");
+    expect(renderToStaticMarkup(<WhatIfBlock shelters={older} k={k} language="en" />)).toBe("");
   });
 });

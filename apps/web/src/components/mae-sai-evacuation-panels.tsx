@@ -18,13 +18,19 @@ import {
   smallestFloodedExtent,
   thaiYear,
   TIMELINE_END_T,
+  formatDateWithYear,
+  formatFileSize,
   type AccessInfo,
+  type CapacityPlanRow,
+  type CheckerRole,
+  type ExportFile,
   type ExternalCheck,
   type Language,
   type PopulationInfo,
   type ReportedRole,
   type ReportedShelter,
   type ShelterCandidate,
+  type ShelterCheckRow,
   type ShelterInfo,
   type TambonProps,
   type TimelineManifest,
@@ -32,31 +38,39 @@ import {
 } from "@/lib/flood-timeline";
 import { GLOSSARY, localizedText, placeNameText, plainManifestText, type GlossaryId } from "@/lib/flood-timeline-copy";
 import {
+  accessEquityGap,
   candidateReasons,
+  capacityAwareView,
   capacityFlag,
   countedInReportedSet,
   EQUITY_MIN_GROUP,
+  equityRuleSentence,
   equityWhy,
   equityWording,
-  evacuationEquityGap,
   osmReference,
   otherCandidates,
+  overCapacitySites,
   planCoverageSentence,
   planSites,
   reportedSetExclusions,
   reportedShelterCheck,
   reportedSiteCounts,
   reportedSiteRole,
+  robustCore,
+  whatIfLevels,
   type AccessCutoff,
   type AccessGroupSums,
   type AccessScope,
   type AccessSnapshot,
+  type CapacityCounts,
   type PlannedShelter,
   type ReportedCheck,
   type SetComparison,
 } from "@/lib/flood-timeline-evacuation";
 import { TIP_CLOSED, tipOpen, tipReducer, tooltipShift } from "@/lib/flood-timeline-layout";
 import type { AccessScopeChoice, ShelterSetChoice } from "@/lib/flood-timeline-link";
+
+import { SeasonEnvelopeComparison, type SeasonEnvelopeState } from "./mae-sai-season-envelope";
 
 import styles from "./mae-sai-flood-timeline.module.css";
 
@@ -94,6 +108,15 @@ const LOCATION_METHODS: Record<string, [string, string]> = {
   unknown: ["Unknown", "ไม่ทราบ"],
 };
 const CONFIDENCE: Record<string, [string, string]> = { high: ["high", "สูง"], medium: ["medium", "ปานกลาง"], low: ["low", "ต่ำ"] };
+/** Who checked a candidate: a role, never a name (the codes of the verification sheet). */
+const CHECKER_ROLES: Record<CheckerRole, [string, string]> = {
+  ddpm_officer: ["a DDPM officer", "เจ้าหน้าที่ ปภ."],
+  local_government_officer: ["a tambon or municipality officer", "เจ้าหน้าที่ อบต. หรือเทศบาล"],
+  village_leader: ["a village head or kamnan", "ผู้ใหญ่บ้านหรือกำนัน"],
+  site_staff: ["staff of the site", "เจ้าหน้าที่ของสถานที่"],
+  project_team: ["the FloodGuard project team", "ทีมโครงการ FloodGuard"],
+  other_local_contact: ["another local contact", "ผู้ประสานงานในพื้นที่อื่น ๆ"],
+};
 
 const pick = (table: Record<string, [string, string]>, key: string, language: Language) => {
   const entry = table[key];
@@ -224,7 +247,7 @@ export function ThemeEyebrow({ prefix, theme, language }: { prefix?: string; the
  * classes once for the whole page.
  */
 export function ProvenanceNote({ kind, confidence, reason, timestamp, language, children }: {
-  kind: "access" | "plan" | "reported" | "impact" | "people" | "routes";
+  kind: "access" | "plan" | "capacity" | "robustness" | "verification" | "reported" | "impact" | "people" | "routes";
   confidence: string;
   reason?: string;
   timestamp: string;
@@ -654,6 +677,8 @@ export function SetComparisonTable({ kind, title, comparison, selected, language
  * ranked plan side by side, each counted both ways (all residents at road nodes, and residents whose homes flood at
  * the modelled peak), with no single headline that ranks them. Below that, for the chosen set and scope: who is
  * without a shelter per subdistrict, the Evacuation Equity Gap (or why no ratio is shown) and the replay curve.
+ * The equity block states its rule in one sentence (of the residents in each group who had a shelter within reach
+ * before the flood, the share who lost it), then the ratio or the reason there is none, then both counts per group.
  */
 export function AccessCard({
   access, shelters, snapshot, series, time, names, tambonTotals, shelterSet, planK, onShelterSet, onPlanK, showCutoff, onShowCutoff,
@@ -694,12 +719,8 @@ export function AccessCard({
   const totals = scopeTotals ?? (scope === "all"
     ? { population: access.totals.population, vulnerable: access.totals.vulnerable, nonVulnerable: access.totals.non_vulnerable }
     : null);
-  const gap = snapshot && totals ? evacuationEquityGap({
-    vulnerableLost: snapshot.lost.vulnerable,
-    vulnerableTotal: totals.vulnerable,
-    nonVulnerableLost: snapshot.lost.nonVulnerable,
-    nonVulnerableTotal: totals.nonVulnerable,
-  }) : null;
+  // Each group's loss rate divides by its residents with a shelter of the set within reach before the flood (R8, option B).
+  const gap = snapshot && totals ? accessEquityGap(snapshot, totals) : null;
   const wording = gap ? equityWording(gap, language) : null;
   const why = gap ? equityWhy(gap, language) : null;
   const without = snapshot ? snapshot.lost.population + snapshot.never.population : 0;
@@ -710,10 +731,6 @@ export function AccessCard({
     ? t("residents at road nodes whose homes flood at the modelled peak", "ผู้อยู่อาศัยที่จุดถนนซึ่งบ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง")
     : t("all residents at road nodes", "ผู้อยู่อาศัยทั้งหมดที่จุดถนน");
   const total = totals ? formatPeople(totals.population) : "…";
-  // Residents of each group with a shelter of the set within reach before the flood (the second denominator shown).
-  const reachBefore = snapshot && totals
-    ? { vulnerable: Math.max(0, totals.vulnerable - snapshot.never.vulnerable), nonVulnerable: Math.max(0, totals.nonVulnerable - snapshot.never.nonVulnerable) }
-    : null;
   const reportedTitle = t(`Shelters reported used in Sep 2024 (${counted} sites counted)`, `ที่พักพิงที่มีรายงานว่าใช้จริงในเดือน ก.ย. 2567 (2024) (นับ ${counted} แห่ง)`);
   return (
     <section className={styles.card} aria-labelledby="mae-sai-access-title" data-testid="access-card">
@@ -818,17 +835,22 @@ export function AccessCard({
                 <strong>{t("Evacuation Equity Gap", "ช่องว่างความเท่าเทียมในการอพยพ")}: {wording.value}</strong>
                 {wording.sentence && <>{" · "}<span>{wording.sentence}</span></>}
               </p>
+              <p data-testid="equity-rule">
+                <strong>{t("What is compared.", "สิ่งที่นำมาเปรียบเทียบ:")}</strong>{" "}{equityRuleSentence(language)}
+              </p>
+              {/* Both counts of each group, one group per line: lost out of those within reach, then everyone counted. */}
+              <p className={styles.muted} data-testid="equity-counts">
+                {t(
+                  `Proxy-vulnerable: ${formatPeople(gap.vulnerableLost)} lost of ${formatPeople(gap.vulnerableWithinReach)} within reach before the flood (${formatPeople(totals.vulnerable)} residents counted).`,
+                  `กลุ่มเปราะบางตามตัวแทน: สูญเสีย ${formatPeople(gap.vulnerableLost)} จาก ${formatPeople(gap.vulnerableWithinReach)} คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด ${formatPeople(totals.vulnerable)} คน)`,
+                )}{" "}
+                <br />
+                {t(
+                  `Everyone else: ${formatPeople(gap.nonVulnerableLost)} lost of ${formatPeople(gap.nonVulnerableWithinReach)} within reach before the flood (${formatPeople(totals.nonVulnerable)} residents counted).`,
+                  `กลุ่มอื่น: สูญเสีย ${formatPeople(gap.nonVulnerableLost)} จาก ${formatPeople(gap.nonVulnerableWithinReach)} คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด ${formatPeople(totals.nonVulnerable)} คน)`,
+                )}
+              </p>
               {why && <p data-testid="equity-why">{why}</p>}
-              {reachBefore && totals.vulnerable >= 0.5 && reachBefore.vulnerable < 0.5 && (
-                <p data-testid="equity-no-baseline">{t(
-                  "No proxy-vulnerable resident counted here had a shelter of this set within reach before the flood, so none could lose it.",
-                  "ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนที่นับในที่นี้มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม จึงไม่มีผู้ใดสูญเสียการเข้าถึงได้",
-                )}</p>
-              )}
-              <p className={styles.muted} data-testid="equity-counts">{t(
-                `Proxy-vulnerable residents who lost access: ${formatPeople(snapshot.lost.vulnerable)} of ${formatPeople(totals.vulnerable)} counted (${formatPeople(reachBefore?.vulnerable ?? 0)} had a shelter of this set within reach before the flood); everyone else: ${formatPeople(snapshot.lost.nonVulnerable)} of ${formatPeople(totals.nonVulnerable)} (${formatPeople(reachBefore?.nonVulnerable ?? 0)} within reach before the flood).`,
-                `กลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง: ${formatPeople(snapshot.lost.vulnerable)} จาก ${formatPeople(totals.vulnerable)} คนที่นับ (${formatPeople(reachBefore?.vulnerable ?? 0)} คนมีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม) กลุ่มอื่น: ${formatPeople(snapshot.lost.nonVulnerable)} จาก ${formatPeople(totals.nonVulnerable)} คน (${formatPeople(reachBefore?.nonVulnerable ?? 0)} คนอยู่ในระยะเดินก่อนน้ำท่วม)`,
-              )}</p>
               <p className={styles.muted} data-testid="equity-label">{t(
                 "T1 scenario (model). Vulnerable = terrain/remoteness proxy.",
                 "สถานการณ์จำลองระดับ T1 (แบบจำลอง) กลุ่มเปราะบาง = ตัวแทนจากภูมิประเทศและความห่างไกล",
@@ -836,8 +858,8 @@ export function AccessCard({
               <details className={styles.more}>
                 <summary>{t("What the ratio and “vulnerable” mean", "อัตราส่วนและ “กลุ่มเปราะบาง” หมายถึงอะไร")}</summary>
                 <p className={styles.muted}>{t(
-                `Ratio of loss rates (vulnerable ÷ everyone else), two decimals; above 1.20 means vulnerable residents are more likely to lose access, below 0.80 less likely. Each rate divides the residents who lost access by all residents counted in that group, including those with no shelter of this set within reach before the flood. No ratio is shown when a group has fewer than ${EQUITY_MIN_GROUP} residents, when no one has lost access, or when only proxy-vulnerable residents have (the ratio would divide by zero). “Vulnerable” is this repository's terrain/remoteness proxy (homes on slopes of 8° or more, or 750 m or more from a drivable road), not demographic vulnerability such as age, disability or income.`,
-                `อัตราส่วนของอัตราการสูญเสีย (กลุ่มเปราะบาง ÷ กลุ่มอื่น) ทศนิยมสองตำแหน่ง มากกว่า 1.20 หมายถึงกลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.80 หมายถึงน้อยกว่า แต่ละอัตราคือผู้ที่สูญเสียการเข้าถึงหารด้วยผู้อยู่อาศัยทั้งหมดที่นับในกลุ่มนั้น รวมผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม ไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีผู้อยู่อาศัยน้อยกว่า ${EQUITY_MIN_GROUP} คน เมื่อไม่มีผู้ใดสูญเสียการเข้าถึง หรือเมื่อมีเพียงกลุ่มเปราะบางตามตัวแทนที่สูญเสีย (อัตราส่วนจะหารด้วยศูนย์) “กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (บ้านบนความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่ความเปราะบางทางประชากร เช่น อายุ ความพิการ หรือรายได้`,
+                `Ratio of loss rates (vulnerable ÷ everyone else), two decimals; above 1.20 means vulnerable residents are more likely to lose access, below 0.80 less likely. Each rate divides the residents of a group who lost access by the residents of that group who had a shelter of this set within reach before the flood. Residents with no shelter of this set within reach before the flood are not in the rate; the bars below count them as already out of reach. No ratio is shown when a group has fewer than ${EQUITY_MIN_GROUP} residents within reach before the flood, when no one has lost access, or when only proxy-vulnerable residents have (the ratio would divide by zero). “Vulnerable” is this repository's terrain/remoteness proxy (homes on slopes of 8° or more, or 750 m or more from a drivable road), not demographic vulnerability such as age, disability or income.`,
+                `อัตราส่วนของอัตราการสูญเสีย (กลุ่มเปราะบาง ÷ กลุ่มอื่น) ทศนิยมสองตำแหน่ง มากกว่า 1.20 หมายถึงกลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.80 หมายถึงน้อยกว่า แต่ละอัตราคือผู้อยู่อาศัยของกลุ่มที่สูญเสียการเข้าถึง หารด้วยผู้อยู่อาศัยของกลุ่มนั้นที่มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม ผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วมไม่อยู่ในอัตรานี้ โดยแถบด้านล่างนับเป็นผู้ที่อยู่นอกระยะอยู่แล้ว ไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมน้อยกว่า ${EQUITY_MIN_GROUP} คน เมื่อไม่มีผู้ใดสูญเสียการเข้าถึง หรือเมื่อมีเพียงกลุ่มเปราะบางตามตัวแทนที่สูญเสีย (อัตราส่วนจะหารด้วยศูนย์) “กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (บ้านบนความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่ความเปราะบางทางประชากร เช่น อายุ ความพิการ หรือรายได้`,
                 )}</p>
               </details>
             </div>
@@ -942,18 +964,66 @@ export function CoverageCurve({ shelters, k, language }: { shelters: ShelterInfo
 const THAI_SCRIPT = /[฀-๿]/;
 const textLang = (value: string, language: Language) => (THAI_SCRIPT.test(value) ? "th" : language);
 
-function PlannedSiteItem({ site, k, shelters, language, onShow }: {
+/** "2.5 m and 4.0 m": the what-if levels other than the replay's own peak. */
+function otherLevelsText(shelters: Pick<ShelterInfo, "robustness">, language: Language): string {
+  const levels = (shelters.robustness?.stages ?? []).filter((stage) => !stage.modelled_peak)
+    .map((stage) => `${stage.stage_m.toFixed(1)} ${language === "th" ? "ม." : "m"}`);
+  return levels.join(language === "th" ? " และ " : " and ");
+}
+
+/** The local check of one candidate, once a returned verification sheet has been imported; null before, or when the site was not checked. */
+export function localCheck(shelters: Pick<ShelterInfo, "verification">, candidateId: string): ShelterCheckRow | null {
+  const check = shelters.verification;
+  if (!check || check.status !== "conducted") return null;
+  return check.checked.find((row) => row.candidate_id === candidateId) ?? null;
+}
+
+/**
+ * What a local checker reported for a site, for the plan lists. The rankings and the capacity figures were computed
+ * without the check, so a site reported not usable is still listed: the line says so instead of leaving the two side
+ * by side.
+ */
+export function localCheckText(row: Pick<ShelterCheckRow, "usable_as_shelter" | "verified_capacity">, language: Language): string {
+  const t = translator(language);
+  if (!row.usable_as_shelter) {
+    return t(
+      "Local check: reported not usable as a shelter. The ranking and the capacity figures do not use the check, so the site is still listed.",
+      "ผลตรวจในพื้นที่: รายงานว่าใช้เป็นที่พักพิงไม่ได้ การจัดอันดับและตัวเลขความจุไม่ได้ใช้ผลตรวจนี้ สถานที่จึงยังอยู่ในรายการ",
+    );
+  }
+  return row.verified_capacity === null
+    ? t("Local check: reported usable as a shelter (no capacity given).", "ผลตรวจในพื้นที่: รายงานว่าใช้เป็นที่พักพิงได้ (ไม่ได้ระบุความจุ)")
+    : t(
+      `Local check: reported usable, capacity ${formatPeople(row.verified_capacity)} people. The figures here still use the footprint estimate.`,
+      `ผลตรวจในพื้นที่: รายงานว่าใช้ได้ ความจุ ${formatPeople(row.verified_capacity)} คน ตัวเลขในส่วนนี้ยังใช้ค่าประมาณจากขอบเขตอาคาร`,
+    );
+}
+
+/** The local-check line of a site in a plan list; nothing when the site was not checked. */
+function LocalCheckBadge({ shelters, candidateId, language }: { shelters: ShelterInfo; candidateId: string; language: Language }) {
+  const row = localCheck(shelters, candidateId);
+  if (!row) return null;
+  return (
+    <span className={styles.checkBadge} data-usable={row.usable_as_shelter ? "yes" : "no"} data-testid="local-check">
+      {localCheckText(row, language)} <span className={styles.muted}>{checkLabel(row, language)}{language === "th" ? "" : "."}</span>
+    </span>
+  );
+}
+
+function PlannedSiteItem({ site, k, shelters, language, onShow, robust }: {
   site: PlannedShelter;
   k: number;
   shelters: ShelterInfo;
   language: Language;
   onShow: (id: string) => void;
+  /** Whether the site is also among the first k at every what-if level. */
+  robust: boolean;
 }) {
   const t = translator(language);
   const title = candidateTitle(site.candidate, language);
   const flag = capacityFlag(site);
   return (
-    <li data-capacity-flag={flag ?? undefined}>
+    <li data-capacity-flag={flag ?? undefined} data-over-capacity={site.shortfall ? "" : undefined} data-robust-core={robust ? "" : undefined}>
       <span className={styles.routeHead}>
         <span className={styles.planRank} aria-hidden="true">{site.rank}</span>
         <strong lang={textLang(title, language)}>{title}</strong>
@@ -967,6 +1037,13 @@ function PlannedSiteItem({ site, k, shelters, language, onShow }: {
         )}
       </span>
       {flag && <span className={styles.capacityBadge} data-flag={flag} data-testid="capacity-flag"><b aria-hidden="true">!</b> {capacityFlagText(site, language)}</span>}
+      {robust && (
+        <span className={styles.robustBadge} data-testid="robust-core">{t(
+          `Robust core: also among the first ${k} sites at ${otherLevelsText(shelters, language)}`,
+          `แกนที่คงทน: อยู่ใน ${k} แห่งแรกที่ระดับ ${otherLevelsText(shelters, language)} ด้วย`,
+        )}</span>
+      )}
+      <LocalCheckBadge shelters={shelters} candidateId={site.candidate.id} language={language} />
       <button type="button" className={styles.linkButton} onClick={() => onShow(site.candidate.id)} aria-label={t(`Show plan site ${site.rank}, ${title}, on the map`, `แสดงสถานที่ในแผนลำดับ ${site.rank} ${title} บนแผนที่`)}>
         {t("Show on map", "แสดงบนแผนที่")}
       </button>
@@ -974,16 +1051,381 @@ function PlannedSiteItem({ site, k, shelters, language, onShow }: {
   );
 }
 
+/** "31" for a load 30.8 times a capacity estimate, "2.4" below ten. */
+export function timesOver(load: number, capacity: number): string {
+  const factor = load / capacity;
+  return factor >= 10 ? String(Math.round(factor)) : factor.toFixed(1);
+}
+
 /**
- * Ranked shelter plan (planning scenario): coverage curve, the first k sites with loads and capacity, and the gap.
+ * A capacity-aware row's capacity under both bounds, with its basis: the unverified footprint estimate, or the median
+ * that stands in for an unknown capacity in the upper bound (the lower bound counts it as 0).
+ */
+export function capacityBoundsText(row: Pick<CapacityPlanRow, "capacity_est" | "upper_capacity_basis" | "upper">, kind: string, language: Language): string {
+  const t = translator(language);
+  if (row.capacity_est !== null) {
+    return t(
+      `Capacity ≈ ${formatPeople(row.capacity_est)} places in both bounds: OpenStreetMap footprint × 0.5 ÷ 3.5 m² per person (Sphere), unverified`,
+      `ความจุ ≈ ${formatPeople(row.capacity_est)} คนทั้งสองขอบเขต: พื้นที่อาคารใน OpenStreetMap × 0.5 ÷ 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ`,
+    );
+  }
+  const median = row.upper_capacity_basis === "kind_median"
+    ? t(
+      `the median estimate of its site kind (${candidateKindLabel(kind, "en").toLowerCase()})`,
+      `ค่ามัธยฐานของค่าประมาณของสถานที่ประเภทเดียวกัน (${candidateKindLabel(kind, "th")})`,
+    )
+    : t(
+      "the median of every estimate, because no site of its kind has one",
+      "ค่ามัธยฐานของค่าประมาณทั้งหมด เพราะไม่มีสถานที่ประเภทเดียวกันที่มีค่าประมาณ",
+    );
+  return t(
+    `Capacity unknown (no mapped building footprint): 0 in the lower bound, ${formatPeople(row.upper.capacity)} in the upper bound, ${median}`,
+    `ไม่ทราบความจุ (ไม่มีขอบเขตอาคารในแผนที่): ขอบเขตล่างนับเป็น 0 ขอบเขตบนใช้ ${formatPeople(row.upper.capacity)} คน ตาม${median}`,
+  );
+}
+
+/** The six standing caveats of the capacity-aware figures, in the order the card lists them. */
+export function capacityCaveats(shelters: Pick<ShelterInfo, "capacitated">, language: Language): string[] {
+  const t = translator(language);
+  const all = shelters.capacitated?.all_eligible;
+  const unknown = all ? all.sites - all.sites_with_estimate : 0;
+  return [
+    t(
+      "T1 scenario (model): computed on the reconstructed peak, not a record of who sheltered where.",
+      "สถานการณ์จำลองระดับ T1 (แบบจำลอง): คำนวณบนระดับน้ำสูงสุดที่จำลองขึ้น ไม่ใช่บันทึกว่าใครไปพักที่ใด",
+    ),
+    t(
+      "Demand is every resident of a home that floods at the modelled peak. That is an upper bound: many people stay with relatives or on an upper floor.",
+      "ความต้องการคือผู้อยู่อาศัยทุกคนในบ้านที่ถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง ซึ่งเป็นค่าขอบเขตบน เพราะหลายคนไปพักกับญาติหรืออยู่ชั้นบนของบ้าน",
+    ),
+    t(
+      `Capacity is an unverified estimate from mapped building footprints (footprint × 0.5 usable ÷ 3.5 m² per person, Sphere)${all ? `; ${unknown} of the ${all.sites} eligible candidates have no footprint to estimate from` : ""}.`,
+      `ความจุเป็นค่าประมาณจากขอบเขตอาคารในแผนที่ที่ยังไม่ได้ตรวจสอบ (พื้นที่อาคาร × ใช้ได้ 0.5 ÷ 3.5 ตร.ม. ต่อคน ตามเกณฑ์ Sphere)${all ? ` สถานที่ที่เข้าเกณฑ์ ${unknown} จาก ${all.sites} แห่งไม่มีขอบเขตอาคารให้ประมาณ` : ""}`,
+    ),
+    t(
+      "Neither bound is a limit on who fits. The two differ only in what a site with no mapped footprint is assumed to hold; a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are unmapped. More residents may fit than the upper bound gives, and fewer than the lower bound if a site turns out unusable.",
+      "ทั้งสองขอบเขตไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้ ทั้งสองต่างกันเพียงว่าสมมุติให้สถานที่ที่ไม่มีขอบเขตอาคารในแผนที่รับได้เท่าใด ส่วนสถานที่ที่มีขอบเขตอาคารนับตามค่าประมาณทั้งสองขอบเขต ซึ่งต่ำกว่าจริงในบริเวณที่อาคารยังไม่ถูกทำแผนที่ จึงอาจรองรับได้มากกว่าขอบเขตบน และอาจน้อยกว่าขอบเขตล่างหากสถานที่ใช้ไม่ได้จริง",
+    ),
+    t(
+      "The sites are candidates to verify on the ground, not a list of sites to open.",
+      "สถานที่เหล่านี้เป็นสถานที่ที่ควรตรวจสอบในพื้นที่ ไม่ใช่รายชื่อสถานที่ที่ต้องเปิด",
+    ),
+    t(
+      "The planning overlay's listed-capacity figures come from a different source (the DDPM shelter list, not building footprints), so its numbers differ from these.",
+      "ตัวเลขความจุตามบัญชีรายชื่อในชั้นข้อมูลการวางแผน (planning overlay) มาจากแหล่งข้อมูลอื่น (รายชื่อที่พักพิงของ ปภ. ไม่ใช่ขอบเขตอาคาร) ตัวเลขจึงต่างจากส่วนนี้",
+    ),
+  ];
+}
+
+/**
+ * Capacity-aware view of the plan (T1 scenario, model), beside the coverage ranking: how many of the residents whose
+ * homes flood at the peak fit under two capacity bounds, for the first k sites of the plan above, for the first k sites
+ * of the capacity-aware ranking, for that whole ranking and for every eligible candidate. Figures are read from the
+ * manifest; overflow = demand − fit. Renders nothing for a manifest without the capacity-aware plan.
+ */
+export function CapacityAwareBlock({ shelters, k, language, onShowCandidate }: {
+  shelters: ShelterInfo;
+  k: number;
+  language: Language;
+  onShowCandidate: (id: string) => void;
+}) {
+  const t = translator(language);
+  const view = capacityAwareView(shelters, k);
+  const plan = shelters.capacitated;
+  if (!view || !plan) return null;
+  const byId = new Map(shelters.candidates.map((candidate) => [candidate.id, candidate]));
+  const size = view.coverage.size;
+  const over = overCapacitySites(planSites(shelters, size));
+  const worst = over[0];
+  const km = shelters.method.threshold_m / 1000;
+  const sitesWord = (count: number) => `${count} site${count === 1 ? "" : "s"}`;
+  /** "first site" / "first 8 sites". */
+  const firstSites = (count: number) => (count === 1 ? "first site" : `first ${count} sites`);
+  const floor = `${Number((view.full.gainFloorShare * 100).toFixed(2))}%`;
+  const row = (name: string, label: string, note: string, value: CapacityCounts) => (
+    <tr key={name}>
+      <th scope="row">{label}<small>{note}</small></th>
+      {(["lower", "upper"] as const).map((bound) => (
+        <td key={bound} data-testid={`capacity-${name}-${bound}`}>
+          {formatPeople(value[bound].served)}
+          <small> {t(`overflow ${formatPeople(value[bound].overflow)}`, `ไม่มีที่รองรับ ${formatPeople(value[bound].overflow)}`)}</small>
+        </td>
+      ))}
+    </tr>
+  );
+  return (
+    <div className={styles.capacityAware} data-testid="capacity-aware">
+      <h3>{t("If capacity counts: who fits (two bounds)", "เมื่อคิดความจุด้วย: รองรับได้กี่คน (สองขอบเขต)")}</h3>
+      <p className={styles.muted}>
+        <span className={styles.tagModel}>{t("T1 scenario (model)", "สถานการณ์จำลองระดับ T1 (แบบจำลอง)")}</span>{" "}
+        {t(
+          `The plan above counts who can walk to a site, not who fits inside. Here every resident of a home that floods at the modelled peak (${formatPeople(view.demand)}) is assigned to a site within the ${km} km walk without going over that site's capacity estimate. Lower bound: a site with no capacity estimate holds nobody. Upper bound: it holds the median estimate of its site kind.`,
+          `แผนด้านบนนับผู้ที่เดินไปถึงสถานที่ได้ ไม่ได้นับผู้ที่พักได้จริง ส่วนนี้จัดให้ผู้อยู่อาศัยทุกคนในบ้านที่ถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง (${formatPeople(view.demand)} คน) ไปยังสถานที่ภายในระยะเดิน ${km} กม. โดยไม่เกินค่าประมาณความจุของสถานที่นั้น ขอบเขตล่าง: สถานที่ที่ไม่มีค่าประมาณความจุถือว่ารับไม่ได้เลย ขอบเขตบน: ใช้ค่ามัธยฐานของค่าประมาณของสถานที่ประเภทเดียวกัน`,
+        )}
+      </p>
+      <ProvenanceNote kind="capacity" confidence={plan.confidence} reason={plan.confidence_reason} timestamp={plan.source_timestamp} language={language} />
+      <div className={styles.setCompare} data-testid="capacity-aware-table">
+        <table>
+          <caption>{t(
+            `Residents who fit, of the ${formatPeople(view.demand)} whose homes flood at the peak (overflow = demand − fit)`,
+            `ผู้ที่พักได้ จาก ${formatPeople(view.demand)} คนที่บ้านถูกน้ำท่วมที่ระดับสูงสุด (ผู้ที่ไม่มีที่รองรับ = ความต้องการ − ผู้ที่พักได้)`,
+          )}</caption>
+          <thead>
+            <tr>
+              <td />
+              <th scope="col" data-testid="capacity-bound-lower">{t("Lower bound", "ขอบเขตล่าง")}<small>{t("a site with no footprint holds nobody", "สถานที่ที่ไม่มีขอบเขตอาคารรับไม่ได้เลย")}</small></th>
+              <th scope="col" data-testid="capacity-bound-upper">{t("Upper bound", "ขอบเขตบน")}<small>{t("a site with no footprint holds a typical size; not a maximum", "สถานที่ที่ไม่มีขอบเขตอาคารรับได้ตามขนาดทั่วไป ไม่ใช่ค่าสูงสุด")}</small></th>
+            </tr>
+          </thead>
+          <tbody>
+            {row("coverage",
+              t(`The ${firstSites(size)} of the plan above`, `${size} แห่งแรกของแผนด้านบน`),
+              t(`Ranked by who can walk there · ${formatPeople(view.coverage.withinReach)} within the walk`, `จัดอันดับตามผู้ที่เดินไปถึงได้ · อยู่ในระยะเดิน ${formatPeople(view.coverage.withinReach)} คน`),
+              view.coverage)}
+            {row("ranked",
+              t(`The ${firstSites(view.ranked.size)} of the capacity-aware ranking`, `${view.ranked.size} แห่งแรกของการจัดอันดับแบบคิดความจุ`),
+              t(`Each step adds the site where the most additional residents fit · ${formatPeople(view.ranked.withinReach)} within the walk`, `แต่ละขั้นเพิ่มสถานที่ที่ทำให้พักได้เพิ่มมากที่สุด · อยู่ในระยะเดิน ${formatPeople(view.ranked.withinReach)} คน`),
+              view.ranked)}
+            {row("full",
+              t(`All ${sitesWord(view.full.size)} of the capacity-aware ranking`, `ทั้ง ${view.full.size} แห่งของการจัดอันดับแบบคิดความจุ`),
+              view.full.endedBy === "gain_floor"
+                ? t(`The ranking ends when the next site adds less than ${floor} of demand`, `การจัดอันดับสิ้นสุดเมื่อสถานที่ถัดไปเพิ่มได้น้อยกว่า ${floor} ของความต้องการ`)
+                : t(`The ranking is limited to ${view.full.size} sites`, `การจัดอันดับจำกัดไว้ที่ ${view.full.size} แห่ง`),
+              view.full)}
+            {row("all",
+              t(`Every eligible candidate (${view.allEligible.size})`, `สถานที่ที่เข้าเกณฑ์ทั้งหมด (${view.allEligible.size} แห่ง)`),
+              t(`${view.allEligible.withEstimate} with a capacity estimate · ${formatPeople(view.allEligible.withinReach)} within the walk`, `มีค่าประมาณความจุ ${view.allEligible.withEstimate} แห่ง · อยู่ในระยะเดิน ${formatPeople(view.allEligible.withinReach)} คน`),
+              view.allEligible)}
+          </tbody>
+        </table>
+        <p data-testid="capacity-aware-sentence">{t(
+          `Reading for k = ${size}: ${formatPeople(view.coverage.withinReach)} residents can walk to the ${firstSites(size)} of the plan above, and the capacity estimates hold ${formatPeople(view.coverage.lower.served)} to ${formatPeople(view.coverage.upper.served)} of them. That leaves ${formatPeople(view.coverage.upper.overflow)} to ${formatPeople(view.coverage.lower.overflow)} of the ${formatPeople(view.demand)} without a place.`,
+          `อ่านที่ k = ${size}: ผู้อยู่อาศัย ${formatPeople(view.coverage.withinReach)} คนเดินไปถึง ${size} แห่งของแผนด้านบนได้ และค่าประมาณความจุรองรับได้ ${formatPeople(view.coverage.lower.served)} ถึง ${formatPeople(view.coverage.upper.served)} คน จึงเหลือ ${formatPeople(view.coverage.upper.overflow)} ถึง ${formatPeople(view.coverage.lower.overflow)} คนจาก ${formatPeople(view.demand)} คนที่ไม่มีที่รองรับ`,
+        )}</p>
+      </div>
+      {worst && worst.capacity !== null && (
+        <p className={styles.caveat} data-testid="over-capacity-note">{t(
+          `${size === 1 ? "The first site of the plan above is" : `${over.length} of the first ${size} sites of the plan above ${over.length === 1 ? "is" : "are"}`} assigned more residents than ${over.length === 1 ? "its" : "their"} capacity estimate holds. Largest gap: ${candidateTitle(worst.candidate, "en")}, ≈ ${formatPeople(worst.capacity)} places for ≈ ${formatPeople(worst.load)} residents assigned (about ${timesOver(worst.load, worst.capacity)} times the estimate).`,
+          `${over.length} จาก ${size} แห่งของแผนด้านบนได้รับผู้อพยพมากกว่าค่าประมาณความจุ ช่องว่างมากที่สุด: ${candidateTitle(worst.candidate, "th")} รองรับได้ ≈ ${formatPeople(worst.capacity)} คน แต่ได้รับผู้อพยพ ≈ ${formatPeople(worst.load)} คน (ประมาณ ${timesOver(worst.load, worst.capacity)} เท่าของค่าประมาณ)`,
+        )}</p>
+      )}
+      <details className={styles.capacitySites} data-testid="capacity-ranking-sites">
+        <summary>{t(
+          `The ${firstSites(view.ranked.size)} of the capacity-aware ranking (candidates to verify)`,
+          `${view.ranked.size} แห่งแรกของการจัดอันดับแบบคิดความจุ (สถานที่ที่ควรตรวจสอบ)`,
+        )}</summary>
+        <ol className={styles.planList}>
+          {view.ranked.rows.map((entry, index) => {
+            const candidate = byId.get(entry.candidate_id);
+            if (!candidate) return null;
+            const title = candidateTitle(candidate, language);
+            return (
+              <li key={entry.candidate_id} data-capacity-basis={entry.capacity_est === null ? "unknown" : "estimate"}>
+                <span className={styles.routeHead}>
+                  <span className={styles.planRank} aria-hidden="true">{index + 1}</span>
+                  <strong lang={textLang(title, language)}>{title}</strong>
+                </span>
+                <span className={styles.routeMeta}>{candidateKindLabel(candidate.kind, language)} · {capacityBoundsText(entry, candidate.kind, language)}</span>
+                <span className={styles.routeFigures}>{t(
+                  `Assigned ${formatPeople(entry.lower.load)} of ${formatPeople(entry.lower.capacity)} places (lower bound) · ${formatPeople(entry.upper.load)} of ${formatPeople(entry.upper.capacity)} (upper bound)`,
+                  `จัดให้ ${formatPeople(entry.lower.load)} จาก ${formatPeople(entry.lower.capacity)} ที่ (ขอบเขตล่าง) · ${formatPeople(entry.upper.load)} จาก ${formatPeople(entry.upper.capacity)} ที่ (ขอบเขตบน)`,
+                )}</span>
+                <LocalCheckBadge shelters={shelters} candidateId={candidate.id} language={language} />
+                <button type="button" className={styles.linkButton} onClick={() => onShowCandidate(candidate.id)} aria-label={t(`Show capacity-aware site ${index + 1}, ${title}, on the map`, `แสดงสถานที่แบบคิดความจุลำดับ ${index + 1} ${title} บนแผนที่`)}>
+                  {t("Show on map", "แสดงบนแผนที่")}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+        <p className={styles.muted}>{t(
+          "A site's figure is the number of residents it adds when it joins the ranking; other assignments with the same totals exist.",
+          "ตัวเลขของแต่ละแห่งคือจำนวนผู้อยู่อาศัยที่เพิ่มขึ้นเมื่อสถานที่นั้นเข้าสู่การจัดอันดับ การจัดแบบอื่นที่ได้ผลรวมเท่ากันก็มีได้",
+        )}</p>
+      </details>
+      <ul className={styles.capacityCaveats} data-testid="capacity-caveats">
+        {capacityCaveats(shelters, language).map((caveat) => <li key={caveat}>{caveat}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Plan robustness (T1 scenario, model): the coverage ranking repeated at what-if levels around the illustrative peak,
+ * which are not return periods, with the count of sites chosen at every level (the robust core). Renders nothing for a
+ * manifest without the robustness block.
+ */
+export function WhatIfBlock({ shelters, k, language }: { shelters: ShelterInfo; k: number; language: Language }) {
+  const t = translator(language);
+  const robustness = shelters.robustness;
+  const levels = whatIfLevels(shelters, k);
+  if (!robustness || levels.length === 0) return null;
+  const size = Math.min(Math.max(1, Math.round(k)), shelters.plan.length);
+  const core = robustCore(shelters, size);
+  const label = localizedText(robustness.label, language);
+  const unit = language === "th" ? "ม." : "m";
+  const peak = levels.find((level) => level.modelledPeak);
+  return (
+    <div className={styles.whatIf} data-testid="what-if-levels">
+      <h3>{t("Other peak levels: which sites stay in the plan", "ระดับน้ำสูงสุดอื่น: สถานที่ใดยังอยู่ในแผน")}</h3>
+      <p className={styles.caveat} data-testid="what-if-label">
+        <span className={styles.tagModel}>{t("T1 scenario (model)", "สถานการณ์จำลองระดับ T1 (แบบจำลอง)")}</span>{" "}
+        <span lang={label.lang}>{label.text}</span>
+      </p>
+      <p className={styles.muted}>{t(
+        `The ${peak ? peak.stage.toFixed(1) : shelters.method.peak_stage_m} m peak of this replay is illustrative (no gauge record), so the ranking is repeated with the peak at ${otherLevelsText(shelters, "en")}: other homes flood and other candidates keep their freeboard.`,
+        `ระดับน้ำสูงสุด ${peak ? peak.stage.toFixed(1) : shelters.method.peak_stage_m} ม. ของการย้อนดูนี้เป็นค่าเพื่อการอธิบาย (ไม่มีข้อมูลสถานีวัดน้ำ) จึงจัดอันดับซ้ำโดยให้ระดับสูงสุดเป็น ${otherLevelsText(shelters, "th")} ซึ่งทำให้บ้านที่ถูกน้ำท่วมและสถานที่ที่ยังมีระยะพ้นน้ำเปลี่ยนไป`,
+      )}</p>
+      <ProvenanceNote kind="robustness" confidence={robustness.confidence} reason={robustness.confidence_reason} timestamp={robustness.source_timestamp} language={language} />
+      <div className={styles.setCompare} data-testid="what-if-table">
+        <table>
+          <caption>{t(`The ranking at each level, for a plan of ${size} site${size === 1 ? "" : "s"}`, `การจัดอันดับที่แต่ละระดับ สำหรับแผน ${size} แห่ง`)}</caption>
+          <thead>
+            <tr>
+              <td />
+              {levels.map((level) => (
+                <th key={level.stage} scope="col" data-peak={level.modelledPeak ? "" : undefined}>
+                  {level.stage.toFixed(1)} {unit}{level.modelledPeak && <small>{t(" (this replay)", " (การย้อนดูนี้)")}</small>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">{t("Residents whose homes flood", "ผู้ที่บ้านถูกน้ำท่วม")}</th>
+              {levels.map((level) => <td key={level.stage} data-testid={`what-if-demand-${level.stage.toFixed(1)}`}>{formatPeople(level.demand)}</td>)}
+            </tr>
+            <tr>
+              <th scope="row">{t("Eligible candidates", "สถานที่ที่เข้าเกณฑ์")}</th>
+              {levels.map((level) => <td key={level.stage}>{level.eligible}</td>)}
+            </tr>
+            <tr>
+              <th scope="row">
+                {t("Within the walk of that level's own plan", "อยู่ในระยะเดินของแผนของระดับนั้นเอง")}
+                <small>{t("Capacity not counted", "ยังไม่คิดความจุ")}</small>
+              </th>
+              {levels.map((level) => (
+                <td key={level.stage} data-testid={`what-if-covered-${level.stage.toFixed(1)}`}>
+                  {formatPeople(level.covered)}<small> {percent(level.share)}{level.size < size ? t(` · ${level.size} sites ranked`, ` · จัดอันดับได้ ${level.size} แห่ง`) : ""}</small>
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+        <p data-testid="robust-core-sentence">{core.length > 0
+          ? t(
+            `${core.length} of the first ${size} site${size === 1 ? "" : "s"} of the plan above ${core.length === 1 ? "is" : "are"} among the first ${size} at every level: the robust core, marked in the list above. A site in the robust core is still a candidate to verify.`,
+            `${core.length} จาก ${size} แห่งแรกของแผนด้านบนอยู่ใน ${size} แห่งแรกที่ทุกระดับ เรียกว่าแกนที่คงทน และมีเครื่องหมายในรายการด้านบน สถานที่ในแกนที่คงทนยังคงเป็นสถานที่ที่ควรตรวจสอบ`,
+          )
+          : t(
+            size === 1
+              ? "The first site of the plan above is not the first site at every level, so a plan this small has no robust core."
+              : `None of the first ${size} sites of the plan above is among the first ${size} at every level, so a plan this small has no robust core.`,
+            `ไม่มีสถานที่ใดใน ${size} แห่งแรกของแผนด้านบนที่อยู่ใน ${size} แห่งแรกที่ทุกระดับ แผนขนาดนี้จึงไม่มีแกนที่คงทน`,
+          )}</p>
+      </div>
+    </div>
+  );
+}
+
+/** "Checked by <role> on <date>; not an official shelter register", in the page's language. */
+export function checkLabel(row: Pick<ShelterCheckRow, "checked_by_role" | "checked_on">, language: Language): string {
+  const role = pick(CHECKER_ROLES, row.checked_by_role, language);
+  const date = formatDateWithYear(row.checked_on, language);
+  return language === "th"
+    ? `ตรวจสอบโดย${role} เมื่อ ${date} ไม่ใช่ทะเบียนที่พักพิงทางการ`
+    : `Checked by ${role} on ${date}; not an official shelter register`;
+}
+
+/**
+ * Local check of the shelter candidates through the verification sheet of the export pack. Until a sheet is returned
+ * and imported the block says the check was not conducted and states no result. A returned check lists each checked
+ * candidate with the label "Checked by <role> on <date>; not an official shelter register", under its confidence, the
+ * reason for it and the dates of the checks, and says that the rankings and the capacity figures above do not use it.
+ * The checker's access notes are never shown: only that one was given. `sheet` is the blank sheet's download file.
+ * Renders nothing for a manifest without the block.
+ */
+export function ShelterVerificationBlock({ shelters, sheet, language }: { shelters: ShelterInfo; sheet?: ExportFile | null; language: Language }) {
+  const t = translator(language);
+  const check = shelters.verification;
+  if (!check) return null;
+  const conducted = check.status === "conducted" && check.checked.length > 0;
+  const byId = new Map(shelters.candidates.map((candidate) => [candidate.id, candidate]));
+  return (
+    <div className={styles.whatIf} data-testid="shelter-verification" data-status={conducted ? "conducted" : "not_conducted"}>
+      <h3>{t("Local check of the candidates", "การตรวจสอบสถานที่ในพื้นที่")}</h3>
+      {conducted ? (
+        <>
+          <p data-testid="verification-status">{t(
+            `A local check of ${check.checked.length} of the ${check.candidates_listed} eligible candidates was returned${check.imported_on ? ` (imported ${formatDateWithYear(check.imported_on, "en")})` : ""}. It is reported by role and is not an official shelter register; a candidate that is not listed below was not checked.`,
+            `มีผลการตรวจสอบในพื้นที่ส่งกลับมา ${check.checked.length} จาก ${check.candidates_listed} แห่งที่เข้าเกณฑ์${check.imported_on ? ` (นำเข้าเมื่อ ${formatDateWithYear(check.imported_on, "th")})` : ""} เป็นข้อมูลที่รายงานตามบทบาท ไม่ใช่ทะเบียนที่พักพิงทางการ สถานที่ที่ไม่อยู่ในรายการด้านล่างยังไม่ได้ตรวจสอบ`,
+          )}</p>
+          {check.confidence && check.source_timestamp && (
+            <ProvenanceNote kind="verification" confidence={check.confidence} reason={check.confidence_reason} timestamp={check.source_timestamp} language={language}>
+              {t(
+                "One checker reported each site once; the project team did not audit the answers.",
+                "ผู้ตรวจสอบหนึ่งรายรายงานแต่ละสถานที่หนึ่งครั้ง ทีมโครงการไม่ได้ตรวจทานคำตอบ",
+              )}
+            </ProvenanceNote>
+          )}
+          <p className={styles.caveat} data-testid="verification-not-used">{t(
+            "The ranking, the capacity figures and the download tables above were computed without this check: a site reported not usable is still ranked, and a reported capacity does not replace the footprint estimate. Checked sites carry a “Local check” line in the lists above.",
+            "การจัดอันดับ ตัวเลขความจุ และตารางดาวน์โหลดด้านบนคำนวณโดยไม่ได้ใช้ผลตรวจนี้ สถานที่ที่รายงานว่าใช้ไม่ได้ยังคงอยู่ในการจัดอันดับ และความจุที่รายงานไม่ได้แทนค่าประมาณจากขอบเขตอาคาร สถานที่ที่ตรวจสอบแล้วมีบรรทัด “ผลตรวจในพื้นที่” ในรายการด้านบน",
+          )}</p>
+          <ul className={styles.list} data-testid="verification-rows">
+            {check.checked.map((row) => {
+              const candidate = byId.get(row.candidate_id);
+              return (
+                <li key={row.candidate_id}>
+                  <strong>{candidate ? candidateTitle(candidate, language) : row.candidate_id}</strong>{" — "}
+                  {row.usable_as_shelter ? t("usable as a shelter", "ใช้เป็นที่พักพิงได้") : t("not usable as a shelter", "ใช้เป็นที่พักพิงไม่ได้")}
+                  {row.verified_capacity !== null && t(`; capacity ${formatPeople(row.verified_capacity)} people`, ` ความจุ ${formatPeople(row.verified_capacity)} คน`)}
+                  {row.access_notes_given && t("; access notes were given (not published)", " มีหมายเหตุการเข้าถึง (ไม่เผยแพร่)")}
+                  {language === "th" ? " " : ". "}
+                  <span className={styles.muted} data-testid="verification-label">{checkLabel(row, language)}{language === "th" ? "" : "."}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : (
+        <p className={styles.caveat} data-testid="verification-status">{t(
+          "Not conducted. No verification sheet has been returned, so no site on this page has been checked on the ground: every capacity is an unverified estimate and every site is a candidate to verify.",
+          "ยังไม่ได้ดำเนินการ ยังไม่มีแบบตรวจสอบส่งกลับมา จึงยังไม่มีสถานที่ใดในหน้านี้ที่ได้รับการตรวจสอบในพื้นที่ ความจุทุกค่าเป็นค่าประมาณที่ยังไม่ได้ตรวจสอบ และทุกแห่งเป็นสถานที่ที่ควรตรวจสอบ",
+        )}</p>
+      )}
+      <p className={styles.muted} data-testid="verification-sheet">
+        {t(
+          `The verification sheet lists the ${check.candidates_listed} eligible candidates with empty columns for a local checker: usable as a shelter, capacity, access notes, role and date. A returned check is labelled “Checked by <role> on <date>; not an official shelter register”. The sheet takes a role, never a name: no names of people, phone numbers or ID numbers. Access notes are for the project team only and are never published.`,
+          `แบบตรวจสอบมีรายการสถานที่ที่เข้าเกณฑ์ ${check.candidates_listed} แห่ง พร้อมคอลัมน์ว่างสำหรับผู้ตรวจสอบในพื้นที่ ได้แก่ ใช้เป็นที่พักพิงได้หรือไม่ ความจุ หมายเหตุการเข้าถึง บทบาท และวันที่ ผลที่ส่งกลับมาจะระบุว่า “ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ” แบบตรวจสอบรับเฉพาะบทบาท ไม่รับชื่อบุคคล หมายเลขโทรศัพท์ หรือเลขประจำตัว หมายเหตุการเข้าถึงใช้ภายในทีมโครงการเท่านั้นและจะไม่ถูกเผยแพร่`,
+        )}
+        {sheet && (
+          <>
+            {" "}
+            <a href={sheet.href} download={sheet.name} className={styles.inlineLink} data-testid="verification-sheet-link">
+              {t(`Download the blank sheet (CSV, ${formatFileSize(sheet.bytes)})`, `ดาวน์โหลดแบบตรวจสอบเปล่า (CSV, ${formatFileSize(sheet.bytes)})`)}
+            </a>
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Ranked shelter plan (planning scenario): coverage curve, the first k sites with loads and capacity, and the gap,
+ * then the capacity-aware view (both bounds), the what-if levels with the robust core and the local check of the
+ * candidates (not conducted until a verification sheet is returned).
  * Memoised: it does not depend on the replay clock, so playback does not re-render it.
  */
-export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPlanK, language, onShowCandidate }: {
+export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPlanK, language, onShowCandidate, verificationSheet }: {
   shelters: ShelterInfo;
   k: number;
   onPlanK: (value: number) => void;
   language: Language;
   onShowCandidate: (id: string) => void;
+  /** The blank verification sheet of the export pack, for its download link. */
+  verificationSheet?: ExportFile | null;
 }) {
   const t = translator(language);
   const sliderId = useId();
@@ -994,6 +1436,7 @@ export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPl
   const shortfalls = sites.filter((site) => site.shortfall).length;
   const unknown = sites.filter((site) => site.capacity === null).length;
   const freeboard = shelters.method.freeboard_m;
+  const core = new Set(robustCore(shelters, k));
   return (
     <section className={styles.card} aria-labelledby="mae-sai-plan-title" data-testid="shelter-plan-card">
       <ThemeEyebrow prefix={t("PLANNING SCENARIO", "สถานการณ์เพื่อการวางแผน")} theme="protect_lives" language={language} />
@@ -1038,13 +1481,16 @@ export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPl
       )}
       <ol className={styles.planList}>
         {sites.map((site) => (
-          <PlannedSiteItem key={site.candidate.id} site={site} k={k} shelters={shelters} language={language} onShow={onShowCandidate} />
+          <PlannedSiteItem key={site.candidate.id} site={site} k={k} shelters={shelters} language={language} onShow={onShowCandidate} robust={core.has(site.candidate.id)} />
         ))}
       </ol>
       <p className={styles.muted}>{t(
         `Loads assign each covered resident to the nearest site of this plan. ${shortfalls > 0 ? `${shortfalls} site${shortfalls === 1 ? " is" : "s are"} over the capacity estimate. ` : ""}${unknown > 0 ? `${unknown} site${unknown === 1 ? " has" : "s have"} no capacity estimate (OpenStreetMap building coverage in Mae Sai is sparse, so capacities are unknown or underestimated). ` : ""}Candidates and loads are model outputs; check any site on the ground before planning with it.`,
         `ภาระคือจำนวนผู้อยู่อาศัยที่ได้รับการครอบคลุมซึ่งจัดให้ไปยังที่พักพิงที่ใกล้ที่สุดของแผนนี้ ${shortfalls > 0 ? `มี ${shortfalls} แห่งที่เกินความจุประมาณการ ` : ""}${unknown > 0 ? `มี ${unknown} แห่งที่ไม่มีค่าประมาณความจุ (ข้อมูลอาคารใน OpenStreetMap ของแม่สายยังมีน้อย ความจุจึงไม่ทราบหรือต่ำกว่าจริง) ` : ""}สถานที่และภาระเป็นผลจากแบบจำลอง ควรตรวจสอบในพื้นที่ก่อนใช้วางแผน`,
       )}</p>
+      <CapacityAwareBlock shelters={shelters} k={k} language={language} onShowCandidate={onShowCandidate} />
+      <WhatIfBlock shelters={shelters} k={k} language={language} />
+      <ShelterVerificationBlock shelters={shelters} sheet={verificationSheet} language={language} />
     </section>
   );
 });
@@ -1320,15 +1766,26 @@ function ExternalCheckItem({ check, manifest, language }: { check: ExternalCheck
 }
 
 /**
- * External size figures, split into the calibration anchor (it set a stage knot, so the model matches it by
+ * External checks in three kinds of group: the calibration anchor (it set a stage knot, so the model matches it by
  * construction), calibration-informed size checks (known while tuning, so not independent) and independent checks
- * (compared over the external product's own time window where it is known).
+ * (compared over the external product's own time window where it is known); then, as a group of its own, the
+ * comparison with the season envelope: a scenario, plausibility and not validation, never listed as independent.
+ * That group needs the envelope's own files (`envelope`); without a shippable envelope it is left out.
  */
-export const ExternalChecks = memo(function ExternalChecks({ manifest, language }: { manifest: CheckManifest; language: Language }) {
+export const ExternalChecks = memo(function ExternalChecks({ manifest, language, envelope, names }: {
+  manifest: CheckManifest;
+  language: Language;
+  /** The season envelope as the page holds it; absent or undefined leaves the comparison group out. */
+  envelope?: SeasonEnvelopeState;
+  /** Subdistrict names for the comparison's rows. */
+  names?: Record<string, TambonProps>;
+}) {
   const t = translator(language);
-  const checks = manifest.external_checks ?? [];
-  if (checks.length === 0) return null;
-  const { calibration, informed, independent } = externalChecksByRole(checks);
+  const all = manifest.external_checks ?? [];
+  const { calibration, informed, independent, envelope: envelopeChecks } = externalChecksByRole(all);
+  const checks = [...calibration, ...informed, ...independent];
+  const comparisons = envelope && envelope.status !== "absent" ? envelopeChecks : [];
+  if (checks.length === 0 && comparisons.length === 0) return null;
   // In Thai, say so only when some source wording has no known translation and stays in its original.
   const untranslated = language === "th" && checks.some((check) => [check.observed, check.reported_text, check.use, check.model_window]
     .some((value) => value && localizedText(value, language).lang !== language));
@@ -1353,6 +1810,9 @@ export const ExternalChecks = memo(function ExternalChecks({ manifest, language 
           <ul className={styles.list}>{independent.map((check) => <ExternalCheckItem key={check.id} check={check} manifest={manifest} language={language} />)}</ul>
         </>
       )}
+      {envelope && comparisons.map((check) => (
+        <SeasonEnvelopeComparison key={check.id} check={check} envelope={envelope} names={names ?? {}} language={language} />
+      ))}
     </div>
   );
 });

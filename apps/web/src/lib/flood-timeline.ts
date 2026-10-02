@@ -208,6 +208,170 @@ export interface ShelterMethod {
   snap_max_m: number;
 }
 
+/**
+ * One capacity bound of a capacity-aware plan row, in whole residents: the site's capacity under that bound, the
+ * residents it adds when it joins the plan (`load`, never above `capacity`), the running total `served` by the plan so
+ * far, and `overflow` = demand − `served` (residents with no site in reach or no place left).
+ */
+export interface CapacityBound { capacity: number; load: number; served: number; overflow: number }
+
+/** Where a site's upper-bound capacity comes from: its own footprint estimate, or a median when it has none. */
+export type UpperCapacityBasis = "estimate" | "kind_median" | "all_kinds_median" | "none";
+
+/** One site of a ranking counted with capacity. The lower bound counts an unknown capacity as 0. */
+export interface CapacityPlanRow {
+  candidate_id: string;
+  capacity_est: number | null;
+  /** "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified", or "unknown". */
+  capacity_basis: string;
+  upper_capacity_basis: UpperCapacityBasis;
+  /** Residents within the walking limit of the plan so far, capacity ignored (capacity-aware ranking only). */
+  within_reach?: number;
+  lower: CapacityBound;
+  upper: CapacityBound;
+}
+
+export interface CapacityTotal { capacity: number; served: number; overflow: number }
+
+/**
+ * Capacity-aware shelter plan (T1 scenario, model): who fits where under two capacity bounds. Demand is every resident
+ * of a home that floods at the modelled peak (an upper bound) and capacity is an unverified footprint estimate, so the
+ * sites are candidates to verify.
+ */
+export interface CapacityAwarePlan {
+  scenario_tier: string;
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  assumptions: string[];
+  demand_people: number;
+  demand_basis: string;
+  capacity_basis: { estimate: string; unknown: string };
+  /** `note` (later r4 bakes): why neither bound is a limit on who fits. */
+  bounds: { lower: string; upper: string; note?: string };
+  method: string;
+  /** The capacity-aware ranking holds at most this many sites, and ends when the next site adds less than this share of demand. */
+  max_plan_sites: number;
+  min_gain_share: number;
+  /** Median capacity estimate per site kind (the upper bound of a site of that kind without an estimate). */
+  kind_median_capacity: Record<string, number>;
+  all_kinds_median_capacity: number | null;
+  /** The capacity-aware ranking: the first k rows are the plan for k sites. */
+  plan: CapacityPlanRow[];
+  /** The coverage ranking (`ShelterInfo.plan`) counted with capacity, row for row. */
+  coverage_plan: CapacityPlanRow[];
+  all_eligible: { sites: number; sites_with_estimate: number; within_reach: number; lower: CapacityTotal; upper: CapacityTotal };
+}
+
+/** The coverage ranking repeated at one what-if design stage. */
+export interface WhatIfStage {
+  stage_m: number;
+  /** True for the stage the replay itself uses (its modelled peak). */
+  modelled_peak: boolean;
+  demand_people: number;
+  eligible_count: number;
+  uncoverable_people: number;
+  knee_k: number | null;
+  /** Ranked candidate ids; the first k are the plan for k sites at this stage. */
+  plan: string[];
+  cumulative_demand: number[];
+}
+
+/** Plan robustness: what-if levels around an illustrative peak, not return periods. */
+export interface PlanRobustness {
+  scenario_tier: string;
+  label: string;
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  assumptions: string[];
+  method: string;
+  stages: WhatIfStage[];
+  /** `core_by_k[k - 1]`: the sites among the first k at every stage. */
+  core_by_k: string[][];
+}
+
+/** Role code of the person who checked a candidate: a role, never a name. */
+export type CheckerRole = "ddpm_officer" | "local_government_officer" | "village_leader" | "site_staff" | "project_team" | "other_local_contact";
+
+/**
+ * One candidate a local checker reported on. Whitelisted columns only: no name of a person, no phone or ID number and
+ * no free text. The checker's access notes are never published; `access_notes_given` says only that one was written.
+ */
+export interface ShelterCheckRow {
+  candidate_id: string;
+  usable_as_shelter: boolean;
+  verified_capacity: number | null;
+  checked_by_role: CheckerRole;
+  /** Date of the check, YYYY-MM-DD. */
+  checked_on: string;
+  access_notes_given: boolean;
+  /** "Checked by <role> on <date>; not an official shelter register". */
+  label: string;
+}
+
+/**
+ * Local check of the shelter candidates through the verification sheet in the export pack. `not_conducted` until a
+ * sheet is returned and imported: then `checked` is empty and nothing is implied about any site. A conducted check
+ * is reported by role and is never an official shelter register; it carries its confidence, the reason for it and
+ * its assumptions, one of which says that the rankings and the capacity figures do not use the check.
+ */
+export interface ShelterVerification {
+  status: "not_conducted" | "conducted";
+  label_template: string;
+  /** Id of the blank sheet in `exports.files`. */
+  sheet: string;
+  candidate_set_sha256: string;
+  candidates_listed: number;
+  statement: string;
+  /** Present on a conducted check: its confidence class, why, and what the check does and does not say. */
+  confidence?: string;
+  confidence_reason?: string;
+  assumptions?: string[];
+  source_timestamp?: string;
+  imported_on?: string;
+  returned_file_sha256?: string;
+  counts?: { checked: number; usable_yes: number; usable_no: number; with_verified_capacity: number };
+  checked: ShelterCheckRow[];
+}
+
+/** One download file of the export pack: a table or a map layer written from the replay's modelled blocks. */
+export interface ExportFile extends HashedAsset {
+  id: string;
+  name: string;
+  media_type: "text/csv" | "application/geo+json" | "text/plain";
+  title: Localized;
+  /** Evidence lanes of the file's content: "SCN" (model) and, for the reported-shelter files, "REP". */
+  lanes: EvidenceLane[];
+  licence: string;
+  source_ids: string[];
+  rows?: number;
+  /** Provenance lines before the column header of a CSV. */
+  header_lines?: number;
+}
+
+/**
+ * The export pack (r4 on): tables and one map layer for spreadsheet and GIS users. T1 scenario (model), modelled and
+ * not observed; one licence lineage per file. The files are downloads: outside the replay's precache budget.
+ */
+export interface ExportPack {
+  scenario_tier: string;
+  tier: string;
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  purpose: string;
+  licence: string;
+  licence_rule: string;
+  header: { csv: string; geojson: string; why_in_the_file: string };
+  offline: string;
+  assumptions: string[];
+  folder: string;
+  file_count: number;
+  bytes: number;
+  files: ExportFile[];
+}
+
 export interface ShelterInfo {
   candidates: ShelterCandidate[];
   plan: ShelterPlanEntry[];
@@ -217,6 +381,12 @@ export interface ShelterInfo {
   eligible_count: number;
   reported: ReportedShelter[];
   method: ShelterMethod;
+  /** Capacity-aware plan under two capacity bounds (absent from a manifest baked before it existed). */
+  capacitated?: CapacityAwarePlan;
+  /** The coverage ranking at what-if levels around the illustrative peak (absent from an older manifest). */
+  robustness?: PlanRobustness;
+  /** Local check of the candidates through the verification sheet (absent from an older manifest). */
+  verification?: ShelterVerification;
   /** Confidence class of the candidate screening and plan, why, and the timestamps behind the shelter figures. */
   confidence: string;
   confidence_reason: string;
@@ -235,7 +405,15 @@ export interface ShelterInfo {
  * stage keyframes were tuned, so agreement is not independent evidence; an independent magnitude check tests the size
  * of the modelled extent against a figure that played no part in tuning.
  */
-export type ExternalCheckRole = "calibration_anchor" | "calibration_informed_magnitude_check" | "independent_magnitude_check";
+export type SizeCheckRole = "calibration_anchor" | "calibration_informed_magnitude_check" | "independent_magnitude_check";
+
+/**
+ * Role of the comparison with a season envelope (lane SCN-ENV): a plausibility comparison, not a validation. It is
+ * never a size check and never independent evidence: the envelope holds water from the whole season, with no date
+ * per patch.
+ */
+export const SEASON_ENVELOPE_ROLE = "season_envelope_plausibility";
+export type ExternalCheckRole = SizeCheckRole | typeof SEASON_ENVELOPE_ROLE;
 
 /** Size comparison of the reconstruction with an external (observed or reported) product. */
 export interface ExternalCheck {
@@ -245,7 +423,7 @@ export interface ExternalCheck {
   reported_people?: number;
   reported_text: string;
   scope?: string;
-  role: ExternalCheckRole;
+  role: SizeCheckRole;
   /** Model figures comparable with the external one (for a windowed product, the largest extent within its window). */
   model_km2: number;
   model_people_in_water?: number;
@@ -257,6 +435,75 @@ export interface ExternalCheck {
   model_peak_people_in_water?: number;
   use: string;
   urls: string[];
+}
+
+/**
+ * The comparison of the modelled water with a season envelope, as the manifest lists it among its external checks:
+ * a role, what it may be used for and the statistics file. It holds no figure: every number derived from the
+ * envelope is in that file, under the product's own licence.
+ */
+export interface SeasonEnvelopeCheck {
+  id: string;
+  /** What the model is set beside. Never `observed`: the envelope is a scenario layer, not the observed side of a check. */
+  compared_with: string;
+  role: typeof SEASON_ENVELOPE_ROLE;
+  /** "Season envelope comparison (scenario; plausibility, not validation)". */
+  title: string;
+  scope: string;
+  statistics: HashedAsset;
+  use: string;
+  tuning_rule?: string;
+  urls: string[];
+}
+
+/** An entry of `external_checks`: a size check, or the comparison with a season envelope. */
+export type ExternalCheckEntry = ExternalCheck | SeasonEnvelopeCheck;
+
+export const isSeasonEnvelopeCheck = (check: Pick<ExternalCheckEntry, "role">): check is SeasonEnvelopeCheck => check.role === SEASON_ENVELOPE_ROLE;
+
+/** The size checks among `external_checks` (everything but the comparison with a season envelope). */
+export function sizeChecks(checks: readonly ExternalCheckEntry[] | undefined): ExternalCheck[] {
+  return (checks ?? []).filter((check): check is ExternalCheck => !isSeasonEnvelopeCheck(check));
+}
+
+/**
+ * A season-long agency extent shown as a scenario layer (lane SCN-ENV): for r4, UNOSAT and GISTDA product 4009,
+ * accumulated water from August to October 2024. It is never an observation for a replay day: it is not in
+ * `layers`, `observations`, `days` or `viirs_daily`, and no replay hour selects it. The manifest names its three
+ * files by address, hash and size only; the areas and the comparison are in the statistics file.
+ */
+export interface SeasonEnvelopeBlock {
+  id: string;
+  lane: "SCN-ENV";
+  evidence_tier: string;
+  shown: true;
+  /** "Scenario (SCN-ENV): 2024 season envelope". */
+  label: string;
+  caption: string;
+  /** "Unvalidated preliminary agency extent … FloodGuard did not validate it.": part of the caption under the map. */
+  standard_sentence: string;
+  day_independent: true;
+  day_rule: string;
+  temporal_relation: "season_envelope";
+  season_window: string;
+  source_timestamp: string;
+  licence: string;
+  licence_url: string;
+  /** Full attribution of the product, as its rights record gives it. */
+  credit: string;
+  /**
+   * Short credit added to the map's credits while the layer is visible: the holders the full credit begins with, and
+   * the licence. An exported PNG or video carries the full credit, the licence and a change note instead.
+   */
+  map_credit: string;
+  rights_record: string;
+  rights_note?: string;
+  confidence: string;
+  confidence_reason: string;
+  assumptions: string[];
+  urls: string[];
+  files_rule: string;
+  files: { raster: HashedAsset; statistics: HashedAsset; licence: HashedAsset };
 }
 
 export interface ExternalReference { name: string; url: string; note?: string; id?: string }
@@ -299,6 +546,102 @@ export interface ViirsDaily {
   /** Which fields of each day are model output placed beside the agency product (later r4 bakes). */
   model_fields?: { names: string[]; evidence_tier: string; note: string };
   days: ViirsDay[];
+}
+
+/** One Sentinel-2 L2A scene of the water check: its acquisition time, how much of the district it saw, and the area found. */
+export interface S2CrosscheckScene {
+  id: string;
+  role: "pre_event" | "event";
+  scene: string;
+  /** Acquisition time (UTC). */
+  source_timestamp: string;
+  local_time: string;
+  clear_km2: number;
+  /** Share (0-1) of the district the scene saw clearly. */
+  clear_share: number;
+  /** Water or saturated mud (MNDWI above 0) in the clear pixels, mapped channels left out; null when nothing was clear. */
+  water_km2: number | null;
+  scl_class_km2: Record<string, number>;
+}
+
+/** One sensitivity row of the water check: the same figures under a stricter clear rule or threshold. */
+export interface S2CrosscheckSensitivity {
+  id: string;
+  rule: string;
+  event_clear_share: number;
+  event_water_km2: number | null;
+  pre_event_clear_share: number;
+  pre_event_water_km2: number | null;
+  new_water_km2: number | null;
+  /** T1 scenario (model) value placed beside the observation. */
+  model_agreement_iou: number | null;
+}
+
+/**
+ * Sentinel-2 water check (later r4 bakes): water or saturated mud on the clear pixels of the scene before the flood
+ * and of the first scene after the river fell. `scenes` and `change` are observed; `model_at_event_scene` and the
+ * `model_` field of each sensitivity row are T1 scenario (model) values. The comparison is indicative.
+ */
+export interface S2Crosscheck {
+  product: string;
+  licence: string;
+  attribution: string;
+  /** What a positive index is called on the page: "water or saturated mud", never a flood extent. */
+  label: string;
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  index: string;
+  water_rule: string;
+  clear_rule: string;
+  permanent_water_rule: string;
+  scope: string;
+  comparison: "indicative";
+  comparison_rule: string;
+  caveat: string;
+  /** What the observation is consistent with; it states no cause and no land cover. */
+  reading: string;
+  /**
+   * Present when the next VIIRS day with clear sky (`viirs_daily.days`, by date) shows less flood water than the
+   * model: what that is consistent with for the day of the scene. The figures stay in `viirs_daily`.
+   */
+  following_day?: { viirs_date: string; reading: string };
+  model_fields: { paths: string[]; evidence_tier: string; note: string };
+  assumptions: string[];
+  resolution_m: number;
+  threshold: number;
+  district_km2: number;
+  permanent_water_km2: number;
+  scenes: S2CrosscheckScene[];
+  change: {
+    pre_event_scene: string;
+    event_scene: string;
+    both_clear_km2: number;
+    event_water_km2: number | null;
+    pre_event_water_km2: number | null;
+    /** Water or saturated mud on the event date that was not there before, where both dates are clear. */
+    new_water_km2: number | null;
+    no_longer_water_km2: number | null;
+  };
+  model_at_event_scene: {
+    model_local_time: string;
+    model_t: number;
+    model_stage_m: number;
+    model_flood_km2_district: number;
+    /** Modelled out-of-channel water in the pixels the event scene saw clearly. */
+    model_flood_km2_clear: number;
+    /**
+     * The same where both scenes are clear: the figure to set beside `change.new_water_km2`, which is counted in
+     * those pixels (absent from a manifest baked before it existed).
+     */
+    model_flood_km2_both_clear?: number;
+    model_overlap_km2: number;
+    model_union_km2: number;
+    model_agreement_iou: number | null;
+    model_share_of_observed_water_reached: number | null;
+    model_share_inside_observed_water: number | null;
+  };
+  sensitivity: S2CrosscheckSensitivity[];
 }
 
 /** Hourly rain gauge (observed forcing, not flooding). */
@@ -386,7 +729,7 @@ export interface TimelineManifest {
     scope?: string;
     reconstruction_stage_at_pass_m: number;
     /** From r4: the recession keyframes were tuned to this pass, so the comparison is calibration-informed. */
-    role?: ExternalCheckRole;
+    role?: SizeCheckRole;
     use?: string;
     source_timestamp?: string;
   };
@@ -399,13 +742,19 @@ export interface TimelineManifest {
   access?: AccessInfo;
   /** Shelter candidates, ranked plan and shelters reported in use in 2024. */
   shelters?: ShelterInfo;
-  external_checks?: ExternalCheck[];
+  external_checks?: ExternalCheckEntry[];
+  /** Season envelope shown as a scenario layer with its own toggle (later r4 bakes); never a day observation. */
+  season_envelope?: SeasonEnvelopeBlock;
   external_references?: ExternalReference[];
   gauge_note?: string;
   /** Observed daily VIIRS flood maps and their clear-sky comparison with the model; absent before r3. */
   viirs_daily?: ViirsDaily;
+  /** Sentinel-2 water check for the first clear scene after the river fell (15 Sep); absent before the later r4 bakes. */
+  s2_crosscheck?: S2Crosscheck;
   /** Observed hourly rain at nearby gauges (forcing, not flooding); absent before r3. */
   rainfall?: Rainfall;
+  /** Download files for spreadsheet and GIS users (absent from a manifest baked before the pack existed). */
+  exports?: ExportPack;
   // --- Evidence envelope (r4 on). Every field is optional so that an r3-shaped manifest, which a client may still
   // hold in its offline cache, is read too; `parseTimelineManifest` fills the defaults that revision implies. ---
   schema_version?: number;
@@ -567,12 +916,10 @@ export function licenceRows(manifest: Pick<TimelineManifest, "publication_eligib
 }
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
+/** Manifest key of the export pack: its files are downloads, not part of the replay's precache set. */
+export const EXPORT_PACK_KEY = "exports";
 
-/**
- * Every hashed asset a manifest references (`{ href, sha256, bytes }` anywhere in it: HAND raster,
- * imagery layers, vectors, and any record a later revision adds), first occurrence per href.
- */
-export function manifestAssets(manifest: unknown): HashedAsset[] {
+function hashedAssets(source: unknown): HashedAsset[] {
   const found = new Map<string, HashedAsset>();
   const visit = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -587,8 +934,35 @@ export function manifestAssets(manifest: unknown): HashedAsset[] {
     }
     Object.values(record).forEach(visit);
   };
-  visit(manifest);
+  visit(source);
   return [...found.values()];
+}
+
+/**
+ * Every hashed asset of the replay's precache set (`{ href, sha256, bytes }` anywhere in the manifest: HAND raster,
+ * imagery layers, vectors, and any record a later revision adds), first occurrence per href. The top-level export
+ * pack is left out: its files are downloads with a budget of their own (see `manifestExportAssets`).
+ */
+export function manifestAssets(manifest: unknown): HashedAsset[] {
+  if (!isRecord(manifest)) return hashedAssets(manifest);
+  return hashedAssets(Object.fromEntries(Object.entries(manifest).filter(([key]) => key !== EXPORT_PACK_KEY)));
+}
+
+/** The export pack's files (`exports.files`), first occurrence per href; empty for a manifest without a pack. */
+export function manifestExportAssets(manifest: unknown): HashedAsset[] {
+  const pack = isRecord(manifest) ? manifest[EXPORT_PACK_KEY] : null;
+  return isRecord(pack) ? hashedAssets(pack.files ?? []) : [];
+}
+
+/**
+ * File size for a download link, in decimal units with the unit a spreadsheet user knows: "342 kB", "1.2 MB".
+ * Below 1 kB the bytes are given as they are.
+ */
+export function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "";
+  if (bytes < 1000) return `${Math.round(bytes)} B`;
+  if (bytes < 999_500) return `${Math.round(bytes / 1000)} kB`;
+  return `${(bytes / 1e6).toFixed(1)} MB`;
 }
 
 /** Minimal GeoJSON shapes used by the replay (avoids a hard dependency on @types/geojson). */
@@ -824,19 +1198,23 @@ export function peopleInWaterStats(
 // --- External checks and assumption caveats ------------------------------------------------------
 
 /**
- * External size figures split by their manifest `role`: calibration anchors (they set a stage knot, so the model
- * agrees with them by construction), calibration-informed magnitude checks (known while tuning) and independent
- * magnitude checks. Manifest order is kept within each group; an unknown role is never shown as independent.
+ * External checks split by their manifest `role`: calibration anchors (they set a stage knot, so the model agrees
+ * with them by construction), calibration-informed magnitude checks (known while tuning), independent magnitude
+ * checks, and the comparison with a season envelope (a scenario: plausibility, not validation). Manifest order is
+ * kept within each group. The season-envelope comparison and any unknown role are never shown as independent.
  */
-export function externalChecksByRole(checks: readonly ExternalCheck[]): {
+export function externalChecksByRole(checks: readonly ExternalCheckEntry[]): {
   calibration: ExternalCheck[];
   informed: ExternalCheck[];
   independent: ExternalCheck[];
+  envelope: SeasonEnvelopeCheck[];
 } {
+  const sized = sizeChecks(checks);
   return {
-    calibration: checks.filter((check) => check.role === "calibration_anchor"),
-    informed: checks.filter((check) => check.role === "calibration_informed_magnitude_check"),
-    independent: checks.filter((check) => check.role === "independent_magnitude_check"),
+    calibration: sized.filter((check) => check.role === "calibration_anchor"),
+    informed: sized.filter((check) => check.role === "calibration_informed_magnitude_check"),
+    independent: sized.filter((check) => check.role === "independent_magnitude_check"),
+    envelope: checks.filter(isSeasonEnvelopeCheck),
   };
 }
 
@@ -917,6 +1295,33 @@ export function viirsDayAt<D extends Pick<ViirsDay, "t" | "date">>(t: number, da
   }
   if (!best || t - best.t >= 1 || t >= tFromLocalDate(lastDate) + 1) return null;
   return best;
+}
+
+/** The event scene (after the river fell) and the scene before the flood of a Sentinel-2 water check, or null when either is missing. */
+export function s2CrosscheckScenes(check: Pick<S2Crosscheck, "scenes">): { event: S2CrosscheckScene; pre: S2CrosscheckScene } | null {
+  const event = check.scenes.find((scene) => scene.role === "event");
+  const pre = check.scenes.find((scene) => scene.role === "pre_event");
+  return event && pre ? { event, pre } : null;
+}
+
+/** Local (ICT) date, `YYYY-MM-DD`, of the event scene of a Sentinel-2 water check; null when the block names none. */
+export function s2CrosscheckDate(check: Pick<S2Crosscheck, "scenes">): string | null {
+  const scenes = s2CrosscheckScenes(check);
+  if (!scenes) return null;
+  const ms = Date.parse(scenes.event.source_timestamp);
+  return Number.isNaN(ms) ? null : new Date(ms + ICT_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/**
+ * The Sentinel-2 water check when the replay position `t` falls on the local day of its event scene (15 Sep), else
+ * null: the check is one observation of one day and is shown on that day only.
+ */
+export function s2CrosscheckAt<C extends Pick<S2Crosscheck, "scenes">>(t: number, check: C | null | undefined): C | null {
+  if (!check || Number.isNaN(t)) return null;
+  const date = s2CrosscheckDate(check);
+  if (!date) return null;
+  const start = tFromLocalDate(date);
+  return t >= start && t < start + 1 ? check : null;
 }
 
 /** Below this area (km²) a VIIRS or model figure reads as "none" (it would print as 0.0). */
@@ -1161,6 +1566,17 @@ export function formatShortDate(input: string, language: Language): string {
 }
 
 /**
+ * "9 Oct 2026" / "9 ต.ค. 2569 (2026)" for a local ISO date outside the event year (the date of a local check, of an
+ * import); the input itself when it is not a date.
+ */
+export function formatDateWithYear(input: string, language: Language): string {
+  const ms = Date.parse(input.length === 10 ? `${input}T00:00:00+07:00` : input);
+  if (Number.isNaN(ms)) return input;
+  const p = ictParts(ms);
+  return `${p.day} ${MONTHS[language][p.month]} ${language === "th" ? thaiYear(p.year) : p.year}`;
+}
+
+/**
  * "1 Oct 2026, 16:10 ICT" / "1 ต.ค. 2569 (2026) 16:10 น." for a manifest's `generated_at`; null when the manifest
  * has none (r3) or the value is not a date.
  */
@@ -1214,7 +1630,10 @@ export function formatHourSpan(from: number, to: number, language: Language): st
 }
 
 export interface GrayRaster { width: number; height: number; data: Uint8Array }
-/** Decoded 8-bit PNG: `channels` interleaved samples per pixel (1 grey, 2 grey + alpha, 3 RGB, 4 RGBA). */
+/**
+ * Decoded PNG: `channels` interleaved 8-bit samples per pixel (1 grey, 2 grey + alpha, 3 RGB, 4 RGBA). A 1-bit
+ * greyscale PNG (a mask) is returned as one sample per pixel, 0 or 255.
+ */
 export interface PngRaster { width: number; height: number; channels: number; data: Uint8Array }
 export type Inflate = (data: Uint8Array) => Promise<Uint8Array> | Uint8Array;
 
@@ -1223,7 +1642,8 @@ const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const PNG_CHANNELS: Record<number, number> = { 0: 1, 2: 3, 4: 2, 6: 4 };
 
 /**
- * Decode an 8-bit, non-interlaced greyscale, grey + alpha, RGB or RGBA PNG into its exact samples.
+ * Decode an 8-bit, non-interlaced greyscale, grey + alpha, RGB or RGBA PNG into its exact samples, or a 1-bit
+ * non-interlaced greyscale PNG (a mask) into samples of 0 and 255.
  * Decoding the file directly avoids browser colour management and canvas read-back noise.
  */
 export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<PngRaster> {
@@ -1233,6 +1653,7 @@ export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<Pn
   let width = 0;
   let height = 0;
   let channels = 0;
+  let bitDepth = 8;
   const parts: Uint8Array[] = [];
   while (offset + 8 <= bytes.length) {
     const length = view.getUint32(offset);
@@ -1241,8 +1662,10 @@ export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<Pn
       width = view.getUint32(offset + 8);
       height = view.getUint32(offset + 12);
       channels = PNG_CHANNELS[bytes[offset + 17]] ?? 0;
-      if (bytes[offset + 16] !== 8 || !channels || bytes[offset + 20] !== 0) {
-        throw new Error("Expected an 8-bit non-interlaced greyscale or RGB PNG");
+      bitDepth = bytes[offset + 16];
+      const mask = bitDepth === 1 && bytes[offset + 17] === 0;
+      if ((bitDepth !== 8 && !mask) || !channels || bytes[offset + 20] !== 0) {
+        throw new Error("Expected an 8-bit non-interlaced greyscale or RGB PNG, or a 1-bit greyscale mask");
       }
     } else if (type === "IDAT") {
       parts.push(bytes.subarray(offset + 8, offset + 8 + length));
@@ -1259,8 +1682,9 @@ export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<Pn
     cursor += part.length;
   }
   const raw = await inflate(joined);
-  const bpp = channels;
-  const rowBytes = width * bpp;
+  // A 1-bit mask packs eight pixels into a byte; the filters then work on whole bytes (one byte per "pixel").
+  const bpp = bitDepth === 1 ? 1 : channels;
+  const rowBytes = bitDepth === 1 ? Math.ceil(width / 8) : width * bpp;
   const stride = rowBytes + 1;
   if (raw.length < height * stride) throw new Error("PNG image data is truncated");
   // Uint8Array stores wrap modulo 256, which is exactly PNG's filter arithmetic.
@@ -1302,6 +1726,14 @@ export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<Pn
       default:
         throw new Error(`Unsupported PNG filter ${filter}`);
     }
+  }
+  if (bitDepth === 1) {
+    const samples = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      const row = y * rowBytes;
+      for (let x = 0; x < width; x += 1) samples[y * width + x] = (out[row + (x >> 3)] >> (7 - (x & 7))) & 1 ? 255 : 0;
+    }
+    return { width, height, channels: 1, data: samples };
   }
   return { width, height, channels, data: out };
 }

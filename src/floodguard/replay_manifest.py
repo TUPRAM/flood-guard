@@ -18,6 +18,13 @@ This module holds the rules that do not depend on any one study:
 * :func:`evidence_problems`, the invariants a replay manifest must keep: no
   score, no action class, not an official warning, non-operational, input
   hashes present, every block with a lane and a source timestamp;
+* :func:`shelter_plan_problems`, the rules of the shelter plan's sub-blocks: the
+  capacity-aware plan, the what-if levels and the local check each need their
+  own evidence block in the right lane, the capacity figures must add up, and
+  no participation share or listed capacity may appear;
+* :func:`season_envelope_problems`, the rules of a season envelope (lane ``SCN-ENV``): the manifest names its files
+  by address, hash and size and holds no figure derived from the product, and the envelope is never among the day
+  observations;
 * :func:`schema_problems`, validation against the JSON schema in
   ``packages/contracts/schemas/case-replay-timeline.schema.json``.
 
@@ -75,7 +82,16 @@ REQUIRED_KEYS: tuple[str, ...] = (
 )
 """Evidence keys a replay manifest must carry (``accepted_*``, ``git_commit`` and ``protocol_sha256`` may be null, but must be present)."""
 
+SHELTER_SUBBLOCK_LANES: Mapping[str, str] = {"capacitated": "SCN", "robustness": "SCN", "reported": "REP", "verification": "REP"}
+"""Parts of ``shelters`` that need an evidence block of their own, and the lane it must sit in. ``shelters`` as a
+whole is a scenario; reported use and a local check are reported facts and must not inherit that lane, and the
+capacity-aware plan and the what-if levels carry their own temporal relation and source timestamp."""
+
+ENVELOPE_CHECK_ROLE = "season_envelope_plausibility"
+"""Role of the external check that sets the model beside a season envelope: a plausibility comparison, never independent."""
+
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_SWEEP_OR_LISTED_KEY = re.compile(r"participation|listed[_-]?capacit|ddpm", re.IGNORECASE)
 _SCORE_OR_CLASS_KEY = re.compile(r"fpps|action[_-]?class|priority[_-]?score", re.IGNORECASE)
 _COVER = re.compile(r"^(?P<key>[A-Za-z0-9_]+)(?:\[(?P<item>[^\]]+)\]|\.(?P<child>[A-Za-z0-9_.]+))?$")
 
@@ -262,6 +278,236 @@ def evidence_problems(manifest: Mapping[str, Any]) -> list[str]:
     except ReplayManifestError as exc:
         problems.append(str(exc))
     return problems
+
+
+def sweep_or_listed_capacity_keys(value: Any, path: str = "$") -> list[str]:
+    """Return the path of every key, at any depth, that names a participation share or a listed capacity.
+
+    The replay publishes no participation sweep (decision D8b) and no capacity listed in a shelter register (the
+    DDPM list): its capacities are footprint estimates, or figures a local checker reported by role.
+    """
+    found: list[str] = []
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            here = f"{path}.{key}"
+            if _SWEEP_OR_LISTED_KEY.search(str(key)):
+                found.append(here)
+            found.extend(sweep_or_listed_capacity_keys(item, here))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            found.extend(sweep_or_listed_capacity_keys(item, f"{path}[{index}]"))
+    return found
+
+
+def _whole(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def capacity_plan_problems(plan: Any, path: str = "shelters.capacitated") -> list[str]:
+    """Why the figures of a capacity-aware plan do not add up (empty when they do).
+
+    For each row of ``plan`` and ``coverage_plan`` and for each bound: a site's load never exceeds its capacity,
+    the running total ``served`` grows by exactly that load, and ``overflow = demand_people - served``. The lower
+    bound never counts more capacity, or serves more residents, than the upper bound. ``all_eligible`` follows the
+    same rules for its totals.
+    """
+    if not isinstance(plan, Mapping):
+        return [f"{path} is not an object"]
+    demand = plan.get("demand_people")
+    if not _whole(demand):
+        return [f"{path}.demand_people must be a whole number of residents"]
+    problems: list[str] = []
+
+    def bounds(row: Any, where: str, keys: tuple[str, ...]) -> dict[str, Mapping[str, Any]] | None:
+        found = {name: row.get(name) if isinstance(row, Mapping) else None for name in ("lower", "upper")}
+        for name, bound in found.items():
+            if not isinstance(bound, Mapping) or not all(_whole(bound.get(key)) for key in keys):
+                problems.append(f"{where}.{name} must give {', '.join(keys)} in whole residents")
+                return None
+        return found  # type: ignore[return-value]
+
+    for name in ("plan", "coverage_plan"):
+        rows = plan.get(name)
+        if not isinstance(rows, list):
+            problems.append(f"{path}.{name} must be a list")
+            continue
+        served_so_far = {"lower": 0, "upper": 0}
+        for index, row in enumerate(rows):
+            where = f"{path}.{name}[{index}]"
+            found = bounds(row, where, ("capacity", "load", "served", "overflow"))
+            if found is None:
+                break
+            for bound_name, bound in found.items():
+                if bound["load"] > bound["capacity"]:
+                    problems.append(f"{where}.{bound_name}: load {bound['load']} is above capacity {bound['capacity']}")
+                if bound["served"] != served_so_far[bound_name] + bound["load"]:
+                    problems.append(f"{where}.{bound_name}: served must grow by the site's load")
+                if bound["overflow"] != demand - bound["served"]:
+                    problems.append(f"{where}.{bound_name}: overflow must equal demand_people - served")
+                served_so_far[bound_name] = bound["served"]
+            if found["lower"]["capacity"] > found["upper"]["capacity"]:
+                problems.append(f"{where}: the lower bound counts more capacity than the upper bound")
+            if found["lower"]["served"] > found["upper"]["served"]:
+                problems.append(f"{where}: the lower bound serves more residents than the upper bound")
+    totals = plan.get("all_eligible")
+    found = bounds(totals, f"{path}.all_eligible", ("capacity", "served", "overflow"))
+    if found is not None:
+        for bound_name, bound in found.items():
+            if bound["served"] > bound["capacity"]:
+                problems.append(f"{path}.all_eligible.{bound_name}: served {bound['served']} is above capacity {bound['capacity']}")
+            if bound["overflow"] != demand - bound["served"]:
+                problems.append(f"{path}.all_eligible.{bound_name}: overflow must equal demand_people - served")
+        if found["lower"]["capacity"] > found["upper"]["capacity"] or found["lower"]["served"] > found["upper"]["served"]:
+            problems.append(f"{path}.all_eligible: the lower bound exceeds the upper bound")
+    return problems
+
+
+def shelter_plan_problems(manifest: Mapping[str, Any]) -> list[str]:
+    """Return every way the shelter plan's sub-blocks break the evidence contract (empty when they hold).
+
+    ``shelters`` is covered as a whole by one scenario block, so :func:`uncovered_blocks` cannot tell whether the
+    capacity-aware plan, the what-if levels, the reported sites and the local check have a block of their own. This
+    function requires one for each part that is present (:data:`SHELTER_SUBBLOCK_LANES`), in its lane: a local check
+    filed as a scenario or as an observation is refused. It also checks the capacity figures
+    (:func:`capacity_plan_problems`), that a conducted local check carries its confidence, its reason, its
+    assumptions and its source timestamp, and that no participation share or listed capacity is published.
+    """
+    shelters = manifest.get("shelters")
+    if not isinstance(shelters, Mapping):
+        return []
+    lanes: dict[str, list[Any]] = {}
+    for block in manifest.get("evidence_blocks") or ():
+        if isinstance(block, Mapping):
+            for path in block.get("covers") or ():
+                lanes.setdefault(str(path), []).append(block.get("lane"))
+    problems: list[str] = []
+    for child, lane in SHELTER_SUBBLOCK_LANES.items():
+        if child not in shelters:
+            continue
+        found = lanes.get(f"shelters.{child}")
+        if not found:
+            problems.append(f"no evidence block names shelters.{child}: it needs its own block in lane {lane}")
+        elif any(item != lane for item in found):
+            problems.append(f"shelters.{child} must sit in lane {lane}, not {', '.join(sorted({str(item) for item in found if item != lane}))}")
+    if "capacitated" in shelters:
+        problems.extend(capacity_plan_problems(shelters["capacitated"]))
+    check = shelters.get("verification")
+    if isinstance(check, Mapping) and check.get("status") == "conducted":
+        for key in ("confidence", "confidence_reason", "assumptions", "source_timestamp"):
+            if not check.get(key):
+                problems.append(f"shelters.verification is a conducted check and lacks {key}")
+    problems.extend(f"{path} names a participation share or a listed capacity: the replay publishes neither"
+                    for path in sweep_or_listed_capacity_keys(manifest))
+    return problems
+
+
+def _numbers(value: Any, path: str) -> list[str]:
+    """Paths of every number (not a boolean) inside ``value``."""
+    if isinstance(value, bool):
+        return []
+    if isinstance(value, (int, float)):
+        return [path]
+    if isinstance(value, Mapping):
+        return [found for key, item in value.items() for found in _numbers(item, f"{path}.{key}")]
+    if isinstance(value, list):
+        return [found for index, item in enumerate(value) for found in _numbers(item, f"{path}[{index}]")]
+    return []
+
+
+def season_envelope_problems(manifest: Mapping[str, Any]) -> list[str]:
+    """Return every way a manifest's season envelope breaks its rules (empty when it holds, or when there is none).
+
+    A season envelope (``season_envelope``, lane ``SCN-ENV``) is a scenario layer derived from an agency product
+    under that product's own licence. The manifest may name its files and say what they are, and nothing more:
+
+    * the block sits in lane ``SCN-ENV``, is marked ``shown`` and ``day_independent``, and carries its licence, its
+      credit, a map credit that names the licence and the holders the credit begins with, the standard sentence
+      (used as provided, not validated by FloodGuard), a source timestamp, a season window, a confidence and
+      assumptions;
+    * its ``files`` are ``raster``, ``statistics`` and ``licence``, each exactly ``href``, ``sha256`` and ``bytes``, all
+      in one folder of their own; the block holds no other number, so no figure derived from the product is in the manifest;
+    * one evidence block in lane ``SCN-ENV`` covers ``season_envelope``, marked ``shown`` with a ``season_window``;
+    * the external check with the role ``season_envelope_plausibility`` points at the statistics file, says
+      "not a validation", names what the model is compared with under ``compared_with`` (never under ``observed``:
+      the envelope is not the observed side of a check) and holds no number either;
+    * no layer, observation, replay day, VIIRS day or export file names one of the envelope's files or its folder:
+      the envelope is never among the day observations and never in the export pack.
+    """
+    block = manifest.get("season_envelope")
+    checks = [check for check in manifest.get("external_checks") or () if isinstance(check, Mapping) and check.get("role") == ENVELOPE_CHECK_ROLE]
+    if block is None:
+        return [f"external_checks[{check.get('id')}] compares with a season envelope the manifest does not carry" for check in checks]
+    if not isinstance(block, Mapping):
+        return ["season_envelope is not an object"]
+    problems: list[str] = []
+    if block.get("lane") != "SCN-ENV":
+        problems.append("season_envelope must sit in lane SCN-ENV")
+    if block.get("shown") is not True or block.get("day_independent") is not True:
+        problems.append("season_envelope must be marked shown and day_independent")
+    for key in ("id", "label", "caption", "standard_sentence", "licence", "licence_url", "credit", "map_credit", "source_timestamp",
+                "season_window", "confidence", "confidence_reason", "rights_record"):
+        if not isinstance(block.get(key), str) or not block[key].strip():
+            problems.append(f"season_envelope lacks {key}")
+    if isinstance(block.get("standard_sentence"), str) and "did not validate" not in block["standard_sentence"]:
+        problems.append("season_envelope.standard_sentence must say that FloodGuard did not validate the product")
+    if not isinstance(block.get("assumptions"), list) or not block["assumptions"]:
+        problems.append("season_envelope lacks assumptions")
+    if isinstance(block.get("licence"), str) and block["licence"] not in str(block.get("map_credit", "")):
+        problems.append("season_envelope.map_credit must name the licence")
+    if isinstance(block.get("credit"), str) and block["credit"].strip():
+        # The holders are what the credit names first, before its first comma; a credit without them credits nobody.
+        holders = block["credit"].split(",", 1)[0].strip()
+        if not holders or holders not in str(block.get("map_credit", "")):
+            problems.append("season_envelope.map_credit must name the holders of the product, as the credit begins")
+    files = block.get("files")
+    hrefs: list[str] = []
+    if not isinstance(files, Mapping) or sorted(files) != ["licence", "raster", "statistics"]:
+        problems.append("season_envelope.files must be raster, statistics and licence")
+        files = {}
+    for name, record in files.items():
+        if not isinstance(record, Mapping) or sorted(record) != ["bytes", "href", "sha256"] or not _SHA256.match(str(record.get("sha256", ""))) \
+                or not _whole(record.get("bytes")) or not isinstance(record.get("href"), str):
+            problems.append(f"season_envelope.files.{name} must give href, sha256 and bytes, and nothing else")
+        else:
+            hrefs.append(record["href"])
+    folders = {href.rsplit("/", 1)[0] + "/" for href in hrefs}
+    if len(folders) > 1:
+        problems.append("the season envelope's files must share one folder of their own")
+    allowed = {f"season_envelope.files.{name}.bytes" for name in files}
+    problems.extend(f"{path} is a number: every figure derived from the product belongs in its statistics file"
+                    for path in _numbers(block, "season_envelope") if path not in allowed)
+    covering = [item for item in manifest.get("evidence_blocks") or () if isinstance(item, Mapping) and "season_envelope" in (item.get("covers") or ())]
+    if len(covering) != 1 or covering[0].get("lane") != "SCN-ENV" or covering[0].get("shown") is not True or not covering[0].get("season_window"):
+        problems.append("one evidence block in lane SCN-ENV must cover season_envelope, marked shown, with a season_window")
+    if len(checks) != 1:
+        problems.append(f"exactly one external check must carry the role {ENVELOPE_CHECK_ROLE}")
+    for check in checks:
+        name = f"external_checks[{check.get('id')}]"
+        if check.get("statistics") != files.get("statistics"):
+            problems.append(f"{name}.statistics must be the season envelope's statistics file")
+        if "not a validation" not in str(check.get("use", "")):
+            problems.append(f"{name}.use must say that the comparison is not a validation")
+        if "observed" in check or not isinstance(check.get("compared_with"), str) or not check["compared_with"].strip():
+            problems.append(f"{name} must name the envelope under compared_with, never under observed: it is a scenario layer")
+        problems.extend(f"{path} is a number: every figure derived from the product belongs in its statistics file"
+                        for path in _numbers(check, name) if path != f"{name}.statistics.bytes")
+    if folders:
+        folder = sorted(folders)[0]
+        for key in ("layers", "observations", "days", "viirs_daily", "exports", "vectors", "hand", "population", "access"):
+            if folder in _text_of(manifest.get(key)):
+                problems.append(f"{key} names a file of the season envelope: it is never a day observation, a replay layer or an export file")
+    return problems
+
+
+def _text_of(value: Any) -> str:
+    """Every string inside ``value``, joined (used to look for an address anywhere in a block)."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, Mapping):
+        return "\n".join(_text_of(item) for item in value.values())
+    if isinstance(value, list):
+        return "\n".join(_text_of(item) for item in value)
+    return ""
 
 
 def schema_problems(manifest: Mapping[str, Any], schema: Mapping[str, Any]) -> list[str]:

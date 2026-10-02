@@ -32,6 +32,12 @@ export const CASE_REPLAY_BUDGET_BYTES = 6_500_000;
 export const CASE_REPLAY_EXPORT_BUDGET_BYTES = 1_000_000;
 /** Manifest key of the export pack and the sub-folder of the revision that holds its files. */
 export const CASE_REPLAY_EXPORT_KEY = "exports";
+/**
+ * Sub-folder of the revision that holds the season envelope's files (UNOSAT and GISTDA product 4009: a 1-bit raster,
+ * a statistics file and the CC BY-SA 4.0 licence notice). The manifest lists them like any other asset, so they are
+ * part of the precache set and of its 6.5 MB budget; the licence notice travels with the offline copy.
+ */
+export const CASE_REPLAY_ENVELOPE_FOLDER = "unosat4009";
 const webRoot = resolve(import.meta.dirname, "..");
 const SHA256 = /^[a-f0-9]{64}$/;
 const SAFE_URL = /^\/[A-Za-z0-9._/-]+$/;

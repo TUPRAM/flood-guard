@@ -33,6 +33,8 @@ WEB = ROOT / "apps" / "web"
 RULES_PATH = WEB / "src" / "lib" / "replay-wording-rules.json"
 RULES = load_rules(RULES_PATH)
 BAKE_SCRIPTS = ("scripts/build_mae_sai_flood_timeline.py", "scripts/mae_sai_timeline_evacuation.py", "scripts/mae_sai_timeline_observations.py",
+                # The season-envelope stage writes the product 4009 files: its strings are their text.
+                "scripts/mae_sai_timeline_unosat4009.py",
                 # The export pack's wording, the returned-sheet messages and the import script's output reach a reader too.
                 "src/floodguard/replay_exports.py", "src/floodguard/shelter_validation.py", "scripts/import_shelter_validation.py")
 JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "docs/proposal_execution/rights_basis_4009_v1.json",
@@ -62,6 +64,16 @@ def export_headers() -> list[tuple[str, str]]:
     return items
 
 
+def envelope_files() -> list[tuple[str, str]]:
+    """Text of the files derived from product 4009 (``unosat4009/``): every string of the statistics file and the
+    whole licence notice. They are 4009 text: precision, recall, accuracy, a validated model and corroboration are
+    refused there like anywhere else."""
+    folder = manifest_path().parent / "unosat4009"
+    document = json.loads((folder / "envelope.json").read_text(encoding="utf-8"))
+    return [*((f"unosat4009/envelope.json {path}", text) for path, text in json_strings(document)),
+            ("unosat4009/LICENSE", (folder / "LICENSE").read_text(encoding="utf-8"))]
+
+
 def manifest_path() -> Path:
     """The manifest the page serves, from the one constant in ``flood-timeline.ts``."""
     source = (WEB / "src" / "lib" / "flood-timeline.ts").read_text(encoding="utf-8")
@@ -85,6 +97,7 @@ def corpus() -> list[tuple[str, str]]:
     items += [(f"{STUDY_LIBRARY} (route table)", line) for line in library.splitlines() if "/studio/cases/mae-sai-2024/" in line]
     items.append(("export header (P3-1 standard sentence)", EXPORT_HEADER))
     items += export_headers()
+    items += envelope_files()
     return items
 
 
@@ -100,6 +113,8 @@ def test_rules_cover_the_six_banned_groups_and_the_shelter_comparison_rules() ->
         "real_time", "live", "forecast", "warning",  # affirmative real-time, live, forecast or warning
         "validation_as_agreement",  # validated, validation or accuracy used for agreement
         "precision_recall",  # precision or recall for product 4009
+        "corroboration",  # the season envelope "corroborating" the model, or the reverse
+        "envelope_verdict",  # "the model is too low" or "too high" against the season envelope
         "september_extent",  # "September extent", "GISTDA's map"
         "return_period",  # 25-year, 100-year
         "road_schedule",  # schedule or closure plan for modelled roads
@@ -161,6 +176,33 @@ def test_the_usual_thai_renderings_of_a_banned_claim_are_flagged(text: str, rule
     assert rule in ids(find_violations(text, RULES)), text
 
 
+@pytest.mark.parametrize(
+    ("text", "rule"),
+    [
+        ("Precision against product 4009: 0.61", "precision_recall"), ("Recall of the season envelope: 0.70", "precision_recall"),
+        ("Accuracy against the season envelope: 48%", "validation_as_agreement"), ("The model is validated by product 4009", "validation_as_agreement"),
+        ("The season envelope corroborates the modelled peak", "corroboration"), ("59% corroboration of the low-confidence water", "corroboration"),
+        ("Against the envelope the model is too low in town", "envelope_verdict"), ("The model is likely too high in Ban Dai", "envelope_verdict"),
+        ("Ban Dai is over-predicted", "envelope_verdict"), ("Compared with the September extent of product 4009", "september_extent"),
+        ("GISTDA's map of the season", "september_extent"),
+        ("ขอบเขตน้ำตลอดฤดูช่วยยืนยันแบบจำลอง", "corroboration"), ("แบบจำลองต่ำเกินไปในเขตเมือง", "envelope_verdict"),
+    ],
+)
+def test_text_about_the_season_envelope_may_not_claim_a_score_or_a_verdict(text: str, rule: str) -> None:
+    assert rule in ids(find_violations(text, RULES)), text
+
+
+def test_the_season_envelope_wording_that_is_asked_for_passes() -> None:
+    for allowed in (
+        "Plausibility against a season envelope, not a validation.",
+        "Season envelope comparison (scenario; plausibility, not validation)",
+        "60% of the modelled water lies inside the envelope; the modelled water reaches 70% of the envelope.",
+        "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.",
+        "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    ):
+        assert find_violations(allowed, RULES) == [], allowed
+
+
 def test_a_denial_covers_only_what_it_denies() -> None:
     for denial in ("ไม่ใช่แผนที่ตามเวลาจริง", "ไม่ใช่การคาดการณ์", "ยังไม่ผ่านการตรวจสอบภาคสนาม", "ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ", "ไม่ใช่ความแม่นยำ",
                    "It is a model, not real-time or a warning.", "not real-time, not an official warning"):
@@ -205,6 +247,10 @@ def test_corpus_covers_manifest_bake_scripts_documents_and_export_header() -> No
     assert "not field-validated" in text
     assert "ไม่ใช่การเตือนภัยอย่างเป็นทางการ" in text
     assert "never a validation" in text
+    # Product 4009 text is in the corpus: the stage's strings, the statistics file and the licence notice.
+    assert sum(source.startswith("unosat4009/envelope.json") for source in sources) > 30 and "unosat4009/LICENSE" in sources
+    assert "Plausibility against a season envelope, not a validation." in text
+    assert "Season envelope comparison (scenario; plausibility, not validation)" in text
 
 
 def test_no_banned_wording_in_todays_replay_text() -> None:
@@ -217,7 +263,9 @@ def test_lint_fails_on_one_seeded_bad_string_per_rule(rule_id: str) -> None:
     rule = next(rule for rule in RULES.rules if rule.id == rule_id)
     items = corpus()
     targets = ("timeline.json $.limitations[0]", "scripts/build_mae_sai_flood_timeline.py", "docs/decision-log-d1-d16.md",
-               "export header (P3-1 standard sentence)")
+               "export header (P3-1 standard sentence)",
+               # Product 4009 text: the stage's strings, the statistics file and the licence notice.
+               "scripts/mae_sai_timeline_unosat4009.py", "unosat4009/envelope.json $.comparison.use", "unosat4009/LICENSE")
     for target in targets:
         index = next(i for i, (source, _) in enumerate(items) if source == target)
         seeded = list(items)

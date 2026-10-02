@@ -29,6 +29,7 @@ from floodguard.replay_manifest import (
     normalise_timestamp,
     schema_problems,
     score_or_class_keys,
+    season_envelope_problems,
     shelter_plan_problems,
     sweep_or_listed_capacity_keys,
     uncovered_blocks,
@@ -335,10 +336,14 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     assert "Calibration anchor" in blocks["gistda_onset_anchor"]["evidence_tier"]
     assert "not an independent check" in blocks["sentinel1_size_comparison"]["evidence_tier"]
     assert "not an independent check" in blocks["unosat_3991_size_comparison"]["evidence_tier"]
-    # Product 4009 is a season envelope scenario and is not shown.
+    # Product 4009 is a season envelope scenario, shown from this revision as a layer of its own: the block covers the
+    # layer and its comparison, and neither sits in an observed lane.
     envelope = blocks["unosat_4009_season_envelope"]
-    assert (envelope["lane"], envelope["temporal_relation"], envelope["shown"]) == ("SCN-ENV", "season_envelope", False)
-    assert envelope["season_window"] == "2024-08-01/2024-10-22"
+    assert (envelope["lane"], envelope["temporal_relation"], envelope["shown"]) == ("SCN-ENV", "season_envelope", True)
+    assert envelope["season_window"] == "2024-08-01/2024-10-22" == envelope["source_timestamp"]
+    assert envelope["covers"] == ["season_envelope", "external_checks[unosat-4009-season-envelope]"]
+    assert envelope["note"].startswith("Never an observation for a replay day.")
+    assert "scenario_fields" not in envelope  # The manifest holds no figure of the comparison to name.
     # Reported facts are never filed as observed or as model output.
     assert lane("reported_shelters") == lane("event_chronology") == "REP"
     assert not any(block["lane"] == "OBS" and block["temporal_relation"] == "season_envelope" for block in blocks.values())
@@ -383,11 +388,16 @@ def test_sources_name_both_dem_tiles_worldpop_and_a_licence_for_every_input(mani
         assert source_id in inputs, source_id
         if source_id != "viirs":
             assert inputs[source_id]["licence"] == source["licence"], source_id
-    # Product 4009 is listed but not shown, and nothing from it is among the baked files.
-    assert inputs["unosat-4009"]["shown"] is False
+    # Product 4009 is shown, as a season envelope scenario layer: its source line carries the credit, and its derived
+    # files sit in one folder of their own, named for the product.
+    assert inputs["unosat-4009"]["shown"] is True
     assert (ROOT / inputs["unosat-4009"]["rights_record"]).resolve() == RIGHTS_RECORD.resolve()
-    assert [row["id"] for row in eligibility["inputs"] if not row["shown"]] == ["unosat-4009"]
-    assert not [name for name in (path.name for path in manifest_path().parent.rglob("*")) if "4009" in name]
+    assert [row["id"] for row in eligibility["inputs"] if not row["shown"]] == []
+    assert sources["unosat-4009"]["attribution"] == "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"
+    assert sources["unosat-4009"]["licence"] == "CC BY-SA 4.0" and "no date per patch" in sources["unosat-4009"]["timestamp"]
+    folder = manifest_path().parent
+    derived = sorted(name for name in (path.relative_to(folder).as_posix() for path in folder.rglob("*")) if "4009" in name)
+    assert derived == ["unosat4009", "unosat4009/LICENSE", "unosat4009/envelope.json", "unosat4009/envelope.png"]
     assert eligibility["status"] == "conditional" and any("CC BY-NC" in line for line in eligibility["conditions"])
 
 
@@ -402,31 +412,36 @@ def test_product_4009_status_is_the_rights_records_status(manifest: dict) -> Non
     assert row["sha256"] == hashlib.sha256(RIGHTS_RECORD.read_bytes()).hexdigest(), stale
     entry = next(item for item in manifest["publication_eligibility"]["inputs"] if item["id"] == "unosat-4009")
     block = next(item for item in manifest["evidence_blocks"] if item["id"] == "unosat_4009_season_envelope")
-    reference = next(item for item in manifest["external_references"] if item["id"] == "unosat-4009")
+    # The product is ingested now, so it is no longer among the references; its rights note sits on its own block.
+    assert [item["id"] for item in manifest["external_references"]] == ["unosat-3969", "charter-912", "hii-event-page"]
+    note = manifest["season_envelope"]["rights_note"]
     condition = next(line for line in manifest["publication_eligibility"]["conditions"] if "product 4009" in line)
     assert entry["licence"] == record["licence"]["name"] == "CC BY-SA 4.0"
-    if owner_confirmed(record):
-        confirmed = "the owners confirmed the rights record on"
-        assert entry["status"].startswith("Not shown in this revision;") and confirmed in entry["status"], stale
-        assert confirmed in block["note"] and confirmed in reference["note"] and confirmed in condition, stale
-        assert "pending" not in entry["status"]
-    else:
-        assert entry["status"] == "Not yet shown; rights record pending owner confirmation.", stale
-        assert block["note"].endswith("Shown only after the owners confirm the rights record."), stale
-        assert "only after the owners confirm the rights record" in reference["note"] and "is signed" not in reference["note"], stale
-        assert condition.endswith("it may appear only after the owners confirm the rights record."), stale
-        # While the record is unconfirmed the manifest names no file for the product and marks nothing of it as shown.
-        assert unconfirmed_product_citations(manifest) == []
+    # The product is shown only because the record says confirmed: a manifest that shows it beside an unconfirmed
+    # record would be refused, and the committed one must not exist in that state.
+    assert owner_confirmed(record), "product 4009 files are published while its rights record is not confirmed"
+    assert unconfirmed_product_citations(manifest) != []  # The same manifest would break the gate of an unconfirmed record.
+    confirmed = "the owners confirmed the rights record on 2 Oct 2026"
+    assert entry["status"] == f"Shown as a season envelope scenario layer; {confirmed}.", stale
+    assert block["note"] == f"Never an observation for a replay day. Shown as a scenario layer with its own toggle, credit and change notice; {confirmed}.", stale
+    assert condition == ("UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is shown as a season envelope scenario layer: its derived files keep "
+                         f"their own folder, credit, licence and change notice; {confirmed}."), stale
+    assert confirmed in note and note.endswith("Shown from this revision as a scenario layer."), stale
+    for text in (entry["status"], block["note"], condition, note):
+        assert "pending" not in text and "not shown" not in text.lower()
     # What the record supports about UNOSAT's reply: its words and the day they were relayed, not the day UNOSAT wrote.
-    assert "signed on 30 Sep 2026" in reference["note"] and f'"{record["provider_reply"]["quote"]}"' in reference["note"]
+    assert "signed on 30 Sep 2026" in note and f'"{record["provider_reply"]["quote"]}"' in note
     assert record["provider_reply"]["relayed_on"] == "2026-10-01" and record["provider_reply"]["original_message_in_repo"] is False
-    assert '"we approve the use" (relayed by a project owner on 1 Oct 2026)' in reference["note"]
-    assert not __import__("re").search(r'approve the use" on \d', reference["note"])
+    assert '"we approve the use" (relayed by a project owner on 1 Oct 2026)' in note
+    assert not __import__("re").search(r'approve the use" on \d', note)
+    # The files derived from the product name the record they were baked from, by path and by hash.
+    document = json.loads((manifest_path().parent / "unosat4009" / "envelope.json").read_text(encoding="utf-8"))
+    assert document["rights_record"] == {"path": RIGHTS_RECORD.relative_to(ROOT).as_posix(), "sha256": row["sha256"], "confirmed_on": "2026-10-02"}, stale
 
 
 def test_input_hashes_are_the_receipts_and_name_no_machine_path(manifest: dict) -> None:
     rows = manifest["input_sha256"]
-    assert len(rows) == 36 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
+    assert len(rows) == 37 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
     for row in rows:
         assert row["root"] in ("external", "repo") and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) and row["bytes"] > 0
     receipt = json.loads((ROOT / "docs" / f"mae_sai_timeline_{manifest['revision']}_input_receipt.json").read_text(encoding="utf-8"))
@@ -449,6 +464,10 @@ def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manif
     assert items["unosat-3991"]["relation"] == "known_during_tuning" and "70 km2" in items["unosat-3991"]["statement"]
     assert (items["unosat-4009"]["relation"], items["unosat-4009"]["known_during_tuning"]) == ("computed_after_keyframes_final", False)
     assert "was not used for tuning" in items["unosat-4009"]["statement"]
+    # The recorded rule: nothing is tuned to product 4009 afterwards, or the figure becomes a calibration figure.
+    assert ("Recorded rule: no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is "
+            "relabelled as calibration.") in items["unosat-4009"]["statement"]
+    assert "not shown" not in items["unosat-4009"]["statement"]
     # The Sentinel-2 water check entered the bake after the last keyframe change. The images had been on the page, and
     # the statement says so rather than claiming the scenes were unseen.
     s2 = items["sentinel-2-water-check"]
@@ -469,13 +488,132 @@ def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manif
     anchor = manifest["s1_anchor"]
     assert anchor["role"] == "calibration_informed_magnitude_check" and round(anchor["best_fit_stage_m"], 2) == 0.10
     roles = {check["id"]: check["role"] for check in manifest["external_checks"]}
-    assert roles == {"gistda-radarsat2-20240910": "calibration_anchor", "unosat-3991": "calibration_informed_magnitude_check"}
+    assert roles == {"gistda-radarsat2-20240910": "calibration_anchor", "unosat-3991": "calibration_informed_magnitude_check",
+                     "unosat-4009-season-envelope": "season_envelope_plausibility"}
     assert not re.search(r'"role": "independent', manifest_path().read_text(encoding="utf-8"))
     assert "tuned to one radar pass rather than checked independently" in manifest["confidence_reason"]
     assert any("re-tuned to the 16 September 06:16 ICT Sentinel-1 pass" in line and "not an independent check" in line for line in manifest["assumptions"])
     # The quoted UNOSAT 3991 wording is unchanged from r3 (its exact source wording could not be checked on disk).
     unosat = next(check for check in manifest["external_checks"] if check["id"] == "unosat-3991")
     assert unosat["reported_text"] == "about 70 km2 flood-affected within a 305 km2 analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated"
+
+
+# --- Season envelope (UNOSAT/GISTDA product 4009, SCN-ENV; roadmap P2-2 and P2-3) -----------------------------
+
+
+def numbers(value, path: str = "$") -> list[str]:
+    """Paths of every number (not a boolean) inside ``value``."""
+    if isinstance(value, bool):
+        return []
+    if isinstance(value, (int, float)):
+        return [path]
+    if isinstance(value, dict):
+        return [found for key, item in value.items() for found in numbers(item, f"{path}.{key}")]
+    if isinstance(value, list):
+        return [found for index, item in enumerate(value) for found in numbers(item, f"{path}[{index}]")]
+    return []
+
+
+def test_season_envelope_block_names_three_files_and_holds_no_figure(manifest: dict, schema: dict) -> None:
+    block = manifest["season_envelope"]
+    assert season_envelope_problems(manifest) == []
+    assert (block["id"], block["lane"], block["shown"], block["day_independent"]) == ("unosat-4009", "SCN-ENV", True, True)
+    assert block["label"] == "Scenario (SCN-ENV): 2024 season envelope"
+    assert block["caption"] == ("UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product "
+                                "is described to 22 Oct); includes August and early-October water; not an observation for any replay day. Clipped to "
+                                "Mae Sai district and rasterised to the replay grid by FloodGuard.")
+    assert (block["licence"], block["credit"], block["map_credit"]) == (
+        "CC BY-SA 4.0", "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009", "UNOSAT and GISTDA \u00b7 CC BY-SA 4.0")
+    assert block["source_timestamp"] == block["season_window"] == "2024-08-01/2024-10-22"
+    assert block["confidence"] == "low" and block["confidence_reason"] and len(block["assumptions"]) == 2
+    # Three files in one folder of their own, each named by address, hash and size and by nothing else.
+    folder = manifest_path().parent
+    assert sorted(block["files"]) == ["licence", "raster", "statistics"]
+    for key, name in (("raster", "envelope.png"), ("statistics", "envelope.json"), ("licence", "LICENSE")):
+        record = block["files"][key]
+        assert sorted(record) == ["bytes", "href", "sha256"]
+        data = (folder / "unosat4009" / name).read_bytes()
+        assert record["href"].endswith(f"/{manifest['revision']}/unosat4009/{name}")
+        assert (record["bytes"], record["sha256"]) == (len(data), __import__("hashlib").sha256(data).hexdigest()), name
+    # No figure derived from the product is in timeline.json: the block and its check hold no number but the file sizes.
+    assert numbers(block, "season_envelope") == [f"season_envelope.files.{key}.bytes" for key in ("raster", "statistics", "licence")]
+    check = next(item for item in manifest["external_checks"] if item["role"] == "season_envelope_plausibility")
+    assert numbers(check, "check") == ["check.statistics.bytes"]
+    assert check["statistics"] == block["files"]["statistics"]
+    assert check["title"] == "Season envelope comparison (scenario; plausibility, not validation)"
+    assert check["use"].startswith("Plausibility against a season envelope, not a validation.")
+    assert check["tuning_rule"] == "No keyframe or elevation change is tuned to product 4009 afterwards; if one is, this comparison is relabelled as calibration."
+    assert not any(key in check for key in ("reported_km2", "model_km2", "model_people_in_water", "reported_text"))
+    # The manifest text never states an area or a share of the envelope (the statistics file does).
+    document = json.loads((folder / "unosat4009" / "envelope.json").read_text(encoding="utf-8"))
+    flat = json.dumps({key: value for key, value in manifest.items() if key != "input_sha256"}, ensure_ascii=False)
+    for value in (document["area"]["district_km2"], document["comparison"]["district"][0]["agreement_iou"],
+                  document["comparison"]["district"][0]["envelope_km2"], document["comparison"]["residents"]["residents_in_envelope"]):
+        assert not re.search(rf"(?<![0-9.]){re.escape(str(value))}(?![0-9])", flat), value
+    # Never among the day observations, the replay layers or the export files.
+    dated = json.dumps([manifest["layers"], manifest["observations"], manifest["days"], manifest["viirs_daily"], manifest["phases"]])
+    assert not re.search(r"4009|envelope|unosat4009", dated, re.IGNORECASE)
+    assert not re.search(r"unosat4009|envelope", json.dumps(manifest["exports"]), re.IGNORECASE)
+    assert schema_problems(manifest, schema) == []
+
+
+def test_season_envelope_rules_refuse_a_figure_a_day_or_a_missing_credit(manifest: dict, schema: dict) -> None:
+    def broken(change) -> list[str]:
+        document = copy.deepcopy(manifest)
+        change(document)
+        return season_envelope_problems(document)
+
+    check_index = next(index for index, item in enumerate(manifest["external_checks"]) if item["role"] == "season_envelope_plausibility")
+    href = manifest["season_envelope"]["files"]["raster"]["href"]
+    # A figure derived from the product has no place in the manifest: not in the block, not in the check.
+    assert broken(lambda d: d["season_envelope"].update(district_km2=77.7)) == [
+        "season_envelope.district_km2 is a number: every figure derived from the product belongs in its statistics file"]
+    assert broken(lambda d: d["season_envelope"]["files"]["raster"].update(width=1610)) == [
+        "season_envelope.files.raster must give href, sha256 and bytes, and nothing else",
+        "season_envelope.files.raster.width is a number: every figure derived from the product belongs in its statistics file"]
+    assert broken(lambda d: d["external_checks"][check_index].update(agreement_iou=0.48)) == [
+        "external_checks[unosat-4009-season-envelope].agreement_iou is a number: every figure derived from the product belongs in its statistics file"]
+    assert broken(lambda d: d["external_checks"][check_index].update(use="Agreement with the season envelope.")) == [
+        "external_checks[unosat-4009-season-envelope].use must say that the comparison is not a validation"]
+    # Never a day observation: no layer, observation, day or VIIRS day may name one of its files.
+    assert broken(lambda d: d["layers"].append({"id": "season", "kind": "sentinel-2", "date": "2024-09-12", "href": href})) == [
+        "layers names a file of the season envelope: it is never a day observation, a replay layer or an export file"]
+    assert broken(lambda d: d["days"][3].update(envelope=href)) == [
+        "days names a file of the season envelope: it is never a day observation, a replay layer or an export file"]
+    assert broken(lambda d: d["exports"]["files"].append({"href": href})) == [
+        "exports names a file of the season envelope: it is never a day observation, a replay layer or an export file"]
+    # Without its label, credit or licence the layer does not ship.
+    assert broken(lambda d: d["season_envelope"].update(credit=" ")) == ["season_envelope lacks credit"]
+    assert broken(lambda d: d["season_envelope"].pop("label")) == ["season_envelope lacks label"]
+    assert broken(lambda d: d["season_envelope"].update(map_credit="UNOSAT and GISTDA")) == ["season_envelope.map_credit must name the licence"]
+    assert broken(lambda d: d["season_envelope"].update(lane="OBS")) == ["season_envelope must sit in lane SCN-ENV"]
+    assert broken(lambda d: d["season_envelope"].update(day_independent=False)) == ["season_envelope must be marked shown and day_independent"]
+    assert broken(lambda d: d["season_envelope"]["files"].pop("licence")) != []
+    # Its evidence block: one, in the envelope lane, marked shown, with the season window.
+    block_index = next(index for index, item in enumerate(manifest["evidence_blocks"]) if "season_envelope" in item["covers"])
+    assert broken(lambda d: d["evidence_blocks"][block_index].update(lane="OBS")) == [
+        "one evidence block in lane SCN-ENV must cover season_envelope, marked shown, with a season_window"]
+    assert broken(lambda d: d["evidence_blocks"][block_index].update(shown=False)) != []
+    # A comparison without an envelope, or an envelope without its comparison, is refused too.
+    assert broken(lambda d: d.pop("season_envelope")) == [
+        "external_checks[unosat-4009-season-envelope] compares with a season envelope the manifest does not carry"]
+    assert broken(lambda d: d["external_checks"].pop(check_index)) == ["exactly one external check must carry the role season_envelope_plausibility"]
+    # A manifest without any of it (an earlier revision) has nothing to check.
+    assert season_envelope_problems(minimal_manifest()) == []
+    # The schema says the same about the block and the check.
+    def schema_broken(change) -> list[str]:
+        document = copy.deepcopy(manifest)
+        change(document)
+        return schema_problems(document, schema)
+
+    assert any("district_km2" in line for line in schema_broken(lambda d: d["season_envelope"].update(district_km2=77.7)))
+    assert schema_broken(lambda d: d["season_envelope"]["files"]["raster"].update(width=1610)) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(licence="CC BY 4.0")) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(label="2024 season envelope")) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(caption="Accumulated water, August to October 2024.")) != []
+    assert schema_broken(lambda d: d["external_checks"][check_index].update(reported_km2=77.7)) != []
+    assert schema_broken(lambda d: d["external_checks"][check_index].update(role="independent_magnitude_check")) != []
+    assert schema_broken(lambda d: d["external_checks"][0].pop("model_km2")) != []
 
 
 # --- Capacity-aware shelter plan and what-if levels (roadmap P2-9, C-1) ---------------------------------------

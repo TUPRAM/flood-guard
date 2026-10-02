@@ -582,6 +582,97 @@ try {
     const image = document.querySelector(".leaflet-fg-viirs-pane img");
     return Boolean(image && image.complete && image.naturalWidth > 0);
   }, undefined, { timeout: 30_000 });
+  // The season envelope (UNOSAT and GISTDA product 4009, a scenario layer) comes from the same offline copy: its raster,
+  // its statistics and its licence notice. With its toggle on, by link, the layer is drawn hatched and credited without a
+  // connection, at 1440 px and at 390 px, clear of the legend, the notes, the zoom buttons and the attribution.
+  const envelopeAssets = caseReplay.assets.filter((asset) => asset.url.includes("/unosat4009/"));
+  if (envelopeAssets.map((asset) => asset.url.split("/").at(-1)).sort().join(",") !== "LICENSE,envelope.json,envelope.png") {
+    throw new Error(`The offline copy does not list the season envelope's three files: ${envelopeAssets.map((asset) => asset.url).join(", ")}`);
+  }
+  const offlineEnvelopeFiles = await page.evaluate(async (assets) => Promise.all(assets.map(async (asset) => {
+    const response = await fetch(asset.url);
+    const digest = await crypto.subtle.digest("SHA-256", await response.arrayBuffer());
+    return response.ok && [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("") === asset.sha256;
+  })), envelopeAssets);
+  if (!offlineEnvelopeFiles.every(Boolean)) throw new Error("A season-envelope file (raster, statistics or licence notice) is missing or changed offline.");
+  const envelopeOffline = [];
+  for (const [width, height] of [[1440, 1000], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto(`${baseUrl}${caseReplay.route}?t=84&layers=trsce`, { waitUntil: "domcontentloaded" });
+    await page.locator(".leaflet-fg-envelope-pane canvas").waitFor({ state: "attached", timeout: 30_000 });
+    await page.getByTestId("envelope-chip").waitFor({ state: "visible" });
+    await page.waitForFunction(() => !document.body.innerText.includes("Preparing the water model"), undefined, { timeout: 30_000 });
+    await page.waitForFunction(() => (document.querySelector(".leaflet-control-attribution")?.textContent ?? "").includes("UNOSAT and GISTDA · CC BY-SA 4.0"), undefined, { timeout: 15_000 });
+    await page.getByTestId("basemap-note").waitFor({ state: "visible" });
+    const state = await page.evaluate(() => {
+      const canvas = document.querySelector(".leaflet-fg-envelope-pane canvas");
+      const scale = canvas.getBoundingClientRect().width / canvas.width;
+      const image = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+      const colours = new Set();
+      const periods = [];
+      for (let y = 16; y < canvas.height; y += 16) {
+        let lastDarkStart = -1;
+        let inDark = false;
+        for (let x = 0; x < canvas.width; x += 1) {
+          const at = (y * canvas.width + x) * 4;
+          if (image[at + 3] === 0) {
+            lastDarkStart = -1;
+            inDark = false;
+            continue;
+          }
+          colours.add(`${image[at]},${image[at + 1]},${image[at + 2]},${image[at + 3]}`);
+          const dark = image[at] < 100 && image[at + 3] > 200;
+          if (dark && !inDark) {
+            if (lastDarkStart >= 0) periods.push(x - lastDarkStart);
+            lastDarkStart = x;
+          }
+          inDark = dark;
+        }
+      }
+      periods.sort((a, b) => a - b);
+      const frame = document.querySelector("[class*='mapFrame']").getBoundingClientRect();
+      const boxes = [".leaflet-control-zoom", "[data-testid='map-notes']", "[data-testid='map-legend']", "[data-testid='basemap-note']", ".leaflet-control-attribution"]
+        .flatMap((selector) => {
+          const element = document.querySelector(selector);
+          if (!element) return [];
+          const style = getComputedStyle(element);
+          const box = element.getBoundingClientRect();
+          return box.width === 0 || box.height === 0 || style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.05 ? [] : [[selector, box]];
+        });
+      const overlapping = [];
+      const outside = [];
+      for (const [index, [name, a]] of boxes.entries()) {
+        if (a.left < frame.left - 0.5 || a.right > frame.right + 0.5 || a.top < frame.top - 0.5 || a.bottom > frame.bottom + 0.5) outside.push(name);
+        for (const [other, b] of boxes.slice(index + 1)) {
+          if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5) overlapping.push(`${name} over ${other}`);
+        }
+      }
+      return {
+        colours: colours.size, periodPx: periods.length ? Math.round(periods[Math.floor(periods.length / 2)] * scale * 10) / 10 : 0, samples: periods.length,
+        chip: document.querySelector("[data-testid='envelope-chip']").textContent,
+        caption: document.querySelector("[data-testid='envelope-caption']")?.textContent ?? "",
+        exportCredits: document.querySelector("[data-testid='export-credits']")?.textContent ?? "",
+        scroll: document.documentElement.scrollWidth - window.innerWidth, overlapping, outside,
+      };
+    });
+    if (state.chip !== "Scenario (SCN-ENV): 2024 season envelope" || !state.caption.includes("not an observation for any replay day")
+      || !state.caption.includes("Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009.") || !state.exportCredits.includes("UNOSAT and GISTDA · CC BY-SA 4.0")) {
+      throw new Error(`The saved season envelope lacks its chip, caption or credit offline at ${width} px: ${JSON.stringify(state)}`);
+    }
+    if (state.colours !== 3 || state.samples < 150 || state.periodPx < 7 || state.periodPx > 12) {
+      throw new Error(`The saved season envelope is not hatched offline at ${width} px: ${JSON.stringify(state)}`);
+    }
+    if (state.overlapping.length > 0 || state.outside.length > 0 || state.scroll > 1) {
+      throw new Error(`The saved season envelope overlaps or overflows offline at ${width} px: ${JSON.stringify(state)}`);
+    }
+    if (await page.locator("main").getByRole("alert").count() !== 0) {
+      throw new Error(`The saved season envelope failed offline: ${await page.locator("main").getByRole("alert").first().innerText()}`);
+    }
+    envelopeOffline.push(`${width} px: hatch period ${state.periodPx} px`);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${baseUrl}${caseReplay.route}?t=158&layers=trfv`, { waitUntil: "domcontentloaded" });
+  await page.getByTestId("replay-readout").waitFor({ state: "visible" });
   // The download links of the saved replay work without a connection: every export file answers with the bytes the
   // manifest lists, and a click on a link saves the file under its own name.
   const offlineDownloads = await page.evaluate(async (assets) => Promise.all(assets.map(async (asset) => {
@@ -657,7 +748,7 @@ try {
   }
   await legacyContext.close();
   console.log(
-    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
+    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
   );
   console.log("legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified");
 } finally {

@@ -1003,7 +1003,7 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     expect(renderToStaticMarkup(<GeneratedAt manifest={{ generated_at: "soon" }} language="th" />)).toBe("");
   });
 
-  it("lists a licence and its terms for every input in the sources panel, with product 4009 marked as not shown", () => {
+  it("lists a licence and its terms for every input in the sources panel, with product 4009 shown as a scenario layer", () => {
     const html = renderToStaticMarkup(<LicencesByInput manifest={manifest} language="en" />);
     const plain = text(html);
     expect(plain).toContain("Licence per input");
@@ -1016,16 +1016,21 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     for (const licence of ["CC BY-NC", "ODbL 1.0", "CC BY 4.0", "CC BY-IGO", "No licence stated by the provider", "CC BY-SA 4.0", "Copernicus DEM licence", "Copernicus Sentinel data terms"]) {
       expect(plain).toContain(licence);
     }
-    // Only product 4009 is listed without being shown; it comes last and says why.
-    expect(html.match(/data-shown="false"/g)).toHaveLength(1);
+    // Every input is shown. Product 4009 comes last and says how: as a season envelope scenario layer, with the date
+    // the owners confirmed its rights record.
+    expect(html).not.toContain('data-shown="false"');
     const last = text(html.slice(html.lastIndexOf("<li data-shown=")).split("</li>")[0]);
     expect(last).toContain("UNOSAT/GISTDA product 4009");
-    // The status sentence follows the rights record: pending, or confirmed on a date. Either way nothing of 4009 is shown.
-    const status4009 = /Not yet shown; rights record pending owner confirmation\.|Not shown in this revision; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\./;
-    expect(last).toMatch(status4009);
-    expect(html).toMatch(new RegExp(`<strong><span lang="en">(?:${status4009.source})</span></strong>`));
-    // An input that is not shown and gives no status still says so.
-    const bare = { ...manifest, publication_eligibility: { ...manifest.publication_eligibility!, inputs: inputs.map((input) => ({ ...input, status: undefined })) } };
+    expect(last).toContain("CC BY-SA 4.0.");
+    expect(last).toMatch(/Shown as a season envelope scenario layer; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\./);
+    expect(plain).not.toMatch(/Not shown in this revision|Not yet shown/);
+    // An input that is not shown says so: with its status, or with the page's own words when it gives none.
+    const hidden = { ...manifest, publication_eligibility: { ...manifest.publication_eligibility!, inputs: inputs.map((input) => (input.id === "unosat-4009"
+      ? { ...input, shown: false, status: "Not yet shown; rights record pending owner confirmation." } : input)) } };
+    const hiddenHtml = renderToStaticMarkup(<LicencesByInput manifest={hidden} language="en" />);
+    expect(hiddenHtml.match(/data-shown="false"/g)).toHaveLength(1);
+    expect(hiddenHtml).toContain('<strong><span lang="en">Not yet shown; rights record pending owner confirmation.</span></strong>');
+    const bare = { ...manifest, publication_eligibility: { ...manifest.publication_eligibility!, inputs: inputs.map((input) => ({ ...input, shown: input.id !== "unosat-4009", status: undefined })) } };
     expect(text(renderToStaticMarkup(<LicencesByInput manifest={bare} language="en" />))).toContain("Not shown on this page.");
     expect(text(renderToStaticMarkup(<LicencesByInput manifest={bare} language="th" />))).toContain("ยังไม่แสดงในหน้านี้");
     expect(plain).toContain(`Conditions of use: ${manifest.publication_eligibility!.scope}`);
@@ -1036,7 +1041,8 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     const thaiHtml = renderToStaticMarkup(<LicencesByInput manifest={manifest} language="th" />);
     const thai = text(thaiHtml);
     expect(thai).toContain("สัญญาอนุญาตของข้อมูลแต่ละชุด");
-    expect(thai).toMatch(/ยังไม่แสดง รอเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูล|ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ/);
+    expect(thai).toContain("แสดงเป็นชั้นข้อมูลสถานการณ์จำลองขอบเขตน้ำตลอดฤดู เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ");
+    expect(thai).not.toContain("ยังไม่แสดง");
     expect(thai).toContain("เงื่อนไขการใช้");
     // Names and published licence names stay as published (marked English); every term and condition has a Thai
     // rendering, and so has the licence wording the project wrote itself.

@@ -405,7 +405,15 @@ export interface ShelterInfo {
  * stage keyframes were tuned, so agreement is not independent evidence; an independent magnitude check tests the size
  * of the modelled extent against a figure that played no part in tuning.
  */
-export type ExternalCheckRole = "calibration_anchor" | "calibration_informed_magnitude_check" | "independent_magnitude_check";
+export type SizeCheckRole = "calibration_anchor" | "calibration_informed_magnitude_check" | "independent_magnitude_check";
+
+/**
+ * Role of the comparison with a season envelope (lane SCN-ENV): a plausibility comparison, not a validation. It is
+ * never a size check and never independent evidence: the envelope holds water from the whole season, with no date
+ * per patch.
+ */
+export const SEASON_ENVELOPE_ROLE = "season_envelope_plausibility";
+export type ExternalCheckRole = SizeCheckRole | typeof SEASON_ENVELOPE_ROLE;
 
 /** Size comparison of the reconstruction with an external (observed or reported) product. */
 export interface ExternalCheck {
@@ -415,7 +423,7 @@ export interface ExternalCheck {
   reported_people?: number;
   reported_text: string;
   scope?: string;
-  role: ExternalCheckRole;
+  role: SizeCheckRole;
   /** Model figures comparable with the external one (for a windowed product, the largest extent within its window). */
   model_km2: number;
   model_people_in_water?: number;
@@ -427,6 +435,70 @@ export interface ExternalCheck {
   model_peak_people_in_water?: number;
   use: string;
   urls: string[];
+}
+
+/**
+ * The comparison of the modelled water with a season envelope, as the manifest lists it among its external checks:
+ * a role, what it may be used for and the statistics file. It holds no figure: every number derived from the
+ * envelope is in that file, under the product's own licence.
+ */
+export interface SeasonEnvelopeCheck {
+  id: string;
+  observed: string;
+  role: typeof SEASON_ENVELOPE_ROLE;
+  /** "Season envelope comparison (scenario; plausibility, not validation)". */
+  title: string;
+  scope: string;
+  statistics: HashedAsset;
+  use: string;
+  tuning_rule?: string;
+  urls: string[];
+}
+
+/** An entry of `external_checks`: a size check, or the comparison with a season envelope. */
+export type ExternalCheckEntry = ExternalCheck | SeasonEnvelopeCheck;
+
+export const isSeasonEnvelopeCheck = (check: Pick<ExternalCheckEntry, "role">): check is SeasonEnvelopeCheck => check.role === SEASON_ENVELOPE_ROLE;
+
+/** The size checks among `external_checks` (everything but the comparison with a season envelope). */
+export function sizeChecks(checks: readonly ExternalCheckEntry[] | undefined): ExternalCheck[] {
+  return (checks ?? []).filter((check): check is ExternalCheck => !isSeasonEnvelopeCheck(check));
+}
+
+/**
+ * A season-long agency extent shown as a scenario layer (lane SCN-ENV): for r4, UNOSAT and GISTDA product 4009,
+ * accumulated water from August to October 2024. It is never an observation for a replay day: it is not in
+ * `layers`, `observations`, `days` or `viirs_daily`, and no replay hour selects it. The manifest names its three
+ * files by address, hash and size only; the areas and the comparison are in the statistics file.
+ */
+export interface SeasonEnvelopeBlock {
+  id: string;
+  lane: "SCN-ENV";
+  evidence_tier: string;
+  shown: true;
+  /** "Scenario (SCN-ENV): 2024 season envelope". */
+  label: string;
+  caption: string;
+  standard_sentence?: string;
+  day_independent: true;
+  day_rule: string;
+  temporal_relation: "season_envelope";
+  season_window: string;
+  source_timestamp: string;
+  licence: string;
+  licence_url: string;
+  /** Full attribution of the product, as its rights record gives it. */
+  credit: string;
+  /** Short credit added to the map and to the PNG and video exports while the layer is visible. */
+  map_credit: string;
+  rights_record: string;
+  rights_note?: string;
+  confidence: string;
+  confidence_reason: string;
+  assumptions: string[];
+  urls: string[];
+  files_rule: string;
+  files: { raster: HashedAsset; statistics: HashedAsset; licence: HashedAsset };
 }
 
 export interface ExternalReference { name: string; url: string; note?: string; id?: string }
@@ -652,7 +724,7 @@ export interface TimelineManifest {
     scope?: string;
     reconstruction_stage_at_pass_m: number;
     /** From r4: the recession keyframes were tuned to this pass, so the comparison is calibration-informed. */
-    role?: ExternalCheckRole;
+    role?: SizeCheckRole;
     use?: string;
     source_timestamp?: string;
   };
@@ -665,7 +737,9 @@ export interface TimelineManifest {
   access?: AccessInfo;
   /** Shelter candidates, ranked plan and shelters reported in use in 2024. */
   shelters?: ShelterInfo;
-  external_checks?: ExternalCheck[];
+  external_checks?: ExternalCheckEntry[];
+  /** Season envelope shown as a scenario layer with its own toggle (later r4 bakes); never a day observation. */
+  season_envelope?: SeasonEnvelopeBlock;
   external_references?: ExternalReference[];
   gauge_note?: string;
   /** Observed daily VIIRS flood maps and their clear-sky comparison with the model; absent before r3. */
@@ -1119,19 +1193,23 @@ export function peopleInWaterStats(
 // --- External checks and assumption caveats ------------------------------------------------------
 
 /**
- * External size figures split by their manifest `role`: calibration anchors (they set a stage knot, so the model
- * agrees with them by construction), calibration-informed magnitude checks (known while tuning) and independent
- * magnitude checks. Manifest order is kept within each group; an unknown role is never shown as independent.
+ * External checks split by their manifest `role`: calibration anchors (they set a stage knot, so the model agrees
+ * with them by construction), calibration-informed magnitude checks (known while tuning), independent magnitude
+ * checks, and the comparison with a season envelope (a scenario: plausibility, not validation). Manifest order is
+ * kept within each group. The season-envelope comparison and any unknown role are never shown as independent.
  */
-export function externalChecksByRole(checks: readonly ExternalCheck[]): {
+export function externalChecksByRole(checks: readonly ExternalCheckEntry[]): {
   calibration: ExternalCheck[];
   informed: ExternalCheck[];
   independent: ExternalCheck[];
+  envelope: SeasonEnvelopeCheck[];
 } {
+  const sized = sizeChecks(checks);
   return {
-    calibration: checks.filter((check) => check.role === "calibration_anchor"),
-    informed: checks.filter((check) => check.role === "calibration_informed_magnitude_check"),
-    independent: checks.filter((check) => check.role === "independent_magnitude_check"),
+    calibration: sized.filter((check) => check.role === "calibration_anchor"),
+    informed: sized.filter((check) => check.role === "calibration_informed_magnitude_check"),
+    independent: sized.filter((check) => check.role === "independent_magnitude_check"),
+    envelope: checks.filter(isSeasonEnvelopeCheck),
   };
 }
 
@@ -1547,7 +1625,10 @@ export function formatHourSpan(from: number, to: number, language: Language): st
 }
 
 export interface GrayRaster { width: number; height: number; data: Uint8Array }
-/** Decoded 8-bit PNG: `channels` interleaved samples per pixel (1 grey, 2 grey + alpha, 3 RGB, 4 RGBA). */
+/**
+ * Decoded PNG: `channels` interleaved 8-bit samples per pixel (1 grey, 2 grey + alpha, 3 RGB, 4 RGBA). A 1-bit
+ * greyscale PNG (a mask) is returned as one sample per pixel, 0 or 255.
+ */
 export interface PngRaster { width: number; height: number; channels: number; data: Uint8Array }
 export type Inflate = (data: Uint8Array) => Promise<Uint8Array> | Uint8Array;
 
@@ -1556,7 +1637,8 @@ const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const PNG_CHANNELS: Record<number, number> = { 0: 1, 2: 3, 4: 2, 6: 4 };
 
 /**
- * Decode an 8-bit, non-interlaced greyscale, grey + alpha, RGB or RGBA PNG into its exact samples.
+ * Decode an 8-bit, non-interlaced greyscale, grey + alpha, RGB or RGBA PNG into its exact samples, or a 1-bit
+ * non-interlaced greyscale PNG (a mask) into samples of 0 and 255.
  * Decoding the file directly avoids browser colour management and canvas read-back noise.
  */
 export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<PngRaster> {
@@ -1566,6 +1648,7 @@ export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<Pn
   let width = 0;
   let height = 0;
   let channels = 0;
+  let bitDepth = 8;
   const parts: Uint8Array[] = [];
   while (offset + 8 <= bytes.length) {
     const length = view.getUint32(offset);
@@ -1574,8 +1657,10 @@ export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<Pn
       width = view.getUint32(offset + 8);
       height = view.getUint32(offset + 12);
       channels = PNG_CHANNELS[bytes[offset + 17]] ?? 0;
-      if (bytes[offset + 16] !== 8 || !channels || bytes[offset + 20] !== 0) {
-        throw new Error("Expected an 8-bit non-interlaced greyscale or RGB PNG");
+      bitDepth = bytes[offset + 16];
+      const mask = bitDepth === 1 && bytes[offset + 17] === 0;
+      if ((bitDepth !== 8 && !mask) || !channels || bytes[offset + 20] !== 0) {
+        throw new Error("Expected an 8-bit non-interlaced greyscale or RGB PNG, or a 1-bit greyscale mask");
       }
     } else if (type === "IDAT") {
       parts.push(bytes.subarray(offset + 8, offset + 8 + length));
@@ -1592,8 +1677,9 @@ export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<Pn
     cursor += part.length;
   }
   const raw = await inflate(joined);
-  const bpp = channels;
-  const rowBytes = width * bpp;
+  // A 1-bit mask packs eight pixels into a byte; the filters then work on whole bytes (one byte per "pixel").
+  const bpp = bitDepth === 1 ? 1 : channels;
+  const rowBytes = bitDepth === 1 ? Math.ceil(width / 8) : width * bpp;
   const stride = rowBytes + 1;
   if (raw.length < height * stride) throw new Error("PNG image data is truncated");
   // Uint8Array stores wrap modulo 256, which is exactly PNG's filter arithmetic.
@@ -1635,6 +1721,14 @@ export async function decodePng(bytes: Uint8Array, inflate: Inflate): Promise<Pn
       default:
         throw new Error(`Unsupported PNG filter ${filter}`);
     }
+  }
+  if (bitDepth === 1) {
+    const samples = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      const row = y * rowBytes;
+      for (let x = 0; x < width; x += 1) samples[y * width + x] = (out[row + (x >> 3)] >> (7 - (x & 7))) & 1 ? 255 : 0;
+    }
+    return { width, height, channels: 1, data: samples };
   }
   return { width, height, channels, data: out };
 }

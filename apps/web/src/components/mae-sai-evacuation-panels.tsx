@@ -70,6 +70,8 @@ import {
 import { TIP_CLOSED, tipOpen, tipReducer, tooltipShift } from "@/lib/flood-timeline-layout";
 import type { AccessScopeChoice, ShelterSetChoice } from "@/lib/flood-timeline-link";
 
+import { SeasonEnvelopeComparison, type SeasonEnvelopeState } from "./mae-sai-season-envelope";
+
 import styles from "./mae-sai-flood-timeline.module.css";
 
 type Translate = (en: string, th: string) => string;
@@ -1764,15 +1766,26 @@ function ExternalCheckItem({ check, manifest, language }: { check: ExternalCheck
 }
 
 /**
- * External size figures, split into the calibration anchor (it set a stage knot, so the model matches it by
+ * External checks in three kinds of group: the calibration anchor (it set a stage knot, so the model matches it by
  * construction), calibration-informed size checks (known while tuning, so not independent) and independent checks
- * (compared over the external product's own time window where it is known).
+ * (compared over the external product's own time window where it is known); then, as a group of its own, the
+ * comparison with the season envelope: a scenario, plausibility and not validation, never listed as independent.
+ * That group needs the envelope's own files (`envelope`); without a shippable envelope it is left out.
  */
-export const ExternalChecks = memo(function ExternalChecks({ manifest, language }: { manifest: CheckManifest; language: Language }) {
+export const ExternalChecks = memo(function ExternalChecks({ manifest, language, envelope, names }: {
+  manifest: CheckManifest;
+  language: Language;
+  /** The season envelope as the page holds it; absent or undefined leaves the comparison group out. */
+  envelope?: SeasonEnvelopeState;
+  /** Subdistrict names for the comparison's rows. */
+  names?: Record<string, TambonProps>;
+}) {
   const t = translator(language);
-  const checks = manifest.external_checks ?? [];
-  if (checks.length === 0) return null;
-  const { calibration, informed, independent } = externalChecksByRole(checks);
+  const all = manifest.external_checks ?? [];
+  const { calibration, informed, independent, envelope: envelopeChecks } = externalChecksByRole(all);
+  const checks = [...calibration, ...informed, ...independent];
+  const comparisons = envelope && envelope.status !== "absent" ? envelopeChecks : [];
+  if (checks.length === 0 && comparisons.length === 0) return null;
   // In Thai, say so only when some source wording has no known translation and stays in its original.
   const untranslated = language === "th" && checks.some((check) => [check.observed, check.reported_text, check.use, check.model_window]
     .some((value) => value && localizedText(value, language).lang !== language));
@@ -1797,6 +1810,9 @@ export const ExternalChecks = memo(function ExternalChecks({ manifest, language 
           <ul className={styles.list}>{independent.map((check) => <ExternalCheckItem key={check.id} check={check} manifest={manifest} language={language} />)}</ul>
         </>
       )}
+      {envelope && comparisons.map((check) => (
+        <SeasonEnvelopeComparison key={check.id} check={check} envelope={envelope} names={names ?? {}} language={language} />
+      ))}
     </div>
   );
 });

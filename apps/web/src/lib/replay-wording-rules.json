@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.replay_wording_rules.v1",
-  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets, present a modelled hour as a safe time to leave, tell the reader which shelters to open or state the equity rates over all residents counted. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
+  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets, present a modelled hour as a safe time to leave, tell the reader which shelters to open or state the equity rates over all residents counted. Text about the 2024 season envelope (UNOSAT and GISTDA product 4009) must not speak of precision, recall, accuracy, a validated model or corroboration, and must not say that the model is too low or too high. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
   "how_it_works": [
     "Text is normalised first: web addresses are removed, runs of white space become one space, curly apostrophes become straight ones, and non-breaking hyphens, figure dashes, en dashes and minus signs become plain hyphens.",
     "Each pattern in allow is then removed, in order. They are explicit negations such as 'not a forecast'. A new negation needs a new entry here; a plain 'not' somewhere in the sentence is not enough.",
@@ -157,6 +157,18 @@
       "bad": ["Precision 0.605 against product 4009", "Recall of the envelope: 0.704"]
     },
     {
+      "id": "corroboration",
+      "pattern": "(?<![A-Za-z0-9_])corroborat[a-z]*|หลักฐานยืนยัน|ช่วยยืนยัน|ยืนยันผล|รับรองผล",
+      "message": "A season envelope does not corroborate the model, and the model does not corroborate the envelope: the envelope holds water from the whole season. Say what share of one lies inside the other.",
+      "bad": ["The envelope corroborates the low-confidence water", "Corroboration share: 59%", "Product 4009 is corroborating evidence for the modelled peak", "ขอบเขตน้ำตลอดฤดูช่วยยืนยันแบบจำลอง", "เป็นหลักฐานยืนยันผลของแบบจำลอง"]
+    },
+    {
+      "id": "envelope_verdict",
+      "pattern": "(?<![A-Za-z0-9_])(?:models?|reconstruction|modelled (?:water|extent|peak|area)) (?:is|are|was|looks|reads|seems|runs) (?:likely |probably |clearly )?too (?:low|high|small|large)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:over|under)-?predict[a-z]*|แบบจำลอง(?:ให้ค่า|ให้ผล)?(?:ต่ำ|สูง|น้อย|มาก)เกินไป",
+      "message": "The comparison with the season envelope says where the model and the envelope differ, not that the model is too low or too high: the envelope also holds August and early-October water and the modelled peak is illustrative.",
+      "bad": ["The model is too low in town", "The model is likely too high in Ban Dai", "Ban Dai and Pong Pha are over-predicted", "The reconstruction underpredicts the town", "แบบจำลองต่ำเกินไปในเขตเมือง", "แบบจำลองให้ค่าสูงเกินไปในตำบลบ้านด้าย"]
+    },
+    {
       "id": "september_extent",
       "pattern": "(?<![A-Za-z0-9_])September extent(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])GISTDA(?:'s)? map(?![A-Za-z0-9_])|ขอบเขตน้ำเดือนกันยายน|แผนที่ของ GISTDA",
       "message": "Product 4009 is a 2024 season envelope from UNOSAT and GISTDA. It is not the September extent and not GISTDA's map.",
@@ -214,6 +226,12 @@
     {"text": "Rain fell on 10–14 Sep; the 25–50 % class is flood water, and 2025 years is not a period.", "rules": []},
     {"text": "See https://example.org/real-time-forecast/validation for the live warning.", "rules": ["live", "warning"]},
     {"text": "Field_Validation=0, unvalidated, invalid geometry repaired, official_warning: false", "rules": []},
+    {"text": "Plausibility against a season envelope, not a validation. 59% of the low-confidence modelled water lies inside the envelope, against 61% of the other modelled water.", "rules": []},
+    {"text": "Season envelope comparison (scenario; plausibility, not validation): recall 0.70, which corroborates the model.", "rules": ["corroboration", "precision_recall"]},
+    {"text": "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.", "rules": []},
+    {"text": "Envelope water the modelled peak does not reach is largest in Ko Chang; the comparison does not say which of the two is right.", "rules": []},
+    {"text": "Agreement 0.48 with product 4009: the model is too low in town and its accuracy is 60%.", "rules": ["envelope_verdict", "validation_as_agreement"]},
+    {"text": "UNOSAT and GISTDA product 4009, the September extent, validated against GISTDA's map.", "rules": ["september_extent", "validation_as_agreement"]},
     {"text": "Modelled, not observed closures. First cut 11 Sep 02:00, reopened 13 Sep 06:00.", "rules": []},
     {"text": "No single figure ranks the sets. Modelled access cut-off hour: 10 Sep 22:00. Hours from illustrative stage keyframes, not observed.", "rules": []},
     {"text": "The smallest plan that gets most of the benefit; it does not grade the choice of sites.", "rules": []},

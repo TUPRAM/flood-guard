@@ -14,11 +14,14 @@ Inputs
     multipolygons and points inside the replay area straight from the extract on every run and keeps no cache)
   - ``viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d*_001day_090.tif.zip`` (10 to 18 September 2024)
   - ``hii_rain/2024_09/{MOU189,DIWO}.csv`` and the two ``*_0all_stn_metadata.csv`` station lists
+  - ``unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip`` (UNOSAT/GISTDA product 4009: only its layer
+    ``CHIANGRAI_20240801_20241012_AccumulatedFlood`` is read, as the 2024 season envelope)
 * In-repo files: ``outputs/mae_sai_admin_context.geojson``, ``outputs/mae_sai_road_risk.geojson``,
   ``outputs/mae_sai_facilities.geojson``, ``outputs/mae_sai_access_edges.csv``,
   ``outputs/mae_sai_population_nodes.csv``, ``outputs/mae_sai_reported_shelters_2024.json`` and
   ``docs/proposal_execution/rights_basis_4009_v1.json`` (the rights record of UNOSAT/GISTDA product 4009: the
-  manifest takes the product's status from it, so a confirmed record needs a new bake). When a local check of the
+  bake stops unless the owners have confirmed it, and the licence, the credit and the change notice of the derived
+  files come from it). When a local check of the
   shelter candidates has been returned and imported (``scripts/import_shelter_validation.py``), the bake also reads
   ``outputs/mae_sai_shelter_validation.json``; without that file the manifest says the check was not conducted.
 
@@ -32,6 +35,13 @@ and a licence README. The export files are listed in the manifest with their has
 (``s2_crosscheck``): water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes inside
 the district, with the modelled water at the 15 Sep acquisition time beside it. It writes no raster; the comparison
 is indicative and the block says so.
+
+The season-envelope stage (``scripts/mae_sai_timeline_unosat4009.py``) writes three more files into their own folder,
+``unosat4009/``: ``envelope.png`` (product 4009's accumulated water, August to October 2024, clipped to the district
+and drawn on the water grid as a 1-bit raster), ``envelope.json`` (its areas and the plausibility comparison with the
+modelled water) and ``LICENSE`` (CC BY-SA 4.0, the credit and the change notice). They are a scenario layer (SCN-ENV),
+never an observation for a replay day. ``timeline.json`` names them by address, hash and size only: no figure derived
+from the product is in the manifest or in the export pack.
 
 Evidence fields
 ---------------
@@ -137,16 +147,21 @@ from floodguard.replay_manifest import (  # noqa: E402
     newest_timestamp,
     normalise_timestamp,
     schema_problems,
+    season_envelope_problems,
     shelter_plan_problems,
 )
 from floodguard.rights_basis import (  # noqa: E402
     RIGHTS_BASIS_4009_PATH,
+    file_sha256,
     load_rights_basis,
     owner_confirmed,
+    require_owner_confirmation,
     unconfirmed_product_citations,
 )
+from floodguard.season_envelope import COMPARISON_ROLE, ENVELOPE_LANE  # noqa: E402
 import mae_sai_timeline_evacuation as evac  # noqa: E402
 import mae_sai_timeline_observations as obs  # noqa: E402
+import mae_sai_timeline_unosat4009 as unosat4009  # noqa: E402
 
 REVISION = "r4"
 STUDY_ID = "mae-sai-2024-flood-timeline"
@@ -154,6 +169,10 @@ OUT_REL = Path(f"apps/web/public/studies/mae-sai-2024-timeline/{REVISION}")
 RECEIPT_REL = Path(f"docs/mae_sai_timeline_{REVISION}_input_receipt.json")
 SCHEMA_REL = Path("packages/contracts/schemas/case-replay-timeline.schema.json")
 SCHEMA_ID = "https://floodguard.th/contracts/case-replay-timeline.schema.json"
+RIGHTS_RECORD = ROOT / RIGHTS_BASIS_4009_PATH
+"""The product 4009 rights record the bake reads. The bake stops unless the owners have confirmed it."""
+ENVELOPE_CHECK_ID = "unosat-4009-season-envelope"
+BOUNDARY_SOURCE = "the eight subdistricts of HDX Thailand COD-AB v01"
 GENERATED_BY = "scripts/build_mae_sai_flood_timeline.py"
 Track = Callable[[Path], Path]
 HREF_PREFIX = f"/studies/mae-sai-2024-timeline/{REVISION}/"
@@ -407,7 +426,13 @@ def s1_anchor(codes: np.ndarray, pre_db: np.ndarray, post_db: np.ndarray, pixel_
 
 
 def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
-    """Bake every asset into ``out_dir``. ``track`` is called with each input file as it is opened."""
+    """Bake every asset into ``out_dir``. ``track`` is called with each input file as it is opened.
+
+    The product 4009 rights record is read first: unless the owners have confirmed it, the bake stops before it
+    opens any other input or writes any file (``floodguard.rights_basis.RightsNotConfirmedError``).
+    """
+    rights = load_rights_basis(track(RIGHTS_RECORD))
+    require_owner_confirmation(rights)
     out_dir.mkdir(parents=True, exist_ok=True)
     to_utm = Transformer.from_crs("EPSG:4326", UTM, always_xy=True).transform
     to_ll = Transformer.from_crs(UTM, "EPSG:4326", always_xy=True).transform
@@ -726,10 +751,22 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     window_km2 = round(sum(flooded_area_km2(histograms[t], window_stage, AOI_RES**2) for t in tambon_ids), 1)
     window_people = round(sum(flooded_area_km2(pop_hist[t], window_stage, 1e6) for t in tambon_ids))
 
+    # --- Season envelope (UNOSAT/GISTDA product 4009, SCN-ENV): a scenario layer and a plausibility comparison ---
+    # Its figures leave this function only for the stage's own files; nothing of them reaches timeline.json or the exports.
+    envelope_data = unosat4009.season_envelope(
+        external, rights, admin["features"], statistics_grid=aoi, raster_grid=water, codes=codes_aoi, zones=zones, tambon_ids=tambon_ids,
+        low_confidence=lowconf_aoi, residents=pop10, channel_code=CHANNEL_CODE, never_code=NEVER_CODE, hand_step_m=HAND_STEP_M,
+        stages=[{"id": "modelled_peak", "model_stage_m": max(k.stage_m for k in KEYFRAMES),
+                 "model_extent": "The modelled peak (illustrative stage, 12 Sep 2024)", "model_residents_in_water": peak_people},
+                {"id": "largest_extent_13_19_sep", "model_stage_m": window_stage,
+                 "model_extent": "Largest modelled extent within 13-19 Sep ICT"}],
+        clip_source=BOUNDARY_SOURCE, track=track)
+
     south, west = to_ll_3857(display.bounds[0], display.bounds[1])
     north, east = to_ll_3857(display.bounds[2], display.bounds[3])
-    rights = load_rights_basis(track(ROOT / RIGHTS_BASIS_4009_PATH))
-    return {"rights_4009": rights_status(rights), "layers": layers, "hand": hand_record, "vectors": vectors, "days": days, "histograms": histograms,
+    return {"rights_4009": rights_status(rights), "season_envelope_data": {"figures": envelope_data, "rights": rights,
+                                                                          "raster_cell_m": water.res / MERCATOR_SCALE},
+            "layers": layers, "hand": hand_record, "vectors": vectors, "days": days, "histograms": histograms,
             "bounds": [[south, west], [north, east]], "display": {"width": display.width, "height": display.height},
             "s1_meta": s1_meta, "s1_anchor": anchor, "coverage": coverage,
             "reported_meta": {k: reported_doc.get(k) for k in ("status", "compiled", "access_set_rule", "licence_note")},
@@ -847,6 +884,22 @@ def write_exports(result: dict, out_dir: Path, generated_at: str, inputs: list[d
             "files": [file.record(prefix) for file in files]}
 
 
+def write_season_envelope(result: dict, out_dir: Path, generated_at: str) -> dict[str, dict]:
+    """Write the three product 4009 files into ``out_dir/unosat4009`` and return what the manifest says about them.
+
+    The files are written by ``scripts/mae_sai_timeline_unosat4009.py`` under CC BY-SA 4.0, with the credit and a change
+    notice from the rights record. The manifest gets each file's address, SHA-256 and size and nothing else: every
+    figure derived from the product stays in ``envelope.json``.
+    """
+    data = result["season_envelope_data"]
+    return unosat4009.write_files(
+        data["figures"], out_dir, rights=data["rights"],
+        rights_record={"path": RIGHTS_BASIS_4009_PATH.as_posix(), "sha256": file_sha256(RIGHTS_RECORD),
+                       "confirmed_on": data["rights"]["owner_confirmation"]["confirmed_on"]},
+        study_id=STUDY_ID, revision=REVISION, generated_at=generated_at, href_prefix=HREF_PREFIX, bounds=result["bounds"],
+        raster_cell_m=data["raster_cell_m"], worldpop_source=WORLDPOP_SOURCE)
+
+
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 
@@ -861,6 +914,9 @@ def rights_status(record: dict) -> dict:
     confirmation = record["owner_confirmation"]
     return {"confirmed": owner_confirmed(record), "confirmed_on": confirmation.get("confirmed_on"),
             "signed_on": record["signed_decision"]["signed_on"], "licence": record["licence"]["name"],
+            "licence_url": record["licence"]["url"], "credit": record["required_attribution_text"],
+            "product_url": record["product"]["product_url"], "dataset_url": record["hdx"]["dataset_url"],
+            "source_timestamp": record["source_timestamp"],
             "reply_quote": record["provider_reply"]["quote"], "reply_relayed_on": record["provider_reply"]["relayed_on"],
             "record": RIGHTS_BASIS_4009_PATH.as_posix()}
 
@@ -932,6 +988,16 @@ SOURCES = [
      "timestamp": "compiled 2026-09-27", "attribution": "FloodGuard team summary of public reporting; not independently verified in this study"},
 ]
 
+ENVELOPE_SOURCE_ID = "unosat-4009"
+ENVELOPE_SOURCE_NAME = "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai"
+
+
+def envelope_source(rights: dict) -> dict:
+    """The manifest's source line for product 4009 (never among the export pack's sources)."""
+    return {"id": ENVELOPE_SOURCE_ID, "name": ENVELOPE_SOURCE_NAME, "licence": rights["licence"],
+            "timestamp": "2024-08-01 / 2024-10-22 (season envelope; no date per patch)", "attribution": rights["credit"]}
+
+
 ASSUMPTIONS = [
     "Daily water surfaces are a HAND (height above nearest drainage) threshold reconstruction, not observations.",
     "Stage keyframes (metres above the mapped channel) are illustrative values shaped to the event chronology; no gauge record was used. The stage is held at 0 through 9 Sep and rises through the night of 10 Sep.",
@@ -957,6 +1023,13 @@ ASSUMPTIONS = [
     "Flash-flood velocity, debris and mud deposition are not modelled.",
     "The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes, inside the district and outside mapped channels; its comparison with the model is indicative.",
 ]
+
+ENVELOPE_ASSUMPTIONS = [
+    ("The 2024 season envelope (UNOSAT/GISTDA product 4009) is a scenario layer with its own toggle: accumulated water from August to "
+     "October 2024, never an observation for a replay day. Setting the modelled water beside it is a plausibility comparison, not a validation."),
+    unosat4009.DSM_ASSUMPTION,
+]
+"""Added to the manifest's assumptions when the season envelope ships."""
 
 NO_PONDING_LIMITATION = ("No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level "
                          "drops below it, so water or saturated mud left behind after the river falls is not reconstructed.")
@@ -1007,7 +1080,9 @@ EXPLORATORY_KNOWLEDGE = {
                        "that also moved the 10 Sep 18:15 knot from 0.12 m to 0.1 m, the model's closest level to GISTDA's figure. The build "
                        "history does not record which came first within that change, so the comparison is not presented as an independent check.")},
         {"id": "unosat-4009", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
-         "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision."},
+         "statement": ("The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning. "
+                       "Recorded rule: no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is "
+                       "relabelled as calibration.")},
         {"id": "sentinel-2-water-check", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
          "statement": ("The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not "
                        "used for tuning: the last keyframe change is commit 129ff03 of 29 Sep 2026, and the check entered the bake on 2 Oct 2026. "
@@ -1227,23 +1302,24 @@ VIIRS_MODEL_FIELDS = ("model_stage_m", "model_flood_km2_clear", "model_flood_km2
 
 
 def rights_wording(rights: dict) -> dict:
-    """The four sentences about product 4009, for a pending or a confirmed rights record. Nothing from it is in this revision."""
+    """The sentences about product 4009 for a confirmed rights record: it is shown, as a season envelope scenario layer.
+
+    The bake never reaches this with an unconfirmed record (``build`` stops first); asking for the wording of one is an error.
+    """
+    if not rights["confirmed"]:
+        raise ReplayManifestError("product 4009 is shown only when the owners have confirmed its rights record")
     reply = (f"The {rights['licence']} rights decision (D2) was signed on {short_date(rights['signed_on'])} and UNOSAT replied "
              f"\"{rights['reply_quote']}\" (relayed by a project owner on {short_date(rights['reply_relayed_on'])})")
-    if rights["confirmed"]:
-        confirmed = f"the owners confirmed the rights record on {short_date(rights['confirmed_on'])}"
-        return {"status": f"Not shown in this revision; {confirmed}.",
-                "condition": f"UNOSAT/GISTDA product 4009 ({rights['licence']}) is not shown in this revision; {confirmed}.",
-                "block_note": f"Never an observation for a replay day. Not shown in this revision; {confirmed}.",
-                "reference_note": f"Season envelope (scenario per decision D3). {reply}; {confirmed}. Not shown in this revision."}
-    return {"status": "Not yet shown; rights record pending owner confirmation.",
-            "condition": f"UNOSAT/GISTDA product 4009 ({rights['licence']}) is not shown; it may appear only after the owners confirm the rights record.",
-            "block_note": "Never an observation for a replay day. Shown only after the owners confirm the rights record.",
-            "reference_note": f"Season envelope (scenario per decision D3). {reply}; shown only after the owners confirm the rights record."}
+    confirmed = f"the owners confirmed the rights record on {short_date(rights['confirmed_on'])}"
+    return {"status": f"Shown as a season envelope scenario layer; {confirmed}.",
+            "condition": (f"UNOSAT/GISTDA product 4009 ({rights['licence']}) is shown as a season envelope scenario layer: its derived files "
+                          f"keep their own folder, credit, licence and change notice; {confirmed}."),
+            "block_note": f"Never an observation for a replay day. Shown as a scenario layer with its own toggle, credit and change notice; {confirmed}.",
+            "rights_note": f"Season envelope (scenario per decision D3). {reply}; {confirmed}. Shown from this revision as a scenario layer."}
 
 
 def publication_eligibility(reported_licence: str | None, rights: dict) -> dict:
-    """Licence and display status per input; product 4009 is listed because it is the next input, not because it is shown."""
+    """Licence and display status per input; product 4009 is shown as a season envelope scenario layer, in its own files."""
     wording = rights_wording(rights)
     def entry(source_id: str, terms: str, **extra) -> dict:
         source = next(s for s in SOURCES if s["id"] == source_id)
@@ -1274,8 +1350,8 @@ def publication_eligibility(reported_licence: str | None, rights: dict) -> dict:
             entry("chronology", "Team summary of public reporting, shown with its compile date."),
             {"id": "external-figures", "name": "GISTDA 10 Sep 2024 and UNOSAT 3991 reported figures", "licence": "Cited figures with links; no data copied",
              "licence_stated": False, "shown": True, "terms": "Quoted as reported, with a link to each source."},
-            {"id": "unosat-4009", "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai", "licence": rights["licence"],
-             "licence_stated": True, "shown": False, "status": wording["status"],
+            {"id": ENVELOPE_SOURCE_ID, "name": ENVELOPE_SOURCE_NAME, "licence": rights["licence"],
+             "licence_stated": True, "shown": True, "status": wording["status"],
              "rights_record": rights["record"],
              "terms": "Attribution, share-alike and a change notice on every derived file; kept in its own folder."},
         ],
@@ -1356,10 +1432,10 @@ def evidence_blocks(result: dict) -> list[dict]:
         {"id": "unosat_3991_size_comparison", "lane": "CAL", "evidence_tier": "Calibration-informed magnitude check; not an independent check",
          "temporal_relation": "event_window_cumulative", "covers": ["external_checks[unosat-3991]"],
          "source_timestamp": "2024-09-13/2024-09-19 (cumulative window)"},
-        {"id": "unosat_4009_season_envelope", "lane": "SCN-ENV", "evidence_tier": "Season envelope (scenario), used as provided; unvalidated; not shown in this revision",
-         "temporal_relation": "season_envelope", "covers": ["external_references[unosat-4009]"], "source_timestamp": "2024-08-01/2024-10-22",
-         "season_window": "2024-08-01/2024-10-22", "shown": False,
-         "note": rights_wording(result["rights_4009"])["block_note"]},
+        *([{"id": "unosat_4009_season_envelope", "lane": ENVELOPE_LANE, "evidence_tier": unosat4009.EVIDENCE_TIER,
+            "temporal_relation": "season_envelope", "covers": ["season_envelope", f"external_checks[{ENVELOPE_CHECK_ID}]"],
+            "source_timestamp": result["rights_4009"]["source_timestamp"], "season_window": unosat4009.SEASON_WINDOW, "shown": True,
+            "note": rights_wording(result["rights_4009"])["block_note"]}] if "season_envelope" in result else []),
         {"id": "terrain_shading", "lane": "CTX", "evidence_tier": "Reference data", "temporal_relation": "static_context",
          "covers": ["layers[hillshade]"], "source_timestamp": "Copernicus DEM (2011-2015 acquisitions)"},
         {"id": "subdistrict_boundaries", "lane": "CTX", "evidence_tier": "Reference data", "temporal_relation": "static_context",
@@ -1491,7 +1567,8 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
         **({"exports": {**EXPORTS_META, "confidence_reason": replay_exports.confidence_reason(conducted)[0],
                         "source_timestamp": exports_source_timestamp(result["reported_meta"]["compiled"]), **result["exports"]}}
            if "exports" in result else {}),
-        "external_checks": result["external_checks"],
+        "external_checks": [*result["external_checks"], *([envelope_check(result["season_envelope"], rights)] if "season_envelope" in result else [])],
+        **({"season_envelope": season_envelope_block(result["season_envelope"], rights)} if "season_envelope" in result else {}),
         "viirs_daily": {
             "product": "NOAA/GMU VIIRS 375 m daily flood-water fraction composite (block 090)",
             "source_url": "https://jpssflood.gmu.edu/",
@@ -1511,14 +1588,12 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
                      "source_url": "https://tiservice.hii.or.th/opendata/", "licence": "CC BY-NC (per the HII open-data catalogue)",
                      "units": "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT", "note": "Observed rainfall (forcing), not flooding."},
         "external_references": [
-            {"id": "unosat-4009", "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)", "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
-             "note": rights_wording(rights)["reference_note"]},
             {"id": "unosat-3969", "name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)", "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"},
             {"id": "charter-912", "name": "International Charter activation 912 (Typhoon Yagi, Thailand)", "url": "https://disasterscharter.org/activations/flood-in-thailand-activation-912-"},
             {"id": "hii-event-page", "name": "HII ThaiWater September 2024 Chiang Rai flood event page (rainfall and Kok River hydrographs)", "url": "https://www.thaiwater.net/uploads/contents/current/2024/FloodChiangrai_Sep2024/"}],
         "gauge_note": "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.",
-        "sources": SOURCES,
-        "assumptions": ASSUMPTIONS,
+        "sources": [*SOURCES, *([envelope_source(rights)] if "season_envelope" in result else [])],
+        "assumptions": [*ASSUMPTIONS, *(ENVELOPE_ASSUMPTIONS if "season_envelope" in result else [])],
         "limitations": [
             "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
             "No high-resolution satellite image exists for 10-14 September over Mae Sai in these inputs; VIIRS (375 m) was cloud-covered on 10-11 Sep and mostly cloud-covered on 12-14 Sep, so onset and peak extents are not observed.",
@@ -1527,6 +1602,42 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
         ],
     }
     return manifest
+
+
+def season_envelope_block(files: dict[str, dict], rights: dict) -> dict:
+    """The manifest's ``season_envelope`` block: what the layer is, its licence and credit, and its three files.
+
+    The files are named by address, SHA-256 and size only. Every figure derived from product 4009 (areas, the
+    comparison with the model, residents) is in the statistics file, under the product's own licence; the bake
+    refuses a manifest whose block holds any other number (``floodguard.replay_manifest.season_envelope_problems``).
+    """
+    return {
+        "id": ENVELOPE_SOURCE_ID, "lane": ENVELOPE_LANE, "evidence_tier": unosat4009.EVIDENCE_TIER, "shown": True,
+        "label": unosat4009.LABEL, "caption": unosat4009.CAPTION, "standard_sentence": unosat4009.STANDARD_SENTENCE,
+        "day_independent": True,
+        "day_rule": "The layer has its own toggle: no replay day selects it, and it is not among the day observations.",
+        "temporal_relation": "season_envelope", "season_window": unosat4009.SEASON_WINDOW, "source_timestamp": rights["source_timestamp"],
+        "licence": rights["licence"], "licence_url": rights["licence_url"], "credit": rights["credit"],
+        "map_credit": unosat4009.map_credit(rights["licence"]),
+        "rights_record": rights["record"], "rights_note": rights_wording(rights)["rights_note"],
+        "confidence": "low", "confidence_reason": unosat4009.CONFIDENCE_REASON,
+        "assumptions": ENVELOPE_ASSUMPTIONS,
+        "urls": [rights["product_url"], rights["dataset_url"]],
+        "files_rule": ("Derived files keep their own folder and licence. This manifest names them by address, hash and size only; "
+                       "every figure derived from the product is in the statistics file."),
+        "files": {key: {name: files[key][name] for name in ("href", "sha256", "bytes")} for key in ("raster", "statistics", "licence")},
+    }
+
+
+def envelope_check(files: dict[str, dict], rights: dict) -> dict:
+    """The season-envelope comparison as an external check: a role, a use and the statistics file, with no figure."""
+    return {"id": ENVELOPE_CHECK_ID,
+            "observed": ("UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; "
+                         "the product is described to 22 Oct)"),
+            "role": COMPARISON_ROLE, "title": unosat4009.COMPARISON_TITLE, "scope": "Mae Sai district",
+            "statistics": {name: files["statistics"][name] for name in ("href", "sha256", "bytes")},
+            "use": unosat4009.COMPARISON_USE, "tuning_rule": unosat4009.TUNING_RULE,
+            "urls": [rights["product_url"], rights["dataset_url"]]}
 
 
 def normalise_utc(value: str) -> str:
@@ -1538,13 +1649,16 @@ def manifest_problems(manifest: dict) -> list[str]:
     """Evidence-contract, rights and JSON-schema problems of a composed manifest (empty when it may be written).
 
     While the owners have not confirmed the product 4009 rights record, a manifest that names a file for the
-    product, or marks it as shown, is refused. The shelter plan's sub-blocks are checked too
+    product, or marks it as shown, is refused. Once it ships, its block may hold the three files' addresses, hashes
+    and sizes and no other number, and nothing of it may sit among the day observations
+    (``floodguard.replay_manifest.season_envelope_problems``). The shelter plan's sub-blocks are checked too
     (``floodguard.replay_manifest.shelter_plan_problems``): each needs its own evidence block in its lane, the
     capacity figures must add up, and no participation share or listed capacity may be published.
     """
     schema = json.loads((ROOT / SCHEMA_REL).read_text(encoding="utf-8"))
-    rights = [] if owner_confirmed(load_rights_basis(ROOT / RIGHTS_BASIS_4009_PATH)) else unconfirmed_product_citations(manifest)
-    return evidence_problems(manifest) + shelter_plan_problems(manifest) + rights + schema_problems(manifest, schema)
+    rights = [] if owner_confirmed(load_rights_basis(RIGHTS_RECORD)) else unconfirmed_product_citations(manifest)
+    return (evidence_problems(manifest) + shelter_plan_problems(manifest) + season_envelope_problems(manifest) + rights
+            + schema_problems(manifest, schema))
 
 
 RECEIPT_ASSUMPTIONS = [
@@ -1561,6 +1675,7 @@ BAKE_SOURCES = (
     GENERATED_BY,
     "scripts/mae_sai_timeline_evacuation.py",
     "scripts/mae_sai_timeline_observations.py",
+    "scripts/mae_sai_timeline_unosat4009.py",
     "src/floodguard/bake_receipt.py",
     "src/floodguard/evacuation_access.py",
     "src/floodguard/flood_timeline.py",
@@ -1568,6 +1683,7 @@ BAKE_SOURCES = (
     "src/floodguard/replay_exports.py",
     "src/floodguard/replay_manifest.py",
     "src/floodguard/rights_basis.py",
+    "src/floodguard/season_envelope.py",
     "src/floodguard/shelter_validation.py",
     SCHEMA_REL.as_posix(),
 )
@@ -1590,6 +1706,9 @@ def bake(external: Path, out_dir: Path, generated_at: str | None = None) -> tupl
     if "export_data" in result:
         # The export pack carries the same generation time and input hashes as the manifest that lists it.
         result["exports"] = write_exports(result, out_dir, generated_stamp(result, generated_at)[0], receipt.entries())
+    if "season_envelope_data" in result:
+        # The product 4009 files carry the same generation time as the manifest that names them.
+        result["season_envelope"] = write_season_envelope(result, out_dir, generated_stamp(result, generated_at)[0])
     manifest = compose_manifest(result, inputs=receipt.entries(), generated_at=generated_at)
     problems = manifest_problems(manifest)
     if problems:

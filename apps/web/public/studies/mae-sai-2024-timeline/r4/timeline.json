@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T16:46:00+07:00",
+ "generated_at": "2026-10-02T18:28:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -306,15 +306,16 @@
   {
    "id": "unosat_4009_season_envelope",
    "lane": "SCN-ENV",
-   "evidence_tier": "Season envelope (scenario), used as provided; unvalidated; not shown in this revision",
+   "evidence_tier": "Season envelope (scenario), used as provided; unvalidated",
    "temporal_relation": "season_envelope",
    "covers": [
-    "external_references[unosat-4009]"
+    "season_envelope",
+    "external_checks[unosat-4009-season-envelope]"
    ],
    "source_timestamp": "2024-08-01/2024-10-22",
    "season_window": "2024-08-01/2024-10-22",
-   "shown": false,
-   "note": "Never an observation for a replay day. Not shown in this revision; the owners confirmed the rights record on 2 Oct 2026."
+   "shown": true,
+   "note": "Never an observation for a replay day. Shown as a scenario layer with its own toggle, credit and change notice; the owners confirmed the rights record on 2 Oct 2026."
   },
   {
    "id": "terrain_shading",
@@ -391,7 +392,7 @@
     "id": "unosat-4009",
     "relation": "computed_after_keyframes_final",
     "known_during_tuning": false,
-    "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision."
+    "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning. Recorded rule: no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is relabelled as calibration."
    },
    {
     "id": "sentinel-2-water-check",
@@ -410,7 +411,7 @@
    "HII rain data are CC BY-NC: the replay as a whole is for non-commercial use, and rain values stay out of any combined table or export.",
    "The VIIRS provider states no licence: the maps are shown with attribution, and reuse beyond this page is not cleared.",
    "OpenStreetMap-derived files (roads, facilities, shelter candidates and the access node positions) stay under ODbL 1.0: attribution and share-alike.",
-   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown in this revision; the owners confirmed the rights record on 2 Oct 2026."
+   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is shown as a season envelope scenario layer: its derived files keep their own folder, credit, licence and change notice; the owners confirmed the rights record on 2 Oct 2026."
   ],
   "inputs": [
    {
@@ -506,8 +507,8 @@
     "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai",
     "licence": "CC BY-SA 4.0",
     "licence_stated": true,
-    "shown": false,
-    "status": "Not shown in this revision; the owners confirmed the rights record on 2 Oct 2026.",
+    "shown": true,
+    "status": "Shown as a season envelope scenario layer; the owners confirmed the rights record on 2 Oct 2026.",
     "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
     "terms": "Attribution, share-alike and a change notice on every derived file; kept in its own folder."
    }
@@ -633,6 +634,12 @@
    "path": "open_context/worldpop_population/tha_ppp_2020.tif",
    "bytes": 296024584,
    "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
+  },
+  {
+   "root": "external",
+   "path": "unosat/unosat_4009_chiang_rai_2024/FL20240912THA_GDB.zip",
+   "bytes": 27977189,
+   "sha256": "1fe3243c2bc986d4111bb3d82aff292abccf7fb1bb1dd722747e994618b66e85"
   },
   {
    "root": "external",
@@ -10164,7 +10171,7 @@
     "id": "shelter_plan_reported_2024",
     "name": "shelter_plan_reported_2024.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv",
-    "sha256": "dc461d1a1e67e66b3f41d26f2b69e2649f5491dfae4366edd4037df449ba7a7d",
+    "sha256": "f78ca2c66afe497d0de3242161e4f7b4257719ef4883714cf4bd6ea1d7f0c9e4",
     "bytes": 28398,
     "media_type": "text/csv",
     "title": {
@@ -10188,7 +10195,7 @@
     "id": "shelter_plan_k",
     "name": "shelter_plan_k.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv",
-    "sha256": "c819d67cdb34e3c648e4f00bbe1d6cfede2cb1ab0f93b6a71f96a9a40c21874a",
+    "sha256": "c2ced866277fa3402da995d8e305cfab45424dec2bf62410590ad7a42786efd7",
     "bytes": 13604,
     "media_type": "text/csv",
     "title": {
@@ -10211,7 +10218,7 @@
     "id": "shelter_plan_capacitated",
     "name": "shelter_plan_capacitated.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv",
-    "sha256": "bd25570b0047b5965317fe84b22bd166fd210ddfada8b6ce281e1a1eb3b78c7e",
+    "sha256": "417a8f2ed78fec8f9e99180ce0b42083a0a944876c88182a828d3d10d73d81fd",
     "bytes": 19081,
     "media_type": "text/csv",
     "title": {
@@ -10234,7 +10241,7 @@
     "id": "shelter_sites",
     "name": "shelter_sites.geojson",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_sites.geojson",
-    "sha256": "140ab1656fc8fb31c07dc8da8f82134ccf4af34e81d3b888c0247eb45268b99e",
+    "sha256": "e9b166219b708532b7cf50b1843656662ac782c580d769325cf4cb8b9734178f",
     "bytes": 99373,
     "media_type": "application/geo+json",
     "title": {
@@ -10258,7 +10265,7 @@
     "id": "modelled_road_inundation_by_hour",
     "name": "modelled_road_inundation_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv",
-    "sha256": "3eecd999c5621a32ca2bc25244cc71f841e96381d438c736627ff595eee038b3",
+    "sha256": "2bb16d0aeccd2535c47eedfafe6d9db3907985e8891b9b4735cf7049c7f3f544",
     "bytes": 346104,
     "media_type": "text/csv",
     "title": {
@@ -10281,7 +10288,7 @@
     "id": "modelled_access_loss_by_hour",
     "name": "modelled_access_loss_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_access_loss_by_hour.csv",
-    "sha256": "bc79ce25ca9f1fa213eb77b1c24071eb9c7bad94d650f3b1f212569e349c7abf",
+    "sha256": "e2de279f76ffaf31c901d8d431f9a8a47af1b1b6ffc396d05fa4e63a74efafbf",
     "bytes": 241197,
     "media_type": "text/csv",
     "title": {
@@ -10306,7 +10313,7 @@
     "id": "shelter_candidate_verification_sheet",
     "name": "shelter_candidate_verification_sheet.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv",
-    "sha256": "d13ed32aa7c8049aeed02398020276ce7a885515ae4f1d51b7a0b00fc7eb516e",
+    "sha256": "69b1495e656a4a55257e4538173902019983fbc15cb5f2cfbd67d20e5ae3a6ce",
     "bytes": 31025,
     "media_type": "text/csv",
     "title": {
@@ -10328,7 +10335,7 @@
     "id": "readme_licences",
     "name": "README_licences.txt",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt",
-    "sha256": "69b8acb7ae36c931edb35c76ff43eb58c658d9fd1f0f19717efcef58de671a44",
+    "sha256": "7cda01e041a40a26f07836f847d16341d0a068ce7ca011837a9426cf3756b253",
     "bytes": 25842,
     "media_type": "text/plain",
     "title": {
@@ -10383,8 +10390,74 @@
    "urls": [
     "https://unosat.org/products/3991"
    ]
+  },
+  {
+   "id": "unosat-4009-season-envelope",
+   "observed": "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct)",
+   "role": "season_envelope_plausibility",
+   "title": "Season envelope comparison (scenario; plausibility, not validation)",
+   "scope": "Mae Sai district",
+   "statistics": {
+    "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.json",
+    "sha256": "e68f74a24544087fd07315ea7dd78c679ebf4a10d06cf3428fbac8c78baaaf45",
+    "bytes": 13615
+   },
+   "use": "Plausibility against a season envelope, not a validation. The envelope also holds August and early-October water and the modelled peak is illustrative, so the figures say where the two differ, not which one is right.",
+   "tuning_rule": "No keyframe or elevation change is tuned to product 4009 afterwards; if one is, this comparison is relabelled as calibration.",
+   "urls": [
+    "https://unosat.org/products/4009",
+    "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province"
+   ]
   }
  ],
+ "season_envelope": {
+  "id": "unosat-4009",
+  "lane": "SCN-ENV",
+  "evidence_tier": "Season envelope (scenario), used as provided; unvalidated",
+  "shown": true,
+  "label": "Scenario (SCN-ENV): 2024 season envelope",
+  "caption": "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct); includes August and early-October water; not an observation for any replay day. Clipped to Mae Sai district and rasterised to the replay grid by FloodGuard.",
+  "standard_sentence": "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+  "day_independent": true,
+  "day_rule": "The layer has its own toggle: no replay day selects it, and it is not among the day observations.",
+  "temporal_relation": "season_envelope",
+  "season_window": "2024-08-01/2024-10-22",
+  "source_timestamp": "2024-08-01/2024-10-22",
+  "licence": "CC BY-SA 4.0",
+  "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+  "map_credit": "UNOSAT and GISTDA · CC BY-SA 4.0",
+  "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
+  "rights_note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); the owners confirmed the rights record on 2 Oct 2026. Shown from this revision as a scenario layer.",
+  "confidence": "low",
+  "confidence_reason": "A preliminary agency product that was not checked in the field, set beside an illustrative model: the envelope spans August to October with no date per patch, and the modelled stages come from no gauge record.",
+  "assumptions": [
+   "The 2024 season envelope (UNOSAT/GISTDA product 4009) is a scenario layer with its own toggle: accumulated water from August to October 2024, never an observation for a replay day. Setting the modelled water beside it is a plausibility comparison, not a validation.",
+   "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated."
+  ],
+  "urls": [
+   "https://unosat.org/products/4009",
+   "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province"
+  ],
+  "files_rule": "Derived files keep their own folder and licence. This manifest names them by address, hash and size only; every figure derived from the product is in the statistics file.",
+  "files": {
+   "raster": {
+    "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.png",
+    "sha256": "148f0a41fb078e2d51ac443a7eda386edd7ad311338bd8121b17a84f7fd2831f",
+    "bytes": 16947
+   },
+   "statistics": {
+    "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.json",
+    "sha256": "e68f74a24544087fd07315ea7dd78c679ebf4a10d06cf3428fbac8c78baaaf45",
+    "bytes": 13615
+   },
+   "licence": {
+    "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/LICENSE",
+    "sha256": "61bdfbee41cce417588041eb53dc8696bce4330dde26977884b18aaac0e32caf",
+    "bytes": 7683
+   }
+  }
+ },
  "viirs_daily": {
   "product": "NOAA/GMU VIIRS 375 m daily flood-water fraction composite (block 090)",
   "source_url": "https://jpssflood.gmu.edu/",
@@ -11271,12 +11344,6 @@
  },
  "external_references": [
   {
-   "id": "unosat-4009",
-   "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)",
-   "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
-   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); the owners confirmed the rights record on 2 Oct 2026. Not shown in this revision."
-  },
-  {
    "id": "unosat-3969",
    "name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)",
    "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"
@@ -11356,6 +11423,13 @@
    "licence": "Project summary text",
    "timestamp": "compiled 2026-09-27",
    "attribution": "FloodGuard team summary of public reporting; not independently verified in this study"
+  },
+  {
+   "id": "unosat-4009",
+   "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai",
+   "licence": "CC BY-SA 4.0",
+   "timestamp": "2024-08-01 / 2024-10-22 (season envelope; no date per patch)",
+   "attribution": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"
   }
  ],
  "assumptions": [
@@ -11381,7 +11455,9 @@
   "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
   "Flash-flood velocity, debris and mud deposition are not modelled.",
-  "The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes, inside the district and outside mapped channels; its comparison with the model is indicative."
+  "The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes, inside the district and outside mapped channels; its comparison with the model is indicative.",
+  "The 2024 season envelope (UNOSAT/GISTDA product 4009) is a scenario layer with its own toggle: accumulated water from August to October 2024, never an observation for a replay day. Setting the modelled water beside it is a plausibility comparison, not a validation.",
+  "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated."
  ],
  "limitations": [
   "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { TIMELINE_MANIFEST_URL, type TimelineManifest } from "./flood-timeline";
+import { isSeasonEnvelopeCheck, TIMELINE_MANIFEST_URL, type TimelineManifest } from "./flood-timeline";
 import { GLOSSARY, GLOSSARY_ORDER, KNOWN_THAI, localizedText, placeNameText, plainManifestText, roadNameText, STANDALONE_K, thaiManifestDate, thaiOnly } from "./flood-timeline-copy";
 
 const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../public", TIMELINE_MANIFEST_URL.replace(/^\//, "")), "utf8")) as TimelineManifest;
@@ -164,18 +164,48 @@ describe("Mae Sai replay copy", () => {
     // No Thai sentence of the page gives a Buddhist-era year on its own.
     const bare = Object.values(KNOWN_THAI).filter((text) => /25[67]\d(?! \(20\d\d\))/.test(text));
     expect(bare).toEqual([]);
-    const reference = manifest.external_references!.find((item) => item.id === "unosat-4009")!;
-    const thai = localizedText(reference.note!, "th");
+    // Product 4009 is no longer a reference waiting to be ingested: its rights note sits on the season-envelope block.
+    expect(manifest.external_references!.some((item) => item.id === "unosat-4009")).toBe(false);
+    const thai = localizedText(manifest.season_envelope!.rights_note!, "th");
     expect(thai.lang).toBe("th");
+    expect(thai.text).toContain("แสดงเป็นชั้นข้อมูลสถานการณ์จำลองตั้งแต่ข้อมูลรุ่นนี้");
     expect(thai.text).toContain("ลงนามเมื่อ 30 ก.ย. 2569 (2026)");
     expect(thai.text).toContain('UNOSAT ตอบว่า "we approve the use" (เจ้าของโครงการแจ้งคำตอบนี้ต่อทีมเมื่อ 1 ต.ค. 2569 (2026))');
     const depthFactor = localizedText(manifest.exploratory_knowledge!.depth_factor, "th").text;
     expect(depthFactor).toContain("28 ก.ย. 2569 (2026)");
   });
 
-  it("has Thai for the status of product 4009 once the owners confirm its rights record", () => {
-    // The bake reads the status from the rights record: pending today, confirmed with a date after the owners
-    // confirm it. Both wordings have a Thai rendering, whatever the date.
+  it("has Thai for product 4009 shown as a season envelope scenario layer, whatever the confirmation date", () => {
+    const envelope = manifest.season_envelope!;
+    const eligibility = manifest.publication_eligibility!;
+    const shown = [
+      eligibility.inputs.find((input) => input.id === "unosat-4009")!.status!,
+      eligibility.conditions.find((line) => line.includes("product 4009"))!,
+      envelope.rights_note!,
+      "Shown as a season envelope scenario layer; the owners confirmed the rights record on 9 Oct 2026.",
+      "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is shown as a season envelope scenario layer: its derived files keep their own folder, credit, licence and change notice; the owners confirmed the rights record on 9 Oct 2026.",
+      "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); the owners confirmed the rights record on 9 Oct 2026. Shown from this revision as a scenario layer.",
+    ];
+    for (const sentence of shown) {
+      const thai = localizedText(sentence, "th");
+      expect(thai.lang, sentence).toBe("th");
+      expect(thai.text, sentence).toMatch(/เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ \d{1,2} ต\.ค\. 2569 \(2026\)/);
+      expect(thai.text, sentence).toContain("ชั้นข้อมูลสถานการณ์จำลอง");
+      expect(thai.text, sentence).not.toContain("ยังไม่แสดง");
+      expect(localizedText(sentence, "en").lang).toBe("en");
+    }
+    // The chip, the caption, the standard sentence, the envelope's assumptions and its comparison wording have Thai too.
+    const check = manifest.external_checks!.find(isSeasonEnvelopeCheck)!;
+    const sentences = [envelope.label, envelope.caption, envelope.standard_sentence!, envelope.confidence_reason, ...envelope.assumptions, check.title, check.use, check.tuning_rule!];
+    expect(sentences.filter((sentence) => localizedText(sentence, "th").lang !== "th")).toEqual([]);
+    expect(localizedText(envelope.label, "th").text).toBe("สถานการณ์จำลอง (SCN-ENV): ขอบเขตน้ำตลอดฤดูปี 2567 (2024)");
+    expect(localizedText(envelope.caption, "th").text).toContain("ไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู");
+    expect(localizedText(check.title, "th").text).toContain("ไม่ใช่การยืนยันความถูกต้อง");
+  });
+
+  it("keeps Thai for the earlier r4 wording, when product 4009 was confirmed but not yet shown", () => {
+    // A client may still hold an earlier r4 manifest in its offline copy: pending, or confirmed with a date and not
+    // shown. Both wordings keep their Thai rendering, whatever the date.
     const confirmed = [
       "Not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
       "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",

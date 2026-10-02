@@ -7,6 +7,7 @@ import {
   coverageComplete,
   districtStats,
   hourlyStages,
+  sizeChecks,
   smallestFloodedExtent,
   TIMELINE_MANIFEST_URL,
   type FacilityProps,
@@ -706,7 +707,8 @@ describe("Shelter plan and reported shelters", () => {
 
   it("renders the size checks with their sources", () => {
     const html = renderToStaticMarkup(<ExternalChecks manifest={manifest} language="en" />);
-    for (const check of manifest.external_checks!) {
+    expect(sizeChecks(manifest.external_checks).map((check) => check.id)).toEqual(["gistda-radarsat2-20240910", "unosat-3991"]);
+    for (const check of sizeChecks(manifest.external_checks)) {
       expect(text(html)).toContain(`reported ${check.reported_km2} km²`);
       expect(text(html)).toContain(`${Number(check.model_km2.toFixed(1))} km²`);
       for (const url of check.urls) expect(html).toContain(`href="${url.replaceAll("&", "&amp;")}"`);
@@ -721,6 +723,11 @@ describe("Shelter plan and reported shelters", () => {
     // Without a "use" sentence the page states the limit itself.
     const bare = text(renderToStaticMarkup(<ExternalChecks manifest={{ ...manifest, external_checks: manifest.external_checks!.map((check) => ({ ...check, use: "" })) }} language="en" />));
     expect(bare).toContain("Magnitude check only, not a spatial validation.");
+    // The comparison with the season envelope is not a size check: without the envelope's own files the page shows
+    // nothing of it, and it never appears under a size-check heading.
+    expect(manifest.external_checks!.some((check) => check.role === "season_envelope_plausibility")).toBe(true);
+    expect(plain).not.toMatch(/Season envelope|product 4009|undefined|NaN/);
+    expect(text(renderToStaticMarkup(<ExternalChecks manifest={manifest} language="en" envelope={{ status: "absent" }} />))).toBe(plain);
   });
 
   it("files the GISTDA onset figure as a calibration anchor and UNOSAT as a calibration-informed check over its own window", () => {
@@ -739,7 +746,7 @@ describe("Shelter plan and reported shelters", () => {
     expect(plain).toContain("this figure was known while the stage keyframes were tuned");
     expect(plain).toContain("time zone not stated; assumed ICT");
     // The anchor text follows the manifest: matched by construction, or how far the closest stage stays and why.
-    const anchor = manifest.external_checks!.find((check) => check.role === "calibration_anchor")!;
+    const anchor = sizeChecks(manifest.external_checks).find((check) => check.role === "calibration_anchor")!;
     const gap = Math.abs(anchor.model_km2 - anchor.reported_km2);
     if (gap / anchor.reported_km2 <= 0.1) {
       expect(plain).toContain("agreement holds by construction and does not test the model");
@@ -752,7 +759,7 @@ describe("Shelter plan and reported shelters", () => {
         expect(plain).toContain(`its smallest non-zero extent, land within ${smallest.stage_m.toFixed(2)} m of the channel level, is already ${smallest.km2.toFixed(1)} km².`);
       }
     }
-    const unosatCheck = manifest.external_checks!.find((check) => check.role === "calibration_informed_magnitude_check")!;
+    const unosatCheck = sizeChecks(manifest.external_checks).find((check) => check.role === "calibration_informed_magnitude_check")!;
     const people = (value: number) => value.toLocaleString("en-US");
     expect(plain).toContain(`The model gives ${Number(unosatCheck.model_km2.toFixed(1))} km² and ≈ ${people(unosatCheck.model_people_in_water!)} modelled residents in water at a ${unosatCheck.model_stage_m} m stage`);
     expect(plain).toContain(unosatCheck.model_window!);

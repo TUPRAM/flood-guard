@@ -22,6 +22,9 @@ This module holds the rules that do not depend on any one study:
   capacity-aware plan, the what-if levels and the local check each need their
   own evidence block in the right lane, the capacity figures must add up, and
   no participation share or listed capacity may appear;
+* :func:`season_envelope_problems`, the rules of a season envelope (lane ``SCN-ENV``): the manifest names its files
+  by address, hash and size and holds no figure derived from the product, and the envelope is never among the day
+  observations;
 * :func:`schema_problems`, validation against the JSON schema in
   ``packages/contracts/schemas/case-replay-timeline.schema.json``.
 
@@ -83,6 +86,9 @@ SHELTER_SUBBLOCK_LANES: Mapping[str, str] = {"capacitated": "SCN", "robustness":
 """Parts of ``shelters`` that need an evidence block of their own, and the lane it must sit in. ``shelters`` as a
 whole is a scenario; reported use and a local check are reported facts and must not inherit that lane, and the
 capacity-aware plan and the what-if levels carry their own temporal relation and source timestamp."""
+
+ENVELOPE_CHECK_ROLE = "season_envelope_plausibility"
+"""Role of the external check that sets the model beside a season envelope: a plausibility comparison, never independent."""
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _SWEEP_OR_LISTED_KEY = re.compile(r"participation|listed[_-]?capacit|ddpm", re.IGNORECASE)
@@ -393,6 +399,103 @@ def shelter_plan_problems(manifest: Mapping[str, Any]) -> list[str]:
     problems.extend(f"{path} names a participation share or a listed capacity: the replay publishes neither"
                     for path in sweep_or_listed_capacity_keys(manifest))
     return problems
+
+
+def _numbers(value: Any, path: str) -> list[str]:
+    """Paths of every number (not a boolean) inside ``value``."""
+    if isinstance(value, bool):
+        return []
+    if isinstance(value, (int, float)):
+        return [path]
+    if isinstance(value, Mapping):
+        return [found for key, item in value.items() for found in _numbers(item, f"{path}.{key}")]
+    if isinstance(value, list):
+        return [found for index, item in enumerate(value) for found in _numbers(item, f"{path}[{index}]")]
+    return []
+
+
+def season_envelope_problems(manifest: Mapping[str, Any]) -> list[str]:
+    """Return every way a manifest's season envelope breaks its rules (empty when it holds, or when there is none).
+
+    A season envelope (``season_envelope``, lane ``SCN-ENV``) is a scenario layer derived from an agency product
+    under that product's own licence. The manifest may name its files and say what they are, and nothing more:
+
+    * the block sits in lane ``SCN-ENV``, is marked ``shown`` and ``day_independent``, and carries its licence, its
+      credit, a map credit that names the licence, a source timestamp, a season window, a confidence and assumptions;
+    * its ``files`` are ``raster``, ``statistics`` and ``licence``, each exactly ``href``, ``sha256`` and ``bytes``, all
+      in one folder of their own; the block holds no other number, so no figure derived from the product is in the manifest;
+    * one evidence block in lane ``SCN-ENV`` covers ``season_envelope``, marked ``shown`` with a ``season_window``;
+    * the external check with the role ``season_envelope_plausibility`` points at the statistics file, says
+      "not a validation" and holds no number either;
+    * no layer, observation, replay day, VIIRS day or export file names one of the envelope's files or its folder:
+      the envelope is never among the day observations and never in the export pack.
+    """
+    block = manifest.get("season_envelope")
+    checks = [check for check in manifest.get("external_checks") or () if isinstance(check, Mapping) and check.get("role") == ENVELOPE_CHECK_ROLE]
+    if block is None:
+        return [f"external_checks[{check.get('id')}] compares with a season envelope the manifest does not carry" for check in checks]
+    if not isinstance(block, Mapping):
+        return ["season_envelope is not an object"]
+    problems: list[str] = []
+    if block.get("lane") != "SCN-ENV":
+        problems.append("season_envelope must sit in lane SCN-ENV")
+    if block.get("shown") is not True or block.get("day_independent") is not True:
+        problems.append("season_envelope must be marked shown and day_independent")
+    for key in ("id", "label", "caption", "licence", "licence_url", "credit", "map_credit", "source_timestamp", "season_window",
+                "confidence", "confidence_reason", "rights_record"):
+        if not isinstance(block.get(key), str) or not block[key].strip():
+            problems.append(f"season_envelope lacks {key}")
+    if not isinstance(block.get("assumptions"), list) or not block["assumptions"]:
+        problems.append("season_envelope lacks assumptions")
+    if isinstance(block.get("licence"), str) and block["licence"] not in str(block.get("map_credit", "")):
+        problems.append("season_envelope.map_credit must name the licence")
+    files = block.get("files")
+    hrefs: list[str] = []
+    if not isinstance(files, Mapping) or sorted(files) != ["licence", "raster", "statistics"]:
+        problems.append("season_envelope.files must be raster, statistics and licence")
+        files = {}
+    for name, record in files.items():
+        if not isinstance(record, Mapping) or sorted(record) != ["bytes", "href", "sha256"] or not _SHA256.match(str(record.get("sha256", ""))) \
+                or not _whole(record.get("bytes")) or not isinstance(record.get("href"), str):
+            problems.append(f"season_envelope.files.{name} must give href, sha256 and bytes, and nothing else")
+        else:
+            hrefs.append(record["href"])
+    folders = {href.rsplit("/", 1)[0] + "/" for href in hrefs}
+    if len(folders) > 1:
+        problems.append("the season envelope's files must share one folder of their own")
+    allowed = {f"season_envelope.files.{name}.bytes" for name in files}
+    problems.extend(f"{path} is a number: every figure derived from the product belongs in its statistics file"
+                    for path in _numbers(block, "season_envelope") if path not in allowed)
+    covering = [item for item in manifest.get("evidence_blocks") or () if isinstance(item, Mapping) and "season_envelope" in (item.get("covers") or ())]
+    if len(covering) != 1 or covering[0].get("lane") != "SCN-ENV" or covering[0].get("shown") is not True or not covering[0].get("season_window"):
+        problems.append("one evidence block in lane SCN-ENV must cover season_envelope, marked shown, with a season_window")
+    if len(checks) != 1:
+        problems.append(f"exactly one external check must carry the role {ENVELOPE_CHECK_ROLE}")
+    for check in checks:
+        name = f"external_checks[{check.get('id')}]"
+        if check.get("statistics") != files.get("statistics"):
+            problems.append(f"{name}.statistics must be the season envelope's statistics file")
+        if "not a validation" not in str(check.get("use", "")):
+            problems.append(f"{name}.use must say that the comparison is not a validation")
+        problems.extend(f"{path} is a number: every figure derived from the product belongs in its statistics file"
+                        for path in _numbers(check, name) if path != f"{name}.statistics.bytes")
+    if folders:
+        folder = sorted(folders)[0]
+        for key in ("layers", "observations", "days", "viirs_daily", "exports", "vectors", "hand", "population", "access"):
+            if folder in _text_of(manifest.get(key)):
+                problems.append(f"{key} names a file of the season envelope: it is never a day observation, a replay layer or an export file")
+    return problems
+
+
+def _text_of(value: Any) -> str:
+    """Every string inside ``value``, joined (used to look for an address anywhere in a block)."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, Mapping):
+        return "\n".join(_text_of(item) for item in value.values())
+    if isinstance(value, list):
+        return "\n".join(_text_of(item) for item in value)
+    return ""
 
 
 def schema_problems(manifest: Mapping[str, Any], schema: Mapping[str, Any]) -> list[str]:

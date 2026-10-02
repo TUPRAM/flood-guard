@@ -539,8 +539,73 @@
         "required": ["id", "observed", "role", "use", "urls"],
         "properties": {
           "role": {
-            "description": "No external figure is labelled independent while it was used, or known, during tuning.",
-            "enum": ["calibration_anchor", "calibration_informed_magnitude_check"]
+            "description": "No external figure is labelled independent while it was used, or known, during tuning. season_envelope_plausibility sets the model beside a season envelope (lane SCN-ENV): a plausibility comparison, not a validation, whose figures live in the envelope's own statistics file.",
+            "enum": ["calibration_anchor", "calibration_informed_magnitude_check", "season_envelope_plausibility"]
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "role": { "const": "season_envelope_plausibility" } } },
+            "then": {
+              "description": "The comparison with a season envelope names its statistics file and holds no figure: no reported or modelled area, people or stage.",
+              "additionalProperties": false,
+              "required": ["id", "observed", "role", "title", "scope", "statistics", "use", "urls"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "observed": { "type": "string", "minLength": 1 },
+                "role": { "const": "season_envelope_plausibility" },
+                "title": { "type": "string", "pattern": "plausibility, not validation" },
+                "scope": { "type": "string", "minLength": 1 },
+                "statistics": { "$ref": "#/$defs/fileReference" },
+                "use": { "type": "string", "pattern": "not a validation" },
+                "tuning_rule": { "type": "string", "minLength": 1 },
+                "urls": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^https://" } }
+              }
+            },
+            "else": { "required": ["reported_km2", "reported_text", "model_km2"] }
+          }
+        ]
+      }
+    },
+    "season_envelope": {
+      "description": "A season-long agency extent shown as a scenario layer (lane SCN-ENV), never as an observation for a replay day. Its files keep their own folder and licence; the manifest names them by address, hash and size only, and holds no figure derived from the product.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "lane", "evidence_tier", "shown", "label", "caption", "day_independent", "day_rule", "temporal_relation", "season_window",
+        "source_timestamp", "licence", "licence_url", "credit", "map_credit", "rights_record", "confidence", "confidence_reason", "assumptions", "urls",
+        "files_rule", "files"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "lane": { "const": "SCN-ENV" },
+        "evidence_tier": { "type": "string", "minLength": 1 },
+        "shown": { "const": true },
+        "label": { "type": "string", "pattern": "^Scenario \\(SCN-ENV\\)" },
+        "caption": { "type": "string", "pattern": "not an observation for any replay day" },
+        "standard_sentence": { "type": "string", "minLength": 1 },
+        "day_independent": { "description": "No replay day selects the layer; it has a toggle of its own.", "const": true },
+        "day_rule": { "type": "string", "minLength": 1 },
+        "temporal_relation": { "const": "season_envelope" },
+        "season_window": { "type": "string", "minLength": 1 },
+        "source_timestamp": { "type": "string", "minLength": 1 },
+        "licence": { "const": "CC BY-SA 4.0" },
+        "licence_url": { "type": "string", "pattern": "^https://" },
+        "credit": { "type": "string", "minLength": 1 },
+        "map_credit": { "description": "Added to the map credit and to the export credit whenever the layer is visible.", "type": "string", "pattern": "CC BY-SA 4\\.0" },
+        "rights_record": { "type": "string", "minLength": 1 },
+        "rights_note": { "type": "string", "minLength": 1 },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "confidence_reason": { "type": "string", "minLength": 1 },
+        "assumptions": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "urls": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^https://" } },
+        "files_rule": { "type": "string", "minLength": 1 },
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["raster", "statistics", "licence"],
+          "properties": {
+            "raster": { "$ref": "#/$defs/fileReference" },
+            "statistics": { "$ref": "#/$defs/fileReference" },
+            "licence": { "$ref": "#/$defs/fileReference" }
           }
         }
       }
@@ -757,6 +822,17 @@
     },
     "hashedAsset": {
       "type": "object",
+      "required": ["href", "sha256", "bytes"],
+      "properties": {
+        "href": { "type": "string", "pattern": "^/studies/[A-Za-z0-9._/-]+$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "fileReference": {
+      "description": "A file named by address, SHA-256 and size, and by nothing else.",
+      "type": "object",
+      "additionalProperties": false,
       "required": ["href", "sha256", "bytes"],
       "properties": {
         "href": { "type": "string", "pattern": "^/studies/[A-Za-z0-9._/-]+$" },

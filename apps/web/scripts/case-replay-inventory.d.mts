@@ -16,6 +16,8 @@ export const CASE_REPLAY_POLICY: string;
 export const CASE_REPLAY_BUDGET_BYTES: number;
 export const CASE_REPLAY_EXPORT_BUDGET_BYTES: number;
 export const CASE_REPLAY_EXPORT_KEY: string;
+/** Sub-folder of the revision that holds the season envelope's files; they are part of the precache set. */
+export const CASE_REPLAY_ENVELOPE_FOLDER: string;
 export function timelineManifestUrl(root?: string): string;
 export function manifestDirectory(manifestUrl: string): string;
 export function timelineManifestAssets(manifest: unknown): { href: string; sha256: string; bytes: number }[];

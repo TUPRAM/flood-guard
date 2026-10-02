@@ -269,8 +269,6 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ทราบตัวเลขของ UNOSAT 3991 (ประมาณ 70 ตร.กม. ในช่วง 13–19 ก.ย.) อยู่แล้วขณะปรับจุดกำหนดระดับน้ำ การเทียบขนาดกับตัวเลขนี้จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ",
   "The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03) that also moved the 10 Sep 18:15 knot from 0.12 m to 0.1 m, the model's closest level to GISTDA's figure. The build history does not record which came first within that change, so the comparison is not presented as an independent check.":
     "การเทียบกับ VIIRS รายวันไม่ได้ใช้ปรับแบบจำลอง การเทียบนี้คำนวณครั้งแรกในการแก้ไขเมื่อ 29 ก.ย. 2569 (2026) (commit 129ff03) ซึ่งเป็นการแก้ไขเดียวกับที่ย้ายจุดกำหนดระดับน้ำ 10 ก.ย. 18:15 น. จาก 0.12 ม. เป็น 0.1 ม. อันเป็นระดับของแบบจำลองที่ใกล้ตัวเลขของ GISTDA ที่สุด ประวัติการสร้างข้อมูลไม่ได้บันทึกว่าขั้นตอนใดเกิดก่อนในการแก้ไขนั้น จึงไม่นำการเทียบนี้มาแสดงเป็นการตรวจสอบอิสระ",
-  "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision.":
-    "การเทียบกับผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง ผลิตภัณฑ์ 4009 ยังไม่แสดงในข้อมูลรุ่นนี้",
   "The depth factor f = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.":
     "ตัวคูณความลึก f = clip((A / A_Sai) ** 0.3, 0.35, 1) เพิ่มเข้ามาเมื่อ 28 ก.ย. 2569 (2026) ซึ่งขณะนั้นทราบตัวเลขของ GISTDA และ UNOSAT 3991 แล้ว เลขชี้กำลังและค่าต่ำสุดเป็นไปตามหลักประมาณของเรขาคณิตชลศาสตร์ ประวัติการสร้างข้อมูลไม่มีบันทึกว่าปรับให้เข้ากับตัวเลขภายนอกใด",
   "The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not used for tuning: the last keyframe change is commit 129ff03 of 29 Sep 2026, and the check entered the bake on 2 Oct 2026. The two true-colour images have been on the page since the first revision, so they were seen while the keyframes were set, but no water area had been derived from them.":
@@ -287,6 +285,57 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ภาพ Sentinel-1 วันที่ 16 กันยายน 06:16 น. ใช้กำหนดขนาดของขอบเขตน้ำช่วงท้ายของการลดลงเท่านั้น ภาพเรดาร์ทั้งสองภาพถ่ายจากทิศทางวงโคจรต่างกัน",
   "Season envelope; not shown until the CC BY-SA rights record is signed.":
     "ขอบเขตน้ำตลอดฤดู ยังไม่แสดงจนกว่าจะลงนามบันทึกสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA",
+  // The same statement as the r4 bakes worded it before product 4009 was shown.
+  "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision.":
+    "การเทียบกับผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง ผลิตภัณฑ์ 4009 ยังไม่แสดงในข้อมูลรุ่นนี้",
+  // --- The 2024 season envelope (UNOSAT and GISTDA product 4009), a scenario layer: manifest and statistics file. ---
+  "Scenario (SCN-ENV): 2024 season envelope": "สถานการณ์จำลอง (SCN-ENV): ขอบเขตน้ำตลอดฤดูปี 2567 (2024)",
+  "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct); includes August and early-October water; not an observation for any replay day. Clipped to Mae Sai district and rasterised to the replay grid by FloodGuard.":
+    "ผลิตภัณฑ์ 4009 ของ UNOSAT และ GISTDA: น้ำสะสมตั้งแต่สิงหาคมถึงตุลาคม 2567 (2024) (ชื่อชั้นข้อมูลสิ้นสุดวันที่ 12 ต.ค. ส่วนคำอธิบายผลิตภัณฑ์ครอบคลุมถึง 22 ต.ค.) รวมน้ำของเดือนสิงหาคมและต้นเดือนตุลาคมด้วย ไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู FloodGuard ตัดให้เหลือเฉพาะอำเภอแม่สายและแปลงเป็นราสเตอร์บนกริดของการย้อนดู",
+  "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.":
+    "ขอบเขตน้ำเบื้องต้นจากหน่วยงานที่ยังไม่ได้ตรวจสอบในพื้นที่จริง (ผลิตภัณฑ์ UNOSAT หมายเลข 4009 ร่วมกับ GISTDA; Field_Validation=0) ใช้ตามที่เผยแพร่ภายใต้สัญญาอนุญาต CC BY-SA 4.0 FloodGuard ก็ไม่ได้ตรวจสอบเช่นกัน",
+  "Season envelope comparison (scenario; plausibility, not validation)":
+    "การเทียบกับขอบเขตน้ำตลอดฤดู (สถานการณ์จำลอง; ดูความสมเหตุสมผล ไม่ใช่การยืนยันความถูกต้อง)",
+  "Plausibility against a season envelope, not a validation. The envelope also holds August and early-October water and the modelled peak is illustrative, so the figures say where the two differ, not which one is right.":
+    "เป็นการดูความสมเหตุสมผลเทียบกับขอบเขตน้ำตลอดฤดู ไม่ใช่การยืนยันความถูกต้อง ขอบเขตนี้รวมน้ำของเดือนสิงหาคมและต้นเดือนตุลาคมด้วย และระดับสูงสุดของแบบจำลองเป็นค่าเพื่อการอธิบาย ตัวเลขจึงบอกว่าทั้งสองต่างกันที่ใด ไม่ได้บอกว่าข้อมูลใดถูกต้อง",
+  "The 2024 season envelope (UNOSAT/GISTDA product 4009) is a scenario layer with its own toggle: accumulated water from August to October 2024, never an observation for a replay day. Setting the modelled water beside it is a plausibility comparison, not a validation.":
+    "ขอบเขตน้ำตลอดฤดูปี 2567 (2024) (ผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA) เป็นชั้นข้อมูลสถานการณ์จำลองที่เปิดปิดได้เอง แสดงน้ำสะสมตั้งแต่สิงหาคมถึงตุลาคม 2567 (2024) และไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู การนำน้ำจากแบบจำลองมาเทียบกับขอบเขตนี้เป็นการดูความสมเหตุสมผล ไม่ใช่การยืนยันความถูกต้อง",
+  "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.":
+    "แบบจำลองพื้นผิวความละเอียด 30 ม. ทำให้ระดับพื้นดินในเขตสิ่งปลูกสร้างสูงกว่าจริง น้ำจากแบบจำลองและจำนวนผู้อยู่อาศัยในน้ำในเขตเมืองจึงน่าจะต่ำกว่าความเป็นจริง",
+  "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning. Recorded rule: no keyframe or elevation change is tuned to product 4009 afterwards; if one is, the comparison is relabelled as calibration.":
+    "การเทียบกับผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง กฎที่บันทึกไว้: หลังจากนี้จะไม่ปรับจุดกำหนดระดับน้ำหรือข้อมูลความสูงให้เข้ากับผลิตภัณฑ์ 4009 หากมีการปรับ การเทียบนี้จะถูกระบุใหม่ว่าเป็นการปรับเทียบแบบจำลอง",
+  "The modelled peak (illustrative stage, 12 Sep 2024)": "ระดับสูงสุดของแบบจำลอง (ระดับน้ำเพื่อการอธิบาย 12 ก.ย. 2567 (2024))",
+  "Largest modelled extent within 13-19 Sep ICT": "ขอบเขตน้ำท่วมจากแบบจำลองที่กว้างที่สุดในช่วง 13–19 ก.ย. (เวลาประเทศไทย)",
+  "Not computed: no land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland.":
+    "ไม่ได้คำนวณ: ข้อมูลนำเข้าของการย้อนดูไม่มีแผนที่สิ่งปกคลุมดิน จึงไม่ได้แยกสัดส่วนของขอบเขตน้ำตลอดฤดูที่แบบจำลองไปถึงตามพื้นที่สิ่งปลูกสร้างและพื้นที่เพาะปลูก",
+  "The envelope is used as provided: a preliminary agency product that was not checked in the field (Field_Validation=0). FloodGuard did not validate it.":
+    "ใช้ขอบเขตนี้ตามที่เผยแพร่: เป็นผลิตภัณฑ์เบื้องต้นของหน่วยงานที่ยังไม่ได้ตรวจสอบในพื้นที่จริง (Field_Validation=0) FloodGuard ก็ไม่ได้ตรวจสอบเช่นกัน",
+  "The envelope holds water mapped at some time from August to October 2024, with no date per patch. It includes August and early-October water, so it is not the water of 9 to 19 September.":
+    "ขอบเขตนี้คือน้ำที่ทำแผนที่ไว้ในช่วงใดช่วงหนึ่งตั้งแต่สิงหาคมถึงตุลาคม 2567 (2024) โดยไม่มีวันที่กำกับแต่ละพื้นที่ จึงรวมน้ำของเดือนสิงหาคมและต้นเดือนตุลาคมด้วย และไม่ใช่น้ำของวันที่ 9 ถึง 19 กันยายน",
+  "The modelled peak is illustrative (no gauge record), so the comparison says where the two differ, not which one is right.":
+    "ระดับสูงสุดของแบบจำลองเป็นค่าเพื่อการอธิบาย (ไม่มีข้อมูลจากสถานีวัดน้ำ) การเทียบจึงบอกว่าทั้งสองต่างกันที่ใด ไม่ได้บอกว่าข้อมูลใดถูกต้อง",
+  "Both masks are counted on the replay's 10 m grid inside the eight Mae Sai subdistricts and outside mapped drainage channels, the rule of every flooded area in the replay.":
+    "นับพื้นที่ทั้งสองบนกริด 10 ม. ของการย้อนดู ภายใน 8 ตำบลของอำเภอแม่สายและนอกร่องน้ำในแผนที่ ซึ่งเป็นเกณฑ์เดียวกับพื้นที่น้ำท่วมทุกค่าในการย้อนดู",
+  "Residents are WorldPop 2020 modelled estimates spread evenly over 10 m cells, the replay's own exposure rule: not a census count and not the 2024 population.":
+    "จำนวนผู้อยู่อาศัยเป็นค่าประมาณจากแบบจำลอง WorldPop 2020 ที่กระจายเท่ากันลงบนช่อง 10 ม. ตามเกณฑ์เดียวกับการย้อนดู ไม่ใช่ข้อมูลสำมะโนประชากรและไม่ใช่ประชากรปี 2567 (2024)",
+  "No land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland.":
+    "ข้อมูลนำเข้าของการย้อนดูไม่มีแผนที่สิ่งปกคลุมดิน จึงไม่ได้แยกสัดส่วนของขอบเขตน้ำตลอดฤดูที่แบบจำลองไปถึงตามพื้นที่สิ่งปลูกสร้างและพื้นที่เพาะปลูก",
+  "The comparison was computed after the stage keyframes were final and was not used for tuning.":
+    "การเทียบนี้คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง",
+  "No keyframe or elevation change is tuned to product 4009 afterwards; if one is, this comparison is relabelled as calibration.":
+    "หลังจากนี้จะไม่ปรับจุดกำหนดระดับน้ำหรือข้อมูลความสูงให้เข้ากับผลิตภัณฑ์ 4009 หากมีการปรับ การเทียบนี้จะถูกระบุใหม่ว่าเป็นการปรับเทียบแบบจำลอง",
+  "A preliminary agency product that was not checked in the field, set beside an illustrative model: the envelope spans August to October with no date per patch, and the modelled stages come from no gauge record.":
+    "เป็นผลิตภัณฑ์เบื้องต้นของหน่วยงานที่ยังไม่ได้ตรวจสอบในพื้นที่จริง นำมาเทียบกับแบบจำลองเพื่อการอธิบาย ขอบเขตนี้ครอบคลุมสิงหาคมถึงตุลาคมโดยไม่มีวันที่กำกับแต่ละพื้นที่ และระดับน้ำของแบบจำลองไม่ได้มาจากข้อมูลสถานีวัดน้ำ",
+  "Not an observation for any replay day: the layer has no date per patch and no replay day selects it.":
+    "ไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู: ชั้นข้อมูลนี้ไม่มีวันที่กำกับแต่ละพื้นที่ และไม่มีวันใดในการย้อนดูที่เลือกแสดงชั้นข้อมูลนี้",
+  "The layer's name ends 12 October 2024, while the product is described to 22 October 2024.":
+    "ชื่อชั้นข้อมูลสิ้นสุดวันที่ 12 ตุลาคม 2567 (2024) ส่วนคำอธิบายผลิตภัณฑ์ครอบคลุมถึงวันที่ 22 ตุลาคม 2567 (2024)",
+  "The third-party satellite imagery UNOSAT and GISTDA used to make the product is not relicensed by these files.":
+    "ไฟล์เหล่านี้ไม่ได้ให้สิทธิ์ใหม่ในภาพถ่ายดาวเทียมของบุคคลที่สามที่ UNOSAT และ GISTDA ใช้จัดทำผลิตภัณฑ์",
+  "UNOSAT and GISTDA do not endorse FloodGuard or its use of the product.":
+    "UNOSAT และ GISTDA ไม่ได้รับรอง FloodGuard หรือการใช้ผลิตภัณฑ์นี้ของ FloodGuard",
+  "Not an official warning and not legal advice; for preparedness learning and planning exercises only.":
+    "ไม่ใช่การเตือนภัยอย่างเป็นทางการ และไม่ใช่คำแนะนำทางกฎหมาย ใช้เพื่อการเรียนรู้ด้านการเตรียมพร้อมและการฝึกซ้อมวางแผนเท่านั้น",
 };
 
 /** A manifest sentence in Thai when a translation is known, otherwise the English original marked as such (ids removed). */
@@ -309,8 +358,9 @@ export function thaiManifestDate(text: string): string {
 
 /**
  * Manifest sentences whose dates (or quoted words) come from a record at bake time, e.g. a source timestamp
- * "compiled 2026-09-27" or the status of product 4009, which the bake reads from the rights record: pending today,
- * and confirmed with a date once the owners confirm it.
+ * "compiled 2026-09-27" or the status of product 4009, which the bake reads from the rights record: pending or
+ * confirmed but not shown in the earlier r4 bakes (a client may still hold one in its offline copy), and shown as a
+ * season envelope scenario layer, with the confirmation date, from the bake that ships its files.
  */
 const THAI_PATTERNS: readonly [RegExp, (match: RegExpMatchArray) => string][] = [
   [/^compiled (\d{4}-\d{2}-\d{2})$/, (m) => `รวบรวมเมื่อ ${m[1]}`],
@@ -324,6 +374,13 @@ const THAI_PATTERNS: readonly [RegExp, (match: RegExpMatchArray) => string][] = 
     (m) => `ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[1])}`],
   [new RegExp(`^UNOSAT/GISTDA product 4009 \\(CC BY-SA 4\\.0\\) is not shown in this revision; the owners confirmed the rights record on ${DATE}\\.$`),
     (m) => `ผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA (CC BY-SA 4.0) ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[1])}`],
+  // Product 4009 shown as a season envelope scenario layer (the revision that ships its files).
+  [new RegExp(`^Shown as a season envelope scenario layer; the owners confirmed the rights record on ${DATE}\\.$`),
+    (m) => `แสดงเป็นชั้นข้อมูลสถานการณ์จำลองขอบเขตน้ำตลอดฤดู เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[1])}`],
+  [new RegExp(`^UNOSAT/GISTDA product 4009 \\(CC BY-SA 4\\.0\\) is shown as a season envelope scenario layer: its derived files keep their own folder, credit, licence and change notice; the owners confirmed the rights record on ${DATE}\\.$`),
+    (m) => `ผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA (CC BY-SA 4.0) แสดงเป็นชั้นข้อมูลสถานการณ์จำลองขอบเขตน้ำตลอดฤดู ไฟล์ที่ดัดแปลงจากผลิตภัณฑ์นี้เก็บในโฟลเดอร์ของตนเอง พร้อมเครดิต สัญญาอนุญาต และประกาศการเปลี่ยนแปลง เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[1])}`],
+  [new RegExp(`^Season envelope\\. The CC BY-SA 4\\.0 rights decision was signed on ${DATE} and UNOSAT replied "([^"]+)" \\(relayed by a project owner on ${DATE}\\); the owners confirmed the rights record on ${DATE}\\. Shown from this revision as a scenario layer\\.$`),
+    (m) => `ขอบเขตน้ำตลอดฤดู มติเรื่องสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA 4.0 ลงนามเมื่อ ${thaiManifestDate(m[1])} และ UNOSAT ตอบว่า "${m[2]}" (เจ้าของโครงการแจ้งคำตอบนี้ต่อทีมเมื่อ ${thaiManifestDate(m[3])}) เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[4])} แสดงเป็นชั้นข้อมูลสถานการณ์จำลองตั้งแต่ข้อมูลรุ่นนี้`],
 ];
 function thaiPattern(text: string): string | undefined {
   for (const [pattern, render] of THAI_PATTERNS) {

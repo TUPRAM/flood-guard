@@ -3,8 +3,8 @@ import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve, sep } from "node:path";
 import {
-  CASE_REPLAY_BUDGET_BYTES, CASE_REPLAY_EXPORT_BUDGET_BYTES, CASE_REPLAY_EXPORT_KEY, caseReplayBytes, caseReplayExportBytes, manifestDirectory,
-  readCaseReplayAssets, readCaseReplayExports, timelineManifestUrl,
+  CASE_REPLAY_BUDGET_BYTES, CASE_REPLAY_ENVELOPE_FOLDER, CASE_REPLAY_EXPORT_BUDGET_BYTES, CASE_REPLAY_EXPORT_KEY, caseReplayBytes, caseReplayExportBytes,
+  manifestDirectory, readCaseReplayAssets, readCaseReplayExports, timelineManifestUrl,
 } from "./case-replay-inventory.mjs";
 
 const root = resolve(import.meta.dirname, "../../..");
@@ -57,10 +57,18 @@ const timelineRevisions = readdirSync(resolve(timelineDirectory, ".."));
 if (timelineRevisions.length !== 1 || timelineRevisions[0] !== timelineRevision) {
   throw new Error(`Exactly one Mae Sai timeline revision may ship (${timelineRevision}); found: ${timelineRevisions.join(", ")}`);
 }
-const timelineListed = new Set(timelineFiles.map((file) => file.url.slice(file.url.lastIndexOf("/") + 1)));
+const timelineBase = manifestDirectory(timelineUrl);
+const timelineListed = new Set(timelineFiles.map((file) => file.url.slice(timelineBase.length)));
 for (const entry of readdirSync(timelineDirectory, { withFileTypes: true })) {
-  // The one folder allowed beside the files is the export pack, checked below against its own list and budget.
+  // Two folders are allowed beside the files: the export pack, checked below against its own list and budget, and the
+  // season envelope's folder, whose files are listed in the manifest like any other asset (checked below too).
   if (entry.isDirectory() && entry.name === CASE_REPLAY_EXPORT_KEY && timeline.exports) continue;
+  if (entry.isDirectory() && entry.name === CASE_REPLAY_ENVELOPE_FOLDER && timeline.season_envelope) {
+    for (const file of readdirSync(resolve(timelineDirectory, entry.name), { withFileTypes: true })) {
+      if (!file.isFile() || !timelineListed.has(`${entry.name}/${file.name}`)) throw new Error(`Mae Sai season-envelope file is not listed in its manifest: ${file.name}`);
+    }
+    continue;
+  }
   if (!entry.isFile() || !timelineListed.has(entry.name)) throw new Error(`Mae Sai timeline file is not listed in its manifest: ${entry.name}`);
 }
 // Export pack: download files, hash-verified against the manifest, outside the precache set and under their own
@@ -141,6 +149,84 @@ if (timeline.access) {
     throw new Error("Mae Sai access node layout does not match its declared sets, count and size");
   }
 }
+// Season envelope (UNOSAT and GISTDA product 4009, a scenario layer): three files in a folder of their own, under CC BY-SA 4.0
+// with the credit and a change notice. The manifest names them by address, hash and size and holds no figure of theirs;
+// nothing of the envelope is a day observation, a replay layer or an export file. Without a label or a credit it must not ship.
+const envelopeFolder = `${timelineBase}${CASE_REPLAY_ENVELOPE_FOLDER}/`;
+const envelopeUrls = timelineFiles.filter((file) => file.url.startsWith(envelopeFolder)).map((file) => file.url.slice(envelopeFolder.length)).sort();
+if (!timeline.season_envelope) {
+  if (envelopeUrls.length > 0) throw new Error("Season-envelope files are listed without a season_envelope block");
+} else {
+  const envelope = timeline.season_envelope;
+  const credit = "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009";
+  if (envelopeUrls.join(",") !== "LICENSE,envelope.json,envelope.png") throw new Error(`The season envelope must ship exactly its raster, statistics and licence files: ${envelopeUrls.join(", ")}`);
+  for (const key of ["raster", "statistics", "licence"]) {
+    const file = envelope.files?.[key];
+    if (!file || Object.keys(file).sort().join(",") !== "bytes,href,sha256" || !file.href.startsWith(envelopeFolder)) {
+      throw new Error(`season_envelope.files.${key} must give href, sha256 and bytes only, inside the envelope's folder`);
+    }
+  }
+  if (envelope.lane !== "SCN-ENV" || envelope.shown !== true || envelope.day_independent !== true || envelope.licence !== "CC BY-SA 4.0"
+    || envelope.credit !== credit || !String(envelope.map_credit).includes("CC BY-SA 4.0") || !String(envelope.label).startsWith("Scenario (SCN-ENV)")
+    || !String(envelope.caption).includes("not an observation for any replay day")) {
+    throw new Error("The season envelope lacks its scenario lane, label, caption, licence or credit, so it must not ship");
+  }
+  const numbers = (value, path) => (typeof value === "number" ? [path]
+    : value && typeof value === "object" ? Object.entries(value).flatMap(([key, item]) => numbers(item, `${path}.${key}`)) : []);
+  const stray = numbers(envelope, "season_envelope").filter((path) => !/^season_envelope\.files\.(raster|statistics|licence)\.bytes$/.test(path));
+  if (stray.length > 0) throw new Error(`timeline.json holds a figure derived from product 4009: ${stray.join(", ")}`);
+  const comparison = (timeline.external_checks ?? []).filter((check) => check.role === "season_envelope_plausibility");
+  if (comparison.length !== 1 || comparison[0].statistics?.href !== envelope.files.statistics.href || !/not a validation/.test(comparison[0].use)
+    || numbers(comparison[0], "check").join(",") !== "check.statistics.bytes") {
+    throw new Error("The season-envelope comparison must name the statistics file, say it is not a validation and hold no figure");
+  }
+  if ((timeline.external_checks ?? []).some((check) => check.role === "independent_magnitude_check" && /4009|envelope/i.test(check.id))) {
+    throw new Error("The season-envelope comparison is listed as an independent check");
+  }
+  const block = timeline.evidence_blocks.filter((item) => item.covers.includes("season_envelope"));
+  if (block.length !== 1 || block[0].lane !== "SCN-ENV" || block[0].shown !== true || !block[0].season_window) {
+    throw new Error("One SCN-ENV evidence block must cover the season envelope, marked shown, with its season window");
+  }
+  // Never a day observation: no layer, observation, day or VIIRS day names the envelope or one of its files.
+  if (/unosat4009|4009|envelope/i.test(JSON.stringify([timeline.layers, timeline.observations, timeline.days, timeline.viirs_daily?.days ?? []]))) {
+    throw new Error("The season envelope appears among the replay's dated layers or observations");
+  }
+  const raster = readAsset(envelope.files.raster.href);
+  if (raster.toString("ascii", 1, 4) !== "PNG" || raster.readUInt32BE(16) !== timeline.hand.width || raster.readUInt32BE(20) !== timeline.hand.height
+    || raster[24] !== 1 || raster[25] !== 0) {
+    throw new Error("The season-envelope raster must be a 1-bit greyscale PNG on the water grid");
+  }
+  const document = JSON.parse(readAsset(envelope.files.statistics.href).toString("utf8"));
+  for (const notice of [document.change_notice, document.comparison?.change_notice]) {
+    if (typeof notice !== "string" || !notice.startsWith("Changed by FloodGuard: clipped to Mae Sai district") || /\{|\}/.test(notice)
+      || !notice.includes(credit) || !notice.includes("CC BY-SA 4.0")) {
+      throw new Error("The season-envelope statistics file lacks a filled change notice with the credit and the licence");
+    }
+  }
+  if (document.lane !== "SCN-ENV" || document.not_an_observation_for_any_replay_day !== true || document.licence?.name !== "CC BY-SA 4.0"
+    || document.credit !== credit || document.map_credit !== envelope.map_credit || document.generated_at !== timeline.generated_at
+    || !document.source_timestamp || document.confidence !== "low" || !document.confidence_reason || !Array.isArray(document.assumptions) || document.assumptions.length === 0
+    || document.raster?.sha256 !== envelope.files.raster.sha256 || document.comparison?.role !== "season_envelope_plausibility"
+    || !/not a validation/.test(document.comparison?.use ?? "") || document.official_warning !== false || document.operational_status !== "non_operational") {
+    throw new Error("The season-envelope statistics file lacks its lane, licence, credit, timestamps, confidence, assumptions or plausibility wording");
+  }
+  for (const row of [...document.comparison.district, ...document.comparison.by_tambon]) {
+    for (const key of ["agreement_iou", "containment_model_in_envelope", "containment_envelope_in_model"]) {
+      if (!(key in row) || (row[key] !== null && !(row[key] >= 0 && row[key] <= 1))) throw new Error(`Season-envelope comparison row lacks ${key}`);
+    }
+  }
+  if (/precision|recall|accuracy|validated|corroborat|fpps|action_class/i.test(JSON.stringify(document).replace(/unvalidated|did not validate/gi, ""))) {
+    throw new Error("The season-envelope statistics file uses a word or a key the comparison does not claim");
+  }
+  const licence = readAsset(envelope.files.licence.href);
+  const licenceText = licence.toString("utf8");
+  if (licence.includes(13) || !licenceText.endsWith("\n")) throw new Error("The season-envelope licence notice must use LF line ends");
+  for (const needle of ["Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)", "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
+    credit, document.change_notice, document.comparison.change_notice, "envelope.png", "envelope.json", "สัญญาอนุญาต"]) {
+    if (!licenceText.includes(needle)) throw new Error(`The season-envelope licence notice lacks: ${needle}`);
+  }
+  if ((timeline.exports?.files ?? []).some((file) => file.href.startsWith(envelopeFolder))) throw new Error("A season-envelope file is in the export pack");
+}
 if (timeline.population && (timeline.population.width !== timeline.hand.width || timeline.population.height !== timeline.hand.height)) {
   throw new Error("Mae Sai residents raster must share the HAND grid");
 }
@@ -171,4 +257,4 @@ for (const entry of entries) {
   const actual = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
   if (actual !== blobId) throw new Error(`Git changes exact study bytes or has stale staged content: ${path}`);
 }
-console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets (${timeline.revision}, ${timelineBytes} of ${CASE_REPLAY_BUDGET_BYTES} budget bytes), ${exportFiles.length} Mae Sai export files (${exportBytes} of ${CASE_REPLAY_EXPORT_BUDGET_BYTES} export-budget bytes, outside the precache budget) and ${entries.length} byte-identical Git blobs.`);
+console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets (${timeline.revision}, ${timelineBytes} of ${CASE_REPLAY_BUDGET_BYTES} budget bytes; ${envelopeUrls.length} of them the season envelope's, with its licence notice), ${exportFiles.length} Mae Sai export files (${exportBytes} of ${CASE_REPLAY_EXPORT_BUDGET_BYTES} export-budget bytes, outside the precache budget) and ${entries.length} byte-identical Git blobs.`);

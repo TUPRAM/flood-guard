@@ -31,6 +31,7 @@ import {
 } from "@/components/mae-sai-flood-timeline";
 import { RainChart, Sentinel2Evidence, ViirsComparisonCard } from "@/components/mae-sai-observed-panels";
 import { ReplayExportPanel } from "@/components/mae-sai-replay-export";
+import { SeasonEnvelopeCaption, SeasonEnvelopeChip, SeasonEnvelopeLegend, type SeasonEnvelopeState } from "@/components/mae-sai-season-envelope";
 import {
   districtStats,
   hourlyStages,
@@ -46,6 +47,7 @@ import {
   type TambonProps,
   type TimelineManifest,
 } from "./flood-timeline";
+import { parseSeasonEnvelopeDocument, shippableEnvelope } from "./flood-timeline-envelope";
 import {
   accessLostSeries,
   accessSnapshot,
@@ -71,6 +73,10 @@ const webRoot = resolve(import.meta.dirname, "../..");
 const publicRoot = resolve(webRoot, "public");
 const readJson = <T,>(href: string): T => JSON.parse(readFileSync(resolve(publicRoot, href.replace(/^\//, "")), "utf8")) as T;
 const manifest = readJson<TimelineManifest>(TIMELINE_MANIFEST_URL);
+// The season envelope (UNOSAT and GISTDA product 4009) as the page holds it once its files have loaded.
+const envelopeBlock = shippableEnvelope(manifest)!;
+const envelopeDocument = parseSeasonEnvelopeDocument(readJson<unknown>(envelopeBlock.files.statistics.href), envelopeBlock);
+const envelopeReady: SeasonEnvelopeState = { status: "ready", block: envelopeBlock, document: envelopeDocument, cells: new Uint32Array(0) };
 const ruleIds = REPLAY_WORDING_RULES.rules.map((rule) => rule.id);
 const idsOf = (findings: WordingFinding[]) => [...new Set(findings.map((finding) => finding.rule))].sort();
 
@@ -181,6 +187,17 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
     panel("ImpactCard", <ImpactCard manifest={manifest} stats={stats} derived={derived} language={language} />),
     panel("TimelineLegend", <TimelineLegend language={language} unmodelledRoads unmodelledFacilities />),
     panel("TimelineLegend hours", <TimelineLegend language={language} unmodelledRoads unmodelledFacilities={false} roadMode="hours" />),
+    // The season envelope (product 4009, a scenario layer): its chip, caption and legend entry while it is visible, its
+    // comparison as the third group of the checks, its entry in the Sources panel and the export panel with its credit.
+    panel("TimelineLegend with the season envelope", <TimelineLegend language={language} unmodelledRoads unmodelledFacilities envelope />),
+    panel("SeasonEnvelopeChip", <SeasonEnvelopeChip envelope={envelopeBlock} language={language} />),
+    panel("SeasonEnvelopeCaption", <SeasonEnvelopeCaption envelope={envelopeBlock} language={language} />),
+    panel("SeasonEnvelopeLegend", <SeasonEnvelopeLegend language={language} />),
+    panel("ExternalChecks with the season envelope", <ExternalChecks manifest={manifest} language={language} envelope={envelopeReady} names={names} />),
+    panel("ExternalChecks while the season envelope loads", <ExternalChecks manifest={manifest} language={language} envelope={{ status: "loading", block: envelopeBlock }} names={names} />),
+    panel("ExternalChecks without the season envelope's files", <ExternalChecks manifest={manifest} language={language} envelope={{ status: "error", block: envelopeBlock }} names={names} />),
+    panel("SourcesPanel with the season envelope", <SourcesPanel manifest={manifest} language={language} offlineCopy={null} envelope={envelopeReady} />),
+    panel("ReplayExportPanel with the season envelope", <ReplayExportPanel source={null} time={3.5} language={language} waterOpacity={0.85} envelope={{ cells: new Uint32Array(0), map_credit: envelopeBlock.map_credit }} />),
     panel("RadarCheck", <RadarCheck manifest={manifest} radarSpan="6 Sep → 16 Sep 06:16 ICT" language={language} />),
     panel("WetFacilitiesCard", <WetFacilitiesCard facilities={facilities} stage={peak} language={language} />),
     panel("Hydrograph", <Hydrograph manifest={manifest} time={3.5} stage={peak} observations={observations} language={language} />),
@@ -203,7 +220,11 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
 function corpus(): { source: string; text: string }[] {
   const sources = replaySourceFiles().flatMap((file) =>
     sourceStrings(readFileSync(resolve(webRoot, file), "utf8"), file).map((text) => ({ source: file, text })));
-  const manifestText = jsonStrings(manifest).map(({ path, text }) => ({ source: `timeline.json ${path}`, text }));
+  const manifestText = [
+    ...jsonStrings(manifest).map(({ path, text }) => ({ source: `timeline.json ${path}`, text })),
+    // The season envelope's statistics file: text derived from product 4009, read by the page.
+    ...jsonStrings(envelopeDocument).map(({ path, text }) => ({ source: `unosat4009/envelope.json ${path}`, text })),
+  ];
   const rendered = [
     { name: "MaeSaiFloodTimeline shell (en)", html: renderToStaticMarkup(<MaeSaiFloodTimeline />) },
     ...renderedPanels("en"),
@@ -220,6 +241,8 @@ describe("Replay wording rules (shared with Python)", () => {
       "real_time", "live", "forecast", "warning", // affirmative real-time, live, forecast or warning
       "validation_as_agreement", // validated, validation or accuracy used for agreement
       "precision_recall", // precision or recall for product 4009
+      "corroboration", // the season envelope "corroborating" the model, or the reverse
+      "envelope_verdict", // "the model is too low" or "too high" against the season envelope
       "september_extent", // "September extent", "GISTDA's map"
       "return_period", // 25-year, 100-year
       "road_schedule", // schedule or closure plan for modelled roads
@@ -284,6 +307,24 @@ describe("Replay wording rules (shared with Python)", () => {
     // The equity rates divide by the residents within reach before the flood (R8, option B); the earlier sentence fails.
     expect(idsOf(findWordingViolations("Each rate divides the residents who lost access by all residents counted in that group"))).toEqual(["equity_denominator"]);
     expect(idsOf(findWordingViolations("แต่ละอัตราคือผู้ที่สูญเสียการเข้าถึงหารด้วยผู้อยู่อาศัยทั้งหมดที่นับในกลุ่มนั้น"))).toEqual(["equity_denominator"]);
+    // Text about the season envelope (product 4009): none of the five words, and no verdict on the model.
+    const envelopeBanned: [string, string][] = [
+      ["Precision against product 4009: 0.61", "precision_recall"], ["Recall of the season envelope: 0.70", "precision_recall"],
+      ["Accuracy against the season envelope: 48%", "validation_as_agreement"], ["The model is validated by product 4009", "validation_as_agreement"],
+      ["The season envelope corroborates the modelled peak", "corroboration"], ["59% corroboration of the low-confidence water", "corroboration"],
+      ["Against the envelope the model is too low in town", "envelope_verdict"], ["The model is likely too high in Ban Dai", "envelope_verdict"],
+      ["Compared with the September extent of product 4009", "september_extent"], ["GISTDA's map of the season", "september_extent"],
+      ["ขอบเขตน้ำตลอดฤดูช่วยยืนยันแบบจำลอง", "corroboration"], ["แบบจำลองต่ำเกินไปในเขตเมือง", "envelope_verdict"],
+    ];
+    for (const [text, rule] of envelopeBanned) expect(idsOf(findWordingViolations(text)), text).toContain(rule);
+    for (const allowed of [
+      "Plausibility against a season envelope, not a validation.",
+      "Season envelope comparison (scenario; plausibility, not validation)",
+      "60% of the modelled water lies inside the envelope; the modelled water reaches 70% of the envelope.",
+      "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.",
+      "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+      "เป็นการดูความสมเหตุสมผลเทียบกับขอบเขตน้ำตลอดฤดู ไม่ใช่การยืนยันความถูกต้อง",
+    ]) expect(describeWordingFindings(findWordingViolations(allowed)), allowed).toBe("");
     expect(findWordingViolations("Each rate divides the residents of a group who lost access by the residents of that group who had a shelter of this set within reach before the flood.")).toEqual([]);
     expect(findWordingViolations("Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted).")).toEqual([]);
   });
@@ -302,7 +343,16 @@ describe("Replay wording lint: current text", () => {
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(51);
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(69);
+    // Product 4009 text is in the corpus three ways: the page's own strings, the statistics file and the rendered panels.
+    for (const file of ["src/components/mae-sai-season-envelope.tsx", "src/lib/flood-timeline-envelope.ts"]) expect(files).toContain(file);
+    expect(items.filter((item) => item.source.startsWith("unosat4009/envelope.json")).length).toBeGreaterThan(30);
+    const envelopeText = items.filter((item) => /season envelope|SeasonEnvelope/.test(item.source)).map((item) => item.text).join(" ");
+    expect(envelopeText).toContain("Scenario (SCN-ENV): 2024 season envelope");
+    expect(envelopeText).toContain("Season envelope comparison (scenario; plausibility, not validation)");
+    expect(envelopeText).toContain("Plausibility against a season envelope, not a validation.");
+    expect(envelopeText).toContain("UNOSAT and GISTDA · CC BY-SA 4.0");
+    expect(envelopeText).toContain("สถานการณ์จำลอง (SCN-ENV): ขอบเขตน้ำตลอดฤดูปี 2567 (2024)");
     // The access card is linted with both shelter sets side by side, at the peak and before the flood, for both ways of
     // counting residents: every wording of the Evacuation Equity Gap (a ratio, no loss, a group too small) is in the corpus.
     const accessText = items.filter((item) => item.source.startsWith("AccessCard")).map((item) => item.text).join(" ");
@@ -333,10 +383,17 @@ describe("Replay wording lint: current text", () => {
     const source = items.find((item) => item.source === "src/components/mae-sai-replay-export.tsx")!;
     const manifestItem = items.find((item) => item.source.startsWith("timeline.json $.limitations"))!;
     const rendered = items.find((item) => item.source === "SourcesPanel (th)")!;
+    // Product 4009 text: the page's own strings, the statistics file and the rendered comparison.
+    const envelopeSource = items.find((item) => item.source === "src/components/mae-sai-season-envelope.tsx")!;
+    const envelopeFile = items.find((item) => item.source === "unosat4009/envelope.json $.comparison.use")!;
+    const envelopeRendered = items.find((item) => item.source === "ExternalChecks with the season envelope (en)")!;
+    const targets = [source, manifestItem, rendered, envelopeSource, envelopeFile, envelopeRendered];
+    // The rest of the corpus is clean (the test above), so only the planted items need linting again.
+    const others = items.filter((item) => !targets.includes(item));
+    expect(lint(others)).toEqual([]);
     for (const rule of REPLAY_WORDING_RULES.rules) {
-      for (const target of [source, manifestItem, rendered]) {
-        const seeded = items.map((item) => (item === target ? { ...item, text: `${item.text} ${rule.bad[0]}` } : item));
-        const findings = lint(seeded);
+      for (const target of targets) {
+        const findings = lint([{ ...target, text: `${target.text} ${rule.bad[0]}` }]);
         expect(idsOf(findings), `${rule.id} planted in ${target.source}`).toContain(rule.id);
         expect(findings.every((finding) => finding.source === target.source), rule.id).toBe(true);
       }

@@ -119,6 +119,14 @@
 .legendPending { max-width: 16rem; margin: .4rem 0 0; color: #815313; font-size: .68rem; font-weight: 600; line-height: 1.4; }
 /* VIIRS pixels are ~375 m; keep them square instead of smoothing them into a false level of detail. */
 .viirsLayer { image-rendering: crisp-edges; image-rendering: pixelated; }
+/* Season envelope (scenario): a chip on the map and a caption under it while the layer is visible. The chip carries the
+   same hatched key as the legend, so the layer is named by its pattern, not by a colour alone. */
+.envelopeChip { display: inline-flex; align-items: center; gap: .4rem; margin: 0; padding: .4rem .65rem; border-left: 4px solid #ffcc00; border-radius: .5rem; background: rgb(38 30 0 / 90%); color: #fff; font-size: .72rem; font-weight: 700; line-height: 1.4; }
+.envelopeSwatch { display: inline-block; flex: none; width: 16px; height: 12px; border-radius: 2px; background-color: #fff; box-shadow: inset 0 0 0 1px rgb(12 39 64 / 30%); }
+/* The layer's canvas: hatch stripes are repainted per zoom, so plain smoothing is enough. */
+.envelopeLayer { image-rendering: auto; }
+.envelopeCaption { margin: 0; padding: .55rem .9rem; border-top: 1px solid #f0e3ad; background: #fffaf0; color: #3d3210; font-size: .76rem; line-height: 1.5; }
+.envelopeCaption a { color: inherit; font-weight: 650; }
 .mapStatus { position: absolute; z-index: 900; top: .75rem; left: 50%; transform: translateX(-50%); margin: 0; padding: .45rem .8rem; border-radius: 999px; background: #fff; color: #17253b; font-size: .78rem; font-weight: 600; box-shadow: 0 4px 16px rgb(15 23 42 / 16%); white-space: nowrap; }
 .mapWarning { background: #fff4dd; color: #815313; white-space: normal; max-width: calc(100% - 2rem); text-align: center; }
 .tooltip { display: grid; gap: .15rem; min-width: 180px; max-width: 260px; white-space: normal; line-height: 1.45; }

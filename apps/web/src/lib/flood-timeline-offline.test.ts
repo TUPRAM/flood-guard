@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CASE_REPLAY_BUDGET_BYTES,
+  CASE_REPLAY_ENVELOPE_FOLDER,
   CASE_REPLAY_EXPORT_BUDGET_BYTES,
   CASE_REPLAY_EXPORT_KEY,
   CASE_REPLAY_ROUTE,
@@ -71,12 +72,15 @@ describe("Mae Sai replay offline inventory", () => {
     const bytes = caseReplayBytes(assets);
     expect(bytes).toBeLessThanOrEqual(CASE_REPLAY_BUDGET_BYTES);
     // The set is every file of the revision folder: the manifest plus every file it lists, and nothing else on disk.
-    // The one sub-folder is the export pack, which is not in this set (see the next test).
-    const directory = resolve(publicRoot, manifestDirectory(TIMELINE_MANIFEST_URL).slice(1));
+    // Two sub-folders exist: the export pack, which is not in this set (see the next test), and the season envelope's
+    // own folder, whose three files (the licence notice among them) are in it.
+    const base = manifestDirectory(TIMELINE_MANIFEST_URL);
+    const directory = resolve(publicRoot, base.slice(1));
     const entries = readdirSync(directory, { withFileTypes: true });
-    expect(entries.filter((entry) => !entry.isFile()).map((entry) => entry.name)).toEqual([CASE_REPLAY_EXPORT_KEY]);
-    const onDisk = entries.filter((entry) => entry.isFile()).map((entry) => entry.name);
-    expect(onDisk.sort()).toEqual(assets.map((asset) => asset.url.slice(asset.url.lastIndexOf("/") + 1)).sort());
+    expect(entries.filter((entry) => !entry.isFile()).map((entry) => entry.name).sort()).toEqual([CASE_REPLAY_EXPORT_KEY, CASE_REPLAY_ENVELOPE_FOLDER]);
+    const envelopeFiles = readdirSync(resolve(directory, CASE_REPLAY_ENVELOPE_FOLDER)).map((name) => `${CASE_REPLAY_ENVELOPE_FOLDER}/${name}`);
+    const onDisk = [...entries.filter((entry) => entry.isFile()).map((entry) => entry.name), ...envelopeFiles];
+    expect(onDisk.sort()).toEqual(assets.map((asset) => asset.url.slice(base.length)).sort());
     expect(onDisk.reduce((sum, name) => sum + statSync(resolve(directory, name)).size, 0)).toBe(bytes);
     expect(readdirSync(resolve(directory, ".."))).toEqual([manifestRevision()]);
     // The check fails one byte over the budget, and on a list with no measurable size.
@@ -84,6 +88,26 @@ describe("Mae Sai replay offline inventory", () => {
     expect(() => caseReplayBytes(assets, bytes - 1)).toThrow(/over its \d+-byte budget/);
     expect(() => caseReplayBytes([])).toThrow(/no measurable size/);
     expect(() => caseReplayBytes([{ bytes: CASE_REPLAY_BUDGET_BYTES + 1 }])).toThrow(/6\.5 MB/);
+  });
+
+  it("keeps the season envelope's three files, the licence notice among them, in the offline copy", () => {
+    const { assets } = readCaseReplayAssets(publicRoot);
+    const folder = `${manifestDirectory(TIMELINE_MANIFEST_URL)}${CASE_REPLAY_ENVELOPE_FOLDER}/`;
+    const typed = manifest as { season_envelope: { files: Record<string, { href: string; sha256: string; bytes: number }> } };
+    const listed = assets.filter((asset) => asset.url.startsWith(folder)).map((asset) => asset.url.slice(folder.length)).sort();
+    expect(listed).toEqual(["LICENSE", "envelope.json", "envelope.png"]);
+    for (const file of Object.values(typed.season_envelope.files)) {
+      expect(assets).toContainEqual({ url: file.href, sha256: file.sha256, bytes: file.bytes });
+      expect(manifestAssets(manifest)).toContainEqual(file);
+    }
+    // They count against the 6.5 MB precache budget, never against the export pack's, and no export file sits beside them.
+    expect(readCaseReplayExports(publicRoot).some((asset) => asset.url.includes(CASE_REPLAY_ENVELOPE_FOLDER))).toBe(false);
+    expect(caseReplayBytes(assets)).toBeLessThanOrEqual(CASE_REPLAY_BUDGET_BYTES);
+    // The licence notice names the licence, the credit and what was changed, in English and Thai.
+    const licence = readFileSync(resolve(publicRoot, typed.season_envelope.files.licence.href.slice(1)), "utf8");
+    for (const needle of ["CC BY-SA 4.0", "https://creativecommons.org/licenses/by-sa/4.0/", "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+      "Changed by FloodGuard: clipped to Mae Sai district", "rasterised to", "สัญญาอนุญาต"]) expect(licence, needle).toContain(needle);
+    expect(licence).not.toMatch(/\r|\{[a-z_]+\}/);
   });
 
   it("lists the export pack apart from the precache set, under a budget of its own", () => {
@@ -166,6 +190,8 @@ describe("Mae Sai replay offline inventory", () => {
       "src/components/mae-sai-replay-export.tsx",
       "src/components/mae-sai-evacuation-panels.tsx",
       "src/components/mae-sai-observed-panels.tsx",
+      "src/components/mae-sai-season-envelope.tsx",
+      "src/lib/flood-timeline-envelope.ts",
       "src/lib/flood-timeline-evacuation.ts",
       "src/lib/flood-timeline-link.ts",
       "src/lib/flood-timeline-copy.ts",

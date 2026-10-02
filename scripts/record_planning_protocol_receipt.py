@@ -350,7 +350,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         input_hashes=input_hashes,
         test_summary=summary,
         signed_by=[signer["signed_by"] for signer in protocol["signature_block"]["signers"]],
-        open_decisions=[decision["id"] for decision in v1a.get("open_decisions", [])],
+        open_decisions=[decision["id"] for decision in v1a.get("open_decisions", []) if decision.get("status") == "open"],
         time_utc=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
     line = json.dumps(receipt, separators=(",", ":"), ensure_ascii=False)

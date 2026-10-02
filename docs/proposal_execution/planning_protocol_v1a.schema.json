@@ -1415,7 +1415,10 @@
             "pattern": "^D[0-9]{1,2}$"
           },
           "status": {
-            "const": "open"
+            "enum": [
+              "open",
+              "withdrawn"
+            ]
           },
           "text": {
             "const": "undefined in the plan files"

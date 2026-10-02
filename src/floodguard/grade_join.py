@@ -30,6 +30,19 @@ from typing import Any
 GRADE_JOIN_RULE_VERSION = "grade_join_endpoint_coincident_v1"
 COINCIDENCE_TOLERANCE_M = 0.0
 JOIN_EDGE_KIND = "grade_join"
+JOIN_LOG_STATUSES = ("candidate", "log_of_record")
+JOIN_LOG_CONFIDENCE_BASIS = (
+    "OSM ways and their end points are unverified map records. A join shows that two ways end at the same "
+    "coordinate; it is not a field check that the transition can be driven."
+)
+JOIN_LOG_ASSUMPTIONS = (
+    "Two graph nodes with an identical coordinate, each the end of at least one OSM way, are treated as one "
+    "junction. Identical coordinates do not prove that the ways share an OSM node.",
+    "The coincidence tolerance is 0 m. Nearness never creates a join.",
+    "The passability of every join is unknown; a join adds no travel time and no length.",
+    "The log describes one context build, named by its canonical SHA-256. Another OSM extract or another "
+    "routing polygon gives another log.",
+)
 
 
 class GradeJoinError(ValueError):
@@ -136,16 +149,62 @@ def apply_grade_joins(context: Mapping[str, Any]) -> tuple[list[dict[str, Any]],
     return [*edges, *join_edges(joins, travel_mode=str(context.get("travel_mode", "")))], joins
 
 
-def join_log(joins: Sequence[Mapping[str, Any]], *, context_canonical_sha256: str) -> dict[str, Any]:
-    """Wrap the joins in the log document that protocol v1b records by SHA-256."""
+def joins_sha256(joins: Sequence[Mapping[str, Any]]) -> str:
+    """Return the SHA-256 of the joins alone, so two runs can be compared whatever their run time."""
 
+    encoded = json.dumps(list(joins), sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(encoded.encode("ascii")).hexdigest()
+
+
+def join_log(
+    joins: Sequence[Mapping[str, Any]],
+    *,
+    context_canonical_sha256: str,
+    status: str,
+    source_timestamp: str,
+    generated_at_utc: str,
+    status_note: str | None = None,
+) -> dict[str, Any]:
+    """Wrap the joins in the log document that protocol v1b records by SHA-256.
+
+    Args:
+        joins: The output of ``endpoint_coincident_joins``.
+        context_canonical_sha256: The canonical SHA-256 of the context the joins belong to.
+        status: ``candidate`` while the context is not the context of record,
+            ``log_of_record`` for the E4 build that protocol v1b names.
+        source_timestamp: When the OSM extract behind the context was retrieved.
+        generated_at_utc: When this log was written.
+        status_note: One sentence on why the log has this status.
+
+    Raises:
+        GradeJoinError: for an unknown status or an empty timestamp.
+    """
+
+    if status not in JOIN_LOG_STATUSES:
+        raise GradeJoinError(f"status must be one of {', '.join(JOIN_LOG_STATUSES)}")
+    if not str(source_timestamp).strip() or not str(generated_at_utc).strip():
+        raise GradeJoinError("a join log needs a source timestamp and a generation time")
     return {
         "schema_version": "floodguard.grade_join_log.v1",
+        "status": status,
+        "status_note": status_note or (
+            "Candidate: this context is not the context of record." if status == "candidate"
+            else "Log of record for the planning context that protocol v1b names."
+        ),
+        "generated_at_utc": generated_at_utc,
+        "source_timestamp": source_timestamp,
+        "source_timestamp_note": "Retrieval time of the OpenStreetMap extract the context was built from.",
+        "confidence_class": "low",
+        "confidence_basis": JOIN_LOG_CONFIDENCE_BASIS,
+        "official_warning": False,
+        "operational_status": "non_operational",
         "rule_version": GRADE_JOIN_RULE_VERSION,
         "coincidence_tolerance_m": COINCIDENCE_TOLERANCE_M,
         "rule": "Join two graph nodes only when they share an identical coordinate and each is the end of at least "
                 "one OSM way. No join at a vertex in the middle of a way and none at a geometric crossing.",
         "context_canonical_sha256": context_canonical_sha256,
+        "assumptions": list(JOIN_LOG_ASSUMPTIONS),
         "join_count": len(joins),
+        "joins_sha256": joins_sha256(joins),
         "joins": list(joins),
     }

@@ -68,7 +68,7 @@ AWAITING = "awaiting_owner_confirmation"
 # Each must stay flagged in the file and in the signing guide while the file is a draft.
 REQUIRED_READINGS = {
     "v1a": [f"DR-A{number:02d}" for number in range(1, 13)],
-    "v1b": [f"DR-B{number:02d}" for number in range(1, 10)],
+    "v1b": [f"DR-B{number:02d}" for number in range(1, 9)],
 }
 SECTIONS_WITH_STATUS = (
     "corridor_polygon", "grade_join_policy", "closure_rule_v1", "facility_sets", "critical_link_selection",
@@ -667,6 +667,129 @@ def test_v1b_open_items_name_real_parameters_and_cover_every_empty_one(
             if item["id"] in protocol[section]["open_items"] and item["status"] == "open"
         ]
         assert (protocol[section]["status"] == "open") == bool(still_open), section
+
+
+# Slots that hold an owner decision. The drafting agent may put a proposal beside them, never a value in
+# them: each stays empty while the open item that names it is open (review of 3 October 2026).
+OWNER_DECISION_SLOTS = {
+    "OI-01": ["/corridor_polygon/context_call/demand_area_rule"],
+    "OI-03": ["/corridor_polygon/acceptance/hospital_count_unit"],
+    "OI-04": ["/grade_join_policy/coincidence_tolerance_m"],
+    "OI-05": [
+        "/closure_rule_v1/unassigned_road_classes/length_threshold_m/motorway",
+        "/closure_rule_v1/unassigned_road_classes/length_threshold_m/residential",
+        "/closure_rule_v1/unassigned_road_classes/length_threshold_m/unclassified",
+        "/closure_rule_v1/delay_under_strict/rule",
+        "/closure_rule_v1/culvert_tag_handling/rule",
+    ],
+    "OI-08": [
+        "/national_vulnerability_anchors/method/unit_set",
+        "/national_vulnerability_anchors/method/percentile_method",
+    ],
+    "OI-09": [
+        "/corridor_polygon/se2_frame/se2_blind_unit_rule",
+        "/corridor_polygon/se2_frame/se2_blind_unit_list",
+    ],
+}
+
+
+def test_v1b_owner_decision_slots_stay_empty_while_their_item_is_open(
+    protocols: dict[str, dict[str, Any]]
+) -> None:
+    protocol = protocols["v1b"]
+    items = {item["id"]: item for item in protocol["open_items"]}
+    for identifier, pointers in OWNER_DECISION_SLOTS.items():
+        for pointer in pointers:
+            assert pointer in items[identifier]["parameter_pointers"], (identifier, pointer)
+            if items[identifier]["status"] == "open":
+                assert receipt_tool.resolve_pointer(protocol, pointer) is None, (
+                    f"{pointer} is filled in while {identifier} is open: an owner decides it"
+                )
+
+    # The SE2-blind district alone does not define the case: the unit rule and the unit list have their own slots.
+    blind = protocol["corridor_polygon"]["se2_frame"]["se2_blind_district"]
+    assert blind is None or "still_missing" not in blind
+
+    # The plan's culvert tags stay listed; what the code can read is a separate, gated statement.
+    closure = protocol["closure_rule_v1"]
+    assert closure["parameters"]["bridge_culvert_tags"] == ["bridge=yes", "tunnel=culvert", "culvert=*"]
+    if items["OI-05"]["status"] == "open":
+        assert "awaiting an owner decision" in closure["bridge_culvert_note"]
+
+
+def test_v1b_anchor_candidates_are_not_presented_as_decided(protocols: dict[str, dict[str, Any]]) -> None:
+    protocol = protocols["v1b"]
+    anchors = protocol["national_vulnerability_anchors"]
+    item = next(item for item in protocol["open_items"] if item["id"] == "OI-08")
+    candidates = anchors.get("anchor_candidates")
+    if item["status"] == "open":
+        assert anchors["status"] == "open" and "closure" not in item
+        assert set(anchors["output_receipt"].values()) == {None}
+        assert candidates is not None, "candidate anchors are kept beside the empty slots"
+    if candidates is None:
+        return
+    rules = {rule["id"]: rule for rule in candidates["rules"]}
+    assert set(rules) >= {"A", "B", "C", "D"}
+    assert [rule["id"] for rule in candidates["rules"] if rule["is_the_proposal_in_this_file"]] == ["A"]
+    for rule in rules.values():
+        ordered = [rule["values"][key] for key in ("P5", "P10", "P75", "P90", "P95")]
+        assert all(0 < value < 1 for value in ordered) and ordered == sorted(set(ordered)), rule["id"]
+    # The choice is made with component inputs for real tambons in view, and the file says so.
+    added = {entry["id"]: entry for entry in protocol["depends_on"]["exploratory_knowledge_added_for_v1b"]}
+    assert "EK-B01" in candidates["outcome_awareness"] and "EK-04" in added["EK-B01"]["what_was_already_known"]
+    assert "outcome-aware" in added["EK-B01"]["could_bias"]
+    assert "exploratory_knowledge_added_for_v1b" in protocol["depends_on"]["exploratory_knowledge_disclosure"]
+
+
+def test_v1b_spike_candidates_say_which_acceptance_criteria_are_met(protocols: dict[str, dict[str, Any]]) -> None:
+    protocol = protocols["v1b"]
+    items = {item["id"]: item for item in protocol["open_items"]}
+    block = protocol["corridor_polygon"].get("e0_spike_candidates")
+    if block is None:
+        return
+    for candidate in block["candidates"]:
+        met = candidate["meets_plan_acceptance"]
+        assert isinstance(met, dict), "one entry per criterion, not one flag"
+        assert set(met) == {
+            "hospitals_in_context_min", "named_ways_within_routing_context", "baseline_vehicle_no_route_share_max",
+            "declared_compute_window", "all_criteria_met",
+        }
+        assert met["all_criteria_met"] == all(value for key, value in met.items() if key != "all_criteria_met")
+        assert met["named_ways_within_routing_context"] == all(candidate["named_ways_within_routing_context"].values())
+        breakdown = candidate["hospital_count_breakdown"]
+        assert breakdown["osm_objects"] == candidate["hospital_count"]
+        assert breakdown["osm_objects"] == (
+            breakdown["distinct_named_hospitals"] + breakdown["unnamed_objects"]
+            + breakdown["objects_that_repeat_a_named_hospital"]
+        )
+    if items["OI-03"]["status"] == "open":
+        # A run outside a declared compute window cannot close OI-03 (plan 5 item 1).
+        assert "compute window" in items["OI-03"]["produced_by"] and "compute window" in items["OI-03"]["note"]
+    record = protocol["corridor_polygon"]["e0_spike_record"]
+    if any(value is not None for value in record.values()):
+        assert items["OI-02"]["status"] == "closed"
+
+
+def test_v1b_lists_every_engineering_run_with_its_receipt(protocols: dict[str, dict[str, Any]]) -> None:
+    runs = protocols["v1b"]["blinding"]["runs_before_v1b_is_in_force"]
+    receipts_named = [run["receipt"] for run in runs]
+    assert len(receipts_named) == len(set(receipts_named))
+    for run in runs:
+        path = ROOT / run["receipt"]
+        assert path.is_file(), run["receipt"]
+        receipt = json.loads(path.read_text(encoding="ascii"))
+        assert receipt["generated_at_utc"] == run["generated_at_utc"], run["receipt"]
+        assert isinstance(run["per_unit_values_written"], bool)
+        if run["per_unit_values_written"]:
+            assert run["per_unit_values_note"].strip()
+        for earlier in run.get("earlier_runs", []):
+            assert earlier["generated_at_utc"] < run["generated_at_utc"] and len(earlier["evidence_sha256"]) == 64
+    committed = sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "outputs" / "planning_v1").glob("*.json")
+        if "grade_join_log" not in path.name
+    )
+    assert sorted(receipts_named) == committed
 
 
 def test_v1b_points_at_the_recorded_v1a(

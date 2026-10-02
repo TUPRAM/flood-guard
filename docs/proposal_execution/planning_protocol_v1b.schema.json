@@ -130,7 +130,9 @@
             "geometry_file",
             "route_selection_rule",
             "e0_spike_record",
-            "se2_frame"
+            "se2_frame",
+            "context_call",
+            "acceptance"
           ],
           "properties": {
             "geometry_file": {
@@ -221,7 +223,9 @@
                 "unit_list",
                 "routing_geometry",
                 "hospital_destinations",
-                "se2_blind_district"
+                "se2_blind_district",
+                "se2_blind_unit_rule",
+                "se2_blind_unit_list"
               ],
               "properties": {
                 "sha256": {
@@ -245,6 +249,42 @@
                   }
                 },
                 "se2_blind_district": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "se2_blind_unit_rule": {
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "se2_blind_unit_list": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "context_call": {
+              "type": "object",
+              "required": [
+                "demand_area_rule"
+              ],
+              "properties": {
+                "demand_area_rule": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "acceptance": {
+              "type": "object",
+              "required": [
+                "hospital_count_unit"
+              ],
+              "properties": {
+                "hospital_count_unit": {
                   "not": {
                     "type": "null"
                   }
@@ -297,6 +337,7 @@
           "required": [
             "unassigned_road_classes",
             "delay_under_strict",
+            "culvert_tag_handling",
             "regression"
           ],
           "properties": {
@@ -353,6 +394,19 @@
               ],
               "properties": {
                 "result": {
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            "culvert_tag_handling": {
+              "type": "object",
+              "required": [
+                "rule"
+              ],
+              "properties": {
+                "rule": {
                   "not": {
                     "type": "null"
                   }
@@ -1397,6 +1451,70 @@
             }
           },
           "additionalProperties": false
+        },
+        "se2_frame": {
+          "type": "object",
+          "required": [
+            "se2_blind_district",
+            "se2_blind_unit_rule",
+            "se2_blind_unit_list"
+          ],
+          "properties": {
+            "se2_blind_unit_rule": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "se2_blind_unit_list": {
+              "description": "COD-AB tha_admin3 codes of the SE2-blind units, or one sentence saying the case was dropped under a cut line.",
+              "type": [
+                "array",
+                "string",
+                "null"
+              ],
+              "minLength": 1,
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "context_call": {
+          "type": "object",
+          "required": [
+            "aoi_geometry",
+            "demand_area_rule"
+          ],
+          "properties": {
+            "demand_area_rule": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            }
+          }
+        },
+        "acceptance": {
+          "type": "object",
+          "required": [
+            "hospitals_in_context_min",
+            "hospital_count_unit"
+          ],
+          "properties": {
+            "hospital_count_unit": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            }
+          }
         }
       }
     },
@@ -1444,7 +1562,8 @@
         "version",
         "levels",
         "parameters",
-        "regression"
+        "regression",
+        "culvert_tag_handling"
       ],
       "properties": {
         "basis": {
@@ -1582,6 +1701,22 @@
                 }
               },
               "additionalProperties": false
+            }
+          }
+        },
+        "culvert_tag_handling": {
+          "type": "object",
+          "required": [
+            "rule",
+            "proposal"
+          ],
+          "properties": {
+            "rule": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
             }
           }
         }

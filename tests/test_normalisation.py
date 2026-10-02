@@ -167,8 +167,43 @@ def test_builder_hashes_the_unit_table_without_writing_it() -> None:
     alternatives = builder.alternatives(units)
     assert "Not used" in alternatives["note"]
     assert set(alternatives["resident_weighted_same_units"]) == {"P5", "P10", "P75", "P90", "P95"}
+    # No unit of the invented set is a Bangkok khwaeng, so that alternative is not shown.
+    assert alternatives["bangkok_khwaeng_units"] == 0 and "without_bangkok_khwaeng" not in alternatives
     encoded = builder.encode({"a": 1})
     assert encoded.endswith(b"\n") and b"\r" not in encoded
+
+
+def test_builder_shows_the_anchors_without_bangkok_khwaeng(tmp_path: Path) -> None:
+    spec = importlib.util.spec_from_file_location("build_national_vulnerability_anchors", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    units = _units(200)
+    # Give the 40 units with the lowest share a Bangkok code: leaving them out must raise the low anchors.
+    for index, row in enumerate(units):
+        row["unit_id"] = f"{builder.BANGKOK_UNIT_PREFIX}{index:04d}" if index < 40 else f"TH99{index:04d}"
+    alternatives = builder.alternatives(units)
+    assert alternatives["bangkok_khwaeng_units"] == 40
+    without = alternatives["without_bangkok_khwaeng"]
+    assert without["unit_count"] == 160
+    everyone = national_vulnerability_anchors(units)["values"]
+    kept = [row for row in units if not row["unit_id"].startswith(builder.BANGKOK_UNIT_PREFIX)]
+    expected = national_vulnerability_anchors(kept)["values"]
+    assert {key: without[key] for key in expected} == expected
+    assert without["P5"] > everyone["P5"] and without["P10"] > everyone["P10"]
+    weighted = alternatives["without_bangkok_khwaeng_resident_weighted"]
+    assert weighted["unit_count"] == 160 and set(expected) <= set(weighted)
+
+    # A replaced receipt names the one it supersedes and says which figures are the same.
+    previous = tmp_path / "receipt.json"
+    previous.write_bytes(builder.encode(
+        {"generated_at_utc": "2026-10-02T00:00:00Z", "values": everyone, "unit_count": 200}
+    ))
+    note = builder.supersedes(previous, {"values": everyone, "unit_count": 199}, "a test reason")
+    assert note["receipt_sha256"] == builder.sha256_file(previous) and note["reason"] == "a test reason"
+    assert note["generated_at_utc"] == "2026-10-02T00:00:00Z"
+    assert note["same_as_superseded"]["values"] is True and note["same_as_superseded"]["unit_count"] is False
+    assert note["all_same"] is False
 
 
 def test_committed_receipt_carries_the_required_fields_and_matches_the_protocol() -> None:
@@ -180,6 +215,8 @@ def test_committed_receipt_carries_the_required_fields_and_matches_the_protocol(
     assert receipt["schema_version"] == "floodguard.national_vulnerability_anchors.v1"
     assert receipt["official_warning"] is False and receipt["operational_status"] == "non_operational"
     assert receipt["source_timestamp"] and receipt["confidence_class"] == "low" and receipt["assumptions"]
+    # The unit set and the percentile rule are an owner decision, so the receipt is a candidate measurement.
+    assert receipt["status"] == "candidate_measurement" and "owner decision" in receipt["status_note"]
     values = receipt["values"]
     assert values["P5"] < values["P10"] < values["P75"] < values["P90"] < values["P95"]
     assert all(0 < value < 1 for value in values.values())

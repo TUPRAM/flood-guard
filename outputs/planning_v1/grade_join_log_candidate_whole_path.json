@@ -1,10 +1,26 @@
 {
   "schema_version": "floodguard.grade_join_log.v1",
+  "status": "candidate",
+  "status_note": "Candidate: open item OI-02 (the route rule) is an owner decision that has not been made. This file is not the corridor or the join log of record.",
+  "generated_at_utc": "2026-10-02T17:06:14Z",
+  "source_timestamp": "2026-07-10T02:46:49Z",
+  "source_timestamp_note": "Retrieval time of the OpenStreetMap extract the context was built from.",
+  "confidence_class": "low",
+  "confidence_basis": "OSM ways and their end points are unverified map records. A join shows that two ways end at the same coordinate; it is not a field check that the transition can be driven.",
+  "official_warning": false,
+  "operational_status": "non_operational",
   "rule_version": "grade_join_endpoint_coincident_v1",
   "coincidence_tolerance_m": 0.0,
   "rule": "Join two graph nodes only when they share an identical coordinate and each is the end of at least one OSM way. No join at a vertex in the middle of a way and none at a geometric crossing.",
   "context_canonical_sha256": "62749072c90c1ad72b07ff78f073f9f0c2bd1c66b52a812995414fbfc95c1c10",
+  "assumptions": [
+    "Two graph nodes with an identical coordinate, each the end of at least one OSM way, are treated as one junction. Identical coordinates do not prove that the ways share an OSM node.",
+    "The coincidence tolerance is 0 m. Nearness never creates a join.",
+    "The passability of every join is unknown; a join adds no travel time and no length.",
+    "The log describes one context build, named by its canonical SHA-256. Another OSM extract or another routing polygon gives another log."
+  ],
   "join_count": 345,
+  "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
   "joins": [
     {
       "join_id": "grade-join-018750995a31c89f",

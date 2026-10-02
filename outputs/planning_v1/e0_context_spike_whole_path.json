@@ -1,6 +1,6 @@
 {
   "schema_version": "floodguard.e0_context_spike.v1",
-  "generated_at_utc": "2026-10-02T16:27:40Z",
+  "generated_at_utc": "2026-10-02T17:06:14Z",
   "protocol_item": "planning_protocol_v1b open items OI-01, OI-03, OI-04 and OI-06 (plan 5 item 1, task E0)",
   "status": "candidate_measurement",
   "status_note": "The corridor is built under one candidate for open item OI-02 (the route rule), which is an owner decision. Nothing here closes an open item until the owners pick a rule.",
@@ -174,7 +174,8 @@
   ],
   "corridor": {
     "path": "outputs/planning_v1/corridor_candidate_whole_path.geojson",
-    "sha256": "4458583170d66ed0d57377bf016b1d7ac6defa58fcb9f573ba77d08d80ed5eb7",
+    "sha256": "86f6dee612d38d3870c44b2d2ea367e1b27b0d114cb1efde158dfb777518dd09",
+    "geometry_sha256": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
     "area_km2": 827.4,
     "aoi_02_area_km2": 541.71,
     "thai_adm3_units_intersecting": 26
@@ -211,7 +212,88 @@
     "named_ways_met": true,
     "baseline_vehicle_no_route_share_max": 0.1,
     "no_route_share_met_with_grade_joins": true,
-    "no_route_share_met_without_grade_joins": true
+    "no_route_share_met_without_grade_joins": true,
+    "compute_window": {
+      "plan_rule": "Builds run serially in a declared compute window with no concurrent SNAP jobs.",
+      "declared_by_the_operator": null,
+      "met": false,
+      "note": "Met only when the operator passes --compute-window with the declaration. This script cannot see what else runs on the machine."
+    },
+    "criteria_met": {
+      "hospitals_in_context_min": true,
+      "named_ways_within_routing_context": true,
+      "baseline_vehicle_no_route_share_max": true,
+      "declared_compute_window": false
+    },
+    "all_criteria_met": false,
+    "criteria_note": "The PII whitelist test and the load_aois count are checked by the test suite, not here."
+  },
+  "hospital_count_breakdown": {
+    "osm_objects": 6,
+    "distinct_named_hospitals": 4,
+    "unnamed_objects": 1,
+    "objects_that_repeat_a_named_hospital": 1,
+    "rule": "Objects with the same OSM name are one named hospital. An object without a name is counted apart; nothing here shows that it is a hospital in its own right."
+  },
+  "edge_counts": {
+    "edges": 65328,
+    "by_road_class": {
+      "local": 16837,
+      "primary": 985,
+      "residential": 32928,
+      "secondary": 4122,
+      "tertiary": 2965,
+      "trunk": 992,
+      "unclassified": 6499
+    },
+    "share_by_road_class": {
+      "local": 0.25773,
+      "primary": 0.015078,
+      "residential": 0.504041,
+      "secondary": 0.063097,
+      "tertiary": 0.045386,
+      "trunk": 0.015185,
+      "unclassified": 0.099483
+    },
+    "by_bridge_tag": {
+      "no": 65136,
+      "yes": 192
+    },
+    "by_tunnel_tag": {
+      "building_passage": 1,
+      "no": 65327
+    },
+    "bridge_yes_edges": 192,
+    "tunnel_culvert_edges": 0,
+    "culvert_tag_note": "The context builder carries the OSM bridge, tunnel and layer tags on each edge. It does not carry a culvert=* tag, so an edge tagged only that way is not counted or treated here."
+  },
+  "reproducibility": {
+    "compared": true,
+    "note": "The earlier run's receipt, corridor and join log were read from outputs/planning_v1 before this run replaced them. Run times, timings and memory figures differ between runs and are not compared.",
+    "previous_run": {
+      "generated_at_utc": "2026-10-02T16:27:40Z",
+      "receipt_sha256": "705a296604ff7d5ee987d4aeb33206b0a454138628efb9ec9dc85946d0c50132",
+      "context_canonical_sha256": "62749072c90c1ad72b07ff78f073f9f0c2bd1c66b52a812995414fbfc95c1c10",
+      "corridor_geometry_sha256": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
+      "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+      "edge_count": 65328,
+      "join_count": 345
+    },
+    "this_run": {
+      "context_canonical_sha256": "62749072c90c1ad72b07ff78f073f9f0c2bd1c66b52a812995414fbfc95c1c10",
+      "corridor_geometry_sha256": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
+      "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+      "edge_count": 65328,
+      "join_count": 345
+    },
+    "same": {
+      "context_canonical_sha256": true,
+      "corridor_geometry_sha256": true,
+      "joins_sha256": true,
+      "edge_count": true,
+      "join_count": true
+    },
+    "all_same": true
   },
   "baseline_no_route": {
     "definition": "Residents on graph-connected demand cells with no modelled vehicle route to any OSM hospital in the routing context, divided by all residents on graph-connected demand cells.",
@@ -238,8 +320,9 @@
     "grade_split_count": 371,
     "possible_endpoint_transition_count": 345,
     "joins_where_every_node_is_an_endpoint": 345,
+    "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
     "log_path": "outputs/planning_v1/grade_join_log_candidate_whole_path.json",
-    "log_sha256": "2f1f63e532db358fdab0ce42531ee110b144916c5e4e66144acbe6a3639690d4"
+    "log_sha256": "9cae845cc825ff618e5f8432dcf03b15721ff671f5f05590b1f99c6d3d1b2cea"
   },
   "context": {
     "canonical_sha256": "62749072c90c1ad72b07ff78f073f9f0c2bd1c66b52a812995414fbfc95c1c10",
@@ -317,16 +400,23 @@
     "ddpm_publication_level": "pitch"
   },
   "timing_seconds": {
-    "route_search_and_corridor": 79.1,
-    "context_build": 98.4,
-    "baseline_access_twice": 4.2
+    "route_search_and_corridor": 78.7,
+    "context_build": 98.9,
+    "baseline_access_twice": 4.0
   },
   "peak_memory_gib_so_far": {
     "after_route_search_and_corridor": 2.44,
     "after_context_build": 2.44,
     "at_the_end": 2.44
   },
-  "timing_note": "wall_time_minutes is the route search plus the context build. Other sessions were running on this machine, so this is not the declared compute window the plan asks for. Peak RAM is the peak working set of this Python process, read at the end of the run; it leaves out the ogr2ogr child processes.",
+  "context_build_memory": {
+    "sampled_peak_gib": 0.53,
+    "at_start_gib": 0.18,
+    "samples": 472,
+    "sample_interval_seconds": 0.2,
+    "note": "Current working set of this Python process, sampled while build_context_inputs ran. It includes memory the route search had not yet returned to the operating system (see at_start_gib), it can miss a short spike, and it leaves out the ogr2ogr child processes. peak_ram_gib in the record above is the peak of the whole process, route search included."
+  },
+  "timing_note": "wall_time_minutes is the route search plus the context build. No compute window was declared for this run, so the timing and memory figures are not the ones the plan asks for and cannot close open item OI-03. Peak RAM is the peak working set of this Python process, read at the end of the run; it leaves out the ogr2ogr child processes.",
   "input_hashes": {
     "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
     "worldpop_2020_sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
@@ -335,17 +425,18 @@
     "reviewed_junctions_sha256": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07"
   },
   "implementation": {
-    "base_commit": "dde9416f5395289ed1ef9f2157795f6ed0b025f6",
-    "builder_sha256": "f3ee0dba33f8f2a74b03bd7f6f8487786eaa47ff146c08791a83ca4826bb5125",
+    "base_commit": "ce3f874887d0629a9f55615e3601c9671d21864d",
+    "builder_sha256": "e893db7d094511e0f7e449ae67b0d12ba30db3e344e9dfc4f352c6d947c311f1",
     "evidence_context_sha256": "3e85955494e0bf2d4592ea772322afcb20a7a5cdf00036e52a4e33d1263c2994",
-    "grade_join_sha256": "7e0486a2ad28b11909635dc5ee713a5b464a2e025604c72f6ea3783cf0fbd1cb"
+    "grade_join_sha256": "87247e54da2acbdbbf5e00f5353b0aedf68e471eb463df99b46d9163aec7d634"
   },
   "assumptions": [
     "The route rule is a candidate for open item OI-02; it is not an owner decision.",
     "The route-selection graph joins ways at every shared vertex coordinate, whatever their grade tags. The context graph does not: it keeps grade-separated vertices apart and joins them only under decision D13.",
     "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented.",
     "A hospital is an OSM object tagged as a hospital. Its operation, entrance and capacity are not verified.",
-    "A grade join shows that two ways end at the same OSM coordinate. It does not show the transition can be driven."
+    "A grade join shows that two ways end at the same OSM coordinate. It does not show the transition can be driven.",
+    "hospital_count counts OSM objects. Two objects can describe one hospital, and an unnamed object may not be a hospital; hospital_count_breakdown says how many there are of each."
   ],
   "limitations": [
     "This is one build on one day. It is a measurement for the owners, not the context of record.",

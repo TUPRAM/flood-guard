@@ -7,8 +7,9 @@ For Putu and Rachmania. Drafted by an AI coding agent on 1 October 2026, on owne
 - **v1a** was signed in commit `04bca20`, and its SHA-256 (`b6dc549c...a954`) is the last line of `RECEIPTS.jsonl` (commit `6ad6f00`). It must not be edited again; a change needs `planning_protocol_v2`.
 - **How it was signed.** Putu told the AI coding agent, in a Claude Code session, that Putu and Rachmania both approve v1a and attest the four statements. The agent typed both signature entries and appended the receipt on that instruction. The file says so in `signature_block.amendments_at_signing`. Rachmania did not type her entry; she can add her own confirmation in a later commit that does not touch v1a.
 - **Left open at signing.** Putu answered "not sure", for both owners, to whether any M1-v2 tuning on GEOID tiles has been run. Rachmania is to state it.
-- **v1b** has 16 open items left: OI-11 closed when v1a was recorded, and OI-08 (the national anchors) closed on 3 October. Both owners approved v1b in principle (decision log R11). That is not a signature, and no signature entry is filled in.
-- **What the owners asked for under R11 is done as far as an agent can do it.** The engineering runs are in section 6. Every choice that only the owners can make is in `planning_protocol_v1b_owner_choices.md`, one short entry each, most important first. All 16 open items wait on those answers, directly or through the route rule (OI-02). OI-09 also waits on the pf-07 frame from Rachmania.
+- **v1b** has 17 open items left. OI-11 closed when v1a was recorded. OI-08 (the national anchors) was closed on 3 October and reopened the same day after a review, because its closure rested on two of the agent's own proposals. Both owners approved v1b in principle (decision log R11). That is not a signature, and no signature entry is filled in.
+- **What the owners asked for under R11 is done as far as an agent can do it.** The engineering runs are in section 6. Every choice that only the owners can make is in `planning_protocol_v1b_owner_choices.md`, one short entry each, most important first: 23 entries. All 17 open items wait on those answers, directly or through the route rule (OI-02). OI-09 also waits on the pf-07 frame from Rachmania, and OI-03 on a compute window that an owner declares.
+- **A review on 3 October found five places where the agent had decided for the owners.** Each is an empty slot again, under an open item and on the sheet. Section 8 says which.
 - No FPPS, class or ensemble may be computed for a real unit until v1b is signed and recorded. None was computed in the engineering runs.
 
 The rule for the rest of this guide stands: agents draft, humans sign. For v1b an agent fills a signature entry or appends the receipt only on the owners' explicit instruction, and the file must say that it did.
@@ -16,12 +17,12 @@ The rule for the rest of this guide stands: agents draft, humans sign. For v1b a
 | File | What it is | Status |
 |---|---|---|
 | `planning_protocol_v1a.json` | Decision rules (plan row G7a) | `signed` and in force; 11 drafter readings confirmed, DR-A11 amended |
-| `planning_protocol_v1b.json` | Engineering addendum (plan row G7b) | `incomplete_draft`: 16 open items (OI-08 and OI-11 closed) and 9 drafter readings |
+| `planning_protocol_v1b.json` | Engineering addendum (plan row G7b) | `incomplete_draft`: 17 open items (OI-11 closed) and 8 drafter readings |
 | `planning_protocol_v1b_owner_choices.md` | The decisions v1b still needs from the owners, with options and a recommendation each | For the owners to answer |
 | `planning_protocol_v1a.schema.json`, `planning_protocol_v1b.schema.json` | Shape checks for the two files | n/a |
 | `tests/test_planning_protocol.py` | Tests that tie the files to the signed decisions, to `scoring.py` and to the receipt | n/a |
 | `scripts/record_planning_protocol_receipt.py` | Checks a signed file and prints its receipt line | n/a |
-| `outputs/planning_v1/` | Receipts of the engineering runs made after R11: national anchors, closure regression, SE2-blind district, and the E0 spike with its two candidate corridors and join logs | Evidence for v1b; candidates are marked as such |
+| `outputs/planning_v1/` | Receipts of the engineering runs made after R11: national anchors under four candidate rules, closure regression, SE2-blind district, and the E0 spike with its two candidate corridors and join logs | Evidence for v1b. Each file carries its source timestamp, confidence and assumptions, and a candidate says inside the file that it is one |
 
 Both files are a "declared protocol after exploratory analysis". They are never called preregistered or confirmatory.
 
@@ -50,7 +51,7 @@ Values the plan states are filled in. Where the plan is silent, the slot is empt
 - **A recorded file is tied to its hash.** Once a receipt names a protocol file, a test fails if the file's bytes change, if the signing commit is no longer in the branch history, or if two different hashes were recorded.
 - **Two different people must sign.** The schema requires "Putu" in the first entry and "Rachmania" in the second. The receipt script refuses the same name twice.
 - **Seven more open items in v1b** (OI-12 to OI-18) for choices the plan leaves unstated.
-- **Twenty drafter readings are now marked** in the files (12 in v1a, 8 in v1b). A signed file must have each one set to `confirmed` or `amended`. A ninth v1b reading, DR-B09, was added on 3 October with the national anchors.
+- **Twenty drafter readings are now marked** in the files (12 in v1a, 8 in v1b). A signed file must have each one set to `confirmed` or `amended`. A ninth v1b reading, DR-B09, was added on 3 October with the national anchors and withdrawn the same day: the anchor unit set and percentile rule are an owner decision under OI-08, not a filled-in value to confirm.
 - **The disclosure says more.** Item EK-R1 now states that would-be classes A to D were shown for real tambons, after the plan's blinding rule. Two items were added (Hat Yai closure sweep; replay evacuation, shelter and equity panels). Guards that named controls which do not exist yet now say so.
 
 ## 4. What to check before signing v1a
@@ -97,25 +98,26 @@ The plan is silent, or says two things, on each of these. The draft picks one re
 | DR-B04 | national anchors, `allocation` | No rule for assigning 1 km cells to tambons. | Projected-area fraction. | No |
 | DR-B05 | `ensemble_grid.one_at_a_time` | Terrain proxy listed under axis 4. | Run one at a time on O1, outside the 540 cells. | No |
 | DR-B08 | scenario S8 base | O2 (plan 6.2) or O1 only (plan 3.4). | O1. | No |
-| DR-B09 | national anchors, unit set and percentile rule | "National tambon percentiles". No unit set, no percentile rule. | Every unit with at least 100 modelled residents, each counted once; linear interpolation; six decimal places. Added on 3 October with the anchor values. | **Yes**: weighting units by residents would put P10 at 0.258 in place of 0.351 |
+
+DR-B09 (national anchors: unit set and percentile rule) is withdrawn. It is owner choice 6 under open item OI-08.
 
 ## 6. Open items in v1b
 
 v1b cannot be signed until all 18 are closed and every parameter they name is filled in. None needs a download. Items OI-12 to OI-18 were added after review.
 
-On 3 October 2026 two items are closed, six are partly filled or measured (OI-01, OI-03, OI-04, OI-05, OI-06, OI-09), and the rest wait for an owner decision. The decisions are set out in `planning_protocol_v1b_owner_choices.md`.
+On 3 October 2026 one item is closed (OI-11), seven are partly filled or measured (OI-01, OI-03, OI-04, OI-05, OI-06, OI-08, OI-09), and the rest wait for an owner decision. The decisions are set out in `planning_protocol_v1b_owner_choices.md`.
 
 | ID | What is missing | What produces it | Who | State on 3 October |
 |---|---|---|---|---|
-| OI-01 | The corridor polygon file and its SHA-256 | E0 spike, then E4 | Agent with Putu | Open. Two candidate polygons are built; waits on OI-02 |
+| OI-01 | The corridor polygon file and its SHA-256; the demand-area rule (the eight-tambon union is not inside AOI-02) | E0 spike, then E4; owner decision | Agent with Putu | Open. Two candidate polygons are built; waits on OI-02 and on owner choice 21 |
 | OI-02 | The rule that picks the trunk/primary routes to the three hospitals (a proposal is in the file) | Owner decision | Putu | Open. The spike shows the proposal as written fails the plan's acceptance (see below) |
-| OI-03 | E0 spike values: hospitals (≥4), the three hospital ways in context, edges, time, RAM, grade splits, no-route share (≤10%) | E0 spike | Agent with Putu | Open. Measured for two route rules; waits on OI-02 |
-| OI-04 | Grade-join tolerance (proposal: 0 m) and the logged join list | E4 | Agent with Putu | Open. The tolerance is filled in (0 m, from D13). `grade_join.py` is written and a candidate log exists for each corridor; the log of record waits on OI-02 |
-| OI-05 | Closure rule: length thresholds for motorway, residential and unclassified roads; the delay rule under "strict"; the regression result (1,824 walking / 1,738 vehicle, exact match) | Owner decision; E3 | Putu; agent | Open. The regression is recorded: exact match. The two rule points are owner decisions |
+| OI-03 | E0 spike values: hospitals (≥4), the three hospital ways in context, edges, time, RAM, grade splits, no-route share (≤10%); what counts as one hospital | E0 spike in a declared compute window; owner decision | Agent with Putu | Open. Measured for two route rules, but not in a declared compute window; waits on OI-02, on that window and on owner choice 22 |
+| OI-04 | Grade-join tolerance (proposal: 0 m; D13 names none) and the logged join list | E4 | Agent with Putu | Open. The tolerance slot is empty (owner choice 20). `grade_join.py` is written and a candidate log exists for each corridor; the log of record waits on OI-02 |
+| OI-05 | Closure rule: length thresholds for motorway, residential and unclassified roads; the delay rule under "strict"; the `culvert=*` tag, which the context builder does not carry; the regression result (1,824 walking / 1,738 vehicle, exact match) | Owner decision; E3 | Putu; agent | Open. The regression is recorded: exact match. The three rule points are owner decisions (choices 4, 5 and 23) |
 | OI-06 | Main-road entry definition; shelter match distance; facility counts in the corridor; Mae Sai Hospital's OSM ID | Owner decision; E4 | Putu; agent | Open. The hospital's OSM ID is filled in. Counts are measured as candidates, except corroborated shelters. The two definitions are owner decisions |
 | OI-07 | Destination set for the critical-link ranking; whether the ranking is bound here or in the first run receipt | Owner decision; E6 | Putu; agent, Rachmania reviews | Open: owner decision |
-| OI-08 | National anchors P5, P10, P75, P90, P95; the tambon set and percentile method; the output receipt | E2 (run once) | Agent, Putu reviews | **Closed** on 3 October; reading DR-B09 awaits confirmation |
-| OI-09 | The Mueang Chiang Rai frame pf-07 (file, tambon list, routing and hospitals); the SE2-blind district | P1; a population ranking | Rachmania; agent | Open. The SE2-blind district is filled in. The pf-07 frame is Rachmania's |
+| OI-08 | National anchors P5, P10, P75, P90, P95; the tambon set and percentile method; the output receipt | E2; owner decision on the unit set and the percentile rule | Agent computes; Putu and Rachmania decide | Open. Computed as candidates under four rules (owner choice 6). Closed on 3 October and reopened the same day |
+| OI-09 | The Mueang Chiang Rai frame pf-07 (file, tambon list, routing and hospitals); the SE2-blind district, the rule for its "amphoe-seat tambons" and the unit list | P1; a population ranking; owner decision | Rachmania; agent | Open. The SE2-blind district is filled in. The pf-07 frame and the SE2-blind unit rule (choice 15c) are Rachmania's; the unit rule and the unit list have their own empty slots |
 | OI-10 | Three unstated points: reference cell for class retention, k for S3b, selection rule for E3 | Owner decision | Putu, Rachmania | Open: owner decision |
 | OI-11 | The recorded SHA-256 of the signed v1a | Signing v1a | Putu, Rachmania | **Closed** on 2 October |
 | OI-12 | The terrain / remoteness proxy: definition and anchor. It is an ensemble level and the S8 cell, and the plan defines neither | Owner decision | Putu, Rachmania | Open: owner decision |
@@ -128,12 +130,21 @@ On 3 October 2026 two items are closed, six are partly filled or measured (OI-01
 
 ### What the engineering runs found
 
-All runs are context, access or closure builds, or national constants, which the blinding rule allows before v1b. Each wrote a receipt under `outputs/planning_v1/` with its input hashes, a source timestamp, a confidence class and its assumptions. None wrote a value for a single tambon.
+All runs are context, access or closure builds, or national constants, which the blinding rule allows before v1b. Each wrote a receipt under `outputs/planning_v1/` with its input hashes, a source timestamp, a confidence class and its assumptions. Since the review the two corridor files and the two join logs carry the same fields and say inside the file that they are candidates; a test checks every file in the folder. None wrote a value for a single tambon. The district ranking lists the resident total of each of the 18 Chiang Rai districts. Every run is listed in `blinding.runs_before_v1b_is_in_force`, reruns included.
 
-**National anchors (OI-08, closed).** P5 0.313095, P10 0.351416, P75 0.454083, P90 0.477677, P95 0.494407, over 7,425 `tha_admin3` units; none had fewer than 100 residents. Receipt `national_vulnerability_anchors_v1.json`, SHA-256 `6d59270a…c816`. A second run with `--verify` reproduced the values and the hash of the per-unit table. Two things to know before confirming DR-B09:
+**National anchors (OI-08, candidates).** The plan says "national tambon percentiles" and names no unit set and no percentile rule. Both move the anchors, so the agent computed four candidate rules and filled in none. All four are in one receipt, `national_vulnerability_anchors_v1.json` (SHA-256 `2ad161d4…3a59`), which replaced the first receipt (`6d59270a…c816`) after recomputing everything: same values, same unit counts, same per-unit table hash.
 
-- Weighting units by residents would move P10 to 0.258 and P90 to 0.458. The plan says "tambon percentiles", so the file counts every unit once.
-- P10 and P90 are only 0.126 apart. A difference of 1.3 points of dependent share moves the vulnerability component by 10 of its 100 points.
+| Rule | Units | Each unit counts | P5 | P10 | P75 | P90 | P95 |
+|---|---|---|---|---|---|---|---|
+| A (proposal in the draft) | all 7,425 `tha_admin3` units | once | 0.313095 | 0.351416 | 0.454083 | 0.477677 | 0.494407 |
+| B | all 7,425 | by its residents | 0.222524 | 0.258155 | 0.431891 | 0.458233 | 0.474917 |
+| C | 7,256, without the 169 Bangkok khwaeng | once | 0.323114 | 0.356539 | 0.454733 | 0.478335 | 0.494696 |
+| D | 7,256 | by its residents | 0.223018 | 0.286154 | 0.438176 | 0.463009 | 0.477062 |
+
+- **This choice is outcome-aware.** The v1a disclosure (EK-04) records that the dependent shares of six Mae Sai tambons were seen. With those shares and this table, the vulnerability component of those tambons can be worked out under each rule. v1b records that as disclosure item EK-B01. Choose by what the plan's words mean, and write the reason into the closure.
+- No unit has fewer than 100 residents, so the minimum-denominator part of the rule changes nothing.
+- Under rule A, P10 and P90 are only 0.126 apart. A difference of 1.3 points of dependent share moves the vulnerability component by 10 of its 100 points.
+- **If a receipt has to be replaced** (a rule other than A to D, or a corrected input): change the builder, run it with `--replace --reason "<why>"`. The new receipt names the old one by SHA-256 under `supersedes` and says which figures are the same. The old receipt stays in the Git history. Without `--replace` the builder refuses to write over a receipt.
 
 **Closure regression (OI-05, recorded).** The permissive level of the new `closure_rules.py` gives 1,824 walking and 1,738 vehicle closed edges on the AOI-01 finals contexts. Both lists equal the finals lists exactly, with the same intersection lengths. Receipt `closure_rule_v1_regression.json`, SHA-256 `3659efc2…9953`.
 
@@ -143,8 +154,12 @@ All runs are context, access or closure builds, or national constants, which the
 |---|---|---|
 | Three named hospital ways in context | **No**: Mae Fa Luang (way 549948901) is outside | Yes |
 | Hospital objects in context (plan: at least 4) | 4: three named hospitals and one unnamed OSM object | 6: four named hospitals, one duplicate node of Mae Fa Luang and one unnamed OSM object |
+| Distinct named hospitals | 3 | 4 |
 | Edges | 57,727 | 65,328 |
-| Wall time, peak RAM | 2.64 min, 0.55 GiB | 2.96 min, 2.44 GiB |
+| Wall time, peak RAM of the whole spike | 2.62 min, 0.55 GiB | 2.96 min, 2.44 GiB |
+| Context build alone, sampled peak | 0.49 GiB | 0.53 GiB |
+| Run in a declared compute window (plan 5 item 1) | **No** | **No** |
+| Edges tagged `bridge=yes`; `tunnel=culvert` | 179; 0 | 192; 0 |
 | Grade splits; endpoint joins under D13 | 345; 319 | 371; 345 |
 | Baseline no-route share (plan: at most 10%) | 0.075% with joins, 1.41% without | 0.075% with joins, 1.41% without |
 | Corridor area | 683 km² | 827 km² |
@@ -152,23 +167,29 @@ All runs are context, access or closure builds, or national constants, which the
 | Located DDPM shelters in the routing context | 78 | 82 |
 
 - **The proposal as written cannot be signed.** The fastest road to Mae Fa Luang hospital has no trunk or primary segment (15.7 km secondary, 14.9 km tertiary), so no buffer reaches it. The schema requires the three named ways in context.
-- Timing was taken on a machine with other sessions running, not in the declared compute window. Peak RAM is the Python process only. The 2.44 GiB of the whole-path run is reached while the spike buffers the path, before the context build starts; the run on the smaller corridor never exceeds 0.55 GiB.
-- Each corridor was built twice. Both times it gave the same polygon, the same join log and the same context hash.
+- **No run was made in a declared compute window**, so the whole-path candidate meets the three measured criteria but not the plan's acceptance as a whole, and its timing and memory figures cannot close OI-03. `meets_plan_acceptance` in the protocol now has one entry per criterion.
+- Peak RAM is the Python process only. The 2.44 GiB of the whole-path run is reached while the spike buffers the path, before the context build starts, so it does not measure the build. The build's own working set, sampled every 0.2 s, peaked at about 0.5 GiB in both runs.
+- Each corridor was built twice on 2 October (UTC). The receipt of the second run compares the two (`reproducibility`): same corridor geometry, same joins, same context SHA-256, same edge and join counts. The file hashes differ, because each file now carries its generation time.
+- The hospital count is a count of OSM objects. Whether the plan's "at least 4" means objects or distinct named hospitals is owner choice 22.
 - About 8% of the frame's residents (6,610 of 81,837) are more than 250 m from a road node and are not connected to the graph. They are outside the no-route share by definition.
-- The union of the eight tambons is 214 m² larger than AOI-02 allows, and the unchanged builder refuses that. Both runs clipped the union to AOI-02, which matches the declared tolerance. The wording of `context_call.aoi_geometry` needs that correction when OI-01 closes.
+- The union of the eight tambons is 214 m² larger than AOI-02 allows, and the unchanged builder refuses that. Both runs clipped the union to AOI-02, which matches the declared tolerance. Whether the protocol adopts the clip is owner choice 21; the slot `context_call.demand_area_rule` is empty.
+- The context builder carries the bridge and tunnel tags and no culvert tag, so the central closure level cannot see `culvert=*`. What to do about that is owner choice 23.
+- Road classes in the whole-path context: residential 50.4% of edges, unclassified 9.9%, trunk and primary together 3.0%, secondary 6.3% (`edge_counts` in the receipt).
 - The corroborated-shelter count is not measured: it needs the match distance (an owner decision) and an OSM building extract.
 
-**SE2-blind district (OI-09, filled in).** Phan (TH5705) is the most populous Chiang Rai district after Mueang Chiang Rai, by WorldPop 2020; Mae Chan is second, 5.3% behind. No flood layer was read. The plan gives no rule for which tambons are the "amphoe seat".
+**SE2-blind district (OI-09, filled in).** Phan (TH5705) is the most populous Chiang Rai district after Mueang Chiang Rai, by WorldPop 2020; Mae Chan is second, 5.3% behind. No flood layer was read. The plan gives no rule for which tambons are the "amphoe seat". That rule and the unit list are two empty slots named by OI-09, so the item cannot close on the frame file alone.
 
 **Mae Sai Hospital (OI-06, filled in).** OSM way 371233866.
 
 ### What happens after the owners answer
 
 1. The agent writes each chosen value into its parameter and closes the item, as in "Steps for v1b" below. The owners' answers are quoted in each closure.
-2. OI-01 and OI-03 close from the spike receipt of the chosen route rule.
-3. OI-04 and the counts of OI-06 are taken from the E4 context build of record. The same inputs give the same context, so the join count will equal the candidate's. E4 also adds the corroborated-shelter count.
-4. OI-09 still needs the pf-07 frame from Rachmania.
-5. Only then can the status move to `draft_for_signature`.
+2. OI-01 closes from the spike receipt of the chosen route rule, with the demand-area rule from owner choice 21. The polygon was the same in every run.
+3. OI-03 does **not** close from the receipts that exist. An owner declares a compute window (serial, no concurrent SNAP jobs), and the agent runs the chosen rule once with `--compute-window "<who declared it, when>"`. That run records the wall time, the peak of the whole process, the sampled peak of the context build alone and the hospital breakdown, and it is the run OI-03 closes from.
+4. OI-08 closes with the values of the rule the owners choose, copied from the anchors receipt, and with their answer and reason quoted in the closure.
+5. OI-04 and the counts of OI-06 are taken from the E4 context build of record. The same inputs give the same context, so the join count will equal the candidate's. E4 also adds the corroborated-shelter count.
+6. OI-09 still needs the pf-07 frame from Rachmania, and the SE2-blind unit rule and unit list.
+7. Only then can the status move to `draft_for_signature`.
 
 On OI-07 and OI-17: plan row G7b lists only E0 and E4 as dependencies, but plan 6.3 says links and nodes are fixed before any scoring. Choose one and write it in the `binding` field: `bound_here` (build the list before signing and record its SHA-256 in v1b) or `bound_in_first_run_receipt` (sign with the rule alone; the SHA-256 goes into the first run receipt, before any scoring).
 
@@ -293,10 +314,10 @@ Run from the repository root, in Git Bash. `python` means the project environmen
 
    When none of a section's items is open, set the section's `status` to `"fixed"`. The tests pass after each closure, and they fail if an item is closed while one of its parameters is still empty. Three things to know:
    - **OI-05:** record the regression result when E3 runs, even if it does not match. The file cannot be signed until `closed_edge_ids_match_exactly` is `true`.
-   - **OI-08:** fill the five anchor values and close the item in the same edit, with the output receipt.
+   - **OI-08:** fill the five anchor values, the unit set and the percentile rule and close the item in the same edit, with the output receipt and the owners' answer to choice 6 quoted in the closure.
    - **OI-11:** copy the hash from the v1a receipt line into `depends_on.v1a_sha256`. A test checks it against the v1a file and the receipt.
 2. **Move to "draft for signature".** Set `"status": "draft_for_signature"` in the file and set `EXPECTED_STATUS["v1b"]` to `"draft_for_signature"` in `tests/test_planning_protocol.py`. Run the tests and commit both files. The schema refuses this status while any item is open, any named parameter is empty or any section is not fixed.
-3. **Sign and record.** Follow steps 1–8 above with `v1b` in place of `v1a`: resolve the eight drafter readings, sign, set `EXPECTED_STATUS["v1b"]` to `"signed"`, commit, run `python scripts/record_planning_protocol_receipt.py v1b`, append the line and commit it. For v1b the script also refuses unless every open item is closed with its parameters filled, and `depends_on.v1a_sha256` equals both the committed v1a file's hash and the v1a receipt.
+3. **Sign and record.** Follow steps 1–8 above with `v1b` in place of `v1a`: resolve every entry in `drafter_readings` (eight on 3 October; count them in the file, not here), sign, set `EXPECTED_STATUS["v1b"]` to `"signed"`, commit, run `python scripts/record_planning_protocol_receipt.py v1b`, append the line and commit it. For v1b the script also refuses unless every open item is closed with its parameters filled, and `depends_on.v1a_sha256` equals both the committed v1a file's hash and the v1a receipt.
 
 **Only after the v1b receipt is committed may any FPPS, A–E class or ensemble be computed for a real unit.**
 
@@ -304,14 +325,23 @@ Run from the repository root, in Git Bash. `python` means the project environmen
 
 When the two files were drafted (1 October) the agent ran nothing. After the owners' approval in principle (R11) it did the engineering work in section 6; each receipt carries its time in UTC:
 
-- It computed the national anchors once and closed OI-08.
-- It ran the closure regression, the SE2-blind population ranking and the E0 context spike for two candidate corridors.
+- It computed the national anchors, first under its own proposed rule and then, after review, under four candidate rules.
+- It ran the closure regression, the SE2-blind population ranking and the E0 context spike for two candidate corridors. It ran each spike variant twice.
 - It added four modules with tests (`normalisation.py`, `closure_rules.py`, `grade_join.py`, `ddpm_shelters.py`) and the four scripts that wrote the receipts. They await Putu's review.
+
+**Where it overstepped, and what was done about it.** An earlier version of this section said the agent had not filled a parameter that is an owner decision or closed an item that depends on one. A review on 3 October showed that was not true of commit `ce3f874`:
+
+1. It closed OI-08 with the anchor unit set and percentile rule filled in from its own two proposals. *Now:* OI-08 is open, the slots are empty, the four candidate rules sit beside them, and reading DR-B09 is withdrawn.
+2. It filled the grade-join tolerance as 0 m "from D13", which names no tolerance. *Now:* the slot is empty (owner choice 20).
+3. It listed three departures from the plan as changes it would make unless an owner objected: the demand area clipped to AOI-02, hospitals counted as OSM objects, and `culvert=*` not read. *Now:* each has an empty slot under OI-01, OI-03 and OI-05 and its own entry on the sheet (choices 21 to 23).
+4. It left the SE2-blind unit list without a slot, so OI-09 could have closed without it. *Now:* two slots, named by OI-09.
+5. It marked the whole-path corridor as meeting the plan's acceptance although no run was made in a declared compute window. *Now:* one entry per criterion, and OI-03 says it needs such a run.
+
+A test (`test_v1b_owner_decision_slots_stay_empty_while_their_item_is_open`) now fails if one of these slots is filled while its item is open. It covers the slots listed in the test, not every possible owner decision.
 
 It did not, at any point:
 
 - append to `RECEIPTS.jsonl`, sign anything, set the v1b status to `draft_for_signature`, confirm any reading, push, merge or download;
 - compute any FPPS, A–E class, ensemble cell or component value for a real unit;
-- fill a parameter that is an owner decision, or close an item that depends on one;
 - change one byte of the signed v1a;
 - build any of the guardrail checks marked `not_built`.

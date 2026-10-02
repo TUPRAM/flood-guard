@@ -83,6 +83,73 @@ def test_spike_variants_and_helpers(spike) -> None:
     assert spike.encode({"a": "\u0e01"}) == b'{\n  "a": "\\u0e01"\n}\n'
 
 
+def test_edge_counts_and_hospital_breakdown_are_counts_for_the_whole_context(spike) -> None:
+    edges = [
+        {"road_class": "residential", "bridge": "no", "tunnel": "no"},
+        {"road_class": "residential", "bridge": "yes", "tunnel": "no"},
+        {"road_class": "trunk", "bridge": "no", "tunnel": "culvert"},
+        {"road_class": "local"},
+    ]
+    counts = spike.edge_tag_counts(edges)
+    assert counts["edges"] == 4 and counts["by_road_class"] == {"local": 1, "residential": 2, "trunk": 1}
+    assert counts["share_by_road_class"]["residential"] == 0.5
+    assert counts["bridge_yes_edges"] == 1 and counts["tunnel_culvert_edges"] == 1
+    assert counts["by_bridge_tag"] == {"no": 3, "yes": 1}
+    assert "culvert=*" in counts["culvert_tag_note"]
+    assert spike.edge_tag_counts([])["share_by_road_class"] == {}
+
+    destinations = [
+        {"name": "Hospital A"}, {"name": "hospital  a"}, {"name": "Hospital B"}, {"name": spike.UNNAMED_FACILITY},
+    ]
+    breakdown = spike.hospital_breakdown(destinations)
+    assert breakdown["osm_objects"] == 4 and breakdown["distinct_named_hospitals"] == 2
+    assert breakdown["unnamed_objects"] == 1 and breakdown["objects_that_repeat_a_named_hospital"] == 1
+
+
+def test_a_run_is_compared_with_the_previous_run_of_the_same_variant(spike, tmp_path: Path) -> None:
+    assert spike.previous_run("proposal", tmp_path) is None
+    assert spike.reproducibility(None, {})["compared"] is False
+
+    geometry = {"type": "Polygon", "coordinates": [[[99.0, 20.0], [99.1, 20.0], [99.1, 20.1], [99.0, 20.0]]]}
+    joins = [{"join_id": "grade-join-a", "node_ids": ["n1", "n2"]}]
+    (tmp_path / "e0_context_spike_proposal.json").write_bytes(spike.encode({
+        "generated_at_utc": "2026-10-02T00:00:00Z", "context": {"canonical_sha256": "c" * 64},
+        "e0_spike_record_candidate": {"edge_count": 10},
+    }))
+    (tmp_path / "corridor_candidate_proposal.geojson").write_bytes(spike.encode({
+        "type": "FeatureCollection", "features": [{"type": "Feature", "properties": {}, "geometry": geometry}],
+    }))
+    # An older log without joins_sha256 can still be compared: the hash is taken over its joins.
+    (tmp_path / "grade_join_log_candidate_proposal.json").write_bytes(spike.encode({"join_count": 1, "joins": joins}))
+    previous = spike.previous_run("proposal", tmp_path)
+    assert previous is not None and previous["generated_at_utc"] == "2026-10-02T00:00:00Z"
+    assert previous["corridor_geometry_sha256"] == spike.geometry_sha256(geometry)
+
+    current = {key: previous[key] for key in (
+        "context_canonical_sha256", "corridor_geometry_sha256", "joins_sha256", "edge_count", "join_count")}
+    same = spike.reproducibility(previous, current)
+    assert same["compared"] is True and same["all_same"] is True and set(same["same"].values()) == {True}
+    moved = dict(geometry, coordinates=[[[99.0, 20.0], [99.2, 20.0], [99.1, 20.1], [99.0, 20.0]]])
+    different = spike.reproducibility(previous, {**current, "corridor_geometry_sha256": spike.geometry_sha256(moved)})
+    assert different["all_same"] is False and different["same"]["corridor_geometry_sha256"] is False
+    assert different["same"]["joins_sha256"] is True
+
+
+def test_memory_sampler_gives_a_block_its_own_peak(spike) -> None:
+    import time
+
+    if spike.current_memory_gib() is None:
+        pytest.skip("current memory cannot be read on this platform")
+    with spike.MemorySampler(interval=0.01) as sampler:
+        block = bytearray(64 * 1024 * 1024)
+        time.sleep(0.05)
+        del block
+    assert sampler.samples >= 2 and sampler.start_gib is not None
+    assert sampler.peak_gib is not None and sampler.peak_gib >= sampler.start_gib
+    whole_process = spike.peak_memory_gib()
+    assert whole_process is None or sampler.peak_gib <= whole_process + 1e-6
+
+
 def test_blind_district_is_the_most_populous_eligible_one(ranking) -> None:
     totals = {"D1": 500.0, "D2": 300.0, "D3": 290.0, "D4": 300.0}
     choice = ranking.select_blind_district(totals, {"D1"})
@@ -129,6 +196,9 @@ def test_committed_spike_receipts_are_candidates_and_stay_out_of_the_protocol(va
     assert receipt["status"] == "candidate_measurement" and receipt["route_rule_variant"] == variant
     assert receipt["official_warning"] is False and receipt["confidence_class"] == "low"
     assert receipt["source_timestamp"] and receipt["assumptions"]
+    # A run counts as made in a declared compute window only when the operator declared one.
+    window = receipt["acceptance"]["compute_window"]
+    assert window["met"] is bool(window["declared_by_the_operator"])
     record = receipt["e0_spike_record_candidate"]
     assert set(record) == {
         "hospital_count", "within_routing_context_for_named_ways", "edge_count", "wall_time_minutes",

@@ -10,11 +10,14 @@ from floodguard.grade_join import (
     COINCIDENCE_TOLERANCE_M,
     GRADE_JOIN_RULE_VERSION,
     JOIN_EDGE_KIND,
+    JOIN_LOG_ASSUMPTIONS,
+    JOIN_LOG_STATUSES,
     GradeJoinError,
     apply_grade_joins,
     endpoint_coincident_joins,
     join_edges,
     join_log,
+    joins_sha256,
 )
 from shapely.geometry import box
 
@@ -130,8 +133,43 @@ def test_bad_review_rows_and_unknown_nodes_are_refused() -> None:
 def test_join_log_states_the_rule_and_binds_the_context() -> None:
     context = _bridge_context()
     _edges, joins = apply_grade_joins(context)
-    log = join_log(joins, context_canonical_sha256=context["canonical_sha256"])
+    log = join_log(
+        joins, context_canonical_sha256=context["canonical_sha256"], status="candidate",
+        source_timestamp="2026-07-10T02:46:49Z", generated_at_utc="2026-10-03T00:00:00Z",
+    )
     assert log["join_count"] == 2 and log["joins"] == joins
     assert log["coincidence_tolerance_m"] == 0.0 and log["rule_version"] == GRADE_JOIN_RULE_VERSION
     assert log["context_canonical_sha256"] == "c" * 64
     assert "middle of a way" in log["rule"] and "crossing" in log["rule"]
+
+
+def test_join_log_carries_its_status_timestamp_confidence_and_assumptions() -> None:
+    """A join log copied out of its folder must still say what it is (AGENTS.md)."""
+
+    context = _bridge_context()
+    _edges, joins = apply_grade_joins(context)
+    arguments = {
+        "context_canonical_sha256": context["canonical_sha256"],
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "generated_at_utc": "2026-10-03T00:00:00Z",
+    }
+    log = join_log(joins, status="candidate", status_note="Candidate for a test.", **arguments)
+    assert log["status"] == "candidate" and log["status_note"] == "Candidate for a test."
+    assert log["source_timestamp"] == "2026-07-10T02:46:49Z" and log["generated_at_utc"] == "2026-10-03T00:00:00Z"
+    assert log["confidence_class"] == "low" and log["confidence_basis"]
+    assert log["official_warning"] is False and log["operational_status"] == "non_operational"
+    assert list(log["assumptions"]) == list(JOIN_LOG_ASSUMPTIONS) and len(log["assumptions"]) >= 3
+    assert any("do not prove" in line for line in log["assumptions"])
+    # The joins have their own hash, so two runs can be compared whatever their run time.
+    assert log["joins_sha256"] == joins_sha256(joins) and len(log["joins_sha256"]) == 64
+    later = join_log(joins, status="candidate", **{**arguments, "generated_at_utc": "2026-10-04T00:00:00Z"})
+    assert later["joins_sha256"] == log["joins_sha256"] and later != log
+    assert joins_sha256(joins[:1]) != log["joins_sha256"]
+
+    record = join_log(joins, status="log_of_record", **arguments)
+    assert record["status"] == "log_of_record" and "record" in record["status_note"]
+    assert set(JOIN_LOG_STATUSES) == {"candidate", "log_of_record"}
+    with pytest.raises(GradeJoinError, match="status"):
+        join_log(joins, status="decided", **arguments)
+    with pytest.raises(GradeJoinError, match="timestamp"):
+        join_log(joins, status="candidate", **{**arguments, "source_timestamp": " "})

@@ -14,6 +14,15 @@ decision). This spike builds the corridor under one of two candidate rules:
 * ``whole_path``: the same path, with every segment buffered whatever its class.
 
 Its outputs are CANDIDATES: they close nothing until the owners pick a rule.
+The corridor file and the join log say so themselves, and each carries its
+source timestamp, a confidence class and its assumptions.
+
+The plan asks for builds to run serially in a declared compute window with no
+concurrent SNAP jobs. A run counts as made in such a window only when the
+operator passes ``--compute-window`` with the declaration; otherwise the receipt
+records that criterion as not met. A run compares itself with the previous run
+of the same variant found in ``outputs/planning_v1`` and records whether the
+polygon, the joins and the context are the same.
 
 A context build is allowed before v1b is in force. The spike reads no flood
 layer and computes no closure, no access loss, no FPPS, no A-E class and no
@@ -35,13 +44,16 @@ Inputs live outside Git, so their locations are arguments::
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 from datetime import datetime, timezone
+import gc
 import hashlib
 import json
 import os
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 from typing import Any
 
@@ -56,7 +68,7 @@ from floodguard.evidence_context import (  # noqa: E402
     build_context_inputs,
 )
 from floodguard.evidence_scenarios import MODELLED_ROAD_SPEED_KMH, calculate_total_access  # noqa: E402
-from floodguard.grade_join import apply_grade_joins, join_log  # noqa: E402
+from floodguard.grade_join import apply_grade_joins, join_log, joins_sha256  # noqa: E402
 
 SCHEMA_VERSION = "floodguard.e0_context_spike.v1"
 PROTOCOL_V1A = ROOT / "docs" / "proposal_execution" / "planning_protocol_v1a.json"
@@ -66,6 +78,24 @@ SEARCH_MARGIN_DEG = 0.45
 HOSPITAL_SNAP_LIMIT_M = 100.0
 HOSPITAL_MATCH_DISTANCE_M = 150.0
 MAE_SAI_HOSPITAL_NAME_TH = "โรงพยาบาลแม่สาย"
+UNNAMED_FACILITY = "Unnamed OSM candidate"
+MEMORY_SAMPLE_SECONDS = 0.2
+CANDIDATE_STATUS_NOTE = (
+    "Candidate: open item OI-02 (the route rule) is an owner decision that has not been made. This file is not "
+    "the corridor or the join log of record."
+)
+CONFIDENCE_BASIS = (
+    "OSM roads and hospitals are unverified map records; travel times are modelled class speeds on an undirected "
+    "graph; the timing was taken on a shared machine."
+)
+CORRIDOR_ASSUMPTIONS = [
+    "The route rule is a candidate for open item OI-02; it is not an owner decision.",
+    "The fastest path is found on fixed class speeds on an undirected graph that joins ways at every shared "
+    "vertex coordinate. One-way rules, turn restrictions and road condition are not represented.",
+    "The polygon is AOI-02 plus 3 km buffers measured in EPSG:32647. It is a routing context, not a hazard zone, "
+    "an evacuation zone or a flood extent.",
+    "OSM hospital ways are map records. Their operation, entrance and capacity are not verified.",
+]
 # Variant -> the road classes of the fastest path that are buffered (None buffers every segment).
 VARIANTS: dict[str, tuple[str, ...] | None] = {"proposal": ("trunk", "primary"), "whole_path": None}
 _ROUTE_RULE_START = (
@@ -98,37 +128,188 @@ def encode(payload: dict[str, Any]) -> bytes:
     return (json.dumps(payload, indent=2, ensure_ascii=True) + "\n").encode("ascii")
 
 
+def _windows_working_set_bytes() -> tuple[int, int] | None:
+    """Return (peak, current) working set of this process in bytes on Windows, or None."""
+
+    import ctypes
+    from ctypes import wintypes
+
+    class Counters(ctypes.Structure):
+        _fields_ = [
+            ("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+            ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
+            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t), ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+            ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t),
+        ]
+
+    counters = Counters()
+    counters.cb = ctypes.sizeof(Counters)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    psapi = ctypes.WinDLL("psapi", use_last_error=True)
+    kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(Counters), wintypes.DWORD]
+    if not psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
+        return None
+    return int(counters.PeakWorkingSetSize), int(counters.WorkingSetSize)
+
+
 def peak_memory_gib() -> float | None:
     """Return this process's peak resident memory in GiB, or None when it cannot be read."""
 
     if os.name == "nt":
-        import ctypes
-        from ctypes import wintypes
-
-        class Counters(ctypes.Structure):
-            _fields_ = [
-                ("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
-                ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
-                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t), ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
-                ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t),
-            ]
-
-        counters = Counters()
-        counters.cb = ctypes.sizeof(Counters)
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        psapi = ctypes.WinDLL("psapi", use_last_error=True)
-        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
-        psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(Counters), wintypes.DWORD]
-        if not psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
-            return None
-        return counters.PeakWorkingSetSize / 1024 ** 3
+        sizes = _windows_working_set_bytes()
+        return None if sizes is None else sizes[0] / 1024 ** 3
     try:
         import resource
     except ImportError:
         return None
     scale = 1 if sys.platform == "darwin" else 1024
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * scale / 1024 ** 3
+
+
+def current_memory_gib() -> float | None:
+    """Return this process's current resident memory in GiB, or None when it cannot be read."""
+
+    if os.name == "nt":
+        sizes = _windows_working_set_bytes()
+        return None if sizes is None else sizes[1] / 1024 ** 3
+    try:
+        with open("/proc/self/statm", encoding="ascii") as stream:
+            resident_pages = int(stream.read().split()[1])
+        return resident_pages * os.sysconf("SC_PAGE_SIZE") / 1024 ** 3
+    except (OSError, ValueError, IndexError, AttributeError):
+        return None
+
+
+class MemorySampler:
+    """Sample this process's resident memory while a block runs, to give that block its own peak.
+
+    ``peak_memory_gib`` is the peak over the whole process and cannot be reset,
+    so it cannot say how much one step needs. This sampler reads the current
+    resident memory every ``interval`` seconds between ``__enter__`` and
+    ``__exit__``. A sampled peak can miss a short spike, and it includes memory
+    that earlier steps have not yet returned to the operating system.
+    """
+
+    def __init__(self, interval: float = MEMORY_SAMPLE_SECONDS) -> None:
+        self.interval = interval
+        self.peak_gib: float | None = None
+        self.start_gib: float | None = None
+        self.samples = 0
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def _read(self) -> None:
+        value = current_memory_gib()
+        if value is not None:
+            self.samples += 1
+            self.peak_gib = value if self.peak_gib is None else max(self.peak_gib, value)
+
+    def _run(self) -> None:
+        while not self._stop.wait(self.interval):
+            self._read()
+
+    def __enter__(self) -> "MemorySampler":
+        self.start_gib = current_memory_gib()
+        self._read()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join()
+        self._read()
+
+
+def geometry_sha256(geometry: dict[str, Any]) -> str:
+    """Return the SHA-256 of a GeoJSON geometry alone, so two runs can be compared whatever their run time."""
+
+    encoded = json.dumps(geometry, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(encoded.encode("ascii")).hexdigest()
+
+
+def edge_tag_counts(edges: list[dict[str, Any]]) -> dict[str, Any]:
+    """Count context edges by road class and by bridge and tunnel tag. Counts for the whole context only."""
+
+    total = len(edges)
+    by_class = Counter(str(edge["road_class"]) for edge in edges)
+    bridge = Counter(str(edge.get("bridge", "no")) for edge in edges)
+    tunnel = Counter(str(edge.get("tunnel", "no")) for edge in edges)
+    return {
+        "edges": total,
+        "by_road_class": dict(sorted(by_class.items())),
+        "share_by_road_class": {key: round(value / total, 6) for key, value in sorted(by_class.items())},
+        "by_bridge_tag": dict(sorted(bridge.items())),
+        "by_tunnel_tag": dict(sorted(tunnel.items())),
+        "bridge_yes_edges": bridge.get("yes", 0),
+        "tunnel_culvert_edges": tunnel.get("culvert", 0),
+        "culvert_tag_note": "The context builder carries the OSM bridge, tunnel and layer tags on each edge. It does "
+                            "not carry a culvert=* tag, so an edge tagged only that way is not counted or treated here.",
+    }
+
+
+def hospital_breakdown(destinations: list[dict[str, Any]]) -> dict[str, Any]:
+    """Say how many OSM hospital objects there are and how many different hospitals they name.
+
+    The plan's acceptance asks for at least four hospitals and does not say
+    whether two OSM objects for one hospital count twice. Objects with the same
+    OSM name are one named hospital; an object without a name is counted apart.
+    """
+
+    names = Counter(" ".join(str(row["name"]).split()).casefold() for row in destinations
+                    if row["name"] != UNNAMED_FACILITY)
+    unnamed = sum(row["name"] == UNNAMED_FACILITY for row in destinations)
+    return {
+        "osm_objects": len(destinations),
+        "distinct_named_hospitals": len(names),
+        "unnamed_objects": unnamed,
+        "objects_that_repeat_a_named_hospital": sum(count - 1 for count in names.values()),
+        "rule": "Objects with the same OSM name are one named hospital. An object without a name is counted apart; "
+                "nothing here shows that it is a hospital in its own right.",
+    }
+
+
+def previous_run(variant: str, output_dir: Path = OUTPUT_DIR) -> dict[str, Any] | None:
+    """Read what the previous run of this variant left in the output folder, before it is overwritten."""
+
+    receipt_path = output_dir / f"e0_context_spike_{variant}.json"
+    corridor_path = output_dir / f"corridor_candidate_{variant}.geojson"
+    log_path = output_dir / f"grade_join_log_candidate_{variant}.json"
+    if not (receipt_path.is_file() and corridor_path.is_file() and log_path.is_file()):
+        return None
+    receipt = json.loads(receipt_path.read_text(encoding="ascii"))
+    corridor = json.loads(corridor_path.read_text(encoding="ascii"))
+    log = json.loads(log_path.read_text(encoding="ascii"))
+    return {
+        "generated_at_utc": receipt["generated_at_utc"],
+        "receipt_sha256": sha256_file(receipt_path),
+        "context_canonical_sha256": receipt["context"]["canonical_sha256"],
+        "corridor_geometry_sha256": geometry_sha256(corridor["features"][0]["geometry"]),
+        "joins_sha256": joins_sha256(log["joins"]),
+        "edge_count": receipt["e0_spike_record_candidate"]["edge_count"],
+        "join_count": log["join_count"],
+    }
+
+
+def reproducibility(previous: dict[str, Any] | None, current: dict[str, Any]) -> dict[str, Any]:
+    """Compare this run with the previous run of the same variant."""
+
+    if previous is None:
+        return {"compared": False, "note": "No earlier run of this variant was found in outputs/planning_v1."}
+    keys = ("context_canonical_sha256", "corridor_geometry_sha256", "joins_sha256", "edge_count", "join_count")
+    same = {key: previous[key] == current[key] for key in keys}
+    return {
+        "compared": True,
+        "note": "The earlier run's receipt, corridor and join log were read from outputs/planning_v1 before this "
+                "run replaced them. Run times, timings and memory figures differ between runs and are not compared.",
+        "previous_run": previous,
+        "this_run": {key: current[key] for key in keys},
+        "same": same,
+        "all_same": all(same.values()),
+    }
 
 
 def fastest_path(
@@ -426,13 +607,41 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     demand = tambon_union.intersection(aoi_02)
     outside_m2 = transform(to_metres, tambon_union.difference(aoi_02)).area
 
+    previous = previous_run(args.variant)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    corridor_path = OUTPUT_DIR / f"corridor_candidate_{args.variant}.geojson"
+    generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+    context_dir = args.work_dir / "context_vehicle"
+    gc.collect()
+    build_started = time.perf_counter()
+    with MemorySampler() as build_memory:
+        context = build_context_inputs(
+            args.context_root, mapping(demand), mapping(corridor), [], context_dir,
+            reporting_geometry=mapping(reporting), travel_mode="legacy_vehicle", reviewed_junctions=reviewed,
+        )
+    build_seconds = time.perf_counter() - build_started
+    peak_after_build = peak_memory_gib()
+    osm_retrieved_at = context["source_metadata"]["osm"]["retrieved_at_utc"]
+
+    # Round-trip through JSON so the hash is taken over exactly what the file holds.
+    corridor_geometry = json.loads(json.dumps(mapping(corridor)))
+    corridor_geometry_sha256 = geometry_sha256(corridor_geometry)
     corridor_feature = {
         "type": "FeatureCollection",
         "features": [{
             "type": "Feature",
             "properties": {
                 "id": f"corridor_candidate_{args.variant}",
-                "status": "candidate: open item OI-02 (the route rule) is an owner decision that has not been made",
+                "status": "candidate",
+                "status_note": CANDIDATE_STATUS_NOTE,
+                "generated_at_utc": generated_at,
+                "source_timestamp": osm_retrieved_at,
+                "source_timestamp_note": "Retrieval time of the OpenStreetMap extract the routes were found on. "
+                                         "AOI-02 and the boundaries are named by their SHA-256.",
+                "confidence_class": "low",
+                "confidence_basis": CONFIDENCE_BASIS,
+                "assumptions": CORRIDOR_ASSUMPTIONS,
                 "route_rule_variant": args.variant,
                 "route_rule": ROUTE_RULES[args.variant],
                 "base": construction["base"],
@@ -440,24 +649,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "buffer_m": construction["buffer_m"],
                 "osm_pbf_sha256": pbf_sha256,
                 "boundaries_sha256": boundaries_sha256,
+                "geometry_sha256": corridor_geometry_sha256,
                 "official_warning": False,
                 "operational_status": "non_operational",
             },
-            "geometry": mapping(corridor),
+            "geometry": corridor_geometry,
         }],
     }
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    corridor_path = OUTPUT_DIR / f"corridor_candidate_{args.variant}.geojson"
     corridor_path.write_bytes(encode(corridor_feature))
-
-    context_dir = args.work_dir / "context_vehicle"
-    build_started = time.perf_counter()
-    context = build_context_inputs(
-        args.context_root, mapping(demand), mapping(corridor), [], context_dir,
-        reporting_geometry=mapping(reporting), travel_mode="legacy_vehicle", reviewed_junctions=reviewed,
-    )
-    build_seconds = time.perf_counter() - build_started
-    peak_after_build = peak_memory_gib()
 
     hospitals = [row for row in context["osm_facilities"] if row["service_type"] == "hospital"]
     destinations = [row for row in hospitals
@@ -475,17 +674,34 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     facilities = facility_counts(destinations, corridor.intersection(reporting), args.dga_facilities,
                                  args.ddpm_shelters)
     log_path = OUTPUT_DIR / f"grade_join_log_candidate_{args.variant}.json"
-    log_path.write_bytes(encode(join_log(joins, context_canonical_sha256=context["canonical_sha256"])))
+    log_path.write_bytes(encode(join_log(
+        joins, context_canonical_sha256=context["canonical_sha256"], status="candidate",
+        status_note=CANDIDATE_STATUS_NOTE, source_timestamp=osm_retrieved_at, generated_at_utc=generated_at,
+    )))
 
     review = context["connectivity_review"]
     share_unjoined, share_joined = no_route_share(unjoined), no_route_share(joined)
     hospital_count = len(destinations)
     wall_minutes = (route_seconds + build_seconds) / 60
     peak = peak_memory_gib()
+    criteria_met = {
+        "hospitals_in_context_min": hospital_count >= acceptance["hospitals_in_context_min"],
+        "named_ways_within_routing_context": all(named.values()),
+        "baseline_vehicle_no_route_share_max":
+            share_joined["share"] <= acceptance["baseline_vehicle_no_route_share_max"],
+        "declared_compute_window": bool(args.compute_window),
+    }
+    compared = reproducibility(previous, {
+        "context_canonical_sha256": context["canonical_sha256"],
+        "corridor_geometry_sha256": corridor_geometry_sha256,
+        "joins_sha256": joins_sha256(joins),
+        "edge_count": len(context["edges"]),
+        "join_count": len(joins),
+    })
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False)
     receipt = {
         "schema_version": SCHEMA_VERSION,
-        "generated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "generated_at_utc": generated_at,
         "protocol_item": "planning_protocol_v1b open items OI-01, OI-03, OI-04 and OI-06 (plan 5 item 1, task E0)",
         "status": "candidate_measurement",
         "status_note": "The corridor is built under one candidate for open item OI-02 (the route rule), which is an "
@@ -495,21 +711,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "operational_status": "non_operational",
         "computes": "One baseline vehicle context. No flood layer, no closure, no access loss, no FPPS, no A-E class, "
                     "no ensemble, and no figure for a single tambon.",
-        "source_timestamp": context["source_metadata"]["osm"]["retrieved_at_utc"],
+        "source_timestamp": osm_retrieved_at,
         "source_timestamps": {
-            "osm_retrieved_at_utc": context["source_metadata"]["osm"]["retrieved_at_utc"],
+            "osm_retrieved_at_utc": osm_retrieved_at,
             "population_year_represented": 2020,
             "boundaries_valid_on": "2022-01-22",
         },
         "confidence_class": "low",
-        "confidence_basis": "OSM roads and hospitals are unverified map records; travel times are modelled class speeds "
-                            "on an undirected graph; the timing was taken on a shared machine.",
+        "confidence_basis": CONFIDENCE_BASIS,
         "route_rule": ROUTE_RULES[args.variant],
         "search_window_wgs84": [round(value, 4) for value in window.bounds],
         "hospital_routes": hospital_routes,
         "corridor": {
             "path": corridor_path.relative_to(ROOT).as_posix(),
             "sha256": sha256_file(corridor_path),
+            "geometry_sha256": corridor_geometry_sha256,
             "area_km2": round(transform(to_metres, corridor).area / 1e6, 2),
             "aoi_02_area_km2": round(transform(to_metres, aoi_02).area / 1e6, 2),
             "thai_adm3_units_intersecting": int(len(in_corridor)),
@@ -544,7 +760,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "baseline_vehicle_no_route_share_max": acceptance["baseline_vehicle_no_route_share_max"],
             "no_route_share_met_with_grade_joins": share_joined["share"] <= acceptance["baseline_vehicle_no_route_share_max"],
             "no_route_share_met_without_grade_joins": share_unjoined["share"] <= acceptance["baseline_vehicle_no_route_share_max"],
+            "compute_window": {
+                "plan_rule": v1b["corridor_polygon"]["compute_window"],
+                "declared_by_the_operator": args.compute_window,
+                "met": bool(args.compute_window),
+                "note": "Met only when the operator passes --compute-window with the declaration. This script "
+                        "cannot see what else runs on the machine.",
+            },
+            "criteria_met": criteria_met,
+            "all_criteria_met": all(criteria_met.values()),
+            "criteria_note": "The PII whitelist test and the load_aois count are checked by the test suite, not here.",
         },
+        "hospital_count_breakdown": hospital_breakdown(destinations),
+        "edge_counts": edge_tag_counts(context["edges"]),
+        "reproducibility": compared,
         "baseline_no_route": {
             "definition": "Residents on graph-connected demand cells with no modelled vehicle route to any OSM hospital "
                           "in the routing context, divided by all residents on graph-connected demand cells.",
@@ -559,6 +788,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "grade_split_count": review["shared_coordinate_grade_split_count"],
             "possible_endpoint_transition_count": review["possible_endpoint_transition_count"],
             "joins_where_every_node_is_an_endpoint": sum(join["all_nodes_at_coordinate_are_endpoints"] for join in joins),
+            "joins_sha256": joins_sha256(joins),
             "log_path": log_path.relative_to(ROOT).as_posix(),
             "log_sha256": sha256_file(log_path),
         },
@@ -595,10 +825,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "after_context_build": None if peak_after_build is None else round(peak_after_build, 2),
             "at_the_end": None if peak is None else round(peak, 2),
         },
-        "timing_note": "wall_time_minutes is the route search plus the context build. Other sessions were running on "
-                       "this machine, so this is not the declared compute window the plan asks for. Peak RAM is the "
-                       "peak working set of this Python process, read at the end of the run; it leaves out the ogr2ogr "
-                       "child processes.",
+        "context_build_memory": {
+            "sampled_peak_gib": None if build_memory.peak_gib is None else round(build_memory.peak_gib, 2),
+            "at_start_gib": None if build_memory.start_gib is None else round(build_memory.start_gib, 2),
+            "samples": build_memory.samples,
+            "sample_interval_seconds": MEMORY_SAMPLE_SECONDS,
+            "note": "Current working set of this Python process, sampled while build_context_inputs ran. It "
+                    "includes memory the route search had not yet returned to the operating system (see "
+                    "at_start_gib), it can miss a short spike, and it leaves out the ogr2ogr child processes. "
+                    "peak_ram_gib in the record above is the peak of the whole process, route search included.",
+        },
+        "timing_note": "wall_time_minutes is the route search plus the context build. "
+                       + ("The operator declared a compute window for this run (acceptance.compute_window). "
+                          if args.compute_window else
+                          "No compute window was declared for this run, so the timing and memory figures are not "
+                          "the ones the plan asks for and cannot close open item OI-03. ")
+                       + "Peak RAM is the peak working set of this Python process, read at the end of the run; it "
+                         "leaves out the ogr2ogr child processes.",
         "input_hashes": {
             "osm_pbf_sha256": pbf_sha256,
             "worldpop_2020_sha256": context["input_hashes"]["worldpop"],
@@ -620,6 +863,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "condition are not represented.",
             "A hospital is an OSM object tagged as a hospital. Its operation, entrance and capacity are not verified.",
             "A grade join shows that two ways end at the same OSM coordinate. It does not show the transition can be driven.",
+            "hospital_count counts OSM objects. Two objects can describe one hospital, and an unnamed object may not "
+            "be a hospital; hospital_count_breakdown says how many there are of each.",
         ],
         "limitations": [
             "This is one build on one day. It is a measurement for the owners, not the context of record.",
@@ -641,6 +886,11 @@ def main() -> int:
     parser.add_argument("--ddpm-shelters", type=Path)
     parser.add_argument("--variant", choices=sorted(VARIANTS), required=True)
     parser.add_argument("--work-dir", type=Path, required=True)
+    parser.add_argument(
+        "--compute-window",
+        help="the operator's declaration that this run is serial, in a declared compute window with no concurrent "
+             "SNAP jobs: who declared it and when. Leave it out for any other run.",
+    )
     args = parser.parse_args()
     if args.work_dir.resolve().is_relative_to(ROOT):
         parser.error("the work folder must be outside Git")

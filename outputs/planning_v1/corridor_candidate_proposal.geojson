@@ -5,7 +5,19 @@
       "type": "Feature",
       "properties": {
         "id": "corridor_candidate_proposal",
-        "status": "candidate: open item OI-02 (the route rule) is an owner decision that has not been made",
+        "status": "candidate",
+        "status_note": "Candidate: open item OI-02 (the route rule) is an owner decision that has not been made. This file is not the corridor or the join log of record.",
+        "generated_at_utc": "2026-10-02T17:03:03Z",
+        "source_timestamp": "2026-07-10T02:46:49Z",
+        "source_timestamp_note": "Retrieval time of the OpenStreetMap extract the routes were found on. AOI-02 and the boundaries are named by their SHA-256.",
+        "confidence_class": "low",
+        "confidence_basis": "OSM roads and hospitals are unverified map records; travel times are modelled class speeds on an undirected graph; the timing was taken on a shared machine.",
+        "assumptions": [
+          "The route rule is a candidate for open item OI-02; it is not an owner decision.",
+          "The fastest path is found on fixed class speeds on an undirected graph that joins ways at every shared vertex coordinate. One-way rules, turn restrictions and road condition are not represented.",
+          "The polygon is AOI-02 plus 3 km buffers measured in EPSG:32647. It is a routing context, not a hazard zone, an evacuation zone or a flood extent.",
+          "OSM hospital ways are map records. Their operation, entrance and capacity are not verified."
+        ],
         "route_rule_variant": "proposal",
         "route_rule": "For each of the three hospitals: build an undirected vehicle graph from every OSM road in the search window that lies inside Thailand, joining ways wherever they share a vertex coordinate; use the modelled class speeds; snap the hospital to the road vertex nearest to its OSM way polygon; take the fastest path from that vertex to the first road vertex inside AOI-02 (the vertex of AOI-02 with the smallest travel time); keep the segments of that path whose class is trunk or primary, links included; buffer them by 3 km in EPSG:32647; and union the three buffers with AOI-02.",
         "base": "resources/aoi/aoi-02_mae_sai_district.geojson",
@@ -13,6 +25,7 @@
         "buffer_m": 3000,
         "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
         "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+        "geometry_sha256": "572727719bf9244454a094c48524efe49fee33c9fe9ac5f6ff4bf06e54079417",
         "official_warning": false,
         "operational_status": "non_operational"
       },

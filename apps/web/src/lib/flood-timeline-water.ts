@@ -4,18 +4,24 @@
  */
 
 import {
+  ARRIVAL_RAMP,
   buildArrivalLut,
   buildDepthLut,
   buildDurationLut,
   buildFactorDepthLut,
   buildPeopleLut,
   buildResidentsLut,
+  DENSITY_CLASSES,
+  DEPTH_CLASSES,
+  DURATION_CLASSES,
   FACTOR_LUT_SIZE,
+  lowConfidenceRgba,
   paintDepth,
   paintLowConfidence,
   type HourClass,
   type Language,
   type Localized,
+  type Rgba,
 } from "./flood-timeline";
 import type { WaterMode } from "./flood-timeline-link";
 
@@ -50,6 +56,27 @@ export function drawnWaterMode(requested: WaterMode, residentsReady: boolean): W
  */
 export function hatchesLowConfidence(drawn: WaterMode): boolean {
   return drawn !== "residents";
+}
+
+/** Stripe and wash colours of the low-confidence key in a legend. */
+export interface LowConfidenceKey { stripe: Rgba; wash: Rgba }
+
+/**
+ * Colours of the low-confidence legend key for the view that is drawn, from the same function that colours the map
+ * (`lowConfidenceRgba`), applied to a colour low-confidence cells typically take in that view: a shallow depth class;
+ * the earliest first-flooded class and the longest hours-under-water class (flat ground at channel level floods first
+ * and stays wet longest); a middle density class in the resident views. The page legend and the exported legend both
+ * use it, so the key is purple-grey where the map's hatching is purple-grey, and blue where it is blue.
+ */
+export function lowConfidenceKey(drawn: WaterMode, arrival: readonly { rgba: Rgba }[] = []): LowConfidenceKey {
+  const base: Rgba = drawn === "arrival"
+    ? arrival[0]?.rgba ?? ARRIVAL_RAMP[0]
+    : drawn === "duration"
+      ? DURATION_CLASSES[DURATION_CLASSES.length - 1].rgba
+      : drawn === "people" || drawn === "residents"
+        ? DENSITY_CLASSES[Math.floor(DENSITY_CLASSES.length / 2)].rgba
+        : DEPTH_CLASSES[1].rgba;
+  return { stripe: lowConfidenceRgba(base, true), wash: lowConfidenceRgba(base, false) };
 }
 
 /** Water views the PNG and video exports can draw. */

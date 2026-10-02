@@ -97,9 +97,15 @@ EQUITY_EDGE_INPUTS: list[tuple[str, float, float, float, float]] = [
     ("rate half-way case 0.00015", 15, 100000, 1000, 10000),
     ("rate half-way case 0.00025", 25, 100000, 1000, 10000),
     ("rate half-way case 0.12345", 12345, 100000, 1000, 10000),
+    # A loss too small for four-decimal rounding is still a loss: the rule reads the lost counts, and the ratio
+    # then uses the unrounded rates.
     ("vulnerable rate rounds to zero", 0.004, 100, 10, 100),
     ("both rates round to zero", 0.004, 100, 0.004, 100),
     ("only the non-vulnerable rate rounds to zero", 5, 100, 0.004, 100),
+    ("small loss in a large group, no vulnerable loss", 0, 7152, 3, 74647),
+    ("small loss in both large groups", 1, 7152, 3, 74647),
+    ("small vulnerable loss only, large groups", 2, 7152, 0, 74647),
+    ("small vulnerable loss beside a large other loss", 0.3, 7152, 5671, 74647),
     ("no vulnerable loss", 0, 2440, 7086, 32085),
     ("only vulnerable loss", 5, 50, 0, 100),
     ("no loss in either group", 0, 50, 0, 100),
@@ -149,8 +155,9 @@ def equity_rows(inputs: list[tuple[float, float, float, float]]) -> list[list]:
 
     Each row is also checked against the unchanged ``floodguard.equity.compute_equity_gap``: the rates always
     agree, and the ratio and wording agree wherever the replay gives a ratio or calls it undefined. The replay
-    differs only by withholding the ratio for small groups and when nobody has lost access (there
-    ``floodguard.equity`` says 1.0).
+    differs by withholding the ratio for small groups and when nobody has lost access (there
+    ``floodguard.equity`` says 1.0), and where a rounded rate of zero hides residents who did lose access: the
+    replay judges loss on the lost counts and divides the unrounded rates there.
     """
     frame = pd.DataFrame({
         "subdistrict_id": [f"case-{index}" for index in range(len(inputs))],
@@ -170,12 +177,16 @@ def equity_rows(inputs: list[tuple[float, float, float, float]]) -> list[list]:
         base_ratio, base_text = number(base["equity_gap_ratio"]), str(base["interpretation_text"])
         if [gap.vulnerable_rate, gap.non_vulnerable_rate] != base_rates:
             raise SystemExit(f"{given}: the replay's loss rates differ from floodguard.equity")
-        if gap.reason is None and (gap.ratio != base_ratio or gap.interpretation != base_text):
+        # A rate of 0.0000 with residents lost: floodguard.equity reads it as no loss, the replay does not.
+        hidden = (given[0] > 0 and gap.vulnerable_rate == 0) or (given[2] > 0 and gap.non_vulnerable_rate == 0)
+        if hidden and gap.reason == REASON_NO_LOSS:
+            raise SystemExit(f"{given}: residents lost access, but the replay reports no loss")
+        if gap.reason is None and not hidden and (gap.ratio != base_ratio or gap.interpretation != base_text):
             raise SystemExit(f"{given}: the replay's ratio or wording differs from floodguard.equity")
-        if gap.reason == REASON_UNDEFINED_RATIO and (base_ratio is not None or gap.interpretation != base_text):
+        if gap.reason == REASON_UNDEFINED_RATIO and (given[2] != 0 or base_ratio is not None or gap.interpretation != base_text):
             raise SystemExit(f"{given}: the replay's undefined ratio differs from floodguard.equity")
-        if gap.reason == REASON_NO_LOSS and base_ratio != 1.0:
-            raise SystemExit(f"{given}: floodguard.equity no longer states 1.0 when nobody has lost access")
+        if gap.reason == REASON_NO_LOSS and (base_ratio != 1.0 or given[0] != 0 or given[2] != 0):
+            raise SystemExit(f"{given}: no loss is reported although residents lost access, or floodguard.equity no longer states 1.0")
         if (gap.reason == REASON_INSUFFICIENT_GROUP) != (min(given[1], given[3]) < MINIMUM_GROUP_SIZE):
             raise SystemExit(f"{given}: the group-size rule was not applied as documented")
         rows.append([*(float(value) for value in given), gap.vulnerable_rate, gap.non_vulnerable_rate, gap.ratio, gap.band,
@@ -322,6 +333,7 @@ def fixture_text() -> str:
             "The flooded scope counts residents whose home node is wet at the modelled peak stage; the all scope counts every resident node.",
             "Hours come from illustrative stage keyframes, not observed; the access cut-off hour is the first replay hour when fewer than half of the residents with a shelter within reach before the flood still have one.",
             "No ratio is stated when a group has fewer than 50 residents or when nobody has lost access; the shelter sets are not ranked.",
+            "Loss is judged on the residents who lost access, not on the rounded rates: a loss that rounds to a rate of 0.0000 still counts, and the ratio then uses the unrounded rates.",
             "No score and no action class is computed from these figures.",
         ],
         "official_warning": False,

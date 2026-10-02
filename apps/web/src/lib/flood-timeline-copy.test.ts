@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { TIMELINE_MANIFEST_URL, type TimelineManifest } from "./flood-timeline";
-import { GLOSSARY, GLOSSARY_ORDER, localizedText, placeNameText, plainManifestText, roadNameText, STANDALONE_K, thaiOnly } from "./flood-timeline-copy";
+import { GLOSSARY, GLOSSARY_ORDER, KNOWN_THAI, localizedText, placeNameText, plainManifestText, roadNameText, STANDALONE_K, thaiManifestDate, thaiOnly } from "./flood-timeline-copy";
 
 const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../public", TIMELINE_MANIFEST_URL.replace(/^\//, "")), "utf8")) as TimelineManifest;
 const THAI = /[฀-๿]/;
@@ -88,7 +88,8 @@ describe("Mae Sai replay copy", () => {
   });
 
   it("has a Thai rendering of every manifest sentence the page shows in its panels", () => {
-    // Source names, licences and attributions stay as published; every sentence of explanation has a translation.
+    // Source names, published licence names and attributions stay as published; every sentence of explanation has a
+    // translation (licence wording the project wrote itself has its own test below).
     const access = manifest.access!;
     const sentences = [
       ...manifest.assumptions, ...manifest.limitations, manifest.confidence_reason, manifest.model_coverage.reason,
@@ -114,5 +115,59 @@ describe("Mae Sai replay copy", () => {
     expect(localizedText("compiled 2026-09-27", "en")).toEqual({ text: "compiled 2026-09-27", lang: "en" });
     const missing = sentences.filter((sentence) => localizedText(sentence, "th").lang !== "th");
     expect(missing).toEqual([]);
+  });
+
+  it("shows licence wording the project wrote itself in Thai and keeps published licence names as published", () => {
+    const published = /^(CC BY(-[A-Z]+)*( \d\.\d)?|ODbL \d\.\d)$/;
+    const licences = [
+      ...manifest.publication_eligibility!.inputs.map((input) => input.licence),
+      ...manifest.sources.map((source) => source.licence),
+      manifest.viirs_daily!.licence, manifest.rainfall!.licence, manifest.population!.licence,
+    ].map((licence) => licence.replace(/\.$/, ""));
+    const names = [...new Set(licences.filter((licence) => published.test(licence)))].sort();
+    expect(names).toEqual(["CC BY 4.0", "CC BY-IGO", "CC BY-NC", "CC BY-SA 4.0", "ODbL 1.0"]);
+    for (const name of names) expect(localizedText(name, "th")).toEqual({ text: name, lang: "en" });
+    // Everything else is a sentence or a description the project wrote: each has a Thai rendering.
+    const written = [...new Set(licences.filter((licence) => !published.test(licence)))];
+    expect(written.length).toBeGreaterThanOrEqual(8);
+    expect(written).toEqual(expect.arrayContaining(["Project summary text", "Cited figures with links; no data copied", "No licence stated by the provider"]));
+    expect(written.filter((licence) => localizedText(licence, "th").lang !== "th")).toEqual([]);
+    for (const licence of written) expect(localizedText(licence, "th").text, licence).toMatch(THAI);
+  });
+
+  it("writes Thai dates with the Buddhist-era year and the CE year in brackets", () => {
+    expect(thaiManifestDate("30 Sep 2026")).toBe("30 ก.ย. 2569 (2026)");
+    expect(thaiManifestDate("1 Oct 2026")).toBe("1 ต.ค. 2569 (2026)");
+    expect(thaiManifestDate("9 Jan 2027")).toBe("9 ม.ค. 2570 (2027)");
+    // No Thai sentence of the page gives a Buddhist-era year on its own.
+    const bare = Object.values(KNOWN_THAI).filter((text) => /25[67]\d(?! \(20\d\d\))/.test(text));
+    expect(bare).toEqual([]);
+    const reference = manifest.external_references!.find((item) => item.id === "unosat-4009")!;
+    const thai = localizedText(reference.note!, "th");
+    expect(thai.lang).toBe("th");
+    expect(thai.text).toContain("ลงนามเมื่อ 30 ก.ย. 2569 (2026)");
+    expect(thai.text).toContain('UNOSAT ตอบว่า "we approve the use" (เจ้าของโครงการแจ้งคำตอบนี้ต่อทีมเมื่อ 1 ต.ค. 2569 (2026))');
+    const depthFactor = localizedText(manifest.exploratory_knowledge!.depth_factor, "th").text;
+    expect(depthFactor).toContain("28 ก.ย. 2569 (2026)");
+  });
+
+  it("has Thai for the status of product 4009 once the owners confirm its rights record", () => {
+    // The bake reads the status from the rights record: pending today, confirmed with a date after the owners
+    // confirm it. Both wordings have a Thai rendering, whatever the date.
+    const confirmed = [
+      "Not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
+      "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
+      "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); the owners confirmed the rights record on 9 Oct 2026. Not shown in this revision.",
+    ];
+    for (const sentence of confirmed) {
+      const thai = localizedText(sentence, "th");
+      expect(thai.lang, sentence).toBe("th");
+      expect(thai.text, sentence).toContain("เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ 9 ต.ค. 2569 (2026)");
+      expect(thai.text, sentence).toContain("ยังไม่แสดงในข้อมูลรุ่นนี้");
+      expect(localizedText(sentence, "en").lang).toBe("en");
+    }
+    // Another relay or signing date is read the same way.
+    const later = "Season envelope. The CC BY-SA 4.0 rights decision was signed on 2 Nov 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 3 Nov 2026); shown only after the owners confirm the rights record.";
+    expect(localizedText(later, "th").text).toContain("ลงนามเมื่อ 2 พ.ย. 2569 (2026)");
   });
 });

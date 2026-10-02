@@ -9,7 +9,7 @@
 /* Thai has no capitals and its tone marks crowd when letter-spaced. */
 .page:lang(th) .eyebrow { letter-spacing: 0; }
 .hero h1 { font-family: "Manrope Variable", "Noto Sans Thai Variable", sans-serif; font-size: clamp(1.7rem, 3vw, 2.5rem); letter-spacing: -.04em; line-height: 1.15; margin: 0 0 .55rem; }
-.page:lang(th) .hero h1 { letter-spacing: -.01em; }
+.page:lang(th) .hero h1 { letter-spacing: 0; }
 .lead { font-size: .98rem; color: #54647c; line-height: 1.6; max-width: 820px; margin: 0 0 .8rem; }
 .heroNotes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .6rem 1rem; }
 .banner { display: inline-block; margin: 0; padding: .6rem 1rem; border: 1px solid #ead7ac; border-left: 4px solid #d18b12; border-radius: .6rem; background: #fff5df; color: #6b4410; font-size: .85rem; line-height: 1.55; }
@@ -97,9 +97,10 @@
 .basemapNote { max-width: min(24rem, 100%); margin: 0; padding: .4rem .65rem; border-radius: .45rem; background: rgb(255 255 255 / 94%); color: #3b4d68; font-size: .72rem; line-height: 1.45; box-shadow: 0 2px 10px rgb(15 23 42 / 18%); }
 /* Top-right notes (imagery caption, the 15 Sep mud cue, the comparison note, the VIIRS note), clear of the zoom control
    on the left and the attribution below. While comparing, the side labels take the top edge, so the notes start below
-   them. While a popup is open the notes and the legend step aside so they never cover it. */
+   them: below their measured height (--fg-compare-labels-h), which grows when a label wraps. While a popup is open
+   the notes and the legend step aside so they never cover it. */
 .mapNotes { position: absolute; z-index: 800; right: 10px; top: 10px; display: grid; justify-items: end; gap: 6px; max-width: min(22rem, calc(100% - 80px)); pointer-events: none; transition: opacity .2s ease; }
-.mapNotes[data-compare] { top: 52px; }
+.mapNotes[data-compare] { top: max(52px, calc(18px + var(--fg-compare-labels-h, 0px))); }
 .caption, .viirsNote, .mudCue, .compareNote { margin: 0; padding: .45rem .7rem; border-radius: .5rem; background: rgb(12 39 64 / 86%); color: #fff; font-size: .76rem; line-height: 1.45; }
 .viirsNote { border-left: 4px solid #9970ab; background: rgb(46 20 62 / 88%); font-size: .72rem; }
 .mudCue { border-left: 4px solid #b07a45; background: rgb(58 36 18 / 90%); font-size: .74rem; }
@@ -135,9 +136,13 @@
    button is always as wide as its widest label and never changes width between Play and Pause. */
 .playText { display: inline-grid; justify-items: start; }
 .playText::after { content: attr(data-labels); height: 0; overflow: hidden; visibility: hidden; white-space: pre; }
+/* The time readout is never cut: every layout gives it room for its longest text in both languages (the narrow
+   two-column desktop narrows the cards column for it, phones give it its own row; the browser check measures every
+   replay hour). The ellipsis and the titles are a last resort for a much larger text size. */
 .readout { display: grid; flex: 1 1 13rem; gap: .1rem; min-width: 0; }
 .readout strong, .readout span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .readout strong { font-size: .95rem; letter-spacing: -.01em; }
+.page:lang(th) .readout strong { letter-spacing: 0; }
 .readout span { min-height: 1.2em; font-size: .78rem; color: #52627a; }
 
 .track { position: relative; height: 44px; }
@@ -217,7 +222,8 @@
 :is(.legend, .toggleSwatch) i.line { height: 4px; border-radius: 2px; }
 :is(.legend, .toggleSwatch) i.dot { width: 11px; height: 11px; border: 2px solid; border-radius: 50%; box-shadow: 0 0 0 1px #c6d1e3; }
 :is(.legend, .toggleSwatch) i.dash { height: 0; border-radius: 0; border-top: 3px dashed; background: none; }
-/* Low-confidence water: a pale, desaturated blue with a diagonal hatch, as the map draws it. */
+/* Low-confidence water: a diagonal hatch over a pale wash. The colours come from the view that is drawn (the page
+   sets them inline from the function that colours the map); the blue here is only the fallback. */
 .legend i.lowConfidenceSwatch { background: repeating-linear-gradient(45deg, rgb(120 150 190 / 95%) 0 2px, rgb(214 222 234 / 85%) 2px 5px); box-shadow: inset 0 0 0 1px rgb(12 39 64 / 18%); }
 
 .panel { display: grid; gap: 1rem; min-width: 0; }
@@ -474,6 +480,14 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
   .mapFrame { height: clamp(360px, calc(100vh - 264px), 760px); }
   .momentLine { display: none; }
 }
+/* The narrow end of the two-column layout (a 1366 px laptop at 125 % is 1093 px wide): the cards column narrows to
+   as little as 300 px and the bar tightens, so that Play, the whole time readout and "Map layers" share one row.
+   The longest readout ("Thu 19 Sep 2024 · end of day (24:00 ICT)", about 300 px in either language) then has about
+   325 px even with a 17 px scrollbar; from 1240 px the usual column and spacing give it more than that. */
+@media (min-width: 1081px) and (max-width: 1239px) {
+  .layout { grid-template-columns: minmax(0, 1fr) clamp(300px, calc(100vw - 790px), 390px); gap: .75rem; }
+  .stageBar { gap: .5rem; padding-inline: .75rem; }
+}
 @media (max-width: 1080px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
 }
@@ -499,7 +513,11 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
      above the attribution. The notes give way first when the map is short; an open legend takes their place. */
   .mapOverlay { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 10px calc(var(--fg-attribution-h, 18px) + 8px); }
   .mapNotes { position: static; flex: 0 1 auto; align-self: flex-end; align-content: start; min-height: 96px; max-width: calc(100% - 56px); overflow: hidden; }
-  .mapNotes[data-compare] { min-height: 54px; margin-top: 42px; }
+  /* Comparing: the notes start below the wrapped side labels (the column starts 10 px down, as the labels do) and end
+     6 px above the divider's handle, which sits at half the map's height and is 34 px tall. A note that does not fit
+     in that height is left out whole, never cut in mid-sentence: the wrapping column puts it beside the first one,
+     outside the box, where the overflow hides it. The comparison note comes first, so it is the one that stays. */
+  .mapNotes[data-compare] { display: flex; flex-flow: column wrap; align-items: flex-end; align-content: flex-start; min-height: 0; margin-top: max(42px, calc(8px + var(--fg-compare-labels-h, 0px))); max-height: calc(var(--fg-frame-h) / 2 - 33px - max(42px, calc(8px + var(--fg-compare-labels-h, 0px)))); }
   .mapLegend { position: static; flex: 0 1 auto; min-height: 34px; max-width: 100%; max-height: none; }
   .mapOverlay:has(> .mapLegend[open]) > .mapNotes { display: none; }
   .mapOverlay:has(> .mapLegend[open]) > .mapLegend { margin-top: 102px; }

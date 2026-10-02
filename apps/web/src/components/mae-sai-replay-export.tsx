@@ -42,7 +42,7 @@ import {
 } from "@/lib/flood-timeline";
 import { reportedShelterCheck, reportedSiteRole } from "@/lib/flood-timeline-evacuation";
 import type { WaterMode } from "@/lib/flood-timeline-link";
-import { exportWaterMode, paintWaterPlan, WATER_LEGEND_COPY, waterPaintPlan, type WaterGrid, type WaterTimings } from "@/lib/flood-timeline-water";
+import { exportWaterMode, lowConfidenceKey, paintWaterPlan, WATER_LEGEND_COPY, waterPaintPlan, type WaterGrid, type WaterTimings } from "@/lib/flood-timeline-water";
 
 import styles from "./mae-sai-flood-timeline.module.css";
 
@@ -681,16 +681,19 @@ export async function createExportRenderer(
       rowY += rowHeight;
     }
     if (hatched) {
-      // Hatched pale-blue swatch, then the label.
+      // Hatched swatch in the colours the map gives low-confidence water in this view, then the label.
+      const key = lowConfidenceKey(mode, timings.arrival);
       const x = x0 + 7 * scale;
       const size = { w: 12 * scale, h: 10 * scale };
-      context.fillStyle = "rgb(214 222 234)";
+      context.fillStyle = "#fff";
+      context.fillRect(x, rowY, size.w, size.h);
+      context.fillStyle = rgbaCss(key.wash);
       context.fillRect(x, rowY, size.w, size.h);
       context.save();
       context.beginPath();
       context.rect(x, rowY, size.w, size.h);
       context.clip();
-      context.strokeStyle = "rgb(120 150 190)";
+      context.strokeStyle = rgbaCss(key.stripe);
       context.lineWidth = Math.max(1, 1.6 * scale);
       for (let offset = -size.h; offset < size.w; offset += 4 * scale) {
         context.beginPath();

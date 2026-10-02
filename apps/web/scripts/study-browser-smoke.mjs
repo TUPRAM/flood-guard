@@ -141,6 +141,9 @@ try {
     "clear route": "[data-testid='clear-route']",
     attribution: ".leaflet-control-attribution",
     popup: ".leaflet-popup",
+    "left label": "[data-testid='compare-label-left']",
+    "right label": "[data-testid='compare-label-right']",
+    "divider handle": "[data-testid='compare-handle']",
   };
   const mapLayout = (target = page) => target.evaluate((selectors) => {
     const frame = document.querySelector("[class*='mapFrame']").getBoundingClientRect();
@@ -235,6 +238,59 @@ try {
     await page.keyboard.press("Escape");
     await expect(drawer).toBeHidden();
     await expect(layersButton).toBeFocused();
+    // Once focus has left the drawer, Escape still closes it, from Play and from the timeline slider, and leaves
+    // focus where the reader is.
+    for (const [name, target] of [["Play", page.getByTestId("play-button")], ["the timeline slider", page.locator("input[type='range'][class*='range']")]]) {
+      await layersButton.focus();
+      await page.keyboard.press("Enter");
+      await expect(drawer).toBeVisible();
+      await target.focus();
+      await expect(drawer, `${label}: the drawer stays open when focus moves to ${name}`).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(drawer, `${label}: Escape closes the drawer while focus is on ${name}`).toBeHidden();
+      await expect(target, `${label}: focus stays on ${name}`).toBeFocused();
+    }
+  };
+  /** Thai text nodes of the page that are letter-spaced (none may be): Thai has no capitals and its tone marks crowd. */
+  const spacedThai = (target = page) => target.evaluate(() => {
+    const walker = document.createTreeWalker(document.querySelector("main"), NodeFilter.SHOW_TEXT);
+    const found = new Set();
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const element = node.parentElement;
+      if (!element || !/[\u0E00-\u0E7F]/.test(node.textContent ?? "") || element.getClientRects().length === 0) continue;
+      const spacing = getComputedStyle(element).letterSpacing;
+      if (!["normal", "0px"].includes(spacing)) found.add(`${element.tagName}.${String(element.className).split(" ")[0]}: ${spacing} "${(node.textContent ?? "").trim().slice(0, 24)}"`);
+    }
+    return [...found];
+  });
+  /**
+   * The time readout over every replay hour: no line of it is cut (scrollWidth within clientWidth), the bar keeps one
+   * height and the map one place. Returns the widest line and the room it had.
+   */
+  const expectWholeReadout = async (label) => {
+    const range = page.locator("input[type='range'][class*='range']");
+    const seen = { widest: 0, room: Infinity, cut: [], barHeights: new Set(), mapTops: new Set() };
+    for (let hour = 0; hour <= 264; hour += 1) {
+      await range.fill(String(hour));
+      // The width the text needs is measured on the text itself (a range), because scrollWidth never reads below
+      // clientWidth and a nowrap line with an ellipsis reports no overflow in some engines.
+      const state = await page.evaluate(() => [...document.querySelectorAll("[data-testid='replay-readout'] > *")].map((line) => {
+        const range = document.createRange();
+        range.selectNodeContents(line);
+        return { text: line.textContent, need: Math.ceil(Math.max(range.getBoundingClientRect().width, line.scrollWidth > line.clientWidth ? line.scrollWidth : 0)), room: line.clientWidth };
+      }));
+      for (const line of state) {
+        seen.widest = Math.max(seen.widest, line.need);
+        seen.room = Math.min(seen.room, line.room);
+        if (line.need > line.room) seen.cut.push(`hour ${hour}: "${line.text}" needs ${line.need} px, has ${line.room}`);
+      }
+      const geometry = await stageGeometry();
+      seen.barHeights.add(geometry.barHeight);
+      seen.mapTops.add(geometry.mapTop);
+    }
+    assert.deepEqual(seen.cut.slice(0, 5), [], `${label}: the time readout is never cut`);
+    assert.deepEqual([seen.barHeights.size, seen.mapTops.size], [1, 1], `${label}: the bar and the map keep their place over the whole replay`);
+    return seen;
   };
   /** Every glossary term: its definition opens on focus inside the viewport, and Escape closes it with focus kept. */
   const expectTooltips = async (label) => {
@@ -373,7 +429,36 @@ try {
   const desktopStage = await expectSteadyPlay("1440 px");
   assert.equal(desktopStage.barHeight, 66, `The desktop bar keeps its height (${JSON.stringify(desktopStage)})`);
   await expectClearMap(["zoom", "notes", "legend", "attribution"], "1440 px");
-  checks.push(`desktop: opening "Map layers" moves focus into the drawer, Tab reaches its first control and Escape returns focus; ${desktopTips} glossary tooltips close on Escape; Play to Pause moves nothing`);
+  checks.push(`desktop: opening "Map layers" moves focus into the drawer, Tab reaches its first control and Escape returns focus, and Escape closes it from Play and the slider too; ${desktopTips} glossary tooltips close on Escape; Play to Pause moves nothing`);
+  // The narrow end of the two-column layout (a 1366 x 768 laptop at 125 % is 1093 x 614): Play, the whole time readout
+  // and "Map layers" share one row at every replay hour, in English and in Thai, and no Thai text is letter-spaced.
+  const narrowDesktop = [];
+  for (const width of [1081, 1100, 1240]) {
+    for (const language of ["en", "th"]) {
+      await page.setViewportSize({ width, height: 614 });
+      await page.goto(`${baseUrl}${caseRoute}?t=84&lang=${language}`, { waitUntil: "networkidle" });
+      await waterModel();
+      const columns = await page.evaluate(() => getComputedStyle(document.querySelector("[class*='layout']")).gridTemplateColumns.split(" ").length);
+      assert.equal(columns, 2, `${width} px is in the two-column layout`);
+      const readoutState = await expectWholeReadout(`${width} px (${language})`);
+      const bar = await stageGeometry();
+      assert.equal(bar.barHeight, 66, `${width} px (${language}): the bar keeps its one-row height (${JSON.stringify(bar)})`);
+      // Headless Chromium draws no scrollbar; a classic one takes 17 px of the same viewport.
+      assert(readoutState.room - readoutState.widest >= 17, `${width} px (${language}): the readout keeps room for a scrollbar (${readoutState.widest} px in ${readoutState.room} px)`);
+      if (language === "th") assert.deepEqual(await spacedThai(), [], `${width} px: no Thai text is letter-spaced`);
+      narrowDesktop.push(`${width} px ${language}: widest line ${readoutState.widest} px in ${readoutState.room} px`);
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`${baseUrl}${caseRoute}?lang=th`, { waitUntil: "networkidle" });
+  await waterModel();
+  assert.deepEqual(await spacedThai(), [], "1440 px: no Thai text is letter-spaced (title, readout and header sub-label included)");
+  // The language choice is remembered, so the page is set back to English before the checks below.
+  await page.goto(`${baseUrl}${caseRoute}?lang=en`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}${caseRoute}`, { waitUntil: "networkidle" });
+  await expect(readout).toContainText("Mon 9 Sep 2024 · 12:00 ICT");
+  await waterModel();
+  checks.push(`narrow two-column desktop: the time readout is whole at all 265 replay hours on one 66 px row (${narrowDesktop.join("; ")}); no Thai text node is letter-spaced`);
   // Evidence envelope: the status and generation time, a licence per input, what was known during tuning, and the
   // radar line labelled calibration-informed. Both boxes are closed again so the layout below is unchanged.
   const howTo = page.getByTestId("how-to-read");
@@ -717,6 +802,26 @@ try {
     await expect(page.getByTestId("viirs-note")).toBeVisible();
     await expect(page.getByTestId("mud-cue")).toBeVisible();
     await expectClearMap(["zoom", "notes", "legend", "attribution"], `${at}, three notes`);
+    // The imagery swipe: both side labels (they wrap here), the divider's handle, the notes, the legend and the zoom
+    // control are clear of each other, with one note and with three, in English and in Thai.
+    for (const [query, state] of [["?t=84&cmp=s2-20240905,s2-20240915", "swipe"], ["?t=158&layers=trscv&cmp=s2-20240905,s2-20240915", "swipe with three notes"],
+      ["?t=84&cmp=s2-20240905,s2-20240915&lang=th", "swipe in Thai"]]) {
+      await page.goto(`${baseUrl}${caseRoute}${query}`, { waitUntil: "networkidle" });
+      await waterModel();
+      await expect(page.getByTestId("compare-note")).toBeVisible();
+      const swipe = await expectClearMap(["zoom", "notes", "legend", "attribution", "left label", "right label", "divider handle"], `${at}, ${state}`);
+      const edges = await page.evaluate(() => {
+        const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+        const frame = box("[class*='mapFrame']");
+        return { labelLeft: Math.round(box("[data-testid='compare-label-left']").left - frame.left), zoomRight: Math.round(box(".leaflet-control-zoom").right - frame.left) };
+      });
+      assert(edges.labelLeft >= edges.zoomRight + 4, `${at}, ${state}: the left label keeps clear of the zoom control (${JSON.stringify(edges)})`);
+      assert(swipe.shown.includes("notes"), `${at}, ${state}: the comparison note is on the map`);
+      await noScroll(state);
+    }
+    // Back to English (the language choice is remembered) for the checks below.
+    await page.goto(`${baseUrl}${caseRoute}?t=158&layers=trscv&lang=en`, { waitUntil: "networkidle" });
+    await waterModel();
     // Offline with a route selected: the basemap note and "Clear route selection" share one stack above the attribution.
     await context.setOffline(true);
     await page.getByTestId("basemap-note").waitFor({ state: "visible" });
@@ -766,7 +871,7 @@ try {
   // The tile route stays: this page keeps its map until the next navigation.
   await page.setViewportSize({ width: 1440, height: 1000 });
   checks.push("case replay fits 360 and 390 px without overflow or truncated phase labels, with finger-sized day chips");
-  checks.push("phones (360 and 390 px): Play to Pause and every replay hour move the map by 0 px; nothing overlaps among zoom buttons, notes, legend, basemap note, clear-route, attribution and popups, all inside the map; no horizontal scroll; Tab reaches the drawer; tooltips stay in the viewport and close on Escape; hatch pixels in the first-flooded PNG; the availability pill returns when the page goes offline");
+  checks.push("phones (360 and 390 px): Play to Pause and every replay hour move the map by 0 px; nothing overlaps among zoom buttons, notes, legend, basemap note, clear-route, attribution and popups, all inside the map, nor among the swipe's side labels, its handle, the notes, the legend and the zoom buttons (English and Thai, one note and three); no horizontal scroll; Tab reaches the drawer and Escape closes it from Play and the slider; tooltips stay in the viewport and close on Escape; hatch pixels in the first-flooded PNG; the availability pill returns when the page goes offline");
   // A touch phone in Thai: no keyboard hint, Buddhist-era years with the CE year, and no letter-spacing on Thai eyebrows.
   const touch = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
   await touch.route("**/*", (route) => {
@@ -796,6 +901,7 @@ try {
     .filter((element) => /[\u0E00-\u0E7F]/.test(element.textContent ?? "") && !["normal", "0px"].includes(getComputedStyle(element).letterSpacing))
     .map((element) => `${element.tagName}: ${getComputedStyle(element).letterSpacing}`));
   assert.deepEqual(thaiSpacing, [], "Thai text on the access card is not letter-spaced");
+  assert.deepEqual(await spacedThai(touchPage), [], "No Thai text node on the page is letter-spaced at 390 px (title, readout and header sub-label included)");
   const thaiOverflow = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   assert(thaiOverflow <= 1, `The Thai case replay does not overflow at 390 px (${thaiOverflow}px)`);
   await touchPage.getByTestId("how-to-read").locator("summary").click();

@@ -552,20 +552,23 @@ describe("Shelter plan and reported shelters", () => {
     expect(html.match(/>Show on map</g)).toHaveLength(eligibleOutside + ineligible);
     expect(text(html)).toContain(`Eligible, not in the first ${shelters.knee_k} (${eligibleOutside})`);
     expect(text(html)).toContain(`Not eligible (${ineligible})`);
-    const items = html.split("<li").slice(1);
-    const unmodelled = shelters.candidates.filter((candidate) => !candidate.m).map((candidate) => candidate.id);
-    expect(unmodelled.length).toBeGreaterThan(0);
-    expect(unmodelled.every((id) => shelters.candidates.find((item) => item.id === id)!.ineligible_reasons.includes("outside_model"))).toBe(true);
-    for (const id of unmodelled) {
-      const candidate = shelters.candidates.find((item) => item.id === id)!;
-      const title = candidateTitle(candidate, "en").replaceAll("&", "&amp;");
-      const item = text(items.find((entry) => entry.includes(title))!);
-      expect(item).toContain("Outside the terrain model (no flood result)");
-      expect(item).toContain("Not modelled: the site lies outside the terrain model");
-      expect(item).not.toContain("High ground");
-      expect(item).not.toContain("keeps less than");
-    }
-    const thai = text(renderToStaticMarkup(<OtherCandidatesList shelters={shelters} k={3} language="th" onShowCandidate={noop} />));
+    // The bake cuts OpenStreetMap to the replay area, so every candidate of the served revision lies inside the terrain
+    // model. The outside-model wording is still the page's answer for a revision that has such a site, so it is
+    // exercised on a copy with one ineligible candidate moved outside the model.
+    expect(shelters.candidates.filter((candidate) => !candidate.m)).toEqual([]);
+    expect(shelters.candidates.some((candidate) => candidate.ineligible_reasons.includes("outside_model"))).toBe(false);
+    const moved = shelters.candidates.find((candidate) => !candidate.eligible)!;
+    const outside = { ...moved, m: false, h: null, freeboard_m: null, high_ground: false, ineligible_reasons: ["outside_model", "no_road_within_400m"] };
+    const withOutside = { ...shelters, candidates: shelters.candidates.map((candidate) => (candidate.id === moved.id ? outside : candidate)) };
+    const outsideHtml = renderToStaticMarkup(<OtherCandidatesList shelters={withOutside} k={shelters.knee_k} language="en" onShowCandidate={noop} />);
+    const title = candidateTitle(outside, "en").replaceAll("&", "&amp;");
+    const item = text(outsideHtml.split("<li").slice(1).find((entry) => entry.includes(title))!);
+    expect(item).toContain("Outside the terrain model (no flood result)");
+    expect(item).toContain("Not modelled: the site lies outside the terrain model");
+    expect(item).not.toContain("High ground");
+    expect(item).not.toContain("keeps less than");
+    expect(text(html)).not.toContain("Outside the terrain model");
+    const thai = text(renderToStaticMarkup(<OtherCandidatesList shelters={withOutside} k={3} language="th" onShowCandidate={noop} />));
     expect(thai).toContain("อยู่นอกแบบจำลองภูมิประเทศ");
     expect(unsafeClaim(text(html))).toBe(false);
   });

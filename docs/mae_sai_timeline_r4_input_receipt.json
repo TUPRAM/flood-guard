@@ -5,7 +5,7 @@
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
  "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
  "generated_at": {
-  "value": "2026-10-01T20:28:00+07:00",
+  "value": "2026-10-02T07:24:00+07:00",
   "basis": "declared"
  },
  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
@@ -14,9 +14,9 @@
  "assumptions": [
   "Input paths are relative to the external data root (FLOODGUARD_EXTERNAL_DATA) or to the repository root; no machine path is recorded.",
   "The same inputs give the same bytes only with the same library versions: another GDAL, PROJ, WebP, zlib or pysheds build can change bytes without changing the method.",
-  "The two OpenStreetMap GeoPackages under derived_context are extracts this bake cuts from the Geofabrik PBF when they are absent; a fresh extract can hash differently while holding the same features.",
+  "The OpenStreetMap input is the Geofabrik PBF itself: the bake reads the replay area's multipolygons and points from it on every run and keeps no derived cache, so no intermediate file stands between the receipt and the result.",
   "The receipt lists files, not their meaning: it does not make the reconstruction an observation.",
-  "generated_at is a declared value (or the newest dated input), not a clock reading; the commit that carries the revision records when the files were written.",
+  "generated_at is a declared value (or the newest dated input), not a clock reading; a bake that changes any output file must declare a new one, and the commit that carries the revision records when the files were written.",
   "Bake sources are hashed with CRLF read as LF, so a Windows checkout gives the same hashes."
  ],
  "official_warning": false,
@@ -27,7 +27,7 @@
   "repo": "repository root"
  },
  "input_count": 32,
- "input_bytes": 4336302981,
+ "input_bytes": 4657730361,
  "inputs": [
   {
    "root": "external",
@@ -40,18 +40,6 @@
    "path": "cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_20240915T231601_20240915T231626_055682_06CCBA_82A9_COG.SAFE.zip",
    "bytes": 1305373702,
    "sha256": "e877c075a96f677a70d7e4c0e501686a9d76025b80a4edce084ace76984fbdb9"
-  },
-  {
-   "root": "external",
-   "path": "derived_context/mae_sai_2024/mae_sai_osm_multipolygons.gpkg",
-   "bytes": 3387392,
-   "sha256": "527774a66d9993b5066584ba94124f256321f9d10f6eb321179ee021ec465c0e"
-  },
-  {
-   "root": "external",
-   "path": "derived_context/mae_sai_2024/mae_sai_osm_points_full.gpkg",
-   "bytes": 237568,
-   "sha256": "55350e00d410080fae02a2382151193f9825b9343584fe9f078dadfa3c9afc0e"
   },
   {
    "root": "external",
@@ -127,6 +115,12 @@
   },
   {
    "root": "external",
+   "path": "open_context/osm_geofabrik/thailand-latest.osm.pbf",
+   "bytes": 325044304,
+   "sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1"
+  },
+  {
+   "root": "external",
    "path": "open_context/worldpop_population/tha_ppp_2020.tif",
    "bytes": 296024584,
    "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
@@ -187,6 +181,12 @@
   },
   {
    "root": "repo",
+   "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+   "bytes": 8036,
+   "sha256": "8f0660c059cdfc5257a23a3577496fa364f61ca3afb6f96806fdb727c3a21e9e"
+  },
+  {
+   "root": "repo",
    "path": "outputs/mae_sai_access_edges.csv",
    "bytes": 4155801,
    "sha256": "266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454"
@@ -225,7 +225,7 @@
  "outputs": {
   "folder": "apps/web/public/studies/mae-sai-2024-timeline/r4",
   "file_count": 22,
-  "bytes": 6118723,
+  "bytes": 6117717,
   "files": [
    {
     "name": "access-nodes.bin",
@@ -289,8 +289,8 @@
    },
    {
     "name": "timeline.json",
-    "bytes": 221500,
-    "sha256": "66e6985dcf0ccf560a784159e6277c9d07abde58cfaf1b71a86f5f7de0b4328a"
+    "bytes": 220494,
+    "sha256": "b309d820af9124bf1fd7c923ce9eaca23aa90651f9c76e9761bf915a052680ff"
    },
    {
     "name": "viirs-20240910.png",
@@ -342,11 +342,11 @@
  "code": [
   {
    "path": "packages/contracts/schemas/case-replay-timeline.schema.json",
-   "sha256": "6f043b540191471c572e1e79a7e8828da15012e5c3591a557a3bf793a3ffc156"
+   "sha256": "49b1b11eef49cbdf3491ec6cad9343abd5e240f9e69ed5798bd10cc45c8de767"
   },
   {
    "path": "scripts/build_mae_sai_flood_timeline.py",
-   "sha256": "c587c284b451047d2cdf6c595272b3c44b569722ac826515d3b364a9630941bc"
+   "sha256": "f4c5cc41b352d5e065c1e3e2814b6b2b02ca476e489617d1123698df47614dca"
   },
   {
    "path": "scripts/mae_sai_timeline_evacuation.py",
@@ -370,7 +370,11 @@
   },
   {
    "path": "src/floodguard/replay_manifest.py",
-   "sha256": "1496326e7487c83978484cbc36e563f8de7b0ee0a11568cd1e6f3372f9eb3f26"
+   "sha256": "7495c3d24dfa1d921f7808e4ec88ca24e143a1940ed11a0b5ae01acffc7d3528"
+  },
+  {
+   "path": "src/floodguard/rights_basis.py",
+   "sha256": "32419611a9d71b429c25a714ebecb7152f6d8bc9f654d0ca5af00e41d38c0c23"
   }
  ],
  "libraries": {

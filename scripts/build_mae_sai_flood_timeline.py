@@ -9,13 +9,15 @@ Inputs
   - ``earth_search/mae_sai_2024/S2B_47QNC_{20240905,20240915}_0_L2A/{red,green,blue}.tif``
   - ``cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_*_COG.SAFE.zip`` (6 and 15 September 2024 UTC)
   - ``open_context/worldpop_population/tha_ppp_2020.tif``
-  - ``derived_context/mae_sai_2024/mae_sai_osm_{multipolygons,points_full}.gpkg`` (cut from
-    ``open_context/osm_geofabrik/thailand-latest.osm.pbf`` by this script when they are absent)
+  - ``open_context/osm_geofabrik/thailand-latest.osm.pbf`` (shelter candidate sites: the bake reads the
+    multipolygons and points inside the replay area straight from the extract on every run and keeps no cache)
   - ``viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d*_001day_090.tif.zip`` (10 to 18 September 2024)
   - ``hii_rain/2024_09/{MOU189,DIWO}.csv`` and the two ``*_0all_stn_metadata.csv`` station lists
 * In-repo files: ``outputs/mae_sai_admin_context.geojson``, ``outputs/mae_sai_road_risk.geojson``,
   ``outputs/mae_sai_facilities.geojson``, ``outputs/mae_sai_access_edges.csv``,
-  ``outputs/mae_sai_population_nodes.csv`` and ``outputs/mae_sai_reported_shelters_2024.json``.
+  ``outputs/mae_sai_population_nodes.csv``, ``outputs/mae_sai_reported_shelters_2024.json`` and
+  ``docs/proposal_execution/rights_basis_4009_v1.json`` (the rights record of UNOSAT/GISTDA product 4009: the
+  manifest takes the product's status from it, so a confirmed record needs a new bake).
 
 Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r4/``): a HAND code raster, dated
 Sentinel-1/2 image layers, a hillshade, VIIRS daily maps, a residents raster, the access node file,
@@ -41,8 +43,11 @@ exits non-zero on any difference.
 
 ``generated_at`` is never read from the machine clock, because a clock value would make a
 byte-for-byte rebuild impossible. It is declared with ``--generated-at`` and recorded in the input
-receipt; a later bake or ``--verify`` without the argument carries the recorded value, and with no
-recorded value the bake uses the newest dated input. ``git_commit`` is null in the manifest: a file
+receipt. ``--verify`` carries the recorded value. A plain bake without the argument carries it only when
+the bake reproduces every recorded output file byte for byte; when any output differs (an input, a bake
+source or a library changed) the bake stops, writes nothing and asks for ``--generated-at``, because the
+recorded time would no longer be true. With no recorded value the bake uses the newest dated input.
+``git_commit`` is null in the manifest: a file
 cannot hold the hash of the commit that adds it, so the receipt identifies the bake sources by content
 and ``git log -1 -- <file>`` names the commit.
 
@@ -62,6 +67,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import shutil
 import sys
 import tempfile
 import zipfile
@@ -112,12 +118,19 @@ from floodguard.flood_timeline import (  # noqa: E402
 )
 from floodguard.replay_manifest import (  # noqa: E402
     LANES,
+    SCENARIO_FIELDS_KEY,
     SCENARIO_TIER,
     ReplayManifestError,
     evidence_problems,
     newest_timestamp,
     normalise_timestamp,
     schema_problems,
+)
+from floodguard.rights_basis import (  # noqa: E402
+    RIGHTS_BASIS_4009_PATH,
+    load_rights_basis,
+    owner_confirmed,
+    unconfirmed_product_citations,
 )
 import mae_sai_timeline_evacuation as evac  # noqa: E402
 import mae_sai_timeline_observations as obs  # noqa: E402
@@ -139,6 +152,7 @@ REPORTED_SHELTERS = Path("outputs/mae_sai_reported_shelters_2024.json")
 EVENT_START = "2024-09-09T00:00:00+07:00"  # Replay origin (t = 0).
 EVENT_END = "2024-09-20T00:00:00+07:00"  # End of the replay and of the last rain hour (19 Sep 24:00 ICT).
 OSM_EXTRACT_DATE = "2026-07-09"
+OSM_PBF_REL = "open_context/osm_geofabrik/thailand-latest.osm.pbf"
 CHRONOLOGY_COMPILED = "2026-09-27"
 # tha_ppp_2020.tif is WorldPop's unconstrained top-down grid: every land cell in the replay area holds a positive value.
 WORLDPOP_SOURCE = "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)"
@@ -525,16 +539,13 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     # --- Evacuation access and shelter plan ---------------------------------------------------
     peak_stage = max(k.stage_m for k in KEYFRAMES)
     graph = evac.build_graph(ROOT, to_utm, codes_aoi, k_aoi, aoi, track)
-    osm_dir = external / "derived_context/mae_sai_2024"
-    polygons_path, points_path = osm_dir / "mae_sai_osm_multipolygons.gpkg", osm_dir / "mae_sai_osm_points_full.gpkg"
-    if not polygons_path.exists() or not points_path.exists():
-        import pyogrio
-        pbf = track(external / "open_context/osm_geofabrik/thailand-latest.osm.pbf")
-        bbox = transform_bounds(UTM, "EPSG:4326", *AOI_UTM, densify_pts=21)
-        pyogrio.read_dataframe(pbf, layer="multipolygons", bbox=bbox).to_file(polygons_path, driver="GPKG")
-        pyogrio.read_dataframe(pbf, layer="points", bbox=bbox).to_file(points_path, driver="GPKG")
+    # Shelter candidates come straight from the Geofabrik extract, cut to the replay area on every run. No derived
+    # cache is kept: a cached cut can outlive a change of the replay area and cannot be rebuilt byte for byte.
     import pyogrio
-    sites = evac.shelter_candidates(pyogrio.read_dataframe(track(polygons_path)), pyogrio.read_dataframe(track(points_path)),
+    pbf = track(external / OSM_PBF_REL)
+    osm_bbox = transform_bounds(UTM, "EPSG:4326", *AOI_UTM, densify_pts=21)
+    sites = evac.shelter_candidates(pyogrio.read_dataframe(pbf, layer="multipolygons", bbox=osm_bbox),
+                                    pyogrio.read_dataframe(pbf, layer="points", bbox=osm_bbox),
                                     track(ROOT / "outputs/mae_sai_facilities.geojson"), to_utm)
     evac.evaluate_sites(sites, graph, codes_aoi, k_aoi, aoi, peak_stage, valid_aoi)
     reported_doc = json.loads(track(ROOT / REPORTED_SHELTERS).read_text(encoding="utf-8")) if (ROOT / REPORTED_SHELTERS).exists() else {"shelters": []}
@@ -667,7 +678,8 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
 
     south, west = to_ll_3857(display.bounds[0], display.bounds[1])
     north, east = to_ll_3857(display.bounds[2], display.bounds[3])
-    return {"layers": layers, "hand": hand_record, "vectors": vectors, "days": days, "histograms": histograms,
+    rights = load_rights_basis(track(ROOT / RIGHTS_BASIS_4009_PATH))
+    return {"rights_4009": rights_status(rights), "layers": layers, "hand": hand_record, "vectors": vectors, "days": days, "histograms": histograms,
             "bounds": [[south, west], [north, east]], "display": {"width": display.width, "height": display.height},
             "s1_meta": s1_meta, "s1_anchor": anchor, "coverage": coverage,
             "reported_meta": {k: reported_doc.get(k) for k in ("status", "compiled", "access_set_rule", "licence_note")},
@@ -701,6 +713,24 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
                                     "freeboard_m": evac.SHELTER_FREEBOARD_M, "peak_stage_m": peak_stage,
                                     "m2_per_person": evac.SPHERE_M2_PER_PERSON, "usable_floor_share": evac.USABLE_FLOOR_SHARE,
                                     "max_plan_sites": evac.MAX_PLAN_SITES, "snap_max_m": evac.SNAP_MAX_M}}}
+
+
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def short_date(iso_date: str) -> str:
+    """``2026-09-30`` as ``30 Sep 2026`` (fixed English month names, whatever the machine's locale)."""
+    year, month, day = (int(part) for part in iso_date.split("-"))
+    return f"{day} {MONTHS[month - 1]} {year}"
+
+
+def rights_status(record: dict) -> dict:
+    """What the manifest says about product 4009, read from its rights record (``floodguard.rights_basis``)."""
+    confirmation = record["owner_confirmation"]
+    return {"confirmed": owner_confirmed(record), "confirmed_on": confirmation.get("confirmed_on"),
+            "signed_on": record["signed_decision"]["signed_on"], "licence": record["licence"]["name"],
+            "reply_quote": record["provider_reply"]["quote"], "reply_relayed_on": record["provider_reply"]["relayed_on"],
+            "record": RIGHTS_BASIS_4009_PATH.as_posix()}
 
 
 def to_ll_3857(x: float, y: float) -> tuple[float, float]:
@@ -810,8 +840,10 @@ EXPLORATORY_KNOWLEDGE = {
          "statement": "The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m), so the radar size comparison is calibration-informed, not an independent check."},
         {"id": "unosat-3991", "relation": "known_during_tuning", "known_during_tuning": True,
          "statement": "UNOSAT 3991 (about 70 km2 over 13-19 Sep) was known while the stage keyframes were tuned, so its size comparison is calibration-informed, not independent."},
-        {"id": "viirs-daily", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
-         "statement": "The VIIRS daily comparison was computed after the keyframes were final and was not used for tuning."},
+        {"id": "viirs-daily", "relation": "not_used_for_tuning", "known_during_tuning": None,
+         "statement": ("The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03) "
+                       "that also moved the 10 Sep 18:15 knot from 0.12 m to 0.1 m, the model's closest level to GISTDA's figure. The build "
+                       "history does not record which came first within that change, so the comparison is not presented as an independent check.")},
         {"id": "unosat-4009", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
          "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision."},
     ],
@@ -820,9 +852,29 @@ EXPLORATORY_KNOWLEDGE = {
     "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.",
 }
 
+VIIRS_MODEL_FIELDS = ("model_stage_m", "model_flood_km2_clear", "model_flood_km2_district")
+"""Fields of every ``viirs_daily.days[]`` row that are model output placed beside the agency product."""
 
-def publication_eligibility(reported_licence: str | None) -> dict:
+
+def rights_wording(rights: dict) -> dict:
+    """The four sentences about product 4009, for a pending or a confirmed rights record. Nothing from it is in this revision."""
+    reply = (f"The {rights['licence']} rights decision (D2) was signed on {short_date(rights['signed_on'])} and UNOSAT replied "
+             f"\"{rights['reply_quote']}\" (relayed by a project owner on {short_date(rights['reply_relayed_on'])})")
+    if rights["confirmed"]:
+        confirmed = f"the owners confirmed the rights record on {short_date(rights['confirmed_on'])}"
+        return {"status": f"Not shown in this revision; {confirmed}.",
+                "condition": f"UNOSAT/GISTDA product 4009 ({rights['licence']}) is not shown in this revision; {confirmed}.",
+                "block_note": f"Never an observation for a replay day. Not shown in this revision; {confirmed}.",
+                "reference_note": f"Season envelope (scenario per decision D3). {reply}; {confirmed}. Not shown in this revision."}
+    return {"status": "Not yet shown; rights record pending owner confirmation.",
+            "condition": f"UNOSAT/GISTDA product 4009 ({rights['licence']}) is not shown; it may appear only after the owners confirm the rights record.",
+            "block_note": "Never an observation for a replay day. Shown only after the owners confirm the rights record.",
+            "reference_note": f"Season envelope (scenario per decision D3). {reply}; shown only after the owners confirm the rights record."}
+
+
+def publication_eligibility(reported_licence: str | None, rights: dict) -> dict:
     """Licence and display status per input; product 4009 is listed because it is the next input, not because it is shown."""
+    wording = rights_wording(rights)
     def entry(source_id: str, terms: str, **extra) -> dict:
         source = next(s for s in SOURCES if s["id"] == source_id)
         return {"id": source_id, "name": source["name"], "licence": source["licence"], "licence_stated": True, "shown": True, "terms": terms, **extra}
@@ -834,7 +886,7 @@ def publication_eligibility(reported_licence: str | None) -> dict:
             "HII rain data are CC BY-NC: the replay as a whole is for non-commercial use, and rain values stay out of any combined table or export.",
             "The VIIRS provider states no licence: the maps are shown with attribution, and reuse beyond this page is not cleared.",
             "OpenStreetMap-derived files (roads, facilities, shelter candidates and the access node positions) stay under ODbL 1.0: attribution and share-alike.",
-            "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record.",
+            wording["condition"],
         ],
         "inputs": [
             entry("copernicus-dem", "Use under the Copernicus DEM licence terms, with the DLR and Airbus attribution."),
@@ -852,9 +904,9 @@ def publication_eligibility(reported_licence: str | None) -> dict:
             entry("chronology", "Team summary of public reporting, shown with its compile date."),
             {"id": "external-figures", "name": "GISTDA 10 Sep 2024 and UNOSAT 3991 reported figures", "licence": "Cited figures with links; no data copied",
              "licence_stated": False, "shown": True, "terms": "Quoted as reported, with a link to each source."},
-            {"id": "unosat-4009", "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai", "licence": "CC BY-SA 4.0",
-             "licence_stated": True, "shown": False, "status": "Not yet shown; rights record pending owner confirmation.",
-             "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
+            {"id": "unosat-4009", "name": "UNOSAT/GISTDA product 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai", "licence": rights["licence"],
+             "licence_stated": True, "shown": False, "status": wording["status"],
+             "rights_record": rights["record"],
              "terms": "Attribution, share-alike and a change notice on every derived file; kept in its own folder."},
         ],
     }
@@ -890,7 +942,9 @@ def evidence_blocks(result: dict) -> list[dict]:
         {"id": "viirs_daily", "lane": "OBS", "evidence_tier": "Agency flood product, used as provided; unvalidated here",
          "temporal_relation": "event_aligned", "covers": ["viirs_daily"],
          "source_timestamp": f"{viirs[0]['nominal_local_time']}/{viirs[-1]['nominal_local_time']} (daily composites, nominal pass time)" if viirs else "no VIIRS day in this bake",
-         "note": "375 m optical flood-water fraction; each day carries its own nominal time and cloud share."},
+         SCENARIO_FIELDS_KEY: [f"viirs_daily.days[].{field}" for field in VIIRS_MODEL_FIELDS],
+         "note": ("375 m optical flood-water fraction; each day carries its own nominal time and cloud share. The model_* fields of each day "
+                  f"are {SCENARIO_TIER} values computed for the comparison, not part of the agency product.")},
         {"id": "sentinel2_20240905", **imagery, "temporal_relation": "pre_event",
          "covers": ["observations[s2-20240905]", "layers[s2-20240905]"], "source_timestamp": s2["s2-20240905"]},
         {"id": "sentinel2_20240915", **imagery, "temporal_relation": "event_aligned",
@@ -916,7 +970,7 @@ def evidence_blocks(result: dict) -> list[dict]:
         {"id": "unosat_4009_season_envelope", "lane": "SCN-ENV", "evidence_tier": "Season envelope (scenario), used as provided; unvalidated; not shown in this revision",
          "temporal_relation": "season_envelope", "covers": ["external_references[unosat-4009]"], "source_timestamp": "2024-08-01/2024-10-22",
          "season_window": "2024-08-01/2024-10-22", "shown": False,
-         "note": "Never an observation for a replay day. Shown only after the owners confirm the rights record."},
+         "note": rights_wording(result["rights_4009"])["block_note"]},
         {"id": "terrain_shading", "lane": "CTX", "evidence_tier": "Reference data", "temporal_relation": "static_context",
          "covers": ["layers[hillshade]"], "source_timestamp": "Copernicus DEM (2011-2015 acquisitions)"},
         {"id": "subdistrict_boundaries", "lane": "CTX", "evidence_tier": "Reference data", "temporal_relation": "static_context",
@@ -950,6 +1004,10 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
     stamp = normalise_timestamp(generated_at) if generated_at else newest_timestamp(dated_inputs(result))
     first_image = min(stamp_ for _, stamp_ in S2_SCENES.values())
     blocks = evidence_blocks(result)
+    rights = result["rights_4009"]
+    unknown_model_fields = sorted({key for day in result["viirs_days"] for key in day if key.startswith("model_")} - set(VIIRS_MODEL_FIELDS))
+    if unknown_model_fields:
+        raise ReplayManifestError(f"VIIRS day rows carry model fields the evidence block does not name: {unknown_model_fields}")
     manifest = {
         "study_id": STUDY_ID, "revision": REVISION, "schema_version": 2, "schema_id": SCHEMA_ID,
         "generated_by": GENERATED_BY,
@@ -988,7 +1046,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
         "lanes": {lane: LANES[lane] for lane in dict.fromkeys(block["lane"] for block in blocks)},
         "evidence_blocks": blocks,
         "exploratory_knowledge": EXPLORATORY_KNOWLEDGE,
-        "publication_eligibility": publication_eligibility(result["reported_meta"].get("licence_note")),
+        "publication_eligibility": publication_eligibility(result["reported_meta"].get("licence_note"), rights),
         "input_sha256": [dict(row) for row in (inputs or [])],
         "hand": {**result["hand"], "low_confidence_share": result["low_confidence_share"], "step_m": HAND_STEP_M, "channel_code": CHANNEL_CODE, "never_code": NEVER_CODE,
                  "stream_threshold_km2": STREAM_THRESHOLD_KM2},
@@ -1037,6 +1095,8 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
             "nominal_overpass": "Daily composite of early-afternoon passes; compared with the model at 13:30 ICT.",
             "comparison_rule": "District only, clear-sky pixels only, permanent water excluded; VIIRS area = sum of flood fraction x pixel area; model area = modelled out-of-channel wet fraction averaged onto the same 375 m pixels.",
             "caveat": "375 m optical data under-detects narrow, shallow, urban or vegetated flooding and sees nothing under cloud; agreement or disagreement is indicative only.",
+            "model_fields": {"names": list(VIIRS_MODEL_FIELDS), "evidence_tier": SCENARIO_TIER,
+                             "note": "Model output on the reconstructed water, placed beside each day for comparison; not part of the VIIRS product."},
             "days": result["viirs_days"],
         },
         "rainfall": {**result["rainfall"], "source": "HII ThaiWater open data, hourly rain gauges",
@@ -1044,7 +1104,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
                      "units": "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT", "note": "Observed rainfall (forcing), not flooding."},
         "external_references": [
             {"id": "unosat-4009", "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)", "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
-             "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" on 1 Oct 2026; shown only after the owners confirm the rights record."},
+             "note": rights_wording(rights)["reference_note"]},
             {"id": "unosat-3969", "name": "UNOSAT 3969: preliminary flood impact assessment, Mae Sai (Pleiades 15 Sep)", "url": "https://unosat.org/static/unosat_filesystem/3969/UNOSAT_Preliminary_Assessment_Report_TC20240912THA_ChiangRai_16Sep2024.pdf"},
             {"id": "charter-912", "name": "International Charter activation 912 (Typhoon Yagi, Thailand)", "url": "https://disasterscharter.org/activations/flood-in-thailand-activation-912-"},
             {"id": "hii-event-page", "name": "HII ThaiWater September 2024 Chiang Rai flood event page (rainfall and Kok River hydrographs)", "url": "https://www.thaiwater.net/uploads/contents/current/2024/FloodChiangrai_Sep2024/"}],
@@ -1066,17 +1126,22 @@ def normalise_utc(value: str) -> str:
 
 
 def manifest_problems(manifest: dict) -> list[str]:
-    """Evidence-contract and JSON-schema problems of a composed manifest (empty when it may be written)."""
+    """Evidence-contract, rights and JSON-schema problems of a composed manifest (empty when it may be written).
+
+    While the owners have not confirmed the product 4009 rights record, a manifest that names a file for the
+    product, or marks it as shown, is refused.
+    """
     schema = json.loads((ROOT / SCHEMA_REL).read_text(encoding="utf-8"))
-    return evidence_problems(manifest) + schema_problems(manifest, schema)
+    rights = [] if owner_confirmed(load_rights_basis(ROOT / RIGHTS_BASIS_4009_PATH)) else unconfirmed_product_citations(manifest)
+    return evidence_problems(manifest) + rights + schema_problems(manifest, schema)
 
 
 RECEIPT_ASSUMPTIONS = [
     "Input paths are relative to the external data root (FLOODGUARD_EXTERNAL_DATA) or to the repository root; no machine path is recorded.",
     "The same inputs give the same bytes only with the same library versions: another GDAL, PROJ, WebP, zlib or pysheds build can change bytes without changing the method.",
-    "The two OpenStreetMap GeoPackages under derived_context are extracts this bake cuts from the Geofabrik PBF when they are absent; a fresh extract can hash differently while holding the same features.",
+    "The OpenStreetMap input is the Geofabrik PBF itself: the bake reads the replay area's multipolygons and points from it on every run and keeps no derived cache, so no intermediate file stands between the receipt and the result.",
     "The receipt lists files, not their meaning: it does not make the reconstruction an observation.",
-    "generated_at is a declared value (or the newest dated input), not a clock reading; the commit that carries the revision records when the files were written.",
+    "generated_at is a declared value (or the newest dated input), not a clock reading; a bake that changes any output file must declare a new one, and the commit that carries the revision records when the files were written.",
     "Bake sources are hashed with CRLF read as LF, so a Windows checkout gives the same hashes.",
 ]
 
@@ -1089,6 +1154,7 @@ BAKE_SOURCES = (
     "src/floodguard/evacuation_access.py",
     "src/floodguard/flood_timeline.py",
     "src/floodguard/replay_manifest.py",
+    "src/floodguard/rights_basis.py",
     SCHEMA_REL.as_posix(),
 )
 """This script, the repository modules it imports and the schema the manifest must follow (a unit test checks the imports)."""
@@ -1160,7 +1226,8 @@ def resolve_generated_at(argument: str | None, recorded: dict) -> tuple[str | No
     """Return the ``generated_at`` to bake with and where it came from.
 
     Order: the ``--generated-at`` argument; else the value an earlier bake declared and recorded in the receipt;
-    else ``None``, which makes the bake use the newest dated input. The machine clock is never read.
+    else ``None``, which makes the bake use the newest dated input. The machine clock is never read. A plain bake
+    may keep a carried value only when :func:`carry_blockers` finds nothing (see :func:`main`).
     """
     if argument:
         return normalise_timestamp(argument), "declared with --generated-at"
@@ -1168,6 +1235,27 @@ def resolve_generated_at(argument: str | None, recorded: dict) -> tuple[str | No
     if carried and carried.get("basis") == "declared" and carried.get("value"):
         return normalise_timestamp(carried["value"]), "carried from the recorded receipt (pass --generated-at to declare a new time)"
     return None, "newest dated input (no time was declared)"
+
+
+def carry_blockers(document: dict, recorded: dict) -> list[str]:
+    """Why a bake may not carry the recorded ``generated_at``: every output file that differs from the recorded bake.
+
+    ``document`` is the receipt of the fresh bake, ``recorded`` the receipt of the earlier one. A declared time
+    describes the files of the bake that declared it; a bake that writes other bytes needs a new one.
+    """
+    recorded_files = {row["name"]: row["sha256"] for row in recorded.get("outputs", {}).get("files", [])}
+    fresh_files = {row["name"]: row["sha256"] for row in document["outputs"]["files"]}
+    if not recorded_files:
+        return ["the recorded receipt lists no output files"]
+    notes = []
+    for name in sorted(fresh_files.keys() | recorded_files.keys()):
+        if name not in recorded_files:
+            notes.append(f"new file: {name}")
+        elif name not in fresh_files:
+            notes.append(f"no longer written: {name}")
+        elif fresh_files[name] != recorded_files[name]:
+            notes.append(f"different bytes: {name}")
+    return notes
 
 
 def verify(external: Path, committed: Path, receipt_path: Path, work_root: Path | None = None, generated_at: str | None = None) -> int:
@@ -1218,7 +1306,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="Input receipt to write (or, with --verify, to compare with). Defaults to the committed receipt for the committed folder.")
     parser.add_argument("--generated-at", default=None,
                         help="Bake time to record as generated_at (ISO 8601 with a UTC offset, e.g. 2026-10-01T21:00:00+07:00). "
-                             "Without it the value in the recorded receipt is carried; with neither, the newest dated input is used. The machine clock is never read.")
+                             "Without it the value in the recorded receipt is carried, which a plain bake may do only when it reproduces the "
+                             "recorded output files; with neither, the newest dated input is used. The machine clock is never read.")
     parser.add_argument("--verify", action="store_true",
                         help="Bake into a temporary folder and byte-compare with --out; exit non-zero on any difference.")
     args = parser.parse_args(argv)
@@ -1228,8 +1317,31 @@ def main(argv: list[str] | None = None) -> int:
     receipt_path = Path(args.receipt) if args.receipt else default_receipt_path(out_dir)
     if args.verify:
         return verify(Path(args.external_root), out_dir, receipt_path, generated_at=args.generated_at)
-    stamp, origin = resolve_generated_at(args.generated_at, recorded_receipt(receipt_path))
-    manifest, result, receipt = bake(Path(args.external_root), out_dir, generated_at=stamp)
+    recorded = recorded_receipt(receipt_path)
+    stamp, origin = resolve_generated_at(args.generated_at, recorded)
+    if stamp is not None and not args.generated_at:
+        # A carried time is true only for the files it was declared for: bake aside first, and publish the result
+        # only when it reproduces every recorded output file.
+        with tempfile.TemporaryDirectory(prefix="mae-sai-timeline-bake-") as tmp:
+            staging = Path(tmp) / out_dir.name
+            manifest, result, receipt = bake(Path(args.external_root), staging, generated_at=stamp)
+            document = receipt_document(manifest, receipt, staging)
+            blockers = carry_blockers(document, recorded)
+            if blockers:
+                print(f"generated_at: the recorded time {stamp} cannot be carried, because this bake does not reproduce the recorded files.",
+                      file=sys.stderr)
+                notes = [*blockers,
+                         *(f"input note: {note}" for note in input_differences(document["inputs"], recorded.get("inputs", []))),
+                         *(f"code note: {note}" for note in source_differences(document["code"], recorded.get("code", []))),
+                         *(f"library note: {note}" for note in version_differences(document["libraries"], recorded.get("libraries", {})))]
+                for note in notes:
+                    print(f"  {note}", file=sys.stderr)
+                print("Declare when these files are generated with --generated-at (ISO 8601 with a UTC offset). Nothing was written.",
+                      file=sys.stderr)
+                return 2
+            shutil.copytree(staging, out_dir, dirs_exist_ok=True)
+    else:
+        manifest, result, receipt = bake(Path(args.external_root), out_dir, generated_at=stamp)
     write_receipt(receipt_path, receipt_document(manifest, receipt, out_dir))
     print(f"generated_at: {manifest.get('generated_at')} ({origin})")
     print(json.dumps(manifest["s1_anchor"], indent=1))

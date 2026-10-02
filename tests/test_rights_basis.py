@@ -20,6 +20,7 @@ from floodguard.rights_basis import (
     owner_confirmed,
     public_derivative_files,
     require_owner_confirmation,
+    unconfirmed_product_citations,
     validate_rights_basis,
     verify_archive,
 )
@@ -273,16 +274,27 @@ def test_archive_hash_matches_the_zip_in_the_external_data_root(record: dict) ->
 
 
 def test_gate_no_public_4009_files_while_the_record_is_unconfirmed(record: dict) -> None:
-    """GATE: nothing derived from product 4009 may sit under ``apps/web/public`` before the owners confirm."""
+    """GATE: no product 4009 derivative may sit under ``apps/web/public`` before the owners confirm.
+
+    The gate works by convention, not by content. It finds (1) any public folder or file whose name carries the
+    product ("unosat4009", "UNOSAT_4009", "unosat-4009" ...) and (2) any replay manifest entry that cites the
+    product and names a file or is marked as shown. A derived file under an unrelated name that no manifest entry
+    ties to the product is not detected; ``verify-study-assets.mjs`` refuses a study file the manifest does not list.
+    """
     files = public_derivative_files(PUBLIC_ROOT)
+    manifests = sorted((PUBLIC_ROOT / "studies").glob("mae-sai-2024-timeline/*/timeline.json"))
+    assert manifests, "the replay manifest was not found"
     if owner_confirmed(record):
         require_owner_confirmation(record)
         return
     listed = ", ".join(path.relative_to(PUBLIC_ROOT).as_posix() for path in files)
     assert files == [], f"product 4009 files are public while the rights record is still pending: {listed}"
+    for path in manifests:
+        cited = unconfirmed_product_citations(json.loads(path.read_text(encoding="utf-8")))
+        assert cited == [], f"{path.relative_to(PUBLIC_ROOT).as_posix()} publishes product 4009 while the rights record is still pending"
 
 
-def test_gate_helper_finds_files_in_any_unosat4009_folder(tmp_path: Path) -> None:
+def test_gate_helper_finds_files_by_folder_or_file_name_whatever_the_case(tmp_path: Path) -> None:
     assert public_derivative_files(tmp_path) == []
     assert public_derivative_files(tmp_path / "absent") == []
     folder = tmp_path / "studies" / "mae-sai-2024-timeline" / "r4" / PUBLIC_DERIVATIVE_FOLDER
@@ -293,3 +305,43 @@ def test_gate_helper_finds_files_in_any_unosat4009_folder(tmp_path: Path) -> Non
     found = [path.relative_to(tmp_path).as_posix() for path in public_derivative_files(tmp_path)]
     assert found == ["studies/mae-sai-2024-timeline/r4/unosat4009/envelope.png",
                      "studies/mae-sai-2024-timeline/r4/unosat4009/nested/LICENSE"]
+    # Another case, another separator, or the product in a file name instead of a folder name.
+    for relative in ("studies/x/UNOSAT_4009/envelope.png", "studies/x/r4/Unosat-4009-season-envelope.png", "exports/unosat 4009.csv"):
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"x")
+    found = sorted(path.relative_to(tmp_path).as_posix() for path in public_derivative_files(tmp_path))  # Path order differs by platform.
+    assert found == ["exports/unosat 4009.csv", "studies/mae-sai-2024-timeline/r4/unosat4009/envelope.png",
+                     "studies/mae-sai-2024-timeline/r4/unosat4009/nested/LICENSE", "studies/x/UNOSAT_4009/envelope.png",
+                     "studies/x/r4/Unosat-4009-season-envelope.png"]
+    # Product 3991 and a bare number are other things.
+    (tmp_path / "studies" / "unosat3991.png").write_bytes(b"x")
+    (tmp_path / "studies" / "tile-4009.png").write_bytes(b"x")
+    assert len(public_derivative_files(tmp_path)) == 5
+
+
+def test_manifest_gate_finds_a_4009_file_under_any_name_and_anything_marked_shown() -> None:
+    manifest = {
+        "layers": [{"id": "s2-20240905", "href": "/studies/x/r4/s2.webp"}],
+        "vectors": {"roads": {"href": "/studies/x/r4/roads.geojson"}},
+        "evidence_blocks": [{"id": "unosat_4009_season_envelope", "covers": ["external_references[unosat-4009]"], "shown": False}],
+        "publication_eligibility": {"conditions": ["UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown."],
+                                    "inputs": [{"id": "unosat-4009", "name": "UNOSAT/GISTDA product 4009", "shown": False},
+                                               {"id": "unosat-3991", "name": "UNOSAT 3991 reported figures", "shown": True}]},
+        "external_references": [{"id": "unosat-4009", "name": "UNOSAT 4009", "url": "https://data.humdata.org/dataset/x"}],
+        "exploratory_knowledge": {"items": [{"id": "unosat-4009", "statement": "product 4009 is not shown in this revision."}]},
+    }
+    assert unconfirmed_product_citations(manifest) == []
+    # A derived raster under an unrelated file name, tied to the product by its layer id, its kind or its vector key.
+    manifest["layers"].append({"id": "season-envelope", "kind": "unosat-4009", "href": "/studies/x/r4/season-envelope.png"})
+    manifest["vectors"]["unosat4009_envelope"] = {"href": "/studies/x/r4/envelope.geojson"}
+    manifest["evidence_blocks"][0]["shown"] = True
+    manifest["evidence_blocks"].append({"id": "envelope_layer", "covers": ["layers[season-envelope]", "vectors.unosat4009_envelope"]})
+    manifest["publication_eligibility"]["inputs"][0]["shown"] = True
+    assert unconfirmed_product_citations(manifest) == [
+        "layers[season-envelope] cites product 4009 and names a file (/studies/x/r4/season-envelope.png) while the rights record is unconfirmed",
+        "vectors.unosat4009_envelope cites product 4009 and names a file (/studies/x/r4/envelope.geojson) while the rights record is unconfirmed",
+        "evidence_blocks[unosat_4009_season_envelope] cites product 4009 and must carry shown: false while the rights record is unconfirmed",
+        "evidence_blocks[envelope_layer] cites product 4009 and must carry shown: false while the rights record is unconfirmed",
+        "publication_eligibility.inputs[unosat-4009] cites product 4009 and must carry shown: false while the rights record is unconfirmed",
+    ]

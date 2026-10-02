@@ -5,6 +5,8 @@ import {
   ARRIVAL_RAMP,
   arrivalClasses,
   CHANNEL_RGBA,
+  DENSITY_CLASSES,
+  DEPTH_CLASSES,
   DURATION_CLASSES,
   hatchStripes,
   lowConfidenceRgba,
@@ -15,6 +17,7 @@ import {
   drawnWaterMode,
   exportWaterMode,
   hatchesLowConfidence,
+  lowConfidenceKey,
   paintWaterPlan,
   residentsPendingText,
   WATER_LEGEND_COPY,
@@ -142,5 +145,43 @@ describe("water view shared by the map, its legend and the exports", () => {
     expect(residentsPendingText("error", "en")).toBe("The residents layer could not be loaded, so the map shows water depth instead.");
     expect(residentsPendingText("loading", "th")).toMatch(THAI);
     expect(residentsPendingText("error", "th")).not.toBe(residentsPendingText("loading", "th"));
+  });
+});
+
+describe("low-confidence legend key", () => {
+  it("takes its stripe and wash from the function that colours the map, per drawn view", () => {
+    const classes = [{ rgba: ARRIVAL_RAMP[0] }, { rgba: ARRIVAL_RAMP[3] }];
+    const expected: Record<WaterMode, Rgba> = {
+      depth: DEPTH_CLASSES[1].rgba,
+      arrival: ARRIVAL_RAMP[0],
+      duration: DURATION_CLASSES[DURATION_CLASSES.length - 1].rgba,
+      people: DENSITY_CLASSES[Math.floor(DENSITY_CLASSES.length / 2)].rgba,
+      residents: DENSITY_CLASSES[Math.floor(DENSITY_CLASSES.length / 2)].rgba,
+    };
+    for (const mode of ALL_MODES) {
+      const key = lowConfidenceKey(mode, classes);
+      expect(key.stripe, mode).toEqual(lowConfidenceRgba(expected[mode], true));
+      expect(key.wash, mode).toEqual(lowConfidenceRgba(expected[mode], false));
+      // The stripe keeps more of the view's colour and more opacity than the wash, as on the map.
+      expect(key.stripe[3], mode).toBeGreaterThan(key.wash[3]);
+    }
+    // First flooded uses the earliest class the map has (the ramp's first colour when no classes are given).
+    expect(lowConfidenceKey("arrival")).toEqual(lowConfidenceKey("arrival", classes));
+    expect(lowConfidenceKey("arrival", [{ rgba: ARRIVAL_RAMP[2] }]).stripe).toEqual(lowConfidenceRgba(ARRIVAL_RAMP[2], true));
+  });
+
+  it("is blue in the depth view and purple in the first-flooded and hours-under-water views", () => {
+    const blueOverRed = (rgba: Rgba) => rgba[2] - rgba[0];
+    const greenOverRed = (rgba: Rgba) => rgba[1] - rgba[0];
+    const depth = lowConfidenceKey("depth").stripe;
+    expect(blueOverRed(depth)).toBeGreaterThan(40);
+    expect(greenOverRed(depth)).toBeGreaterThan(20);
+    for (const mode of ["arrival", "duration"] as const) {
+      const stripe = lowConfidenceKey(mode).stripe;
+      // Purple: blue well above red, and green below both.
+      expect(blueOverRed(stripe), mode).toBeGreaterThan(10);
+      expect(greenOverRed(stripe), mode).toBeLessThan(0);
+      expect(stripe, mode).not.toEqual(depth);
+    }
   });
 });

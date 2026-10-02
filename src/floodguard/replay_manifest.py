@@ -12,7 +12,9 @@ This module holds the rules that do not depend on any one study:
   which is never read from the machine clock (a clock value would make a
   byte-for-byte rebuild impossible);
 * :func:`uncovered_blocks`, which finds manifest content no evidence block
-  describes;
+  describes, including a new child of an object that is covered child by child;
+* :func:`score_or_class_keys`, which finds a score or action-class field at any
+  depth of the manifest;
 * :func:`evidence_problems`, the invariants a replay manifest must keep: no
   score, no action class, not an official warning, non-operational, input
   hashes present, every block with a lane and a source timestamp;
@@ -45,6 +47,13 @@ SCENARIO_TIER = "T1 scenario (model)"
 BLOCK_FIELDS: tuple[str, ...] = ("id", "covers", "lane", "evidence_tier", "temporal_relation", "source_timestamp")
 """Fields every evidence block must carry."""
 
+SCENARIO_FIELDS_KEY = "scenario_fields"
+"""Optional block field: paths inside the covered content that hold T1 scenario (model) values placed beside it for
+comparison (for example ``viirs_daily.days[].model_flood_km2_clear``). They are not in the block's own lane."""
+
+ACCEPTED_NULL_KEYS: frozenset[str] = frozenset({"accepted_fpps", "accepted_action_class"})
+"""The only score and action-class keys a replay manifest may hold: top level, both null."""
+
 ENVELOPE_KEYS: frozenset[str] = frozenset({
     "study_id", "revision", "schema_version", "schema_id", "generated_by", "generated_at", "generated_at_basis", "generated_at_note",
     "git_commit", "git_commit_reason", "git_commit_lookup", "data_version", "dataset_mode", "data_mode", "operational_status",
@@ -67,6 +76,7 @@ REQUIRED_KEYS: tuple[str, ...] = (
 """Evidence keys a replay manifest must carry (``accepted_*``, ``git_commit`` and ``protocol_sha256`` may be null, but must be present)."""
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_SCORE_OR_CLASS_KEY = re.compile(r"fpps|action[_-]?class|priority[_-]?score", re.IGNORECASE)
 _COVER = re.compile(r"^(?P<key>[A-Za-z0-9_]+)(?:\[(?P<item>[^\]]+)\]|\.(?P<child>[A-Za-z0-9_.]+))?$")
 
 
@@ -102,10 +112,10 @@ def newest_timestamp(values: Iterable[str]) -> str:
     return max(stamps, key=lambda stamp: datetime.fromisoformat(stamp.replace("Z", "+00:00")))
 
 
-def _covered(blocks: Iterable[Mapping[str, Any]]) -> tuple[set[str], set[tuple[str, str]], set[str]]:
+def _covered(blocks: Iterable[Mapping[str, Any]]) -> tuple[set[str], set[tuple[str, str]], dict[str, set[str]]]:
     whole: set[str] = set()
     items: set[tuple[str, str]] = set()
-    partial: set[str] = set()
+    partial: dict[str, set[str]] = {}
     for block in blocks:
         for path in block.get("covers", ()):
             match = _COVER.match(path) if isinstance(path, str) else None
@@ -114,7 +124,7 @@ def _covered(blocks: Iterable[Mapping[str, Any]]) -> tuple[set[str], set[tuple[s
             if match["item"] is not None:
                 items.add((match["key"], match["item"]))
             elif match["child"] is not None:
-                partial.add(match["key"])
+                partial.setdefault(match["key"], set()).add(match["child"].split(".")[0])
             else:
                 whole.add(match["key"])
     return whole, items, partial
@@ -123,8 +133,10 @@ def _covered(blocks: Iterable[Mapping[str, Any]]) -> tuple[set[str], set[tuple[s
 def uncovered_blocks(manifest: Mapping[str, Any]) -> list[str]:
     """Return the manifest content that no evidence block covers (empty when everything has a lane).
 
-    A block covers ``"key"`` (the whole value), ``"key.child"`` (part of an object) or ``"key[id]"`` (one item of a
-    list whose items carry an ``id``). A list of identified items is covered only when every item is.
+    A block covers ``"key"`` (the whole value), ``"key.child"`` (one child of an object) or ``"key[id]"`` (one item
+    of a list whose items carry an ``id``). A list of identified items is covered only when every item is, and an
+    object that is covered child by child only when every one of its children is named: a child added later has
+    no lane until a block names it.
     """
     whole, items, partial = _covered(manifest.get("evidence_blocks", ()))
     missing: list[str] = []
@@ -134,12 +146,18 @@ def uncovered_blocks(manifest: Mapping[str, Any]) -> list[str]:
         identified = isinstance(value, list) and value and all(isinstance(item, Mapping) and "id" in item for item in value)
         if identified:
             missing.extend(f"{key}[{item['id']}]" for item in value if (key, str(item["id"])) not in items)
-        elif key not in partial:
+        elif key in partial and isinstance(value, Mapping):
+            missing.extend(f"{key}.{child}" for child in value if child not in partial[key])
+        else:
             missing.append(key)
     known = set(manifest)
-    for key in sorted(whole | partial | {key for key, _ in items}):
+    for key in sorted(whole | set(partial) | {key for key, _ in items}):
         if key not in known:
             missing.append(f"{key} (named by an evidence block but absent)")
+    for key, children in sorted(partial.items()):
+        value = manifest.get(key)
+        if isinstance(value, Mapping):
+            missing.extend(f"{key}.{child} (named by an evidence block but absent)" for child in sorted(children) if child not in value)
     for key, item in sorted(items):
         value = manifest.get(key)
         if isinstance(value, list) and not any(isinstance(row, Mapping) and str(row.get("id")) == item for row in value):
@@ -147,18 +165,40 @@ def uncovered_blocks(manifest: Mapping[str, Any]) -> list[str]:
     return missing
 
 
+def score_or_class_keys(value: Any, path: str = "$") -> list[str]:
+    """Return the path of every key, at any depth, that names a priority score or an action class.
+
+    The replay computes neither. The two top-level ``accepted_*`` fields are the only such keys a manifest may
+    hold (and :func:`evidence_problems` requires them to be null); a nested ``accepted_fpps`` is reported too.
+    """
+    found: list[str] = []
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            here = f"{path}.{key}"
+            if _SCORE_OR_CLASS_KEY.search(str(key)) and not (path == "$" and key in ACCEPTED_NULL_KEYS):
+                found.append(here)
+            found.extend(score_or_class_keys(item, here))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            found.extend(score_or_class_keys(item, f"{path}[{index}]"))
+    return found
+
+
 def evidence_problems(manifest: Mapping[str, Any]) -> list[str]:
     """Return every way ``manifest`` breaks the replay's evidence contract (empty when it holds).
 
     The contract: every required key is present; no accepted score or action class; not an official warning and
     not real-time; non-operational; cannot feed the decision layer; ``confidence_class`` mirrors ``confidence``;
-    ``data_mode`` mirrors ``dataset_mode``; input hashes are listed; and every piece of content sits in an evidence
-    block that names its lane, tier, temporal relation and source timestamp.
+    ``data_mode`` mirrors ``dataset_mode``; input hashes are listed; no other score or action-class field exists at
+    any depth; and every piece of content sits in an evidence block that names its lane, tier, temporal relation
+    and source timestamp.
     """
     problems = [f"missing key: {key}" for key in REQUIRED_KEYS if key not in manifest]
     for key in ("accepted_fpps", "accepted_action_class"):
         if manifest.get(key) is not None:
             problems.append(f"{key} must be null: the replay computes no score and no action class")
+    problems.extend(f"{path} is a score or action-class field: the replay computes no score and no action class"
+                    for path in score_or_class_keys(manifest))
     if manifest.get("protocol_sha256") is not None:
         problems.append("protocol_sha256 must be null: the replay is not a protocol case")
     for key in ("official_warning", "real_time", "can_feed_decision_layer"):
@@ -208,6 +248,15 @@ def evidence_problems(manifest: Mapping[str, Any]) -> list[str]:
             problems.append(f"evidence block {name} uses lane {lane}, which the manifest's lanes table does not define")
         if lane == "SCN" and block.get("evidence_tier") != SCENARIO_TIER:
             problems.append(f"evidence block {name} is a scenario and must carry the tier {SCENARIO_TIER!r}")
+        if SCENARIO_FIELDS_KEY in block:
+            fields = block[SCENARIO_FIELDS_KEY]
+            roots = {re.split(r"[.\[]", str(path))[0] for path in block.get("covers", ())}
+            if not isinstance(fields, list) or not fields or not all(isinstance(field, str) and field for field in fields):
+                problems.append(f"evidence block {name}: {SCENARIO_FIELDS_KEY} must list at least one field path")
+            elif any(re.split(r"[.\[]", field)[0] not in roots for field in fields):
+                problems.append(f"evidence block {name}: every {SCENARIO_FIELDS_KEY} path must lie inside the content the block covers")
+            elif lane == "SCN":
+                problems.append(f"evidence block {name} is already a scenario; {SCENARIO_FIELDS_KEY} marks model values inside another lane")
     try:
         problems.extend(f"no evidence block covers {path}" for path in uncovered_blocks(manifest))
     except ReplayManifestError as exc:

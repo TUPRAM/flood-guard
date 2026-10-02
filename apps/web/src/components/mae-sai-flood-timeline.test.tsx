@@ -14,6 +14,7 @@ import {
   parseTimelineManifest,
   rainAt,
   referencesNotIngested,
+  rgbaCss,
   roadCut,
   roadCutGroups,
   stageAt,
@@ -30,7 +31,7 @@ import {
 } from "@/lib/flood-timeline";
 import { plainManifestText, STANDALONE_K } from "@/lib/flood-timeline-copy";
 import type { WaterMode } from "@/lib/flood-timeline-link";
-import { residentsPendingText } from "@/lib/flood-timeline-water";
+import { lowConfidenceKey, residentsPendingText } from "@/lib/flood-timeline-water";
 import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
 import {
   facilityStatusText,
@@ -295,6 +296,21 @@ describe("Mae Sai replay panels", () => {
       expect(renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} part="overlay" />), waterMode)
         .not.toContain("low-confidence-legend");
     }
+    // The key is drawn in the colours the map gives low-confidence water in that view: blue for depth, purple for the
+    // first-flooded and hours-under-water views. A fixed blue key would match no hatched area there.
+    const swatch = (html: string) => html.match(/<i class="[^"]*lowConfidenceSwatch[^"]*"[^>]*>/)?.[0] ?? "";
+    const gradient = (waterMode: WaterMode) => {
+      const key = lowConfidenceKey(waterMode, classes);
+      return `repeating-linear-gradient(45deg, ${rgbaCss(key.stripe)} 0 2px, ${rgbaCss(key.wash)} 2px 5px)`;
+    };
+    const keys = new Set<string>();
+    for (const waterMode of ["depth", "arrival", "duration"] as const) {
+      const html = renderToStaticMarkup(<TimelineLegend language="en" unmodelledRoads={false} unmodelledFacilities={false} waterMode={waterMode} arrival={classes} lowConfidence part="overlay" />);
+      expect(swatch(html), waterMode).toContain(`data-view="${waterMode}"`);
+      expect(swatch(html), waterMode).toContain(`style="background:${gradient(waterMode)}"`);
+      keys.add(gradient(waterMode));
+    }
+    expect(keys.size).toBe(3);
     // Evidence: the share at the modelled peak, from the manifest (14 of 88.7 km²), and what it means.
     const share = manifest.hand.low_confidence_share!;
     const evidence = text(renderToStaticMarkup(<dl><LowConfidenceEvidence hand={manifest.hand} language="en" /></dl>));
@@ -749,8 +765,23 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     expect(thai).toContain("สัญญาอนุญาตของข้อมูลแต่ละชุด");
     expect(thai).toContain("ยังไม่แสดง รอเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูล");
     expect(thai).toContain("เงื่อนไขการใช้");
-    // Names and licences stay as published (marked English); every term and condition has a Thai rendering.
-    expect(thaiHtml).toContain('<span lang="en">CC BY-NC.</span>');
+    // Names and published licence names stay as published (marked English); every term and condition has a Thai
+    // rendering, and so has the licence wording the project wrote itself.
+    expect(thaiHtml).toContain('<span lang="en" data-licence="">CC BY-NC.</span>');
+    expect(thaiHtml).toContain('<span lang="en" data-licence="">CC BY-SA 4.0.</span>');
+    const published = /^(CC BY|ODbL)/;
+    const written = inputs.map((input) => input.licence.replace(/\.$/, "")).filter((licence) => !published.test(licence));
+    expect(written).toEqual(expect.arrayContaining(["Project summary text", "Cited figures with links; no data copied", "No licence stated by the provider",
+      "Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)"]));
+    for (const licence of written) {
+      expect(thai, licence).not.toContain(licence);
+      expect(html, licence).toContain(`<span lang="en" data-licence="">${licence.replaceAll("&", "&amp;")}.</span>`);
+    }
+    expect(thai).toContain("ข้อความสรุปของโครงการ");
+    expect(thai).toContain("ผู้ให้บริการไม่ได้ระบุสัญญาอนุญาต");
+    expect(thai).toContain("ตัวเลขที่อ้างอิงพร้อมลิงก์ ไม่ได้คัดลอกข้อมูล");
+    // A Thai licence phrase takes no Latin full stop.
+    expect(thaiHtml).toContain('<span lang="th" data-licence="">ข้อความสรุปของโครงการ</span>');
     for (const sentence of [...inputs.map((input) => input.terms), ...manifest.publication_eligibility!.conditions, manifest.publication_eligibility!.scope]) {
       expect(thai, sentence).not.toContain(plainManifestText(sentence));
     }
@@ -764,11 +795,15 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     expect(plain).toContain("Used for tuning: GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (9.9 km² flooded in Mae Sai) was used on purpose to set the onset stage knot");
     expect(plain).toContain("Used for tuning: The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m)");
     expect(plain).toContain("Known during tuning: UNOSAT 3991 (about 70 km² over 13-19 Sep) was known while the stage keyframes were tuned");
-    expect(plain).toContain("Not used for tuning: The VIIRS daily comparison was computed after the keyframes were final and was not used for tuning.");
+    // VIIRS: only what the build history supports. The comparison and the last stage-knot edit are in one commit.
+    expect(plain).toContain("Not used for tuning: The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03)");
+    expect(plain).toContain("The build history does not record which came first within that change, so the comparison is not presented as an independent check.");
+    expect(plain).not.toContain("The VIIRS daily comparison was computed after the keyframes were final");
     expect(plain).toContain("Not used for tuning: The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final");
     expect(html.match(/data-relation="used_for_tuning"/g)).toHaveLength(2);
     expect(html.match(/data-relation="known_during_tuning"/g)).toHaveLength(1);
-    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(2);
+    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(1);
+    expect(html.match(/data-relation="not_used_for_tuning"/g)).toHaveLength(1);
     expect(plain).toContain(plainManifestText(manifest.exploratory_knowledge!.rule));
     expect(findWordingViolations(visibleText(html), "TuningDisclosure")).toEqual([]);
     // The disclosure and the radar label agree: both call the Sentinel-1 comparison calibration-informed.

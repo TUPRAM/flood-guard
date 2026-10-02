@@ -162,15 +162,28 @@
             "required": ["id", "relation", "known_during_tuning", "statement"],
             "properties": {
               "id": { "type": "string", "minLength": 1 },
-              "relation": { "enum": ["used_for_tuning", "known_during_tuning", "computed_after_keyframes_final"] },
-              "known_during_tuning": { "type": "boolean" },
+              "relation": {
+                "description": "used_for_tuning and known_during_tuning: known while the model was tuned. computed_after_keyframes_final: computed later. not_used_for_tuning: not used, and the build history does not record whether it was known.",
+                "enum": ["used_for_tuning", "known_during_tuning", "computed_after_keyframes_final", "not_used_for_tuning"]
+              },
+              "known_during_tuning": {
+                "description": "null only where the build history does not record the order (relation not_used_for_tuning).",
+                "type": ["boolean", "null"]
+              },
               "statement": { "type": "string", "minLength": 1 }
             },
             "allOf": [
               {
                 "if": { "properties": { "relation": { "enum": ["used_for_tuning", "known_during_tuning"] } } },
-                "then": { "properties": { "known_during_tuning": { "const": true } } },
-                "else": { "properties": { "known_during_tuning": { "const": false } } }
+                "then": { "properties": { "known_during_tuning": { "const": true } } }
+              },
+              {
+                "if": { "properties": { "relation": { "const": "computed_after_keyframes_final" } } },
+                "then": { "properties": { "known_during_tuning": { "const": false } } }
+              },
+              {
+                "if": { "properties": { "relation": { "const": "not_used_for_tuning" } } },
+                "then": { "properties": { "known_during_tuning": { "const": null } } }
               }
             ]
           }
@@ -209,7 +222,7 @@
       }
     },
     "input_sha256": {
-      "description": "Every input file the bake opened, from the input receipt: path relative to a named root, size and SHA-256.",
+      "description": "Every input file of the bake, from the input receipt: path relative to a named root, size and SHA-256. OpenStreetMap is identified by the PBF extract itself; no derived cache is listed.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -294,6 +307,17 @@
       "type": "object",
       "required": ["product", "source_url", "licence", "attribution", "days"],
       "properties": {
+        "model_fields": {
+          "description": "Which fields of each day are model output placed beside the agency product (the evidence block lists them as scenario_fields).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["names", "evidence_tier", "note"],
+          "properties": {
+            "names": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^model_[a-z0-9_]+$" } },
+            "evidence_tier": { "const": "T1 scenario (model)" },
+            "note": { "type": "string", "minLength": 1 }
+          }
+        },
         "days": {
           "type": "array",
           "items": {
@@ -389,12 +413,19 @@
         "source_timestamp": { "type": "string", "minLength": 1 },
         "note": { "type": "string", "minLength": 1 },
         "season_window": { "type": "string", "minLength": 1 },
-        "shown": { "type": "boolean" }
+        "shown": { "type": "boolean" },
+        "scenario_fields": {
+          "description": "Paths inside the covered content that hold T1 scenario (model) values placed beside it for comparison; they are not in this block's lane.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9_]+(\\[\\])?(\\.[A-Za-z0-9_]+(\\[\\])?)+$" }
+        }
       },
       "allOf": [
         {
           "if": { "properties": { "lane": { "const": "SCN" } } },
-          "then": { "properties": { "evidence_tier": { "const": "T1 scenario (model)" } } }
+          "then": { "properties": { "evidence_tier": { "const": "T1 scenario (model)" } }, "not": { "required": ["scenario_fields"] } }
         },
         {
           "if": { "properties": { "lane": { "const": "SCN-ENV" } } },

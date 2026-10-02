@@ -403,6 +403,9 @@ export interface EquityGap {
   status: EquityStatus;
   /** Why the ratio is withheld; null exactly when `ratio` is a number. */
   reason: EquityNullReason | null;
+  /** Residents of each group who have lost access; a small loss in a large group rounds to a rate of zero. */
+  vulnerableLost: number;
+  nonVulnerableLost: number;
   /** Loss rate rounded to 4 decimals; null only for a group with no residents. */
   vulnerableRate: number | null;
   nonVulnerableRate: number | null;
@@ -441,30 +444,40 @@ const rate = (numerator: number, denominator: number) => (denominator === 0 ? nu
  * to 4 decimals, ratio to 3, band limits 1.2 and 0.8 as in `floodguard.equity`. The ratio is null, with a reason:
  * "insufficient_group_denominator" when a group has fewer than `EQUITY_MIN_GROUP` residents (checked first, because
  * it does not depend on the hour), "no_loss" when neither group has lost access, and "undefined_ratio" when only
- * proxy-vulnerable residents have. "Vulnerable" is the terrain/remoteness proxy.
+ * proxy-vulnerable residents have. Loss is judged on the lost counts, not on the rounded rates: three residents lost
+ * in a group of 74,647 is a rate of 0.0000 and still a loss, and the ratio then uses the unrounded rates.
+ * "Vulnerable" is the terrain/remoteness proxy.
  */
 export function evacuationEquityGap(input: EquityInput): EquityGap {
   const { vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal } = input;
   const vulnerableRate = rate(vulnerableLost, vulnerableTotal);
   const nonVulnerableRate = rate(nonVulnerableLost, nonVulnerableTotal);
   const withheld = (reason: EquityNullReason, interpretation: string): EquityGap => ({
-    status: reason, reason, vulnerableRate, nonVulnerableRate, ratio: null, band: null, interpretation, vulnerableTotal, nonVulnerableTotal,
+    status: reason, reason, vulnerableLost, nonVulnerableLost, vulnerableRate, nonVulnerableRate, ratio: null, band: null, interpretation,
+    vulnerableTotal, nonVulnerableTotal,
   });
   if (vulnerableTotal < EQUITY_MIN_GROUP || nonVulnerableTotal < EQUITY_MIN_GROUP || vulnerableRate === null || nonVulnerableRate === null) {
     return withheld("insufficient_group_denominator", `Equity gap not computed: a group has fewer than ${EQUITY_MIN_GROUP} residents.`);
   }
-  if (vulnerableRate === 0 && nonVulnerableRate === 0) return withheld("no_loss", "Equity gap not computed: neither group has lost access.");
-  if (nonVulnerableRate === 0) {
+  if (vulnerableLost === 0 && nonVulnerableLost === 0) return withheld("no_loss", "Equity gap not computed: neither group has lost access.");
+  if (nonVulnerableLost === 0) {
     return withheld("undefined_ratio", "Equity gap ratio undefined because vulnerable loss exists while non-vulnerable loss is zero.");
   }
-  const ratio = roundLikePython(vulnerableRate / nonVulnerableRate, 3);
+  // A loss too small to survive four-decimal rounding is still a loss: divide the unrounded rates there.
+  const hiddenByRounding = nonVulnerableRate === 0 || (vulnerableRate === 0 && vulnerableLost > 0);
+  const ratio = hiddenByRounding
+    ? roundLikePython((vulnerableLost / vulnerableTotal) / (nonVulnerableLost / nonVulnerableTotal), 3)
+    : roundLikePython(vulnerableRate / nonVulnerableRate, 3);
   const band = ratio > 1.2 ? "higher" : ratio < 0.8 ? "lower" : "similar";
   const interpretation = band === "higher"
     ? `Vulnerable residents are ${formatSignificant3(ratio)} times more likely to lose access.`
     : band === "lower"
       ? `Vulnerable residents are ${formatSignificant3(ratio)} times as likely to lose access.`
       : "Access-loss rates are broadly similar between groups.";
-  return { status: "ratio", reason: null, vulnerableRate, nonVulnerableRate, ratio, band, interpretation, vulnerableTotal, nonVulnerableTotal };
+  return {
+    status: "ratio", reason: null, vulnerableLost, nonVulnerableLost, vulnerableRate, nonVulnerableRate, ratio, band, interpretation,
+    vulnerableTotal, nonVulnerableTotal,
+  };
 }
 
 /** How the page states the gap: the headline value and a plain sentence (empty when the value says it all). */
@@ -472,6 +485,8 @@ export interface EquityWording { value: string; sentence: string }
 
 /** A loss rate as a percentage with two decimals ("0.18%"). */
 export const formatRate = (rate: number): string => `${(rate * 100).toFixed(2)}%`;
+/** The same, but a real loss too small for two decimals reads "< 0.01%", never "0.00%". */
+const lossRateText = (rate: number, lost: number): string => (lost > 0 && rate * 100 < 0.005 ? "< 0.01%" : formatRate(rate));
 /** "about N×" amount: whole numbers from 10, one decimal below. */
 const timesText = (value: number) => (value >= 10 ? String(Math.round(value)) : value.toFixed(1));
 /** Whole residents of a group that is too small, rounded down so "fewer than 50" never reads "50". */
@@ -480,7 +495,8 @@ const smallGroup = (value: number) => Math.floor(value).toLocaleString("en-US");
 /**
  * Page wording of the Evacuation Equity Gap. With a ratio: two decimals ("< 0.01" for a ratio that would print as
  * 0.00) and a plain comparison of the two loss rates ("about 50× less likely (0.18% vs 9.60%)"); when no
- * proxy-vulnerable resident has lost access the value is said in words, never "0.00". Without a ratio the value is
+ * proxy-vulnerable resident has lost access the value is said in words, never "0.00". "No resident" is read from the
+ * lost counts, and a loss that rounds to 0.00% is written "< 0.01%". Without a ratio the value is
  * "no ratio shown" and the sentence states why: a group below `EQUITY_MIN_GROUP` residents, nobody having lost
  * access, or only proxy-vulnerable residents having lost it. The rules stay those of `evacuationEquityGap`.
  */
@@ -488,7 +504,14 @@ export function equityWording(gap: EquityGap, language: Language): EquityWording
   const th = language === "th";
   const v = gap.vulnerableRate ?? 0;
   const o = gap.nonVulnerableRate ?? 0;
-  const pair = th ? `(${formatRate(v)} เทียบกับ ${formatRate(o)})` : `(${formatRate(v)} vs ${formatRate(o)})`;
+  const vPercent = lossRateText(v, gap.vulnerableLost);
+  const oPercent = lossRateText(o, gap.nonVulnerableLost);
+  const pair = th ? `(${vPercent} เทียบกับ ${oPercent})` : `(${vPercent} vs ${oPercent})`;
+  // "About N×" uses the rounded rates, as the pair beside it does, unless rounding hid a loss.
+  const exact = (lost: number, total: number) => (total > 0 ? lost / total : 0);
+  const hidden = v === 0 || o === 0;
+  const vTimes = hidden ? exact(gap.vulnerableLost, gap.vulnerableTotal) : v;
+  const oTimes = hidden ? exact(gap.nonVulnerableLost, gap.nonVulnerableTotal) : o;
   const noRatio = th ? "ไม่แสดงอัตราส่วน" : "no ratio shown";
   switch (gap.status) {
     case "insufficient_group_denominator": {
@@ -520,24 +543,24 @@ export function equityWording(gap: EquityGap, language: Language): EquityWording
         : `Only proxy-vulnerable residents have lost access ${pair}, so the ratio cannot be computed.` };
     default: {
       const ratio = gap.ratio ?? 0;
-      if (v === 0) {
+      if (gap.vulnerableLost === 0) {
         return {
           value: th ? "ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง" : "no proxy-vulnerable resident has lost access",
           sentence: th
-            ? `ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นสูญเสียการเข้าถึง ${formatRate(o)}`
-            : `At this replay hour, ${formatRate(o)} of everyone else have.`,
+            ? `ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นสูญเสียการเข้าถึง ${oPercent}`
+            : `At this replay hour, ${oPercent} of everyone else have.`,
         };
       }
       const value = ratio < 0.005 ? "< 0.01" : ratio.toFixed(2);
       if (gap.band === "higher") {
         return { value, sentence: th
-          ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่าประมาณ ${timesText(v / o)} เท่า ${pair}`
-          : `Proxy-vulnerable residents are about ${timesText(v / o)}× more likely to lose access ${pair}.` };
+          ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่าประมาณ ${timesText(vTimes / oTimes)} เท่า ${pair}`
+          : `Proxy-vulnerable residents are about ${timesText(vTimes / oTimes)}× more likely to lose access ${pair}.` };
       }
       if (gap.band === "lower") {
         return { value, sentence: th
-          ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงน้อยกว่าประมาณ ${timesText(o / v)} เท่า ${pair}`
-          : `Proxy-vulnerable residents are about ${timesText(o / v)}× less likely to lose access ${pair}.` };
+          ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงน้อยกว่าประมาณ ${timesText(oTimes / vTimes)} เท่า ${pair}`
+          : `Proxy-vulnerable residents are about ${timesText(oTimes / vTimes)}× less likely to lose access ${pair}.` };
       }
       return { value, sentence: th
         ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงใกล้เคียงกับกลุ่มอื่น ${pair}`

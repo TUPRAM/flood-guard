@@ -118,7 +118,9 @@ describe("Mae Sai replay manifest reader: the served revision (r4 shape)", () =>
     expect(items["gistda-radarsat2-20240910"].relation).toBe("used_for_tuning");
     expect(items["sentinel-1-20240916"].relation).toBe("used_for_tuning");
     expect(items["unosat-3991"].relation).toBe("known_during_tuning");
-    expect(items["viirs-daily"]).toMatchObject({ relation: "computed_after_keyframes_final", known_during_tuning: false });
+    // VIIRS: not used for tuning; whether it was known then is not recorded, so the field is null, never false.
+    expect(items["viirs-daily"]).toMatchObject({ relation: "not_used_for_tuning", known_during_tuning: null });
+    expect(items["viirs-daily"].statement).toContain("commit 129ff03");
     expect(items["unosat-4009"]).toMatchObject({ relation: "computed_after_keyframes_final", known_during_tuning: false });
     expect(manifest.s1_anchor.use).toMatch(/not an independent check/);
     expect(manifest.confidence_reason).toMatch(/tuned to one radar pass rather than checked independently/);
@@ -226,9 +228,9 @@ describe("Mae Sai replay manifest reader: what it refuses", () => {
 
   it("refuses an official alert, a current product, an operational status or a feed into the decision layer", () => {
     for (const base of [served, r3]) {
-      expect(refused((manifest) => { manifest.official_warning = true; }, base)).toMatch(/no official alert/);
+      expect(refused((manifest) => { manifest.official_warning = true; }, base)).toMatch(/not an official warning/);
       expect(refused((manifest) => { manifest.real_time = true; }, base)).toMatch(/historical/);
-      expect(refused((manifest) => { delete manifest.official_warning; }, base)).toMatch(/no official alert/);
+      expect(refused((manifest) => { delete manifest.official_warning; }, base)).toMatch(/not an official warning/);
       expect(refused((manifest) => { manifest.operational_status = "agency_operational"; }, base)).toMatch(/non-operational/);
       expect(refused((manifest) => { manifest.can_feed_decision_layer = true; }, base)).toMatch(/decision layer/);
     }

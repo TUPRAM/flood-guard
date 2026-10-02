@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-01T20:28:00+07:00",
+ "generated_at": "2026-10-02T07:24:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -152,7 +152,12 @@
     "viirs_daily"
    ],
    "source_timestamp": "2024-09-10T13:30+07:00/2024-09-18T13:30+07:00 (daily composites, nominal pass time)",
-   "note": "375 m optical flood-water fraction; each day carries its own nominal time and cloud share."
+   "scenario_fields": [
+    "viirs_daily.days[].model_stage_m",
+    "viirs_daily.days[].model_flood_km2_clear",
+    "viirs_daily.days[].model_flood_km2_district"
+   ],
+   "note": "375 m optical flood-water fraction; each day carries its own nominal time and cloud share. The model_* fields of each day are T1 scenario (model) values computed for the comparison, not part of the agency product."
   },
   {
    "id": "sentinel2_20240905",
@@ -319,9 +324,9 @@
    },
    {
     "id": "viirs-daily",
-    "relation": "computed_after_keyframes_final",
-    "known_during_tuning": false,
-    "statement": "The VIIRS daily comparison was computed after the keyframes were final and was not used for tuning."
+    "relation": "not_used_for_tuning",
+    "known_during_tuning": null,
+    "statement": "The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03) that also moved the 10 Sep 18:15 knot from 0.12 m to 0.1 m, the model's closest level to GISTDA's figure. The build history does not record which came first within that change, so the comparison is not presented as an independent check."
    },
    {
     "id": "unosat-4009",
@@ -458,18 +463,6 @@
   },
   {
    "root": "external",
-   "path": "derived_context/mae_sai_2024/mae_sai_osm_multipolygons.gpkg",
-   "bytes": 3387392,
-   "sha256": "527774a66d9993b5066584ba94124f256321f9d10f6eb321179ee021ec465c0e"
-  },
-  {
-   "root": "external",
-   "path": "derived_context/mae_sai_2024/mae_sai_osm_points_full.gpkg",
-   "bytes": 237568,
-   "sha256": "55350e00d410080fae02a2382151193f9825b9343584fe9f078dadfa3c9afc0e"
-  },
-  {
-   "root": "external",
    "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/blue.tif",
    "bytes": 218096139,
    "sha256": "5ef3970df5afa0c0722a4a2e55e8469b00fd403fbbc9d0b52a86e6e32cd59098"
@@ -542,6 +535,12 @@
   },
   {
    "root": "external",
+   "path": "open_context/osm_geofabrik/thailand-latest.osm.pbf",
+   "bytes": 325044304,
+   "sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1"
+  },
+  {
+   "root": "external",
    "path": "open_context/worldpop_population/tha_ppp_2020.tif",
    "bytes": 296024584,
    "sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20"
@@ -599,6 +598,12 @@
    "path": "viirs_flood/2024_09/WATER_COM_VIIRS_Prj_SVI_d20240918_d20240918_4448_4448_9_001day_090.tif.zip",
    "bytes": 1497203,
    "sha256": "efadba38f8780e12b26d03fc9f1405d18a0ab248fee64995214058205dbb0f54"
+  },
+  {
+   "root": "repo",
+   "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+   "bytes": 8036,
+   "sha256": "8f0660c059cdfc5257a23a3577496fa364f61ca3afb6f96806fdb727c3a21e9e"
   },
   {
    "root": "repo",
@@ -6205,27 +6210,6 @@
    },
    {
     "id": "C023",
-    "kind": "worship",
-    "name": "ศาลเจ้าปู่ พญาแสนภู",
-    "lon": 100.048364,
-    "lat": 20.370902,
-    "source": "OSM way/374834904",
-    "footprint_m2": 62,
-    "capacity_est": 8,
-    "h": null,
-    "k": 1.0,
-    "freeboard_m": null,
-    "snap_m": 3408,
-    "eligible": false,
-    "ineligible_reasons": [
-     "outside_model",
-     "no_road_within_400m"
-    ],
-    "m": false,
-    "high_ground": false
-   },
-   {
-    "id": "C024",
     "kind": "school",
     "name": "ศูนย์พัฒนาการศึกษาเพื่อลูกหญิงและชุมชน",
     "lon": 99.876697,
@@ -6243,7 +6227,7 @@
     "high_ground": true
    },
    {
-    "id": "C025",
+    "id": "C024",
     "kind": "school",
     "name": "ศูนย์การเรียนชุมชนป่ายางใหม่",
     "lon": 99.876165,
@@ -6261,7 +6245,7 @@
     "high_ground": true
    },
    {
-    "id": "C026",
+    "id": "C025",
     "kind": "worship",
     "name": "วัดเหมืองแดง",
     "lon": 99.89229,
@@ -6279,7 +6263,7 @@
     "high_ground": false
    },
    {
-    "id": "C027",
+    "id": "C026",
     "kind": "worship",
     "name": "วัดเวียงพาน",
     "lon": 99.881577,
@@ -6297,7 +6281,7 @@
     "high_ground": true
    },
    {
-    "id": "C028",
+    "id": "C027",
     "kind": "worship",
     "name": "วัดผาแตก",
     "lon": 99.868036,
@@ -6315,7 +6299,7 @@
     "high_ground": true
    },
    {
-    "id": "C029",
+    "id": "C028",
     "kind": "worship",
     "name": "ศาลหลักเมืองแม่สาย",
     "lon": 99.884244,
@@ -6333,7 +6317,7 @@
     "high_ground": true
    },
    {
-    "id": "C030",
+    "id": "C029",
     "kind": "school",
     "name": "โรงเรียนบ้านจ้อง",
     "lon": 99.884471,
@@ -6351,7 +6335,7 @@
     "high_ground": false
    },
    {
-    "id": "C031",
+    "id": "C030",
     "kind": "worship",
     "name": "วัดห้วยไคร้ใหม่",
     "lon": 99.859724,
@@ -6369,7 +6353,7 @@
     "high_ground": true
    },
    {
-    "id": "C032",
+    "id": "C031",
     "kind": "worship",
     "name": "",
     "lon": 100.014857,
@@ -6389,7 +6373,7 @@
     "high_ground": false
    },
    {
-    "id": "C033",
+    "id": "C032",
     "kind": "worship",
     "name": "วัดถ้ำเสาหินพญานาค",
     "lon": 99.866584,
@@ -6407,7 +6391,7 @@
     "high_ground": true
    },
    {
-    "id": "C034",
+    "id": "C033",
     "kind": "school",
     "name": "วิทยาลัยอาชีวศึกษาแม่สาย",
     "lon": 99.870027,
@@ -6425,7 +6409,7 @@
     "high_ground": true
    },
    {
-    "id": "C035",
+    "id": "C034",
     "kind": "school",
     "name": "โรงเรียนบ้านถ้ำปลา",
     "lon": 99.875955,
@@ -6443,7 +6427,7 @@
     "high_ground": true
    },
    {
-    "id": "C036",
+    "id": "C035",
     "kind": "school",
     "name": "โรงเรียนบ้านถ้ำ ตชด",
     "lon": 99.865162,
@@ -6461,7 +6445,7 @@
     "high_ground": true
    },
    {
-    "id": "C037",
+    "id": "C036",
     "kind": "school",
     "name": "Wat Tham Pla Wittayakhom School",
     "lon": 99.864753,
@@ -6479,7 +6463,7 @@
     "high_ground": true
    },
    {
-    "id": "C038",
+    "id": "C037",
     "kind": "school",
     "name": "โรงเรียนบ้านถ้ำ",
     "lon": 99.883166,
@@ -6497,7 +6481,7 @@
     "high_ground": true
    },
    {
-    "id": "C039",
+    "id": "C038",
     "kind": "worship",
     "name": "วัดพระธาตุดอยเวา",
     "lon": 99.877845,
@@ -6515,7 +6499,7 @@
     "high_ground": true
    },
    {
-    "id": "C040",
+    "id": "C039",
     "kind": "worship",
     "name": "วัดบ้านถ้ำหลวง",
     "lon": 99.883726,
@@ -6533,7 +6517,7 @@
     "high_ground": true
    },
    {
-    "id": "C041",
+    "id": "C040",
     "kind": "worship",
     "name": "พระธาตุดอยตุง",
     "lon": 99.83245,
@@ -6551,7 +6535,7 @@
     "high_ground": true
    },
    {
-    "id": "C042",
+    "id": "C041",
     "kind": "school",
     "name": "Chinese School",
     "lon": 99.869312,
@@ -6569,7 +6553,7 @@
     "high_ground": true
    },
    {
-    "id": "C043",
+    "id": "C042",
     "kind": "worship",
     "name": "Chinese shrine",
     "lon": 99.868754,
@@ -6587,7 +6571,7 @@
     "high_ground": true
    },
    {
-    "id": "C044",
+    "id": "C043",
     "kind": "worship",
     "name": "",
     "lon": 99.86045,
@@ -6605,7 +6589,7 @@
     "high_ground": true
    },
    {
-    "id": "C045",
+    "id": "C044",
     "kind": "worship",
     "name": "",
     "lon": 99.860507,
@@ -6623,7 +6607,7 @@
     "high_ground": true
    },
    {
-    "id": "C046",
+    "id": "C045",
     "kind": "worship",
     "name": "คริสตจักรแบ๊บติสต์บ้านถ้ำ",
     "lon": 99.866894,
@@ -6641,7 +6625,7 @@
     "high_ground": true
    },
    {
-    "id": "C047",
+    "id": "C046",
     "kind": "worship",
     "name": "",
     "lon": 99.907329,
@@ -6659,7 +6643,7 @@
     "high_ground": false
    },
    {
-    "id": "C048",
+    "id": "C047",
     "kind": "worship",
     "name": "",
     "lon": 99.894953,
@@ -6677,7 +6661,7 @@
     "high_ground": true
    },
    {
-    "id": "C049",
+    "id": "C048",
     "kind": "worship",
     "name": "วัดพระธาตุดอยเวา",
     "lon": 99.879994,
@@ -6695,7 +6679,7 @@
     "high_ground": true
    },
    {
-    "id": "C050",
+    "id": "C049",
     "kind": "worship",
     "name": "",
     "lon": 99.913447,
@@ -6713,7 +6697,7 @@
     "high_ground": false
    },
    {
-    "id": "C051",
+    "id": "C050",
     "kind": "worship",
     "name": "",
     "lon": 99.94763,
@@ -6731,7 +6715,7 @@
     "high_ground": true
    },
    {
-    "id": "C052",
+    "id": "C051",
     "kind": "worship",
     "name": "",
     "lon": 99.864891,
@@ -6749,7 +6733,7 @@
     "high_ground": true
    },
    {
-    "id": "C053",
+    "id": "C052",
     "kind": "worship",
     "name": "",
     "lon": 100.035619,
@@ -6769,7 +6753,7 @@
     "high_ground": true
    },
    {
-    "id": "C054",
+    "id": "C053",
     "kind": "worship",
     "name": "วัดมงคลธรรมกายาราม",
     "lon": 99.893169,
@@ -6787,7 +6771,7 @@
     "high_ground": false
    },
    {
-    "id": "C055",
+    "id": "C054",
     "kind": "worship",
     "name": "วัดมงคลธรรมกายาราม",
     "lon": 99.893207,
@@ -6805,7 +6789,7 @@
     "high_ground": false
    },
    {
-    "id": "C056",
+    "id": "C055",
     "kind": "worship",
     "name": "วัดมงคลธรรมกายาราม",
     "lon": 99.890415,
@@ -6823,7 +6807,7 @@
     "high_ground": true
    },
    {
-    "id": "C057",
+    "id": "C056",
     "kind": "worship",
     "name": "วัดมงคลธรรมกายาราม",
     "lon": 99.890444,
@@ -6841,7 +6825,7 @@
     "high_ground": true
    },
    {
-    "id": "C058",
+    "id": "C057",
     "kind": "worship",
     "name": "วัดมงคลธรรมกายาราม",
     "lon": 99.891577,
@@ -6859,7 +6843,7 @@
     "high_ground": true
    },
    {
-    "id": "C059",
+    "id": "C058",
     "kind": "worship",
     "name": "วัดมงคลธรรมกายาราม",
     "lon": 99.89233,
@@ -6877,7 +6861,7 @@
     "high_ground": true
    },
    {
-    "id": "C060",
+    "id": "C059",
     "kind": "school",
     "name": "",
     "lon": 99.854946,
@@ -6897,7 +6881,7 @@
     "high_ground": true
    },
    {
-    "id": "C061",
+    "id": "C060",
     "kind": "worship",
     "name": "วัดสันกอง",
     "lon": 99.856409,
@@ -6915,7 +6899,7 @@
     "high_ground": true
    },
    {
-    "id": "C062",
+    "id": "C061",
     "kind": "worship",
     "name": "วัดห้วยน้ำขุ่น",
     "lon": 99.835101,
@@ -6933,7 +6917,7 @@
     "high_ground": true
    },
    {
-    "id": "C063",
+    "id": "C062",
     "kind": "worship",
     "name": "วัดห้วยไร่",
     "lon": 99.851143,
@@ -6953,7 +6937,7 @@
     "high_ground": true
    },
    {
-    "id": "C064",
+    "id": "C063",
     "kind": "government",
     "name": "สำนักงานเทศบาลตำบลห้วยไคร้",
     "lon": 99.862579,
@@ -6971,7 +6955,7 @@
     "high_ground": true
    },
    {
-    "id": "C065",
+    "id": "C064",
     "kind": "school",
     "name": "โรงเรียนบ้านห้วยไคร้",
     "lon": 99.861776,
@@ -6989,7 +6973,7 @@
     "high_ground": true
    },
    {
-    "id": "C066",
+    "id": "C065",
     "kind": "worship",
     "name": "คริสตจักรประชากิตติสุข ภาคที่2",
     "lon": 99.863276,
@@ -7007,7 +6991,7 @@
     "high_ground": true
    },
    {
-    "id": "C067",
+    "id": "C066",
     "kind": "worship",
     "name": "วัดห้วยไคร้หลวง",
     "lon": 99.863871,
@@ -7025,7 +7009,7 @@
     "high_ground": true
    },
    {
-    "id": "C068",
+    "id": "C067",
     "kind": "school",
     "name": "โรงเรียนบ้านโป่ง",
     "lon": 99.881298,
@@ -7043,7 +7027,7 @@
     "high_ground": true
    },
    {
-    "id": "C069",
+    "id": "C068",
     "kind": "school",
     "name": "โรงเรียนบ้านน้ำจำ",
     "lon": 99.885564,
@@ -7061,7 +7045,7 @@
     "high_ground": true
    },
    {
-    "id": "C070",
+    "id": "C069",
     "kind": "government",
     "name": "ตรวจคนเข้าเมืองจังหวัดเชียงราย",
     "lon": 99.884225,
@@ -7079,7 +7063,7 @@
     "high_ground": true
    },
    {
-    "id": "C071",
+    "id": "C070",
     "kind": "school",
     "name": "โรงเรียนบ้านสันถนน",
     "lon": 99.952821,
@@ -7097,7 +7081,7 @@
     "high_ground": false
    },
    {
-    "id": "C072",
+    "id": "C071",
     "kind": "worship",
     "name": "วัดมรรคาราม",
     "lon": 99.947379,
@@ -7115,7 +7099,7 @@
     "high_ground": false
    },
    {
-    "id": "C073",
+    "id": "C072",
     "kind": "worship",
     "name": "",
     "lon": 99.934887,
@@ -7133,7 +7117,7 @@
     "high_ground": false
    },
    {
-    "id": "C074",
+    "id": "C073",
     "kind": "school",
     "name": "โรงเรียนบ้านสันธาตุ",
     "lon": 99.967213,
@@ -7151,7 +7135,7 @@
     "high_ground": false
    },
    {
-    "id": "C075",
+    "id": "C074",
     "kind": "worship",
     "name": "วัดเจติยาราม(สันธาตุ)",
     "lon": 99.967402,
@@ -7169,7 +7153,7 @@
     "high_ground": false
    },
    {
-    "id": "C076",
+    "id": "C075",
     "kind": "school",
     "name": "โรงเรียนชุมชนบ้านป่าสักน้อย",
     "lon": 99.989259,
@@ -7189,7 +7173,7 @@
     "high_ground": true
    },
    {
-    "id": "C077",
+    "id": "C076",
     "kind": "worship",
     "name": "วัดป่าสักน้อย",
     "lon": 99.989423,
@@ -7209,7 +7193,7 @@
     "high_ground": false
    },
    {
-    "id": "C078",
+    "id": "C077",
     "kind": "worship",
     "name": "วัดดอยจำปี",
     "lon": 100.022846,
@@ -7229,7 +7213,7 @@
     "high_ground": true
    },
    {
-    "id": "C079",
+    "id": "C078",
     "kind": "worship",
     "name": "",
     "lon": 99.983565,
@@ -7249,7 +7233,7 @@
     "high_ground": true
    },
    {
-    "id": "C080",
+    "id": "C079",
     "kind": "school",
     "name": "",
     "lon": 99.851848,
@@ -7267,7 +7251,7 @@
     "high_ground": true
    },
    {
-    "id": "C081",
+    "id": "C080",
     "kind": "worship",
     "name": "เจดีย์วัดผาแตก",
     "lon": 99.867546,
@@ -7285,28 +7269,7 @@
     "high_ground": true
    },
    {
-    "id": "C082",
-    "kind": "worship",
-    "name": "",
-    "lon": 99.846652,
-    "lat": 20.254104,
-    "source": "OSM node/4527119260",
-    "footprint_m2": 0,
-    "capacity_est": null,
-    "h": null,
-    "k": 1.0,
-    "freeboard_m": null,
-    "snap_m": 1403,
-    "eligible": false,
-    "ineligible_reasons": [
-     "outside_model",
-     "no_road_within_400m"
-    ],
-    "m": false,
-    "high_ground": false
-   },
-   {
-    "id": "C083",
+    "id": "C081",
     "kind": "worship",
     "name": "",
     "lon": 99.88653,
@@ -7324,7 +7287,7 @@
     "high_ground": true
    },
    {
-    "id": "C084",
+    "id": "C082",
     "kind": "worship",
     "name": "",
     "lon": 99.868845,
@@ -7342,7 +7305,7 @@
     "high_ground": true
    },
    {
-    "id": "C085",
+    "id": "C083",
     "kind": "worship",
     "name": "",
     "lon": 99.882024,
@@ -7360,7 +7323,7 @@
     "high_ground": false
    },
    {
-    "id": "C086",
+    "id": "C084",
     "kind": "worship",
     "name": "วัดหนองอ้อ",
     "lon": 99.905982,
@@ -7378,7 +7341,7 @@
     "high_ground": false
    },
    {
-    "id": "C087",
+    "id": "C085",
     "kind": "worship",
     "name": "",
     "lon": 99.930782,
@@ -7396,7 +7359,7 @@
     "high_ground": false
    },
    {
-    "id": "C088",
+    "id": "C086",
     "kind": "worship",
     "name": "วัดน้ำจำ",
     "lon": 99.886613,
@@ -7414,7 +7377,7 @@
     "high_ground": true
    },
    {
-    "id": "C089",
+    "id": "C087",
     "kind": "worship",
     "name": "Chao Por Tham Kob Shrine",
     "lon": 99.881734,
@@ -7432,7 +7395,7 @@
     "high_ground": false
    },
    {
-    "id": "C090",
+    "id": "C088",
     "kind": "worship",
     "name": "",
     "lon": 99.88703,
@@ -7452,7 +7415,7 @@
     "high_ground": false
    },
    {
-    "id": "C091",
+    "id": "C089",
     "kind": "worship",
     "name": "",
     "lon": 99.871823,
@@ -7470,7 +7433,7 @@
     "high_ground": true
    },
    {
-    "id": "C092",
+    "id": "C090",
     "kind": "worship",
     "name": "ถ้ำป่าสารภี",
     "lon": 99.855012,
@@ -7488,7 +7451,7 @@
     "high_ground": true
    },
    {
-    "id": "C093",
+    "id": "C091",
     "kind": "community",
     "name": "หมู่บ้านเก้าหลัง",
     "lon": 99.862988,
@@ -7506,7 +7469,7 @@
     "high_ground": true
    },
    {
-    "id": "C094",
+    "id": "C092",
     "kind": "worship",
     "name": "สำนักสงฆ์บ่อน้ำทิพย์",
     "lon": 99.838214,
@@ -7526,7 +7489,7 @@
     "high_ground": true
    },
    {
-    "id": "C095",
+    "id": "C093",
     "kind": "worship",
     "name": "วัดสันมะเค็ด",
     "lon": 100.029236,
@@ -7546,28 +7509,7 @@
     "high_ground": false
    },
    {
-    "id": "C096",
-    "kind": "worship",
-    "name": "วัดหนองบัวตแง",
-    "lon": 100.046264,
-    "lat": 20.29496,
-    "source": "OSM node/6395095388",
-    "footprint_m2": 0,
-    "capacity_est": null,
-    "h": null,
-    "k": 1.0,
-    "freeboard_m": null,
-    "snap_m": 8682,
-    "eligible": false,
-    "ineligible_reasons": [
-     "outside_model",
-     "no_road_within_400m"
-    ],
-    "m": false,
-    "high_ground": false
-   },
-   {
-    "id": "C097",
+    "id": "C094",
     "kind": "worship",
     "name": "วัดสันปูเลย",
     "lon": 99.945429,
@@ -7585,7 +7527,7 @@
     "high_ground": false
    },
    {
-    "id": "C098",
+    "id": "C095",
     "kind": "worship",
     "name": "วัดศรีบุญยืน",
     "lon": 99.972476,
@@ -7605,7 +7547,7 @@
     "high_ground": true
    },
    {
-    "id": "C099",
+    "id": "C096",
     "kind": "worship",
     "name": "วัดสะนสลี",
     "lon": 99.957555,
@@ -7623,7 +7565,7 @@
     "high_ground": false
    },
    {
-    "id": "C100",
+    "id": "C097",
     "kind": "government",
     "name": "",
     "lon": 99.880146,
@@ -7643,7 +7585,7 @@
     "high_ground": false
    },
    {
-    "id": "C101",
+    "id": "C098",
     "kind": "worship",
     "name": "",
     "lon": 99.833746,
@@ -7661,7 +7603,7 @@
     "high_ground": true
    },
    {
-    "id": "C102",
+    "id": "C099",
     "kind": "school",
     "name": "โรงเรียนอนุบาลมานิตวิทยา",
     "lon": 99.859456,
@@ -7679,7 +7621,7 @@
     "high_ground": true
    },
    {
-    "id": "C103",
+    "id": "C100",
     "kind": "school",
     "name": "โรงเรียนมานิตวิทยา",
     "lon": 99.860195,
@@ -7697,7 +7639,7 @@
     "high_ground": true
    },
    {
-    "id": "C104",
+    "id": "C101",
     "kind": "worship",
     "name": "วัดศาลาเชิงดอย",
     "lon": 99.843705,
@@ -7715,7 +7657,7 @@
     "high_ground": true
    },
    {
-    "id": "C105",
+    "id": "C102",
     "kind": "worship",
     "name": "",
     "lon": 100.021564,
@@ -7735,7 +7677,7 @@
     "high_ground": false
    },
    {
-    "id": "C106",
+    "id": "C103",
     "kind": "worship",
     "name": "",
     "lon": 99.833304,
@@ -7753,7 +7695,7 @@
     "high_ground": true
    },
    {
-    "id": "C107",
+    "id": "C104",
     "kind": "worship",
     "name": "วัดพระธาตุดอยเวียงแก้ว(ครูบาบุญชุ่ม)",
     "lon": 100.018961,
@@ -7773,28 +7715,7 @@
     "high_ground": true
    },
    {
-    "id": "C108",
-    "kind": "school",
-    "name": "โรงเรียนบ้านขาแหย่งพัฒนา",
-    "lon": 99.802436,
-    "lat": 20.273831,
-    "source": "OSM node/12917404701",
-    "footprint_m2": 0,
-    "capacity_est": null,
-    "h": null,
-    "k": 1.0,
-    "freeboard_m": null,
-    "snap_m": 3577,
-    "eligible": false,
-    "ineligible_reasons": [
-     "outside_model",
-     "no_road_within_400m"
-    ],
-    "m": false,
-    "high_ground": false
-   },
-   {
-    "id": "C109",
+    "id": "C105",
     "kind": "school",
     "name": "โรงเรียนบ้านเวียงแก้ว",
     "lon": 100.027728,
@@ -7814,7 +7735,7 @@
     "high_ground": false
    },
    {
-    "id": "C110",
+    "id": "C106",
     "kind": "worship",
     "name": "วัดเวียงแก้ว",
     "lon": 100.022357,
@@ -7834,7 +7755,7 @@
     "high_ground": true
    },
    {
-    "id": "C111",
+    "id": "C107",
     "kind": "government",
     "name": "สำนักงานองค์การบริหารส่วนตำบลศรีเมืองชุม",
     "lon": 99.987367,
@@ -7852,7 +7773,7 @@
     "high_ground": false
    },
    {
-    "id": "C112",
+    "id": "C108",
     "kind": "school",
     "name": "โรงเรียนสอนคนตาบอดแม่สาย",
     "lon": 99.988879,
@@ -7872,7 +7793,7 @@
     "high_ground": false
    },
    {
-    "id": "C113",
+    "id": "C109",
     "kind": "community",
     "name": "ศูนย์ปฏิบัติการ ชรบ.อพปร.บ้านผาหมี",
     "lon": 99.847065,
@@ -7890,7 +7811,7 @@
     "high_ground": true
    },
    {
-    "id": "C114",
+    "id": "C110",
     "kind": "community",
     "name": "ศูนย์ชุมชนบ้านผาหมี",
     "lon": 99.851017,
@@ -7908,7 +7829,7 @@
     "high_ground": true
    },
    {
-    "id": "C115",
+    "id": "C111",
     "kind": "community",
     "name": "ศูนย์การเรียนรู้ชาวไทยภูเขาบ้านเผาฮี้",
     "lon": 99.827599,
@@ -7926,7 +7847,7 @@
     "high_ground": true
    },
    {
-    "id": "C116",
+    "id": "C112",
     "kind": "worship",
     "name": "",
     "lon": 99.870994,
@@ -7944,7 +7865,7 @@
     "high_ground": true
    },
    {
-    "id": "C117",
+    "id": "C113",
     "kind": "worship",
     "name": "สวนปฏิบัติธรรมดอยช้าง-งู",
     "lon": 99.872797,
@@ -7967,7 +7888,7 @@
     "marginal_demand": 2955.8,
     "cumulative_demand": 2955.8,
     "cumulative_share": 0.2086,
-    "candidate_id": "C050",
+    "candidate_id": "C049",
     "loads": [
      2956
     ],
@@ -7988,7 +7909,7 @@
     "marginal_demand": 780.9,
     "cumulative_demand": 5725.3,
     "cumulative_share": 0.4041,
-    "candidate_id": "C111",
+    "candidate_id": "C107",
     "loads": [
      2430,
      2515,
@@ -8000,7 +7921,7 @@
     "marginal_demand": 470.4,
     "cumulative_demand": 6195.7,
     "cumulative_share": 0.4373,
-    "candidate_id": "C086",
+    "candidate_id": "C084",
     "loads": [
      2430,
      2515,
@@ -8013,7 +7934,7 @@
     "marginal_demand": 430.1,
     "cumulative_demand": 6625.7,
     "cumulative_share": 0.4676,
-    "candidate_id": "C097",
+    "candidate_id": "C094",
     "loads": [
      2430,
      2515,
@@ -8042,7 +7963,7 @@
     "marginal_demand": 335.3,
     "cumulative_demand": 7335.9,
     "cumulative_share": 0.5177,
-    "candidate_id": "C073",
+    "candidate_id": "C072",
     "loads": [
      2430,
      2515,
@@ -8058,7 +7979,7 @@
     "marginal_demand": 243.8,
     "cumulative_demand": 7579.8,
     "cumulative_share": 0.5349,
-    "candidate_id": "C074",
+    "candidate_id": "C073",
     "loads": [
      2430,
      2515,
@@ -8075,7 +7996,7 @@
     "marginal_demand": 235.3,
     "cumulative_demand": 7815.1,
     "cumulative_share": 0.5516,
-    "candidate_id": "C051",
+    "candidate_id": "C050",
     "loads": [
      2430,
      2515,
@@ -8093,7 +8014,7 @@
     "marginal_demand": 172.9,
     "cumulative_demand": 7988.0,
     "cumulative_share": 0.5638,
-    "candidate_id": "C087",
+    "candidate_id": "C085",
     "loads": [
      2430,
      2515,
@@ -8112,7 +8033,7 @@
     "marginal_demand": 165.5,
     "cumulative_demand": 8153.5,
     "cumulative_share": 0.5754,
-    "candidate_id": "C085",
+    "candidate_id": "C083",
     "loads": [
      2430,
      2515,
@@ -8132,7 +8053,7 @@
     "marginal_demand": 113.5,
     "cumulative_demand": 8267.0,
     "cumulative_share": 0.5834,
-    "candidate_id": "C072",
+    "candidate_id": "C071",
     "loads": [
      2430,
      2515,
@@ -9203,6 +9124,15 @@
   "nominal_overpass": "Daily composite of early-afternoon passes; compared with the model at 13:30 ICT.",
   "comparison_rule": "District only, clear-sky pixels only, permanent water excluded; VIIRS area = sum of flood fraction x pixel area; model area = modelled out-of-channel wet fraction averaged onto the same 375 m pixels.",
   "caveat": "375 m optical data under-detects narrow, shallow, urban or vegetated flooding and sees nothing under cloud; agreement or disagreement is indicative only.",
+  "model_fields": {
+   "names": [
+    "model_stage_m",
+    "model_flood_km2_clear",
+    "model_flood_km2_district"
+   ],
+   "evidence_tier": "T1 scenario (model)",
+   "note": "Model output on the reconstructed water, placed beside each day for comparison; not part of the VIIRS product."
+  },
   "days": [
    {
     "date": "2024-09-10",
@@ -9927,7 +9857,7 @@
    "id": "unosat-4009",
    "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)",
    "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
-   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" on 1 Oct 2026; shown only after the owners confirm the rights record."
+   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); shown only after the owners confirm the rights record."
   },
   {
    "id": "unosat-3969",

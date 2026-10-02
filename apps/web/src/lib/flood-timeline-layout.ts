@@ -22,6 +22,25 @@ export const POPUP_CHROME_PX = { x: 28, y: 46 } as const;
  */
 export const ZOOM_CLEARANCE_PX = 64;
 
+/** A side label of the imagery swipe is shown only when at least this much width is left for it. */
+export const COMPARE_LABEL_MIN_PX = 64;
+/** Gap between the divider and each side label, and between the right label and the map edge. */
+export const COMPARE_LABEL_GAP_PX = { divider: 16, edge: 10 } as const;
+
+/**
+ * Width (px) left for each side label of the imagery swipe on a map `frameWidth` wide with the divider at `pct` %.
+ * The left label sits between the zoom control (`ZOOM_CLEARANCE_PX`) and the divider, the right one between the
+ * divider and the map edge. A label with less than `COMPARE_LABEL_MIN_PX` is not shown: on a narrow map it would
+ * wrap into a tall sliver, and the divider's value text still names both images.
+ */
+export function compareLabelRoom(frameWidth: number, pct: number): { left: number; right: number } {
+  const divider = (Math.max(0, frameWidth) * Math.min(100, Math.max(0, pct))) / 100;
+  return {
+    left: Math.max(0, divider - COMPARE_LABEL_GAP_PX.divider - ZOOM_CLEARANCE_PX),
+    right: Math.max(0, frameWidth - divider - COMPARE_LABEL_GAP_PX.divider - COMPARE_LABEL_GAP_PX.edge),
+  };
+}
+
 export interface PopupFitInput {
   /** Size of the map container in CSS pixels. */
   mapWidth: number;

@@ -114,9 +114,38 @@ def test_a_negation_does_not_excuse_an_affirmative_claim_in_the_same_text() -> N
 def test_text_is_normalised_like_the_web_linter() -> None:
     assert normalise("GISTDA’s  map\n(see https://gistda.or.th/live/forecast) real‑time") == "GISTDA's map (see ) real-time"
     assert ids(find_violations("GISTDA’s map, real‑time", RULES)) == ["real_time", "september_extent"]
+    # En dashes, figure dashes and minus signs read as hyphens, so "real–time" cannot slip past as another word.
+    assert normalise("real–time, real‒time, real−time, 10–14 Sep") == "real-time, real-time, real-time, 10-14 Sep"
+    assert ids(find_violations("A real–time view", RULES)) == ["real_time"]
     finding = find_violations("x" * 60 + " a live map " + "y" * 60, RULES, "seed")[0]
     assert (finding.rule, finding.match, finding.source) == ("live", "live", "seed")
     assert len(finding.context) == 84 and "live" in finding.describe()
+
+
+@pytest.mark.parametrize(
+    ("text", "rule"),
+    [
+        ("แผนที่น้ำท่วมตามเวลาจริง", "real_time"), ("คาดการณ์น้ำท่วม", "forecast"), ("ทำนายระดับน้ำ", "forecast"),
+        ("แบบจำลองแม่นยำ 48%", "validation_as_agreement"), ("ผ่านการตรวจสอบแล้ว", "validation_as_agreement"),
+        ("ประกาศเตือน", "warning"), ("คาบการเกิดซ้ำ 100 ปี", "return_period"), ("รอบ ๑๐๐ ปี", "return_period"), ("รอบ ๒๕ ปี", "return_period"),
+        ("100 yr flood", "return_period"), ("Flood alert", "warning"), ("the plan is the better option", "set_ranking"),
+    ],
+)
+def test_the_usual_thai_renderings_of_a_banned_claim_are_flagged(text: str, rule: str) -> None:
+    # A translator's wording of a banned English claim must fail too, not only the one spelling listed first.
+    assert rule in ids(find_violations(text, RULES)), text
+
+
+def test_a_denial_covers_only_what_it_denies() -> None:
+    for denial in ("ไม่ใช่แผนที่ตามเวลาจริง", "ไม่ใช่การคาดการณ์", "ยังไม่ผ่านการตรวจสอบภาคสนาม", "ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ", "ไม่ใช่ความแม่นยำ",
+                   "It is a model, not real-time or a warning.", "not real-time, not an official warning"):
+        assert find_violations(denial, RULES) == [], denial
+    # "not real-time" does not excuse a warning joined with a comma or "and"; only "or" shares the one "not".
+    assert ids(find_violations("not real-time, warning: flooding expected", RULES)) == ["warning"]
+    assert ids(find_violations("This is not real-time and an official warning", RULES)) == ["warning"]
+    assert ids(find_violations("ไม่ใช่ข้อมูลเรียลไทม์และคำเตือนอย่างเป็นทางการ", RULES)) == ["warning"]
+    document = json.loads(RULES_PATH.read_text(encoding="utf-8"))
+    assert "has not signed the list off yet" in document["thai_terms_review"]
 
 
 def test_a_malformed_rules_file_is_refused(tmp_path: Path) -> None:

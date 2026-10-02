@@ -78,8 +78,31 @@ def test_no_loss_gives_no_ratio_with_a_reason() -> None:
     assert gap.interpretation == "Equity gap not computed: neither group has lost access."
     # floodguard.equity states 1.0 for the same input; the replay does not.
     assert float(reference(0, 50, 0, 100)["equity_gap_ratio"]) == 1.0
-    # Rates that round to zero count as no loss, exactly as in floodguard.equity.
-    assert replay_equity_gap(0.004, 100, 0.004, 100).reason == REASON_NO_LOSS
+
+
+def test_a_loss_too_small_for_the_rounded_rate_is_still_a_loss() -> None:
+    # Three residents lost in a group of 74,647 is a rate of 0.0000. The rule reads the lost counts, so this is
+    # neither "nobody has lost access" nor "only vulnerable residents have".
+    other_only = replay_equity_gap(0, 7152, 3, 74647)
+    assert (other_only.vulnerable_rate, other_only.non_vulnerable_rate) == (0.0, 0.0)
+    assert (other_only.status, other_only.reason, other_only.ratio, other_only.band) == ("ratio", None, 0.0, "lower")
+    assert (other_only.vulnerable_lost, other_only.non_vulnerable_lost) == (0.0, 3.0)
+    # floodguard.equity reads the same input as zero loss in both groups.
+    assert float(reference(0, 7152, 3, 74647)["equity_gap_ratio"]) == 1.0
+    # Both groups lost a little: the ratio comes from the unrounded rates, (1 / 7152) / (3 / 74647).
+    both = replay_equity_gap(1, 7152, 3, 74647)
+    assert (both.vulnerable_rate, both.non_vulnerable_rate, both.ratio, both.band) == (0.0001, 0.0, 3.479, "higher")
+    assert both.interpretation == "Vulnerable residents are 3.48 times more likely to lose access."
+    assert replay_equity_gap(0.004, 100, 0.004, 100).ratio == 1.0
+    # Only the other group's rate rounds to zero: a ratio, not "undefined".
+    small_other = replay_equity_gap(5, 100, 0.004, 100)
+    assert (small_other.reason, small_other.ratio, small_other.band) == (None, 1250.0, "higher")
+    assert pd.isna(reference(5, 100, 0.004, 100)["equity_gap_ratio"])
+    # A vulnerable rate that rounds to zero beside a large other loss stays a ratio of 0.0, as before.
+    assert (replay_equity_gap(0.3, 7152, 5671, 74647).ratio, replay_equity_gap(0.3, 7152, 5671, 74647).band) == (0.001, "lower")
+    # With no loss at all in the other group the ratio stays undefined, however small the vulnerable loss.
+    assert replay_equity_gap(2, 7152, 0, 74647).reason == REASON_UNDEFINED_RATIO
+    assert replay_equity_gap(0, 7152, 0, 74647).reason == REASON_NO_LOSS
 
 
 @pytest.mark.parametrize(
@@ -125,6 +148,12 @@ def test_the_minimum_group_size_can_be_set_for_another_study() -> None:
     assert replay_equity_gap(10, 49, 100, 1000, minimum_group_size=30).ratio == 2.041
     gap = replay_equity_gap(10, 49, 100, 1000, minimum_group_size=100)
     assert gap.reason == REASON_INSUFFICIENT_GROUP and "fewer than 100 residents" in gap.interpretation
+    # An empty group never gives a ratio, whatever the minimum, and a minimum below 1 is refused.
+    empty = replay_equity_gap(0, 0, 5, 100, minimum_group_size=1)
+    assert (empty.reason, empty.ratio, empty.vulnerable_rate) == (REASON_INSUFFICIENT_GROUP, None, None)
+    for bad in (0, -1, 0.5, float("nan"), True):
+        with pytest.raises(ReplayEquityError, match="minimum_group_size"):
+            replay_equity_gap(0, 0, 5, 100, minimum_group_size=bad)
 
 
 def test_reason_is_none_exactly_when_there_is_a_ratio() -> None:
@@ -145,7 +174,7 @@ def test_reason_is_none_exactly_when_there_is_a_ratio() -> None:
         (1200, 10000, 1000, 10000), (1201, 10000, 1000, 10000), (799, 10000, 1000, 10000), (500, 10000, 500, 10000),
         (100, 300, 100, 700), (200, 300, 100, 700), (5000, 10000, 4, 10000), (1, 10000, 5000, 10000),
         (5, 100000, 1000, 10000), (15, 100000, 1000, 10000), (12345, 100000, 1000, 10000), (0.004, 100, 10, 100),
-        (0, 2440, 7086, 32085), (50, 50, 100, 100), (34.3, 7151.6, 5671, 74646.9), (5, 50, 0, 100), (5, 100, 0.004, 100),
+        (0, 2440, 7086, 32085), (50, 50, 100, 100), (34.3, 7151.6, 5671, 74646.9), (5, 50, 0, 100),
     ],
 )
 def test_same_rates_ratio_and_wording_as_floodguard_equity_wherever_a_ratio_or_undefined_is_stated(inputs: tuple[float, ...]) -> None:

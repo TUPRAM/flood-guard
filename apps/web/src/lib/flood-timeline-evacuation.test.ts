@@ -373,15 +373,20 @@ describe("Mae Sai shelter plan and reported shelters", () => {
   it("marks shelter sites outside the terrain model from the manifest's m flag", () => {
     const outside = shelters.candidates.filter((candidate) => !siteModelled(candidate)).map((candidate) => candidate.id).sort();
     // The model flag and the screening reason agree, and (with both DEM tiles, r3 on) the only unmodelled sites are
-    // those outside the replay grid itself.
-    expect(outside.length).toBeGreaterThan(0);
+    // those outside the replay grid itself. The bake cuts OpenStreetMap to the replay area, so the served revision
+    // has none; a revision that had one would be read the same way (the copy below).
+    expect(outside).toEqual([]);
     expect(outside).toEqual(shelters.candidates.filter((candidate) => candidate.ineligible_reasons.includes("outside_model")).map((candidate) => candidate.id).sort());
     const [[south, west], [north, east]] = manifest.bounds;
     const inGrid = (candidate: { lat: number; lon: number }) => candidate.lat >= south && candidate.lat <= north && candidate.lon >= west && candidate.lon <= east;
     if (coverageComplete(manifest.model_coverage)) {
       expect(shelters.candidates.filter((candidate) => !inGrid(candidate)).map((candidate) => candidate.id).sort()).toEqual(outside);
     }
-    for (const candidate of shelters.candidates.filter((item) => outside.includes(item.id))) {
+    const moved = shelters.candidates.find((candidate) => !candidate.eligible)!;
+    const copy = { ...moved, m: false, h: null, high_ground: false, ineligible_reasons: ["outside_model", "no_road_within_400m"] };
+    expect(siteModelled(copy)).toBe(false);
+    expect(siteModelled({ m: true })).toBe(true);
+    for (const candidate of [copy]) {
       expect(candidate.h).toBeNull();
       expect(candidate.high_ground).toBe(false);
       expect(candidate.eligible).toBe(false);

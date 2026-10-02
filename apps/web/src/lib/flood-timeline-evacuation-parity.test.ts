@@ -21,6 +21,7 @@ import {
   accessSnapshot,
   CUTOFF_COVERAGE_SHARE,
   EQUITY_MIN_GROUP,
+  equityWording,
   evacuationEquityGap,
   floodedHomeMask,
   homeWetAt,
@@ -207,11 +208,45 @@ describe("Evacuation Equity Gap parity with floodguard.replay_equity", () => {
   });
 
   it("withholds the ratio with reason no_loss when neither group has lost access, as Python does", () => {
-    for (const name of ["no loss in either group", "no loss, both groups large", "no loss, groups of exactly 50", "both rates round to zero"]) {
+    for (const name of ["no loss in either group", "no loss, both groups large", "no loss, groups of exactly 50"]) {
       const row = edgeCase(name);
+      expect([row[0], row[2]], name).toEqual([0, 0]);
       expect(row.slice(4), name).toEqual([0, 0, null, null, "Equity gap not computed: neither group has lost access.", "no_loss"]);
       expect(gapOf(row), name).toMatchObject({ status: "no_loss", reason: "no_loss", ratio: null, band: null });
     }
+  });
+
+  it("reads loss from the residents who lost access, not from a rate that rounds to zero, as Python does", () => {
+    // Three residents lost in a group of 74,647: both rates are 0.0000, and it is still a loss.
+    const otherOnly = edgeCase("small loss in a large group, no vulnerable loss");
+    expect(otherOnly.slice(0, 4)).toEqual([0, 7152, 3, 74647]);
+    expect(otherOnly.slice(4)).toEqual([0, 0, 0, "lower", "Vulnerable residents are 0 times as likely to lose access.", null]);
+    expect(gapOf(otherOnly)).toMatchObject({ status: "ratio", reason: null, vulnerableLost: 0, nonVulnerableLost: 3 });
+    // Both groups lost a little: the ratio comes from the unrounded rates.
+    expect(edgeCase("small loss in both large groups").slice(4, 8)).toEqual([0.0001, 0, 3.479, "higher"]);
+    expect(edgeCase("both rates round to zero").slice(4, 8)).toEqual([0, 0, 1, "similar"]);
+    expect(edgeCase("only the non-vulnerable rate rounds to zero").slice(6, 8)).toEqual([1250, "higher"]);
+    // No loss at all in the other group stays undefined, however small the vulnerable loss.
+    expect(edgeCase("small vulnerable loss only, large groups").slice(6)).toEqual([null, null,
+      "Equity gap ratio undefined because vulnerable loss exists while non-vulnerable loss is zero.", "undefined_ratio"]);
+    // The page never says "no one" or "no proxy-vulnerable resident" while residents have lost access.
+    for (const name of ["small loss in a large group, no vulnerable loss", "small loss in both large groups", "both rates round to zero",
+      "only the non-vulnerable rate rounds to zero", "small vulnerable loss beside a large other loss"]) {
+      const row = edgeCase(name);
+      for (const language of ["en", "th"] as const) {
+        const wording = equityWording(gapOf(row), language);
+        const said = `${wording.value} ${wording.sentence}`;
+        expect(said, name).not.toMatch(/No one in either group|ไม่มีผู้ใดในทั้งสองกลุ่ม|Infinity|NaN/);
+        if (row[0] > 0) expect(said, name).not.toMatch(/no proxy-vulnerable resident has lost access|ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง/);
+        if (row[2] > 0 && row[5] === 0) expect(said, name).toContain("< 0.01%");
+      }
+    }
+    expect(equityWording(gapOf(otherOnly), "en")).toEqual({
+      value: "no proxy-vulnerable resident has lost access", sentence: "At this replay hour, < 0.01% of everyone else have.",
+    });
+    expect(equityWording(gapOf(edgeCase("small loss in both large groups")), "en")).toEqual({
+      value: "3.48", sentence: "Proxy-vulnerable residents are about 3.5× more likely to lose access (0.01% vs < 0.01%).",
+    });
   });
 
   it("withholds the ratio with reason insufficient_group_denominator below 50 residents per group, as Python does", () => {

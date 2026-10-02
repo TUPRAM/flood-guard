@@ -11,7 +11,8 @@ through ``replay-wording-lint.ts``, so both sides apply the same patterns.
 How a text is judged:
 
 1. :func:`normalise` removes web addresses, collapses white space and makes
-   curly apostrophes and non-breaking hyphens plain.
+   curly apostrophes plain and every hyphen-like dash (non-breaking hyphen,
+   figure dash, en dash, minus sign) a plain hyphen.
 2. Every allowlisted negation is removed, in order.
 3. Whatever still matches a banned pattern is a finding.
 """
@@ -109,7 +110,9 @@ def load_rules(path: Path | str) -> WordingRules:
 def normalise(text: str) -> str:
     """Return ``text`` as the linter reads it (the same steps as ``normaliseWording`` on the web side)."""
     text = _URL.sub(" ", text)
-    text = text.replace("‘", "'").replace("’", "'").replace("‐", "-").replace("‑", "-")
+    text = text.replace("‘", "'").replace("’", "'")
+    for dash in "‐‑‒–−":  # Hyphen, non-breaking hyphen, figure dash, en dash and minus sign.
+        text = text.replace(dash, "-")
     return _WHITE_SPACE.sub(" ", text).strip()
 
 

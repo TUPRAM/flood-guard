@@ -43,7 +43,7 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
   "Water extents are a terrain-model reconstruction with illustrative stages; the late-recession size was tuned to one radar pass rather than checked independently, and spatial agreement there is weak.":
     "ขอบเขตน้ำจำลองจากแบบจำลองภูมิประเทศด้วยระดับน้ำสมมุติ ขนาดพื้นที่ช่วงท้ายของน้ำลดปรับตามภาพเรดาร์หนึ่งภาพ ไม่ได้ตรวจสอบอย่างอิสระ และตำแหน่งยังสอดคล้องกันน้อย",
   "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.":
-    "ไม่พบข้อมูลระดับน้ำแม่น้ำสายรายชั่วโมงที่เปิดเผยสำหรับเดือน ก.ย. 2567 (2024) (สถานี MYA004 ของ สสน. ติดตั้งปี 2568 สถานี Kh.50 ของกรมชลประทานปิดแล้ว และระบบเตือนภัยบ้านแม่สายของกรมทรัพยากรน้ำยังไม่ได้ยืนยัน) ค่าระดับน้ำจึงยังเป็นค่าเพื่อการอธิบาย",
+    "ไม่พบข้อมูลระดับน้ำแม่น้ำสายรายชั่วโมงที่เปิดเผยสำหรับเดือน ก.ย. 2567 (2024) (สถานี MYA004 ของ สสน. ติดตั้งปี 2568 (2025) สถานี Kh.50 ของกรมชลประทานปิดแล้ว และระบบเตือนภัยบ้านแม่สายของกรมทรัพยากรน้ำยังไม่ได้ยืนยัน) ค่าระดับน้ำจึงยังเป็นค่าเพื่อการอธิบาย",
   "375 m optical data under-detects narrow, shallow, urban or vegetated flooding and sees nothing under cloud; agreement or disagreement is indicative only.":
     "ข้อมูลเชิงแสงความละเอียด 375 ม. ตรวจพบน้ำท่วมที่แคบ ตื้น อยู่ในเมือง หรืออยู่ใต้พืชพรรณได้น้อยกว่าจริง และมองไม่เห็นพื้นที่ใต้เมฆ ความสอดคล้องหรือความต่างจึงเป็นเพียงข้อบ่งชี้",
   "Daily composite of early-afternoon passes; compared with the model at 13:30 ICT.":
@@ -52,8 +52,6 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "เฉพาะในอำเภอและเฉพาะพิกเซลที่ท้องฟ้าโปร่ง ไม่รวมแหล่งน้ำถาวร พื้นที่ของ VIIRS = ผลรวมของสัดส่วนน้ำท่วม × พื้นที่พิกเซล พื้นที่ของแบบจำลอง = สัดส่วนพื้นที่เปียกนอกร่องน้ำจากแบบจำลอง เฉลี่ยลงบนพิกเซล 375 ม. เดียวกัน",
   "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT":
     "มม. ต่อชั่วโมง ดัชนี 0 = 9 ก.ย. 00:00–01:00 น.",
-  "Season envelope. The CC BY-SA 4.0 rights decision was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" on 1 Oct 2026; shown only after the owners confirm the rights record.":
-    "ขอบเขตน้ำตลอดฤดู มติเรื่องสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA 4.0 ลงนามเมื่อ 30 ก.ย. 2569 และ UNOSAT ตอบว่า \"we approve the use\" เมื่อ 1 ต.ค. 2569 จะแสดงหลังจากเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลแล้วเท่านั้น",
   // Evacuation access scenario (the "Sources, assumptions and limits" panel).
   "T1 scenario (model), not observed evacuation outcomes":
     "สถานการณ์จำลองระดับ T1 (แบบจำลอง) ไม่ใช่ผลการอพยพที่สังเกตได้จริง",
@@ -98,7 +96,7 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
   "about 70 km² flood-affected within a 305 km² analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated":
     "พื้นที่ได้รับผลกระทบจากน้ำท่วมประมาณ 70 ตร.กม. จากพื้นที่วิเคราะห์ 305 ตร.กม. ประชากรที่อยู่ในพื้นที่น้ำท่วมประมาณ 13,600 คน (WorldPop 2020) เป็นผลเบื้องต้น ยังไม่ได้ตรวจสอบภาคสนาม",
   "Magnitude check over the same window only; UNOSAT is a cumulative multi-sensor observation, not a spatial validation of the model. Calibration-informed, not independent: this figure was known while the stage keyframes were tuned (owner decision, 30 Sep 2026). Its people figure is an exposure estimate, a different measure from the model's residents in water.":
-    "ใช้ตรวจขนาดในช่วงเวลาเดียวกันเท่านั้น UNOSAT เป็นการสังเกตสะสมจากดาวเทียมหลายดวง ไม่ใช่การยืนยันตำแหน่งของแบบจำลอง ตัวเลขนี้มีส่วนในการปรับแบบจำลอง จึงไม่ใช่การตรวจสอบอิสระ เพราะทราบตัวเลขนี้แล้วขณะปรับจุดระดับน้ำ ตามมติของเจ้าของโครงการเมื่อ 30 ก.ย. 2569 ตัวเลขประชากรของ UNOSAT เป็นค่าประมาณผู้ได้รับผลกระทบ ซึ่งวัดต่างจากจำนวนผู้อยู่อาศัยในน้ำตามแบบจำลอง",
+    "ใช้ตรวจขนาดในช่วงเวลาเดียวกันเท่านั้น UNOSAT เป็นการสังเกตสะสมจากดาวเทียมหลายดวง ไม่ใช่การยืนยันตำแหน่งของแบบจำลอง ตัวเลขนี้มีส่วนในการปรับแบบจำลอง จึงไม่ใช่การตรวจสอบอิสระ เพราะทราบตัวเลขนี้แล้วขณะปรับจุดระดับน้ำ ตามมติของเจ้าของโครงการเมื่อ 30 ก.ย. 2569 (2026) ตัวเลขประชากรของ UNOSAT เป็นค่าประมาณผู้ได้รับผลกระทบ ซึ่งวัดต่างจากจำนวนผู้อยู่อาศัยในน้ำตามแบบจำลอง",
   "Largest modelled extent within 13-19 Sep ICT (the start of the UNOSAT window)":
     "ขอบเขตที่จำลองได้มากที่สุดในช่วง 13–19 ก.ย. (ต้นช่วงเวลาของ UNOSAT)",
   // Residents and low-confidence water.
@@ -188,6 +186,19 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ไฟล์ที่ได้จาก OpenStreetMap (ถนน สถานที่สำคัญ สถานที่ที่อาจใช้เป็นที่พักพิง และตำแหน่งจุดถนน) ยังอยู่ภายใต้ ODbL 1.0 ต้องแสดงที่มาและอนุญาตแบบเดียวกัน",
   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record.":
     "ผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA (CC BY-SA 4.0) ยังไม่แสดง จะแสดงได้หลังจากเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลแล้วเท่านั้น",
+  // Licence wording the project wrote itself. Published licence names ("CC BY 4.0", "ODbL 1.0") stay as published.
+  "Project summary text": "ข้อความสรุปของโครงการ",
+  "Cited figures with links; no data copied": "ตัวเลขที่อ้างอิงพร้อมลิงก์ ไม่ได้คัดลอกข้อมูล",
+  "Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)":
+    "ข้อเท็จจริงพร้อมการอ้างอิง พิกัดที่ได้จาก OSM © ผู้ร่วมสร้าง OpenStreetMap (ODbL)",
+  "Facts with citations": "ข้อเท็จจริงพร้อมการอ้างอิง",
+  "No licence stated by the provider": "ผู้ให้บริการไม่ได้ระบุสัญญาอนุญาต",
+  "No licence stated by the provider; attribution given": "ผู้ให้บริการไม่ได้ระบุสัญญาอนุญาต จึงแสดงที่มาไว้",
+  "NOAA JPSS Proving Ground product; no licence stated on the site, attribution given":
+    "ผลิตภัณฑ์ของ NOAA JPSS Proving Ground เว็บไซต์ไม่ได้ระบุสัญญาอนุญาต จึงแสดงที่มาไว้",
+  "Copernicus DEM licence (free, attribution)": "สัญญาอนุญาต Copernicus DEM (ใช้ได้โดยไม่มีค่าใช้จ่าย ต้องแสดงที่มา)",
+  "Copernicus Sentinel data terms (free, full and open)": "เงื่อนไขข้อมูล Copernicus Sentinel (ใช้ได้โดยไม่มีค่าใช้จ่าย ครบถ้วนและเปิดกว้าง)",
+  "CC BY-NC (per the HII open-data catalogue)": "CC BY-NC (ตามบัญชีข้อมูลเปิดของ สสน.)",
   // What was used, or already known, while the model was tuned.
   "Which external figures were used, or already known, while the stage keyframes and the depth factor were set. A figure used or known during tuning cannot serve as an independent check.":
     "ตัวเลขจากภายนอกใดบ้างที่ใช้หรือทราบอยู่แล้วขณะกำหนดจุดระดับน้ำและตัวคูณความลึก ตัวเลขที่ใช้หรือทราบขณะปรับแบบจำลองไม่อาจนับเป็นการตรวจสอบอิสระ",
@@ -197,12 +208,12 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ภาพ Sentinel-1 วันที่ 16 ก.ย. 06:16 น. ถูกใช้ปรับจุดกำหนดระดับน้ำช่วงน้ำลดใหม่ (ระดับน้ำที่เข้ากันดีที่สุด 0.10 ม.) การเทียบขนาดกับเรดาร์จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ",
   "UNOSAT 3991 (about 70 km² over 13-19 Sep) was known while the stage keyframes were tuned, so its size comparison is calibration-informed, not independent.":
     "ทราบตัวเลขของ UNOSAT 3991 (ประมาณ 70 ตร.กม. ในช่วง 13–19 ก.ย.) อยู่แล้วขณะปรับจุดกำหนดระดับน้ำ การเทียบขนาดกับตัวเลขนี้จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ",
-  "The VIIRS daily comparison was computed after the keyframes were final and was not used for tuning.":
-    "การเทียบกับ VIIRS รายวันคำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง",
+  "The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03) that also moved the 10 Sep 18:15 knot from 0.12 m to 0.1 m, the model's closest level to GISTDA's figure. The build history does not record which came first within that change, so the comparison is not presented as an independent check.":
+    "การเทียบกับ VIIRS รายวันไม่ได้ใช้ปรับแบบจำลอง การเทียบนี้คำนวณครั้งแรกในการแก้ไขเมื่อ 29 ก.ย. 2569 (2026) (commit 129ff03) ซึ่งเป็นการแก้ไขเดียวกับที่ย้ายจุดกำหนดระดับน้ำ 10 ก.ย. 18:15 น. จาก 0.12 ม. เป็น 0.1 ม. อันเป็นระดับของแบบจำลองที่ใกล้ตัวเลขของ GISTDA ที่สุด ประวัติการสร้างข้อมูลไม่ได้บันทึกว่าขั้นตอนใดเกิดก่อนในการแก้ไขนั้น จึงไม่นำการเทียบนี้มาแสดงเป็นการตรวจสอบอิสระ",
   "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision.":
     "การเทียบกับผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง ผลิตภัณฑ์ 4009 ยังไม่แสดงในข้อมูลรุ่นนี้",
   "The depth factor f = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.":
-    "ตัวคูณความลึก f = clip((A / A_Sai) ** 0.3, 0.35, 1) เพิ่มเข้ามาเมื่อ 28 ก.ย. 2569 ซึ่งขณะนั้นทราบตัวเลขของ GISTDA และ UNOSAT 3991 แล้ว เลขชี้กำลังและค่าต่ำสุดเป็นไปตามหลักประมาณของเรขาคณิตชลศาสตร์ ประวัติการสร้างข้อมูลไม่มีบันทึกว่าปรับให้เข้ากับตัวเลขภายนอกใด",
+    "ตัวคูณความลึก f = clip((A / A_Sai) ** 0.3, 0.35, 1) เพิ่มเข้ามาเมื่อ 28 ก.ย. 2569 (2026) ซึ่งขณะนั้นทราบตัวเลขของ GISTDA และ UNOSAT 3991 แล้ว เลขชี้กำลังและค่าต่ำสุดเป็นไปตามหลักประมาณของเรขาคณิตชลศาสตร์ ประวัติการสร้างข้อมูลไม่มีบันทึกว่าปรับให้เข้ากับตัวเลขภายนอกใด",
   "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.":
     "นับจากนี้จะไม่ปรับจุดกำหนดระดับน้ำ ตัวคูณความลึก หรือข้อมูลภูมิประเทศให้เข้ากับ VIIRS หรือผลิตภัณฑ์ 4009 หากมีการปรับ การเทียบนั้นจะถูกระบุใหม่ว่ามีส่วนในการปรับแบบจำลอง",
   // Sentences of revision r3 that r4 reworded, kept for a client that still holds the r3 manifest in its offline copy.
@@ -221,12 +232,38 @@ export function localizedText(text: string, language: Language): { text: string;
   return thai ? { text: thai, lang: "th" } : { text: plain, lang: "en" };
 }
 
-/** Short manifest phrases with a date in them, e.g. a source timestamp "compiled 2026-09-27". */
-const THAI_PATTERNS: readonly [RegExp, string][] = [
-  [/^compiled (\d{4}-\d{2}-\d{2})$/, "รวบรวมเมื่อ $1"],
+const THAI_MONTHS: Readonly<Record<string, string>> = {
+  Jan: "ม.ค.", Feb: "ก.พ.", Mar: "มี.ค.", Apr: "เม.ย.", May: "พ.ค.", Jun: "มิ.ย.", Jul: "ก.ค.", Aug: "ส.ค.", Sep: "ก.ย.", Oct: "ต.ค.", Nov: "พ.ย.", Dec: "ธ.ค.",
+};
+/** A manifest date such as "30 Sep 2026": day, English month abbreviation and CE year. */
+const DATE = "(\\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \\d{4})";
+/** "30 Sep 2026" as "30 ก.ย. 2569 (2026)": the Buddhist-era year with the CE year in brackets, as everywhere on the page. */
+export function thaiManifestDate(text: string): string {
+  const [day, month, year] = text.split(" ");
+  return `${day} ${THAI_MONTHS[month] ?? month} ${Number(year) + 543} (${year})`;
+}
+
+/**
+ * Manifest sentences whose dates (or quoted words) come from a record at bake time, e.g. a source timestamp
+ * "compiled 2026-09-27" or the status of product 4009, which the bake reads from the rights record: pending today,
+ * and confirmed with a date once the owners confirm it.
+ */
+const THAI_PATTERNS: readonly [RegExp, (match: RegExpMatchArray) => string][] = [
+  [/^compiled (\d{4}-\d{2}-\d{2})$/, (m) => `รวบรวมเมื่อ ${m[1]}`],
+  [new RegExp(`^Season envelope\\. The CC BY-SA 4\\.0 rights decision was signed on ${DATE} and UNOSAT replied "([^"]+)" \\(relayed by a project owner on ${DATE}\\); shown only after the owners confirm the rights record\\.$`),
+    (m) => `ขอบเขตน้ำตลอดฤดู มติเรื่องสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA 4.0 ลงนามเมื่อ ${thaiManifestDate(m[1])} และ UNOSAT ตอบว่า "${m[2]}" (เจ้าของโครงการแจ้งคำตอบนี้ต่อทีมเมื่อ ${thaiManifestDate(m[3])}) จะแสดงหลังจากเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลแล้วเท่านั้น`],
+  [new RegExp(`^Season envelope\\. The CC BY-SA 4\\.0 rights decision was signed on ${DATE} and UNOSAT replied "([^"]+)" \\(relayed by a project owner on ${DATE}\\); the owners confirmed the rights record on ${DATE}\\. Not shown in this revision\\.$`),
+    (m) => `ขอบเขตน้ำตลอดฤดู มติเรื่องสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA 4.0 ลงนามเมื่อ ${thaiManifestDate(m[1])} และ UNOSAT ตอบว่า "${m[2]}" (เจ้าของโครงการแจ้งคำตอบนี้ต่อทีมเมื่อ ${thaiManifestDate(m[3])}) เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[4])} ยังไม่แสดงในข้อมูลรุ่นนี้`],
+  [new RegExp(`^Not shown in this revision; the owners confirmed the rights record on ${DATE}\\.$`),
+    (m) => `ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[1])}`],
+  [new RegExp(`^UNOSAT/GISTDA product 4009 \\(CC BY-SA 4\\.0\\) is not shown in this revision; the owners confirmed the rights record on ${DATE}\\.$`),
+    (m) => `ผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA (CC BY-SA 4.0) ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ ${thaiManifestDate(m[1])}`],
 ];
 function thaiPattern(text: string): string | undefined {
-  for (const [pattern, replacement] of THAI_PATTERNS) if (pattern.test(text)) return text.replace(pattern, replacement);
+  for (const [pattern, render] of THAI_PATTERNS) {
+    const match = text.match(pattern);
+    if (match) return render(match);
+  }
   return undefined;
 }
 

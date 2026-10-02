@@ -66,8 +66,15 @@ def test_edge_cases_cover_both_null_reasons_of_the_replay_rule(generator) -> Non
     no_loss = [None, None, "Equity gap not computed: neither group has lost access.", "no_loss"]
     too_small = [None, None, "Equity gap not computed: a group has fewer than 50 residents.", "insufficient_group_denominator"]
     # Nobody has lost access: no ratio (never the 1.0 that floodguard.equity states), with the reason.
-    for name in ("no loss in either group", "no loss, both groups large", "no loss, groups of exactly 50", "both rates round to zero"):
+    for name in ("no loss in either group", "no loss, both groups large", "no loss, groups of exactly 50"):
         assert rows[name][4:] == [0.0, 0.0, *no_loss], name
+        assert (rows[name][0], rows[name][2]) == (0.0, 0.0), name
+    # A loss too small for the rounded rate is still a loss: a ratio from the unrounded rates, never "no loss".
+    assert rows["both rates round to zero"][4:] == [0.0, 0.0, 1.0, "similar", "Access-loss rates are broadly similar between groups.", None]
+    assert rows["small loss in a large group, no vulnerable loss"][4:] == [0.0, 0.0, 0.0, "lower", "Vulnerable residents are 0 times as likely to lose access.", None]
+    assert rows["small loss in both large groups"][4:] == [0.0001, 0.0, 3.479, "higher", "Vulnerable residents are 3.48 times more likely to lose access.", None]
+    assert rows["only the non-vulnerable rate rounds to zero"][6:8] == [1250.0, "higher"]
+    assert rows["small vulnerable loss only, large groups"][6:] == [None, None, "Equity gap ratio undefined because vulnerable loss exists while non-vulnerable loss is zero.", "undefined_ratio"]
     # A group below 50 residents: no ratio, with the reason, whatever was lost.
     for name in ("vulnerable group of 49.99 (too small)", "vulnerable group of 49 (too small)", "other group of 49 (too small)",
                  "both groups too small", "one resident in the vulnerable group", "too small and no loss (group size is the reason)",

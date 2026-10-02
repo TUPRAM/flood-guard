@@ -9,6 +9,13 @@ owners have confirmed it. The first record is
 Nothing here is legal advice. The gate is deliberately strict: a derived layer
 may be published only when the record validates *and* its
 ``owner_confirmation.status`` is ``"confirmed"``.
+
+The gate recognises a product 4009 derivative in two ways, and both are by
+convention rather than by content: a public folder or file whose name carries
+the product (``unosat4009``, ``UNOSAT_4009``, ``unosat-4009`` ...), and a replay
+manifest entry that cites the product and names a file or is marked as shown.
+A derived file under another name that no manifest entry ties to the product
+is not detected.
 """
 
 from __future__ import annotations
@@ -26,6 +33,12 @@ RIGHTS_BASIS_4009_PATH = Path("docs/proposal_execution/rights_basis_4009_v1.json
 RIGHTS_BASIS_4009_SCHEMA = "floodguard.rights_basis_4009.v1"
 PUBLIC_DERIVATIVE_FOLDER = "unosat4009"
 """Folder name reserved for product 4009 derivatives under ``apps/web/public``."""
+
+PRODUCT_4009_NAME = re.compile(r"unosat[-_ ]?4009", re.IGNORECASE)
+"""A folder or file name that marks a product 4009 derivative, whatever its case or separator."""
+
+PRODUCT_4009_CITATION = re.compile(r"(?:unosat|product)[-_ /A-Za-z]{0,20}?4009(?![0-9])", re.IGNORECASE)
+"""Text that cites the product in a manifest: "unosat-4009", "UNOSAT/GISTDA product 4009", "unosat4009/envelope.png"."""
 
 CONFIRMATION_STATUSES: tuple[str, ...] = ("pending", "confirmed")
 RECORD_STATUS_BY_CONFIRMATION: dict[str, str] = {"pending": "draft_pending_owner_confirmation", "confirmed": "confirmed"}
@@ -230,12 +243,62 @@ def verify_archive(record: Mapping[str, Any], external_root: Path | str) -> Path
     return path
 
 
-def public_derivative_files(public_root: Path | str, folder_name: str = PUBLIC_DERIVATIVE_FOLDER) -> list[Path]:
-    """List every file under any ``folder_name`` directory below ``public_root`` (sorted)."""
+def public_derivative_files(public_root: Path | str, name_pattern: re.Pattern[str] = PRODUCT_4009_NAME) -> list[Path]:
+    """List every file under ``public_root`` whose own name or a folder above it matches ``name_pattern`` (sorted).
+
+    The match ignores case and the separator, so ``unosat4009/``, ``UNOSAT_4009/`` and ``unosat-4009-envelope.png``
+    are all found. A derivative saved under an unrelated name is not: see :func:`unconfirmed_product_citations`.
+    """
     root = Path(public_root)
     if not root.is_dir():
         return []
-    return sorted(path for folder in root.rglob(folder_name) if folder.is_dir() for path in folder.rglob("*") if path.is_file())
+    return sorted(path for path in root.rglob("*")
+                  if path.is_file() and any(name_pattern.search(part) for part in path.relative_to(root).parts))
+
+
+def unconfirmed_product_citations(manifest: Mapping[str, Any], citation: re.Pattern[str] = PRODUCT_4009_CITATION) -> list[str]:
+    """Return every way a replay manifest publishes the product while its rights record is unconfirmed.
+
+    An entry (an object at any depth) cites the product when its key, one of its own text values or one of its own
+    lists of text matches ``citation``. Such an entry must not name a file (``href``) and, where it carries
+    ``shown``, that must be ``false``; an evidence block or a ``publication_eligibility`` input that cites the
+    product must carry ``shown: false``. Call this only while :func:`owner_confirmed` is false.
+    """
+    problems: list[str] = []
+
+    def cites(key: str, node: Mapping[str, Any]) -> bool:
+        if citation.search(key):
+            return True
+        for value in node.values():
+            if isinstance(value, str) and citation.search(value):
+                return True
+            if isinstance(value, list) and any(isinstance(item, str) and citation.search(item) for item in value):
+                return True
+        return False
+
+    def visit(value: Any, path: str, key: str, must_state_shown: bool) -> None:
+        if isinstance(value, Mapping):
+            if cites(key, value):
+                if "href" in value:
+                    problems.append(f"{path} cites product 4009 and names a file ({value['href']}) while the rights record is unconfirmed")
+                if ("shown" in value or must_state_shown) and value.get("shown") is not False:
+                    problems.append(f"{path} cites product 4009 and must carry shown: false while the rights record is unconfirmed")
+            for child_key, child in value.items():
+                visit(child, f"{path}.{child_key}", str(child_key), False)
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                label = item.get("id", index) if isinstance(item, Mapping) else index
+                visit(item, f"{path}[{label}]", "", must_state_shown)
+
+    for top_key, top_value in manifest.items():
+        if top_key == "evidence_blocks":
+            visit(top_value, top_key, top_key, True)
+        elif top_key == "publication_eligibility" and isinstance(top_value, Mapping):
+            for child_key, child in top_value.items():
+                visit(child, f"{top_key}.{child_key}", str(child_key), child_key == "inputs")
+        else:
+            visit(top_value, top_key, str(top_key), False)
+    return problems
 
 
 def _text(value: Any, name: str) -> str:

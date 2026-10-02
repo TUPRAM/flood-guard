@@ -296,6 +296,8 @@ export interface ViirsDaily {
   nominal_overpass: string;
   comparison_rule: string;
   caveat: string;
+  /** Which fields of each day are model output placed beside the agency product (later r4 bakes). */
+  model_fields?: { names: string[]; evidence_tier: string; note: string };
   days: ViirsDay[];
 }
 
@@ -454,13 +456,20 @@ export interface EvidenceBlock {
   note?: string;
   season_window?: string;
   shown?: boolean;
+  /**
+   * Paths inside the covered content that hold T1 scenario (model) values placed beside it for comparison, e.g.
+   * "viirs_daily.days[].model_flood_km2_clear". They are not in this block's lane.
+   */
+  scenario_fields?: string[];
 }
 
 /** An external figure and whether it was used, or already known, while the stage keyframes were tuned. */
 export interface ExploratoryKnowledgeItem {
   id: string;
-  relation: "used_for_tuning" | "known_during_tuning" | "computed_after_keyframes_final";
-  known_during_tuning: boolean;
+  /** "not_used_for_tuning": not used, and the build history does not record whether it was known at the time. */
+  relation: "used_for_tuning" | "known_during_tuning" | "computed_after_keyframes_final" | "not_used_for_tuning";
+  /** Null only where the build history does not record the order (relation "not_used_for_tuning"). */
+  known_during_tuning: boolean | null;
   statement: string;
 }
 export interface ExploratoryKnowledge { purpose: string; items: ExploratoryKnowledgeItem[]; depth_factor: string; rule: string }
@@ -515,7 +524,7 @@ export function parseTimelineManifest(value: unknown): TimelineManifest {
     throw new TimelineManifestError("The replay manifest has no stage anchors or no days.");
   }
   if (value.official_warning !== false || value.real_time !== false) {
-    throw new TimelineManifestError("The replay manifest must be marked as historical and as no official alert.");
+    throw new TimelineManifestError("The replay manifest must be marked as historical and as not an official warning.");
   }
   if (value.accepted_fpps != null || value.accepted_action_class != null) {
     throw new TimelineManifestError("The replay manifest carries an accepted score or action class; the replay shows neither.");

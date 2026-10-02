@@ -344,7 +344,7 @@ def test_generated_at_is_declared_once_then_carried_and_never_read_from_the_cloc
     assert (manifest()["generated_at"], manifest()["generated_at_basis"]) == ("2026-10-01T16:10:00+07:00", "declared")
     assert json.loads(receipt_path.read_text(encoding="utf-8"))["generated_at"] == {"value": "2026-10-01T16:10:00+07:00", "basis": "declared"}
     first = (committed / "timeline.json").read_bytes()
-    # A later bake without the argument carries the recorded value, so the bytes do not move.
+    # A later bake without the argument reproduces the recorded files, so it may carry the value: the bytes do not move.
     capsys.readouterr()
     assert bake.main(base) == 0
     assert (committed / "timeline.json").read_bytes() == first
@@ -363,6 +363,53 @@ def test_generated_at_is_declared_once_then_carried_and_never_read_from_the_cloc
     assert bake.resolve_generated_at(None, {"generated_at": {"value": "2024-09-19T17:00:00Z", "basis": "newest_input_timestamp"}})[0] is None
     source = (SCRIPTS / "build_mae_sai_flood_timeline.py").read_text(encoding="utf-8")
     assert not re.search(r"datetime\.now|utcnow|time\.time\(|date\.today", source)
+
+
+def test_a_bake_that_changes_the_files_may_not_carry_the_recorded_time(fake_bake, capsys: pytest.CaptureFixture[str]) -> None:
+    bake, external, committed, work = fake_bake
+    receipt_path = committed.parent / "r4_input_receipt.json"
+    base = ["--external-root", str(external), "--out", str(committed)]
+    assert bake.main([*base, "--generated-at", "2026-10-01T20:28:00+07:00"]) == 0
+    before, receipt_before = snapshot(committed), (receipt_path.read_bytes(), receipt_path.stat().st_mtime_ns)
+
+    (external / "input.bin").write_bytes(b"0123456780")  # One byte of one input changes: the baked files change with it.
+    capsys.readouterr()
+    assert bake.main(base) == 2
+    captured = capsys.readouterr()
+    assert "the recorded time 2026-10-01T20:28:00+07:00 cannot be carried" in captured.err
+    assert "different bytes: layer.bin" in captured.err and "different bytes: timeline.json" in captured.err
+    assert "input note: external:input.bin has different bytes" in captured.err
+    assert "--generated-at" in captured.err and "Nothing was written" in captured.err
+    assert "carried from the recorded receipt" not in captured.out
+    # Refused means untouched: the published folder and the receipt keep their bytes and their modification times.
+    assert snapshot(committed) == before
+    assert (receipt_path.read_bytes(), receipt_path.stat().st_mtime_ns) == receipt_before
+    assert list(work.iterdir()) == []  # The bake that was set aside is removed.
+
+    # Declaring a new time is the way through, and the receipt then records it.
+    assert bake.main([*base, "--generated-at", "2026-10-08T09:00:00+07:00"]) == 0
+    assert json.loads((committed / "timeline.json").read_text(encoding="utf-8"))["generated_at"] == "2026-10-08T09:00:00+07:00"
+    assert json.loads(receipt_path.read_text(encoding="utf-8"))["generated_at"] == {"value": "2026-10-08T09:00:00+07:00", "basis": "declared"}
+    assert (committed / "layer.bin").read_bytes() == b"0123456780"[::-1]
+    # With the input restored the files differ from that recorded bake again, so a plain bake is refused again.
+    (external / "input.bin").write_bytes(b"0123456789")
+    assert bake.main(base) == 2
+    # --verify still carries the recorded time: it writes nothing, and the byte comparison reports the difference.
+    capsys.readouterr()
+    assert bake.main([*base, "--verify"]) == 1
+    assert "verify: generated_at 2026-10-08T09:00:00+07:00" in capsys.readouterr().out
+
+
+def test_carry_blockers_name_every_output_file_that_differs_from_the_recorded_bake() -> None:
+    bake = load_bake()
+    files = lambda **hashes: {"outputs": {"files": [{"name": name, "sha256": value} for name, value in hashes.items()]}}  # noqa: E731
+    recorded = files(**{"a.png": "1" * 64, "timeline.json": "2" * 64, "old.bin": "3" * 64})
+    assert bake.carry_blockers(recorded, recorded) == []
+    fresh = files(**{"a.png": "1" * 64, "timeline.json": "9" * 64, "new.bin": "4" * 64})
+    assert bake.carry_blockers(fresh, recorded) == ["new file: new.bin", "no longer written: old.bin", "different bytes: timeline.json"]
+    # A receipt without an output list (or no receipt) cannot vouch for anything.
+    assert bake.carry_blockers(fresh, {}) == ["the recorded receipt lists no output files"]
+    assert bake.carry_blockers(fresh, {"outputs": {"files": []}}) == ["the recorded receipt lists no output files"]
 
 
 def test_verify_reports_changed_bake_sources_without_failing_identical_bytes(fake_bake, capsys: pytest.CaptureFixture[str]) -> None:
@@ -469,9 +516,55 @@ def test_bake_docstring_names_both_dem_tiles_and_the_verify_mode() -> None:
     source = (SCRIPTS / "build_mae_sai_flood_timeline.py").read_text(encoding="utf-8")
     docstring = source.split('"""')[1]
     assert "N20_00_E099_00_DEM.tif" in docstring and "N20_00_E100_00_DEM.tif" in docstring
-    for needle in ("tha_ppp_2020.tif", "viirs_flood", "hii_rain", "mae_sai_access_edges.csv", "--verify", "input receipt"):
+    for needle in ("tha_ppp_2020.tif", "viirs_flood", "hii_rain", "mae_sai_access_edges.csv", "--verify", "input receipt",
+                   "thailand-latest.osm.pbf", "rights_basis_4009_v1.json"):
         assert needle in docstring, needle
     assert not LOCAL_PATH.search(source)  # No machine path in the script.
+
+
+def test_product_4009_wording_follows_the_rights_record() -> None:
+    """The manifest's four sentences about product 4009 come from the rights record, pending or confirmed.
+
+    The confirmed sentences are the ones ``flood-timeline-copy.test.ts`` renders in Thai; keep the two in step.
+    """
+    from floodguard.rights_basis import load_rights_basis, owner_confirmed
+
+    bake = load_bake()
+    assert bake.short_date("2026-09-30") == "30 Sep 2026" and bake.short_date("2026-10-01") == "1 Oct 2026"
+    record = load_rights_basis(ROOT / "docs" / "proposal_execution" / "rights_basis_4009_v1.json")
+    status = bake.rights_status(record)
+    assert status["confirmed"] is owner_confirmed(record)
+    assert (status["signed_on"], status["reply_quote"], status["reply_relayed_on"], status["licence"]) == ("2026-09-30", "we approve the use", "2026-10-01", "CC BY-SA 4.0")
+    assert status["record"] == "docs/proposal_execution/rights_basis_4009_v1.json"
+    reply = 'The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied "we approve the use" (relayed by a project owner on 1 Oct 2026)'
+    pending = bake.rights_wording({**status, "confirmed": False, "confirmed_on": None})
+    assert pending == {
+        "status": "Not yet shown; rights record pending owner confirmation.",
+        "condition": "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record.",
+        "block_note": "Never an observation for a replay day. Shown only after the owners confirm the rights record.",
+        "reference_note": f"Season envelope (scenario per decision D3). {reply}; shown only after the owners confirm the rights record.",
+    }
+    confirmed = bake.rights_wording({**status, "confirmed": True, "confirmed_on": "2026-10-09"})
+    assert confirmed == {
+        "status": "Not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
+        "condition": "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
+        "block_note": "Never an observation for a replay day. Not shown in this revision; the owners confirmed the rights record on 9 Oct 2026.",
+        "reference_note": f"Season envelope (scenario per decision D3). {reply}; the owners confirmed the rights record on 9 Oct 2026. Not shown in this revision.",
+    }
+    # Neither wording says when UNOSAT wrote its reply (the original message is not filed), and neither shows the product.
+    for wording in (pending, confirmed):
+        assert not re.search(r'approve the use" on \d', wording["reference_note"])
+        assert bake.publication_eligibility(None, {**status, "confirmed": wording is confirmed, "confirmed_on": "2026-10-09"})["inputs"][-1]["shown"] is False
+
+
+def test_bake_reads_openstreetmap_from_the_pbf_and_keeps_no_derived_cache() -> None:
+    # A cached cut can outlive a change of the replay area and cannot be rebuilt byte for byte (a GeoPackage carries
+    # its write time), so the bake reads the extract itself on every run and writes nothing outside its output folder.
+    source = (SCRIPTS / "build_mae_sai_flood_timeline.py").read_text(encoding="utf-8")
+    assert 'OSM_PBF_REL = "open_context/osm_geofabrik/thailand-latest.osm.pbf"' in source
+    assert "track(external / OSM_PBF_REL)" in source
+    for needle in ("derived_context", ".gpkg", ".to_file(", "write_dataframe"):
+        assert needle not in source, needle
 
 
 # --- The committed r4 receipt ---------------------------------------------------------------------------
@@ -504,7 +597,8 @@ def test_committed_receipt_and_manifest_agree_on_inputs_generation_time_and_bake
     manifest = json.loads((COMMITTED_FOLDER / "timeline.json").read_text(encoding="utf-8"))
     assert manifest["input_sha256"] == committed_receipt["inputs"]
     assert committed_receipt["generated_at"] == {"value": manifest["generated_at"], "basis": manifest["generated_at_basis"]}
-    # The committed revision was baked with a declared time, so --verify and a plain re-bake carry it.
+    # The committed revision was baked with a declared time: --verify carries it, and so does a plain re-bake that
+    # reproduces the recorded files.
     assert manifest["generated_at_basis"] == "declared"
     bake = load_bake()
     assert bake.resolve_generated_at(None, committed_receipt)[0] == manifest["generated_at"]
@@ -530,11 +624,14 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
     assert count(r"S2B_47QNC_202409(05|15)_0_L2A/(red|green|blue)\.tif$") == 6
     assert count(r"cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_.*\.SAFE\.zip$") == 2
     assert count(r"worldpop_population/tha_ppp_2020\.tif$") == 1
-    assert count(r"mae_sai_osm_(multipolygons|points_full)\.gpkg$") == 2
+    # OpenStreetMap is identified by the extract itself, never by a derived cache.
+    assert count(r"^open_context/osm_geofabrik/thailand-latest\.osm\.pbf$") == 1
+    assert count(r"\.gpkg$") == 0 and count(r"derived_context") == 0
     assert count(r"viirs_flood/2024_09/WATER_COM_VIIRS_.*_001day_090\.tif\.zip$") == 9
     assert count(r"hii_rain/2024_09/(MOU189|DIWO|mou_0all_stn_metadata|main_0all_stn_metadata)\.csv$") == 4
     repo_inputs = sorted(path for root, path in keys if root == "repo")
-    assert repo_inputs == ["outputs/mae_sai_access_edges.csv", "outputs/mae_sai_admin_context.geojson", "outputs/mae_sai_facilities.geojson",
+    assert repo_inputs == ["docs/proposal_execution/rights_basis_4009_v1.json",
+                           "outputs/mae_sai_access_edges.csv", "outputs/mae_sai_admin_context.geojson", "outputs/mae_sai_facilities.geojson",
                            "outputs/mae_sai_population_nodes.csv", "outputs/mae_sai_reported_shelters_2024.json",
                            "outputs/mae_sai_road_risk.geojson"]
     assert len(inputs) == 32
@@ -557,9 +654,8 @@ def test_committed_receipt_matches_the_external_inputs(committed_receipt: dict) 
     external = os.environ.get("FLOODGUARD_EXTERNAL_DATA")
     if not external:
         pytest.skip("FLOODGUARD_EXTERNAL_DATA is not set; the external inputs stay outside Git")
-    regenerable = re.compile(r"derived_context/.*\.gpkg$")  # Cut from the OSM PBF by the bake; may differ per machine.
-    for row in committed_receipt["inputs"]:
-        if row["root"] != "external" or regenerable.search(row["path"]):
+    for row in committed_receipt["inputs"]:  # Every external input, the OSM extract included: none is machine-specific.
+        if row["root"] != "external":
             continue
         path = Path(external) / row["path"]
         assert path.is_file(), row["path"]
@@ -600,7 +696,7 @@ def real_bake(tmp_path_factory: pytest.TempPathFactory) -> dict:
         recorded = json.loads(COMMITTED_RECEIPT.read_text(encoding="utf-8"))
         stamp, _ = bake.resolve_generated_at(None, recorded)
         manifest, _, receipt = bake.bake(Path(external), out, generated_at=stamp)
-        observed = under(opened + native, Path(external), ROOT / "outputs")
+        observed = under(opened + native, Path(external), ROOT / "outputs", ROOT / "docs" / "proposal_execution")
     return {"bake": bake, "external": Path(external), "out": out, "manifest": manifest, "receipt": receipt,
             "observed": observed, "committed_before": committed_before}
 

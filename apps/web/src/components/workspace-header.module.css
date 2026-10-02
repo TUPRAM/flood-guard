@@ -12,6 +12,8 @@
 }
 .brand { display: flex; align-items: center; justify-self: start; gap: .7rem; color: #17253b; text-decoration: none; font-weight: 750; font-size: 1.08rem; }
 .brand small { display: block; color: #617189; font-size: .62rem; letter-spacing: .13em; margin-top: .15rem; text-transform: uppercase; }
+/* Thai has no capitals and its tone marks crowd when letter-spaced. */
+.header:lang(th) .brand small { letter-spacing: 0; }
 .navigation { display: flex; align-items: center; justify-content: center; gap: .35rem; }
 .navigation a { display: flex; align-items: center; justify-content: center; min-height: 44px; text-decoration: none; color: #45566f; padding: .6rem .85rem; border-radius: .5rem; font-size: .9rem; }
 .navigation a[aria-current] { color: #174ecb; background: #edf3ff; font-weight: 650; }

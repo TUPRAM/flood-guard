@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  COMPARE_LABEL_GAP_PX,
+  COMPARE_LABEL_MIN_PX,
+  compareLabelRoom,
   POPUP_CHROME_PX,
   POPUP_MAX_HEIGHT_PX,
   POPUP_MIN_HEIGHT_PX,
@@ -112,5 +115,40 @@ describe("glossary tooltip", () => {
     expect(tipReducer(TIP_CLOSED, "escape")).toBe(TIP_CLOSED);
     expect(tipReducer(TIP_CLOSED, "leave")).toBe(TIP_CLOSED);
     expect(tipReducer(TIP_CLOSED, "blur")).toBe(TIP_CLOSED);
+  });
+});
+
+describe("imagery swipe side labels", () => {
+  it("keeps the left label clear of the zoom control and both labels clear of the divider", () => {
+    // A 326 px map (a 360 px phone) with the divider in the middle: 163 px a side.
+    const half = compareLabelRoom(326, 50);
+    expect(half).toEqual({ left: 163 - COMPARE_LABEL_GAP_PX.divider - ZOOM_CLEARANCE_PX, right: 163 - COMPARE_LABEL_GAP_PX.divider - COMPARE_LABEL_GAP_PX.edge });
+    // The left label's box starts at the divider minus the gap minus its room: never left of the zoom clearance.
+    for (const width of [326, 356, 600, 1016]) {
+      for (const pct of [15, 30, 50, 70, 85]) {
+        const room = compareLabelRoom(width, pct);
+        const divider = (width * pct) / 100;
+        expect(divider - COMPARE_LABEL_GAP_PX.divider - room.left, `${width}px ${pct}%`).toBeGreaterThanOrEqual(Math.min(ZOOM_CLEARANCE_PX, divider - COMPARE_LABEL_GAP_PX.divider));
+        expect(divider + COMPARE_LABEL_GAP_PX.divider + room.right, `${width}px ${pct}%`).toBeLessThanOrEqual(width - COMPARE_LABEL_GAP_PX.edge + 1e-9);
+      }
+    }
+    expect(ZOOM_CLEARANCE_PX).toBeGreaterThan(ZOOM_RIGHT_EDGE);
+  });
+
+  it("gives a side no label when less than the minimum width is left, instead of a tall sliver", () => {
+    // On a phone the left side loses its label first, because the zoom control takes 64 px of it.
+    expect(compareLabelRoom(326, 30).left).toBeLessThan(COMPARE_LABEL_MIN_PX);
+    expect(compareLabelRoom(326, 30).right).toBeGreaterThanOrEqual(COMPARE_LABEL_MIN_PX);
+    expect(compareLabelRoom(326, 50).left).toBeGreaterThanOrEqual(COMPARE_LABEL_MIN_PX);
+    expect(compareLabelRoom(326, 80).right).toBeLessThan(COMPARE_LABEL_MIN_PX);
+    // On a desktop map both sides have room over the whole 15–85 % range the labels are offered in.
+    for (const pct of [15, 50, 85]) {
+      const room = compareLabelRoom(1016, pct);
+      expect(Math.min(room.left, room.right), `${pct}%`).toBeGreaterThanOrEqual(COMPARE_LABEL_MIN_PX);
+    }
+    // Never negative, whatever the input.
+    expect(compareLabelRoom(0, 50)).toEqual({ left: 0, right: 0 });
+    expect(compareLabelRoom(326, -20)).toEqual({ left: 0, right: 300 });
+    expect(compareLabelRoom(326, 140)).toEqual({ left: 246, right: 0 });
   });
 });

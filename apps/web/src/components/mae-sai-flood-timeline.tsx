@@ -142,10 +142,11 @@ import {
   type ShelterSetChoice,
   type WaterMode,
 } from "@/lib/flood-timeline-link";
-import { popupFit } from "@/lib/flood-timeline-layout";
+import { COMPARE_LABEL_GAP_PX, COMPARE_LABEL_MIN_PX, compareLabelRoom, popupFit, ZOOM_CLEARANCE_PX } from "@/lib/flood-timeline-layout";
 import {
   drawnWaterMode,
   hatchesLowConfidence,
+  lowConfidenceKey,
   paintWaterPlan,
   residentsPendingText,
   WATER_LEGEND_COPY,
@@ -2190,7 +2191,13 @@ export function MaeSaiFloodTimeline() {
       <div className={styles.container}>
         {intro}
         <div className={styles.layout}>
-          <section className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}>
+          {/* Escape closes the "Map layers" drawer from anywhere in this section (the map, the legend, Play, the
+              timeline), leaving focus where the reader is. Inside the drawer its own handler runs first and hands
+              focus back to the button. */}
+          <section className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && layersOpen) setLayersOpen(false);
+            }}>
             <div className={styles.stageBar}>
               <button type="button" className={styles.play} onClick={togglePlay} aria-keyshortcuts="Space" disabled={!manifest || !derived} data-testid="play-button">
                 <span aria-hidden="true" className={styles.playIcon}>{playing ? "❚❚" : "▶"}</span>
@@ -2198,7 +2205,7 @@ export function MaeSaiFloodTimeline() {
                 <span className={styles.playText} data-labels={playLabels(lang).join("\n")}>{playLabel(time, playing, lang)}</span>
               </button>
               <div className={styles.readout} data-testid="replay-readout">
-                <strong>{manifest ? moment : t("Loading the replay…", "กำลังโหลดการย้อนดูเหตุการณ์…")}</strong>
+                <strong title={manifest ? moment : undefined}>{manifest ? moment : t("Loading the replay…", "กำลังโหลดการย้อนดูเหตุการณ์…")}</strong>
                 <span title={manifest ? `${phaseLabel} · ${stageText}` : undefined}>{manifest ? `${phaseLabel} · ${stageText}` : "\u00a0"}</span>
               </div>
               <button ref={layersButton} type="button" className={styles.layersButton} aria-expanded={layersOpen} aria-controls="mae-sai-map-layers"
@@ -2215,17 +2222,7 @@ export function MaeSaiFloodTimeline() {
               <div ref={mapElement} className={styles.map} role="region" aria-label={t("Map of Mae Sai with imagery, reconstructed water, roads, shelters and key facilities", "แผนที่แม่สายพร้อมภาพดาวเทียม น้ำที่จำลอง ถนน ที่พักพิง และสถานที่สำคัญ")} />
               {comparing && sides && mapReady && (
                 <>
-                  {/* A side narrower than ~15 % has no room for its label; the divider's value text still names both images. */}
-                  {comparePct >= 15 && (
-                    <p className={`${styles.compareLabel} ${styles.compareLabelLeft}`} style={{ right: `calc(${100 - comparePct}% + 16px)`, maxWidth: `max(0px, min(42%, calc(${comparePct}% - 72px)))` }}>
-                      ◀ {sideLabel(sides[0], compareLeft)}
-                    </p>
-                  )}
-                  {comparePct <= 85 && (
-                    <p className={`${styles.compareLabel} ${styles.compareLabelRight}`} style={{ left: `calc(${comparePct}% + 16px)`, maxWidth: `max(0px, min(42%, calc(${100 - comparePct}% - 26px)))` }}>
-                      {sideLabel(sides[1], compareRight)} ▶
-                    </p>
-                  )}
+                  <CompareLabels pct={comparePct} left={`◀ ${sideLabel(sides[0], compareLeft)}`} right={`${sideLabel(sides[1], compareRight)} ▶`} />
                   <CompareDivider
                     pct={comparePct}
                     onChange={setComparePct}
@@ -2253,8 +2250,9 @@ export function MaeSaiFloodTimeline() {
                   {manifest && (
                     <>
                       {!comparing && <p className={styles.caption} data-testid="imagery-caption">{caption}</p>}
-                      {mudCue && <p className={styles.mudCue} data-testid="mud-cue">{mudCue}</p>}
+                      {/* While comparing, the comparison note leads: on a phone the notes end above the divider's handle. */}
                       {compareNote && <p className={styles.compareNote} data-testid="compare-note">{compareNote}</p>}
+                      {mudCue && <p className={styles.mudCue} data-testid="mud-cue">{mudCue}</p>}
                       {viirsNote && <p className={styles.viirsNote} data-testid="viirs-note">{viirsNote}</p>}
                     </>
                   )}
@@ -2646,6 +2644,58 @@ export function HowToRead({ manifest, language }: { manifest: TimelineManifest |
 }
 
 
+/**
+ * Side labels of the imagery swipe, each on its own side of the divider; the left one keeps clear of the zoom control.
+ * On a narrow map the labels wrap, so the taller one's height (--fg-compare-labels-h) and the map's height
+ * (--fg-frame-h) are measured for the style sheet: the notes start below the labels and stop above the divider's
+ * handle. A side with too little room has no label; the divider's value text still names both images.
+ */
+function CompareLabels({ pct, left, right }: { pct: number; left: string; right: string }) {
+  const leftLabel = useRef<HTMLParagraphElement>(null);
+  const rightLabel = useRef<HTMLParagraphElement>(null);
+  const [frameWidth, setFrameWidth] = useState<number | null>(null);
+  const room = frameWidth === null ? null : compareLabelRoom(frameWidth, pct);
+  const showLeft = pct >= 15 && (room === null || room.left >= COMPARE_LABEL_MIN_PX);
+  const showRight = pct <= 85 && (room === null || room.right >= COMPARE_LABEL_MIN_PX);
+  useEffect(() => {
+    const labels = [leftLabel.current, rightLabel.current].filter((label): label is HTMLParagraphElement => label !== null);
+    const frame = (labels[0] ?? null)?.parentElement ?? null;
+    if (!frame) return;
+    const sync = () => {
+      frame.style.setProperty("--fg-compare-labels-h", `${Math.ceil(Math.max(0, ...labels.map((label) => label.offsetHeight)))}px`);
+      frame.style.setProperty("--fg-frame-h", `${frame.clientHeight}px`);
+      setFrameWidth(frame.clientWidth);
+    };
+    sync();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(sync);
+    for (const label of labels) observer.observe(label);
+    observer.observe(frame);
+    return () => {
+      observer.disconnect();
+      frame.style.removeProperty("--fg-compare-labels-h");
+      frame.style.removeProperty("--fg-frame-h");
+    };
+  }, [showLeft, showRight]);
+  const gap = COMPARE_LABEL_GAP_PX;
+  return (
+    <>
+      {showLeft && (
+        <p ref={leftLabel} className={`${styles.compareLabel} ${styles.compareLabelLeft}`} data-testid="compare-label-left"
+          style={{ right: `calc(${100 - pct}% + ${gap.divider}px)`, maxWidth: `max(0px, min(42%, calc(${pct}% - ${gap.divider + ZOOM_CLEARANCE_PX}px)))` }}>
+          {left}
+        </p>
+      )}
+      {showRight && (
+        <p ref={rightLabel} className={`${styles.compareLabel} ${styles.compareLabelRight}`} data-testid="compare-label-right"
+          style={{ left: `calc(${pct}% + ${gap.divider}px)`, maxWidth: `max(0px, min(42%, calc(${100 - pct}% - ${gap.divider + gap.edge}px)))` }}>
+          {right}
+        </p>
+      )}
+    </>
+  );
+}
+
 /** Focusable vertical divider for the imagery swipe: pointer drag, arrow keys (Shift for 10 %), Home and End. */
 function CompareDivider({ pct, onChange, label, valueText }: { pct: number; onChange: (pct: number) => void; label: string; valueText: string }) {
   const fromPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -2688,7 +2738,7 @@ function CompareDivider({ pct, onChange, label, valueText }: { pct: number; onCh
       }}
       onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)}
     >
-      <span className={styles.compareHandle} aria-hidden="true">‹ ›</span>
+      <span className={styles.compareHandle} aria-hidden="true" data-testid="compare-handle">‹ ›</span>
     </div>
   );
 }
@@ -2725,20 +2775,21 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
   return (
     <details className={styles.card} data-testid="sources-panel" id="mae-sai-sources">
       <summary>{t("Sources, assumptions and limits", "แหล่งข้อมูล สมมติฐาน และข้อจำกัด")}</summary>
-      {th && <p className={styles.muted}>ชื่อแหล่งข้อมูล สัญญาอนุญาต และข้อความที่ยังไม่มีคำแปลคงไว้เป็นภาษาอังกฤษตามต้นฉบับ</p>}
+      {th && <p className={styles.muted}>ชื่อแหล่งข้อมูล ชื่อสัญญาอนุญาตตามที่ผู้เผยแพร่กำหนด ข้อความแสดงที่มา และข้อความที่ยังไม่มีคำแปลคงไว้เป็นภาษาอังกฤษตามต้นฉบับ</p>}
       <h3>{t("Sources", "แหล่งข้อมูล")}</h3>
-      {/* Source names, licences and attributions stay as their publishers give them; known sentences are in Thai. */}
+      {/* Source names, published licence names and attributions stay as their publishers give them; licence wording
+          the project wrote itself and known sentences are in Thai. */}
       <ul className={styles.list}>
         {manifest.sources.map((source) => (
           <li key={source.id}>
-            <strong lang="en">{plainManifestText(source.name)}</strong> — <span lang="en">{source.licence}. {source.attribution}.</span>{" "}
+            <strong lang="en">{plainManifestText(source.name)}</strong> — <LicenceText text={source.licence} language={language} />{" "}<span lang="en">{source.attribution}.</span>{" "}
             {source.id === POPULATION_SOURCE_ID && manifest.population && <><Localized text={manifest.population.note} language={language} />{" "}</>}
             <span className={styles.muted} lang="en">{source.timestamp}</span>
           </li>
         ))}
         {/* Revisions before r4 list WorldPop only in the population block. */}
         {manifest.population && !manifest.sources.some((source) => source.id === POPULATION_SOURCE_ID) && (
-          <li><strong lang="en">{plainManifestText(manifest.population.source)}</strong> — <span lang="en">{manifest.population.licence}.</span> <Localized text={manifest.population.note} language={language} /> <span className={styles.muted}>{manifest.population.timestamp}</span></li>
+          <li><strong lang="en">{plainManifestText(manifest.population.source)}</strong> — <LicenceText text={manifest.population.licence} language={language} /> <Localized text={manifest.population.note} language={language} /> <span className={styles.muted}>{manifest.population.timestamp}</span></li>
         )}
       </ul>
       <LicencesByInput manifest={manifest} language={language} />
@@ -2748,7 +2799,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
           <ul className={styles.list} data-testid="observed-sources">
             {viirs && (
               <li>
-                <strong lang="en">{viirs.product}</strong> — <span lang="en">{viirs.licence}. {viirs.attribution}.</span>{" "}
+                <strong lang="en">{viirs.product}</strong> — <LicenceText text={viirs.licence} language={language} />{" "}<span lang="en">{viirs.attribution}.</span>{" "}
                 <Localized text={viirs.nominal_overpass} language={language} />{" "}
                 <Localized text={viirs.comparison_rule} language={language} />{" "}
                 <Localized text={viirs.caveat} language={language} />{" "}
@@ -2757,7 +2808,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
             )}
             {rain && (
               <li>
-                <strong lang="en">{rain.source}</strong> — <span lang="en">{rain.licence}.</span> <Localized text={rain.note} language={language} />{" "}
+                <strong lang="en">{rain.source}</strong> — <LicenceText text={rain.licence} language={language} /> <Localized text={rain.note} language={language} />{" "}
                 {t("Units", "หน่วย")}: <Localized text={rain.units} language={language} />{th ? " " : ". "}
                 {t("Stations", "สถานี")}: {rain.stations.map((station) => `${station.code} ${rainStationName(station, language)} (${station.lat.toFixed(3)}, ${station.lon.toFixed(3)}; ${t(`${station.missing_hours} missing hours`, `ไม่มีข้อมูล ${station.missing_hours} ชั่วโมง`)})`).join("; ")}{th ? "" : "."}{" "}
                 <a href={rain.source_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{rain.source_url}</a>
@@ -2874,8 +2925,9 @@ export function GeneratedAt({ manifest, language, lead = false }: { manifest: Pi
 }
 
 /**
- * Licence and terms of every input, from `publication_eligibility` (r4 on). Names and licences stay as published;
- * the terms and the conditions of use are shown in Thai where the page knows a translation. An input that is
+ * Licence and terms of every input, from `publication_eligibility` (r4 on). Names and published licence names
+ * ("CC BY 4.0", "ODbL 1.0") stay as published; licence wording the project wrote itself ("Project summary text",
+ * "No licence stated by the provider"), the terms and the conditions of use are shown in Thai. An input that is
  * listed but not shown (product 4009 until its rights record is confirmed) is marked as such.
  */
 export function LicencesByInput({ manifest, language }: { manifest: TimelineManifest; language: Language }) {
@@ -2889,7 +2941,7 @@ export function LicencesByInput({ manifest, language }: { manifest: TimelineMani
       <ul className={styles.list} data-testid="licences-by-input">
         {licenceRows(manifest).map((row) => (
           <li key={row.id} data-shown={row.shown}>
-            <strong lang="en">{plainManifestText(row.name)}</strong> — <span lang="en">{row.licence.replace(/\.$/, "")}.</span>{" "}
+            <strong lang="en">{plainManifestText(row.name)}</strong> — <LicenceText text={row.licence} language={language} />{" "}
             <Localized text={row.terms} language={language} />
             {!row.shown && <>{" "}<strong>{row.status ? <Localized text={row.status} language={language} /> : t("Not shown on this page.", "ยังไม่แสดงในหน้านี้")}</strong></>}
           </li>
@@ -2936,6 +2988,15 @@ export function TuningDisclosure({ manifest, language }: { manifest: TimelineMan
 function Localized({ text, language }: { text: string; language: Language }) {
   const value = localized(text, language);
   return <span lang={value.lang}>{value.text}</span>;
+}
+
+/**
+ * A licence as the manifest gives it. A published licence name has no translation and is shown as published,
+ * marked English and closed with a full stop; wording the project wrote itself has a Thai rendering.
+ */
+function LicenceText({ text, language }: { text: string; language: Language }) {
+  const value = localized(text.replace(/\.$/, ""), language);
+  return <span lang={value.lang} data-licence="">{value.text}{value.lang === "th" ? "" : "."}</span>;
 }
 
 type ReplayDerived = {
@@ -3166,9 +3227,16 @@ export function RadarCheck({ manifest, radarSpan, language }: { manifest: Timeli
   );
 }
 
-/** Swatch of low-confidence water: a pale, hatched version of the water colour. */
-function LowConfidenceSwatch() {
-  return <i className={styles.lowConfidenceSwatch} aria-hidden="true" />;
+/**
+ * Swatch of low-confidence water in the view that is drawn: the stripe and the wash the map gives that view's colours
+ * (`lowConfidenceKey`), so the key is blue in the depth view and purple-grey in the first-flooded view, as the map is.
+ */
+function LowConfidenceSwatch({ waterMode, arrival }: { waterMode: WaterMode; arrival: readonly HourClass[] }) {
+  const key = lowConfidenceKey(waterMode, arrival);
+  return (
+    <i className={styles.lowConfidenceSwatch} aria-hidden="true" data-view={waterMode}
+      style={{ background: `repeating-linear-gradient(45deg, ${rgbaCss(key.stripe)} 0 2px, ${rgbaCss(key.wash)} 2px 5px)` }} />
+  );
 }
 
 /**
@@ -3215,7 +3283,7 @@ export function TimelineLegend({
   const th = language === "th";
   const channel = <li><i style={{ background: rgbaCss(CHANNEL_RGBA) }} />{th ? "ร่องน้ำ/แม่น้ำ (น้ำตลอดเวลา)" : "River channel (always water)"}</li>;
   const lowConfidenceItem = lowConfidence && (
-    <li data-testid="low-confidence-legend"><LowConfidenceSwatch />{WATER_LEGEND_COPY.lowConfidence[language]}</li>
+    <li data-testid="low-confidence-legend"><LowConfidenceSwatch waterMode={waterMode} arrival={arrival} />{WATER_LEGEND_COPY.lowConfidence[language]}</li>
   );
   const residentsView = (waterMode === "people" || waterMode === "residents") && densityMax !== undefined;
   const anyShelter = shelters && (shelters.reported || shelters.candidates || shelters.ineligible);

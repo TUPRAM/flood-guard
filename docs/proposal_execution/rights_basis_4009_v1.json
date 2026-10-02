@@ -114,7 +114,7 @@
     "confirmed_by": [],
     "confirmed_on": null,
     "note": "This file transcribes signed decision D2. The owners have not yet confirmed the transcription.",
-    "how_to_confirm": "Both owners read this file and the notice. Then set status to confirmed, list both names in confirmed_by, set confirmed_on (YYYY-MM-DD), set record_status to confirmed, set signed_by_human and human_rights_clearance to true, and remove the draft status lines from the notice file, all in one commit."
+    "how_to_confirm": "Both owners read this file and the notice. Then set status to confirmed, list both names in confirmed_by, set confirmed_on (YYYY-MM-DD), set record_status to confirmed, set signed_by_human and human_rights_clearance to true, and remove the draft status lines from the notice file. Then bake the Mae Sai replay again with a new --generated-at (scripts/build_mae_sai_flood_timeline.py): the replay manifest takes the product's status and this file's SHA-256 from this record, so the tests fail until the manifest is baked from the confirmed record. Commit the record, the notice, the baked revision and its input receipt together."
   },
   "signed_by_human": false,
   "human_rights_clearance": false,

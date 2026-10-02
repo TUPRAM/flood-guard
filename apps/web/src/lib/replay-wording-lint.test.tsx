@@ -251,6 +251,27 @@ describe("Replay wording rules (shared with Python)", () => {
   it("reads text the way the Python linter does: no web addresses, plain apostrophes and hyphens, single spaces", () => {
     expect(normaliseWording("GISTDA’s  map\n(see https://gistda.or.th/live/forecast) real‑time")).toBe("GISTDA's map (see ) real-time");
     expect(idsOf(findWordingViolations("GISTDA’s map, real‑time"))).toEqual(["real_time", "september_extent"]);
+    // En dashes, figure dashes and minus signs read as hyphens, so "real–time" cannot slip past as another word.
+    expect(normaliseWording("real–time, real‒time, real−time, 10–14 Sep")).toBe("real-time, real-time, real-time, 10-14 Sep");
+    expect(idsOf(findWordingViolations("A real–time view"))).toEqual(["real_time"]);
+  });
+
+  it("flags the Thai renderings a translator would use for a banned claim, and lets their denials pass", () => {
+    const banned: [string, string][] = [
+      ["แผนที่น้ำท่วมตามเวลาจริง", "real_time"], ["คาดการณ์น้ำท่วม", "forecast"], ["ทำนายระดับน้ำ", "forecast"],
+      ["แบบจำลองแม่นยำ 48%", "validation_as_agreement"], ["ผ่านการตรวจสอบแล้ว", "validation_as_agreement"],
+      ["ประกาศเตือน", "warning"], ["คาบการเกิดซ้ำ 100 ปี", "return_period"], ["รอบ ๑๐๐ ปี", "return_period"], ["รอบ ๒๕ ปี", "return_period"],
+    ];
+    for (const [text, rule] of banned) expect(idsOf(findWordingViolations(text)), text).toContain(rule);
+    for (const denial of ["ไม่ใช่แผนที่ตามเวลาจริง", "ไม่ใช่การคาดการณ์", "ยังไม่ผ่านการตรวจสอบภาคสนาม", "ไม่ใช่ประกาศเตือนภัยอย่างเป็นทางการ", "ไม่ใช่ความแม่นยำ"]) {
+      expect(findWordingViolations(denial), denial).toEqual([]);
+    }
+    // One denial does not cover a claim joined with "and": the warning needs its own "not".
+    expect(idsOf(findWordingViolations("not real-time, warning: flooding expected"))).toEqual(["warning"]);
+    expect(idsOf(findWordingViolations("This is not real-time and an official warning"))).toEqual(["warning"]);
+    expect(idsOf(findWordingViolations("ไม่ใช่ข้อมูลเรียลไทม์และคำเตือนอย่างเป็นทางการ"))).toEqual(["warning"]);
+    expect(findWordingViolations("It is a model, not real-time or a warning.")).toEqual([]);
+    expect(idsOf(findWordingViolations("100 yr flood; Flood alert; the plan is the better option"))).toEqual(["return_period", "set_ranking", "warning"]);
   });
 });
 

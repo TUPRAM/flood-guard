@@ -26,8 +26,10 @@ from floodguard.replay_manifest import (
     newest_timestamp,
     normalise_timestamp,
     schema_problems,
+    score_or_class_keys,
     uncovered_blocks,
 )
+from floodguard.rights_basis import load_rights_basis, owner_confirmed, unconfirmed_product_citations
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "apps" / "web"
@@ -168,6 +170,64 @@ def test_content_without_an_evidence_block_is_found() -> None:
     assert {"sources", "assumptions", "limitations", "generated_at", "input_sha256"} <= ENVELOPE_KEYS
 
 
+def test_a_new_child_of_an_object_covered_child_by_child_has_no_lane() -> None:
+    document = minimal_manifest()
+    assert uncovered_blocks(document) == []  # "vectors.roads" names the only child of vectors.
+    document["vectors"]["unosat4009_envelope"] = {"href": "/studies/x/r1/envelope.png"}
+    assert uncovered_blocks(document) == ["vectors.unosat4009_envelope"]
+    assert "no evidence block covers vectors.unosat4009_envelope" in evidence_problems(document)
+    document["evidence_blocks"].append({"id": "envelope", "covers": ["vectors.unosat4009_envelope"], "lane": "OBS", "evidence_tier": "x",
+                                        "temporal_relation": "event_aligned", "source_timestamp": "2024"})
+    assert uncovered_blocks(document) == []
+    # A child path below the first level still names its first-level child.
+    document["evidence_blocks"][0]["covers"] = ["hand", "vectors.roads.features"]
+    assert uncovered_blocks(document) == []
+    # A block naming a child the object does not hold is a stale registry entry.
+    document["evidence_blocks"][0]["covers"] = ["hand", "vectors.roads", "vectors.gone"]
+    assert uncovered_blocks(document) == ["vectors.gone (named by an evidence block but absent)"]
+    # A key covered whole lends its lane to every child, old or new; a partly covered key that is not an object is uncovered.
+    document = minimal_manifest()
+    document["evidence_blocks"][0]["covers"] = ["hand", "vectors"]
+    document["vectors"]["later"] = {}
+    assert uncovered_blocks(document) == []
+    document["evidence_blocks"][0]["covers"] = ["hand", "vectors.roads"]
+    document["vectors"] = ["roads"]
+    assert uncovered_blocks(document) == ["vectors"]
+
+
+def test_a_score_or_an_action_class_is_refused_at_any_depth() -> None:
+    document = minimal_manifest()
+    assert score_or_class_keys(document) == []
+    document["hand"]["stats"] = [{"fpps": 81.2}]
+    document["vectors"]["roads"]["accepted_action_class_by_tambon"] = {}
+    document["layers"][0]["Priority-Score"] = 3
+    document["hand"]["accepted_fpps"] = None  # The accepted_* names are reserved for the top level.
+    assert score_or_class_keys(document) == ["$.hand.stats[0].fpps", "$.hand.accepted_fpps", "$.vectors.roads.accepted_action_class_by_tambon",
+                                             "$.layers[0].Priority-Score"]
+    found = evidence_problems(document)
+    for path in score_or_class_keys(document):
+        assert f"{path} is a score or action-class field: the replay computes no score and no action class" in found
+    # Text that mentions a score is not a field, and the two null top-level fields stay allowed.
+    document = minimal_manifest()
+    document["reason_blocked"] = "No FPPS and no action_class is computed here."
+    assert evidence_problems(document) == []
+
+
+def test_scenario_fields_mark_model_values_inside_another_lane() -> None:
+    document = minimal_manifest()
+    document["layers"][0]["model_km2"] = 1.0
+    image = document["evidence_blocks"][1]
+    image["scenario_fields"] = ["layers[].model_km2"]
+    assert evidence_problems(document) == []
+    image["scenario_fields"] = []
+    assert "evidence block image: scenario_fields must list at least one field path" in evidence_problems(document)
+    image["scenario_fields"] = ["hand.model_km2"]  # Not inside what this block covers.
+    assert "evidence block image: every scenario_fields path must lie inside the content the block covers" in evidence_problems(document)
+    del image["scenario_fields"]
+    document["evidence_blocks"][0]["scenario_fields"] = ["hand.step_m"]
+    assert any("is already a scenario" in line for line in evidence_problems(document))
+
+
 # --- The committed manifest ---------------------------------------------------------------------------------
 
 
@@ -217,6 +277,14 @@ def test_committed_manifest_validates_against_its_json_schema(manifest: dict, sc
     broken = copy.deepcopy(manifest)
     del broken["evidence_blocks"][0]["source_timestamp"]
     assert any(line.startswith("evidence_blocks/0") for line in schema_problems(broken, schema))
+    # A scenario block cannot carry scenario_fields, and an unrecorded tuning order is null, never false.
+    broken = copy.deepcopy(manifest)
+    broken["evidence_blocks"][0]["scenario_fields"] = ["hand.step_m"]
+    assert any(line.startswith("evidence_blocks/0") for line in schema_problems(broken, schema))
+    broken = copy.deepcopy(manifest)
+    viirs = next(item for item in broken["exploratory_knowledge"]["items"] if item["id"] == "viirs-daily")
+    viirs["known_during_tuning"] = False
+    assert any(line.startswith("exploratory_knowledge/items/3") for line in schema_problems(broken, schema))
 
 
 def test_generated_at_is_declared_and_git_commit_is_explained(manifest: dict) -> None:
@@ -242,6 +310,14 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     # VIIRS, Sentinel-1, Sentinel-2 and rain are observed, each with its own timestamp.
     observed = ("viirs_daily", "sentinel2_20240905", "sentinel2_20240915", "sentinel1_20240906", "sentinel1_20240915", "sentinel1_change", "rainfall")
     assert all(lane(name) == "OBS" for name in observed)
+    # The model figures placed beside each VIIRS day are named as scenario values, not filed as the agency's.
+    model_fields = sorted({key for day in manifest["viirs_daily"]["days"] for key in day if key.startswith("model_")})
+    assert model_fields == ["model_flood_km2_clear", "model_flood_km2_district", "model_stage_m"]
+    assert sorted(blocks["viirs_daily"]["scenario_fields"]) == [f"viirs_daily.days[].{field}" for field in model_fields]
+    assert SCENARIO_TIER in blocks["viirs_daily"]["note"] and "not part of the agency product" in blocks["viirs_daily"]["note"]
+    assert sorted(manifest["viirs_daily"]["model_fields"]["names"]) == model_fields
+    assert manifest["viirs_daily"]["model_fields"]["evidence_tier"] == SCENARIO_TIER
+    assert not any("scenario_fields" in block for block in blocks.values() if block["id"] != "viirs_daily")
     assert len({blocks[name]["source_timestamp"] for name in observed}) == len(observed)
     assert blocks["sentinel2_20240915"]["source_timestamp"] == "2024-09-15T03:58:15Z"
     assert blocks["sentinel1_20240915"]["source_timestamp"] == "2024-09-15T23:16:01Z"
@@ -303,15 +379,43 @@ def test_sources_name_both_dem_tiles_worldpop_and_a_licence_for_every_input(mani
             assert inputs[source_id]["licence"] == source["licence"], source_id
     # Product 4009 is listed but not shown, and nothing from it is among the baked files.
     assert inputs["unosat-4009"]["shown"] is False
-    assert inputs["unosat-4009"]["status"] == "Not yet shown; rights record pending owner confirmation."
     assert (ROOT / inputs["unosat-4009"]["rights_record"]).resolve() == RIGHTS_RECORD.resolve()
-    assert json.loads(RIGHTS_RECORD.read_text(encoding="utf-8"))["owner_confirmation"]["status"] == "pending"
     assert [row["id"] for row in eligibility["inputs"] if not row["shown"]] == ["unosat-4009"]
     assert not [name for name in (path.name for path in manifest_path().parent.rglob("*")) if "4009" in name]
     assert eligibility["status"] == "conditional" and any("CC BY-NC" in line for line in eligibility["conditions"])
+
+
+def test_product_4009_status_is_the_rights_records_status(manifest: dict) -> None:
+    """The bake reads the product's status from the rights record. A record that changed since needs a new bake."""
+    stale = "re-bake the replay manifest: its product 4009 status is read from the rights record at bake time"
+    record = load_rights_basis(RIGHTS_RECORD)
+    # The manifest carries the SHA-256 of the record it was baked from.
+    row = next(row for row in manifest["input_sha256"] if row["path"] == RIGHTS_RECORD.relative_to(ROOT).as_posix())
+    import hashlib
+
+    assert row["sha256"] == hashlib.sha256(RIGHTS_RECORD.read_bytes()).hexdigest(), stale
+    entry = next(item for item in manifest["publication_eligibility"]["inputs"] if item["id"] == "unosat-4009")
+    block = next(item for item in manifest["evidence_blocks"] if item["id"] == "unosat_4009_season_envelope")
     reference = next(item for item in manifest["external_references"] if item["id"] == "unosat-4009")
-    assert "signed on 30 Sep 2026" in reference["note"] and '"we approve the use"' in reference["note"]
-    assert "only after the owners confirm the rights record" in reference["note"] and "is signed" not in reference["note"]
+    condition = next(line for line in manifest["publication_eligibility"]["conditions"] if "product 4009" in line)
+    assert entry["licence"] == record["licence"]["name"] == "CC BY-SA 4.0"
+    if owner_confirmed(record):
+        confirmed = "the owners confirmed the rights record on"
+        assert entry["status"].startswith("Not shown in this revision;") and confirmed in entry["status"], stale
+        assert confirmed in block["note"] and confirmed in reference["note"] and confirmed in condition, stale
+        assert "pending" not in entry["status"]
+    else:
+        assert entry["status"] == "Not yet shown; rights record pending owner confirmation.", stale
+        assert block["note"].endswith("Shown only after the owners confirm the rights record."), stale
+        assert "only after the owners confirm the rights record" in reference["note"] and "is signed" not in reference["note"], stale
+        assert condition.endswith("it may appear only after the owners confirm the rights record."), stale
+        # While the record is unconfirmed the manifest names no file for the product and marks nothing of it as shown.
+        assert unconfirmed_product_citations(manifest) == []
+    # What the record supports about UNOSAT's reply: its words and the day they were relayed, not the day UNOSAT wrote.
+    assert "signed on 30 Sep 2026" in reference["note"] and f'"{record["provider_reply"]["quote"]}"' in reference["note"]
+    assert record["provider_reply"]["relayed_on"] == "2026-10-01" and record["provider_reply"]["original_message_in_repo"] is False
+    assert '"we approve the use" (relayed by a project owner on 1 Oct 2026)' in reference["note"]
+    assert not __import__("re").search(r'approve the use" on \d', reference["note"])
 
 
 def test_input_hashes_are_the_receipts_and_name_no_machine_path(manifest: dict) -> None:
@@ -323,6 +427,11 @@ def test_input_hashes_are_the_receipts_and_name_no_machine_path(manifest: dict) 
     assert rows == receipt["inputs"]
     assert sum(1 for row in rows if "Copernicus_DSM_COG_10_N20_00_E" in row["path"]) == 2
     assert not LOCAL_PATH.search(json.dumps(rows))
+    # OpenStreetMap is the Geofabrik extract itself; no machine-made cache stands in for it.
+    assert [row["path"] for row in rows if "osm" in row["path"].lower()] == ["open_context/osm_geofabrik/thailand-latest.osm.pbf"]
+    assert not any(row["path"].endswith(".gpkg") or "derived_context" in row["path"] for row in rows)
+    # Every shelter candidate therefore lies inside the replay area that the extract is cut to.
+    assert manifest["shelters"]["candidates"] and all(candidate["m"] for candidate in manifest["shelters"]["candidates"])
 
 
 def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manifest: dict) -> None:
@@ -332,9 +441,15 @@ def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manif
     assert "9.9 km2" in items["gistda-radarsat2-20240910"]["statement"] and "on purpose" in items["gistda-radarsat2-20240910"]["statement"]
     assert "re-tune the recession keyframes (best-fit stage 0.10 m)" in items["sentinel-1-20240916"]["statement"]
     assert items["unosat-3991"]["relation"] == "known_during_tuning" and "70 km2" in items["unosat-3991"]["statement"]
-    for name in ("viirs-daily", "unosat-4009"):
-        assert items[name]["relation"] == "computed_after_keyframes_final" and items[name]["known_during_tuning"] is False
-        assert "was not used for tuning" in items[name]["statement"]
+    assert (items["unosat-4009"]["relation"], items["unosat-4009"]["known_during_tuning"]) == ("computed_after_keyframes_final", False)
+    assert "was not used for tuning" in items["unosat-4009"]["statement"]
+    # VIIRS: the build history shows the comparison and the last stage-knot edit in one change (commit 129ff03), so the
+    # manifest claims only what that supports: not used for tuning, order within the change not recorded.
+    viirs = items["viirs-daily"]
+    assert (viirs["relation"], viirs["known_during_tuning"]) == ("not_used_for_tuning", None)
+    assert "was not used for tuning" in viirs["statement"] and "commit 129ff03" in viirs["statement"]
+    assert "does not record which came first" in viirs["statement"] and "not presented as an independent check" in viirs["statement"]
+    assert "computed after the keyframes were final" not in viirs["statement"]
     assert all(items[name]["known_during_tuning"] for name in ("gistda-radarsat2-20240910", "sentinel-1-20240916", "unosat-3991"))
     assert "28 Sep 2026" in disclosure["depth_factor"] and disclosure["rule"]
     # The disclosure, the labels and the numbers agree: what was used or known is never labelled independent.

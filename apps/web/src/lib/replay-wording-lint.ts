@@ -47,14 +47,15 @@ function compile(rules: WordingRules) {
 }
 
 /**
- * Text as the linter reads it: web addresses removed, white space collapsed, curly apostrophes and non-breaking
- * hyphens made plain. The same steps as `floodguard.wording_lint.normalise`.
+ * Text as the linter reads it: web addresses removed, white space collapsed, curly apostrophes made plain and every
+ * hyphen-like dash (non-breaking hyphen, figure dash, en dash, minus sign) made a plain hyphen. The same steps as
+ * `floodguard.wording_lint.normalise`.
  */
 export function normaliseWording(text: string): string {
   return text
     .replace(URL_PATTERN, " ")
     .replace(/[‘’]/g, "'")
-    .replace(/[‐‑]/g, "-")
+    .replace(/[‐‑‒–−]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
 }

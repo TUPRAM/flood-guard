@@ -508,6 +508,167 @@ def test_hash_helpers_are_stable() -> None:
     assert first != bench.array_sha256(np.zeros((2, 3), dtype="int8"))
 
 
+# --- committed artefacts: tuning log, freeze, summary and result document -------
+
+TUNING_LOG = TRACK / "geoid_m1_v2_tuning_log.jsonl"
+FROZEN_CONFIG = TRACK / "geoid_m1_v2_frozen_config.json"
+FREEZE_RECEIPT = TRACK / "geoid_m1_v2_freeze_receipt.json"
+RESULT_DOCUMENT = TRACK / "GEOID_M1_BENCHMARK_V2_RESULT.md"
+SUMMARY = ROOT / "outputs" / "geoid_m1_benchmark_v2_summary.json"
+
+
+def _log_records() -> list[dict[str, object]]:
+    return [json.loads(line) for line in TUNING_LOG.read_text(encoding="utf-8").splitlines()]
+
+
+def test_tuning_log_never_opened_a_test_tile_and_logs_every_declared_run() -> None:
+    records = _log_records()
+    sessions = [record for record in records if record["record"] == "session_start"]
+    runs = [record for record in records if record["record"] == "run"]
+    development = sorted(bench.tile_name(tile_id) for tile_id in bench.DEVELOPMENT_TILE_IDS)
+    test_names = {bench.tile_name(tile_id) for tile_id in bench.TEST_TILE_IDS}
+    assert len(sessions) == 2
+    for session in sessions:
+        assert session["phase"] == bench.PHASE_TUNING
+        assert session["test_tiles_opened"] == []
+        assert session["tiles_opened"] == development
+        assert session["planning_protocol_v1a_sha256"] == bench.PROTOCOL_V1A_SHA256
+        assert session["planning_protocol_v1a_file_checked"] is True
+        assert session["runs_declared"] == 36
+        assert not any(name in path for name in test_names for path in session["input_sha256"])
+    assert len(runs) == 72
+    for run in runs:
+        assert run["split"] == "development"
+        assert set(run["kittler_illingworth"]["per_tile"]) == set(development)
+        assert set(run["otsu_comparator"]["per_tile"]) == set(development)
+    grid = bench.expand_search_space(
+        json.loads(PROTOCOL.read_text(encoding="utf-8"))["m1_v2"]["search_space"]["dimensions"]
+    )
+    for session in sessions:
+        prefix = session["session_started_utc"]
+        own = [run for run in runs if run["run_id"].startswith(prefix)]
+        assert [run["parameters"] for run in own] == grid
+    # The second session ran under the amended protocol, which is the committed one.
+    assert sessions[1]["declared_benchmark_protocol_sha256"] == bench.file_sha256(PROTOCOL)
+    assert sessions[0]["declared_benchmark_protocol_sha256"] != bench.file_sha256(PROTOCOL)
+
+
+def test_frozen_configuration_is_the_declared_choice_of_the_second_session() -> None:
+    records = _log_records()
+    frozen_bytes = FROZEN_CONFIG.read_bytes()
+    frozen = json.loads(frozen_bytes)
+    receipt = json.loads(FREEZE_RECEIPT.read_bytes())
+    assert receipt["frozen_config_sha256"] == bench.bytes_sha256(frozen_bytes)
+    assert receipt["planning_protocol_v1a_sha256"] == bench.PROTOCOL_V1A_SHA256
+    assert receipt["declared_benchmark_protocol_sha256"] == bench.file_sha256(PROTOCOL)
+    assert receipt["tuning_log_sha256"] == bench.file_sha256(TUNING_LOG)
+    assert receipt["test_tiles_opened_before_freeze"] is False
+    last_session = [r for r in records if r["record"] == "session_start"][-1]
+    own = [
+        r
+        for r in records
+        if r["record"] == "run" and r["run_id"].startswith(last_session["session_started_utc"])
+    ]
+    chosen = bench.select_run(own)
+    assert chosen["run_id"] == frozen["selected_run_id"] == receipt["selected_run_id"]
+    config = sar.m1_v2_config_from_json(frozen["parameters"])
+    assert config == sar.M1V2Config(threshold_method="kittler_illingworth", **chosen["parameters"])
+    assert frozen["development"]["iou_strict"] == chosen["development_iou_strict"]
+    assert frozen["planning_protocol_v1a_sha256"] == bench.PROTOCOL_V1A_SHA256
+    for field in ("source_timestamp", "confidence", "assumptions"):
+        assert frozen[field]
+    assert frozen["can_feed_decision_layer"] is False
+
+
+def test_summary_carries_provenance_and_no_decision_output() -> None:
+    summary = json.loads(SUMMARY.read_text(encoding="utf-8"))
+    receipt = json.loads(FREEZE_RECEIPT.read_bytes())
+    assert summary["source_timestamp"] == "2024-01-03T05:34:06Z"
+    assert "not independent accuracy" in summary["confidence"]
+    assert len(summary["assumptions"]) >= 5
+    assert summary["required_statement"] == bench.REQUIRED_STATEMENT
+    assert len(summary["dataset"]["input_sha256"]) == 116
+    assert all(len(value) == 64 for value in summary["dataset"]["input_sha256"].values())
+    provenance = summary["provenance"]
+    assert provenance["frozen_config_sha256"] == bench.file_sha256(FROZEN_CONFIG)
+    assert provenance["freeze_receipt_sha256"] == bench.file_sha256(FREEZE_RECEIPT)
+    assert provenance["tuning_log_sha256"] == bench.file_sha256(TUNING_LOG)
+    assert provenance["planning_protocol_v1a_sha256"] == bench.PROTOCOL_V1A_SHA256
+    assert provenance["code_sha256"] == receipt["code_sha256"]
+    assert len(provenance["freeze_commit"]) == 40
+    for flag in (
+        "fpps_computed",
+        "action_class_computed",
+        "mae_sai_run",
+        "accepted_observation",
+        "official_warning",
+        "can_feed_decision_layer",
+        "human_reviewed_by_floodguard",
+    ):
+        assert summary[flag] is False
+    assert [row["split"] for row in summary["per_tile"]].count("test") == 14
+    assert [row["split"] for row in summary["per_tile"]].count("development") == 15
+    # The pooled figures are the per-tile counts added up.
+    for method in bench.METHODS:
+        for split in bench.SPLITS:
+            rows = [r["methods"][method] for r in summary["per_tile"] if r["split"] == split]
+            for comparison in ("primary", "secondary"):
+                pooled = bench.metrics_from_counts(
+                    bench.sum_counts(row[comparison] for row in rows)
+                )
+                assert pooled == summary["results"][method][split][comparison]
+    frozen = json.loads(FROZEN_CONFIG.read_bytes())
+    development = summary["results"]["m1_v2_kittler_illingworth"]["development"]["primary"]
+    assert development["strict"]["iou"] == frozen["development"]["iou_strict"]
+    bar = summary["t2_skill_bar"]
+    test = summary["results"]["m1_v2_kittler_illingworth"]["test"]["primary"]
+    assert bar["geoid_held_out_test_iou_min"] == 0.40
+    assert bar["m1_v2_test_iou_strict"] == test["strict"]["iou"]
+    assert bar["m1_v2_test_iou_covered"] == test["covered"]["iou"]
+    assert bar["m1_v2_reaches_the_geoid_condition"] is bench.clears_skill_bar(test)
+    assert len(bar["not_assessed_here"]) == 3
+
+
+def test_result_document_states_the_required_wording_and_the_summary_figures() -> None:
+    text = RESULT_DOCUMENT.read_bytes().decode("utf-8")
+    assert "\r" not in text
+    summary = json.loads(SUMMARY.read_text(encoding="utf-8"))
+    assert bench.REQUIRED_STATEMENT in text
+    assert bench.AGREEMENT_WORDING in " ".join(text.split())
+    for phrase in (
+        "One foreign event",
+        "The split is",
+        "The earlier all-tile diagnostic saw the test tiles",
+        "Whether any M1-v2 tuning existed before this run is unknown to the agent",
+        "first tuning recorded in the repository",
+        "No FPPS and no A-E class was",
+        "not preregistered",
+        bench.PROTOCOL_V1A_SHA256,
+        bench.file_sha256(FROZEN_CONFIG),
+    ):
+        assert phrase in " ".join(text.split()), phrase
+    lowered = text.lower()
+    assert lowered.count("preregistered") == 1
+    assert "confirmatory" in lowered and "not confirmatory" in " ".join(lowered.split())
+    assert "validated" not in lowered
+    names = {
+        "m1_literal": "M1-literal",
+        "m1_v2_kittler_illingworth": "M1-v2 (frozen)",
+        "m1_v2_otsu_comparator": "M1-v2 with Otsu (comparator)",
+    }
+    for method, label in names.items():
+        for split in bench.SPLITS:
+            result = summary["results"][method][split]
+            primary = result["primary"]
+            row = (
+                f"| {label} | {split} | {primary['strict']['iou']:.3f} | "
+                f"{primary['covered']['iou']:.3f} | {primary['covered']['precision']:.3f} | "
+                f"{primary['strict']['recall']:.3f} | {100 * primary['coverage']:.1f}% | "
+                f"{result['abstained_tiles']} of {result['tiles']} |"
+            )
+            assert row in text, row
+
+
 def test_scripts_and_modules_carry_no_local_path_and_no_decision_output() -> None:
     for relative in (
         "scripts/tune_geoid_m1_v2.py",

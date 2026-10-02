@@ -5,6 +5,8 @@
  * dry shelter as the assumed stage rises. It is not an observation of who was cut off, and not a warning.
  * Mirrors `scripts/mae_sai_timeline_evacuation.py` (`lost_at`), `floodguard.replay_equity` (the Evacuation Equity Gap
  * with its null rule) and `floodguard.shelter_set_comparison` (the side-by-side figures of the shelter sets).
+ * The capacity-aware plan and the what-if levels are computed by the bake (`floodguard.evacuation_access`:
+ * `capacitated_plan`, `robust_core`); this module only reads their figures from the manifest.
  * No priority score and no action class is computed here. No DOM access in this module.
  */
 
@@ -12,6 +14,7 @@ import {
   roundLikePython,
   type AccessDayStats,
   type AccessInfo,
+  type CapacityPlanRow,
   type Language,
   type ReportedShelter,
   type ShelterCandidate,
@@ -633,6 +636,92 @@ export const FAR_OVER_CAPACITY = 2;
 export function capacityFlag(site: Pick<PlannedShelter, "load" | "capacity">): "unknown" | "far_below" | null {
   if (site.capacity === null) return "unknown";
   return site.load > site.capacity && site.load >= FAR_OVER_CAPACITY * site.capacity ? "far_below" : null;
+}
+
+/** Plan sites assigned more residents than their capacity estimate holds, most overloaded first (unknown capacity never counts). */
+export function overCapacitySites(sites: readonly PlannedShelter[]): PlannedShelter[] {
+  return sites
+    .filter((site) => site.shortfall && site.capacity !== null)
+    .sort((a, b) => b.load / (b.capacity as number) - a.load / (a.capacity as number) || a.rank - b.rank);
+}
+
+/** Residents who fit and residents left over under one capacity bound (`overflow` = demand − `served`). */
+export interface CapacityCount { served: number; overflow: number }
+/** The same sites counted under both capacity bounds: an unknown capacity is 0 (lower) or its kind's median (upper). */
+export interface CapacityCounts { lower: CapacityCount; upper: CapacityCount }
+
+export interface CapacityAwareView {
+  /** Every resident of a home that floods at the modelled peak (an upper bound on shelter demand). */
+  demand: number;
+  /** The first k sites of the coverage ranking (the plan the card and the map show), counted with capacity. */
+  coverage: CapacityCounts & { size: number; withinReach: number };
+  /** The first k sites of the capacity-aware ranking (fewer when that ranking is shorter than k). */
+  ranked: CapacityCounts & { size: number; withinReach: number; rows: CapacityPlanRow[] };
+  /** Every site of the capacity-aware ranking, and whether it ended at the plan-size limit or at the gain floor. */
+  full: CapacityCounts & { size: number; endedBy: "size_limit" | "gain_floor"; gainFloorShare: number };
+  /** Every eligible candidate together: the ceiling of any plan. */
+  allEligible: CapacityCounts & { size: number; withEstimate: number; withinReach: number };
+}
+
+const counts = (row: { lower: CapacityCount; upper: CapacityCount }): CapacityCounts => ({
+  lower: { served: row.lower.served, overflow: row.lower.overflow },
+  upper: { served: row.upper.served, overflow: row.upper.overflow },
+});
+
+/**
+ * Capacity-aware figures for a plan of `k` sites, read from the manifest (nothing is recomputed here): the coverage
+ * ranking's first k sites counted with capacity, the capacity-aware ranking's first k sites, that whole ranking and
+ * every eligible candidate. Null when the manifest carries no capacity-aware plan, or one whose rows do not match the
+ * coverage ranking.
+ */
+export function capacityAwareView(shelters: Pick<ShelterInfo, "plan" | "capacitated">, k: number): CapacityAwareView | null {
+  const plan = shelters.capacitated;
+  const size = Math.min(Math.max(1, Math.round(k)), shelters.plan.length);
+  if (!plan || shelters.plan.length === 0 || plan.plan.length === 0) return null;
+  const coverageRow = plan.coverage_plan[size - 1];
+  if (!coverageRow || coverageRow.candidate_id !== shelters.plan[size - 1].candidate_id) return null;
+  const rankedSize = Math.min(size, plan.plan.length);
+  const rankedRow = plan.plan[rankedSize - 1];
+  const lastRow = plan.plan[plan.plan.length - 1];
+  return {
+    demand: plan.demand_people,
+    coverage: { size, withinReach: shelters.plan[size - 1].cumulative_demand, ...counts(coverageRow) },
+    ranked: { size: rankedSize, withinReach: rankedRow.within_reach ?? 0, rows: plan.plan.slice(0, rankedSize), ...counts(rankedRow) },
+    full: { size: plan.plan.length, endedBy: plan.plan.length >= plan.max_plan_sites ? "size_limit" : "gain_floor", gainFloorShare: plan.min_gain_share, ...counts(lastRow) },
+    allEligible: { size: plan.all_eligible.sites, withEstimate: plan.all_eligible.sites_with_estimate, withinReach: plan.all_eligible.within_reach, ...counts(plan.all_eligible) },
+  };
+}
+
+/**
+ * Sites of the first `k` that are also among the first k at every what-if level (the robust core), read from the
+ * manifest. Empty when the manifest has no robustness block.
+ */
+export function robustCore(shelters: Pick<ShelterInfo, "plan" | "robustness">, k: number): string[] {
+  const size = Math.min(Math.max(1, Math.round(k)), shelters.plan.length);
+  return shelters.robustness?.core_by_k[size - 1] ?? [];
+}
+
+export interface WhatIfLevel {
+  stage: number;
+  modelledPeak: boolean;
+  demand: number;
+  eligible: number;
+  /** Sites in this level's plan of `k` sites (fewer when its ranking is shorter). */
+  size: number;
+  /** Residents within the walk of those sites at this level. */
+  covered: number;
+  share: number;
+}
+
+/** The what-if levels with the coverage of each level's own first `k` sites; empty without a robustness block. */
+export function whatIfLevels(shelters: Pick<ShelterInfo, "plan" | "robustness">, k: number): WhatIfLevel[] {
+  const wanted = Math.min(Math.max(1, Math.round(k)), Math.max(1, shelters.plan.length));
+  return (shelters.robustness?.stages ?? []).map((stage) => {
+    const size = Math.min(wanted, stage.plan.length);
+    const covered = size > 0 ? stage.cumulative_demand[size - 1] ?? 0 : 0;
+    return { stage: stage.stage_m, modelledPeak: stage.modelled_peak, demand: stage.demand_people, eligible: stage.eligible_count,
+      size, covered, share: stage.demand_people > 0 ? covered / stage.demand_people : 0 };
+  });
 }
 
 const wholePeople = (value: number) => Math.round(value).toLocaleString("en-US");

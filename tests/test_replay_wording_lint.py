@@ -82,6 +82,7 @@ def test_rules_cover_the_six_banned_groups_and_the_shelter_comparison_rules() ->
         "road_schedule",  # schedule or closure plan for modelled roads
         "set_ranking",  # a shelter set or plan called better, best or worse (P2-4)
         "safe_departure",  # the modelled cut-off hour presented as a safe time to leave (P2-4)
+        "shelter_directive",  # "open these shelters": the plans list candidates to verify (P2-9)
     )
     assert len(RULES.allow) >= 8
 

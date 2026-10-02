@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T07:24:00+07:00",
+ "generated_at": "2026-10-02T12:01:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -122,6 +122,28 @@
    ],
    "source_timestamp": "OSM extract 2026-07-09; reconstructed peak 2024-09-12 ICT",
    "note": "Candidate screening and ranked plan on the reconstructed peak; the reported sites inside this block sit in the reported lane."
+  },
+  {
+   "id": "capacity_aware_plan",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "event_window_reconstruction",
+   "covers": [
+    "shelters.capacitated"
+   ],
+   "source_timestamp": "OSM extract 2026-07-09 (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT",
+   "note": "Who fits where under two capacity bounds, on the reconstructed peak. Demand is every resident of a home that floods at the peak; capacity is an unverified footprint estimate. Candidates to verify, not a list of sites to open."
+  },
+  {
+   "id": "plan_robustness",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "what_if_levels",
+   "covers": [
+    "shelters.robustness"
+   ],
+   "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; what-if design stages around the illustrative 2024-09-12 ICT peak",
+   "note": "The coverage ranking repeated at what-if levels around an illustrative peak, not return periods."
   },
   {
    "id": "reported_shelters",
@@ -9054,6 +9076,949 @@
     }
    }
   ],
+  "capacitated": {
+   "scenario_tier": "T1 scenario (model)",
+   "confidence": "low",
+   "confidence_reason": "Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; demand is a modelled upper bound; nothing was checked on the ground.",
+   "source_timestamp": "OSM extract 2026-07-09 (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT",
+   "demand_basis": "Every resident of a home that floods at the modelled peak (WorldPop 2020 residents at road nodes). An upper bound on shelter demand: many people stay with relatives or on an upper floor.",
+   "capacity_basis": {
+    "estimate": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+    "unknown": "unknown"
+   },
+   "bounds": {
+    "lower": "An unknown capacity counts as 0.",
+    "upper": "An unknown capacity takes the median estimate of the same site kind (kind_median), or the median of every estimate when no site of that kind has one (all_kinds_median). Medians use every candidate with an estimate."
+   },
+   "method": "Residents are assigned to eligible sites within the walking limit on normal roads without exceeding a site's capacity, serving as many as possible (a maximum flow, solved in thousandths of a resident and published in whole residents). The capacity-aware ranking adds, at each step, the site that lets the most additional residents fit under the upper bound; it stops at the plan-size limit or when a site adds less than 0.5% of demand. Both bounds use that one site order, and a site's load is the number it adds when it joins. coverage_plan counts the existing coverage ranking the same way. overflow = demand_people - served.",
+   "assumptions": [
+    "T1 scenario (model) on the reconstructed peak; not an observation of who sheltered where.",
+    "Demand is every resident of a home that floods at the modelled peak, an upper bound: many people stay with relatives or on an upper floor.",
+    "Capacity is an unverified estimate from mapped building footprints (footprint x 0.5 usable share / 3.5 m2 per person, Sphere); most candidates have no mapped footprint.",
+    "The sites are candidates to verify on the ground, not a list of sites to open.",
+    "The planning overlay's shelter-capacity figures use listed capacities from a different source (DDPM); none of those values is used or published here, so the two sets of figures differ.",
+    "Everyone is assumed to walk before the water rises (normal roads) and to accept any site within the limit; households are not kept together."
+   ],
+   "demand_people": 14169,
+   "max_plan_sites": 30,
+   "min_gain_share": 0.005,
+   "kind_median_capacity": {
+    "government": 81,
+    "school": 253,
+    "worship": 76
+   },
+   "all_kinds_median_capacity": 80,
+   "plan": [
+    {
+     "candidate_id": "C006",
+     "capacity_est": 984,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 1109,
+     "lower": {
+      "capacity": 984,
+      "load": 984,
+      "served": 984,
+      "overflow": 13185
+     },
+     "upper": {
+      "capacity": 984,
+      "load": 984,
+      "served": 984,
+      "overflow": 13185
+     }
+    },
+    {
+     "candidate_id": "C007",
+     "capacity_est": 306,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 2772,
+     "lower": {
+      "capacity": 306,
+      "load": 306,
+      "served": 1290,
+      "overflow": 12879
+     },
+     "upper": {
+      "capacity": 306,
+      "load": 306,
+      "served": 1290,
+      "overflow": 12879
+     }
+    },
+    {
+     "candidate_id": "C010",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 2772,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 1290,
+      "overflow": 12879
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 253,
+      "served": 1543,
+      "overflow": 12626
+     }
+    },
+    {
+     "candidate_id": "C073",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 3110,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 1290,
+      "overflow": 12879
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 253,
+      "served": 1796,
+      "overflow": 12373
+     }
+    },
+    {
+     "candidate_id": "C038",
+     "capacity_est": 212,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3110,
+     "lower": {
+      "capacity": 212,
+      "load": 212,
+      "served": 1502,
+      "overflow": 12667
+     },
+     "upper": {
+      "capacity": 212,
+      "load": 212,
+      "served": 2008,
+      "overflow": 12161
+     }
+    },
+    {
+     "candidate_id": "C029",
+     "capacity_est": 240,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3283,
+     "lower": {
+      "capacity": 240,
+      "load": 173,
+      "served": 1675,
+      "overflow": 12494
+     },
+     "upper": {
+      "capacity": 240,
+      "load": 173,
+      "served": 2181,
+      "overflow": 11988
+     }
+    },
+    {
+     "candidate_id": "C017",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 3283,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 1675,
+      "overflow": 12494
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 130,
+      "served": 2311,
+      "overflow": 11858
+     }
+    },
+    {
+     "candidate_id": "C002",
+     "capacity_est": 130,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3283,
+     "lower": {
+      "capacity": 130,
+      "load": 130,
+      "served": 1805,
+      "overflow": 12364
+     },
+     "upper": {
+      "capacity": 130,
+      "load": 130,
+      "served": 2441,
+      "overflow": 11728
+     }
+    },
+    {
+     "candidate_id": "C008",
+     "capacity_est": 121,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3283,
+     "lower": {
+      "capacity": 121,
+      "load": 121,
+      "served": 1926,
+      "overflow": 12243
+     },
+     "upper": {
+      "capacity": 121,
+      "load": 121,
+      "served": 2562,
+      "overflow": 11607
+     }
+    },
+    {
+     "candidate_id": "C011",
+     "capacity_est": 110,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3502,
+     "lower": {
+      "capacity": 110,
+      "load": 110,
+      "served": 2036,
+      "overflow": 12133
+     },
+     "upper": {
+      "capacity": 110,
+      "load": 110,
+      "served": 2672,
+      "overflow": 11497
+     }
+    },
+    {
+     "candidate_id": "C068",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 3526,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2036,
+      "overflow": 12133
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 109,
+      "served": 2781,
+      "overflow": 11388
+     }
+    },
+    {
+     "candidate_id": "C070",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 3617,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2036,
+      "overflow": 12133
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 100,
+      "served": 2881,
+      "overflow": 11288
+     }
+    },
+    {
+     "candidate_id": "C025",
+     "capacity_est": 88,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3655,
+     "lower": {
+      "capacity": 88,
+      "load": 88,
+      "served": 2124,
+      "overflow": 12045
+     },
+     "upper": {
+      "capacity": 88,
+      "load": 88,
+      "served": 2969,
+      "overflow": 11200
+     }
+    },
+    {
+     "candidate_id": "C047",
+     "capacity_est": 84,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 3655,
+     "lower": {
+      "capacity": 84,
+      "load": 84,
+      "served": 2208,
+      "overflow": 11961
+     },
+     "upper": {
+      "capacity": 84,
+      "load": 84,
+      "served": 3053,
+      "overflow": 11116
+     }
+    },
+    {
+     "candidate_id": "C107",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 4342,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2208,
+      "overflow": 11961
+     },
+     "upper": {
+      "capacity": 81,
+      "load": 81,
+      "served": 3134,
+      "overflow": 11035
+     }
+    },
+    {
+     "candidate_id": "C026",
+     "capacity_est": 79,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 4342,
+     "lower": {
+      "capacity": 79,
+      "load": 79,
+      "served": 2287,
+      "overflow": 11882
+     },
+     "upper": {
+      "capacity": 79,
+      "load": 79,
+      "served": 3213,
+      "overflow": 10956
+     }
+    },
+    {
+     "candidate_id": "C049",
+     "capacity_est": 79,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "within_reach": 6476,
+     "lower": {
+      "capacity": 79,
+      "load": 79,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 79,
+      "load": 79,
+      "served": 3292,
+      "overflow": 10877
+     }
+    },
+    {
+     "candidate_id": "C020",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6476,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3368,
+      "overflow": 10801
+     }
+    },
+    {
+     "candidate_id": "C071",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6611,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3444,
+      "overflow": 10725
+     }
+    },
+    {
+     "candidate_id": "C072",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6834,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3520,
+      "overflow": 10649
+     }
+    },
+    {
+     "candidate_id": "C074",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6834,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3596,
+      "overflow": 10573
+     }
+    },
+    {
+     "candidate_id": "C083",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 6999,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3672,
+      "overflow": 10497
+     }
+    },
+    {
+     "candidate_id": "C084",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 7460,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3748,
+      "overflow": 10421
+     }
+    },
+    {
+     "candidate_id": "C085",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 7633,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3824,
+      "overflow": 10345
+     }
+    },
+    {
+     "candidate_id": "C094",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "within_reach": 8063,
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 2366,
+      "overflow": 11803
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 3900,
+      "overflow": 10269
+     }
+    }
+   ],
+   "coverage_plan": [
+    {
+     "candidate_id": "C049",
+     "capacity_est": 79,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "lower": {
+      "capacity": 79,
+      "load": 79,
+      "served": 79,
+      "overflow": 14090
+     },
+     "upper": {
+      "capacity": 79,
+      "load": 79,
+      "served": 79,
+      "overflow": 14090
+     }
+    },
+    {
+     "candidate_id": "C007",
+     "capacity_est": 306,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "lower": {
+      "capacity": 306,
+      "load": 306,
+      "served": 385,
+      "overflow": 13784
+     },
+     "upper": {
+      "capacity": 306,
+      "load": 306,
+      "served": 385,
+      "overflow": 13784
+     }
+    },
+    {
+     "candidate_id": "C107",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 385,
+      "overflow": 13784
+     },
+     "upper": {
+      "capacity": 81,
+      "load": 81,
+      "served": 466,
+      "overflow": 13703
+     }
+    },
+    {
+     "candidate_id": "C084",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 385,
+      "overflow": 13784
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 542,
+      "overflow": 13627
+     }
+    },
+    {
+     "candidate_id": "C094",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 385,
+      "overflow": 13784
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 618,
+      "overflow": 13551
+     }
+    },
+    {
+     "candidate_id": "C011",
+     "capacity_est": 110,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "lower": {
+      "capacity": 110,
+      "load": 110,
+      "served": 495,
+      "overflow": 13674
+     },
+     "upper": {
+      "capacity": 110,
+      "load": 110,
+      "served": 728,
+      "overflow": 13441
+     }
+    },
+    {
+     "candidate_id": "C072",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 495,
+      "overflow": 13674
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 804,
+      "overflow": 13365
+     }
+    },
+    {
+     "candidate_id": "C073",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 495,
+      "overflow": 13674
+     },
+     "upper": {
+      "capacity": 253,
+      "load": 253,
+      "served": 1057,
+      "overflow": 13112
+     }
+    },
+    {
+     "candidate_id": "C050",
+     "capacity_est": 62,
+     "capacity_basis": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",
+     "upper_capacity_basis": "estimate",
+     "lower": {
+      "capacity": 62,
+      "load": 62,
+      "served": 557,
+      "overflow": 13612
+     },
+     "upper": {
+      "capacity": 62,
+      "load": 62,
+      "served": 1119,
+      "overflow": 13050
+     }
+    },
+    {
+     "candidate_id": "C085",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 557,
+      "overflow": 13612
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 1195,
+      "overflow": 12974
+     }
+    },
+    {
+     "candidate_id": "C083",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 557,
+      "overflow": 13612
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 1271,
+      "overflow": 12898
+     }
+    },
+    {
+     "candidate_id": "C071",
+     "capacity_est": null,
+     "capacity_basis": "unknown",
+     "upper_capacity_basis": "kind_median",
+     "lower": {
+      "capacity": 0,
+      "load": 0,
+      "served": 557,
+      "overflow": 13612
+     },
+     "upper": {
+      "capacity": 76,
+      "load": 76,
+      "served": 1347,
+      "overflow": 12822
+     }
+    }
+   ],
+   "all_eligible": {
+    "sites": 95,
+    "sites_with_estimate": 42,
+    "within_reach": 8426,
+    "lower": {
+     "capacity": 7342,
+     "served": 2673,
+     "overflow": 11496
+    },
+    "upper": {
+     "capacity": 14228,
+     "served": 4149,
+     "overflow": 10020
+    }
+   }
+  },
+  "robustness": {
+   "scenario_tier": "T1 scenario (model)",
+   "label": "What-if levels around an illustrative peak, not return periods.",
+   "confidence": "low",
+   "confidence_reason": "The peak stage is illustrative (no gauge record); the levels show how the ranking moves if it were lower or higher.",
+   "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; what-if design stages around the illustrative 2024-09-12 ICT peak",
+   "method": "At each level the demand is the residents whose homes are wet at that level and a candidate is eligible if it keeps its freeboard there; the same greedy coverage ranking is then repeated. core_by_k[k - 1] lists the sites among the first k at every level (the robust core for a plan of k sites).",
+   "assumptions": [
+    "The levels are what-if stages around the illustrative 3.5 m peak, not return periods and not observed levels.",
+    "Reach is the same 2 km walk on normal roads at every level; only the demand and the eligible sites change.",
+    "A site in the robust core is still a candidate to verify on the ground."
+   ],
+   "stages": [
+    {
+     "stage_m": 2.5,
+     "modelled_peak": false,
+     "demand_people": 10333,
+     "eligible_count": 95,
+     "uncoverable_people": 4276,
+     "knee_k": 8,
+     "plan": [
+      "C025",
+      "C049",
+      "C107",
+      "C011",
+      "C094",
+      "C084",
+      "C050",
+      "C072",
+      "C073",
+      "C085",
+      "C083",
+      "C071"
+     ],
+     "cumulative_demand": [
+      2336,
+      3768,
+      4276,
+      4604,
+      4844,
+      5071,
+      5284,
+      5480,
+      5660,
+      5765,
+      5869,
+      5963
+     ]
+    },
+    {
+     "stage_m": 3.5,
+     "modelled_peak": true,
+     "demand_people": 14169,
+     "eligible_count": 95,
+     "uncoverable_people": 5743,
+     "knee_k": 8,
+     "plan": [
+      "C049",
+      "C007",
+      "C107",
+      "C084",
+      "C094",
+      "C011",
+      "C072",
+      "C073",
+      "C050",
+      "C085",
+      "C083",
+      "C071"
+     ],
+     "cumulative_demand": [
+      2956,
+      4944,
+      5725,
+      6196,
+      6626,
+      7001,
+      7336,
+      7580,
+      7815,
+      7988,
+      8154,
+      8267
+     ]
+    },
+    {
+     "stage_m": 4.0,
+     "modelled_peak": false,
+     "demand_people": 16069,
+     "eligible_count": 94,
+     "uncoverable_people": 7189,
+     "knee_k": 7,
+     "plan": [
+      "C049",
+      "C007",
+      "C084",
+      "C094",
+      "C073",
+      "C011",
+      "C072",
+      "C050",
+      "C085",
+      "C083",
+      "C071",
+      "C022"
+     ],
+     "cumulative_demand": [
+      3472,
+      5664,
+      6191,
+      6687,
+      7164,
+      7553,
+      7905,
+      8148,
+      8350,
+      8535,
+      8649,
+      8732
+     ]
+    }
+   ],
+   "core_by_k": [
+    [],
+    [
+     "C049"
+    ],
+    [
+     "C049"
+    ],
+    [
+     "C049"
+    ],
+    [
+     "C049",
+     "C094"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072",
+     "C073",
+     "C050"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072",
+     "C073",
+     "C050",
+     "C085"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072",
+     "C073",
+     "C050",
+     "C085",
+     "C083"
+    ],
+    [
+     "C049",
+     "C084",
+     "C094",
+     "C011",
+     "C072",
+     "C073",
+     "C050",
+     "C085",
+     "C083",
+     "C071"
+    ]
+   ]
+  },
   "method": {
    "evacuation_stage_m": 0.0,
    "late_evacuation_stage_m": 1.0,
@@ -9957,6 +10922,8 @@
   "Evacuation access uses the repo road graph and walking distance: a resident node has access when an open, dry shelter is within 2 km along roads still passable (about 30 minutes on foot); a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it. Levels are evaluated every 0.05 m of stage.",
   "Shelter candidates are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres; OSM amenity=shelter huts are excluded). A candidate is eligible only if it keeps 0.5 m freeboard at the modelled peak and a road node lies within 400 m. Ranking is greedy maximal coverage of residents whose homes are wet at the peak, within 2 km walking on normal roads (pre-emptive evacuation); late_cumulative_share repeats the check on roads still open at 1.0 m stage.",
   "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.",
+  "The capacity-aware plan assigns residents of homes that flood at the modelled peak to eligible sites within the 2 km walk without exceeding a site's capacity. It gives two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). Demand is an upper bound (many people stay with relatives) and the sites are candidates to verify.",
+  "Plan robustness repeats the coverage ranking at 2.5 m, 3.5 m and 4.0 m: what-if levels around an illustrative peak, not return periods.",
   "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
   "Flash-flood velocity, debris and mud deposition are not modelled."

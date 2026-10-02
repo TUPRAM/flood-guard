@@ -556,6 +556,11 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     evac.evaluate_sites(located, graph, codes_aoi, k_aoi, aoi, peak_stage, valid_aoi)
     counted = [r for r in located if r.get("in_access_set", True)]
     access = evac.plan_and_access(sites, counted, graph, peak_stage)
+    coverage_order = [entry["candidate_id"] for entry in access["ranking"]]
+    capacitated = evac.capacity_aware_plan(sites, graph, peak_stage, coverage_order)
+    if capacitated["demand_people"] != access["demand_people"]:
+        raise ReplayManifestError("the capacity-aware plan and the coverage ranking count a different demand")
+    robustness = evac.what_if_plans(sites, graph, codes_aoi, k_aoi, aoi, valid_aoi, evac.WHAT_IF_STAGES_M, peak_stage, coverage_order)
     pop_df = graph["pop"]
     tambon_order = list(tambon_ids)
     node_tambon = np.array([tambon_order.index(t) + 1 if t in tambon_order else 0 for t in pop_df["subdistrict_id"]], dtype=np.uint8)
@@ -709,6 +714,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
             "shelters": {"candidates": [site_public(x) for x in sites], "plan": access["ranking"], "knee_k": access["knee_k"],
                          "demand_people": access["demand_people"], "uncoverable_people": access["uncoverable_people"],
                          "eligible_count": access["eligible_count"], "reported": reported_public,
+                         "capacitated": capacitated, "robustness": robustness,
                          "method": {"evacuation_stage_m": evac.EVACUATION_STAGE_M, "late_evacuation_stage_m": evac.LATE_EVACUATION_STAGE_M, "threshold_m": evac.ACCESS_THRESHOLD_M,
                                     "freeboard_m": evac.SHELTER_FREEBOARD_M, "peak_stage_m": peak_stage,
                                     "m2_per_person": evac.SPHERE_M2_PER_PERSON, "usable_floor_share": evac.USABLE_FLOOR_SHARE,
@@ -810,6 +816,8 @@ ASSUMPTIONS = [
     "Evacuation access uses the repo road graph and walking distance: a resident node has access when an open, dry shelter is within 2 km along roads still passable (about 30 minutes on foot); a road closes at 0.3 m of reconstructed depth and a shelter stops serving once water reaches it. Levels are evaluated every 0.05 m of stage.",
     "Shelter candidates are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres; OSM amenity=shelter huts are excluded). A candidate is eligible only if it keeps 0.5 m freeboard at the modelled peak and a road node lies within 400 m. Ranking is greedy maximal coverage of residents whose homes are wet at the peak, within 2 km walking on normal roads (pre-emptive evacuation); late_cumulative_share repeats the check on roads still open at 1.0 m stage.",
     "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.",
+    "The capacity-aware plan assigns residents of homes that flood at the modelled peak to eligible sites within the 2 km walk without exceeding a site's capacity. It gives two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). Demand is an upper bound (many people stay with relatives) and the sites are candidates to verify.",
+    "Plan robustness repeats the coverage ranking at 2.5 m, 3.5 m and 4.0 m: what-if levels around an illustrative peak, not return periods.",
     "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
     "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
     "Flash-flood velocity, debris and mud deposition are not modelled.",
@@ -851,6 +859,52 @@ EXPLORATORY_KNOWLEDGE = {
                      "UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure."),
     "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.",
 }
+
+CAPACITATED_META = {
+    "scenario_tier": SCENARIO_TIER,
+    "confidence": "low",
+    "confidence_reason": ("Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; "
+                          "demand is a modelled upper bound; nothing was checked on the ground."),
+    "source_timestamp": f"OSM extract {OSM_EXTRACT_DATE} (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT",
+    "demand_basis": ("Every resident of a home that floods at the modelled peak (WorldPop 2020 residents at road nodes). An upper bound on "
+                     "shelter demand: many people stay with relatives or on an upper floor."),
+    "capacity_basis": {"estimate": evac.CAPACITY_ESTIMATE_BASIS, "unknown": evac.CAPACITY_UNKNOWN_BASIS},
+    "bounds": {"lower": "An unknown capacity counts as 0.",
+               "upper": ("An unknown capacity takes the median estimate of the same site kind (kind_median), or the median of every estimate "
+                         "when no site of that kind has one (all_kinds_median). Medians use every candidate with an estimate.")},
+    "method": ("Residents are assigned to eligible sites within the walking limit on normal roads without exceeding a site's capacity, serving "
+               "as many as possible (a maximum flow, solved in thousandths of a resident and published in whole residents). The capacity-aware "
+               "ranking adds, at each step, the site that lets the most additional residents fit under the upper bound; it stops at the plan-size "
+               f"limit or when a site adds less than {evac.CAPACITY_MIN_GAIN_SHARE:.1%} of demand. Both bounds use that one site order, and a "
+               "site's load is the number it adds when it joins. coverage_plan counts the existing coverage ranking the same way. "
+               "overflow = demand_people - served."),
+    "assumptions": [
+        "T1 scenario (model) on the reconstructed peak; not an observation of who sheltered where.",
+        "Demand is every resident of a home that floods at the modelled peak, an upper bound: many people stay with relatives or on an upper floor.",
+        "Capacity is an unverified estimate from mapped building footprints (footprint x 0.5 usable share / 3.5 m2 per person, Sphere); most candidates have no mapped footprint.",
+        "The sites are candidates to verify on the ground, not a list of sites to open.",
+        "The planning overlay's shelter-capacity figures use listed capacities from a different source (DDPM); none of those values is used or published here, so the two sets of figures differ.",
+        "Everyone is assumed to walk before the water rises (normal roads) and to accept any site within the limit; households are not kept together.",
+    ],
+}
+"""Wording and provenance of ``shelters.capacitated`` (the figures come from the build)."""
+
+ROBUSTNESS_META = {
+    "scenario_tier": SCENARIO_TIER,
+    "label": "What-if levels around an illustrative peak, not return periods.",
+    "confidence": "low",
+    "confidence_reason": "The peak stage is illustrative (no gauge record); the levels show how the ranking moves if it were lower or higher.",
+    "source_timestamp": f"OSM extract {OSM_EXTRACT_DATE}; WorldPop 2020; what-if design stages around the illustrative 2024-09-12 ICT peak",
+    "method": ("At each level the demand is the residents whose homes are wet at that level and a candidate is eligible if it keeps its "
+               "freeboard there; the same greedy coverage ranking is then repeated. core_by_k[k - 1] lists the sites among the first k "
+               "at every level (the robust core for a plan of k sites)."),
+    "assumptions": [
+        "The levels are what-if stages around the illustrative 3.5 m peak, not return periods and not observed levels.",
+        "Reach is the same 2 km walk on normal roads at every level; only the demand and the eligible sites change.",
+        "A site in the robust core is still a candidate to verify on the ground.",
+    ],
+}
+"""Wording and provenance of ``shelters.robustness`` (the figures come from the build)."""
 
 VIIRS_MODEL_FIELDS = ("model_stage_m", "model_flood_km2_clear", "model_flood_km2_district")
 """Fields of every ``viirs_daily.days[]`` row that are model output placed beside the agency product."""
@@ -934,6 +988,13 @@ def evidence_blocks(result: dict) -> list[dict]:
         {"id": "shelter_plan", **scenario, "temporal_relation": "event_window_reconstruction", "covers": ["shelters"],
          "source_timestamp": f"OSM extract {OSM_EXTRACT_DATE}; reconstructed peak 2024-09-12 ICT",
          "note": "Candidate screening and ranked plan on the reconstructed peak; the reported sites inside this block sit in the reported lane."},
+        {"id": "capacity_aware_plan", **scenario, "temporal_relation": "event_window_reconstruction", "covers": ["shelters.capacitated"],
+         "source_timestamp": f"OSM extract {OSM_EXTRACT_DATE} (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT",
+         "note": ("Who fits where under two capacity bounds, on the reconstructed peak. Demand is every resident of a home that floods at the "
+                  "peak; capacity is an unverified footprint estimate. Candidates to verify, not a list of sites to open.")},
+        {"id": "plan_robustness", **scenario, "temporal_relation": "what_if_levels", "covers": ["shelters.robustness"],
+         "source_timestamp": f"OSM extract {OSM_EXTRACT_DATE}; WorldPop 2020; what-if design stages around the illustrative 2024-09-12 ICT peak",
+         "note": "The coverage ranking repeated at what-if levels around an illustrative peak, not return periods."},
         {"id": "reported_shelters", "lane": "REP", "evidence_tier": "Reported use from public sources; not an official register",
          "temporal_relation": "post_event_compilation", "covers": ["shelters.reported"],
          "source_timestamp": f"reports dated 2024-09-11 to 2024-10-11; compiled {compiled}"},
@@ -1079,7 +1140,10 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
                    "confidence_reason": "Built on the reconstructed water, WorldPop 2020 residents at road nodes, an OSM road graph with assumed walking access and shelters assumed open for the whole replay.",
                    "source_timestamp": "OSM roads and sites 2026-07-09; WorldPop 2020; water model 2024-09-09/2024-09-19 ICT",
                    "definition": "A resident node loses access when no open, dry shelter of the chosen set is reachable within the threshold on roads that are still passable, having been reachable before the flood."},
-        "shelters": {**result["shelters"], "confidence": "low",
+        "shelters": {**result["shelters"],
+                     "capacitated": {**CAPACITATED_META, **result["shelters"]["capacitated"]},
+                     "robustness": {**ROBUSTNESS_META, **result["shelters"]["robustness"]},
+                     "confidence": "low",
                      "confidence_reason": "Candidates are OSM public buildings with sparse footprints; eligibility and coverage use the reconstructed peak and walking distance, not site surveys.",
                      "source_timestamp": "OSM extract 2026-07-09; reported shelters compiled 2026-09-27 from reports dated 2024-09-11 to 2024-10-11",
                      "reported_status": result["reported_meta"]["status"], "reported_compiled": result["reported_meta"]["compiled"],

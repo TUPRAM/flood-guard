@@ -5,7 +5,7 @@
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
  "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
  "generated_at": {
-  "value": "2026-10-02T07:24:00+07:00",
+  "value": "2026-10-02T12:01:00+07:00",
   "basis": "declared"
  },
  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
@@ -225,7 +225,7 @@
  "outputs": {
   "folder": "apps/web/public/studies/mae-sai-2024-timeline/r4",
   "file_count": 22,
-  "bytes": 6117717,
+  "bytes": 6140671,
   "files": [
    {
     "name": "access-nodes.bin",
@@ -289,8 +289,8 @@
    },
    {
     "name": "timeline.json",
-    "bytes": 220494,
-    "sha256": "b309d820af9124bf1fd7c923ce9eaca23aa90651f9c76e9761bf915a052680ff"
+    "bytes": 243448,
+    "sha256": "9d7296aa78c12966f516d6c8c00793e10e676018f4966b4f05349f867d15a581"
    },
    {
     "name": "viirs-20240910.png",
@@ -342,15 +342,15 @@
  "code": [
   {
    "path": "packages/contracts/schemas/case-replay-timeline.schema.json",
-   "sha256": "49b1b11eef49cbdf3491ec6cad9343abd5e240f9e69ed5798bd10cc45c8de767"
+   "sha256": "683b9d5d6f06f79f4eba2d67757eb016bb280c10fab7c0e9aedf4077f6a335d6"
   },
   {
    "path": "scripts/build_mae_sai_flood_timeline.py",
-   "sha256": "f4c5cc41b352d5e065c1e3e2814b6b2b02ca476e489617d1123698df47614dca"
+   "sha256": "707dbdadf0658cbfbaa2e87c4bf0f5e8a4e823c1a75ee05b90f80ece3bc289f4"
   },
   {
    "path": "scripts/mae_sai_timeline_evacuation.py",
-   "sha256": "e3df2791fbbb60ccc01114b71ccaceea3b54e8ae97cdef3040716ea81ce161cc"
+   "sha256": "afd6f230f6edfb71ff89abf59deacd308405da4582a8b68afa1f3bb50fa35858"
   },
   {
    "path": "scripts/mae_sai_timeline_observations.py",
@@ -362,7 +362,7 @@
   },
   {
    "path": "src/floodguard/evacuation_access.py",
-   "sha256": "4022c993b0ad760c4e39168c056e2808d1b116df1afc93a85b300e7e6c7df440"
+   "sha256": "49e8984feebce22f0bab012d9a835a96fcfc7a834ebcd0c7058ae1d405766b42"
   },
   {
    "path": "src/floodguard/flood_timeline.py",

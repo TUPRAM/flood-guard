@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.replay_wording_rules.v1",
-  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets or present a modelled hour as a safe time to leave. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
+  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets, present a modelled hour as a safe time to leave or tell the reader which shelters to open. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
   "how_it_works": [
     "Text is normalised first: web addresses are removed, runs of white space become one space, curly apostrophes become straight ones, and non-breaking hyphens, figure dashes, en dashes and minus signs become plain hyphens.",
     "Each pattern in allow is then removed, in order. They are explicit negations such as 'not a forecast'. A new negation needs a new entry here; a plain 'not' somewhere in the sentence is not enough.",
@@ -94,6 +94,23 @@
       "ok": ["ผลเบื้องต้น ยังไม่ผ่านการตรวจสอบภาคสนาม", "ข้อมูลนี้ยังไม่ได้ผ่านการยืนยัน"]
     },
     {
+      "id": "not_sites_to_open",
+      "pattern": "(?<![A-Za-z0-9_])(?:not|never) (?:a |an )?(?:list of )?(?:shelters|sites) to open(?![A-Za-z0-9_])|ไม่ใช่(?:รายชื่อ|รายการ)?(?:ที่พักพิง|สถานที่)ที่(?:ต้อง|ควร)เปิด",
+      "why": "The standing caveat of the shelter plans: the sites are candidates to verify, and the text says they are not a list to open.",
+      "ok": [
+        "Candidates to verify, not a list of sites to open.",
+        "The sites are candidates to verify on the ground, not a list of sites to open.",
+        "These are candidates to check, never shelters to open.",
+        "เป็นสถานที่ที่ควรตรวจสอบ ไม่ใช่รายชื่อที่พักพิงที่ต้องเปิด"
+      ]
+    },
+    {
+      "id": "th_not_return_period",
+      "pattern": "ไม่ใช่(?:ระดับน้ำตาม|ระดับตาม)?(?:คาบการเกิดซ้ำ|รอบการเกิดซ้ำ|คาบอุบัติซ้ำ)",
+      "why": "Thai denial that the what-if levels are return periods. The English 'not return periods' needs no entry: the rule flags only a named period such as '100-year'.",
+      "ok": ["ระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดที่ใช้เพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ", "ระดับเหล่านี้ไม่ใช่ระดับน้ำตามรอบการเกิดซ้ำ"]
+    },
+    {
       "id": "th_named_warning_station",
       "pattern": "ระบบเตือนภัยบ้านแม่สายของกรมทรัพยากรน้ำ",
       "why": "Names another agency's early-warning station, which the replay says it could not verify. It claims no warning.",
@@ -166,6 +183,12 @@
       "pattern": "(?<![A-Za-z0-9_])last safe (?:departure|time|hour|moment|chance)s?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])safe (?:departure|evacuation) (?:time|hour|window)s?(?![A-Za-z0-9_])|เวลาออกเดินทางที่ปลอดภัย|เวลาอพยพที่ปลอดภัย",
       "message": "The access cut-off hour is a modelled hour from illustrative stage keyframes, not a safe time to leave. Say 'modelled access cut-off hour'.",
       "bad": ["Last safe departure: 10 Sep 22:00", "The last safe hour to leave is 22:00", "Safe departure window ends at 22:00", "เวลาออกเดินทางที่ปลอดภัยครั้งสุดท้าย 22:00 น."]
+    },
+    {
+      "id": "shelter_directive",
+      "pattern": "(?<![A-Za-z0-9_])open(?:ing)? (?:these|those|the following|all) (?:[0-9]+ )?(?:shelters?|sites?)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) to open(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) (?:that )?(?:must|should|need to) (?:be )?open(?:ed)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:must|should|need to) open (?:[0-9]+ |these |those |the )?(?:shelters?|sites?)(?![A-Za-z0-9_])|เปิดที่พักพิงเหล่านี้|เปิดสถานที่เหล่านี้|(?:ที่พักพิง|สถานที่)ที่(?:ต้อง|ควร)เปิด|(?:ต้อง|ควร)เปิดที่พักพิง",
+      "message": "The shelter plans list candidates to verify on the ground. Do not tell the reader which shelters to open; say 'candidates to verify'.",
+      "bad": ["Open these shelters first", "The 8 shelters to open in Mae Sai", "The district must open 8 shelters", "Sites that should be opened before the peak", "เปิดที่พักพิงเหล่านี้ก่อนน้ำมา", "ที่พักพิงที่ต้องเปิด 8 แห่ง", "อำเภอควรเปิดที่พักพิง 8 แห่ง"]
     }
   ],
   "mixed": [
@@ -184,6 +207,10 @@
     {"text": "Modelled, not observed closures. First cut 11 Sep 02:00, reopened 13 Sep 06:00.", "rules": []},
     {"text": "No single figure ranks the sets. Modelled access cut-off hour: 10 Sep 22:00. Hours from illustrative stage keyframes, not observed.", "rules": []},
     {"text": "The smallest plan that gets most of the benefit; it does not grade the choice of sites.", "rules": []},
-    {"text": "The plan is better: its last safe departure is 23:00.", "rules": ["safe_departure", "set_ranking"]}
+    {"text": "The plan is better: its last safe departure is 23:00.", "rules": ["safe_departure", "set_ranking"]},
+    {"text": "Candidates to verify, not a list of sites to open. Open these shelters first.", "rules": ["shelter_directive"]},
+    {"text": "A resident node has access when an open, dry shelter is within 2 km; roads still open at a 1 m stage; opening times are not modelled.", "rules": []},
+    {"text": "ไม่ใช่คาบการเกิดซ้ำ แต่เป็นระดับน้ำรอบ 100 ปี", "rules": ["return_period"]},
+    {"text": "What-if levels around an illustrative peak, not return periods. Sites chosen at 2.5 m, 3.5 m and 4.0 m form the robust core.", "rules": []}
   ]
 }

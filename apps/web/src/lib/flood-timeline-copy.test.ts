@@ -96,6 +96,9 @@ describe("Mae Sai replay copy", () => {
       access.scenario_tier, access.definition, access.travel_mode, access.confidence_reason, access.source_timestamp,
       manifest.shelters!.confidence_reason, manifest.shelters!.reported_status, manifest.shelters!.source_timestamp,
       manifest.shelters!.reported_access_set_rule, ...manifest.shelters!.reported.map((shelter) => shelter.access_set_note),
+      // The capacity-aware view and the what-if levels on the plan card: confidence reason, source timestamp, label.
+      manifest.shelters!.capacitated!.confidence_reason, manifest.shelters!.capacitated!.source_timestamp,
+      manifest.shelters!.robustness!.confidence_reason, manifest.shelters!.robustness!.source_timestamp, manifest.shelters!.robustness!.label,
       manifest.population!.note, manifest.rainfall!.note, manifest.rainfall!.units,
       manifest.viirs_daily!.nominal_overpass, manifest.viirs_daily!.comparison_rule, manifest.viirs_daily!.caveat,
       ...(manifest.external_references ?? []).flatMap((reference) => (reference.note ? [reference.note] : [])),

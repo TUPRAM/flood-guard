@@ -218,6 +218,7 @@ describe("Replay wording rules (shared with Python)", () => {
       "road_schedule", // schedule or closure plan for modelled roads
       "set_ranking", // a shelter set or plan called better, best or worse (P2-4)
       "safe_departure", // the modelled cut-off hour presented as a safe time to leave (P2-4)
+      "shelter_directive", // "open these shelters": the plans list candidates to verify (P2-9)
     ]);
     expect(new Set(REPLAY_WORDING_RULES.allow.map((item) => item.id)).size).toBe(REPLAY_WORDING_RULES.allow.length);
   });

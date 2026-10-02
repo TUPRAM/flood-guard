@@ -208,6 +208,88 @@ export interface ShelterMethod {
   snap_max_m: number;
 }
 
+/**
+ * One capacity bound of a capacity-aware plan row, in whole residents: the site's capacity under that bound, the
+ * residents it adds when it joins the plan (`load`, never above `capacity`), the running total `served` by the plan so
+ * far, and `overflow` = demand − `served` (residents with no site in reach or no place left).
+ */
+export interface CapacityBound { capacity: number; load: number; served: number; overflow: number }
+
+/** Where a site's upper-bound capacity comes from: its own footprint estimate, or a median when it has none. */
+export type UpperCapacityBasis = "estimate" | "kind_median" | "all_kinds_median" | "none";
+
+/** One site of a ranking counted with capacity. The lower bound counts an unknown capacity as 0. */
+export interface CapacityPlanRow {
+  candidate_id: string;
+  capacity_est: number | null;
+  /** "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified", or "unknown". */
+  capacity_basis: string;
+  upper_capacity_basis: UpperCapacityBasis;
+  /** Residents within the walking limit of the plan so far, capacity ignored (capacity-aware ranking only). */
+  within_reach?: number;
+  lower: CapacityBound;
+  upper: CapacityBound;
+}
+
+export interface CapacityTotal { capacity: number; served: number; overflow: number }
+
+/**
+ * Capacity-aware shelter plan (T1 scenario, model): who fits where under two capacity bounds. Demand is every resident
+ * of a home that floods at the modelled peak (an upper bound) and capacity is an unverified footprint estimate, so the
+ * sites are candidates to verify.
+ */
+export interface CapacityAwarePlan {
+  scenario_tier: string;
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  assumptions: string[];
+  demand_people: number;
+  demand_basis: string;
+  capacity_basis: { estimate: string; unknown: string };
+  bounds: { lower: string; upper: string };
+  method: string;
+  /** The capacity-aware ranking holds at most this many sites, and ends when the next site adds less than this share of demand. */
+  max_plan_sites: number;
+  min_gain_share: number;
+  /** Median capacity estimate per site kind (the upper bound of a site of that kind without an estimate). */
+  kind_median_capacity: Record<string, number>;
+  all_kinds_median_capacity: number | null;
+  /** The capacity-aware ranking: the first k rows are the plan for k sites. */
+  plan: CapacityPlanRow[];
+  /** The coverage ranking (`ShelterInfo.plan`) counted with capacity, row for row. */
+  coverage_plan: CapacityPlanRow[];
+  all_eligible: { sites: number; sites_with_estimate: number; within_reach: number; lower: CapacityTotal; upper: CapacityTotal };
+}
+
+/** The coverage ranking repeated at one what-if design stage. */
+export interface WhatIfStage {
+  stage_m: number;
+  /** True for the stage the replay itself uses (its modelled peak). */
+  modelled_peak: boolean;
+  demand_people: number;
+  eligible_count: number;
+  uncoverable_people: number;
+  knee_k: number | null;
+  /** Ranked candidate ids; the first k are the plan for k sites at this stage. */
+  plan: string[];
+  cumulative_demand: number[];
+}
+
+/** Plan robustness: what-if levels around an illustrative peak, not return periods. */
+export interface PlanRobustness {
+  scenario_tier: string;
+  label: string;
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  assumptions: string[];
+  method: string;
+  stages: WhatIfStage[];
+  /** `core_by_k[k - 1]`: the sites among the first k at every stage. */
+  core_by_k: string[][];
+}
+
 export interface ShelterInfo {
   candidates: ShelterCandidate[];
   plan: ShelterPlanEntry[];
@@ -217,6 +299,10 @@ export interface ShelterInfo {
   eligible_count: number;
   reported: ReportedShelter[];
   method: ShelterMethod;
+  /** Capacity-aware plan under two capacity bounds (absent from a manifest baked before it existed). */
+  capacitated?: CapacityAwarePlan;
+  /** The coverage ranking at what-if levels around the illustrative peak (absent from an older manifest). */
+  robustness?: PlanRobustness;
   /** Confidence class of the candidate screening and plan, why, and the timestamps behind the shelter figures. */
   confidence: string;
   confidence_reason: string;

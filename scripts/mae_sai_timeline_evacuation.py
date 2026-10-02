@@ -25,10 +25,14 @@ from shapely.ops import transform as shp_transform
 from floodguard.evacuation_access import (
     NEVER_LOST,
     NO_BASELINE_ACCESS,
+    capacitated_assignment,
+    capacitated_plan,
+    capacity_bounds,
     closure_stage,
     cutoff_levels_for_sets,
     greedy_plan,
     knee_index,
+    robust_core,
 )
 from floodguard.flood_timeline import CHANNEL_CODE, HAND_STEP_M, IMPASSABLE_DEPTH_M, NEVER_CODE
 
@@ -41,6 +45,10 @@ USABLE_FLOOR_SHARE = 0.5
 MAX_PLAN_SITES = 30
 SNAP_MAX_M = 400.0
 LEVELS = [round(i * 0.05, 2) for i in range(81)]  # 0.00 .. 4.00 m
+CAPACITY_ESTIMATE_BASIS = "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified"
+CAPACITY_UNKNOWN_BASIS = "unknown"
+CAPACITY_MIN_GAIN_SHARE = 0.005  # The coverage ranking's stopping rule: a site must add at least 0.5 % of demand.
+WHAT_IF_STAGES_M = (2.5, 3.5, 4.0)  # What-if levels around the illustrative 3.5 m peak; not return periods.
 
 SITE_AMENITIES = {
     "school": "school", "kindergarten": "school", "college": "school", "university": "school",
@@ -344,6 +352,117 @@ def plan_and_access(sites: list[dict], reported: list[dict], graph: dict, peak_s
     return {"ranking": ranking, "knee_k": knee_index(ranking, 0.9), "set_ids": [s[0] for s in sets], "node_codes": node_codes,
             "demand_people": round(float(demand_weight.sum())), "uncoverable_people": round(uncoverable),
             "eligible_count": len(eligible)}
+
+
+def plan_demand(graph: dict, stage: float) -> tuple[np.ndarray, np.ndarray]:
+    """Graph nodes and residents of the homes that are wet at ``stage``: the demand every plan is built for."""
+    mask = home_wet(graph["home_code"], stage)
+    return graph["pop_index"][mask], graph["pop"]["total_population"].to_numpy(float)[mask]
+
+
+def whole_people(value: float) -> int:
+    """Whole residents, halves rounded up, so that rounding a running total commutes with adding a whole number."""
+    return int(math.floor(float(value) + 0.5))
+
+
+def _capacity_rows(plan: dict, eligible: list[dict], upper_basis: list[str], demand_people: int, with_reach: bool) -> list[dict]:
+    """Public rows of a capacity-aware ranking in whole residents.
+
+    ``served`` is the rounded running total and ``load`` its step, so the loads of the first k rows add up to the
+    row's ``served`` for every k, no load exceeds its (whole) capacity, and ``overflow`` is ``demand_people - served``.
+    """
+    rows = []
+    running = {"lower": 0, "upper": 0}
+    for entry in plan["ranking"]:
+        site = eligible[entry["candidate"]]
+        row = {"candidate_id": site["id"], "capacity_est": site["capacity_est"],
+               "capacity_basis": CAPACITY_UNKNOWN_BASIS if site["capacity_est"] is None else CAPACITY_ESTIMATE_BASIS,
+               "upper_capacity_basis": upper_basis[entry["candidate"]]}
+        if with_reach:
+            row["within_reach"] = whole_people(entry["within_reach"])
+        for key in ("lower", "upper"):
+            served = whole_people(entry[key]["served"])
+            if served > demand_people:
+                raise ValueError(f"the {key} bound serves {served} residents, more than the demand of {demand_people}")
+            row[key] = {"capacity": int(entry[key]["capacity"]), "load": served - running[key], "served": served,
+                        "overflow": demand_people - served}
+            running[key] = served
+        rows.append(row)
+    return rows
+
+
+def capacity_aware_plan(sites: list[dict], graph: dict, peak_stage: float, coverage_order: list[str]) -> dict:
+    """Count who fits: assign peak flooded-home residents to eligible sites within the walk, capacity respected.
+
+    Returns the capacity-aware ranking (``plan``), the capacity count of the existing coverage ranking in the
+    order ``coverage_order`` (``coverage_plan``) and the count with every eligible candidate (``all_eligible``),
+    each under two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind
+    (upper). The medians are taken over every candidate with an estimate, eligible or not. A T1 scenario on a
+    modelled flood: demand is every resident of a home that floods at the peak and capacity is an unverified
+    footprint estimate, so the sites are candidates to verify.
+    """
+    demand_nodes, demand_weight = plan_demand(graph, peak_stage)
+    demand_people = round(float(demand_weight.sum()))
+    kinds = [s["kind"] for s in sites]
+    probes = sorted(set(kinds))
+    lower_all, upper_all, basis_all = capacity_bounds([s["capacity_est"] for s in sites] + [None] * len(probes), kinds + probes)
+    keep = [i for i, s in enumerate(sites) if s["eligible"]]
+    eligible = [sites[i] for i in keep]
+    lower, upper, basis = lower_all[keep], upper_all[keep], [basis_all[i] for i in keep]
+    masks, _ = coverage_masks(eligible, graph, demand_nodes, EVACUATION_STAGE_M) if eligible else ([], None)
+    plan = capacitated_plan(demand_weight, masks, lower, upper, MAX_PLAN_SITES, CAPACITY_MIN_GAIN_SHARE)
+    position = {s["id"]: i for i, s in enumerate(eligible)}
+    check = capacitated_plan(demand_weight, masks, lower, upper, len(coverage_order), order=[position[i] for i in coverage_order])
+    everything = {key: capacitated_assignment(demand_weight, masks, bound) for key, bound in (("lower", lower), ("upper", upper))}
+    within_reach = whole_people(float(demand_weight[np.any(np.array(masks), axis=0)].sum())) if masks else 0
+    known = [s["capacity_est"] for s in sites if s["capacity_est"] is not None]
+    return {
+        "demand_people": demand_people,
+        "max_plan_sites": MAX_PLAN_SITES, "min_gain_share": CAPACITY_MIN_GAIN_SHARE,
+        "kind_median_capacity": {kind: int(upper_all[len(sites) + i]) for i, kind in enumerate(probes) if basis_all[len(sites) + i] == "kind_median"},
+        "all_kinds_median_capacity": int(math.floor(float(np.median(known)))) if known else None,
+        "plan": _capacity_rows(plan, eligible, basis, demand_people, with_reach=True),
+        "coverage_plan": _capacity_rows(check, eligible, basis, demand_people, with_reach=False),
+        "all_eligible": {"sites": len(eligible), "sites_with_estimate": sum(1 for s in eligible if s["capacity_est"] is not None),
+                         "within_reach": within_reach,
+                         **{key: {"capacity": int(bound.sum()), "served": whole_people(everything[key]["served"]),
+                                  "overflow": demand_people - whole_people(everything[key]["served"])}
+                            for key, bound in (("lower", lower), ("upper", upper))}},
+    }
+
+
+def what_if_plans(sites: list[dict], graph: dict, codes, kgrid, aoi, valid, stages: tuple[float, ...], peak_stage: float,
+                  coverage_order: list[str]) -> dict:
+    """Repeat the candidate screening and the coverage ranking at other design stages (what-if levels).
+
+    The stages are levels around an illustrative peak, not return periods. At each stage the demand is the residents
+    whose homes are wet at that stage and a site is eligible if it keeps its freeboard there; reach is the same
+    2 km walk on normal roads. ``sites`` is not changed. The ranking at ``peak_stage`` must equal
+    ``coverage_order`` (the plan the replay shows). ``core_by_k[k - 1]`` lists the sites among the first ``k`` at
+    every stage.
+    """
+    if peak_stage not in stages:
+        raise ValueError("the what-if stages must include the modelled peak")
+    rows = []
+    for stage in stages:
+        trial = [dict(site) for site in sites]
+        evaluate_sites(trial, graph, codes, kgrid, aoi, stage, valid)
+        eligible = [s for s in trial if s["eligible"]]
+        demand_nodes, demand_weight = plan_demand(graph, stage)
+        total = float(demand_weight.sum())
+        masks, _ = coverage_masks(eligible, graph, demand_nodes, EVACUATION_STAGE_M) if eligible else ([], None)
+        ranking = greedy_plan(demand_weight, masks, MAX_PLAN_SITES)
+        order = [eligible[entry["candidate"]]["id"] for entry in ranking]
+        if stage == peak_stage and order != list(coverage_order):
+            raise ValueError("the what-if ranking at the modelled peak differs from the plan the replay shows")
+        # Counted as plan_and_access counts them: demand that no eligible site reaches, and whole residents as the page rounds them.
+        uncoverable = float(demand_weight[~np.any(np.array(masks), axis=0)].sum()) if masks else total
+        rows.append({"stage_m": stage, "modelled_peak": stage == peak_stage, "demand_people": round(total),
+                     "eligible_count": len(eligible), "uncoverable_people": round(uncoverable),
+                     "knee_k": knee_index(ranking, 0.9), "plan": order,
+                     "cumulative_demand": [whole_people(entry["cumulative_demand"]) for entry in ranking]})
+    rankings = [next(row["plan"] for row in rows if row["modelled_peak"])] + [row["plan"] for row in rows if not row["modelled_peak"]]
+    return {"stages": rows, "core_by_k": [robust_core(rankings, k) for k in range(1, len(coverage_order) + 1)]}
 
 
 def lost_at(node_codes_row: np.ndarray, stage: float) -> np.ndarray:

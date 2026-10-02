@@ -463,3 +463,133 @@ def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manif
     # The quoted UNOSAT 3991 wording is unchanged from r3 (its exact source wording could not be checked on disk).
     unosat = next(check for check in manifest["external_checks"] if check["id"] == "unosat-3991")
     assert unosat["reported_text"] == "about 70 km2 flood-affected within a 305 km2 analysed area; about 13,600 people exposed (WorldPop 2020); preliminary, not field-validated"
+
+
+# --- Capacity-aware shelter plan and what-if levels (roadmap P2-9, C-1) ---------------------------------------
+
+
+def test_capacity_aware_plan_and_robustness_have_their_own_scenario_blocks(manifest: dict) -> None:
+    blocks = {block["id"]: block for block in manifest["evidence_blocks"]}
+    for name, covers, relation in (("capacity_aware_plan", "shelters.capacitated", "event_window_reconstruction"),
+                                   ("plan_robustness", "shelters.robustness", "what_if_levels")):
+        block = blocks[name]
+        assert (block["lane"], block["evidence_tier"], block["temporal_relation"]) == ("SCN", SCENARIO_TIER, relation), name
+        assert block["covers"] == [covers] and block["source_timestamp"], name
+    assert "Candidates to verify, not a list of sites to open" in blocks["capacity_aware_plan"]["note"]
+    assert "not return periods" in blocks["plan_robustness"]["note"]
+    for key in ("capacitated", "robustness"):
+        part = manifest["shelters"][key]
+        assert part["scenario_tier"] == SCENARIO_TIER and part["confidence"] == "low"
+        assert part["confidence_reason"] and part["source_timestamp"] and part["assumptions"]
+    # A block that names a missing child is reported, so the two blocks cannot outlive their content.
+    broken = copy.deepcopy(manifest)
+    del broken["shelters"]["robustness"]
+    assert "shelters.robustness (named by an evidence block but absent)" in uncovered_blocks(broken)
+
+
+def test_capacity_aware_plan_never_loads_a_site_beyond_capacity_and_its_arithmetic_holds(manifest: dict) -> None:
+    shelters = manifest["shelters"]
+    plan = shelters["capacitated"]
+    demand = plan["demand_people"]
+    assert demand == shelters["demand_people"]  # The same residents as the coverage ranking: homes that flood at the peak.
+    candidates = {candidate["id"]: candidate for candidate in shelters["candidates"]}
+    estimate = "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified"
+    assert plan["capacity_basis"] == {"estimate": estimate, "unknown": "unknown"}
+    for rows in (plan["plan"], plan["coverage_plan"]):
+        assert rows and len({row["candidate_id"] for row in rows}) == len(rows)
+        for position, row in enumerate(rows, start=1):
+            candidate = candidates[row["candidate_id"]]
+            assert candidate["eligible"] and row["capacity_est"] == candidate["capacity_est"]
+            known = candidate["capacity_est"] is not None
+            assert row["capacity_basis"] == (estimate if known else "unknown")
+            assert row["upper_capacity_basis"] in (("estimate",) if known else ("kind_median", "all_kinds_median"))
+            assert row["lower"]["capacity"] == (candidate["capacity_est"] if known else 0)
+            if known:
+                assert row["upper"]["capacity"] == candidate["capacity_est"]
+            elif row["upper_capacity_basis"] == "kind_median":
+                assert row["upper"]["capacity"] == plan["kind_median_capacity"][candidate["kind"]]
+            else:
+                assert row["upper"]["capacity"] == plan["all_kinds_median_capacity"]
+            for key in ("lower", "upper"):
+                bound = row[key]
+                assert 0 <= bound["load"] <= bound["capacity"], (row["candidate_id"], key)  # Load never exceeds capacity.
+                assert bound["overflow"] == demand - bound["served"]  # overflow = demand - served.
+                assert bound["served"] == sum(item[key]["load"] for item in rows[:position])  # Nested: a running total.
+            assert row["lower"]["served"] <= row["upper"]["served"]  # Lower bound <= upper bound.
+    # The medians come from the candidates' own estimates (every candidate with one, eligible or not).
+    by_kind: dict[str, list[int]] = {}
+    for candidate in shelters["candidates"]:
+        if candidate["capacity_est"] is not None:
+            by_kind.setdefault(candidate["kind"], []).append(candidate["capacity_est"])
+    median = lambda values: sorted(values)[len(values) // 2] if len(values) % 2 else sum(sorted(values)[len(values) // 2 - 1:len(values) // 2 + 1]) // 2  # noqa: E731
+    assert plan["kind_median_capacity"] == {kind: median(values) for kind, values in sorted(by_kind.items())}
+    assert plan["all_kinds_median_capacity"] == median([value for values in by_kind.values() for value in values])
+    # The coverage ranking is counted row for row, in its own order.
+    assert [row["candidate_id"] for row in plan["coverage_plan"]] == [entry["candidate_id"] for entry in shelters["plan"]]
+    assert all("within_reach" in row for row in plan["plan"]) and not any("within_reach" in row for row in plan["coverage_plan"])
+    assert all(row["upper"]["served"] <= row["within_reach"] <= demand - shelters["uncoverable_people"] for row in plan["plan"])
+    # Every eligible candidate together is the ceiling of any plan.
+    everything = plan["all_eligible"]
+    assert everything["sites"] == shelters["eligible_count"] and everything["within_reach"] == demand - shelters["uncoverable_people"]
+    for key in ("lower", "upper"):
+        assert everything[key]["overflow"] == demand - everything[key]["served"]
+        assert everything[key]["served"] <= everything[key]["capacity"]
+        assert max(row[key]["served"] for rows in (plan["plan"], plan["coverage_plan"]) for row in rows) <= everything[key]["served"]
+    assert everything["lower"]["served"] <= everything["upper"]["served"] < demand
+
+
+def test_capacity_aware_plan_states_the_roadmap_example_and_its_caveats(manifest: dict) -> None:
+    shelters = manifest["shelters"]
+    plan = shelters["capacitated"]
+    k = shelters["knee_k"]
+    # The site the nearest-site rule overloads: 79 places, about 2,430 residents assigned in the default plan.
+    first = plan["coverage_plan"][0]
+    assert (first["capacity_est"], shelters["plan"][k - 1]["loads"][0]) == (79, 2430)
+    assert first["upper"] == {"capacity": 79, "load": 79, "served": 79, "overflow": shelters["demand_people"] - 79}
+    # With capacity counted, the default plan's sites hold far fewer residents than can walk to them.
+    assert plan["coverage_plan"][k - 1]["upper"]["served"] < 0.2 * shelters["plan"][k - 1]["cumulative_demand"]
+    text = " ".join([plan["demand_basis"], plan["method"], *plan["bounds"].values(), *plan["assumptions"]])
+    for phrase in ("T1 scenario (model)", "an upper bound", "many people stay with relatives", "unverified", "candidates to verify",
+                   "not a list of sites to open", "different source", "overflow = demand_people - served", "counts as 0", "median"):
+        assert phrase in text, phrase
+    # No participation sweep, no listed capacity and no score: only footprint estimates and their medians.
+    flat = json.dumps(plan).lower()
+    assert "participation" not in flat and "listed_capacity" not in flat
+    assert score_or_class_keys(plan) == []
+    assert any("capacity-aware plan" in line and "candidates to verify" in line for line in manifest["assumptions"])
+
+
+def test_plan_robustness_repeats_the_ranking_at_what_if_levels_not_return_periods(manifest: dict) -> None:
+    shelters = manifest["shelters"]
+    robustness = shelters["robustness"]
+    assert robustness["label"] == "What-if levels around an illustrative peak, not return periods."
+    stages = robustness["stages"]
+    assert [stage["stage_m"] for stage in stages] == [2.5, 3.5, 4.0]
+    assert [stage["modelled_peak"] for stage in stages] == [False, True, False]
+    peak = stages[1]
+    assert peak["stage_m"] == shelters["method"]["peak_stage_m"]
+    # The peak row is the plan the replay shows.
+    assert peak["plan"] == [entry["candidate_id"] for entry in shelters["plan"]]
+    assert (peak["demand_people"], peak["eligible_count"], peak["uncoverable_people"], peak["knee_k"]) == (
+        shelters["demand_people"], shelters["eligible_count"], shelters["uncoverable_people"], shelters["knee_k"])
+    assert peak["cumulative_demand"] == [int(entry["cumulative_demand"] + 0.5) for entry in shelters["plan"]]  # Halves up, as the page rounds.
+    # Residents whose homes flood at each level (roadmap C-1).
+    assert [stage["demand_people"] for stage in stages] == [10333, 14169, 16069]
+    eligible = {candidate["id"] for candidate in shelters["candidates"]}
+    for stage in stages:
+        assert len(set(stage["plan"])) == len(stage["plan"]) == len(stage["cumulative_demand"]) and set(stage["plan"]) <= eligible
+        assert stage["cumulative_demand"] == sorted(stage["cumulative_demand"])  # Nested plans: coverage only grows.
+        assert stage["cumulative_demand"][-1] <= stage["demand_people"] - stage["uncoverable_people"]
+        assert 1 <= stage["knee_k"] <= len(stage["plan"])
+    # A higher level floods more homes and can only remove candidates.
+    assert stages[0]["eligible_count"] >= stages[1]["eligible_count"] >= stages[2]["eligible_count"]
+    # The robust core for k sites: among the first k at every level, in the order of the replay's plan.
+    core = robustness["core_by_k"]
+    assert len(core) == len(shelters["plan"])
+    for k, sites in enumerate(core, start=1):
+        heads = [set(stage["plan"][:k]) for stage in stages]
+        assert sites == [site for site in peak["plan"][:k] if all(site in head for head in heads)]
+    assert core[shelters["knee_k"] - 1], "the default plan has no site that holds at every level"
+    text = json.dumps(robustness)
+    assert not re.search(r"\b(?:25|100)[- ]?year", text) and "return period" not in text.replace("not return periods", "")
+    assert score_or_class_keys(robustness) == []

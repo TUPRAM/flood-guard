@@ -289,7 +289,113 @@
       "required": ["nodes", "levels", "sets", "scenario_tier", "confidence", "confidence_reason", "source_timestamp"],
       "properties": { "nodes": { "$ref": "#/$defs/hashedAsset" } }
     },
-    "shelters": { "type": "object", "required": ["candidates", "plan", "reported", "confidence", "confidence_reason", "source_timestamp"] },
+    "shelters": {
+      "type": "object",
+      "required": ["candidates", "plan", "reported", "capacitated", "robustness", "confidence", "confidence_reason", "source_timestamp"],
+      "properties": {
+        "capacitated": {
+          "description": "Capacity-aware shelter plan (T1 scenario): who fits where under two capacity bounds. Whole residents; overflow = demand_people - served. Candidates to verify, never a list of sites to open.",
+          "type": "object",
+          "required": [
+            "scenario_tier", "confidence", "confidence_reason", "source_timestamp", "assumptions", "demand_people", "demand_basis",
+            "capacity_basis", "bounds", "method", "max_plan_sites", "min_gain_share", "kind_median_capacity", "all_kinds_median_capacity",
+            "plan", "coverage_plan", "all_eligible"
+          ],
+          "properties": {
+            "scenario_tier": { "const": "T1 scenario (model)" },
+            "confidence": { "const": "low" },
+            "confidence_reason": { "type": "string", "minLength": 1 },
+            "source_timestamp": { "type": "string", "minLength": 1 },
+            "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "demand_people": { "type": "integer", "minimum": 0 },
+            "demand_basis": { "type": "string", "minLength": 1 },
+            "capacity_basis": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["estimate", "unknown"],
+              "properties": {
+                "estimate": { "const": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified" },
+                "unknown": { "const": "unknown" }
+              }
+            },
+            "bounds": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["lower", "upper"],
+              "properties": { "lower": { "type": "string", "minLength": 1 }, "upper": { "type": "string", "minLength": 1 } }
+            },
+            "method": { "type": "string", "minLength": 1 },
+            "max_plan_sites": { "description": "The capacity-aware ranking holds at most this many sites.", "type": "integer", "minimum": 1 },
+            "min_gain_share": { "description": "The ranking ends when the next site adds less than this share of demand.", "type": "number", "minimum": 0, "maximum": 1 },
+            "kind_median_capacity": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+            "all_kinds_median_capacity": { "type": ["integer", "null"], "minimum": 0 },
+            "plan": {
+              "description": "The capacity-aware ranking; the first k rows are the plan for k sites.",
+              "type": "array",
+              "minItems": 1,
+              "items": { "allOf": [{ "$ref": "#/$defs/capacityRow" }], "required": ["within_reach"] }
+            },
+            "coverage_plan": {
+              "description": "The coverage ranking (shelters.plan) counted with capacity, row for row.",
+              "type": "array",
+              "items": { "$ref": "#/$defs/capacityRow" }
+            },
+            "all_eligible": {
+              "type": "object",
+              "required": ["sites", "sites_with_estimate", "within_reach", "lower", "upper"],
+              "properties": {
+                "sites": { "type": "integer", "minimum": 0 },
+                "sites_with_estimate": { "type": "integer", "minimum": 0 },
+                "within_reach": { "type": "integer", "minimum": 0 },
+                "lower": { "$ref": "#/$defs/capacityTotal" },
+                "upper": { "$ref": "#/$defs/capacityTotal" }
+              }
+            }
+          }
+        },
+        "robustness": {
+          "description": "The coverage ranking repeated at what-if design stages around the illustrative peak (T1 scenario). The stages are not return periods.",
+          "type": "object",
+          "required": ["scenario_tier", "label", "confidence", "confidence_reason", "source_timestamp", "assumptions", "method", "stages", "core_by_k"],
+          "properties": {
+            "scenario_tier": { "const": "T1 scenario (model)" },
+            "label": { "const": "What-if levels around an illustrative peak, not return periods." },
+            "confidence": { "const": "low" },
+            "confidence_reason": { "type": "string", "minLength": 1 },
+            "source_timestamp": { "type": "string", "minLength": 1 },
+            "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "method": { "type": "string", "minLength": 1 },
+            "stages": {
+              "type": "array",
+              "minItems": 2,
+              "contains": { "type": "object", "properties": { "modelled_peak": { "const": true } }, "required": ["modelled_peak"] },
+              "minContains": 1,
+              "maxContains": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["stage_m", "modelled_peak", "demand_people", "eligible_count", "uncoverable_people", "knee_k", "plan", "cumulative_demand"],
+                "properties": {
+                  "stage_m": { "type": "number", "exclusiveMinimum": 0 },
+                  "modelled_peak": { "type": "boolean" },
+                  "demand_people": { "type": "integer", "minimum": 0 },
+                  "eligible_count": { "type": "integer", "minimum": 0 },
+                  "uncoverable_people": { "type": "integer", "minimum": 0 },
+                  "knee_k": { "type": ["integer", "null"], "minimum": 1 },
+                  "plan": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^C[0-9]{3}$" } },
+                  "cumulative_demand": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
+                }
+              }
+            },
+            "core_by_k": {
+              "description": "core_by_k[k - 1]: the sites among the first k at every stage.",
+              "type": "array",
+              "items": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^C[0-9]{3}$" } }
+            }
+          }
+        }
+      }
+    },
     "external_checks": {
       "type": "array",
       "items": {
@@ -378,6 +484,48 @@
         "bytes": { "type": "integer", "minimum": 1 }
       }
     },
+    "capacityBound": {
+      "description": "One capacity bound of a plan row: the site's capacity under that bound, the residents it adds (load, never above capacity), the running total served and overflow = demand_people - served.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capacity", "load", "served", "overflow"],
+      "properties": {
+        "capacity": { "type": "integer", "minimum": 0 },
+        "load": { "type": "integer", "minimum": 0 },
+        "served": { "type": "integer", "minimum": 0 },
+        "overflow": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "capacityTotal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capacity", "served", "overflow"],
+      "properties": {
+        "capacity": { "type": "integer", "minimum": 0 },
+        "served": { "type": "integer", "minimum": 0 },
+        "overflow": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "capacityRow": {
+      "type": "object",
+      "required": ["candidate_id", "capacity_est", "capacity_basis", "upper_capacity_basis", "lower", "upper"],
+      "properties": {
+        "candidate_id": { "type": "string", "pattern": "^C[0-9]{3}$" },
+        "capacity_est": { "type": ["integer", "null"], "minimum": 1 },
+        "capacity_basis": { "enum": ["OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified", "unknown"] },
+        "upper_capacity_basis": { "enum": ["estimate", "kind_median", "all_kinds_median", "none"] },
+        "within_reach": { "type": "integer", "minimum": 0 },
+        "lower": { "$ref": "#/$defs/capacityBound" },
+        "upper": { "$ref": "#/$defs/capacityBound" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "capacity_est": { "type": "null" } } },
+          "then": { "properties": { "capacity_basis": { "const": "unknown" }, "lower": { "properties": { "capacity": { "const": 0 }, "load": { "const": 0 } } } } },
+          "else": { "properties": { "capacity_basis": { "const": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified" }, "upper_capacity_basis": { "const": "estimate" } } }
+        }
+      ]
+    },
     "lane": {
       "description": "SCN scenario (model); OBS observed; CAL calibration (used or known during tuning); SCN-ENV season envelope scenario; REP reported; CTX static context; REF cited, not ingested.",
       "enum": ["SCN", "OBS", "CAL", "SCN-ENV", "REP", "CTX", "REF"]
@@ -407,7 +555,8 @@
             "season_envelope",
             "post_event_compilation",
             "static_context",
-            "not_ingested"
+            "not_ingested",
+            "what_if_levels"
           ]
         },
         "source_timestamp": { "type": "string", "minLength": 1 },

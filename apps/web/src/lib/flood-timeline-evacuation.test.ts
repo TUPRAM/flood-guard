@@ -12,6 +12,7 @@ import {
   accessSnapshot,
   buildCutoffRamp,
   candidateReasons,
+  capacityAwareView,
   capacityFlag,
   capacityShortfall,
   clampPlanK,
@@ -32,6 +33,7 @@ import {
   nodeWithoutAccess,
   osmReference,
   otherCandidates,
+  overCapacitySites,
   parseAccessNodes,
   planSetId,
   planSites,
@@ -41,11 +43,13 @@ import {
   reportedSiteCounts,
   reportedShelterCheck,
   reportedSiteRole,
+  robustCore,
   shareOfAchievable,
   shelterSetComparison,
   siteModelled,
   summarizeAccessSets,
   tambonResidents,
+  whatIfLevels,
 } from "./flood-timeline-evacuation";
 import {
   buildDepthLut,
@@ -741,5 +745,122 @@ describe("Plan-size sentence and capacity flags", () => {
     expect(capacityFlag({ load: 10, capacity: 400 })).toBeNull();
     const flagged = planSites(shelters, shelters.plan.length).filter((site) => capacityFlag(site) !== null);
     for (const site of flagged) expect(site.capacity === null || site.load >= 2 * site.capacity).toBe(true);
+  });
+});
+
+describe("Capacity-aware plan and what-if levels (T1 scenario; figures read from the manifest)", () => {
+  const plan = shelters.capacitated!;
+  const robustness = shelters.robustness!;
+
+  it("keeps the baked arithmetic: load within capacity, lower bound within upper, overflow = demand − served, nested rows", () => {
+    expect(plan.scenario_tier).toBe("T1 scenario (model)");
+    expect(plan.demand_people).toBe(shelters.demand_people);
+    expect(plan.capacity_basis).toEqual({ estimate: "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified", unknown: "unknown" });
+    const byId = new Map(shelters.candidates.map((candidate) => [candidate.id, candidate]));
+    for (const rows of [plan.plan, plan.coverage_plan]) {
+      const served = { lower: 0, upper: 0 };
+      for (const row of rows) {
+        const candidate = byId.get(row.candidate_id)!;
+        expect(candidate.eligible, row.candidate_id).toBe(true);
+        expect(row.capacity_est).toBe(candidate.capacity_est);
+        expect(row.capacity_basis).toBe(candidate.capacity_est === null ? plan.capacity_basis.unknown : plan.capacity_basis.estimate);
+        expect(row.lower.capacity).toBe(candidate.capacity_est ?? 0);
+        if (candidate.capacity_est === null) expect(["kind_median", "all_kinds_median"]).toContain(row.upper_capacity_basis);
+        else expect([row.upper_capacity_basis, row.upper.capacity]).toEqual(["estimate", candidate.capacity_est]);
+        for (const bound of ["lower", "upper"] as const) {
+          expect(row[bound].load, `${row.candidate_id} ${bound}`).toBeLessThanOrEqual(row[bound].capacity);
+          expect(row[bound].load).toBeGreaterThanOrEqual(0);
+          served[bound] += row[bound].load;
+          expect(row[bound].served).toBe(served[bound]);
+          expect(row[bound].overflow).toBe(plan.demand_people - row[bound].served);
+        }
+        expect(row.lower.served).toBeLessThanOrEqual(row.upper.served);
+      }
+    }
+    expect(plan.coverage_plan.map((row) => row.candidate_id)).toEqual(shelters.plan.map((entry) => entry.candidate_id));
+    expect(plan.plan.length).toBeLessThanOrEqual(plan.max_plan_sites);
+    // Neither a score nor an action class, and no listed capacity from another source.
+    expect(JSON.stringify(plan)).not.toMatch(/fpps|action_class|priority_score|listed_capacity|participation/i);
+  });
+
+  it("reads the view for a plan of k sites: the plan above, the capacity-aware ranking, that whole ranking and every candidate", () => {
+    const k = shelters.knee_k;
+    const view = capacityAwareView(shelters, k)!;
+    expect(view.demand).toBe(14169);
+    // The default plan's eight sites: 7,580 residents within the walk, 495 to 1,057 fit.
+    expect(view.coverage).toEqual({ size: 8, withinReach: shelters.plan[k - 1].cumulative_demand, lower: { served: 495, overflow: 13674 }, upper: { served: 1057, overflow: 13112 } });
+    expect(Math.round(view.coverage.withinReach)).toBe(7580);
+    expect([view.ranked.size, view.ranked.rows.length, view.ranked.withinReach]).toEqual([8, 8, 3283]);
+    expect([view.ranked.lower, view.ranked.upper]).toEqual([{ served: 1805, overflow: 12364 }, { served: 2441, overflow: 11728 }]);
+    expect(view.full).toEqual({ size: 25, endedBy: "gain_floor", gainFloorShare: 0.005, lower: { served: 2366, overflow: 11803 }, upper: { served: 3900, overflow: 10269 } });
+    expect(view.allEligible).toEqual({ size: 95, withEstimate: 42, withinReach: 8426, lower: { served: 2673, overflow: 11496 }, upper: { served: 4149, overflow: 10020 } });
+    // Every figure in the view obeys overflow = demand − served and lower ≤ upper; no plan beats every candidate together.
+    for (const part of [view.coverage, view.ranked, view.full, view.allEligible]) {
+      for (const bound of ["lower", "upper"] as const) expect(part[bound].served + part[bound].overflow).toBe(view.demand);
+      expect(part.lower.served).toBeLessThanOrEqual(part.upper.served);
+      expect(part.upper.served).toBeLessThanOrEqual(view.allEligible.upper.served);
+    }
+    for (let size = 1; size <= shelters.plan.length; size += 1) {
+      const at = capacityAwareView(shelters, size)!;
+      expect(at.coverage.size).toBe(size);
+      expect(at.coverage.upper.served).toBeLessThanOrEqual(at.coverage.withinReach);
+      expect(at.ranked.rows).toEqual(plan.plan.slice(0, size));
+      if (size > 1) expect(at.ranked.upper.served).toBeGreaterThanOrEqual(capacityAwareView(shelters, size - 1)!.ranked.upper.served);
+    }
+    // Out-of-range sizes are clamped like the plan-size slider.
+    expect(capacityAwareView(shelters, 99)!.coverage.size).toBe(shelters.plan.length);
+    expect(capacityAwareView(shelters, 0)!.coverage.size).toBe(1);
+  });
+
+  it("gives no view for a manifest without the capacity-aware plan, or with rows that do not match the plan", () => {
+    const older = { ...shelters, capacitated: undefined };
+    expect(capacityAwareView(older, 3)).toBeNull();
+    expect(capacityAwareView({ plan: [], capacitated: plan }, 1)).toBeNull();
+    const shuffled = { ...plan, coverage_plan: [...plan.coverage_plan].reverse() };
+    expect(capacityAwareView({ plan: shelters.plan, capacitated: shuffled }, 1)).toBeNull();
+    // A capacity-aware ranking shorter than k is used in full.
+    const short = { ...plan, plan: plan.plan.slice(0, 3) };
+    const view = capacityAwareView({ plan: shelters.plan, capacitated: short }, 8)!;
+    expect([view.ranked.size, view.full.size, view.full.endedBy]).toEqual([3, 3, "gain_floor"]);
+    expect(capacityAwareView({ plan: shelters.plan, capacitated: { ...short, max_plan_sites: 3 } }, 8)!.full.endedBy).toBe("size_limit");
+  });
+
+  it("lists the plan sites assigned more residents than their capacity estimate, most overloaded first", () => {
+    const sites = planSites(shelters, shelters.knee_k);
+    const over = overCapacitySites(sites);
+    // The roadmap's example: 79 places, about 2,430 residents assigned on the nearest-site rule.
+    expect([over[0].rank, over[0].capacity, over[0].load]).toEqual([1, 79, 2430]);
+    expect(over.map((site) => site.candidate.id)).toEqual(["C049", "C007", "C011"]);
+    for (const site of over) expect(site.load).toBeGreaterThan(site.capacity!);
+    expect(over.every((site, index) => index === 0 || over[index - 1].load / over[index - 1].capacity! >= site.load / site.capacity!)).toBe(true);
+    // A site without an estimate is flagged as unknown, never as over capacity.
+    expect(sites.filter((site) => site.capacity === null).length).toBeGreaterThan(0);
+    expect(over.some((site) => site.capacity === null)).toBe(false);
+    expect(overCapacitySites([])).toEqual([]);
+  });
+
+  it("reads the what-if levels and the robust core, which are not return periods", () => {
+    expect(robustness.label).toBe("What-if levels around an illustrative peak, not return periods.");
+    expect(robustness.stages.map((stage) => [stage.stage_m, stage.modelled_peak, stage.demand_people])).toEqual([[2.5, false, 10333], [3.5, true, 14169], [4, false, 16069]]);
+    const levels = whatIfLevels(shelters, shelters.knee_k);
+    expect(levels.map((level) => [level.stage, level.modelledPeak, level.demand, level.eligible, level.size, level.covered])).toEqual([
+      [2.5, false, 10333, 95, 8, 5480], [3.5, true, 14169, 95, 8, 7580], [4, false, 16069, 94, 8, 8148],
+    ]);
+    for (const level of levels) expect(level.share).toBeCloseTo(level.covered / level.demand, 12);
+    // The robust core for k sites: among the first k at every level, in the plan's own order.
+    for (let k = 1; k <= shelters.plan.length; k += 1) {
+      const expected = shelters.plan.slice(0, k).map((entry) => entry.candidate_id)
+        .filter((id) => robustness.stages.every((stage) => stage.plan.slice(0, k).includes(id)));
+      expect(robustCore(shelters, k), `k = ${k}`).toEqual(expected);
+    }
+    expect(robustCore(shelters, shelters.knee_k)).toEqual(["C049", "C084", "C094", "C011", "C072"]);
+    expect(robustCore(shelters, 1)).toEqual([]);
+    const older = { ...shelters, robustness: undefined };
+    expect(robustCore(older, 3)).toEqual([]);
+    expect(whatIfLevels(older, 3)).toEqual([]);
+    // A level whose ranking is shorter than k counts what it has.
+    const short = { ...robustness, stages: robustness.stages.map((stage) => ({ ...stage, plan: stage.plan.slice(0, 2), cumulative_demand: stage.cumulative_demand.slice(0, 2) })) };
+    expect(whatIfLevels({ plan: shelters.plan, robustness: short }, 8).map((level) => level.size)).toEqual([2, 2, 2]);
+    expect(JSON.stringify(robustness)).not.toMatch(/\b(?:25|100)[- ]?year/i);
   });
 });

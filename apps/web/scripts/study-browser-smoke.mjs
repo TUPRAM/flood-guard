@@ -719,6 +719,52 @@ try {
   const mapTop = await page.evaluate(() => document.querySelector(".leaflet-container").getBoundingClientRect().top);
   assert(mapTop >= 0 && mapTop < 200, `The map stays in view beside the plan card (top ${mapTop}px)`);
   await expect(planCard.getByText("Shelter gap", { exact: true })).toBeVisible();
+  // The capacity-aware view sits beside the plan (k = 3): both bounds, overflow = demand − fit, and the standing caveats.
+  const capacityBlock = planCard.getByTestId("capacity-aware");
+  await expect(capacityBlock.getByRole("heading", { name: "If capacity counts: who fits (two bounds)" })).toBeVisible();
+  await expect(capacityBlock.getByTestId("capacity-coverage-lower")).toHaveText("385 overflow 13,784");
+  await expect(capacityBlock.getByTestId("capacity-coverage-upper")).toHaveText("466 overflow 13,703");
+  await expect(capacityBlock.getByTestId("capacity-aware-sentence")).toHaveText(
+    "Reading for k = 3: 5,725 residents can walk to the first 3 sites of the plan above, and the capacity estimates hold 385 to 466 of them. That leaves 13,703 to 13,784 of the 14,169 without a place.");
+  const capacityFigures = await capacityBlock.locator("td[data-testid^='capacity-']").evaluateAll((cells) => cells.map((cell) => cell.textContent.replaceAll(",", "").match(/\d+/g).map(Number)));
+  assert(capacityFigures.length === 8 && capacityFigures.every(([served, overflow]) => served + overflow === 14169), `Every capacity cell keeps overflow = demand − fit (${JSON.stringify(capacityFigures)})`);
+  for (let index = 0; index < capacityFigures.length; index += 2) {
+    assert(capacityFigures[index][0] <= capacityFigures[index + 1][0], `The lower bound never exceeds the upper bound (${JSON.stringify(capacityFigures)})`);
+  }
+  const caveats = capacityBlock.getByTestId("capacity-caveats");
+  await expect(caveats.locator("li")).toHaveCount(5);
+  await expect(caveats).toContainText("T1 scenario (model)");
+  await expect(caveats).toContainText("That is an upper bound: many people stay with relatives");
+  await expect(caveats).toContainText("Capacity is an unverified estimate from mapped building footprints");
+  await expect(caveats).toContainText("candidates to verify on the ground, not a list of sites to open");
+  await expect(caveats).toContainText("The planning overlay's listed-capacity figures come from a different source");
+  // The site with 79 places carrying about 2,430 residents is flagged on its row and named in the note.
+  await expect(planCard.locator("li[data-over-capacity]").first()).toContainText("≈ 79 places for ≈ 2,430 residents assigned");
+  await expect(capacityBlock.getByTestId("over-capacity-note")).toContainText("≈ 79 places for ≈ 2,430 residents assigned (about 31 times the estimate)");
+  await expect(planCard).not.toContainText(/open these shelters|shelters to open/i);
+  // The capacity-aware ranking's own sites: closed until asked for, then load against capacity with the capacity basis.
+  const capacitySites = capacityBlock.getByTestId("capacity-ranking-sites");
+  await expect(capacitySites).not.toHaveAttribute("open", "");
+  await capacitySites.locator("summary").click();
+  await expect(capacitySites.locator("ol > li")).toHaveCount(3);
+  await expect(capacitySites.locator("ol > li").first()).toContainText("Assigned 984 of 984 places (lower bound) · 984 of 984 (upper bound)");
+  await expect(capacitySites.locator("ol > li").first()).toContainText("OpenStreetMap footprint × 0.5 ÷ 3.5 m² per person (Sphere), unverified");
+  await expect(capacitySites.locator("ol > li[data-capacity-basis='unknown']").first()).toContainText("Capacity unknown (no mapped building footprint): 0 in the lower bound, 253 in the upper bound");
+  await capacitySites.locator("summary").click();
+  // What-if levels around the illustrative peak, not return periods, with the robust core marked on the plan list.
+  const whatIf = planCard.getByTestId("what-if-levels");
+  await expect(whatIf.getByTestId("what-if-label")).toContainText("What-if levels around an illustrative peak, not return periods.");
+  await expect(whatIf.getByTestId("what-if-demand-2.5")).toHaveText("10,333");
+  await expect(whatIf.getByTestId("what-if-demand-3.5")).toHaveText("14,169");
+  await expect(whatIf.getByTestId("what-if-demand-4.0")).toHaveText("16,069");
+  await expect(whatIf.getByTestId("robust-core-sentence")).toContainText("1 of the first 3 sites of the plan above is among the first 3 at every level");
+  await expect(planCard.getByTestId("robust-core")).toHaveCount(1);
+  await expect(planCard.getByTestId("robust-core")).toHaveText("Robust core: also among the first 3 sites at 2.5 m and 4.0 m");
+  await expect(planCard).not.toContainText(/\b(?:25|100)[- ]?year/i);
+  const planTables = await planCard.locator("[data-testid='capacity-aware-table'], [data-testid='what-if-table']")
+    .evaluateAll((boxes) => boxes.map((box) => ({ need: box.querySelector("table").scrollWidth, room: box.clientWidth })));
+  assert(planTables.length === 2 && planTables.every((box) => box.need <= box.room), `The capacity and what-if tables fit the plan card (${JSON.stringify(planTables)})`);
+  checks.push("capacity-aware view beside the plan: both bounds with overflow = demand − fit, five caveats, the 79-place site flagged, candidates to verify; what-if levels labelled as not return periods, robust core marked");
   await planCard.getByRole("button", { name: /^Show plan site 1, / }).click();
   // A closing popup fades out for a moment, so each check picks the popup by its text.
   const popupWith = (text) => page.locator(".leaflet-popup-content").filter({ hasText: text });
@@ -901,6 +947,26 @@ try {
     .filter((element) => /[\u0E00-\u0E7F]/.test(element.textContent ?? "") && !["normal", "0px"].includes(getComputedStyle(element).letterSpacing))
     .map((element) => `${element.tagName}: ${getComputedStyle(element).letterSpacing}`));
   assert.deepEqual(thaiSpacing, [], "Thai text on the access card is not letter-spaced");
+  // The capacity-aware view and the what-if levels in Thai (default plan size): same figures, the caveats, no letter-spacing, tables fit.
+  const thaiPlan = touchPage.getByTestId("shelter-plan-card");
+  await expect(thaiPlan.getByTestId("capacity-coverage-lower")).toHaveText("495 ไม่มีที่รองรับ 13,674");
+  await expect(thaiPlan.getByTestId("capacity-coverage-upper")).toHaveText("1,057 ไม่มีที่รองรับ 13,112");
+  await expect(thaiPlan.getByTestId("capacity-aware-sentence")).toContainText("ค่าประมาณความจุรองรับได้ 495 ถึง 1,057 คน จึงเหลือ 13,112 ถึง 13,674 คนจาก 14,169 คนที่ไม่มีที่รองรับ");
+  await expect(thaiPlan.getByTestId("capacity-caveats")).toContainText("เป็นค่าขอบเขตบน เพราะหลายคนไปพักกับญาติ");
+  await expect(thaiPlan.getByTestId("capacity-caveats")).toContainText("สถานที่ที่ควรตรวจสอบในพื้นที่ ไม่ใช่รายชื่อสถานที่ที่ต้องเปิด");
+  await expect(thaiPlan.getByTestId("capacity-caveats")).toContainText("มาจากแหล่งข้อมูลอื่น");
+  await expect(thaiPlan.getByTestId("over-capacity-note")).toContainText("รองรับได้ ≈ 79 คน แต่ได้รับผู้อพยพ ≈ 2,430 คน");
+  await expect(thaiPlan.getByTestId("what-if-label")).toContainText("ระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดที่ใช้เพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ");
+  await expect(thaiPlan.getByTestId("robust-core")).toHaveCount(5);
+  await expect(thaiPlan.getByTestId("robust-core").first()).toHaveText("แกนที่คงทน: อยู่ใน 8 แห่งแรกที่ระดับ 2.5 ม. และ 4.0 ม. ด้วย");
+  await expect(thaiPlan).not.toContainText(/Lower bound|Upper bound|overflow|What-if|Robust core|เปิดที่พักพิงเหล่านี้/);
+  const thaiPlanSpacing = await thaiPlan.evaluate((card) => [...card.querySelectorAll("p, th, td, caption, h2, h3, li, small, strong, span, summary")]
+    .filter((element) => /[\u0E00-\u0E7F]/.test(element.textContent ?? "") && !["normal", "0px"].includes(getComputedStyle(element).letterSpacing))
+    .map((element) => `${element.tagName}: ${getComputedStyle(element).letterSpacing}`));
+  assert.deepEqual(thaiPlanSpacing, [], "Thai text on the plan card is not letter-spaced");
+  const thaiPlanTables = await thaiPlan.locator("[data-testid='capacity-aware-table'], [data-testid='what-if-table']")
+    .evaluateAll((boxes) => boxes.map((box) => ({ need: box.querySelector("table").scrollWidth, room: box.clientWidth })));
+  assert(thaiPlanTables.length === 2 && thaiPlanTables.every((box) => box.need <= box.room), `The capacity and what-if tables fit the plan card at 390 px in Thai (${JSON.stringify(thaiPlanTables)})`);
   assert.deepEqual(await spacedThai(touchPage), [], "No Thai text node on the page is letter-spaced at 390 px (title, readout and header sub-label included)");
   const thaiOverflow = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   assert(thaiOverflow <= 1, `The Thai case replay does not overflow at 390 px (${thaiOverflow}px)`);
@@ -909,6 +975,7 @@ try {
   await expect(touchPage.getByTestId("how-to-status").getByTestId("generated-at")).toHaveText(/สร้างไฟล์ข้อมูลเมื่อ \d{1,2} \S+ 25\d{2} \(20\d{2}\) \d{2}:\d{2} น\./);
   await touch.close();
   checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips, non-operational status and generation time in Thai, shelter-set comparison in Thai without letter-spacing or overflow");
+  checks.push("touch phone in Thai: capacity-aware bounds, caveats and what-if label in Thai, robust core marked, no letter-spacing, tables fit at 390 px");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

@@ -135,6 +135,21 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "สถานที่ที่อาจใช้เป็นที่พักพิงคืออาคารและพื้นที่สาธารณะใน OpenStreetMap (โรงเรียน ศาสนสถาน หน่วยงานราชการ ศูนย์ชุมชน ไม่รวมศาลาที่พักประเภท amenity=shelter) สถานที่จะเข้าเกณฑ์เมื่อมีระยะพ้นน้ำ 0.5 ม. ที่ระดับสูงสุดของแบบจำลองและมีจุดถนนภายใน 400 ม. การจัดอันดับใช้วิธีละโมบเพื่อครอบคลุมผู้อยู่อาศัยที่บ้านเปียกที่ระดับสูงสุดให้ได้มากที่สุดภายในระยะเดิน 2 กม. บนถนนปกติ (อพยพล่วงหน้า) สัดส่วนการอพยพล่าช้าตรวจซ้ำบนถนนที่ยังเปิดที่ระดับน้ำ 1.0 ม.",
   "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.":
     "ความจุที่พักพิง = พื้นที่อาคารใน OSM ภายในสถานที่ × สัดส่วนที่ใช้ได้ 0.5 ÷ 3.5 ตร.ม. ต่อคน (พื้นที่ในร่มขั้นต่ำตามเกณฑ์ Sphere) ข้อมูลอาคารใน OSM ของแม่สายยังมีน้อย ความจุหลายแห่งจึงไม่ทราบหรือต่ำกว่าจริง",
+  "The capacity-aware plan assigns residents of homes that flood at the modelled peak to eligible sites within the 2 km walk without exceeding a site's capacity. It gives two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). Demand is an upper bound (many people stay with relatives) and the sites are candidates to verify.":
+    "แผนแบบคิดความจุจัดให้ผู้อยู่อาศัยในบ้านที่ถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลองไปยังสถานที่ที่เข้าเกณฑ์ภายในระยะเดิน 2 กม. โดยไม่เกินความจุของแต่ละแห่ง และให้ค่าสองขอบเขต: ความจุที่ไม่ทราบนับเป็น 0 (ขอบเขตล่าง) หรือใช้ค่ามัธยฐานของค่าประมาณของสถานที่ประเภทเดียวกัน (ขอบเขตบน) ความต้องการเป็นค่าขอบเขตบน (หลายคนไปพักกับญาติ) และสถานที่เหล่านี้เป็นสถานที่ที่ควรตรวจสอบ",
+  "Plan robustness repeats the coverage ranking at 2.5 m, 3.5 m and 4.0 m: what-if levels around an illustrative peak, not return periods.":
+    "การตรวจความคงทนของแผนจัดอันดับความครอบคลุมซ้ำที่ระดับ 2.5 ม. 3.5 ม. และ 4.0 ม. ซึ่งเป็นระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดที่ใช้เพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ",
+  // Capacity-aware plan and what-if levels: confidence reasons, source timestamps and the what-if label.
+  "Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; demand is a modelled upper bound; nothing was checked on the ground.":
+    "ความจุเป็นค่าประมาณจากขอบเขตอาคารใน OpenStreetMap ซึ่งมีข้อมูลน้อย ยังไม่ได้ตรวจสอบ และไม่ทราบสำหรับสถานที่ส่วนใหญ่ ความต้องการเป็นค่าขอบเขตบนจากแบบจำลอง และยังไม่ได้ตรวจสอบสิ่งใดในพื้นที่",
+  "OSM extract 2026-07-09 (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT":
+    "ข้อมูล OSM 2026-07-09 (ขอบเขตอาคารและสถานที่) · WorldPop 2020 · ระดับน้ำสูงสุดที่จำลอง 2024-09-12 เวลาประเทศไทย",
+  "The peak stage is illustrative (no gauge record); the levels show how the ranking moves if it were lower or higher.":
+    "ระดับน้ำสูงสุดเป็นค่าเพื่อการอธิบาย (ไม่มีข้อมูลสถานีวัดน้ำ) ระดับเหล่านี้แสดงว่าการจัดอันดับเปลี่ยนไปอย่างไรหากระดับน้ำต่ำหรือสูงกว่านี้",
+  "OSM extract 2026-07-09; WorldPop 2020; what-if design stages around the illustrative 2024-09-12 ICT peak":
+    "ข้อมูล OSM 2026-07-09 · WorldPop 2020 · ระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดเพื่อการอธิบายของวันที่ 2024-09-12 เวลาประเทศไทย",
+  "What-if levels around an illustrative peak, not return periods.":
+    "ระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดที่ใช้เพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ",
   "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.":
     "แผนที่น้ำท่วมรายวัน VIIRS (375 ม.) เทียบกับการจำลองเฉพาะพิกเซลที่ท้องฟ้าโปร่ง ณ เวลาประมาณ 13:30 น. และมองไม่เห็นน้ำท่วมใต้เมฆหรือในระดับถนน",
   "Flash-flood velocity, debris and mud deposition are not modelled.":

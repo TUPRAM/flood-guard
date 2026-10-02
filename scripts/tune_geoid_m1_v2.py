@@ -4,6 +4,13 @@ Opens development tiles only: the loader refuses every held-out test tile.
 Runs the search space declared in geoid_m1_benchmark_protocol_v2.json, logs
 every run, then writes the frozen configuration and its receipt. Commit the
 log, the configuration and the receipt before any held-out scoring.
+
+The tile store records which tiles it opened, and that record (not a
+constant) is written to the log and to the receipt. Every record carries its
+source timestamp, confidence, assumptions and the agreement wording. Both
+were added after the review of 3 October 2026 and apply to a future session:
+the two sessions in the committed log were written before, and tuning for
+the frozen configuration is closed.
 """
 
 from __future__ import annotations
@@ -20,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from floodguard import geoid_m1_benchmark as bench  # noqa: E402
+from floodguard import geoid_m1_review as review  # noqa: E402
 from floodguard import sar_change_v2 as sar  # noqa: E402
 
 TRACK = ROOT / "docs" / "proposal_execution" / "automated_track"
@@ -85,7 +93,7 @@ def main() -> None:
         raise SystemExit("The search space does not have the declared number of runs")
 
     geoid = arguments.external_data / "geoid_flood"
-    store = bench.GeoidTileStore(
+    store = review.RecordingTileStore(
         geoid / "sample" / "sample" / "geoid-flood" / bench.AOI,
         geoid / "metadata" / "SHA256SUMS",
         phase=bench.PHASE_TUNING,
@@ -94,20 +102,23 @@ def main() -> None:
     session = now_utc()
     loaded = bench.load_tiles(store, store.tile_ids(), with_reference=True)
     source_timestamp = max(tile.post_acquired_utc for tile in loaded.inputs.values())
+    # Every tile is read above; nothing below opens a tile.
+    if store.opened_test_tile_ids():
+        raise SystemExit("A held-out test tile was opened while tuning; nothing is frozen")
+    context = review.output_context(source_timestamp)
     append_log(
         {
             "record": "session_start",
             "session_started_utc": session,
             "note": arguments.note,
             "phase": bench.PHASE_TUNING,
-            "tiles_opened": sorted(loaded.filtered),
-            "test_tiles_opened": [],
+            **store.access_record(),
+            **context,
             "declared_benchmark_protocol_sha256": bench.bytes_sha256(protocol_bytes),
             "planning_protocol_v1a_sha256": bench.PROTOCOL_V1A_SHA256,
             "planning_protocol_v1a_file_checked": v1a_checked,
             "code_sha256": code_sha256,
             "input_sha256": loaded.input_sha256,
-            "source_timestamp": source_timestamp,
             "runs_declared": len(grid),
         }
     )
@@ -116,6 +127,7 @@ def main() -> None:
         record = {
             "run_id": f"{session}-run-{record['run_index']:02d}",
             "logged_utc": now_utc(),
+            **context,
             **record,
         }
         append_log(record)
@@ -181,16 +193,23 @@ def main() -> None:
             "runs_completed": len(runs),
             "frozen_config_sha256": bench.bytes_sha256(frozen_bytes),
             "selected_utc": frozen_at,
+            **context,
         }
     )
-    receipt = bench.build_freeze_receipt(
-        frozen_config_sha256=bench.bytes_sha256(frozen_bytes),
-        declared_protocol_sha256=bench.bytes_sha256(protocol_bytes),
-        tuning_log_sha256=bench.file_sha256(TUNING_LOG),
-        code_sha256=code_sha256,
-        selected_run_id=chosen["run_id"],
-        frozen_at_utc=frozen_at,
-    )
+    receipt = {
+        **bench.build_freeze_receipt(
+            frozen_config_sha256=bench.bytes_sha256(frozen_bytes),
+            declared_protocol_sha256=bench.bytes_sha256(protocol_bytes),
+            tuning_log_sha256=bench.file_sha256(TUNING_LOG),
+            code_sha256=code_sha256,
+            selected_run_id=chosen["run_id"],
+            frozen_at_utc=frozen_at,
+        ),
+        # What the store recorded, in place of the constant in the receipt builder.
+        "test_tiles_opened_before_freeze": bool(store.opened_test_tile_ids()),
+        **store.access_record(),
+        **context,
+    }
     FREEZE_RECEIPT.write_bytes(bench.canonical_json_bytes(receipt))
     print(f"frozen {chosen['run_id']} {chosen['parameters']}")
     print(f"frozen config SHA-256 {receipt['frozen_config_sha256']}")

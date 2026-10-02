@@ -659,14 +659,20 @@ def test_result_document_states_the_required_wording_and_the_summary_figures() -
     for method, label in names.items():
         for split in bench.SPLITS:
             result = summary["results"][method][split]
-            primary = result["primary"]
-            row = (
-                f"| {label} | {split} | {primary['strict']['iou']:.3f} | "
-                f"{primary['covered']['iou']:.3f} | {primary['covered']['precision']:.3f} | "
-                f"{primary['strict']['recall']:.3f} | {100 * primary['coverage']:.1f}% | "
-                f"{result['abstained_tiles']} of {result['tiles']} |"
-            )
-            assert row in text, row
+            for comparison in ("primary", "secondary"):
+                scores = result[comparison]
+                # The strict IoU is shown with the share of cells without an answer, and
+                # Dice (in the declared metric list) closes the row.
+                row = (
+                    f"| {label} | {split} | {scores['strict']['iou']:.3f} "
+                    f"({100 * scores['abstained_cell_share']:.1f}% no answer) | "
+                    f"{scores['covered']['iou']:.3f} | {scores['covered']['precision']:.3f} | "
+                    f"{scores['strict']['recall']:.3f} | {100 * scores['coverage']:.1f}% | "
+                    f"{result['abstained_tiles']} of {result['tiles']} | "
+                    f"{scores['predicted_to_reference_area_ratio']:.2f} | "
+                    f"{scores['strict']['dice']:.3f} | {scores['covered']['dice']:.3f} |"
+                )
+                assert row in text, row
 
 
 def test_scripts_and_modules_carry_no_local_path_and_no_decision_output() -> None:

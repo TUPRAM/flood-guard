@@ -10,25 +10,84 @@ image of activation EMSR712-3). Scored on 2 October 2026. Confidence: low
 (one foreign event, a spatial split by tile, a reference drawn from the
 input pass). Rachmania has not yet reviewed the tuning or this result.
 
+Revised on 3 October 2026 after a review. The revision corrects wording and
+adds checks computed from the committed counts. No score, no configuration
+and no line of the frozen method code changed. See "Review corrections".
+
+## Decisions for the owners
+
+Read these before the numbers.
+
+1. **The 14 held-out test tiles are used up for this configuration.** The
+   held-out scores were computed on 2 October at 16:35 UTC, less than six
+   minutes after the freeze was committed (16:30 UTC) and before the review
+   that owner decision R11 attaches to the tuning ("for Rachmania to
+   review").
+   Rachmania's review can therefore do one of two things: accept the frozen
+   M1-v2 with the limits written here, or open a new version. A new version
+   has no unseen tile left in this sample. It would need held-out data that
+   is not on disk, which means a download and a change to the scope freeze
+   (decision D11).
+2. **The choice she is asked to review rests on a thin margin and one
+   amendment.** The frozen run leads the next three by 0.007 to 0.012 of
+   development IoU (0.441 against 0.434, 0.429, 0.429). Amendment 1 was
+   written after development scores had been seen, and it replaced the
+   choice the first session would have frozen (run 29).
+3. **How to read the GEOID condition of the T2 skill bar.** The point
+   estimate is 0.411 against a minimum of 0.40, with 67.9% of the test cells
+   left without an answer. It is not distinguishable from 0.40 on 14 tiles
+   (see "The T2 skill bar"). Protocol v1a gives a minimum and no rule for
+   uncertainty or for declined cells. The owners decide, in v1b, whether a
+   point estimate counts as passing and whether declining needs a limit on
+   this benchmark too. A rule written now is written after the score was
+   seen and must say so.
+4. **Record the outcome.** Rachmania's review result belongs in the decision
+   log before M1-v2 is applied to Mae Sai (plan task A4).
+
+Two smaller choices are listed under "Review corrections": whether to
+correct one sentence inside a frozen code module, and whether to score a
+second reading of M1-literal on the test tiles.
+
 ## Result in brief
 
-| Method | Tuning | Test IoU, strict | Test IoU, covered cells | Test coverage | Test tiles where the method declined |
+"No answer" is the share of evaluable cells where the method gave no answer.
+The strict IoU is always shown with it, because the strict reading scores a
+declined tile like an answer of "no flood" (see "The T2 skill bar").
+
+| Method | Tuning | Test IoU, strict (cells without an answer) | Test IoU, covered cells | Test coverage | Test tiles where the method declined |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-literal (the proposal as written) | none | 0.159 | 0.159 | 99.8% | 0 of 14 |
-| M1-v2 (frozen configuration) | 15 development tiles | 0.411 | 0.506 | 32.1% | 10 of 14 |
-| M1-v2 with Otsu (comparator, not a candidate) | none of its own | 0.216 | 0.216 | 98.3% | 1 of 14 |
+| M1-literal (the proposal as written, with one added clause) | none | 0.159 (0.2% no answer) | 0.159 | 99.8% | 0 of 14 |
+| M1-v2 (frozen configuration) | 15 development tiles | 0.411 (67.9% no answer) | 0.506 | 32.1% | 10 of 14 |
+| M1-v2 with Otsu (comparator at the blocks chosen for M1-v2, not a candidate) | none of its own | 0.216 (1.7% no answer) | 0.216 | 98.3% | 1 of 14 |
 
 - **M1-literal** flags about five times the mapped flood area. It finds most
   of the mapped flood (recall 0.84) and is wrong about most of what it flags
-  (precision 0.16).
+  (precision 0.16). Its rule is "delta-VH below the Otsu threshold and below
+  zero". The clause "below zero" is the agent's addition to the proposal's
+  words. The Otsu threshold is above zero on 23 of the 29 tiles, and there
+  the Otsu threshold plays no part: the rule is "delta-VH below zero".
 - **M1-v2** gives an answer on 4 of the 14 test tiles and declines on the
   other 10. Where it answers, 73% of what it flags is mapped flood. The 10
   declined tiles hold 22% of the mapped flood of the test split.
-- The held-out test IoU of M1-v2 is 0.411 when every declined cell counts as
-  "no flood found" (strict) and 0.506 on the cells where it answered. Both
-  are at or above the 0.40 named in the T2 skill bar of protocol v1a. The
-  strict figure clears it by 0.011. This is one of four conditions and the
-  only one that can be assessed here. See "The T2 skill bar" below.
+- The held-out test IoU of M1-v2 is 0.411 on the strict reading, with 67.9%
+  of the test cells left without an answer, and 0.506 on the cells where it
+  answered. Both point estimates are at or above the 0.40 named in the T2
+  skill bar of protocol v1a. **The strict figure is not distinguishable from
+  0.40 on 14 tiles:** it is 0.297 without tile 42 and 0.380 without tile 49,
+  and a tile bootstrap gives a 95% range of 0.10 to 0.51 with 51% of the
+  resamples at or above 0.40. This is one of four conditions and the only
+  one that can be assessed here. See "The T2 skill bar" below.
+- **Most of the gain over M1-literal comes from declining tiles, not from
+  the threshold method.** On the four test tiles where M1-v2 answered, the
+  three methods score 0.350 (M1-literal), 0.460 (Otsu comparator) and 0.506
+  (M1-v2). The rest of the difference between 0.159 and 0.411 comes from
+  the ten tiles M1-v2 declined: M1-literal has 1,755,423 false alarms there
+  and the Otsu comparator 1,095,692, and a declined tile is charged none.
+- **The Otsu comparator is shown at the configuration chosen for
+  Kittler-Illingworth only.** In the declared grid, Otsu with 256-cell
+  blocks on the mean of VV and VH scored 0.475 on the development tiles
+  while declining 10 of 15 of them. That is higher than the frozen M1-v2
+  (0.441). That Otsu run was never scored on the test tiles.
 - The first tuning session exposed a defect in the threshold code. It was
   corrected on the development tiles, before the freeze, and the change is
   recorded as amendment 1. See "Tuning on the development tiles".
@@ -105,6 +164,22 @@ being global within each 10 km tile, "strong negative change" meaning below
 both the threshold and zero, and the 3 by 3 majority rule for "clean
 isolated speckle".
 
+**The "below zero" clause is not in the proposal.** Step 4 of the proposal
+reads: "Estimate the Otsu threshold on valid delta-VH pixels; strong
+negative change becomes candidate temporary water." The Otsu threshold is
+above zero on 23 of the 29 tiles (it is below zero only on tiles 22, 31, 32,
+33, 42 and 49). On those 23 tiles the rule as
+implemented is "delta-VH below zero" and the proposal's Otsu threshold has
+no effect. The method scored under the name M1-literal is therefore mostly
+not an Otsu method. The clause favours M1-literal: without it, the rule
+flags every cell below a threshold that sits above zero, including cells
+that became brighter. On the 15 development tiles the reading without the
+clause scores IoU 0.088 and flags 9.2 times the mapped flood area, against
+0.127 and 6.3 times with the clause
+([reproduction file](../../../outputs/geoid_m1_v2_amendment_check_reproduction.json)).
+The reading without the clause was not scored on the test tiles, because
+the held-out scoring is computed once.
+
 Steps of the proposal that were not run, and why:
 
 - Orbit correction, thermal-noise removal, calibration and terrain
@@ -140,7 +215,9 @@ Steps of the proposal that were not run, and why:
 
 The Otsu comparator is the same pipeline with Otsu's threshold on the same
 pooled histogram. It is reported beside M1-v2 and was never eligible to be
-chosen.
+chosen. In the result tables it is evaluated at the configuration that the
+selection rule chose for Kittler-Illingworth, not at the configuration where
+Otsu itself scored best on the development tiles.
 
 Two parts of the plan's specification are left out, as the task allows:
 
@@ -164,6 +241,14 @@ Two parts of the plan's specification are left out, as the task allows:
   **Strict:** every cell without an answer counts as "no flood found", so
   declining over mapped flood costs recall. **Coverage:** share of evaluable
   cells with an answer.
+- **What the strict reading does not do.** It scores a declined tile exactly
+  like an answer of "no flood" everywhere. Mapped flood in the tile is
+  missed, and nothing in the tile can be a false alarm. Declining a tile
+  with little flood therefore raises the strict IoU. For this reason the
+  strict IoU is shown with the share of cells without an answer in the same
+  table cell or sentence.
+- **Dice** is reported beside IoU on both readings. It is a function of the
+  same counts (Dice = 2 IoU / (1 + IoU)) and adds no information.
 - IoU, precision and recall are used because the reference is a labelled
   benchmark. They measure agreement with a same-pass CEMS map, not
   independent accuracy. Mapped background is not confirmed dry land.
@@ -176,14 +261,41 @@ Two parts of the plan's specification are left out, as the task allows:
 | Session 1 | (logged) | 36 runs on the development tiles. Its freeze was written but never committed, and is withdrawn. |
 | Amendment 1 | `2a3fdcb` | The session 1 log, the correction to the threshold code and its test, and the amendment text in the declared protocol. |
 | Session 2 and freeze | `34ff88d` | The session 2 log, the frozen configuration and its receipt. Committed before any test tile was opened. |
-| Held-out scoring | the commit that adds this file | The summary and this document. Computed once. |
+| Held-out scoring | `27f737f` | The summary and this document. Computed once. |
+| Review corrections | the commit that adds the addendum | Addendum 1, the derived checks, the reproduction of the amendment check, this revision. No test tile opened, no score changed. |
 
 The task asked for two commits (freeze, then result). There are four: the
 declaration and the amendment were committed separately so that the order
 "declare, tune, freeze, score" can be read from the history. The loader
-refused every test tile during both tuning sessions (`test_tiles_opened` is
-empty in both session records), and the scoring script refuses to run unless
-the frozen files equal the committed versions, and refuses to run twice.
+refuses every test tile in the tuning phase, and the scoring script refuses
+to run unless the frozen files equal the committed versions, and refuses to
+run twice.
+
+What the two attestations are worth. `test_tiles_opened: []` in both session
+records and `test_tiles_opened_before_freeze: false` in the receipt were
+written as constants by the scripts. They are not a record of what was
+opened. The loader guard covers reads made through the tile store only; it
+cannot stop a raster read that goes around it. What supports the claim that
+tuning saw development tiles only:
+
+- The reviewer reported that both sessions reproduce exactly from the 15
+  development tiles alone, with the code of commits `7666536` and `2a3fdcb`:
+  all 72 runs, including the per-tile detail, and the two choices (run 29,
+  then run 1). This lane did not repeat that re-run.
+- The development-only check quoted in amendment 1 was made by code that was
+  not committed and is not in the log. It has now been recomputed from the
+  15 development tiles through a tile store that records what it opens
+  (`scripts/diagnose_geoid_m1_v2_amendment_check.py`). Every published
+  value for the six tiles was recomputed exactly. The store opened 15
+  development tiles and no test tile.
+- The commit order is declaration 15:59:26 UTC, session 1 from 15:59:33,
+  amendment 16:14:01, session 2 from 16:14:07, freeze commit 16:30:14,
+  held-out summary 16:35:47 (all 2 October 2026).
+
+So the frozen configuration follows from the development tiles, the
+committed code and the declared grid. What was looked at while amendment 1
+was being designed cannot be shown after the fact. From now on the tuning
+script writes what its tile store recorded, not a constant.
 
 Frozen configuration: SHA-256
 `2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68`, recorded
@@ -194,29 +306,29 @@ beside the v1a SHA-256 in
 
 Primary comparison (permanent water counts as not flood):
 
-| Method | Split | IoU, strict | IoU, covered cells | Precision | Recall, strict | Coverage | Tiles declined | Predicted area / reference area |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| M1-literal | development | 0.127 | 0.127 | 0.131 | 0.822 | 99.8% | 0 of 15 | 6.29 |
-| M1-literal | test | 0.159 | 0.159 | 0.164 | 0.839 | 99.8% | 0 of 14 | 5.11 |
-| M1-v2 (frozen) | development | 0.441 | 0.446 | 0.592 | 0.633 | 51.3% | 9 of 15 | 1.07 |
-| M1-v2 (frozen) | test | 0.411 | 0.506 | 0.731 | 0.484 | 32.1% | 10 of 14 | 0.66 |
-| M1-v2 with Otsu (comparator) | development | 0.171 | 0.171 | 0.181 | 0.748 | 99.8% | 0 of 15 | 4.13 |
-| M1-v2 with Otsu (comparator) | test | 0.216 | 0.216 | 0.233 | 0.750 | 98.3% | 1 of 14 | 3.23 |
+| Method | Split | IoU, strict (cells without an answer) | IoU, covered cells | Precision | Recall, strict | Coverage | Tiles declined | Predicted area / reference area | Dice, strict | Dice, covered cells |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| M1-literal | development | 0.127 (0.2% no answer) | 0.127 | 0.131 | 0.822 | 99.8% | 0 of 15 | 6.29 | 0.225 | 0.226 |
+| M1-literal | test | 0.159 (0.2% no answer) | 0.159 | 0.164 | 0.839 | 99.8% | 0 of 14 | 5.11 | 0.275 | 0.275 |
+| M1-v2 (frozen) | development | 0.441 (48.7% no answer) | 0.446 | 0.592 | 0.633 | 51.3% | 9 of 15 | 1.07 | 0.612 | 0.617 |
+| M1-v2 (frozen) | test | 0.411 (67.9% no answer) | 0.506 | 0.731 | 0.484 | 32.1% | 10 of 14 | 0.66 | 0.583 | 0.672 |
+| M1-v2 with Otsu (comparator) | development | 0.171 (0.2% no answer) | 0.171 | 0.181 | 0.748 | 99.8% | 0 of 15 | 4.13 | 0.292 | 0.292 |
+| M1-v2 with Otsu (comparator) | test | 0.216 (1.7% no answer) | 0.216 | 0.233 | 0.750 | 98.3% | 1 of 14 | 3.23 | 0.355 | 0.355 |
 
 Secondary comparison (permanent water left out):
 
-| Method | Split | IoU, strict | IoU, covered cells | Precision | Recall, strict | Coverage | Tiles declined | Predicted area / reference area |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| M1-literal | development | 0.130 | 0.130 | 0.134 | 0.822 | 99.9% | 0 of 15 | 6.14 |
-| M1-literal | test | 0.163 | 0.163 | 0.168 | 0.839 | 99.9% | 0 of 14 | 5.00 |
-| M1-v2 (frozen) | development | 0.443 | 0.449 | 0.596 | 0.633 | 51.7% | 9 of 15 | 1.06 |
-| M1-v2 (frozen) | test | 0.413 | 0.508 | 0.736 | 0.484 | 32.1% | 10 of 14 | 0.66 |
-| M1-v2 with Otsu (comparator) | development | 0.174 | 0.174 | 0.185 | 0.748 | 99.9% | 0 of 15 | 4.04 |
-| M1-v2 with Otsu (comparator) | test | 0.220 | 0.220 | 0.237 | 0.750 | 98.4% | 1 of 14 | 3.16 |
+| Method | Split | IoU, strict (cells without an answer) | IoU, covered cells | Precision | Recall, strict | Coverage | Tiles declined | Predicted area / reference area | Dice, strict | Dice, covered cells |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| M1-literal | development | 0.130 (0.1% no answer) | 0.130 | 0.134 | 0.822 | 99.9% | 0 of 15 | 6.14 | 0.230 | 0.230 |
+| M1-literal | test | 0.163 (0.1% no answer) | 0.163 | 0.168 | 0.839 | 99.9% | 0 of 14 | 5.00 | 0.280 | 0.280 |
+| M1-v2 (frozen) | development | 0.443 (48.3% no answer) | 0.449 | 0.596 | 0.633 | 51.7% | 9 of 15 | 1.06 | 0.614 | 0.619 |
+| M1-v2 (frozen) | test | 0.413 (67.9% no answer) | 0.508 | 0.736 | 0.484 | 32.1% | 10 of 14 | 0.66 | 0.584 | 0.674 |
+| M1-v2 with Otsu (comparator) | development | 0.174 (0.1% no answer) | 0.174 | 0.185 | 0.748 | 99.9% | 0 of 15 | 4.04 | 0.297 | 0.297 |
+| M1-v2 with Otsu (comparator) | test | 0.220 (1.6% no answer) | 0.220 | 0.237 | 0.750 | 98.4% | 1 of 14 | 3.16 | 0.360 | 0.361 |
 
 Cell counts, primary comparison:
 
-| Method | Split | Evaluable cells | Reference flood cells | Flood agreed (TP) | Flagged, not mapped flood (FP) | Mapped flood missed in classified tiles | Mapped flood in declined tiles |
+| Method | Split | Evaluable cells | Reference flood cells | Flood agreed (TP) | Flagged, not mapped flood (FP) | Mapped flood missed where the method answered | Mapped flood in cells without an answer |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | M1-literal | development | 9,197,566 | 414,165 | 340,580 | 2,266,221 | 73,079 | 506 |
 | M1-literal | test | 8,598,631 | 548,591 | 460,321 | 2,344,285 | 87,688 | 582 |
@@ -224,6 +336,10 @@ Cell counts, primary comparison:
 | M1-v2 (frozen) | test | 8,598,631 | 548,591 | 265,729 | 97,693 | 161,598 | 121,264 |
 | M1-v2 with Otsu (comparator) | development | 9,197,566 | 414,165 | 309,647 | 1,400,602 | 104,012 | 506 |
 | M1-v2 with Otsu (comparator) | test | 8,598,631 | 548,591 | 411,663 | 1,358,204 | 136,346 | 582 |
+
+"Cells without an answer" are the cells of declined tiles and the few cells
+with unusable radar values in tiles that were answered. For M1-v2 on the
+test split, 120,771 of the 121,264 cells are in the ten declined tiles.
 
 Reading the tables:
 
@@ -235,14 +351,32 @@ Reading the tables:
   five to six times the mapped flood.
 - **M1-v2.** Higher precision, lower recall, and an answer on about half of
   the development cells and a third of the test cells. The gap between the
-  strict and the covered reading on the test split (0.411 against 0.506) is
-  the mapped flood inside declined tiles.
-- **Otsu comparator.** With the same blocks, Otsu's threshold sits low (0.1
-  to 3.8 dB of darkening on the development tiles) and almost never
-  declines, so it flags three to four times the mapped flood.
+  strict and the covered reading on the test split (0.411 with 67.9% of the
+  cells without an answer, against 0.506) is the mapped flood inside
+  declined tiles.
+- **Otsu comparator.** With the same 64-cell blocks, Otsu's threshold sits
+  low (0.1 to 3.8 dB of darkening on the development tiles) and almost
+  never declines, so it flags three to four times the mapped flood. This
+  holds for the configuration chosen for Kittler-Illingworth only. With
+  256-cell blocks most tiles have no bimodal block, Otsu declines on them
+  too, and its development score rises: 0.475 with 10 of 15 tiles declined
+  (run 29), 0.419 with 8 declined (run 35), 0.374 with 9 declined (run 5).
+  Run 29 is above the frozen M1-v2 (0.441). The tuning table lists the
+  comparator's score and its declined tiles for all 36 runs.
+- **What the comparison does and does not show.** The table above compares
+  two threshold rules at one block size. It does not show that the
+  Kittler-Illingworth threshold lifts the score from about 0.2 to 0.41. On
+  the tiles where M1-v2 answered, the two rules are closer: 0.446 against
+  0.376 on the six development tiles and 0.506 against 0.460 on the four
+  test tiles (M1-literal: 0.247 and 0.350). The larger part of the
+  difference in the pooled score comes from the tiles M1-v2 declined. On
+  the ten declined test tiles the Otsu comparator has 1,095,692 false
+  alarms (81% of all its false alarms on the test split) and M1-v2 is
+  charged none.
 - Development and test scores of M1-v2 are close on the strict reading
-  (0.441 and 0.411). The test split has more mapped flood (6.4% of
-  evaluable cells against 4.5%).
+  (0.441 with 48.7% of the cells without an answer, and 0.411 with 67.9%).
+  The test split has more mapped flood (6.4% of evaluable cells against
+  4.5%).
 
 ## The T2 skill bar
 
@@ -251,25 +385,79 @@ conditions all pass. One of them is a GEOID held-out test IoU of at least
 0.40. The other three concern Mae Sai (abstention at most 0.20, unit
 coverage at least 0.80, a 3-day recency window) and cannot be assessed here.
 
-| Reading | M1-v2 pooled test IoU | At least 0.40? |
-| --- | ---: | --- |
-| Strict (declined cells count as "no flood found") | 0.411 | yes, by 0.011 |
-| Covered cells only | 0.506 | yes |
+| Reading | M1-v2 pooled test IoU, point estimate | Point estimate at least 0.40? | Lowest with one tile left out | Tile bootstrap, 95% range | Resamples at or above 0.40 |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Strict (declined cells count as "no flood found") | 0.411 (67.9% no answer) | yes, by 0.011 | 0.297 | 0.098 to 0.513 | 51.1% |
+| Covered cells only | 0.506 | yes | 0.434 | 0.284 to 0.579 | 87.1% |
 
 v1a does not say how declined cells count. The declared benchmark protocol
-fixed the reading before any tuning: both figures must reach 0.40. They do,
-so **the GEOID condition of the bar is met on this benchmark**. That
-sentence is a number against a rule. It does not make M1-v2 qualified,
-promoted or a basis for any class above E:
+fixed the reading before any tuning: both figures must reach 0.40.
+
+**Reading: point estimate 0.411; not distinguishable from 0.40 on 14
+tiles.** Both point estimates reach the minimum. The strict one does not
+hold when either of two tiles is removed, and half of the tile resamples
+fall below 0.40. The earlier text of this section said the condition "is
+met"; that was a bare yes on a point estimate and is withdrawn. Whether a
+point estimate with this spread counts as passing is for the owners to
+decide in v1b (see "Decisions for the owners").
+
+Pooled test IoU of M1-v2 with each test tile left out in turn:
+
+| Tile left out | M1-v2 on that tile | IoU, strict | IoU, covered cells | Cells without an answer | Both readings at least 0.40? |
+| ---: | --- | ---: | ---: | ---: | --- |
+| 35 | declined | 0.411 | 0.506 | 66.8% | yes |
+| 36 | declined | 0.412 | 0.506 | 65.1% | yes |
+| 37 | declined | 0.416 | 0.506 | 63.5% | yes |
+| 38 | declined | 0.427 | 0.506 | 64.4% | yes |
+| 39 | declined | 0.414 | 0.506 | 65.7% | yes |
+| 40 | declined | 0.414 | 0.506 | 64.9% | yes |
+| 41 | declined | 0.433 | 0.506 | 64.4% | yes |
+| 42 | answered | 0.297 | 0.434 | 75.9% | no |
+| 45 | declined | 0.411 | 0.506 | 67.4% | yes |
+| 46 | answered | 0.413 | 0.518 | 73.0% | yes |
+| 47 | answered | 0.427 | 0.541 | 74.1% | yes |
+| 48 | declined | 0.425 | 0.506 | 65.5% | yes |
+| 49 | answered | 0.380 | 0.500 | 72.2% | no |
+| 50 | declined | 0.427 | 0.506 | 67.2% | yes |
+
+How these checks were made. They use the per-tile counts in the committed
+summary and open no tile. The bootstrap draws 14 tiles with replacement,
+20,000 times, with a fixed seed, pools the counts of each draw and takes the
+2.5th and 97.5th percentiles. In 178 draws no answered tile was drawn; those
+have no covered IoU and count as below 0.40. The tile is the resampling
+unit. Neighbouring tiles are not independent, so the true spread is more
+likely wider than the range shown, and 14 tiles are few for this method.
+The checks were added after the score had been seen. They are a description of
+how much the score rests on single tiles, not a declared pass rule. The
+figures are in
+[geoid_m1_benchmark_v2_derived_checks.json](../../../outputs/geoid_m1_benchmark_v2_derived_checks.json),
+block `t2_skill_bar`, with the flag `robust: false`. A later lane reads that
+block. The boolean `m1_v2_reaches_the_geoid_condition: true` in the summary
+states the point estimate only and must not be used alone.
+
+**Requiring both readings does not make the bar proof against declining.**
+A code comment said that it does, and the declared protocol implies it. That
+was wrong.
+The covered reading ignores declined tiles. The strict reading scores a
+declined tile like an answer of "no flood": mapped flood in it is missed,
+and nothing in it can be a false alarm. Neither reading charges anything
+for declining a tile with little flood. The selection rule maximises the
+strict development IoU, so it favours configurations that decline such
+tiles, and the frozen one declines 9 of 15 development tiles and 10 of 14
+test tiles. The same pipeline with a threshold that almost never declines
+(the Otsu comparator at the same blocks) scores 0.216 on the test split.
+
+None of this makes M1-v2 qualified, promoted or a basis for any class above
+E:
 
 - It is agreement with a same-pass CEMS map on one foreign event, not
   independent accuracy.
-- The margin on the strict reading is small, and no uncertainty interval
-  was estimated. Two test tiles (42 and 49, both more than 23% flooded) hold
-  63% of the mapped flood of the test split and carry the score.
-- On these test tiles the method declined on 10 of 14 tiles, 68% of the
-  evaluable cells. The Mae Sai abstention condition (at most 0.20) is a
-  separate test, and this behaviour is a warning for it.
+- Two test tiles (42 and 49, both more than 23% flooded) hold 63% of the
+  mapped flood of the test split and carry the score.
+- On these test tiles the method declined on 10 of 14 tiles, 67.9% of the
+  evaluable cells. The Mae Sai abstention condition of v1a (at most 0.20) is
+  a separate test. A method that behaved there as it does here would fail
+  it.
 - The bar itself was written after a figure of 0.455 had been seen on these
   tiles.
 - M1-literal is declared unable to meet the bar by v1a, whatever it scores.
@@ -321,44 +509,44 @@ committed as a freeze.
 [geoid_m1_v2_tuning_log.jsonl](geoid_m1_v2_tuning_log.jsonl): two session
 records, 72 run records with per-tile detail, two selection records.
 
-| Run | Change | Direction | Block (cells) | Threshold scope | Session 1 IoU, strict | Session 2 IoU, strict | Session 2 IoU, covered cells | Session 2 precision | Session 2 recall, strict | Session 2 coverage | Session 2 tiles declined | Otsu comparator IoU, strict |
-| ---: | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **1** | delta-VH | darkening | 64 | per tile | 0.053 | **0.441** | 0.446 | 0.592 | 0.633 | 51.3% | 9 of 15 | 0.171 |
-| 2 | delta-VH | darkening | 64 | pooled | 0.020 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.239 |
-| 3 | delta-VH | darkening | 128 | per tile | 0.055 | 0.409 | 0.575 | 0.715 | 0.489 | 31.7% | 11 of 15 | 0.195 |
-| 4 | delta-VH | darkening | 128 | pooled | 0.014 | 0.369 | 0.369 | 0.508 | 0.574 | 99.8% | 0 of 15 | 0.268 |
-| 5 | delta-VH | darkening | 256 | per tile | 0.415 | 0.417 | 0.603 | 0.775 | 0.474 | 22.9% | 12 of 15 | 0.374 |
-| 6 | delta-VH | darkening | 256 | pooled | 0.011 | 0.361 | 0.361 | 0.461 | 0.625 | 99.8% | 0 of 15 | 0.285 |
-| 7 | delta-VH | bidirectional | 64 | per tile | 0.051 | 0.434 | 0.439 | 0.580 | 0.633 | 51.3% | 9 of 15 | 0.092 |
-| 8 | delta-VH | bidirectional | 64 | pooled | 0.019 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.111 |
-| 9 | delta-VH | bidirectional | 128 | per tile | 0.054 | 0.407 | 0.570 | 0.707 | 0.489 | 31.7% | 11 of 15 | 0.101 |
-| 10 | delta-VH | bidirectional | 128 | pooled | 0.014 | 0.369 | 0.369 | 0.508 | 0.574 | 99.8% | 0 of 15 | 0.103 |
-| 11 | delta-VH | bidirectional | 256 | per tile | 0.414 | 0.417 | 0.603 | 0.775 | 0.474 | 22.9% | 12 of 15 | 0.338 |
-| 12 | delta-VH | bidirectional | 256 | pooled | 0.011 | 0.361 | 0.361 | 0.461 | 0.625 | 99.8% | 0 of 15 | 0.113 |
-| 13 | delta-VV | darkening | 64 | per tile | 0.008 | 0.330 | 0.498 | 0.730 | 0.376 | 16.2% | 13 of 15 | 0.152 |
-| 14 | delta-VV | darkening | 64 | pooled | 0.012 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.183 |
-| 15 | delta-VV | darkening | 128 | per tile | 0.016 | 0.053 | 0.484 | 0.680 | 0.054 | 5.2% | 14 of 15 | 0.318 |
-| 16 | delta-VV | darkening | 128 | pooled | 0.015 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.174 |
-| 17 | delta-VV | darkening | 256 | per tile | 0.008 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.302 |
-| 18 | delta-VV | darkening | 256 | pooled | 0.019 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.169 |
-| 19 | delta-VV | bidirectional | 64 | per tile | 0.007 | 0.330 | 0.498 | 0.730 | 0.376 | 16.2% | 13 of 15 | 0.066 |
-| 20 | delta-VV | bidirectional | 64 | pooled | 0.011 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.069 |
-| 21 | delta-VV | bidirectional | 128 | per tile | 0.015 | 0.053 | 0.484 | 0.680 | 0.054 | 5.2% | 14 of 15 | 0.143 |
-| 22 | delta-VV | bidirectional | 128 | pooled | 0.014 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.072 |
-| 23 | delta-VV | bidirectional | 256 | per tile | 0.008 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.302 |
-| 24 | delta-VV | bidirectional | 256 | pooled | 0.019 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.169 |
-| 25 | mean of both | darkening | 64 | per tile | 0.394 | 0.368 | 0.491 | 0.573 | 0.507 | 49.7% | 8 of 15 | 0.222 |
-| 26 | mean of both | darkening | 64 | pooled | 0.022 | 0.358 | 0.358 | 0.531 | 0.523 | 99.8% | 0 of 15 | 0.258 |
-| 27 | mean of both | darkening | 128 | per tile | 0.075 | 0.394 | 0.532 | 0.622 | 0.518 | 38.5% | 10 of 15 | 0.237 |
-| 28 | mean of both | darkening | 128 | pooled | 0.018 | 0.365 | 0.365 | 0.501 | 0.573 | 99.8% | 0 of 15 | 0.272 |
-| 29 | mean of both | darkening | 256 | per tile | 0.433 | 0.429 | 0.618 | 0.768 | 0.493 | 23.6% | 11 of 15 | 0.475 |
-| 30 | mean of both | darkening | 256 | pooled | 0.018 | 0.364 | 0.364 | 0.476 | 0.607 | 99.8% | 0 of 15 | 0.279 |
-| 31 | mean of both | bidirectional | 64 | per tile | 0.380 | 0.362 | 0.477 | 0.558 | 0.507 | 58.5% | 7 of 15 | 0.097 |
-| 32 | mean of both | bidirectional | 64 | pooled | 0.021 | 0.358 | 0.358 | 0.531 | 0.523 | 99.8% | 0 of 15 | 0.100 |
-| 33 | mean of both | bidirectional | 128 | per tile | 0.073 | 0.391 | 0.526 | 0.613 | 0.518 | 38.5% | 10 of 15 | 0.115 |
-| 34 | mean of both | bidirectional | 128 | pooled | 0.017 | 0.365 | 0.365 | 0.501 | 0.573 | 99.8% | 0 of 15 | 0.105 |
-| 35 | mean of both | bidirectional | 256 | per tile | 0.432 | 0.429 | 0.618 | 0.768 | 0.493 | 23.6% | 11 of 15 | 0.419 |
-| 36 | mean of both | bidirectional | 256 | pooled | 0.017 | 0.364 | 0.364 | 0.476 | 0.607 | 99.8% | 0 of 15 | 0.109 |
+| Run | Change | Direction | Block (cells) | Threshold scope | Session 1 IoU, strict | Session 2 IoU, strict | Session 2 IoU, covered cells | Session 2 precision | Session 2 recall, strict | Session 2 coverage | Session 2 tiles declined | Otsu comparator IoU, strict | Otsu comparator tiles declined |
+| ---: | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **1** | delta-VH | darkening | 64 | per tile | 0.053 | **0.441** | 0.446 | 0.592 | 0.633 | 51.3% | 9 of 15 | 0.171 | 0 of 15 |
+| 2 | delta-VH | darkening | 64 | pooled | 0.020 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.239 | 0 of 15 |
+| 3 | delta-VH | darkening | 128 | per tile | 0.055 | 0.409 | 0.575 | 0.715 | 0.489 | 31.7% | 11 of 15 | 0.195 | 5 of 15 |
+| 4 | delta-VH | darkening | 128 | pooled | 0.014 | 0.369 | 0.369 | 0.508 | 0.574 | 99.8% | 0 of 15 | 0.268 | 0 of 15 |
+| 5 | delta-VH | darkening | 256 | per tile | 0.415 | 0.417 | 0.603 | 0.775 | 0.474 | 22.9% | 12 of 15 | 0.374 | 9 of 15 |
+| 6 | delta-VH | darkening | 256 | pooled | 0.011 | 0.361 | 0.361 | 0.461 | 0.625 | 99.8% | 0 of 15 | 0.285 | 0 of 15 |
+| 7 | delta-VH | bidirectional | 64 | per tile | 0.051 | 0.434 | 0.439 | 0.580 | 0.633 | 51.3% | 9 of 15 | 0.092 | 0 of 15 |
+| 8 | delta-VH | bidirectional | 64 | pooled | 0.019 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.111 | 0 of 15 |
+| 9 | delta-VH | bidirectional | 128 | per tile | 0.054 | 0.407 | 0.570 | 0.707 | 0.489 | 31.7% | 11 of 15 | 0.101 | 1 of 15 |
+| 10 | delta-VH | bidirectional | 128 | pooled | 0.014 | 0.369 | 0.369 | 0.508 | 0.574 | 99.8% | 0 of 15 | 0.103 | 0 of 15 |
+| 11 | delta-VH | bidirectional | 256 | per tile | 0.414 | 0.417 | 0.603 | 0.775 | 0.474 | 22.9% | 12 of 15 | 0.338 | 7 of 15 |
+| 12 | delta-VH | bidirectional | 256 | pooled | 0.011 | 0.361 | 0.361 | 0.461 | 0.625 | 99.8% | 0 of 15 | 0.113 | 0 of 15 |
+| 13 | delta-VV | darkening | 64 | per tile | 0.008 | 0.330 | 0.498 | 0.730 | 0.376 | 16.2% | 13 of 15 | 0.152 | 1 of 15 |
+| 14 | delta-VV | darkening | 64 | pooled | 0.012 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.183 | 0 of 15 |
+| 15 | delta-VV | darkening | 128 | per tile | 0.016 | 0.053 | 0.484 | 0.680 | 0.054 | 5.2% | 14 of 15 | 0.318 | 9 of 15 |
+| 16 | delta-VV | darkening | 128 | pooled | 0.015 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.174 | 0 of 15 |
+| 17 | delta-VV | darkening | 256 | per tile | 0.008 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.302 | 12 of 15 |
+| 18 | delta-VV | darkening | 256 | pooled | 0.019 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.169 | 0 of 15 |
+| 19 | delta-VV | bidirectional | 64 | per tile | 0.007 | 0.330 | 0.498 | 0.730 | 0.376 | 16.2% | 13 of 15 | 0.066 | 0 of 15 |
+| 20 | delta-VV | bidirectional | 64 | pooled | 0.011 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.069 | 0 of 15 |
+| 21 | delta-VV | bidirectional | 128 | per tile | 0.015 | 0.053 | 0.484 | 0.680 | 0.054 | 5.2% | 14 of 15 | 0.143 | 5 of 15 |
+| 22 | delta-VV | bidirectional | 128 | pooled | 0.014 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.072 | 0 of 15 |
+| 23 | delta-VV | bidirectional | 256 | per tile | 0.008 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.302 | 12 of 15 |
+| 24 | delta-VV | bidirectional | 256 | pooled | 0.019 | 0.000 | undefined | undefined | 0.000 | 0.0% | 15 of 15 | 0.169 | 0 of 15 |
+| 25 | mean of both | darkening | 64 | per tile | 0.394 | 0.368 | 0.491 | 0.573 | 0.507 | 49.7% | 8 of 15 | 0.222 | 2 of 15 |
+| 26 | mean of both | darkening | 64 | pooled | 0.022 | 0.358 | 0.358 | 0.531 | 0.523 | 99.8% | 0 of 15 | 0.258 | 0 of 15 |
+| 27 | mean of both | darkening | 128 | per tile | 0.075 | 0.394 | 0.532 | 0.622 | 0.518 | 38.5% | 10 of 15 | 0.237 | 4 of 15 |
+| 28 | mean of both | darkening | 128 | pooled | 0.018 | 0.365 | 0.365 | 0.501 | 0.573 | 99.8% | 0 of 15 | 0.272 | 0 of 15 |
+| 29 | mean of both | darkening | 256 | per tile | 0.433 | 0.429 | 0.618 | 0.768 | 0.493 | 23.6% | 11 of 15 | 0.475 | 10 of 15 |
+| 30 | mean of both | darkening | 256 | pooled | 0.018 | 0.364 | 0.364 | 0.476 | 0.607 | 99.8% | 0 of 15 | 0.279 | 0 of 15 |
+| 31 | mean of both | bidirectional | 64 | per tile | 0.380 | 0.362 | 0.477 | 0.558 | 0.507 | 58.5% | 7 of 15 | 0.097 | 0 of 15 |
+| 32 | mean of both | bidirectional | 64 | pooled | 0.021 | 0.358 | 0.358 | 0.531 | 0.523 | 99.8% | 0 of 15 | 0.100 | 0 of 15 |
+| 33 | mean of both | bidirectional | 128 | per tile | 0.073 | 0.391 | 0.526 | 0.613 | 0.518 | 38.5% | 10 of 15 | 0.115 | 0 of 15 |
+| 34 | mean of both | bidirectional | 128 | pooled | 0.017 | 0.365 | 0.365 | 0.501 | 0.573 | 99.8% | 0 of 15 | 0.105 | 0 of 15 |
+| 35 | mean of both | bidirectional | 256 | per tile | 0.432 | 0.429 | 0.618 | 0.768 | 0.493 | 23.6% | 11 of 15 | 0.419 | 8 of 15 |
+| 36 | mean of both | bidirectional | 256 | pooled | 0.017 | 0.364 | 0.364 | 0.476 | 0.607 | 99.8% | 0 of 15 | 0.109 | 0 of 15 |
 
 All figures are pooled over the 15 development tiles, primary comparison.
 The Otsu comparator is the same in both sessions. The chosen run is in bold.
@@ -380,6 +568,14 @@ What the table shows:
   reading because it declines on tiles with little or no flood, where a
   pooled threshold produces false alarms.
 - **delta-VV alone** declines on almost every tile.
+- **The Otsu comparator scores higher the more tiles it declines.** Its
+  seven best runs (0.475, 0.419, 0.374, 0.338, 0.318 and 0.302 twice) are
+  per-tile runs with 256-cell or 128-cell blocks that decline 7 to 12 of
+  the 15 tiles.
+  Where it declines on none it scores 0.07 to 0.29. One Otsu run (run 29,
+  0.475) is above the frozen Kittler-Illingworth run (0.441). The declared
+  selection rule reads the Kittler-Illingworth score only, so this did not
+  and could not change the choice.
 
 ## Results per tile
 
@@ -455,8 +651,9 @@ includes mapped flood inside declined tiles.
   declined** (7 tiles, 97,153 mapped flood cells), and so was tile 50 with
   13% mapped flood.
 - Both tiles without mapped flood in the test split, and all six in the
-  development split, were declined by M1-v2. M1-literal flags 27% to 31% of
-  the cells of those tiles.
+  development split, were declined by M1-v2. M1-literal flags 27% (test)
+  and 31% (development) of the cells of those tiles, pooled by split, and
+  25% to 44% per tile (tile 30 is the highest).
 - M1-literal reaches 0.54 to 0.64 only where more than 20% of the tile is
   flooded. Below 5% it stays under 0.16.
 
@@ -544,13 +741,27 @@ soil, short grass); high values are woodland and built-up areas.
 - M1-v2 answers on a third of the test cells. A method that declines this
   often would fail the Mae Sai abstention condition if it behaved the same
   way there. Whether it does is plan task A4.
+- The strict reading, which the selection rule maximises, rewards declining
+  tiles with little flood. The headline strict IoU is therefore not a
+  measure of how well the method maps flood where flood is sparse: on the
+  seven test tiles with up to 5% mapped flood it gave no answer at all.
+- The amended threshold rule declines where the flooded and the unchanged
+  class overlap. That includes tile 50 with 13% mapped flood and tiles 38,
+  41 and 48 with 3% to 4%. This is a property of the frozen method. It is
+  recorded here and not corrected: a correction would be a new version (v3)
+  and would need held-out data that has not been used.
 - The pre-event image is four months older and from the opposite orbit
   direction. Mae Sai has a 12-day same-orbit pair, a monsoon landscape and
   steep terrain. Nothing here says how either method behaves there.
 - The configuration was chosen among 36 runs on 15 tiles with a thin margin,
   after one amendment. The development figures are optimistic by
   construction; the test figures are the ones to quote.
-- No uncertainty interval was estimated for any score.
+- The only uncertainty estimate is the tile bootstrap and the
+  leave-one-tile-out table of the held-out M1-v2 score, added after the
+  score was seen. No other score has one.
+- Four fields of the frozen configuration are names the code does not act
+  on (see "Review corrections", item 6). The configuration SHA-256 alone
+  does not pin the method.
 
 ## What could not be done, and why
 
@@ -566,14 +777,97 @@ soil, short grass); high values are woodland and built-up areas.
   calibrated and geocoded by the publisher, and SNAP is not installed.
 - **Boundary error in metres:** not computed; the edge-band stratum stands in.
 - **Review by Rachmania:** not done yet. Decision R11 assigns the tuning to
-  the agent "for Rachmania to review". The held-out tiles are now used for
-  this configuration. Any change to M1-v2 after this point is a new version,
-  and its test score on these tiles would no longer be held out.
+  the agent "for Rachmania to review". The held-out scoring was run before
+  that review. The held-out tiles are now used for this configuration. Any
+  change to M1-v2 after this point is a new version, and its test score on
+  these tiles would no longer be held out. See "Decisions for the owners".
 - **RECEIPTS.jsonl:** the frozen configuration's SHA-256 is recorded in the
   freeze receipt and in this document, not yet in
   `docs/proposal_execution/RECEIPTS.jsonl`, which other lanes are editing.
 - **Mae Sai, FPPS, A-E classes, ensembles:** out of scope by instruction
   (plan task A4; guardrail GR5, protocol v1b is not signed).
+
+## Review corrections
+
+A review on 3 October 2026 checked the code, the data and the plan. It
+reports that a re-run with the frozen configuration reproduced every count
+and candidate hash on all 29 tiles, and it found no wrong score. It found
+nine defects in reporting, wording and provenance. Each was checked against
+the files before it was acted on, and all nine were confirmed.
+
+The declared protocol, the tuning log, the frozen configuration, its
+receipt, the held-out summary and the two code modules named in the receipt
+are bound to each other by SHA-256. They were not edited. Where one of them
+is wrong or incomplete, the correction is in this document and in
+[geoid_m1_benchmark_v2_addendum_1.json](geoid_m1_benchmark_v2_addendum_1.json),
+which names the files it corrects by their hashes.
+
+| # | Finding | What was done |
+| ---: | --- | --- |
+| 1 | The skill-bar verdict was a bare yes on a point estimate of 0.411 against 0.40 | Leave-one-tile-out figures and a tile bootstrap added beside the verdict; the verdict reworded; a derived file carries `robust: false` for later lanes |
+| 2 | The Otsu comparator was shown only at the blocks chosen for Kittler-Illingworth | The brief, "Reading the tables" and the tuning table now say so, give the Otsu run that beat the frozen configuration on development (0.475) and show that most of the gain over M1-literal is declining. No further Otsu variant was scored on the test tiles |
+| 3 | "Requiring both readings stops abstention from buying the bar" was false | Corrected here and in the addendum; the strict IoU is quoted with the share of cells without an answer in the headline tables and sentences |
+| 4 | The tuning log and the freeze receipt lack confidence and assumptions | See the note below this table and the addendum; the tuning script writes the fields in any future session |
+| 5 | The split attestations were constants, and the amendment check was not committed | The check was recomputed through a recording tile store and matches; the tuning script now writes what the store recorded. See "Order of work" |
+| 6 | Four fields of the frozen configuration are names the code does not act on | Recorded as a limit; a guard, `require_frozen_m1_v2`, checks the configuration SHA-256 and both code SHA-256 values together |
+| 7 | M1-literal adds a "below zero" clause the proposal does not contain | Stated in the brief and in "M1-literal as implemented"; the reading without the clause is reported for the development tiles only |
+| 8 | Dice was missing from the tables; "27% to 31%" was a pooled figure, not the per-tile range | Dice added to both by-split tables; the sentence corrected to 25% to 44% per tile |
+| 9 | The held-out scoring ran before Rachmania's review | Put first in "Decisions for the owners" |
+
+**Tuning log and freeze receipt (finding 4).** Both files are bound by
+hash and cannot take new fields. For
+[geoid_m1_v2_tuning_log.jsonl](geoid_m1_v2_tuning_log.jsonl) (76 records,
+72 of them sets of development scores) and
+[geoid_m1_v2_freeze_receipt.json](geoid_m1_v2_freeze_receipt.json) the
+following holds, and the addendum states it per file:
+
+- Source timestamp: Sentinel-1 pass of 3 January 2024, 05:34:06 UTC.
+- Confidence: low. One foreign event, a spatial split by tile, development
+  tiles only. A development figure quoted from the log (for example 0.441 or
+  0.475) is optimistic by construction, because the configuration was chosen
+  on these tiles.
+- Wording: every figure is agreement with a same-pass CEMS map, not
+  independent accuracy.
+- Assumptions: the tiles are linear sigma0 at 10 m with about 4.4 equivalent
+  looks; the label was drawn from the post-event pass itself; mapped
+  background is not confirmed dry land; permanent water in the label is
+  modelled; no DEM, slope, HAND or land-cover layer was used; the two passes
+  are almost four months apart and from different orbit directions.
+
+**The configuration hash does not pin the method (finding 6).** The frozen
+code never reads `kittler_illingworth_rule` or `isolated_speckle_cleaning`.
+On the benchmark path the tile loader names the speckle filter and the
+number of looks itself and ignores `speckle_filter` and `equivalent_looks`.
+A configuration with another value in one of these fields would load, behave
+the same and carry a different hash; a code change would alter the behaviour
+under the same configuration hash. What pins the behaviour is the
+configuration SHA-256 together with the two code SHA-256 values in the
+freeze receipt:
+
+- frozen configuration: `2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68`
+- `src/floodguard/sar_change_v2.py`: `3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134`
+- `src/floodguard/geoid_m1_benchmark.py`: `26d98f5cbdbcdcb1eeafe0b83a6e44b0ff4c9c7fb245078469952d95829e409f`
+
+Plan task A4 must check all three before it runs M1-v2 on Mae Sai, by
+calling `floodguard.geoid_m1_review.require_frozen_m1_v2`. Making the four
+fields operative is a code change and belongs to a later version.
+
+**Not done, and why.**
+
+- The sentence "so abstaining cannot buy the bar" is still in the docstring
+  of `clears_skill_bar` in `src/floodguard/geoid_m1_benchmark.py`. Editing
+  that file changes its SHA-256, and that hash is one of the three that pin
+  the method. The sentence is marked wrong here and in the addendum. If the
+  owners prefer a corrected file, the change is one sentence and needs a new
+  receipt entry that records the old and the new hash.
+- The amendment check was not appended to the tuning log, because the log is
+  bound by hash. Its recomputation is a separate file.
+- The reading of M1-literal without the "below zero" clause was not scored
+  on the test tiles. The held-out scoring is computed once. The owners can
+  ask for it; it would be a second, disclosed pass over the test tiles for
+  an untuned method.
+- Rachmania's review outcome was not written to the decision log. That file
+  belongs to another lane, and the review has not happened.
 
 ## Reproduce
 
@@ -586,9 +880,17 @@ holds `geoid_flood/`), or pass `--external-data`.
   to run now, because the summary exists. To check the numbers, delete
   `outputs/geoid_m1_benchmark_v2_summary.json` in a scratch checkout of the
   freeze commit and run it there; the result is deterministic.
-- Tests: `pytest tests/test_sar_change_v2.py tests/test_geoid_m1_benchmark.py`.
-  They use synthetic arrays; one test reads a real development tile and is
-  skipped when `FLOODGUARD_EXTERNAL_DATA` is unset.
+- Derived checks: `python scripts/derive_geoid_m1_review_checks.py`. It
+  reads the committed summary and tuning log only and writes the same bytes
+  every time; `--check` compares the committed file with a fresh
+  derivation.
+- Amendment check: `python scripts/diagnose_geoid_m1_v2_amendment_check.py`.
+  It opens the 15 development tiles only and first checks that the frozen
+  files and both code modules match the freeze receipt.
+- Tests: `pytest tests/test_sar_change_v2.py tests/test_geoid_m1_benchmark.py
+  tests/test_geoid_m1_review.py`. They use synthetic arrays; two tests read
+  a real development tile and are skipped when `FLOODGUARD_EXTERNAL_DATA`
+  is unset.
 
 ## Files
 
@@ -599,9 +901,14 @@ holds `geoid_flood/`), or pass `--external-data`.
 | [geoid_m1_v2_frozen_config.json](geoid_m1_v2_frozen_config.json) | Frozen configuration |
 | [geoid_m1_v2_freeze_receipt.json](geoid_m1_v2_freeze_receipt.json) | SHA-256 of the configuration, of v1a, of the protocol, the log and the code |
 | [../../../outputs/geoid_m1_benchmark_v2_summary.json](../../../outputs/geoid_m1_benchmark_v2_summary.json) | Full result: per tile, pooled, strata, input hashes, source timestamp, confidence, assumptions |
-| `src/floodguard/sar_change_v2.py` | M1-literal and M1-v2 |
-| `src/floodguard/geoid_m1_benchmark.py` | Split, loader, scoring, strata, freeze receipt |
+| [geoid_m1_benchmark_v2_addendum_1.json](geoid_m1_benchmark_v2_addendum_1.json) | Corrections after the review; the fields the log and the receipt lack; what a later lane must check |
+| [../../../outputs/geoid_m1_benchmark_v2_derived_checks.json](../../../outputs/geoid_m1_benchmark_v2_derived_checks.json) | Leave one tile out, tile bootstrap, declined-tile accounting, Otsu across the grid, Dice. From committed counts only |
+| [../../../outputs/geoid_m1_v2_amendment_check_reproduction.json](../../../outputs/geoid_m1_v2_amendment_check_reproduction.json) | The check behind amendment 1, recomputed on development tiles; M1-literal step 4 with and without the added clause |
+| `src/floodguard/sar_change_v2.py` | M1-literal and M1-v2. Bound by the freeze receipt; unchanged since the freeze |
+| `src/floodguard/geoid_m1_benchmark.py` | Split, loader, scoring, strata, freeze receipt. Bound by the freeze receipt; unchanged since the freeze |
+| `src/floodguard/geoid_m1_review.py` | Review checks, the recording tile store, the guard `require_frozen_m1_v2` |
 | `scripts/tune_geoid_m1_v2.py`, `scripts/score_geoid_m1_benchmark.py` | Thin runners |
+| `scripts/derive_geoid_m1_review_checks.py`, `scripts/diagnose_geoid_m1_v2_amendment_check.py` | Review runners |
 
 Attribution: modified Copernicus Sentinel-1 data (2023-2024); Copernicus
 Emergency Management Service Rapid Mapping products, (c) European Union;

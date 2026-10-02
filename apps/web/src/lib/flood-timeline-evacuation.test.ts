@@ -606,7 +606,7 @@ describe("Shelter sets side by side (T1 scenario; hours from illustrative stage 
     expect([whole(plan.vulnerableLost), whole(plan.vulnerableWithinReach)]).toEqual([320, 373]);
     expect([whole(plan.nonVulnerableLost), whole(plan.nonVulnerableWithinReach)]).toEqual([13_109, 24_537]);
     expect(plan).toMatchObject({ status: "ratio", reason: null, vulnerableRate: 0.8577, nonVulnerableRate: 0.5342, ratio: 1.606, band: "higher" });
-    expect(equityWording(plan, "en")).toEqual({ value: "1.61", sentence: "Proxy-vulnerable residents are about 1.6× more likely to lose access (85.77% vs 53.42%)." });
+    expect(equityWording(plan, "en")).toEqual({ value: "1.61", sentence: "Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.6× more likely to lose it (85.77% vs 53.42%)." });
     // The earlier denominator (all 7,152 and 74,647 residents counted) read 0.255, "lower": the direction changed.
     expect(whole(scoped.all.totals.vulnerable)).toBe(7_152);
     expect(whole(scoped.all.totals.nonVulnerable)).toBe(74_647);
@@ -773,33 +773,33 @@ describe("Evacuation Equity Gap wording on the page", () => {
   it("states the ratio to two decimals and compares the two rates in plain words", () => {
     const lower = equityWording(gap(1, 100, 50, 1000), "en");
     expect(lower.value).toBe("0.20");
-    expect(lower.sentence).toBe("Proxy-vulnerable residents are about 5.0× less likely to lose access (1.00% vs 5.00%).");
+    expect(lower.sentence).toBe("Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 5.0× less likely to lose it (1.00% vs 5.00%).");
     const higher = equityWording(gap(10, 100, 20, 1000), "en");
     expect(higher.value).toBe("5.00");
-    expect(higher.sentence).toBe("Proxy-vulnerable residents are about 5.0× more likely to lose access (10.00% vs 2.00%).");
+    expect(higher.sentence).toBe("Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 5.0× more likely to lose it (10.00% vs 2.00%).");
     const far = equityWording(gap(18, 10_000, 960, 10_000), "en");
     expect(far.value).toBe("0.02");
-    expect(far.sentence).toBe("Proxy-vulnerable residents are about 53× less likely to lose access (0.18% vs 9.60%).");
+    expect(far.sentence).toBe("Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 53× less likely to lose it (0.18% vs 9.60%).");
     const similar = equityWording(gap(10, 100, 100, 1000), "en");
     expect(similar.value).toBe("1.00");
-    expect(similar.sentence).toContain("about as likely as everyone else");
+    expect(similar.sentence).toMatch(/^Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about as likely as everyone else to lose it \(/);
     for (const value of [lower.value, higher.value, far.value, similar.value]) expect(value).toMatch(/^\d+\.\d{2}$/);
     expect(formatRate(0.0018)).toBe("0.18%");
-    expect(equityWording(gap(1, 100, 50, 1000), "th").sentence).toContain("น้อยกว่าประมาณ 5.0 เท่า (1.00% เทียบกับ 5.00%)");
+    expect(equityWording(gap(1, 100, 50, 1000), "th").sentence).toBe("ในกลุ่มผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงน้อยกว่ากลุ่มอื่นประมาณ 5.0 เท่า (1.00% เทียบกับ 5.00%)");
   });
 
   it("never prints 0.00: no vulnerable loss is said in words, and a tiny ratio reads '< 0.01'", () => {
     const zero = equityWording(gap(0, 100, 50, 1000), "en");
     expect(zero.value).toBe("no proxy-vulnerable resident has lost access");
-    expect(zero.sentence).toBe("At this replay hour, 5.00% of everyone else have.");
+    expect(zero.sentence).toBe("At this replay hour, 5.00% of everyone else who had a shelter within reach before the flood have lost it.");
     // Thai says "none", not "not yet" (which would imply it is about to happen).
     const thai = equityWording(gap(0, 100, 50, 1000), "th");
     expect(thai.value).toBe("ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง");
-    expect(thai.sentence).toBe("ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นสูญเสียการเข้าถึง 5.00%");
+    expect(thai.sentence).toBe("ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมสูญเสียการเข้าถึง 5.00%");
     expect(`${thai.value} ${thai.sentence}`).not.toContain("ยังไม่มี");
     const tiny = equityWording(gap(1, 10_000, 5_000, 10_000), "en");
     expect(tiny.value).toBe("< 0.01");
-    expect(tiny.sentence).toContain("less likely to lose access (0.01% vs 50.00%)");
+    expect(tiny.sentence).toContain("less likely to lose it (0.01% vs 50.00%)");
     // No input makes the page print "0.00" as the gap.
     const inputs: [number, number, number, number][] = [[0, 100, 50, 1000], [1, 10_000, 5_000, 10_000], [0, 100, 0, 1000], [0.004, 100, 10, 100], [3, 100_000, 9_000, 10_000]];
     for (const input of inputs) {
@@ -810,8 +810,26 @@ describe("Evacuation Equity Gap wording on the page", () => {
   it("says why there is no ratio when only proxy-vulnerable residents have lost access", () => {
     const only = equityWording(gap(5, 100, 0, 1000), "en");
     expect(only.value).toBe("no ratio shown");
-    expect(only.sentence).toBe("Only proxy-vulnerable residents have lost access (5.00% vs 0.00%), so the ratio cannot be computed.");
+    expect(only.sentence).toBe("Among residents with a shelter within reach before the flood, only proxy-vulnerable residents have lost it (5.00% vs 0.00%), so the ratio cannot be computed.");
     expect(equityWording(gap(5, 100, 0, 1000), "th").sentence).toContain("จึงคำนวณอัตราส่วนไม่ได้");
+  });
+
+  it("names the residents each rate divides by in every sentence that prints a rate, in English and Thai", () => {
+    // Option B (owner decision R8): a rate is the share of the residents within reach before the flood who lost access.
+    // A sentence that prints one without saying so reads as a share of the whole group.
+    const cases: [number, number, number, number][] = [
+      [10, 100, 20, 1000], [1, 100, 50, 1000], [10, 100, 100, 1000], [0, 100, 50, 1000], [5, 100, 0, 1000], [1, 10_000, 5_000, 10_000], [320, 373, 13_109, 24_537],
+    ];
+    for (const input of cases) {
+      const english = equityWording(gap(...input), "en").sentence;
+      const thai = equityWording(gap(...input), "th").sentence;
+      expect(english, JSON.stringify(input)).toMatch(/%/);
+      expect(english, JSON.stringify(input)).toMatch(/^Among residents with a shelter within reach before the flood, |of everyone else who had a shelter within reach before the flood have lost it\.$/);
+      expect(thai, JSON.stringify(input)).toMatch(/^ในกลุ่มผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม |กลุ่มอื่นที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมสูญเสียการเข้าถึง/);
+      expect(english, JSON.stringify(input)).not.toMatch(/^Proxy-vulnerable residents are|of everyone else have\.|to lose access \(/);
+    }
+    // The sentences without a rate need no denominator.
+    expect(equityWording(gap(0, 100, 0, 1000), "en").sentence).not.toMatch(/%/);
   });
 
   it("says how to read a ratio that points one way: the proxy, and that only residents within reach are counted", () => {

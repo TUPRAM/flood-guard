@@ -111,6 +111,7 @@ import { GLOSSARY, GLOSSARY_ORDER, localizedText, plainManifestText, roadNameTex
 import {
   ENVELOPE_COPY,
   envelopeCells,
+  envelopeCredit,
   envelopeHatch,
   paintEnvelope,
   parseSeasonEnvelopeDocument,
@@ -211,6 +212,8 @@ import {
   SeasonEnvelopeLegend,
   SeasonEnvelopeSources,
   SeasonEnvelopeSwatch,
+  envelopeFailure,
+  settledSeasonEnvelope,
   type SeasonEnvelopeState,
 } from "./mae-sai-season-envelope";
 import { WorkspaceHeader } from "./workspace-header";
@@ -466,16 +469,18 @@ async function loadPopulation(manifest: TimelineManifest, signal: AbortSignal): 
 }
 
 /**
- * The season envelope's statistics file and the cells of its 1-bit raster on the water grid. Either file missing,
- * refused (`parseSeasonEnvelopeDocument`) or on another grid rejects: the layer and its comparison are then not shown.
+ * The season envelope's two files, each loaded on its own: the statistics file (refused by
+ * `parseSeasonEnvelopeDocument` when it is not what the manifest names) and the cells of the 1-bit raster on the water
+ * grid. The comparison needs the statistics only, so a raster that is missing or on another grid withholds the layer
+ * and nothing else.
  */
-async function loadSeasonEnvelope(manifest: TimelineManifest, block: SeasonEnvelopeBlock, signal: AbortSignal): Promise<{ document: SeasonEnvelopeDocument; cells: Uint32Array }> {
-  const [document, bytes] = await Promise.all([
-    fetchJson<unknown>(block.files.statistics.href, signal).then((value) => parseSeasonEnvelopeDocument(value, block)),
-    fetchBytes(block.files.raster.href, signal),
-  ]);
-  const raster = typeof DecompressionStream === "function" ? await decodePng(bytes, inflateZlib) : await decodeWithCanvas(bytes);
-  return { document, cells: envelopeCells(raster, manifest.hand.width, manifest.hand.height) };
+function loadSeasonEnvelope(manifest: TimelineManifest, block: SeasonEnvelopeBlock, signal: AbortSignal): { statistics: Promise<SeasonEnvelopeDocument>; raster: Promise<Uint32Array> } {
+  return {
+    statistics: fetchJson<unknown>(block.files.statistics.href, signal).then((value) => parseSeasonEnvelopeDocument(value, block)),
+    raster: fetchBytes(block.files.raster.href, signal)
+      .then((bytes) => (typeof DecompressionStream === "function" ? decodePng(bytes, inflateZlib) : decodeWithCanvas(bytes)))
+      .then((decoded) => envelopeCells(decoded, manifest.hand.width, manifest.hand.height)),
+  };
 }
 
 /** Resident nodes and their per-set cut codes, parsed per the manifest layout. */
@@ -786,10 +791,15 @@ export function MaeSaiFloodTimeline() {
         const envelopeBlock = shippableEnvelope(manifest);
         if (envelopeBlock) {
           setEnvelope({ status: "loading", block: envelopeBlock });
-          loadSeasonEnvelope(manifest, envelopeBlock, signal).then(
-            (value) => { if (!signal.aborted) setEnvelope({ status: "ready", block: envelopeBlock, ...value }); },
-            () => { if (!signal.aborted) setEnvelope({ status: "error", block: envelopeBlock }); },
+          const { statistics, raster } = loadSeasonEnvelope(manifest, envelopeBlock, signal);
+          // The comparison is shown as soon as the statistics have loaded, whatever becomes of the raster.
+          statistics.then(
+            (document) => { if (!signal.aborted) setEnvelope((current) => (current.status === "loading" ? { ...current, document } : current)); },
+            () => undefined,
           );
+          void Promise.allSettled([statistics, raster]).then(([statisticsResult, rasterResult]) => {
+            if (!signal.aborted) setEnvelope(settledSeasonEnvelope(envelopeBlock, statisticsResult, rasterResult));
+          });
         } else setEnvelope({ status: "absent" });
         const [roads, facilities, tambons] = await Promise.all([
           fetchJson<ReplayData["roads"]>(manifest.vectors.roads.href, signal),
@@ -969,6 +979,7 @@ export function MaeSaiFloodTimeline() {
   const compareRight = compareOn && sides ? resolveImagery(sides[1]) : null;
   const comparing = compareOn && sides !== null;
 
+  const envelopeFailed = envelope.status === "error";
   const linkState = useMemo<ReplayLinkState>(() => ({
     hour,
     imagery,
@@ -980,13 +991,14 @@ export function MaeSaiFloodTimeline() {
     layers: {
       tambons: showTambons, roads: showRoads, facilities: showFacilities,
       reported: showReported, candidates: showCandidates, ineligible: showIneligible, cutoff: showCutoff,
-      viirs: showViirs, gauges: showGauges, envelope: showEnvelope,
+      // A layer that could not be loaded is not on the map, so a shared link does not ask for it.
+      viirs: showViirs, gauges: showGauges, envelope: showEnvelope && !envelopeFailed,
     },
     shelterSet,
     planK,
     accessScope,
   }), [hour, imagery, waterMode, waterOpacity, roadMode, comparing, sides, language, showTambons, showRoads, showFacilities,
-    showReported, showCandidates, showIneligible, showCutoff, showViirs, showGauges, showEnvelope, shelterSet, planK, accessScope]);
+    showReported, showCandidates, showIneligible, showCutoff, showViirs, showGauges, showEnvelope, envelopeFailed, shelterSet, planK, accessScope]);
 
   useEffect(() => {
     languageRef.current = language;
@@ -1635,7 +1647,8 @@ export function MaeSaiFloodTimeline() {
       };
 
       // --- Season envelope (scenario, SCN-ENV): its cells on the water grid, hatched on a canvas of its own above the
-      // water. The hatch is repainted after a zoom so its stripes keep about the same width on screen. Nothing here reads
+      // water. The hatch is repainted after a zoom, in whole raster cells: its stripes keep about the same width on
+      // screen up to two screen pixels per cell and are four cells wide closer in (`envelopeHatch`). Nothing here reads
       // the replay time: the layer is on or off by its own toggle only.
       let envelopeLayer: {
         overlay: ImageOverlay; context: CanvasRenderingContext2D; image: ImageData; pixels: Uint32Array; cells: Uint32Array; credit: string; hatchKey: string;
@@ -1972,12 +1985,25 @@ export function MaeSaiFloodTimeline() {
   // The season envelope is drawn while its toggle is on and its files have loaded; the replay time plays no part.
   const envelopeOnMap = envelope.status === "ready" && seasonEnvelopeDrawn(showEnvelope, true) ? envelope : null;
   useEffect(() => {
-    if (mapReady) controllerRef.current?.setEnvelope(envelopeOnMap ? envelopeOnMap.cells : null, envelopeOnMap ? envelopeOnMap.block.map_credit : "");
+    if (mapReady) controllerRef.current?.setEnvelope(envelopeOnMap ? envelopeOnMap.cells : null, envelopeCredit(envelopeOnMap?.block, envelopeOnMap !== null) ?? "");
   }, [mapReady, envelopeOnMap]);
   const exportEnvelope = useMemo<ExportEnvelope | null>(
-    () => (envelopeOnMap ? { cells: envelopeOnMap.cells, map_credit: envelopeOnMap.block.map_credit } : null),
+    () => (envelopeOnMap
+      ? { cells: envelopeOnMap.cells, credit: envelopeOnMap.block.credit, licence: envelopeOnMap.block.licence, licence_url: envelopeOnMap.block.licence_url }
+      : null),
     [envelopeOnMap],
   );
+  // The caption under the map takes room from the map, not from the timeline: its height is given to the style sheet,
+  // which subtracts it from the map on wide screens, where the stage is sticky and must keep fitting the window.
+  const stageElement = useRef<HTMLElement | null>(null);
+  const setEnvelopeCaptionHeight = useCallback((height: number) => {
+    const stage = stageElement.current;
+    if (!stage) return;
+    if (height > 0) stage.style.setProperty("--fg-envelope-caption-h", `${height}px`);
+    else stage.style.removeProperty("--fg-envelope-caption-h");
+  }, []);
+  // A link (or the toggle, before the files failed) asked for the layer and it cannot be drawn: say so by the map.
+  const envelopeMapFailure = showEnvelope ? envelopeFailure(envelope, language) : null;
 
   useEffect(() => {
     if (mapReady) controllerRef.current?.refreshTooltips();
@@ -2327,7 +2353,7 @@ export function MaeSaiFloodTimeline() {
           {/* Escape closes the "Map layers" drawer from anywhere in this section (the map, the legend, Play, the
               timeline), leaving focus where the reader is. Inside the drawer its own handler runs first and hands
               focus back to the button. */}
-          <section className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}
+          <section ref={stageElement} className={styles.stage} aria-label={t("Flood replay map and timeline", "แผนที่และเส้นเวลาการย้อนดูน้ำท่วม")}
             onKeyDown={(event) => {
               if (event.key === "Escape" && layersOpen) setLayersOpen(false);
             }}>
@@ -2387,7 +2413,6 @@ export function MaeSaiFloodTimeline() {
                       {compareNote && <p className={styles.compareNote} data-testid="compare-note">{compareNote}</p>}
                       {mudCue && <p className={styles.mudCue} data-testid="mud-cue">{mudCue}</p>}
                       {viirsNote && <p className={styles.viirsNote} data-testid="viirs-note">{viirsNote}</p>}
-                      {envelopeOnMap && <SeasonEnvelopeChip envelope={envelopeOnMap.block} language={lang} />}
                     </>
                   )}
                 </div>
@@ -2399,8 +2424,12 @@ export function MaeSaiFloodTimeline() {
                     <TimelineLegend {...legendProps} part="symbols" />
                   </details>
                 </details>
-                {/* One stack above the attribution: the basemap note over the "Clear route selection" button. */}
+                {/* One stack above the attribution: the scenario chip of the season envelope, the basemap note and the
+                    "Clear route selection" button. The chip sits here, not among the notes: on a phone the notes give
+                    way to the comparison labels and to an open legend, and the layer must never be on the map unlabelled. */}
                 <div className={styles.mapFoot} data-map-foot="" data-testid="map-foot">
+                  {envelopeOnMap && <SeasonEnvelopeChip envelope={envelopeOnMap.block} language={lang} />}
+                  {mapReady && envelopeMapFailure && <p className={styles.basemapNote} role="status" data-testid="envelope-failed-map">{envelopeMapFailure}</p>}
                   {mapReady && (basemapIssue || !online) && (
                     <p className={styles.basemapNote} role="status" data-testid="basemap-note">{online
                       ? t(
@@ -2508,10 +2537,10 @@ export function MaeSaiFloodTimeline() {
                     {showEnvelope && envelope.status === "loading" && <p className={styles.muted} role="status">{ENVELOPE_COPY.loading[lang]}</p>}
                   </fieldset>
                 )}
-                {envelope.status === "error" && <p className={styles.muted} role="status" data-testid="envelope-failed">{ENVELOPE_COPY.failed[lang]}</p>}
+                {envelopeFailed && <p className={styles.muted} data-testid="envelope-failed">{envelopeFailure(envelope, lang)}</p>}
               </div>
             </div>
-            {envelopeOnMap && <SeasonEnvelopeCaption envelope={envelopeOnMap.block} language={lang} />}
+            {envelopeOnMap && <SeasonEnvelopeCaption envelope={envelopeOnMap.block} language={lang} onHeight={setEnvelopeCaptionHeight} />}
 
             <div className={styles.dock}>
               {manifest && derived && (

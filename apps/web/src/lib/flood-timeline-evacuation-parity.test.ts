@@ -255,10 +255,10 @@ describe("Evacuation Equity Gap parity with floodguard.replay_equity", () => {
       }
     }
     expect(equityWording(gapOf(otherOnly), "en")).toEqual({
-      value: "no proxy-vulnerable resident has lost access", sentence: "At this replay hour, < 0.01% of everyone else have.",
+      value: "no proxy-vulnerable resident has lost access", sentence: "At this replay hour, < 0.01% of everyone else who had a shelter within reach before the flood have lost it.",
     });
     expect(equityWording(gapOf(edgeCase("small loss in both large groups")), "en")).toEqual({
-      value: "3.48", sentence: "Proxy-vulnerable residents are about 3.5× more likely to lose access (0.01% vs < 0.01%).",
+      value: "3.48", sentence: "Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 3.5× more likely to lose it (0.01% vs < 0.01%).",
     });
   });
 

@@ -151,7 +151,9 @@ if (timeline.access) {
 }
 // Season envelope (UNOSAT and GISTDA product 4009, a scenario layer): three files in a folder of their own, under CC BY-SA 4.0
 // with the credit and a change notice. The manifest names them by address, hash and size and holds no figure of theirs;
-// nothing of the envelope is a day observation, a replay layer or an export file. Without a label or a credit it must not ship.
+// nothing of the envelope is a day observation, a replay layer or an export file. Without its label, its standard sentence
+// (preliminary, not validated by FloodGuard) or a credit that names its holders it must not ship. The statistics file also
+// holds figures from other open data: it and the licence notice must name each with its own licence and credit.
 const envelopeFolder = `${timelineBase}${CASE_REPLAY_ENVELOPE_FOLDER}/`;
 const envelopeUrls = timelineFiles.filter((file) => file.url.startsWith(envelopeFolder)).map((file) => file.url.slice(envelopeFolder.length)).sort();
 if (!timeline.season_envelope) {
@@ -166,10 +168,16 @@ if (!timeline.season_envelope) {
       throw new Error(`season_envelope.files.${key} must give href, sha256 and bytes only, inside the envelope's folder`);
     }
   }
+  // The holders the credit begins with: a short credit that names the licence and nobody credits nobody.
+  const holders = credit.split(",", 1)[0].trim();
   if (envelope.lane !== "SCN-ENV" || envelope.shown !== true || envelope.day_independent !== true || envelope.licence !== "CC BY-SA 4.0"
     || envelope.credit !== credit || !String(envelope.map_credit).includes("CC BY-SA 4.0") || !String(envelope.label).startsWith("Scenario (SCN-ENV)")
     || !String(envelope.caption).includes("not an observation for any replay day")) {
     throw new Error("The season envelope lacks its scenario lane, label, caption, licence or credit, so it must not ship");
+  }
+  if (!holders || !String(envelope.map_credit).includes(holders)) throw new Error(`The season envelope's map credit must name its holders (${holders}), not the licence alone`);
+  if (typeof envelope.standard_sentence !== "string" || !envelope.standard_sentence.includes("did not validate") || !envelope.standard_sentence.includes("CC BY-SA 4.0")) {
+    throw new Error("The season envelope lacks its standard sentence (preliminary, used as provided, not validated by FloodGuard), so it must not ship");
   }
   const numbers = (value, path) => (typeof value === "number" ? [path]
     : value && typeof value === "object" ? Object.entries(value).flatMap(([key, item]) => numbers(item, `${path}.${key}`)) : []);
@@ -179,6 +187,10 @@ if (!timeline.season_envelope) {
   if (comparison.length !== 1 || comparison[0].statistics?.href !== envelope.files.statistics.href || !/not a validation/.test(comparison[0].use)
     || numbers(comparison[0], "check").join(",") !== "check.statistics.bytes") {
     throw new Error("The season-envelope comparison must name the statistics file, say it is not a validation and hold no figure");
+  }
+  // The envelope is a scenario layer, never the observed side of a check: the key says what the model is compared with.
+  if ("observed" in comparison[0] || typeof comparison[0].compared_with !== "string" || !comparison[0].compared_with.trim()) {
+    throw new Error("The season-envelope comparison must name the envelope under compared_with, never under observed");
   }
   if ((timeline.external_checks ?? []).some((check) => check.role === "independent_magnitude_check" && /4009|envelope/i.test(check.id))) {
     throw new Error("The season-envelope comparison is listed as an independent check");
@@ -210,6 +222,27 @@ if (!timeline.season_envelope) {
     || !/not a validation/.test(document.comparison?.use ?? "") || document.official_warning !== false || document.operational_status !== "non_operational") {
     throw new Error("The season-envelope statistics file lacks its lane, licence, credit, timestamps, confidence, assumptions or plausibility wording");
   }
+  if (document.standard_sentence !== envelope.standard_sentence) throw new Error("The season-envelope statistics file and the manifest give different standard sentences");
+  // Other inputs of the statistics file (terrain model, population grid, boundaries): each with the licence and the credit
+  // the manifest's own source line gives it, and what it was used for.
+  const sources = new Map(timeline.sources.map((source) => [source.id, source]));
+  const otherInputs = Array.isArray(document.other_inputs) ? document.other_inputs : [];
+  if (otherInputs.map((item) => item.id).join(",") !== "copernicus-dem,worldpop,cod-ab") {
+    throw new Error("The season-envelope statistics file must list its other inputs: the terrain model, the population grid and the boundaries");
+  }
+  for (const item of otherInputs) {
+    const source = sources.get(item.id);
+    if (!source || item.name !== source.name || item.licence !== source.licence || item.attribution !== source.attribution || !item.used_for) {
+      throw new Error(`The season-envelope statistics file gives another licence or credit for ${item.id} than the manifest's sources`);
+    }
+  }
+  // Residents inside the envelope: two counts, each with the rule it was counted by.
+  const residents = document.comparison.residents ?? {};
+  for (const [count, rule] of [["residents_in_envelope", "rule"], ["residents_in_envelope_replay_rule", "replay_rule"]]) {
+    if (!Number.isFinite(residents[count]) || typeof residents[rule] !== "string" || !residents[rule].trim()) {
+      throw new Error(`The season-envelope statistics file must give ${count} with its rule in ${rule}`);
+    }
+  }
   for (const row of [...document.comparison.district, ...document.comparison.by_tambon]) {
     for (const key of ["agreement_iou", "containment_model_in_envelope", "containment_envelope_in_model"]) {
       if (!(key in row) || (row[key] !== null && !(row[key] >= 0 && row[key] <= 1))) throw new Error(`Season-envelope comparison row lacks ${key}`);
@@ -224,6 +257,19 @@ if (!timeline.season_envelope) {
   for (const needle of ["Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)", "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
     credit, document.change_notice, document.comparison.change_notice, "envelope.png", "envelope.json", "สัญญาอนุญาต"]) {
     if (!licenceText.includes(needle)) throw new Error(`The season-envelope licence notice lacks: ${needle}`);
+  }
+  // Both halves of the notice name every other input with its licence and its credit; the Thai half states the changes in Thai.
+  const halves = licenceText.split("-".repeat(80));
+  if (halves.length !== 2) throw new Error("The season-envelope licence notice must have an English and a Thai half");
+  for (const half of halves) {
+    for (const item of otherInputs) {
+      for (const needle of [item.name, item.licence, item.attribution]) {
+        if (!half.includes(needle)) throw new Error(`A half of the season-envelope licence notice lacks, for ${item.id}: ${needle}`);
+      }
+    }
+  }
+  if (!halves[1].includes("FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย") || halves[0].includes("FloodGuard เปลี่ยนแปลงดังนี้")) {
+    throw new Error("The Thai half of the season-envelope licence notice must state what FloodGuard changed in Thai");
   }
   if ((timeline.exports?.files ?? []).some((file) => file.href.startsWith(envelopeFolder))) throw new Error("A season-envelope file is in the export pack");
 }

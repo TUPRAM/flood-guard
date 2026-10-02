@@ -389,14 +389,16 @@ describe("Evacuation access card (scenario)", () => {
     // Ranked plan of 8, all residents, at the peak: 320 of 373 against 13,109 of 24,537 within reach before the flood.
     const peakHtml = accessCard("en", "plan", shelters.knee_k, peak, "all");
     const peakText = text(withoutTips(peakHtml));
-    expect(peakText).toContain("Evacuation Equity Gap: 1.61 · Proxy-vulnerable residents are about 1.6× more likely to lose access (85.77% vs 53.42%).");
+    expect(peakText).toContain("Evacuation Equity Gap: 1.61 · Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.6× more likely to lose it (85.77% vs 53.42%).");
     expect(cellText(peakHtml, "equity-rule")).toBe("What is compared. Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
     // Both counts of each group: lost out of those within reach before the flood, and all residents counted as context.
     expect(cellText(peakHtml, "equity-counts")).toBe(
       "Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted). Everyone else: 13,109 lost of 24,537 within reach before the flood (74,647 residents counted).",
     );
     // The earlier denominator (all residents counted) read "less likely"; nothing on the card divides by it now.
-    expect(peakText).not.toMatch(/less likely to lose access \(/);
+    expect(peakText).not.toMatch(/less likely to lose (?:access|it) \(/);
+    // No sentence prints a rate without naming the residents it divides by.
+    expect(peakText).not.toMatch(/Proxy-vulnerable residents are about|of everyone else have\./);
     expect(peakText).not.toMatch(/320 of 7,152|13,109 of 74,647|all residents counted in that group/);
     expect(peakText).not.toMatch(/times as likely/);
     expect(cellText(peakHtml, "equity-why")).toBe(
@@ -419,7 +421,7 @@ describe("Evacuation access card (scenario)", () => {
     // Reported set, all residents, at the peak: none of the 2,440 proxy-vulnerable residents within reach lost access.
     const reportedHtml = accessCard("en", "reported", shelters.knee_k, peak, "all");
     const reported = text(withoutTips(reportedHtml));
-    expect(reported).toContain("Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, 22.08% of everyone else have.");
+    expect(reported).toContain("Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, 22.08% of everyone else who had a shelter within reach before the flood have lost it.");
     expect(reported).not.toContain("Evacuation Equity Gap: 0.00");
     expect(cellText(reportedHtml, "equity-counts")).toBe(
       "Proxy-vulnerable: 0 lost of 2,440 within reach before the flood (7,152 residents counted). Everyone else: 7,086 lost of 32,085 within reach before the flood (74,647 residents counted).",
@@ -428,7 +430,7 @@ describe("Evacuation access card (scenario)", () => {
     expect(reportedHtml).not.toContain("data-reason=");
     const thaiHtml = accessCard("th", "reported", shelters.knee_k, peak, "all");
     const thaiPeak = text(thaiHtml);
-    expect(thaiPeak).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง · ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นสูญเสียการเข้าถึง 22.08%");
+    expect(thaiPeak).toContain("ช่องว่างความเท่าเทียมในการอพยพ: ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง · ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมสูญเสียการเข้าถึง 22.08%");
     // "ยังไม่มี" ("not yet") would imply the loss is about to happen.
     expect(thaiPeak).not.toContain("ยังไม่มีผู้อยู่อาศัยกลุ่มเปราะบาง");
     expect(thaiPeak).toContain("สถานการณ์จำลองระดับ T1 (แบบจำลอง) กลุ่มเปราะบาง = ตัวแทนจากภูมิประเทศและความห่างไกล");
@@ -437,7 +439,7 @@ describe("Evacuation access card (scenario)", () => {
       "กลุ่มเปราะบางตามตัวแทน: สูญเสีย 0 จาก 2,440 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 7,152 คน) กลุ่มอื่น: สูญเสีย 7,086 จาก 32,085 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 74,647 คน)",
     );
     const thaiPlan = text(accessCard("th", "plan", shelters.knee_k, peak, "all"));
-    expect(thaiPlan).toContain("ช่องว่างความเท่าเทียมในการอพยพ: 1.61 · ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่าประมาณ 1.6 เท่า (85.77% เทียบกับ 53.42%)");
+    expect(thaiPlan).toContain("ช่องว่างความเท่าเทียมในการอพยพ: 1.61 · ในกลุ่มผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่ากลุ่มอื่นประมาณ 1.6 เท่า (85.77% เทียบกับ 53.42%)");
     expect(thaiPlan).toContain("ค่าที่สูงจึงบอกตำแหน่งของบ้านเหล่านั้นเทียบกับพื้นที่ราบที่ถูกน้ำท่วม");
     expect(findWordingViolations(thaiPlan)).toEqual([]);
   });

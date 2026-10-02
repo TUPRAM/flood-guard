@@ -631,7 +631,7 @@ try {
       }
       periods.sort((a, b) => a - b);
       const frame = document.querySelector("[class*='mapFrame']").getBoundingClientRect();
-      const boxes = [".leaflet-control-zoom", "[data-testid='map-notes']", "[data-testid='map-legend']", "[data-testid='basemap-note']", ".leaflet-control-attribution"]
+      const boxes = [".leaflet-control-zoom", "[data-testid='map-notes']", "[data-testid='map-legend']", "[data-testid='envelope-chip']", "[data-testid='basemap-note']", ".leaflet-control-attribution"]
         .flatMap((selector) => {
           const element = document.querySelector(selector);
           if (!element) return [];
@@ -656,7 +656,9 @@ try {
       };
     });
     if (state.chip !== "Scenario (SCN-ENV): 2024 season envelope" || !state.caption.includes("not an observation for any replay day")
-      || !state.caption.includes("Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009.") || !state.exportCredits.includes("UNOSAT and GISTDA · CC BY-SA 4.0")) {
+      || !state.caption.includes("FloodGuard did not validate it.")
+      || !state.caption.includes("Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009.")
+      || !state.exportCredits.includes("UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0) · clipped to Mae Sai district and rasterised by FloodGuard")) {
       throw new Error(`The saved season envelope lacks its chip, caption or credit offline at ${width} px: ${JSON.stringify(state)}`);
     }
     if (state.colours !== 3 || state.samples < 150 || state.periodPx < 7 || state.periodPx > 12) {

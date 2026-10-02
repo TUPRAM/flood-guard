@@ -444,7 +444,8 @@ export interface ExternalCheck {
  */
 export interface SeasonEnvelopeCheck {
   id: string;
-  observed: string;
+  /** What the model is set beside. Never `observed`: the envelope is a scenario layer, not the observed side of a check. */
+  compared_with: string;
   role: typeof SEASON_ENVELOPE_ROLE;
   /** "Season envelope comparison (scenario; plausibility, not validation)". */
   title: string;
@@ -479,7 +480,8 @@ export interface SeasonEnvelopeBlock {
   /** "Scenario (SCN-ENV): 2024 season envelope". */
   label: string;
   caption: string;
-  standard_sentence?: string;
+  /** "Unvalidated preliminary agency extent … FloodGuard did not validate it.": part of the caption under the map. */
+  standard_sentence: string;
   day_independent: true;
   day_rule: string;
   temporal_relation: "season_envelope";
@@ -489,7 +491,10 @@ export interface SeasonEnvelopeBlock {
   licence_url: string;
   /** Full attribution of the product, as its rights record gives it. */
   credit: string;
-  /** Short credit added to the map and to the PNG and video exports while the layer is visible. */
+  /**
+   * Short credit added to the map's credits while the layer is visible: the holders the full credit begins with, and
+   * the licence. An exported PNG or video carries the full credit, the licence and a change note instead.
+   */
   map_credit: string;
   rights_record: string;
   rights_note?: string;

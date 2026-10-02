@@ -173,6 +173,7 @@ RIGHTS_RECORD = ROOT / RIGHTS_BASIS_4009_PATH
 """The product 4009 rights record the bake reads. The bake stops unless the owners have confirmed it."""
 ENVELOPE_CHECK_ID = "unosat-4009-season-envelope"
 BOUNDARY_SOURCE = "the eight subdistricts of HDX Thailand COD-AB v01"
+BOUNDARY_SOURCE_THAI = "ตำบลทั้งแปดตาม HDX Thailand COD-AB v01"
 GENERATED_BY = "scripts/build_mae_sai_flood_timeline.py"
 Track = Callable[[Path], Path]
 HREF_PREFIX = f"/studies/mae-sai-2024-timeline/{REVISION}/"
@@ -578,7 +579,8 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     facilities = {"type": "FeatureCollection", "features": facility_features}
 
     # --- Population (WorldPop 2020) -------------------------------------------------------
-    coarse_pop, pop10 = evac.population_grid(track(external / "open_context/worldpop_population/tha_ppp_2020.tif"), aoi)
+    worldpop = track(external / "open_context/worldpop_population/tha_ppp_2020.tif")
+    coarse_pop, pop10 = evac.population_grid(worldpop, aoi)
     pop_hist = {tid: np.round(np.bincount(codes_aoi[zones == i + 1], weights=pop10[zones == i + 1], minlength=256), 1).tolist()
                 for i, tid in enumerate(tambon_ids)}
     density, density_cap = evac.density_codes(coarse_pop, aoi, water)
@@ -755,7 +757,8 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     # Its figures leave this function only for the stage's own files; nothing of them reaches timeline.json or the exports.
     envelope_data = unosat4009.season_envelope(
         external, rights, admin["features"], statistics_grid=aoi, raster_grid=water, codes=codes_aoi, zones=zones, tambon_ids=tambon_ids,
-        low_confidence=lowconf_aoi, residents=pop10, channel_code=CHANNEL_CODE, never_code=NEVER_CODE, hand_step_m=HAND_STEP_M,
+        low_confidence=lowconf_aoi, residents=pop10, population=worldpop, channel_code=CHANNEL_CODE, never_code=NEVER_CODE,
+        hand_step_m=HAND_STEP_M,
         stages=[{"id": "modelled_peak", "model_stage_m": max(k.stage_m for k in KEYFRAMES),
                  "model_extent": "The modelled peak (illustrative stage, 12 Sep 2024)", "model_residents_in_water": peak_people},
                 {"id": "largest_extent_13_19_sep", "model_stage_m": window_stage,
@@ -897,7 +900,7 @@ def write_season_envelope(result: dict, out_dir: Path, generated_at: str) -> dic
         rights_record={"path": RIGHTS_BASIS_4009_PATH.as_posix(), "sha256": file_sha256(RIGHTS_RECORD),
                        "confirmed_on": data["rights"]["owner_confirmation"]["confirmed_on"]},
         study_id=STUDY_ID, revision=REVISION, generated_at=generated_at, href_prefix=HREF_PREFIX, bounds=result["bounds"],
-        raster_cell_m=data["raster_cell_m"], worldpop_source=WORLDPOP_SOURCE)
+        raster_cell_m=data["raster_cell_m"], worldpop_source=WORLDPOP_SOURCE, sources=SOURCES, clip_geometry_thai=BOUNDARY_SOURCE_THAI)
 
 
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -1632,8 +1635,9 @@ def season_envelope_block(files: dict[str, dict], rights: dict) -> dict:
 def envelope_check(files: dict[str, dict], rights: dict) -> dict:
     """The season-envelope comparison as an external check: a role, a use and the statistics file, with no figure."""
     return {"id": ENVELOPE_CHECK_ID,
-            "observed": ("UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; "
-                         "the product is described to 22 Oct)"),
+            # Never "observed": the envelope is a scenario layer, not the observed side of a check (decision D3).
+            "compared_with": ("UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; "
+                              "the product is described to 22 Oct); a scenario layer, not an observation for any replay day"),
             "role": COMPARISON_ROLE, "title": unosat4009.COMPARISON_TITLE, "scope": "Mae Sai district",
             "statistics": {name: files["statistics"][name] for name in ("href", "sha256", "bytes")},
             "use": unosat4009.COMPARISON_USE, "tuning_rule": unosat4009.TUNING_RULE,

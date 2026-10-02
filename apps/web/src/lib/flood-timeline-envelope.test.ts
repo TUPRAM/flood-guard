@@ -1,7 +1,8 @@
 /**
  * The 2024 season envelope (UNOSAT and GISTDA product 4009) as a scenario layer of the replay: it ships only with
- * its label, licence and credit; no replay day selects it; its credit is added while it is visible and gone while it
- * is hidden; and it is drawn hatched, not by colour alone.
+ * its label, its standard sentence, its licence and a credit that names its holders; no replay day selects it; its
+ * credit is added while it is visible and gone while it is hidden; a statistics file that lacks anything the page
+ * reads is refused; and it is drawn hatched, not by colour alone.
  */
 
 import { createHash } from "node:crypto";
@@ -23,12 +24,16 @@ import {
   type TimelineManifest,
 } from "./flood-timeline";
 import {
-  creditsWithEnvelope,
+  creditHolders,
   ENVELOPE_COPY,
+  ENVELOPE_EXPORT_CHANGE,
+  ENVELOPE_HATCH_STEADY_SCALE,
   ENVELOPE_RGBA,
   envelopeCells,
   envelopeCredit,
   envelopeDifferenceList,
+  envelopeExportCredit,
+  envelopeExportCreditParts,
   envelopeHatch,
   envelopeHatchClass,
   envelopeIou,
@@ -87,10 +92,39 @@ describe("Season envelope: what ships", () => {
       expect(bytes.byteLength, file.href).toBe(file.bytes);
     }
     // The wording never calls the layer the September extent or GISTDA's map, and passes the shared lint.
-    for (const sentence of [block.label, block.caption, block.standard_sentence!, block.day_rule, ...block.assumptions]) {
+    for (const sentence of [block.label, block.caption, block.standard_sentence, block.day_rule, ...block.assumptions]) {
       expect(findWordingViolations(sentence, "season_envelope")).toEqual([]);
       expect(sentence).not.toMatch(/September extent|GISTDA's map/i);
     }
+  });
+
+  it("does not ship without its label, its standard sentence, its licence, or a credit that names its holders", () => {
+    const shipped = (change: (value: Record<string, unknown>) => void): boolean => {
+      const value = JSON.parse(JSON.stringify(manifest.season_envelope)) as Record<string, unknown>;
+      change(value);
+      return shippableEnvelope({ season_envelope: value as unknown as TimelineManifest["season_envelope"] }) !== null;
+    };
+    expect(shipped(() => undefined)).toBe(true);
+    // The caption under the map shows the standard sentence: without it nothing by the map says "preliminary, not validated".
+    expect(block.standard_sentence).toBe("Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.");
+    expect(shipped((value) => { delete value.standard_sentence; })).toBe(false);
+    expect(shipped((value) => { value.standard_sentence = " "; })).toBe(false);
+    expect(shipped((value) => { value.standard_sentence = "Agency extent, used as provided under CC BY-SA 4.0."; })).toBe(false);
+    // A map credit that names the licence and nobody, or only one of the holders, credits nobody.
+    expect(creditHolders(block.credit)).toBe("UNOSAT and GISTDA");
+    expect(creditHolders("One holder")).toBe("One holder");
+    expect(shipped((value) => { value.map_credit = "CC BY-SA 4.0"; })).toBe(false);
+    expect(shipped((value) => { value.map_credit = "GISTDA · CC BY-SA 4.0"; })).toBe(false);
+    expect(shipped((value) => { value.map_credit = "UNOSAT and GISTDA"; })).toBe(false);
+    expect(shipped((value) => { value.credit = ", FL20240912THA"; })).toBe(false);
+    for (const key of ["label", "caption", "licence", "licence_url", "credit", "map_credit", "files"]) expect(shipped((value) => { delete value[key]; }), key).toBe(false);
+    expect(shipped((value) => { value.label = "2024 season envelope"; })).toBe(false);
+    expect(shipped((value) => { value.caption = "Accumulated water, August to October 2024."; })).toBe(false);
+    expect(shipped((value) => { value.licence = "CC BY 4.0"; })).toBe(false);
+    expect(shipped((value) => { value.lane = "OBS"; })).toBe(false);
+    expect(shipped((value) => { value.day_independent = false; })).toBe(false);
+    expect(shippableEnvelope(null)).toBeNull();
+    expect(shippableEnvelope({})).toBeNull();
   });
 
   it("reads the statistics file only when it is the scenario envelope the manifest names", () => {
@@ -132,6 +166,48 @@ describe("Season envelope: what ships", () => {
     expect(refused((value) => { value.assumptions = []; })).toMatch(/assumptions/);
     expect(() => parseSeasonEnvelopeDocument(null, block)).toThrow(SeasonEnvelopeError);
     expect(() => parseSeasonEnvelopeDocument([], block)).toThrow(SeasonEnvelopeError);
+  });
+
+  it("refuses a statistics file that lacks anything the page reads, so the page says 'not shown' and never fails while drawing", () => {
+    const comparison = (value: Record<string, unknown>) => value.comparison as Record<string, unknown>;
+    const part = (value: Record<string, unknown>, key: string) => comparison(value)[key] as Record<string, unknown>;
+    const rows = (value: Record<string, unknown>, key: string) => comparison(value)[key] as Record<string, unknown>[];
+    const cases: [string, (value: Record<string, unknown>) => void, RegExp][] = [
+      ["no residents block", (value) => { delete comparison(value).residents; }, /both counts of residents/],
+      ["one count of residents only", (value) => { delete part(value, "residents").residents_in_envelope_replay_rule; }, /both counts of residents/],
+      ["a count without its rule", (value) => { delete part(value, "residents").rule; }, /both counts of residents/],
+      ["no residents of the model", (value) => { part(value, "residents").model_residents_in_water = "16060"; }, /both counts of residents/],
+      ["no lists of differences", (value) => { delete comparison(value).disagreement; }, /lists of largest differences/],
+      ["a list that is not a list", (value) => { part(value, "disagreement").envelope_water_the_model_lacks = "TH570903"; }, /lists of largest differences/],
+      ["no low-confidence block", (value) => { delete comparison(value).low_confidence; }, /low-confidence shares/],
+      ["a share above 1", (value) => { part(value, "low_confidence").share_inside_envelope_other = 60.8; }, /low-confidence shares/],
+      ["no land-cover note", (value) => { delete comparison(value).land_cover; }, /land-cover split/],
+      ["a land-cover split left out without a reason", (value) => { part(value, "land_cover").reason = ""; }, /land-cover split/],
+      ["no tuning rule", (value) => { delete part(value, "tuning").rule; }, /tuning statement and rule/],
+      ["no tuning block", (value) => { delete comparison(value).tuning; }, /tuning statement and rule/],
+      ["a district row without an area", (value) => { delete rows(value, "district")[0].model_km2; }, /areas, its ratios or its name/],
+      ["a district row with a text area", (value) => { rows(value, "district")[1].overlap_km2 = "55.1"; }, /areas, its ratios or its name/],
+      ["a district row without its extent", (value) => { delete rows(value, "district")[0].model_extent; }, /areas, its ratios or its name/],
+      ["a district row without its stage", (value) => { delete rows(value, "district")[0].model_stage_m; }, /areas, its ratios or its name/],
+      ["a subdistrict row without a ratio", (value) => { delete rows(value, "by_tambon")[2].agreement_iou; }, /areas, its ratios or its name/],
+      ["a subdistrict row with a ratio above 1", (value) => { rows(value, "by_tambon")[2].agreement_iou = 1.4; }, /areas, its ratios or its name/],
+      ["a subdistrict row without its difference", (value) => { delete rows(value, "by_tambon")[0].envelope_only_km2; }, /areas, its ratios or its name/],
+      ["a subdistrict row without its id", (value) => { delete rows(value, "by_tambon")[0].tambon_id; }, /areas, its ratios or its name/],
+      ["limits that are not a list", (value) => { value.limitations = "None."; }, /limits/],
+      ["no limits", (value) => { delete value.limitations; }, /limits/],
+      ["an assumption that is not text", (value) => { value.assumptions = [1]; }, /assumptions/],
+      ["no other inputs", (value) => { delete value.other_inputs; }, /other inputs/],
+      ["an other input without its credit", (value) => { (value.other_inputs as Record<string, unknown>[])[1].attribution = ""; }, /other inputs/],
+      ["an other input without its licence", (value) => { delete (value.other_inputs as Record<string, unknown>[])[0].licence; }, /other inputs/],
+    ];
+    for (const [name, change, message] of cases) {
+      const value = served();
+      change(value);
+      expect(() => parseSeasonEnvelopeDocument(value, block), name).toThrow(SeasonEnvelopeError);
+      expect(() => parseSeasonEnvelopeDocument(value, block), name).toThrow(message);
+    }
+    // A subdistrict without modelled water has no share to state: null is not a missing figure.
+    expect(document.comparison.by_tambon.some((row) => row.containment_envelope_in_model === null)).toBe(true);
   });
 });
 
@@ -183,32 +259,29 @@ describe("Season envelope: independent of the day slider", () => {
 });
 
 describe("Season envelope: credit while visible", () => {
-  it("adds the holders and CC BY-SA 4.0 to the credits while the layer is visible, and nothing while it is hidden", () => {
+  it("gives the map the holders and CC BY-SA 4.0 while the layer is visible, and nothing while it is hidden", () => {
     expect(envelopeCredit(block, true)).toBe("UNOSAT and GISTDA · CC BY-SA 4.0");
     expect(envelopeCredit(block, true)).toContain("CC BY-SA 4.0");
     expect(envelopeCredit(block, false)).toBeNull();
     expect(envelopeCredit(null, true)).toBeNull();
     expect(envelopeCredit(undefined, true)).toBeNull();
-    const standing = "© OpenStreetMap contributors · Water: FloodGuard model";
-    expect(creditsWithEnvelope(standing, block, true)).toEqual([standing, "UNOSAT and GISTDA · CC BY-SA 4.0"]);
-    expect(creditsWithEnvelope(standing, block, false)).toEqual([standing]);
-    expect(creditsWithEnvelope(standing, null, true)).toEqual([standing]);
-    expect(creditsWithEnvelope(standing, block, false).join(" · ")).not.toMatch(/CC BY-SA|UNOSAT|GISTDA/);
+    // The short credit names the holders the full credit begins with, and the licence.
+    expect(envelopeCredit(block, true)).toBe(`${creditHolders(block.credit)} · ${block.licence}`);
   });
 
-  it("hands the map layer its credit, so the map's own credit line follows the layer on and off", () => {
-    // The map credit is Leaflet's attribution control, which lists the credit of every layer on the map. The envelope's
-    // overlay is created with the manifest's map credit and is removed from the map when the layer is hidden.
-    const page = readFileSync(resolve(import.meta.dirname, "../components/mae-sai-flood-timeline.tsx"), "utf8");
-    expect(page).toContain('createCanvasOverlay(L, element, bounds, { pane: "fg-envelope", opacity: 1, className: styles.envelopeLayer, attribution: credit })');
-    expect(page).toContain('controllerRef.current?.setEnvelope(envelopeOnMap ? envelopeOnMap.cells : null, envelopeOnMap ? envelopeOnMap.block.map_credit : "")');
-    expect(page).toContain("envelopeLayer.overlay.remove();");
-    // The toggle alone decides, through the function that takes no replay time.
-    expect(page).toContain('const envelopeOnMap = envelope.status === "ready" && seasonEnvelopeDrawn(showEnvelope, true) ? envelope : null;');
-    // Only two things set the toggle: the checkbox itself and a shared link's own layer letter.
-    expect(page.match(/setShowEnvelope/g)).toHaveLength(3);
-    expect(page).toContain("setShowEnvelope(link.layers.envelope && envelopeBlock !== null);");
-    expect(page).toContain("layerToggle(showEnvelope, setShowEnvelope, ENVELOPE_COPY.toggle[lang], <SeasonEnvelopeSwatch />)");
+  it("gives an exported picture the product's full credit, the licence with its address and a change note", () => {
+    // A PNG or a video leaves the page, so the short map credit is not enough for it.
+    expect(envelopeExportCredit(block, "en")).toBe(
+      "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0) · clipped to Mae Sai district and rasterised by FloodGuard");
+    expect(envelopeExportCredit(block, "en").startsWith(`${block.credit} · ${block.licence} (`)).toBe(true);
+    expect(envelopeExportCredit(block, "th")).toBe(
+      "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0) · FloodGuard ตัดตามขอบเขตอำเภอแม่สายและแปลงเป็นราสเตอร์");
+    expect(envelopeExportCreditParts(block, "th")).toEqual({
+      published: "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0)",
+      change: ENVELOPE_EXPORT_CHANGE.th,
+    });
+    expect(block.licence_url).toBe("https://creativecommons.org/licenses/by-sa/4.0/");
+    expect(findWordingViolations(`${ENVELOPE_EXPORT_CHANGE.en} ${ENVELOPE_EXPORT_CHANGE.th}`, "ENVELOPE_EXPORT_CHANGE")).toEqual([]);
   });
 });
 
@@ -249,17 +322,26 @@ describe("Season envelope: the raster and its hatch", () => {
     expect(document.raster.bounds).toEqual(manifest.bounds);
   });
 
-  it("draws the layer hatched, with stripes of about the same width on screen at every zoom", () => {
+  it("draws the layer hatched: about 9 px on screen up to two pixels per cell, and four cells wide closer in", () => {
     // At 1 screen pixel per cell: a 9 px period, a 2 px dark stripe and a yellow edge beside it.
     expect(envelopeHatch(1)).toEqual({ period: 9, dark: 2, light: 2 });
-    // On a phone the raster is drawn at about a quarter of its size; zoomed in, at several pixels per cell.
-    for (const scale of [0.2, 0.25, 0.5, 1, 2, 4]) {
+    expect(ENVELOPE_HATCH_STEADY_SCALE).toBe(2);
+    // On a phone the raster is drawn at about a quarter of its size, on a wide map at one to two pixels per cell: the
+    // hatch is painted in whole cells, and up to two pixels per cell its period stays between 8 and 10 px on screen.
+    for (const scale of [0.2, 0.25, 0.5, 0.75, 1, 1.5, 2]) {
       const hatch = envelopeHatch(scale);
       expect(hatch.period * scale, `period at ${scale}`).toBeGreaterThanOrEqual(8);
-      expect(hatch.period * scale, `period at ${scale}`).toBeLessThanOrEqual(scale >= 2 ? 5 * scale : 10);
+      expect(hatch.period * scale, `period at ${scale}`).toBeLessThanOrEqual(10);
       expect(hatch.dark * scale, `stripe at ${scale}`).toBeGreaterThanOrEqual(Math.min(1.5, scale));
       expect(hatch.period).toBeGreaterThan(hatch.dark + hatch.light);
     }
+    // Closer in, a stripe cannot be thinner than one cell nor the period shorter than four cells: the hatch then grows
+    // with the zoom (22.5 px at 5.63 px per cell, about 45 px at 11 px per cell). It stays a hatch; its width is not constant.
+    for (const scale of [2.5, 4, 5.63, 11.25]) {
+      expect(envelopeHatch(scale), `hatch at ${scale}`).toEqual({ period: 4, dark: 1, light: 1 });
+      expect(envelopeHatch(scale).period * scale, `period at ${scale}`).toBeGreaterThan(9);
+    }
+    expect(envelopeHatch(5.63).period * 5.63).toBeCloseTo(22.5, 1);
     expect(envelopeHatch(0)).toEqual(envelopeHatch(1));
     expect(envelopeHatch(Number.NaN)).toEqual(envelopeHatch(1));
     // Stripes run "\\": a cell and the one below and to its right are on the same stripe. The low-confidence hatch runs "/".

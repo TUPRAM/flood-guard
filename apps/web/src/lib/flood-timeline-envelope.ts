@@ -7,9 +7,11 @@
  * takes a replay time. Setting the modelled water beside it is a plausibility comparison, not a validation.
  *
  * Its files (a 1-bit raster, a statistics file and a licence notice) are derived from the product and ship under
- * CC BY-SA 4.0 in a folder of their own. Whenever the layer is visible, the map credit and the credit of an exported
- * PNG or video add the product's holders and the licence. If the label, the caption, the credit or the licence cannot
- * be shown, the layer does not ship: `shippableEnvelope` and `parseSeasonEnvelopeDocument` refuse it.
+ * CC BY-SA 4.0 in a folder of their own. Whenever the layer is visible, the map credit adds the product's holders and
+ * the licence, and an exported PNG or video carries the product's full credit, the licence with its address and a
+ * note of what FloodGuard changed (`envelopeExportCredit`). If the label, the caption, the standard sentence (the
+ * extent is preliminary and FloodGuard did not validate it), the credit or the licence cannot be shown, the layer does
+ * not ship: `shippableEnvelope` and `parseSeasonEnvelopeDocument` refuse it.
  *
  * Pure logic only; no DOM access in this module.
  */
@@ -50,6 +52,9 @@ export interface EnvelopeDistrictRow extends EnvelopeAgreement { id: string; mod
 export interface EnvelopeTambonRow extends EnvelopeAgreement { tambon_id: string }
 
 /** `unosat4009/envelope.json`: what the layer is, its licence, credit and change notice, its areas and the comparison. */
+/** An input besides the product whose figures the statistics file holds; it keeps its own licence and credit. */
+export interface EnvelopeOtherInput { id: string; name: string; licence: string; attribution: string; used_for: string; timestamp?: string }
+
 export interface SeasonEnvelopeDocument {
   schema: string;
   id: string;
@@ -67,6 +72,9 @@ export interface SeasonEnvelopeDocument {
   credit: string;
   map_credit: string;
   change_notice: string;
+  /** Terrain model, population grid and boundaries: the inputs besides the product, each with its licence and credit. */
+  other_inputs: EnvelopeOtherInput[];
+  other_inputs_note?: string;
   changes: { repair: { parts_repaired: number; source_parts: number; source_parts_invalid: number; parts_meeting_district: number } };
   raster: { file: string; sha256: string; bytes: number; width: number; height: number; bit_depth: number; bounds: [[number, number], [number, number]] };
   area: {
@@ -92,7 +100,16 @@ export interface SeasonEnvelopeDocument {
     };
     /** Null figures with the reason: no land-cover map is among the replay's inputs. */
     land_cover: { computed: boolean; reason: string };
-    residents: { residents_in_envelope: number; model_residents_in_water: number; source: string; scope: string; rule: string };
+    /**
+     * Residents inside the envelope by two rules, each named: `residents_in_envelope` counts whole WorldPop cells
+     * (about 100 m) by their centre, the exposure definition stated for the planning overlay;
+     * `residents_in_envelope_replay_rule` counts like the replay's residents in water, so it is the one to set beside
+     * `model_residents_in_water`.
+     */
+    residents: {
+      residents_in_envelope: number; rule: string; residents_in_envelope_replay_rule: number; replay_rule: string;
+      model_residents_in_water: number; source: string; scope: string; rules_note?: string;
+    };
     tuning: { relation: string; statement: string; rule: string };
   };
   confidence: string;
@@ -116,12 +133,24 @@ const text = (value: unknown): value is string => typeof value === "string" && v
 const SHA256 = /^[a-f0-9]{64}$/;
 const fileReference = (value: unknown): value is HashedAsset => isRecord(value) && text(value.href) && typeof value.sha256 === "string"
   && SHA256.test(value.sha256) && typeof value.bytes === "number" && value.bytes > 0;
+const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+const share = (value: unknown): boolean => value === null || (finite(value) && value >= 0 && value <= 1);
+const texts = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === "string");
+
+/**
+ * The holders a credit names first: its text before the first comma ("UNOSAT and GISTDA, FL20240912THA, UNOSAT
+ * product 4009" gives "UNOSAT and GISTDA"). A short credit must name them, never the licence alone.
+ */
+export const creditHolders = (credit: string): string => credit.split(",", 1)[0].trim();
+/** What the standard sentence of a season envelope must say, whatever else it says. */
+export const SEASON_ENVELOPE_NOT_VALIDATED = "did not validate";
 
 /**
  * The manifest's season envelope when everything it needs to be shown is there: the scenario lane, the chip and the
- * caption (which must say that it is not an observation for any replay day), the licence, the credit, a map credit
- * that names the licence, and the three files. Otherwise null: without a label or a credit the layer does not ship,
- * so the page shows no toggle, no layer and no comparison.
+ * caption (which must say that it is not an observation for any replay day), the standard sentence (which must say
+ * that FloodGuard did not validate the extent), the licence, the credit, a map credit that names the licence and the
+ * holders the credit begins with, and the three files. Otherwise null: without a label, the standard sentence or a
+ * credit that names somebody the layer does not ship, so the page shows no toggle, no layer and no comparison.
  */
 export function shippableEnvelope(manifest: Pick<TimelineManifest, "season_envelope"> | null | undefined): SeasonEnvelopeBlock | null {
   const block: unknown = manifest?.season_envelope;
@@ -130,8 +159,10 @@ export function shippableEnvelope(manifest: Pick<TimelineManifest, "season_envel
   const ok = block.lane === SEASON_ENVELOPE_LANE && block.shown === true && block.day_independent === true
     && text(block.label) && block.label.startsWith(SEASON_ENVELOPE_CHIP_PREFIX)
     && text(block.caption) && block.caption.includes("not an observation for any replay day")
+    && text(block.standard_sentence) && block.standard_sentence.includes(SEASON_ENVELOPE_NOT_VALIDATED)
     && block.licence === SEASON_ENVELOPE_LICENCE && text(block.licence_url)
     && text(block.credit) && text(block.map_credit) && block.map_credit.includes(SEASON_ENVELOPE_LICENCE)
+    && creditHolders(block.credit).length > 0 && block.map_credit.includes(creditHolders(block.credit))
     && isRecord(files) && fileReference(files.raster) && fileReference(files.statistics) && fileReference(files.licence);
   return ok ? (block as unknown as SeasonEnvelopeBlock) : null;
 }
@@ -139,8 +170,12 @@ export function shippableEnvelope(manifest: Pick<TimelineManifest, "season_envel
 /**
  * Read a fetched `envelope.json` for the manifest's envelope `block`. It refuses, with a `SeasonEnvelopeError`, a
  * document that is not a scenario envelope, that does not say it is no observation for a replay day, whose licence,
- * credit or map credit differ from the manifest's, that lacks its change notice, or whose comparison is not the
- * plausibility comparison. A refused document means the layer and the comparison are not shown.
+ * credit or map credit differ from the manifest's, that lacks its change notice or its other inputs, or whose
+ * comparison is not the plausibility comparison. It also refuses a document that lacks any figure or sentence the
+ * page reads (a district or subdistrict row without its areas and ratios, the two lists of largest differences, the
+ * low-confidence shares, the two counts of residents with their rules, the land-cover note, the tuning rule, the
+ * limits): the page then says that the comparison is not shown, instead of failing while it draws it. A refused
+ * document means the layer and the comparison are not shown.
  */
 export function parseSeasonEnvelopeDocument(value: unknown, block: SeasonEnvelopeBlock): SeasonEnvelopeDocument {
   if (!isRecord(value)) throw new SeasonEnvelopeError("The season-envelope file is not an object.");
@@ -166,8 +201,38 @@ export function parseSeasonEnvelopeDocument(value: unknown, block: SeasonEnvelop
     throw new SeasonEnvelopeError("The season-envelope comparison must be a plausibility comparison with its district rows.");
   }
   if (!text(value.confidence) || !text(value.confidence_reason) || !text(value.source_timestamp) || !text(value.generated_at)
-    || !Array.isArray(value.assumptions) || value.assumptions.length === 0) {
-    throw new SeasonEnvelopeError("The season-envelope file lacks its confidence, timestamps or assumptions.");
+    || !texts(value.assumptions) || value.assumptions.length === 0 || !texts(value.limitations)) {
+    throw new SeasonEnvelopeError("The season-envelope file lacks its confidence, timestamps, assumptions or limits.");
+  }
+  const inputs = value.other_inputs;
+  if (!Array.isArray(inputs) || inputs.length === 0
+    || !inputs.every((item) => isRecord(item) && text(item.id) && text(item.name) && text(item.licence) && text(item.attribution) && text(item.used_for))) {
+    throw new SeasonEnvelopeError("The season-envelope file must list its other inputs, each with its licence and its credit.");
+  }
+  // Every figure and sentence the comparison group prints, so that a file of another shape gives "not shown", never a crash.
+  const agreement = (row: unknown): row is Record<string, unknown> => isRecord(row)
+    && ["model_km2", "envelope_km2", "overlap_km2", "model_only_km2", "envelope_only_km2"].every((key) => finite(row[key]))
+    && ["agreement_iou", "containment_model_in_envelope", "containment_envelope_in_model"].every((key) => share(row[key]));
+  if (!comparison.district.every((row) => agreement(row) && text(row.id) && text(row.model_extent) && finite(row.model_stage_m))
+    || !comparison.by_tambon.every((row) => agreement(row) && text(row.tambon_id))) {
+    throw new SeasonEnvelopeError("A row of the season-envelope comparison lacks its areas, its ratios or its name.");
+  }
+  const { disagreement, low_confidence: low, residents, land_cover: landCover, tuning } = comparison;
+  if (!isRecord(disagreement) || !texts(disagreement.envelope_water_the_model_lacks) || !texts(disagreement.modelled_water_outside_the_envelope)) {
+    throw new SeasonEnvelopeError("The season-envelope comparison lacks its lists of largest differences.");
+  }
+  if (!isRecord(low) || !share(low.share_inside_envelope_low_confidence) || !share(low.share_inside_envelope_other)) {
+    throw new SeasonEnvelopeError("The season-envelope comparison lacks its low-confidence shares.");
+  }
+  if (!isRecord(residents) || !finite(residents.residents_in_envelope) || !text(residents.rule) || !finite(residents.residents_in_envelope_replay_rule)
+    || !text(residents.replay_rule) || !finite(residents.model_residents_in_water)) {
+    throw new SeasonEnvelopeError("The season-envelope comparison must give both counts of residents in the envelope, each with its rule, and the model's.");
+  }
+  if (!isRecord(landCover) || typeof landCover.computed !== "boolean" || (!landCover.computed && !text(landCover.reason))) {
+    throw new SeasonEnvelopeError("The season-envelope comparison must say whether the land-cover split was computed, and why not.");
+  }
+  if (!isRecord(tuning) || !text(tuning.statement) || !text(tuning.rule)) {
+    throw new SeasonEnvelopeError("The season-envelope comparison lacks its tuning statement and rule.");
   }
   return value as unknown as SeasonEnvelopeDocument;
 }
@@ -181,17 +246,31 @@ export function seasonEnvelopeDrawn(toggle: boolean, ready: boolean): boolean {
 }
 
 /**
- * The credit the map and the PNG and video exports add for the envelope: its holders and its licence while the layer
- * is visible, nothing while it is hidden.
+ * The credit the map adds for the envelope: its holders and its licence while the layer is visible, nothing while it
+ * is hidden. The caption under the map carries the full credit, the licence link and what FloodGuard changed.
  */
 export function envelopeCredit(envelope: Pick<SeasonEnvelopeBlock, "map_credit"> | null | undefined, visible: boolean): string | null {
   return visible && envelope ? envelope.map_credit : null;
 }
 
-/** Credits of a map or an export: the standing credits, then the envelope's while its layer is visible. */
-export function creditsWithEnvelope(credits: string, envelope: Pick<SeasonEnvelopeBlock, "map_credit"> | null | undefined, visible: boolean): string[] {
-  const added = envelopeCredit(envelope, visible);
-  return added ? [credits, added] : [credits];
+/** What an exported picture needs of the envelope's block to credit it in full. */
+export type EnvelopeExportCredit = Pick<SeasonEnvelopeBlock, "credit" | "licence" | "licence_url">;
+
+/**
+ * The credit an exported PNG or video carries for the envelope. The picture leaves the page, so it is an adaptation
+ * of the product on its own: it states the product's full credit as the rights record gives it (holders, event code
+ * and product number), the licence with its address, and what FloodGuard changed. The credit and the licence stay as
+ * published; the change note follows the picture's language. The exports wrap this text, they never cut it.
+ */
+export function envelopeExportCredit(envelope: EnvelopeExportCredit, language: Language): string {
+  const parts = envelopeExportCreditParts(envelope, language);
+  return `${parts.published} · ${parts.change}`;
+}
+
+/** The two parts of `envelopeExportCredit`: the credit and the licence as published, and the change note in `language`. */
+export function envelopeExportCreditParts(envelope: EnvelopeExportCredit, language: Language): { published: string; change: string } {
+  const address = envelope.licence_url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  return { published: `${envelope.credit} · ${envelope.licence} (${address})`, change: ENVELOPE_EXPORT_CHANGE[language] };
 }
 
 /** Cells of the decoded 1-bit raster that lie inside the envelope (sample at or above 128). */
@@ -221,9 +300,16 @@ export const ENVELOPE_RGBA = {
 /** Hatch geometry in raster cells: stripes run "\\" (the low-confidence hatch runs "/"). */
 export interface EnvelopeHatch { period: number; dark: number; light: number }
 
+/** Screen pixels per raster cell up to which the hatch keeps its 9 px period; a closer view widens it (see `envelopeHatch`). */
+export const ENVELOPE_HATCH_STEADY_SCALE = 2;
+
 /**
- * Hatch for a raster drawn at `screenScale` screen pixels per raster cell, so the stripes keep about the same width
- * on screen at every zoom: a 9 px period with a 2 px dark stripe and a 1.5 px yellow edge.
+ * Hatch for a raster drawn at `screenScale` screen pixels per raster cell. The hatch is painted in whole raster cells
+ * (about 15 m), so its width on screen is steady only while a cell is small: up to `ENVELOPE_HATCH_STEADY_SCALE`
+ * screen pixels per cell the period stays about 9 px, with a dark stripe of about 2 px and a yellow edge of about
+ * 1.5 px. Closer in, a stripe cannot be thinner than one cell and the period cannot be shorter than four cells, so
+ * the hatch grows with the zoom (four cells: about 22 px at 5.6 px per cell) and its stripes show the cells' steps.
+ * The pattern stays a hatch at every zoom; only its width is not constant.
  */
 export function envelopeHatch(screenScale: number): EnvelopeHatch {
   const scale = Number.isFinite(screenScale) && screenScale > 0 ? screenScale : 1;
@@ -274,7 +360,22 @@ export const ENVELOPE_COPY = {
     en: "The season envelope could not be loaded, so its layer and its comparison are not shown.",
     th: "โหลดขอบเขตน้ำตลอดฤดูไม่สำเร็จ จึงไม่แสดงชั้นข้อมูลและการเทียบของขอบเขตนี้",
   },
+  // The statistics loaded and the raster did not: the comparison needs only the statistics, so it stays.
+  layerFailed: {
+    en: "The season envelope's map layer could not be loaded, so the layer is not shown. Its comparison figures are still shown under “Evidence for this moment”.",
+    th: "โหลดชั้นแผนที่ของขอบเขตน้ำตลอดฤดูไม่สำเร็จ จึงไม่แสดงชั้นข้อมูลนี้ ตัวเลขการเทียบยังแสดงอยู่ในหัวข้อ “หลักฐานของช่วงเวลานี้”",
+  },
+  comparisonFailed: {
+    en: "The figures of this comparison are not shown: its statistics file could not be loaded.",
+    th: "ไม่แสดงตัวเลขของการเทียบนี้ เนื่องจากโหลดไฟล์สถิติไม่สำเร็จ",
+  },
 } as const satisfies Record<string, Localized>;
+
+/** What FloodGuard changed, as an exported picture says it after the product's credit and licence. */
+export const ENVELOPE_EXPORT_CHANGE: Localized = {
+  en: "clipped to Mae Sai district and rasterised by FloodGuard",
+  th: "FloodGuard ตัดตามขอบเขตอำเภอแม่สายและแปลงเป็นราสเตอร์",
+};
 
 /** Subdistrict names for a list of ids, joined for a sentence ("Ko Chang (11.6 km²), Mae Sai (5.6 km²) and …"). */
 export function envelopeDifferenceList(

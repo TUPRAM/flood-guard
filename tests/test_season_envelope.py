@@ -19,12 +19,16 @@ from floodguard.season_envelope import (
     COMPARISON_ROLE,
     COMPARISON_USE,
     ENVELOPE_LANE,
+    OTHER_INPUT_KEYS,
+    RESIDENT_COUNT_RULES,
     SeasonEnvelopeError,
+    credit_holders,
     document_problems,
     fill_change_notice,
     largest_differences,
     licence_notice,
     mask_agreement,
+    other_input_problems,
     residents_inside,
     share_inside,
     zone_agreement,
@@ -176,6 +180,12 @@ def test_change_notice_fills_every_placeholder_or_refuses() -> None:
         fill_change_notice(TEMPLATE + " Simplified to {tolerance_m} m.", **values)
 
 
+OTHER_INPUTS = [
+    {"id": "terrain", "name": "A terrain model", "licence": "Terrain licence (free, attribution)", "attribution": "© Terrain holders", "used_for": "The modelled water."},
+    {"id": "population", "name": "A population grid", "licence": "CC BY 4.0", "attribution": "Population grid makers", "used_for": "The residents counts."},
+]
+
+
 def licence_arguments() -> dict:
     return {
         "title": "Licence notice for the derived files",
@@ -186,9 +196,16 @@ def licence_arguments() -> dict:
         "change_notices": {"envelope.png": "Changed by FloodGuard: clipped.", "envelope.json": "Changed by FloodGuard: clipped and counted."},
         "source_lines": ["Source name", "Archive: file.zip"],
         "limits": ["Not legal advice."],
+        "other_inputs": OTHER_INPUTS,
+        "other_inputs_note": "The statistics file also holds figures from the open data below; each keeps its own credit and licence.",
         "thai": {"title": "ประกาศสัญญาอนุญาต", "headings": {"files": "ไฟล์", "source": "แหล่งข้อมูล", "credit": "การให้เครดิต", "licence": "สัญญาอนุญาต",
-                                                     "share_alike": "การอนุญาตแบบเดียวกัน", "changes": "สิ่งที่เปลี่ยนแปลง", "limits": "ข้อจำกัด"},
-                 "source_lines": ["ชื่อแหล่งข้อมูล"], "share_alike": "เผยแพร่ภายใต้สัญญาอนุญาตเดียวกัน", "limits": ["ไม่ใช่คำแนะนำทางกฎหมาย"]},
+                                                     "share_alike": "การอนุญาตแบบเดียวกัน", "changes": "สิ่งที่เปลี่ยนแปลง",
+                                                     "other_inputs": "ข้อมูลนำเข้าอื่น", "limits": "ข้อจำกัด"},
+                 "source_lines": ["ชื่อแหล่งข้อมูล"], "share_alike": "เผยแพร่ภายใต้สัญญาอนุญาตเดียวกัน", "limits": ["ไม่ใช่คำแนะนำทางกฎหมาย"],
+                 "change_notices": {"envelope.png": "FloodGuard เปลี่ยนแปลง: ตัดตามขอบเขต", "envelope.json": "FloodGuard เปลี่ยนแปลง: ตัดตามขอบเขตและนับ"},
+                 "other_inputs_note": "ไฟล์สถิติมีตัวเลขจากข้อมูลเปิดด้านล่างนี้ด้วย",
+                 "other_inputs_labels": {"licence": "สัญญาอนุญาต", "credit": "เครดิต", "used_for": "ใช้สำหรับ"},
+                 "other_inputs_used_for": {"terrain": "น้ำจากแบบจำลอง", "population": "จำนวนผู้อยู่อาศัย"}},
     }
 
 
@@ -203,11 +220,44 @@ def test_licence_notice_states_licence_credit_and_changes_in_english_and_thai() 
             assert needle in half, needle
     assert "share your version under the same licence, CC BY-SA 4.0" in english and "Not legal advice." in english and "Archive: file.zip" in english
     assert "ประกาศสัญญาอนุญาต" in thai and "ไม่ใช่คำแนะนำทางกฎหมาย" in thai and "ชื่อแหล่งข้อมูล" in thai and "Source name" not in thai
+    # What was changed is readable in Thai: the Thai half gives each notice in Thai first, then the English notice as published.
+    assert "FloodGuard เปลี่ยนแปลง: ตัดตามขอบเขต" not in english
+    assert thai.index("FloodGuard เปลี่ยนแปลง: ตัดตามขอบเขต") < thai.index("Changed by FloodGuard: clipped.")
+    assert thai.index("FloodGuard เปลี่ยนแปลง: ตัดตามขอบเขตและนับ") < thai.index("Changed by FloodGuard: clipped and counted.")
+    # The other inputs keep their own licences and credits, in both halves, each with what it was used for.
+    assert "7. Other inputs (their own credits and licences)" in english and "8. Limits" in english
+    assert "7. ข้อมูลนำเข้าอื่น" in thai and "8. ข้อจำกัด" in thai
+    for half, labels, uses in ((english, ("Licence", "Credit", "Used for"), ("The modelled water.", "The residents counts.")),
+                               (thai, ("สัญญาอนุญาต", "เครดิต", "ใช้สำหรับ"), ("น้ำจากแบบจำลอง", "จำนวนผู้อยู่อาศัย"))):
+        for item, use in zip(OTHER_INPUTS, uses):
+            for needle in (f"- {item['name']}", f"{labels[0]}: {item['licence']}", f"{labels[1]}: {item['attribution']}", f"{labels[2]}: {use}"):
+                assert needle in half, needle
+    assert "The statistics file also holds figures from the open data below" in english and "ไฟล์สถิติมีตัวเลขจากข้อมูลเปิดด้านล่างนี้ด้วย" in thai
     # A notice without a credit, a licence link or a change notice for a file it covers is refused.
     for change in ({"credit": " "}, {"files": []}, {"change_notices": {}}, {"change_notices": {"other.png": "x"}},
                    {"licence": {"name": "CC BY-SA 4.0", "full_name": "x", "url": "", "legal_code_url": "y"}}):
         with pytest.raises(SeasonEnvelopeError):
             licence_notice(**{**licence_arguments(), **change})
+    # So is one without its other inputs, with an input that lacks its licence or its credit, or without the Thai of either.
+    arguments = licence_arguments()
+    for change in ({"other_inputs": []}, {"other_inputs_note": " "}, {"other_inputs": [{**OTHER_INPUTS[0], "licence": ""}]},
+                   {"other_inputs": [{key: value for key, value in OTHER_INPUTS[1].items() if key != "attribution"}]},
+                   {"thai": {**arguments["thai"], "change_notices": {"envelope.png": "FloodGuard เปลี่ยนแปลง"}}},
+                   {"thai": {**arguments["thai"], "other_inputs_used_for": {"terrain": "น้ำจากแบบจำลอง"}}},
+                   {"thai": {**arguments["thai"], "other_inputs_note": ""}}):
+        with pytest.raises(SeasonEnvelopeError):
+            licence_notice(**{**arguments, **change})
+
+
+def test_other_inputs_need_a_name_a_licence_a_credit_and_a_use() -> None:
+    assert OTHER_INPUT_KEYS == ("id", "name", "licence", "attribution", "used_for")
+    assert other_input_problems(OTHER_INPUTS) == []
+    assert other_input_problems(None) == other_input_problems([]) == other_input_problems("CC BY 4.0") == [
+        "other_inputs must list every input besides the product, each with its licence and its credit"]
+    assert other_input_problems([{**OTHER_INPUTS[0], "attribution": " "}, "WorldPop"]) == [
+        "other_inputs[0] lacks attribution", *(f"other_inputs[1] lacks {key}" for key in OTHER_INPUT_KEYS)]
+    # A short credit names the holders the full credit begins with.
+    assert credit_holders(CREDIT) == "UNOSAT and GISTDA" and credit_holders("One holder") == "One holder" and credit_holders("") == ""
 
 
 # --- What a published document must keep -------------------------------------------------------------------------
@@ -220,6 +270,8 @@ def document() -> dict:
         "lane": ENVELOPE_LANE, "not_an_observation_for_any_replay_day": True,
         "licence": {"name": "CC BY-SA 4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/"},
         "credit": CREDIT, "map_credit": "UNOSAT and GISTDA · CC BY-SA 4.0", "change_notice": notice,
+        "standard_sentence": "Unvalidated preliminary agency extent, used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+        "other_inputs": copy.deepcopy(OTHER_INPUTS),
         "source_timestamp": "2024-08-01/2024-10-22", "generated_at": "2026-10-02T18:00:00+07:00", "season_window": "2024-08-01/2024-10-22",
         "confidence": "low", "confidence_reason": "A preliminary agency product beside an illustrative model.", "assumptions": ["Used as provided."],
         "source": {"field_validation": 0},
@@ -228,6 +280,8 @@ def document() -> dict:
             "role": COMPARISON_ROLE, "use": f"{COMPARISON_USE} The figures say where the two differ.", "change_notice": notice,
             "district": [{"id": "modelled_peak", **mask_agreement(MODEL, ENVELOPE, 1.0)}],
             "by_tambon": [{"tambon_id": "west", **mask_agreement(MODEL, ENVELOPE, 1.0)}, {"tambon_id": "east", **mask_agreement(MODEL & False, ENVELOPE, 1.0)}],
+            "residents": {"residents_in_envelope": 120, "rule": "Population cells whose centre lies inside the envelope.",
+                          "residents_in_envelope_replay_rule": 110, "replay_rule": "The replay's rule.", "model_residents_in_water": 90},
         },
     }
 
@@ -247,6 +301,15 @@ def test_a_complete_document_has_no_problem() -> None:
         (lambda d: d.pop("licence"), "licence must be CC BY-SA 4.0"),
         (lambda d: d.update(credit="GISTDA"), "credit must be the rights record's attribution text"),
         (lambda d: d.update(map_credit="UNOSAT and GISTDA"), "map_credit must name the licence"),
+        (lambda d: d.update(map_credit="CC BY-SA 4.0"), "map_credit must name the holders of the product"),
+        (lambda d: d.update(map_credit="GISTDA · CC BY-SA 4.0"), "map_credit must name the holders of the product"),
+        (lambda d: d.pop("standard_sentence"), "standard_sentence must say"),
+        (lambda d: d.update(standard_sentence="Preliminary agency extent under CC BY-SA 4.0."), "standard_sentence must say"),
+        (lambda d: d.pop("other_inputs"), "other_inputs must list every input besides the product"),
+        (lambda d: d["other_inputs"][1].pop("licence"), "other_inputs[1] lacks licence"),
+        (lambda d: d["other_inputs"][0].update(attribution=""), "other_inputs[0] lacks attribution"),
+        (lambda d: d["comparison"]["residents"].pop("rule"), "comparison.residents must give residents_in_envelope with its rule in rule"),
+        (lambda d: d["comparison"]["residents"].pop("residents_in_envelope_replay_rule"), "must give residents_in_envelope_replay_rule with its rule in replay_rule"),
         (lambda d: d.update(change_notice="Changed by FloodGuard: clipped to {clip_geometry}."), "change_notice must be filled"),
         (lambda d: d.update(change_notice=""), "change_notice must be filled"),
         (lambda d: d["comparison"].pop("change_notice"), "comparison.change_notice must be filled"),
@@ -282,4 +345,8 @@ def test_a_null_ratio_is_allowed_and_the_products_own_attribute_name_is_not_a_me
     # A subdistrict with no modelled water has no share to state; "field_validation" is the product's attribute.
     value = document()
     assert value["comparison"]["by_tambon"][1]["containment_model_in_envelope"] is None
+    assert document_problems(value, licence_name="CC BY-SA 4.0", credit=CREDIT) == []
+    # A comparison without a residents block is allowed; one with a count gives each count its rule.
+    assert RESIDENT_COUNT_RULES == {"residents_in_envelope": "rule", "residents_in_envelope_replay_rule": "replay_rule"}
+    value["comparison"].pop("residents")
     assert document_problems(value, licence_name="CC BY-SA 4.0", credit=CREDIT) == []

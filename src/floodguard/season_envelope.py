@@ -37,6 +37,17 @@ COMPARISON_USE = "Plausibility against a season envelope, not a validation."
 AGREEMENT_KEYS: tuple[str, ...] = ("agreement_iou", "containment_model_in_envelope", "containment_envelope_in_model")
 """The three ratios of :func:`mask_agreement`, each between 0 and 1 (or ``None`` without a denominator)."""
 
+RESIDENT_COUNT_RULES: dict[str, str] = {
+    "residents_in_envelope": "rule",
+    "residents_in_envelope_replay_rule": "replay_rule",
+}
+"""The two counts of residents inside an envelope and the key that states the rule of each.
+
+``residents_in_envelope`` follows the planning overlay's exposure definition (population cells whose centre lies
+inside the envelope); ``residents_in_envelope_replay_rule`` follows the replay's own rule, so that it can be set
+beside the replay's residents in water. A published document gives both, each with its rule.
+"""
+
 _PLACEHOLDER = re.compile(r"\{[^{}]*\}")
 _MISNAMED_KEY = re.compile(r"precision|recall|accura|validat|corroborat|fpps|action[_-]?class|priority[_-]?score", re.IGNORECASE)
 
@@ -174,15 +185,43 @@ def fill_change_notice(template: str, *, clip_geometry: str, repair_method: str,
     return notice
 
 
+OTHER_INPUT_KEYS: tuple[str, ...] = ("id", "name", "licence", "attribution", "used_for")
+"""What a derived file states about each input that is not the agency product (see :func:`other_input_problems`)."""
+
+
+def other_input_problems(inputs: Any) -> list[str]:
+    """Why a list of other inputs may not be published (empty when it may).
+
+    A statistics file derived from an agency product also holds figures from other open data (for the replay: the
+    modelled water from a terrain model, residents from a population grid, subdistrict areas from boundary data).
+    Each of those inputs keeps its own credit and licence, so each entry states its ``name``, its ``licence``, its
+    ``attribution`` and what it was ``used_for``, with an ``id``. At least one entry is needed.
+    """
+    if not isinstance(inputs, Sequence) or isinstance(inputs, (str, bytes)) or not inputs:
+        return ["other_inputs must list every input besides the product, each with its licence and its credit"]
+    problems = []
+    for index, item in enumerate(inputs):
+        for key in OTHER_INPUT_KEYS:
+            if not isinstance(item, Mapping) or not isinstance(item.get(key), str) or not item[key].strip():
+                problems.append(f"other_inputs[{index}] lacks {key}")
+    return problems
+
+
 def licence_notice(*, title: str, files: Sequence[str], licence: Mapping[str, Any], credit: str, change_notices: Mapping[str, str],
-                   source_lines: Sequence[str], limits: Sequence[str], thai: Mapping[str, Any]) -> str:
+                   source_lines: Sequence[str], limits: Sequence[str], other_inputs: Sequence[Mapping[str, str]], other_inputs_note: str,
+                   thai: Mapping[str, Any]) -> str:
     """Text of the ``LICENSE`` file that ships beside the derived files: licence, credit and what was changed.
 
     ``licence`` needs ``full_name``, ``name``, ``url`` and ``legal_code_url``. ``change_notices`` maps a file name
-    to its change notice. ``thai`` gives the Thai half: ``title``, ``headings`` (files, source, credit, licence,
-    share_alike, changes, limits), ``source_lines``, ``share_alike`` and ``limits``; the credit, the licence name, the links and the
-    change notices are repeated as published. The two halves are separated by a line of dashes, as in the rights
-    record's own notice. Lines end with LF.
+    to its change notice. ``other_inputs`` lists the inputs besides the product whose figures a covered file holds
+    (:data:`OTHER_INPUT_KEYS`); ``other_inputs_note`` says that they keep their own credits and licences. ``thai``
+    gives the Thai half: ``title``, ``headings`` (files, source, credit, licence, share_alike, changes, other_inputs,
+    limits), ``source_lines``, ``share_alike``, ``limits``, ``change_notices`` (the Thai rendering of each file's
+    notice), ``other_inputs_note``, ``other_inputs_used_for`` (input id to Thai text) and ``other_inputs_labels``
+    (``licence``, ``credit``, ``used_for``). The credit, the licence names, the input names and the links are
+    repeated as published; in the Thai half each change notice is given in Thai, followed by the English notice as
+    published. The two halves are separated by a line of dashes, as in the rights record's own notice. Lines end
+    with LF.
     """
     for name in ("full_name", "name", "url", "legal_code_url"):
         if not str(licence.get(name, "")).strip():
@@ -192,8 +231,20 @@ def licence_notice(*, title: str, files: Sequence[str], licence: Mapping[str, An
     missing = [name for name in change_notices if name not in files]
     if missing:
         raise SeasonEnvelopeError(f"a change notice names a file the notice does not cover: {missing}")
+    problems = other_input_problems(other_inputs)
+    if problems or not other_inputs_note.strip():
+        raise SeasonEnvelopeError(f"the licence notice needs the other inputs with their licences and credits: {problems}")
+    thai_notices = thai.get("change_notices") or {}
+    untranslated = [name for name in change_notices if not str(thai_notices.get(name, "")).strip()]
+    if untranslated:
+        raise SeasonEnvelopeError(f"the Thai half needs a Thai change notice for: {untranslated}")
+    thai_used_for = thai.get("other_inputs_used_for") or {}
+    unnamed = [item["id"] for item in other_inputs if not str(thai_used_for.get(item["id"], "")).strip()]
+    if unnamed or not str(thai.get("other_inputs_note", "")).strip():
+        raise SeasonEnvelopeError(f"the Thai half needs the note on the other inputs and what each was used for: {unnamed}")
 
-    def half(heading: Mapping[str, str], head: str, sources: Sequence[str], share_alike: str, limit_lines: Sequence[str]) -> list[str]:
+    def half(heading: Mapping[str, str], head: str, sources: Sequence[str], share_alike: str, limit_lines: Sequence[str],
+             notices: Mapping[str, Sequence[str]], inputs_note: str, labels: Mapping[str, str], used_for: Mapping[str, str]) -> list[str]:
         lines = ["FloodGuard Thailand", head, "", f"1. {heading['files']}", *(f"   - {name}" for name in files), "",
                  f"2. {heading['source']}", *(f"   {line}" for line in sources), "",
                  f"3. {heading['credit']}", f"   {credit}", "",
@@ -201,27 +252,46 @@ def licence_notice(*, title: str, files: Sequence[str], licence: Mapping[str, An
                  f"   {licence['legal_code_url']}", "",
                  f"5. {heading['share_alike']}", f"   {share_alike}", "",
                  f"6. {heading['changes']}"]
-        for name, notice in change_notices.items():
-            lines += [f"   {name}:", f"   {notice}"]
-        lines += ["", f"7. {heading['limits']}", *(f"   - {line}" for line in limit_lines)]
+        for name, texts in notices.items():
+            lines += [f"   {name}:", *(f"   {text}" for text in texts)]
+        lines += ["", f"7. {heading['other_inputs']}", f"   {inputs_note}"]
+        for item in other_inputs:
+            lines += [f"   - {item['name']}", f"     {labels['licence']}: {item['licence']}", f"     {labels['credit']}: {item['attribution']}",
+                      f"     {labels['used_for']}: {used_for[item['id']]}"]
+        lines += ["", f"8. {heading['limits']}", *(f"   - {line}" for line in limit_lines)]
         return lines
 
     english = half(
         {"files": "Files this notice covers", "source": "Source", "credit": "Credit", "licence": "Licence", "share_alike": "ShareAlike",
-         "changes": "Changes made by FloodGuard (change notice)", "limits": "Limits"},
+         "changes": "Changes made by FloodGuard (change notice)", "other_inputs": "Other inputs (their own credits and licences)",
+         "limits": "Limits"},
         title, source_lines,
         ("You may copy, share and adapt these files if you give the credit above, link to the licence, say what you changed "
          f"and share your version under the same licence, {licence['name']}."),
-        limits)
-    thai_half = half(thai["headings"], thai["title"], thai["source_lines"], thai["share_alike"], thai["limits"])
+        limits, {name: [notice] for name, notice in change_notices.items()}, other_inputs_note,
+        {"licence": "Licence", "credit": "Credit", "used_for": "Used for"}, {item["id"]: item["used_for"] for item in other_inputs})
+    thai_half = half(thai["headings"], thai["title"], thai["source_lines"], thai["share_alike"], thai["limits"],
+                     {name: [thai_notices[name], notice] for name, notice in change_notices.items()}, thai["other_inputs_note"],
+                     thai["other_inputs_labels"], thai_used_for)
     return "\n".join([*english, "", "-" * 80, "", *thai_half]) + "\n"
+
+
+def credit_holders(credit: str) -> str:
+    """The holders a credit names first: its text before the first comma.
+
+    "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009" gives "UNOSAT and GISTDA". A short credit (on a map, or
+    in an exported picture) must name these holders, never the licence alone.
+    """
+    return str(credit).split(",", 1)[0].strip()
 
 
 def document_problems(document: Mapping[str, Any], *, licence_name: str, credit: str) -> list[str]:
     """Why a season-envelope document (``envelope.json``) may not be published (empty when it may).
 
     The document must sit in the ``SCN-ENV`` lane and say it is not an observation for any replay day; carry the
-    licence ``licence_name``, the credit ``credit`` and a filled change notice; carry ``source_timestamp``,
+    licence ``licence_name``, the credit ``credit``, a map credit that names the licence and the credit's holders,
+    the standard sentence (used as provided, not validated by FloodGuard) and a filled change notice; list its other
+    inputs with their licences and credits (:func:`other_input_problems`); carry ``source_timestamp``,
     ``generated_at``, a confidence with its reason, and assumptions; state the plausibility sentence; name its
     ratios with :data:`AGREEMENT_KEYS` and keep each between 0 and 1; and hold no key that names a precision, a
     recall, an accuracy, a validation, a score or an action class.
@@ -236,8 +306,16 @@ def document_problems(document: Mapping[str, Any], *, licence_name: str, credit:
         problems.append(f"licence must be {licence_name} with its link")
     if document.get("credit") != credit:
         problems.append("credit must be the rights record's attribution text")
-    if licence_name not in str(document.get("map_credit", "")):
+    map_credit = str(document.get("map_credit", ""))
+    if licence_name not in map_credit:
         problems.append("map_credit must name the licence")
+    holders = credit_holders(credit)
+    if not holders or holders not in map_credit:
+        problems.append("map_credit must name the holders of the product, as the credit begins")
+    sentence = document.get("standard_sentence")
+    if not isinstance(sentence, str) or "did not validate" not in sentence or licence_name not in sentence:
+        problems.append("standard_sentence must say that the product is used as provided under its licence and that FloodGuard did not validate it")
+    problems.extend(other_input_problems(document.get("other_inputs")))
     comparison = document.get("comparison")
     notices = {"change_notice": document.get("change_notice"),
                "comparison.change_notice": comparison.get("change_notice") if isinstance(comparison, Mapping) else None}
@@ -266,6 +344,12 @@ def document_problems(document: Mapping[str, Any], *, licence_name: str, credit:
                 value = row.get(key) if isinstance(row, Mapping) else None
                 if key not in row or (value is not None and not 0 <= value <= 1):
                     problems.append(f"comparison row {row.get('id') or row.get('tambon_id')}: {key} must be a share between 0 and 1, or null")
+        residents = comparison.get("residents")
+        if residents is not None:
+            # Two rules give two counts of the residents inside the envelope; a count without its rule cannot be compared.
+            for count, rule in RESIDENT_COUNT_RULES.items():
+                if not isinstance(residents, Mapping) or count not in residents or not isinstance(residents.get(rule), str) or not residents[rule].strip():
+                    problems.append(f"comparison.residents must give {count} with its rule in {rule}")
     problems.extend(f"{path} names a measure the comparison does not claim" for path in _misnamed_keys(document))
     return problems
 

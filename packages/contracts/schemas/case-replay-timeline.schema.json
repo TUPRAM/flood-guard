@@ -536,7 +536,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "observed", "role", "use", "urls"],
+        "required": ["id", "role", "use", "urls"],
         "properties": {
           "role": {
             "description": "No external figure is labelled independent while it was used, or known, during tuning. season_envelope_plausibility sets the model beside a season envelope (lane SCN-ENV): a plausibility comparison, not a validation, whose figures live in the envelope's own statistics file.",
@@ -547,12 +547,12 @@
           {
             "if": { "properties": { "role": { "const": "season_envelope_plausibility" } } },
             "then": {
-              "description": "The comparison with a season envelope names its statistics file and holds no figure: no reported or modelled area, people or stage.",
+              "description": "The comparison with a season envelope names its statistics file and holds no figure: no reported or modelled area, people or stage. What the model is compared with is named under compared_with; the key observed is refused, because the envelope is a scenario layer and never the observed side of a check.",
               "additionalProperties": false,
-              "required": ["id", "observed", "role", "title", "scope", "statistics", "use", "urls"],
+              "required": ["id", "compared_with", "role", "title", "scope", "statistics", "use", "urls"],
               "properties": {
                 "id": { "type": "string", "minLength": 1 },
-                "observed": { "type": "string", "minLength": 1 },
+                "compared_with": { "type": "string", "minLength": 1 },
                 "role": { "const": "season_envelope_plausibility" },
                 "title": { "type": "string", "pattern": "plausibility, not validation" },
                 "scope": { "type": "string", "minLength": 1 },
@@ -562,7 +562,7 @@
                 "urls": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^https://" } }
               }
             },
-            "else": { "required": ["reported_km2", "reported_text", "model_km2"] }
+            "else": { "required": ["observed", "reported_km2", "reported_text", "model_km2"] }
           }
         ]
       }
@@ -571,7 +571,7 @@
       "description": "A season-long agency extent shown as a scenario layer (lane SCN-ENV), never as an observation for a replay day. Its files keep their own folder and licence; the manifest names them by address, hash and size only, and holds no figure derived from the product.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "lane", "evidence_tier", "shown", "label", "caption", "day_independent", "day_rule", "temporal_relation", "season_window",
+      "required": ["id", "lane", "evidence_tier", "shown", "label", "caption", "standard_sentence", "day_independent", "day_rule", "temporal_relation", "season_window",
         "source_timestamp", "licence", "licence_url", "credit", "map_credit", "rights_record", "confidence", "confidence_reason", "assumptions", "urls",
         "files_rule", "files"],
       "properties": {
@@ -581,7 +581,7 @@
         "shown": { "const": true },
         "label": { "type": "string", "pattern": "^Scenario \\(SCN-ENV\\)" },
         "caption": { "type": "string", "pattern": "not an observation for any replay day" },
-        "standard_sentence": { "type": "string", "minLength": 1 },
+        "standard_sentence": { "description": "Shown in the caption under the map whenever the layer is visible: the product is preliminary, used as provided, and FloodGuard did not validate it.", "type": "string", "pattern": "did not validate" },
         "day_independent": { "description": "No replay day selects the layer; it has a toggle of its own.", "const": true },
         "day_rule": { "type": "string", "minLength": 1 },
         "temporal_relation": { "const": "season_envelope" },
@@ -590,7 +590,7 @@
         "licence": { "const": "CC BY-SA 4.0" },
         "licence_url": { "type": "string", "pattern": "^https://" },
         "credit": { "type": "string", "minLength": 1 },
-        "map_credit": { "description": "Added to the map credit and to the export credit whenever the layer is visible.", "type": "string", "pattern": "CC BY-SA 4\\.0" },
+        "map_credit": { "description": "Added to the map credit whenever the layer is visible: the holders the credit begins with, and the licence. An exported PNG or video carries the full credit, the licence and a change note instead.", "type": "string", "pattern": "^[^·]*[A-Za-z][^·]*· CC BY-SA 4\\.0$" },
         "rights_record": { "type": "string", "minLength": 1 },
         "rights_note": { "type": "string", "minLength": 1 },
         "confidence": { "enum": ["low", "medium", "high"] },

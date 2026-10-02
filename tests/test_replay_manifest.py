@@ -524,6 +524,9 @@ def test_season_envelope_block_names_three_files_and_holds_no_figure(manifest: d
                                 "Mae Sai district and rasterised to the replay grid by FloodGuard.")
     assert (block["licence"], block["credit"], block["map_credit"]) == (
         "CC BY-SA 4.0", "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009", "UNOSAT and GISTDA \u00b7 CC BY-SA 4.0")
+    # The caption under the map shows this sentence whenever the layer is visible.
+    assert block["standard_sentence"] == ("Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided "
+                                          "under CC BY-SA 4.0. FloodGuard did not validate it.")
     assert block["source_timestamp"] == block["season_window"] == "2024-08-01/2024-10-22"
     assert block["confidence"] == "low" and block["confidence_reason"] and len(block["assumptions"]) == 2
     # Three files in one folder of their own, each named by address, hash and size and by nothing else.
@@ -544,6 +547,10 @@ def test_season_envelope_block_names_three_files_and_holds_no_figure(manifest: d
     assert check["use"].startswith("Plausibility against a season envelope, not a validation.")
     assert check["tuning_rule"] == "No keyframe or elevation change is tuned to product 4009 afterwards; if one is, this comparison is relabelled as calibration."
     assert not any(key in check for key in ("reported_km2", "model_km2", "model_people_in_water", "reported_text"))
+    # The envelope is never filed as the observed side of a check: the key says what the model is compared with.
+    assert "observed" not in check and check["compared_with"].startswith("UNOSAT and GISTDA product 4009: accumulated water, August to October 2024")
+    assert check["compared_with"].endswith("a scenario layer, not an observation for any replay day")
+    assert all("observed" in item for item in manifest["external_checks"] if item is not check)
     # The manifest text never states an area or a share of the envelope (the statistics file does).
     document = json.loads((folder / "unosat4009" / "envelope.json").read_text(encoding="utf-8"))
     flat = json.dumps({key: value for key, value in manifest.items() if key != "input_sha256"}, ensure_ascii=False)
@@ -586,6 +593,19 @@ def test_season_envelope_rules_refuse_a_figure_a_day_or_a_missing_credit(manifes
     assert broken(lambda d: d["season_envelope"].update(credit=" ")) == ["season_envelope lacks credit"]
     assert broken(lambda d: d["season_envelope"].pop("label")) == ["season_envelope lacks label"]
     assert broken(lambda d: d["season_envelope"].update(map_credit="UNOSAT and GISTDA")) == ["season_envelope.map_credit must name the licence"]
+    # A credit that names the licence and nobody, or only one of the holders, credits nobody: the layer does not ship.
+    assert broken(lambda d: d["season_envelope"].update(map_credit="CC BY-SA 4.0")) == [
+        "season_envelope.map_credit must name the holders of the product, as the credit begins"]
+    assert broken(lambda d: d["season_envelope"].update(map_credit="GISTDA \u00b7 CC BY-SA 4.0")) == [
+        "season_envelope.map_credit must name the holders of the product, as the credit begins"]
+    # Nor does it ship without the sentence that says the agency extent is preliminary and was not validated.
+    assert broken(lambda d: d["season_envelope"].pop("standard_sentence")) == ["season_envelope lacks standard_sentence"]
+    assert broken(lambda d: d["season_envelope"].update(standard_sentence="Agency extent, used as provided.")) == [
+        "season_envelope.standard_sentence must say that FloodGuard did not validate the product"]
+    # The comparison names the envelope under compared_with, never under observed.
+    name_rule = ["external_checks[unosat-4009-season-envelope] must name the envelope under compared_with, never under observed: it is a scenario layer"]
+    assert broken(lambda d: d["external_checks"][check_index].update(observed="UNOSAT and GISTDA product 4009")) == name_rule
+    assert broken(lambda d: d["external_checks"][check_index].pop("compared_with")) == name_rule
     assert broken(lambda d: d["season_envelope"].update(lane="OBS")) == ["season_envelope must sit in lane SCN-ENV"]
     assert broken(lambda d: d["season_envelope"].update(day_independent=False)) == ["season_envelope must be marked shown and day_independent"]
     assert broken(lambda d: d["season_envelope"]["files"].pop("licence")) != []
@@ -611,6 +631,13 @@ def test_season_envelope_rules_refuse_a_figure_a_day_or_a_missing_credit(manifes
     assert schema_broken(lambda d: d["season_envelope"].update(licence="CC BY 4.0")) != []
     assert schema_broken(lambda d: d["season_envelope"].update(label="2024 season envelope")) != []
     assert schema_broken(lambda d: d["season_envelope"].update(caption="Accumulated water, August to October 2024.")) != []
+    assert any("standard_sentence" in line for line in schema_broken(lambda d: d["season_envelope"].pop("standard_sentence")))
+    assert schema_broken(lambda d: d["season_envelope"].update(standard_sentence="Agency extent, used as provided.")) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(map_credit="CC BY-SA 4.0")) != []
+    assert schema_broken(lambda d: d["season_envelope"].update(map_credit="UNOSAT and GISTDA")) != []
+    assert schema_broken(lambda d: d["external_checks"][check_index].update(observed="UNOSAT and GISTDA product 4009")) != []
+    assert schema_broken(lambda d: d["external_checks"][check_index].pop("compared_with")) != []
+    assert schema_broken(lambda d: d["external_checks"][0].pop("observed")) != []
     assert schema_broken(lambda d: d["external_checks"][check_index].update(reported_km2=77.7)) != []
     assert schema_broken(lambda d: d["external_checks"][check_index].update(role="independent_magnitude_check")) != []
     assert schema_broken(lambda d: d["external_checks"][0].pop("model_km2")) != []

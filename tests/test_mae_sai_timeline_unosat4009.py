@@ -23,7 +23,7 @@ import pytest
 
 np = pytest.importorskip("numpy")
 shapely = pytest.importorskip("shapely")
-pytest.importorskip("rasterio")
+rasterio = pytest.importorskip("rasterio")
 pytest.importorskip("pyproj")
 PIL_Image = pytest.importorskip("PIL.Image")
 
@@ -33,7 +33,7 @@ from rasterio.transform import from_origin  # noqa: E402
 from shapely.geometry import MultiPolygon, Polygon, box, mapping, shape  # noqa: E402
 
 from floodguard.rights_basis import RIGHTS_BASIS_4009_PATH, RightsNotConfirmedError, file_sha256, load_rights_basis  # noqa: E402
-from floodguard.season_envelope import COMPARISON_ROLE, document_problems, fill_change_notice, mask_agreement  # noqa: E402
+from floodguard.season_envelope import COMPARISON_ROLE, credit_holders, document_problems, fill_change_notice, mask_agreement  # noqa: E402
 from floodguard.wording_lint import find_violations, json_strings, load_rules  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +43,16 @@ RECORD_PATH = ROOT / RIGHTS_BASIS_4009_PATH
 CREDIT = "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"
 UTM = "EPSG:32647"
 PRECACHE_BUDGET_BYTES = 6_500_000
+SOURCES = [
+    {"id": "copernicus-dem", "name": "Copernicus DEM GLO-30", "licence": "Copernicus DEM licence (free, attribution)", "timestamp": "2021 release",
+     "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"},
+    {"id": "osm", "name": "OpenStreetMap", "licence": "ODbL 1.0", "timestamp": "2026-07-09", "attribution": "© OpenStreetMap contributors"},
+    {"id": "worldpop", "name": "WorldPop Thailand 100 m population 2020", "licence": "CC BY 4.0", "timestamp": "2020 estimate",
+     "attribution": "WorldPop (www.worldpop.org), University of Southampton"},
+    {"id": "cod-ab", "name": "HDX Thailand COD-AB subdistrict boundaries v01", "licence": "CC BY-IGO", "timestamp": "valid from 2022-01-22",
+     "attribution": "OCHA / HDX Thailand COD-AB"},
+]
+"""Source lines as the bake passes them to the stage (its own list also holds inputs the envelope file does not use)."""
 TAMBON_NAMES = {"TH570901": "Mae Sai", "TH570902": "Huai Khrai", "TH570903": "Ko Chang", "TH570904": "Pong Pha", "TH570905": "Si Mueang Chum",
                 "TH570906": "Wiang Phang Kham", "TH570908": "Ban Dai", "TH570909": "Pong Ngam"}
 
@@ -194,6 +204,15 @@ def synthetic(stage, record: dict, tmp_path: Path, monkeypatch: pytest.MonkeyPat
     low_confidence = np.zeros(statistics.shape, dtype=bool)
     low_confidence[80:120, 0:40] = True
     residents = np.full(statistics.shape, 0.25)
+    # A population raster on its own lon/lat grid (cells of 1/1200 degree, as WorldPop's): two residents per cell,
+    # no data in its first row, and a negative value in one cell.
+    lon0, lat0, cell = 99.85, 20.38, 1 / 1200
+    cells = np.full((60, 60), 2.0, dtype=np.float32)
+    cells[0, :] = -99999.0
+    population = tmp_path / "population.tif"
+    with rasterio.open(population, "w", driver="GTiff", width=60, height=60, count=1, dtype="float32", crs="EPSG:4326",
+                       transform=from_origin(lon0, lat0, cell, cell), nodata=-99999.0) as target:
+        target.write(cells, 1)
     tracked: list[Path] = []
     monkeypatch.setattr(stage, "read_layer", lambda archive, expected: layer)
     monkeypatch.setattr(stage, "verify_archive", lambda rights, external: Path(external) / rights["archive"]["relative_path"])
@@ -201,11 +220,12 @@ def synthetic(stage, record: dict, tmp_path: Path, monkeypatch: pytest.MonkeyPat
               {"id": "lower", "model_stage_m": 1.0, "model_extent": "A lower stage"}]
     data = stage.season_envelope(
         tmp_path / "external", record, admin, statistics_grid=statistics, raster_grid=raster, codes=codes, zones=zones, tambon_ids=["A", "B"],
-        low_confidence=low_confidence, residents=residents, channel_code=0, never_code=255, hand_step_m=0.05, stages=stages,
+        low_confidence=low_confidence, residents=residents, population=population, channel_code=0, never_code=255, hand_step_m=0.05, stages=stages,
         clip_source="two test subdistricts", track=lambda path: tracked.append(Path(path)) or path)
     clip_utm = shapely.union_all([shapely.make_valid(part) for part in parts_utm[:3]]).intersection(shapely.union_all(list(tambons_utm.values())))
     return {"data": data, "tracked": tracked, "zones": zones, "codes": codes, "clip_utm": clip_utm, "tambons_utm": tambons_utm,
-            "statistics": statistics, "raster": raster, "low_confidence": low_confidence, "residents": residents, "external": tmp_path / "external"}
+            "statistics": statistics, "raster": raster, "low_confidence": low_confidence, "residents": residents, "external": tmp_path / "external",
+            "population": population, "population_grid": (lon0, lat0, cell, cells)}
 
 
 def test_stage_clips_rasterises_and_tabulates_the_envelope_per_subdistrict(stage, record: dict, synthetic: dict) -> None:
@@ -259,9 +279,29 @@ def test_stage_compares_the_model_with_the_envelope_outside_channels(stage, synt
     low = synthetic["low_confidence"]
     assert data["low_confidence"]["share_inside_envelope_low_confidence"] == round(float((wet & low & out_of_channel).sum()) / float((wet & low).sum()), 3)
     assert data["low_confidence"]["share_inside_envelope_other"] == round(float((wet & ~low & out_of_channel).sum()) / float((wet & ~low).sum()), 3)
-    assert data["residents"] == {"residents_in_envelope": round(float(out_of_channel.sum()) * 0.25), "model_residents_in_water": round(float(wet.sum()) * 0.25),
-                                 "model_stage": "modelled_peak"}
+    # Residents inside the envelope by two rules: the population raster's own cells by their centre (the overlay's stated
+    # exposure definition), and the replay's 10 m cells outside mapped channels. The model's figure follows the second.
+    lon0, lat0, cell, cells = synthetic["population_grid"]
+    clip_lonlat = to_lonlat(synthetic["clip_utm"])
+    rows, cols = np.indices(cells.shape)
+    centre_inside = shapely.contains_xy(clip_lonlat, lon0 + (cols + 0.5) * cell, lat0 - (rows + 0.5) * cell)
+    by_centre = round(float(np.where(cells < 0, 0.0, cells)[centre_inside].sum()))
+    assert centre_inside.sum() > 40 and by_centre == 2 * int((centre_inside & (cells > 0)).sum())
+    assert data["residents"] == {"residents_in_envelope": by_centre, "residents_in_envelope_replay_rule": round(float(out_of_channel.sum()) * 0.25),
+                                 "model_residents_in_water": round(float(wet.sum()) * 0.25), "model_stage": "modelled_peak"}
+    assert data["residents"]["residents_in_envelope"] != data["residents"]["residents_in_envelope_replay_rule"]
     assert not any("resident" in key for row in data["by_tambon"] for key in row)
+
+
+def test_cell_centre_residents_counts_whole_population_cells_and_treats_missing_cells_as_empty(stage, synthetic: dict, tmp_path: Path) -> None:
+    lon0, lat0, cell, _ = synthetic["population_grid"]
+    # Three whole cells and a sliver of a fourth, whose centre is outside: three cells of two residents count.
+    three = box(lon0 + 10 * cell, lat0 - 6 * cell, lon0 + 13.4 * cell, lat0 - 5 * cell)
+    assert stage.cell_centre_residents(synthetic["population"], three) == 6
+    # The raster's first row holds no data: a clip over it counts nobody there, and a clip beyond the raster counts nobody at all.
+    assert stage.cell_centre_residents(synthetic["population"], box(lon0, lat0 - 2 * cell, lon0 + 4 * cell, lat0 + 3 * cell)) == 2 * 4
+    assert stage.cell_centre_residents(synthetic["population"], box(lon0 - 1, lat0 + 1, lon0 - 0.9, lat0 + 1.1)) == 0
+    assert stage.cell_centre_residents(synthetic["population"], Polygon()) == 0
 
 
 def test_stage_states_the_replays_own_residents_figure_or_stops(stage) -> None:
@@ -276,7 +316,7 @@ def test_stage_writes_three_files_with_licence_credit_and_change_notice(stage, r
     arguments = dict(rights=record, rights_record={"path": RIGHTS_BASIS_4009_PATH.as_posix(), "sha256": file_sha256(RECORD_PATH), "confirmed_on": "2026-10-02"},
                      study_id="mae-sai-2024-flood-timeline", revision="r4", generated_at="2026-10-02T18:00:00+07:00",
                      href_prefix="/studies/mae-sai-2024-timeline/r4/", bounds=[[20.25, 99.8], [20.49, 100.04]], raster_cell_m=14.9968,
-                     worldpop_source="WorldPop 2020")
+                     worldpop_source="WorldPop 2020", sources=SOURCES, clip_geometry_thai="ตำบลทดสอบสองตำบล")
     references = stage.write_files(synthetic["data"], out, **arguments)
     assert sorted(path.name for path in (out / "unosat4009").iterdir()) == ["LICENSE", "envelope.json", "envelope.png"]
     assert list(out.iterdir()) == [out / "unosat4009"]  # Nothing is written beside the product's own folder.
@@ -295,13 +335,47 @@ def test_stage_writes_three_files_with_licence_credit_and_change_notice(stage, r
     assert (document["generated_at"], document["source_timestamp"], document["confidence"]) == ("2026-10-02T18:00:00+07:00", "2024-08-01/2024-10-22", "low")
     assert document["licence"]["name"] == "CC BY-SA 4.0" and document["credit"] == CREDIT and document["map_credit"] == "UNOSAT and GISTDA · CC BY-SA 4.0"
     assert document["raster"]["sha256"] == references["raster"]["sha256"] and document["raster"]["cell_size_m"] == 15.0
+    assert document["standard_sentence"] == stage.STANDARD_SENTENCE and "FloodGuard did not validate it" in document["standard_sentence"]
+    # The other inputs of the statistics file keep their own licences and credits; a source the bake does not list stops the stage.
+    assert [(item["id"], item["licence"], item["attribution"]) for item in document["other_inputs"]] == [
+        (source["id"], source["licence"], source["attribution"]) for source in (SOURCES[0], SOURCES[2], SOURCES[3])]
+    assert all(item["used_for"] == stage.OTHER_INPUT_USE[item["id"]]["en"] and item["name"] and item["timestamp"] for item in document["other_inputs"])
+    assert "osm" not in [item["id"] for item in document["other_inputs"]] and "not legal advice" in document["other_inputs_note"]
+    with pytest.raises(ValueError, match=r"the bake lists no source line for: \['worldpop'\]"):
+        stage.write_files(synthetic["data"], tmp_path / "no-credit" / "r4", **{**arguments, "sources": [SOURCES[0], SOURCES[1], SOURCES[3]]})
+    assert not (tmp_path / "no-credit").exists()
+    # Two counts of residents, each with its rule.
+    residents = document["comparison"]["residents"]
+    assert residents["rule"] == stage.RESIDENTS_RULE and "whose centre lies inside" in residents["rule"] and "planning overlay" in residents["rule"]
+    assert residents["replay_rule"] == stage.RESIDENTS_REPLAY_RULE and "outside mapped channels" in residents["replay_rule"]
+    assert "residents_in_envelope_replay_rule, not residents_in_envelope, beside model_residents_in_water" in residents["rules_note"]
     licence = (out / "unosat4009" / "LICENSE").read_text(encoding="utf-8")
     for needle in (CREDIT, "Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)", record["licence"]["legal_code_url"],
-                   document["change_notice"], document["comparison"]["change_notice"], record["archive"]["sha256"], "not legal advice and not an official warning"):
+                   document["change_notice"], document["comparison"]["change_notice"], record["archive"]["sha256"], "not legal advice and not an official warning",
+                   *(source["attribution"] for source in (SOURCES[0], SOURCES[2], SOURCES[3])), "CC BY 4.0", "CC BY-IGO", "Copernicus DEM licence"):
         assert needle in licence, needle
+    assert SOURCES[1]["attribution"] not in licence
+    # The Thai half says what was changed in Thai, with this file's own values, before the English notice as published.
+    thai = licence.split("-" * 80)[1]
+    for needle in ("FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย (ตำบลทดสอบสองตำบล) ซ่อมแซมรูปทรงเรขาคณิต (make_valid ซ่อมแซม 1 ส่วน) "
+                   "แปลงระบบพิกัดจาก EPSG:4326 เป็น EPSG:3857 และแปลงเป็นราสเตอร์ขนาดเซลล์ ประมาณ 15 ม. แหล่งข้อมูล: " + CREDIT + ", CC BY-SA 4.0",
+                   "แปลงระบบพิกัดจาก EPSG:4326 เป็น EPSG:32647 และแปลงเป็นราสเตอร์ขนาดเซลล์ 10 ม. แหล่งข้อมูล: " + CREDIT + ", CC BY-SA 4.0 จากนั้นนับจำนวนเซลล์"):
+        assert needle in thai and needle not in licence.split("-" * 80)[0], needle
+    assert "{" not in licence
     # Written again from the same data, the three files are byte for byte the same.
     again = stage.write_files(synthetic["data"], tmp_path / "again" / "r4", **arguments)
     assert again == references
+
+
+def test_thai_change_notice_template_fills_the_same_placeholders_as_the_rights_record(stage, record: dict) -> None:
+    placeholders = lambda text: sorted(re.findall(r"\{([a-z_]+)\}", text))  # noqa: E731
+    assert placeholders(stage.CHANGE_NOTICE_THAI) == placeholders(record["change_notice"]["template"])
+    assert len(placeholders(stage.CHANGE_NOTICE_THAI)) == 6
+    # The English template ends with the credit and the licence; the Thai one gets them appended as published.
+    assert record["change_notice"]["template"].endswith(f"Source: {CREDIT}, CC BY-SA 4.0.") and stage.CHANGE_NOTICE_THAI.endswith("แหล่งข้อมูล: ")
+    assert set(stage.OTHER_INPUT_USE) == {"copernicus-dem", "worldpop", "cod-ab"}
+    assert all(use["en"].strip() and re.search(r"[\u0e00-\u0e7f]", use["th"]) for use in stage.OTHER_INPUT_USE.values())
+    assert stage.LICENCE_THAI["other_inputs_used_for"] == {key: use["th"] for key, use in stage.OTHER_INPUT_USE.items()}
 
 
 # --- Rights gate ------------------------------------------------------------------------------------------------
@@ -315,14 +389,15 @@ def test_stage_refuses_an_unconfirmed_rights_record_before_it_reads_or_writes_an
     with pytest.raises(RightsNotConfirmedError, match="not confirmed by the owners"):
         stage.season_envelope(tmp_path / "no-such-root", pending, [], statistics_grid=grid_, raster_grid=synthetic["raster"], codes=synthetic["codes"],
                               zones=synthetic["zones"], tambon_ids=["A", "B"], low_confidence=synthetic["low_confidence"], residents=synthetic["residents"],
-                              channel_code=0, never_code=255, hand_step_m=0.05, stages=[{"id": "modelled_peak", "model_stage_m": 3.5, "model_extent": "x"}],
+                              population=synthetic["population"], channel_code=0, never_code=255, hand_step_m=0.05,
+                              stages=[{"id": "modelled_peak", "model_stage_m": 3.5, "model_extent": "x"}],
                               clip_source="x", track=lambda path: tracked.append(Path(path)) or path)
     assert tracked == []  # The archive was not even looked for.
     out = tmp_path / "pending-out" / "r4"
     with pytest.raises(RightsNotConfirmedError, match="must stay out of public files"):
         stage.write_files(synthetic["data"], out, rights=pending, rights_record={"path": "x", "sha256": "0" * 64, "confirmed_on": None},
                           study_id="s", revision="r4", generated_at="2026-10-02T18:00:00+07:00", href_prefix="/studies/x/r4/", bounds=[[0, 0], [1, 1]],
-                          raster_cell_m=15.0, worldpop_source="WorldPop 2020")
+                          raster_cell_m=15.0, worldpop_source="WorldPop 2020", sources=SOURCES, clip_geometry_thai="x")
     assert not out.exists()
     # A record that covers another layer, or another licence, stops the stage too.
     other_layer = copy.deepcopy(record)
@@ -330,14 +405,14 @@ def test_stage_refuses_an_unconfirmed_rights_record_before_it_reads_or_writes_an
     with pytest.raises(ValueError, match="the rights record covers CHIANGRAI_20241022_FloodExtent"):
         stage.season_envelope(tmp_path / "no-such-root", other_layer, [], statistics_grid=grid_, raster_grid=synthetic["raster"], codes=synthetic["codes"],
                               zones=synthetic["zones"], tambon_ids=["A", "B"], low_confidence=synthetic["low_confidence"], residents=synthetic["residents"],
-                              channel_code=0, never_code=255, hand_step_m=0.05, stages=[{"id": "modelled_peak", "model_stage_m": 3.5, "model_extent": "x"}],
-                              clip_source="x")
+                              population=synthetic["population"], channel_code=0, never_code=255, hand_step_m=0.05,
+                              stages=[{"id": "modelled_peak", "model_stage_m": 3.5, "model_extent": "x"}], clip_source="x")
     other_licence = copy.deepcopy(record)
     other_licence["licence"]["name"] = "CC BY 4.0"
     with pytest.raises(ValueError, match="cannot be published"):
         stage.write_files(synthetic["data"], out, rights=other_licence, rights_record={"path": "x", "sha256": "0" * 64, "confirmed_on": "2026-10-02"},
                           study_id="s", revision="r4", generated_at="2026-10-02T18:00:00+07:00", href_prefix="/studies/x/r4/", bounds=[[0, 0], [1, 1]],
-                          raster_cell_m=15.0, worldpop_source="WorldPop 2020")
+                          raster_cell_m=15.0, worldpop_source="WorldPop 2020", sources=SOURCES, clip_geometry_thai="x")
     assert not out.exists()
 
 
@@ -355,6 +430,19 @@ def test_committed_files_carry_licence_credit_change_notice_timestamps_confidenc
     assert document["licence"] == {key: record["licence"][key] for key in ("name", "full_name", "spdx_id", "url", "legal_code_url")}
     assert document["licence"]["name"] == "CC BY-SA 4.0" and document["credit"] == CREDIT == record["required_attribution_text"]
     assert document["map_credit"] == "UNOSAT and GISTDA · CC BY-SA 4.0" == manifest["season_envelope"]["map_credit"]
+    assert credit_holders(document["credit"]) == "UNOSAT and GISTDA" and document["map_credit"].startswith(credit_holders(document["credit"]))
+    # The standard sentence ships in both files: the caption under the map shows it whenever the layer is visible.
+    assert document["standard_sentence"] == manifest["season_envelope"]["standard_sentence"] == (
+        "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. "
+        "FloodGuard did not validate it.")
+    # The statistics file names its other inputs with the licences and credits the manifest gives them.
+    by_id = {source["id"]: source for source in manifest["sources"]}
+    assert [item["id"] for item in document["other_inputs"]] == ["copernicus-dem", "worldpop", "cod-ab"]
+    for item in document["other_inputs"]:
+        assert {key: item[key] for key in ("name", "licence", "attribution", "timestamp")} == {key: by_id[item["id"]][key] for key in ("name", "licence", "attribution", "timestamp")}
+        assert item["used_for"] == stage.OTHER_INPUT_USE[item["id"]]["en"]
+    assert {item["licence"] for item in document["other_inputs"]} == {"Copernicus DEM licence (free, attribution)", "CC BY 4.0", "CC BY-IGO"}
+    assert document["other_inputs_note"] == stage.OTHER_INPUTS_NOTE
     repair = document["changes"]["repair"]
     assert document["change_notice"] == fill_change_notice(
         record["change_notice"]["template"], clip_geometry=document["changes"]["clip_geometry"], repair_method=repair["method"],
@@ -404,8 +492,21 @@ def test_committed_licence_notice_is_bilingual_and_names_what_was_changed(record
     for half in (english, thai):
         for needle in ("envelope.png", "envelope.json", "LICENSE", CREDIT, "Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)",
                        record["licence"]["url"], record["licence"]["legal_code_url"], document["change_notice"], document["comparison"]["change_notice"],
-                       record["archive"]["sha256"], "CHIANGRAI_20240801_20241012_AccumulatedFlood"):
+                       record["archive"]["sha256"], "CHIANGRAI_20240801_20241012_AccumulatedFlood",
+                       *(f"- {item['name']}" for item in document["other_inputs"]), *(item["attribution"] for item in document["other_inputs"]),
+                       "CC BY 4.0", "CC BY-IGO", "Copernicus DEM licence (free, attribution)"):
             assert needle in half, needle
+    # What FloodGuard changed is stated in Thai in the Thai half (before the English notice as published), with the file's own values.
+    repair = document["changes"]["repair"]["parts_repaired"]
+    thai_raster = (f"FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย (ตำบลทั้งแปดตาม HDX Thailand COD-AB v01) ซ่อมแซมรูปทรงเรขาคณิต (make_valid ซ่อมแซม {repair} ส่วน) "
+                   f"แปลงระบบพิกัดจาก EPSG:4326 เป็น EPSG:3857 และแปลงเป็นราสเตอร์ขนาดเซลล์ ประมาณ 15 ม. แหล่งข้อมูล: {CREDIT}, CC BY-SA 4.0")
+    assert thai_raster in thai and thai.index(thai_raster) < thai.index(document["change_notice"]) and thai_raster not in english
+    assert "เป็น EPSG:32647 และแปลงเป็นราสเตอร์ขนาดเซลล์ 10 ม." in thai and "จากนั้นนับจำนวนเซลล์และเทียบกับน้ำจากแบบจำลองของการย้อนดู เพื่อจัดทำตารางนี้" in thai
+    # Each input besides the product is listed with what it gave the statistics file, in both languages.
+    assert "7. Other inputs (their own credits and licences)" in english and "8. Limits" in english
+    assert "7. ข้อมูลนำเข้าอื่น (มีเครดิตและสัญญาอนุญาตของตนเอง)" in thai and "8. ข้อจำกัด" in thai
+    assert all(f"Used for: {item['used_for']}" in english for item in document["other_inputs"])
+    assert thai.count("ใช้สำหรับ: ") == len(document["other_inputs"]) == 3 and document["other_inputs_note"] in english
     assert "ShareAlike" in english and "not legal advice and not an official warning" in english and "plausibility comparison, not a validation" in english
     assert re.search(r"[฀-๿]", thai) and "ไม่ใช่การเตือนภัยอย่างเป็นทางการ" in thai
     # A Buddhist-era year always carries its CE year.
@@ -461,9 +562,15 @@ def test_committed_statistics_reproduce_the_scouts_values(manifest: dict, docume
 def test_committed_statistics_give_residents_as_a_district_total_and_no_land_cover_split(manifest: dict, document: dict) -> None:
     residents = document["comparison"]["residents"]
     assert residents["scope"] == "District total only." and "WorldPop" in residents["source"] and "not a census count" in residents["rule"]
-    # The model's figure is the replay's own peak; the envelope's is counted with the same exposure rule.
+    # The model's figure is the replay's own peak. The envelope's residents are counted twice, each count with its rule:
+    # by the planning overlay's stated exposure definition (WorldPop 2020 cells of about 100 m, by their centre), which
+    # the scouts measured at about 17,960, and by the replay's own rule, to set beside the model's figure.
     assert residents["model_residents_in_water"] == max(day["stats"]["people_in_water"] for day in manifest["days"])
-    assert 15_000 < residents["residents_in_envelope"] < 20_000
+    assert (residents["residents_in_envelope"], residents["residents_in_envelope_replay_rule"]) == (17_927, 17_344)
+    assert residents["residents_in_envelope"] == pytest.approx(17_960, abs=50)
+    assert "WorldPop 2020 cells (about 100 m) whose centre lies inside the clipped envelope" in residents["rule"] and "planning overlay" in residents["rule"]
+    assert "the replay's exposure rule" in residents["replay_rule"] and "outside mapped channels" in residents["replay_rule"]
+    assert "not a census count" in residents["replay_rule"] and residents["rules_note"]
     assert not re.search(r"resident", json.dumps(document["comparison"]["by_tambon"]) + json.dumps(document["area"]))
     # No land-cover map is among the bake's inputs, so the built-up against cropland split is left out, and the file says so.
     assert document["comparison"]["land_cover"] == {"computed": False, "reason": ("Not computed: no land-cover map is among the replay's inputs, so the share of "

@@ -140,6 +140,8 @@ try {
     legend: "[data-testid='map-legend']",
     "basemap note": "[data-testid='basemap-note']",
     "clear route": "[data-testid='clear-route']",
+    "envelope chip": "[data-testid='envelope-chip']",
+    "envelope failure": "[data-testid='envelope-failed-map']",
     attribution: ".leaflet-control-attribution",
     popup: ".leaflet-popup",
     "left label": "[data-testid='compare-label-left']",
@@ -406,6 +408,9 @@ try {
   };
   // --- Season envelope (UNOSAT and GISTDA product 4009, a scenario layer) -----------------------------------------
   const ENVELOPE_CREDIT = "UNOSAT and GISTDA · CC BY-SA 4.0";
+  /** What an exported PNG or video says of the layer: the full credit, the licence with its address and a change note. */
+  const ENVELOPE_EXPORT_CREDIT = "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0)";
+  const ENVELOPE_STANDARD = "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.";
   /** Fewest pixels of each stripe colour the exported PNG must gain with the layer on (measured: several times more). */
   const ENVELOPE_EXPORT_PIXELS = 5000;
   const ENVELOPE_CAPTION = "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct); includes August and early-October water; not an observation for any replay day. Clipped to Mae Sai district and rasterised to the replay grid by FloodGuard.";
@@ -467,21 +472,70 @@ try {
       onScreen: box.right > frame.left && box.left < frame.right && box.bottom > frame.top && box.top < frame.bottom,
     };
   });
+  /**
+   * The scenario chip as a reader sees it: inside the map frame, shown, and not cut off by a box that hides its overflow
+   * (on phones the notes column drops what does not fit; the chip must never be among what is dropped).
+   */
+  const envelopeChipOnMap = (target = page) => target.evaluate(() => {
+    const chip = document.querySelector("[data-testid='envelope-chip']");
+    if (!chip) return { present: false };
+    const frame = document.querySelector("[class*='mapFrame']").getBoundingClientRect();
+    const box = chip.getBoundingClientRect();
+    const inside = (outer) => box.left >= outer.left - 0.5 && box.right <= outer.right + 0.5 && box.top >= outer.top - 0.5 && box.bottom <= outer.bottom + 0.5;
+    let hidden = false;
+    let clipped = false;
+    for (let node = chip; node && !String(node.className).includes("mapFrame"); node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) < 0.05) hidden = true;
+      if (node !== chip && style.overflow !== "visible" && !inside(node.getBoundingClientRect())) clipped = true;
+    }
+    return { present: true, visible: box.width > 0 && box.height > 0 && !hidden && !clipped && inside(frame), hidden, clipped, box: [box.left, box.top, box.right, box.bottom].map(Math.round), parent: chip.parentElement.getAttribute("data-testid") };
+  });
+  /** The chip is visible inside the map while the layer is drawn (the layer never ships unlabelled). */
+  const expectEnvelopeChipVisible = async (label, target = page) => {
+    await expect.poll(async () => JSON.stringify(await envelopeChipOnMap(target)), { message: `${label}: the scenario chip is visible on the map`, timeout: 8000 }).toContain('"visible":true');
+    const chip = await envelopeChipOnMap(target);
+    assert.equal(chip.parent, "map-foot", `${label}: the chip sits in the bottom stack, which is never clipped (${JSON.stringify(chip)})`);
+    return chip;
+  };
+  /** The envelope canvas's screen pixels per raster cell once a zoom has finished (two equal readings in a row). */
+  const settledEnvelopeScale = async (target = page) => {
+    let last = null;
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const scale = (await envelopeHatchOnScreen(target))?.scale ?? null;
+      if (scale !== null && scale === last) return scale;
+      last = scale;
+      await target.waitForTimeout(150);
+    }
+    throw new Error(`The map did not settle after a zoom (${last})`);
+  };
+  /** One click on a zoom button, waited for: the zoom control ignores a click that arrives during a zoom animation. */
+  const zoomEnvelopeMap = async (direction, label) => {
+    const before = await settledEnvelopeScale();
+    await page.locator(`.leaflet-control-zoom-${direction}`).click();
+    await expect.poll(async () => (await envelopeHatchOnScreen()).scale / before, { message: label })[direction === "in" ? "toBeGreaterThan" : "toBeLessThan"](direction === "in" ? 1.5 : 0.75);
+    return settledEnvelopeScale();
+  };
   /** The layer is on: canvas, chip, caption, legend entry, map credit and export credit; hatched with stripes a reader can see. */
   const expectEnvelopeShown = async (label, target = page, language = "en") => {
     await expect(target.locator(".leaflet-fg-envelope-pane canvas"), `${label}: the envelope layer is on the map`).toHaveCount(1);
     const state = await envelopeState(target);
     assert(state.credit.includes(ENVELOPE_CREDIT), `${label}: the map credit names UNOSAT and GISTDA and CC BY-SA 4.0 (${state.credit})`);
-    assert(state.exportCredits.includes(ENVELOPE_CREDIT), `${label}: the export credit names UNOSAT and GISTDA and CC BY-SA 4.0 (${state.exportCredits})`);
+    assert(state.exportCredits.includes(ENVELOPE_EXPORT_CREDIT), `${label}: the export credit gives the full attribution and the licence with its address (${state.exportCredits})`);
+    await expectEnvelopeChipVisible(label, target);
     if (language === "en") {
       assert.equal(state.chip, "Scenario (SCN-ENV): 2024 season envelope", `${label}: the scenario chip`);
-      assert(state.caption?.includes(ENVELOPE_CAPTION) && state.caption.includes("Licence: CC BY-SA 4.0") && state.caption.includes("Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009."),
+      assert(state.exportCredits.includes(`${ENVELOPE_EXPORT_CREDIT} · clipped to Mae Sai district and rasterised by FloodGuard`), `${label}: the export credit says what FloodGuard changed (${state.exportCredits})`);
+      // The standard sentence leads the caption: the reader is told under the map that the extent is preliminary and was not validated.
+      assert(state.caption?.includes(`Scenario (SCN-ENV): 2024 season envelope. ${ENVELOPE_STANDARD} ${ENVELOPE_CAPTION}`) && state.caption.includes("Licence: CC BY-SA 4.0") && state.caption.includes("Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009."),
         `${label}: the caption under the map (${state.caption})`);
       assert(!/September extent|GISTDA's map/i.test(`${state.chip} ${state.caption} ${state.legend}`), `${label}: the layer is never called the September extent or GISTDA's map`);
     } else {
       assert.equal(state.chip, "สถานการณ์จำลอง (SCN-ENV): ขอบเขตน้ำตลอดฤดูปี 2567 (2024)", `${label}: the scenario chip in Thai`);
+      assert(state.exportCredits.includes(`${ENVELOPE_EXPORT_CREDIT} · FloodGuard ตัดตามขอบเขตอำเภอแม่สายและแปลงเป็นราสเตอร์`), `${label}: the export credit says in Thai what FloodGuard changed (${state.exportCredits})`);
       assert(state.caption?.includes("ไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู") && state.caption.includes("สัญญาอนุญาต: CC BY-SA 4.0") && state.caption.includes("เครดิต: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009"),
         `${label}: the Thai caption under the map (${state.caption})`);
+      assert(state.caption.includes("FloodGuard ก็ไม่ได้ตรวจสอบเช่นกัน") && !state.caption.includes("FloodGuard did not validate it"), `${label}: the Thai caption carries the standard sentence in Thai (${state.caption})`);
     }
     const hatch = await envelopeHatchOnScreen(target);
     assert(hatch && hatch.onScreen && hatch.samples > 150, `${label}: the envelope is drawn inside the map (${JSON.stringify(hatch)})`);
@@ -498,6 +552,49 @@ try {
     assert.deepEqual([state.canvases, state.chip, state.caption, state.legend], [0, null, null, null], `${label}: the envelope layer is off (${JSON.stringify(state)})`);
     assert(!/CC BY-SA|UNOSAT|GISTDA/.test(state.credit), `${label}: the map credit does not name the envelope while it is hidden (${state.credit})`);
     assert(!/CC BY-SA|UNOSAT|GISTDA/.test(state.exportCredits), `${label}: the export credit does not name the envelope while it is hidden (${state.exportCredits})`);
+  };
+  /**
+   * The sticky stage (bar, map, caption and timeline) while it is stuck to the top of the window: its bottom edge and the
+   * bottom of the day buttons against the window's height. Positive values are pixels cut off below the window.
+   */
+  const stuckStage = async (target = page) => {
+    await target.evaluate(() => window.scrollTo(0, 640));
+    await target.waitForTimeout(150);
+    return target.evaluate(() => {
+      const section = document.querySelector("[class*='mapFrame']").parentElement;
+      const stage = section.getBoundingClientRect();
+      const days = [...section.querySelectorAll("button")].map((button) => button.getBoundingClientRect()).filter((box) => box.width > 0).map((box) => box.bottom);
+      const caption = document.querySelector("[data-testid='envelope-caption']")?.getBoundingClientRect() ?? null;
+      return {
+        top: Math.round(stage.top), over: Math.round(stage.bottom - window.innerHeight), daysOver: Math.round(Math.max(...days) - window.innerHeight),
+        map: Math.round(document.querySelector("[class*='mapFrame']").getBoundingClientRect().height), caption: caption ? Math.round(caption.height) : 0,
+      };
+    });
+  };
+  /** Yellow stripe pixels of the season envelope in the map part of the video's live preview (the recording canvas). */
+  const previewStripes = () => page.evaluate(() => {
+    const canvas = document.querySelector("[class*='videoPreview'] canvas");
+    if (!canvas) return null;
+    const data = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+    let yellow = 0;
+    for (let at = 0; at < data.length; at += 4) if (data[at] > 215 && data[at + 1] > 170 && data[at + 1] < 225 && data[at + 2] < 70) yellow += 1;
+    return { width: canvas.width, height: canvas.height, yellow };
+  });
+  /** Record a 16:9 video until the replay frames are being drawn, read its preview, and cancel. Null without MediaRecorder. */
+  const recordedStripes = async () => {
+    const button = page.getByRole("button", { name: /^Record video/ });
+    if (!(await button.count())) return null;
+    await page.getByRole("radio", { name: "16:9 (1280 × 720)" }).check();
+    await button.click();
+    const progress = page.getByRole("progressbar", { name: "Recording progress" });
+    await expect(progress).toBeVisible();
+    // The first second is the title card; the replay frames follow.
+    await expect.poll(async () => progress.evaluate((element) => Number(element.value)), { message: "the recording reaches the replay frames", timeout: 20_000 }).toBeGreaterThanOrEqual(12);
+    const stripes = await previewStripes();
+    await page.getByRole("button", { name: "Cancel recording" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Recording cancelled." })).toBeVisible();
+    await page.getByRole("radio", { name: "Whole study area (portrait)" }).check();
+    return stripes;
   };
   /** Save the PNG of this moment and return its size and how many pixels of its map are the envelope's stripe colours. */
   const exportedEnvelope = async () => {
@@ -605,6 +702,11 @@ try {
   await expect(envelopeSources).toContainText("Scenario (SCN-ENV): 2024 season envelope");
   await expect(envelopeSources.getByTestId("envelope-licence")).toContainText("Licence: CC BY-SA 4.0");
   await expect(envelopeSources.getByTestId("envelope-licence")).toContainText("Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009.");
+  await expect(envelopeSources).toContainText(ENVELOPE_STANDARD);
+  // The statistics file's other inputs keep their own licences and credits.
+  for (const needle of ["Copernicus DEM licence (free, attribution)", "CC BY 4.0; WorldPop (www.worldpop.org), University of Southampton", "CC BY-IGO; OCHA / HDX Thailand COD-AB"]) {
+    await expect(envelopeSources.getByTestId("envelope-other-inputs")).toContainText(needle);
+  }
   await expect(envelopeSources.getByTestId("envelope-change-notice")).toContainText(/Change notice: Changed by FloodGuard: clipped to Mae Sai district \(.+\); geometry repaired \(make_valid; \d+ parts repaired\); reprojected from EPSG:4326 to EPSG:3857; rasterised to about 15 m cells\./);
   const envelopeFiles = await page.evaluate(async () => {
     const manifestUrl = performance.getEntriesByType("resource").map((entry) => entry.name).find((name) => name.endsWith("/timeline.json"));
@@ -687,7 +789,7 @@ try {
   const envelopeDesktop = await expectEnvelopeShown("1440 px");
   await expect(page).toHaveURL(/[?&]layers=[a-z]*e(&|$)/);
   await expect(page.getByTestId("map-legend").getByTestId("envelope-legend")).toContainText("Hatched: water mapped at some time from August to October 2024; not an observation for any replay day");
-  await expectClearMap(["zoom", "notes", "legend", "attribution"], "1440 px with the season envelope");
+  await expectClearMap(["zoom", "notes", "legend", "envelope chip", "attribution"], "1440 px with the season envelope");
   // With the layer on, the hour still plays no part: every hour keeps the layer and its credit.
   for (let hour = 0; hour <= 264; hour += 24) {
     await slider.fill(String(hour));
@@ -695,15 +797,20 @@ try {
     assert(state.canvases === 1 && state.credit.includes(ENVELOPE_CREDIT) && state.chip !== null, `Hour ${hour} keeps the season envelope on (${JSON.stringify(state)})`);
   }
   await slider.fill("84");
-  // Zooming in repaints the hatch, so the stripes keep about the same width on screen.
-  await page.locator(".leaflet-control-zoom-in").click();
-  await page.locator(".leaflet-control-zoom-in").click();
-  await expect.poll(async () => (await envelopeHatchOnScreen()).scale, { message: "the map zooms in" }).toBeGreaterThan(envelopeDesktop.hatch.scale * 1.5);
+  // Zooming in repaints the hatch in whole raster cells: up to two screen pixels per cell the stripes keep about the
+  // same width on screen.
+  for (const step of [1, 2]) await zoomEnvelopeMap("in", `the map zooms in, step ${step}`);
+  await expect.poll(async () => (await envelopeHatchOnScreen()).scale, { message: "the map zooms in" }).toBeGreaterThan(envelopeDesktop.hatch.scale * 3);
   await expect.poll(async () => (await envelopeHatchOnScreen()).periodPx, { message: "the hatch is repainted for the new zoom" }).toBeLessThanOrEqual(12);
   const envelopeZoomed = await envelopeHatchOnScreen();
-  assert(envelopeZoomed.periodPx >= 7 && envelopeZoomed.darkPx >= 1.4, `The hatch keeps its width on screen after zooming in (${JSON.stringify(envelopeZoomed)})`);
-  await page.locator(".leaflet-control-zoom-out").click();
-  await page.locator(".leaflet-control-zoom-out").click();
+  assert(envelopeZoomed.scale <= 2 && envelopeZoomed.periodPx >= 7 && envelopeZoomed.darkPx >= 1.4, `The hatch keeps its width on screen after zooming in (${JSON.stringify(envelopeZoomed)})`);
+  // Closer in (street level) a stripe cannot be thinner than a cell: the period is four cells, so it grows with the zoom.
+  for (const step of [3, 4]) await zoomEnvelopeMap("in", `the map zooms in, step ${step}`);
+  await expect.poll(async () => (await envelopeHatchOnScreen()).scale, { message: "the map zooms in to street level" }).toBeGreaterThan(4);
+  await expect.poll(async () => { const hatch = await envelopeHatchOnScreen(); return hatch.periodPx / hatch.scale; }, { message: "the hatch is four cells wide at street level" }).toBeCloseTo(4, 0);
+  const envelopeStreet = await envelopeHatchOnScreen();
+  assert(envelopeStreet.periodPx > 12 && envelopeStreet.darkPx >= 1.4 && envelopeStreet.colours.length === 3, `At street level the hatch is still a hatch, four cells wide (${JSON.stringify(envelopeStreet)})`);
+  for (const step of [1, 2, 3, 4]) await zoomEnvelopeMap("out", `the map zooms back out, step ${step}`);
   // The comparison is the third group of the checks: plausibility, not validation, and never an independent check.
   const envelopeComparison = page.getByTestId("envelope-comparison");
   await expect(envelopeComparison).toContainText("Season envelope comparison (scenario; plausibility, not validation)");
@@ -715,21 +822,30 @@ try {
   const comparisonText = await envelopeComparison.innerText();
   assert(!/precision|recall|accuracy|validated|corroborat|too low|too high|September extent|GISTDA's map/i.test(comparisonText), "The envelope comparison uses none of the words it must not");
   await expect(page.getByText("Independent size checks", { exact: true })).toHaveCount(0);
-  // The exported PNG draws the layer hatched and adds its credit on a line of its own (a taller caption band); hidden, it does neither.
-  await expect(page.getByTestId("export-envelope")).toContainText("the PNG and the video draw it hatched, with its legend entry and its credit");
+  // The exported PNG draws the layer hatched and adds its full credit under the standing credits, wrapped onto whole
+  // lines (a taller caption band); hidden, it does neither. The video draws it too: its live preview is read back.
+  await expect(page.getByTestId("export-envelope")).toContainText("the PNG and the video draw it hatched, with its legend entry, its full credit, its licence and a note of what FloodGuard changed");
   const exportWith = await exportedEnvelope();
+  const videoWith = await recordedStripes();
   await openLayers();
   await envelopeToggle.uncheck();
   await page.locator("#mae-sai-map-layers").getByRole("button", { name: "Close", exact: true }).click();
   await expectEnvelopeHidden("1440 px, after switching the layer off");
   await expect(page.getByTestId("export-envelope")).toHaveCount(0);
   const exportWithout = await exportedEnvelope();
+  const videoWithout = await recordedStripes();
   const creditLine = (16 * exportWith.width) / 720;
+  const creditLines = (exportWith.band - exportWithout.band) / creditLine;
   assert(exportWith.width === exportWithout.width && exportWith.mapHeight === exportWithout.mapHeight
-    && exportWith.band - exportWithout.band >= creditLine - 2 && exportWith.band - exportWithout.band <= creditLine + 2,
-    `The exported PNG is one credit line taller with the envelope (${JSON.stringify([exportWith, exportWithout])})`);
+    && creditLines >= 0.9 && creditLines <= 3.1 && Math.abs(creditLines - Math.round(creditLines)) < 0.1,
+    `The exported PNG is taller by the whole lines of the envelope's credit (${JSON.stringify([exportWith, exportWithout, creditLines])})`);
   assert(exportWith.yellow > ENVELOPE_EXPORT_PIXELS && exportWith.yellow > 5 * (exportWithout.yellow + 50) && exportWith.dark > ENVELOPE_EXPORT_PIXELS && exportWith.dark > 5 * (exportWithout.dark + 50),
     `The exported PNG draws the envelope's two stripe colours only while the layer is on (${JSON.stringify([exportWith, exportWithout])})`);
+  if (videoWith && videoWithout) {
+    assert.deepEqual([videoWith.width, videoWith.height, videoWithout.width, videoWithout.height], [1280, 720, 1280, 720], "The 16:9 video is recorded at 1280 x 720 with and without the layer");
+    assert(videoWith.yellow > 1500 && videoWith.yellow > 3 * (videoWithout.yellow + 50),
+      `The recorded video draws the envelope's hatch only while the layer is on (${JSON.stringify([videoWith, videoWithout])})`);
+  }
   await expect(page).not.toHaveURL(/[?&]layers=[a-z]*e(&|$)/);
   // A shared link restores the layer by its own letter, at any hour.
   await page.goto(`${baseUrl}${caseRoute}?t=10&layers=trsce`, { waitUntil: "networkidle" });
@@ -739,7 +855,88 @@ try {
   await page.goto(`${baseUrl}${caseRoute}`, { waitUntil: "networkidle" });
   await waterModel();
   await expectEnvelopeHidden("1440 px, link without the layer letter");
-  checks.push(`season envelope (scenario, SCN-ENV) at 1440 px: off by default and selected by no replay hour or day button; its own toggle shows the chip, the caption, a hatched legend entry and the layer (hatch period ${envelopeDesktop.hatch.periodPx} px, stripe ${envelopeDesktop.hatch.darkPx} px; ${envelopeZoomed.periodPx} px after zooming in), clear of zoom, notes, legend and attribution; the map credit and the export credit add "${ENVELOPE_CREDIT}" only while it is visible; the exported PNG draws it hatched (${exportWith.yellow} yellow and ${exportWith.dark} dark pixels against ${exportWithout.yellow} and ${exportWithout.dark}) on a band one credit line taller; the comparison group says plausibility, not validation`);
+  checks.push(`season envelope (scenario, SCN-ENV) at 1440 px: off by default and selected by no replay hour or day button; its own toggle shows the chip, the caption with the standard sentence, a hatched legend entry and the layer (hatch period ${envelopeDesktop.hatch.periodPx} px, stripe ${envelopeDesktop.hatch.darkPx} px; ${envelopeZoomed.periodPx} px at ${envelopeZoomed.scale} px per cell; four cells, ${envelopeStreet.periodPx} px, at ${envelopeStreet.scale} px per cell), clear of zoom, notes, legend and attribution; the map credit adds "${ENVELOPE_CREDIT}" and the export credit the full attribution, the licence and the change note only while it is visible; the exported PNG draws it hatched (${exportWith.yellow} yellow and ${exportWith.dark} dark pixels against ${exportWithout.yellow} and ${exportWithout.dark}) on a band ${Math.round(creditLines)} credit lines taller${videoWith ? `; the 16:9 video preview holds ${videoWith.yellow} stripe pixels with the layer and ${videoWithout.yellow} without` : ""}; the comparison group says plausibility, not validation`);
+  // The stage is sticky on wide screens: with the caption under the map it must still end inside the window, so the
+  // day buttons of the timeline stay in view, at common laptop sizes, in English and in Thai.
+  const stageFits = [];
+  for (const [width, height] of [[1440, 1000], [1440, 900], [1366, 768], [1280, 720], [1093, 615]]) {
+    await page.setViewportSize({ width, height });
+    for (const language of ["en", "th"]) {
+      await page.goto(`${baseUrl}${caseRoute}?t=84&layers=trsce&lang=${language}`, { waitUntil: "networkidle" });
+      await waterModel();
+      await expect(page.getByTestId("envelope-caption")).toBeVisible();
+      await expect.poll(async () => (await stuckStage()).over, { message: `${width} x ${height} (${language}): the stage with the envelope's caption ends inside the window` }).toBeLessThanOrEqual(0);
+      const fit = await stuckStage();
+      assert(fit.top === 12 && fit.over <= 0 && fit.daysOver <= 0 && fit.caption > 40 && fit.map >= 220,
+        `${width} x ${height} (${language}): the stuck stage, its day buttons and the caption fit the window (${JSON.stringify(fit)})`);
+      stageFits.push(`${width}x${height} ${language}: map ${fit.map} px, caption ${fit.caption} px, ${-fit.over} px to spare`);
+    }
+    await page.goto(`${baseUrl}${caseRoute}?t=84&lang=en`, { waitUntil: "networkidle" });
+    await waterModel();
+    const without = await stuckStage();
+    assert(without.caption === 0 && without.map >= 360 && (height < 640 || without.over <= 0), `${width} x ${height}: without the layer the map keeps its usual height (${JSON.stringify(without)})`);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  checks.push(`sticky stage with the season envelope's caption: the map gives up the caption's height, so the stage and its day buttons stay inside the window (${stageFits.join("; ")})`);
+  // The envelope's two files load on their own. Without the raster the comparison keeps its figures and only the layer is
+  // withheld; without the statistics, or with statistics the page cannot read, both are withheld. Each case says so by
+  // the map, and the link no longer asks for the layer.
+  const envelopeFailures = await context.newPage();
+  const failureErrors = [];
+  envelopeFailures.on("pageerror", (error) => failureErrors.push(error.message));
+  await envelopeFailures.route("https://tile.openstreetmap.org/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: blankTile }));
+  const failureReady = () => envelopeFailures.waitForFunction(() => !document.body.innerText.includes("Preparing the water model"), undefined, { timeout: 30_000 });
+  await envelopeFailures.route("**/unosat4009/envelope.png", (route) => route.fulfill({ status: 404, body: "missing" }));
+  await envelopeFailures.goto(`${baseUrl}${caseRoute}?t=84&layers=trsce`, { waitUntil: "networkidle" });
+  await failureReady();
+  const layerFailed = "The season envelope's map layer could not be loaded, so the layer is not shown. Its comparison figures are still shown under “Evidence for this moment”.";
+  await expect(envelopeFailures.getByTestId("envelope-failed-map")).toBeVisible();
+  await expect(envelopeFailures.getByTestId("envelope-failed-map")).toHaveText(layerFailed);
+  await expect(envelopeFailures.getByTestId("envelope-failed-map")).toHaveAttribute("role", "status");
+  await expectClearMap(["zoom", "notes", "legend", "envelope failure", "attribution"], "raster missing", envelopeFailures);
+  await expect(envelopeFailures.locator(".leaflet-fg-envelope-pane canvas")).toHaveCount(0);
+  await expect(envelopeFailures.getByTestId("envelope-chip")).toHaveCount(0);
+  await expect(envelopeFailures.getByTestId("envelope-comparison").getByTestId("envelope-district").locator("li[data-row='modelled_peak']")).toContainText("agreement (IoU) 0.48");
+  await expect(envelopeFailures.getByTestId("envelope-comparison").getByTestId("envelope-residents")).toContainText("about 17,927");
+  await expect(envelopeFailures.getByTestId("envelope-comparison-status")).toHaveCount(0);
+  await expect(envelopeFailures).not.toHaveURL(/[?&]layers=[a-z]*e(&|$)/);
+  assert(!/CC BY-SA|UNOSAT/.test(await envelopeFailures.locator(".leaflet-control-attribution").innerText()), "A layer that is not drawn adds no credit to the map");
+  await envelopeFailures.getByRole("button", { name: "Map layers", exact: true }).click();
+  await expect(envelopeFailures.getByTestId("envelope-toggle")).toHaveCount(0);
+  await expect(envelopeFailures.getByTestId("envelope-failed")).toHaveText(layerFailed);
+  await envelopeFailures.unroute("**/unosat4009/envelope.png");
+  const allFailed = "The season envelope could not be loaded, so its layer and its comparison are not shown.";
+  const brokenStatistics = [
+    ["statistics missing", (route) => route.fulfill({ status: 404, body: "missing" })],
+    ["statistics without the residents block", async (route) => {
+      const document = await (await route.fetch()).json();
+      delete document.comparison.residents;
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(document) });
+    }],
+    ["statistics without the lists of differences", async (route) => {
+      const document = await (await route.fetch()).json();
+      delete document.comparison.disagreement;
+      delete document.comparison.low_confidence;
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(document) });
+    }],
+  ];
+  for (const [name, handler] of brokenStatistics) {
+    await envelopeFailures.route("**/unosat4009/envelope.json", handler);
+    await envelopeFailures.goto(`${baseUrl}${caseRoute}?t=84&layers=trsce`, { waitUntil: "networkidle" });
+    await failureReady();
+    await expect(envelopeFailures.getByTestId("envelope-failed-map"), name).toHaveText(allFailed);
+    await expect(envelopeFailures.getByTestId("envelope-comparison-status"), name).toHaveText("The figures of this comparison are not shown: its statistics file could not be loaded.");
+    await expect(envelopeFailures.getByTestId("envelope-district"), name).toHaveCount(0);
+    await expect(envelopeFailures.locator(".leaflet-fg-envelope-pane canvas"), name).toHaveCount(0);
+    // The rest of the page is whole: the readout, the access card and the checks above the comparison.
+    await expect(envelopeFailures.getByTestId("replay-readout"), name).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
+    await expect(envelopeFailures.getByTestId("access-card"), name).toBeVisible();
+    await expect(envelopeFailures).not.toHaveURL(/[?&]layers=[a-z]*e(&|$)/);
+    await envelopeFailures.unroute("**/unosat4009/envelope.json");
+  }
+  assert.deepEqual(failureErrors, [], "A missing or unreadable season-envelope file raises no client exception");
+  await envelopeFailures.close();
+  checks.push("season envelope files load on their own: without the raster the comparison keeps its figures and a note by the map says the layer is not shown; without readable statistics the layer and the comparison are withheld with their own sentences; the shared link drops the layer letter; no client exception");
   await slider.fill("84");
   await expect(readout).toContainText("Thu 12 Sep 2024 · 12:00 ICT");
   await expect(page).toHaveURL(/[?&]t=84(&|$)/);
@@ -984,14 +1181,14 @@ try {
   await expect(equity.getByTestId("equity-why")).toHaveCount(0);
   // All residents at road nodes, reported set: none of the 2,440 proxy-vulnerable residents within reach lost access. Never "0.00".
   await accessCard.getByRole("radio", { name: /^All residents at road nodes/ }).check();
-  await expect(equity).toContainText("Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, 22.08% of everyone else have.");
+  await expect(equity).toContainText("Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, 22.08% of everyone else who had a shelter within reach before the flood have lost it.");
   await expect(equity).not.toContainText("Evacuation Equity Gap: 0.00");
   await expect(equity.getByTestId("equity-counts")).toHaveText(
     "Proxy-vulnerable: 0 lost of 2,440 within reach before the flood (7,152 residents counted). Everyone else: 7,086 lost of 32,085 within reach before the flood (74,647 residents counted).");
   assert.equal(await equity.getAttribute("data-reason"), null, "With a ratio the equity block carries no reason");
   // All residents, ranked plan of 8 at the 3.5 m peak: 320 of 373 against 13,109 of 24,537, about 1.6 and "more likely".
   await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
-  await expect(equity).toContainText("Evacuation Equity Gap: 1.61 · Proxy-vulnerable residents are about 1.6× more likely to lose access (85.77% vs 53.42%).");
+  await expect(equity).toContainText("Evacuation Equity Gap: 1.61 · Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.6× more likely to lose it (85.77% vs 53.42%).");
   await expect(equity.getByTestId("equity-counts")).toHaveText(
     "Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted). Everyone else: 13,109 lost of 24,537 within reach before the flood (74,647 residents counted).");
   await expect(equity.getByTestId("equity-why")).toContainText("the ratio counts only residents who had a shelter of this set within reach before the flood. So a high ratio says where those homes sit");
@@ -999,7 +1196,7 @@ try {
   await equity.locator("details summary").click();
   await expect(equity.locator("details")).toContainText("by the residents of that group who had a shelter of this set within reach before the flood");
   await expect(equity.locator("details")).toContainText("No ratio is shown when a group has fewer than 50 residents within reach before the flood");
-  assert(!/all residents counted in that group|less likely to lose access/.test(await equity.innerText()), "No rate on the card divides by all residents counted");
+  assert(!/all residents counted in that group|less likely to lose (?:access|it)/.test(await equity.innerText()), "No rate on the card divides by all residents counted");
   await equity.locator("details summary").click();
   // Back to residents whose homes flood: 27 proxy-vulnerable residents are within reach of the plan's 8 sites, too few for a ratio.
   await accessCard.getByRole("radio", { name: /^Residents whose homes flood at the peak/ }).check();
@@ -1197,7 +1394,7 @@ try {
     await page.goto(`${baseUrl}${caseRoute}?t=84&layers=trsce`, { waitUntil: "networkidle" });
     await waterModel();
     const envelopePhone = await expectEnvelopeShown(at);
-    await expectClearMap(["zoom", "notes", "legend", "attribution"], `${at} with the season envelope`);
+    await expectClearMap(["zoom", "notes", "legend", "envelope chip", "attribution"], `${at} with the season envelope`);
     await noScroll("with the season envelope");
     const captionFit = await page.getByTestId("envelope-caption").evaluate((caption) => {
       const frame = document.querySelector("[class*='mapFrame']").getBoundingClientRect();
@@ -1209,8 +1406,28 @@ try {
     await page.goto(`${baseUrl}${caseRoute}?t=158&layers=trscve`, { waitUntil: "networkidle" });
     await waterModel();
     await expect(page.getByTestId("envelope-chip")).toBeVisible();
-    await expectClearMap(["zoom", "notes", "legend", "attribution"], `${at}, three notes and the season envelope`);
+    await expectClearMap(["zoom", "notes", "legend", "envelope chip", "attribution"], `${at}, three notes and the season envelope`);
     await noScroll("with three notes and the season envelope");
+    // With the legend open the notes step aside; the chip does not.
+    await page.getByTestId("map-legend").locator("> summary").click();
+    await expectClearMap(["zoom", "legend", "envelope chip", "attribution"], `${at}, legend open with the season envelope`);
+    await expectEnvelopeChipVisible(`${at}, legend open`);
+    await page.getByTestId("map-legend").locator("> summary").click();
+    // The imagery swipe with the layer on: the notes column drops what does not fit under the side labels, and the chip
+    // is not in it, so the hatched layer is never on the map without its label. One note and three, English and Thai.
+    for (const [query, state] of [["?t=84&layers=trsce&cmp=s2-20240905,s2-20240915", "swipe with the season envelope"],
+      ["?t=158&layers=trscve&cmp=s2-20240905,s2-20240915", "swipe with three notes and the season envelope"],
+      ["?t=84&layers=trsce&cmp=s2-20240905,s2-20240915&lang=th", "swipe with the season envelope in Thai"],
+      ["?t=158&layers=trscve&cmp=s2-20240905,s2-20240915&lang=th", "swipe with three notes and the season envelope in Thai"]]) {
+      await page.goto(`${baseUrl}${caseRoute}${query}`, { waitUntil: "networkidle" });
+      await waterModel();
+      await expect(page.locator(".leaflet-fg-envelope-pane canvas"), `${at}, ${state}: the layer is drawn`).toHaveCount(1);
+      await expectEnvelopeChipVisible(`${at}, ${state}`);
+      await expectClearMap(["zoom", "notes", "legend", "envelope chip", "attribution", "left label", "right label", "divider handle"], `${at}, ${state}`);
+      await noScroll(state);
+    }
+    await page.goto(`${baseUrl}${caseRoute}?t=158&layers=trscve&lang=en`, { waitUntil: "networkidle" });
+    await waterModel();
     envelopePhones.push(`${at}: hatch period ${envelopePhone.hatch.periodPx} px, stripe ${envelopePhone.hatch.darkPx} px`);
     // The imagery swipe: both side labels (they wrap here), the divider's handle, the notes, the legend and the zoom
     // control are clear of each other, with one note and with three, in English and in Thai.
@@ -1281,7 +1498,7 @@ try {
   // The tile route stays: this page keeps its map until the next navigation.
   await page.setViewportSize({ width: 1440, height: 1000 });
   checks.push("case replay fits 360 and 390 px without overflow or truncated phase labels, with finger-sized day chips");
-  checks.push(`season envelope on phones: toggle on by link, chip among the notes, credit in the attribution and caption under the map, hatched (${envelopePhones.join("; ")}), nothing overlapping and no horizontal scroll, alone and with three notes`);
+  checks.push(`season envelope on phones: toggle on by link, chip in the bottom stack of the map (visible with the legend open and during the imagery swipe, one note and three, English and Thai), credit in the attribution and caption under the map, hatched (${envelopePhones.join("; ")}), nothing overlapping and no horizontal scroll`);
   checks.push("phones (360 and 390 px): Play to Pause and every replay hour move the map by 0 px; nothing overlaps among zoom buttons, notes, legend, basemap note, clear-route, attribution and popups, all inside the map, nor among the swipe's side labels, its handle, the notes, the legend and the zoom buttons (English and Thai, one note and three); no horizontal scroll; Tab reaches the drawer and Escape closes it from Play and the slider; tooltips stay in the viewport and close on Escape; hatch pixels in the first-flooded PNG; the availability pill returns when the page goes offline");
   // A touch phone in Thai: no keyboard hint, Buddhist-era years with the CE year, and no letter-spacing on Thai eyebrows.
   const touch = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
@@ -1318,7 +1535,7 @@ try {
   // All residents, ranked plan of 8: the ratio and its plain comparison in Thai.
   await touchPage.getByTestId("access-card").getByRole("radio", { name: /^ผู้อยู่อาศัยทั้งหมดที่จุดถนน/ }).check();
   await touchPage.getByTestId("access-card").getByRole("radio", { name: "แผนจัดอันดับ" }).check();
-  await expect(thaiEquity).toContainText("ช่องว่างความเท่าเทียมในการอพยพ: 1.61 · ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่าประมาณ 1.6 เท่า (85.77% เทียบกับ 53.42%)");
+  await expect(thaiEquity).toContainText("ช่องว่างความเท่าเทียมในการอพยพ: 1.61 · ในกลุ่มผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่ากลุ่มอื่นประมาณ 1.6 เท่า (85.77% เทียบกับ 53.42%)");
   await expect(thaiEquity.getByTestId("equity-counts")).toContainText("กลุ่มเปราะบางตามตัวแทน: สูญเสีย 320 จาก 373 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 7,152 คน)");
   await expect(thaiEquity.getByTestId("equity-why")).toContainText("ค่าที่สูงจึงบอกตำแหน่งของบ้านเหล่านั้น");
   const thaiEquityFit = await thaiEquity.evaluate((box) => ({ need: box.scrollWidth, room: box.clientWidth }));
@@ -1330,7 +1547,7 @@ try {
   await touchPage.goto(`${baseUrl}${caseRoute}?t=84&lang=th&layers=trsce`, { waitUntil: "networkidle" });
   await touchPage.waitForFunction(() => !document.body.innerText.includes("กำลังเตรียมแบบจำลองน้ำ"), undefined, { timeout: 30_000 });
   const envelopeThai = await expectEnvelopeShown("touch phone in Thai", touchPage, "th");
-  await expectClearMap(["zoom", "notes", "legend", "attribution"], "touch phone in Thai with the season envelope", touchPage);
+  await expectClearMap(["zoom", "notes", "legend", "envelope chip", "attribution"], "touch phone in Thai with the season envelope", touchPage);
   assert.deepEqual(await spacedThai(touchPage), [], "Touch phone: no Thai text is letter-spaced with the season envelope on");
   const envelopeThaiScroll = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   assert(envelopeThaiScroll <= 1, `Touch phone in Thai: no horizontal scroll with the season envelope (${envelopeThaiScroll}px)`);

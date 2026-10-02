@@ -4,7 +4,7 @@
  "study_id": "mae-sai-2024-flood-timeline",
  "revision": "r4",
  "generated_by": "scripts/mae_sai_timeline_unosat4009.py",
- "generated_at": "2026-10-02T18:28:00+07:00",
+ "generated_at": "2026-10-02T20:59:00+07:00",
  "lane": "SCN-ENV",
  "evidence_tier": "Season envelope (scenario), used as provided; unvalidated",
  "temporal_relation": "season_envelope",
@@ -39,6 +39,33 @@
  "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
  "map_credit": "UNOSAT and GISTDA · CC BY-SA 4.0",
  "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+ "other_inputs_note": "envelope.json also holds figures that come from the open data below. Each keeps its own credit and licence: give these credits as well when you reuse the file. The licence and the credit above cover what comes from product 4009. This is a caution, not legal advice.",
+ "other_inputs": [
+  {
+   "id": "copernicus-dem",
+   "name": "Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100)",
+   "licence": "Copernicus DEM licence (free, attribution)",
+   "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA",
+   "timestamp": "2021 release (DSM from 2011-2015 acquisitions)",
+   "used_for": "The modelled water set beside the envelope: model_stage_m, model_km2, model_only_km2, the overlap, the union and the three ratios, the low-confidence areas and on_mapped_channels_km2. Model output on a terrain model (T1 scenario), not an observation."
+  },
+  {
+   "id": "worldpop",
+   "name": "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)",
+   "licence": "CC BY 4.0",
+   "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+   "timestamp": "2020 estimate",
+   "used_for": "residents_in_envelope, residents_in_envelope_replay_rule and model_residents_in_water: modelled population estimates for 2020, not a census count."
+  },
+  {
+   "id": "cod-ab",
+   "name": "HDX Thailand COD-AB subdistrict boundaries v01",
+   "licence": "CC BY-IGO",
+   "attribution": "OCHA / HDX Thailand COD-AB",
+   "timestamp": "valid from 2022-01-22",
+   "used_for": "The district clip, the subdistrict ids, tambon_km2 and share_of_tambon."
+  }
+ ],
  "rights_record": {
   "path": "docs/proposal_execution/rights_basis_4009_v1.json",
   "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
@@ -138,7 +165,7 @@
   "change_notice": "Changed by FloodGuard: clipped to Mae Sai district (the eight subdistricts of HDX Thailand COD-AB v01); geometry repaired (make_valid; 3 parts repaired); reprojected from EPSG:4326 to EPSG:32647; rasterised to 10 m cells. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0. The cells were then counted, and compared with the replay's modelled water, to make this table.",
   "model_fields": {
    "evidence_tier": "T1 scenario (model)",
-   "note": "model_stage_m, model_km2, model_only_km2, model_residents_in_water and the low-confidence areas are model output on the reconstructed water; envelope_km2, envelope_only_km2 and residents_in_envelope come from the season envelope; the overlap and the three ratios use both."
+   "note": "model_stage_m, model_km2, model_only_km2, model_residents_in_water and the low-confidence areas are model output on the reconstructed water; envelope_km2, envelope_only_km2 and the two counts of residents in the envelope come from the season envelope; the overlap and the three ratios use both."
   },
   "district": [
    {
@@ -294,12 +321,15 @@
    "reason": "Not computed: no land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland."
   },
   "residents": {
-   "residents_in_envelope": 17344,
+   "residents_in_envelope": 17927,
+   "residents_in_envelope_replay_rule": 17344,
    "model_residents_in_water": 16060,
    "model_stage": "modelled_peak",
    "source": "WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020)",
    "scope": "District total only.",
-   "rule": "Residents on envelope cells outside mapped channels, inside the eight subdistricts: the replay's exposure rule (WorldPop 2020 spread evenly over 10 m cells). Modelled estimates, not a census count and not the 2024 population."
+   "rule": "WorldPop 2020 cells (about 100 m) whose centre lies inside the clipped envelope, inside the eight subdistricts: the exposure definition stated for the planning overlay. Modelled estimates, not a census count and not the 2024 population.",
+   "replay_rule": "Residents on envelope cells outside mapped channels, inside the eight subdistricts: the replay's exposure rule (WorldPop 2020 spread evenly over 10 m cells), the rule of model_residents_in_water. Modelled estimates, not a census count and not the 2024 population.",
+   "rules_note": "The two counts of residents inside the envelope differ because the rules differ (whole 100 m cells by their centre, against 10 m cells with mapped channels left out). Set residents_in_envelope_replay_rule, not residents_in_envelope, beside model_residents_in_water."
   },
   "tuning": {
    "relation": "computed_after_keyframes_final",
@@ -315,7 +345,7 @@
   "The modelled peak is illustrative (no gauge record), so the comparison says where the two differ, not which one is right.",
   "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.",
   "Both masks are counted on the replay's 10 m grid inside the eight Mae Sai subdistricts and outside mapped drainage channels, the rule of every flooded area in the replay.",
-  "Residents are WorldPop 2020 modelled estimates spread evenly over 10 m cells, the replay's own exposure rule: not a census count and not the 2024 population.",
+  "Residents are WorldPop 2020 modelled estimates, counted by two rules that the file names (100 m cells by their centre, and the replay's 10 m cells with mapped channels left out): not a census count and not the 2024 population.",
   "No land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland.",
   "The comparison was computed after the stage keyframes were final and was not used for tuning."
  ],

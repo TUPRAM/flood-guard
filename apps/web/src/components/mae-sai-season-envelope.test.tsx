@@ -7,14 +7,17 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { externalChecksByRole, TIMELINE_MANIFEST_URL, type GeoCollection, type TambonProps, type TimelineManifest } from "@/lib/flood-timeline";
-import { parseSeasonEnvelopeDocument, shippableEnvelope } from "@/lib/flood-timeline-envelope";
+import { ENVELOPE_COPY, parseSeasonEnvelopeDocument, shippableEnvelope } from "@/lib/flood-timeline-envelope";
+import { localizedText } from "@/lib/flood-timeline-copy";
 import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
 import { ExternalChecks } from "./mae-sai-evacuation-panels";
 import { HowToRead, LicencesByInput, SourcesPanel, TimelineLegend } from "./mae-sai-flood-timeline";
-import { EXPORT_CREDITS, exportCreditLines, ReplayExportPanel } from "./mae-sai-replay-export";
+import {
+  createExportRenderer, EXPORT_CREDITS, exportCreditLines, PNG_WIDTH, ReplayExportPanel, VIDEO_FORMATS, type ExportEnvelope, type ReplayExportSource,
+} from "./mae-sai-replay-export";
 import {
   ENVELOPE_SWATCH_BACKGROUND,
   SeasonEnvelopeCaption,
@@ -22,6 +25,9 @@ import {
   SeasonEnvelopeComparison,
   SeasonEnvelopeLegend,
   SeasonEnvelopeSources,
+  envelopeDocument,
+  envelopeFailure,
+  settledSeasonEnvelope,
   type SeasonEnvelopeState,
 } from "./mae-sai-season-envelope";
 
@@ -33,6 +39,9 @@ const document = parseSeasonEnvelopeDocument(readJson<unknown>(block.files.stati
 const ready: SeasonEnvelopeState = { status: "ready", block, document, cells: new Uint32Array(0) };
 const loading: SeasonEnvelopeState = { status: "loading", block };
 const failed: SeasonEnvelopeState = { status: "error", block };
+/** The statistics loaded and the raster did not: the comparison is shown, the layer is not. */
+const rasterFailed: SeasonEnvelopeState = { status: "error", block, document };
+const STANDARD = "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.";
 const names = Object.fromEntries(readJson<GeoCollection<unknown, TambonProps>>(manifest.vectors.tambons.href).features.map((feature) => [feature.properties.id, feature.properties]));
 const check = externalChecksByRole(manifest.external_checks!).envelope[0];
 const text = (html: string) => html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&#x27;/g, "'").replace(/&quot;/g, "\"").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/ /g, " ");
@@ -49,16 +58,23 @@ describe("Season envelope on the map: chip, caption and legend", () => {
     expect(chip).toContain("repeating-linear-gradient");
     const caption = renderToStaticMarkup(<SeasonEnvelopeCaption envelope={block} language="en" />);
     const plain = text(caption);
-    expect(plain).toContain(`Scenario (SCN-ENV): 2024 season envelope. ${CAPTION}`);
+    // The standard sentence leads the caption: the reader who switches the layer on is told, under the map, that the
+    // agency extent is preliminary and that FloodGuard did not validate it.
+    expect(block.standard_sentence).toBe(STANDARD);
+    expect(plain).toContain(`Scenario (SCN-ENV): 2024 season envelope. ${STANDARD} ${CAPTION}`);
+    expect(caption).toContain('data-testid="envelope-caption-standard"');
     expect(plain).toContain("Licence: CC BY-SA 4.0 · Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009.");
     expect(caption).toContain('href="https://creativecommons.org/licenses/by-sa/4.0/"');
-    expect(plain).not.toMatch(NEVER);
+    expect(plain.replace("Unvalidated", "")).not.toMatch(NEVER);
     expect(findWordingViolations(visibleText(caption), "caption")).toEqual([]);
     const thaiChip = renderToStaticMarkup(<SeasonEnvelopeChip envelope={block} language="th" />);
     expect(text(thaiChip)).toBe("สถานการณ์จำลอง (SCN-ENV): ขอบเขตน้ำตลอดฤดูปี 2567 (2024)");
     expect(thaiChip).toContain('lang="th"');
     const thai = text(renderToStaticMarkup(<SeasonEnvelopeCaption envelope={block} language="th" />));
     expect(thai).toContain("ไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู");
+    expect(thai).toContain(localizedText(STANDARD, "th").text);
+    expect(thai).toContain("FloodGuard ก็ไม่ได้ตรวจสอบเช่นกัน");
+    expect(thai).not.toContain(STANDARD);
     expect(thai).toContain("FloodGuard ตัดให้เหลือเฉพาะอำเภอแม่สายและแปลงเป็นราสเตอร์บนกริดของการย้อนดู");
     // The published licence name and the credit stay as published; the Buddhist-era year carries its CE year.
     expect(thai).toContain("สัญญาอนุญาต: CC BY-SA 4.0 · เครดิต: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009");
@@ -169,10 +185,16 @@ describe("Season envelope comparison: the third group of the checks", () => {
     expect(low.share_inside_envelope_other).toBeCloseTo(0.608, 2);
     expect(plain).toContain(`Low-confidence modelled water: ${(low.share_inside_envelope_low_confidence! * 100).toFixed(1)}% of it lies inside the envelope, against ${(low.share_inside_envelope_other! * 100).toFixed(1)}% of the other modelled water.`);
     const residents = comparison.residents;
-    expect(plain).toContain(`Residents inside the envelope, district total: about ${residents.residents_in_envelope.toLocaleString("en-US")} (WorldPop 2020 modelled estimates, counted like the replay's residents in water); the modelled peak has ${residents.model_residents_in_water.toLocaleString("en-US")} residents in water.`);
+    // Two counts, each with its rule: whole WorldPop cells by their centre (the exposure definition stated for the planning
+    // overlay) lead; the count by the replay's own rule is the one set beside the model's residents in water.
+    expect([residents.residents_in_envelope, residents.residents_in_envelope_replay_rule]).toEqual([17_927, 17_344]);
+    expect(plain).toContain("Residents inside the envelope, district total: about 17,927 (WorldPop 2020 modelled estimates; cells of about 100 m whose centre lies inside the envelope, the exposure definition stated for the planning overlay). Counted like the replay's residents in water (10 m cells, mapped channels left out), the envelope holds about 17,344; by that rule the modelled peak has "
+      + `${residents.model_residents_in_water.toLocaleString("en-US")} residents in water.`);
+    expect(residents.rule).toContain("whose centre lies inside the clipped envelope");
+    expect(residents.replay_rule).toContain("the replay's exposure rule");
     // A district total only: the statistics file holds no per-subdistrict residents.
     expect(JSON.stringify(comparison.by_tambon)).not.toMatch(/resident/);
-    expect(Object.keys(residents).sort()).toEqual(["model_residents_in_water", "model_stage", "residents_in_envelope", "rule", "scope", "source"]);
+    expect(Object.keys(residents).sort()).toEqual(["model_residents_in_water", "model_stage", "replay_rule", "residents_in_envelope", "residents_in_envelope_replay_rule", "rule", "rules_note", "scope", "source"]);
     // No land-cover map is among the bake's inputs, so the built-up and cropland split is left out, and the page says so.
     expect(comparison.land_cover).toEqual({ computed: false, reason: "Not computed: no land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland." });
     expect(plain).toContain(comparison.land_cover.reason);
@@ -192,6 +214,29 @@ describe("Season envelope comparison: the third group of the checks", () => {
       expect(pending).toContain(sentence);
       expect(pending).not.toMatch(/agreement \(IoU\)|Residents inside the envelope|km², envelope/);
     }
+  });
+
+  it("keeps its figures when only the raster failed or is still loading: the comparison needs the statistics file alone", () => {
+    for (const state of [rasterFailed, { status: "loading", block, document } as SeasonEnvelopeState]) {
+      const shown = text(renderToStaticMarkup(<ExternalChecks manifest={manifest} language="en" envelope={state} names={names} />));
+      expect(shown).toBe(plain);
+      expect(shown).not.toMatch(/could not be loaded|Loading the season envelope/);
+    }
+    // The two files settle on their own. The statistics decide the comparison; the layer needs both.
+    const cells = new Uint32Array([1, 2]);
+    const ok = <T,>(value: T): PromiseFulfilledResult<T> => ({ status: "fulfilled", value });
+    const no: PromiseRejectedResult = { status: "rejected", reason: new Error("HTTP 404") };
+    expect(settledSeasonEnvelope(block, ok(document), ok(cells))).toEqual({ status: "ready", block, document, cells });
+    expect(settledSeasonEnvelope(block, ok(document), no)).toEqual({ status: "error", block, document });
+    expect(settledSeasonEnvelope(block, no, ok(cells))).toEqual({ status: "error", block });
+    expect(settledSeasonEnvelope(block, no, no)).toEqual({ status: "error", block });
+    expect([ready, rasterFailed, failed, loading, { status: "absent" } as const].map(envelopeDocument)).toEqual([document, document, null, null, null]);
+    // Each failure has its own, accurate sentence, in both languages.
+    expect(envelopeFailure(rasterFailed, "en")).toBe("The season envelope's map layer could not be loaded, so the layer is not shown. Its comparison figures are still shown under “Evidence for this moment”.");
+    expect(envelopeFailure(failed, "en")).toBe("The season envelope could not be loaded, so its layer and its comparison are not shown.");
+    expect(envelopeFailure(rasterFailed, "th")).toContain("ตัวเลขการเทียบยังแสดงอยู่ในหัวข้อ “หลักฐานของช่วงเวลานี้”");
+    expect(envelopeFailure(failed, "th")).toContain("จึงไม่แสดงชั้นข้อมูลและการเทียบของขอบเขตนี้");
+    for (const state of [ready, loading, { status: "absent" } as const]) expect(envelopeFailure(state, "en")).toBeNull();
   });
 
   it("reads the same in Thai, with the published names kept as published", () => {
@@ -222,6 +267,12 @@ describe("Season envelope in the Sources panel", () => {
     expect(plain).toContain("Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.");
     expect(plain).toContain("Licence: CC BY-SA 4.0 · Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009.");
     expect(plain).toContain(`Change notice: ${document.change_notice}`);
+    // The statistics file's other inputs, with the licences and credits they keep.
+    expect(plain).toContain("The statistics file also holds figures from other open data, which keep their own credits and licences; give these credits as well when you reuse it: "
+      + "Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution); © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA)"
+      + " · WorldPop Thailand 100 m population 2020, unconstrained top-down (CC BY 4.0; WorldPop (www.worldpop.org), University of Southampton)"
+      + " · HDX Thailand COD-AB subdistrict boundaries v01 (CC BY-IGO; OCHA / HDX Thailand COD-AB).");
+    expect(document.other_inputs.map((item) => item.id)).toEqual(["copernicus-dem", "worldpop", "cod-ab"]);
     for (const [name, file] of [["envelope.png", block.files.raster], ["envelope.json", block.files.statistics], ["LICENSE", block.files.licence]] as const) {
       expect(html).toContain(`<a href="${file.href}" download="${name}"`);
     }
@@ -237,9 +288,30 @@ describe("Season envelope in the Sources panel", () => {
     expect(pending).toContain("Credit: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009.");
     expect(pending).toContain("The season envelope could not be loaded, so its layer and its comparison are not shown.");
     expect(pending).not.toContain("Change notice:");
-    const thai = text(renderToStaticMarkup(<SeasonEnvelopeSources envelope={ready} language="th" />));
+    // With the statistics and without the raster the entry keeps the change notice and says that only the layer is missing.
+    const noRaster = text(renderToStaticMarkup(<SeasonEnvelopeSources envelope={rasterFailed} language="en" />));
+    expect(noRaster).toContain(`Change notice: ${document.change_notice}`);
+    expect(noRaster).toContain("The season envelope's map layer could not be loaded, so the layer is not shown.");
+    expect(noRaster).not.toContain("its layer and its comparison are not shown");
+    const thaiHtml = renderToStaticMarkup(<SeasonEnvelopeSources envelope={ready} language="th" />);
+    const thai = text(thaiHtml);
     expect(thai).toContain("ขอบเขตน้ำตลอดฤดู (ชั้นข้อมูลสถานการณ์จำลอง)");
     expect(thai).toContain("FloodGuard ก็ไม่ได้ตรวจสอบเช่นกัน");
+    // What FloodGuard changed is readable in Thai: the notice in Thai first, then the English notice as published.
+    const thaiNotice = localizedText(document.change_notice, "th");
+    expect(thaiNotice.lang).toBe("th");
+    expect(thaiNotice.text).toBe("FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย (ตำบลทั้งแปดตาม HDX Thailand COD-AB v01) ซ่อมแซมรูปทรงเรขาคณิต (make_valid ซ่อมแซม 3 ส่วน) "
+      + "แปลงระบบพิกัดจาก EPSG:4326 เป็น EPSG:3857 และแปลงเป็นราสเตอร์ขนาดเซลล์ ประมาณ 15 ม. แหล่งข้อมูล: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0");
+    expect(thai).toContain(`ประกาศการเปลี่ยนแปลง: ${thaiNotice.text} (ข้อความตามที่เผยแพร่: ${document.change_notice})`);
+    expect(thaiHtml).toContain(`<span lang="th">${thaiNotice.text}</span>`);
+    // The same Thai sentences are in the Thai half of the licence file that ships beside the layer, for both derived files.
+    const licence = readFileSync(resolve(publicRoot, block.files.licence.href.replace(/^\//, "")), "utf8").split("-".repeat(80));
+    expect(licence).toHaveLength(2);
+    expect(licence[1]).toContain(thaiNotice.text);
+    expect(licence[1]).toContain(localizedText(document.comparison.change_notice, "th").text);
+    expect(localizedText(document.comparison.change_notice, "th").text).toContain("เพื่อจัดทำตารางนี้");
+    expect(licence[0]).not.toContain(thaiNotice.text);
+    expect(thai).toContain("ไฟล์สถิติมีตัวเลขที่มาจากข้อมูลเปิดอื่นด้วย ซึ่งมีเครดิตและสัญญาอนุญาตของตนเอง");
     for (const limit of document.limitations) expect(thai, limit).not.toContain(limit);
     expect(thai).not.toMatch(/25[67]\d(?! \(20\d\d\))/);
   });
@@ -261,36 +333,142 @@ describe("Season envelope in the Sources panel", () => {
 });
 
 describe("Season envelope in the exported PNG and video", () => {
-  it("adds its credit on a line of its own while the layer is visible, and nothing while it is hidden", () => {
-    const visible = { cells: new Uint32Array(0), map_credit: block.map_credit };
-    expect(exportCreditLines(visible)).toEqual([EXPORT_CREDITS, "UNOSAT and GISTDA · CC BY-SA 4.0"]);
-    expect(exportCreditLines(visible).join(" · ")).toContain("CC BY-SA 4.0");
+  const FULL = "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0) · clipped to Mae Sai district and rasterised by FloodGuard";
+  const visible: ExportEnvelope = { cells: new Uint32Array([5, 6, 7]), credit: block.credit, licence: block.licence, licence_url: block.licence_url };
+
+  it("credits the product in full while the layer is visible, and not at all while it is hidden", () => {
+    // An exported picture leaves the page: it carries the rights record's attribution (holders, event code, product
+    // number), the licence with its address and what FloodGuard changed, not the short credit of the map.
+    expect(exportCreditLines(visible, "en")).toEqual([EXPORT_CREDITS, FULL]);
+    expect(exportCreditLines(visible, "en")[1]).toContain(block.credit);
+    expect(exportCreditLines(visible, "en")[1]).not.toBe(block.map_credit);
+    expect(exportCreditLines(visible, "th")[1]).toBe(
+      "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0) · FloodGuard ตัดตามขอบเขตอำเภอแม่สายและแปลงเป็นราสเตอร์");
     for (const hidden of [null, undefined]) {
-      expect(exportCreditLines(hidden)).toEqual([EXPORT_CREDITS]);
-      expect(exportCreditLines(hidden).join(" ")).not.toMatch(/CC BY-SA|UNOSAT|GISTDA/);
+      expect(exportCreditLines(hidden, "en")).toEqual([EXPORT_CREDITS]);
+      expect(exportCreditLines(hidden, "en").join(" ")).not.toMatch(/CC BY-SA|UNOSAT|GISTDA/);
     }
     // The standing credits are unchanged by the layer.
     expect(EXPORT_CREDITS).toBe("Contains modified Copernicus Sentinel data 2024 · © OpenStreetMap contributors · Copernicus DEM © DLR e.V., Airbus DS · WorldPop");
   });
 
   it("says under the export buttons which credits the frame carries, with and without the layer", () => {
-    const on = renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="en" waterOpacity={0.85} envelope={{ cells: new Uint32Array(0), map_credit: block.map_credit }} />);
+    const on = renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="en" waterOpacity={0.85} envelope={visible} />);
     const off = renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="en" waterOpacity={0.85} />);
     const credits = (html: string) => text(html.split('data-testid="export-credits">')[1].split("</p>")[0]);
-    expect(credits(on)).toBe(`Credits drawn into the PNG and the video: ${EXPORT_CREDITS} · UNOSAT and GISTDA · CC BY-SA 4.0`);
+    expect(credits(on)).toBe(`Credits drawn into the PNG and the video: ${EXPORT_CREDITS} · ${FULL}`);
     expect(credits(off)).toBe(`Credits drawn into the PNG and the video: ${EXPORT_CREDITS}`);
-    expect(text(on)).toContain("The season envelope (scenario) is on the map, so the PNG and the video draw it hatched, with its legend entry and its credit.");
+    expect(text(on)).toContain("The season envelope (scenario) is on the map, so the PNG and the video draw it hatched, with its legend entry, its full credit, its licence and a note of what FloodGuard changed.");
     expect(off).not.toContain("export-envelope");
     expect(text(off)).not.toMatch(/CC BY-SA|UNOSAT|GISTDA|season envelope/i);
-    const thai = text(renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="th" waterOpacity={0.85} envelope={{ cells: new Uint32Array(0), map_credit: block.map_credit }} />));
+    const thaiHtml = renderToStaticMarkup(<ReplayExportPanel source={null} time={3.5} language="th" waterOpacity={0.85} envelope={visible} />);
+    const thai = text(thaiHtml);
     expect(thai).toContain("เครดิตที่วาดลงในภาพ PNG และวิดีโอ");
-    expect(thai).toContain("UNOSAT and GISTDA · CC BY-SA 4.0");
-    // The renderer draws the credit lines it is given by the same function, each on its own line, and the layer's hatch.
-    const source = readFileSync(resolve(import.meta.dirname, "mae-sai-replay-export.tsx"), "utf8");
-    expect(source).toContain("const creditLines = exportCreditLines(envelope);");
-    expect(source).toContain("creditLines.forEach((credit, index) => line(163 + index * 16, credit, 400, 10.5, \"#b9c6d8\"));");
-    expect(source).toContain("for (const credit of creditLines) block(credit, 400, 10.5, \"#b9c6d8\", 2);");
-    expect(source).toContain("...creditLines.map((credit) => ({ value: credit, weight: 400, size: 10.5, colour: \"#b9c6d8\", gap: 4 })),");
-    expect(source).toContain("if (envelopeCanvas) context.drawImage(envelopeCanvas, 0, 0, mapWidth, mapHeight);");
+    expect(thai).toContain("UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0) · FloodGuard ตัดตามขอบเขตอำเภอแม่สายและแปลงเป็นราสเตอร์");
+    // The published credit and licence are marked as English; the change note is in the page's language.
+    expect(thaiHtml).toContain('<span lang="en">UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0)</span>');
+  });
+
+  /**
+   * The renderer itself, on a canvas that records what is drawn: text is as wide as its characters (half the font size
+   * each), so wrapping and fitting behave as in a browser, and every `fillText` and `drawImage` call is kept.
+   */
+  interface Recorded { texts: string[]; images: unknown[]; canvases: StubCanvas[] }
+  interface StubCanvas { width: number; height: number; getContext: () => unknown }
+  function recordingCanvas(): Recorded {
+    const recorded: Recorded = { texts: [], images: [], canvases: [] };
+    const context = (canvas: StubCanvas) => {
+      const state: Record<string, unknown> = { font: "400 10px sans-serif" };
+      const size = () => Number(/(\d+(?:\.\d+)?)px/.exec(String(state.font))?.[1] ?? 10);
+      const methods: Record<string, (...values: unknown[]) => unknown> = {
+        measureText: (value) => ({ width: String(value).length * size() * 0.5 }),
+        fillText: (value) => { if (canvas === recorded.canvases[0]) recorded.texts.push(String(value)); },
+        drawImage: (image) => { if (canvas === recorded.canvases[0]) recorded.images.push(image); },
+        createImageData: (width, height) => ({ data: new Uint8ClampedArray(Number(width) * Number(height) * 4), width, height }),
+      };
+      return new Proxy(state, {
+        get: (target, key: string) => (key in methods ? methods[key] : key in target ? target[key] : () => undefined),
+        set: (target, key: string, value) => { target[key] = value; return true; },
+      });
+    };
+    const stub = {
+      createElement: () => {
+        const canvas: StubCanvas = { width: 0, height: 0, getContext: () => held };
+        const held = context(canvas);
+        recorded.canvases.push(canvas);
+        return canvas;
+      },
+    };
+    vi.stubGlobal("document", stub);
+    vi.stubGlobal("Image", class { decoding = ""; src = ""; decode() { return Promise.reject(new Error("no image in this test")); } });
+    vi.stubGlobal("Path2D", class { moveTo() {} lineTo() {} closePath() {} });
+    return recorded;
+  }
+  const exportSource = (): ReplayExportSource => ({
+    manifest,
+    roads: { type: "FeatureCollection", features: [] },
+    roadProps: [],
+    facilityProps: [],
+    hand: { codes: new Uint8Array(manifest.hand.width * manifest.hand.height).fill(manifest.hand.never_code), factorKeys: null, candidates: new Uint32Array(0) },
+  });
+  const squeeze = (value: string) => value.replace(/\s+/g, "");
+  /** Whether `rows`, drawn one after another, hold `whole` in order with nothing cut. */
+  const drawnWhole = (texts: string[], whole: string) => squeeze(texts.join("")).includes(squeeze(whole));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    ["portrait", "en"], ["portrait", "th"], ["landscape", "en"], ["landscape", "th"],
+  ] as const)("draws the hatch, the whole legend entry and the whole credit into a %s frame (%s) only while the layer is passed", async (format, language) => {
+    const legend = ENVELOPE_COPY.exportLegend[language];
+    const credit = exportCreditLines(visible, language)[1];
+    for (const width of format === "portrait" ? [VIDEO_FORMATS.portrait.width, PNG_WIDTH] : [VIDEO_FORMATS.landscape.width]) {
+      const withLayer = recordingCanvas();
+      const renderer = await createExportRenderer(exportSource(), { width, language, waterOpacity: 0.85, format, envelope: visible });
+      // The frame: the envelope's own canvas is drawn over the water (two pictures: the water, then the envelope).
+      renderer.draw(3.5);
+      const envelopeCanvas = withLayer.canvases[2];
+      expect(withLayer.canvases).toHaveLength(3);
+      expect(withLayer.images).toEqual([withLayer.canvases[1], envelopeCanvas]);
+      // Its legend entry and its credit are drawn whole: wrapped onto further rows, never cut with an ellipsis.
+      expect(drawnWhole(withLayer.texts, legend), `${format} ${language} ${width}: legend`).toBe(true);
+      expect(drawnWhole(withLayer.texts, credit), `${format} ${language} ${width}: credit`).toBe(true);
+      const ownRows = withLayer.texts.filter((row) => /UNOSAT|CC BY-SA|FloodGuard ตัด|clipped to|season envelope|ขอบเขตน้ำตลอดฤดู|การสังเกตการณ์ของวันใด|replay day/.test(row));
+      expect(ownRows.length).toBeGreaterThanOrEqual(2);
+      expect(ownRows.filter((row) => row.includes("…"))).toEqual([]);
+      expect(withLayer.texts.join(" ")).toContain("FL20240912THA");
+      // The standing credits stay on the frame beside it.
+      expect(withLayer.texts.some((row) => row.startsWith("Contains modified Copernicus Sentinel data 2024"))).toBe(true);
+      // The portrait frame grows by the credit's rows; the 16:9 frame keeps its shape.
+      const frameHeight = renderer.canvas.height;
+      // The end card of the video carries the credit too.
+      withLayer.texts.length = 0;
+      renderer.drawEnd();
+      expect(drawnWhole(withLayer.texts, credit), `${format} ${language} ${width}: end card`).toBe(true);
+      vi.unstubAllGlobals();
+
+      const without = recordingCanvas();
+      const plain = await createExportRenderer(exportSource(), { width, language, waterOpacity: 0.85, format });
+      plain.draw(3.5);
+      plain.drawEnd();
+      expect(without.canvases).toHaveLength(2);
+      expect(without.images.every((image) => image === without.canvases[1])).toBe(true);
+      expect(without.texts.join(" ")).not.toMatch(/UNOSAT|GISTDA|CC BY-SA|FL20240912THA|season envelope|ขอบเขตน้ำตลอดฤดู/);
+      if (format === "portrait") expect(frameHeight).toBeGreaterThan(plain.canvas.height);
+      else expect(frameHeight).toBe(plain.canvas.height);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("wraps the Thai legend entry of the portrait frame onto a second row instead of cutting it", async () => {
+    // The portrait legend is 380 px wide at a 720 px frame; the Thai entry is wider than the 350 px its row has.
+    const recorded = recordingCanvas();
+    const renderer = await createExportRenderer(exportSource(), { width: VIDEO_FORMATS.portrait.width, language: "th", waterOpacity: 0.85, envelope: visible });
+    renderer.draw(3.5);
+    const rows = recorded.texts.filter((row) => /ขอบเขตน้ำตลอดฤดูปี|ในการย้อนดู\)/.test(row));
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    expect(squeeze(rows.join(""))).toBe(squeeze(ENVELOPE_COPY.exportLegend.th));
+    expect(rows.join("")).toContain("ในการย้อนดู)");
+    expect(rows.join("")).not.toContain("…");
   });
 });

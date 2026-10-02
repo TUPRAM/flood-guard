@@ -197,7 +197,9 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
     panel("ExternalChecks while the season envelope loads", <ExternalChecks manifest={manifest} language={language} envelope={{ status: "loading", block: envelopeBlock }} names={names} />),
     panel("ExternalChecks without the season envelope's files", <ExternalChecks manifest={manifest} language={language} envelope={{ status: "error", block: envelopeBlock }} names={names} />),
     panel("SourcesPanel with the season envelope", <SourcesPanel manifest={manifest} language={language} offlineCopy={null} envelope={envelopeReady} />),
-    panel("ReplayExportPanel with the season envelope", <ReplayExportPanel source={null} time={3.5} language={language} waterOpacity={0.85} envelope={{ cells: new Uint32Array(0), map_credit: envelopeBlock.map_credit }} />),
+    panel("SourcesPanel with the season envelope's statistics and without its raster", <SourcesPanel manifest={manifest} language={language} offlineCopy={null} envelope={{ status: "error", block: envelopeBlock, document: envelopeDocument }} />),
+    panel("ReplayExportPanel with the season envelope", <ReplayExportPanel source={null} time={3.5} language={language} waterOpacity={0.85}
+      envelope={{ cells: new Uint32Array(0), credit: envelopeBlock.credit, licence: envelopeBlock.licence, licence_url: envelopeBlock.licence_url }} />),
     panel("RadarCheck", <RadarCheck manifest={manifest} radarSpan="6 Sep → 16 Sep 06:16 ICT" language={language} />),
     panel("WetFacilitiesCard", <WetFacilitiesCard facilities={facilities} stage={peak} language={language} />),
     panel("Hydrograph", <Hydrograph manifest={manifest} time={3.5} stage={peak} observations={observations} language={language} />),
@@ -224,6 +226,8 @@ function corpus(): { source: string; text: string }[] {
     ...jsonStrings(manifest).map(({ path, text }) => ({ source: `timeline.json ${path}`, text })),
     // The season envelope's statistics file: text derived from product 4009, read by the page.
     ...jsonStrings(envelopeDocument).map(({ path, text }) => ({ source: `unosat4009/envelope.json ${path}`, text })),
+    // The licence notice that ships beside it, English and Thai halves (the Thai half states the changes in Thai).
+    { source: "unosat4009/LICENSE", text: readFileSync(resolve(publicRoot, envelopeBlock.files.licence.href.replace(/^\//, "")), "utf8") },
   ];
   const rendered = [
     { name: "MaeSaiFloodTimeline shell (en)", html: renderToStaticMarkup(<MaeSaiFloodTimeline />) },
@@ -242,7 +246,8 @@ describe("Replay wording rules (shared with Python)", () => {
       "validation_as_agreement", // validated, validation or accuracy used for agreement
       "precision_recall", // precision or recall for product 4009
       "corroboration", // the season envelope "corroborating" the model, or the reverse
-      "envelope_verdict", // "the model is too low" or "too high" against the season envelope
+      "envelope_verdict", // "the model is too low" or "too high", or under- or overestimates, against the season envelope
+      "envelope_as_observation", // the season envelope called observed, or an observation
       "september_extent", // "September extent", "GISTDA's map"
       "return_period", // 25-year, 100-year
       "road_schedule", // schedule or closure plan for modelled roads
@@ -315,6 +320,15 @@ describe("Replay wording rules (shared with Python)", () => {
       ["Against the envelope the model is too low in town", "envelope_verdict"], ["The model is likely too high in Ban Dai", "envelope_verdict"],
       ["Compared with the September extent of product 4009", "september_extent"], ["GISTDA's map of the season", "september_extent"],
       ["ขอบเขตน้ำตลอดฤดูช่วยยืนยันแบบจำลอง", "corroboration"], ["แบบจำลองต่ำเกินไปในเขตเมือง", "envelope_verdict"],
+      // A verdict in other words: under- or overestimate verbs, and "too low/large" a few words after the model.
+      ["The model underestimates the town against the envelope", "envelope_verdict"], ["Modelled water in town is too low", "envelope_verdict"],
+      ["The modelled extent in Ban Dai is too large", "envelope_verdict"], ["The model overestimates Ban Dai", "envelope_verdict"],
+      ["The town is underestimated by the model", "envelope_verdict"], ["แบบจำลองประเมินต่ำเกินไปในเขตเมือง", "envelope_verdict"],
+      // The envelope is a scenario layer: never observed water, never an observation.
+      ["the envelope observed in September", "envelope_as_observation"], ["The season envelope was observed on 12 Sep", "envelope_as_observation"],
+      ["The observed envelope covers the town", "envelope_as_observation"], ["Product 4009 is the observed flood extent", "envelope_as_observation"],
+      ["ขอบเขตน้ำตลอดฤดูที่สังเกตได้ในเดือนกันยายน", "envelope_as_observation"],
+      ["ขอบเขตน้ำตลอดฤดูยืนยันผลการจำลอง", "corroboration"],
     ];
     for (const [text, rule] of envelopeBanned) expect(idsOf(findWordingViolations(text)), text).toContain(rule);
     for (const allowed of [
@@ -324,7 +338,15 @@ describe("Replay wording rules (shared with Python)", () => {
       "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.",
       "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
       "เป็นการดูความสมเหตุสมผลเทียบกับขอบเขตน้ำตลอดฤดู ไม่ใช่การยืนยันความถูกต้อง",
+      "Scenario (SCN-ENV): 2024 season envelope; not an observation for any replay day.",
+      "The envelope is never an observation for a replay day. VIIRS daily flood map (375 m, observed).",
+      // "ยืนยันผล" and "รับรองผล" are the start of "...ผลิตภัณฑ์" (product) in the licence limits: no finding there.
+      "UNOSAT และ GISTDA ไม่ได้รับรองผลิตภัณฑ์นี้",
+      "UNOSAT และ GISTDA ไม่ได้รับรอง FloodGuard หรือการใช้ผลิตภัณฑ์นี้ของ FloodGuard",
+      "แบบจำลองพื้นผิวความละเอียด 30 ม. ทำให้ระดับพื้นดินในเขตสิ่งปลูกสร้างสูงกว่าจริง น้ำจากแบบจำลองและจำนวนผู้อยู่อาศัยในน้ำในเขตเมืองจึงน่าจะต่ำกว่าความเป็นจริง",
     ]) expect(describeWordingFindings(findWordingViolations(allowed)), allowed).toBe("");
+    // The disclosed terrain bias is allowed in its own words only: the same claim in other words is a finding.
+    expect(idsOf(findWordingViolations("The 30 m surface model raises the ground, so the model underestimates the town."))).toEqual(["envelope_verdict"]);
     expect(findWordingViolations("Each rate divides the residents of a group who lost access by the residents of that group who had a shelter of this set within reach before the flood.")).toEqual([]);
     expect(findWordingViolations("Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted).")).toEqual([]);
   });
@@ -343,15 +365,21 @@ describe("Replay wording lint: current text", () => {
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(69);
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(71);
     // Product 4009 text is in the corpus three ways: the page's own strings, the statistics file and the rendered panels.
     for (const file of ["src/components/mae-sai-season-envelope.tsx", "src/lib/flood-timeline-envelope.ts"]) expect(files).toContain(file);
     expect(items.filter((item) => item.source.startsWith("unosat4009/envelope.json")).length).toBeGreaterThan(30);
+    const licence = items.find((item) => item.source === "unosat4009/LICENSE")!.text;
+    expect(licence).toContain("FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย");
+    expect(licence).toContain("UNOSAT และ GISTDA ไม่ได้รับรอง FloodGuard หรือการใช้ผลิตภัณฑ์นี้ของ FloodGuard");
     const envelopeText = items.filter((item) => /season envelope|SeasonEnvelope/.test(item.source)).map((item) => item.text).join(" ");
     expect(envelopeText).toContain("Scenario (SCN-ENV): 2024 season envelope");
     expect(envelopeText).toContain("Season envelope comparison (scenario; plausibility, not validation)");
     expect(envelopeText).toContain("Plausibility against a season envelope, not a validation.");
-    expect(envelopeText).toContain("UNOSAT and GISTDA · CC BY-SA 4.0");
+    expect(envelopeText).toContain("UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009 · CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0)");
+    expect(envelopeText).toContain("clipped to Mae Sai district and rasterised by FloodGuard");
+    expect(envelopeText).toContain("Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.");
+    expect(envelopeText).toContain("FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย");
     expect(envelopeText).toContain("สถานการณ์จำลอง (SCN-ENV): ขอบเขตน้ำตลอดฤดูปี 2567 (2024)");
     // The access card is linted with both shelter sets side by side, at the peak and before the flood, for both ways of
     // counting residents: every wording of the Evacuation Equity Gap (a ratio, no loss, a group too small) is in the corpus.
@@ -361,11 +389,11 @@ describe("Replay wording lint: current text", () => {
     expect(accessText).toContain("no ratio shown");
     expect(accessText).toContain("ไม่แสดงอัตราส่วน");
     expect(accessText).toContain("Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
-    expect(accessText).toContain("more likely to lose access (85.77% vs 53.42%)");
+    expect(accessText).toContain("Among residents with a shelter within reach before the flood, proxy-vulnerable residents are about 1.6× more likely to lose it (85.77% vs 53.42%)");
     expect(accessText).toContain("no proxy-vulnerable resident has lost access");
     expect(accessText).toContain("so none could lose it");
     expect(accessText).toContain("No one in either group has lost access at this replay hour");
-    expect(accessText).toContain("มากกว่าประมาณ 1.6 เท่า");
+    expect(accessText).toContain("มากกว่ากลุ่มอื่นประมาณ 1.6 เท่า");
     expect(accessText).toContain("จึงไม่มีผู้ใดในกลุ่มนี้สูญเสียการเข้าถึงได้");
     // The corpus really holds the standing disclaimer in both languages, export caption included.
     const all = items.map((item) => item.text).join("\n");

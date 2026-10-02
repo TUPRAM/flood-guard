@@ -27,7 +27,9 @@ import warnings
 import numpy as np
 from PIL import Image
 from pyproj import Transformer
+import rasterio
 from rasterio.features import rasterize
+from rasterio.windows import Window, from_bounds
 import shapely
 from shapely.geometry import shape
 
@@ -78,7 +80,7 @@ ASSUMPTIONS = [
     "The modelled peak is illustrative (no gauge record), so the comparison says where the two differ, not which one is right.",
     DSM_ASSUMPTION,
     "Both masks are counted on the replay's 10 m grid inside the eight Mae Sai subdistricts and outside mapped drainage channels, the rule of every flooded area in the replay.",
-    "Residents are WorldPop 2020 modelled estimates spread evenly over 10 m cells, the replay's own exposure rule: not a census count and not the 2024 population.",
+    "Residents are WorldPop 2020 modelled estimates, counted by two rules that the file names (100 m cells by their centre, and the replay's 10 m cells with mapped channels left out): not a census count and not the 2024 population.",
     "No land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland.",
     TUNING_STATEMENT,
 ]
@@ -99,11 +101,51 @@ LICENCE_LIMITS = [
     "The statistics file sets the product beside a model: a plausibility comparison, not a validation.",
     "This notice is not legal advice and not an official warning.",
 ]
+OTHER_INPUT_USE = {
+    "copernicus-dem": {
+        "en": ("The modelled water set beside the envelope: model_stage_m, model_km2, model_only_km2, the overlap, the union and the three "
+               "ratios, the low-confidence areas and on_mapped_channels_km2. Model output on a terrain model (T1 scenario), not an observation."),
+        "th": ("น้ำจากแบบจำลองที่นำมาเทียบกับขอบเขตนี้ ได้แก่ model_stage_m, model_km2, model_only_km2 พื้นที่ซ้อนทับ พื้นที่รวม อัตราส่วนทั้งสาม "
+               "พื้นที่ความเชื่อมั่นต่ำ และ on_mapped_channels_km2 เป็นผลจากแบบจำลองบนแบบจำลองภูมิประเทศ (สถานการณ์จำลอง T1) ไม่ใช่การสังเกตการณ์"),
+    },
+    "worldpop": {
+        "en": ("residents_in_envelope, residents_in_envelope_replay_rule and model_residents_in_water: modelled population estimates for "
+               "2020, not a census count."),
+        "th": ("residents_in_envelope, residents_in_envelope_replay_rule และ model_residents_in_water เป็นค่าประมาณประชากรจากแบบจำลองของปี 2563 (2020) "
+               "ไม่ใช่ผลสำมะโนประชากร"),
+    },
+    "cod-ab": {
+        "en": "The district clip, the subdistrict ids, tambon_km2 and share_of_tambon.",
+        "th": "การตัดตามขอบเขตอำเภอ รหัสตำบล tambon_km2 และ share_of_tambon",
+    },
+}
+"""What each input besides product 4009 gives ``envelope.json``, by the source id the bake uses, in English and Thai."""
+OTHER_INPUTS_NOTE = ("envelope.json also holds figures that come from the open data below. Each keeps its own credit and licence: give these "
+                     "credits as well when you reuse the file. The licence and the credit above cover what comes from product 4009. "
+                     "This is a caution, not legal advice.")
+CHANGE_NOTICE_THAI = ("FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย ({clip_geometry}) ซ่อมแซมรูปทรงเรขาคณิต ({repair_method} ซ่อมแซม {repair_count} ส่วน) "
+                      "แปลงระบบพิกัดจาก {source_crs} เป็น {target_crs} และแปลงเป็นราสเตอร์ขนาดเซลล์ {cell_size_m} ม. แหล่งข้อมูล: ")
+"""Thai rendering of the rights record's change-notice template, with the same placeholders; the credit and the licence follow it."""
+COUNTED_SENTENCE = " The cells were then counted, and compared with the replay's modelled water, to make this table."
+COUNTED_SENTENCE_THAI = " จากนั้นนับจำนวนเซลล์และเทียบกับน้ำจากแบบจำลองของการย้อนดู เพื่อจัดทำตารางนี้"
+RESIDENTS_RULE = ("WorldPop 2020 cells (about 100 m) whose centre lies inside the clipped envelope, inside the eight subdistricts: the exposure "
+                  "definition stated for the planning overlay. Modelled estimates, not a census count and not the 2024 population.")
+RESIDENTS_REPLAY_RULE = ("Residents on envelope cells outside mapped channels, inside the eight subdistricts: the replay's exposure rule "
+                         "(WorldPop 2020 spread evenly over 10 m cells), the rule of model_residents_in_water. Modelled estimates, not a "
+                         "census count and not the 2024 population.")
+RESIDENTS_RULES_NOTE = ("The two counts of residents inside the envelope differ because the rules differ (whole 100 m cells by their centre, "
+                        "against 10 m cells with mapped channels left out). Set residents_in_envelope_replay_rule, not residents_in_envelope, "
+                        "beside model_residents_in_water.")
 LICENCE_THAI = {
     "title": "ประกาศสัญญาอนุญาตสำหรับไฟล์ขอบเขตน้ำตลอดฤดูที่ดัดแปลงจากผลิตภัณฑ์ UNOSAT หมายเลข 4009",
     "headings": {"files": "ไฟล์ที่ประกาศนี้ครอบคลุม", "source": "แหล่งข้อมูล", "credit": "การให้เครดิต", "licence": "สัญญาอนุญาต",
                  "share_alike": "การอนุญาตแบบเดียวกัน (ShareAlike)", "changes": "สิ่งที่ FloodGuard เปลี่ยนแปลง (ประกาศการเปลี่ยนแปลง)",
-                 "limits": "ข้อจำกัด"},
+                 "other_inputs": "ข้อมูลนำเข้าอื่น (มีเครดิตและสัญญาอนุญาตของตนเอง)", "limits": "ข้อจำกัด"},
+    "other_inputs_note": ("envelope.json มีตัวเลขที่มาจากข้อมูลเปิดด้านล่างนี้ด้วย ข้อมูลแต่ละชุดมีเครดิตและสัญญาอนุญาตของตนเอง เมื่อนำไฟล์ไปใช้ต่อ "
+                          "โปรดให้เครดิตเหล่านี้ด้วย สัญญาอนุญาตและเครดิตข้างต้นครอบคลุมส่วนที่มาจากผลิตภัณฑ์หมายเลข 4009 ข้อความนี้เป็นข้อควรระวัง "
+                          "ไม่ใช่คำแนะนำทางกฎหมาย"),
+    "other_inputs_labels": {"licence": "สัญญาอนุญาต", "credit": "เครดิต", "used_for": "ใช้สำหรับ"},
+    "other_inputs_used_for": {key: value["th"] for key, value in OTHER_INPUT_USE.items()},
     "share_alike": ("ท่านคัดลอก แบ่งปัน และดัดแปลงไฟล์เหล่านี้ได้ หากให้เครดิตตามข้างต้น ใส่ลิงก์ไปยังสัญญาอนุญาต ระบุสิ่งที่ท่านเปลี่ยนแปลง "
                     "และเผยแพร่ผลงานของท่านภายใต้สัญญาอนุญาตเดียวกัน คือ CC BY-SA 4.0"),
     "limits": [
@@ -204,6 +246,29 @@ def bitmask_png(mask: np.ndarray) -> bytes:
     return buffer.getvalue()
 
 
+def cell_centre_residents(population: Path, clip) -> int:
+    """Residents of the population cells whose centre lies inside ``clip``, on the population raster's own grid.
+
+    ``population`` is a population raster (for the replay, WorldPop 2020 at about 100 m, in lon/lat); ``clip`` is
+    the clipped envelope in lon/lat, already cut to the district. This is the exposure definition stated for the
+    planning overlay: a whole cell counts when its centre is inside, and nothing is spread over finer cells.
+    Cells without data count as no residents.
+    """
+    if clip.is_empty:
+        return 0
+    with rasterio.open(population) as src:
+        geometry = clip if src.crs is None or src.crs.to_string() == SOURCE_CRS else reproject(clip, src.crs.to_string())
+        window = from_bounds(*geometry.bounds, transform=src.transform).round_offsets(op="floor").round_lengths(op="ceil")
+        window = Window(window.col_off - 2, window.row_off - 2, window.width + 4, window.height + 4)
+        cells = src.read(1, window=window, boundless=True, fill_value=0).astype(np.float64)
+        missing = ~np.isfinite(cells) | (cells < 0)
+        if src.nodata is not None:
+            missing |= cells == src.nodata
+        transform = src.window_transform(window)
+    cells = np.where(missing, 0.0, cells)
+    return envelope_stats.residents_inside(rasterise(geometry, transform, cells.shape), cells)
+
+
 def model_residents(stage: Mapping, counted: int) -> int:
     """The replay's own figure of residents in water at ``stage`` when it gives one, else the count on the mask.
 
@@ -219,12 +284,16 @@ def model_residents(stage: Mapping, counted: int) -> int:
 
 
 def season_envelope(external: Path, rights: Mapping, admin_features: Sequence[Mapping], *, statistics_grid, raster_grid, codes: np.ndarray,
-                    zones: np.ndarray, tambon_ids: Sequence[str], low_confidence: np.ndarray, residents: np.ndarray, channel_code: int,
-                    never_code: int, hand_step_m: float, stages: Sequence[Mapping], clip_source: str, track: Track = lambda path: path) -> dict:
+                    zones: np.ndarray, tambon_ids: Sequence[str], low_confidence: np.ndarray, residents: np.ndarray, population: Path,
+                    channel_code: int, never_code: int, hand_step_m: float, stages: Sequence[Mapping], clip_source: str,
+                    track: Track = lambda path: path) -> dict:
     """Read, clip and rasterise the season envelope and compare the modelled water with it.
 
     ``statistics_grid`` is the replay's 10 m UTM grid (``codes``, ``zones``, ``low_confidence`` and ``residents`` are
     on it); ``raster_grid`` is the replay's water display grid, on which the published 1-bit raster is drawn.
+    ``population`` is the population raster ``residents`` was made from, already recorded as an input by the caller:
+    the residents inside the envelope are counted twice, on its own cells by their centre (the planning overlay's
+    stated exposure definition) and on the 10 m grid outside mapped channels (the replay's rule).
     ``stages`` lists the modelled extents to compare, each ``{"id", "model_stage_m", "model_extent"}``; the first is
     the one the per-subdistrict rows, the low-confidence split and the residents use, and it may carry the replay's
     own ``model_residents_in_water`` so the two files state one figure. ``clip_source`` names the
@@ -295,36 +364,59 @@ def season_envelope(external: Path, rights: Mapping, admin_features: Sequence[Ma
             "share_inside_envelope_other": envelope_stats.share_inside(peak_wet & ~low_confidence, out_of_channel, district),
         },
         "residents": {
-            "residents_in_envelope": envelope_stats.residents_inside(out_of_channel, residents, district),
+            "residents_in_envelope": cell_centre_residents(population, clip),
+            "residents_in_envelope_replay_rule": envelope_stats.residents_inside(out_of_channel, residents, district),
             "model_residents_in_water": model_residents(peak, envelope_stats.residents_inside(peak_wet, residents, district)),
             "model_stage": peak["id"],
         },
     }
 
 
+def other_inputs(sources: Sequence[Mapping[str, str]]) -> list[dict[str, str]]:
+    """The inputs besides product 4009 whose figures ``envelope.json`` holds, with their licences and credits.
+
+    ``sources`` are the bake's own source lines (``id``, ``name``, ``licence``, ``attribution``, ``timestamp``); the
+    stage keeps those it names in :data:`OTHER_INPUT_USE` and says what each was used for. A source the stage needs
+    and the bake does not list stops the bake: the file would ship without that credit.
+    """
+    by_id = {str(source.get("id")): source for source in sources}
+    absent = [key for key in OTHER_INPUT_USE if key not in by_id]
+    if absent:
+        raise SeasonEnvelopeStageError(f"the bake lists no source line for: {absent}")
+    return [{"id": key, **{name: str(by_id[key][name]) for name in ("name", "licence", "attribution", "timestamp")}, "used_for": use["en"]}
+            for key, use in OTHER_INPUT_USE.items()]
+
+
 def write_files(data: Mapping, out_dir: Path, *, rights: Mapping, rights_record: Mapping[str, str], study_id: str, revision: str,
                 generated_at: str, href_prefix: str, bounds: Sequence[Sequence[float]], raster_cell_m: float,
-                worldpop_source: str) -> dict[str, dict]:
+                worldpop_source: str, sources: Sequence[Mapping[str, str]], clip_geometry_thai: str) -> dict[str, dict]:
     """Write ``envelope.png``, ``envelope.json`` and ``LICENSE`` into ``out_dir/unosat4009`` and return their references.
 
     ``data`` is the result of :func:`season_envelope`; ``rights_record`` gives the record's repository path and
-    SHA-256. Each reference holds ``href``, ``sha256`` and ``bytes`` only: that is all ``timeline.json`` says about
-    the files. A document that breaks its own rules (``floodguard.season_envelope.document_problems``) is not written.
+    SHA-256. ``sources`` are the bake's source lines, from which the other inputs of ``envelope.json`` (terrain
+    model, population grid, boundaries) take their licences and credits; ``clip_geometry_thai`` names the clip
+    geometry in Thai for the Thai change notice. Each reference holds ``href``, ``sha256`` and ``bytes`` only: that
+    is all ``timeline.json`` says about the files. A document that breaks its own rules
+    (``floodguard.season_envelope.document_problems``) is not written.
     """
     require_owner_confirmation(rights)
     licence = {key: rights["licence"][key] for key in ("name", "full_name", "spdx_id", "url", "legal_code_url")}
     credit = rights["required_attribution_text"]
     template = rights["change_notice"]["template"]
     clip_geometry = data["clip_geometry"]
-    notices = {
-        RASTER_NAME: envelope_stats.fill_change_notice(
-            template, clip_geometry=clip_geometry, repair_method=REPAIR_METHOD, repair_count=data["repair"]["parts_repaired"],
-            source_crs=SOURCE_CRS, target_crs=data["raster"]["crs"], cell_size_m=f"about {raster_cell_m:.0f}"),
-        DOCUMENT_NAME: envelope_stats.fill_change_notice(
-            template, clip_geometry=clip_geometry, repair_method=REPAIR_METHOD, repair_count=data["repair"]["parts_repaired"],
-            source_crs=SOURCE_CRS, target_crs=data["statistics_crs"], cell_size_m=f"{data['statistics_cell_m']:g}")
-        + " The cells were then counted, and compared with the replay's modelled water, to make this table.",
-    }
+    inputs = other_inputs(sources)
+    repair_count = data["repair"]["parts_repaired"]
+    cell_sizes = {RASTER_NAME: (data["raster"]["crs"], f"about {raster_cell_m:.0f}", f"ประมาณ {raster_cell_m:.0f}"),
+                  DOCUMENT_NAME: (data["statistics_crs"], f"{data['statistics_cell_m']:g}", f"{data['statistics_cell_m']:g}")}
+    notices = {name: envelope_stats.fill_change_notice(
+        template, clip_geometry=clip_geometry, repair_method=REPAIR_METHOD, repair_count=repair_count, source_crs=SOURCE_CRS,
+        target_crs=crs, cell_size_m=english) for name, (crs, english, _) in cell_sizes.items()}
+    notices[DOCUMENT_NAME] += COUNTED_SENTENCE
+    # The same notices in Thai, for the Thai half of the licence file; the credit and the licence name stay as published.
+    thai_notices = {name: envelope_stats.fill_change_notice(
+        CHANGE_NOTICE_THAI, clip_geometry=clip_geometry_thai, repair_method=REPAIR_METHOD, repair_count=repair_count, source_crs=SOURCE_CRS,
+        target_crs=crs, cell_size_m=thai) + f"{credit}, {licence['name']}" for name, (crs, _, thai) in cell_sizes.items()}
+    thai_notices[DOCUMENT_NAME] += COUNTED_SENTENCE_THAI
     raster = data["raster_png"]
     folder = Path(out_dir) / FOLDER
     prefix = f"{href_prefix}{FOLDER}/"
@@ -359,6 +451,8 @@ def write_files(data: Mapping, out_dir: Path, *, rights: Mapping, rights_record:
         "credit": credit,
         "map_credit": map_credit(licence["name"]),
         "share_alike": rights["share_alike"],
+        "other_inputs_note": OTHER_INPUTS_NOTE,
+        "other_inputs": inputs,
         "rights_record": dict(rights_record),
         "change_notice": notices[RASTER_NAME],
         "changes": {"clip_geometry": clip_geometry, "repair": data["repair"], "source_crs": SOURCE_CRS,
@@ -381,8 +475,8 @@ def write_files(data: Mapping, out_dir: Path, *, rights: Mapping, rights_record:
             "model_fields": {
                 "evidence_tier": "T1 scenario (model)",
                 "note": ("model_stage_m, model_km2, model_only_km2, model_residents_in_water and the low-confidence areas are model output "
-                         "on the reconstructed water; envelope_km2, envelope_only_km2 and residents_in_envelope come from the season "
-                         "envelope; the overlap and the three ratios use both."),
+                         "on the reconstructed water; envelope_km2, envelope_only_km2 and the two counts of residents in the envelope come "
+                         "from the season envelope; the overlap and the three ratios use both."),
             },
             "district": data["district"],
             "by_tambon_stage": data["by_tambon_stage"],
@@ -391,9 +485,7 @@ def write_files(data: Mapping, out_dir: Path, *, rights: Mapping, rights_record:
             "low_confidence": data["low_confidence"],
             "land_cover": {"computed": False, "reason": LAND_COVER_REASON},
             "residents": {**data["residents"], "source": worldpop_source, "scope": "District total only.",
-                          "rule": ("Residents on envelope cells outside mapped channels, inside the eight subdistricts: the replay's "
-                                   "exposure rule (WorldPop 2020 spread evenly over 10 m cells). Modelled estimates, not a census count "
-                                   "and not the 2024 population.")},
+                          "rule": RESIDENTS_RULE, "replay_rule": RESIDENTS_REPLAY_RULE, "rules_note": RESIDENTS_RULES_NOTE},
             "tuning": {"relation": "computed_after_keyframes_final", "statement": TUNING_STATEMENT, "rule": TUNING_RULE},
         },
         "confidence": "low",
@@ -418,8 +510,8 @@ def write_files(data: Mapping, out_dir: Path, *, rights: Mapping, rights_record:
         source_lines=[rights["source"], f"Layer read: {LAYER}", rights["product"]["product_url"], rights["hdx"]["dataset_url"],
                       f"Archive: {archive['file_name']}, {archive['bytes']:,} bytes", f"SHA-256: {archive['sha256']}",
                       f"Rights record: {rights_record['path']}"],
-        limits=LICENCE_LIMITS,
-        thai={**LICENCE_THAI, "source_lines": [
+        limits=LICENCE_LIMITS, other_inputs=inputs, other_inputs_note=OTHER_INPUTS_NOTE,
+        thai={**LICENCE_THAI, "change_notices": thai_notices, "source_lines": [
             "ขอบเขตน้ำของ UNOSAT และ GISTDA ระหว่างวันที่ 1 สิงหาคม ถึง 22 ตุลาคม 2567 (2024) จังหวัดเชียงราย ประเทศไทย "
             f"(ผลิตภัณฑ์ UNOSAT หมายเลข 4009 รหัสเหตุการณ์ {rights['product']['event_code']})",
             f"ชั้นข้อมูลที่อ่าน: {LAYER}", rights["product"]["product_url"], rights["hdx"]["dataset_url"],

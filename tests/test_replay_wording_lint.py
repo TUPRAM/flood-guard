@@ -114,7 +114,8 @@ def test_rules_cover_the_six_banned_groups_and_the_shelter_comparison_rules() ->
         "validation_as_agreement",  # validated, validation or accuracy used for agreement
         "precision_recall",  # precision or recall for product 4009
         "corroboration",  # the season envelope "corroborating" the model, or the reverse
-        "envelope_verdict",  # "the model is too low" or "too high" against the season envelope
+        "envelope_verdict",  # "the model is too low" or "too high", or under- or overestimates, against the season envelope
+        "envelope_as_observation",  # the season envelope called observed, or an observation
         "september_extent",  # "September extent", "GISTDA's map"
         "return_period",  # 25-year, 100-year
         "road_schedule",  # schedule or closure plan for modelled roads
@@ -186,10 +187,29 @@ def test_the_usual_thai_renderings_of_a_banned_claim_are_flagged(text: str, rule
         ("Ban Dai is over-predicted", "envelope_verdict"), ("Compared with the September extent of product 4009", "september_extent"),
         ("GISTDA's map of the season", "september_extent"),
         ("ขอบเขตน้ำตลอดฤดูช่วยยืนยันแบบจำลอง", "corroboration"), ("แบบจำลองต่ำเกินไปในเขตเมือง", "envelope_verdict"),
+        # A verdict in other words: under- or overestimate verbs, and "too low/large" a few words after the model.
+        ("The model underestimates the town against the envelope", "envelope_verdict"), ("Modelled water in town is too low", "envelope_verdict"),
+        ("The modelled extent in Ban Dai is too large", "envelope_verdict"), ("The model overestimates Ban Dai", "envelope_verdict"),
+        ("The town is underestimated by the model", "envelope_verdict"), ("แบบจำลองประเมินต่ำเกินไปในเขตเมือง", "envelope_verdict"),
+        ("แบบจำลองประเมินไว้สูงกว่าความเป็นจริงในตำบลโป่งผา", "envelope_verdict"),
+        # The envelope is a scenario layer: never observed water, never an observation.
+        ("the envelope observed in September", "envelope_as_observation"), ("The season envelope was observed on 12 Sep", "envelope_as_observation"),
+        ("The observed envelope covers the town", "envelope_as_observation"), ("Product 4009 is the observed flood extent", "envelope_as_observation"),
+        ("ขอบเขตน้ำตลอดฤดูที่สังเกตได้ในเดือนกันยายน", "envelope_as_observation"),
+        ("ขอบเขตน้ำตลอดฤดูยืนยันผลการจำลอง", "corroboration"),
     ],
 )
 def test_text_about_the_season_envelope_may_not_claim_a_score_or_a_verdict(text: str, rule: str) -> None:
     assert rule in ids(find_violations(text, RULES)), text
+
+
+def test_thai_corroboration_terms_do_not_match_the_word_for_product() -> None:
+    # "ยืนยันผล" and "รับรองผล" are the start of "...ผลิตภัณฑ์" (product) in the licence limits: no finding there.
+    for allowed in ("UNOSAT และ GISTDA ไม่ได้รับรองผลิตภัณฑ์นี้", "UNOSAT และ GISTDA ไม่ได้รับรอง FloodGuard หรือการใช้ผลิตภัณฑ์นี้ของ FloodGuard",
+                    "เจ้าของโครงการยืนยันผลิตภัณฑ์ที่ใช้"):
+        assert find_violations(allowed, RULES) == [], allowed
+    for banned in ("ขอบเขตน้ำตลอดฤดูยืนยันผลของแบบจำลอง", "ผลิตภัณฑ์นี้รับรองผลการจำลอง"):
+        assert ids(find_violations(banned, RULES)) == ["corroboration"], banned
 
 
 def test_the_season_envelope_wording_that_is_asked_for_passes() -> None:
@@ -199,8 +219,14 @@ def test_the_season_envelope_wording_that_is_asked_for_passes() -> None:
         "60% of the modelled water lies inside the envelope; the modelled water reaches 70% of the envelope.",
         "The 30 m surface model raises the ground in built-up areas, so modelled water and residents in town are likely underestimated.",
         "Unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+        "Scenario (SCN-ENV): 2024 season envelope; not an observation for any replay day.",
+        "The envelope is never an observation for a replay day. VIIRS daily flood map (375 m, observed).",
+        "Envelope water the modelled peak does not reach is largest in Ko Chang; modelled water outside the envelope is largest in Ban Dai.",
+        "แบบจำลองพื้นผิวความละเอียด 30 ม. ทำให้ระดับพื้นดินในเขตสิ่งปลูกสร้างสูงกว่าจริง น้ำจากแบบจำลองและจำนวนผู้อยู่อาศัยในน้ำในเขตเมืองจึงน่าจะต่ำกว่าความเป็นจริง",
     ):
         assert find_violations(allowed, RULES) == [], allowed
+    # The disclosed terrain bias is allowed in its own words only: the same claim in other words is a finding.
+    assert ids(find_violations("The 30 m surface model raises the ground, so the model underestimates the town.", RULES)) == ["envelope_verdict"]
 
 
 def test_a_denial_covers_only_what_it_denies() -> None:

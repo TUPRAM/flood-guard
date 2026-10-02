@@ -421,12 +421,15 @@ def season_envelope_problems(manifest: Mapping[str, Any]) -> list[str]:
     under that product's own licence. The manifest may name its files and say what they are, and nothing more:
 
     * the block sits in lane ``SCN-ENV``, is marked ``shown`` and ``day_independent``, and carries its licence, its
-      credit, a map credit that names the licence, a source timestamp, a season window, a confidence and assumptions;
+      credit, a map credit that names the licence and the holders the credit begins with, the standard sentence
+      (used as provided, not validated by FloodGuard), a source timestamp, a season window, a confidence and
+      assumptions;
     * its ``files`` are ``raster``, ``statistics`` and ``licence``, each exactly ``href``, ``sha256`` and ``bytes``, all
       in one folder of their own; the block holds no other number, so no figure derived from the product is in the manifest;
     * one evidence block in lane ``SCN-ENV`` covers ``season_envelope``, marked ``shown`` with a ``season_window``;
     * the external check with the role ``season_envelope_plausibility`` points at the statistics file, says
-      "not a validation" and holds no number either;
+      "not a validation", names what the model is compared with under ``compared_with`` (never under ``observed``:
+      the envelope is not the observed side of a check) and holds no number either;
     * no layer, observation, replay day, VIIRS day or export file names one of the envelope's files or its folder:
       the envelope is never among the day observations and never in the export pack.
     """
@@ -441,14 +444,21 @@ def season_envelope_problems(manifest: Mapping[str, Any]) -> list[str]:
         problems.append("season_envelope must sit in lane SCN-ENV")
     if block.get("shown") is not True or block.get("day_independent") is not True:
         problems.append("season_envelope must be marked shown and day_independent")
-    for key in ("id", "label", "caption", "licence", "licence_url", "credit", "map_credit", "source_timestamp", "season_window",
-                "confidence", "confidence_reason", "rights_record"):
+    for key in ("id", "label", "caption", "standard_sentence", "licence", "licence_url", "credit", "map_credit", "source_timestamp",
+                "season_window", "confidence", "confidence_reason", "rights_record"):
         if not isinstance(block.get(key), str) or not block[key].strip():
             problems.append(f"season_envelope lacks {key}")
+    if isinstance(block.get("standard_sentence"), str) and "did not validate" not in block["standard_sentence"]:
+        problems.append("season_envelope.standard_sentence must say that FloodGuard did not validate the product")
     if not isinstance(block.get("assumptions"), list) or not block["assumptions"]:
         problems.append("season_envelope lacks assumptions")
     if isinstance(block.get("licence"), str) and block["licence"] not in str(block.get("map_credit", "")):
         problems.append("season_envelope.map_credit must name the licence")
+    if isinstance(block.get("credit"), str) and block["credit"].strip():
+        # The holders are what the credit names first, before its first comma; a credit without them credits nobody.
+        holders = block["credit"].split(",", 1)[0].strip()
+        if not holders or holders not in str(block.get("map_credit", "")):
+            problems.append("season_envelope.map_credit must name the holders of the product, as the credit begins")
     files = block.get("files")
     hrefs: list[str] = []
     if not isinstance(files, Mapping) or sorted(files) != ["licence", "raster", "statistics"]:
@@ -477,6 +487,8 @@ def season_envelope_problems(manifest: Mapping[str, Any]) -> list[str]:
             problems.append(f"{name}.statistics must be the season envelope's statistics file")
         if "not a validation" not in str(check.get("use", "")):
             problems.append(f"{name}.use must say that the comparison is not a validation")
+        if "observed" in check or not isinstance(check.get("compared_with"), str) or not check["compared_with"].strip():
+            problems.append(f"{name} must name the envelope under compared_with, never under observed: it is a scenario layer")
         problems.extend(f"{path} is a number: every figure derived from the product belongs in its statistics file"
                         for path in _numbers(check, name) if path != f"{name}.statistics.bytes")
     if folders:

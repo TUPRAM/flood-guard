@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T18:28:00+07:00",
+ "generated_at": "2026-10-02T20:59:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -10171,7 +10171,7 @@
     "id": "shelter_plan_reported_2024",
     "name": "shelter_plan_reported_2024.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv",
-    "sha256": "f78ca2c66afe497d0de3242161e4f7b4257719ef4883714cf4bd6ea1d7f0c9e4",
+    "sha256": "7ef215cee658efcb2eebba5dd6ea1ff64dd51b70499b533cb5799665ee3a1957",
     "bytes": 28398,
     "media_type": "text/csv",
     "title": {
@@ -10195,7 +10195,7 @@
     "id": "shelter_plan_k",
     "name": "shelter_plan_k.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv",
-    "sha256": "c2ced866277fa3402da995d8e305cfab45424dec2bf62410590ad7a42786efd7",
+    "sha256": "f64730e22ad2e1e52ad86de83d931cd23bddf97aa7666d7b2a3c4ff74d918de3",
     "bytes": 13604,
     "media_type": "text/csv",
     "title": {
@@ -10218,7 +10218,7 @@
     "id": "shelter_plan_capacitated",
     "name": "shelter_plan_capacitated.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv",
-    "sha256": "417a8f2ed78fec8f9e99180ce0b42083a0a944876c88182a828d3d10d73d81fd",
+    "sha256": "4a5c51510325917dac9cecc3c579e9a6436f1fc94ad1f2fe24cfbd5dc8b17b6b",
     "bytes": 19081,
     "media_type": "text/csv",
     "title": {
@@ -10241,7 +10241,7 @@
     "id": "shelter_sites",
     "name": "shelter_sites.geojson",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_sites.geojson",
-    "sha256": "e9b166219b708532b7cf50b1843656662ac782c580d769325cf4cb8b9734178f",
+    "sha256": "fb8ecc04f67f597475431378ffff75f5258a0c91922df3bde104a7a79eb80b03",
     "bytes": 99373,
     "media_type": "application/geo+json",
     "title": {
@@ -10265,7 +10265,7 @@
     "id": "modelled_road_inundation_by_hour",
     "name": "modelled_road_inundation_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv",
-    "sha256": "2bb16d0aeccd2535c47eedfafe6d9db3907985e8891b9b4735cf7049c7f3f544",
+    "sha256": "0452131a8cc92684a2bc6aaf0b7363ac4365aeef43dbbfec258f9e252b310414",
     "bytes": 346104,
     "media_type": "text/csv",
     "title": {
@@ -10288,7 +10288,7 @@
     "id": "modelled_access_loss_by_hour",
     "name": "modelled_access_loss_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_access_loss_by_hour.csv",
-    "sha256": "e2de279f76ffaf31c901d8d431f9a8a47af1b1b6ffc396d05fa4e63a74efafbf",
+    "sha256": "f994204dad5e3939577e0a404ec8016f91b08f0bd14806699ee3feba71648212",
     "bytes": 241197,
     "media_type": "text/csv",
     "title": {
@@ -10313,7 +10313,7 @@
     "id": "shelter_candidate_verification_sheet",
     "name": "shelter_candidate_verification_sheet.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv",
-    "sha256": "69b1495e656a4a55257e4538173902019983fbc15cb5f2cfbd67d20e5ae3a6ce",
+    "sha256": "cc9ee005b2630103c7a0645ced95a4d88756b040e50481fd1d7422f3dc138bcd",
     "bytes": 31025,
     "media_type": "text/csv",
     "title": {
@@ -10335,7 +10335,7 @@
     "id": "readme_licences",
     "name": "README_licences.txt",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt",
-    "sha256": "7cda01e041a40a26f07836f847d16341d0a068ce7ca011837a9426cf3756b253",
+    "sha256": "ae45d16fd682cc5c3eeadf3c76cef197aabe18ea73b1d58f8b681ec083d66736",
     "bytes": 25842,
     "media_type": "text/plain",
     "title": {
@@ -10393,14 +10393,14 @@
   },
   {
    "id": "unosat-4009-season-envelope",
-   "observed": "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct)",
+   "compared_with": "UNOSAT and GISTDA product 4009: accumulated water, August to October 2024 (the layer name ends 12 Oct; the product is described to 22 Oct); a scenario layer, not an observation for any replay day",
    "role": "season_envelope_plausibility",
    "title": "Season envelope comparison (scenario; plausibility, not validation)",
    "scope": "Mae Sai district",
    "statistics": {
     "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.json",
-    "sha256": "e68f74a24544087fd07315ea7dd78c679ebf4a10d06cf3428fbac8c78baaaf45",
-    "bytes": 13615
+    "sha256": "19360178c60b61b48fccea3741da57e61cf1ffee5fb9b2c86af76842c1ed5d27",
+    "bytes": 16008
    },
    "use": "Plausibility against a season envelope, not a validation. The envelope also holds August and early-October water and the modelled peak is illustrative, so the figures say where the two differ, not which one is right.",
    "tuning_rule": "No keyframe or elevation change is tuned to product 4009 afterwards; if one is, this comparison is relabelled as calibration.",
@@ -10448,13 +10448,13 @@
    },
    "statistics": {
     "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.json",
-    "sha256": "e68f74a24544087fd07315ea7dd78c679ebf4a10d06cf3428fbac8c78baaaf45",
-    "bytes": 13615
+    "sha256": "19360178c60b61b48fccea3741da57e61cf1ffee5fb9b2c86af76842c1ed5d27",
+    "bytes": 16008
    },
    "licence": {
     "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/LICENSE",
-    "sha256": "61bdfbee41cce417588041eb53dc8696bce4330dde26977884b18aaac0e32caf",
-    "bytes": 7683
+    "sha256": "17168099bae77b9fc0d5f024cf69414281f399109d305fb8eb848af162926c13",
+    "bytes": 13180
    }
   }
  },

@@ -316,6 +316,9 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ระดับสูงสุดของแบบจำลองเป็นค่าเพื่อการอธิบาย (ไม่มีข้อมูลจากสถานีวัดน้ำ) การเทียบจึงบอกว่าทั้งสองต่างกันที่ใด ไม่ได้บอกว่าข้อมูลใดถูกต้อง",
   "Both masks are counted on the replay's 10 m grid inside the eight Mae Sai subdistricts and outside mapped drainage channels, the rule of every flooded area in the replay.":
     "นับพื้นที่ทั้งสองบนกริด 10 ม. ของการย้อนดู ภายใน 8 ตำบลของอำเภอแม่สายและนอกร่องน้ำในแผนที่ ซึ่งเป็นเกณฑ์เดียวกับพื้นที่น้ำท่วมทุกค่าในการย้อนดู",
+  "Residents are WorldPop 2020 modelled estimates, counted by two rules that the file names (100 m cells by their centre, and the replay's 10 m cells with mapped channels left out): not a census count and not the 2024 population.":
+    "จำนวนผู้อยู่อาศัยเป็นค่าประมาณจากแบบจำลอง WorldPop 2020 นับด้วยเกณฑ์สองแบบที่ไฟล์ระบุไว้ (ช่อง 100 ม. ตามจุดกึ่งกลาง และช่อง 10 ม. ของการย้อนดูโดยไม่นับร่องน้ำในแผนที่) ไม่ใช่ข้อมูลสำมะโนประชากรและไม่ใช่ประชากรปี 2567 (2024)",
+  // The same assumption as the earlier r4 bake worded it (one count, by the replay's rule).
   "Residents are WorldPop 2020 modelled estimates spread evenly over 10 m cells, the replay's own exposure rule: not a census count and not the 2024 population.":
     "จำนวนผู้อยู่อาศัยเป็นค่าประมาณจากแบบจำลอง WorldPop 2020 ที่กระจายเท่ากันลงบนช่อง 10 ม. ตามเกณฑ์เดียวกับการย้อนดู ไม่ใช่ข้อมูลสำมะโนประชากรและไม่ใช่ประชากรปี 2567 (2024)",
   "No land-cover map is among the replay's inputs, so the share of the envelope reached is not split by built-up land and cropland.":
@@ -364,6 +367,11 @@ export function thaiManifestDate(text: string): string {
  */
 const THAI_PATTERNS: readonly [RegExp, (match: RegExpMatchArray) => string][] = [
   [/^compiled (\d{4}-\d{2}-\d{2})$/, (m) => `รวบรวมเมื่อ ${m[1]}`],
+  // Change notice of a file derived from product 4009 (what FloodGuard changed): the repair method and count, the two
+  // coordinate systems and the cell size come from the bake; the credit and the licence name stay as published. The
+  // same Thai text is in the Thai half of the LICENSE file (scripts/mae_sai_timeline_unosat4009.py).
+  [/^Changed by FloodGuard: clipped to Mae Sai district \(the eight subdistricts of HDX Thailand COD-AB v01\); geometry repaired \(([A-Za-z_]+); (\d+) parts repaired\); reprojected from (EPSG:\d+) to (EPSG:\d+); rasterised to (about )?(\d+(?:\.\d+)?) m cells\. Source: (.+), (CC BY-SA 4\.0)\.( The cells were then counted, and compared with the replay's modelled water, to make this table\.)?$/,
+    (m) => `FloodGuard เปลี่ยนแปลงดังนี้: ตัดตามขอบเขตอำเภอแม่สาย (ตำบลทั้งแปดตาม HDX Thailand COD-AB v01) ซ่อมแซมรูปทรงเรขาคณิต (${m[1]} ซ่อมแซม ${m[2]} ส่วน) แปลงระบบพิกัดจาก ${m[3]} เป็น ${m[4]} และแปลงเป็นราสเตอร์ขนาดเซลล์ ${m[5] ? "ประมาณ " : ""}${m[6]} ม. แหล่งข้อมูล: ${m[7]}, ${m[8]}${m[9] ? " จากนั้นนับจำนวนเซลล์และเทียบกับน้ำจากแบบจำลองของการย้อนดู เพื่อจัดทำตารางนี้" : ""}`],
   // Source timestamp of a returned local check of the shelter candidates: the range of the dates of the checks.
   [/^checks dated (\d{4}-\d{2}-\d{2})\/(\d{4}-\d{2}-\d{2})$/, (m) => (m[1] === m[2] ? `ตรวจสอบเมื่อ ${m[1]}` : `ตรวจสอบระหว่าง ${m[1]} ถึง ${m[2]}`)],
   [new RegExp(`^Season envelope\\. The CC BY-SA 4\\.0 rights decision was signed on ${DATE} and UNOSAT replied "([^"]+)" \\(relayed by a project owner on ${DATE}\\); shown only after the owners confirm the rights record\\.$`),

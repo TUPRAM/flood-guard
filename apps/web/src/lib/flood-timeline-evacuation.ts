@@ -573,8 +573,10 @@ function smallGroupSentence(group: "vulnerable" | "other", withinReach: number, 
 
 /**
  * Page wording of the Evacuation Equity Gap. With a ratio: two decimals ("< 0.01" for a ratio that would print as
- * 0.00) and a plain comparison of the two loss rates ("about 1.6× more likely (85.77% vs 53.42%)"); each rate is the
- * share of the group's residents within reach before the flood who lost access. When no proxy-vulnerable resident
+ * 0.00) and a plain comparison of the two loss rates ("about 1.6× more likely to lose it (85.77% vs 53.42%)"); each
+ * rate is the share of the group's residents within reach before the flood who lost access, and every sentence that
+ * prints a rate names that denominator ("Among residents with a shelter within reach before the flood, …"), so a
+ * rate is never read as a share of the whole group. When no proxy-vulnerable resident
  * has lost access the value is said in words, never "0.00". "No resident" is read from the lost counts, and a loss
  * that rounds to 0.00% is written "< 0.01%". Without a ratio the value is "no ratio shown" and the sentence states
  * why: a group with fewer than `EQUITY_MIN_GROUP` residents within reach before the flood (or none, so none could
@@ -594,6 +596,8 @@ export function equityWording(gap: EquityGap, language: Language): EquityWording
   const vTimes = hidden ? exact(gap.vulnerableLost, gap.vulnerableWithinReach) : v;
   const oTimes = hidden ? exact(gap.nonVulnerableLost, gap.nonVulnerableWithinReach) : o;
   const noRatio = th ? "ไม่แสดงอัตราส่วน" : "no ratio shown";
+  // Every sentence that prints a rate begins with the residents the rate divides by (owner decision R8, option B).
+  const among = th ? "ในกลุ่มผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม" : "Among residents with a shelter within reach before the flood,";
   switch (gap.status) {
     case "insufficient_group_denominator": {
       const smallV = gap.vulnerableWithinReach < EQUITY_MIN_GROUP;
@@ -615,32 +619,32 @@ export function equityWording(gap: EquityGap, language: Language): EquityWording
         : "No one in either group has lost access at this replay hour, so there are no loss rates to compare." };
     case "undefined_ratio":
       return { value: noRatio, sentence: th
-        ? `มีเพียงกลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง ${pair} จึงคำนวณอัตราส่วนไม่ได้`
-        : `Only proxy-vulnerable residents have lost access ${pair}, so the ratio cannot be computed.` };
+        ? `${among} มีเพียงกลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง ${pair} จึงคำนวณอัตราส่วนไม่ได้`
+        : `${among} only proxy-vulnerable residents have lost it ${pair}, so the ratio cannot be computed.` };
     default: {
       const ratio = gap.ratio ?? 0;
       if (gap.vulnerableLost === 0) {
         return {
           value: th ? "ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง" : "no proxy-vulnerable resident has lost access",
           sentence: th
-            ? `ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นสูญเสียการเข้าถึง ${oPercent}`
-            : `At this replay hour, ${oPercent} of everyone else have.`,
+            ? `ณ ชั่วโมงนี้ของการย้อนดู กลุ่มอื่นที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมสูญเสียการเข้าถึง ${oPercent}`
+            : `At this replay hour, ${oPercent} of everyone else who had a shelter within reach before the flood have lost it.`,
         };
       }
       const value = ratio < 0.005 ? "< 0.01" : ratio.toFixed(2);
       if (gap.band === "higher") {
         return { value, sentence: th
-          ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่าประมาณ ${timesText(vTimes / oTimes)} เท่า ${pair}`
-          : `Proxy-vulnerable residents are about ${timesText(vTimes / oTimes)}× more likely to lose access ${pair}.` };
+          ? `${among} กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่ากลุ่มอื่นประมาณ ${timesText(vTimes / oTimes)} เท่า ${pair}`
+          : `${among} proxy-vulnerable residents are about ${timesText(vTimes / oTimes)}× more likely to lose it ${pair}.` };
       }
       if (gap.band === "lower") {
         return { value, sentence: th
-          ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงน้อยกว่าประมาณ ${timesText(oTimes / vTimes)} เท่า ${pair}`
-          : `Proxy-vulnerable residents are about ${timesText(oTimes / vTimes)}× less likely to lose access ${pair}.` };
+          ? `${among} กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงน้อยกว่ากลุ่มอื่นประมาณ ${timesText(oTimes / vTimes)} เท่า ${pair}`
+          : `${among} proxy-vulnerable residents are about ${timesText(oTimes / vTimes)}× less likely to lose it ${pair}.` };
       }
       return { value, sentence: th
-        ? `ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงใกล้เคียงกับกลุ่มอื่น ${pair}`
-        : `Proxy-vulnerable residents are about as likely as everyone else to lose access ${pair}.` };
+        ? `${among} กลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงใกล้เคียงกับกลุ่มอื่น ${pair}`
+        : `${among} proxy-vulnerable residents are about as likely as everyone else to lose it ${pair}.` };
     }
   }
 }

@@ -101,6 +101,10 @@ describe("Mae Sai replay copy", () => {
       manifest.shelters!.robustness!.confidence_reason, manifest.shelters!.robustness!.source_timestamp, manifest.shelters!.robustness!.label,
       manifest.population!.note, manifest.rainfall!.note, manifest.rainfall!.units,
       manifest.viirs_daily!.nominal_overpass, manifest.viirs_daily!.comparison_rule, manifest.viirs_daily!.caveat,
+      // The Sentinel-2 water check: what it measures, its rules, its caveat and what it is consistent with.
+      manifest.s2_crosscheck!.index, manifest.s2_crosscheck!.water_rule, manifest.s2_crosscheck!.clear_rule,
+      manifest.s2_crosscheck!.permanent_water_rule, manifest.s2_crosscheck!.comparison_rule, manifest.s2_crosscheck!.caveat,
+      manifest.s2_crosscheck!.reading, manifest.s2_crosscheck!.confidence_reason, manifest.s2_crosscheck!.scope,
       ...(manifest.external_references ?? []).flatMap((reference) => (reference.note ? [reference.note] : [])),
       ...(manifest.gauge_note ? [manifest.gauge_note] : []),
       // The event chronology's source line under the "Reported:" narrative.
@@ -113,7 +117,7 @@ describe("Mae Sai replay copy", () => {
       manifest.exploratory_knowledge!.purpose, ...manifest.exploratory_knowledge!.items.map((item) => item.statement),
       manifest.exploratory_knowledge!.depth_factor, manifest.exploratory_knowledge!.rule,
     ];
-    expect(sentences.length).toBeGreaterThan(70);
+    expect(sentences.length).toBeGreaterThan(80);
     expect(localizedText("compiled 2026-09-27", "th")).toEqual({ text: "รวบรวมเมื่อ 2026-09-27", lang: "th" });
     expect(localizedText("compiled 2026-09-27", "en")).toEqual({ text: "compiled 2026-09-27", lang: "en" });
     const missing = sentences.filter((sentence) => localizedText(sentence, "th").lang !== "th");

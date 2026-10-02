@@ -17,6 +17,9 @@ import {
   rgbaCss,
   roadCut,
   roadCutGroups,
+  s2CrosscheckAt,
+  s2CrosscheckDate,
+  s2CrosscheckScenes,
   stageAt,
   viirsReading,
   tFromDate,
@@ -26,10 +29,11 @@ import {
   type GeoCollection,
   type LineGeometry,
   type RoadProps,
+  type S2Crosscheck,
   type TambonProps,
   type TimelineManifest,
 } from "@/lib/flood-timeline";
-import { plainManifestText, STANDALONE_K } from "@/lib/flood-timeline-copy";
+import { localizedText, plainManifestText, STANDALONE_K } from "@/lib/flood-timeline-copy";
 import type { WaterMode } from "@/lib/flood-timeline-link";
 import { lowConfidenceKey, residentsPendingText } from "@/lib/flood-timeline-water";
 import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
@@ -52,7 +56,18 @@ import {
   TuningDisclosure,
   WetFacilitiesCard,
 } from "./mae-sai-flood-timeline";
-import { formatDateSet, RainChart, ViirsComparisonCard, viirsMomentText } from "./mae-sai-observed-panels";
+import {
+  bothObservationsText,
+  formatDateSet,
+  observedLargerThanModel,
+  RainChart,
+  s2ModelText,
+  s2ObservedText,
+  s2SensitivityText,
+  Sentinel2Evidence,
+  ViirsComparisonCard,
+  viirsMomentText,
+} from "./mae-sai-observed-panels";
 import {
   exportPlaceLabels,
   exportScaleBar,
@@ -693,6 +708,187 @@ describe("Mae Sai observed evidence panels", () => {
   });
 });
 
+describe("Mae Sai Sentinel-2 water check on 15 Sep", () => {
+  const THAI = /[฀-๿]/;
+  const check = manifest.s2_crosscheck!;
+  const viirs = manifest.viirs_daily!;
+  const scenes = s2CrosscheckScenes(check)!;
+  const viirsDay = viirs.days.find((day) => day.date === s2CrosscheckDate(check))!;
+  const noop = () => undefined;
+  const km = (value: number | null) => (value ?? Number.NaN).toFixed(1);
+  const pct = (share: number) => `${Math.round(share * 100)}%`;
+  const READING = "Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only model cannot hold water once the river level drops.";
+
+  it("is one observation of one day: on show from 15 Sep 00:00 to 24:00 ICT and at no other time", () => {
+    expect(s2CrosscheckDate(check)).toBe("2024-09-15");
+    expect(scenes.event.id).toBe("s2-20240915");
+    expect(scenes.pre.id).toBe("s2-20240905");
+    expect(viirsDay.date).toBe("2024-09-15");
+    const start = tFromDate("2024-09-15T00:00:00+07:00");
+    expect(start).toBe(6);
+    expect(s2CrosscheckAt(start, check)).toBe(check);
+    expect(s2CrosscheckAt(start + 0.5, check)).toBe(check);
+    expect(s2CrosscheckAt(start + 1 - 1e-6, check)).toBe(check);
+    for (const t of [0, 3.5, start - 1e-6, start + 1, 10.9, Number.NaN]) expect(s2CrosscheckAt(t, check), String(t)).toBeNull();
+    expect(s2CrosscheckAt(start + 0.5, undefined)).toBeNull();
+    expect(s2CrosscheckAt(start + 0.5, null)).toBeNull();
+    // A block without both scenes, or with an unreadable time, is never shown.
+    expect(s2CrosscheckAt(start + 0.5, { scenes: [scenes.event] })).toBeNull();
+    expect(s2CrosscheckAt(start + 0.5, { scenes: [scenes.pre, { ...scenes.event, source_timestamp: "soon" }] })).toBeNull();
+    // 03:58 UTC is 10:58 ICT the same day; a scene late in the UTC day belongs to the next local day.
+    expect(s2CrosscheckDate({ scenes: [scenes.pre, { ...scenes.event, source_timestamp: "2024-09-15T18:30:00Z" }] })).toBe("2024-09-16");
+  });
+
+  it("labels the observation with its product, acquisition time and clear share, as water or saturated mud", () => {
+    const english = s2ObservedText(check, "en");
+    expect(english).toBe(
+      `Observed (Sentinel-2 L2A, 15 Sep 10:58 ICT, ${pct(scenes.event.clear_share)} of the district clear): ${km(scenes.event.water_km2)} km² of water or saturated mud outside the mapped channels, `
+      + `against ${km(scenes.pre.water_km2)} km² on 5 Sep, before the flood (${pct(scenes.pre.clear_share)} clear). Where both dates are clear, ${km(check.change.new_water_km2)} km² is new.`);
+    expect(english).not.toMatch(/flood extent|flood water|flooded/);
+    expect(check.label).toBe("water or saturated mud");
+    expect(scenes.event.local_time).toBe("2024-09-15T10:58:15+07:00");
+    const model = s2ModelText(check, "en");
+    expect(model).toBe(`Model at that time (assumed stage ${check.model_at_event_scene.model_stage_m.toFixed(2)} m): ${km(check.model_at_event_scene.model_flood_km2_clear)} km² in the same clear pixels. This comparison is indicative.`);
+    expect(check.comparison).toBe("indicative");
+    const thai = `${s2ObservedText(check, "th")} ${s2ModelText(check, "th")}`;
+    expect(thai).toContain("สังเกตการณ์ (Sentinel-2 L2A 15 ก.ย. 10:58 น.");
+    expect(thai).toContain(`มองเห็นพื้นที่อำเภอ ${pct(scenes.event.clear_share)}`);
+    expect(thai).toContain(`น้ำหรือโคลนอิ่มน้ำ ${km(scenes.event.water_km2)} ตร.กม.`);
+    expect(thai).toContain("การเปรียบเทียบนี้เป็นเพียงข้อบ่งชี้");
+    expect(thai.replace("Sentinel-2 L2A", "")).not.toMatch(/[A-Za-z]{3,}/);  // Nothing is left in English but the product name.
+    // A scene with nothing clear is no observation, never a zero.
+    const hidden: S2Crosscheck = { ...check, scenes: [scenes.pre, { ...scenes.event, clear_share: 0, clear_km2: 0, water_km2: null }] };
+    expect(s2ObservedText(hidden, "en")).toBe("Observed (Sentinel-2 L2A, 15 Sep 10:58 ICT): cloud covered the whole district, so there is no observation.");
+    expect(s2ObservedText(hidden, "en")).not.toMatch(/0\.0 km²/);
+    expect(bothObservationsText(hidden, viirsDay, "en")).toBe("");
+    expect(observedLargerThanModel(hidden, viirsDay)).toBe(false);
+  });
+
+  it("names both observations of the day and says what the larger observed area is consistent with, never a cause", () => {
+    const html = renderToStaticMarkup(<dl><Sentinel2Evidence check={check} viirsDay={viirsDay} language="en" /></dl>);
+    const plain = text(html);
+    expect(html).toContain('data-testid="s2-evidence"');
+    expect(html).toContain('data-testid="observed-reading"');
+    expect(plain).toContain("Sentinel-2 (observed)");
+    expect(plain).toContain(s2ObservedText(check, "en"));
+    expect(plain).toContain("This comparison is indicative.");
+    expect(plain).toContain(
+      `Two observations on this day: VIIRS (15 Sep 13:30 ICT, nominal) shows ${km(viirsDay.viirs_flood_km2_clear)} km² of flood water against the model's ${km(viirsDay.model_flood_km2_clear)} km², `
+      + `and Sentinel-2 (15 Sep 10:58 ICT) shows ${km(scenes.event.water_km2)} km² of water or saturated mud against the model's ${km(check.model_at_event_scene.model_flood_km2_clear)} km², each in its own clear pixels.`);
+    // Both observations exceed the model in this bake, so the reading is shown, word for word from the manifest.
+    expect(viirsDay.viirs_flood_km2_clear).toBeGreaterThan(viirsDay.model_flood_km2_clear);
+    expect(scenes.event.water_km2!).toBeGreaterThan(check.model_at_event_scene.model_flood_km2_clear);
+    expect(observedLargerThanModel(check, viirsDay)).toBe(true);
+    expect(check.reading).toBe(READING);
+    expect(html).toContain(`<strong data-testid="s2-reading"><span lang="en">${READING}</span></strong>`);
+    expect(plain).toContain(check.caveat);
+    expect(plain).toContain("not a flood extent");
+    // "is consistent with" is the claim; the text never says the observation explains the gap or proves a cause.
+    expect(plain).not.toMatch(/explain|because of|caused by|due to|proves?\b|confirms?\b/i);
+    expect(findWordingViolations(visibleText(html), "Sentinel2Evidence")).toEqual([]);
+
+    const thaiHtml = renderToStaticMarkup(<dl><Sentinel2Evidence check={check} viirsDay={viirsDay} language="th" /></dl>);
+    const thai = text(thaiHtml);
+    expect(thai).toContain("Sentinel-2 (สังเกตการณ์)");
+    expect(thai).toContain("วันนี้มีการสังเกตการณ์สองแหล่ง: VIIRS (15 ก.ย. 13:30 น. โดยประมาณ)");
+    expect(thai).toContain("สอดคล้องกับพื้นที่ที่สังเกตได้ซึ่งกว้างกว่า");
+    expect(thai).toContain("แบบจำลองที่ใช้เฉพาะภูมิประเทศไม่สามารถกักน้ำไว้ได้เมื่อระดับแม่น้ำลดลง");
+    expect(thai).toContain("ไม่ใช่ขอบเขตน้ำท่วม");
+    expect(thai).not.toContain(READING);
+    expect(thai).not.toContain(check.caveat);
+    expect(thai).not.toMatch(/อธิบาย|เพราะ|สาเหตุ/);
+    expect(thaiHtml).not.toContain('lang="en"');
+    expect(findWordingViolations(visibleText(thaiHtml), "Sentinel2Evidence th")).toEqual([]);
+    for (const sentence of [check.reading, check.caveat, check.index, check.water_rule, check.clear_rule, check.permanent_water_rule,
+      check.comparison_rule, check.confidence_reason, check.scope]) {
+      const rendered = localizedText(sentence, "th");
+      expect(rendered.lang, sentence).toBe("th");
+      expect(rendered.text, sentence).toMatch(THAI);
+    }
+  });
+
+  it("does not speak of a larger observed area unless every observation of the day is larger than the model", () => {
+    const smallS2: S2Crosscheck = { ...check, model_at_event_scene: { ...check.model_at_event_scene, model_flood_km2_clear: (scenes.event.water_km2 ?? 0) + 5 } };
+    expect(observedLargerThanModel(smallS2, viirsDay)).toBe(false);
+    const html = renderToStaticMarkup(<dl><Sentinel2Evidence check={smallS2} viirsDay={viirsDay} language="en" /></dl>);
+    expect(html).not.toContain('data-testid="s2-reading"');
+    expect(text(html)).not.toContain("consistent with the larger observed area");
+    expect(text(html)).toContain(check.caveat);
+    // VIIRS not larger than the model on that day: the same.
+    const smallViirs = { ...viirsDay, viirs_flood_km2_clear: viirsDay.model_flood_km2_clear - 1 };
+    expect(observedLargerThanModel(check, smallViirs)).toBe(false);
+    expect(renderToStaticMarkup(<dl><Sentinel2Evidence check={check} viirsDay={smallViirs} language="en" /></dl>)).not.toContain('data-testid="s2-reading"');
+    // Without a VIIRS map with clear sky for the day, only Sentinel-2 is named and judged.
+    for (const missing of [null, { ...viirsDay, clear_km2: 0, viirs_flood_km2_clear: 0, model_flood_km2_clear: 0 }]) {
+      const only = text(renderToStaticMarkup(<dl><Sentinel2Evidence check={check} viirsDay={missing} language="en" /></dl>));
+      expect(only).toContain(`One observation on this day: Sentinel-2 (15 Sep 10:58 ICT) shows ${km(scenes.event.water_km2)} km² of water or saturated mud against the model's`);
+      expect(only).not.toContain("Two observations");
+      expect(only).toContain(READING);
+    }
+    expect(bothObservationsText(check, null, "th")).toContain("วันนี้มีการสังเกตการณ์หนึ่งแหล่ง");
+  });
+
+  it("adds the second observation to the VIIRS card on that day only", () => {
+    const card = (s2: S2Crosscheck | null, language: "en" | "th") =>
+      renderToStaticMarkup(<ViirsComparisonCard viirs={viirs} activeDate={viirsDay.date} showOnMap={false} onShowOnMap={noop} language={language} s2={s2} />);
+    const withCheck = card(check, "en");
+    expect(withCheck).toContain('data-testid="viirs-s2-note"');
+    const plain = text(withCheck);
+    expect(plain).toContain(`Second observation on 15 Sep: ${s2ObservedText(check, "en")} ${s2ModelText(check, "en")} ${READING}`);
+    expect(findWordingViolations(visibleText(withCheck), "ViirsComparisonCard with Sentinel-2")).toEqual([]);
+    expect(card(null, "en")).not.toContain("viirs-s2-note");
+    // The card applies the same condition as the evidence list: no "larger observed area" unless both are larger.
+    const smallS2: S2Crosscheck = { ...check, model_at_event_scene: { ...check.model_at_event_scene, model_flood_km2_clear: (scenes.event.water_km2 ?? 0) + 5 } };
+    const smaller = text(card(smallS2, "en"));
+    expect(smaller).toContain("Second observation on 15 Sep:");
+    expect(smaller).not.toContain("consistent with the larger observed area");
+    expect(renderToStaticMarkup(<ViirsComparisonCard viirs={viirs} activeDate={viirsDay.date} showOnMap={false} onShowOnMap={noop} language="en" />)).toBe(card(null, "en"));
+    const thai = text(card(check, "th"));
+    expect(thai).toContain("การสังเกตการณ์แหล่งที่สองของวันที่ 15 ก.ย.");
+    expect(thai).toContain("สอดคล้องกับพื้นที่ที่สังเกตได้ซึ่งกว้างกว่า");
+    expect(findWordingViolations(visibleText(card(check, "th")), "ViirsComparisonCard with Sentinel-2 th")).toEqual([]);
+  });
+
+  it("describes the water check in the sources panel: index, rules, caveat, stricter readings, confidence and both acquisition times", () => {
+    const html = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="en" offlineCopy={null} />);
+    const item = text(html.slice(html.indexOf('data-testid="s2-source"')).split("</li>")[0]);
+    for (const sentence of [check.product, check.attribution, check.index, check.water_rule, check.clear_rule, check.permanent_water_rule,
+      check.comparison_rule, check.caveat, check.confidence_reason]) {
+      expect(item, sentence).toContain(sentence);
+    }
+    expect(item).toContain("Water check (water or saturated mud):");
+    expect(item).toContain("Confidence: low — ");
+    expect(item).toContain(`${scenes.pre.source_timestamp} / ${scenes.event.source_timestamp}`);
+    const strict = check.sensitivity.find((row) => row.id === "strict_clear")!;
+    const tenth = check.sensitivity.find((row) => row.id === "threshold_0_1")!;
+    const fifth = check.sensitivity.find((row) => row.id === "threshold_0_2")!;
+    expect(s2SensitivityText(check, "en")).toBe(
+      `Under stricter rules the 15 Sep area is ${km(strict.event_water_km2)} km² (only vegetation, bare ground and water classes count as clear); `
+      + `${km(tenth.event_water_km2)} km² (MNDWI above 0.1); ${km(fifth.event_water_km2)} km² (MNDWI above 0.2).`);
+    expect(item).toContain(s2SensitivityText(check, "en"));
+    // A stricter rule never finds more than the main one.
+    for (const row of [strict, tenth, fifth]) expect(row.event_water_km2!).toBeLessThanOrEqual(scenes.event.water_km2!);
+    expect(s2SensitivityText({ ...check, sensitivity: [{ ...strict, id: "another_rule" }] }, "en")).toBe("");
+    // The top-level lists carry the limitation and the assumption.
+    const plain = text(html);
+    expect(manifest.limitations.some((line) => line.startsWith("No ponding or storage after the river falls"))).toBe(true);
+    expect(plain).toContain("No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level drops below it");
+    expect(plain).toContain("The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels");
+    const thaiHtml = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />);
+    const thaiItem = text(thaiHtml.slice(thaiHtml.indexOf('data-testid="s2-source"')).split("</li>")[0]);
+    expect(thaiItem).toContain("การตรวจน้ำ (น้ำหรือโคลนอิ่มน้ำ):");
+    expect(thaiItem).toContain("ความเชื่อมั่น: ต่ำ — ");
+    expect(thaiItem).toContain(s2SensitivityText(check, "th"));
+    for (const sentence of [check.index, check.water_rule, check.clear_rule, check.permanent_water_rule, check.comparison_rule, check.caveat, check.confidence_reason]) {
+      expect(thaiItem, sentence).not.toContain(sentence);
+    }
+    expect(text(thaiHtml)).toContain("ไม่จำลองน้ำขังหรือการกักเก็บน้ำหลังระดับแม่น้ำลดลง");
+    // A manifest baked before the check has no such entry, and the panel still renders.
+    const before = { ...manifest, s2_crosscheck: undefined };
+    expect(renderToStaticMarkup(<SourcesPanel manifest={before} language="en" offlineCopy={null} />)).not.toContain("s2-source");
+  });
+});
+
 describe("Mae Sai replay evidence envelope on the page (r4)", () => {
   const THAI = /[฀-๿]/;
   // The r3 shape a client may still hold in its offline copy (trimmed; see the fixture's own notes).
@@ -800,9 +996,12 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     expect(plain).toContain("The build history does not record which came first within that change, so the comparison is not presented as an independent check.");
     expect(plain).not.toContain("The VIIRS daily comparison was computed after the keyframes were final");
     expect(plain).toContain("Not used for tuning: The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final");
+    // The Sentinel-2 water check entered the bake after the last keyframe change; the images themselves had been seen.
+    expect(plain).toContain("Not used for tuning: The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not used for tuning");
+    expect(plain).toContain("they were seen while the keyframes were set, but no water area had been derived from them.");
     expect(html.match(/data-relation="used_for_tuning"/g)).toHaveLength(2);
     expect(html.match(/data-relation="known_during_tuning"/g)).toHaveLength(1);
-    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(1);
+    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(2);
     expect(html.match(/data-relation="not_used_for_tuning"/g)).toHaveLength(1);
     expect(plain).toContain(plainManifestText(manifest.exploratory_knowledge!.rule));
     expect(findWordingViolations(visibleText(html), "TuningDisclosure")).toEqual([]);

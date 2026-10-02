@@ -6,7 +6,8 @@ Inputs
 * External files (kept outside Git), under ``--external-root`` or ``FLOODGUARD_EXTERNAL_DATA``:
   - ``open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif`` and
     ``..._N20_00_E100_00_DEM.tif`` (both tiles: the east tile covers the Ruak and the east of the district)
-  - ``earth_search/mae_sai_2024/S2B_47QNC_{20240905,20240915}_0_L2A/{red,green,blue}.tif``
+  - ``earth_search/mae_sai_2024/S2B_47QNC_{20240905,20240915}_0_L2A/{red,green,blue,swir16,scl}.tif`` (true colour;
+    green, short-wave infrared and the scene classification also feed the Sentinel-2 water check)
   - ``cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_*_COG.SAFE.zip`` (6 and 15 September 2024 UTC)
   - ``open_context/worldpop_population/tha_ppp_2020.tif``
   - ``open_context/osm_geofabrik/thailand-latest.osm.pbf`` (shelter candidate sites: the bake reads the
@@ -27,7 +28,10 @@ sampled road/facility/tambon vectors and ``timeline.json``; and, in ``exports/``
 spreadsheet and GIS users (``floodguard.replay_exports``): three shelter plan tables, one GeoJSON of the
 sites, modelled road inundation and modelled access loss by hour, the shelter-candidate verification sheet
 and a licence README. The export files are listed in the manifest with their hashes, are covered by
-``--verify`` and sit outside the replay's precache budget.
+``--verify`` and sit outside the replay's precache budget. ``timeline.json`` also holds the Sentinel-2 water check
+(``s2_crosscheck``): water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes inside
+the district, with the modelled water at the 15 Sep acquisition time beside it. It writes no raster; the comparison
+is indicative and the block says so.
 
 Evidence fields
 ---------------
@@ -195,6 +199,9 @@ S1_SCENES = {
 }
 S1_STAMPS = {"s1-20240906": "2024-09-06T11:31:06Z", "s1-20240915": "2024-09-15T23:16:01Z"}
 S1_PAIR = f"{S1_STAMPS['s1-20240906']}/{S1_STAMPS['s1-20240915']}"
+# The Sentinel-2 water check: the scene before the flood and the first scene after the river fell.
+S2_CHECK_PRE, S2_CHECK_EVENT = "s2-20240905", "s2-20240915"
+S2_CHECK_PAIR = f"{S2_SCENES[S2_CHECK_PRE][1]}/{S2_SCENES[S2_CHECK_EVENT][1]}"
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -695,6 +702,17 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
         viirs_days.append(record)
     rain = obs.rainfall(external / "hii_rain/2024_09", 11 * 24, track)
 
+    # --- Sentinel-2 water check: MNDWI on clear pixels, before the flood and after the river fell ------------
+    s2_dirs = {key: external / "earth_search/mae_sai_2024" / scene for key, (scene, _) in S2_SCENES.items()}
+    s2_t = replay_days(S2_SCENES[S2_CHECK_EVENT][1])
+    s2_stage = stage_at(s2_t)
+    aoi_codes = codes_aoi.astype(int)
+    s2_model_wet = (aoi_codes != CHANNEL_CODE) & (aoi_codes != NEVER_CODE) & (aoi_codes * HAND_STEP_M < s2_stage)
+    # Permanent water is the model's own rule: mapped drainage-channel cells are left out, as in every flooded area.
+    s2_check = obs.sentinel2_water_check(s2_dirs[S2_CHECK_PRE], s2_dirs[S2_CHECK_EVENT], UTM, AOI_UTM, zones > 0,
+                                         codes_aoi == CHANNEL_CODE, s2_model_wet, AOI_RES, track)
+    s2_check["model_at_event_scene"] = {"model_t": round(s2_t, 4), "model_stage_m": round(s2_stage, 3), **s2_check["model_at_event_scene"]}
+
     peak_wet = (codes_aoi != CHANNEL_CODE) & (codes_aoi != NEVER_CODE) & (codes_aoi.astype(int) * HAND_STEP_M < max(k.stage_m for k in KEYFRAMES)) & (zones > 0)
     low_confidence_share = {"peak_flooded_km2": round(float(peak_wet.sum()) * AOI_RES**2 / 1e6, 1),
                             "low_confidence_km2": round(float((peak_wet & lowconf_aoi).sum()) * AOI_RES**2 / 1e6, 1)}
@@ -714,7 +732,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
             "bounds": [[south, west], [north, east]], "display": {"width": display.width, "height": display.height},
             "s1_meta": s1_meta, "s1_anchor": anchor, "coverage": coverage,
             "reported_meta": {k: reported_doc.get(k) for k in ("status", "compiled", "access_set_rule", "licence_note")},
-            "viirs_days": viirs_days, "rainfall": rain, "low_confidence_share": low_confidence_share,
+            "viirs_days": viirs_days, "rainfall": rain, "low_confidence_share": low_confidence_share, "s2_check": s2_check,
             "external_checks": [
                 {"id": "gistda-radarsat2-20240910", "observed": "GISTDA RADARSAT-2 flood analysis, 10 Sep 2024 18:15 (time zone not stated; assumed ICT)",
                  "reported_km2": 9.9, "reported_text": "Mae Sai 6,182 rai", "scope": "Mae Sai district",
@@ -840,6 +858,12 @@ def rights_status(record: dict) -> dict:
             "record": RIGHTS_BASIS_4009_PATH.as_posix()}
 
 
+def replay_days(stamp: str) -> float:
+    """Days from the replay origin (9 Sep 2024 00:00 ICT) to an ISO 8601 instant."""
+    moment = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    return (moment - datetime.fromisoformat(EVENT_START)).total_seconds() / 86400
+
+
 def to_ll_3857(x: float, y: float) -> tuple[float, float]:
     lon, lat = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True).transform(x, y)
     return round(lat, 6), round(lon, 6)
@@ -922,7 +946,11 @@ ASSUMPTIONS = [
     "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
     "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
     "Flash-flood velocity, debris and mud deposition are not modelled.",
+    "The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes, inside the district and outside mapped channels; its comparison with the model is indicative.",
 ]
+
+NO_PONDING_LIMITATION = ("No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level "
+                         "drops below it, so water or saturated mud left standing on fields is not reconstructed.")
 
 
 CONFIDENCE_REASON = ("Water extents are a terrain-model reconstruction with illustrative stages; the late-recession size was tuned to "
@@ -955,10 +983,15 @@ EXPLORATORY_KNOWLEDGE = {
                        "history does not record which came first within that change, so the comparison is not presented as an independent check.")},
         {"id": "unosat-4009", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
          "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision."},
+        {"id": "sentinel-2-water-check", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
+         "statement": ("The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not "
+                       "used for tuning: the last keyframe change is commit 129ff03 of 29 Sep 2026, and the check entered the bake on 2 Oct 2026. "
+                       "The two true-colour images have been on the page since the first revision, so they were seen while the keyframes were "
+                       "set, but no water area had been derived from them.")},
     ],
     "depth_factor": (f"The depth factor k = clip((A / A_Sai) ** {DEPTH_FACTOR_EXPONENT}, {DEPTH_FACTOR_FLOOR}, 1) was added on 28 Sep 2026, when the GISTDA and "
                      "UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure."),
-    "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.",
+    "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS, the Sentinel-2 water check or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.",
 }
 
 CAPACITATED_META = {
@@ -1040,6 +1073,87 @@ def exports_source_timestamp(reported_compiled: str) -> str:
     """Source timestamp of the export pack: the dated inputs its tables are written from."""
     return (f"OSM extract {OSM_EXTRACT_DATE}; WorldPop 2020; reported shelters compiled {reported_compiled}; "
             "illustrative stage keyframes for 2024-09-09/2024-09-19 ICT")
+
+S2_CHECK_META = {
+    "product": "Sentinel-2B MSI Level-2A via Earth Search (tile 47QNC): green band (B03), short-wave infrared band (B11) and scene classification (SCL)",
+    "licence": "Copernicus Sentinel data terms (free, full and open)",
+    "attribution": "Contains modified Copernicus Sentinel data [2024]",
+    "label": "water or saturated mud",
+    "confidence": "low",
+    "confidence_reason": ("One index threshold on two partly cloudy scenes, with no field check: a positive index also flags saturated mud and wet "
+                          "sediment, the scene classification can miss thin cloud and cloud shadow, and the ground under cloud was not seen."),
+    "source_timestamp": S2_CHECK_PAIR,
+    "index": ("MNDWI = (green - swir16) / (green + swir16) on surface reflectance (digital number / 10000, nothing subtracted). The 10 m green "
+              "band is averaged onto the 20 m grid of the short-wave infrared band."),
+    "water_rule": "A clear pixel counts as water or saturated mud when its MNDWI is above 0.",
+    "clear_rule": ("A pixel is clear when its scene classification is not no data (0), cloud shadow (3), cloud (8, 9) or thin cirrus (10), and "
+                   "both bands hold data."),
+    "permanent_water_rule": ("Mapped drainage-channel cells are left out on both dates: the same out-of-channel rule as the model's flooded area. "
+                             "No land-cover map is used, so ponds and reservoirs count on both dates; the new-water figure leaves them out."),
+    "scope": "The eight Mae Sai subdistricts, on the replay's 10 m grid.",
+    "comparison": "indicative",
+    "comparison_rule": ("The model figures are the modelled out-of-channel water at the acquisition time of the 15 Sep scene, counted in the pixels "
+                        "that scene saw clearly. The overlap ratio says how far the two areas coincide, not which one is right."),
+    "caveat": ("A positive MNDWI also flags saturated mud and wet sediment, so the area is water or saturated mud, not a flood extent. The scene "
+               "classification can miss thin cloud and cloud shadow, and cloud hid part of the district on both dates. The comparison with the "
+               "model is indicative only."),
+    "reading": ("Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only "
+                "model cannot hold water once the river level drops."),
+    "model_fields": {"paths": ["model_at_event_scene", "sensitivity[].model_agreement_iou"], "evidence_tier": SCENARIO_TIER,
+                     "note": "Model output on the reconstructed water, placed beside the observation for comparison; not part of the Sentinel-2 data."},
+    "assumptions": [
+        "Reflectance = digital number / 10000 for the Earth Search L2A files, which already have the baseline-04.00 offset removed.",
+        "An MNDWI above 0 is read as water or saturated mud. The threshold was not tuned and nothing was checked on the ground; the sensitivity rows give 0.1 and 0.2.",
+        "Clear pixels follow the provider's scene classification. Unclassified and dark pixels are kept; the strict_clear sensitivity row drops them.",
+        "New water needs both dates clear. Water already there on 5 Sep, before the flood, is not counted as new.",
+        "The model is sampled at the acquisition time of the 15 Sep scene. No keyframe was tuned to this check.",
+    ],
+}
+"""Wording and provenance of the manifest's ``s2_crosscheck`` block (the figures come from the build)."""
+
+S2_MODEL_PATHS = tuple(S2_CHECK_META["model_fields"]["paths"])
+"""Paths inside ``s2_crosscheck`` that hold model output placed beside the observation (the evidence block's scenario fields)."""
+
+
+def model_key_paths(value, path: str = "") -> list[str]:
+    """Paths of every key that starts with ``model_`` inside ``value``; list items are written ``[]``."""
+    found: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            here = f"{path}.{key}" if path else key
+            if key.startswith("model_"):
+                found.append(here)
+            found.extend(model_key_paths(item, here))
+    elif isinstance(value, list):
+        for item in value:
+            found.extend(model_key_paths(item, f"{path}[]"))
+    return sorted(set(found))
+
+
+def s2_crosscheck_block(check: dict) -> dict:
+    """The manifest's ``s2_crosscheck`` block: observed areas per scene, the change, the model beside it and a caveat.
+
+    Model output may sit only under the paths in :data:`S2_MODEL_PATHS`; a ``model_`` key anywhere else stops the
+    bake, because the evidence block would file it as observed.
+    """
+    local = {observation["id"]: observation["local"] for observation in OBSERVATIONS}
+    scenes = [{"id": key, "role": role, "scene": S2_SCENES[key][0], "source_timestamp": S2_SCENES[key][1], "local_time": local[key],
+               **check["scenes"][role]} for role, key in (("pre_event", S2_CHECK_PRE), ("event", S2_CHECK_EVENT))]
+    block = {**S2_CHECK_META, "resolution_m": check["resolution_m"], "threshold": check["threshold"],
+             "district_km2": check["district_km2"], "permanent_water_km2": check["permanent_water_km2"], "scenes": scenes,
+             "change": {"pre_event_scene": S2_CHECK_PRE, "event_scene": S2_CHECK_EVENT, **check["change"]},
+             "model_at_event_scene": {"model_local_time": local[S2_CHECK_EVENT], **check["model_at_event_scene"]},
+             "sensitivity": check["sensitivity"]}
+    figures = {key: value for key, value in block.items() if key != "model_fields"}
+    unnamed = [path for path in model_key_paths(figures)
+               if not any(path == allowed or path.startswith(allowed + ".") for allowed in S2_MODEL_PATHS)]
+    if unnamed:
+        raise ReplayManifestError(f"the Sentinel-2 water check carries model fields the evidence block does not name: {unnamed}")
+    not_model = [key for key in block["model_at_event_scene"] if not key.startswith("model_")]
+    if not_model:
+        raise ReplayManifestError(f"model_at_event_scene holds a field that is not named as model output: {not_model}")
+    return block
+
 
 VIIRS_MODEL_FIELDS = ("model_stage_m", "model_flood_km2_clear", "model_flood_km2_district")
 """Fields of every ``viirs_daily.days[]`` row that are model output placed beside the agency product."""
@@ -1150,6 +1264,13 @@ def evidence_blocks(result: dict) -> list[dict]:
          "covers": ["observations[s2-20240905]", "layers[s2-20240905]"], "source_timestamp": s2["s2-20240905"]},
         {"id": "sentinel2_20240915", **imagery, "temporal_relation": "event_aligned",
          "covers": ["observations[s2-20240915]", "layers[s2-20240915]"], "source_timestamp": s2["s2-20240915"]},
+        *([{"id": "sentinel2_water_check", "lane": "OBS",
+            "evidence_tier": "Optical water index on observed images, clear pixels only: water or saturated mud; unvalidated here",
+            "temporal_relation": "pre_event_to_event_pair", "covers": ["s2_crosscheck"], "source_timestamp": S2_CHECK_PAIR,
+            SCENARIO_FIELDS_KEY: [f"s2_crosscheck.{path}" for path in S2_MODEL_PATHS],
+            "note": ("MNDWI above 0 on the clear pixels of two Sentinel-2 L2A scenes; each scene carries its own acquisition time and clear "
+                     f"share. model_at_event_scene and the model_ field of each sensitivity row are {SCENARIO_TIER} values computed for the "
+                     "comparison, which is indicative only.")}] if "s2_check" in result else []),
         {"id": "sentinel1_20240906", **imagery, "temporal_relation": "pre_event",
          "covers": ["observations[s1-20240906]", "layers[s1-20240906]"], "source_timestamp": S1_STAMPS["s1-20240906"]},
         {"id": "sentinel1_20240915", **imagery, "temporal_relation": "event_aligned",
@@ -1316,6 +1437,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
                              "note": "Model output on the reconstructed water, placed beside each day for comparison; not part of the VIIRS product."},
             "days": result["viirs_days"],
         },
+        **({"s2_crosscheck": s2_crosscheck_block(result["s2_check"])} if "s2_check" in result else {}),
         "rainfall": {**result["rainfall"], "source": "HII ThaiWater open data, hourly rain gauges",
                      "source_url": "https://tiservice.hii.or.th/opendata/", "licence": "CC BY-NC (per the HII open-data catalogue)",
                      "units": "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT", "note": "Observed rainfall (forcing), not flooding."},
@@ -1332,6 +1454,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
             "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
             "No high-resolution satellite image exists for 10-14 September over Mae Sai in these inputs; VIIRS (375 m) was cloud-covered on 10-11 Sep and mostly cloud-covered on 12-14 Sep, so onset and peak extents are not observed.",
             "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded.",
+            NO_PONDING_LIMITATION,
         ],
     }
     return manifest
@@ -1370,6 +1493,7 @@ BAKE_SOURCES = (
     "src/floodguard/bake_receipt.py",
     "src/floodguard/evacuation_access.py",
     "src/floodguard/flood_timeline.py",
+    "src/floodguard/optical_water_check.py",
     "src/floodguard/replay_exports.py",
     "src/floodguard/replay_manifest.py",
     "src/floodguard/rights_basis.py",

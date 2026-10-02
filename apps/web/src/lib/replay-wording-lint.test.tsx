@@ -29,7 +29,7 @@ import {
   TimelineLegend,
   WetFacilitiesCard,
 } from "@/components/mae-sai-flood-timeline";
-import { RainChart, ViirsComparisonCard } from "@/components/mae-sai-observed-panels";
+import { RainChart, Sentinel2Evidence, ViirsComparisonCard } from "@/components/mae-sai-observed-panels";
 import { ReplayExportPanel } from "@/components/mae-sai-replay-export";
 import {
   districtStats,
@@ -183,6 +183,9 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
     panel("RouteCutsCard", <RouteCutsCard groups={groups} names={names} language={language} focused={null} onFocus={noop} onReset={noop} />),
     panel("ReplayExportPanel", <ReplayExportPanel source={null} time={3.5} language={language} waterOpacity={0.85} />),
     panel("ViirsComparisonCard", <ViirsComparisonCard viirs={viirs} activeDate={viirs.days[0].date} showOnMap={false} onShowOnMap={noop} language={language} />),
+    // 15 Sep: the Sentinel-2 water check beside VIIRS, in the evidence list and on the VIIRS card.
+    panel("Sentinel2Evidence", <dl><Sentinel2Evidence check={manifest.s2_crosscheck!} viirsDay={viirs.days.find((day) => day.date === "2024-09-15") ?? null} language={language} /></dl>),
+    panel("ViirsComparisonCard on 15 Sep", <ViirsComparisonCard viirs={viirs} activeDate="2024-09-15" showOnMap={false} onShowOnMap={noop} language={language} s2={manifest.s2_crosscheck!} />),
     panel("RainChart", <RainChart rainfall={manifest.rainfall!} time={3.5} dayLabels={manifest.days.map((day) => String(Number(day.date.slice(8))))} language={language} />),
     panel("SourcesPanel", <SourcesPanel manifest={manifest} language={language} offlineCopy={null} />),
     panel("LowConfidenceEvidence", <dl><LowConfidenceEvidence hand={manifest.hand} language={language} /></dl>),
@@ -289,7 +292,7 @@ describe("Replay wording lint: current text", () => {
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(41);
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(45);
     // The access card is linted with both shelter sets side by side, at the peak and before the flood.
     const accessText = items.filter((item) => item.source.startsWith("AccessCard")).map((item) => item.text).join(" ");
     expect(accessText).toContain("Modelled access cut-off hour");

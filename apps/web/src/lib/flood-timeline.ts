@@ -463,6 +463,92 @@ export interface ViirsDaily {
   days: ViirsDay[];
 }
 
+/** One Sentinel-2 L2A scene of the water check: its acquisition time, how much of the district it saw, and the area found. */
+export interface S2CrosscheckScene {
+  id: string;
+  role: "pre_event" | "event";
+  scene: string;
+  /** Acquisition time (UTC). */
+  source_timestamp: string;
+  local_time: string;
+  clear_km2: number;
+  /** Share (0-1) of the district the scene saw clearly. */
+  clear_share: number;
+  /** Water or saturated mud (MNDWI above 0) in the clear pixels, mapped channels left out; null when nothing was clear. */
+  water_km2: number | null;
+  scl_class_km2: Record<string, number>;
+}
+
+/** One sensitivity row of the water check: the same figures under a stricter clear rule or threshold. */
+export interface S2CrosscheckSensitivity {
+  id: string;
+  rule: string;
+  event_clear_share: number;
+  event_water_km2: number | null;
+  pre_event_clear_share: number;
+  pre_event_water_km2: number | null;
+  new_water_km2: number | null;
+  /** T1 scenario (model) value placed beside the observation. */
+  model_agreement_iou: number | null;
+}
+
+/**
+ * Sentinel-2 water check (later r4 bakes): water or saturated mud on the clear pixels of the scene before the flood
+ * and of the first scene after the river fell. `scenes` and `change` are observed; `model_at_event_scene` and the
+ * `model_` field of each sensitivity row are T1 scenario (model) values. The comparison is indicative.
+ */
+export interface S2Crosscheck {
+  product: string;
+  licence: string;
+  attribution: string;
+  /** What a positive index is called on the page: "water or saturated mud", never a flood extent. */
+  label: string;
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  index: string;
+  water_rule: string;
+  clear_rule: string;
+  permanent_water_rule: string;
+  scope: string;
+  comparison: "indicative";
+  comparison_rule: string;
+  caveat: string;
+  /** What the observation is consistent with; it states no cause. */
+  reading: string;
+  model_fields: { paths: string[]; evidence_tier: string; note: string };
+  assumptions: string[];
+  resolution_m: number;
+  threshold: number;
+  district_km2: number;
+  permanent_water_km2: number;
+  scenes: S2CrosscheckScene[];
+  change: {
+    pre_event_scene: string;
+    event_scene: string;
+    both_clear_km2: number;
+    event_water_km2: number | null;
+    pre_event_water_km2: number | null;
+    /** Water or saturated mud on the event date that was not there before, where both dates are clear. */
+    new_water_km2: number | null;
+    no_longer_water_km2: number | null;
+  };
+  model_at_event_scene: {
+    model_local_time: string;
+    model_t: number;
+    model_stage_m: number;
+    model_flood_km2_district: number;
+    /** Modelled out-of-channel water in the pixels the event scene saw clearly. */
+    model_flood_km2_clear: number;
+    model_overlap_km2: number;
+    model_union_km2: number;
+    model_agreement_iou: number | null;
+    model_share_of_observed_water_reached: number | null;
+    model_share_inside_observed_water: number | null;
+  };
+  sensitivity: S2CrosscheckSensitivity[];
+}
+
 /** Hourly rain gauge (observed forcing, not flooding). */
 export interface RainStation {
   code: string;
@@ -566,6 +652,8 @@ export interface TimelineManifest {
   gauge_note?: string;
   /** Observed daily VIIRS flood maps and their clear-sky comparison with the model; absent before r3. */
   viirs_daily?: ViirsDaily;
+  /** Sentinel-2 water check for the first clear scene after the river fell (15 Sep); absent before the later r4 bakes. */
+  s2_crosscheck?: S2Crosscheck;
   /** Observed hourly rain at nearby gauges (forcing, not flooding); absent before r3. */
   rainfall?: Rainfall;
   /** Download files for spreadsheet and GIS users (absent from a manifest baked before the pack existed). */
@@ -1106,6 +1194,33 @@ export function viirsDayAt<D extends Pick<ViirsDay, "t" | "date">>(t: number, da
   }
   if (!best || t - best.t >= 1 || t >= tFromLocalDate(lastDate) + 1) return null;
   return best;
+}
+
+/** The event scene (after the river fell) and the scene before the flood of a Sentinel-2 water check, or null when either is missing. */
+export function s2CrosscheckScenes(check: Pick<S2Crosscheck, "scenes">): { event: S2CrosscheckScene; pre: S2CrosscheckScene } | null {
+  const event = check.scenes.find((scene) => scene.role === "event");
+  const pre = check.scenes.find((scene) => scene.role === "pre_event");
+  return event && pre ? { event, pre } : null;
+}
+
+/** Local (ICT) date, `YYYY-MM-DD`, of the event scene of a Sentinel-2 water check; null when the block names none. */
+export function s2CrosscheckDate(check: Pick<S2Crosscheck, "scenes">): string | null {
+  const scenes = s2CrosscheckScenes(check);
+  if (!scenes) return null;
+  const ms = Date.parse(scenes.event.source_timestamp);
+  return Number.isNaN(ms) ? null : new Date(ms + ICT_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/**
+ * The Sentinel-2 water check when the replay position `t` falls on the local day of its event scene (15 Sep), else
+ * null: the check is one observation of one day and is shown on that day only.
+ */
+export function s2CrosscheckAt<C extends Pick<S2Crosscheck, "scenes">>(t: number, check: C | null | undefined): C | null {
+  if (!check || Number.isNaN(t)) return null;
+  const date = s2CrosscheckDate(check);
+  if (!date) return null;
+  const start = tFromLocalDate(date);
+  return t >= start && t < start + 1 ? check : null;
 }
 
 /** Below this area (km²) a VIIRS or model figure reads as "none" (it would print as 0.0). */

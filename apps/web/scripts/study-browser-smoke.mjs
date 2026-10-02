@@ -643,14 +643,31 @@ try {
   const viirsCard = page.getByTestId("viirs-card");
   await expect(viirsCard.getByText("not a validation of the model", { exact: false })).toBeVisible();
   await expect(viirsCard.locator("tr[aria-current='date']")).toContainText("15 Sep");
+  // 15 Sep has a second observation, the Sentinel-2 water check: the evidence list names both observations and says
+  // what the larger observed area is consistent with (never what explains it); the comparison is labelled indicative.
+  const s2Evidence = page.getByTestId("s2-evidence");
+  await expect(s2Evidence).toContainText(/Observed \(Sentinel-2 L2A, 15 Sep 10:58 ICT, \d+% of the district clear\): \d+\.\d km² of water or saturated mud outside the mapped channels/);
+  await expect(s2Evidence).toContainText("This comparison is indicative.");
+  const observedReading = page.getByTestId("observed-reading");
+  await expect(observedReading).toContainText("Two observations on this day: VIIRS (15 Sep 13:30 ICT, nominal)");
+  await expect(observedReading).toContainText("and Sentinel-2 (15 Sep 10:58 ICT) shows");
+  await expect(observedReading.getByTestId("s2-reading")).toHaveText("Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only model cannot hold water once the river level drops.");
+  await expect(observedReading).toContainText("not a flood extent");
+  await expect(observedReading).not.toContainText(/explain/i);
+  await expect(viirsCard.getByTestId("viirs-s2-note")).toContainText("Second observation on 15 Sep");
   await slider.fill("40");
   await expect(viirsImage).toHaveAttribute("src", /viirs-20240910\.png$/);
+  // The water check is one observation of one day: on any other day the rows and the note are gone.
+  await expect(page.getByTestId("s2-evidence")).toHaveCount(0);
+  await expect(page.getByTestId("observed-reading")).toHaveCount(0);
+  await expect(viirsCard.getByTestId("viirs-s2-note")).toHaveCount(0);
   await slider.fill("12");
   await expect(viirsImage).toHaveCount(0);
   await expect(page.getByTestId("viirs-note")).toContainText("no daily map");
   await expect(page.getByTestId("rain-chart")).toBeVisible();
   await expect(page.getByTestId("rain-now")).toContainText("MOU189");
   checks.push("observed VIIRS daily map (day at or before the playhead, pixelated, deep-linked) with its clear-sky comparison card, and the hourly rain chart");
+  checks.push("15 Sep names both observations (VIIRS and the Sentinel-2 water check) with the consistent-with reading and the indicative label; no Sentinel-2 rows on another day");
   // While the residents raster is still loading, a resident view draws water depth, and the legend says exactly that.
   let releaseResidents;
   const residentsHeld = new Promise((release) => { releaseResidents = release; });
@@ -1036,10 +1053,28 @@ try {
   await touchPage.getByTestId("how-to-read").locator("summary").click();
   await expect(touchPage.getByTestId("how-to-status")).toContainText("สถานะ: ไม่ใช้ในการปฏิบัติการ");
   await expect(touchPage.getByTestId("how-to-status").getByTestId("generated-at")).toHaveText(/สร้างไฟล์ข้อมูลเมื่อ \d{1,2} \S+ 25\d{2} \(20\d{2}\) \d{2}:\d{2} น\./);
+  // 15 Sep in Thai: both observations, the consistent-with reading and the caveat, with no English sentence left,
+  // no letter-spacing and no overflow at 390 px.
+  await touchPage.goto(`${baseUrl}${caseRoute}?t=158&lang=th`, { waitUntil: "networkidle" });
+  await expect(touchPage.getByTestId("replay-readout")).toContainText("15 ก.ย. 2567 (2024) · 14:00 น.");
+  const thaiS2 = touchPage.getByTestId("s2-evidence");
+  await expect(thaiS2).toContainText("สังเกตการณ์ (Sentinel-2 L2A 15 ก.ย. 10:58 น. มองเห็นพื้นที่อำเภอ");
+  await expect(thaiS2).toContainText("น้ำหรือโคลนอิ่มน้ำ");
+  await expect(thaiS2).toContainText("การเปรียบเทียบนี้เป็นเพียงข้อบ่งชี้");
+  const thaiReading = touchPage.getByTestId("observed-reading");
+  await expect(thaiReading).toContainText("วันนี้มีการสังเกตการณ์สองแหล่ง: VIIRS (15 ก.ย. 13:30 น. โดยประมาณ)");
+  await expect(thaiReading.getByTestId("s2-reading")).toContainText("สอดคล้องกับพื้นที่ที่สังเกตได้ซึ่งกว้างกว่า");
+  await expect(thaiReading).toContainText("ไม่ใช่ขอบเขตน้ำท่วม");
+  await expect(thaiReading).not.toContainText(/Water or saturated mud|indicative|consistent with/);
+  await expect(touchPage.getByTestId("viirs-card").getByTestId("viirs-s2-note")).toContainText("การสังเกตการณ์แหล่งที่สองของวันที่ 15 ก.ย.");
+  assert.deepEqual(await spacedThai(touchPage), [], "No Thai text node is letter-spaced on 15 Sep at 390 px");
+  const thaiS2Overflow = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert(thaiS2Overflow <= 1, `The Thai 15 Sep evidence does not overflow at 390 px (${thaiS2Overflow}px)`);
   await touch.close();
   checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips, non-operational status and generation time in Thai, shelter-set comparison in Thai without letter-spacing or overflow");
   checks.push("touch phone in Thai: capacity-aware bounds, caveats and what-if label in Thai, robust core marked, no letter-spacing, tables fit at 390 px");
   checks.push("touch phone in Thai: the candidate check says not conducted, and the eight download links have Thai titles under the standing sentence without overflow or letter-spacing");
+  checks.push("touch phone in Thai on 15 Sep: both observations, the consistent-with reading and the caveat in Thai, without letter-spacing or overflow");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

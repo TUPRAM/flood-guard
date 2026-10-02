@@ -67,6 +67,8 @@ import {
   roadCutClassIndex,
   roadCutGroups,
   roadState,
+  s2CrosscheckAt,
+  s2CrosscheckDate,
   stageAt,
   tFromDate,
   tFromLocalDate,
@@ -188,7 +190,7 @@ import {
   Term,
   ThemeEyebrow,
 } from "./mae-sai-evacuation-panels";
-import { RainChart, rainStationName, ViirsComparisonCard, ViirsLegend, viirsMomentText } from "./mae-sai-observed-panels";
+import { RainChart, rainStationName, s2SensitivityText, Sentinel2Evidence, ViirsComparisonCard, ViirsLegend, viirsMomentText } from "./mae-sai-observed-panels";
 import { DIAMOND_PATH, ReplayExportPanel, STAR_PATH, STAR_SLASH_PATH, type ReplayExportSource } from "./mae-sai-replay-export";
 import { WorkspaceHeader } from "./workspace-header";
 
@@ -894,6 +896,11 @@ export function MaeSaiFloodTimeline() {
   const rainfall = manifest?.rainfall ?? null;
   // At most nine days to scan; the day object is stable, so the map and the card update only when the day changes.
   const viirsDay = viirsInfo ? viirsDayAt(time, viirsInfo.days) : null;
+  // The Sentinel-2 water check is one observation of one day (15 Sep): it is on show while the playhead is on that day,
+  // beside that day's VIIRS map (whatever VIIRS day the playhead itself is on).
+  const s2Check = s2CrosscheckAt(time, manifest?.s2_crosscheck);
+  const s2Date = s2Check ? s2CrosscheckDate(s2Check) : null;
+  const s2ViirsDay = s2Date ? viirsInfo?.days.find((day) => day.date === s2Date) ?? null : null;
   const latestOptical = manifest ? latestObservation(time, manifest.observations, "optical") : null;
   const latestOpticalId = latestOptical?.observation.id ?? null;
   const resolveImagery = useCallback(
@@ -2538,6 +2545,7 @@ export function MaeSaiFloodTimeline() {
                     {viirsInfo && (
                       <div data-testid="viirs-evidence"><dt>{t("VIIRS (observed)", "VIIRS (สังเกตการณ์)")}</dt><dd>{viirsMomentText(viirsDay, viirsInfo, lang)}</dd></div>
                     )}
+                    {s2Check && <Sentinel2Evidence check={s2Check} viirsDay={s2ViirsDay} language={lang} />}
                     {rainfall && (
                       <div><dt>{t("Rain (observed)", "ฝน (ตรวจวัดจริง)")}</dt><dd>{t(
                         `Hourly rain at ${rainfall.stations.length} HII gauges is charted under the stage curve; it is the forcing, not a measure of flooding.`,
@@ -2566,7 +2574,7 @@ export function MaeSaiFloodTimeline() {
                 </section>
 
                 {viirsInfo && (
-                  <ViirsComparisonCard viirs={viirsInfo} activeDate={viirsDay?.date ?? null} showOnMap={showViirs} onShowOnMap={setShowViirs} language={lang} />
+                  <ViirsComparisonCard viirs={viirsInfo} activeDate={viirsDay?.date ?? null} showOnMap={showViirs} onShowOnMap={setShowViirs} language={lang} s2={s2Check} />
                 )}
 
                 <section className={styles.card} aria-labelledby="mae-sai-share-title">
@@ -2857,6 +2865,8 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
   const pendingReferences = referencesNotIngested(manifest);
   const viirs = manifest.viirs_daily ?? null;
   const rain = manifest.rainfall ?? null;
+  const s2 = manifest.s2_crosscheck ?? null;
+  const s2Confidence = s2 ? (s2.confidence.toLowerCase() === "low" ? t("low", "ต่ำ") : s2.confidence) : "";
   return (
     <details className={styles.card} data-testid="sources-panel" id="mae-sai-sources">
       <summary>{t("Sources, assumptions and limits", "แหล่งข้อมูล สมมติฐาน และข้อจำกัด")}</summary>
@@ -2879,7 +2889,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
       </ul>
       <LicencesByInput manifest={manifest} language={language} />
       <ExportDownloads manifest={manifest} language={language} offlineCopy={offlineCopy} />
-      {(viirs || rain) && (
+      {(viirs || rain || s2) && (
         <>
           <h3>{t("Observed data shown with the model", "ข้อมูลที่สังเกตได้ซึ่งแสดงคู่กับแบบจำลอง")}</h3>
           <ul className={styles.list} data-testid="observed-sources">
@@ -2890,6 +2900,21 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
                 <Localized text={viirs.comparison_rule} language={language} />{" "}
                 <Localized text={viirs.caveat} language={language} />{" "}
                 <a href={viirs.source_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{viirs.source_url}</a>
+              </li>
+            )}
+            {s2 && (
+              <li data-testid="s2-source">
+                <strong lang="en">{s2.product}</strong> — <LicenceText text={s2.licence} language={language} />{" "}<span lang="en">{s2.attribution}.</span>{" "}
+                {t("Water check (water or saturated mud)", "การตรวจน้ำ (น้ำหรือโคลนอิ่มน้ำ)")}:{" "}
+                <Localized text={s2.index} language={language} />{" "}
+                <Localized text={s2.water_rule} language={language} />{" "}
+                <Localized text={s2.clear_rule} language={language} />{" "}
+                <Localized text={s2.permanent_water_rule} language={language} />{" "}
+                <Localized text={s2.comparison_rule} language={language} />{" "}
+                <Localized text={s2.caveat} language={language} />{" "}
+                {s2SensitivityText(s2, language)}{" "}
+                {t("Confidence", "ความเชื่อมั่น")}: {s2Confidence} — <Localized text={s2.confidence_reason} language={language} />{" "}
+                <span className={styles.muted} lang="en">{s2.scenes.map((scene) => scene.source_timestamp).join(" / ")}</span>
               </li>
             )}
             {rain && (

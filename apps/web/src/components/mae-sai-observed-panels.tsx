@@ -2,8 +2,9 @@
 
 /**
  * Observed evidence in the Mae Sai replay: the NOAA/GMU VIIRS daily flood maps (375 m, compared with the model in
- * clear-sky pixels only) and the HII hourly rain gauges (forcing, not flooding). Everything here is rendered from the
- * manifest's `viirs_daily` and `rainfall` blocks. VIIRS is a coarse consistency check, never a validation.
+ * clear-sky pixels only), the Sentinel-2 water check of 15 Sep (water or saturated mud on clear pixels) and the HII
+ * hourly rain gauges (forcing, not flooding). Everything here is rendered from the manifest's `viirs_daily`,
+ * `s2_crosscheck` and `rainfall` blocks. Both comparisons with the model are indicative, never a validation.
  */
 
 import { memo } from "react";
@@ -14,12 +15,15 @@ import {
   hourIndex,
   rainAt,
   rgbaCss,
+  s2CrosscheckDate,
+  s2CrosscheckScenes,
   TIMELINE_END_T,
   VIIRS_CLASSES,
   viirsReading,
   type Language,
   type Rainfall,
   type RainStation,
+  type S2Crosscheck,
   type ViirsDaily,
   type ViirsDay,
 } from "@/lib/flood-timeline";
@@ -86,6 +90,137 @@ export function viirsMomentText(day: ViirsDay | null, viirs: Pick<ViirsDaily, "d
   );
 }
 
+// --- Sentinel-2 water check (15 Sep) -----------------------------------------------------------------
+
+/**
+ * What the Sentinel-2 water check observed: the product, the acquisition time, the share of the district seen and the
+ * area of water or saturated mud, beside the scene before the flood and the part that is new. Observed figures only.
+ */
+export function s2ObservedText(check: S2Crosscheck, language: Language): string {
+  const t = translator(language);
+  const scenes = s2CrosscheckScenes(check);
+  if (!scenes) return "";
+  const { event, pre } = scenes;
+  const stamp = formatLocalStamp(event.local_time, language);
+  if (event.water_km2 === null) {
+    return t(
+      `Observed (Sentinel-2 L2A, ${stamp}): cloud covered the whole district, so there is no observation.`,
+      `สังเกตการณ์ (Sentinel-2 L2A ${stamp}): เมฆปกคลุมทั้งอำเภอ จึงไม่มีการสังเกต`,
+    );
+  }
+  const before = pre.water_km2 === null ? "" : t(
+    `, against ${km(pre.water_km2)} km² on ${formatShortDate(pre.local_time, "en")}, before the flood (${pct(pre.clear_share)} clear)`,
+    ` เทียบกับ ${km(pre.water_km2)} ตร.กม. เมื่อ ${formatShortDate(pre.local_time, "th")} ก่อนน้ำท่วม (มองเห็น ${pct(pre.clear_share)})`,
+  );
+  const fresh = check.change.new_water_km2 === null ? "" : t(
+    ` Where both dates are clear, ${km(check.change.new_water_km2)} km² is new.`,
+    ` ในบริเวณที่มองเห็นได้ทั้งสองวัน มี ${km(check.change.new_water_km2)} ตร.กม. ที่เพิ่มขึ้นใหม่`,
+  );
+  return t(
+    `Observed (Sentinel-2 L2A, ${stamp}, ${pct(event.clear_share)} of the district clear): ${km(event.water_km2)} km² of water or saturated mud outside the mapped channels${before}.${fresh}`,
+    `สังเกตการณ์ (Sentinel-2 L2A ${stamp} มองเห็นพื้นที่อำเภอ ${pct(event.clear_share)} โดยไม่มีเมฆบัง): พบน้ำหรือโคลนอิ่มน้ำ ${km(event.water_km2)} ตร.กม. นอกร่องน้ำในแผนที่${before}${fresh}`,
+  );
+}
+
+/** The model beside the Sentinel-2 observation, in the same clear pixels; the comparison is labelled indicative. */
+export function s2ModelText(check: S2Crosscheck, language: Language): string {
+  const t = translator(language);
+  const model = check.model_at_event_scene;
+  return t(
+    `Model at that time (assumed stage ${model.model_stage_m.toFixed(2)} m): ${km(model.model_flood_km2_clear)} km² in the same clear pixels. This comparison is indicative.`,
+    `แบบจำลอง ณ เวลาเดียวกัน (ระดับน้ำสมมุติ ${model.model_stage_m.toFixed(2)} ม.): ${km(model.model_flood_km2_clear)} ตร.กม. ในพิกเซลเดียวกัน การเปรียบเทียบนี้เป็นเพียงข้อบ่งชี้`,
+  );
+}
+
+/**
+ * True when every observation of the day shows a larger area than the model in its own clear pixels: Sentinel-2
+ * always, and VIIRS when the day has a VIIRS map with clear sky. Only then may the page speak of "the larger observed area".
+ */
+export function observedLargerThanModel(check: S2Crosscheck, viirsDay: Pick<ViirsDay, "clear_km2" | "viirs_flood_km2_clear" | "model_flood_km2_clear"> | null): boolean {
+  const water = s2CrosscheckScenes(check)?.event.water_km2 ?? null;
+  if (water === null || water <= check.model_at_event_scene.model_flood_km2_clear) return false;
+  return !viirsDay || viirsDay.clear_km2 <= 0 || viirsDay.viirs_flood_km2_clear > viirsDay.model_flood_km2_clear;
+}
+
+/**
+ * Both observations of the day named side by side, each against the model in its own clear pixels: VIIRS (when the
+ * day has a map with clear sky) and Sentinel-2. Numbers only; what they are consistent with is said separately.
+ */
+export function bothObservationsText(check: S2Crosscheck, viirsDay: ViirsDay | null, language: Language): string {
+  const t = translator(language);
+  const scenes = s2CrosscheckScenes(check);
+  if (!scenes || scenes.event.water_km2 === null) return "";
+  const s2Stamp = formatLocalStamp(scenes.event.local_time, language);
+  const s2Model = km(check.model_at_event_scene.model_flood_km2_clear);
+  const s2 = km(scenes.event.water_km2);
+  if (!viirsDay || viirsDay.clear_km2 <= 0) {
+    return t(
+      `One observation on this day: Sentinel-2 (${s2Stamp}) shows ${s2} km² of water or saturated mud against the model's ${s2Model} km² in the same clear pixels.`,
+      `วันนี้มีการสังเกตการณ์หนึ่งแหล่ง: Sentinel-2 (${s2Stamp}) พบน้ำหรือโคลนอิ่มน้ำ ${s2} ตร.กม. เทียบกับแบบจำลอง ${s2Model} ตร.กม. ในพิกเซลเดียวกัน`,
+    );
+  }
+  const viirsStamp = formatLocalStamp(viirsDay.nominal_local_time, language);
+  return t(
+    `Two observations on this day: VIIRS (${viirsStamp}, nominal) shows ${km(viirsDay.viirs_flood_km2_clear)} km² of flood water against the model's ${km(viirsDay.model_flood_km2_clear)} km², and Sentinel-2 (${s2Stamp}) shows ${s2} km² of water or saturated mud against the model's ${s2Model} km², each in its own clear pixels.`,
+    `วันนี้มีการสังเกตการณ์สองแหล่ง: VIIRS (${viirsStamp} โดยประมาณ) พบน้ำท่วม ${km(viirsDay.viirs_flood_km2_clear)} ตร.กม. เทียบกับแบบจำลอง ${km(viirsDay.model_flood_km2_clear)} ตร.กม. และ Sentinel-2 (${s2Stamp}) พบน้ำหรือโคลนอิ่มน้ำ ${s2} ตร.กม. เทียบกับแบบจำลอง ${s2Model} ตร.กม. โดยแต่ละแหล่งนับเฉพาะพิกเซลที่ตนมองเห็น`,
+  );
+}
+
+/**
+ * The reading of the day with two observations: the numbers of both, then (only when both show more than the model)
+ * the manifest's sentence on what that is consistent with, then the caveat. It states no cause.
+ */
+export function ObservedReading({ check, viirsDay, language }: { check: S2Crosscheck; viirsDay: ViirsDay | null; language: Language }) {
+  return (
+    <>
+      {bothObservationsText(check, viirsDay, language)}{" "}
+      {observedLargerThanModel(check, viirsDay) && <><strong data-testid="s2-reading"><ManifestText text={check.reading} language={language} /></strong>{" "}</>}
+      <ManifestText text={check.caveat} language={language} />
+    </>
+  );
+}
+
+/**
+ * Evidence rows for the day of the Sentinel-2 water check (15 Sep): what Sentinel-2 observed, the model beside it,
+ * and the reading of both observations. Rendered inside the "Evidence for this moment" list on that day only.
+ */
+export function Sentinel2Evidence({ check, viirsDay, language }: { check: S2Crosscheck; viirsDay: ViirsDay | null; language: Language }) {
+  const t = translator(language);
+  if (!s2CrosscheckScenes(check)) return null;
+  return (
+    <>
+      <div data-testid="s2-evidence">
+        <dt>{t("Sentinel-2 (observed)", "Sentinel-2 (สังเกตการณ์)")}</dt>
+        <dd>{s2ObservedText(check, language)} {s2ModelText(check, language)}</dd>
+      </div>
+      <div data-testid="observed-reading">
+        <dt>{t("VIIRS and Sentinel-2", "VIIRS และ Sentinel-2")}</dt>
+        <dd><ObservedReading check={check} viirsDay={viirsDay} language={language} /></dd>
+      </div>
+    </>
+  );
+}
+
+const SENSITIVITY_LABELS: Readonly<Record<string, [string, string]>> = {
+  strict_clear: ["only vegetation, bare ground and water classes count as clear", "นับเฉพาะชั้นพืชพรรณ ดินเปล่า และน้ำว่าไม่มีเมฆบัง"],
+  threshold_0_1: ["MNDWI above 0.1", "MNDWI มากกว่า 0.1"],
+  threshold_0_2: ["MNDWI above 0.2", "MNDWI มากกว่า 0.2"],
+};
+
+/** "Under stricter rules the 15 Sep area is …": the sensitivity rows the page knows how to name, or an empty string. */
+export function s2SensitivityText(check: S2Crosscheck, language: Language): string {
+  const t = translator(language);
+  const scenes = s2CrosscheckScenes(check);
+  const rows = check.sensitivity.filter((row) => SENSITIVITY_LABELS[row.id] && row.event_water_km2 !== null);
+  if (!scenes || rows.length === 0) return "";
+  const parts = rows.map((row) => `${km(row.event_water_km2 ?? 0)} ${t("km²", "ตร.กม.")} (${SENSITIVITY_LABELS[row.id][language === "th" ? 1 : 0]})`);
+  const date = formatShortDate(scenes.event.local_time, language);
+  return t(
+    `Under stricter rules the ${date} area is ${parts.join("; ")}.`,
+    `หากใช้เกณฑ์ที่เข้มขึ้น พื้นที่ของวันที่ ${date} เป็น ${parts.join(" · ")}`,
+  );
+}
+
 /** Legend of the pre-coloured VIIRS classes, labelled from the manifest legend (Thai from the page). */
 export function ViirsLegend({ viirs, language }: { viirs: Pick<ViirsDaily, "legend">; language: Language }) {
   const t = translator(language);
@@ -110,10 +245,12 @@ export function ViirsLegend({ viirs, language }: { viirs: Pick<ViirsDaily, "lege
  * the model's area in the same clear pixels, with a plain reading of each day and the product's caveat. Memoised: it
  * changes only when the day on show changes.
  */
-export const ViirsComparisonCard = memo(function ViirsComparisonCard({ viirs, activeDate, showOnMap, onShowOnMap, language }: {
+export const ViirsComparisonCard = memo(function ViirsComparisonCard({ viirs, activeDate, showOnMap, onShowOnMap, language, s2 = null }: {
   viirs: ViirsDaily;
   /** Local date of the VIIRS map at or before the playhead, highlighted in the table. */
   activeDate: string | null;
+  /** The Sentinel-2 water check while the playhead is on its day (15 Sep): the second observation of that day. */
+  s2?: S2Crosscheck | null;
   showOnMap: boolean;
   onShowOnMap: (value: boolean) => void;
   language: Language;
@@ -124,6 +261,9 @@ export const ViirsComparisonCard = memo(function ViirsComparisonCard({ viirs, ac
   const range = formatDateSet(days.map((day) => day.date), language);
   const cloudy = cloudyViirsDays(days);
   const unit = t("km²", "ตร.กม.");
+  // The day of the Sentinel-2 water check, named by its date: the row highlighted above is the VIIRS map at or before
+  // the playhead, which is the day before until the 13:30 pass.
+  const s2Date = s2 && s2CrosscheckScenes(s2) ? s2CrosscheckDate(s2) : null;
   return (
     <section className={styles.card} aria-labelledby="mae-sai-viirs-title" data-testid="viirs-card">
       <p className={styles.eyebrow}>{t("OBSERVED · VIIRS 375 m · DAILY", "การสังเกตการณ์ · VIIRS 375 ม. · รายวัน")}</p>
@@ -179,6 +319,13 @@ export const ViirsComparisonCard = memo(function ViirsComparisonCard({ viirs, ac
           );
         })}
       </ul>
+      {s2 && s2Date && (
+        <p className={styles.caveat} data-testid="viirs-s2-note">
+          <strong>{t(`Second observation on ${formatShortDate(s2Date, "en")}`, `การสังเกตการณ์แหล่งที่สองของวันที่ ${formatShortDate(s2Date, "th")}`)}:</strong>{" "}
+          {s2ObservedText(s2, language)} {s2ModelText(s2, language)}{" "}
+          {observedLargerThanModel(s2, days.find((day) => day.date === s2Date) ?? null) && <ManifestText text={s2.reading} language={language} />}
+        </p>
+      )}
       <p className={styles.caveat}>
         <strong>{t("Caveat", "ข้อควรระวัง")}:</strong> <ManifestText text={viirs.caveat} language={language} />{" "}
         {t(

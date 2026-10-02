@@ -154,6 +154,27 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "แผนที่น้ำท่วมรายวัน VIIRS (375 ม.) เทียบกับการจำลองเฉพาะพิกเซลที่ท้องฟ้าโปร่ง ณ เวลาประมาณ 13:30 น. และมองไม่เห็นน้ำท่วมใต้เมฆหรือในระดับถนน",
   "Flash-flood velocity, debris and mud deposition are not modelled.":
     "ไม่ได้จำลองความเร็วของน้ำหลาก เศษวัสดุ และการทับถมของโคลน",
+  "The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes, inside the district and outside mapped channels; its comparison with the model is indicative.":
+    "การตรวจน้ำด้วยภาพ Sentinel-2 นับพื้นที่น้ำหรือโคลนอิ่มน้ำ (ค่า MNDWI มากกว่า 0) ในพิกเซลที่ไม่มีเมฆบังของภาพวันที่ 5 ก.ย. และ 15 ก.ย. เฉพาะในเขตอำเภอและนอกร่องน้ำในแผนที่ การเปรียบเทียบกับแบบจำลองเป็นเพียงข้อบ่งชี้",
+  // Sentinel-2 water check (15 Sep): what it measures, how, and what it is consistent with.
+  "MNDWI = (green - swir16) / (green + swir16) on surface reflectance (digital number / 10000, nothing subtracted). The 10 m green band is averaged onto the 20 m grid of the short-wave infrared band.":
+    "MNDWI = (green - swir16) / (green + swir16) คำนวณจากค่าการสะท้อนที่พื้นผิว (ค่าดิจิทัล ÷ 10000 โดยไม่ลบค่าใด) แถบสีเขียวความละเอียด 10 ม. ถูกเฉลี่ยลงบนกริด 20 ม. ของแถบอินฟราเรดคลื่นสั้น",
+  "A clear pixel counts as water or saturated mud when its MNDWI is above 0.":
+    "พิกเซลที่ไม่มีเมฆบังนับเป็นน้ำหรือโคลนอิ่มน้ำเมื่อค่า MNDWI มากกว่า 0",
+  "A pixel is clear when its scene classification is not no data (0), cloud shadow (3), cloud (8, 9) or thin cirrus (10), and both bands hold data.":
+    "พิกเซลถือว่าไม่มีเมฆบังเมื่อการจำแนกฉาก (SCL) ไม่ใช่ไม่มีข้อมูล (0) เงาเมฆ (3) เมฆ (8, 9) หรือเมฆซีร์รัสบาง (10) และทั้งสองแถบมีข้อมูล",
+  "Mapped drainage-channel cells are left out on both dates: the same out-of-channel rule as the model's flooded area. No land-cover map is used, so ponds and reservoirs count on both dates; the new-water figure leaves them out.":
+    "ไม่นับช่องที่เป็นร่องน้ำในแผนที่ทั้งสองวัน ซึ่งเป็นเกณฑ์นอกร่องน้ำเดียวกับพื้นที่น้ำท่วมของแบบจำลอง ไม่ได้ใช้แผนที่สิ่งปกคลุมดิน บ่อน้ำและอ่างเก็บน้ำจึงถูกนับทั้งสองวัน แต่ตัวเลขน้ำที่เพิ่มขึ้นใหม่ไม่รวมแหล่งน้ำเหล่านี้",
+  "The model figures are the modelled out-of-channel water at the acquisition time of the 15 Sep scene, counted in the pixels that scene saw clearly. The overlap ratio says how far the two areas coincide, not which one is right.":
+    "ตัวเลขของแบบจำลองคือน้ำนอกร่องน้ำจากแบบจำลอง ณ เวลาถ่ายภาพของวันที่ 15 ก.ย. นับเฉพาะพิกเซลที่ภาพนั้นมองเห็นได้ชัด อัตราส่วนการซ้อนทับบอกว่าพื้นที่ทั้งสองตรงกันมากน้อยเพียงใด ไม่ได้บอกว่าฝ่ายใดถูก",
+  "A positive MNDWI also flags saturated mud and wet sediment, so the area is water or saturated mud, not a flood extent. The scene classification can miss thin cloud and cloud shadow, and cloud hid part of the district on both dates. The comparison with the model is indicative only.":
+    "ค่า MNDWI ที่เป็นบวกรวมถึงโคลนอิ่มน้ำและตะกอนเปียกด้วย พื้นที่นี้จึงเป็นน้ำหรือโคลนอิ่มน้ำ ไม่ใช่ขอบเขตน้ำท่วม การจำแนกฉากอาจพลาดเมฆบางและเงาเมฆ และเมฆบังพื้นที่อำเภอบางส่วนทั้งสองวัน การเปรียบเทียบกับแบบจำลองเป็นเพียงข้อบ่งชี้เท่านั้น",
+  "Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only model cannot hold water once the river level drops.":
+    "น้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่ในไร่นาหลังระดับแม่น้ำลดลง สอดคล้องกับพื้นที่ที่สังเกตได้ซึ่งกว้างกว่า แบบจำลองที่ใช้เฉพาะภูมิประเทศไม่สามารถกักน้ำไว้ได้เมื่อระดับแม่น้ำลดลง",
+  "One index threshold on two partly cloudy scenes, with no field check: a positive index also flags saturated mud and wet sediment, the scene classification can miss thin cloud and cloud shadow, and the ground under cloud was not seen.":
+    "ใช้เกณฑ์ดัชนีค่าเดียวกับภาพสองภาพที่มีเมฆบางส่วน และไม่มีการตรวจภาคสนาม ค่าดัชนีที่เป็นบวกรวมถึงโคลนอิ่มน้ำและตะกอนเปียก การจำแนกฉากอาจพลาดเมฆบางและเงาเมฆ และมองไม่เห็นพื้นดินใต้เมฆ",
+  "The eight Mae Sai subdistricts, on the replay's 10 m grid.":
+    "8 ตำบลของอำเภอแม่สาย บนกริด 10 ม. ของการย้อนดู",
   // Limitations.
   "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.":
     "ไม่ใช่ผลิตภัณฑ์เรียลไทม์หรือคำเตือนทางการ ใช้เพื่อการเรียนรู้ด้านการเตรียมพร้อมและการจัดลำดับความสำคัญหลังเกิดเหตุเท่านั้น",
@@ -161,6 +182,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ข้อมูลชุดนี้ไม่มีภาพดาวเทียมความละเอียดสูงของแม่สายในวันที่ 10–14 กันยายน VIIRS (375 ม.) มีเมฆปกคลุมในวันที่ 10–11 ก.ย. และมีเมฆมากในวันที่ 12–14 ก.ย. จึงไม่มีการสังเกตขอบเขตน้ำช่วงเริ่มท่วมและช่วงสูงสุด",
   "Statistics cover only the modelled parts of the eight Mae Sai subdistricts; roads and facilities outside the model are excluded.":
     "ตัวเลขครอบคลุมเฉพาะส่วนที่จำลองของ 8 ตำบลในอำเภอแม่สาย ถนนและสถานที่นอกแบบจำลองไม่นับรวม",
+  "No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level drops below it, so water or saturated mud left standing on fields is not reconstructed.":
+    "ไม่จำลองน้ำขังหรือการกักเก็บน้ำหลังระดับแม่น้ำลดลง: แบบจำลองที่ใช้เฉพาะภูมิประเทศทำให้ทุกช่องแห้งทันทีที่ระดับแม่น้ำสมมุติลดต่ำกว่าช่องนั้น จึงไม่ได้จำลองน้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่ในไร่นา",
   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.":
     "หลุมที่ถูกถมและพื้นที่ราบเรียบในแบบจำลองความสูงที่สูงจากร่องน้ำไม่ถึง 0.1 ม. (ระบุไว้ในช่อง B ของภาพ) จะแสดงว่าเปียกแทบทุกระดับน้ำ จึงแสดงเป็นน้ำที่มีความเชื่อมั่นต่ำ",
   // Evidence envelope (r4): permitted use and what the source-timestamp span covers.
@@ -229,6 +252,11 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "การเทียบกับผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง ผลิตภัณฑ์ 4009 ยังไม่แสดงในข้อมูลรุ่นนี้",
   "The depth factor f = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.":
     "ตัวคูณความลึก f = clip((A / A_Sai) ** 0.3, 0.35, 1) เพิ่มเข้ามาเมื่อ 28 ก.ย. 2569 (2026) ซึ่งขณะนั้นทราบตัวเลขของ GISTDA และ UNOSAT 3991 แล้ว เลขชี้กำลังและค่าต่ำสุดเป็นไปตามหลักประมาณของเรขาคณิตชลศาสตร์ ประวัติการสร้างข้อมูลไม่มีบันทึกว่าปรับให้เข้ากับตัวเลขภายนอกใด",
+  "The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not used for tuning: the last keyframe change is commit 129ff03 of 29 Sep 2026, and the check entered the bake on 2 Oct 2026. The two true-colour images have been on the page since the first revision, so they were seen while the keyframes were set, but no water area had been derived from them.":
+    "การตรวจน้ำด้วยภาพ Sentinel-2 (ค่า MNDWI ของภาพวันที่ 5 ก.ย. และ 15 ก.ย.) คำนวณหลังจากจุดกำหนดระดับน้ำเสร็จสมบูรณ์แล้ว และไม่ได้ใช้ปรับแบบจำลอง การแก้ไขจุดกำหนดระดับน้ำครั้งสุดท้ายคือ commit 129ff03 เมื่อ 29 ก.ย. 2569 (2026) ส่วนการตรวจนี้เข้าสู่ขั้นตอนสร้างข้อมูลเมื่อ 2 ต.ค. 2569 (2026) ภาพสีจริงทั้งสองภาพอยู่บนหน้านี้ตั้งแต่ข้อมูลรุ่นแรก ทีมงานจึงเห็นภาพเหล่านี้ขณะกำหนดจุดระดับน้ำ แต่ยังไม่เคยคำนวณพื้นที่น้ำจากภาพ",
+  "No keyframe, depth-factor or terrain change may be tuned to VIIRS, the Sentinel-2 water check or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.":
+    "นับจากนี้จะไม่ปรับจุดกำหนดระดับน้ำ ตัวคูณความลึก หรือข้อมูลภูมิประเทศให้เข้ากับ VIIRS การตรวจน้ำด้วยภาพ Sentinel-2 หรือผลิตภัณฑ์ 4009 หากมีการปรับ การเทียบนั้นจะถูกระบุใหม่ว่ามีส่วนในการปรับแบบจำลอง",
+  // The same rule as an earlier r4 bake worded it, before the Sentinel-2 water check existed.
   "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.":
     "นับจากนี้จะไม่ปรับจุดกำหนดระดับน้ำ ตัวคูณความลึก หรือข้อมูลภูมิประเทศให้เข้ากับ VIIRS หรือผลิตภัณฑ์ 4009 หากมีการปรับ การเทียบนั้นจะถูกระบุใหม่ว่ามีส่วนในการปรับแบบจำลอง",
   // Sentences of revision r3 that r4 reworded, kept for a client that still holds the r3 manifest in its offline copy.

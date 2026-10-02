@@ -517,7 +517,7 @@ def test_bake_docstring_names_both_dem_tiles_and_the_verify_mode() -> None:
     docstring = source.split('"""')[1]
     assert "N20_00_E099_00_DEM.tif" in docstring and "N20_00_E100_00_DEM.tif" in docstring
     for needle in ("tha_ppp_2020.tif", "viirs_flood", "hii_rain", "mae_sai_access_edges.csv", "--verify", "input receipt",
-                   "thailand-latest.osm.pbf", "rights_basis_4009_v1.json"):
+                   "thailand-latest.osm.pbf", "rights_basis_4009_v1.json", "{red,green,blue,swir16,scl}.tif"):
         assert needle in docstring, needle
     assert not LOCAL_PATH.search(source)  # No machine path in the script.
 
@@ -555,6 +555,57 @@ def test_product_4009_wording_follows_the_rights_record() -> None:
     for wording in (pending, confirmed):
         assert not re.search(r'approve the use" on \d', wording["reference_note"])
         assert bake.publication_eligibility(None, {**status, "confirmed": wording is confirmed, "confirmed_on": "2026-10-09"})["inputs"][-1]["shown"] is False
+
+
+def s2_check_figures() -> dict:
+    """Figures of a Sentinel-2 water check as the observation stage returns them (made-up values)."""
+    scene = {"clear_km2": 10.0, "clear_share": 0.5, "water_km2": 2.0, "scl_class_km2": {"vegetation": 10.0, "cloud_high_probability": 10.0}}
+    return {
+        "resolution_m": 20.0, "threshold": 0.0, "district_km2": 20.0, "permanent_water_km2": 0.1,
+        "scenes": {"pre_event": dict(scene, water_km2=1.0), "event": dict(scene)},
+        "change": {"both_clear_km2": 8.0, "event_water_km2": 1.8, "pre_event_water_km2": 0.9, "new_water_km2": 1.0, "no_longer_water_km2": 0.1},
+        "model_at_event_scene": {"model_t": 6.4571, "model_stage_m": 0.278, "model_flood_km2_district": 1.5, "model_flood_km2_clear": 1.0,
+                                 "model_overlap_km2": 0.5, "model_union_km2": 2.5, "model_agreement_iou": 0.2,
+                                 "model_share_of_observed_water_reached": 0.25, "model_share_inside_observed_water": 0.5},
+        "sensitivity": [{"id": "strict_clear", "rule": "stricter", "event_clear_share": 0.4, "event_water_km2": 1.9, "pre_event_clear_share": 0.4,
+                         "pre_event_water_km2": 0.9, "new_water_km2": 0.9, "model_agreement_iou": 0.2}],
+    }
+
+
+def test_sentinel2_block_dates_each_scene_and_refuses_an_unnamed_model_field() -> None:
+    """Model output inside the observed block sits only where the evidence block names it as scenario fields."""
+    bake = load_bake()
+    block = bake.s2_crosscheck_block(s2_check_figures())
+    assert [(scene["id"], scene["role"], scene["source_timestamp"], scene["local_time"]) for scene in block["scenes"]] == [
+        ("s2-20240905", "pre_event", "2024-09-05T03:58:19Z", "2024-09-05T10:58:19+07:00"),
+        ("s2-20240915", "event", "2024-09-15T03:58:15Z", "2024-09-15T10:58:15+07:00")]
+    assert block["source_timestamp"] == bake.S2_CHECK_PAIR == "2024-09-05T03:58:19Z/2024-09-15T03:58:15Z"
+    assert block["model_at_event_scene"]["model_local_time"] == "2024-09-15T10:58:15+07:00"
+    assert (block["label"], block["comparison"], block["confidence"]) == ("water or saturated mud", "indicative", "low")
+    assert "consistent with" in block["reading"] and "explain" not in block["reading"].lower()
+    assert bake.model_key_paths(block) == sorted([
+        "model_at_event_scene", "model_fields", "sensitivity[].model_agreement_iou",
+        *(f"model_at_event_scene.{key}" for key in block["model_at_event_scene"])])
+    assert bake.S2_MODEL_PATHS == ("model_at_event_scene", "sensitivity[].model_agreement_iou")
+    # The replay's acquisition time of the 15 Sep scene, in days since 9 Sep 00:00 ICT.
+    assert bake.replay_days("2024-09-15T03:58:15Z") == pytest.approx(6 + (10 + 58 / 60 + 15 / 3600) / 24)
+    assert bake.replay_days(bake.EVENT_START) == 0.0
+    # A model figure placed among the observed figures stops the bake: the evidence block would file it as observed.
+    for part in ("change", "scenes"):
+        figures = s2_check_figures()
+        target = figures[part] if part == "change" else figures[part]["event"]
+        target["model_flood_km2"] = 1.0
+        with pytest.raises(ValueError, match="model fields the evidence block does not name"):
+            bake.s2_crosscheck_block(figures)
+    figures = s2_check_figures()
+    figures["sensitivity"][0]["model_flood_km2_clear"] = 1.0
+    with pytest.raises(ValueError, match=r"sensitivity\[\]\.model_flood_km2_clear"):
+        bake.s2_crosscheck_block(figures)
+    # And an observed figure may not hide inside the model part.
+    figures = s2_check_figures()
+    figures["model_at_event_scene"]["water_km2"] = 2.0
+    with pytest.raises(ValueError, match="not named as model output"):
+        bake.s2_crosscheck_block(figures)
 
 
 def test_bake_reads_openstreetmap_from_the_pbf_and_keeps_no_derived_cache() -> None:
@@ -622,6 +673,11 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
     count = lambda pattern: sum(1 for path in paths if re.search(pattern, path))  # noqa: E731
     assert count(r"copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E(099|100)_00_DEM\.tif$") == 2  # Both DEM tiles.
     assert count(r"S2B_47QNC_202409(05|15)_0_L2A/(red|green|blue)\.tif$") == 6
+    # The Sentinel-2 water check also reads the short-wave infrared band and the scene classification of both scenes.
+    assert count(r"S2B_47QNC_202409(05|15)_0_L2A/(swir16|scl)\.tif$") == 4
+    assert count(r"S2B_47QNC_") == 10
+    # The check uses no land-cover map and nothing from the UNOSAT products (the rights record is the only 4009 file read).
+    assert count(r"worldcover") == 0 and count(r"^unosat/") == 0 and [path for path in paths if "4009" in path] == ["docs/proposal_execution/rights_basis_4009_v1.json"]
     assert count(r"cdse/mae_sai_2024/S1A_IW_GRDH_1SDV_.*\.SAFE\.zip$") == 2
     assert count(r"worldpop_population/tha_ppp_2020\.tif$") == 1
     # OpenStreetMap is identified by the extract itself, never by a derived cache.
@@ -634,7 +690,7 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
                            "outputs/mae_sai_access_edges.csv", "outputs/mae_sai_admin_context.geojson", "outputs/mae_sai_facilities.geojson",
                            "outputs/mae_sai_population_nodes.csv", "outputs/mae_sai_reported_shelters_2024.json",
                            "outputs/mae_sai_road_risk.geojson"]
-    assert len(inputs) == 32
+    assert len(inputs) == 36
 
 
 def test_committed_receipt_matches_the_in_repo_inputs_and_the_committed_revision(committed_receipt: dict) -> None:

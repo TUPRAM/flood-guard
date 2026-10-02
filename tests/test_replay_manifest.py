@@ -308,7 +308,8 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     for name in ("water_reconstruction", "residents_in_water", "evacuation_access", "shelter_plan"):
         assert (lane(name), blocks[name]["evidence_tier"]) == ("SCN", SCENARIO_TIER), name
     # VIIRS, Sentinel-1, Sentinel-2 and rain are observed, each with its own timestamp.
-    observed = ("viirs_daily", "sentinel2_20240905", "sentinel2_20240915", "sentinel1_20240906", "sentinel1_20240915", "sentinel1_change", "rainfall")
+    observed = ("viirs_daily", "sentinel2_20240905", "sentinel2_20240915", "sentinel2_water_check", "sentinel1_20240906", "sentinel1_20240915",
+                "sentinel1_change", "rainfall")
     assert all(lane(name) == "OBS" for name in observed)
     # The model figures placed beside each VIIRS day are named as scenario values, not filed as the agency's.
     model_fields = sorted({key for day in manifest["viirs_daily"]["days"] for key in day if key.startswith("model_")})
@@ -317,7 +318,8 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     assert SCENARIO_TIER in blocks["viirs_daily"]["note"] and "not part of the agency product" in blocks["viirs_daily"]["note"]
     assert sorted(manifest["viirs_daily"]["model_fields"]["names"]) == model_fields
     assert manifest["viirs_daily"]["model_fields"]["evidence_tier"] == SCENARIO_TIER
-    assert not any("scenario_fields" in block for block in blocks.values() if block["id"] != "viirs_daily")
+    # Only the two observed blocks that place model figures beside an observation name scenario fields.
+    assert sorted(block["id"] for block in blocks.values() if "scenario_fields" in block) == ["sentinel2_water_check", "viirs_daily"]
     assert len({blocks[name]["source_timestamp"] for name in observed}) == len(observed)
     assert blocks["sentinel2_20240915"]["source_timestamp"] == "2024-09-15T03:58:15Z"
     assert blocks["sentinel1_20240915"]["source_timestamp"] == "2024-09-15T23:16:01Z"
@@ -420,7 +422,7 @@ def test_product_4009_status_is_the_rights_records_status(manifest: dict) -> Non
 
 def test_input_hashes_are_the_receipts_and_name_no_machine_path(manifest: dict) -> None:
     rows = manifest["input_sha256"]
-    assert len(rows) == 32 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
+    assert len(rows) == 36 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
     for row in rows:
         assert row["root"] in ("external", "repo") and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) and row["bytes"] > 0
     receipt = json.loads((ROOT / "docs" / f"mae_sai_timeline_{manifest['revision']}_input_receipt.json").read_text(encoding="utf-8"))
@@ -443,6 +445,13 @@ def test_exploratory_knowledge_states_what_was_used_or_known_during_tuning(manif
     assert items["unosat-3991"]["relation"] == "known_during_tuning" and "70 km2" in items["unosat-3991"]["statement"]
     assert (items["unosat-4009"]["relation"], items["unosat-4009"]["known_during_tuning"]) == ("computed_after_keyframes_final", False)
     assert "was not used for tuning" in items["unosat-4009"]["statement"]
+    # The Sentinel-2 water check entered the bake after the last keyframe change. The images had been on the page, and
+    # the statement says so rather than claiming the scenes were unseen.
+    s2 = items["sentinel-2-water-check"]
+    assert (s2["relation"], s2["known_during_tuning"]) == ("computed_after_keyframes_final", False)
+    assert "was not used for tuning" in s2["statement"] and "commit 129ff03 of 29 Sep 2026" in s2["statement"]
+    assert "they were seen while the keyframes were set, but no water area had been derived from them" in s2["statement"]
+    assert "the Sentinel-2 water check" in disclosure["rule"]
     # VIIRS: the build history shows the comparison and the last stage-knot edit in one change (commit 129ff03), so the
     # manifest claims only what that supports: not used for tuning, order within the change not recorded.
     viirs = items["viirs-daily"]
@@ -593,3 +602,144 @@ def test_plan_robustness_repeats_the_ranking_at_what_if_levels_not_return_period
     text = json.dumps(robustness)
     assert not re.search(r"\b(?:25|100)[- ]?year", text) and "return period" not in text.replace("not return periods", "")
     assert score_or_class_keys(robustness) == []
+
+
+# --- Sentinel-2 water check, 15 Sep (roadmap P2-7) -------------------------------------------------------------
+
+S2_READING = ("Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; "
+              "the terrain-only model cannot hold water once the river level drops.")
+
+
+def test_sentinel2_water_check_is_observed_with_its_model_figures_named_as_scenario(manifest: dict) -> None:
+    check = manifest["s2_crosscheck"]
+    block = next(item for item in manifest["evidence_blocks"] if item["id"] == "sentinel2_water_check")
+    assert (block["lane"], block["temporal_relation"], block["covers"]) == ("OBS", "pre_event_to_event_pair", ["s2_crosscheck"])
+    assert "water or saturated mud" in block["evidence_tier"] and "unvalidated" in block["evidence_tier"]
+    assert block["source_timestamp"] == check["source_timestamp"] == "2024-09-05T03:58:19Z/2024-09-15T03:58:15Z"
+    # Every model figure inside the block is named as a scenario field; nothing else carries a model_ key.
+    assert block["scenario_fields"] == ["s2_crosscheck.model_at_event_scene", "s2_crosscheck.sensitivity[].model_agreement_iou"]
+    assert check["model_fields"]["paths"] == [path.removeprefix("s2_crosscheck.") for path in block["scenario_fields"]]
+    assert check["model_fields"]["evidence_tier"] == SCENARIO_TIER and SCENARIO_TIER in block["note"] and "indicative" in block["note"]
+    assert all(key.startswith("model_") for key in check["model_at_event_scene"])
+    for part in (check["change"], *check["scenes"]):
+        assert not any(key.startswith("model_") for key in part)
+    assert all([key for key in row if key.startswith("model_")] == ["model_agreement_iou"] for row in check["sensitivity"])
+    # Timestamp, confidence, assumptions and a caveat (AGENTS.md), and each scene dated on its own.
+    assert check["confidence"] == "low" and check["confidence_reason"] and len(check["assumptions"]) >= 4
+    assert [(scene["id"], scene["role"], scene["source_timestamp"], scene["local_time"]) for scene in check["scenes"]] == [
+        ("s2-20240905", "pre_event", "2024-09-05T03:58:19Z", "2024-09-05T10:58:19+07:00"),
+        ("s2-20240915", "event", "2024-09-15T03:58:15Z", "2024-09-15T10:58:15+07:00")]
+    observations = {item["id"]: item for item in manifest["observations"]}
+    for scene in check["scenes"]:
+        assert (observations[scene["id"]]["utc"], observations[scene["id"]]["local"]) == (scene["source_timestamp"], scene["local_time"])
+    assert check["model_at_event_scene"]["model_local_time"] == "2024-09-15T10:58:15+07:00"
+    assert "not a flood extent" in check["caveat"] and "indicative only" in check["caveat"] and "saturated mud" in check["caveat"]
+    # No score, no action class, and nothing from product 4009 or a land-cover map.
+    assert score_or_class_keys(check) == []
+    flat = json.dumps(check).lower()
+    assert "4009" not in flat and "unosat" not in flat and "worldcover" not in flat and "envelope" not in flat
+    # The licence is the Sentinel-2 source's own.
+    source = next(item for item in manifest["sources"] if item["id"] == "sentinel-2")
+    assert (check["licence"], check["attribution"]) == (source["licence"], source["attribution"])
+    # A manifest whose block loses its evidence entry, or gains a model figure outside the named paths, is refused.
+    broken = copy.deepcopy(manifest)
+    broken["evidence_blocks"] = [item for item in broken["evidence_blocks"] if item["id"] != "sentinel2_water_check"]
+    assert "no evidence block covers s2_crosscheck" in evidence_problems(broken)
+
+
+def test_sentinel2_water_check_says_consistent_with_and_labels_the_comparison_indicative(manifest: dict) -> None:
+    check = manifest["s2_crosscheck"]
+    assert check["label"] == "water or saturated mud" and check["comparison"] == "indicative"
+    assert check["reading"] == S2_READING
+    text = " ".join(str(value) for value in jsonable_strings(check))
+    assert not re.search(r"explain", text, re.IGNORECASE)  # "is consistent with", never "explains".
+    assert not re.search(r"\b(?:proves?|confirms?|caused by|because of)\b", text, re.IGNORECASE)
+    assert "flood extent" not in text.replace("not a flood extent", "")
+    # The limitation and the assumption are in the manifest's own lists.
+    assert any(line.startswith("No ponding or storage after the river falls: the terrain-only model") for line in manifest["limitations"])
+    assert any("Sentinel-2 water check" in line and "indicative" in line and "water or saturated mud" in line for line in manifest["assumptions"])
+    # Rules: reflectance scaling with nothing subtracted, the dropped scene classes, the permanent-water rule in use.
+    assert "digital number / 10000, nothing subtracted" in check["index"] and "(green - swir16) / (green + swir16)" in check["index"]
+    for needle in ("no data (0)", "cloud shadow (3)", "cloud (8, 9)", "thin cirrus (10)"):
+        assert needle in check["clear_rule"], needle
+    assert "drainage-channel cells are left out on both dates" in check["permanent_water_rule"] and "No land-cover map is used" in check["permanent_water_rule"]
+    assert (check["threshold"], check["resolution_m"]) == (0.0, 20.0)
+
+
+def jsonable_strings(value) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [text for item in value.values() for text in jsonable_strings(item)]
+    if isinstance(value, list):
+        return [text for item in value for text in jsonable_strings(item)]
+    return []
+
+
+def test_sentinel2_water_check_arithmetic_holds_and_matches_the_models_own_figures(manifest: dict) -> None:
+    from floodguard.flood_timeline import flooded_area_km2, stage_at
+
+    check = manifest["s2_crosscheck"]
+    pre, event = check["scenes"]
+    district = check["district_km2"]
+    assert district == pytest.approx(manifest["model_coverage"]["district_km2"], abs=0.5)  # Rasterised on the 10 m grid.
+    for scene in (pre, event):
+        assert scene["clear_share"] == pytest.approx(scene["clear_km2"] / district, abs=0.001)
+        assert 0 < scene["water_km2"] < scene["clear_km2"] <= district
+        # The class areas add up to the district, and the clear area is the kept classes (minus pixels without data).
+        assert sum(scene["scl_class_km2"].values()) == pytest.approx(district, abs=0.1)
+        dropped = sum(scene["scl_class_km2"].get(name, 0) for name in ("no_data", "cloud_shadow", "cloud_medium_probability", "cloud_high_probability", "thin_cirrus"))
+        assert scene["clear_km2"] == pytest.approx(district - dropped, abs=0.1)
+    # The scene after the river fell is the cloudier one and still shows far more water or saturated mud.
+    assert event["clear_share"] < pre["clear_share"] and event["water_km2"] > 2 * pre["water_km2"]
+    change = check["change"]
+    assert (change["pre_event_scene"], change["event_scene"]) == (pre["id"], event["id"])
+    assert change["both_clear_km2"] <= min(pre["clear_km2"], event["clear_km2"])
+    assert change["event_water_km2"] <= event["water_km2"] and change["pre_event_water_km2"] <= pre["water_km2"]
+    # new = event - (water on both dates); no longer = pre - (water on both dates).
+    assert change["new_water_km2"] - change["no_longer_water_km2"] == pytest.approx(change["event_water_km2"] - change["pre_event_water_km2"], abs=0.02)
+    assert 0 < change["new_water_km2"] <= change["event_water_km2"]
+    # The model beside it: the stage at the acquisition time, its out-of-channel area, and the overlap ratios.
+    model = check["model_at_event_scene"]
+    t = 6 + (10 + 58 / 60 + 15 / 3600) / 24  # 15 Sep 10:58:15 ICT, in days since 9 Sep 00:00 ICT.
+    assert model["model_t"] == pytest.approx(t, abs=1e-4) and model["model_stage_m"] == pytest.approx(stage_at(t), abs=5e-4)
+    histogram_km2 = sum(flooded_area_km2(histogram, stage_at(t), manifest["pixel_area_m2"]) for histogram in manifest["tambon_histograms"].values())
+    assert model["model_flood_km2_district"] == pytest.approx(histogram_km2, abs=0.02)  # The same cells as every flooded-area figure.
+    assert model["model_flood_km2_clear"] <= model["model_flood_km2_district"]
+    assert model["model_union_km2"] == pytest.approx(event["water_km2"] + model["model_flood_km2_clear"] - model["model_overlap_km2"], abs=0.02)
+    assert model["model_agreement_iou"] == pytest.approx(model["model_overlap_km2"] / model["model_union_km2"], abs=0.002)
+    assert model["model_share_of_observed_water_reached"] == pytest.approx(model["model_overlap_km2"] / event["water_km2"], abs=0.002)
+    assert model["model_share_inside_observed_water"] == pytest.approx(model["model_overlap_km2"] / model["model_flood_km2_clear"], abs=0.002)
+    # The reading speaks of "the larger observed area": both observations of 15 Sep exceed the model in their own clear pixels.
+    assert event["water_km2"] > model["model_flood_km2_clear"]
+    viirs = next(day for day in manifest["viirs_daily"]["days"] if day["date"] == "2024-09-15")
+    assert viirs["viirs_flood_km2_clear"] > viirs["model_flood_km2_clear"]
+    # Agreement in place is weak, which is why the comparison is only indicative.
+    assert model["model_agreement_iou"] < 0.3
+    # Stricter rules never find more, and the weak agreement does not depend on the rule.
+    strict, tenth, fifth = check["sensitivity"]
+    assert [row["id"] for row in check["sensitivity"]] == ["strict_clear", "threshold_0_1", "threshold_0_2"]
+    assert strict["event_clear_share"] < event["clear_share"] and strict["pre_event_clear_share"] < pre["clear_share"]
+    assert (tenth["event_clear_share"], fifth["event_clear_share"]) == (event["clear_share"], event["clear_share"])
+    assert event["water_km2"] >= strict["event_water_km2"] and event["water_km2"] >= tenth["event_water_km2"] >= fifth["event_water_km2"]
+    assert pre["water_km2"] >= tenth["pre_event_water_km2"] >= fifth["pre_event_water_km2"]
+    assert all(row["event_water_km2"] > 2 * row["pre_event_water_km2"] and row["model_agreement_iou"] < 0.3 for row in check["sensitivity"])
+
+
+def test_sentinel2_water_check_validates_against_the_schema_and_bad_wording_is_refused(manifest: dict, schema: dict) -> None:
+    assert schema_problems(manifest, schema) == []
+
+    def problems(change) -> list[str]:
+        document = copy.deepcopy(manifest)
+        change(document["s2_crosscheck"])
+        return schema_problems(document, schema)
+
+    assert any("reading" in line for line in problems(lambda check: check.update(reading="Standing water on fields explains the larger observed area.")))
+    assert any("reading" in line for line in problems(lambda check: check.update(reading="Standing water on fields accounts for the gap.")))
+    assert any("comparison" in line for line in problems(lambda check: check.update(comparison="validation")))
+    assert any("label" in line for line in problems(lambda check: check.update(label="flood water")))
+    assert problems(lambda check: check["model_at_event_scene"].update(observed_km2=1.0))  # Only model_ keys beside the observation.
+    assert problems(lambda check: check["scenes"][1].update(model_flood_km2=1.0))  # No model figure inside an observed scene.
+    assert problems(lambda check: check["scenes"][1].pop("source_timestamp"))  # Each scene carries its own timestamp.
+    assert problems(lambda check: check.pop("caveat")) and problems(lambda check: check.pop("confidence")) and problems(lambda check: check.pop("assumptions"))
+    assert problems(lambda check: check.update(accepted_fpps=None))  # No extra keys, score fields least of all.

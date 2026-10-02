@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T14:33:00+07:00",
+ "generated_at": "2026-10-02T14:19:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -215,6 +215,21 @@
    "source_timestamp": "2024-09-15T03:58:15Z"
   },
   {
+   "id": "sentinel2_water_check",
+   "lane": "OBS",
+   "evidence_tier": "Optical water index on observed images, clear pixels only: water or saturated mud; unvalidated here",
+   "temporal_relation": "pre_event_to_event_pair",
+   "covers": [
+    "s2_crosscheck"
+   ],
+   "source_timestamp": "2024-09-05T03:58:19Z/2024-09-15T03:58:15Z",
+   "scenario_fields": [
+    "s2_crosscheck.model_at_event_scene",
+    "s2_crosscheck.sensitivity[].model_agreement_iou"
+   ],
+   "note": "MNDWI above 0 on the clear pixels of two Sentinel-2 L2A scenes; each scene carries its own acquisition time and clear share. model_at_event_scene and the model_ field of each sensitivity row are T1 scenario (model) values computed for the comparison, which is indicative only."
+  },
+  {
    "id": "sentinel1_20240906",
    "lane": "OBS",
    "evidence_tier": "Observed image, shown as acquired; no flood extent is derived from it",
@@ -377,10 +392,16 @@
     "relation": "computed_after_keyframes_final",
     "known_during_tuning": false,
     "statement": "The comparison with UNOSAT/GISTDA product 4009 was computed after the keyframes were final and was not used for tuning; product 4009 is not shown in this revision."
+   },
+   {
+    "id": "sentinel-2-water-check",
+    "relation": "computed_after_keyframes_final",
+    "known_during_tuning": false,
+    "statement": "The Sentinel-2 water check (MNDWI on the 5 Sep and 15 Sep scenes) was computed after the keyframes were final and was not used for tuning: the last keyframe change is commit 129ff03 of 29 Sep 2026, and the check entered the bake on 2 Oct 2026. The two true-colour images have been on the page since the first revision, so they were seen while the keyframes were set, but no water area had been derived from them."
    }
   ],
   "depth_factor": "The depth factor k = clip((A / A_Sai) ** 0.3, 0.35, 1) was added on 28 Sep 2026, when the GISTDA and UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure.",
-  "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS or product 4009 from here on; if one is, that comparison is relabelled calibration-informed."
+  "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS, the Sentinel-2 water check or product 4009 from here on; if one is, that comparison is relabelled calibration-informed."
  },
  "publication_eligibility": {
   "status": "conditional",
@@ -525,6 +546,18 @@
   },
   {
    "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/scl.tif",
+   "bytes": 3345372,
+   "sha256": "c33c2de5e59fbb9768776b7449f9193c3843aae51460a3085cfc5cf4c152de3e"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240905_0_L2A/swir16.tif",
+   "bytes": 61345276,
+   "sha256": "24d39dba72cf3f6cd700af6a2506d3c4893e31f52681fe38655be3c4b2c0747f"
+  },
+  {
+   "root": "external",
    "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/blue.tif",
    "bytes": 220036077,
    "sha256": "aa058cecc7643f0384ef363d131ea59c3ba6f415e9e1ab7d6d5ec8824d48a7a8"
@@ -540,6 +573,18 @@
    "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/red.tif",
    "bytes": 221362768,
    "sha256": "dbe241cefd75a7e94f9259aeffe3b8d9b471a0c02b115db09ac38d27a0ac29d8"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/scl.tif",
+   "bytes": 3465002,
+   "sha256": "ce119a84f064e8e712ccfc450721350ab91852a6962ae8b8bf83a8fe05b3366f"
+  },
+  {
+   "root": "external",
+   "path": "earth_search/mae_sai_2024/S2B_47QNC_20240915_0_L2A/swir16.tif",
+   "bytes": 61284543,
+   "sha256": "67929ca9285acf1254578f9d550aa9907abde160b7b5c625a434184708a31da2"
   },
   {
    "root": "external",
@@ -10097,7 +10142,7 @@
     "id": "shelter_plan_reported_2024",
     "name": "shelter_plan_reported_2024.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv",
-    "sha256": "6af029a6ea9307af9e7c51ddfa60ed64f8b69daa150ee64ca141f98dddf8074a",
+    "sha256": "f211dfcd1f8d0da65984e001357d98041a6416700e2078b1d748969f648ce471",
     "bytes": 21874,
     "media_type": "text/csv",
     "title": {
@@ -10121,7 +10166,7 @@
     "id": "shelter_plan_k",
     "name": "shelter_plan_k.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv",
-    "sha256": "c67a43b5a909dc939b0b40611f2b42943aa633703988aa56047fef6977711c13",
+    "sha256": "3054cf7e0efd0dfb4a033ac2cef2ac55fa4a26e4adcd5a6c5044d8aa085bcfbb",
     "bytes": 12754,
     "media_type": "text/csv",
     "title": {
@@ -10144,7 +10189,7 @@
     "id": "shelter_plan_capacitated",
     "name": "shelter_plan_capacitated.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv",
-    "sha256": "1fd77def8f373f5d433648f3b16fda9e971d9c865e9f68eddcf0f616b8fbfb61",
+    "sha256": "95e9dcaffb5031b84458877c86f86cccacbae22e462732331cd86a411f58460b",
     "bytes": 16031,
     "media_type": "text/csv",
     "title": {
@@ -10167,7 +10212,7 @@
     "id": "shelter_sites",
     "name": "shelter_sites.geojson",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_sites.geojson",
-    "sha256": "07148d0474d72dd6c193f854958a4a333e49ef37ca21ade7d13c4b95c6e5153e",
+    "sha256": "57f06cfa5480dd73629383fdd6014f0184a090de1d9aa6f571cb9395993b2f82",
     "bytes": 88448,
     "media_type": "application/geo+json",
     "title": {
@@ -10191,7 +10236,7 @@
     "id": "modelled_road_inundation_by_hour",
     "name": "modelled_road_inundation_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv",
-    "sha256": "d04d3b45fba261df12249eb06b41466ba3eab8add057b6b8c77adc579add92c2",
+    "sha256": "c6c19cb9b6bbbbc73b58a538afe7fdeaf7b5ac43f73ddf646ac3bd5f31737128",
     "bytes": 345264,
     "media_type": "text/csv",
     "title": {
@@ -10214,7 +10259,7 @@
     "id": "modelled_access_loss_by_hour",
     "name": "modelled_access_loss_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_access_loss_by_hour.csv",
-    "sha256": "2f84b43259c8ed50ba11a82dd4187d489bb9ddc94abf7999053f4dd202331c76",
+    "sha256": "32fca44025aed340ced125a3bca29ffe0d95f3a3b9a8d65642a36c817d19d1c8",
     "bytes": 241197,
     "media_type": "text/csv",
     "title": {
@@ -10239,7 +10284,7 @@
     "id": "shelter_candidate_verification_sheet",
     "name": "shelter_candidate_verification_sheet.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv",
-    "sha256": "de8041b54142886e788c62868227c097628c45932dfd1021fe7f779ed711d2cc",
+    "sha256": "cdf4272b3a4e2bb10ecf8c4f2f40a74a83bd3486e53100f58b4c81991fd2bd50",
     "bytes": 22074,
     "media_type": "text/csv",
     "title": {
@@ -10261,7 +10306,7 @@
     "id": "readme_licences",
     "name": "README_licences.txt",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt",
-    "sha256": "90b28ea994487c448c539faf471478eeafe714446f3635d0e3e09db10fd6f299",
+    "sha256": "7f689ef2ce8201215fff8397e6a6868d7b6d64470a89ebabd85d279322f7d1ef",
     "bytes": 23838,
     "media_type": "text/plain",
     "title": {
@@ -10497,6 +10542,139 @@
     "width": 64,
     "height": 70,
     "source_file": "WATER_COM_VIIRS_Prj_SVI_d20240918_d20240918_4448_4448_9_001day_090.tif.zip"
+   }
+  ]
+ },
+ "s2_crosscheck": {
+  "product": "Sentinel-2B MSI Level-2A via Earth Search (tile 47QNC): green band (B03), short-wave infrared band (B11) and scene classification (SCL)",
+  "licence": "Copernicus Sentinel data terms (free, full and open)",
+  "attribution": "Contains modified Copernicus Sentinel data [2024]",
+  "label": "water or saturated mud",
+  "confidence": "low",
+  "confidence_reason": "One index threshold on two partly cloudy scenes, with no field check: a positive index also flags saturated mud and wet sediment, the scene classification can miss thin cloud and cloud shadow, and the ground under cloud was not seen.",
+  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-15T03:58:15Z",
+  "index": "MNDWI = (green - swir16) / (green + swir16) on surface reflectance (digital number / 10000, nothing subtracted). The 10 m green band is averaged onto the 20 m grid of the short-wave infrared band.",
+  "water_rule": "A clear pixel counts as water or saturated mud when its MNDWI is above 0.",
+  "clear_rule": "A pixel is clear when its scene classification is not no data (0), cloud shadow (3), cloud (8, 9) or thin cirrus (10), and both bands hold data.",
+  "permanent_water_rule": "Mapped drainage-channel cells are left out on both dates: the same out-of-channel rule as the model's flooded area. No land-cover map is used, so ponds and reservoirs count on both dates; the new-water figure leaves them out.",
+  "scope": "The eight Mae Sai subdistricts, on the replay's 10 m grid.",
+  "comparison": "indicative",
+  "comparison_rule": "The model figures are the modelled out-of-channel water at the acquisition time of the 15 Sep scene, counted in the pixels that scene saw clearly. The overlap ratio says how far the two areas coincide, not which one is right.",
+  "caveat": "A positive MNDWI also flags saturated mud and wet sediment, so the area is water or saturated mud, not a flood extent. The scene classification can miss thin cloud and cloud shadow, and cloud hid part of the district on both dates. The comparison with the model is indicative only.",
+  "reading": "Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only model cannot hold water once the river level drops.",
+  "model_fields": {
+   "paths": [
+    "model_at_event_scene",
+    "sensitivity[].model_agreement_iou"
+   ],
+   "evidence_tier": "T1 scenario (model)",
+   "note": "Model output on the reconstructed water, placed beside the observation for comparison; not part of the Sentinel-2 data."
+  },
+  "assumptions": [
+   "Reflectance = digital number / 10000 for the Earth Search L2A files, which already have the baseline-04.00 offset removed.",
+   "An MNDWI above 0 is read as water or saturated mud. The threshold was not tuned and nothing was checked on the ground; the sensitivity rows give 0.1 and 0.2.",
+   "Clear pixels follow the provider's scene classification. Unclassified and dark pixels are kept; the strict_clear sensitivity row drops them.",
+   "New water needs both dates clear. Water already there on 5 Sep, before the flood, is not counted as new.",
+   "The model is sampled at the acquisition time of the 15 Sep scene. No keyframe was tuned to this check."
+  ],
+  "resolution_m": 20.0,
+  "threshold": 0.0,
+  "district_km2": 305.56,
+  "permanent_water_km2": 1.93,
+  "scenes": [
+   {
+    "id": "s2-20240905",
+    "role": "pre_event",
+    "scene": "S2B_47QNC_20240905_0_L2A",
+    "source_timestamp": "2024-09-05T03:58:19Z",
+    "local_time": "2024-09-05T10:58:19+07:00",
+    "clear_km2": 262.85,
+    "clear_share": 0.86,
+    "water_km2": 13.77,
+    "scl_class_km2": {
+     "dark_area": 0.06,
+     "cloud_shadow": 9.86,
+     "vegetation": 201.36,
+     "not_vegetated": 45.61,
+     "water": 5.94,
+     "unclassified": 9.88,
+     "cloud_medium_probability": 16.71,
+     "cloud_high_probability": 16.14
+    }
+   },
+   {
+    "id": "s2-20240915",
+    "role": "event",
+    "scene": "S2B_47QNC_20240915_0_L2A",
+    "source_timestamp": "2024-09-15T03:58:15Z",
+    "local_time": "2024-09-15T10:58:15+07:00",
+    "clear_km2": 185.96,
+    "clear_share": 0.609,
+    "water_km2": 36.79,
+    "scl_class_km2": {
+     "dark_area": 0.0,
+     "cloud_shadow": 17.71,
+     "vegetation": 111.46,
+     "not_vegetated": 51.53,
+     "water": 17.27,
+     "unclassified": 5.68,
+     "cloud_medium_probability": 28.94,
+     "cloud_high_probability": 71.77,
+     "thin_cirrus": 1.17
+    }
+   }
+  ],
+  "change": {
+   "pre_event_scene": "s2-20240905",
+   "event_scene": "s2-20240915",
+   "both_clear_km2": 177.29,
+   "event_water_km2": 36.14,
+   "pre_event_water_km2": 11.31,
+   "new_water_km2": 25.3,
+   "no_longer_water_km2": 0.47
+  },
+  "model_at_event_scene": {
+   "model_local_time": "2024-09-15T10:58:15+07:00",
+   "model_t": 6.4571,
+   "model_stage_m": 0.278,
+   "model_flood_km2_district": 21.44,
+   "model_flood_km2_clear": 18.02,
+   "model_overlap_km2": 7.34,
+   "model_union_km2": 47.47,
+   "model_agreement_iou": 0.155,
+   "model_share_of_observed_water_reached": 0.2,
+   "model_share_inside_observed_water": 0.407
+  },
+  "sensitivity": [
+   {
+    "id": "strict_clear",
+    "rule": "Only scene-classification classes 4 (vegetation), 5 (not vegetated) and 6 (water) count as clear.",
+    "event_clear_share": 0.59,
+    "event_water_km2": 35.36,
+    "pre_event_clear_share": 0.828,
+    "pre_event_water_km2": 10.08,
+    "new_water_km2": 21.66,
+    "model_agreement_iou": 0.157
+   },
+   {
+    "id": "threshold_0_1",
+    "rule": "A clear pixel counts when MNDWI > 0.1.",
+    "event_clear_share": 0.609,
+    "event_water_km2": 33.23,
+    "pre_event_clear_share": 0.86,
+    "pre_event_water_km2": 11.6,
+    "new_water_km2": 23.33,
+    "model_agreement_iou": 0.158
+   },
+   {
+    "id": "threshold_0_2",
+    "rule": "A clear pixel counts when MNDWI > 0.2.",
+    "event_clear_share": 0.609,
+    "event_water_km2": 30.26,
+    "pre_event_clear_share": 0.86,
+    "pre_event_water_km2": 9.82,
+    "new_water_km2": 21.72,
+    "model_agreement_iou": 0.16
    }
   ]
  },
@@ -11172,11 +11350,13 @@
   "Plan robustness repeats the coverage ranking at 2.5 m, 3.5 m and 4.0 m: what-if levels around an illustrative peak, not return periods.",
   "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
-  "Flash-flood velocity, debris and mud deposition are not modelled."
+  "Flash-flood velocity, debris and mud deposition are not modelled.",
+  "The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes, inside the district and outside mapped channels; its comparison with the model is indicative."
  ],
  "limitations": [
   "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
   "No high-resolution satellite image exists for 10-14 September over Mae Sai in these inputs; VIIRS (375 m) was cloud-covered on 10-11 Sep and mostly cloud-covered on 12-14 Sep, so onset and peak extents are not observed.",
-  "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded."
+  "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded.",
+  "No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level drops below it, so water or saturated mud left standing on fields is not reconstructed."
  ]
 }

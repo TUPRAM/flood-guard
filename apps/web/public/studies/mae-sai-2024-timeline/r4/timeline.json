@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T07:24:00+07:00",
+ "generated_at": "2026-10-02T11:16:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -266,7 +266,7 @@
    "source_timestamp": "2024-08-01/2024-10-22",
    "season_window": "2024-08-01/2024-10-22",
    "shown": false,
-   "note": "Never an observation for a replay day. Shown only after the owners confirm the rights record."
+   "note": "Never an observation for a replay day. Not shown in this revision; the owners confirmed the rights record on 2 Oct 2026."
   },
   {
    "id": "terrain_shading",
@@ -345,7 +345,7 @@
    "HII rain data are CC BY-NC: the replay as a whole is for non-commercial use, and rain values stay out of any combined table or export.",
    "The VIIRS provider states no licence: the maps are shown with attribution, and reuse beyond this page is not cleared.",
    "OpenStreetMap-derived files (roads, facilities, shelter candidates and the access node positions) stay under ODbL 1.0: attribution and share-alike.",
-   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown; it may appear only after the owners confirm the rights record."
+   "UNOSAT/GISTDA product 4009 (CC BY-SA 4.0) is not shown in this revision; the owners confirmed the rights record on 2 Oct 2026."
   ],
   "inputs": [
    {
@@ -442,7 +442,7 @@
     "licence": "CC BY-SA 4.0",
     "licence_stated": true,
     "shown": false,
-    "status": "Not yet shown; rights record pending owner confirmation.",
+    "status": "Not shown in this revision; the owners confirmed the rights record on 2 Oct 2026.",
     "rights_record": "docs/proposal_execution/rights_basis_4009_v1.json",
     "terms": "Attribution, share-alike and a change notice on every derived file; kept in its own folder."
    }
@@ -602,8 +602,8 @@
   {
    "root": "repo",
    "path": "docs/proposal_execution/rights_basis_4009_v1.json",
-   "bytes": 8036,
-   "sha256": "8f0660c059cdfc5257a23a3577496fa364f61ca3afb6f96806fdb727c3a21e9e"
+   "bytes": 8170,
+   "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
   },
   {
    "root": "repo",
@@ -9857,7 +9857,7 @@
    "id": "unosat-4009",
    "name": "UNOSAT 4009: water extents 1 Aug-22 Oct 2024, Chiang Rai (GDB/SHP, HDX)",
    "url": "https://data.humdata.org/dataset/water-extents-from-1-aug-2024-to-22-october-2024-over-chiang-rai-province",
-   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); shown only after the owners confirm the rights record."
+   "note": "Season envelope (scenario per decision D3). The CC BY-SA 4.0 rights decision (D2) was signed on 30 Sep 2026 and UNOSAT replied \"we approve the use\" (relayed by a project owner on 1 Oct 2026); the owners confirmed the rights record on 2 Oct 2026. Not shown in this revision."
   },
   {
    "id": "unosat-3969",

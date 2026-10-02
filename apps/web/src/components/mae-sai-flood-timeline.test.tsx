@@ -749,8 +749,10 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     expect(html.match(/data-shown="false"/g)).toHaveLength(1);
     const last = text(html.slice(html.lastIndexOf("<li data-shown=")).split("</li>")[0]);
     expect(last).toContain("UNOSAT/GISTDA product 4009");
-    expect(last).toContain("Not yet shown; rights record pending owner confirmation.");
-    expect(html).toContain("<strong><span lang=\"en\">Not yet shown; rights record pending owner confirmation.</span></strong>");
+    // The status sentence follows the rights record: pending, or confirmed on a date. Either way nothing of 4009 is shown.
+    const status4009 = /Not yet shown; rights record pending owner confirmation\.|Not shown in this revision; the owners confirmed the rights record on \d{1,2} \w{3} \d{4}\./;
+    expect(last).toMatch(status4009);
+    expect(html).toMatch(new RegExp(`<strong><span lang="en">(?:${status4009.source})</span></strong>`));
     // An input that is not shown and gives no status still says so.
     const bare = { ...manifest, publication_eligibility: { ...manifest.publication_eligibility!, inputs: inputs.map((input) => ({ ...input, status: undefined })) } };
     expect(text(renderToStaticMarkup(<LicencesByInput manifest={bare} language="en" />))).toContain("Not shown on this page.");
@@ -763,7 +765,7 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     const thaiHtml = renderToStaticMarkup(<LicencesByInput manifest={manifest} language="th" />);
     const thai = text(thaiHtml);
     expect(thai).toContain("สัญญาอนุญาตของข้อมูลแต่ละชุด");
-    expect(thai).toContain("ยังไม่แสดง รอเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูล");
+    expect(thai).toMatch(/ยังไม่แสดง รอเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูล|ยังไม่แสดงในข้อมูลรุ่นนี้ เจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลเมื่อ/);
     expect(thai).toContain("เงื่อนไขการใช้");
     // Names and published licence names stay as published (marked English); every term and condition has a Thai
     // rendering, and so has the licence wording the project wrote itself.

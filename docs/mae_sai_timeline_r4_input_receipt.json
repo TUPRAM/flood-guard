@@ -5,7 +5,7 @@
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
  "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
  "generated_at": {
-  "value": "2026-10-02T07:24:00+07:00",
+  "value": "2026-10-02T11:16:00+07:00",
   "basis": "declared"
  },
  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
@@ -27,7 +27,7 @@
   "repo": "repository root"
  },
  "input_count": 32,
- "input_bytes": 4657730361,
+ "input_bytes": 4657730495,
  "inputs": [
   {
    "root": "external",
@@ -182,8 +182,8 @@
   {
    "root": "repo",
    "path": "docs/proposal_execution/rights_basis_4009_v1.json",
-   "bytes": 8036,
-   "sha256": "8f0660c059cdfc5257a23a3577496fa364f61ca3afb6f96806fdb727c3a21e9e"
+   "bytes": 8170,
+   "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3"
   },
   {
    "root": "repo",
@@ -225,7 +225,7 @@
  "outputs": {
   "folder": "apps/web/public/studies/mae-sai-2024-timeline/r4",
   "file_count": 22,
-  "bytes": 6117717,
+  "bytes": 6117804,
   "files": [
    {
     "name": "access-nodes.bin",
@@ -289,8 +289,8 @@
    },
    {
     "name": "timeline.json",
-    "bytes": 220494,
-    "sha256": "b309d820af9124bf1fd7c923ce9eaca23aa90651f9c76e9761bf915a052680ff"
+    "bytes": 220581,
+    "sha256": "0ffa560810638680dd328d10b168e4e66f0c2f6b8719b5ecc8f7cb42ca584b9e"
    },
    {
     "name": "viirs-20240910.png",
@@ -350,7 +350,7 @@
   },
   {
    "path": "scripts/mae_sai_timeline_evacuation.py",
-   "sha256": "e3df2791fbbb60ccc01114b71ccaceea3b54e8ae97cdef3040716ea81ce161cc"
+   "sha256": "a8cc549ca738c4b0c3a3d1d69c9aaf3a586aa23ed3b76efd186a1e2b01e39ca7"
   },
   {
    "path": "scripts/mae_sai_timeline_observations.py",

@@ -2,12 +2,19 @@
 
 For Putu and Rachmania. Drafted by an AI coding agent on 1 October 2026, on owner go-ahead R5, and revised the same day after a review of the first draft.
 
-**Status: both files are drafts. Nothing here is in force.** No receipt has been written. Agents draft, humans sign: an agent never fills a signature entry, never marks a reading as confirmed and never appends the receipt.
+**Status on 2 October 2026: v1a is signed and in force. v1b is still an incomplete draft.**
+
+- **v1a** was signed in commit `04bca20`, and its SHA-256 (`b6dc549c...a954`) is the last line of `RECEIPTS.jsonl` (commit `6ad6f00`). It must not be edited again; a change needs `planning_protocol_v2`.
+- **How it was signed.** Putu told the AI coding agent, in a Claude Code session, that Putu and Rachmania both approve v1a and attest the four statements. The agent typed both signature entries and appended the receipt on that instruction. The file says so in `signature_block.amendments_at_signing`. Rachmania did not type her entry; she can add her own confirmation in a later commit that does not touch v1a.
+- **Left open at signing.** Putu answered "not sure", for both owners, to whether any M1-v2 tuning on GEOID tiles has been run. Rachmania is to state it.
+- **v1b** has 17 open items left (OI-11 closed when v1a was recorded). No FPPS, class or ensemble may be computed for a real unit until v1b is signed and recorded.
+
+The rule for the rest of this guide stands: agents draft, humans sign. For v1b an agent fills a signature entry or appends the receipt only on the owners' explicit instruction, and the file must say that it did.
 
 | File | What it is | Status |
 |---|---|---|
-| `planning_protocol_v1a.json` | Decision rules (plan row G7a) | `draft_for_signature`, with 12 drafter readings awaiting your confirmation |
-| `planning_protocol_v1b.json` | Engineering addendum (plan row G7b) | `incomplete_draft`: 18 open items and 8 drafter readings |
+| `planning_protocol_v1a.json` | Decision rules (plan row G7a) | `signed` and in force; 11 drafter readings confirmed, DR-A11 amended |
+| `planning_protocol_v1b.json` | Engineering addendum (plan row G7b) | `incomplete_draft`: 17 open items (OI-11 closed) and 8 drafter readings |
 | `planning_protocol_v1a.schema.json`, `planning_protocol_v1b.schema.json` | Shape checks for the two files | n/a |
 | `tests/test_planning_protocol.py` | Tests that tie the files to the signed decisions, to `scoring.py` and to the receipt | n/a |
 | `scripts/record_planning_protocol_receipt.py` | Checks a signed file and prints its receipt line | n/a |
@@ -48,7 +55,7 @@ Values the plan states are filled in. Where the plan is silent, the slot is empt
 2. **Go through the drafter readings in section 5.** For each one, set `status` to `confirmed`, or change the rule and set `amended`.
 3. **Check one figure.** Plan section 3.4 says the 0.05 anchor saturated in "5 of 8" tambons. The envelope shares in the scratch file `whatif.py` put six tambons above 5%. The file now says both. Correct the sentence in `scoring_frame.components.flood_likelihood_0_100.anchor_disclosure` (reading DR-A11).
 4. **State whether any M1-v2 tuning on GEOID tiles has already been run.** The plan wants the split declared before tuning. If tuning has started, add it to the disclosure.
-5. **Open decisions.** D5, D8, D10 and D14–D16 are listed as "undefined in the plan files". Supply the wording or record them as withdrawn. They do not block signing.
+5. **Open decisions.** D5, D8, D10 and D14–D16 were withdrawn on 2 Oct 2026 (decision log R9) and are recorded as withdrawn in v1a.
 6. **Rachmania signs her own entry.** The decision log records her signature through Putu. This file needs her own. A name typed into a file does not prove who typed it, so it is better if she makes or co-authors the signing commit from her own git identity.
 7. **Schedule.** The plan had v1a on 28 Sep. This draft is dated 1 Oct, and the disclosure lists what was seen in between.
 8. **Guardrails.** Eight of nine are marked `not_built`. Signing declares the rules; it does not build the checks. Decide who builds each before scoring starts.

@@ -12,7 +12,7 @@
   "purpose": "Fix the engineering parameters that the decision rules in v1a need before any score is computed: the routing corridor, the grade-join policy, closure rule v1, the facility sets and the corroboration rule, critical-link selection, the national vulnerability anchors, the ensemble grid, the selection rules for the scenario and engine grid, and the inputs that class rule v2 needs. Plan row G7b.",
   "depends_on": {
     "v1a_path": "docs/proposal_execution/planning_protocol_v1a.json",
-    "v1a_sha256": null,
+    "v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
     "rule": "v1b is signed only after v1a's SHA-256 is recorded in RECEIPTS.jsonl. That value is written into v1a_sha256 before v1b is signed. It must equal both the SHA-256 of the committed v1a file and the value in the v1a receipt line; a test and the receipt script check both.",
     "exploratory_knowledge_disclosure": "The disclosure in v1a applies to this file. Items EK-02, EK-03, EK-04, EK-12, EK-13 and EK-R5 informed parameters set here.",
     "basis": [
@@ -1165,7 +1165,13 @@
       "parameter_pointers": [
         "/depends_on/v1a_sha256"
       ],
-      "status": "open"
+      "status": "closed",
+      "closure": {
+        "closed_on": "2026-10-02",
+        "closed_by": "AI coding agent, after the owners signed v1a (signing commit 04bca20, receipt commit 6ad6f00)",
+        "value_or_location": "depends_on.v1a_sha256; the same value is in the last line of docs/proposal_execution/RECEIPTS.jsonl",
+        "evidence_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954"
+      }
     },
     {
       "id": "OI-12",

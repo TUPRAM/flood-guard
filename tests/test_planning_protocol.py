@@ -68,7 +68,7 @@ AWAITING = "awaiting_owner_confirmation"
 # Each must stay flagged in the file and in the signing guide while the file is a draft.
 REQUIRED_READINGS = {
     "v1a": [f"DR-A{number:02d}" for number in range(1, 13)],
-    "v1b": [f"DR-B{number:02d}" for number in range(1, 9)],
+    "v1b": [f"DR-B{number:02d}" for number in range(1, 10)],
 }
 SECTIONS_WITH_STATUS = (
     "corridor_polygon", "grade_join_policy", "closure_rule_v1", "facility_sets", "critical_link_selection",

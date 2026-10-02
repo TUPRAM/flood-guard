@@ -1,0 +1,324 @@
+{
+  "schema_version": "floodguard.e0_context_spike.v1",
+  "generated_at_utc": "2026-10-02T16:24:33Z",
+  "protocol_item": "planning_protocol_v1b open items OI-01, OI-03, OI-04 and OI-06 (plan 5 item 1, task E0)",
+  "status": "candidate_measurement",
+  "status_note": "The corridor is built under one candidate for open item OI-02 (the route rule), which is an owner decision. Nothing here closes an open item until the owners pick a rule.",
+  "route_rule_variant": "proposal",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "One baseline vehicle context. No flood layer, no closure, no access loss, no FPPS, no A-E class, no ensemble, and no figure for a single tambon.",
+  "source_timestamp": "2026-07-10T02:46:49Z",
+  "source_timestamps": {
+    "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+    "population_year_represented": 2020,
+    "boundaries_valid_on": "2022-01-22"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "OSM roads and hospitals are unverified map records; travel times are modelled class speeds on an undirected graph; the timing was taken on a shared machine.",
+  "route_rule": "For each of the three hospitals: build an undirected vehicle graph from every OSM road in the search window that lies inside Thailand, joining ways wherever they share a vertex coordinate; use the modelled class speeds; snap the hospital to the road vertex nearest to its OSM way polygon; take the fastest path from that vertex to the first road vertex inside AOI-02 (the vertex of AOI-02 with the smallest travel time); keep the segments of that path whose class is trunk or primary, links included; buffer them by 3 km in EPSG:32647; and union the three buffers with AOI-02.",
+  "search_window_wgs84": [
+    99.3607,
+    19.8077,
+    100.4868,
+    20.9151
+  ],
+  "hospital_routes": [
+    {
+      "osm_way": 447735125,
+      "name": "Mae Chan hospital",
+      "found_in_osm_extract": true,
+      "snap_distance_m": 0.0,
+      "snapped_within_100_m": true,
+      "route_found": true,
+      "route_minutes": 12.26,
+      "route_km": 14.26,
+      "route_km_by_road_class": {
+        "residential": 0.024,
+        "trunk": 14.237
+      },
+      "kept_km": 14.237,
+      "path_segment_count": 182,
+      "kept_segment_count": 181,
+      "path_osm_way_ids": [
+        "549638421",
+        "1241276754",
+        "1349495919",
+        "1360505911",
+        "105127702",
+        "1349496303",
+        "1349496072",
+        "40191713",
+        "105130607",
+        "105130582",
+        "1349496540",
+        "1349504611",
+        "105130593",
+        "105133571",
+        "105193529"
+      ],
+      "kept_osm_way_ids": [
+        "1241276754",
+        "1349495919",
+        "1360505911",
+        "105127702",
+        "1349496303",
+        "1349496072",
+        "40191713",
+        "105130607",
+        "105130582",
+        "1349496540",
+        "1349504611",
+        "105130593",
+        "105133571",
+        "105193529"
+      ],
+      "hospital_distance_to_kept_segments_m": 10.2,
+      "way_polygon_inside_corridor": true
+    },
+    {
+      "osm_way": 527539157,
+      "name": "Chiang Saen hospital",
+      "found_in_osm_extract": true,
+      "snap_distance_m": 0.0,
+      "snapped_within_100_m": true,
+      "route_found": true,
+      "route_minutes": 5.81,
+      "route_km": 5.434,
+      "route_km_by_road_class": {
+        "local": 0.157,
+        "primary": 4.979,
+        "secondary": 0.298
+      },
+      "kept_km": 4.979,
+      "path_segment_count": 94,
+      "kept_segment_count": 84,
+      "path_osm_way_ids": [
+        "527539200",
+        "527539215",
+        "223865267",
+        "223865265",
+        "543842328",
+        "543842324",
+        "1349510712",
+        "205443619"
+      ],
+      "kept_osm_way_ids": [
+        "223865265",
+        "543842328",
+        "543842324",
+        "1349510712",
+        "205443619"
+      ],
+      "hospital_distance_to_kept_segments_m": 129.6,
+      "way_polygon_inside_corridor": true
+    },
+    {
+      "osm_way": 549948901,
+      "name": "Mae Fa Luang hospital",
+      "found_in_osm_extract": true,
+      "snap_distance_m": 4.38,
+      "snapped_within_100_m": true,
+      "route_found": true,
+      "route_minutes": 42.47,
+      "route_km": 31.137,
+      "route_km_by_road_class": {
+        "local": 0.035,
+        "residential": 0.335,
+        "secondary": 15.705,
+        "tertiary": 14.92,
+        "unclassified": 0.141
+      },
+      "kept_km": 0.0,
+      "path_segment_count": 1267,
+      "kept_segment_count": 0,
+      "path_osm_way_ids": [
+        "547139810",
+        "547139817",
+        "199256817",
+        "199259673",
+        "547139831",
+        "547139832",
+        "547139830",
+        "129311594",
+        "204352850",
+        "40211509",
+        "40191387",
+        "105832304",
+        "274939139",
+        "274950351"
+      ],
+      "kept_osm_way_ids": [],
+      "hospital_distance_to_kept_segments_m": null,
+      "way_polygon_inside_corridor": false
+    }
+  ],
+  "corridor": {
+    "path": "outputs/planning_v1/corridor_candidate_proposal.geojson",
+    "sha256": "ebe0402f857f5355d65df711dba536f92a42b589f960e2d01ff78975da8a2e5e",
+    "area_km2": 683.09,
+    "aoi_02_area_km2": 541.71,
+    "thai_adm3_units_intersecting": 24
+  },
+  "context_call": {
+    "function": "floodguard.evidence_context.build_context_inputs (unchanged)",
+    "aoi_geometry": "Union of the eight Mae Sai tambons, clipped to AOI-02.",
+    "aoi_geometry_note": "The unclipped union lies partly outside AOI-02, and the builder refuses a demand area that the routing polygon does not contain.",
+    "tambon_union_outside_aoi_02_m2": 214.5,
+    "routing_geometry": "the corridor candidate",
+    "reporting_geometry": "union of the Thai COD-AB ADM3 polygons that intersect the corridor",
+    "travel_mode": "legacy_vehicle",
+    "facilities_supplied": 0,
+    "reviewed_junctions_supplied": 20,
+    "reviewed_junctions_applied": 20
+  },
+  "e0_spike_record_candidate": {
+    "hospital_count": 4,
+    "within_routing_context_for_named_ways": false,
+    "edge_count": 57727,
+    "wall_time_minutes": 2.64,
+    "peak_ram_gib": 0.55,
+    "grade_split_count": 345,
+    "baseline_vehicle_no_route_share": 0.00075
+  },
+  "acceptance": {
+    "hospitals_in_context_min": 4,
+    "hospitals_in_context_met": true,
+    "named_ways_within_routing_context": {
+      "447735125": true,
+      "527539157": true,
+      "549948901": false
+    },
+    "named_ways_met": false,
+    "baseline_vehicle_no_route_share_max": 0.1,
+    "no_route_share_met_with_grade_joins": true,
+    "no_route_share_met_without_grade_joins": true
+  },
+  "baseline_no_route": {
+    "definition": "Residents on graph-connected demand cells with no modelled vehicle route to any OSM hospital in the routing context, divided by all residents on graph-connected demand cells.",
+    "with_grade_joins": {
+      "residents": 81836.889439,
+      "graph_connected_residents": 75226.97719,
+      "connected_residents_without_a_route": 56.446837,
+      "share": 0.00075,
+      "residents_not_connected_to_the_graph": 6609.912249
+    },
+    "without_grade_joins": {
+      "residents": 81836.889439,
+      "graph_connected_residents": 75226.97719,
+      "connected_residents_without_a_route": 1062.855133,
+      "share": 0.014129,
+      "residents_not_connected_to_the_graph": 6609.912249
+    },
+    "value_recorded_in_candidate": "with_grade_joins (the planning context applies decision D13)"
+  },
+  "grade_joins": {
+    "rule_version": "grade_join_endpoint_coincident_v1",
+    "coincidence_tolerance_m": 0.0,
+    "join_count": 319,
+    "grade_split_count": 345,
+    "possible_endpoint_transition_count": 319,
+    "joins_where_every_node_is_an_endpoint": 319,
+    "log_path": "outputs/planning_v1/grade_join_log_candidate_proposal.json",
+    "log_sha256": "95962f1a1b2ed3a45d4132b449a386b230ad3be9e957ab267a37265938ccbbd4"
+  },
+  "context": {
+    "canonical_sha256": "c565134448f66b593e1180c66ceb8fbf828c2ab35d3a23dba8935904c4e32a27",
+    "road_nodes": 54855,
+    "connected_components": 230,
+    "segments_omitted_at_routing_boundary_or_degenerate": 32770,
+    "population_cells": 36765,
+    "modelled_population_2020": 81836.9,
+    "population_snap_coverage_fraction": 0.919231,
+    "retained": false,
+    "retained_note": "The context file is a spike product and was not kept; plan task E4 builds the context of record."
+  },
+  "hospitals_in_routing_context": [
+    {
+      "facility_id": "OSM-way-1010348419",
+      "name": "Unnamed OSM candidate",
+      "source_geometry_type": "MultiPolygon",
+      "snapped_to_graph": true
+    },
+    {
+      "facility_id": "OSM-way-371233866",
+      "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e41\u0e21\u0e48\u0e2a\u0e32\u0e22",
+      "source_geometry_type": "MultiPolygon",
+      "snapped_to_graph": true
+    },
+    {
+      "facility_id": "OSM-way-447735125",
+      "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e41\u0e21\u0e48\u0e08\u0e31\u0e19",
+      "source_geometry_type": "MultiPolygon",
+      "snapped_to_graph": true
+    },
+    {
+      "facility_id": "OSM-way-527539157",
+      "name": "\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e40\u0e0a\u0e35\u0e22\u0e07\u0e41\u0e2a\u0e19",
+      "source_geometry_type": "MultiPolygon",
+      "snapped_to_graph": true
+    }
+  ],
+  "hospitals_outside_routing_context": 0,
+  "facility_counts_candidate": {
+    "osm_hospitals": 4,
+    "mae_sai_hospital_facility_ids_by_osm_name": [
+      "OSM-way-371233866"
+    ],
+    "dga_matched_hospitals": 4,
+    "located_ddpm_shelters": 78,
+    "corroborated_shelters": null,
+    "corroborated_shelters_note": "Not measured: it needs the shelter match distance (an owner decision) and an extract of OSM buildings, which this spike does not make.",
+    "dga_match_rule": "An OSM hospital is matched when a DGA record lies within 150 m of its OSM footprint or point, measured in EPSG:32647.",
+    "dga_records_read": 10622,
+    "dga_file_sha256": "15d208b7c269562c9444f5f034f5e16c3a33a2e069a19637264b2ddc2f1ee58d",
+    "ddpm_rows_with_a_coordinate_in_the_routing_context": {
+      "listed_rows": 88,
+      "listed_places": 38940.0,
+      "located_rows": 78,
+      "located_places": 38440.0,
+      "unlocated_rows": 10,
+      "unlocated_places": 500.0,
+      "rows_without_a_listed_capacity": 0
+    },
+    "ddpm_location_rule": "A coordinate shared by at least 3 rows of the national file is a placeholder and those rows are not located. Located means status located.",
+    "ddpm_file_sha256": "91a8f26a5dd2446b68b562dcda13024d1bd4981720f985722a6467d4edeef9d7",
+    "ddpm_publication_level": "pitch"
+  },
+  "timing_seconds": {
+    "route_search_and_corridor": 62.2,
+    "context_build": 95.9,
+    "baseline_access_twice": 3.6
+  },
+  "peak_memory_gib_so_far": {
+    "after_route_search_and_corridor": 0.55,
+    "after_context_build": 0.55,
+    "at_the_end": 0.55
+  },
+  "timing_note": "wall_time_minutes is the route search plus the context build. Other sessions were running on this machine, so this is not the declared compute window the plan asks for. Peak RAM is the peak working set of this Python process, read at the end of the run; it leaves out the ogr2ogr child processes.",
+  "input_hashes": {
+    "osm_pbf_sha256": "b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1",
+    "worldpop_2020_sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+    "boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8",
+    "aoi_02_sha256": "d49de53e86264c06218fd9a03cc2b5da1549085a49fae2f3cd288bf6334f5a56",
+    "reviewed_junctions_sha256": "43de4cc50efc790af1aa502e820e178856389041b568ff61bf2c463cfe240f07"
+  },
+  "implementation": {
+    "base_commit": "dde9416f5395289ed1ef9f2157795f6ed0b025f6",
+    "builder_sha256": "f3ee0dba33f8f2a74b03bd7f6f8487786eaa47ff146c08791a83ca4826bb5125",
+    "evidence_context_sha256": "3e85955494e0bf2d4592ea772322afcb20a7a5cdf00036e52a4e33d1263c2994",
+    "grade_join_sha256": "7e0486a2ad28b11909635dc5ee713a5b464a2e025604c72f6ea3783cf0fbd1cb"
+  },
+  "assumptions": [
+    "The route rule is a candidate for open item OI-02; it is not an owner decision.",
+    "The route-selection graph joins ways at every shared vertex coordinate, whatever their grade tags. The context graph does not: it keeps grade-separated vertices apart and joins them only under decision D13.",
+    "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road condition are not represented.",
+    "A hospital is an OSM object tagged as a hospital. Its operation, entrance and capacity are not verified.",
+    "A grade join shows that two ways end at the same OSM coordinate. It does not show the transition can be driven."
+  ],
+  "limitations": [
+    "This is one build on one day. It is a measurement for the owners, not the context of record.",
+    "Facility counts are counts of map and list records. No hospital and no shelter was checked on the ground.",
+    "The number of corroborated shelters is not measured."
+  ]
+}

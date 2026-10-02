@@ -4,7 +4,7 @@
   "title": "FloodGuard planning protocol v1b: engineering addendum",
   "protocol_kind": "declared_protocol_after_exploratory_analysis",
   "status": "incomplete_draft",
-  "status_note": "Incomplete draft written by an AI coding agent. Agents draft, humans sign. Nothing in this file is in force. It cannot be signed while any entry in open_items is open, while any parameter named by an open item is empty, or while any entry in drafter_readings awaits confirmation. Until the signed file's SHA-256 is recorded in docs/proposal_execution/RECEIPTS.jsonl, no FPPS, no A-E class and no ensemble may be computed for any real unit. No receipt has been written.",
+  "status_note": "Incomplete draft written by an AI coding agent. Agents draft, humans sign. Nothing in this file is in force. It cannot be signed while any entry in open_items is open, while any parameter named by an open item is empty, or while any entry in drafter_readings awaits confirmation. Until the signed file's SHA-256 is recorded in docs/proposal_execution/RECEIPTS.jsonl, no FPPS, no A-E class and no ensemble may be computed for any real unit. No receipt has been written. The owners approved this file in principle (decision-log entry R11); that is not a signature. Engineering values were added afterwards (see blinding.runs_before_v1b_is_in_force); the owner choices that remain are listed in docs/proposal_execution/planning_protocol_v1b_owner_choices.md.",
   "drafted_on": "2026-10-01",
   "drafted_by": "AI coding agent (Claude), on the owner go-ahead R5 of 2026-10-01",
   "official_warning": false,
@@ -59,6 +59,16 @@
     "base_commit": {
       "branch": "codex/thai-event-selection",
       "commit": "96fab6e60f7aac35fc153b21c89f5c71c755af22"
+    },
+    "decision_log_at_engineering_closure": {
+      "name": "docs/decision-log-d1-d16.md",
+      "sha256": "e1c20b365f7122df9fe9d16f366936033e187be59b9cb2eb3620251392fe14b4",
+      "decisions_used": [
+        "R9",
+        "R10",
+        "R11"
+      ],
+      "note": "The log was extended after this file was drafted. R11 records that both owners approve v1b in principle and ask the agent to close the engineering items and to write one proposal for each owner choice."
     }
   },
   "blinding": {
@@ -79,7 +89,38 @@
       "Any ensemble cell."
     ],
     "reading_status": "Drafter reading DR-B07. Plan 2.3 item 5 allows 'context, access and closure builds' before v1b. The draft adds two things to that list: the baseline critical-link ranking (E6), which the plan schedules after v1b, and the national dependent-share percentiles, which plan 3.4 says are computed in v1b. It also limits the ban to real units, as in v1a drafter reading DR-A06. The owners confirm or amend the list at signing.",
-    "status_at_drafting": "None of the builds above has been run for this protocol. No value in this file comes from a new computation."
+    "status_at_drafting": "When this file was drafted on 2026-10-01, none of the builds above had been run for this protocol and no value in it came from a new computation. The runs made since then are listed in runs_before_v1b_is_in_force.",
+    "runs_before_v1b_is_in_force": [
+      {
+        "run": "National dependent-share percentiles (open item OI-08)",
+        "generated_at_utc": "2026-10-02T15:50:57Z",
+        "receipt": "outputs/planning_v1/national_vulnerability_anchors_v1.json",
+        "allowed_by": "Plan 3.4: the anchors are computed once in v1b, before any case scoring. Drafter reading DR-B07 lists them too.",
+        "per_unit_values_written": false
+      },
+      {
+        "run": "Closure regression at the permissive level on the AOI-01 finals context (plan task E3)",
+        "generated_at_utc": "2026-10-02T16:09:19Z",
+        "receipt": "outputs/planning_v1/closure_rule_v1_regression.json",
+        "allowed_by": "Plan 2.3 item 5: closure builds.",
+        "per_unit_values_written": false
+      },
+      {
+        "run": "Population ranking of the Chiang Rai districts for SE2-blind; no flood layer is read",
+        "generated_at_utc": "2026-10-02T16:21:48Z",
+        "receipt": "outputs/planning_v1/se2_blind_district_ranking.json",
+        "allowed_by": "Plan 6.1: computed before any overlay.",
+        "per_unit_values_written": false
+      },
+      {
+        "run": "E0 context spike, two candidate corridors, baseline vehicle access to hospitals for the whole frame",
+        "generated_at_utc": "2026-10-02T16:27:40Z",
+        "receipt": "outputs/planning_v1/e0_context_spike_proposal.json and e0_context_spike_whole_path.json",
+        "allowed_by": "Plan 2.3 item 5: context and access builds.",
+        "per_unit_values_written": false
+      }
+    ],
+    "runs_statement": "No FPPS, no A-E class, no ensemble cell and no component value for a real unit was computed in these runs. None of them read a flood layer except the closure regression, which read the legacy candidate extent to compare edge lists and computed no access result."
   },
   "corridor_polygon": {
     "basis": [
@@ -166,10 +207,78 @@
       "unit_list": null,
       "routing_geometry": null,
       "hospital_destinations": null,
-      "se2_blind_district": null,
+      "se2_blind_district": {
+        "adm2_pcode": "TH5705",
+        "adm2_name": "Phan",
+        "rule": "The most populous district of Chiang Rai province by WorldPop 2020 total, leaving out Mueang Chiang Rai and Mae Sai. A cell counts for the district that holds its centre. Ties break on the lower district code.",
+        "runner_up": "Mae Chan",
+        "margin_share_of_selected": 0.053273,
+        "evidence_path": "outputs/planning_v1/se2_blind_district_ranking.json",
+        "evidence_sha256": "9b307ca031b788d4c0fdcd451aa38f6e094d56ed1104885ec9947241c547a5c5",
+        "still_missing": "Which tambons of this district are the 'amphoe-seat tambons'. The plan gives no rule for that and this file has no slot for the unit list of SE2-blind."
+      },
       "note": "New planning frames live in resources/planning_frames/, not resources/aoi/, so load_aois still returns exactly six AOIs. The SE2 routing geometry and its hospital destinations are not specified in the plan.",
       "open_items": [
         "OI-09"
+      ]
+    },
+    "e0_spike_candidates": {
+      "status": "Measured on 2026-10-02 (UTC) by scripts/run_planning_context_spike.py. Candidates only: the route rule is open item OI-02, an owner decision, so geometry_file, e0_spike_record and the join log stay empty.",
+      "finding": "Under the proposal as written (buffer only the trunk and primary segments of the fastest path) the Mae Fa Luang hospital way 549948901 is outside the routing context: its fastest path from AOI-02 has no trunk or primary segment. The file could not be signed with that corridor, because the schema requires the three named ways in context. Buffering the whole fastest path brings all three in.",
+      "peak_ram_note": "peak_ram_gib is the peak working set of the Python process over the whole spike. In the whole_path run the peak is reached while the spike buffers the path, before the context build starts. Timing was taken with other sessions running on the machine, not in a declared compute window.",
+      "reproducibility_note": "Each corridor was built twice. Both times it gave the same polygon, the same join log and the same context SHA-256.",
+      "context_call_note": "The union of the eight tambons lies partly outside AOI-02 (214.5 square metres), and build_context_inputs refuses a demand area that the routing polygon does not contain. Both runs used the union clipped to AOI-02, in line with the declared tolerance. context_call.aoi_geometry above still carries the plan wording.",
+      "candidates": [
+        {
+          "route_rule_variant": "proposal",
+          "route_rule": "For each of the three hospitals: build an undirected vehicle graph from every OSM road in the search window that lies inside Thailand, joining ways wherever they share a vertex coordinate; use the modelled class speeds; snap the hospital to the road vertex nearest to its OSM way polygon; take the fastest path from that vertex to the first road vertex inside AOI-02 (the vertex of AOI-02 with the smallest travel time); keep the segments of that path whose class is trunk or primary, links included; buffer them by 3 km in EPSG:32647; and union the three buffers with AOI-02.",
+          "spike_record_path": "outputs/planning_v1/e0_context_spike_proposal.json",
+          "spike_record_sha256": "548bac35b8a20566255910da0ae8eaa2db695ad768a8e13d564ffae0c5631863",
+          "corridor_path": "outputs/planning_v1/corridor_candidate_proposal.geojson",
+          "corridor_sha256": "ebe0402f857f5355d65df711dba536f92a42b589f960e2d01ff78975da8a2e5e",
+          "corridor_area_km2": 683.09,
+          "hospital_count": 4,
+          "named_ways_within_routing_context": {
+            "447735125": true,
+            "527539157": true,
+            "549948901": false
+          },
+          "edge_count": 57727,
+          "wall_time_minutes": 2.64,
+          "peak_ram_gib": 0.55,
+          "grade_split_count": 345,
+          "baseline_vehicle_no_route_share": 0.00075,
+          "baseline_vehicle_no_route_share_without_grade_joins": 0.014129,
+          "grade_join_count": 319,
+          "grade_join_log_path": "outputs/planning_v1/grade_join_log_candidate_proposal.json",
+          "grade_join_log_sha256": "95962f1a1b2ed3a45d4132b449a386b230ad3be9e957ab267a37265938ccbbd4",
+          "meets_plan_acceptance": false
+        },
+        {
+          "route_rule_variant": "whole_path",
+          "route_rule": "For each of the three hospitals: build an undirected vehicle graph from every OSM road in the search window that lies inside Thailand, joining ways wherever they share a vertex coordinate; use the modelled class speeds; snap the hospital to the road vertex nearest to its OSM way polygon; take the fastest path from that vertex to the first road vertex inside AOI-02 (the vertex of AOI-02 with the smallest travel time); keep every segment of that path, whatever its road class; buffer the path by 3 km in EPSG:32647; and union the three buffers with AOI-02.",
+          "spike_record_path": "outputs/planning_v1/e0_context_spike_whole_path.json",
+          "spike_record_sha256": "705a296604ff7d5ee987d4aeb33206b0a454138628efb9ec9dc85946d0c50132",
+          "corridor_path": "outputs/planning_v1/corridor_candidate_whole_path.geojson",
+          "corridor_sha256": "4458583170d66ed0d57377bf016b1d7ac6defa58fcb9f573ba77d08d80ed5eb7",
+          "corridor_area_km2": 827.4,
+          "hospital_count": 6,
+          "named_ways_within_routing_context": {
+            "447735125": true,
+            "527539157": true,
+            "549948901": true
+          },
+          "edge_count": 65328,
+          "wall_time_minutes": 2.96,
+          "peak_ram_gib": 2.44,
+          "grade_split_count": 371,
+          "baseline_vehicle_no_route_share": 0.00075,
+          "baseline_vehicle_no_route_share_without_grade_joins": 0.014129,
+          "grade_join_count": 345,
+          "grade_join_log_path": "outputs/planning_v1/grade_join_log_candidate_whole_path.json",
+          "grade_join_log_sha256": "2f1f63e532db358fdab0ce42531ee110b144916c5e4e66144acbe6a3639690d4",
+          "meets_plan_acceptance": true
+        }
       ]
     }
   },
@@ -190,14 +299,15 @@
       "The 20 reviewed AOI-01 junctions are reused as they are.",
       "The finals contract and the nine SHA-bound finals modules are unchanged. The finals rule that proximity never creates a join still holds for the finals path."
     ],
-    "module": "src/floodguard/grade_join.py (new; does not exist on this lineage)",
-    "coincidence_tolerance_m": null,
+    "module": "src/floodguard/grade_join.py (added with the E0 spike; awaiting Putu's review). A join is a zero-length connector edge between two nodes that share an identical coordinate and each end at least one way.",
+    "coincidence_tolerance_m": 0,
     "coincidence_tolerance_proposal": "0 m: identical OSM coordinates at 1e-7 degree precision.",
     "join_log": {
       "path": null,
       "sha256": null,
       "join_count": null
-    }
+    },
+    "coincidence_tolerance_status": "Filled in from decision D13 and rule 1 above: endpoints that coincide have identical OSM coordinates, so the tolerance is 0 m. A larger value would let proximity create a join, which the finals rule forbids. Putu reviews it with src/floodguard/grade_join.py when OI-04 closes."
   },
   "closure_rule_v1": {
     "version": "closure_rule_v1",
@@ -275,10 +385,19 @@
         "walking": 1824,
         "vehicle": 1738
       },
-      "result": null,
-      "result_shape": "When the regression is run, result is an object: walking_closed_edges, vehicle_closed_edges, closed_edge_ids_match_exactly (true or false) and evidence_sha256 (the SHA-256 of the run output). A failing run is recorded as it is; the file cannot be signed until the match is exact."
+      "result": {
+        "walking_closed_edges": 1824,
+        "vehicle_closed_edges": 1738,
+        "closed_edge_ids_match_exactly": true,
+        "evidence_sha256": "3659efc28df781d34caa9191f9a8c703adb4227ba1ab9f4e7aba3b26f0ba9953"
+      },
+      "result_shape": "When the regression is run, result is an object: walking_closed_edges, vehicle_closed_edges, closed_edge_ids_match_exactly (true or false) and evidence_sha256 (the SHA-256 of the run output). A failing run is recorded as it is; the file cannot be signed until the match is exact.",
+      "result_location": "outputs/planning_v1/closure_rule_v1_regression.json",
+      "run_note": "Run on 2026-10-02 (UTC) by scripts/check_closure_rule_regression.py with the permissive level of src/floodguard/closure_rules.py on the AOI-01 finals contexts and the legacy 2.25 dB candidate extent. Both closed-edge lists equal the finals lists, in the same order and with the same intersection lengths. The external finals build was accepted only after its lists were found equal to those in the committed finals database."
     },
-    "field_verification_priority": "Segments are ranked by residents affected x disagreement across the strict, central and permissive levels."
+    "field_verification_priority": "Segments are ranked by residents affected x disagreement across the strict, central and permissive levels.",
+    "module": "src/floodguard/closure_rules.py (plan task E3). The central level takes the length thresholds as an argument and refuses a road class without one; the strict level refuses to guess whether an open edge is delayed. Both wait on open item OI-05.",
+    "bridge_culvert_note": "Context edges built by build_context_inputs carry the bridge and tunnel tags, not a culvert tag. Until the planning context adds it, the central level sees bridge=yes and tunnel=culvert, and cannot see culvert=*."
   },
   "facility_sets": {
     "basis": [
@@ -393,7 +512,8 @@
       "located_ddpm_shelters": null,
       "corroborated_shelters": null
     },
-    "mae_sai_hospital_osm_id": null
+    "mae_sai_hospital_osm_id": "way/371233866",
+    "mae_sai_hospital_osm_id_evidence": "OSM way 371233866 carries the Thai name of the hospital and is the only hospital-tagged object with that name in the routing context of both E0 spike runs (facility_id OSM-way-371233866). It lies inside AOI-02, so it does not depend on the corridor rule. docs/mae_sai_model_audit_20260922.md names the same way."
   },
   "critical_link_selection": {
     "basis": [
@@ -443,18 +563,18 @@
       "plan 5 item 11 axis 4",
       "plan 8.1 E2"
     ],
-    "status": "open",
+    "status": "fixed",
     "open_items": [
       "OI-08"
     ],
     "definition": "Percentiles, across Thai tambons, of the dependent share: residents aged 0-14 plus residents aged 60 and over, divided by all residents, from the WorldPop 2024 1 km age counts.",
-    "computed": "Once, in v1b, before any case scoring. The values are constants for every case and lane.",
+    "computed": "Once, in v1b, before any case scoring. The values are constants for every case and lane. Computed on 2026-10-02 (UTC) by scripts/build_national_vulnerability_anchors.py; the script refuses to write a second receipt and its --verify option recomputes and compares. A --verify run made afterwards reproduced the values, the unit counts and the SHA-256 of the per-unit table.",
     "values": {
-      "P5": null,
-      "P10": null,
-      "P75": null,
-      "P90": null,
-      "P95": null
+      "P5": 0.313095,
+      "P10": 0.351416,
+      "P75": 0.454083,
+      "P90": 0.477677,
+      "P95": 0.494407
     },
     "uses": {
       "P10_P90": "Default anchors of the vulnerability component (v1a scoring_frame).",
@@ -515,19 +635,21 @@
       },
       "allocation": "Each 1 km cell's counts are allocated to a tambon by the projected-area fraction of the cell inside the tambon, as in scripts/bridge_worldpop_age_access.py.",
       "allocation_status": "Drafter reading DR-B04. The plan does not say how 1 km cells are assigned to tambons. The draft follows scripts/bridge_worldpop_age_access.py (projected-area fraction). The owners confirm at signing.",
-      "unit_set": null,
+      "unit_set": "Every tha_admin3 unit with at least 100 modelled 2024 residents on the cells where all 20 age bands are valid (the minimum-denominator figure of v1a guardrail GR1). All 7,425 units pass, so none is left out.",
       "unit_set_proposal": "Every tha_admin3 unit in Thailand with at least 100 modelled 2024 residents (the minimum-denominator rule). The number of units used and the number excluded are recorded.",
-      "percentile_method": null,
+      "percentile_method": "Unweighted across units: every unit counts once. Linear interpolation between order statistics at position (n - 1) x p / 100 (Hyndman and Fan type 7, the numpy default). Each value is rounded to six decimal places, and the rounded values are the anchors.",
       "percentile_method_proposal": "Unweighted across tambons, linear interpolation between order statistics.",
-      "module": "src/floodguard/normalisation.py (new; does not exist on this lineage)"
+      "module": "src/floodguard/normalisation.py (the national-anchor step of plan task E2; the rest of frame v1 is not built)",
+      "unit_set_and_percentile_status": "Drafter reading DR-B09. The plan says 'national tambon percentiles' and names neither the unit set nor the percentile rule. The values above adopt the two proposals that were already in this file. The percentile rule matters: weighting each unit by its residents would put P10 at 0.258155 and P90 at 0.458233, against 0.351416 and 0.477677 here, because large urban units have a low dependent share. The minimum of 100 residents changes nothing, because no unit falls below it. The receipt lists both alternatives. The owners confirm or amend this at signing."
     },
     "output_receipt": {
-      "path": null,
-      "sha256": null,
-      "unit_count": null,
-      "excluded_unit_count": null
+      "path": "outputs/planning_v1/national_vulnerability_anchors_v1.json",
+      "sha256": "6d59270ad1aa252ecfedf8983bc7db705616f0d5e5e3ba503d7e62c5dbbcc816",
+      "unit_count": 7425,
+      "excluded_unit_count": 0
     },
-    "caveat": "Modelled 1 km age composition; not observed. Mixed vintages are disclosed: 2020 demand, 2024 age, 2022 boundaries, 2026 OSM."
+    "caveat": "Modelled 1 km age composition; not observed. Mixed vintages are disclosed: 2020 demand, 2024 age, 2022 boundaries, 2026 OSM.",
+    "anchor_span_note": "P10 and P90 are 0.126261 apart. A difference of about 1.3 points of dependent share between two units therefore moves the vulnerability component by 10 of its 100 points, and a unit below P10 or above P90 sits at 0 or 100. The modelled age composition comes from 1 km cells."
   },
   "ensemble_grid": {
     "basis": [
@@ -1006,7 +1128,8 @@
         "/corridor_polygon/geometry_file/path",
         "/corridor_polygon/geometry_file/sha256"
       ],
-      "status": "open"
+      "status": "open",
+      "note": "Measured as a candidate under two route rules (corridor_polygon.e0_spike_candidates). Not filled in and not closed: the corridor depends on the route rule, which is open item OI-02, an owner decision."
     },
     {
       "id": "OI-02",
@@ -1018,7 +1141,8 @@
       "parameter_pointers": [
         "/corridor_polygon/route_selection_rule/rule"
       ],
-      "status": "open"
+      "status": "open",
+      "note": "The E0 spike shows that the proposal as written leaves the Mae Fa Luang hospital way outside the corridor; see corridor_polygon.e0_spike_candidates and docs/proposal_execution/planning_protocol_v1b_owner_choices.md."
     },
     {
       "id": "OI-03",
@@ -1036,7 +1160,8 @@
         "/corridor_polygon/e0_spike_record/grade_split_count",
         "/corridor_polygon/e0_spike_record/baseline_vehicle_no_route_share"
       ],
-      "status": "open"
+      "status": "open",
+      "note": "Measured as a candidate under two route rules (corridor_polygon.e0_spike_candidates). Not filled in and not closed: the corridor depends on the route rule, which is open item OI-02, an owner decision."
     },
     {
       "id": "OI-04",
@@ -1051,7 +1176,8 @@
         "/grade_join_policy/join_log/sha256",
         "/grade_join_policy/join_log/join_count"
       ],
-      "status": "open"
+      "status": "open",
+      "note": "src/floodguard/grade_join.py now exists and a candidate join log was written for each spike run (corridor_polygon.e0_spike_candidates). Not filled in and not closed: the log of record belongs to the context of record, which needs the corridor (OI-02). The tolerance is filled in as 0 m, which follows from D13."
     },
     {
       "id": "OI-05",
@@ -1067,7 +1193,8 @@
         "/closure_rule_v1/delay_under_strict/rule",
         "/closure_rule_v1/regression/result"
       ],
-      "status": "open"
+      "status": "open",
+      "note": "The regression part is done: 1,824 walking and 1,738 vehicle closed edges, exact match; see closure_rule_v1.regression.result. Still open: the three length thresholds and the delay rule under the strict level, which are owner decisions (docs/proposal_execution/planning_protocol_v1b_owner_choices.md)."
     },
     {
       "id": "OI-06",
@@ -1085,7 +1212,8 @@
         "/facility_sets/counts_in_corridor/corroborated_shelters",
         "/facility_sets/mae_sai_hospital_osm_id"
       ],
-      "status": "open"
+      "status": "open",
+      "note": "Filled in: the OSM ID of the hospital for scenario S4. Measured as candidates only, because they depend on the corridor (OI-02): OSM hospitals, DGA-matched hospitals and located DDPM shelters in the routing context (outputs/planning_v1/e0_context_spike_*.json). Not measured: corroborated shelters. Still open: the main-road entry definition and the shelter match distance, which are owner decisions."
     },
     {
       "id": "OI-07",
@@ -1122,7 +1250,13 @@
         "/national_vulnerability_anchors/output_receipt/unit_count",
         "/national_vulnerability_anchors/output_receipt/excluded_unit_count"
       ],
-      "status": "open"
+      "status": "closed",
+      "closure": {
+        "closed_on": "2026-10-03",
+        "closed_by": "AI coding agent, on the owners' instruction recorded as decision-log entry R11; for Putu's review",
+        "value_or_location": "national_vulnerability_anchors.values (P5 0.313095, P10 0.351416, P75 0.454083, P90 0.477677, P95 0.494407), method.unit_set, method.percentile_method and output_receipt; computed by scripts/build_national_vulnerability_anchors.py over 7,425 units, with the unit set and the percentile rule marked as drafter reading DR-B09",
+        "evidence_sha256": "6d59270ad1aa252ecfedf8983bc7db705616f0d5e5e3ba503d7e62c5dbbcc816"
+      }
     },
     {
       "id": "OI-09",
@@ -1139,7 +1273,8 @@
         "/corridor_polygon/se2_frame/hospital_destinations",
         "/corridor_polygon/se2_frame/se2_blind_district"
       ],
-      "status": "open"
+      "status": "open",
+      "note": "The SE2-blind district is filled in: a population ranking that reads no flood layer. Still open: the pf-07 frame (file, SHA-256, unit list, routing geometry, hospital destinations), which is Rachmania's, and the rule for the amphoe-seat tambons of the blind district."
     },
     {
       "id": "OI-10",
@@ -1342,6 +1477,15 @@
       "draft_says": "Base case O1.",
       "outcome_sensitive": false,
       "status": "awaiting_owner_confirmation"
+    },
+    {
+      "id": "DR-B09",
+      "where": "national_vulnerability_anchors.method.unit_set and method.percentile_method",
+      "pointer": "/national_vulnerability_anchors/method/unit_set_and_percentile_status",
+      "plan_says": "'National tambon percentiles' of the dependent share. No unit set and no percentile rule.",
+      "draft_says": "Every tha_admin3 unit with at least 100 modelled residents, each counted once; linear interpolation between order statistics; values rounded to six decimal places.",
+      "outcome_sensitive": true,
+      "status": "awaiting_owner_confirmation"
     }
   ],
   "dependencies_that_do_not_block_signing": [
@@ -1376,8 +1520,8 @@
   },
   "assumptions": [
     "Parameters marked as proposals are the drafting agent's reading of a point the plan leaves unstated; their slots are empty and each is named by an open item. Values that are filled in but do not come from the plan are listed in drafter_readings. Neither kind carries authority until an owner confirms it.",
-    "Counts quoted from the plan (shelter rows, closed-edge counts, hospital distances) were verified by the plan's authors, not re-run for this draft.",
-    "The on-disk check covers file presence and, for the age rasters, the manifest SHA-256 and byte sizes. Raster contents were not opened.",
+    "Counts quoted from the plan were verified by the plan's authors. Three were re-run for this file after drafting: the closed-edge counts (1,824 walking and 1,738 vehicle, reproduced exactly), the DDPM counts for Mae Sai district (27 rows, 6,050 places, 17 located rows, 5,550 places, 500 unlocated places, reproduced exactly by src/floodguard/ddpm_shelters.py) and the three hospital ways (all three exist in the OSM extract). The plan's distance note of 27-33 km was not re-measured the same way: by road from the edge of AOI-02 the spike gives about 14 km, 5 km and 31 km.",
+    "The on-disk check of 2026-10-01 covered file presence and, for the age rasters, the manifest SHA-256 and byte sizes. The age rasters, the boundary file, the WorldPop 2020 raster and the OSM extract were opened and their SHA-256 checked when the runs listed under blinding.runs_before_v1b_is_in_force were made.",
     "The open-item list was extended after review from 11 to 18 items. It covers every empty parameter in this file; a test checks that. It cannot show that no further unstated choice remains, and the signers add any they find."
   ],
   "signature_block": {

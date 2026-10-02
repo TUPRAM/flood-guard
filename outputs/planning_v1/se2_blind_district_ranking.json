@@ -1,0 +1,174 @@
+{
+  "schema_version": "floodguard.se2_blind_district_ranking.v1",
+  "generated_at_utc": "2026-10-02T16:21:48Z",
+  "protocol_item": "planning_protocol_v1b open item OI-09, se2_frame.se2_blind_district (plan 6.1, case SE2-blind)",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "computes": "District population totals only. No flood layer is read. No exposure, FPPS, A-E class or ensemble.",
+  "source_timestamp": "2020",
+  "source_timestamps": {
+    "population_year_represented": 2020,
+    "district_boundaries_valid_on": "2022-01-22"
+  },
+  "confidence_class": "low",
+  "confidence_basis": "Modelled 2020 residential population on 2022 boundaries; not a census count.",
+  "rule": "The most populous district of Chiang Rai province by WorldPop 2020 total, leaving out Mueang Chiang Rai and Mae Sai. A cell counts for the district that holds its centre. Ties break on the lower district code.",
+  "excluded_districts": {
+    "TH5701": "Mueang Chiang Rai",
+    "TH5709": "Mae Sai"
+  },
+  "selected_district": {
+    "adm2_pcode": "TH5705",
+    "adm2_name": "Phan"
+  },
+  "runner_up_district": {
+    "adm2_pcode": "TH5707",
+    "adm2_name": "Mae Chan"
+  },
+  "margin_share_of_selected": 0.053273,
+  "districts_ranked": [
+    {
+      "rank": 1,
+      "adm2_pcode": "TH5701",
+      "adm2_name": "Mueang Chiang Rai",
+      "residents_2020": 220991.5,
+      "eligible": false
+    },
+    {
+      "rank": 2,
+      "adm2_pcode": "TH5705",
+      "adm2_name": "Phan",
+      "residents_2020": 128042.5,
+      "eligible": true
+    },
+    {
+      "rank": 3,
+      "adm2_pcode": "TH5707",
+      "adm2_name": "Mae Chan",
+      "residents_2020": 121221.3,
+      "eligible": true
+    },
+    {
+      "rank": 4,
+      "adm2_pcode": "TH5704",
+      "adm2_name": "Thoeng",
+      "residents_2020": 81890.5,
+      "eligible": true
+    },
+    {
+      "rank": 5,
+      "adm2_pcode": "TH5709",
+      "adm2_name": "Mae Sai",
+      "residents_2020": 81836.9,
+      "eligible": false
+    },
+    {
+      "rank": 6,
+      "adm2_pcode": "TH5710",
+      "adm2_name": "Mae Suai",
+      "residents_2020": 75889.7,
+      "eligible": true
+    },
+    {
+      "rank": 7,
+      "adm2_pcode": "TH5711",
+      "adm2_name": "Wiang Pa Pao",
+      "residents_2020": 67333.9,
+      "eligible": true
+    },
+    {
+      "rank": 8,
+      "adm2_pcode": "TH5703",
+      "adm2_name": "Chiang Khong",
+      "residents_2020": 64401.4,
+      "eligible": true
+    },
+    {
+      "rank": 9,
+      "adm2_pcode": "TH5715",
+      "adm2_name": "Mae Fa Luang",
+      "residents_2020": 59937.1,
+      "eligible": true
+    },
+    {
+      "rank": 10,
+      "adm2_pcode": "TH5708",
+      "adm2_name": "Chiang Saen",
+      "residents_2020": 53744.3,
+      "eligible": true
+    },
+    {
+      "rank": 11,
+      "adm2_pcode": "TH5702",
+      "adm2_name": "Wiang Chai",
+      "residents_2020": 45054.2,
+      "eligible": true
+    },
+    {
+      "rank": 12,
+      "adm2_pcode": "TH5712",
+      "adm2_name": "Phaya Mengrai",
+      "residents_2020": 42972.1,
+      "eligible": true
+    },
+    {
+      "rank": 13,
+      "adm2_pcode": "TH5714",
+      "adm2_name": "Khun Tan",
+      "residents_2020": 35663.4,
+      "eligible": true
+    },
+    {
+      "rank": 14,
+      "adm2_pcode": "TH5713",
+      "adm2_name": "Wiang Kaen",
+      "residents_2020": 31672.4,
+      "eligible": true
+    },
+    {
+      "rank": 15,
+      "adm2_pcode": "TH5716",
+      "adm2_name": "Mae Lao",
+      "residents_2020": 31357.6,
+      "eligible": true
+    },
+    {
+      "rank": 16,
+      "adm2_pcode": "TH5706",
+      "adm2_name": "Pa Daet",
+      "residents_2020": 27451.5,
+      "eligible": true
+    },
+    {
+      "rank": 17,
+      "adm2_pcode": "TH5717",
+      "adm2_name": "Wiang Chiang Rung",
+      "residents_2020": 25701.0,
+      "eligible": true
+    },
+    {
+      "rank": 18,
+      "adm2_pcode": "TH5718",
+      "adm2_name": "Doi Luang",
+      "residents_2020": 21161.5,
+      "eligible": true
+    }
+  ],
+  "input_hashes": {
+    "worldpop_2020_sha256": "fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20",
+    "district_boundaries_sha256": "09e62345481bb80030ff6779e074bfb2c16629b70ae1e373ebd31945f1c6e0d8"
+  },
+  "implementation": {
+    "base_commit": "dde9416f5395289ed1ef9f2157795f6ed0b025f6",
+    "builder_sha256": "bdcccf85059b7178e41a60b985c588cc45bd4a2b91f19d36f6f61ff0766f1d2f"
+  },
+  "assumptions": [
+    "WorldPop 2020 is a modelled residential population, not a census count.",
+    "A 100 m cell belongs to the district that holds its centre; boundary cells are not split.",
+    "Districts are the 2022 COD-AB tha_admin2 polygons of province TH57."
+  ],
+  "limitations": [
+    "The rule picks a district. It does not say which tambons are the amphoe seat; the plan gives no rule for that.",
+    "Flooded shares for the Chiang Rai tambons inside the 4009 analysis extent were already seen in exploratory work (v1a disclosure item EK-09). The selection rule uses none of them, but the case is blind by rule, not by ignorance."
+  ]
+}

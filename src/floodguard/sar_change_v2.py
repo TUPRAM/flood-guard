@@ -88,6 +88,7 @@ class M1V2Config:
     min_component_weight: float = 0.1
     min_block_valid_fraction: float = 0.5
     min_threshold_class_fraction: float = 0.01
+    kittler_illingworth_rule: str = "interior_minimum_between_fitted_modes"
     isolated_speckle_cleaning: str = "majority_3x3_at_least_5_of_9"
     histogram: HistogramSpec = HistogramSpec()
 
@@ -466,6 +467,7 @@ def kittler_illingworth_threshold(
     spec: HistogramSpec = HistogramSpec(),
     *,
     min_class_fraction: float = 0.01,
+    interior_between_db: tuple[float, float] | None = None,
 ) -> float | None:
     """Kittler and Illingworth (1986) minimum-error threshold.
 
@@ -474,6 +476,16 @@ def kittler_illingworth_threshold(
     samples. One twelfth of the squared bin width is added to each class
     variance so a class inside one bin stays finite. Returns ``None`` when no
     split is admissible.
+
+    Without ``interior_between_db`` the lowest admissible value wins, even
+    when it sits at the edge of the admissible range. That edge is not a
+    minimum of the criterion: on a histogram whose classes overlap, the
+    criterion can fall all the way to the edge, and the result is then set by
+    ``min_class_fraction`` rather than by the data. With
+    ``interior_between_db=(low, high)`` only an interior minimum counts: a
+    split strictly between ``low`` and ``high`` whose criterion is lower than
+    at the split before it and not higher than at the split after it. The
+    lowest such minimum is returned, or ``None`` when there is none.
     """
 
     counts = np.asarray(counts)
@@ -496,6 +508,20 @@ def kittler_illingworth_threshold(
             - 2.0 * (low_weight * np.log(low_weight) + high_weight * np.log(high_weight))
         )
     criterion = np.where(usable & np.isfinite(criterion), criterion, np.inf)
+    if interior_between_db is not None:
+        low, high = interior_between_db
+        thresholds = spec.lower_db + (np.arange(spec.bins - 1) + 1) * spec.bin_width_db
+        interior = np.zeros(criterion.shape, dtype=bool)
+        interior[1:-1] = (
+            np.isfinite(criterion[:-2])
+            & np.isfinite(criterion[2:])
+            & (criterion[1:-1] < criterion[:-2])
+            & (criterion[1:-1] <= criterion[2:])
+        )
+        interior &= (thresholds > low) & (thresholds < high)
+        if not interior.any():
+            return None
+        criterion = np.where(interior, criterion, np.inf)
     split = int(np.argmin(criterion))
     if not np.isfinite(criterion[split]):
         return None
@@ -673,13 +699,24 @@ def threshold_from_histogram(counts: np.ndarray, config: M1V2Config) -> float | 
 
     The score is positive in the direction of change, so a threshold that is
     not positive would flag cells that did not change in that direction.
+
+    The Kittler-Illingworth threshold must be an interior minimum of the
+    criterion between the means of the two Gaussian components fitted to the
+    pooled histogram. When there is none the method declines (``None``)
+    instead of returning the edge of its search range.
     """
 
     if int(np.asarray(counts).sum()) == 0:
         return None
     if config.threshold_method == "kittler_illingworth":
+        fit = fit_two_gaussians(counts, config.histogram)
+        if fit is None:
+            return None
         threshold = kittler_illingworth_threshold(
-            counts, config.histogram, min_class_fraction=config.min_threshold_class_fraction
+            counts,
+            config.histogram,
+            min_class_fraction=config.min_threshold_class_fraction,
+            interior_between_db=(fit.mean_low, fit.mean_high),
         )
     else:
         threshold = otsu_threshold(counts, config.histogram)

@@ -216,6 +216,36 @@ def test_kittler_illingworth_respects_the_minimum_class_fraction() -> None:
     assert sar.kittler_illingworth_threshold(counts, SPEC, min_class_fraction=0.001) is not None
 
 
+def test_kittler_illingworth_edge_value_is_not_an_interior_minimum() -> None:
+    """Overlapping classes: the free search runs to the edge of its range."""
+
+    rng = np.random.default_rng(30)
+    overlapping = np.concatenate([rng.normal(0.0, 2.4, 170000), rng.normal(5.5, 2.4, 30000)])
+    counts = sar.histogram_db(overlapping, SPEC)
+    fit = sar.fit_two_gaussians(counts, SPEC)
+    assert fit is not None
+    free = sar.kittler_illingworth_threshold(counts, SPEC)
+    # The free result sits where the upper class shrinks to the 1 percent floor.
+    assert free == pytest.approx(float(np.quantile(overlapping, 0.99)), abs=0.3)
+    between = (fit.mean_low, fit.mean_high)
+    assert sar.kittler_illingworth_threshold(counts, SPEC, interior_between_db=between) is None
+    for method, expected_none in (("kittler_illingworth", True), ("otsu", False)):
+        config = sar.M1V2Config(threshold_method=method)
+        assert (sar.threshold_from_histogram(counts, config) is None) is expected_none
+
+    separated = np.concatenate([rng.normal(0.0, 2.0, 160000), rng.normal(6.0, 2.0, 40000)])
+    counts = sar.histogram_db(separated, SPEC)
+    fit = sar.fit_two_gaussians(counts, SPEC)
+    assert fit is not None
+    between = (fit.mean_low, fit.mean_high)
+    interior = sar.kittler_illingworth_threshold(counts, SPEC, interior_between_db=between)
+    assert interior == sar.kittler_illingworth_threshold(counts, SPEC)
+    assert fit.mean_low < interior < fit.mean_high
+    assert sar.threshold_from_histogram(counts, sar.M1V2Config()) == interior
+    assert sar.kittler_illingworth_threshold(counts, SPEC, interior_between_db=(8.0, 9.0)) is None
+    assert sar.M1V2Config().kittler_illingworth_rule == "interior_minimum_between_fitted_modes"
+
+
 def test_mixture_fit_recovers_two_modes_and_rejects_one_mode() -> None:
     rng = np.random.default_rng(6)
     two = np.concatenate([rng.normal(0.0, 1.2, 12000), rng.normal(7.0, 1.5, 4000)])

@@ -117,6 +117,8 @@ import {
   capacityFlag,
   clampPlanK,
   cutoffWeight,
+  EQUITY_MIN_GROUP,
+  equityRuleSentence,
   floodedHomeMask,
   nodeLostAccess,
   osmReference,
@@ -2955,6 +2957,10 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
             <li>{t(
               `Residents: ${formatPeople(accessInfo.totals.population)} at road nodes (${formatPeople(accessInfo.totals.vulnerable)} in the terrain/remoteness proxy group, ${formatPeople(accessInfo.totals.non_vulnerable)} others).`,
               `ผู้อยู่อาศัย: ${formatPeople(accessInfo.totals.population)} คนที่จุดถนน (กลุ่มตัวแทนความเปราะบางจากภูมิประเทศและความห่างไกล ${formatPeople(accessInfo.totals.vulnerable)} คน กลุ่มอื่น ${formatPeople(accessInfo.totals.non_vulnerable)} คน)`,
+            )}</li>
+            <li data-testid="sources-equity-rule">{t(
+              `Evacuation Equity Gap: the two groups are compared on one rate. ${equityRuleSentence("en")} The gap is the proxy group's rate ÷ the others' rate. The residents counted above are context, not the denominator, and no ratio is shown when a group has fewer than ${EQUITY_MIN_GROUP} residents within reach before the flood or when no one has lost access.`,
+              `ช่องว่างความเท่าเทียมในการอพยพ: เปรียบเทียบสองกลุ่มด้วยอัตราเดียวกัน ${equityRuleSentence("th")} ช่องว่างคืออัตราของกลุ่มตัวแทน ÷ อัตราของกลุ่มอื่น จำนวนผู้อยู่อาศัยที่นับข้างต้นเป็นข้อมูลประกอบ ไม่ใช่ตัวหาร และไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมน้อยกว่า ${EQUITY_MIN_GROUP} คน หรือเมื่อไม่มีผู้ใดสูญเสียการเข้าถึง`,
             )}</li>
           </ul>
         </>

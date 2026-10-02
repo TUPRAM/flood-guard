@@ -158,6 +158,10 @@ describe("policy mentoring brief", () => {
     expect(access).toContain("0.3 m of modelled water");
     expect(access).toContain("Above 1.20");
     expect(access).toContain("below 0.80");
+    // The replay's equity denominator (owner decision R8, option B) and its minimum group size.
+    expect(access).toContain("Each rate counts only people who had a shelter within reach before the flood: of those, the share who lost it.");
+    expect(access).toContain("No ratio is given when a group has fewer than 50 such people or when nobody has lost access.");
+    expect(access).not.toMatch(/all residents counted/i);
     expect(access).toContain("terrain/remoteness proxy (slopes of 8° or more, or 750 m or more from a drivable road)");
     expect(access).toContain("no single number makes one set better");
   });

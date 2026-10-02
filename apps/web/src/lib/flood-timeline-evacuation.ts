@@ -3,8 +3,9 @@
  *
  * Everything here is a T1 planning scenario on the modelled flood: which residents could still walk to an open,
  * dry shelter as the assumed stage rises. It is not an observation of who was cut off, and not a warning.
- * Mirrors `scripts/mae_sai_timeline_evacuation.py` (`lost_at`), `floodguard.replay_equity` (the Evacuation Equity Gap
- * with its null rule) and `floodguard.shelter_set_comparison` (the side-by-side figures of the shelter sets).
+ * Mirrors `scripts/mae_sai_timeline_evacuation.py` (`lost_at`), `floodguard.replay_equity` (the Evacuation Equity Gap:
+ * of the residents in each group who had a shelter within reach before the flood, the share who lost it, with its null
+ * rule) and `floodguard.shelter_set_comparison` (the side-by-side figures of the shelter sets).
  * The capacity-aware plan and the what-if levels are computed by the bake (`floodguard.evacuation_access`:
  * `capacitated_plan`, `robust_core`); this module only reads their figures from the manifest.
  * No priority score and no action class is computed here. No DOM access in this module.
@@ -395,8 +396,14 @@ export function buildCutoffRamp(littleEndian = true): Uint32Array {
 
 // --- Evacuation Equity Gap -----------------------------------------------------------------------------
 
-/** Fewest residents a group needs before a ratio of loss rates is stated (plan section 2.3-1). */
+/** Fewest residents within reach before the flood a group needs before a ratio of loss rates is stated (plan section 2.3-1). */
 export const EQUITY_MIN_GROUP = 50;
+
+/**
+ * What each loss rate divides by (owner decision R8, option B): the group's residents who had a shelter of the set
+ * within reach before the flood, not every resident counted in the group. Same value as Python's `DENOMINATOR`.
+ */
+export const EQUITY_DENOMINATOR = "within_reach_before_flood";
 
 /** Why no ratio is given. */
 export type EquityNullReason = "insufficient_group_denominator" | "no_loss" | "undefined_ratio";
@@ -409,21 +416,25 @@ export interface EquityGap {
   /** Residents of each group who have lost access; a small loss in a large group rounds to a rate of zero. */
   vulnerableLost: number;
   nonVulnerableLost: number;
-  /** Loss rate rounded to 4 decimals; null only for a group with no residents. */
+  /** Lost ÷ within reach before the flood, rounded to 4 decimals; null only for a group with nobody within reach. */
   vulnerableRate: number | null;
   nonVulnerableRate: number | null;
-  /** (vulnerable lost / vulnerable total) / (non-vulnerable lost / non-vulnerable total), rounded to 3 decimals. */
+  /** (vulnerable lost / vulnerable within reach) / (non-vulnerable lost / non-vulnerable within reach), rounded to 3 decimals. */
   ratio: number | null;
   /** "higher" when ratio > 1.2, "lower" when ratio < 0.8, else "similar"; null without a ratio. */
   band: "higher" | "lower" | "similar" | null;
   /** English interpretation, word for word as `floodguard.replay_equity`. */
   interpretation: string;
-  /** The two group sizes the rates were computed on. */
-  vulnerableTotal: number;
-  nonVulnerableTotal: number;
+  /** The two denominators: residents of each group with a shelter of the set within reach before the flood. */
+  vulnerableWithinReach: number;
+  nonVulnerableWithinReach: number;
 }
 
-export interface EquityInput { vulnerableLost: number; vulnerableTotal: number; nonVulnerableLost: number; nonVulnerableTotal: number }
+/**
+ * Residents who lost access and, as the denominator, residents who had a shelter of the set within reach before the
+ * flood, for the proxy-vulnerable group and for everyone else. Never pass all residents counted as the denominator.
+ */
+export interface EquityInput { vulnerableLost: number; vulnerableWithinReach: number; nonVulnerableLost: number; nonVulnerableWithinReach: number }
 
 /** Python `format(value, ".3g")` for a finite number. */
 export function formatSignificant3(value: number): string {
@@ -443,24 +454,29 @@ export function formatSignificant3(value: number): string {
 const rate = (numerator: number, denominator: number) => (denominator === 0 ? null : roundLikePython(numerator / denominator, 4));
 
 /**
- * Evacuation Equity Gap of the replay, the same rules as `floodguard.replay_equity.replay_equity_gap`: rates rounded
- * to 4 decimals, ratio to 3, band limits 1.2 and 0.8 as in `floodguard.equity`. The ratio is null, with a reason:
- * "insufficient_group_denominator" when a group has fewer than `EQUITY_MIN_GROUP` residents (checked first, because
- * it does not depend on the hour), "no_loss" when neither group has lost access, and "undefined_ratio" when only
- * proxy-vulnerable residents have. Loss is judged on the lost counts, not on the rounded rates: three residents lost
- * in a group of 74,647 is a rate of 0.0000 and still a loss, and the ratio then uses the unrounded rates.
- * "Vulnerable" is the terrain/remoteness proxy.
+ * Evacuation Equity Gap of the replay, the same rules as `floodguard.replay_equity.replay_equity_gap`. Each group's
+ * loss rate is: of the residents in the group who had a shelter within reach before the flood, the share who lost it
+ * (owner decision R8, option B). Rates are rounded to 4 decimals, the ratio to 3, band limits 1.2 and 0.8 as in
+ * `floodguard.equity`. The ratio is null, with a reason: "insufficient_group_denominator" when a group has fewer than
+ * `EQUITY_MIN_GROUP` residents within reach before the flood (checked first, because it does not depend on the hour),
+ * "no_loss" when neither group has lost access, and "undefined_ratio" when only proxy-vulnerable residents have. Loss
+ * is judged on the lost counts, not on the rounded rates: three residents lost in a group of 74,647 is a rate of
+ * 0.0000 and still a loss, and the ratio then uses the unrounded rates. "Vulnerable" is the terrain/remoteness proxy.
+ * Python also refuses a lost count above its denominator; here the inputs are the page's own sums and are not checked.
  */
 export function evacuationEquityGap(input: EquityInput): EquityGap {
-  const { vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal } = input;
-  const vulnerableRate = rate(vulnerableLost, vulnerableTotal);
-  const nonVulnerableRate = rate(nonVulnerableLost, nonVulnerableTotal);
+  const { vulnerableLost, vulnerableWithinReach, nonVulnerableLost, nonVulnerableWithinReach } = input;
+  const vulnerableRate = rate(vulnerableLost, vulnerableWithinReach);
+  const nonVulnerableRate = rate(nonVulnerableLost, nonVulnerableWithinReach);
   const withheld = (reason: EquityNullReason, interpretation: string): EquityGap => ({
     status: reason, reason, vulnerableLost, nonVulnerableLost, vulnerableRate, nonVulnerableRate, ratio: null, band: null, interpretation,
-    vulnerableTotal, nonVulnerableTotal,
+    vulnerableWithinReach, nonVulnerableWithinReach,
   });
-  if (vulnerableTotal < EQUITY_MIN_GROUP || nonVulnerableTotal < EQUITY_MIN_GROUP || vulnerableRate === null || nonVulnerableRate === null) {
-    return withheld("insufficient_group_denominator", `Equity gap not computed: a group has fewer than ${EQUITY_MIN_GROUP} residents.`);
+  if (vulnerableWithinReach < EQUITY_MIN_GROUP || nonVulnerableWithinReach < EQUITY_MIN_GROUP || vulnerableRate === null || nonVulnerableRate === null) {
+    return withheld(
+      "insufficient_group_denominator",
+      `Equity gap not computed: a group has fewer than ${EQUITY_MIN_GROUP} residents with a shelter within reach before the flood.`,
+    );
   }
   if (vulnerableLost === 0 && nonVulnerableLost === 0) return withheld("no_loss", "Equity gap not computed: neither group has lost access.");
   if (nonVulnerableLost === 0) {
@@ -469,7 +485,7 @@ export function evacuationEquityGap(input: EquityInput): EquityGap {
   // A loss too small to survive four-decimal rounding is still a loss: divide the unrounded rates there.
   const hiddenByRounding = nonVulnerableRate === 0 || (vulnerableRate === 0 && vulnerableLost > 0);
   const ratio = hiddenByRounding
-    ? roundLikePython((vulnerableLost / vulnerableTotal) / (nonVulnerableLost / nonVulnerableTotal), 3)
+    ? roundLikePython((vulnerableLost / vulnerableWithinReach) / (nonVulnerableLost / nonVulnerableWithinReach), 3)
     : roundLikePython(vulnerableRate / nonVulnerableRate, 3);
   const band = ratio > 1.2 ? "higher" : ratio < 0.8 ? "lower" : "similar";
   const interpretation = band === "higher"
@@ -479,12 +495,46 @@ export function evacuationEquityGap(input: EquityInput): EquityGap {
       : "Access-loss rates are broadly similar between groups.";
   return {
     status: "ratio", reason: null, vulnerableLost, nonVulnerableLost, vulnerableRate, nonVulnerableRate, ratio, band, interpretation,
-    vulnerableTotal, nonVulnerableTotal,
+    vulnerableWithinReach, nonVulnerableWithinReach,
   };
+}
+
+/**
+ * Residents of each group who had a shelter of the set within reach before the flood: everyone counted in the scope
+ * (`totals`) minus those the set never reached (`never`). These are the denominators of the Evacuation Equity Gap.
+ * `totals` and `never` must come from the same scope mask.
+ */
+export function withinReachBeforeFlood(totals: AccessGroupSums, never: AccessGroupSums): AccessGroupSums {
+  return {
+    population: Math.max(0, totals.population - never.population),
+    vulnerable: Math.max(0, totals.vulnerable - never.vulnerable),
+    nonVulnerable: Math.max(0, totals.nonVulnerable - never.nonVulnerable),
+  };
+}
+
+/**
+ * The Evacuation Equity Gap the page states for one shelter set at one stage: lost residents of each group over that
+ * group's residents within reach before the flood. `snapshot` and `totals` must come from the same scope mask.
+ */
+export function accessEquityGap(snapshot: Pick<AccessSnapshot, "lost" | "never">, totals: AccessGroupSums): EquityGap {
+  const reach = withinReachBeforeFlood(totals, snapshot.never);
+  return evacuationEquityGap({
+    vulnerableLost: snapshot.lost.vulnerable,
+    vulnerableWithinReach: reach.vulnerable,
+    nonVulnerableLost: snapshot.lost.nonVulnerable,
+    nonVulnerableWithinReach: reach.nonVulnerable,
+  });
 }
 
 /** How the page states the gap: the headline value and a plain sentence (empty when the value says it all). */
 export interface EquityWording { value: string; sentence: string }
+
+/** The rule of the Evacuation Equity Gap in one plain sentence, as the page states it above the counts. */
+export function equityRuleSentence(language: Language): string {
+  return language === "th"
+    ? "ในบรรดาผู้อยู่อาศัยของแต่ละกลุ่มที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม สัดส่วนของผู้ที่สูญเสียการเข้าถึง"
+    : "Of the residents in each group who had a shelter within reach before the flood, the share who lost it.";
+}
 
 /** A loss rate as a percentage with two decimals ("0.18%"). */
 export const formatRate = (rate: number): string => `${(rate * 100).toFixed(2)}%`;
@@ -492,16 +542,44 @@ export const formatRate = (rate: number): string => `${(rate * 100).toFixed(2)}%
 const lossRateText = (rate: number, lost: number): string => (lost > 0 && rate * 100 < 0.005 ? "< 0.01%" : formatRate(rate));
 /** "about N×" amount: whole numbers from 10, one decimal below. */
 const timesText = (value: number) => (value >= 10 ? String(Math.round(value)) : value.toFixed(1));
-/** Whole residents of a group that is too small, rounded down so "fewer than 50" never reads "50". */
-const smallGroup = (value: number) => Math.floor(value).toLocaleString("en-US");
+/**
+ * Whole residents of a group that is too small: rounded like the counts beside it, but never up to the minimum, so
+ * "fewer than 50" never reads "50" (49.99 residents read "49").
+ */
+const smallGroup = (value: number) => Math.min(EQUITY_MIN_GROUP - 1, Math.round(value)).toLocaleString("en-US");
+
+/** Why one group is too small for a ratio, in plain words: nobody within reach, less than one resident, or a count. */
+function smallGroupSentence(group: "vulnerable" | "other", withinReach: number, language: Language): string {
+  const th = language === "th";
+  const vulnerable = group === "vulnerable";
+  if (withinReach === 0) {
+    if (th) {
+      return `${vulnerable ? "ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทน" : "ไม่มีผู้อยู่อาศัยกลุ่มอื่น"}ที่นับในที่นี้มีที่พักพิงในระยะเดินตั้งแต่ก่อนน้ำท่วม จึงไม่มีผู้ใดในกลุ่มนี้สูญเสียการเข้าถึงได้ การแสดงอัตราส่วนต้องมีผู้อยู่อาศัยเช่นนี้อย่างน้อยกลุ่มละ ${EQUITY_MIN_GROUP} คน`;
+    }
+    return `${vulnerable ? "No proxy-vulnerable resident" : "No resident of the other group"} counted here had a shelter within reach before the flood, so none could lose it. A ratio needs at least ${EQUITY_MIN_GROUP} such residents in each group.`;
+  }
+  // A fraction of a modelled resident that rounds to nobody is said as "fewer than 1", not as "0".
+  const count = smallGroup(withinReach) === "0" ? null : smallGroup(withinReach);
+  if (th) {
+    const who = vulnerable ? "กลุ่มเปราะบางตามตัวแทน" : "กลุ่มอื่น";
+    const amount = count === null ? "ไม่ถึง 1 คน" : `${count} คน`;
+    return `${who}มีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม ${amount} น้อยกว่า ${EQUITY_MIN_GROUP} คนที่ต้องมีในแต่ละกลุ่มจึงจะแสดงอัตราส่วนได้`;
+  }
+  const who = vulnerable ? "proxy-vulnerable resident" : "resident of the other group";
+  const whoPlural = vulnerable ? "proxy-vulnerable residents" : "residents of the other group";
+  const subject = count === null ? `Fewer than 1 ${who}` : count === "1" ? `Only 1 ${who}` : `Only ${count} ${whoPlural}`;
+  return `${subject} had a shelter within reach before the flood, fewer than the ${EQUITY_MIN_GROUP} a ratio needs in each group.`;
+}
 
 /**
  * Page wording of the Evacuation Equity Gap. With a ratio: two decimals ("< 0.01" for a ratio that would print as
- * 0.00) and a plain comparison of the two loss rates ("about 50× less likely (0.18% vs 9.60%)"); when no
- * proxy-vulnerable resident has lost access the value is said in words, never "0.00". "No resident" is read from the
- * lost counts, and a loss that rounds to 0.00% is written "< 0.01%". Without a ratio the value is
- * "no ratio shown" and the sentence states why: a group below `EQUITY_MIN_GROUP` residents, nobody having lost
- * access, or only proxy-vulnerable residents having lost it. The rules stay those of `evacuationEquityGap`.
+ * 0.00) and a plain comparison of the two loss rates ("about 1.6× more likely (85.77% vs 53.42%)"); each rate is the
+ * share of the group's residents within reach before the flood who lost access. When no proxy-vulnerable resident
+ * has lost access the value is said in words, never "0.00". "No resident" is read from the lost counts, and a loss
+ * that rounds to 0.00% is written "< 0.01%". Without a ratio the value is "no ratio shown" and the sentence states
+ * why: a group with fewer than `EQUITY_MIN_GROUP` residents within reach before the flood (or none, so none could
+ * lose it), nobody having lost access, or only proxy-vulnerable residents having lost it. The rules stay those of
+ * `evacuationEquityGap`.
  */
 export function equityWording(gap: EquityGap, language: Language): EquityWording {
   const th = language === "th";
@@ -511,30 +589,25 @@ export function equityWording(gap: EquityGap, language: Language): EquityWording
   const oPercent = lossRateText(o, gap.nonVulnerableLost);
   const pair = th ? `(${vPercent} เทียบกับ ${oPercent})` : `(${vPercent} vs ${oPercent})`;
   // "About N×" uses the rounded rates, as the pair beside it does, unless rounding hid a loss.
-  const exact = (lost: number, total: number) => (total > 0 ? lost / total : 0);
+  const exact = (lost: number, withinReach: number) => (withinReach > 0 ? lost / withinReach : 0);
   const hidden = v === 0 || o === 0;
-  const vTimes = hidden ? exact(gap.vulnerableLost, gap.vulnerableTotal) : v;
-  const oTimes = hidden ? exact(gap.nonVulnerableLost, gap.nonVulnerableTotal) : o;
+  const vTimes = hidden ? exact(gap.vulnerableLost, gap.vulnerableWithinReach) : v;
+  const oTimes = hidden ? exact(gap.nonVulnerableLost, gap.nonVulnerableWithinReach) : o;
   const noRatio = th ? "ไม่แสดงอัตราส่วน" : "no ratio shown";
   switch (gap.status) {
     case "insufficient_group_denominator": {
-      const smallV = gap.vulnerableTotal < EQUITY_MIN_GROUP;
-      const smallO = gap.nonVulnerableTotal < EQUITY_MIN_GROUP;
-      const vText = smallGroup(gap.vulnerableTotal);
-      const oText = smallGroup(gap.nonVulnerableTotal);
+      const smallV = gap.vulnerableWithinReach < EQUITY_MIN_GROUP;
+      const smallO = gap.nonVulnerableWithinReach < EQUITY_MIN_GROUP;
       if (smallV && smallO) {
+        const vText = smallGroup(gap.vulnerableWithinReach);
+        const oText = smallGroup(gap.nonVulnerableWithinReach);
         return { value: noRatio, sentence: th
-          ? `ทั้งสองกลุ่มมีผู้อยู่อาศัยในการนับนี้น้อยกว่า ${EQUITY_MIN_GROUP} คน (กลุ่มเปราะบางตามตัวแทน ${vText} คน กลุ่มอื่น ${oText} คน) การแสดงอัตราส่วนต้องมีอย่างน้อยกลุ่มละ ${EQUITY_MIN_GROUP} คน`
-          : `Both groups have fewer than ${EQUITY_MIN_GROUP} residents in this count (proxy-vulnerable ${vText}, everyone else ${oText}); a ratio needs at least ${EQUITY_MIN_GROUP} in each group.` };
+          ? `ทั้งสองกลุ่มมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมน้อยกว่า ${EQUITY_MIN_GROUP} คน (กลุ่มเปราะบางตามตัวแทน ${vText} คน กลุ่มอื่น ${oText} คน) การแสดงอัตราส่วนต้องมีอย่างน้อยกลุ่มละ ${EQUITY_MIN_GROUP} คน`
+          : `Both groups have fewer than ${EQUITY_MIN_GROUP} residents with a shelter within reach before the flood (proxy-vulnerable ${vText}, everyone else ${oText}); a ratio needs at least ${EQUITY_MIN_GROUP} in each group.` };
       }
-      if (smallV) {
-        return { value: noRatio, sentence: th
-          ? `กลุ่มเปราะบางตามตัวแทนมีผู้อยู่อาศัยในการนับนี้ ${vText} คน น้อยกว่า ${EQUITY_MIN_GROUP} คนที่ต้องมีในแต่ละกลุ่มจึงจะแสดงอัตราส่วนได้`
-          : `The proxy-vulnerable group has ${vText} resident${vText === "1" ? "" : "s"} in this count, fewer than the ${EQUITY_MIN_GROUP} a ratio needs in each group.` };
-      }
-      return { value: noRatio, sentence: th
-        ? `กลุ่มอื่นมีผู้อยู่อาศัยในการนับนี้ ${oText} คน น้อยกว่า ${EQUITY_MIN_GROUP} คนที่ต้องมีในแต่ละกลุ่มจึงจะแสดงอัตราส่วนได้`
-        : `The group of everyone else has ${oText} resident${oText === "1" ? "" : "s"} in this count, fewer than the ${EQUITY_MIN_GROUP} a ratio needs in each group.` };
+      return { value: noRatio, sentence: smallV
+        ? smallGroupSentence("vulnerable", gap.vulnerableWithinReach, language)
+        : smallGroupSentence("other", gap.nonVulnerableWithinReach, language) };
     }
     case "no_loss":
       return { value: noRatio, sentence: th
@@ -573,14 +646,16 @@ export function equityWording(gap: EquityGap, language: Language): EquityWording
 }
 
 /**
- * One plain line on why the proxy points the way it does, when proxy-vulnerable residents are the less affected
- * group (null otherwise): the proxy marks hillside and remote homes, which stay dry in this valley-floor flood.
+ * One plain line on how to read a ratio that points one way (null for a similar ratio or none): the proxy marks
+ * hillside and remote homes, and the ratio covers only residents who had a shelter of the set within reach before the
+ * flood, so it says where those homes sit relative to the flooded valley floor, not who is more vulnerable.
  */
 export function equityWhy(gap: EquityGap, language: Language): string | null {
-  if (gap.status !== "ratio" || gap.band !== "lower") return null;
+  if (gap.status !== "ratio" || gap.band === null || gap.band === "similar") return null;
+  const high = gap.band === "higher";
   return language === "th"
-    ? "วิธีอ่าน: ตัวแทนนี้ระบุบ้านบนที่ลาดชันหรือห่างถนนที่รถวิ่งได้ ไม่ใช่อายุ ความพิการ หรือรายได้ ค่าที่ต่ำจึงบอกตำแหน่งของบ้านเหล่านี้เทียบกับพื้นที่ราบที่ถูกน้ำท่วม ไม่ได้บอกว่าใครเปราะบางกว่า"
-    : "How to read this: the proxy marks homes on slopes or far from a drivable road, not age, disability or income, so a low ratio says where those homes sit relative to the flooded valley floor, not who is more vulnerable.";
+    ? `วิธีอ่าน: ตัวแทนนี้ระบุบ้านบนที่ลาดชันหรือห่างถนนที่รถวิ่งได้ ไม่ใช่อายุ ความพิการ หรือรายได้ และอัตราส่วนนับเฉพาะผู้ที่มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม ค่าที่${high ? "สูง" : "ต่ำ"}จึงบอกตำแหน่งของบ้านเหล่านั้นเทียบกับพื้นที่ราบที่ถูกน้ำท่วม ไม่ได้บอกว่าใครเปราะบางกว่า`
+    : `How to read this: the proxy marks homes on slopes or far from a drivable road, not age, disability or income, and the ratio counts only residents who had a shelter of this set within reach before the flood. So a ${high ? "high" : "low"} ratio says where those homes sit relative to the flooded valley floor, not who is more vulnerable.`;
 }
 
 // --- Shelter plan ---------------------------------------------------------------------------------------

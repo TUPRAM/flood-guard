@@ -38,14 +38,15 @@ import {
 } from "@/lib/flood-timeline";
 import { GLOSSARY, localizedText, placeNameText, plainManifestText, type GlossaryId } from "@/lib/flood-timeline-copy";
 import {
+  accessEquityGap,
   candidateReasons,
   capacityAwareView,
   capacityFlag,
   countedInReportedSet,
   EQUITY_MIN_GROUP,
+  equityRuleSentence,
   equityWhy,
   equityWording,
-  evacuationEquityGap,
   osmReference,
   otherCandidates,
   overCapacitySites,
@@ -674,6 +675,8 @@ export function SetComparisonTable({ kind, title, comparison, selected, language
  * ranked plan side by side, each counted both ways (all residents at road nodes, and residents whose homes flood at
  * the modelled peak), with no single headline that ranks them. Below that, for the chosen set and scope: who is
  * without a shelter per subdistrict, the Evacuation Equity Gap (or why no ratio is shown) and the replay curve.
+ * The equity block states its rule in one sentence (of the residents in each group who had a shelter within reach
+ * before the flood, the share who lost it), then the ratio or the reason there is none, then both counts per group.
  */
 export function AccessCard({
   access, shelters, snapshot, series, time, names, tambonTotals, shelterSet, planK, onShelterSet, onPlanK, showCutoff, onShowCutoff,
@@ -714,12 +717,8 @@ export function AccessCard({
   const totals = scopeTotals ?? (scope === "all"
     ? { population: access.totals.population, vulnerable: access.totals.vulnerable, nonVulnerable: access.totals.non_vulnerable }
     : null);
-  const gap = snapshot && totals ? evacuationEquityGap({
-    vulnerableLost: snapshot.lost.vulnerable,
-    vulnerableTotal: totals.vulnerable,
-    nonVulnerableLost: snapshot.lost.nonVulnerable,
-    nonVulnerableTotal: totals.nonVulnerable,
-  }) : null;
+  // Each group's loss rate divides by its residents with a shelter of the set within reach before the flood (R8, option B).
+  const gap = snapshot && totals ? accessEquityGap(snapshot, totals) : null;
   const wording = gap ? equityWording(gap, language) : null;
   const why = gap ? equityWhy(gap, language) : null;
   const without = snapshot ? snapshot.lost.population + snapshot.never.population : 0;
@@ -730,10 +729,6 @@ export function AccessCard({
     ? t("residents at road nodes whose homes flood at the modelled peak", "ผู้อยู่อาศัยที่จุดถนนซึ่งบ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง")
     : t("all residents at road nodes", "ผู้อยู่อาศัยทั้งหมดที่จุดถนน");
   const total = totals ? formatPeople(totals.population) : "…";
-  // Residents of each group with a shelter of the set within reach before the flood (the second denominator shown).
-  const reachBefore = snapshot && totals
-    ? { vulnerable: Math.max(0, totals.vulnerable - snapshot.never.vulnerable), nonVulnerable: Math.max(0, totals.nonVulnerable - snapshot.never.nonVulnerable) }
-    : null;
   const reportedTitle = t(`Shelters reported used in Sep 2024 (${counted} sites counted)`, `ที่พักพิงที่มีรายงานว่าใช้จริงในเดือน ก.ย. 2567 (2024) (นับ ${counted} แห่ง)`);
   return (
     <section className={styles.card} aria-labelledby="mae-sai-access-title" data-testid="access-card">
@@ -838,17 +833,22 @@ export function AccessCard({
                 <strong>{t("Evacuation Equity Gap", "ช่องว่างความเท่าเทียมในการอพยพ")}: {wording.value}</strong>
                 {wording.sentence && <>{" · "}<span>{wording.sentence}</span></>}
               </p>
+              <p data-testid="equity-rule">
+                <strong>{t("What is compared.", "สิ่งที่นำมาเปรียบเทียบ:")}</strong>{" "}{equityRuleSentence(language)}
+              </p>
+              {/* Both counts of each group, one group per line: lost out of those within reach, then everyone counted. */}
+              <p className={styles.muted} data-testid="equity-counts">
+                {t(
+                  `Proxy-vulnerable: ${formatPeople(gap.vulnerableLost)} lost of ${formatPeople(gap.vulnerableWithinReach)} within reach before the flood (${formatPeople(totals.vulnerable)} residents counted).`,
+                  `กลุ่มเปราะบางตามตัวแทน: สูญเสีย ${formatPeople(gap.vulnerableLost)} จาก ${formatPeople(gap.vulnerableWithinReach)} คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด ${formatPeople(totals.vulnerable)} คน)`,
+                )}{" "}
+                <br />
+                {t(
+                  `Everyone else: ${formatPeople(gap.nonVulnerableLost)} lost of ${formatPeople(gap.nonVulnerableWithinReach)} within reach before the flood (${formatPeople(totals.nonVulnerable)} residents counted).`,
+                  `กลุ่มอื่น: สูญเสีย ${formatPeople(gap.nonVulnerableLost)} จาก ${formatPeople(gap.nonVulnerableWithinReach)} คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด ${formatPeople(totals.nonVulnerable)} คน)`,
+                )}
+              </p>
               {why && <p data-testid="equity-why">{why}</p>}
-              {reachBefore && totals.vulnerable >= 0.5 && reachBefore.vulnerable < 0.5 && (
-                <p data-testid="equity-no-baseline">{t(
-                  "No proxy-vulnerable resident counted here had a shelter of this set within reach before the flood, so none could lose it.",
-                  "ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนที่นับในที่นี้มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม จึงไม่มีผู้ใดสูญเสียการเข้าถึงได้",
-                )}</p>
-              )}
-              <p className={styles.muted} data-testid="equity-counts">{t(
-                `Proxy-vulnerable residents who lost access: ${formatPeople(snapshot.lost.vulnerable)} of ${formatPeople(totals.vulnerable)} counted (${formatPeople(reachBefore?.vulnerable ?? 0)} had a shelter of this set within reach before the flood); everyone else: ${formatPeople(snapshot.lost.nonVulnerable)} of ${formatPeople(totals.nonVulnerable)} (${formatPeople(reachBefore?.nonVulnerable ?? 0)} within reach before the flood).`,
-                `กลุ่มเปราะบางตามตัวแทนที่สูญเสียการเข้าถึง: ${formatPeople(snapshot.lost.vulnerable)} จาก ${formatPeople(totals.vulnerable)} คนที่นับ (${formatPeople(reachBefore?.vulnerable ?? 0)} คนมีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม) กลุ่มอื่น: ${formatPeople(snapshot.lost.nonVulnerable)} จาก ${formatPeople(totals.nonVulnerable)} คน (${formatPeople(reachBefore?.nonVulnerable ?? 0)} คนอยู่ในระยะเดินก่อนน้ำท่วม)`,
-              )}</p>
               <p className={styles.muted} data-testid="equity-label">{t(
                 "T1 scenario (model). Vulnerable = terrain/remoteness proxy.",
                 "สถานการณ์จำลองระดับ T1 (แบบจำลอง) กลุ่มเปราะบาง = ตัวแทนจากภูมิประเทศและความห่างไกล",
@@ -856,8 +856,8 @@ export function AccessCard({
               <details className={styles.more}>
                 <summary>{t("What the ratio and “vulnerable” mean", "อัตราส่วนและ “กลุ่มเปราะบาง” หมายถึงอะไร")}</summary>
                 <p className={styles.muted}>{t(
-                `Ratio of loss rates (vulnerable ÷ everyone else), two decimals; above 1.20 means vulnerable residents are more likely to lose access, below 0.80 less likely. Each rate divides the residents who lost access by all residents counted in that group, including those with no shelter of this set within reach before the flood. No ratio is shown when a group has fewer than ${EQUITY_MIN_GROUP} residents, when no one has lost access, or when only proxy-vulnerable residents have (the ratio would divide by zero). “Vulnerable” is this repository's terrain/remoteness proxy (homes on slopes of 8° or more, or 750 m or more from a drivable road), not demographic vulnerability such as age, disability or income.`,
-                `อัตราส่วนของอัตราการสูญเสีย (กลุ่มเปราะบาง ÷ กลุ่มอื่น) ทศนิยมสองตำแหน่ง มากกว่า 1.20 หมายถึงกลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.80 หมายถึงน้อยกว่า แต่ละอัตราคือผู้ที่สูญเสียการเข้าถึงหารด้วยผู้อยู่อาศัยทั้งหมดที่นับในกลุ่มนั้น รวมผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม ไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีผู้อยู่อาศัยน้อยกว่า ${EQUITY_MIN_GROUP} คน เมื่อไม่มีผู้ใดสูญเสียการเข้าถึง หรือเมื่อมีเพียงกลุ่มเปราะบางตามตัวแทนที่สูญเสีย (อัตราส่วนจะหารด้วยศูนย์) “กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (บ้านบนความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่ความเปราะบางทางประชากร เช่น อายุ ความพิการ หรือรายได้`,
+                `Ratio of loss rates (vulnerable ÷ everyone else), two decimals; above 1.20 means vulnerable residents are more likely to lose access, below 0.80 less likely. Each rate divides the residents of a group who lost access by the residents of that group who had a shelter of this set within reach before the flood. Residents with no shelter of this set within reach before the flood are not in the rate; the bars below count them as already out of reach. No ratio is shown when a group has fewer than ${EQUITY_MIN_GROUP} residents within reach before the flood, when no one has lost access, or when only proxy-vulnerable residents have (the ratio would divide by zero). “Vulnerable” is this repository's terrain/remoteness proxy (homes on slopes of 8° or more, or 750 m or more from a drivable road), not demographic vulnerability such as age, disability or income.`,
+                `อัตราส่วนของอัตราการสูญเสีย (กลุ่มเปราะบาง ÷ กลุ่มอื่น) ทศนิยมสองตำแหน่ง มากกว่า 1.20 หมายถึงกลุ่มเปราะบางมีโอกาสสูญเสียการเข้าถึงมากกว่า ต่ำกว่า 0.80 หมายถึงน้อยกว่า แต่ละอัตราคือผู้อยู่อาศัยของกลุ่มที่สูญเสียการเข้าถึง หารด้วยผู้อยู่อาศัยของกลุ่มนั้นที่มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม ผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วมไม่อยู่ในอัตรานี้ โดยแถบด้านล่างนับเป็นผู้ที่อยู่นอกระยะอยู่แล้ว ไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมน้อยกว่า ${EQUITY_MIN_GROUP} คน เมื่อไม่มีผู้ใดสูญเสียการเข้าถึง หรือเมื่อมีเพียงกลุ่มเปราะบางตามตัวแทนที่สูญเสีย (อัตราส่วนจะหารด้วยศูนย์) “กลุ่มเปราะบาง” ในที่นี้เป็นตัวแทนจากภูมิประเทศและความห่างไกล (บ้านบนความลาดชัน 8° ขึ้นไป หรือห่างถนนที่รถวิ่งได้ 750 ม. ขึ้นไป) ไม่ใช่ความเปราะบางทางประชากร เช่น อายุ ความพิการ หรือรายได้`,
                 )}</p>
               </details>
             </div>

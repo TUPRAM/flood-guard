@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   accessCutoffHour,
   accessDayStats,
+  accessEquityGap,
   accessLevelIndex,
   accessLevelStep,
   accessLostSeries,
@@ -17,7 +18,9 @@ import {
   capacityShortfall,
   clampPlanK,
   cutoffWeight,
+  EQUITY_DENOMINATOR,
   EQUITY_MIN_GROUP,
+  equityRuleSentence,
   equityWhy,
   equityWording,
   evacuationEquityGap,
@@ -50,6 +53,7 @@ import {
   summarizeAccessSets,
   tambonResidents,
   whatIfLevels,
+  withinReachBeforeFlood,
 } from "./flood-timeline-evacuation";
 import {
   buildDepthLut,
@@ -203,39 +207,58 @@ describe("Mae Sai evacuation access (T1 scenario)", () => {
 
 describe("Evacuation Equity Gap (the replay's rule, as floodguard.replay_equity)", () => {
   it("computes the ratio of loss rates with Python rounding and wording", () => {
-    const normal = evacuationEquityGap({ vulnerableLost: 20, vulnerableTotal: 100, nonVulnerableLost: 10, nonVulnerableTotal: 100 });
+    const normal = evacuationEquityGap({ vulnerableLost: 20, vulnerableWithinReach: 100, nonVulnerableLost: 10, nonVulnerableWithinReach: 100 });
     expect(normal).toMatchObject({ status: "ratio", reason: null, vulnerableRate: 0.2, nonVulnerableRate: 0.1, ratio: 2, band: "higher" });
     expect(normal.interpretation).toBe("Vulnerable residents are 2 times more likely to lose access.");
-    const lower = evacuationEquityGap({ vulnerableLost: 34.3, vulnerableTotal: 7151.6, nonVulnerableLost: 5671, nonVulnerableTotal: 74646.9 });
+    const lower = evacuationEquityGap({ vulnerableLost: 34.3, vulnerableWithinReach: 7151.6, nonVulnerableLost: 5671, nonVulnerableWithinReach: 74646.9 });
     expect(lower.vulnerableRate).toBe(0.0048);
     expect(lower.nonVulnerableRate).toBe(0.076);
     expect(lower.ratio).toBe(0.063);
     expect(lower.band).toBe("lower");
     expect(lower.interpretation).toBe("Vulnerable residents are 0.063 times as likely to lose access.");
-    const similar = evacuationEquityGap({ vulnerableLost: 11, vulnerableTotal: 100, nonVulnerableLost: 10, nonVulnerableTotal: 100 });
+    const similar = evacuationEquityGap({ vulnerableLost: 11, vulnerableWithinReach: 100, nonVulnerableLost: 10, nonVulnerableWithinReach: 100 });
     expect(similar).toMatchObject({ ratio: 1.1, band: "similar", interpretation: "Access-loss rates are broadly similar between groups." });
-    expect(evacuationEquityGap({ vulnerableLost: 12, vulnerableTotal: 100, nonVulnerableLost: 10, nonVulnerableTotal: 100 }).band).toBe("similar"); // exactly 1.2
-    expect(evacuationEquityGap({ vulnerableLost: 8, vulnerableTotal: 100, nonVulnerableLost: 10, nonVulnerableTotal: 100 }).band).toBe("similar"); // exactly 0.8
-    // The group sizes travel with the result, so the page can say which group is too small.
-    expect(normal).toMatchObject({ vulnerableTotal: 100, nonVulnerableTotal: 100 });
+    expect(evacuationEquityGap({ vulnerableLost: 12, vulnerableWithinReach: 100, nonVulnerableLost: 10, nonVulnerableWithinReach: 100 }).band).toBe("similar"); // exactly 1.2
+    expect(evacuationEquityGap({ vulnerableLost: 8, vulnerableWithinReach: 100, nonVulnerableLost: 10, nonVulnerableWithinReach: 100 }).band).toBe("similar"); // exactly 0.8
+    // The denominators travel with the result, so the page can say which group is too small.
+    expect(normal).toMatchObject({ vulnerableWithinReach: 100, nonVulnerableWithinReach: 100 });
+  });
+
+  it("divides each group's lost residents by its residents within reach before the flood, never by all residents counted (R8, option B)", () => {
+    expect(EQUITY_DENOMINATOR).toBe("within_reach_before_flood");
+    expect(equityRuleSentence("en")).toBe("Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
+    expect(equityRuleSentence("th")).toBe("ในบรรดาผู้อยู่อาศัยของแต่ละกลุ่มที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม สัดส่วนของผู้ที่สูญเสียการเข้าถึง");
+    // A scope of 1,000 + 10,000 residents, of whom 100 + 4,000 had a shelter within reach; 80 + 2,000 lost it.
+    const totals = { population: 11_000, vulnerable: 1_000, nonVulnerable: 10_000 };
+    const never = { population: 6_900, vulnerable: 900, nonVulnerable: 6_000 };
+    expect(withinReachBeforeFlood(totals, never)).toEqual({ population: 4_100, vulnerable: 100, nonVulnerable: 4_000 });
+    const gap = accessEquityGap({ lost: { population: 2_080, vulnerable: 80, nonVulnerable: 2_000 }, never }, totals);
+    expect(gap).toMatchObject({ vulnerableRate: 0.8, nonVulnerableRate: 0.5, ratio: 1.6, band: "higher", vulnerableWithinReach: 100, nonVulnerableWithinReach: 4_000 });
+    // All residents counted as denominators would say the opposite (0.08 vs 0.2): that is not the replay's rule.
+    expect(gap.vulnerableRate).not.toBe(0.08);
+    // A set nobody of a group could reach leaves that group without a rate and the gap without a ratio.
+    const unreachable = accessEquityGap({ lost: { population: 2_000, vulnerable: 0, nonVulnerable: 2_000 }, never: { population: 7_000, vulnerable: 1_000, nonVulnerable: 6_000 } }, totals);
+    expect(unreachable).toMatchObject({ reason: "insufficient_group_denominator", vulnerableRate: null, vulnerableWithinReach: 0, nonVulnerableRate: 0.5 });
+    // Float noise never makes a denominator negative.
+    expect(withinReachBeforeFlood({ population: 1, vulnerable: 0.1, nonVulnerable: 0.9 }, { population: 1, vulnerable: 0.1000001, nonVulnerable: 0.9 }).vulnerable).toBe(0);
   });
 
   it("gives no ratio, with reason no_loss, when neither group has lost access", () => {
-    const none = evacuationEquityGap({ vulnerableLost: 0, vulnerableTotal: 50, nonVulnerableLost: 0, nonVulnerableTotal: 100 });
+    const none = evacuationEquityGap({ vulnerableLost: 0, vulnerableWithinReach: 50, nonVulnerableLost: 0, nonVulnerableWithinReach: 100 });
     expect(none).toMatchObject({ status: "no_loss", reason: "no_loss", ratio: null, band: null, vulnerableRate: 0, nonVulnerableRate: 0 });
     expect(none.interpretation).toBe("Equity gap not computed: neither group has lost access.");
     // Never the 1.0 "similar" that floodguard.equity states for 0/0.
     expect(none.ratio).not.toBe(1);
   });
 
-  it("gives no ratio, with reason insufficient_group_denominator, when a group has fewer than 50 residents", () => {
+  it("gives no ratio, with reason insufficient_group_denominator, when a group has fewer than 50 residents within reach before the flood", () => {
     expect(EQUITY_MIN_GROUP).toBe(50);
-    const gapOf = (vulnerableLost: number, vulnerableTotal: number, nonVulnerableLost: number, nonVulnerableTotal: number) =>
-      evacuationEquityGap({ vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal });
+    const gapOf = (vulnerableLost: number, vulnerableWithinReach: number, nonVulnerableLost: number, nonVulnerableWithinReach: number) =>
+      evacuationEquityGap({ vulnerableLost, vulnerableWithinReach, nonVulnerableLost, nonVulnerableWithinReach });
     const small = gapOf(10, 49, 100, 1000);
     expect(small).toMatchObject({ status: "insufficient_group_denominator", reason: "insufficient_group_denominator", ratio: null, band: null });
     expect(small.vulnerableRate).toBe(0.2041);
-    expect(small.interpretation).toBe("Equity gap not computed: a group has fewer than 50 residents.");
+    expect(small.interpretation).toBe("Equity gap not computed: a group has fewer than 50 residents with a shelter within reach before the flood.");
     expect(gapOf(10, 49.99, 100, 1000).reason).toBe("insufficient_group_denominator");
     expect(gapOf(100, 1000, 10, 49).reason).toBe("insufficient_group_denominator");
     // Exactly 50 is enough.
@@ -250,12 +273,12 @@ describe("Evacuation Equity Gap (the replay's rule, as floodguard.replay_equity)
   });
 
   it("is undefined when only vulnerable residents lose access, and the reason is null exactly when there is a ratio", () => {
-    const onlyVulnerable = evacuationEquityGap({ vulnerableLost: 5, vulnerableTotal: 50, nonVulnerableLost: 0, nonVulnerableTotal: 100 });
+    const onlyVulnerable = evacuationEquityGap({ vulnerableLost: 5, vulnerableWithinReach: 50, nonVulnerableLost: 0, nonVulnerableWithinReach: 100 });
     expect(onlyVulnerable).toMatchObject({ status: "undefined_ratio", reason: "undefined_ratio", ratio: null, band: null });
     expect(onlyVulnerable.interpretation).toContain("undefined");
     for (const input of [[20, 100, 10, 100], [0, 100, 10, 100], [0, 100, 0, 100], [5, 100, 0, 100], [1, 10, 1, 100], [0, 0, 0, 0]]) {
-      const [vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal] = input;
-      const gap = evacuationEquityGap({ vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal });
+      const [vulnerableLost, vulnerableWithinReach, nonVulnerableLost, nonVulnerableWithinReach] = input;
+      const gap = evacuationEquityGap({ vulnerableLost, vulnerableWithinReach, nonVulnerableLost, nonVulnerableWithinReach });
       expect(gap.reason === null, JSON.stringify(input)).toBe(gap.ratio !== null);
       expect(gap.status, JSON.stringify(input)).toBe(gap.reason ?? "ratio");
     }
@@ -573,6 +596,60 @@ describe("Shelter sets side by side (T1 scenario; hours from illustrative stage 
     expect([whole(planAll.vulnerableLost), whole(planAll.vulnerableBaseline)]).toEqual([320, 373]);
   });
 
+  it("states the Evacuation Equity Gap on the within-reach denominators at the 3.5 m peak (R8, option B)", () => {
+    const gapOf = (setId: string, scope: "all" | "flooded", stage = peakStage) => {
+      const summary = scoped[scope].summaries[access.sets.indexOf(setId)];
+      return accessEquityGap(accessSnapshot(summary, stage, access.levels), scoped[scope].totals);
+    };
+    // Plan of 8 sites, all residents: proxy-vulnerable 320 of 373, everyone else 13,109 of 24,537: about 1.6, "higher".
+    const plan = gapOf(planSetId(8), "all");
+    expect([whole(plan.vulnerableLost), whole(plan.vulnerableWithinReach)]).toEqual([320, 373]);
+    expect([whole(plan.nonVulnerableLost), whole(plan.nonVulnerableWithinReach)]).toEqual([13_109, 24_537]);
+    expect(plan).toMatchObject({ status: "ratio", reason: null, vulnerableRate: 0.8577, nonVulnerableRate: 0.5342, ratio: 1.606, band: "higher" });
+    expect(equityWording(plan, "en")).toEqual({ value: "1.61", sentence: "Proxy-vulnerable residents are about 1.6× more likely to lose access (85.77% vs 53.42%)." });
+    // The earlier denominator (all 7,152 and 74,647 residents counted) read 0.255, "lower": the direction changed.
+    expect(whole(scoped.all.totals.vulnerable)).toBe(7_152);
+    expect(whole(scoped.all.totals.nonVulnerable)).toBe(74_647);
+    // The denominators are the set comparison's own baselines.
+    const planRow = compare(planSetId(8), "all");
+    expect(plan.vulnerableWithinReach).toBeCloseTo(planRow.vulnerableBaseline, 6);
+    expect(plan.vulnerableWithinReach + plan.nonVulnerableWithinReach).toBeCloseTo(planRow.baseline, 6);
+    // Reported 2024 set, all residents: no proxy-vulnerable resident of the 2,440 within reach lost access.
+    const reported = gapOf(REPORTED_SET_ID, "all");
+    expect([whole(reported.vulnerableLost), whole(reported.vulnerableWithinReach)]).toEqual([0, 2_440]);
+    expect([whole(reported.nonVulnerableLost), whole(reported.nonVulnerableWithinReach)]).toEqual([7_086, 32_085]);
+    expect(reported).toMatchObject({ status: "ratio", ratio: 0, band: "lower", nonVulnerableRate: 0.2208 });
+    expect(equityWording(reported, "en").value).toBe("no proxy-vulnerable resident has lost access");
+    // The default view (reported set, residents whose homes flood): 103 proxy-vulnerable residents are counted, none of
+    // them within reach of a reported site before the flood, so there is no ratio and the card says why.
+    const initial = gapOf(REPORTED_SET_ID, "flooded");
+    expect(whole(scoped.flooded.totals.vulnerable)).toBe(103);
+    expect(initial.vulnerableWithinReach).toBe(0);
+    expect(whole(initial.nonVulnerableWithinReach)).toBe(5_698);
+    expect(initial).toMatchObject({ status: "insufficient_group_denominator", ratio: null, band: null, vulnerableRate: null });
+    expect(equityWording(initial, "en")).toEqual({
+      value: "no ratio shown",
+      sentence: "No proxy-vulnerable resident counted here had a shelter within reach before the flood, so none could lose it. A ratio needs at least 50 such residents in each group.",
+    });
+    // Among residents whose homes flood no plan size reaches 50 proxy-vulnerable residents (at most 27), and the reason
+    // does not change with the hour.
+    for (const setId of access.sets) {
+      for (const stage of [0, 1, peakStage]) {
+        const gap = gapOf(setId, "flooded", stage);
+        expect(gap.reason, `${setId} at ${stage} m`).toBe("insufficient_group_denominator");
+        expect(gap.vulnerableWithinReach, setId).toBeLessThan(27);
+      }
+    }
+    expect(equityWording(gapOf(planSetId(8), "flooded"), "en").sentence).toBe(
+      "Only 27 proxy-vulnerable residents had a shelter within reach before the flood, fewer than the 50 a ratio needs in each group.",
+    );
+    // Over all residents every plan from two sites on has at least 50 in both groups; the one-site plan does not.
+    expect(gapOf(planSetId(1), "all").reason).toBe("insufficient_group_denominator");
+    for (let k = 2; k <= shelters.plan.length; k += 1) expect(gapOf(planSetId(k), "all"), `plan of ${k}`).toMatchObject({ reason: null, band: "higher" });
+    // Before the water rises nobody has lost access.
+    expect(gapOf(planSetId(8), "all", 0).reason).toBe("no_loss");
+  });
+
   it("has no single winner: each set is ahead on one way of counting", () => {
     const reported = { all: compare(REPORTED_SET_ID, "all"), flooded: compare(REPORTED_SET_ID, "flooded") };
     const plan = { all: compare(planSetId(8), "all"), flooded: compare(planSetId(8), "flooded") };
@@ -638,8 +715,8 @@ describe("Shelter sets side by side (T1 scenario; hours from illustrative stage 
 });
 
 describe("Evacuation Equity Gap wording on the page", () => {
-  const gap = (vulnerableLost: number, vulnerableTotal: number, nonVulnerableLost: number, nonVulnerableTotal: number) =>
-    evacuationEquityGap({ vulnerableLost, vulnerableTotal, nonVulnerableLost, nonVulnerableTotal });
+  const gap = (vulnerableLost: number, vulnerableWithinReach: number, nonVulnerableLost: number, nonVulnerableWithinReach: number) =>
+    evacuationEquityGap({ vulnerableLost, vulnerableWithinReach, nonVulnerableLost, nonVulnerableWithinReach });
 
   it("shows no ratio and says plainly why when no one has lost access, never a parity ratio or a dash alone", () => {
     const none = equityWording(gap(0, 100, 0, 1000), "en");
@@ -656,18 +733,41 @@ describe("Evacuation Equity Gap wording on the page", () => {
     const vulnerable = equityWording(gap(5, 26.5, 100, 7553.2), "en");
     expect(vulnerable).toEqual({
       value: "no ratio shown",
-      sentence: "The proxy-vulnerable group has 26 residents in this count, fewer than the 50 a ratio needs in each group.",
+      sentence: "Only 27 proxy-vulnerable residents had a shelter within reach before the flood, fewer than the 50 a ratio needs in each group.",
     });
-    // 49.99 residents never read as "50".
-    expect(equityWording(gap(5, 49.99, 100, 1000), "en").sentence).toContain("has 49 residents");
-    expect(equityWording(gap(1, 1.2, 100, 1000), "en").sentence).toContain("has 1 resident in this count");
-    expect(equityWording(gap(100, 1000, 5, 30), "en").sentence).toBe("The group of everyone else has 30 residents in this count, fewer than the 50 a ratio needs in each group.");
-    expect(equityWording(gap(0, 0, 0, 12), "en").sentence).toBe("Both groups have fewer than 50 residents in this count (proxy-vulnerable 0, everyone else 12); a ratio needs at least 50 in each group.");
+    // Counts are rounded like the figures beside them, but 49.99 residents never read as "50".
+    expect(equityWording(gap(5, 49.99, 100, 1000), "en").sentence).toContain("Only 49 proxy-vulnerable residents had");
+    expect(equityWording(gap(1, 1.2, 100, 1000), "en").sentence).toContain("Only 1 proxy-vulnerable resident had a shelter within reach before the flood");
+    expect(equityWording(gap(0.2, 0.4, 100, 1000), "en").sentence).toContain("Fewer than 1 proxy-vulnerable resident had");
+    expect(equityWording(gap(100, 1000, 5, 30), "en").sentence).toBe("Only 30 residents of the other group had a shelter within reach before the flood, fewer than the 50 a ratio needs in each group.");
+    expect(equityWording(gap(0, 0, 0, 12), "en").sentence).toBe("Both groups have fewer than 50 residents with a shelter within reach before the flood (proxy-vulnerable 0, everyone else 12); a ratio needs at least 50 in each group.");
     const thai = equityWording(gap(5, 26.5, 100, 7553.2), "th");
     expect(thai.value).toBe("ไม่แสดงอัตราส่วน");
-    expect(thai.sentence).toBe("กลุ่มเปราะบางตามตัวแทนมีผู้อยู่อาศัยในการนับนี้ 26 คน น้อยกว่า 50 คนที่ต้องมีในแต่ละกลุ่มจึงจะแสดงอัตราส่วนได้");
-    expect(equityWording(gap(100, 1000, 5, 30), "th").sentence).toContain("กลุ่มอื่นมีผู้อยู่อาศัยในการนับนี้ 30 คน");
-    expect(equityWording(gap(0, 0, 0, 12), "th").sentence).toContain("ทั้งสองกลุ่มมีผู้อยู่อาศัยในการนับนี้น้อยกว่า 50 คน");
+    expect(thai.sentence).toBe("กลุ่มเปราะบางตามตัวแทนมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม 27 คน น้อยกว่า 50 คนที่ต้องมีในแต่ละกลุ่มจึงจะแสดงอัตราส่วนได้");
+    expect(equityWording(gap(0.2, 0.4, 100, 1000), "th").sentence).toContain("ไม่ถึง 1 คน");
+    expect(equityWording(gap(100, 1000, 5, 30), "th").sentence).toContain("กลุ่มอื่นมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม 30 คน");
+    expect(equityWording(gap(0, 0, 0, 12), "th").sentence).toContain("ทั้งสองกลุ่มมีผู้อยู่อาศัยที่มีที่พักพิงในระยะเดินก่อนน้ำท่วมน้อยกว่า 50 คน");
+  });
+
+  it("says in plain words that nobody of a group was within reach before the flood, so none could lose access", () => {
+    const none = equityWording(gap(0, 0, 5_400, 5_698), "en");
+    expect(none).toEqual({
+      value: "no ratio shown",
+      sentence: "No proxy-vulnerable resident counted here had a shelter within reach before the flood, so none could lose it. A ratio needs at least 50 such residents in each group.",
+    });
+    expect(equityWording(gap(0, 0, 5_400, 5_698), "th")).toEqual({
+      value: "ไม่แสดงอัตราส่วน",
+      sentence: "ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนที่นับในที่นี้มีที่พักพิงในระยะเดินตั้งแต่ก่อนน้ำท่วม จึงไม่มีผู้ใดในกลุ่มนี้สูญเสียการเข้าถึงได้ การแสดงอัตราส่วนต้องมีผู้อยู่อาศัยเช่นนี้อย่างน้อยกลุ่มละ 50 คน",
+    });
+    expect(equityWording(gap(10, 100, 0, 0), "en").sentence).toBe(
+      "No resident of the other group counted here had a shelter within reach before the flood, so none could lose it. A ratio needs at least 50 such residents in each group.",
+    );
+    expect(equityWording(gap(10, 100, 0, 0), "th").sentence).toContain("ไม่มีผู้อยู่อาศัยกลุ่มอื่นที่นับในที่นี้");
+    // Never "not yet", and never a number where there is nothing to divide.
+    for (const language of ["en", "th"] as const) {
+      const said = `${equityWording(gap(0, 0, 5_400, 5_698), language).value} ${equityWording(gap(0, 0, 5_400, 5_698), language).sentence}`;
+      expect(said).not.toMatch(/ยังไม่มี|NaN|Infinity|0\.00/);
+    }
   });
 
   it("states the ratio to two decimals and compares the two rates in plain words", () => {
@@ -714,10 +814,17 @@ describe("Evacuation Equity Gap wording on the page", () => {
     expect(equityWording(gap(5, 100, 0, 1000), "th").sentence).toContain("จึงคำนวณอัตราส่วนไม่ได้");
   });
 
-  it("explains why the proxy points this way only when proxy-vulnerable residents are less affected", () => {
-    expect(equityWhy(gap(1, 100, 50, 1000), "en")).toContain("not who is more vulnerable");
-    expect(equityWhy(gap(1, 100, 50, 1000), "th")).toMatch(/[\u0E00-\u0E7F]/);
-    expect(equityWhy(gap(10, 100, 20, 1000), "en")).toBeNull();
+  it("says how to read a ratio that points one way: the proxy, and that only residents within reach are counted", () => {
+    const low = equityWhy(gap(1, 100, 50, 1000), "en")!;
+    expect(low).toContain("the ratio counts only residents who had a shelter of this set within reach before the flood");
+    expect(low).toContain("So a low ratio says where those homes sit relative to the flooded valley floor, not who is more vulnerable.");
+    const high = equityWhy(gap(10, 100, 20, 1000), "en")!;
+    expect(high).toContain("So a high ratio says where those homes sit");
+    expect(high).toContain("not age, disability or income");
+    expect(equityWhy(gap(1, 100, 50, 1000), "th")).toContain("ค่าที่ต่ำจึงบอกตำแหน่งของบ้านเหล่านั้น");
+    expect(equityWhy(gap(10, 100, 20, 1000), "th")).toContain("ค่าที่สูงจึงบอกตำแหน่งของบ้านเหล่านั้น");
+    // Nothing to read into a similar ratio or a missing one.
+    expect(equityWhy(gap(10, 100, 100, 1000), "en")).toBeNull();
     expect(equityWhy(gap(0, 100, 0, 1000), "en")).toBeNull();
     expect(equityWhy(gap(1, 26, 50, 1000), "en")).toBeNull();
   });

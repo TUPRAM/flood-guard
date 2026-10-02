@@ -157,14 +157,14 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
       flooded: shelterSetComparison(scopes.flooded.summaries[index], scopes.flooded.totals, stage, stages, access.levels),
     };
   };
-  const accessCard = (set: "reported" | "plan", stage: number) => {
-    const summary = scopes.flooded.summaries[access.sets.indexOf(set === "reported" ? REPORTED_SET_ID : planSetId(shelters.knee_k))];
+  const accessCard = (set: "reported" | "plan", stage: number, scope: "flooded" | "all" = "flooded") => {
+    const summary = scopes[scope].summaries[access.sets.indexOf(set === "reported" ? REPORTED_SET_ID : planSetId(shelters.knee_k))];
     return (
       <AccessCard access={access} shelters={shelters} snapshot={accessSnapshot(summary, stage, access.levels)}
         series={accessLostSeries(summary, stages, access.levels)} time={3.5} names={names}
-        tambonTotals={tambonResidents(nodes, access.tambons.length, mask)} shelterSet={set} planK={shelters.knee_k}
-        onShelterSet={noop} onPlanK={noop} showCutoff={false} onShowCutoff={noop} scope="flooded" onScope={noop}
-        scopeTotals={scopes.flooded.totals} allResidents={scopes.all.totals.population} floodedResidents={scopes.flooded.totals.population}
+        tambonTotals={tambonResidents(nodes, access.tambons.length, scope === "flooded" ? mask : null)} shelterSet={set} planK={shelters.knee_k}
+        onShelterSet={noop} onPlanK={noop} showCutoff={false} onShowCutoff={noop} scope={scope} onScope={noop}
+        scopeTotals={scopes[scope].totals} allResidents={scopes.all.totals.population} floodedResidents={scopes.flooded.totals.population}
         comparison={{ reported: bothScopes(REPORTED_SET_ID, stage), plan: bothScopes(planSetId(shelters.knee_k), stage) }}
         language={language} status="ready" />
     );
@@ -173,6 +173,10 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
     panel("AccessCard reported, peak", accessCard("reported", peak)),
     panel("AccessCard plan, peak", accessCard("plan", peak)),
     panel("AccessCard plan, before the flood", accessCard("plan", 0)),
+    // All residents at road nodes: the views where the Evacuation Equity Gap states a ratio, or that nobody has lost access.
+    panel("AccessCard reported, all residents, peak", accessCard("reported", peak, "all")),
+    panel("AccessCard plan, all residents, peak", accessCard("plan", peak, "all")),
+    panel("AccessCard plan, all residents, before the flood", accessCard("plan", 0, "all")),
     panel("HowToRead", <HowToRead manifest={manifest} language={language} />),
     panel("ImpactCard", <ImpactCard manifest={manifest} stats={stats} derived={derived} language={language} />),
     panel("TimelineLegend", <TimelineLegend language={language} unmodelledRoads unmodelledFacilities />),
@@ -222,6 +226,7 @@ describe("Replay wording rules (shared with Python)", () => {
       "set_ranking", // a shelter set or plan called better, best or worse (P2-4)
       "safe_departure", // the modelled cut-off hour presented as a safe time to leave (P2-4)
       "shelter_directive", // "open these shelters": the plans list candidates to verify (P2-9)
+      "equity_denominator", // the equity rates stated over all residents counted, not those within reach before the flood (R8)
     ]);
     expect(new Set(REPLAY_WORDING_RULES.allow.map((item) => item.id)).size).toBe(REPLAY_WORDING_RULES.allow.length);
   });
@@ -276,6 +281,11 @@ describe("Replay wording rules (shared with Python)", () => {
     expect(idsOf(findWordingViolations("ไม่ใช่ข้อมูลเรียลไทม์และคำเตือนอย่างเป็นทางการ"))).toEqual(["warning"]);
     expect(findWordingViolations("It is a model, not real-time or a warning.")).toEqual([]);
     expect(idsOf(findWordingViolations("100 yr flood; Flood alert; the plan is the better option"))).toEqual(["return_period", "set_ranking", "warning"]);
+    // The equity rates divide by the residents within reach before the flood (R8, option B); the earlier sentence fails.
+    expect(idsOf(findWordingViolations("Each rate divides the residents who lost access by all residents counted in that group"))).toEqual(["equity_denominator"]);
+    expect(idsOf(findWordingViolations("แต่ละอัตราคือผู้ที่สูญเสียการเข้าถึงหารด้วยผู้อยู่อาศัยทั้งหมดที่นับในกลุ่มนั้น"))).toEqual(["equity_denominator"]);
+    expect(findWordingViolations("Each rate divides the residents of a group who lost access by the residents of that group who had a shelter of this set within reach before the flood.")).toEqual([]);
+    expect(findWordingViolations("Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted).")).toEqual([]);
   });
 });
 
@@ -292,13 +302,21 @@ describe("Replay wording lint: current text", () => {
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(45);
-    // The access card is linted with both shelter sets side by side, at the peak and before the flood.
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(51);
+    // The access card is linted with both shelter sets side by side, at the peak and before the flood, for both ways of
+    // counting residents: every wording of the Evacuation Equity Gap (a ratio, no loss, a group too small) is in the corpus.
     const accessText = items.filter((item) => item.source.startsWith("AccessCard")).map((item) => item.text).join(" ");
     expect(accessText).toContain("Modelled access cut-off hour");
     expect(accessText).toContain("No single figure ranks the sets");
     expect(accessText).toContain("no ratio shown");
     expect(accessText).toContain("ไม่แสดงอัตราส่วน");
+    expect(accessText).toContain("Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
+    expect(accessText).toContain("more likely to lose access (85.77% vs 53.42%)");
+    expect(accessText).toContain("no proxy-vulnerable resident has lost access");
+    expect(accessText).toContain("so none could lose it");
+    expect(accessText).toContain("No one in either group has lost access at this replay hour");
+    expect(accessText).toContain("มากกว่าประมาณ 1.6 เท่า");
+    expect(accessText).toContain("จึงไม่มีผู้ใดในกลุ่มนี้สูญเสียการเข้าถึงได้");
     // The corpus really holds the standing disclaimer in both languages, export caption included.
     const all = items.map((item) => item.text).join("\n");
     expect(all).toContain("not real-time, not an official warning");

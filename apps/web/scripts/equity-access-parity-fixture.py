@@ -4,20 +4,23 @@ The page recomputes three things in the browser that Python also computes:
 
 * which resident nodes have lost walking access to a shelter at a stage
   (``lost_at`` and ``home_wet`` in ``scripts/mae_sai_timeline_evacuation.py``);
-* the Evacuation Equity Gap between proxy-vulnerable residents and everyone else, with the replay's null rule
-  (``floodguard.replay_equity.replay_equity_gap``: no ratio, with a reason, when a group has fewer than 50
-  residents or when nobody has lost access);
+* the Evacuation Equity Gap between proxy-vulnerable residents and everyone else
+  (``floodguard.replay_equity.replay_equity_gap``): each group's loss rate is the share of its residents with a
+  shelter within reach before the flood who lost it (owner decision R8, option B), and no ratio is given, with a
+  reason, when a group has fewer than 50 such residents or when nobody has lost access;
 * the side-by-side figures of every shelter set (``floodguard.shelter_set_comparison.shelter_set_summary``):
   residents within reach before the flood, still within reach, newly lost with their share of that baseline,
   and the modelled access cut-off hour.
 
 This script computes all three with the Python code, from the served manifest and its access node file, and
 writes the results as a fixture. The web tests then check that ``flood-timeline-evacuation.ts`` gives the
-same level indices, the same lost residents, the same rates, ratio, reason and wording and the same set
-figures, so a changed threshold or rounding rule on either side fails a test.
+same level indices, the same lost residents, the same within-reach denominators, the same rates, ratio,
+reason and wording and the same set figures, so a changed threshold, rounding rule or denominator on either
+side fails a test.
 
 Where the replay's equity rule gives a ratio, the script also checks it against the unchanged
-``floodguard.equity.compute_equity_gap``; the two differ only where the replay withholds a ratio.
+``floodguard.equity.compute_equity_gap`` fed the same numerators and denominators; the two differ only where
+the replay withholds a ratio.
 
 Everything in the fixture is a T1 scenario on a modelled flood: not observed evacuation outcomes, not a
 score and not an action class. "Vulnerable" is the terrain and remoteness proxy, not age, disability or
@@ -46,6 +49,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from floodguard.equity import compute_equity_gap  # noqa: E402
 from floodguard.replay_equity import (  # noqa: E402
+    DENOMINATOR,
     MINIMUM_GROUP_SIZE,
     REASON_INSUFFICIENT_GROUP,
     REASON_NO_LOSS,
@@ -69,13 +73,14 @@ MANIFEST_URL_PATTERN = 'TIMELINE_MANIFEST_URL = "'
 FIXTURE = WEB / "src" / "lib" / "__fixtures__" / "mae-sai-equity-access-parity.json"
 HOURS = 11 * 24
 SCOPES = ("all", "flooded")
-EQUITY_COLUMNS = ["vulnerable_lost", "vulnerable_total", "non_vulnerable_lost", "non_vulnerable_total",
+EQUITY_COLUMNS = ["vulnerable_lost", "vulnerable_within_reach", "non_vulnerable_lost", "non_vulnerable_within_reach",
                   "vulnerable_rate", "non_vulnerable_rate", "ratio", "band", "interpretation", "reason"]
 # Replay hours at which the set comparison is sampled: before the flood, through the rise, the peak and the recession.
 COMPARISON_HOURS = (0, 24, 36, 40, 42, 44, 46, 47, 48, 49, 52, 55, 58, 60, 72, 84, 96, 108, 120, 144, 168, 216, 263)
 
-# Hand-picked inputs around every rule of the Evacuation Equity Gap. The expected values are computed below by
-# floodguard.replay_equity; nothing here states an expected result.
+# Hand-picked inputs around every rule of the Evacuation Equity Gap: (case, vulnerable lost, vulnerable within reach
+# before the flood, other lost, other within reach before the flood). "Group" below means that within-reach
+# denominator. The expected values are computed below by floodguard.replay_equity; nothing here states an expected result.
 EQUITY_EDGE_INPUTS: list[tuple[str, float, float, float, float]] = [
     ("ratio exactly 1.2 (upper limit of similar)", 1200, 10000, 1000, 10000),
     ("ratio 1.201 (just above 1.2)", 1201, 10000, 1000, 10000),
@@ -115,7 +120,8 @@ EQUITY_EDGE_INPUTS: list[tuple[str, float, float, float, float]] = [
     ("no residents at all", 0, 0, 0, 0),
     ("everyone lost", 50, 50, 100, 100),
     ("fractional residents", 34.3, 7151.6, 5671, 74646.9),
-    # The null rule: no ratio when a group has fewer than 50 residents, or when nobody has lost access.
+    # The null rule: no ratio when a group has fewer than 50 residents within reach before the flood, or when nobody
+    # has lost access.
     ("vulnerable group of exactly 50 (enough)", 10, 50, 100, 1000),
     ("vulnerable group of 49.99 (too small)", 10, 49.99, 100, 1000),
     ("vulnerable group of 49 (too small)", 10, 49, 100, 1000),
@@ -128,6 +134,14 @@ EQUITY_EDGE_INPUTS: list[tuple[str, float, float, float, float]] = [
     ("no loss, both groups large", 0, 2440.4, 0, 32084.7),
     ("no loss, groups of exactly 50", 0, 50, 0, 50),
     ("only vulnerable loss, both groups large", 320, 7151.6, 0, 74646.9),
+    # The served replay at the 3.5 m peak, all residents (rounded): the denominator is the residents within reach
+    # before the flood (373 and 24,537 for the plan of 8), not all residents counted (7,152 and 74,647).
+    ("plan of 8 at the peak, within-reach denominators", 320, 373, 13109, 24537),
+    ("plan of 8 at the peak, if all residents counted were the denominators", 320, 7152, 13109, 74647),
+    ("reported set at the peak, within-reach denominators", 0, 2440, 7086, 32085),
+    ("nobody in the vulnerable group within reach (the default view)", 0, 0, 5400, 5698),
+    ("27 vulnerable residents within reach, all lost (too small)", 26.5, 26.5, 7093.5, 7553.2),
+    ("everyone within reach lost in both groups", 373, 373, 24537, 24537),
 ]
 
 
@@ -151,13 +165,15 @@ def read_nodes(data: bytes, access: dict) -> dict[str, np.ndarray]:
 
 
 def equity_rows(inputs: list[tuple[float, float, float, float]]) -> list[list]:
-    """Run ``floodguard.replay_equity.replay_equity_gap`` on (vulnerable lost, vulnerable total, other lost, other total).
+    """Run ``floodguard.replay_equity.replay_equity_gap`` on (vulnerable lost, vulnerable within reach, other lost, other within reach).
 
-    Each row is also checked against the unchanged ``floodguard.equity.compute_equity_gap``: the rates always
-    agree, and the ratio and wording agree wherever the replay gives a ratio or calls it undefined. The replay
-    differs by withholding the ratio for small groups and when nobody has lost access (there
-    ``floodguard.equity`` says 1.0), and where a rounded rate of zero hides residents who did lose access: the
-    replay judges loss on the lost counts and divides the unrounded rates there.
+    The denominators are the residents of each group with a shelter within reach before the flood. Each row is
+    also checked against the unchanged ``floodguard.equity.compute_equity_gap`` fed the same four numbers (its
+    "total" columns take the within-reach residents): the rates always agree, and the ratio and wording agree
+    wherever the replay gives a ratio or calls it undefined. The replay differs by withholding the ratio for
+    small groups and when nobody has lost access (there ``floodguard.equity`` says 1.0), and where a rounded
+    rate of zero hides residents who did lose access: the replay judges loss on the lost counts and divides the
+    unrounded rates there.
     """
     frame = pd.DataFrame({
         "subdistrict_id": [f"case-{index}" for index in range(len(inputs))],
@@ -173,6 +189,8 @@ def equity_rows(inputs: list[tuple[float, float, float, float]]) -> list[list]:
     rows = []
     for given, (_, base) in zip(inputs, reference.iterrows()):
         gap = replay_equity_gap(*given)
+        if gap.denominator != DENOMINATOR or (gap.vulnerable_within_reach, gap.non_vulnerable_within_reach) != (float(given[1]), float(given[3])):
+            raise SystemExit(f"{given}: the replay's rates do not divide by the residents within reach before the flood")
         base_rates = [number(base["vulnerable_access_loss_rate"]), number(base["non_vulnerable_access_loss_rate"])]
         base_ratio, base_text = number(base["equity_gap_ratio"]), str(base["interpretation_text"])
         if [gap.vulnerable_rate, gap.non_vulnerable_rate] != base_rates:
@@ -195,23 +213,33 @@ def equity_rows(inputs: list[tuple[float, float, float, float]]) -> list[list]:
 
 
 def random_inputs(count: int) -> list[tuple[float, float, float, float]]:
-    """Reproducible inputs with fractional residents, like the population-weighted node sums."""
+    """Reproducible inputs with fractional residents, like the population-weighted node sums.
+
+    Each row is (vulnerable lost, vulnerable within reach, other lost, other within reach); the lost residents
+    never exceed those within reach.
+    """
     rng = random.Random(20240912)
     rows = []
     for _ in range(count):
-        vulnerable_total = round(rng.uniform(50, 8000), 1)
-        other_total = round(rng.uniform(500, 80000), 1)
-        rows.append((round(vulnerable_total * rng.random() ** 2, 1), vulnerable_total, round(other_total * rng.random() ** 2, 1), other_total))
+        vulnerable_reach = round(rng.uniform(50, 8000), 1)
+        other_reach = round(rng.uniform(500, 80000), 1)
+        rows.append((round(vulnerable_reach * rng.random() ** 2, 1), vulnerable_reach, round(other_reach * rng.random() ** 2, 1), other_reach))
     return rows
 
 
-def assert_stable(lost: float, total: float, label: str) -> None:
-    """Fail when ``lost / total`` is within 1e-9 of a four-decimal rounding edge (the browser sums in another order)."""
-    if total == 0:
+def assert_stable(lost: float, within_reach: float, label: str) -> None:
+    """Fail when ``lost / within_reach`` is within 1e-9 of a four-decimal rounding edge (the browser sums in another order)."""
+    if within_reach == 0:
         return
-    scaled = lost / total * 1e4
+    scaled = lost / within_reach * 1e4
     if abs(scaled - math.floor(scaled) - 0.5) < 1e-5:
-        raise SystemExit(f"{label}: loss rate {lost / total!r} sits on a rounding edge; the parity fixture would be fragile")
+        raise SystemExit(f"{label}: loss rate {lost / within_reach!r} sits on a rounding edge; the parity fixture would be fragile")
+
+
+def assert_clear_of_minimum(within_reach: float, label: str) -> None:
+    """Fail when a denominator is within 1e-6 of the 50-resident minimum (the browser sums in another order)."""
+    if abs(within_reach - MINIMUM_GROUP_SIZE) < 1e-6:
+        raise SystemExit(f"{label}: {within_reach!r} residents within reach sits on the group-size limit; the parity fixture would be fragile")
 
 
 def fixture_text() -> str:
@@ -261,6 +289,8 @@ def fixture_text() -> str:
                   for stage in (0.0, 0.05, 0.1, 0.5, 3.5, 12.7, 99.0)]
 
     # --- Lost residents and the equity gap, per shelter set, scope and level ----------------------
+    # Each loss rate divides by the residents of the group with a shelter of the set within reach before the flood
+    # (cut code other than "no baseline access"), not by all residents counted in the group.
     knee = f"plan_{shelters['knee_k']}"
     set_ids = ["reported_2024", "plan_1", knee, access["sets"][-1]]
     access_rows = []
@@ -269,17 +299,28 @@ def fixture_text() -> str:
         for scope in SCOPES:
             mask = masks[scope]
             totals = [total(population[mask]), total(vulnerable[mask]), total(other[mask])]
+            no_baseline = (row_codes == evac.NO_BASELINE_ACCESS) & mask
+            within = mask & ~no_baseline
+            reach = [total(population[within]), total(vulnerable[within]), total(other[within])]
+            assert_clear_of_minimum(reach[1], f"{set_id}/{scope} vulnerable")
+            assert_clear_of_minimum(reach[2], f"{set_id}/{scope} other")
+            # The set-comparison module counts the same baseline: the two Python paths must name one denominator.
+            twin = shelter_set_summary(population, row_codes, peak_stage, [], vulnerable_population=vulnerable, mask=mask)
+            if twin.vulnerable_baseline != reach[1] or abs(twin.baseline - reach[0]) > 1e-6 or abs(twin.residents - totals[0]) > 1e-6:
+                raise SystemExit(f"{set_id}/{scope}: the within-reach residents differ from floodguard.shelter_set_comparison")
             sums = []
             for level in levels:
                 lost = evac.lost_at(row_codes, level) & mask
+                if (lost & ~within).any():
+                    raise SystemExit(f"{set_id}/{scope}/{level}: a node lost access without having had it before the flood")
                 sums.append((total(population[lost]), total(vulnerable[lost]), total(other[lost])))
-                assert_stable(sums[-1][1], totals[1], f"{set_id}/{scope}/{level} vulnerable")
-                assert_stable(sums[-1][2], totals[2], f"{set_id}/{scope}/{level} other")
-            equity = equity_rows([(lost_v, totals[1], lost_o, totals[2]) for _, lost_v, lost_o in sums])
-            no_baseline = (row_codes == evac.NO_BASELINE_ACCESS) & mask
+                assert_stable(sums[-1][1], reach[1], f"{set_id}/{scope}/{level} vulnerable")
+                assert_stable(sums[-1][2], reach[2], f"{set_id}/{scope}/{level} other")
+            equity = equity_rows([(lost_v, reach[1], lost_o, reach[2]) for _, lost_v, lost_o in sums])
             access_rows.append({
                 "set": set_id, "scope": scope,
                 "totals": {"population": totals[0], "vulnerable": totals[1], "non_vulnerable": totals[2]},
+                "within_reach": {"population": reach[0], "vulnerable": reach[1], "non_vulnerable": reach[2]},
                 "no_baseline_access": total(population[no_baseline]),
                 "levels": [[index, lost_all, *row[:1], row[2], *row[4:]] for index, ((lost_all, _, _), row) in enumerate(zip(sums, equity))],
             })
@@ -332,7 +373,8 @@ def fixture_text() -> str:
             "Residents are WorldPop 2020 modelled estimates at road nodes; vulnerable residents are the terrain and remoteness proxy.",
             "The flooded scope counts residents whose home node is wet at the modelled peak stage; the all scope counts every resident node.",
             "Hours come from illustrative stage keyframes, not observed; the access cut-off hour is the first replay hour when fewer than half of the residents with a shelter within reach before the flood still have one.",
-            "No ratio is stated when a group has fewer than 50 residents or when nobody has lost access; the shelter sets are not ranked.",
+            "Each group's loss rate is, of its residents who had a shelter of the set within reach before the flood, the share who lost it (owner decision R8, option B); residents with no shelter of the set within reach before the flood are not in the rate.",
+            "No ratio is stated when a group has fewer than 50 residents within reach before the flood or when nobody has lost access; the shelter sets are not ranked.",
             "Loss is judged on the residents who lost access, not on the rounded rates: a loss that rounds to a rate of 0.0000 still counts, and the ratio then uses the unrounded rates.",
             "No score and no action class is computed from these figures.",
         ],
@@ -346,6 +388,7 @@ def fixture_text() -> str:
         "lost_cases": lost_cases,
         "home_codes": home_codes,
         "home_wet_cases": home_cases,
+        "equity_denominator": DENOMINATOR,
         "equity_minimum_group": MINIMUM_GROUP_SIZE,
         "equity_null_reasons": [REASON_INSUFFICIENT_GROUP, REASON_NO_LOSS, REASON_UNDEFINED_RATIO],
         "equity_columns": EQUITY_COLUMNS,
@@ -370,7 +413,7 @@ def fixture_text() -> str:
         elif key == "access":
             groups = []
             for group in value:
-                head = json.dumps({name: group[name] for name in ("set", "scope", "totals", "no_baseline_access")}, ensure_ascii=False)
+                head = json.dumps({name: group[name] for name in ("set", "scope", "totals", "within_reach", "no_baseline_access")}, ensure_ascii=False)
                 groups.append(f'  {head[:-1]}, "levels": {block(group["levels"], "   ")[:-2]}  ]}}')
             parts.append(f' "access": [\n' + ",\n".join(groups) + "\n ]")
         elif key == "set_comparison":

@@ -708,6 +708,23 @@ describe("Mae Sai observed evidence panels", () => {
     // Source names and licences stay as published, marked as English.
     expect(thaiHtml).toContain(`<strong lang="en">${manifest.sources[0].name}</strong>`);
   });
+
+  it("states the equity rule beside the resident counts, so the counts are not read as its denominator", () => {
+    const englishHtml = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="en" offlineCopy={null} />);
+    const english = text(englishHtml);
+    expect(englishHtml).toContain('data-testid="sources-equity-rule"');
+    expect(english).toContain(
+      "Evacuation Equity Gap: the two groups are compared on one rate. Of the residents in each group who had a shelter within reach before the flood, the share who lost it. The gap is the proxy group's rate ÷ the others' rate. The residents counted above are context, not the denominator, and no ratio is shown when a group has fewer than 50 residents within reach before the flood or when no one has lost access.",
+    );
+    // The line follows the resident counts it qualifies.
+    expect(english.indexOf("Evacuation Equity Gap: the two groups")).toBeGreaterThan(english.indexOf("in the terrain/remoteness proxy group"));
+    const thaiHtml = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />);
+    const thai = text(thaiHtml);
+    expect(thai).toContain("ในบรรดาผู้อยู่อาศัยของแต่ละกลุ่มที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม สัดส่วนของผู้ที่สูญเสียการเข้าถึง");
+    expect(thai).toContain("จำนวนผู้อยู่อาศัยที่นับข้างต้นเป็นข้อมูลประกอบ ไม่ใช่ตัวหาร");
+    expect(findWordingViolations(visibleText(englishHtml), "SourcesPanel (en)")).toEqual([]);
+    expect(findWordingViolations(visibleText(thaiHtml), "SourcesPanel (th)")).toEqual([]);
+  });
 });
 
 describe("Mae Sai Sentinel-2 water check on 15 Sep", () => {

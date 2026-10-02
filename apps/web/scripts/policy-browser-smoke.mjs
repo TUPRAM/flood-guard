@@ -217,6 +217,13 @@ try {
       await expect(summary.locator("..")).toHaveAttribute("open", "");
     }
     await expect(page.locator("#sources a")).toHaveCount(6);
+    // The equity definition names the replay's denominator (owner decision R8): people with a shelter within reach before the flood.
+    await expect(page.locator("#access")).toContainText(thai
+      ? "แต่ละอัตรานับเฉพาะผู้ที่มีศูนย์พักพิงในระยะเดินก่อนน้ำท่วม คือสัดส่วนของคนเหล่านั้นที่สูญเสียการเข้าถึง"
+      : "Each rate counts only people who had a shelter within reach before the flood: of those, the share who lost it.");
+    await expect(page.locator("#access")).toContainText(thai
+      ? "ไม่แสดงอัตราส่วนเมื่อกลุ่มใดมีคนเช่นนี้น้อยกว่า 50 คน หรือเมื่อไม่มีผู้ใดสูญเสียการเข้าถึง"
+      : "No ratio is given when a group has fewer than 50 such people or when nobody has lost access.");
     if (thai) {
       await expect(page.getByTestId("worked-example-caveat")).toContainText("ห้ามอ้างเป็นคะแนนของกรณีแม่สาย");
       await expect(page.getByTestId("signed-frame-table")).toContainText("ESA WorldCover คลาส 80");
@@ -258,6 +265,7 @@ try {
   await page.getByRole("button", { name: "Use English", exact: true }).click();
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  checks.push("access and equity section states the replay's equity rule in both languages: rates over people with a shelter within reach before the flood, no ratio below 50 such people or without a loss");
   checks.push("Thai and English preferences survive reload");
 
   for (const area of ["header", "footer"]) {

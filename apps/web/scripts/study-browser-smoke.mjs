@@ -743,12 +743,45 @@ try {
   await expect(page).toHaveURL(/[?&]pop=all(&|$)/);
   await accessCard.getByRole("radio", { name: /^Residents whose homes flood at the peak/ }).check();
   await expect(page).toHaveURL(/[?&]pop=flooded(&|$)/);
-  await expect(accessCard.getByTestId("equity-gap")).toContainText("Evacuation Equity Gap");
-  await expect(accessCard.getByTestId("equity-gap")).toContainText("terrain/remoteness proxy");
-  // The equity gap is never printed as "0.00": with the reported set no proxy-vulnerable resident has lost access.
-  await expect(accessCard.getByTestId("equity-gap")).toContainText("no proxy-vulnerable resident has lost access");
-  await expect(accessCard.getByTestId("equity-gap")).not.toContainText("Evacuation Equity Gap: 0.00");
-  await expect(accessCard.getByTestId("equity-label")).toContainText("Vulnerable = terrain/remoteness proxy");
+  // Evacuation Equity Gap (owner decision R8, option B): of the residents in each group who had a shelter within reach
+  // before the flood, the share who lost it. The default view (reported set, residents whose homes flood) has no
+  // proxy-vulnerable resident within reach, so it shows no ratio and says why in plain words.
+  const equity = accessCard.getByTestId("equity-gap");
+  await expect(equity).toContainText("terrain/remoteness proxy");
+  await expect(equity).toHaveAttribute("data-reason", "insufficient_group_denominator");
+  await expect(equity).toContainText("Evacuation Equity Gap: no ratio shown");
+  await expect(equity).toContainText("No proxy-vulnerable resident counted here had a shelter within reach before the flood, so none could lose it. A ratio needs at least 50 such residents in each group.");
+  await expect(equity.getByTestId("equity-rule")).toHaveText("What is compared. Of the residents in each group who had a shelter within reach before the flood, the share who lost it.");
+  await expect(equity.getByTestId("equity-counts")).toHaveText(
+    "Proxy-vulnerable: 0 lost of 0 within reach before the flood (103 residents counted). Everyone else: 5,400 lost of 5,698 within reach before the flood (14,067 residents counted).");
+  await expect(equity.getByTestId("equity-label")).toContainText("T1 scenario (model). Vulnerable = terrain/remoteness proxy. Hours from illustrative stage keyframes, not observed.");
+  await expect(equity.getByTestId("equity-why")).toHaveCount(0);
+  // All residents at road nodes, reported set: none of the 2,440 proxy-vulnerable residents within reach lost access. Never "0.00".
+  await accessCard.getByRole("radio", { name: /^All residents at road nodes/ }).check();
+  await expect(equity).toContainText("Evacuation Equity Gap: no proxy-vulnerable resident has lost access · At this replay hour, 22.08% of everyone else have.");
+  await expect(equity).not.toContainText("Evacuation Equity Gap: 0.00");
+  await expect(equity.getByTestId("equity-counts")).toHaveText(
+    "Proxy-vulnerable: 0 lost of 2,440 within reach before the flood (7,152 residents counted). Everyone else: 7,086 lost of 32,085 within reach before the flood (74,647 residents counted).");
+  assert.equal(await equity.getAttribute("data-reason"), null, "With a ratio the equity block carries no reason");
+  // All residents, ranked plan of 8 at the 3.5 m peak: 320 of 373 against 13,109 of 24,537, about 1.6 and "more likely".
+  await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
+  await expect(equity).toContainText("Evacuation Equity Gap: 1.61 · Proxy-vulnerable residents are about 1.6× more likely to lose access (85.77% vs 53.42%).");
+  await expect(equity.getByTestId("equity-counts")).toHaveText(
+    "Proxy-vulnerable: 320 lost of 373 within reach before the flood (7,152 residents counted). Everyone else: 13,109 lost of 24,537 within reach before the flood (74,647 residents counted).");
+  await expect(equity.getByTestId("equity-why")).toContainText("the ratio counts only residents who had a shelter of this set within reach before the flood. So a high ratio says where those homes sit");
+  assert.equal(await equity.getAttribute("data-reason"), null, "The plan of 8 over all residents has a ratio");
+  await equity.locator("details summary").click();
+  await expect(equity.locator("details")).toContainText("by the residents of that group who had a shelter of this set within reach before the flood");
+  await expect(equity.locator("details")).toContainText("No ratio is shown when a group has fewer than 50 residents within reach before the flood");
+  assert(!/all residents counted in that group|less likely to lose access/.test(await equity.innerText()), "No rate on the card divides by all residents counted");
+  await equity.locator("details summary").click();
+  // Back to residents whose homes flood: 27 proxy-vulnerable residents are within reach of the plan's 8 sites, too few for a ratio.
+  await accessCard.getByRole("radio", { name: /^Residents whose homes flood at the peak/ }).check();
+  await expect(equity).toHaveAttribute("data-reason", "insufficient_group_denominator");
+  await expect(equity).toContainText("Evacuation Equity Gap: no ratio shown · Only 27 proxy-vulnerable residents had a shelter within reach before the flood, fewer than the 50 a ratio needs in each group.");
+  await expect(equity.getByTestId("equity-counts")).toContainText("Proxy-vulnerable: 27 lost of 27 within reach before the flood (103 residents counted).");
+  await expect(page).toHaveURL(/[?&]pop=flooded(&|$)/);
+  checks.push("Evacuation Equity Gap on the within-reach denominator (R8, option B): the rule in one sentence, 1.61 for the plan of 8 over all residents (320 of 373 against 13,109 of 24,537), no proxy-vulnerable loss for the reported set, no ratio with the reason in the default view, both counts per group");
   await accessCard.getByRole("radio", { name: "Ranked plan" }).check();
   const planSlider = accessCard.getByRole("slider", { name: /^Plan size k/ });
   await planSlider.fill("3");
@@ -873,15 +906,20 @@ try {
   await expect(page.getByRole("checkbox", { name: "People cut off (scenario)" })).toBeChecked();
   checks.push("deep link restores the residents view, shelter set, plan size and cut-off layer");
   await page.screenshot({ path: resolve(artifacts, "case-replay-desktop.png"), fullPage: true });
-  // Before the water rises nobody has lost access: no ratio is shown, and the card says why.
-  await page.goto(`${baseUrl}${caseRoute}?t=0`, { waitUntil: "networkidle" });
+  // Before the water rises nobody has lost access: counting all residents, no ratio is shown and the card says why.
+  await page.goto(`${baseUrl}${caseRoute}?t=0&pop=all`, { waitUntil: "networkidle" });
   await waterModel();
   const dryEquity = page.getByTestId("access-card").getByTestId("equity-gap");
   await expect(dryEquity).toHaveAttribute("data-reason", "no_loss");
   await expect(dryEquity).toContainText("Evacuation Equity Gap: no ratio shown");
   await expect(dryEquity).toContainText("No one in either group has lost access at this replay hour");
+  await expect(dryEquity.getByTestId("equity-counts")).toContainText("Proxy-vulnerable: 0 lost of 2,440 within reach before the flood (7,152 residents counted). Everyone else: 0 lost of 32,085");
   await expect(page.getByTestId("access-card").getByTestId("compare-reported-all-lost")).toHaveText("0 of 34,525 (0%)");
-  checks.push("equity gap gives no ratio, with the reason, before anyone has lost access");
+  // Among residents whose homes flood the reason is the group size at every hour: it does not change as the water rises.
+  await page.getByTestId("access-card").getByRole("radio", { name: /^Residents whose homes flood at the peak/ }).check();
+  await expect(dryEquity).toHaveAttribute("data-reason", "insufficient_group_denominator");
+  await expect(dryEquity).toContainText("No proxy-vulnerable resident counted here had a shelter within reach before the flood, so none could lose it.");
+  checks.push("equity gap gives no ratio, with the reason, before anyone has lost access; a group with too few residents within reach keeps that reason at every hour");
   for (const width of [360, 390]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
@@ -1021,7 +1059,25 @@ try {
   await expect(thaiComparison.getByTestId("set-comparison-label")).toContainText("ชั่วโมงมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่ค่าที่สังเกตได้");
   await expect(thaiComparison.getByTestId("compare-reported-all-lost")).toHaveText("7,086 จาก 34,525 (21%)");
   await expect(thaiComparison.getByTestId("compare-plan-flooded-cutoff")).toHaveText("10 ก.ย. 23:00 น.");
-  await expect(touchPage.getByTestId("access-card").getByTestId("equity-gap")).toContainText("ไม่มีผู้ใดในกลุ่มเปราะบางตามตัวแทนสูญเสียการเข้าถึง");
+  // The equity block in Thai, default view: no ratio, the plain reason, the rule and both counts per group.
+  const thaiEquity = touchPage.getByTestId("access-card").getByTestId("equity-gap");
+  await expect(thaiEquity).toHaveAttribute("data-reason", "insufficient_group_denominator");
+  await expect(thaiEquity).toContainText("ช่องว่างความเท่าเทียมในการอพยพ: ไม่แสดงอัตราส่วน");
+  await expect(thaiEquity).toContainText("ไม่มีผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนที่นับในที่นี้มีที่พักพิงในระยะเดินตั้งแต่ก่อนน้ำท่วม จึงไม่มีผู้ใดในกลุ่มนี้สูญเสียการเข้าถึงได้");
+  await expect(thaiEquity.getByTestId("equity-rule")).toHaveText("สิ่งที่นำมาเปรียบเทียบ: ในบรรดาผู้อยู่อาศัยของแต่ละกลุ่มที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม สัดส่วนของผู้ที่สูญเสียการเข้าถึง");
+  await expect(thaiEquity.getByTestId("equity-counts")).toContainText("กลุ่มเปราะบางตามตัวแทน: สูญเสีย 0 จาก 0 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 103 คน)");
+  await expect(thaiEquity.getByTestId("equity-label")).toContainText("กลุ่มเปราะบาง = ตัวแทนจากภูมิประเทศและความห่างไกล");
+  // All residents, ranked plan of 8: the ratio and its plain comparison in Thai.
+  await touchPage.getByTestId("access-card").getByRole("radio", { name: /^ผู้อยู่อาศัยทั้งหมดที่จุดถนน/ }).check();
+  await touchPage.getByTestId("access-card").getByRole("radio", { name: "แผนจัดอันดับ" }).check();
+  await expect(thaiEquity).toContainText("ช่องว่างความเท่าเทียมในการอพยพ: 1.61 · ผู้อยู่อาศัยกลุ่มเปราะบางตามตัวแทนมีโอกาสสูญเสียการเข้าถึงมากกว่าประมาณ 1.6 เท่า (85.77% เทียบกับ 53.42%)");
+  await expect(thaiEquity.getByTestId("equity-counts")).toContainText("กลุ่มเปราะบางตามตัวแทน: สูญเสีย 320 จาก 373 คนที่มีที่พักพิงในระยะเดินก่อนน้ำท่วม (ผู้อยู่อาศัยที่นับทั้งหมด 7,152 คน)");
+  await expect(thaiEquity.getByTestId("equity-why")).toContainText("ค่าที่สูงจึงบอกตำแหน่งของบ้านเหล่านั้น");
+  const thaiEquityFit = await thaiEquity.evaluate((box) => ({ need: box.scrollWidth, room: box.clientWidth }));
+  assert(thaiEquityFit.need <= thaiEquityFit.room, `The Thai equity block fits the access card at 390 px (${JSON.stringify(thaiEquityFit)})`);
+  await touchPage.getByTestId("access-card").getByRole("radio", { name: "มีรายงานว่าใช้", exact: false }).check();
+  await touchPage.getByTestId("access-card").getByRole("radio", { name: /^ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุด/ }).check();
+  await expect(thaiEquity).toHaveAttribute("data-reason", "insufficient_group_denominator");
   const thaiSpacing = await touchPage.getByTestId("access-card").evaluate((card) => [...card.querySelectorAll("p, th, td, caption, legend, h2, h3, small, strong, span")]
     .filter((element) => /[\u0E00-\u0E7F]/.test(element.textContent ?? "") && !["normal", "0px"].includes(getComputedStyle(element).letterSpacing))
     .map((element) => `${element.tagName}: ${getComputedStyle(element).letterSpacing}`));

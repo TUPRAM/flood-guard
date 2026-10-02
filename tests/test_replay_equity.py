@@ -1,8 +1,11 @@
-"""The replay's Evacuation Equity Gap and its null rule (``floodguard.replay_equity``).
+"""The replay's Evacuation Equity Gap, its denominator and its null rule (``floodguard.replay_equity``).
 
-The rule: no ratio when a group has fewer than 50 residents (``insufficient_group_denominator``) or when
-nobody has lost access (``no_loss``); otherwise the same figures as ``floodguard.equity``, which stays
-unchanged. All inputs here are small synthetic numbers; "vulnerable" is the terrain/remoteness proxy.
+The rule (owner decision R8, option B): each group's loss rate is, of its residents who had a shelter within
+reach before the flood, the share who lost it. No ratio when a group has fewer than 50 such residents
+(``insufficient_group_denominator``) or when nobody has lost access (``no_loss``); otherwise the same figures
+as ``floodguard.equity`` gives for the same numerators and denominators. ``floodguard.equity`` stays
+unchanged. The inputs are (vulnerable lost, vulnerable within reach, other lost, other within reach); all are
+small synthetic numbers unless a test says otherwise; "vulnerable" is the terrain/remoteness proxy.
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ import pytest
 
 from floodguard import equity, replay_equity
 from floodguard.replay_equity import (
+    DENOMINATOR,
     MINIMUM_GROUP_SIZE,
     NULL_REASONS,
     REASON_INSUFFICIENT_GROUP,
@@ -29,7 +33,7 @@ from floodguard.replay_equity import (
 
 
 def reference(vulnerable_lost: float, vulnerable_total: float, other_lost: float, other_total: float) -> pd.Series:
-    """The unchanged ``floodguard.equity`` result for the same four numbers."""
+    """The unchanged ``floodguard.equity`` result for the same four numbers (its totals take the within-reach residents)."""
     frame = pd.DataFrame({
         "subdistrict_id": ["case"], "subdistrict_name": ["case"], "confidence_class": ["low"],
         "total_vulnerable_population": [vulnerable_total], "vulnerable_population_losing_access": [vulnerable_lost],
@@ -65,6 +69,50 @@ def test_band_limits_are_above_1_2_and_below_0_8(vulnerable_lost: int, band: str
 def test_no_vulnerable_loss_is_a_ratio_of_zero_not_a_missing_value() -> None:
     gap = replay_equity_gap(0, 2440, 7086, 32085)
     assert (gap.status, gap.reason, gap.ratio, gap.band) == ("ratio", None, 0.0, "lower")
+
+
+# --- The denominator: residents within reach before the flood (R8, option B) ---------------------------
+
+
+def test_each_rate_divides_by_the_residents_within_reach_before_the_flood() -> None:
+    assert DENOMINATOR == "within_reach_before_flood"
+    # 1,000 proxy-vulnerable residents are counted, 100 of them had a shelter within reach and 80 lost it;
+    # of 10,000 others, 4,000 had one within reach and 2,000 lost it. The rates are 80/100 and 2,000/4,000.
+    gap = replay_equity_gap(80, 100, 2000, 4000)
+    assert (gap.vulnerable_rate, gap.non_vulnerable_rate, gap.ratio, gap.band) == (0.8, 0.5, 1.6, "higher")
+    assert (gap.vulnerable_within_reach, gap.non_vulnerable_within_reach, gap.denominator) == (100.0, 4000.0, DENOMINATOR)
+    # Over all residents counted (80/1,000 and 2,000/10,000) the direction would flip; that is another input.
+    assert replay_equity_gap(80, 1000, 2000, 10000).band == "lower"
+
+
+def test_the_served_figures_at_the_peak_read_higher_for_the_plan_of_eight() -> None:
+    # Mae Sai r4 at the 3.5 m peak, all residents, rounded to whole residents (the parity fixture holds the
+    # unrounded sums): plan of 8 sites 320 of 373 against 13,109 of 24,537; reported set 0 of 2,440.
+    plan = replay_equity_gap(320, 373, 13109, 24537)
+    assert (plan.ratio, plan.band, plan.reason) == (1.606, "higher", None)
+    assert plan.interpretation == "Vulnerable residents are 1.61 times more likely to lose access."
+    reported = replay_equity_gap(0, 2440, 7086, 32085)
+    assert (reported.ratio, reported.band, reported.reason) == (0.0, "lower", None)
+    # The default view: nobody of the proxy-vulnerable group within reach of a reported site before the flood.
+    default = replay_equity_gap(0, 0, 5400, 5698)
+    assert (default.reason, default.ratio, default.vulnerable_rate) == (REASON_INSUFFICIENT_GROUP, None, None)
+
+
+@pytest.mark.parametrize(
+    "inputs",
+    [(101, 100, 10, 100), (10, 100, 100.5, 100), (1, 0, 10, 100), (320, 26.5, 100, 7553.2)],
+)
+def test_more_residents_lost_than_were_within_reach_is_refused(inputs: tuple[float, float, float, float]) -> None:
+    # Only a resident who had a shelter within reach can lose it; a larger count means the wrong denominator.
+    with pytest.raises(ReplayEquityError, match="within_reach"):
+        replay_equity_gap(*inputs)
+
+
+def test_float_noise_between_two_sums_of_the_same_residents_is_tolerated() -> None:
+    # Everyone within reach lost access, and the two sums differ in the last bits.
+    gap = replay_equity_gap(26.540000000000003, 26.54, 7093.5, 7553.2)
+    assert gap.reason == REASON_INSUFFICIENT_GROUP
+    assert replay_equity_gap(373.0000001, 373, 24537, 24537).ratio == 1.0
 
 
 # --- The null rule -----------------------------------------------------------------------------------
@@ -109,13 +157,13 @@ def test_a_loss_too_small_for_the_rounded_rate_is_still_a_loss() -> None:
     "inputs",
     [(10, 49, 100, 1000), (10, 49.99, 100, 1000), (100, 1000, 10, 49), (1, 3, 1, 7), (1, 1, 100, 1000), (0, 0, 5, 50), (5, 50, 0, 0), (0, 0, 0, 0)],
 )
-def test_fewer_than_50_residents_in_a_group_gives_no_ratio_with_a_reason(inputs: tuple[float, float, float, float]) -> None:
+def test_fewer_than_50_residents_within_reach_in_a_group_gives_no_ratio_with_a_reason(inputs: tuple[float, float, float, float]) -> None:
     gap = replay_equity_gap(*inputs)
     assert gap.ratio is None and gap.band is None
     assert (gap.status, gap.reason) == (REASON_INSUFFICIENT_GROUP, "insufficient_group_denominator")
-    assert gap.interpretation == "Equity gap not computed: a group has fewer than 50 residents."
+    assert gap.interpretation == "Equity gap not computed: a group has fewer than 50 residents with a shelter within reach before the flood."
     assert gap.minimum_group_size == MINIMUM_GROUP_SIZE == 50
-    assert (gap.vulnerable_total, gap.non_vulnerable_total) == (inputs[1], inputs[3])
+    assert (gap.vulnerable_within_reach, gap.non_vulnerable_within_reach) == (inputs[1], inputs[3])
 
 
 def test_exactly_50_residents_per_group_is_enough() -> None:
@@ -147,7 +195,7 @@ def test_only_vulnerable_loss_is_undefined() -> None:
 def test_the_minimum_group_size_can_be_set_for_another_study() -> None:
     assert replay_equity_gap(10, 49, 100, 1000, minimum_group_size=30).ratio == 2.041
     gap = replay_equity_gap(10, 49, 100, 1000, minimum_group_size=100)
-    assert gap.reason == REASON_INSUFFICIENT_GROUP and "fewer than 100 residents" in gap.interpretation
+    assert gap.reason == REASON_INSUFFICIENT_GROUP and "fewer than 100 residents with a shelter within reach" in gap.interpretation
     # An empty group never gives a ratio, whatever the minimum, and a minimum below 1 is refused.
     empty = replay_equity_gap(0, 0, 5, 100, minimum_group_size=1)
     assert (empty.reason, empty.ratio, empty.vulnerable_rate) == (REASON_INSUFFICIENT_GROUP, None, None)
@@ -215,6 +263,9 @@ def test_result_is_a_frozen_record_that_serialises_to_json_without_a_score_or_cl
         gap.ratio = 1.0  # type: ignore[misc]
     record = json.loads(json.dumps(gap.as_dict()))
     assert record["ratio"] == 2.0 and record["reason"] is None and record["minimum_group_size"] == 50
+    assert record["denominator"] == "within_reach_before_flood"
+    assert (record["vulnerable_within_reach"], record["non_vulnerable_within_reach"]) == (100.0, 100.0)
+    assert "vulnerable_total" not in record and "non_vulnerable_total" not in record
     assert not any("fpps" in key or "action_class" in key or "score" in key for key in record)
     assert json.loads(json.dumps(replay_equity_gap(0, 0, 0, 0).as_dict()))["vulnerable_rate"] is None
     assert not math.isnan(gap.ratio)
@@ -224,4 +275,6 @@ def test_module_states_what_the_figures_are() -> None:
     text = " ".join(replay_equity.__doc__.split())
     assert "T1 scenario" in text and "not an observed evacuation outcome" in text
     assert "terrain and remoteness proxy" in text
+    assert "Of the residents in the group who had a shelter within reach before the flood, the share who lost it." in text
+    assert "owner decision R8, option B" in text
     assert "No priority score and no action class" in text

@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.replay_wording_rules.v1",
-  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets, present a modelled hour as a safe time to leave or tell the reader which shelters to open. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
+  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets, present a modelled hour as a safe time to leave, tell the reader which shelters to open or state the equity rates over all residents counted. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
   "how_it_works": [
     "Text is normalised first: web addresses are removed, runs of white space become one space, curly apostrophes become straight ones, and non-breaking hyphens, figure dashes, en dashes and minus signs become plain hyphens.",
     "Each pattern in allow is then removed, in order. They are explicit negations such as 'not a forecast'. A new negation needs a new entry here; a plain 'not' somewhere in the sentence is not enough.",
@@ -191,9 +191,17 @@
       "pattern": "(?<![A-Za-z0-9_])open(?:ing)? (?:(?:the|these|those|all|first|following|next|top|[0-9]+) ){1,4}(?:shelters?|sites?)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])open(?:ing)? (?:shelters|sites)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) to (?:be )?open(?:ed)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) (?:that )?(?:must|should|need to|needs to|have to|has to|ought to) (?:be )?open(?:ed)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:must|should|need to|needs to|have to|has to|ought to) open (?:(?:the|these|those|all|first|following|next|top|[0-9]+) ){0,4}(?:shelters?|sites?)(?![A-Za-z0-9_])|เปิด(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)(?:ทั้ง)?เหล่านี้|(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)ที่(?:ต้อง|ควร)เปิด|(?:ต้อง|ควร)เปิด(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)",
       "message": "The shelter plans list candidates to verify on the ground. Do not tell the reader which shelters to open; say 'candidates to verify'.",
       "bad": ["Open these shelters first", "The 8 shelters to open in Mae Sai", "The district must open 8 shelters", "Sites that should be opened before the peak", "The tambon should open the first 8 sites", "Shelters to be opened: C049", "Open shelters C049 and C007 first", "Open the first 8 sites of the plan", "Opening all 12 sites covers the town", "เปิดที่พักพิงเหล่านี้ก่อนน้ำมา", "ที่พักพิงที่ต้องเปิด 8 แห่ง", "อำเภอควรเปิดที่พักพิง 8 แห่ง", "ควรเปิดสถานที่ 8 แห่งแรก", "เปิดศูนย์พักพิงเหล่านี้", "ศูนย์อพยพที่ควรเปิดก่อน"]
+    },
+    {
+      "id": "equity_denominator",
+      "pattern": "(?<![A-Za-z0-9_])divid(?:e|es|ed|ing) (?:[a-z-]+ ){0,8}by all (?:the )?residents(?![A-Za-z0-9_])|หารด้วยผู้อยู่อาศัยทั้งหมด",
+      "message": "Each group's loss rate divides by its residents who had a shelter within reach before the flood (owner decision R8, option B), not by all residents counted. All residents counted may be shown beside the rate as context.",
+      "bad": ["Each rate divides the residents who lost access by all residents counted in that group", "The loss rate is divided by all the residents of the group", "แต่ละอัตราคือผู้ที่สูญเสียการเข้าถึงหารด้วยผู้อยู่อาศัยทั้งหมดที่นับในกลุ่มนั้น"]
     }
   ],
   "mixed": [
+    {"text": "Each rate divides the residents of a group who lost access by the residents of that group who had a shelter within reach before the flood, not by all residents counted.", "rules": []},
+    {"text": "T1 scenario (model). The gap divides the lost residents by all residents counted in the group.", "rules": ["equity_denominator"]},
     {"text": "This is not a forecast. It is a live forecast of the Sai River.", "rules": ["live", "forecast"]},
     {"text": "Not an official warning, but treat it as a warning.", "rules": ["warning"]},
     {"text": "Not a validation of the model; accuracy is 0.48.", "rules": ["validation_as_agreement"]},

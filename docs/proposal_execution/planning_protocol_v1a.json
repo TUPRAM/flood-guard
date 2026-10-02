@@ -3,8 +3,8 @@
   "protocol_id": "planning_protocol_v1a",
   "title": "FloodGuard planning protocol v1a: decision rules",
   "protocol_kind": "declared_protocol_after_exploratory_analysis",
-  "status": "draft_for_signature",
-  "status_note": "Draft written by an AI coding agent for the owners' signature. Agents draft, humans sign. Nothing in this file is in force. It takes effect only when both signers have filled the signature block, every entry in drafter_readings is marked confirmed or amended, the file is committed, and the SHA-256 of the committed file is recorded in docs/proposal_execution/RECEIPTS.jsonl. No receipt has been written.",
+  "status": "signed",
+  "status_note": "Signed. In force only once the SHA-256 of this committed file is recorded in docs/proposal_execution/RECEIPTS.jsonl.",
   "drafted_on": "2026-10-01",
   "drafted_by": "AI coding agent (Claude), on the owner go-ahead R5 of 2026-10-01",
   "official_warning": false,
@@ -74,12 +74,12 @@
     },
     "decision_log": {
       "name": "docs/decision-log-d1-d16.md",
-      "sha256": "2c64fa479573c8eb1d6ac50a8e1d9c5e77e609c336f2352e52b2f05c8804b21e",
+      "sha256": "ccc450d6d3465e724c12ba919835dd606e38bd8b1b27eaf57c27d9f33fa7d27c",
       "committed": true,
-      "read_from": "branch claude/mae-sai-r4 at commit ec6c014 (replay lineage). The file is not on this lineage and was not copied.",
+      "read_from": "branch master at commit 9a7d24d (merge of PR #39, 2026-10-02). The file is not on this lineage and was not copied.",
       "signed_on": "2026-09-30",
       "signed_by": "Putu and Rachmania. Putu approved in a Claude Code session on behalf of both; Rachmania has not signed that file directly.",
-      "working_copy_note": "On 2026-10-01 the working copy of the log on that branch had one uncommitted follow-up line, about the draft 4009 rights record. The SHA-256 here is of the committed file at ec6c014. If the log is committed again before signing, the signers update this hash and read_from."
+      "working_copy_note": "Updated at signing on 2026-10-02: the SHA-256 is of the committed file on master at 9a7d24d, which records the owner decisions R1 to R9."
     },
     "scoring_module": {
       "name": "src/floodguard/scoring.py",
@@ -231,7 +231,7 @@
       "The temporal honesty assertion in guardrails holds."
     ],
     "no_assumed_components_in_obs_or_scn": "No FPPS component is assumed at 0, 50 or 100 in the OBS or SCN lanes. Assumed completions exist only as T1 assumed-completion arithmetic and are labelled as such (plan 1.2).",
-    "no_assumed_components_status": "Drafter reading DR-A05. Plan 1.2 forbids assumed components in 'the OBS or SCN lanes' and, in the next sentence, keeps assumed completions as T1 arithmetic; T1 is the scenario tier. The draft reads this as: no case row and no scenario cell in OBS, SCN or SCN-ENV carries an assumed component; assumed-completion arithmetic is a separate table, labelled as such, and is never a case row or a scenario cell. An earlier draft narrowed the rule to 'OBS or SCN-ENV'; the plan's wording is restored here. The owners confirm or amend the reading at signing."
+    "no_assumed_components_status": "Drafter reading DR-A05. Plan 1.2 forbids assumed components in 'the OBS or SCN lanes' and, in the next sentence, keeps assumed completions as T1 arithmetic; T1 is the scenario tier. The draft reads this as: no case row and no scenario cell in OBS, SCN or SCN-ENV carries an assumed component; assumed-completion arithmetic is a separate table, labelled as such, and is never a case row or a scenario cell. An earlier draft narrowed the rule to 'OBS or SCN-ENV'; the plan's wording is restored here. The owners confirm or amend the reading at signing. Confirmed by the owners at signing on 2026-10-02."
   },
   "date_rule": {
     "basis": [
@@ -255,7 +255,7 @@
         "lane": "SCN-ENV",
         "use": "scenario only",
         "reason": "No per-patch dates, Field_Validation=0, and a span from 1 Aug 2024 into October 2024. It fails the recency condition.",
-        "date_span_status": "Drafter reading DR-A10. The layer name gives 1 Aug to 12 Oct 2024. Plan 0 item 1 says the union spans 1 Aug to 22 Oct and plan 4.1 says '1 Aug-12/22 Oct'; the decision log calls it the Aug-Oct accumulated layer. The draft records the layer name as it is in the package. Whichever end date is right, the layer is a season window and fails the recency condition. The owners confirm at signing."
+        "date_span_status": "Drafter reading DR-A10. The layer name gives 1 Aug to 12 Oct 2024. Plan 0 item 1 says the union spans 1 Aug to 22 Oct and plan 4.1 says '1 Aug-12/22 Oct'; the decision log calls it the Aug-Oct accumulated layer. The draft records the layer name as it is in the package. Whichever end date is right, the layer is a season window and fails the recency condition. The owners confirm at signing. Confirmed by the owners at signing on 2026-10-02."
       },
       "layer_22_oct": {
         "layer": "CHIANGRAI_20241022_FloodExtent",
@@ -354,7 +354,7 @@
         "C3 to C8 are evaluated exactly as for an observed row.",
         "The row carries confidence_class medium or low, because the scoring module accepts only high, medium and low, together with confidence_kind scenario. It is displayed as scenario confidence and is never shown or counted as observed confidence."
       ],
-      "rule_status": "Drafter reading DR-A07, not in the plan. This is the most outcome-sensitive reading in this file: it decides whether any scenario row can have a class above E. The owners confirm it, or replace it with one of the alternatives, before signing.",
+      "rule_status": "Drafter reading DR-A07, not in the plan. This is the most outcome-sensitive reading in this file: it decides whether any scenario row can have a class above E. The owners confirm it, or replace it with one of the alternatives, before signing. Confirmed by the owners at signing on 2026-10-02.",
       "alternatives": [
         "Literal: C1 fails for every T1 row and every scenario class is E.",
         "Declared: each scenario cell states its confidence in v1b, and C1 to C8 are not evaluated for it."
@@ -403,7 +403,7 @@
     "local_path": "<external_data_workspace>/geoid_flood/sample/sample/geoid-flood/EMSR712-3/",
     "unit": "tile ID (the integer after EMSR712-3-)",
     "rule": "Sort the 29 tile IDs in ascending numeric order. The first 15 are development tiles. The remaining 14 are test tiles.",
-    "rule_status": "Drafter reading DR-A01. The plan says 29 tiles by tile ID, 15 dev / 14 test, and gives no list. This ordering rule is the drafting agent's reading. The owners confirm or amend it at signing.",
+    "rule_status": "Drafter reading DR-A01. The plan says 29 tiles by tile ID, 15 dev / 14 test, and gives no list. This ordering rule is the drafting agent's reading. The owners confirm or amend it at signing. Confirmed by the owners at signing on 2026-10-02.",
     "development_tile_ids": [
       9,
       10,
@@ -478,8 +478,8 @@
           0.1,
           0.3
         ],
-        "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 5 of 8 Mae Sai tambons, as stated in plan 3.4. It was chosen after seeing the data. The per-tambon envelope shares kept from that analysis show 6 of the 8 above 0.05, not 5. The owners check the count and correct this sentence before signing.",
-        "anchor_disclosure_status": "Drafter reading DR-A11. The count is quoted from plan 3.4 and does not match the retained shares (disclosure items EK-05 and EK-R3). The disclosure itself, that 0.20 was chosen after seeing the data, is not in doubt.",
+        "anchor_disclosure": "The 0.20 anchor was declared after the 0.05 anchor was seen to saturate in 6 of the 8 Mae Sai tambons. It was chosen after seeing the data. Plan 3.4 says 5 of 8; the per-tambon envelope shares kept from that analysis show 6 above 0.05, and the owners corrected the count at signing on 2026-10-02.",
+        "anchor_disclosure_status": "Drafter reading DR-A11. The count is quoted from plan 3.4 and does not match the retained shares (disclosure items EK-05 and EK-R3). The disclosure itself, that 0.20 was chosen after seeing the data, is not in doubt. Amended at signing on 2026-10-02: the owners corrected the count to 6 of the 8.",
         "permanent_water": {
           "source": "ESA WorldCover 2021 v200",
           "class": 80,
@@ -556,7 +556,7 @@
     "leave_one_component_out": {
       "required_on_every_row": true,
       "rule": "For each of the five components, report an FPPS with that component's weight set to 0 and the other four weights renormalised to sum to 1, and the v1 class of that FPPS.",
-      "rule_status": "Drafter reading DR-A02. The plan requires a leave-one-component-out FPPS and class on every row and does not say how the remaining weights are treated. Renormalisation follows scoring.validate_weights. The owners confirm or amend it at signing."
+      "rule_status": "Drafter reading DR-A02. The plan requires a leave-one-component-out FPPS and class on every row and does not say how the remaining weights are treated. Renormalisation follows scoring.validate_weights. The owners confirm or amend it at signing. Confirmed by the owners at signing on 2026-10-02."
     },
     "weight_presets": {
       "source": "src/floodguard/sensitivity.py WEIGHT_SCENARIOS",
@@ -736,7 +736,7 @@
         "rule": "Triggers are evaluated in the order E, A, B, C, D. The first trigger that matches gives the v2 class.",
         "otherwise": "no_v2_trigger",
         "otherwise_meaning": "A unit with FPPS of at least 35, exposure of at least 10 and medium or scenario confidence that meets none of A to D gets no v2 letter. It is reported as 'no v2 trigger met', counted as its own category, and counted as a class change against v1 in the v1 / v2 comparison.",
-        "rule_status": "Drafter reading DR-A08, not in the plan. The plan lists the five triggers with no order and no fallback, so a unit where both the B and the C trigger fire, or one where none fires, has no defined v2 class. E is placed first because of the invariant that no class above E exists without medium or scenario confidence; A to D then follow the v1 order. The owners confirm or amend it at signing.",
+        "rule_status": "Drafter reading DR-A08, not in the plan. The plan lists the five triggers with no order and no fallback, so a unit where both the B and the C trigger fire, or one where none fires, has no defined v2 class. E is placed first because of the invariant that no class above E exists without medium or scenario confidence; A to D then follow the v1 order. The owners confirm or amend it at signing. Confirmed by the owners at signing on 2026-10-02.",
         "alternatives": [
           "When no trigger matches, fall back to the v1 class.",
           "When no trigger matches, fall back to D.",
@@ -772,7 +772,7 @@
         "group_min_for_ratio": 50
       },
       "precedence": "GR1 decides the class, ahead of confidence condition C6. A unit with fewer than 100 residents has no binding class (reason insufficient_denominator), no would-be class and no v2 class. Its confidence is still recorded as low, with C6 in failed_conditions.",
-      "precedence_status": "Drafter reading DR-A09, not in the plan. Plan 2.3 item 1 says such a unit gets no class. Plan 3.3 condition 6 makes it low confidence, which the v1 rule turns into class E. Plan 5 item 10 lists 'denominator' among the non-evidence conditions for which a would-be class is shown in Command. The owners confirm which of these applies.",
+      "precedence_status": "Drafter reading DR-A09, not in the plan. Plan 2.3 item 1 says such a unit gets no class. Plan 3.3 condition 6 makes it low confidence, which the v1 rule turns into class E. Plan 5 item 10 lists 'denominator' among the non-evidence conditions for which a would-be class is shown in Command. The owners confirm which of these applies. Confirmed by the owners at signing on 2026-10-02.",
       "enforcement": {
         "status": "not_built",
         "note": "To be enforced by planning_assessment.py and verify_planning_assessment.py (plan task E8). Neither exists on this lineage. Required before any scoring."
@@ -820,7 +820,7 @@
     {
       "id": "GR5_blinding",
       "rule": "Context, access and closure builds may run before v1b is in force. No FPPS, no A-E class and no ensemble may be computed for any real unit until the signed v1b's SHA-256 is recorded in RECEIPTS.jsonl. The grid, nodes, links, anchors and case list are fixed before any scoring.",
-      "rule_status": "Drafter reading DR-A06. Plan 2.3 item 5 forbids computing any FPPS, class or ensemble before the v1b receipt, with no qualifier. The words 'for any real unit' were added by the drafting agent because the existing test suite scores synthetic fixtures on every run (tests/test_scoring.py). The reading does not excuse the replay computation of 28 Sep 2026, which scored real tambons after the plan date; that is disclosed in item EK-R1. The owners confirm or amend the wording at signing.",
+      "rule_status": "Drafter reading DR-A06. Plan 2.3 item 5 forbids computing any FPPS, class or ensemble before the v1b receipt, with no qualifier. The words 'for any real unit' were added by the drafting agent because the existing test suite scores synthetic fixtures on every run (tests/test_scoring.py). The reading does not excuse the replay computation of 28 Sep 2026, which scored real tambons after the plan date; that is disclosed in item EK-R1. The owners confirm or amend the wording at signing. Confirmed by the owners at signing on 2026-10-02.",
       "status_at_drafting": "No FPPS, class or ensemble was computed while drafting or revising this file. One computation for real tambons was made after the plan date on another lineage; see known_departure.",
       "known_departure": "Disclosure item EK-R1: scenario FPPS and score-implied classes for the eight Mae Sai tambons were computed on the replay lineage on 28 Sep 2026, two days after the plan adopted this rule.",
       "enforcement": {
@@ -1027,7 +1027,7 @@
         "priority": "stretch",
         "frame": "Hat Yai AOI-03",
         "case_reference_date": "2025-11-24",
-        "case_reference_date_status": "Drafter reading DR-A12, not in the plan. The plan gives H1 no reference date, but the OBS lane requires one. H1 is treated as self-dated, like O2, on its post-event Sentinel-1 acquisition, 2025-11-23T23:03:09Z (24 Nov 2025 local time), recorded in docs/proposal_execution/hat_yai_transfer.md. That acquisition is not the event peak. H1 is forced to class E whatever the date. The owners confirm or amend it at signing.",
+        "case_reference_date_status": "Drafter reading DR-A12, not in the plan. The plan gives H1 no reference date, but the OBS lane requires one. H1 is treated as self-dated, like O2, on its post-event Sentinel-1 acquisition, 2025-11-23T23:03:09Z (24 Nov 2025 local time), recorded in docs/proposal_execution/hat_yai_transfer.md. That acquisition is not the event peak. H1 is forced to class E whatever the date. The owners confirm or amend it at signing. Confirmed by the owners at signing on 2026-10-02.",
         "flood_inputs": [
           "own raw 20 m candidate"
         ],
@@ -1061,9 +1061,9 @@
       "plan 2.3 item 8"
     ],
     "rule": "The demo tambon is the highest-FPPS headline-eligible unit in the SCN-ENV lane of case SE1. If no unit is headline-eligible, it is the highest-FPPS unit, shown as unstable: verify. FPPS here is the value of the reference cell fixed in v1b (ensemble_grid.headline_rule.reference_cell).",
-    "rule_status": "Drafter reading DR-A04. Plan 7.4 says 'highest-FPPS headline-eligible unit in SCN-ENV' and names no case and no ensemble cell. SCN-ENV also holds SE2 and SE2-blind. The draft restricts the rule to SE1, because the live demo in plan 7.4 opens on the brief for the SE1 frame and SE2 is shown later with its selection disclosure, and it takes FPPS from the reference cell. The owners confirm or amend it at signing.",
+    "rule_status": "Drafter reading DR-A04. Plan 7.4 says 'highest-FPPS headline-eligible unit in SCN-ENV' and names no case and no ensemble cell. SCN-ENV also holds SE2 and SE2-blind. The draft restricts the rule to SE1, because the live demo in plan 7.4 opens on the brief for the SE1 frame and SE2 is shown later with its selection disclosure, and it takes FPPS from the reference cell. The owners confirm or amend it at signing. Confirmed by the owners at signing on 2026-10-02.",
     "tie_break": "Lowest subdistrict_id.",
-    "tie_break_status": "Drafter reading DR-A03. Not in the plan. Added by the drafting agent so the rule is deterministic; the owners confirm or amend it at signing.",
+    "tie_break_status": "Drafter reading DR-A03. Not in the plan. Added by the drafting agent so the rule is deterministic; the owners confirm or amend it at signing. Confirmed by the owners at signing on 2026-10-02.",
     "scripts_use_placeholders_until": "2026-10-23",
     "note": "The demo tambon is not chosen by hand and is not chosen for its class."
   },
@@ -1146,45 +1146,61 @@
       {
         "id": "R5",
         "effect": "Go-ahead of 1 Oct 2026 to draft v1a and v1b for signature. The drafts are not in force until both owners sign and the SHA-256 values are in RECEIPTS.jsonl."
+      },
+      {
+        "id": "R6",
+        "effect": "Both owners confirmed the 4009 rights record rights_basis_4009_v1.json on 2026-10-02 (relayed by Putu). Layers derived from product 4009 may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (D3)."
+      },
+      {
+        "id": "R7",
+        "effect": "PR #39 merged into master on 2026-10-02; production carries replay revision r4."
+      },
+      {
+        "id": "R8",
+        "effect": "On the replay, each group's access-loss rate is divided by the residents of that group who had a shelter within reach before the flood, as the scoring frame counts access loss. Where a group has fewer than 50 such residents no ratio is shown."
+      },
+      {
+        "id": "R9",
+        "effect": "D5, D8, D10 and D14-D16 are withdrawn. No wording for them exists in the plan files."
       }
     ]
   },
   "open_decisions": [
     {
       "id": "D5",
-      "status": "open",
+      "status": "withdrawn",
       "text": "undefined in the plan files",
-      "needed": "The owners supply the original wording or record the decision as withdrawn."
+      "needed": "Withdrawn by the owners on 2026-10-02 (owner decision R9). If one is needed later it is recorded as a new decision."
     },
     {
       "id": "D8",
-      "status": "open",
+      "status": "withdrawn",
       "text": "undefined in the plan files",
-      "needed": "The owners supply the original wording or record the decision as withdrawn."
+      "needed": "Withdrawn by the owners on 2026-10-02 (owner decision R9). If one is needed later it is recorded as a new decision."
     },
     {
       "id": "D10",
-      "status": "open",
+      "status": "withdrawn",
       "text": "undefined in the plan files",
-      "needed": "The owners supply the original wording or record the decision as withdrawn."
+      "needed": "Withdrawn by the owners on 2026-10-02 (owner decision R9). If one is needed later it is recorded as a new decision."
     },
     {
       "id": "D14",
-      "status": "open",
+      "status": "withdrawn",
       "text": "undefined in the plan files",
-      "needed": "The owners supply the original wording or record the decision as withdrawn."
+      "needed": "Withdrawn by the owners on 2026-10-02 (owner decision R9). If one is needed later it is recorded as a new decision."
     },
     {
       "id": "D15",
-      "status": "open",
+      "status": "withdrawn",
       "text": "undefined in the plan files",
-      "needed": "The owners supply the original wording or record the decision as withdrawn."
+      "needed": "Withdrawn by the owners on 2026-10-02 (owner decision R9). If one is needed later it is recorded as a new decision."
     },
     {
       "id": "D16",
-      "status": "open",
+      "status": "withdrawn",
       "text": "undefined in the plan files",
-      "needed": "The owners supply the original wording or record the decision as withdrawn."
+      "needed": "Withdrawn by the owners on 2026-10-02 (owner decision R9). If one is needed later it is recorded as a new decision."
     }
   ],
   "drafter_readings": [
@@ -1195,7 +1211,7 @@
       "plan_says": "29 tiles by tile ID, 15 development and 14 test. No list.",
       "draft_says": "Tile IDs sorted ascending; the first 15 (9-33) are development, the last 14 (35-50) are test.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A02",
@@ -1204,7 +1220,7 @@
       "plan_says": "A leave-one-component-out FPPS and class on every row. Weight handling not stated.",
       "draft_says": "The dropped component's weight is set to 0 and the other four are renormalised to sum to 1.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A03",
@@ -1213,7 +1229,7 @@
       "plan_says": "No tie-break.",
       "draft_says": "Lowest subdistrict_id.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A04",
@@ -1222,7 +1238,7 @@
       "plan_says": "Highest-FPPS headline-eligible unit in SCN-ENV. No case and no ensemble cell named.",
       "draft_says": "Restricted to case SE1, with FPPS taken from the v1b reference cell.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A05",
@@ -1231,7 +1247,7 @@
       "plan_says": "No assumed component in the OBS or SCN lanes; assumed completions only as T1 arithmetic.",
       "draft_says": "No case row or scenario cell in OBS, SCN or SCN-ENV carries an assumed component; assumed-completion arithmetic is a separate labelled table.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A06",
@@ -1240,7 +1256,7 @@
       "plan_says": "No FPPS, class or ensemble before the v1b receipt. No qualifier.",
       "draft_says": "Adds 'for any real unit', so that the existing fixture tests are not a breach.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A07",
@@ -1249,7 +1265,7 @@
       "plan_says": "Condition C1 needs tier T3 or a skill-passing T2. Scenario rows are tier T1. Scenario confidence is called both derived and declared.",
       "draft_says": "For T1 rows C1 is judged on the base flood input and C2 is replaced by the scenario declaration; scenario confidence is derived.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A08",
@@ -1258,7 +1274,7 @@
       "plan_says": "Five triggers, no evaluation order and no fallback.",
       "draft_says": "Order E, A, B, C, D; first match wins; a unit that matches none is reported as 'no v2 trigger met'.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A09",
@@ -1267,7 +1283,7 @@
       "plan_says": "Fewer than 100 residents: 'no class' (2.3 item 1), low confidence and so class E (3.3), and a would-be class shown for denominator failures (5 item 10).",
       "draft_says": "GR1 wins: no binding class, no would-be class, no v2 class; confidence is still recorded as low.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A10",
@@ -1276,7 +1292,7 @@
       "plan_says": "The union spans 1 Aug to 22 Oct (plan 0) or '1 Aug-12/22 Oct' (plan 4.1); the decisions say Aug-Oct.",
       "draft_says": "Records the layer name CHIANGRAI_20240801_20241012_AccumulatedFlood as it is in the package.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-A11",
@@ -1285,7 +1301,7 @@
       "plan_says": "The 0.05 anchor saturated in 5 of 8 tambons.",
       "draft_says": "Quotes the plan's count and states that the retained shares show 6 of 8 above 0.05.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "amended"
     },
     {
       "id": "DR-A12",
@@ -1294,7 +1310,7 @@
       "plan_says": "H1 is in the OBS lane with no reference date.",
       "draft_says": "Self-dated on the post-event acquisition: 2025-11-24.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     }
   ],
   "exploratory_knowledge_disclosure": {
@@ -1939,19 +1955,28 @@
         "role": "owner",
         "required_signer": "Putu (I Putu Pramana Putra)",
         "action": "signs",
-        "signed_by": null,
-        "signed_at_utc": null,
-        "attestation": null
+        "signed_by": "I Putu Pramana Putra (Putu)",
+        "signed_at_utc": "2026-10-02T06:10:49Z",
+        "attestation": "I confirm the four statements in attestations_required. On the third statement: I am not sure whether any M1-v2 tuning on GEOID tiles has been run, and that is recorded in amendments_at_signing. Given by Putu in a Claude Code session on 2026-10-02 and typed into this entry by the AI coding agent on Putu's instruction."
       },
       {
         "role": "method_co_signer",
         "required_signer": "Rachmania (Rachmania Ulwani)",
         "action": "co-signs",
-        "signed_by": null,
-        "signed_at_utc": null,
-        "attestation": null
+        "signed_by": "Rachmania Ulwani (Rachmania)",
+        "signed_at_utc": "2026-10-02T06:10:49Z",
+        "attestation": "I confirm the four statements in attestations_required. On the third statement: I am not sure whether any M1-v2 tuning on GEOID tiles has been run, and that is recorded in amendments_at_signing. Relayed by Putu in a Claude Code session on 2026-10-02: Putu stated that Rachmania approves and attests with Putu. Typed into this entry by the AI coding agent on Putu's instruction; Rachmania did not type this entry and did not make the signing commit."
       }
     ],
-    "amendments_at_signing": []
+    "amendments_at_signing": [
+      "How the signatures were entered: on 2026-10-02 Putu told the AI coding agent, in a Claude Code session, that Putu and Rachmania both approve this protocol, both attest the four statements, and want their signatures recorded. The agent typed both entries on that instruction. This departs from the note in this block that each signer fills their own entry. Rachmania can add her own confirmation in a later commit; that commit must not change this file.",
+      "Drafter readings DR-A01 to DR-A10 and DR-A12 are confirmed as drafted. This includes DR-A07: for a scenario row, confidence condition C1 is judged on the base flood input, so a scenario built on an agency product used as provided can reach medium confidence.",
+      "Drafter reading DR-A11 is amended: the anchor disclosure now says the 0.05 anchor saturated in 6 of the 8 Mae Sai tambons, and that plan 3.4 says 5 of 8.",
+      "GEOID tuning: at signing, Putu answered 'not sure' for both owners to whether any M1-v2 tuning on GEOID tiles has been run. No M1-v2 tuning code or output is in this repository at the commit before the signing commit. Rachmania is to state it. If tuning had already been run, that is disclosed in a planning_protocol_v2 with a written reason.",
+      "The owners stated that the exploratory-knowledge disclosure is complete as drafted. They did not add which would-be class each tambon was shown in the 28 Sep study (item EK-R1).",
+      "D5, D8, D10 and D14-D16 are recorded as withdrawn (owner decision R9), and owner decisions R6 to R9 are added to signed_decisions.",
+      "The decision-log reference now points at the committed file on master at 9a7d24d.",
+      "Guardrails: eight of the nine are still marked not_built. Signing declares the rules; it does not build the checks."
+    ]
   }
 }

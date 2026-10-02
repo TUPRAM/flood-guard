@@ -57,7 +57,7 @@ _SPEC.loader.exec_module(receipt_tool)
 # docs/proposal_execution/planning_protocol_v1_signing.md.
 #   v1a: draft_for_signature -> signed
 #   v1b: incomplete_draft -> draft_for_signature -> signed
-EXPECTED_STATUS = {"v1a": "draft_for_signature", "v1b": "incomplete_draft"}
+EXPECTED_STATUS = {"v1a": "signed", "v1b": "incomplete_draft"}
 DRAFT_STATUSES = {"draft_for_signature", "incomplete_draft"}
 
 DISCLOSURE_KEY = "exploratory_knowledge_disclosure"

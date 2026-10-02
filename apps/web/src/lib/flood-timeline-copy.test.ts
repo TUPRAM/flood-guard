@@ -105,6 +105,10 @@ describe("Mae Sai replay copy", () => {
       manifest.s2_crosscheck!.index, manifest.s2_crosscheck!.water_rule, manifest.s2_crosscheck!.clear_rule,
       manifest.s2_crosscheck!.permanent_water_rule, manifest.s2_crosscheck!.comparison_rule, manifest.s2_crosscheck!.caveat,
       manifest.s2_crosscheck!.reading, manifest.s2_crosscheck!.confidence_reason, manifest.s2_crosscheck!.scope,
+      // What the next clear VIIRS day is consistent with, shown beside the reading.
+      manifest.s2_crosscheck!.following_day!.reading,
+      // The export pack's source timestamp (the downloads footer).
+      manifest.exports!.source_timestamp,
       ...(manifest.external_references ?? []).flatMap((reference) => (reference.note ? [reference.note] : [])),
       ...(manifest.gauge_note ? [manifest.gauge_note] : []),
       // The event chronology's source line under the "Reported:" narrative.
@@ -120,6 +124,17 @@ describe("Mae Sai replay copy", () => {
     expect(sentences.length).toBeGreaterThan(80);
     expect(localizedText("compiled 2026-09-27", "th")).toEqual({ text: "รวบรวมเมื่อ 2026-09-27", lang: "th" });
     expect(localizedText("compiled 2026-09-27", "en")).toEqual({ text: "compiled 2026-09-27", lang: "en" });
+    // Sentences the page shows only once a local check of the shelter candidates has been returned.
+    for (const sentence of [
+      "Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; demand is a modelled upper bound; the local check that was returned is reported by role and is not used in these figures.",
+      "One local check per site, reported by role and not audited by the project team.",
+      "checks dated 2026-10-09/2026-10-12",
+    ]) expect(localizedText(sentence, "th").lang, sentence).toBe("th");
+    expect(localizedText("checks dated 2026-10-09/2026-10-12", "th").text).toBe("ตรวจสอบระหว่าง 2026-10-09 ถึง 2026-10-12");
+    // No sentence names a land cover for the water of 15 Sep: no land-cover map is an input of the bake.
+    expect(manifest.s2_crosscheck!.reading).not.toMatch(/on fields/);
+    expect(localizedText(manifest.s2_crosscheck!.reading, "th").text).not.toContain("ไร่นา");
+    expect(manifest.limitations.join(" ")).not.toMatch(/on fields/);
     const missing = sentences.filter((sentence) => localizedText(sentence, "th").lang !== "th");
     expect(missing).toEqual([]);
   });

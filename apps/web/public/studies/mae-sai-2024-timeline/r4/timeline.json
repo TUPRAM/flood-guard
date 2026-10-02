@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T14:19:00+07:00",
+ "generated_at": "2026-10-02T16:10:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -721,8 +721,8 @@
   {
    "root": "repo",
    "path": "outputs/mae_sai_reported_shelters_2024.json",
-   "bytes": 69754,
-   "sha256": "9865a3db58ec0b6991d85f5d651520838fa67121e7b411dc4b859fc666293f6d"
+   "bytes": 75792,
+   "sha256": "674d95881b857916f65f864e555a1b20f815a25bd9c43e2d475fc0c8f2d00d35"
   },
   {
    "root": "repo",
@@ -8242,6 +8242,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8315,6 +8316,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8381,6 +8383,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8440,6 +8443,7 @@
     "first_use": "2024-09-21",
     "in_access_set": false,
     "access_set_note": "The temple was itself flooded and evacuated at the peak; it served as a shelter from 21 Sep.",
+    "access_set_note_th": "วัดถูกน้ำท่วมและต้องอพยพในช่วงระดับน้ำสูงสุด แล้วจึงใช้เป็นที่พักพิงตั้งแต่ 21 ก.ย.",
     "model_check": {
      "h": 7.35,
      "k": 1.0,
@@ -8492,6 +8496,7 @@
     "first_use": "2024-09-11",
     "in_access_set": false,
     "access_set_note": "Incident command centre and relief kitchens; not a documented overnight shelter in Sep 2024.",
+    "access_set_note_th": "ศูนย์บัญชาการเหตุการณ์และโรงครัว ไม่มีหลักฐานว่าใช้เป็นที่พักค้างคืนในเดือน ก.ย. 2567 (2024)",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8544,6 +8549,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": 6.2,
      "k": 1.0,
@@ -8589,6 +8595,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8634,6 +8641,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8686,6 +8694,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": null
    },
    {
@@ -8730,6 +8739,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8789,6 +8799,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": 10.2,
      "k": 0.712,
@@ -8841,6 +8852,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -8886,6 +8898,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": null
    },
    {
@@ -8923,6 +8936,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": null
    },
    {
@@ -8960,6 +8974,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -9005,6 +9020,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -9050,6 +9066,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": null
    },
    {
@@ -9087,6 +9104,7 @@
     "first_use": "2024-09-15 or earlier",
     "in_access_set": true,
     "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+    "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน",
     "model_check": {
      "h": 10.75,
      "k": 1.0,
@@ -9132,6 +9150,7 @@
     "first_use": "2024-09-14",
     "in_access_set": false,
     "access_set_note": "Prepared as a shelter for vulnerable groups by 14 Sep, after the peak.",
+    "access_set_note_th": "เตรียมเป็นที่พักพิงสำหรับกลุ่มเปราะบางภายใน 14 ก.ย. หลังช่วงระดับน้ำสูงสุด",
     "model_check": {
      "h": null,
      "k": 1.0,
@@ -9155,7 +9174,8 @@
    },
    "bounds": {
     "lower": "An unknown capacity counts as 0.",
-    "upper": "An unknown capacity takes the median estimate of the same site kind (kind_median), or the median of every estimate when no site of that kind has one (all_kinds_median). Medians use every candidate with an estimate."
+    "upper": "An unknown capacity takes the median estimate of the same site kind (kind_median), or the median of every estimate when no site of that kind has one (all_kinds_median). Medians use every candidate with an estimate.",
+    "note": "The bounds differ only in what a site without a mapped footprint is assumed to hold. Neither is a limit on who fits: a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are unmapped, so more residents may fit than the upper bound gives."
    },
    "method": "Residents are assigned to eligible sites within the walking limit on normal roads without exceeding a site's capacity, serving as many as possible (a maximum flow, solved in thousandths of a resident and published in whole residents). The capacity-aware ranking adds, at each step, the site that lets the most additional residents fit under the upper bound; it stops at the plan-size limit or when a site adds less than 0.5% of demand. Both bounds use that one site order, and a site's load is the number it adds when it joins. coverage_plan counts the existing coverage ranking the same way. overflow = demand_people - served.",
    "assumptions": [
@@ -9164,7 +9184,8 @@
     "Capacity is an unverified estimate from mapped building footprints (footprint x 0.5 usable share / 3.5 m2 per person, Sphere); most candidates have no mapped footprint.",
     "The sites are candidates to verify on the ground, not a list of sites to open.",
     "The planning overlay's shelter-capacity figures use listed capacities from a different source (DDPM); none of those values is used or published here, so the two sets of figures differ.",
-    "Everyone is assumed to walk before the water rises (normal roads) and to accept any site within the limit; households are not kept together."
+    "Everyone is assumed to walk before the water rises (normal roads) and to accept any site within the limit; households are not kept together.",
+    "Neither bound is a limit on who fits: both count a site with a mapped footprint at its estimate, which is too low where buildings are unmapped."
    ],
    "demand_people": 14169,
    "max_plan_sites": 30,
@@ -10131,19 +10152,20 @@
    "Every table is a T1 scenario (model) on the reconstructed water; the reported-shelter table adds reported facts, kept apart in their own columns.",
    "Hours are replay hours on the hourly grid (hour 0 = 9 Sep 2024 00:00 ICT); the assumed stage is sampled at the start of each hour.",
    "The modelled road table lists one row per OpenStreetMap way of the classes the replay models; the legacy candidate columns of the source road file are not carried.",
+   "Bridge decks are not modelled: a row flagged as a bridge reflects the ground at its approaches, and its hours are best read as unknown.",
    "No listed capacity from a shelter register, no occupancy count and no personal data is in any file."
   ],
   "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT",
   "folder": "/studies/mae-sai-2024-timeline/r4/exports/",
   "file_count": 8,
-  "bytes": 771480,
+  "bytes": 804624,
   "files": [
    {
     "id": "shelter_plan_reported_2024",
     "name": "shelter_plan_reported_2024.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv",
-    "sha256": "f211dfcd1f8d0da65984e001357d98041a6416700e2078b1d748969f648ce471",
-    "bytes": 21874,
+    "sha256": "2156130df19d61fb94b6117e9c7a400064a0d8ca68d24c6bb3a7f571b2fdc710",
+    "bytes": 28398,
     "media_type": "text/csv",
     "title": {
      "en": "Shelters reported in use in Mae Sai in September 2024, with a model check of each located site (not an official register)",
@@ -10166,8 +10188,8 @@
     "id": "shelter_plan_k",
     "name": "shelter_plan_k.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv",
-    "sha256": "3054cf7e0efd0dfb4a033ac2cef2ac55fa4a26e4adcd5a6c5044d8aa085bcfbb",
-    "bytes": 12754,
+    "sha256": "b61263f2b2d854cea4cf4a38277210a542d4a92faec865d7510a411d48b3890e",
+    "bytes": 13604,
     "media_type": "text/csv",
     "title": {
      "en": "Modelled shelter coverage ranking, sites 1 to N: a plan of any size is its first rows (candidates to verify)",
@@ -10189,8 +10211,8 @@
     "id": "shelter_plan_capacitated",
     "name": "shelter_plan_capacitated.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv",
-    "sha256": "95e9dcaffb5031b84458877c86f86cccacbae22e462732331cd86a411f58460b",
-    "bytes": 16031,
+    "sha256": "093a5b12ecdd4f7db5a56b65ddb4cb2c965929dcf5bd85b0d77e9ebe3ca6db59",
+    "bytes": 19081,
     "media_type": "text/csv",
     "title": {
      "en": "Capacity-aware shelter ranking under two capacity bounds: who fits (candidates to verify)",
@@ -10206,14 +10228,14 @@
      "copernicus-dem"
     ],
     "rows": 25,
-    "header_lines": 37
+    "header_lines": 39
    },
    {
     "id": "shelter_sites",
     "name": "shelter_sites.geojson",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_sites.geojson",
-    "sha256": "57f06cfa5480dd73629383fdd6014f0184a090de1d9aa6f571cb9395993b2f82",
-    "bytes": 88448,
+    "sha256": "aa317d51646c0de392714151ad4e432ee3ffa659ed0e3add3b04683e962af54e",
+    "bytes": 99373,
     "media_type": "application/geo+json",
     "title": {
      "en": "Shelter sites as points: every modelled candidate and every located site reported in use in September 2024",
@@ -10236,8 +10258,8 @@
     "id": "modelled_road_inundation_by_hour",
     "name": "modelled_road_inundation_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv",
-    "sha256": "c6c19cb9b6bbbbc73b58a538afe7fdeaf7b5ac43f73ddf646ac3bd5f31737128",
-    "bytes": 345264,
+    "sha256": "e070403092736853eafd82f9c3dfbf8e69a22dce4b503b0d3478acb4e32bf452",
+    "bytes": 346104,
     "media_type": "text/csv",
     "title": {
      "en": "Modelled road inundation by hour, one row per OpenStreetMap way (modelled, not observed)",
@@ -10253,13 +10275,13 @@
      "cod-ab"
     ],
     "rows": 3478,
-    "header_lines": 37
+    "header_lines": 39
    },
    {
     "id": "modelled_access_loss_by_hour",
     "name": "modelled_access_loss_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_access_loss_by_hour.csv",
-    "sha256": "32fca44025aed340ced125a3bca29ffe0d95f3a3b9a8d65642a36c817d19d1c8",
+    "sha256": "22f99a5dfe67c06ab946648bdd52d3ef82cd07d936f6686713f5ce0634151cf8",
     "bytes": 241197,
     "media_type": "text/csv",
     "title": {
@@ -10284,8 +10306,8 @@
     "id": "shelter_candidate_verification_sheet",
     "name": "shelter_candidate_verification_sheet.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv",
-    "sha256": "cdf4272b3a4e2bb10ecf8c4f2f40a74a83bd3486e53100f58b4c81991fd2bd50",
-    "bytes": 22074,
+    "sha256": "fd4c7a2bbb3769cf4f0078b2e17ed2129645cada0fa8192d3bcd7a363f0837ab",
+    "bytes": 31025,
     "media_type": "text/csv",
     "title": {
      "en": "Shelter-candidate verification sheet: a blank checklist for a local checker (no check has been conducted)",
@@ -10300,14 +10322,14 @@
      "copernicus-dem"
     ],
     "rows": 95,
-    "header_lines": 43
+    "header_lines": 47
    },
    {
     "id": "readme_licences",
     "name": "README_licences.txt",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt",
-    "sha256": "7f689ef2ce8201215fff8397e6a6868d7b6d64470a89ebabd85d279322f7d1ef",
-    "bytes": 23838,
+    "sha256": "dc9786eadf74a9e090fe60089d15d357a358723a4a0bda24a9879af50a77c6a9",
+    "bytes": 25842,
     "media_type": "text/plain",
     "title": {
      "en": "Licences, attributions and reading notes of the export pack (read this first)",
@@ -10561,7 +10583,7 @@
   "comparison": "indicative",
   "comparison_rule": "The model figures are the modelled out-of-channel water at the acquisition time of the 15 Sep scene, counted in the pixels that scene saw clearly. The overlap ratio says how far the two areas coincide, not which one is right.",
   "caveat": "A positive MNDWI also flags saturated mud and wet sediment, so the area is water or saturated mud, not a flood extent. The scene classification can miss thin cloud and cloud shadow, and cloud hid part of the district on both dates. The comparison with the model is indicative only.",
-  "reading": "Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only model cannot hold water once the river level drops.",
+  "reading": "The larger observed area is consistent with water or saturated mud left after the river fell; the terrain-only model cannot hold water once the river level drops.",
   "model_fields": {
    "paths": [
     "model_at_event_scene",
@@ -10575,7 +10597,8 @@
    "An MNDWI above 0 is read as water or saturated mud. The threshold was not tuned and nothing was checked on the ground; the sensitivity rows give 0.1 and 0.2.",
    "Clear pixels follow the provider's scene classification. Unclassified and dark pixels are kept; the strict_clear sensitivity row drops them.",
    "New water needs both dates clear. Water already there on 5 Sep, before the flood, is not counted as new.",
-   "The model is sampled at the acquisition time of the 15 Sep scene. No keyframe was tuned to this check."
+   "The model is sampled at the acquisition time of the 15 Sep scene. No keyframe was tuned to this check.",
+   "No land-cover map is an input, so the check does not say what kind of land the water or saturated mud lies on."
   ],
   "resolution_m": 20.0,
   "threshold": 0.0,
@@ -10639,6 +10662,7 @@
    "model_stage_m": 0.278,
    "model_flood_km2_district": 21.44,
    "model_flood_km2_clear": 18.02,
+   "model_flood_km2_both_clear": 17.86,
    "model_overlap_km2": 7.34,
    "model_union_km2": 47.47,
    "model_agreement_iou": 0.155,
@@ -10676,7 +10700,11 @@
     "new_water_km2": 21.72,
     "model_agreement_iou": 0.16
    }
-  ]
+  ],
+  "following_day": {
+   "viirs_date": "2024-09-16",
+   "reading": "A day later the VIIRS map shows less flood water than the model in its clear pixels, so the larger area on the day of the scene is consistent with saturated mud or short-lived water rather than lasting ponding."
+  }
  },
  "rainfall": {
   "stations": [
@@ -11336,6 +11364,7 @@
   "The stage is the assumed Sai main-stem level at the Mae Sai bridges; tributaries rise k x stage (see the next assumption). Real water levels still differed reach by reach.",
   "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.",
   "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
+  "Bridge decks are not modelled: a bridge's road state reflects the ground at its approaches and beside it, so a raised deck can stay passable while the model shows the way impassable. Read a bridge's impassable hours as unknown.",
   "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
   "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
   "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km2, so the 18:15 knot is set to the closest level (0.1 m).",
@@ -11347,6 +11376,7 @@
   "Shelter candidates are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres; OSM amenity=shelter huts are excluded). A candidate is eligible only if it keeps 0.5 m freeboard at the modelled peak and a road node lies within 400 m. Ranking is greedy maximal coverage of residents whose homes are wet at the peak, within 2 km walking on normal roads (pre-emptive evacuation); late_cumulative_share repeats the check on roads still open at 1.0 m stage.",
   "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.",
   "The capacity-aware plan assigns residents of homes that flood at the modelled peak to eligible sites within the 2 km walk without exceeding a site's capacity. It gives two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). Demand is an upper bound (many people stay with relatives) and the sites are candidates to verify.",
+  "The two capacity bounds differ only in what a site without a mapped footprint is assumed to hold. Neither is a limit on who fits: a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are unmapped.",
   "Plan robustness repeats the coverage ranking at 2.5 m, 3.5 m and 4.0 m: what-if levels around an illustrative peak, not return periods.",
   "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
@@ -11357,6 +11387,6 @@
   "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
   "No high-resolution satellite image exists for 10-14 September over Mae Sai in these inputs; VIIRS (375 m) was cloud-covered on 10-11 Sep and mostly cloud-covered on 12-14 Sep, so onset and peak extents are not observed.",
   "Statistics cover only the modelled parts of the eight Mae Sai subdistricts (see model_coverage); roads and facilities outside the model are flagged m=false and excluded.",
-  "No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level drops below it, so water or saturated mud left standing on fields is not reconstructed."
+  "No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level drops below it, so water or saturated mud left behind after the river falls is not reconstructed."
  ]
 }

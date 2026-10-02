@@ -18,6 +18,10 @@ This module holds the rules that do not depend on any one study:
 * :func:`evidence_problems`, the invariants a replay manifest must keep: no
   score, no action class, not an official warning, non-operational, input
   hashes present, every block with a lane and a source timestamp;
+* :func:`shelter_plan_problems`, the rules of the shelter plan's sub-blocks: the
+  capacity-aware plan, the what-if levels and the local check each need their
+  own evidence block in the right lane, the capacity figures must add up, and
+  no participation share or listed capacity may appear;
 * :func:`schema_problems`, validation against the JSON schema in
   ``packages/contracts/schemas/case-replay-timeline.schema.json``.
 
@@ -75,7 +79,13 @@ REQUIRED_KEYS: tuple[str, ...] = (
 )
 """Evidence keys a replay manifest must carry (``accepted_*``, ``git_commit`` and ``protocol_sha256`` may be null, but must be present)."""
 
+SHELTER_SUBBLOCK_LANES: Mapping[str, str] = {"capacitated": "SCN", "robustness": "SCN", "reported": "REP", "verification": "REP"}
+"""Parts of ``shelters`` that need an evidence block of their own, and the lane it must sit in. ``shelters`` as a
+whole is a scenario; reported use and a local check are reported facts and must not inherit that lane, and the
+capacity-aware plan and the what-if levels carry their own temporal relation and source timestamp."""
+
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_SWEEP_OR_LISTED_KEY = re.compile(r"participation|listed[_-]?capacit|ddpm", re.IGNORECASE)
 _SCORE_OR_CLASS_KEY = re.compile(r"fpps|action[_-]?class|priority[_-]?score", re.IGNORECASE)
 _COVER = re.compile(r"^(?P<key>[A-Za-z0-9_]+)(?:\[(?P<item>[^\]]+)\]|\.(?P<child>[A-Za-z0-9_.]+))?$")
 
@@ -261,6 +271,127 @@ def evidence_problems(manifest: Mapping[str, Any]) -> list[str]:
         problems.extend(f"no evidence block covers {path}" for path in uncovered_blocks(manifest))
     except ReplayManifestError as exc:
         problems.append(str(exc))
+    return problems
+
+
+def sweep_or_listed_capacity_keys(value: Any, path: str = "$") -> list[str]:
+    """Return the path of every key, at any depth, that names a participation share or a listed capacity.
+
+    The replay publishes no participation sweep (decision D8b) and no capacity listed in a shelter register (the
+    DDPM list): its capacities are footprint estimates, or figures a local checker reported by role.
+    """
+    found: list[str] = []
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            here = f"{path}.{key}"
+            if _SWEEP_OR_LISTED_KEY.search(str(key)):
+                found.append(here)
+            found.extend(sweep_or_listed_capacity_keys(item, here))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            found.extend(sweep_or_listed_capacity_keys(item, f"{path}[{index}]"))
+    return found
+
+
+def _whole(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def capacity_plan_problems(plan: Any, path: str = "shelters.capacitated") -> list[str]:
+    """Why the figures of a capacity-aware plan do not add up (empty when they do).
+
+    For each row of ``plan`` and ``coverage_plan`` and for each bound: a site's load never exceeds its capacity,
+    the running total ``served`` grows by exactly that load, and ``overflow = demand_people - served``. The lower
+    bound never counts more capacity, or serves more residents, than the upper bound. ``all_eligible`` follows the
+    same rules for its totals.
+    """
+    if not isinstance(plan, Mapping):
+        return [f"{path} is not an object"]
+    demand = plan.get("demand_people")
+    if not _whole(demand):
+        return [f"{path}.demand_people must be a whole number of residents"]
+    problems: list[str] = []
+
+    def bounds(row: Any, where: str, keys: tuple[str, ...]) -> dict[str, Mapping[str, Any]] | None:
+        found = {name: row.get(name) if isinstance(row, Mapping) else None for name in ("lower", "upper")}
+        for name, bound in found.items():
+            if not isinstance(bound, Mapping) or not all(_whole(bound.get(key)) for key in keys):
+                problems.append(f"{where}.{name} must give {', '.join(keys)} in whole residents")
+                return None
+        return found  # type: ignore[return-value]
+
+    for name in ("plan", "coverage_plan"):
+        rows = plan.get(name)
+        if not isinstance(rows, list):
+            problems.append(f"{path}.{name} must be a list")
+            continue
+        served_so_far = {"lower": 0, "upper": 0}
+        for index, row in enumerate(rows):
+            where = f"{path}.{name}[{index}]"
+            found = bounds(row, where, ("capacity", "load", "served", "overflow"))
+            if found is None:
+                break
+            for bound_name, bound in found.items():
+                if bound["load"] > bound["capacity"]:
+                    problems.append(f"{where}.{bound_name}: load {bound['load']} is above capacity {bound['capacity']}")
+                if bound["served"] != served_so_far[bound_name] + bound["load"]:
+                    problems.append(f"{where}.{bound_name}: served must grow by the site's load")
+                if bound["overflow"] != demand - bound["served"]:
+                    problems.append(f"{where}.{bound_name}: overflow must equal demand_people - served")
+                served_so_far[bound_name] = bound["served"]
+            if found["lower"]["capacity"] > found["upper"]["capacity"]:
+                problems.append(f"{where}: the lower bound counts more capacity than the upper bound")
+            if found["lower"]["served"] > found["upper"]["served"]:
+                problems.append(f"{where}: the lower bound serves more residents than the upper bound")
+    totals = plan.get("all_eligible")
+    found = bounds(totals, f"{path}.all_eligible", ("capacity", "served", "overflow"))
+    if found is not None:
+        for bound_name, bound in found.items():
+            if bound["served"] > bound["capacity"]:
+                problems.append(f"{path}.all_eligible.{bound_name}: served {bound['served']} is above capacity {bound['capacity']}")
+            if bound["overflow"] != demand - bound["served"]:
+                problems.append(f"{path}.all_eligible.{bound_name}: overflow must equal demand_people - served")
+        if found["lower"]["capacity"] > found["upper"]["capacity"] or found["lower"]["served"] > found["upper"]["served"]:
+            problems.append(f"{path}.all_eligible: the lower bound exceeds the upper bound")
+    return problems
+
+
+def shelter_plan_problems(manifest: Mapping[str, Any]) -> list[str]:
+    """Return every way the shelter plan's sub-blocks break the evidence contract (empty when they hold).
+
+    ``shelters`` is covered as a whole by one scenario block, so :func:`uncovered_blocks` cannot tell whether the
+    capacity-aware plan, the what-if levels, the reported sites and the local check have a block of their own. This
+    function requires one for each part that is present (:data:`SHELTER_SUBBLOCK_LANES`), in its lane: a local check
+    filed as a scenario or as an observation is refused. It also checks the capacity figures
+    (:func:`capacity_plan_problems`), that a conducted local check carries its confidence, its reason, its
+    assumptions and its source timestamp, and that no participation share or listed capacity is published.
+    """
+    shelters = manifest.get("shelters")
+    if not isinstance(shelters, Mapping):
+        return []
+    lanes: dict[str, list[Any]] = {}
+    for block in manifest.get("evidence_blocks") or ():
+        if isinstance(block, Mapping):
+            for path in block.get("covers") or ():
+                lanes.setdefault(str(path), []).append(block.get("lane"))
+    problems: list[str] = []
+    for child, lane in SHELTER_SUBBLOCK_LANES.items():
+        if child not in shelters:
+            continue
+        found = lanes.get(f"shelters.{child}")
+        if not found:
+            problems.append(f"no evidence block names shelters.{child}: it needs its own block in lane {lane}")
+        elif any(item != lane for item in found):
+            problems.append(f"shelters.{child} must sit in lane {lane}, not {', '.join(sorted({str(item) for item in found if item != lane}))}")
+    if "capacitated" in shelters:
+        problems.extend(capacity_plan_problems(shelters["capacitated"]))
+    check = shelters.get("verification")
+    if isinstance(check, Mapping) and check.get("status") == "conducted":
+        for key in ("confidence", "confidence_reason", "assumptions", "source_timestamp"):
+            if not check.get(key):
+                problems.append(f"shelters.verification is a conducted check and lacks {key}")
+    problems.extend(f"{path} names a participation share or a listed capacity: the replay publishes neither"
+                    for path in sweep_or_listed_capacity_keys(manifest))
     return problems
 
 

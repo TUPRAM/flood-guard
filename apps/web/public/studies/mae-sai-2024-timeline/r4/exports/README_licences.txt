@@ -9,7 +9,7 @@
 # confidence_reason_th: ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
 # lanes: REP, SCN
 # source_timestamp: OpenStreetMap extract 2026-07-09; WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT
-# generated_at: 2026-10-02T14:19:00+07:00
+# generated_at: 2026-10-02T16:10:00+07:00
 # generated_by: scripts/build_mae_sai_flood_timeline.py
 # study: mae-sai-2024-flood-timeline r4
 # accepted: accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
@@ -23,7 +23,7 @@
 # assumption_1_th: น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้
 # assumption_2: Hours are replay hours on an hourly grid: hour 0 is 9 Sep 2024 00:00 ICT (UTC+7) and hour 263 is 19 Sep 2024 23:00; the assumed stage is sampled at the start of each hour.
 # assumption_2_th: ชั่วโมงคือชั่วโมงของการย้อนดูแบบรายชั่วโมง ชั่วโมง 0 คือ 9 ก.ย. 2567 (2024) 00:00 น. เวลาประเทศไทย (UTC+7) และชั่วโมง 263 คือ 19 ก.ย. 2567 (2024) 23:00 น. ใช้ระดับน้ำสมมุติ ณ ต้นชั่วโมง
-# input_receipt: docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=d11776091eef590dc8609f823346bb5543327a6fce9a08319b610d491a871292
+# input_receipt: docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=a27437c70c58170194ab3c7581e7756e6a104ca984c8f3d27fccfa92c2e4bdf0
 # git_commit: null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt
 
 FLOODGUARD MAE SAI SEPTEMBER 2024 REPLAY: EXPORT PACK
@@ -41,48 +41,55 @@ Confidence is low and nothing was checked on the ground.
 ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง และไม่ใช่การเตือนภัยอย่างเป็นทางการ ห้ามใช้ในการตอบสนองเหตุฉุกเฉินหรือการสั่งอพยพ
 ความเชื่อมั่นอยู่ในระดับต่ำ และยังไม่มีการตรวจสอบในพื้นที่
 
+Bridges: the deck of a bridge is not modelled. In the road table a row with bridge_flag = yes reflects the ground at the
+bridge's approaches, so read its hours as unknown. Capacity bounds: neither the lower nor the upper bound is a limit on
+who fits; a footprint estimate can be too low where buildings are unmapped.
+
+สะพาน: ไม่ได้จำลองพื้นสะพาน ในตารางถนน แถวที่ bridge_flag = yes สะท้อนระดับพื้นดินบริเวณคอสะพาน ให้ถือว่าชั่วโมงของแถวนั้นเป็นค่าที่ไม่ทราบ
+ขอบเขตความจุ: ทั้งขอบเขตล่างและขอบเขตบนไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้ ค่าประมาณจากขอบเขตอาคารอาจต่ำกว่าจริงในบริเวณที่อาคารยังไม่ถูกทำแผนที่
+
 2. FILES / รายการไฟล์
 
 shelter_plan_reported_2024.csv
   Shelters reported in use in Mae Sai in September 2024, with a model check of each located site (not an official register)
   ที่พักพิงที่มีรายงานว่าใช้ในแม่สายเดือนกันยายน 2567 (2024) พร้อมผลเทียบกับแบบจำลองของสถานที่ที่ระบุตำแหน่งได้ (ไม่ใช่ทะเบียนทางการ)
-  21,874 bytes; 19 rows; 35 provenance lines before the column header; SHA-256 f211dfcd1f8d0da65984e001357d98041a6416700e2078b1d748969f648ce471
+  28,398 bytes; 19 rows; 35 provenance lines before the column header; SHA-256 2156130df19d61fb94b6117e9c7a400064a0d8ca68d24c6bb3a7f571b2fdc710
   Lanes: REP, SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); Shelters reported in use in September 2024 (FloodGuard desk research) (Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)).
 
 shelter_plan_k.csv
   Modelled shelter coverage ranking, sites 1 to N: a plan of any size is its first rows (candidates to verify)
   การจัดอันดับความครอบคลุมของที่พักพิงตามแบบจำลอง ลำดับ 1 ถึง N แผนขนาดใดก็ตามคือแถวแรกตามจำนวนนั้น (สถานที่ที่ควรตรวจสอบ)
-  12,754 bytes; 12 rows; 38 provenance lines before the column header; SHA-256 3054cf7e0efd0dfb4a033ac2cef2ac55fa4a26e4adcd5a6c5044d8aa085bcfbb
+  13,604 bytes; 12 rows; 38 provenance lines before the column header; SHA-256 b61263f2b2d854cea4cf4a38277210a542d4a92faec865d7510a411d48b3890e
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020) (CC BY 4.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)).
 
 shelter_plan_capacitated.csv
   Capacity-aware shelter ranking under two capacity bounds: who fits (candidates to verify)
   การจัดอันดับที่พักพิงแบบคิดความจุภายใต้ขอบเขตล่างและขอบเขตบน: รองรับได้กี่คน (สถานที่ที่ควรตรวจสอบ)
-  16,031 bytes; 25 rows; 37 provenance lines before the column header; SHA-256 95e9dcaffb5031b84458877c86f86cccacbae22e462732331cd86a411f58460b
+  19,081 bytes; 25 rows; 39 provenance lines before the column header; SHA-256 093a5b12ecdd4f7db5a56b65ddb4cb2c965929dcf5bd85b0d77e9ebe3ca6db59
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020) (CC BY 4.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)).
 
 shelter_sites.geojson
   Shelter sites as points: every modelled candidate and every located site reported in use in September 2024
   ตำแหน่งที่พักพิงแบบจุด: สถานที่ที่เป็นไปได้ทุกแห่งตามแบบจำลอง และสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) ที่ระบุตำแหน่งได้
-  88,448 bytes; 128 features; SHA-256 57f06cfa5480dd73629383fdd6014f0184a090de1d9aa6f571cb9395993b2f82
+  99,373 bytes; 128 features; SHA-256 aa317d51646c0de392714151ad4e432ee3ffa659ed0e3add3b04683e962af54e
   Lanes: SCN, REP. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020) (CC BY 4.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)); Shelters reported in use in September 2024 (FloodGuard desk research) (Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)).
 
 modelled_road_inundation_by_hour.csv
   Modelled road inundation by hour, one row per OpenStreetMap way (modelled, not observed)
   ถนนที่น้ำท่วมตามแบบจำลองรายชั่วโมง หนึ่งแถวต่อหนึ่งเส้นทางใน OpenStreetMap (ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้)
-  345,264 bytes; 3,478 rows; 37 provenance lines before the column header; SHA-256 c6c19cb9b6bbbbc73b58a538afe7fdeaf7b5ac43f73ddf646ac3bd5f31737128
+  346,104 bytes; 3,478 rows; 39 provenance lines before the column header; SHA-256 e070403092736853eafd82f9c3dfbf8e69a22dce4b503b0d3478acb4e32bf452
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)); HDX Thailand COD-AB subdistrict boundaries v01 (CC BY-IGO).
 
 modelled_access_loss_by_hour.csv
   Modelled loss of walking access to a shelter by hour, one row per subdistrict and replay hour
   การสูญเสียการเข้าถึงที่พักพิงด้วยการเดินตามแบบจำลองรายชั่วโมง หนึ่งแถวต่อตำบลและชั่วโมงของการย้อนดู
-  241,197 bytes; 2,112 rows; 38 provenance lines before the column header; SHA-256 32fca44025aed340ced125a3bca29ffe0d95f3a3b9a8d65642a36c817d19d1c8
+  241,197 bytes; 2,112 rows; 38 provenance lines before the column header; SHA-256 22f99a5dfe67c06ab946648bdd52d3ef82cd07d936f6686713f5ce0634151cf8
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020) (CC BY 4.0); HDX Thailand COD-AB subdistrict boundaries v01 (CC BY-IGO); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)); Shelters reported in use in September 2024 (FloodGuard desk research) (Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)).
 
 shelter_candidate_verification_sheet.csv
   Shelter-candidate verification sheet: a blank checklist for a local checker (no check has been conducted)
   แบบตรวจสอบสถานที่ที่อาจใช้เป็นที่พักพิง: รายการตรวจที่ยังว่างสำหรับผู้ตรวจสอบในพื้นที่ (ยังไม่มีการตรวจสอบ)
-  22,074 bytes; 95 rows; 43 provenance lines before the column header; SHA-256 cdf4272b3a4e2bb10ecf8c4f2f40a74a83bd3486e53100f58b4c81991fd2bd50
+  31,025 bytes; 95 rows; 47 provenance lines before the column header; SHA-256 fd4c7a2bbb3769cf4f0078b2e17ed2129645cada0fa8192d3bcd7a363f0837ab
   Lanes: SCN. Licence: ODbL 1.0. Derived from: OpenStreetMap roads and candidate facilities (Geofabrik extract) (ODbL 1.0); Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100) (Copernicus DEM licence (free, attribution)).
 
 3. LICENCE AND ATTRIBUTION / สัญญาอนุญาตและการแสดงที่มา
@@ -138,11 +145,15 @@ in its metadata member. Values yes and no are written in English; an empty cell 
 shelter_candidate_verification_sheet.csv is a blank checklist. No check has been conducted for this revision.
 A local checker fills in the last five columns and returns the file to the project team; a returned check is labelled
 'Checked by <role> on <date>; not an official shelter register'. Give a role code, never a name: ddpm_officer, local_government_officer, village_leader, site_staff, project_team, other_local_contact.
-Do not add names of people, phone numbers, ID numbers or new columns. The returned file is kept outside the project's
-repository; only its hash and the checked columns are kept.
+Do not add names of people, phone numbers, ID numbers or new columns. Keep the lines that start with # and the first
+eight columns as they are: they tie each answer to its site, and a file without them is refused. The returned file is
+kept outside the project's repository; only its hash and the checked columns are kept. Access notes are never published
+or kept: only the fact that a note was given is recorded.
 
 ไฟล์ shelter_candidate_verification_sheet.csv เป็นรายการตรวจที่ยังว่าง ยังไม่มีการตรวจสอบสำหรับข้อมูลรุ่นนี้
 ผู้ตรวจสอบในพื้นที่กรอกห้าคอลัมน์สุดท้าย
 แล้วส่งไฟล์กลับให้ทีมโครงการ ผลที่ส่งกลับมาจะระบุว่า 'ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ'
 โปรดระบุรหัสบทบาท ไม่ใช่ชื่อ: ddpm_officer = เจ้าหน้าที่ ปภ. · local_government_officer = เจ้าหน้าที่ อบต. หรือเทศบาล · village_leader = ผู้ใหญ่บ้านหรือกำนัน · site_staff = เจ้าหน้าที่ของสถานที่ · project_team = ทีมโครงการ FloodGuard · other_local_contact = ผู้ประสานงานในพื้นที่อื่น ๆ
-โปรดอย่าใส่ชื่อบุคคล หมายเลขโทรศัพท์ เลขประจำตัว หรือเพิ่มคอลัมน์ ไฟล์ที่ส่งกลับจะเก็บไว้นอกคลังรหัสของโครงการ เก็บไว้เพียงค่าแฮชและคอลัมน์ที่ตรวจสอบ
+โปรดอย่าใส่ชื่อบุคคล หมายเลขโทรศัพท์ เลขประจำตัว หรือเพิ่มคอลัมน์ โปรดคงบรรทัดที่ขึ้นต้นด้วย # และแปดคอลัมน์แรกไว้ตามเดิม
+เพราะข้อมูลส่วนนี้ผูกคำตอบแต่ละแถวกับสถานที่ ไฟล์ที่ไม่มีข้อมูลส่วนนี้จะถูกปฏิเสธ ไฟล์ที่ส่งกลับจะเก็บไว้นอกคลังรหัสของโครงการ
+เก็บไว้เพียงค่าแฮชและคอลัมน์ที่ตรวจสอบ หมายเหตุการเข้าถึงจะไม่ถูกเผยแพร่หรือเก็บไว้ บันทึกเพียงว่ามีการให้หมายเหตุหรือไม่

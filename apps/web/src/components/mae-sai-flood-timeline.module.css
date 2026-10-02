@@ -369,13 +369,18 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 .capacityAware, .whatIf { margin-top: 1rem; padding-top: .2rem; border-top: 1px solid #e5eaf2; }
 .capacityAware .setCompare thead td { width: 44%; }
 .whatIf .setCompare thead td { width: 37%; }
-.whatIf .setCompare thead th small { display: block; font-weight: 600; }
+/* A note under a column heading: the heading's own size, never the browser's "smaller" (9.3 px under a .7rem heading). */
+.whatIf .setCompare thead th small, .capacityAware .setCompare thead th small { display: block; font-size: 1em; font-weight: 600; }
 .capacitySites { margin-top: .6rem; font-size: .78rem; }
 .capacitySites > summary { min-height: 28px; cursor: pointer; font-weight: 700; color: #17253b; }
 .capacitySites .routeFigures { color: #223650; }
 .capacityCaveats { margin: .6rem 0 0; padding: .5rem .65rem .5rem 1.6rem; border-left: 3px solid #d19a00; border-radius: .35rem; background: #fdf8ea; color: #4a3a12; font-size: .76rem; line-height: 1.5; }
 .capacityCaveats li + li { margin-top: .2rem; }
 .robustBadge { justify-self: start; display: inline-flex; padding: .12rem .45rem; border-radius: .35rem; background: #e3f1ea; color: #0a5a41; font-size: .72rem; font-weight: 650; }
+/* What a local checker reported for a site; "no" is marked because the ranking above still lists the site. */
+.checkBadge { justify-self: start; display: block; padding: .15rem .45rem; border-radius: .35rem; background: #eef3fb; color: #223650; font-size: .74rem; font-weight: 600; line-height: 1.45; }
+.checkBadge[data-usable="no"] { background: #fdecea; color: #8c1d18; }
+.checkBadge .muted { font-size: inherit; font-weight: 500; color: inherit; }
 .reportedList { display: grid; gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; }
 .reportedList > li { border: 1px solid #ecdfb8; border-left: 4px solid #d19a00; border-radius: .5rem; background: #fffbef; }
 .reportedList details { padding: .5rem .7rem; font-size: .78rem; line-height: 1.5; }

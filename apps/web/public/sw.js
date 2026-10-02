@@ -106,11 +106,23 @@ async function cacheCaseReplay() {
 /**
  * Save optional, build-pinned files ({ url, sha256 }) into the current cache. Each file is stored only when
  * its SHA-256 matches this build; failures are counted and never invalidate the saved application.
+ *
+ * Without a connection the deployment profile cannot be re-checked and nothing can be fetched. The request then
+ * reports what this build's cache already holds and changes nothing: a fully saved replay opened offline must not
+ * read as "0 of N files saved".
  */
 async function cacheOptionalAssets(assets, fetchCache) {
   const result = { cached: 0, failed: 0, total: assets.length };
   try {
-    if (!(await caches.keys()).includes(CACHE_NAME) || !(await competitionStillDeployed())) return result;
+    if (!(await caches.keys()).includes(CACHE_NAME)) return result;
+    let deployed;
+    try {
+      deployed = await competitionStillDeployed();
+    } catch {
+      result.cached = await countSavedAssets(assets);
+      return result;
+    }
+    if (!deployed) return result;
     const cache = await caches.open(CACHE_NAME);
     for (const asset of assets) {
       if (!(await caches.keys()).includes(CACHE_NAME)) return result;
@@ -132,6 +144,16 @@ async function cacheOptionalAssets(assets, fetchCache) {
     // Optional downloads never invalidate the saved planning app.
   }
   return result;
+}
+
+/** How many of the listed files this build's cache already holds. Reads only: nothing is fetched or stored. */
+async function countSavedAssets(assets) {
+  const cache = await caches.open(CACHE_NAME);
+  let saved = 0;
+  for (const asset of assets) {
+    if (await cache.match(asset.url)) saved += 1;
+  }
+  return saved;
 }
 
 async function competitionStillDeployed() {

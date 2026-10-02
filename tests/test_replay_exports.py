@@ -95,13 +95,15 @@ def synthetic_context(**changes) -> exports.ExportContext:
         robust_core=["C004"],
         reported=[{"id": "R01", "name_en": "Wat Example shelter", "name_th": "ศูนย์พักพิงวัดตัวอย่าง", "type": "temple", "tambon": "แม่สาย",
                    "lon": 99.8843199, "lat": 20.4265331, "location_method": "osm_feature", "location_confidence": "high", "role": "shelter",
-                   "first_use": "2024-09-11", "in_access_set": True, "access_set_note": "Reported in use by 15 Sep.", "evidence_strength": "official",
+                   "first_use": "2024-09-11", "in_access_set": True, "access_set_note": "Reported in use by 15 Sep.",
+                   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย.", "evidence_strength": "official",
                    "sources": [{"url": "https://example.org/a"}, {"url": "https://example.org/b"}],
                    "reported_capacity_or_occupancy": "Occupancy: 341. A municipal list gives about 200.", "period_used": "34 people at 01:00",
                    "model_check": {"m": True, "floods_at_modelled_peak": False, "freeboard_m": 3.85}},
                   {"id": "R02", "name_en": "Village hall", "name_th": "ศาลาหมู่บ้าน", "type": "other", "tambon": "เกาะช้าง", "lon": None, "lat": None,
                    "location_method": "not_located", "location_confidence": "low", "role": "shelter", "first_use": "2024-09-15 or earlier",
-                   "in_access_set": True, "access_set_note": "Not located.", "evidence_strength": "media", "sources": [], "model_check": None}],
+                   "in_access_set": True, "access_set_note": "Not located.", "access_set_note_th": "ระบุตำแหน่งไม่ได้",
+                   "evidence_strength": "media", "sources": [], "model_check": None}],
         peak_stage_m=3.5, walk_limit_m=2000.0, freeboard_m=0.5, snap_max_m=400.0)
     return replace(context, **changes)
 
@@ -258,12 +260,13 @@ def test_verification_sheet_lists_the_eligible_candidates_with_the_checker_colum
     context = synthetic_context()
     rows = exports.sheet_rows(context)
     assert [row["candidate_id"] for row in rows] == ["C001", "C002", "C004"]  # C003 is not eligible.
-    whitelist = ["candidate_id", "kind", "name", "lat", "lon", "estimated_capacity", "capacity_basis",
+    whitelist = ["candidate_id", "kind", "name", "lat", "lon", "estimated_capacity", "capacity_basis", "capacity_basis_th",
                  "usable_as_shelter", "verified_capacity", "access_notes", "checked_by_role", "checked_on"]
     assert [column.key for column in exports.SHEET_COLUMNS] == whitelist
     assert all(list(row) == whitelist for row in rows)
-    assert all(row[key] is None for row in rows for key in whitelist[7:])  # No result is implied.
-    assert (rows[1]["estimated_capacity"], rows[1]["capacity_basis"]) == (None, "unknown")
+    assert whitelist[8:] == [column.key for column in exports.SHEET_CHECKER]
+    assert all(row[key] is None for row in rows for key in whitelist[8:])  # No result is implied.
+    assert (rows[1]["estimated_capacity"], rows[1]["capacity_basis"], rows[1]["capacity_basis_th"]) == (None, "unknown", "ไม่ทราบ")
     fingerprint = exports.candidate_set_sha256(context.candidates)
     assert re.fullmatch(r"[0-9a-f]{64}", fingerprint)
     assert exports.candidate_set_sha256(list(reversed(context.candidates))) == fingerprint  # Order does not matter.
@@ -273,6 +276,104 @@ def test_verification_sheet_lists_the_eligible_candidates_with_the_checker_colum
     assert exports.candidate_set_sha256(renamed) == fingerprint  # A name is not what a check is matched on.
     not_eligible = [{**site, "eligible": site["id"] != "C004"} for site in context.candidates]
     assert exports.candidate_set_sha256(not_eligible) != fingerprint
+
+
+def test_prose_cells_have_a_thai_companion_column() -> None:
+    context = synthetic_context()
+    estimate = "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified"
+    assert set(exports.CAPACITY_BASIS_TH) == {estimate, "unknown"} and all(THAI.search(text) for text in exports.CAPACITY_BASIS_TH.values())
+    # The basis of a capacity: in the two plan tables, the sheet a Thai checker fills in, and the site layer.
+    plan = exports.plan_rows(context)
+    assert (plan[1]["capacity_basis"], plan[1]["capacity_basis_th"]) == (estimate, exports.CAPACITY_BASIS_TH[estimate])
+    assert (plan[2]["capacity_basis"], plan[2]["capacity_basis_th"]) == ("unknown", "ไม่ทราบ")
+    assert [row["capacity_basis_th"] for row in exports.capacitated_rows(context)] == [exports.CAPACITY_BASIS_TH[estimate], "ไม่ทราบ"]
+    assert all(row["capacity_basis_th"] == exports.capacity_basis_th(row["capacity_basis"]) for row in exports.sheet_rows(context))
+    features = {feature["properties"]["id"]: feature["properties"] for feature in exports.site_features(context)}
+    assert features["C002"]["capacity_basis_th"] == "ไม่ทราบ" and features["R01"]["capacity_basis_th"] is None
+    with pytest.raises(exports.ReplayExportError, match="no Thai wording for the capacity basis"):
+        exports.capacity_basis_th("surveyed floor plan")
+    # Why a reported site is counted, and when it was first used.
+    reported = exports.reported_rows(context)
+    assert [(row["access_set_note"], row["access_set_note_th"]) for row in reported] == [
+        ("Reported in use by 15 Sep.", "มีรายงานว่าใช้ภายใน 15 ก.ย."), ("Not located.", "ระบุตำแหน่งไม่ได้")]
+    assert [(row["first_use"], row["first_use_th"]) for row in reported] == [
+        ("2024-09-11", "2024-09-11"), ("2024-09-15 or earlier", "2024-09-15 หรือก่อนหน้า")]
+    assert exports.first_use_th("") == ""
+    with pytest.raises(exports.ReplayExportError, match="no Thai wording for the first reported use"):
+        exports.first_use_th("some time in September")
+    untranslated = [{**site, "access_set_note_th": ""} if site["id"] == "R02" else site for site in context.reported]
+    with pytest.raises(exports.ReplayExportError, match="R02: access_set_note has no Thai rendering"):
+        exports.export_pack(synthetic_context(reported=untranslated))
+    keys = {name: [column.key for column in columns] for name, columns in (
+        ("plan", exports.PLAN_COLUMNS), ("capacitated", exports.CAPACITATED_COLUMNS), ("sheet", exports.SHEET_COLUMNS),
+        ("sites", exports.SITE_FIELDS), ("reported", exports.REPORTED_COLUMNS))}
+    for name in ("plan", "capacitated", "sheet", "sites"):
+        assert keys[name][keys[name].index("capacity_basis") + 1] == "capacity_basis_th", name
+    assert keys["reported"][keys["reported"].index("access_set_note") + 1] == "access_set_note_th"
+    assert keys["reported"][keys["reported"].index("first_use") + 1] == "first_use_th"
+
+
+def assumptions_of(file: exports.ExportFile) -> list[tuple[str, str]]:
+    """The (English, Thai) assumption pairs of a file's header."""
+    fields = exports.read_export_csv(file.data)[0] if file.media_type == "text/csv" else json.loads(file.data)["metadata"]
+    return [(fields[key], fields[f"{key}_th"]) for key in fields if re.fullmatch(r"assumption_\d+", key)]
+
+
+def test_road_table_says_bridge_decks_are_not_modelled() -> None:
+    files = pack()
+    english = [pair[0] for pair in assumptions_of(files["modelled_road_inundation_by_hour"])]
+    bridge = [text for text in english if "Bridge decks are not modelled" in text]
+    assert len(bridge) == 1 and "read the hours of a bridge row as unknown" in bridge[0] and "approaches" in bridge[0]
+    thai = dict(assumptions_of(files["modelled_road_inundation_by_hour"]))[bridge[0]]
+    assert "ไม่ได้จำลองพื้นสะพาน" in thai and "bridge_flag = yes" in thai
+    readme = files["readme_licences"].data.decode("utf-8")
+    assert "the deck of a bridge is not modelled" in readme and "ไม่ได้จำลองพื้นสะพาน" in readme
+    assert "the deck is not modelled" in next(column.en for column in exports.ROAD_COLUMNS if column.key == "bridge_flag")
+    # The trunk way of the synthetic replay is a bridge with impassable hours: the table keeps them, as the page does.
+    rows = exports.read_export_csv(files["modelled_road_inundation_by_hour"].data)[2]
+    assert [(row["bridge_flag"], row["modelled_impassable_hours"]) for row in rows if row["road_id"] == "200"] == [("yes", "6")]
+
+
+def test_capacity_table_says_neither_bound_is_a_limit() -> None:
+    files = pack()
+    pairs = assumptions_of(files["shelter_plan_capacitated"])
+    limit = [pair for pair in pairs if pair[0].startswith("Neither bound is a limit on who fits.")]
+    assert len(limit) == 1 and "more residents may fit than the upper bound gives" in limit[0][0] and "ไม่ใช่ค่าจำกัด" in limit[0][1]
+    columns = {column.key: column.en for column in exports.CAPACITATED_COLUMNS}
+    assert "not a minimum" in columns["lower_capacity"] and "not a maximum" in columns["upper_capacity"]
+    assert "neither the lower nor the upper bound is a limit" in files["readme_licences"].data.decode("utf-8")
+
+
+def test_sheet_tells_the_checker_to_keep_the_provenance_lines_and_that_notes_are_not_published() -> None:
+    files = pack()
+    english = [pair[0] for pair in assumptions_of(files["shelter_candidate_verification_sheet"])]
+    keep = next(text for text in english if text.startswith("Keep the lines that start with #"))
+    assert "the first eight columns" in keep and "is refused" in keep
+    assert len(exports.SHEET_PREFILLED) == 8 and len(exports.SHEET_CHECKER) == 5
+    assert any("they are never published and never kept" in text for text in english)
+    readme = files["readme_licences"].data.decode("utf-8")
+    assert "Keep the lines that start with # and the first" in readme and "Access notes are never published" in readme
+    assert "โปรดคงบรรทัดที่ขึ้นต้นด้วย #" in readme
+
+
+def test_nothing_says_nothing_was_checked_once_a_check_has_been_returned() -> None:
+    blank, checked = pack(), pack(synthetic_context(verification_status="conducted"))
+    for file in blank.values():
+        text = file.data.decode("utf-8-sig")
+        assert exports.CONFIDENCE_REASON in text and "nothing was checked on the ground" in text, file.name
+        assert "A local check of some" not in text, file.name
+    for file in checked.values():
+        text = file.data.decode("utf-8-sig")
+        assert exports.CONFIDENCE_REASON_CHECKED in text and exports.CONFIDENCE_REASON_CHECKED_TH in text, file.name
+        assert "nothing was checked on the ground" not in text and "ยังไม่มีการตรวจสอบในพื้นที่" not in text, file.name
+        assert "nothing else was checked on the ground" in text, file.name
+    readme = checked["readme_licences"].data.decode("utf-8")
+    assert "the tables do not use it, and nothing else was checked on the ground." in readme and "แต่ตารางเหล่านี้ไม่ได้ใช้ผลดังกล่าว" in readme
+    # The plan tables and the site layer say that they ignore the check; without a check they say nothing about one.
+    for name in ("shelter_plan_k", "shelter_plan_capacitated", "shelter_sites"):
+        said = [pair for pair in assumptions_of(checked[name]) if pair[0].startswith("A local check of some candidates has been returned")]
+        assert len(said) == 1 and "a site reported not usable is still listed and ranked" in said[0][0] and THAI.search(said[0][1]), name
+        assert not any("A local check of some candidates" in pair[0] for pair in assumptions_of(blank[name])), name
 
 
 # --- Files: headers, encoding and format -----------------------------------------------------------------------

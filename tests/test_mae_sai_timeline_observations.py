@@ -152,9 +152,10 @@ def test_sentinel2_water_check_counts_clear_water_new_water_and_the_model_overla
     assert out["scenes"]["pre_event"]["scl_class_km2"]["cloud_shadow"] == 0.03
     # New water needs both dates clear: columns 5-19 of the 28 rows clear on 15 Sep.
     assert out["change"] == {"both_clear_km2": 0.4, "event_water_km2": 0.21, "pre_event_water_km2": 0.04, "new_water_km2": 0.17, "no_longer_water_km2": 0.0}
-    # The model (360 cells in the district, all of them clear) overlaps the observed area in 180 cells of 712.
+    # The model (360 cells in the district, all of them clear on both dates) overlaps the observed area in 180 cells of 712.
     assert out["model_at_event_scene"] == {
-        "model_flood_km2_district": 0.14, "model_flood_km2_clear": 0.14, "model_overlap_km2": 0.07, "model_union_km2": 0.28,
+        "model_flood_km2_district": 0.14, "model_flood_km2_clear": 0.14, "model_flood_km2_both_clear": 0.14,
+        "model_overlap_km2": 0.07, "model_union_km2": 0.28,
         "model_agreement_iou": 0.253, "model_share_of_observed_water_reached": 0.338, "model_share_inside_observed_water": 0.5}
     strict, loose, looser = out["sensitivity"]
     assert [row["id"] for row in out["sensitivity"]] == ["strict_clear", "threshold_0_1", "threshold_0_2"]

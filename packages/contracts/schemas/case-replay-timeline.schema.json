@@ -294,8 +294,9 @@
       "required": ["candidates", "plan", "reported", "capacitated", "robustness", "verification", "confidence", "confidence_reason", "source_timestamp"],
       "properties": {
         "capacitated": {
-          "description": "Capacity-aware shelter plan (T1 scenario): who fits where under two capacity bounds. Whole residents; overflow = demand_people - served. Candidates to verify, never a list of sites to open.",
+          "description": "Capacity-aware shelter plan (T1 scenario): who fits where under two capacity bounds. Whole residents; overflow = demand_people - served. Candidates to verify, never a list of sites to open. No other key is allowed: no participation share and no listed capacity from a shelter register.",
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "scenario_tier", "confidence", "confidence_reason", "source_timestamp", "assumptions", "demand_people", "demand_basis",
             "capacity_basis", "bounds", "method", "max_plan_sites", "min_gain_share", "kind_median_capacity", "all_kinds_median_capacity",
@@ -321,8 +322,12 @@
             "bounds": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["lower", "upper"],
-              "properties": { "lower": { "type": "string", "minLength": 1 }, "upper": { "type": "string", "minLength": 1 } }
+              "required": ["lower", "upper", "note"],
+              "properties": {
+                "lower": { "type": "string", "minLength": 1 },
+                "upper": { "type": "string", "minLength": 1 },
+                "note": { "description": "Neither bound is a limit on who fits; the note says why.", "type": "string", "pattern": "[Nn]either is a limit" }
+              }
             },
             "method": { "type": "string", "minLength": 1 },
             "max_plan_sites": { "description": "The capacity-aware ranking holds at most this many sites.", "type": "integer", "minimum": 1 },
@@ -342,6 +347,7 @@
             },
             "all_eligible": {
               "type": "object",
+              "additionalProperties": false,
               "required": ["sites", "sites_with_estimate", "within_reach", "lower", "upper"],
               "properties": {
                 "sites": { "type": "integer", "minimum": 0 },
@@ -395,7 +401,7 @@
           }
         },
         "verification": {
-          "description": "Local check of the shelter candidates through the verification sheet. not_conducted until a sheet is returned and imported; a conducted check is reported by role and is never an official shelter register.",
+          "description": "Local check of the shelter candidates through the verification sheet. not_conducted until a sheet is returned and imported; a conducted check is reported by role and is never an official shelter register. A conducted check carries its confidence, the reason for it and its assumptions. Free-text notes are never published: only whether a note was given.",
           "type": "object",
           "additionalProperties": false,
           "required": ["status", "label_template", "sheet", "candidate_set_sha256", "candidates_listed", "statement", "checked"],
@@ -406,6 +412,9 @@
             "candidate_set_sha256": { "$ref": "#/$defs/sha256" },
             "candidates_listed": { "type": "integer", "minimum": 0 },
             "statement": { "type": "string", "minLength": 1 },
+            "confidence": { "enum": ["low", "medium", "high"] },
+            "confidence_reason": { "type": "string", "minLength": 1 },
+            "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
             "source_timestamp": { "type": "string", "minLength": 1 },
             "imported_on": { "type": "string", "format": "date" },
             "returned_file_sha256": { "$ref": "#/$defs/sha256" },
@@ -421,7 +430,7 @@
               }
             },
             "checked": {
-              "description": "Whitelisted columns only: no name of a person, no phone number, no ID number.",
+              "description": "Whitelisted columns only: no name of a person, no phone number, no ID number and no free text.",
               "type": "array",
               "items": {
                 "type": "object",
@@ -436,7 +445,6 @@
                   },
                   "checked_on": { "type": "string", "format": "date" },
                   "access_notes_given": { "type": "boolean" },
-                  "access_notes": { "type": "string", "maxLength": 300 },
                   "label": { "type": "string", "pattern": "^Checked by .+ on [0-9]{4}-[0-9]{2}-[0-9]{2}; not an official shelter register$" }
                 }
               }
@@ -446,7 +454,10 @@
             {
               "if": { "properties": { "status": { "const": "not_conducted" } } },
               "then": { "properties": { "checked": { "maxItems": 0 } }, "not": { "anyOf": [{ "required": ["counts"] }, { "required": ["returned_file_sha256"] }] } },
-              "else": { "properties": { "checked": { "minItems": 1 } }, "required": ["source_timestamp", "imported_on", "returned_file_sha256", "counts"] }
+              "else": {
+                "properties": { "checked": { "minItems": 1 } },
+                "required": ["confidence", "confidence_reason", "assumptions", "source_timestamp", "imported_on", "returned_file_sha256", "counts"]
+              }
             }
           ]
         }
@@ -588,10 +599,20 @@
         "comparison_rule": { "type": "string", "minLength": 1 },
         "caveat": { "type": "string", "minLength": 1 },
         "reading": {
-          "description": "What the observation is consistent with. It states no cause.",
+          "description": "What the observation is consistent with. It states no cause, and no land cover: no land-cover map is an input.",
           "type": "string",
           "pattern": "consistent with",
-          "not": { "pattern": "[Ee]xplain" }
+          "not": { "pattern": "[Ee]xplain|on fields|paddy|cropland" }
+        },
+        "following_day": {
+          "description": "Present when the next VIIRS day with clear sky (viirs_daily.days, by date) shows less flood water than the model: what that is consistent with for the day of the scene. The figures stay in viirs_daily.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["viirs_date", "reading"],
+          "properties": {
+            "viirs_date": { "type": "string", "format": "date" },
+            "reading": { "type": "string", "pattern": "consistent with", "not": { "pattern": "[Ee]xplain|on fields|paddy|cropland" } }
+          }
         },
         "model_fields": {
           "description": "Which parts of the block are model output placed beside the observation (the evidence block lists them as scenario_fields).",
@@ -647,13 +668,14 @@
           }
         },
         "model_at_event_scene": {
-          "description": "T1 scenario (model): the modelled out-of-channel water at the acquisition time of the event scene, in the district and in the pixels the scene saw clearly, and how far it coincides with the observed area. Every key starts with model_.",
+          "description": "T1 scenario (model): the modelled out-of-channel water at the acquisition time of the event scene, in the district, in the pixels the scene saw clearly and in the pixels both scenes saw clearly (the figure to set beside change.new_water_km2), and how far it coincides with the observed area. Every key starts with model_.",
           "type": "object",
           "additionalProperties": false,
           "propertyNames": { "pattern": "^model_" },
           "required": [
-            "model_local_time", "model_t", "model_stage_m", "model_flood_km2_district", "model_flood_km2_clear", "model_overlap_km2",
-            "model_union_km2", "model_agreement_iou", "model_share_of_observed_water_reached", "model_share_inside_observed_water"
+            "model_local_time", "model_t", "model_stage_m", "model_flood_km2_district", "model_flood_km2_clear", "model_flood_km2_both_clear",
+            "model_overlap_km2", "model_union_km2", "model_agreement_iou", "model_share_of_observed_water_reached",
+            "model_share_inside_observed_water"
           ],
           "properties": {
             "model_local_time": { "type": "string", "format": "date-time" },
@@ -661,6 +683,7 @@
             "model_stage_m": { "type": "number", "minimum": 0 },
             "model_flood_km2_district": { "type": "number", "minimum": 0 },
             "model_flood_km2_clear": { "type": "number", "minimum": 0 },
+            "model_flood_km2_both_clear": { "type": "number", "minimum": 0 },
             "model_overlap_km2": { "type": "number", "minimum": 0 },
             "model_union_km2": { "type": "number", "minimum": 0 },
             "model_agreement_iou": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
@@ -764,7 +787,9 @@
       }
     },
     "capacityRow": {
+      "description": "One site of a ranking counted with capacity. No other key is allowed: no participation share and no listed capacity.",
       "type": "object",
+      "additionalProperties": false,
       "required": ["candidate_id", "capacity_est", "capacity_basis", "upper_capacity_basis", "lower", "upper"],
       "properties": {
         "candidate_id": { "type": "string", "pattern": "^C[0-9]{3}$" },

@@ -651,9 +651,15 @@ try {
   const observedReading = page.getByTestId("observed-reading");
   await expect(observedReading).toContainText("Two observations on this day: VIIRS (15 Sep 13:30 ICT, nominal)");
   await expect(observedReading).toContainText("and Sentinel-2 (15 Sep 10:58 ICT) shows");
-  await expect(observedReading.getByTestId("s2-reading")).toHaveText("Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only model cannot hold water once the river level drops.");
+  // The Sentinel-2 figures are given like for like: the water that is new since 5 Sep against the model where both dates are clear.
+  await expect(observedReading).toContainText(/of which \d+\.\d km² is new since 5 Sep against the model's \d+\.\d km² where both dates are clear/);
+  await expect(observedReading.getByTestId("s2-reading")).toHaveText("The larger observed area is consistent with water or saturated mud left after the river fell; the terrain-only model cannot hold water once the river level drops.");
+  // The next clear VIIRS day shows less than the model, and the page says so beside the reading instead of leaving 15 Sep alone.
+  const followingDay = observedReading.getByTestId("s2-following-day");
+  await expect(followingDay).toContainText(/The next clear VIIRS map \(16 Sep 13:30 ICT, nominal\) shows \d+\.\d km² of flood water against the model's \d+\.\d km²/);
+  await expect(followingDay).toContainText("is consistent with saturated mud or short-lived water rather than lasting ponding");
   await expect(observedReading).toContainText("not a flood extent");
-  await expect(observedReading).not.toContainText(/explain/i);
+  await expect(observedReading).not.toContainText(/explain|on fields/i);
   await expect(viirsCard.getByTestId("viirs-s2-note")).toContainText("Second observation on 15 Sep");
   await slider.fill("40");
   await expect(viirsImage).toHaveAttribute("src", /viirs-20240910\.png$/);
@@ -667,7 +673,7 @@ try {
   await expect(page.getByTestId("rain-chart")).toBeVisible();
   await expect(page.getByTestId("rain-now")).toContainText("MOU189");
   checks.push("observed VIIRS daily map (day at or before the playhead, pixelated, deep-linked) with its clear-sky comparison card, and the hourly rain chart");
-  checks.push("15 Sep names both observations (VIIRS and the Sentinel-2 water check) with the consistent-with reading and the indicative label; no Sentinel-2 rows on another day");
+  checks.push("15 Sep names both observations (VIIRS and the Sentinel-2 water check) with the consistent-with reading, the next clear VIIRS day beside it and the indicative label; no land cover named; no Sentinel-2 rows on another day");
   // While the residents raster is still loading, a resident view draws water depth, and the legend says exactly that.
   let releaseResidents;
   const residentsHeld = new Promise((release) => { releaseResidents = release; });
@@ -780,8 +786,10 @@ try {
     assert(capacityFigures[index][0] <= capacityFigures[index + 1][0], `The lower bound never exceeds the upper bound (${JSON.stringify(capacityFigures)})`);
   }
   const caveats = capacityBlock.getByTestId("capacity-caveats");
-  await expect(caveats.locator("li")).toHaveCount(5);
+  await expect(caveats.locator("li")).toHaveCount(6);
   await expect(caveats).toContainText("T1 scenario (model)");
+  await expect(caveats).toContainText("Neither bound is a limit on who fits.");
+  await expect(capacityBlock.getByTestId("capacity-bound-upper")).toContainText("not a maximum");
   await expect(caveats).toContainText("That is an upper bound: many people stay with relatives");
   await expect(caveats).toContainText("Capacity is an unverified estimate from mapped building footprints");
   await expect(caveats).toContainText("candidates to verify on the ground, not a list of sites to open");
@@ -812,13 +820,16 @@ try {
   const planTables = await planCard.locator("[data-testid='capacity-aware-table'], [data-testid='what-if-table']")
     .evaluateAll((boxes) => boxes.map((box) => ({ need: box.querySelector("table").scrollWidth, room: box.clientWidth })));
   assert(planTables.length === 2 && planTables.every((box) => box.need <= box.room), `The capacity and what-if tables fit the plan card (${JSON.stringify(planTables)})`);
-  checks.push("capacity-aware view beside the plan: both bounds with overflow = demand − fit, five caveats, the 79-place site flagged, candidates to verify; what-if levels labelled as not return periods, robust core marked");
+  checks.push("capacity-aware view beside the plan: both bounds with overflow = demand − fit and what each assumes, six caveats (neither bound is a limit), the 79-place site flagged, candidates to verify; what-if levels labelled as not return periods, robust core marked");
   // Local check of the candidates: no verification sheet has been returned, so the card says so and states no result.
   const verification = planCard.getByTestId("shelter-verification");
   await expect(verification).toHaveAttribute("data-status", "not_conducted");
   await expect(verification.getByTestId("verification-status")).toContainText("Not conducted. No verification sheet has been returned");
   await expect(verification.getByTestId("verification-sheet")).toContainText("“Checked by <role> on <date>; not an official shelter register”");
   await expect(verification.getByTestId("verification-rows")).toHaveCount(0);
+  // No check was returned, so no site carries a local-check line and nothing says the plans ignore one.
+  await expect(planCard.getByTestId("local-check")).toHaveCount(0);
+  await expect(verification.getByTestId("verification-not-used")).toHaveCount(0);
   const sheetLink = verification.getByTestId("verification-sheet-link");
   await expect(sheetLink).toHaveAttribute("download", "shelter_candidate_verification_sheet.csv");
   const sheetFile = await page.evaluate(async (href) => {
@@ -830,6 +841,8 @@ try {
   assert(sheetText.includes("# verification_status,not_conducted"), "The blank sheet says no check was conducted");
   const sheetRows = sheetText.split("\n").filter((line) => /^C\d{3},/.test(line));
   assert(sheetRows.length === 95 && sheetRows.every((line) => line.endsWith(",,,,,")), "The sheet lists the 95 eligible candidates with the five checker columns empty");
+  assert(sheetText.includes("Keep the lines that start with # and the first eight columns exactly as they are"), "The sheet tells the checker to keep its provenance lines and prefilled columns");
+  assert(/capacity_basis_th \([^)]*[\u0E00-\u0E7F]/.test(sheetText) && sheetText.includes("ไม่ทราบ"), "The sheet gives the capacity basis in Thai beside the English phrase");
   checks.push("shelter-candidate check: not conducted, no result stated; the blank sheet downloads with 95 candidates and empty checker columns");
   await planCard.getByRole("button", { name: /^Show plan site 1, / }).click();
   // A closing popup fades out for a moment, so each check picks the popup by its text.
@@ -1029,6 +1042,17 @@ try {
   await expect(thaiPlan.getByTestId("verification-status")).toContainText("ยังไม่ได้ดำเนินการ ยังไม่มีแบบตรวจสอบส่งกลับมา");
   await expect(thaiPlan.getByTestId("verification-sheet")).toContainText("“ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ”");
   await expect(thaiPlan.getByTestId("shelter-verification")).not.toContainText(/Not conducted|Download the blank sheet/);
+  await expect(thaiPlan.getByTestId("capacity-caveats")).toContainText("ทั้งสองขอบเขตไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้");
+  // No text on the plan card is smaller than 10.5 px: a note under a column heading keeps the heading's size (a bare
+  // <small> under a .7rem heading renders at 9.3 px, too small for Thai with stacked marks on a phone).
+  const tinyPlanText = await thaiPlan.evaluate((card) => [...card.querySelectorAll("*")]
+    .filter((element) => !(element instanceof SVGElement) && element.getClientRects().length > 0
+      && [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim())
+      && Number.parseFloat(getComputedStyle(element).fontSize) < 10.5)
+    .map((element) => `${element.tagName} ${getComputedStyle(element).fontSize}: ${element.textContent.trim().slice(0, 40)}`));
+  assert.deepEqual(tinyPlanText, [], "No text on the Thai plan card is smaller than 10.5 px at 390 px");
+  const peakNote = Number.parseFloat(await thaiPlan.locator("[data-testid='what-if-table'] thead th small").first().evaluate((element) => getComputedStyle(element).fontSize));
+  assert(peakNote >= 10.5, `The label of the replay's own what-if column is readable (${peakNote}px)`);
   // The download list in Thai: Thai titles for every file, the standing sentence, and no overflow at 390 px.
   await touchPage.getByTestId("sources-panel").locator("summary").click();
   const thaiDownloads = touchPage.getByTestId("sources-panel").getByTestId("export-files");
@@ -1036,6 +1060,11 @@ try {
   assert((await thaiDownloads.locator("a[download]").allInnerTexts()).every((label) => /[฀-๿]/.test(label)), "Every download link has a Thai title");
   await expect(touchPage.getByTestId("sources-panel").getByTestId("export-tier")).toContainText("ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้");
   await expect(touchPage.getByTestId("sources-panel").getByTestId("export-tier")).toContainText("ไม่ใช่การพยากรณ์ ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง และไม่ใช่การเตือนภัยอย่างเป็นทางการ");
+  // The footer of the download list is Thai throughout, the pack's source timestamp included.
+  const thaiFooter = touchPage.getByTestId("sources-panel").getByTestId("export-footer");
+  await expect(thaiFooter).toContainText("เวลาของข้อมูลต้นทาง: ข้อมูล OSM");
+  await expect(thaiFooter).not.toContainText(/OSM extract|reported shelters compiled|illustrative stage keyframes/);
+  assert.equal(await thaiFooter.locator("[lang='en']").count(), 0, "The Thai download footer carries no English sentence");
   const thaiDownloadOverflow = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   assert(thaiDownloadOverflow <= 1, `The Thai download list does not overflow at 390 px (${thaiDownloadOverflow}px)`);
   assert.deepEqual(await spacedThai(touchPage), [], "No Thai text node is letter-spaced with the sources panel open at 390 px");
@@ -1063,7 +1092,10 @@ try {
   await expect(thaiS2).toContainText("การเปรียบเทียบนี้เป็นเพียงข้อบ่งชี้");
   const thaiReading = touchPage.getByTestId("observed-reading");
   await expect(thaiReading).toContainText("วันนี้มีการสังเกตการณ์สองแหล่ง: VIIRS (15 ก.ย. 13:30 น. โดยประมาณ)");
-  await expect(thaiReading.getByTestId("s2-reading")).toContainText("สอดคล้องกับพื้นที่ที่สังเกตได้ซึ่งกว้างกว่า");
+  await expect(thaiReading.getByTestId("s2-reading")).toContainText("พื้นที่ที่สังเกตได้ซึ่งกว้างกว่าสอดคล้องกับน้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่หลังระดับแม่น้ำลดลง");
+  await expect(thaiReading.getByTestId("s2-following-day")).toContainText("แผนที่ VIIRS ที่ท้องฟ้าโปร่งถัดมา (16 ก.ย. 13:30 น. โดยประมาณ)");
+  await expect(thaiReading.getByTestId("s2-following-day")).toContainText("มากกว่าน้ำขังที่คงอยู่นาน");
+  await expect(thaiReading).not.toContainText("ไร่นา");
   await expect(thaiReading).toContainText("ไม่ใช่ขอบเขตน้ำท่วม");
   await expect(thaiReading).not.toContainText(/Water or saturated mud|indicative|consistent with/);
   await expect(touchPage.getByTestId("viirs-card").getByTestId("viirs-s2-note")).toContainText("การสังเกตการณ์แหล่งที่สองของวันที่ 15 ก.ย.");
@@ -1072,9 +1104,9 @@ try {
   assert(thaiS2Overflow <= 1, `The Thai 15 Sep evidence does not overflow at 390 px (${thaiS2Overflow}px)`);
   await touch.close();
   checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips, non-operational status and generation time in Thai, shelter-set comparison in Thai without letter-spacing or overflow");
-  checks.push("touch phone in Thai: capacity-aware bounds, caveats and what-if label in Thai, robust core marked, no letter-spacing, tables fit at 390 px");
-  checks.push("touch phone in Thai: the candidate check says not conducted, and the eight download links have Thai titles under the standing sentence without overflow or letter-spacing");
-  checks.push("touch phone in Thai on 15 Sep: both observations, the consistent-with reading and the caveat in Thai, without letter-spacing or overflow");
+  checks.push("touch phone in Thai: capacity-aware bounds, caveats and what-if label in Thai, robust core marked, no letter-spacing, no text under 10.5 px, tables fit at 390 px");
+  checks.push("touch phone in Thai: the candidate check says not conducted, and the eight download links have Thai titles under the standing sentence, with a Thai source timestamp, without overflow or letter-spacing");
+  checks.push("touch phone in Thai on 15 Sep: both observations, the consistent-with reading, the next clear VIIRS day and the caveat in Thai, without letter-spacing or overflow");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

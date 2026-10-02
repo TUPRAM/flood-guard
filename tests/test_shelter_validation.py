@@ -40,8 +40,9 @@ def blank_sheet() -> bytes:
     """A blank sheet for the three eligible candidates, written like the bake writes it."""
     rows = []
     for site in exports.sheet_candidates(CANDIDATES):
+        basis = BASIS["unknown" if site["capacity_est"] is None else "estimate"]
         row = {"candidate_id": site["id"], "kind": site["kind"], "name": site["name"], "lat": site["lat"], "lon": site["lon"],
-               "estimated_capacity": site["capacity_est"], "capacity_basis": BASIS["unknown" if site["capacity_est"] is None else "estimate"]}
+               "estimated_capacity": site["capacity_est"], "capacity_basis": basis, "capacity_basis_th": exports.capacity_basis_th(basis)}
         row.update({column.key: None for column in exports.SHEET_CHECKER})
         rows.append(row)
     fields = [("title", "Shelter-candidate verification sheet"), ("generated_at", "2026-10-02T15:00:00+07:00"),
@@ -53,11 +54,11 @@ SHEET_ROWS = exports.read_export_csv(blank_sheet())[2]
 
 
 def returned(answers: dict[str, dict[str, str]], *, extra_columns: dict[str, str] | None = None, keep_provenance: bool = True,
-             header: list[str] | None = None, pad: int = 0) -> str:
+             header: list[str] | None = None, pad: int = 0, drop_columns: tuple[str, ...] = ()) -> str:
     """A returned sheet as text: the blank sheet with ``answers`` filled in per candidate id.
 
     ``extra_columns`` adds columns (heading to one value for every row), ``pad`` appends empty cells to every line as
-    a spreadsheet does, and ``keep_provenance=False`` drops the provenance lines.
+    a spreadsheet does, ``keep_provenance=False`` drops the provenance lines and ``drop_columns`` removes columns by key.
     """
     lines = list(csv.reader(io.StringIO(blank_sheet().decode("utf-8-sig"), newline="")))
     start = next(index for index, cells in enumerate(lines) if not cells[0].startswith("#"))
@@ -68,6 +69,10 @@ def returned(answers: dict[str, dict[str, str]], *, extra_columns: dict[str, str
             cells[keys.index(key)] = value
     if header is not None:
         head = header
+    if drop_columns:
+        kept = [index for index, key in enumerate(keys) if key not in drop_columns]
+        head = [head[index] for index in kept]
+        body = [[cells[index] for index in kept] for cells in body]
     for heading, value in (extra_columns or {}).items():
         head = [*head, heading]
         body = [[*cells, value] for cells in body]
@@ -107,9 +112,10 @@ def test_a_filled_sheet_gives_only_the_whitelisted_columns_of_the_checked_candid
     assert all(tuple(row) == rules.DERIVED_KEYS for row in rows)
     # C002 was left empty: it is not a check, and nothing is said about it.
     assert "C002" not in [row["candidate_id"] for row in rows]
-    # The free-text note is kept only on request.
-    with_notes = check(returned(GOOD), include_access_notes=True)
-    assert with_notes[0]["access_notes"] == "Paved road to the gate" and with_notes[1]["access_notes"] == ""
+    # The free-text note is never kept, only the fact that one was given, and there is no option to keep it.
+    assert "Paved road" not in json.dumps(rows) and all("access_notes" not in row for row in rows)
+    with pytest.raises(TypeError):
+        check(returned(GOOD), include_access_notes=True)
 
 
 def test_a_spreadsheet_round_trip_is_read_padded_cells_thai_answers_and_local_dates() -> None:
@@ -158,7 +164,7 @@ def test_a_personal_data_column_is_refused_whatever_it_holds(heading: str, kind:
     assert rules.personal_data_kind(heading) == kind
     for value in ("", "anything"):
         problems = refused(returned(GOOD, extra_columns={heading: value}))
-        assert problems == [f"column 13 asks for {kind}: personal data is not accepted; remove the column and send the file again"]
+        assert problems == [f"column 14 asks for {kind}: personal data is not accepted; remove the column and send the file again"]
 
 
 def test_the_sheets_own_columns_are_not_mistaken_for_personal_data() -> None:
@@ -169,9 +175,9 @@ def test_the_sheets_own_columns_are_not_mistaken_for_personal_data() -> None:
 
 
 def test_an_unknown_column_is_refused_and_an_empty_trailing_one_is_ignored() -> None:
-    assert refused(returned(GOOD, extra_columns={"remarks": "none"})) == ["column 13 is not on the sheet's whitelist; remove it"]
+    assert refused(returned(GOOD, extra_columns={"remarks": "none"})) == ["column 14 is not on the sheet's whitelist; remove it"]
     assert check(returned(GOOD, extra_columns={"": ""}))  # A spreadsheet's empty trailing column.
-    assert refused(returned(GOOD, extra_columns={"": "a stray value"})) == ["column 13 has no heading but holds values; remove it"]
+    assert refused(returned(GOOD, extra_columns={"": "a stray value"})) == ["column 14 has no heading but holds values; remove it"]
     head = [column.label for column in exports.SHEET_COLUMNS]
     assert refused(returned(GOOD, header=[*head[:-1], "name (ชื่อ)"])) == ["column name appears twice", "column checked_on is missing"]
     assert "column usable_as_shelter is missing" in refused(returned(GOOD, header=[cell for cell in head if not cell.startswith("usable")] + [""]))
@@ -181,12 +187,17 @@ def test_an_unknown_column_is_refused_and_an_empty_trailing_one_is_ignored() -> 
     ("call 081-234-5678 first", "a phone number"), ("0812345678", "a phone number"), ("+66 81 234 5678", "a phone number"),
     ("053 731 234", "a phone number"), ("key holder 1-2345-67890-12-3", "an ID number"), ("1234567890123", "an ID number"),
     ("write to somchai@example.org", "an e-mail address"),
+    # However the separators are written (review of 2 Oct 2026: these four were accepted before).
+    ("โทร 081.234.5678", "a phone number"), ("tel (081) 234 5678", "a phone number"), ("call 081/2345678", "a phone number"),
+    ("โทร ๐๘๑-๒๓๔-๕๖๗๘", "a phone number"), ("081 - 234 - 5678", "a phone number"), ("+66 (0) 81 234 5678", "a phone number"),
+    ("LINE: somchai99", "a messaging id"), ("ไลน์ somchai99", "a messaging id"), ("Line ID = somchai.j", "a messaging id"),
+    ("message @somchai99", "a messaging id"),
 ])
 def test_a_cell_that_reads_as_personal_data_is_refused_without_repeating_it(note: str, kind: str) -> None:
     assert rules.personal_data_in_value(note) == kind
     problems = refused(returned({"C001": {**GOOD["C001"], "access_notes": note}}))
-    assert problems == [f"data row 1, column 10: the cell reads as {kind}; personal data is not accepted"]
-    assert note not in "\n".join(problems) and "5678" not in "\n".join(problems)  # The message never repeats the cell.
+    assert problems == [f"data row 1, column 11: the cell reads as {kind}; personal data is not accepted"]
+    assert note not in "\n".join(problems) and "5678" not in "\n".join(problems) and "somchai" not in "\n".join(problems)  # Never repeats the cell.
     for column in ("checked_by_role", "name"):
         assert any("personal data is not accepted" in problem for problem in refused(returned({"C001": {**GOOD["C001"], column: note}})))
 
@@ -197,14 +208,34 @@ def test_ordinary_answers_are_not_read_as_personal_data() -> None:
         assert rules.personal_data_in_value(value) is None, value
 
 
-def test_notes_that_name_a_person_are_refused_when_the_notes_are_kept() -> None:
-    for note in ("ติดต่อ นายสมชาย ก่อนเข้า", "Ask Mr. Somchai for the key", "น.ส.มาลี ถือกุญแจ"):
-        answers = {"C001": {**GOOD["C001"], "access_notes": note}}
-        assert refused(returned(answers), include_access_notes=True) == [
-            "data row 1 (C001): access_notes seems to name a person; remove the name or import without the notes"]
-        rows = check(returned(answers))  # Without the notes nothing of the text is kept, only that a note was given.
-        assert rows[0]["access_notes_given"] is True and "access_notes" not in rows[0]
+def test_free_text_notes_are_never_kept_because_a_name_cannot_be_screened() -> None:
+    # No screen recognises an untitled name, or every form of address, so nothing of a note is kept or published.
+    for note in ("ติดต่อ นายสมชาย ก่อนเข้า", "Ask Mr. Somchai for the key", "น.ส.มาลี ถือกุญแจ", "ติดต่อ นางสมศรี ใจดี", "ติดต่อคุณสมชาย",
+                 "ผู้ใหญ่สมชาย ใจดี ดูแลกุญแจ", "contact Somchai Jaidee"):
+        rows = check(returned({"C001": {**GOOD["C001"], "access_notes": note}}))
+        assert rows[0]["access_notes_given"] is True and set(rows[0]) == set(rules.DERIVED_KEYS)
+        text = json.dumps(document(rows), ensure_ascii=False)
+        assert note not in text and "สมชาย" not in text and "Somchai" not in text and "สมศรี" not in text and "มาลี" not in text
+    assert "access_notes" not in rules.DERIVED_KEYS
     assert len(refused(returned({"C001": {**GOOD["C001"], "access_notes": "x" * 301}}))) == 1
+
+
+def test_a_file_that_lost_its_provenance_lines_must_still_carry_each_checked_site() -> None:
+    lost = ("the file has lost its '# candidate_set_sha256' line and this row does not carry the sheet's kind, lat and lon, "
+            "so it cannot be matched to a site; fill in the current sheet again and keep its first lines and columns")
+    # (a) The '#' lines deleted and kind, lat and lon blanked (the name changed to another site's): refused.
+    blanked = {"C001": {**GOOD["C001"], "kind": "", "lat": "", "lon": "", "name": "Another site"}}
+    assert refused(returned(blanked, keep_provenance=False)) == [f"data row 1 (C001): {lost}"]
+    # (b) The '#' lines deleted and the kind, name, lat and lon columns removed: refused, row by row.
+    assert refused(returned(GOOD, keep_provenance=False, drop_columns=("kind", "name", "lat", "lon"))) == [
+        f"data row 1 (C001): {lost}", f"data row 3 (C004): {lost}"]
+    assert refused(returned(GOOD, keep_provenance=False, drop_columns=("lat",))) == [f"data row 1 (C001): {lost}", f"data row 3 (C004): {lost}"]
+    # With the fingerprint line the same tidied files are matched by it, as before.
+    assert check(returned(blanked)) and check(returned(GOOD, drop_columns=("kind", "name", "lat", "lon")))
+    # Without it, a file that keeps the site columns is matched row by row, and an unchecked row needs nothing.
+    assert [row["candidate_id"] for row in check(returned(GOOD, keep_provenance=False))] == ["C001", "C004"]
+    moved = {"C001": {**GOOD["C001"], "lat": "20.5"}}
+    assert refused(returned(moved, keep_provenance=False)) == ["data row 1 (C001): lat differs from the sheet; the file may answer another candidate list"]
 
 
 # --- Unknown candidates and malformed values ----------------------------------------------------------------------------
@@ -292,7 +323,12 @@ def test_a_document_for_another_candidate_list_or_with_extra_columns_is_not_publ
     assert problems(doc, ids, "f" * 64) == ["the check answers another candidate list (candidate_set_sha256 differs); the sheet must be sent out again"]
     assert problems(doc, ["C001"], FINGERPRINT) == ["C004: not a candidate of this revision"]
     assert problems({**doc, "rows": [{**doc["rows"][0], "checker_name": "x"}]}, ids, FINGERPRINT) == ["C001: columns outside the whitelist: ['checker_name']"]
-    assert problems({**doc, "rows": [{**doc["rows"][0], "access_notes": "call 0812345678"}]}, ids, FINGERPRINT) == ["C001: a value reads as personal data"]
+    assert problems({**doc, "rows": [{**doc["rows"][0], "access_notes": "Paved road to the gate"}]}, ids, FINGERPRINT) == [
+        "C001: columns outside the whitelist: ['access_notes']"]  # Free text is never published, whatever it says.
+    assert problems({**doc, "rows": [{**doc["rows"][0], "checked_on": "call 081.234.5678"}]}, ids, FINGERPRINT) == [
+        "C001: checked_on must be a date", "C001: a value reads as personal data"]
+    assert "confidence_reason is missing" in problems({key: value for key, value in doc.items() if key != "confidence_reason"}, ids, FINGERPRINT)
+    assert "assumptions is missing" in problems({**doc, "assumptions": []}, ids, FINGERPRINT)
     assert problems({**doc, "rows": [{**doc["rows"][0], "checked_by_role": "Somchai"}]}, ids, FINGERPRINT) == ["C001: checked_by_role must be a role code"]
     assert problems({**doc, "rows": [doc["rows"][0], doc["rows"][0]]}, ids, FINGERPRINT) == ["C001: appears twice"]
     assert problems({**doc, "rows": [{**doc["rows"][0], "usable_as_shelter": "yes", "verified_capacity": 1.5, "checked_on": "soon"}]}, ids, FINGERPRINT) == [
@@ -354,8 +390,13 @@ def test_script_writes_nothing_when_the_file_is_refused_or_only_checked(workspac
     back.write_text(returned(GOOD, extra_columns={"เบอร์โทร": "0812345678"}), encoding="utf-8")
     assert script.main([str(back), "--sheet", str(sheet), "--out", str(out), "--imported-on", "2026-10-20"]) == 1
     errors = capsys.readouterr().err
-    assert not out.exists() and "column 13 asks for a phone number" in errors and "Nothing was written." in errors
+    assert not out.exists() and "column 14 asks for a phone number" in errors and "Nothing was written." in errors
     assert "0812345678" not in errors
+    # There is no option to keep the free-text notes: publishing them is an owner decision, not a flag.
+    back.write_bytes(exports.BOM + returned(GOOD).encode("utf-8"))
+    with pytest.raises(SystemExit):
+        script.main([str(back), "--sheet", str(sheet), "--out", str(out), "--imported-on", "2026-10-20", "--include-access-notes"])
+    assert not out.exists()
 
 
 def test_script_refuses_a_returned_file_inside_the_repository(workspace, tmp_path: Path) -> None:
@@ -391,13 +432,39 @@ def test_bake_says_not_conducted_without_a_document_and_labels_every_row_with_on
                        "sheet": "shelter_candidate_verification_sheet", "candidate_set_sha256": FINGERPRINT, "candidates_listed": 3,
                        "statement": bake.VERIFICATION_NOT_CONDUCTED, "checked": []}
     assert "was not conducted" in nothing["statement"]
-    conducted = bake.shelter_check(document(check(returned(GOOD), include_access_notes=True)), CANDIDATES, FINGERPRINT)
+    conducted = bake.shelter_check(document(), CANDIDATES, FINGERPRINT)
     assert conducted["status"] == "conducted" and conducted["counts"]["checked"] == 2 and conducted["returned_file_sha256"] == "a" * 64
     assert [row["label"] for row in conducted["checked"]] == [
         "Checked by a village head or kamnan on 2026-10-09; not an official shelter register",
         "Checked by a tambon or municipality officer on 2026-10-10; not an official shelter register"]
-    assert conducted["checked"][0]["access_notes"] == "Paved road to the gate" and "access_notes" not in conducted["checked"][1]
+    # Only the whitelisted columns and the label are published: never the free-text notes.
+    assert all(set(row) == {*rules.DERIVED_KEYS, "label"} for row in conducted["checked"])
+    assert "Paved road" not in json.dumps(conducted) and conducted["checked"][0]["access_notes_given"] is True
     assert "not an official shelter register" in conducted["statement"] and conducted["source_timestamp"] == "checks dated 2026-10-09/2026-10-10"
+    # A conducted check is published with its confidence, the reason and its assumptions, and says the plans do not use it.
+    assert conducted["confidence"] == "low" and "not audited" in conducted["confidence_reason"]
+    assert conducted["assumptions"][:-1] == document()["assumptions"] and conducted["assumptions"][-1] == bake.VERIFICATION_NOT_USED
+    assert "a site reported not usable is still ranked" in bake.VERIFICATION_NOT_USED
     with pytest.raises(ValueError, match="cannot be published"):
         bake.shelter_check(document(), CANDIDATES, "f" * 64)
+    with pytest.raises(ValueError, match="columns outside the whitelist"):  # A document written by an older import, with notes.
+        bake.shelter_check({**document(), "rows": [{**document()["rows"][0], "access_notes": "Paved road to the gate"}]}, CANDIDATES, FINGERPRINT)
     assert bake.SHELTER_VALIDATION.as_posix() == "outputs/mae_sai_shelter_validation.json"
+
+
+def test_wording_stops_saying_nothing_was_checked_once_a_check_is_conducted() -> None:
+    for dependency in ("PIL", "pyproj", "rasterio", "scipy", "shapely"):
+        pytest.importorskip(dependency)
+    bake = load("build_mae_sai_flood_timeline")
+    nothing = bake.shelter_check(None, CANDIDATES, FINGERPRINT)
+    conducted = bake.shelter_check(document(), CANDIDATES, FINGERPRINT)
+    assert not bake.check_conducted(nothing) and bake.check_conducted(conducted)
+    before, after = bake.capacitated_meta(nothing), bake.capacitated_meta(conducted)
+    assert before == bake.CAPACITATED_META and "nothing was checked on the ground" in before["confidence_reason"]
+    assert "nothing was checked" not in after["confidence_reason"] and "is not used in these figures" in after["confidence_reason"]
+    assert after["assumptions"][-1] == bake.VERIFICATION_NOT_USED and bake.VERIFICATION_NOT_USED not in before["assumptions"]
+    assert bake.FIELD_CHECK[False] == "nothing was field-checked." and "apart from a local check" in bake.FIELD_CHECK[True]
+    assert exports.confidence_reason(False) == (exports.CONFIDENCE_REASON, exports.CONFIDENCE_REASON_TH)
+    english, thai = exports.confidence_reason(True)
+    assert "nothing was checked on the ground" not in english and "nothing else was checked on the ground" in english and "is not used in these tables" in english
+    assert "ยังไม่มีการตรวจสอบในพื้นที่" not in thai and "ไม่ได้ใช้ผลดังกล่าว" in thai

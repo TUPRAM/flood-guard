@@ -175,6 +175,27 @@ def test_model_overlap_is_counted_in_clear_cells_and_every_key_is_named_as_model
     assert apart["model_agreement_iou"] == 0.0 and apart["model_overlap_km2"] == 0.0
 
 
+def test_model_area_where_both_scenes_are_clear_is_the_figure_beside_the_new_water() -> None:
+    wet, clear, model = grid(["###....."]), grid(["######.."]), grid([".#####.#"])
+    area, permanent = grid(["########"]), grid(["........"])
+    # Without the earlier scene's clear mask the result has no both-clear figure: it would be a guess.
+    assert "model_flood_km2_both_clear" not in model_overlap(wet, clear, model, area, permanent, 1.0)
+    earlier = grid([".####..#"])  # Cloud hid the first cell and two more on the earlier date.
+    out = model_overlap(wet, clear, model, area, permanent, 1.0, earlier_clear=earlier)
+    # Model cells 1-5 are clear on the event date; cells 1-4 are clear on both dates.
+    assert (out["model_flood_km2_clear"], out["model_flood_km2_both_clear"]) == (5.0, 4.0)
+    assert out["model_flood_km2_both_clear"] <= out["model_flood_km2_clear"] <= out["model_flood_km2_district"]
+    assert all(key.startswith("model_") for key in out)
+    # It is counted in the same cells as the new water: both dates clear, inside the area, outside permanent water.
+    pre_wet = grid([".#......"])
+    change = new_water_areas(wet, clear, pre_wet, earlier, area, permanent, 1.0)
+    assert (change["both_clear_km2"], change["new_water_km2"]) == (4.0, 1.0)
+    channel = grid(["..#....."])
+    assert model_overlap(wet, clear, model, area, channel, 1.0, earlier_clear=earlier)["model_flood_km2_both_clear"] == 3.0
+    with pytest.raises(ValueError, match="share one grid"):
+        model_overlap(wet, clear, model, area, permanent, 1.0, earlier_clear=grid(["####"]))
+
+
 def test_class_areas_name_every_class_present_in_the_area() -> None:
     scl = np.array([[4, 4, 6, 9], [3, 7, 4, 200]], dtype=np.uint8)
     area = np.array([[True, True, True, True], [True, True, False, True]])

@@ -5,7 +5,7 @@
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
  "purpose": "Every input file the bake opened, so the published revision can be rebuilt and compared byte for byte (--verify).",
  "generated_at": {
-  "value": "2026-10-02T14:19:00+07:00",
+  "value": "2026-10-02T16:10:00+07:00",
   "basis": "declared"
  },
  "source_timestamp": "2024-09-05T03:58:19Z/2024-09-19T17:00:00Z",
@@ -27,7 +27,7 @@
   "repo": "repository root"
  },
  "input_count": 36,
- "input_bytes": 4787170554,
+ "input_bytes": 4787176592,
  "inputs": [
   {
    "root": "external",
@@ -236,8 +236,8 @@
   {
    "root": "repo",
    "path": "outputs/mae_sai_reported_shelters_2024.json",
-   "bytes": 69754,
-   "sha256": "9865a3db58ec0b6991d85f5d651520838fa67121e7b411dc4b859fc666293f6d"
+   "bytes": 75792,
+   "sha256": "674d95881b857916f65f864e555a1b20f815a25bd9c43e2d475fc0c8f2d00d35"
   },
   {
    "root": "repo",
@@ -249,7 +249,7 @@
  "outputs": {
   "folder": "apps/web/public/studies/mae-sai-2024-timeline/r4",
   "file_count": 30,
-  "bytes": 6932752,
+  "bytes": 6973467,
   "files": [
    {
     "name": "access-nodes.bin",
@@ -259,42 +259,42 @@
    {
     "name": "exports/modelled_access_loss_by_hour.csv",
     "bytes": 241197,
-    "sha256": "32fca44025aed340ced125a3bca29ffe0d95f3a3b9a8d65642a36c817d19d1c8"
+    "sha256": "22f99a5dfe67c06ab946648bdd52d3ef82cd07d936f6686713f5ce0634151cf8"
    },
    {
     "name": "exports/modelled_road_inundation_by_hour.csv",
-    "bytes": 345264,
-    "sha256": "c6c19cb9b6bbbbc73b58a538afe7fdeaf7b5ac43f73ddf646ac3bd5f31737128"
+    "bytes": 346104,
+    "sha256": "e070403092736853eafd82f9c3dfbf8e69a22dce4b503b0d3478acb4e32bf452"
    },
    {
     "name": "exports/README_licences.txt",
-    "bytes": 23838,
-    "sha256": "7f689ef2ce8201215fff8397e6a6868d7b6d64470a89ebabd85d279322f7d1ef"
+    "bytes": 25842,
+    "sha256": "dc9786eadf74a9e090fe60089d15d357a358723a4a0bda24a9879af50a77c6a9"
    },
    {
     "name": "exports/shelter_candidate_verification_sheet.csv",
-    "bytes": 22074,
-    "sha256": "cdf4272b3a4e2bb10ecf8c4f2f40a74a83bd3486e53100f58b4c81991fd2bd50"
+    "bytes": 31025,
+    "sha256": "fd4c7a2bbb3769cf4f0078b2e17ed2129645cada0fa8192d3bcd7a363f0837ab"
    },
    {
     "name": "exports/shelter_plan_capacitated.csv",
-    "bytes": 16031,
-    "sha256": "95e9dcaffb5031b84458877c86f86cccacbae22e462732331cd86a411f58460b"
+    "bytes": 19081,
+    "sha256": "093a5b12ecdd4f7db5a56b65ddb4cb2c965929dcf5bd85b0d77e9ebe3ca6db59"
    },
    {
     "name": "exports/shelter_plan_k.csv",
-    "bytes": 12754,
-    "sha256": "3054cf7e0efd0dfb4a033ac2cef2ac55fa4a26e4adcd5a6c5044d8aa085bcfbb"
+    "bytes": 13604,
+    "sha256": "b61263f2b2d854cea4cf4a38277210a542d4a92faec865d7510a411d48b3890e"
    },
    {
     "name": "exports/shelter_plan_reported_2024.csv",
-    "bytes": 21874,
-    "sha256": "f211dfcd1f8d0da65984e001357d98041a6416700e2078b1d748969f648ce471"
+    "bytes": 28398,
+    "sha256": "2156130df19d61fb94b6117e9c7a400064a0d8ca68d24c6bb3a7f571b2fdc710"
    },
    {
     "name": "exports/shelter_sites.geojson",
-    "bytes": 88448,
-    "sha256": "57f06cfa5480dd73629383fdd6014f0184a090de1d9aa6f571cb9395993b2f82"
+    "bytes": 99373,
+    "sha256": "aa317d51646c0de392714151ad4e432ee3ffa659ed0e3add3b04683e962af54e"
    },
    {
     "name": "facilities.geojson",
@@ -353,8 +353,8 @@
    },
    {
     "name": "timeline.json",
-    "bytes": 264049,
-    "sha256": "0a359121ec7f08d21ee8d48c08043ebb4ab331e9cd472fe666895482572a36a6"
+    "bytes": 271620,
+    "sha256": "313a762036dd8839d738560839e20016f84c64a227a279dbacb80cd3aedf2742"
    },
    {
     "name": "viirs-20240910.png",
@@ -406,11 +406,11 @@
  "code": [
   {
    "path": "packages/contracts/schemas/case-replay-timeline.schema.json",
-   "sha256": "402aa2a8292fc0488183714712be5c9ae61eb59b7cbc6602e99ae1a53cff977c"
+   "sha256": "91e1bb235aedfa970af19e4b8ed894767b38d7bcca98fabb5e1034755da861b0"
   },
   {
    "path": "scripts/build_mae_sai_flood_timeline.py",
-   "sha256": "b2fa05f8bb0e71d45cc9267d36506459e7eeb4b10a1fdfbed96746bd7cdf50b6"
+   "sha256": "35f2b9473e2f2278dbc90aed145197f6d1a807db7316c8839c2823353cc9b3a5"
   },
   {
    "path": "scripts/mae_sai_timeline_evacuation.py",
@@ -418,7 +418,7 @@
   },
   {
    "path": "scripts/mae_sai_timeline_observations.py",
-   "sha256": "938667a2480963cc6f43687f5e1457d4197ebac45d4ed44a224ffa2188c55ff3"
+   "sha256": "982c050075274c206347d9efd082a0cd3fdb277b639c90e6052ab26e3480671d"
   },
   {
    "path": "src/floodguard/bake_receipt.py",
@@ -434,15 +434,15 @@
   },
   {
    "path": "src/floodguard/optical_water_check.py",
-   "sha256": "22980039d0bfcebfbd2dc747abdb73ee2e51750aa4eb49145d12f1a410daf922"
+   "sha256": "bc637371ada38fb4c6579a8454d5a9d18cb0a828bc2ab2d63ea305bdd3417f45"
   },
   {
    "path": "src/floodguard/replay_exports.py",
-   "sha256": "aaab7e2c74e87bc32362e272767b8fd8e55a8d1d0cbc46f05c3ef67d42618134"
+   "sha256": "138b7080dbd7744e25dc3c57b17b770c37170013e49330d214627245398b232a"
   },
   {
    "path": "src/floodguard/replay_manifest.py",
-   "sha256": "7495c3d24dfa1d921f7808e4ec88ca24e143a1940ed11a0b5ae01acffc7d3528"
+   "sha256": "2b69eb33e7a06593132104a5e5af83e5997a7c20a61600d45aaa6a483eaa22fc"
   },
   {
    "path": "src/floodguard/rights_basis.py",
@@ -450,7 +450,7 @@
   },
   {
    "path": "src/floodguard/shelter_validation.py",
-   "sha256": "ee551d758ba4feed81007a8d3e3df479f0c4be4ddac689bfd3c71622abcba6bf"
+   "sha256": "67bb5a988574e9c6de2f3b096962653b67a996e3a89d263629a2725041443ead"
   }
  ],
  "libraries": {

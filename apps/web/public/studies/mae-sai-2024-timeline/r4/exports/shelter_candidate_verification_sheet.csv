@@ -1,5 +1,5 @@
 ﻿# floodguard_export,shelter_candidate_verification_sheet.csv
-# header_lines,43,"The first 43 lines are provenance and the column header is on line 44. A spreadsheet shows them as rows; in QGIS discard 43 header lines, in pandas use skiprows=43.",43 บรรทัดแรกเป็นข้อมูลกำกับ และหัวคอลัมน์อยู่ที่บรรทัด 44 โปรแกรมตารางคำนวณจะแสดงเป็นแถว ใน QGIS ให้ข้าม 43 บรรทัดแรก
+# header_lines,47,"The first 47 lines are provenance and the column header is on line 48. A spreadsheet shows them as rows; in QGIS discard 47 header lines, in pandas use skiprows=47.",47 บรรทัดแรกเป็นข้อมูลกำกับ และหัวคอลัมน์อยู่ที่บรรทัด 48 โปรแกรมตารางคำนวณจะแสดงเป็นแถว ใน QGIS ให้ข้าม 47 บรรทัดแรก
 # title,Shelter-candidate verification sheet: a blank checklist for a local checker (no check has been conducted)
 # title_th,แบบตรวจสอบสถานที่ที่อาจใช้เป็นที่พักพิง: รายการตรวจที่ยังว่างสำหรับผู้ตรวจสอบในพื้นที่ (ยังไม่มีการตรวจสอบ)
 # tier,"T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null"
@@ -10,7 +10,7 @@
 # confidence_reason_th,ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
 # lanes,SCN
 # source_timestamp,OpenStreetMap extract 2026-07-09 (sites and building footprints); reconstructed peak 2024-09-12 ICT
-# generated_at,2026-10-02T14:19:00+07:00
+# generated_at,2026-10-02T16:10:00+07:00
 # generated_by,scripts/build_mae_sai_flood_timeline.py
 # study,mae-sai-2024-flood-timeline r4
 # accepted,accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
@@ -26,114 +26,118 @@
 # assumption_2_th,ผลที่ส่งกลับมาจะระบุว่า 'ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ'
 # assumption_3,"Do not add names of people, phone numbers or ID numbers, and do not add columns. Give a role code, never a name; the import script refuses a file that carries personal data."
 # assumption_3_th,โปรดอย่าใส่ชื่อบุคคล หมายเลขโทรศัพท์ หรือเลขประจำตัว และอย่าเพิ่มคอลัมน์ ให้ระบุรหัสบทบาท ไม่ใช่ชื่อ โปรแกรมนำเข้าจะปฏิเสธไฟล์ที่มีข้อมูลส่วนบุคคล
-# assumption_4,"usable_as_shelter: yes or no. verified_capacity: a whole number of people. checked_on: the date of the check as YYYY-MM-DD. checked_by_role: one of ddpm_officer, local_government_officer, village_leader, site_staff, project_team, other_local_contact."
-# assumption_4_th,usable_as_shelter: yes หรือ no · verified_capacity: จำนวนคนเป็นจำนวนเต็ม · checked_on: วันที่ตรวจสอบในรูปแบบ YYYY-MM-DD (ปี ค.ศ.) · checked_by_role: ddpm_officer = เจ้าหน้าที่ ปภ. · local_government_officer = เจ้าหน้าที่ อบต. หรือเทศบาล · village_leader = ผู้ใหญ่บ้านหรือกำนัน · site_staff = เจ้าหน้าที่ของสถานที่ · project_team = ทีมโครงการ FloodGuard · other_local_contact = ผู้ประสานงานในพื้นที่อื่น ๆ
-# assumption_5,"The sites are candidates to verify on the ground, not a list of sites to open. They are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres)."
-# assumption_5_th,สถานที่เหล่านี้เป็นสถานที่ที่ควรตรวจสอบในพื้นที่ ไม่ใช่รายชื่อสถานที่ที่ต้องเปิด เป็นอาคารและพื้นที่สาธารณะใน OpenStreetMap (โรงเรียน ศาสนสถาน หน่วยงานราชการ ศูนย์ชุมชน)
-# assumption_6,A candidate is eligible when it keeps 0.5 m of freeboard at the modelled peak (3.5 m stage) and a road node lies within 400 m.
-# assumption_6_th,สถานที่เข้าเกณฑ์เมื่อยังสูงกว่าระดับน้ำสูงสุดตามแบบจำลอง (ระดับ 3.5 ม.) อย่างน้อย 0.5 ม. และมีจุดถนนภายในระยะ 400 ม.
-# assumption_7,"Capacity is an unverified estimate from mapped building footprints (footprint x 0.5 usable share / 3.5 m2 per person, Sphere) and is unknown for most candidates. No listed capacity from a shelter register is used or published here."
-# assumption_7_th,ความจุเป็นค่าประมาณที่ยังไม่ได้ตรวจสอบ คำนวณจากขอบเขตอาคารในแผนที่ (พื้นที่อาคาร x สัดส่วนใช้สอย 0.5 / 3.5 ตร.ม. ต่อคน ตามมาตรฐาน Sphere) และไม่ทราบค่าสำหรับสถานที่ส่วนใหญ่ ไม่มีการใช้หรือเผยแพร่ความจุจากทะเบียนที่พักพิงใด ๆ ในไฟล์นี้
-# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=d11776091eef590dc8609f823346bb5543327a6fce9a08319b610d491a871292
+# assumption_4,"Keep the lines that start with # and the first eight columns exactly as they are, and fill in only the last five. They tie each answer to its site: candidate ids are renumbered when the map data changes, so a file without them cannot be matched and is refused."
+# assumption_4_th,โปรดคงบรรทัดที่ขึ้นต้นด้วย # และแปดคอลัมน์แรกไว้ตามเดิมทุกประการ และกรอกเฉพาะห้าคอลัมน์สุดท้าย ข้อมูลส่วนนี้ผูกคำตอบแต่ละแถวกับสถานที่ รหัสสถานที่จะเปลี่ยนเมื่อข้อมูลแผนที่เปลี่ยน ไฟล์ที่ไม่มีข้อมูลส่วนนี้จึงจับคู่กับสถานที่ไม่ได้และจะถูกปฏิเสธ
+# assumption_5,Access notes are for the project team only: they are never published and never kept in the project's files; only the fact that a note was given is recorded.
+# assumption_5_th,หมายเหตุการเข้าถึงใช้ภายในทีมโครงการเท่านั้น จะไม่ถูกเผยแพร่และไม่ถูกเก็บไว้ในไฟล์ของโครงการ บันทึกไว้เพียงว่ามีการให้หมายเหตุหรือไม่
+# assumption_6,"usable_as_shelter: yes or no. verified_capacity: a whole number of people. checked_on: the date of the check as YYYY-MM-DD. checked_by_role: one of ddpm_officer, local_government_officer, village_leader, site_staff, project_team, other_local_contact."
+# assumption_6_th,usable_as_shelter: yes หรือ no · verified_capacity: จำนวนคนเป็นจำนวนเต็ม · checked_on: วันที่ตรวจสอบในรูปแบบ YYYY-MM-DD (ปี ค.ศ.) · checked_by_role: ddpm_officer = เจ้าหน้าที่ ปภ. · local_government_officer = เจ้าหน้าที่ อบต. หรือเทศบาล · village_leader = ผู้ใหญ่บ้านหรือกำนัน · site_staff = เจ้าหน้าที่ของสถานที่ · project_team = ทีมโครงการ FloodGuard · other_local_contact = ผู้ประสานงานในพื้นที่อื่น ๆ
+# assumption_7,"The sites are candidates to verify on the ground, not a list of sites to open. They are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres)."
+# assumption_7_th,สถานที่เหล่านี้เป็นสถานที่ที่ควรตรวจสอบในพื้นที่ ไม่ใช่รายชื่อสถานที่ที่ต้องเปิด เป็นอาคารและพื้นที่สาธารณะใน OpenStreetMap (โรงเรียน ศาสนสถาน หน่วยงานราชการ ศูนย์ชุมชน)
+# assumption_8,A candidate is eligible when it keeps 0.5 m of freeboard at the modelled peak (3.5 m stage) and a road node lies within 400 m.
+# assumption_8_th,สถานที่เข้าเกณฑ์เมื่อยังสูงกว่าระดับน้ำสูงสุดตามแบบจำลอง (ระดับ 3.5 ม.) อย่างน้อย 0.5 ม. และมีจุดถนนภายในระยะ 400 ม.
+# assumption_9,"Capacity is an unverified estimate from mapped building footprints (footprint x 0.5 usable share / 3.5 m2 per person, Sphere) and is unknown for most candidates. No listed capacity from a shelter register is used or published here."
+# assumption_9_th,ความจุเป็นค่าประมาณที่ยังไม่ได้ตรวจสอบ คำนวณจากขอบเขตอาคารในแผนที่ (พื้นที่อาคาร x สัดส่วนใช้สอย 0.5 / 3.5 ตร.ม. ต่อคน ตามมาตรฐาน Sphere) และไม่ทราบค่าสำหรับสถานที่ส่วนใหญ่ ไม่มีการใช้หรือเผยแพร่ความจุจากทะเบียนที่พักพิงใด ๆ ในไฟล์นี้
+# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=a27437c70c58170194ab3c7581e7756e6a104ca984c8f3d27fccfa92c2e4bdf0
 # input_sha256,external:open_context/osm_geofabrik/thailand-latest.osm.pbf=b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1; repo:outputs/mae_sai_facilities.geojson=5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce; repo:outputs/mae_sai_access_edges.csv=266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf
 # git_commit,null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv
 # verification_status,not_conducted
 # verification_label,Checked by <role> on <date>; not an official shelter register
 # verification_label_th,ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ
 # candidate_set_sha256,728655fd042e631241f5527a906ea7456380127bc9ed0de4aa6a461867cc7bb8
-candidate_id (รหัสสถานที่),kind (ประเภท),name (ชื่อ),lat (ละติจูด),lon (ลองจิจูด),estimated_capacity (ความจุโดยประมาณ),capacity_basis (ที่มาของค่าความจุ),usable_as_shelter (ใช้เป็นที่พักพิงได้หรือไม่),verified_capacity (ความจุที่ตรวจสอบแล้ว),access_notes (หมายเหตุการเข้าถึง),checked_by_role (บทบาทของผู้ตรวจสอบ),checked_on (วันที่ตรวจสอบ)
-C001,worship,วัดถ้ำปลา,20.329773,99.863965,,unknown,,,,,
-C002,worship,มูลนิธิกวงเม้งแม่สาย,20.436535,99.884614,130,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C003,worship,พระธาตุน้อยดอยตุง,20.324269,99.833001,18,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C004,worship,,20.327896,99.825757,191,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C005,worship,วัดถ้ำผาจม,20.441814,99.873484,,unknown,,,,,
-C006,school,โรงเรียนแม่สายประสิทธิ์ศาสตร์,20.42964,99.881465,984,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C007,school,โรงเรียนบ้านเหมืองแดง,20.437352,99.893756,306,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C008,government,สำนักงานเทศบาลตำบลแม่สาย,20.426533,99.88432,121,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C009,government,สำนักงานเทศบาลตำบลเวียงพางคำ,20.403363,99.88562,81,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C010,school,โรงเรียนอนุบาลแม่สาย,20.435298,99.881307,,unknown,,,,,
-C011,government,องค์การบริหารส่วนตำบลโป่งผา,20.378527,99.88522,110,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C012,worship,วัดบ้านจ้อง,20.367565,99.880792,262,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C013,government,องค์การบริหารส่วนตำบลเกาะช้าง,20.415396,99.990452,56,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C014,worship,วัดพญาสี่ตวงคำ,20.435442,99.879765,,unknown,,,,,
-C015,worship,วัดพรหมวิหาร,20.426665,99.879955,33,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C016,school,โรงเรียนบ้านป่าเหมือด,20.412416,99.886779,577,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C017,school,โรงเรียนบ้านป่ายาง,20.42359,99.890878,,unknown,,,,,
-C018,school,โรงเรียนบ้านผาฮี้,20.348139,99.831126,76,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C019,worship,มัสยิดอันนุร แม่สาย,20.4308,99.884198,41,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C020,worship,มัสยิด อัรเราะห์มานิยะฮ์,20.433015,99.893498,,unknown,,,,,
-C021,worship,คริสตจักรศรีชัยภูมิ,20.43716,99.959478,50,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C022,worship,คริสตจักรพัฒนาพระพรปางห้า,20.412819,99.99415,29,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C023,school,ศูนย์พัฒนาการศึกษาเพื่อลูกหญิงและชุมชน,20.419351,99.876697,253,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C024,school,ศูนย์การเรียนชุมชนป่ายางใหม่,20.419895,99.876165,39,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C025,worship,วัดเหมืองแดง,20.437428,99.89229,88,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C026,worship,วัดเวียงพาน,20.433657,99.881577,79,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C027,worship,วัดผาแตก,20.420463,99.868036,73,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C028,worship,ศาลหลักเมืองแม่สาย,20.428375,99.884244,5,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C029,school,โรงเรียนบ้านจ้อง,20.368865,99.884471,240,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C030,worship,วัดห้วยไคร้ใหม่,20.272562,99.859724,63,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C032,worship,วัดถ้ำเสาหินพญานาค,20.325862,99.866584,183,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C033,school,วิทยาลัยอาชีวศึกษาแม่สาย,20.325688,99.870027,,unknown,,,,,
-C034,school,โรงเรียนบ้านถ้ำปลา,20.322844,99.875955,,unknown,,,,,
-C035,school,โรงเรียนบ้านถ้ำ ตชด,20.327835,99.865162,,unknown,,,,,
-C036,school,Wat Tham Pla Wittayakhom School,20.332872,99.864753,,unknown,,,,,
-C037,school,โรงเรียนบ้านถ้ำ,20.327545,99.883166,,unknown,,,,,
-C038,worship,วัดพระธาตุดอยเวา,20.442704,99.877845,212,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C039,worship,วัดบ้านถ้ำหลวง,20.330642,99.883726,1609,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C040,worship,พระธาตุดอยตุง,20.325031,99.83245,20,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C041,school,Chinese School,20.326853,99.869312,,unknown,,,,,
-C042,worship,Chinese shrine,20.326932,99.868754,203,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C043,worship,,20.344417,99.86045,,unknown,,,,,
-C044,worship,,20.346465,99.860507,,unknown,,,,,
-C045,worship,คริสตจักรแบ๊บติสต์บ้านถ้ำ,20.328942,99.866894,135,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C046,worship,,20.391369,99.907329,,unknown,,,,,
-C047,worship,,20.424352,99.894953,84,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C048,worship,วัดพระธาตุดอยเวา,20.442127,99.879994,57,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C049,worship,,20.441102,99.913447,79,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C050,worship,,20.435488,99.94763,62,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C051,worship,,20.426945,99.864891,94,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C053,worship,วัดมงคลธรรมกายาราม,20.326782,99.893169,181,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C054,worship,วัดมงคลธรรมกายาราม,20.325884,99.893207,225,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C055,worship,วัดมงคลธรรมกายาราม,20.324888,99.890415,58,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C056,worship,วัดมงคลธรรมกายาราม,20.325637,99.890444,40,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C057,worship,วัดมงคลธรรมกายาราม,20.324926,99.891577,93,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C058,worship,วัดมงคลธรรมกายาราม,20.325265,99.89233,40,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C060,worship,วัดสันกอง,20.26375,99.856409,,unknown,,,,,
-C061,worship,วัดห้วยน้ำขุ่น,20.269081,99.835101,,unknown,,,,,
-C063,government,สำนักงานเทศบาลตำบลห้วยไคร้,20.274877,99.862579,,unknown,,,,,
-C064,school,โรงเรียนบ้านห้วยไคร้,20.276153,99.861776,,unknown,,,,,
-C065,worship,คริสตจักรประชากิตติสุข ภาคที่2,20.274356,99.863276,,unknown,,,,,
-C066,worship,วัดห้วยไคร้หลวง,20.278874,99.863871,,unknown,,,,,
-C067,school,โรงเรียนบ้านโป่ง,20.313034,99.881298,,unknown,,,,,
-C068,school,โรงเรียนบ้านน้ำจำ,20.386877,99.885564,,unknown,,,,,
-C069,government,ตรวจคนเข้าเมืองจังหวัดเชียงราย,20.430311,99.884225,62,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",,,,,
-C070,school,โรงเรียนบ้านสันถนน,20.382452,99.952821,,unknown,,,,,
-C071,worship,วัดมรรคาราม,20.385982,99.947379,,unknown,,,,,
-C072,worship,,20.395432,99.934887,,unknown,,,,,
-C073,school,โรงเรียนบ้านสันธาตุ,20.3667,99.967213,,unknown,,,,,
-C074,worship,วัดเจติยาราม(สันธาตุ),20.367727,99.967402,,unknown,,,,,
-C079,school,,20.39891,99.851848,,unknown,,,,,
-C080,worship,เจดีย์วัดผาแตก,20.419888,99.867546,,unknown,,,,,
-C081,worship,,20.279687,99.88653,,unknown,,,,,
-C082,worship,,20.299276,99.868845,,unknown,,,,,
-C083,worship,,20.305946,99.882024,,unknown,,,,,
-C084,worship,วัดหนองอ้อ,20.354305,99.905982,,unknown,,,,,
-C085,worship,,20.369255,99.930782,,unknown,,,,,
-C086,worship,วัดน้ำจำ,20.386671,99.886613,,unknown,,,,,
-C087,worship,Chao Por Tham Kob Shrine,20.44101,99.881734,,unknown,,,,,
-C089,worship,,20.315748,99.871823,,unknown,,,,,
-C090,worship,ถ้ำป่าสารภี,20.283718,99.855012,,unknown,,,,,
-C091,community,หมู่บ้านเก้าหลัง,20.289682,99.862988,,unknown,,,,,
-C094,worship,วัดสันปูเลย,20.324154,99.945429,,unknown,,,,,
-C096,worship,วัดสะนสลี,20.306957,99.957555,,unknown,,,,,
-C098,worship,,20.322795,99.833746,,unknown,,,,,
-C099,school,โรงเรียนอนุบาลมานิตวิทยา,20.273221,99.859456,,unknown,,,,,
-C100,school,โรงเรียนมานิตวิทยา,20.271705,99.860195,,unknown,,,,,
-C101,worship,วัดศาลาเชิงดอย,20.276088,99.843705,,unknown,,,,,
-C103,worship,,20.326188,99.833304,,unknown,,,,,
-C107,government,สำนักงานองค์การบริหารส่วนตำบลศรีเมืองชุม,20.367975,99.987367,,unknown,,,,,
-C109,community,ศูนย์ปฏิบัติการ ชรบ.อพปร.บ้านผาหมี,20.398914,99.847065,,unknown,,,,,
-C110,community,ศูนย์ชุมชนบ้านผาหมี,20.399391,99.851017,,unknown,,,,,
-C111,community,ศูนย์การเรียนรู้ชาวไทยภูเขาบ้านเผาฮี้,20.350611,99.827599,,unknown,,,,,
-C112,worship,,20.425939,99.870994,,unknown,,,,,
-C113,worship,สวนปฏิบัติธรรมดอยช้าง-งู,20.436413,99.872797,,unknown,,,,,
+candidate_id (รหัสสถานที่),kind (ประเภท),name (ชื่อ),lat (ละติจูด),lon (ลองจิจูด),estimated_capacity (ความจุโดยประมาณ),capacity_basis (ที่มาของค่าความจุ),capacity_basis_th (ที่มาของค่าความจุ ภาษาไทย),usable_as_shelter (ใช้เป็นที่พักพิงได้หรือไม่),verified_capacity (ความจุที่ตรวจสอบแล้ว),access_notes (หมายเหตุการเข้าถึง),checked_by_role (บทบาทของผู้ตรวจสอบ),checked_on (วันที่ตรวจสอบ)
+C001,worship,วัดถ้ำปลา,20.329773,99.863965,,unknown,ไม่ทราบ,,,,,
+C002,worship,มูลนิธิกวงเม้งแม่สาย,20.436535,99.884614,130,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C003,worship,พระธาตุน้อยดอยตุง,20.324269,99.833001,18,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C004,worship,,20.327896,99.825757,191,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C005,worship,วัดถ้ำผาจม,20.441814,99.873484,,unknown,ไม่ทราบ,,,,,
+C006,school,โรงเรียนแม่สายประสิทธิ์ศาสตร์,20.42964,99.881465,984,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C007,school,โรงเรียนบ้านเหมืองแดง,20.437352,99.893756,306,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C008,government,สำนักงานเทศบาลตำบลแม่สาย,20.426533,99.88432,121,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C009,government,สำนักงานเทศบาลตำบลเวียงพางคำ,20.403363,99.88562,81,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C010,school,โรงเรียนอนุบาลแม่สาย,20.435298,99.881307,,unknown,ไม่ทราบ,,,,,
+C011,government,องค์การบริหารส่วนตำบลโป่งผา,20.378527,99.88522,110,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C012,worship,วัดบ้านจ้อง,20.367565,99.880792,262,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C013,government,องค์การบริหารส่วนตำบลเกาะช้าง,20.415396,99.990452,56,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C014,worship,วัดพญาสี่ตวงคำ,20.435442,99.879765,,unknown,ไม่ทราบ,,,,,
+C015,worship,วัดพรหมวิหาร,20.426665,99.879955,33,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C016,school,โรงเรียนบ้านป่าเหมือด,20.412416,99.886779,577,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C017,school,โรงเรียนบ้านป่ายาง,20.42359,99.890878,,unknown,ไม่ทราบ,,,,,
+C018,school,โรงเรียนบ้านผาฮี้,20.348139,99.831126,76,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C019,worship,มัสยิดอันนุร แม่สาย,20.4308,99.884198,41,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C020,worship,มัสยิด อัรเราะห์มานิยะฮ์,20.433015,99.893498,,unknown,ไม่ทราบ,,,,,
+C021,worship,คริสตจักรศรีชัยภูมิ,20.43716,99.959478,50,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C022,worship,คริสตจักรพัฒนาพระพรปางห้า,20.412819,99.99415,29,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C023,school,ศูนย์พัฒนาการศึกษาเพื่อลูกหญิงและชุมชน,20.419351,99.876697,253,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C024,school,ศูนย์การเรียนชุมชนป่ายางใหม่,20.419895,99.876165,39,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C025,worship,วัดเหมืองแดง,20.437428,99.89229,88,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C026,worship,วัดเวียงพาน,20.433657,99.881577,79,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C027,worship,วัดผาแตก,20.420463,99.868036,73,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C028,worship,ศาลหลักเมืองแม่สาย,20.428375,99.884244,5,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C029,school,โรงเรียนบ้านจ้อง,20.368865,99.884471,240,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C030,worship,วัดห้วยไคร้ใหม่,20.272562,99.859724,63,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C032,worship,วัดถ้ำเสาหินพญานาค,20.325862,99.866584,183,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C033,school,วิทยาลัยอาชีวศึกษาแม่สาย,20.325688,99.870027,,unknown,ไม่ทราบ,,,,,
+C034,school,โรงเรียนบ้านถ้ำปลา,20.322844,99.875955,,unknown,ไม่ทราบ,,,,,
+C035,school,โรงเรียนบ้านถ้ำ ตชด,20.327835,99.865162,,unknown,ไม่ทราบ,,,,,
+C036,school,Wat Tham Pla Wittayakhom School,20.332872,99.864753,,unknown,ไม่ทราบ,,,,,
+C037,school,โรงเรียนบ้านถ้ำ,20.327545,99.883166,,unknown,ไม่ทราบ,,,,,
+C038,worship,วัดพระธาตุดอยเวา,20.442704,99.877845,212,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C039,worship,วัดบ้านถ้ำหลวง,20.330642,99.883726,1609,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C040,worship,พระธาตุดอยตุง,20.325031,99.83245,20,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C041,school,Chinese School,20.326853,99.869312,,unknown,ไม่ทราบ,,,,,
+C042,worship,Chinese shrine,20.326932,99.868754,203,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C043,worship,,20.344417,99.86045,,unknown,ไม่ทราบ,,,,,
+C044,worship,,20.346465,99.860507,,unknown,ไม่ทราบ,,,,,
+C045,worship,คริสตจักรแบ๊บติสต์บ้านถ้ำ,20.328942,99.866894,135,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C046,worship,,20.391369,99.907329,,unknown,ไม่ทราบ,,,,,
+C047,worship,,20.424352,99.894953,84,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C048,worship,วัดพระธาตุดอยเวา,20.442127,99.879994,57,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C049,worship,,20.441102,99.913447,79,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C050,worship,,20.435488,99.94763,62,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C051,worship,,20.426945,99.864891,94,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C053,worship,วัดมงคลธรรมกายาราม,20.326782,99.893169,181,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C054,worship,วัดมงคลธรรมกายาราม,20.325884,99.893207,225,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C055,worship,วัดมงคลธรรมกายาราม,20.324888,99.890415,58,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C056,worship,วัดมงคลธรรมกายาราม,20.325637,99.890444,40,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C057,worship,วัดมงคลธรรมกายาราม,20.324926,99.891577,93,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C058,worship,วัดมงคลธรรมกายาราม,20.325265,99.89233,40,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C060,worship,วัดสันกอง,20.26375,99.856409,,unknown,ไม่ทราบ,,,,,
+C061,worship,วัดห้วยน้ำขุ่น,20.269081,99.835101,,unknown,ไม่ทราบ,,,,,
+C063,government,สำนักงานเทศบาลตำบลห้วยไคร้,20.274877,99.862579,,unknown,ไม่ทราบ,,,,,
+C064,school,โรงเรียนบ้านห้วยไคร้,20.276153,99.861776,,unknown,ไม่ทราบ,,,,,
+C065,worship,คริสตจักรประชากิตติสุข ภาคที่2,20.274356,99.863276,,unknown,ไม่ทราบ,,,,,
+C066,worship,วัดห้วยไคร้หลวง,20.278874,99.863871,,unknown,ไม่ทราบ,,,,,
+C067,school,โรงเรียนบ้านโป่ง,20.313034,99.881298,,unknown,ไม่ทราบ,,,,,
+C068,school,โรงเรียนบ้านน้ำจำ,20.386877,99.885564,,unknown,ไม่ทราบ,,,,,
+C069,government,ตรวจคนเข้าเมืองจังหวัดเชียงราย,20.430311,99.884225,62,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,,,,,
+C070,school,โรงเรียนบ้านสันถนน,20.382452,99.952821,,unknown,ไม่ทราบ,,,,,
+C071,worship,วัดมรรคาราม,20.385982,99.947379,,unknown,ไม่ทราบ,,,,,
+C072,worship,,20.395432,99.934887,,unknown,ไม่ทราบ,,,,,
+C073,school,โรงเรียนบ้านสันธาตุ,20.3667,99.967213,,unknown,ไม่ทราบ,,,,,
+C074,worship,วัดเจติยาราม(สันธาตุ),20.367727,99.967402,,unknown,ไม่ทราบ,,,,,
+C079,school,,20.39891,99.851848,,unknown,ไม่ทราบ,,,,,
+C080,worship,เจดีย์วัดผาแตก,20.419888,99.867546,,unknown,ไม่ทราบ,,,,,
+C081,worship,,20.279687,99.88653,,unknown,ไม่ทราบ,,,,,
+C082,worship,,20.299276,99.868845,,unknown,ไม่ทราบ,,,,,
+C083,worship,,20.305946,99.882024,,unknown,ไม่ทราบ,,,,,
+C084,worship,วัดหนองอ้อ,20.354305,99.905982,,unknown,ไม่ทราบ,,,,,
+C085,worship,,20.369255,99.930782,,unknown,ไม่ทราบ,,,,,
+C086,worship,วัดน้ำจำ,20.386671,99.886613,,unknown,ไม่ทราบ,,,,,
+C087,worship,Chao Por Tham Kob Shrine,20.44101,99.881734,,unknown,ไม่ทราบ,,,,,
+C089,worship,,20.315748,99.871823,,unknown,ไม่ทราบ,,,,,
+C090,worship,ถ้ำป่าสารภี,20.283718,99.855012,,unknown,ไม่ทราบ,,,,,
+C091,community,หมู่บ้านเก้าหลัง,20.289682,99.862988,,unknown,ไม่ทราบ,,,,,
+C094,worship,วัดสันปูเลย,20.324154,99.945429,,unknown,ไม่ทราบ,,,,,
+C096,worship,วัดสะนสลี,20.306957,99.957555,,unknown,ไม่ทราบ,,,,,
+C098,worship,,20.322795,99.833746,,unknown,ไม่ทราบ,,,,,
+C099,school,โรงเรียนอนุบาลมานิตวิทยา,20.273221,99.859456,,unknown,ไม่ทราบ,,,,,
+C100,school,โรงเรียนมานิตวิทยา,20.271705,99.860195,,unknown,ไม่ทราบ,,,,,
+C101,worship,วัดศาลาเชิงดอย,20.276088,99.843705,,unknown,ไม่ทราบ,,,,,
+C103,worship,,20.326188,99.833304,,unknown,ไม่ทราบ,,,,,
+C107,government,สำนักงานองค์การบริหารส่วนตำบลศรีเมืองชุม,20.367975,99.987367,,unknown,ไม่ทราบ,,,,,
+C109,community,ศูนย์ปฏิบัติการ ชรบ.อพปร.บ้านผาหมี,20.398914,99.847065,,unknown,ไม่ทราบ,,,,,
+C110,community,ศูนย์ชุมชนบ้านผาหมี,20.399391,99.851017,,unknown,ไม่ทราบ,,,,,
+C111,community,ศูนย์การเรียนรู้ชาวไทยภูเขาบ้านเผาฮี้,20.350611,99.827599,,unknown,ไม่ทราบ,,,,,
+C112,worship,,20.425939,99.870994,,unknown,ไม่ทราบ,,,,,
+C113,worship,สวนปฏิบัติธรรมดอยช้าง-งู,20.436413,99.872797,,unknown,ไม่ทราบ,,,,,

@@ -21,12 +21,16 @@ from floodguard.replay_manifest import (
     LANES,
     REQUIRED_KEYS,
     SCENARIO_TIER,
+    SHELTER_SUBBLOCK_LANES,
     ReplayManifestError,
+    capacity_plan_problems,
     evidence_problems,
     newest_timestamp,
     normalise_timestamp,
     schema_problems,
     score_or_class_keys,
+    shelter_plan_problems,
+    sweep_or_listed_capacity_keys,
     uncovered_blocks,
 )
 from floodguard.rights_basis import load_rights_basis, owner_confirmed, unconfirmed_product_citations
@@ -496,6 +500,122 @@ def test_capacity_aware_plan_and_robustness_have_their_own_scenario_blocks(manif
     assert "shelters.robustness (named by an evidence block but absent)" in uncovered_blocks(broken)
 
 
+def conducted_check(manifest: dict) -> dict:
+    """A made-up conducted local check for the committed manifest's first two eligible candidates (no real check exists)."""
+    check = manifest["shelters"]["verification"]
+    first, second = [site["id"] for site in manifest["shelters"]["candidates"] if site["eligible"]][:2]
+    label = "Checked by a DDPM officer on 2026-10-09; not an official shelter register"
+    return {"status": "conducted", "label_template": check["label_template"], "sheet": check["sheet"],
+            "candidate_set_sha256": check["candidate_set_sha256"], "candidates_listed": check["candidates_listed"],
+            "statement": "A local check of 2 of the candidates was returned. It is reported by role and is not an official shelter register.",
+            "confidence": "low", "confidence_reason": "One local check per site, reported by role and not audited by the project team.",
+            "assumptions": ["Each row is what one local checker reported for one candidate; it is not an official shelter register.",
+                            "The plans were computed without this check."],
+            "source_timestamp": "checks dated 2026-10-09/2026-10-09", "imported_on": "2026-10-20", "returned_file_sha256": "a" * 64,
+            "counts": {"checked": 2, "usable_yes": 1, "usable_no": 1, "with_verified_capacity": 1},
+            "checked": [{"candidate_id": first, "usable_as_shelter": True, "verified_capacity": 150, "checked_by_role": "ddpm_officer",
+                         "checked_on": "2026-10-09", "access_notes_given": True, "label": label},
+                        {"candidate_id": second, "usable_as_shelter": False, "verified_capacity": None, "checked_by_role": "ddpm_officer",
+                         "checked_on": "2026-10-09", "access_notes_given": False, "label": label}]}
+
+
+def test_shelter_sub_blocks_each_need_their_own_evidence_block_in_their_lane(manifest: dict) -> None:
+    assert shelter_plan_problems(manifest) == []
+    assert dict(SHELTER_SUBBLOCK_LANES) == {"capacitated": "SCN", "robustness": "SCN", "reported": "REP", "verification": "REP"}
+    # "shelters" is covered as a whole, so the general coverage rule cannot see a missing sub-block: this rule does.
+    for block_id, child, lane in (("capacity_aware_plan", "capacitated", "SCN"), ("plan_robustness", "robustness", "SCN"),
+                                  ("reported_shelters", "reported", "REP"), ("shelter_candidate_check", "verification", "REP")):
+        broken = copy.deepcopy(manifest)
+        broken["evidence_blocks"] = [block for block in broken["evidence_blocks"] if block["id"] != block_id]
+        assert evidence_problems(broken) == []
+        assert shelter_plan_problems(broken) == [f"no evidence block names shelters.{child}: it needs its own block in lane {lane}"]
+    # A local check filed as an observation, or a capacity plan filed as reported, is refused.
+    for block_id, wrong, message in (("shelter_candidate_check", "OBS", "shelters.verification must sit in lane REP, not OBS"),
+                                     ("shelter_candidate_check", "SCN", "shelters.verification must sit in lane REP, not SCN"),
+                                     ("capacity_aware_plan", "REP", "shelters.capacitated must sit in lane SCN, not REP")):
+        broken = copy.deepcopy(manifest)
+        next(block for block in broken["evidence_blocks"] if block["id"] == block_id)["lane"] = wrong
+        assert message in shelter_plan_problems(broken)
+    # A manifest without a shelter plan has nothing to check.
+    assert shelter_plan_problems({key: value for key, value in manifest.items() if key != "shelters"}) == []
+
+
+def test_capacity_figures_that_do_not_add_up_stop_the_bake(manifest: dict) -> None:
+    plan = manifest["shelters"]["capacitated"]
+    assert capacity_plan_problems(plan) == []
+
+    def problems(change) -> list[str]:
+        broken = copy.deepcopy(plan)
+        change(broken)
+        return capacity_plan_problems(broken)
+
+    row = plan["plan"][0]
+    assert problems(lambda p: p["plan"][0]["upper"].update(load=row["upper"]["capacity"] + 1)) == [
+        f"shelters.capacitated.plan[0].upper: load {row['upper']['capacity'] + 1} is above capacity {row['upper']['capacity']}",
+        "shelters.capacitated.plan[0].upper: served must grow by the site's load"]
+    assert problems(lambda p: p["plan"][0]["lower"].update(overflow=0)) == [
+        "shelters.capacitated.plan[0].lower: overflow must equal demand_people - served"]
+    more = plan["coverage_plan"][1]["upper"]["served"] + 5
+    found = problems(lambda p: p["coverage_plan"][1]["lower"].update(served=more, overflow=plan["demand_people"] - more))
+    assert "shelters.capacitated.coverage_plan[1]: the lower bound serves more residents than the upper bound" in found
+    assert "shelters.capacitated.coverage_plan[1].lower: served must grow by the site's load" in found
+    assert problems(lambda p: p["all_eligible"]["upper"].update(overflow=1)) == [
+        "shelters.capacitated.all_eligible.upper: overflow must equal demand_people - served"]
+    assert problems(lambda p: p["all_eligible"]["lower"].update(served=p["all_eligible"]["lower"]["capacity"] + 1))[0].startswith(
+        "shelters.capacitated.all_eligible.lower: served ")
+    assert problems(lambda p: p["plan"][2].pop("upper")) == ["shelters.capacitated.plan[2].upper must give capacity, load, served, overflow in whole residents"]
+    assert problems(lambda p: p.update(demand_people=14169.5)) == ["shelters.capacitated.demand_people must be a whole number of residents"]
+    assert capacity_plan_problems([]) == ["shelters.capacitated is not an object"]
+    # The same breaks reach the bake through shelter_plan_problems.
+    broken = copy.deepcopy(manifest)
+    broken["shelters"]["capacitated"]["plan"][0]["lower"]["overflow"] = 0
+    assert shelter_plan_problems(broken) == ["shelters.capacitated.plan[0].lower: overflow must equal demand_people - served"]
+
+
+def test_no_participation_share_and_no_listed_capacity_is_published(manifest: dict, schema: dict) -> None:
+    assert sweep_or_listed_capacity_keys(manifest) == []
+    for key in ("participation_share", "participation_sweep_pct", "ddpm_listed_capacity", "listed_capacity", "ListedCapacities"):
+        for place in ("capacitated", "robustness"):
+            broken = copy.deepcopy(manifest)
+            broken["shelters"][place][key] = 0.25
+            assert shelter_plan_problems(broken) == [
+                f"$.shelters.{place}.{key} names a participation share or a listed capacity: the replay publishes neither"]
+        broken = copy.deepcopy(manifest)
+        broken["shelters"]["capacitated"]["plan"][0][key] = 100
+        assert any(key in line for line in shelter_plan_problems(broken))
+        assert any(line.startswith("shelters/capacitated/plan/0") for line in schema_problems(broken, schema))  # The schema allows no extra key in a row.
+    broken = copy.deepcopy(manifest)
+    broken["shelters"]["capacitated"]["sweep"] = [5, 10, 25]
+    assert any(line.startswith("shelters/capacitated") and "sweep" in line for line in schema_problems(broken, schema))
+    broken = copy.deepcopy(manifest)
+    broken["shelters"]["capacitated"]["all_eligible"]["checked_capacity"] = 1
+    assert any(line.startswith("shelters/capacitated/all_eligible") for line in schema_problems(broken, schema))
+    # Values and prose may name the DDPM (a checker's role code, the source of another layer's figures): only keys are data.
+    assert sweep_or_listed_capacity_keys({"checked_by_role": "ddpm_officer", "note": "the DDPM shelter list"}) == []
+
+
+def test_a_conducted_local_check_is_published_with_confidence_reason_and_assumptions(manifest: dict, schema: dict) -> None:
+    published = copy.deepcopy(manifest)
+    published["shelters"]["verification"] = conducted_check(manifest)
+    assert schema_problems(published, schema) == [] and shelter_plan_problems(published) == [] and evidence_problems(published) == []
+    for key in ("confidence", "confidence_reason", "assumptions", "source_timestamp"):
+        broken = copy.deepcopy(published)
+        del broken["shelters"]["verification"][key]
+        assert f"shelters.verification is a conducted check and lacks {key}" in shelter_plan_problems(broken), key
+        assert any(line.startswith("shelters/verification") and key in line for line in schema_problems(broken, schema)), key
+    broken = copy.deepcopy(published)
+    broken["shelters"]["verification"]["assumptions"] = []
+    assert "shelters.verification is a conducted check and lacks assumptions" in shelter_plan_problems(broken)
+    # Free text is never published: a row with notes is refused by the schema.
+    broken = copy.deepcopy(published)
+    broken["shelters"]["verification"]["checked"][0]["access_notes"] = "Paved road to the gate"
+    assert any(line.startswith("shelters/verification/checked/0") for line in schema_problems(broken, schema))
+    # The committed manifest states no result: the check was not conducted.
+    committed = manifest["shelters"]["verification"]
+    if committed["status"] == "not_conducted":
+        assert committed["checked"] == [] and "confidence" not in committed
+
+
 def test_capacity_aware_plan_never_loads_a_site_beyond_capacity_and_its_arithmetic_holds(manifest: dict) -> None:
     shelters = manifest["shelters"]
     plan = shelters["capacitated"]
@@ -557,6 +677,11 @@ def test_capacity_aware_plan_states_the_roadmap_example_and_its_caveats(manifest
     assert first["upper"] == {"capacity": 79, "load": 79, "served": 79, "overflow": shelters["demand_people"] - 79}
     # With capacity counted, the default plan's sites hold far fewer residents than can walk to them.
     assert plan["coverage_plan"][k - 1]["upper"]["served"] < 0.2 * shelters["plan"][k - 1]["cumulative_demand"]
+    # Neither bound is a limit on who fits: the block says so where the bounds are defined and among its assumptions.
+    assert set(plan["bounds"]) == {"lower", "upper", "note"} and "Neither is a limit on who fits" in plan["bounds"]["note"]
+    assert "more residents may fit than the upper bound gives" in plan["bounds"]["note"]
+    assert any(line.startswith("Neither bound is a limit on who fits") for line in plan["assumptions"])
+    assert any("Neither is a limit on who fits" in line for line in manifest["assumptions"])
     text = " ".join([plan["demand_basis"], plan["method"], *plan["bounds"].values(), *plan["assumptions"]])
     for phrase in ("T1 scenario (model)", "an upper bound", "many people stay with relatives", "unverified", "candidates to verify",
                    "not a list of sites to open", "different source", "overflow = demand_people - served", "counts as 0", "median"):
@@ -606,8 +731,10 @@ def test_plan_robustness_repeats_the_ranking_at_what_if_levels_not_return_period
 
 # --- Sentinel-2 water check, 15 Sep (roadmap P2-7) -------------------------------------------------------------
 
-S2_READING = ("Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; "
+S2_READING = ("The larger observed area is consistent with water or saturated mud left after the river fell; "
               "the terrain-only model cannot hold water once the river level drops.")
+S2_FOLLOWING_DAY_READING = ("A day later the VIIRS map shows less flood water than the model in its clear pixels, so the larger area on the "
+                            "day of the scene is consistent with saturated mud or short-lived water rather than lasting ponding.")
 
 
 def test_sentinel2_water_check_is_observed_with_its_model_figures_named_as_scenario(manifest: dict) -> None:
@@ -655,7 +782,17 @@ def test_sentinel2_water_check_says_consistent_with_and_labels_the_comparison_in
     assert not re.search(r"explain", text, re.IGNORECASE)  # "is consistent with", never "explains".
     assert not re.search(r"\b(?:proves?|confirms?|caused by|because of)\b", text, re.IGNORECASE)
     assert "flood extent" not in text.replace("not a flood extent", "")
+    # No land-cover map is an input, so nothing says what kind of land the water lies on.
+    assert not re.search(r"on fields|cropland|padd(?:y|ies)|farmland", text, re.IGNORECASE)
+    assert any("No land-cover map is an input" in line for line in check["assumptions"])
+    # The next clear VIIRS day cuts against lasting ponding, and the block says so instead of leaving 15 Sep alone.
+    following = check["following_day"]
+    assert following == {"viirs_date": "2024-09-16", "reading": S2_FOLLOWING_DAY_READING}
+    day = next(item for item in manifest["viirs_daily"]["days"] if item["date"] == following["viirs_date"])
+    assert day["clear_km2"] > 0 and day["viirs_flood_km2_clear"] < day["model_flood_km2_clear"]
     # The limitation and the assumption are in the manifest's own lists.
+    limitation = next(line for line in manifest["limitations"] if line.startswith("No ponding or storage after the river falls: the terrain-only model"))
+    assert "on fields" not in limitation and limitation.endswith("left behind after the river falls is not reconstructed.")
     assert any(line.startswith("No ponding or storage after the river falls: the terrain-only model") for line in manifest["limitations"])
     assert any("Sentinel-2 water check" in line and "indicative" in line and "water or saturated mud" in line for line in manifest["assumptions"])
     # Rules: reflectance scaling with nothing subtracted, the dropped scene classes, the permanent-water rule in use.
@@ -706,6 +843,9 @@ def test_sentinel2_water_check_arithmetic_holds_and_matches_the_models_own_figur
     histogram_km2 = sum(flooded_area_km2(histogram, stage_at(t), manifest["pixel_area_m2"]) for histogram in manifest["tambon_histograms"].values())
     assert model["model_flood_km2_district"] == pytest.approx(histogram_km2, abs=0.02)  # The same cells as every flooded-area figure.
     assert model["model_flood_km2_clear"] <= model["model_flood_km2_district"]
+    # The model where both scenes are clear: the figure to set beside the new water, which is counted in the same cells.
+    assert 0 < model["model_flood_km2_both_clear"] <= model["model_flood_km2_clear"]
+    assert change["new_water_km2"] > model["model_flood_km2_both_clear"]  # "The larger observed area" holds for the new water too.
     assert model["model_union_km2"] == pytest.approx(event["water_km2"] + model["model_flood_km2_clear"] - model["model_overlap_km2"], abs=0.02)
     assert model["model_agreement_iou"] == pytest.approx(model["model_overlap_km2"] / model["model_union_km2"], abs=0.002)
     assert model["model_share_of_observed_water_reached"] == pytest.approx(model["model_overlap_km2"] / event["water_km2"], abs=0.002)
@@ -736,6 +876,13 @@ def test_sentinel2_water_check_validates_against_the_schema_and_bad_wording_is_r
 
     assert any("reading" in line for line in problems(lambda check: check.update(reading="Standing water on fields explains the larger observed area.")))
     assert any("reading" in line for line in problems(lambda check: check.update(reading="Standing water on fields accounts for the gap.")))
+    assert any("reading" in line for line in problems(lambda check: check.update(reading="Water standing on fields is consistent with the larger area.")))
+    assert any("reading" in line for line in problems(lambda check: check.update(reading="Flooded cropland is consistent with the larger area.")))
+    assert any("following_day" in line for line in problems(lambda check: check["following_day"].update(reading="The next day explains it.")))
+    assert any("following_day" in line for line in problems(lambda check: check["following_day"].update(model_flood_km2_clear=7.7)))
+    assert any("following_day" in line for line in problems(lambda check: check["following_day"].pop("viirs_date")))
+    assert problems(lambda check: check.pop("following_day")) == []  # Optional: present only when the next clear day supports it.
+    assert problems(lambda check: check["model_at_event_scene"].pop("model_flood_km2_both_clear"))
     assert any("comparison" in line for line in problems(lambda check: check.update(comparison="validation")))
     assert any("label" in line for line in problems(lambda check: check.update(label="flood water")))
     assert problems(lambda check: check["model_at_event_scene"].update(observed_km2=1.0))  # Only model_ keys beside the observation.

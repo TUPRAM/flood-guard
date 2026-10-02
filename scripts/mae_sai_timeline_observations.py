@@ -188,7 +188,8 @@ def sentinel2_water_check(pre_dir: Path, event_dir: Path, crs: str, bounds: tupl
         "permanent_water_km2": round(float(np.count_nonzero(permanent & district)) * cell_km2, 2),
         "scenes": {"pre_event": scene(pre, pre_scl), "event": scene(event, event_scl)},
         "change": water_check.new_water_areas(up(event.wet), up(event.clear), up(pre.wet), up(pre.clear), district, permanent, cell_km2),
-        "model_at_event_scene": water_check.model_overlap(up(event.wet), up(event.clear), model_wet, district, permanent, cell_km2),
+        "model_at_event_scene": water_check.model_overlap(up(event.wet), up(event.clear), model_wet, district, permanent, cell_km2,
+                                                          earlier_clear=up(pre.clear)),
         "sensitivity": sensitivity,
     }
 

@@ -14,7 +14,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --configLoader runner",
-    "test:offline": "node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs",
+    "test:offline": "node --test scripts/landing-offline-policy.test.mjs && node scripts/offline-smoke.mjs && node scripts/browser-offline-smoke.mjs",
     "test:csp": "node scripts/csp-smoke.mjs",
     "test:studies": "node scripts/verify-study-assets.mjs && node scripts/study-browser-smoke.mjs",
     "test:policy": "node scripts/policy-browser-smoke.mjs",

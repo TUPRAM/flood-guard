@@ -10,7 +10,7 @@
 # confidence_reason_th,ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
 # lanes,SCN
 # source_timestamp,"OpenStreetMap extract 2026-07-09 (sites, building footprints and roads); WorldPop 2020; reconstructed peak 2024-09-12 ICT"
-# generated_at,2026-10-02T14:19:00+07:00
+# generated_at,2026-10-02T16:10:00+07:00
 # generated_by,scripts/build_mae_sai_flood_timeline.py
 # study,mae-sai-2024-flood-timeline r4
 # accepted,accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
@@ -32,20 +32,20 @@
 # assumption_5_th,ความจุเป็นค่าประมาณที่ยังไม่ได้ตรวจสอบ คำนวณจากขอบเขตอาคารในแผนที่ (พื้นที่อาคาร x สัดส่วนใช้สอย 0.5 / 3.5 ตร.ม. ต่อคน ตามมาตรฐาน Sphere) และไม่ทราบค่าสำหรับสถานที่ส่วนใหญ่ ไม่มีการใช้หรือเผยแพร่ความจุจากทะเบียนที่พักพิงใด ๆ ในไฟล์นี้
 # assumption_6,"The robust core is the set of sites among the first k at every what-if level (2.5 m, 3.5 m and 4.0 m): levels around an illustrative peak, not return periods."
 # assumption_6_th,แกนที่คงทนคือสถานที่ที่อยู่ใน k แห่งแรกที่ทุกระดับสมมุติ (2.5 ม. 3.5 ม. และ 4.0 ม.) ซึ่งเป็นระดับรอบค่าสูงสุดเพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ
-# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=d11776091eef590dc8609f823346bb5543327a6fce9a08319b610d491a871292
+# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=a27437c70c58170194ab3c7581e7756e6a104ca984c8f3d27fccfa92c2e4bdf0
 # input_sha256,external:open_context/osm_geofabrik/thailand-latest.osm.pbf=b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1; repo:outputs/mae_sai_facilities.geojson=5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce; repo:outputs/mae_sai_access_edges.csv=266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454; repo:outputs/mae_sai_population_nodes.csv=172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf
 # git_commit,null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv
 # knee_k,8
-rank (ลำดับ),candidate_id (รหัสสถานที่),kind (ประเภท),name (ชื่อ),lat (ละติจูด),lon (ลองจิจูด),osm_source (ที่มาใน OSM),in_knee_plan (อยู่ในแผนที่แสดง),added_flooded_home_residents (ผู้อยู่อาศัยในบ้านที่น้ำท่วมที่เพิ่มขึ้น),cumulative_flooded_home_residents (ผู้อยู่อาศัยในบ้านที่น้ำท่วมสะสม),cumulative_share (สัดส่วนสะสม),late_cumulative_share (สัดส่วนสะสมเมื่ออพยพช้า),estimated_capacity (ความจุโดยประมาณ),capacity_basis (ที่มาของค่าความจุ),in_robust_core (อยู่ในแกนที่คงทน)
-1,C049,worship,,20.441102,99.913447,OSM way/1112444544,yes,2955.8,2955.8,0.2086,0.1128,79,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",yes
-2,C007,school,โรงเรียนบ้านเหมืองแดง,20.437352,99.893756,OSM way/371233879,yes,1988.6,4944.4,0.349,0.183,306,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",no
-3,C107,government,สำนักงานองค์การบริหารส่วนตำบลศรีเมืองชุม,20.367975,99.987367,OSM node/13325257201,yes,780.9,5725.3,0.4041,0.2252,,unknown,no
-4,C084,worship,วัดหนองอ้อ,20.354305,99.905982,OSM node/4527119264,yes,470.4,6195.7,0.4373,0.2491,,unknown,yes
-5,C094,worship,วัดสันปูเลย,20.324154,99.945429,OSM node/6395095585,yes,430.1,6625.7,0.4676,0.2733,,unknown,yes
-6,C011,government,องค์การบริหารส่วนตำบลโป่งผา,20.378527,99.88522,OSM way/372608928,yes,374.9,7000.7,0.4941,0.2829,110,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",yes
-7,C072,worship,,20.395432,99.934887,OSM node/2207485396,yes,335.3,7335.9,0.5177,0.3026,,unknown,yes
-8,C073,school,โรงเรียนบ้านสันธาตุ,20.3667,99.967213,OSM node/2207495991,yes,243.8,7579.8,0.5349,0.3162,,unknown,no
-9,C050,worship,,20.435488,99.94763,OSM way/1112594073,no,235.3,7815.1,0.5516,0.3174,62,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",no
-10,C085,worship,,20.369255,99.930782,OSM node/4527119265,no,172.9,7988.0,0.5638,0.3264,,unknown,no
-11,C083,worship,,20.305946,99.882024,OSM node/4527119263,no,165.5,8153.5,0.5754,0.3355,,unknown,no
-12,C071,worship,วัดมรรคาราม,20.385982,99.947379,OSM node/2207485393,no,113.5,8267.0,0.5834,0.3366,,unknown,no
+rank (ลำดับ),candidate_id (รหัสสถานที่),kind (ประเภท),name (ชื่อ),lat (ละติจูด),lon (ลองจิจูด),osm_source (ที่มาใน OSM),in_knee_plan (อยู่ในแผนที่แสดง),added_flooded_home_residents (ผู้อยู่อาศัยในบ้านที่น้ำท่วมที่เพิ่มขึ้น),cumulative_flooded_home_residents (ผู้อยู่อาศัยในบ้านที่น้ำท่วมสะสม),cumulative_share (สัดส่วนสะสม),late_cumulative_share (สัดส่วนสะสมเมื่ออพยพช้า),estimated_capacity (ความจุโดยประมาณ),capacity_basis (ที่มาของค่าความจุ),capacity_basis_th (ที่มาของค่าความจุ ภาษาไทย),in_robust_core (อยู่ในแกนที่คงทน)
+1,C049,worship,,20.441102,99.913447,OSM way/1112444544,yes,2955.8,2955.8,0.2086,0.1128,79,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,yes
+2,C007,school,โรงเรียนบ้านเหมืองแดง,20.437352,99.893756,OSM way/371233879,yes,1988.6,4944.4,0.349,0.183,306,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,no
+3,C107,government,สำนักงานองค์การบริหารส่วนตำบลศรีเมืองชุม,20.367975,99.987367,OSM node/13325257201,yes,780.9,5725.3,0.4041,0.2252,,unknown,ไม่ทราบ,no
+4,C084,worship,วัดหนองอ้อ,20.354305,99.905982,OSM node/4527119264,yes,470.4,6195.7,0.4373,0.2491,,unknown,ไม่ทราบ,yes
+5,C094,worship,วัดสันปูเลย,20.324154,99.945429,OSM node/6395095585,yes,430.1,6625.7,0.4676,0.2733,,unknown,ไม่ทราบ,yes
+6,C011,government,องค์การบริหารส่วนตำบลโป่งผา,20.378527,99.88522,OSM way/372608928,yes,374.9,7000.7,0.4941,0.2829,110,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,yes
+7,C072,worship,,20.395432,99.934887,OSM node/2207485396,yes,335.3,7335.9,0.5177,0.3026,,unknown,ไม่ทราบ,yes
+8,C073,school,โรงเรียนบ้านสันธาตุ,20.3667,99.967213,OSM node/2207495991,yes,243.8,7579.8,0.5349,0.3162,,unknown,ไม่ทราบ,no
+9,C050,worship,,20.435488,99.94763,OSM way/1112594073,no,235.3,7815.1,0.5516,0.3174,62,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ,no
+10,C085,worship,,20.369255,99.930782,OSM node/4527119265,no,172.9,7988.0,0.5638,0.3264,,unknown,ไม่ทราบ,no
+11,C083,worship,,20.305946,99.882024,OSM node/4527119263,no,165.5,8153.5,0.5754,0.3355,,unknown,ไม่ทราบ,no
+12,C071,worship,วัดมรรคาราม,20.385982,99.947379,OSM node/2207485393,no,113.5,8267.0,0.5834,0.3366,,unknown,ไม่ทราบ,no

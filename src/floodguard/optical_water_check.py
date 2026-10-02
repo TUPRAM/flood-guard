@@ -162,18 +162,27 @@ def new_water_areas(event_wet: np.ndarray, event_clear: np.ndarray, pre_wet: np.
 
 
 def model_overlap(wet: np.ndarray, clear: np.ndarray, model_wet: np.ndarray, area: np.ndarray, permanent: np.ndarray,
-                  cell_km2: float) -> dict:
+                  cell_km2: float, earlier_clear: np.ndarray | None = None) -> dict:
     """How the modelled water compares with the observed water or saturated mud, inside the clear part of ``area``.
 
     Every figure is a model value placed beside the observation (key names start with ``model_``):
     the model's area in the whole of ``area`` and in its clear part, the overlap, the union, their ratio
     (``model_agreement_iou``), the share of the observed area the model reaches and the share of the modelled area
     the observation confirms as wet. Ratios are ``None`` when their denominator is zero.
+
+    With ``earlier_clear`` (the clear mask of the scene before the event) the result also holds
+    ``model_flood_km2_both_clear``: the model's area where both scenes are clear. That is the figure to set beside
+    the *new* water of :func:`new_water_areas`, which is counted in the same cells; the event scene's whole wet area
+    also holds water that was already there before the flood.
     """
     _same_shape(wet, clear, model_wet, area, permanent)
     area = np.asarray(area, dtype=bool) & ~np.asarray(permanent, dtype=bool)
     model = np.asarray(model_wet, dtype=bool) & area
     seen = np.asarray(clear, dtype=bool) & area
+    both_clear: dict[str, float] = {}
+    if earlier_clear is not None:
+        _same_shape(clear, earlier_clear)
+        both_clear["model_flood_km2_both_clear"] = round(_km2(model & seen & np.asarray(earlier_clear, dtype=bool), cell_km2), 2)
     observed = np.asarray(wet, dtype=bool) & seen
     model_seen = model & seen
     overlap = _km2(observed & model_seen, cell_km2)
@@ -187,6 +196,7 @@ def model_overlap(wet: np.ndarray, clear: np.ndarray, model_wet: np.ndarray, are
     return {
         "model_flood_km2_district": round(_km2(model, cell_km2), 2),
         "model_flood_km2_clear": round(model_seen_km2, 2),
+        **both_clear,
         "model_overlap_km2": round(overlap, 2),
         "model_union_km2": round(union, 2),
         "model_agreement_iou": ratio(overlap, union),

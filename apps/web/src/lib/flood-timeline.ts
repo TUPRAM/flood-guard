@@ -247,7 +247,8 @@ export interface CapacityAwarePlan {
   demand_people: number;
   demand_basis: string;
   capacity_basis: { estimate: string; unknown: string };
-  bounds: { lower: string; upper: string };
+  /** `note` (later r4 bakes): why neither bound is a limit on who fits. */
+  bounds: { lower: string; upper: string; note?: string };
   method: string;
   /** The capacity-aware ranking holds at most this many sites, and ends when the next site adds less than this share of demand. */
   max_plan_sites: number;
@@ -293,7 +294,10 @@ export interface PlanRobustness {
 /** Role code of the person who checked a candidate: a role, never a name. */
 export type CheckerRole = "ddpm_officer" | "local_government_officer" | "village_leader" | "site_staff" | "project_team" | "other_local_contact";
 
-/** One candidate a local checker reported on. Whitelisted columns only: no name of a person, no phone or ID number. */
+/**
+ * One candidate a local checker reported on. Whitelisted columns only: no name of a person, no phone or ID number and
+ * no free text. The checker's access notes are never published; `access_notes_given` says only that one was written.
+ */
 export interface ShelterCheckRow {
   candidate_id: string;
   usable_as_shelter: boolean;
@@ -302,7 +306,6 @@ export interface ShelterCheckRow {
   /** Date of the check, YYYY-MM-DD. */
   checked_on: string;
   access_notes_given: boolean;
-  access_notes?: string;
   /** "Checked by <role> on <date>; not an official shelter register". */
   label: string;
 }
@@ -310,7 +313,8 @@ export interface ShelterCheckRow {
 /**
  * Local check of the shelter candidates through the verification sheet in the export pack. `not_conducted` until a
  * sheet is returned and imported: then `checked` is empty and nothing is implied about any site. A conducted check
- * is reported by role and is never an official shelter register.
+ * is reported by role and is never an official shelter register; it carries its confidence, the reason for it and
+ * its assumptions, one of which says that the rankings and the capacity figures do not use the check.
  */
 export interface ShelterVerification {
   status: "not_conducted" | "conducted";
@@ -320,6 +324,10 @@ export interface ShelterVerification {
   candidate_set_sha256: string;
   candidates_listed: number;
   statement: string;
+  /** Present on a conducted check: its confidence class, why, and what the check does and does not say. */
+  confidence?: string;
+  confidence_reason?: string;
+  assumptions?: string[];
   source_timestamp?: string;
   imported_on?: string;
   returned_file_sha256?: string;
@@ -514,8 +522,13 @@ export interface S2Crosscheck {
   comparison: "indicative";
   comparison_rule: string;
   caveat: string;
-  /** What the observation is consistent with; it states no cause. */
+  /** What the observation is consistent with; it states no cause and no land cover. */
   reading: string;
+  /**
+   * Present when the next VIIRS day with clear sky (`viirs_daily.days`, by date) shows less flood water than the
+   * model: what that is consistent with for the day of the scene. The figures stay in `viirs_daily`.
+   */
+  following_day?: { viirs_date: string; reading: string };
   model_fields: { paths: string[]; evidence_tier: string; note: string };
   assumptions: string[];
   resolution_m: number;
@@ -540,6 +553,11 @@ export interface S2Crosscheck {
     model_flood_km2_district: number;
     /** Modelled out-of-channel water in the pixels the event scene saw clearly. */
     model_flood_km2_clear: number;
+    /**
+     * The same where both scenes are clear: the figure to set beside `change.new_water_km2`, which is counted in
+     * those pixels (absent from a manifest baked before it existed).
+     */
+    model_flood_km2_both_clear?: number;
     model_overlap_km2: number;
     model_union_km2: number;
     model_agreement_iou: number | null;

@@ -8,7 +8,7 @@
     "Patterns are case-insensitive regular expressions that mean the same in JavaScript (flags iu) and in Python (re.IGNORECASE). Word edges are written as (?<![A-Za-z0-9_]) and (?![A-Za-z0-9_]) because \\b treats Thai letters differently in the two engines.",
     "Each Thai rule lists the common renderings of the banned claim, not one spelling: a translator's wording of a banned English claim must fail too. A Thai denial needs its own allow entry, as in English."
   ],
-  "thai_terms_review": "The Thai terms and denials were widened on 2 Oct 2026 (ตามเวลาจริง, คาดการณ์, ทำนาย, แม่นยำ, ยืนยันแล้ว, ผ่านการตรวจสอบ, ประกาศเตือน, คาบการเกิดซ้ำ, Thai digits). The Thai language reviewer has not signed the list off yet (roadmap H12, due 22 Oct 2026).",
+  "thai_terms_review": "The Thai terms and denials were widened on 2 Oct 2026 (ตามเวลาจริง, คาดการณ์, ทำนาย, แม่นยำ, ยืนยันแล้ว, ผ่านการตรวจสอบ, ประกาศเตือน, คาบการเกิดซ้ำ, Thai digits), and again the same day for the shelter and road rules (ศูนย์พักพิง, ศูนย์อพยพ, ตารางเวลาปิดถนน, แผนการปิดถนน). The Thai language reviewer has not signed the list off yet (roadmap H12, due 22 Oct 2026).",
   "allow": [
     {
       "id": "not_real_time_or_warning",
@@ -95,13 +95,15 @@
     },
     {
       "id": "not_sites_to_open",
-      "pattern": "(?<![A-Za-z0-9_])(?:not|never) (?:a |an )?(?:list of )?(?:shelters|sites) to open(?![A-Za-z0-9_])|ไม่ใช่(?:รายชื่อ|รายการ)?(?:ที่พักพิง|สถานที่)ที่(?:ต้อง|ควร)เปิด",
+      "pattern": "(?<![A-Za-z0-9_])(?:not|never) (?:a |an )?(?:list of )?(?:shelters|sites) to (?:be )?open(?:ed)?(?![A-Za-z0-9_])|ไม่ใช่(?:รายชื่อ|รายการ)?(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)ที่(?:ต้อง|ควร)เปิด",
       "why": "The standing caveat of the shelter plans: the sites are candidates to verify, and the text says they are not a list to open.",
       "ok": [
         "Candidates to verify, not a list of sites to open.",
         "The sites are candidates to verify on the ground, not a list of sites to open.",
         "These are candidates to check, never shelters to open.",
-        "เป็นสถานที่ที่ควรตรวจสอบ ไม่ใช่รายชื่อที่พักพิงที่ต้องเปิด"
+        "Candidates to verify, not a list of sites to be opened.",
+        "เป็นสถานที่ที่ควรตรวจสอบ ไม่ใช่รายชื่อที่พักพิงที่ต้องเปิด",
+        "เป็นสถานที่ที่ควรตรวจสอบ ไม่ใช่รายชื่อศูนย์พักพิงที่ต้องเปิด"
       ]
     },
     {
@@ -168,9 +170,9 @@
     },
     {
       "id": "road_schedule",
-      "pattern": "(?<![A-Za-z0-9_])(?:re)?schedul[a-z]*|(?<![A-Za-z0-9_])closure plans?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])cut-off lists?(?![A-Za-z0-9_])|ตารางปิดถนน|แผนปิดถนน|กำหนดการปิดถนน",
+      "pattern": "(?<![A-Za-z0-9_])(?:re)?schedul[a-z]*|(?<![A-Za-z0-9_])timetabl[a-z]*|(?<![A-Za-z0-9_])closure plans?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])cut-off lists?(?![A-Za-z0-9_])|ตาราง(?:เวลา)?(?:การ)?ปิดถนน|แผน(?:การ)?ปิดถนน|กำหนดการปิดถนน",
       "message": "Modelled road inundation is not a schedule or a closure plan. Say 'modelled road inundation by hour'.",
-      "bad": ["Road closure schedule", "Closure plan for Phahonyothin Road", "Cut-off list by subdistrict", "ตารางปิดถนนรายชั่วโมง"]
+      "bad": ["Road closure schedule", "Closure plan for Phahonyothin Road", "Cut-off list by subdistrict", "Road closure timetable by hour", "Timetables of road closures", "ตารางปิดถนนรายชั่วโมง", "ตารางเวลาปิดถนน", "แผนการปิดถนน", "ตารางการปิดถนนรายชั่วโมง"]
     },
     {
       "id": "set_ranking",
@@ -186,9 +188,9 @@
     },
     {
       "id": "shelter_directive",
-      "pattern": "(?<![A-Za-z0-9_])open(?:ing)? (?:these|those|the following|all) (?:[0-9]+ )?(?:shelters?|sites?)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) to open(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) (?:that )?(?:must|should|need to) (?:be )?open(?:ed)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:must|should|need to) open (?:[0-9]+ |these |those |the )?(?:shelters?|sites?)(?![A-Za-z0-9_])|เปิดที่พักพิงเหล่านี้|เปิดสถานที่เหล่านี้|(?:ที่พักพิง|สถานที่)ที่(?:ต้อง|ควร)เปิด|(?:ต้อง|ควร)เปิดที่พักพิง",
+      "pattern": "(?<![A-Za-z0-9_])open(?:ing)? (?:(?:the|these|those|all|first|following|next|top|[0-9]+) ){1,4}(?:shelters?|sites?)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])open(?:ing)? (?:shelters|sites)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) to (?:be )?open(?:ed)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:shelters?|sites?) (?:that )?(?:must|should|need to|needs to|have to|has to|ought to) (?:be )?open(?:ed)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:must|should|need to|needs to|have to|has to|ought to) open (?:(?:the|these|those|all|first|following|next|top|[0-9]+) ){0,4}(?:shelters?|sites?)(?![A-Za-z0-9_])|เปิด(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)(?:ทั้ง)?เหล่านี้|(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)ที่(?:ต้อง|ควร)เปิด|(?:ต้อง|ควร)เปิด(?:ที่พักพิง|สถานที่|ศูนย์พักพิง|ศูนย์อพยพ)",
       "message": "The shelter plans list candidates to verify on the ground. Do not tell the reader which shelters to open; say 'candidates to verify'.",
-      "bad": ["Open these shelters first", "The 8 shelters to open in Mae Sai", "The district must open 8 shelters", "Sites that should be opened before the peak", "เปิดที่พักพิงเหล่านี้ก่อนน้ำมา", "ที่พักพิงที่ต้องเปิด 8 แห่ง", "อำเภอควรเปิดที่พักพิง 8 แห่ง"]
+      "bad": ["Open these shelters first", "The 8 shelters to open in Mae Sai", "The district must open 8 shelters", "Sites that should be opened before the peak", "The tambon should open the first 8 sites", "Shelters to be opened: C049", "Open shelters C049 and C007 first", "Open the first 8 sites of the plan", "Opening all 12 sites covers the town", "เปิดที่พักพิงเหล่านี้ก่อนน้ำมา", "ที่พักพิงที่ต้องเปิด 8 แห่ง", "อำเภอควรเปิดที่พักพิง 8 แห่ง", "ควรเปิดสถานที่ 8 แห่งแรก", "เปิดศูนย์พักพิงเหล่านี้", "ศูนย์อพยพที่ควรเปิดก่อน"]
     }
   ],
   "mixed": [
@@ -210,6 +212,10 @@
     {"text": "The plan is better: its last safe departure is 23:00.", "rules": ["safe_departure", "set_ranking"]},
     {"text": "Candidates to verify, not a list of sites to open. Open these shelters first.", "rules": ["shelter_directive"]},
     {"text": "A resident node has access when an open, dry shelter is within 2 km; roads still open at a 1 m stage; opening times are not modelled.", "rules": []},
+    {"text": "Every shelter is assumed open for the whole replay; a shelter that is open and dry counts; the hall opens at 08:00.", "rules": []},
+    {"text": "จุดผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่เปิดและแห้งภายใน 2 กม. ไม่ได้จำลองเวลาเปิดของสถานที่", "rules": []},
+    {"text": "Candidates to verify, not a list of sites to be opened. The tambon should open the first 8 sites.", "rules": ["shelter_directive"]},
+    {"text": "Modelled road inundation by hour, not a timetable.", "rules": ["road_schedule"]},
     {"text": "ไม่ใช่คาบการเกิดซ้ำ แต่เป็นระดับน้ำรอบ 100 ปี", "rules": ["return_period"]},
     {"text": "What-if levels around an illustrative peak, not return periods. Sites chosen at 2.5 m, 3.5 m and 4.0 m form the robust core.", "rules": []}
   ]

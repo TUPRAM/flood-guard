@@ -67,6 +67,29 @@ CONFIDENCE_REASON = ("The tables come from a terrain-model reconstruction with i
                      "and sites, and unverified capacity estimates; nothing was checked on the ground.")
 CONFIDENCE_REASON_TH = ("ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap "
                         "และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่")
+CONFIDENCE_REASON_CHECKED = ("The tables come from a terrain-model reconstruction with illustrative stages, WorldPop 2020 residents, OpenStreetMap "
+                             "roads and sites, and unverified capacity estimates. A local check of some shelter candidates was returned "
+                             "(reported by role, not an official register) and is not used in these tables; nothing else was checked on the ground.")
+CONFIDENCE_REASON_CHECKED_TH = ("ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap "
+                                "และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ มีผลการตรวจสอบสถานที่บางแห่งในพื้นที่ส่งกลับมาแล้ว (รายงานตามบทบาท ไม่ใช่ทะเบียนทางการ) "
+                                "แต่ตารางเหล่านี้ไม่ได้ใช้ผลดังกล่าว และยังไม่มีการตรวจสอบสิ่งอื่นใดในพื้นที่")
+
+
+def confidence_reason(conducted: bool) -> tuple[str, str]:
+    """Why the pack's confidence is low, in English and Thai.
+
+    Until a verification sheet is returned it says nothing was checked on the ground. Afterwards it says a local
+    check exists, that the tables do not use it and that nothing else was checked: the sentence must not go on
+    denying a check the same pack reports.
+    """
+    return (CONFIDENCE_REASON_CHECKED, CONFIDENCE_REASON_CHECKED_TH) if conducted else (CONFIDENCE_REASON, CONFIDENCE_REASON_TH)
+
+
+CAPACITY_BASIS_TH: Mapping[str, str] = {
+    "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified": "พื้นที่อาคารใน OSM x 0.5 / 3.5 ตร.ม. ต่อคน (Sphere) ยังไม่ได้ตรวจสอบ",
+    "unknown": "ไม่ทราบ",
+}
+"""Thai wording of the two capacity-basis phrases, for the ``capacity_basis_th`` companion column."""
 OPERATIONAL_STATUS = "non_operational"
 ACCEPTED_NULL = "accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)"
 NOT_INCLUDED = ("No HII rain values (CC BY-NC), nothing from a source without a stated licence and nothing from UNOSAT/GISTDA "
@@ -244,7 +267,7 @@ ROAD_COLUMNS: tuple[Column, ...] = (
     Column("road_id", "รหัสทาง OSM", "OpenStreetMap way id"),
     Column("road_name", "ชื่อถนน", "Road name in OpenStreetMap (blank when the way has none)"),
     Column("road_class", "ประเภทถนน", "Road class (trunk, primary, secondary, tertiary, unclassified, residential)"),
-    Column("bridge_flag", "เป็นสะพาน", "yes when OpenStreetMap tags the way as a bridge"),
+    Column("bridge_flag", "เป็นสะพาน", "yes when OpenStreetMap tags the way as a bridge; the deck is not modelled, so read its hours as unknown"),
     Column("tambon_id", "รหัสตำบล", "Subdistrict code (COD-AB ADM3)"),
     Column("tambon_name_th", "ชื่อตำบล", "Subdistrict name in Thai"),
     Column("tambon_name_en", "ชื่อตำบลภาษาอังกฤษ", "Subdistrict name in English"),
@@ -355,6 +378,8 @@ def access_loss_rows(tambons: Sequence[Mapping[str, str]], node_tambon: np.ndarr
     return rows
 
 
+_BASIS_TH_COLUMN = Column("capacity_basis_th", "ที่มาของค่าความจุ ภาษาไทย", "The same phrase in Thai")
+
 _SITE_COLUMNS: tuple[Column, ...] = (
     Column("candidate_id", "รหัสสถานที่", "Candidate id in this revision"),
     Column("kind", "ประเภท", "school, worship, government or community"),
@@ -375,6 +400,7 @@ PLAN_COLUMNS: tuple[Column, ...] = (
     Column("late_cumulative_share", "สัดส่วนสะสมเมื่ออพยพช้า", "The same share on the roads still passable at a 1.0 m stage"),
     Column("estimated_capacity", "ความจุโดยประมาณ", "Unverified estimate from the mapped building footprint (blank: unknown)"),
     Column("capacity_basis", "ที่มาของค่าความจุ", "How the estimate was made, or unknown"),
+    _BASIS_TH_COLUMN,
     Column("in_robust_core", "อยู่ในแกนที่คงทน", "yes when the site is among the first k at every what-if level"),
 )
 
@@ -384,13 +410,15 @@ CAPACITATED_COLUMNS: tuple[Column, ...] = (
     Column("osm_source", "ที่มาใน OSM", "OpenStreetMap element the candidate comes from"),
     Column("estimated_capacity", "ความจุโดยประมาณ", "Unverified estimate from the mapped building footprint (blank: unknown)"),
     Column("capacity_basis", "ที่มาของค่าความจุ", "How the estimate was made, or unknown"),
+    _BASIS_TH_COLUMN,
     Column("upper_capacity_basis", "ที่มาของความจุในขอบเขตบน", "estimate, kind_median or all_kinds_median: what the upper bound counts for this site"),
     Column("flooded_home_residents_within_reach", "ผู้อยู่อาศัยในบ้านที่น้ำท่วมในระยะเดิน", "Residents of flooded homes within the walk of the first k sites"),
-    Column("lower_capacity", "ความจุ ขอบเขตล่าง", "Capacity counted in the lower bound (unknown counts as 0)"),
+    Column("lower_capacity", "ความจุ ขอบเขตล่าง", "Capacity counted in the lower bound: a site without a mapped footprint holds nobody (not a minimum)"),
     Column("lower_load", "จำนวนที่จัดให้ ขอบเขตล่าง", "Residents this site adds in the lower bound"),
     Column("lower_cumulative_fit", "จำนวนที่รองรับได้สะสม ขอบเขตล่าง", "Residents who fit in the first k sites, lower bound"),
     Column("lower_overflow", "จำนวนที่ไม่มีที่รองรับ ขอบเขตล่าง", "Demand minus the residents who fit, lower bound"),
-    Column("upper_capacity", "ความจุ ขอบเขตบน", "Capacity counted in the upper bound (unknown takes a median)"),
+    Column("upper_capacity", "ความจุ ขอบเขตบน",
+           "Capacity counted in the upper bound: a site without a mapped footprint holds the median of its kind (not a maximum: a footprint estimate can be too low)"),
     Column("upper_load", "จำนวนที่จัดให้ ขอบเขตบน", "Residents this site adds in the upper bound"),
     Column("upper_cumulative_fit", "จำนวนที่รองรับได้สะสม ขอบเขตบน", "Residents who fit in the first k sites, upper bound"),
     Column("upper_overflow", "จำนวนที่ไม่มีที่รองรับ ขอบเขตบน", "Demand minus the residents who fit, upper bound"),
@@ -408,8 +436,10 @@ REPORTED_COLUMNS: tuple[Column, ...] = (
     Column("location_confidence", "ความเชื่อมั่นของตำแหน่ง", "high, medium or low"),
     Column("role", "บทบาท", "shelter, or relief and command centre"),
     Column("first_use", "วันที่เริ่มใช้ตามรายงาน", "First reported use"),
+    Column("first_use_th", "วันที่เริ่มใช้ตามรายงาน ภาษาไทย", "The same in Thai"),
     Column("counted_in_access_set", "นับในชุดการเข้าถึง", "yes when the reported 2024 access set counts the site"),
     Column("access_set_note", "เหตุผลที่นับหรือไม่นับ", "Why the site is, or is not, counted"),
+    Column("access_set_note_th", "เหตุผลที่นับหรือไม่นับ ภาษาไทย", "The same reason in Thai"),
     Column("evidence_strength", "น้ำหนักของหลักฐาน", "official, multiple_media or single_media"),
     Column("source_urls", "ลิงก์แหล่งข้อมูล", "Public sources, separated by a space"),
     Column("modelled_in_model_area", "อยู่ในพื้นที่แบบจำลอง", "Model check: yes when the point lies inside the water model"),
@@ -421,6 +451,7 @@ SHEET_PREFILLED: tuple[Column, ...] = (
     *_SITE_COLUMNS,
     Column("estimated_capacity", "ความจุโดยประมาณ", "Unverified estimate from the mapped building footprint (blank: unknown)"),
     Column("capacity_basis", "ที่มาของค่าความจุ", "How the estimate was made, or unknown"),
+    _BASIS_TH_COLUMN,
 )
 SHEET_CHECKER: tuple[Column, ...] = (
     Column("usable_as_shelter", "ใช้เป็นที่พักพิงได้หรือไม่", "For the checker: yes or no"),
@@ -430,7 +461,7 @@ SHEET_CHECKER: tuple[Column, ...] = (
     Column("checked_on", "วันที่ตรวจสอบ", "For the checker: the date of the check, YYYY-MM-DD"),
 )
 SHEET_COLUMNS: tuple[Column, ...] = (*SHEET_PREFILLED, *SHEET_CHECKER)
-"""The verification sheet's whitelist: seven prefilled columns and five empty ones for the checker."""
+"""The verification sheet's whitelist: eight prefilled columns and five empty ones for the checker."""
 
 CHECKER_ROLES: Mapping[str, Mapping[str, str]] = {
     "ddpm_officer": {"en": "DDPM officer", "th": "เจ้าหน้าที่ ปภ.", "by": "a DDPM officer"},
@@ -446,6 +477,33 @@ of the label "Checked by <role> on <date>"."""
 
 def _capacity_basis(site: Mapping[str, Any], estimate_basis: str, unknown_basis: str) -> str:
     return unknown_basis if site.get("capacity_est") is None else estimate_basis
+
+
+def capacity_basis_th(basis: str) -> str:
+    """The Thai wording of a capacity-basis phrase. A phrase without one stops the export: prose cells are bilingual."""
+    if basis not in CAPACITY_BASIS_TH:
+        raise ReplayExportError(f"no Thai wording for the capacity basis {basis!r}")
+    return CAPACITY_BASIS_TH[basis]
+
+
+_ISO_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def first_use_th(value: str) -> str:
+    """``first_use`` for the Thai companion column: a date stays as it is, ``<date> or earlier`` is translated."""
+    if not value or _ISO_DAY.match(value):
+        return value
+    if value.endswith(" or earlier") and _ISO_DAY.match(value[: -len(" or earlier")]):
+        return value[: -len(" or earlier")] + " หรือก่อนหน้า"
+    raise ReplayExportError(f"no Thai wording for the first reported use {value!r}")
+
+
+def access_set_note_th(site: Mapping[str, Any]) -> str:
+    """The Thai rendering of a reported site's access-set note, as compiled with the site. A note without one stops the export."""
+    note, thai = site.get("access_set_note") or "", site.get("access_set_note_th") or ""
+    if note and not thai:
+        raise ReplayExportError(f"reported site {site.get('id')}: access_set_note has no Thai rendering (access_set_note_th)")
+    return thai
 
 
 def _site_cells(site: Mapping[str, Any]) -> dict[str, Any]:
@@ -465,6 +523,7 @@ def plan_rows(ctx: ExportContext) -> list[dict[str, Any]]:
                      "cumulative_share": entry["cumulative_share"], "late_cumulative_share": entry.get("late_cumulative_share"),
                      "estimated_capacity": site.get("capacity_est"),
                      "capacity_basis": _capacity_basis(site, basis["estimate"], basis["unknown"]),
+                     "capacity_basis_th": capacity_basis_th(_capacity_basis(site, basis["estimate"], basis["unknown"])),
                      "in_robust_core": site["id"] in set(ctx.robust_core)})
     return rows
 
@@ -476,7 +535,8 @@ def capacitated_rows(ctx: ExportContext) -> list[dict[str, Any]]:
     for rank, entry in enumerate(ctx.capacitated["plan"], start=1):
         site = sites[entry["candidate_id"]]
         row = {"rank": rank, **_site_cells(site), "osm_source": site.get("source") or "", "estimated_capacity": entry["capacity_est"],
-               "capacity_basis": entry["capacity_basis"], "upper_capacity_basis": entry["upper_capacity_basis"],
+               "capacity_basis": entry["capacity_basis"], "capacity_basis_th": capacity_basis_th(entry["capacity_basis"]),
+               "upper_capacity_basis": entry["upper_capacity_basis"],
                "flooded_home_residents_within_reach": entry.get("within_reach")}
         for bound in ("lower", "upper"):
             row[f"{bound}_capacity"] = entry[bound]["capacity"]
@@ -500,8 +560,9 @@ def reported_rows(ctx: ExportContext) -> list[dict[str, Any]]:
             "site_id": site["id"], "name_th": site.get("name_th") or "", "name_en": site.get("name_en") or "", "type": site.get("type") or "",
             "tambon_as_reported": site.get("tambon") or "", "lat": site.get("lat"), "lon": site.get("lon"),
             "location_method": site.get("location_method") or "", "location_confidence": site.get("location_confidence") or "",
-            "role": site.get("role") or "", "first_use": site.get("first_use") or "",
+            "role": site.get("role") or "", "first_use": site.get("first_use") or "", "first_use_th": first_use_th(site.get("first_use") or ""),
             "counted_in_access_set": bool(site.get("in_access_set")), "access_set_note": site.get("access_set_note") or "",
+            "access_set_note_th": access_set_note_th(site),
             "evidence_strength": site.get("evidence_strength") or "",
             "source_urls": " ".join(source["url"] for source in site.get("sources") or [] if source.get("url")),
             "modelled_in_model_area": check.get("m") if located else None,
@@ -532,7 +593,8 @@ def sheet_rows(ctx: ExportContext) -> list[dict[str, Any]]:
     rows = []
     for site in sheet_candidates(ctx.candidates):
         row = {**_site_cells(site), "estimated_capacity": site.get("capacity_est"),
-               "capacity_basis": _capacity_basis(site, basis["estimate"], basis["unknown"])}
+               "capacity_basis": _capacity_basis(site, basis["estimate"], basis["unknown"]),
+               "capacity_basis_th": capacity_basis_th(_capacity_basis(site, basis["estimate"], basis["unknown"]))}
         row.update({column.key: None for column in SHEET_CHECKER})
         rows.append(row)
     return rows
@@ -553,6 +615,7 @@ SITE_FIELDS: tuple[Column, ...] = (
     Column("capacity_rank", "ลำดับในการจัดอันดับแบบคิดความจุ", "Rank in the capacity-aware ranking (null: not ranked)"),
     Column("estimated_capacity", "ความจุโดยประมาณ", "Unverified footprint estimate (null: unknown)"),
     Column("capacity_basis", "ที่มาของค่าความจุ", "How the estimate was made, or unknown"),
+    _BASIS_TH_COLUMN,
     Column("counted_in_access_set", "นับในชุดการเข้าถึง", "Reported site counted by the reported 2024 access set"),
     Column("location_confidence", "ความเชื่อมั่นของตำแหน่ง", "Reported site: high, medium or low"),
     Column("modelled_floods_at_peak", "น้ำถึงสถานที่ที่ระดับสูงสุดตามแบบจำลอง", "Model check: the modelled peak reaches the site"),
@@ -577,6 +640,7 @@ def site_features(ctx: ExportContext) -> list[dict[str, Any]]:
             "coverage_rank": rank, "in_knee_plan": rank is not None and rank <= ctx.knee_k, "in_robust_core": site["id"] in core,
             "capacity_rank": capacity_rank.get(site["id"]), "estimated_capacity": site.get("capacity_est"),
             "capacity_basis": _capacity_basis(site, basis["estimate"], basis["unknown"]),
+            "capacity_basis_th": capacity_basis_th(_capacity_basis(site, basis["estimate"], basis["unknown"])),
             "counted_in_access_set": None, "location_confidence": None,
             "modelled_floods_at_peak": floods, "modelled_freeboard_m": site.get("freeboard_m")}})
     for site in ctx.reported:
@@ -587,7 +651,7 @@ def site_features(ctx: ExportContext) -> list[dict[str, Any]]:
             "site_set": "reported_2024", "id": site["id"], "name": site.get("name_th") or "", "name_en": site.get("name_en") or "",
             "kind": site.get("type") or "", "osm_source": None, "modelled_eligible": None, "modelled_ineligible_reasons": None,
             "coverage_rank": None, "in_knee_plan": None, "in_robust_core": None, "capacity_rank": None, "estimated_capacity": None,
-            "capacity_basis": None, "counted_in_access_set": bool(site.get("in_access_set")),
+            "capacity_basis": None, "capacity_basis_th": None, "counted_in_access_set": bool(site.get("in_access_set")),
             "location_confidence": site.get("location_confidence") or "",
             "modelled_floods_at_peak": check.get("floods_at_modelled_peak"), "modelled_freeboard_m": check.get("freeboard_m")}})
     return features
@@ -669,6 +733,7 @@ def header_fields(ctx: ExportContext, spec: Mapping[str, Any]) -> list[tuple[str
     if problems:
         raise ReplayExportError("; ".join(problems))
     sources = [_source(ctx, source_id) for source_id in source_ids]
+    reason, reason_th = confidence_reason(ctx.verification_status == "conducted")
     fields: list[tuple[str, str]] = [
         ("title", spec["title"]["en"]),
         ("title_th", spec["title"]["th"]),
@@ -676,8 +741,8 @@ def header_fields(ctx: ExportContext, spec: Mapping[str, Any]) -> list[tuple[str
         ("tier_th", EXPORT_TIER_TH),
         ("operational_status", OPERATIONAL_STATUS),
         ("confidence_class", CONFIDENCE_CLASS),
-        ("confidence_reason", CONFIDENCE_REASON),
-        ("confidence_reason_th", CONFIDENCE_REASON_TH),
+        ("confidence_reason", reason),
+        ("confidence_reason_th", reason_th),
         ("lanes", ", ".join(spec["lanes"])),
         ("source_timestamp", spec["source_timestamp"]),
         ("generated_at", ctx.generated_at),
@@ -812,6 +877,14 @@ _A_CAPACITY = {"en": "Capacity is an unverified estimate from mapped building fo
                "th": "ความจุเป็นค่าประมาณที่ยังไม่ได้ตรวจสอบ คำนวณจากขอบเขตอาคารในแผนที่ (พื้นที่อาคาร x สัดส่วนใช้สอย 0.5 / 3.5 ตร.ม. ต่อคน ตามมาตรฐาน Sphere) และไม่ทราบค่าสำหรับสถานที่ส่วนใหญ่ ไม่มีการใช้หรือเผยแพร่ความจุจากทะเบียนที่พักพิงใด ๆ ในไฟล์นี้"}
 
 
+_A_BRIDGES = {"en": "Bridge decks are not modelled. A row with bridge_flag = yes reflects the ground at the bridge's approaches and beside it, so a raised deck can stay passable while the table shows the way impassable: read the hours of a bridge row as unknown.",
+              "th": "ไม่ได้จำลองพื้นสะพาน แถวที่ bridge_flag = yes สะท้อนระดับพื้นดินบริเวณคอสะพานและข้างสะพาน พื้นสะพานที่ยกสูงจึงอาจยังสัญจรได้แม้ตารางระบุว่าสัญจรไม่ได้ ให้ถือว่าชั่วโมงของแถวที่เป็นสะพานเป็นค่าที่ไม่ทราบ"}
+_A_BOUNDS = {"en": "Neither bound is a limit on who fits. Both count a site with a mapped footprint at its estimate, which is too low where buildings are unmapped, so more residents may fit than the upper bound gives; and a site may turn out unusable, so fewer may fit than the lower bound gives.",
+             "th": "ทั้งสองขอบเขตไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้ ทั้งสองขอบเขตนับสถานที่ที่มีขอบเขตอาคารในแผนที่ตามค่าประมาณ ซึ่งต่ำกว่าจริงในบริเวณที่อาคารยังไม่ถูกทำแผนที่ จึงอาจรองรับได้มากกว่าขอบเขตบน และสถานที่อาจใช้ไม่ได้จริง จึงอาจรองรับได้น้อยกว่าขอบเขตล่าง"}
+_A_CHECK_NOT_USED = {"en": "A local check of some candidates has been returned for this revision (reported by role, not an official register). This file does not use it: a site reported not usable is still listed and ranked, and a reported capacity does not replace the footprint estimate. The checked rows are on the replay page.",
+                     "th": "มีผลการตรวจสอบสถานที่บางแห่งในพื้นที่ส่งกลับมาแล้วสำหรับข้อมูลรุ่นนี้ (รายงานตามบทบาท ไม่ใช่ทะเบียนทางการ) ไฟล์นี้ไม่ได้ใช้ผลดังกล่าว สถานที่ที่รายงานว่าใช้ไม่ได้ยังคงอยู่ในรายการและการจัดอันดับ และความจุที่รายงานไม่ได้แทนค่าประมาณจากขอบเขตอาคาร แถวที่ตรวจสอบแล้วแสดงอยู่ในหน้าการย้อนดู"}
+
+
 def _specs(ctx: ExportContext) -> dict[str, dict[str, Any]]:
     """Title, lanes, lineage, source timestamp, assumptions and direct inputs of every file of the pack."""
     osm = f"OpenStreetMap extract {ctx.osm_extract_date}"
@@ -822,6 +895,7 @@ def _specs(ctx: ExportContext) -> dict[str, dict[str, Any]]:
     if ctx.verification_status not in ("not_conducted", "conducted"):
         raise ReplayExportError(f"unknown verification status: {ctx.verification_status}")
     conducted = ctx.verification_status == "conducted"
+    not_used = (_A_CHECK_NOT_USED,) if conducted else ()
     sheet_title = {"en": "Shelter-candidate verification sheet: a blank checklist for a local checker" + ("" if conducted else " (no check has been conducted)"),
                    "th": "แบบตรวจสอบสถานที่ที่อาจใช้เป็นที่พักพิง: รายการตรวจที่ยังว่างสำหรับผู้ตรวจสอบในพื้นที่" + ("" if conducted else " (ยังไม่มีการตรวจสอบ)")}
     sheet_state = ({"en": "The last five columns are for a local checker and are empty in this blank copy. A check has been returned for this revision: its rows are in the replay manifest (shelters.verification), not in this file.",
@@ -845,6 +919,7 @@ def _specs(ctx: ExportContext) -> dict[str, dict[str, Any]]:
                  "th": f"หนึ่งแถวต่อหนึ่งเส้นทางใน OpenStreetMap เฉพาะประเภทถนนที่การย้อนดูจำลอง ({classes}) ถนนบริการและทางลำลองไม่ได้จำลองและไม่อยู่ในตาราง"},
                 {"en": f"A way is impassable when the modelled depth reaches {ctx.impassable_depth_m} m at any 10 m sample along it; river-channel samples on bridges are ignored. The passable-again hour is the first hour after the last impassable hour.",
                  "th": f"เส้นทางสัญจรไม่ได้เมื่อความลึกตามแบบจำลองถึง {ctx.impassable_depth_m} ม. ที่จุดตัวอย่างใดก็ตามซึ่งห่างกันทุก 10 ม. ไม่นับจุดตัวอย่างในร่องน้ำใต้สะพาน ชั่วโมงที่กลับมาสัญจรได้คือชั่วโมงแรกหลังชั่วโมงสุดท้ายที่สัญจรไม่ได้"},
+                _A_BRIDGES,
                 {"en": "Not an observed closure record: no closure, reopening or traffic report was used. Flow velocity, debris, mud and damage are not modelled, so a real road can stay shut after the water falls.",
                  "th": "ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง ไม่ได้ใช้รายงานการปิดถนน การเปิดถนน หรือการจราจร ไม่ได้จำลองความเร็วกระแสน้ำ เศษวัสดุ โคลน และความเสียหาย ถนนจริงจึงอาจยังใช้ไม่ได้หลังน้ำลด"},
                 {"en": "The candidate columns of the source road file (an earlier Sentinel-1 change heuristic, now superseded) are not carried.",
@@ -886,6 +961,7 @@ def _specs(ctx: ExportContext) -> dict[str, dict[str, Any]]:
                 _A_CAPACITY,
                 {"en": "The robust core is the set of sites among the first k at every what-if level (2.5 m, 3.5 m and 4.0 m): levels around an illustrative peak, not return periods.",
                  "th": "แกนที่คงทนคือสถานที่ที่อยู่ใน k แห่งแรกที่ทุกระดับสมมุติ (2.5 ม. 3.5 ม. และ 4.0 ม.) ซึ่งเป็นระดับรอบค่าสูงสุดเพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ"},
+                *not_used,
             ),
             "extra": (("knee_k", str(ctx.knee_k)),),
         },
@@ -902,8 +978,10 @@ def _specs(ctx: ExportContext) -> dict[str, dict[str, Any]]:
                  "th": f"ความต้องการคือผู้อยู่อาศัยทุกคนในบ้านที่น้ำท่วม ณ ระดับสูงสุดตามแบบจำลอง ({ctx.capacitated['demand_people']:,} คน) ซึ่งเป็นค่าสูงสุดที่เป็นไปได้ เพราะหลายคนไปอาศัยกับญาติหรืออยู่ชั้นบน"},
                 {"en": "Two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). A load is the number of residents a site adds when it joins; overflow is demand minus the residents who fit.",
                  "th": "มีสองขอบเขต ความจุที่ไม่ทราบนับเป็น 0 (ขอบเขตล่าง) หรือใช้ค่ามัธยฐานของสถานที่ประเภทเดียวกัน (ขอบเขตบน) จำนวนที่จัดให้คือผู้อยู่อาศัยที่เพิ่มขึ้นเมื่อสถานที่นั้นเข้าสู่การจัดอันดับ ส่วนจำนวนที่ไม่มีที่รองรับคือความต้องการลบด้วยจำนวนที่รองรับได้"},
+                _A_BOUNDS,
                 {"en": "Everyone is assumed to walk before the water rises and to accept any site within the limit; households are not kept together.",
                  "th": "สมมุติว่าทุกคนเดินเท้าก่อนน้ำขึ้นและยอมไปสถานที่ใดก็ได้ภายในระยะที่กำหนด ไม่ได้จัดให้ครัวเรือนอยู่ด้วยกัน"},
+                *not_used,
             ),
         },
         "reported": {
@@ -936,6 +1014,7 @@ def _specs(ctx: ExportContext) -> dict[str, dict[str, Any]]:
                 _A_WATER, _A_CANDIDATES, screening, _A_CAPACITY,
                 {"en": "site_set tells the lane of a point: candidate is a modelled screening of an OpenStreetMap building; reported_2024 is reported use from public sources, not an official register.",
                  "th": "site_set บอกประเภทของจุด: candidate คือการคัดกรองอาคารใน OpenStreetMap ด้วยแบบจำลอง ส่วน reported_2024 คือการใช้งานตามรายงานจากแหล่งข้อมูลสาธารณะ ไม่ใช่ทะเบียนทางการ"},
+                *not_used,
             ),
             "extra": (("knee_k", str(ctx.knee_k)), ("crs", "WGS 84 (EPSG:4326), longitude then latitude")),
         },
@@ -951,6 +1030,10 @@ def _specs(ctx: ExportContext) -> dict[str, dict[str, Any]]:
                  "th": f"ผลที่ส่งกลับมาจะระบุว่า '{VERIFICATION_LABEL_TH}'"},
                 {"en": "Do not add names of people, phone numbers or ID numbers, and do not add columns. Give a role code, never a name; the import script refuses a file that carries personal data.",
                  "th": "โปรดอย่าใส่ชื่อบุคคล หมายเลขโทรศัพท์ หรือเลขประจำตัว และอย่าเพิ่มคอลัมน์ ให้ระบุรหัสบทบาท ไม่ใช่ชื่อ โปรแกรมนำเข้าจะปฏิเสธไฟล์ที่มีข้อมูลส่วนบุคคล"},
+                {"en": "Keep the lines that start with # and the first eight columns exactly as they are, and fill in only the last five. They tie each answer to its site: candidate ids are renumbered when the map data changes, so a file without them cannot be matched and is refused.",
+                 "th": "โปรดคงบรรทัดที่ขึ้นต้นด้วย # และแปดคอลัมน์แรกไว้ตามเดิมทุกประการ และกรอกเฉพาะห้าคอลัมน์สุดท้าย ข้อมูลส่วนนี้ผูกคำตอบแต่ละแถวกับสถานที่ รหัสสถานที่จะเปลี่ยนเมื่อข้อมูลแผนที่เปลี่ยน ไฟล์ที่ไม่มีข้อมูลส่วนนี้จึงจับคู่กับสถานที่ไม่ได้และจะถูกปฏิเสธ"},
+                {"en": "Access notes are for the project team only: they are never published and never kept in the project's files; only the fact that a note was given is recorded.",
+                 "th": "หมายเหตุการเข้าถึงใช้ภายในทีมโครงการเท่านั้น จะไม่ถูกเผยแพร่และไม่ถูกเก็บไว้ในไฟล์ของโครงการ บันทึกไว้เพียงว่ามีการให้หมายเหตุหรือไม่"},
                 {"en": "usable_as_shelter: yes or no. verified_capacity: a whole number of people. checked_on: the date of the check as YYYY-MM-DD. checked_by_role: one of " + ", ".join(CHECKER_ROLES) + ".",
                  "th": "usable_as_shelter: yes หรือ no · verified_capacity: จำนวนคนเป็นจำนวนเต็ม · checked_on: วันที่ตรวจสอบในรูปแบบ YYYY-MM-DD (ปี ค.ศ.) · checked_by_role: " + " · ".join(f"{code} = {label['th']}" for code, label in CHECKER_ROLES.items())},
                 _A_CANDIDATES, screening, _A_CAPACITY,
@@ -985,6 +1068,12 @@ def readme_bytes(ctx: ExportContext, files: Sequence[ExportFile], specs: Mapping
                       else "No check has been conducted for this revision.")
     sheet_state_th = ("มีผลการตรวจสอบส่งกลับมาแล้วสำหรับข้อมูลรุ่นนี้และแสดงอยู่ในหน้าการย้อนดู ไฟล์นี้ยังคงเป็นแบบเปล่า" if conducted
                       else "ยังไม่มีการตรวจสอบสำหรับข้อมูลรุ่นนี้")
+    ground_en = ("Confidence is low. A local check of some shelter candidates was returned (reported by role, not an official register);\n"
+                 "the tables do not use it, and nothing else was checked on the ground." if conducted
+                 else "Confidence is low and nothing was checked on the ground.")
+    ground_th = ("ความเชื่อมั่นอยู่ในระดับต่ำ มีผลการตรวจสอบสถานที่บางแห่งในพื้นที่ส่งกลับมาแล้ว (รายงานตามบทบาท ไม่ใช่ทะเบียนทางการ)\n"
+                 "แต่ตารางเหล่านี้ไม่ได้ใช้ผลดังกล่าว และยังไม่มีการตรวจสอบสิ่งอื่นใดในพื้นที่" if conducted
+                 else "ความเชื่อมั่นอยู่ในระดับต่ำ และยังไม่มีการตรวจสอบในพื้นที่")
     lines = [f"# floodguard_export: {README_NAME}"] + [f"# {key}: {value}" for key, value in fields] + [""]
     lines += [
         "FLOODGUARD MAE SAI SEPTEMBER 2024 REPLAY: EXPORT PACK",
@@ -995,12 +1084,19 @@ def readme_bytes(ctx: ExportContext, files: Sequence[ExportFile], specs: Mapping
         "Tables and one map layer written from a model replay of the September 2024 flood in Mae Sai District. They are for",
         "preparedness planning and exercises. Every table is modelled, not observed: it is not a forecast, not an observed",
         "closure record and not an official warning, and it must not be used for emergency response or evacuation orders.",
-        "Confidence is low and nothing was checked on the ground.",
+        *ground_en.split("\n"),
         "",
         "ตารางและชั้นข้อมูลแผนที่หนึ่งชั้นที่เขียนจากการย้อนดูด้วยแบบจำลองของเหตุการณ์น้ำท่วมอำเภอแม่สายเดือนกันยายน 2567 (2024)",
         "ใช้สำหรับการวางแผนเตรียมความพร้อมและการฝึกซ้อม ทุกตารางเป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้ ไม่ใช่การพยากรณ์",
         "ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง และไม่ใช่การเตือนภัยอย่างเป็นทางการ ห้ามใช้ในการตอบสนองเหตุฉุกเฉินหรือการสั่งอพยพ",
-        "ความเชื่อมั่นอยู่ในระดับต่ำ และยังไม่มีการตรวจสอบในพื้นที่",
+        *ground_th.split("\n"),
+        "",
+        "Bridges: the deck of a bridge is not modelled. In the road table a row with bridge_flag = yes reflects the ground at the",
+        "bridge's approaches, so read its hours as unknown. Capacity bounds: neither the lower nor the upper bound is a limit on",
+        "who fits; a footprint estimate can be too low where buildings are unmapped.",
+        "",
+        "สะพาน: ไม่ได้จำลองพื้นสะพาน ในตารางถนน แถวที่ bridge_flag = yes สะท้อนระดับพื้นดินบริเวณคอสะพาน ให้ถือว่าชั่วโมงของแถวนั้นเป็นค่าที่ไม่ทราบ",
+        "ขอบเขตความจุ: ทั้งขอบเขตล่างและขอบเขตบนไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้ ค่าประมาณจากขอบเขตอาคารอาจต่ำกว่าจริงในบริเวณที่อาคารยังไม่ถูกทำแผนที่",
         "",
         "2. FILES / รายการไฟล์",
         "",
@@ -1073,14 +1169,18 @@ def readme_bytes(ctx: ExportContext, files: Sequence[ExportFile], specs: Mapping
         "shelter_candidate_verification_sheet.csv is a blank checklist. " + sheet_state_en,
         "A local checker fills in the last five columns and returns the file to the project team; a returned check is labelled",
         f"'{VERIFICATION_LABEL}'. Give a role code, never a name: " + ", ".join(CHECKER_ROLES) + ".",
-        "Do not add names of people, phone numbers, ID numbers or new columns. The returned file is kept outside the project's",
-        "repository; only its hash and the checked columns are kept.",
+        "Do not add names of people, phone numbers, ID numbers or new columns. Keep the lines that start with # and the first",
+        "eight columns as they are: they tie each answer to its site, and a file without them is refused. The returned file is",
+        "kept outside the project's repository; only its hash and the checked columns are kept. Access notes are never published",
+        "or kept: only the fact that a note was given is recorded.",
         "",
         "ไฟล์ shelter_candidate_verification_sheet.csv เป็นรายการตรวจที่ยังว่าง " + sheet_state_th,
         "ผู้ตรวจสอบในพื้นที่กรอกห้าคอลัมน์สุดท้าย",
         f"แล้วส่งไฟล์กลับให้ทีมโครงการ ผลที่ส่งกลับมาจะระบุว่า '{VERIFICATION_LABEL_TH}'",
         "โปรดระบุรหัสบทบาท ไม่ใช่ชื่อ: " + " · ".join(f"{code} = {label['th']}" for code, label in CHECKER_ROLES.items()),
-        "โปรดอย่าใส่ชื่อบุคคล หมายเลขโทรศัพท์ เลขประจำตัว หรือเพิ่มคอลัมน์ ไฟล์ที่ส่งกลับจะเก็บไว้นอกคลังรหัสของโครงการ เก็บไว้เพียงค่าแฮชและคอลัมน์ที่ตรวจสอบ",
+        "โปรดอย่าใส่ชื่อบุคคล หมายเลขโทรศัพท์ เลขประจำตัว หรือเพิ่มคอลัมน์ โปรดคงบรรทัดที่ขึ้นต้นด้วย # และแปดคอลัมน์แรกไว้ตามเดิม",
+        "เพราะข้อมูลส่วนนี้ผูกคำตอบแต่ละแถวกับสถานที่ ไฟล์ที่ไม่มีข้อมูลส่วนนี้จะถูกปฏิเสธ ไฟล์ที่ส่งกลับจะเก็บไว้นอกคลังรหัสของโครงการ",
+        "เก็บไว้เพียงค่าแฮชและคอลัมน์ที่ตรวจสอบ หมายเหตุการเข้าถึงจะไม่ถูกเผยแพร่หรือเก็บไว้ บันทึกเพียงว่ามีการให้หมายเหตุหรือไม่",
     ]
     return ("\n".join(lines) + "\n").encode("utf-8")
 

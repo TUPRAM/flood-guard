@@ -115,6 +115,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ร่องน้ำคือช่องที่มีพื้นที่รับน้ำด้านเหนือน้ำอย่างน้อย 25 ตร.กม. บน Copernicus DSM ความละเอียด 30 ม. อาคารและต้นไม้ใน DSM ทำให้ค่า HAND ในเขตเมืองสูงกว่าจริง",
   "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported depth factor f makes h + 0.3/f equal the earliest sample closure); river-channel samples on bridges are ignored.":
     "ถนนสัญจรไม่ได้เมื่อความลึกจำลองถึง 0.3 ม. ที่จุดตัวอย่างใดก็ตามซึ่งห่างกันทุก 10 ม. ตามถนนช่วงละ 120 ม. (ใช้ตัวคูณความลึกรายจุด ตัวคูณความลึก f ที่ส่งออกทำให้ h + 0.3/f เท่ากับเวลาที่จุดตัวอย่างแรกถูกปิด) ไม่นับจุดตัวอย่างในร่องน้ำบนสะพาน",
+  "Bridge decks are not modelled: a bridge's road state reflects the ground at its approaches and beside it, so a raised deck can stay passable while the model shows the way impassable. Read a bridge's impassable hours as unknown.":
+    "ไม่ได้จำลองพื้นสะพาน: สถานะถนนของสะพานสะท้อนระดับพื้นดินบริเวณคอสะพานและข้างสะพาน พื้นสะพานที่ยกสูงจึงอาจยังสัญจรได้แม้แบบจำลองแสดงว่าสัญจรไม่ได้ ให้ถือว่าชั่วโมงที่สะพานสัญจรไม่ได้เป็นค่าที่ไม่ทราบ",
   "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.":
     "ถนนช่วงที่ค่า HAND ต่ำสุดเกิน 4 ม. ไม่ถูกน้ำท่วมภายใต้จุดกำหนดระดับน้ำเหล่านี้จึงไม่แสดง ยกเว้นทางหลวงสายหลัก ถนนสายหลัก และถนนสายรอง",
   "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.":
@@ -137,11 +139,22 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ความจุที่พักพิง = พื้นที่อาคารใน OSM ภายในสถานที่ × สัดส่วนที่ใช้ได้ 0.5 ÷ 3.5 ตร.ม. ต่อคน (พื้นที่ในร่มขั้นต่ำตามเกณฑ์ Sphere) ข้อมูลอาคารใน OSM ของแม่สายยังมีน้อย ความจุหลายแห่งจึงไม่ทราบหรือต่ำกว่าจริง",
   "The capacity-aware plan assigns residents of homes that flood at the modelled peak to eligible sites within the 2 km walk without exceeding a site's capacity. It gives two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). Demand is an upper bound (many people stay with relatives) and the sites are candidates to verify.":
     "แผนแบบคิดความจุจัดให้ผู้อยู่อาศัยในบ้านที่ถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลองไปยังสถานที่ที่เข้าเกณฑ์ภายในระยะเดิน 2 กม. โดยไม่เกินความจุของแต่ละแห่ง และให้ค่าสองขอบเขต: ความจุที่ไม่ทราบนับเป็น 0 (ขอบเขตล่าง) หรือใช้ค่ามัธยฐานของค่าประมาณของสถานที่ประเภทเดียวกัน (ขอบเขตบน) ความต้องการเป็นค่าขอบเขตบน (หลายคนไปพักกับญาติ) และสถานที่เหล่านี้เป็นสถานที่ที่ควรตรวจสอบ",
+  "The two capacity bounds differ only in what a site without a mapped footprint is assumed to hold. Neither is a limit on who fits: a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are unmapped.":
+    "ขอบเขตความจุทั้งสองต่างกันเพียงว่าสมมุติให้สถานที่ที่ไม่มีขอบเขตอาคารในแผนที่รับได้เท่าใด ทั้งสองไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้ สถานที่ที่มีขอบเขตอาคารนับตามค่าประมาณทั้งสองขอบเขต และค่าประมาณนั้นต่ำกว่าจริงในบริเวณที่อาคารยังไม่ถูกทำแผนที่",
   "Plan robustness repeats the coverage ranking at 2.5 m, 3.5 m and 4.0 m: what-if levels around an illustrative peak, not return periods.":
     "การตรวจความคงทนของแผนจัดอันดับความครอบคลุมซ้ำที่ระดับ 2.5 ม. 3.5 ม. และ 4.0 ม. ซึ่งเป็นระดับน้ำสมมุติรอบ ๆ ระดับสูงสุดที่ใช้เพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ",
   // Capacity-aware plan and what-if levels: confidence reasons, source timestamps and the what-if label.
   "Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; demand is a modelled upper bound; nothing was checked on the ground.":
     "ความจุเป็นค่าประมาณจากขอบเขตอาคารใน OpenStreetMap ซึ่งมีข้อมูลน้อย ยังไม่ได้ตรวจสอบ และไม่ทราบสำหรับสถานที่ส่วนใหญ่ ความต้องการเป็นค่าขอบเขตบนจากแบบจำลอง และยังไม่ได้ตรวจสอบสิ่งใดในพื้นที่",
+  // The same reason once a local check has been returned: it stops saying that nothing was checked.
+  "Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; demand is a modelled upper bound; the local check that was returned is reported by role and is not used in these figures.":
+    "ความจุเป็นค่าประมาณจากขอบเขตอาคารใน OpenStreetMap ซึ่งมีข้อมูลน้อย ยังไม่ได้ตรวจสอบ และไม่ทราบสำหรับสถานที่ส่วนใหญ่ ความต้องการเป็นค่าขอบเขตบนจากแบบจำลอง ผลการตรวจสอบในพื้นที่ที่ส่งกลับมาเป็นข้อมูลที่รายงานตามบทบาท และตัวเลขเหล่านี้ไม่ได้ใช้ผลดังกล่าว",
+  // The local check of the shelter candidates (shown once a verification sheet has been returned).
+  "One local check per site, reported by role and not audited by the project team.":
+    "ตรวจสอบในพื้นที่หนึ่งครั้งต่อสถานที่ รายงานตามบทบาท และทีมโครงการไม่ได้ตรวจทาน",
+  // The export pack's source timestamp (the downloads footer).
+  "OSM extract 2026-07-09; WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT":
+    "ข้อมูล OSM 2026-07-09 · WorldPop 2020 · รวบรวมที่พักพิงที่มีรายงานเมื่อ 2026-09-27 · จุดกำหนดระดับน้ำเพื่อการอธิบายสำหรับ 2024-09-09/2024-09-19 เวลาประเทศไทย",
   "OSM extract 2026-07-09 (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT":
     "ข้อมูล OSM 2026-07-09 (ขอบเขตอาคารและสถานที่) · WorldPop 2020 · ระดับน้ำสูงสุดที่จำลอง 2024-09-12 เวลาประเทศไทย",
   "The peak stage is illustrative (no gauge record); the levels show how the ranking moves if it were lower or higher.":
@@ -169,8 +182,13 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ตัวเลขของแบบจำลองคือน้ำนอกร่องน้ำจากแบบจำลอง ณ เวลาถ่ายภาพของวันที่ 15 ก.ย. นับเฉพาะพิกเซลที่ภาพนั้นมองเห็นได้ชัด อัตราส่วนการซ้อนทับบอกว่าพื้นที่ทั้งสองตรงกันมากน้อยเพียงใด ไม่ได้บอกว่าฝ่ายใดถูก",
   "A positive MNDWI also flags saturated mud and wet sediment, so the area is water or saturated mud, not a flood extent. The scene classification can miss thin cloud and cloud shadow, and cloud hid part of the district on both dates. The comparison with the model is indicative only.":
     "ค่า MNDWI ที่เป็นบวกรวมถึงโคลนอิ่มน้ำและตะกอนเปียกด้วย พื้นที่นี้จึงเป็นน้ำหรือโคลนอิ่มน้ำ ไม่ใช่ขอบเขตน้ำท่วม การจำแนกฉากอาจพลาดเมฆบางและเงาเมฆ และเมฆบังพื้นที่อำเภอบางส่วนทั้งสองวัน การเปรียบเทียบกับแบบจำลองเป็นเพียงข้อบ่งชี้เท่านั้น",
+  "The larger observed area is consistent with water or saturated mud left after the river fell; the terrain-only model cannot hold water once the river level drops.":
+    "พื้นที่ที่สังเกตได้ซึ่งกว้างกว่าสอดคล้องกับน้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่หลังระดับแม่น้ำลดลง แบบจำลองที่ใช้เฉพาะภูมิประเทศไม่สามารถกักน้ำไว้ได้เมื่อระดับแม่น้ำลดลง",
+  "A day later the VIIRS map shows less flood water than the model in its clear pixels, so the larger area on the day of the scene is consistent with saturated mud or short-lived water rather than lasting ponding.":
+    "หนึ่งวันถัดมา แผนที่ VIIRS พบน้ำท่วมน้อยกว่าแบบจำลองในพิกเซลที่ท้องฟ้าโปร่ง พื้นที่ที่กว้างกว่าในวันที่ถ่ายภาพจึงสอดคล้องกับโคลนอิ่มน้ำหรือน้ำที่ค้างอยู่ช่วงสั้น ๆ มากกว่าน้ำขังที่คงอยู่นาน",
+  // The reading as an earlier r4 bake worded it (it named a land cover that no input of the bake supports).
   "Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only model cannot hold water once the river level drops.":
-    "น้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่ในไร่นาหลังระดับแม่น้ำลดลง สอดคล้องกับพื้นที่ที่สังเกตได้ซึ่งกว้างกว่า แบบจำลองที่ใช้เฉพาะภูมิประเทศไม่สามารถกักน้ำไว้ได้เมื่อระดับแม่น้ำลดลง",
+    "น้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่หลังระดับแม่น้ำลดลง สอดคล้องกับพื้นที่ที่สังเกตได้ซึ่งกว้างกว่า แบบจำลองที่ใช้เฉพาะภูมิประเทศไม่สามารถกักน้ำไว้ได้เมื่อระดับแม่น้ำลดลง",
   "One index threshold on two partly cloudy scenes, with no field check: a positive index also flags saturated mud and wet sediment, the scene classification can miss thin cloud and cloud shadow, and the ground under cloud was not seen.":
     "ใช้เกณฑ์ดัชนีค่าเดียวกับภาพสองภาพที่มีเมฆบางส่วน และไม่มีการตรวจภาคสนาม ค่าดัชนีที่เป็นบวกรวมถึงโคลนอิ่มน้ำและตะกอนเปียก การจำแนกฉากอาจพลาดเมฆบางและเงาเมฆ และมองไม่เห็นพื้นดินใต้เมฆ",
   "The eight Mae Sai subdistricts, on the replay's 10 m grid.":
@@ -182,8 +200,11 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ข้อมูลชุดนี้ไม่มีภาพดาวเทียมความละเอียดสูงของแม่สายในวันที่ 10–14 กันยายน VIIRS (375 ม.) มีเมฆปกคลุมในวันที่ 10–11 ก.ย. และมีเมฆมากในวันที่ 12–14 ก.ย. จึงไม่มีการสังเกตขอบเขตน้ำช่วงเริ่มท่วมและช่วงสูงสุด",
   "Statistics cover only the modelled parts of the eight Mae Sai subdistricts; roads and facilities outside the model are excluded.":
     "ตัวเลขครอบคลุมเฉพาะส่วนที่จำลองของ 8 ตำบลในอำเภอแม่สาย ถนนและสถานที่นอกแบบจำลองไม่นับรวม",
+  "No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level drops below it, so water or saturated mud left behind after the river falls is not reconstructed.":
+    "ไม่จำลองน้ำขังหรือการกักเก็บน้ำหลังระดับแม่น้ำลดลง: แบบจำลองที่ใช้เฉพาะภูมิประเทศทำให้ทุกช่องแห้งทันทีที่ระดับแม่น้ำสมมุติลดต่ำกว่าช่องนั้น จึงไม่ได้จำลองน้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่หลังระดับแม่น้ำลดลง",
+  // The same limitation as an earlier r4 bake worded it.
   "No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level drops below it, so water or saturated mud left standing on fields is not reconstructed.":
-    "ไม่จำลองน้ำขังหรือการกักเก็บน้ำหลังระดับแม่น้ำลดลง: แบบจำลองที่ใช้เฉพาะภูมิประเทศทำให้ทุกช่องแห้งทันทีที่ระดับแม่น้ำสมมุติลดต่ำกว่าช่องนั้น จึงไม่ได้จำลองน้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่ในไร่นา",
+    "ไม่จำลองน้ำขังหรือการกักเก็บน้ำหลังระดับแม่น้ำลดลง: แบบจำลองที่ใช้เฉพาะภูมิประเทศทำให้ทุกช่องแห้งทันทีที่ระดับแม่น้ำสมมุติลดต่ำกว่าช่องนั้น จึงไม่ได้จำลองน้ำหรือโคลนอิ่มน้ำที่ยังค้างอยู่หลังระดับแม่น้ำลดลง",
   "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.":
     "หลุมที่ถูกถมและพื้นที่ราบเรียบในแบบจำลองความสูงที่สูงจากร่องน้ำไม่ถึง 0.1 ม. (ระบุไว้ในช่อง B ของภาพ) จะแสดงว่าเปียกแทบทุกระดับน้ำ จึงแสดงเป็นน้ำที่มีความเชื่อมั่นต่ำ",
   // Evidence envelope (r4): permitted use and what the source-timestamp span covers.
@@ -293,6 +314,8 @@ export function thaiManifestDate(text: string): string {
  */
 const THAI_PATTERNS: readonly [RegExp, (match: RegExpMatchArray) => string][] = [
   [/^compiled (\d{4}-\d{2}-\d{2})$/, (m) => `รวบรวมเมื่อ ${m[1]}`],
+  // Source timestamp of a returned local check of the shelter candidates: the range of the dates of the checks.
+  [/^checks dated (\d{4}-\d{2}-\d{2})\/(\d{4}-\d{2}-\d{2})$/, (m) => (m[1] === m[2] ? `ตรวจสอบเมื่อ ${m[1]}` : `ตรวจสอบระหว่าง ${m[1]} ถึง ${m[2]}`)],
   [new RegExp(`^Season envelope\\. The CC BY-SA 4\\.0 rights decision was signed on ${DATE} and UNOSAT replied "([^"]+)" \\(relayed by a project owner on ${DATE}\\); shown only after the owners confirm the rights record\\.$`),
     (m) => `ขอบเขตน้ำตลอดฤดู มติเรื่องสิทธิ์การใช้ข้อมูลตามสัญญาอนุญาต CC BY-SA 4.0 ลงนามเมื่อ ${thaiManifestDate(m[1])} และ UNOSAT ตอบว่า "${m[2]}" (เจ้าของโครงการแจ้งคำตอบนี้ต่อทีมเมื่อ ${thaiManifestDate(m[3])}) จะแสดงหลังจากเจ้าของโครงการยืนยันบันทึกสิทธิ์การใช้ข้อมูลแล้วเท่านั้น`],
   [new RegExp(`^Season envelope\\. The CC BY-SA 4\\.0 rights decision was signed on ${DATE} and UNOSAT replied "([^"]+)" \\(relayed by a project owner on ${DATE}\\); the owners confirmed the rights record on ${DATE}\\. Not shown in this revision\\.$`),

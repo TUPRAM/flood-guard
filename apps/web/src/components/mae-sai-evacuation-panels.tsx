@@ -244,7 +244,7 @@ export function ThemeEyebrow({ prefix, theme, language }: { prefix?: string; the
  * classes once for the whole page.
  */
 export function ProvenanceNote({ kind, confidence, reason, timestamp, language, children }: {
-  kind: "access" | "plan" | "capacity" | "robustness" | "reported" | "impact" | "people" | "routes";
+  kind: "access" | "plan" | "capacity" | "robustness" | "verification" | "reported" | "impact" | "people" | "routes";
   confidence: string;
   reason?: string;
   timestamp: string;
@@ -969,6 +969,45 @@ function otherLevelsText(shelters: Pick<ShelterInfo, "robustness">, language: La
   return levels.join(language === "th" ? " และ " : " and ");
 }
 
+/** The local check of one candidate, once a returned verification sheet has been imported; null before, or when the site was not checked. */
+export function localCheck(shelters: Pick<ShelterInfo, "verification">, candidateId: string): ShelterCheckRow | null {
+  const check = shelters.verification;
+  if (!check || check.status !== "conducted") return null;
+  return check.checked.find((row) => row.candidate_id === candidateId) ?? null;
+}
+
+/**
+ * What a local checker reported for a site, for the plan lists. The rankings and the capacity figures were computed
+ * without the check, so a site reported not usable is still listed: the line says so instead of leaving the two side
+ * by side.
+ */
+export function localCheckText(row: Pick<ShelterCheckRow, "usable_as_shelter" | "verified_capacity">, language: Language): string {
+  const t = translator(language);
+  if (!row.usable_as_shelter) {
+    return t(
+      "Local check: reported not usable as a shelter. The ranking and the capacity figures do not use the check, so the site is still listed.",
+      "ผลตรวจในพื้นที่: รายงานว่าใช้เป็นที่พักพิงไม่ได้ การจัดอันดับและตัวเลขความจุไม่ได้ใช้ผลตรวจนี้ สถานที่จึงยังอยู่ในรายการ",
+    );
+  }
+  return row.verified_capacity === null
+    ? t("Local check: reported usable as a shelter (no capacity given).", "ผลตรวจในพื้นที่: รายงานว่าใช้เป็นที่พักพิงได้ (ไม่ได้ระบุความจุ)")
+    : t(
+      `Local check: reported usable, capacity ${formatPeople(row.verified_capacity)} people. The figures here still use the footprint estimate.`,
+      `ผลตรวจในพื้นที่: รายงานว่าใช้ได้ ความจุ ${formatPeople(row.verified_capacity)} คน ตัวเลขในส่วนนี้ยังใช้ค่าประมาณจากขอบเขตอาคาร`,
+    );
+}
+
+/** The local-check line of a site in a plan list; nothing when the site was not checked. */
+function LocalCheckBadge({ shelters, candidateId, language }: { shelters: ShelterInfo; candidateId: string; language: Language }) {
+  const row = localCheck(shelters, candidateId);
+  if (!row) return null;
+  return (
+    <span className={styles.checkBadge} data-usable={row.usable_as_shelter ? "yes" : "no"} data-testid="local-check">
+      {localCheckText(row, language)} <span className={styles.muted}>{checkLabel(row, language)}{language === "th" ? "" : "."}</span>
+    </span>
+  );
+}
+
 function PlannedSiteItem({ site, k, shelters, language, onShow, robust }: {
   site: PlannedShelter;
   k: number;
@@ -1002,6 +1041,7 @@ function PlannedSiteItem({ site, k, shelters, language, onShow, robust }: {
           `แกนที่คงทน: อยู่ใน ${k} แห่งแรกที่ระดับ ${otherLevelsText(shelters, language)} ด้วย`,
         )}</span>
       )}
+      <LocalCheckBadge shelters={shelters} candidateId={site.candidate.id} language={language} />
       <button type="button" className={styles.linkButton} onClick={() => onShow(site.candidate.id)} aria-label={t(`Show plan site ${site.rank}, ${title}, on the map`, `แสดงสถานที่ในแผนลำดับ ${site.rank} ${title} บนแผนที่`)}>
         {t("Show on map", "แสดงบนแผนที่")}
       </button>
@@ -1042,7 +1082,7 @@ export function capacityBoundsText(row: Pick<CapacityPlanRow, "capacity_est" | "
   );
 }
 
-/** The five standing caveats of the capacity-aware figures, in the order the card lists them. */
+/** The six standing caveats of the capacity-aware figures, in the order the card lists them. */
 export function capacityCaveats(shelters: Pick<ShelterInfo, "capacitated">, language: Language): string[] {
   const t = translator(language);
   const all = shelters.capacitated?.all_eligible;
@@ -1059,6 +1099,10 @@ export function capacityCaveats(shelters: Pick<ShelterInfo, "capacitated">, lang
     t(
       `Capacity is an unverified estimate from mapped building footprints (footprint × 0.5 usable ÷ 3.5 m² per person, Sphere)${all ? `; ${unknown} of the ${all.sites} eligible candidates have no footprint to estimate from` : ""}.`,
       `ความจุเป็นค่าประมาณจากขอบเขตอาคารในแผนที่ที่ยังไม่ได้ตรวจสอบ (พื้นที่อาคาร × ใช้ได้ 0.5 ÷ 3.5 ตร.ม. ต่อคน ตามเกณฑ์ Sphere)${all ? ` สถานที่ที่เข้าเกณฑ์ ${unknown} จาก ${all.sites} แห่งไม่มีขอบเขตอาคารให้ประมาณ` : ""}`,
+    ),
+    t(
+      "Neither bound is a limit on who fits. The two differ only in what a site with no mapped footprint is assumed to hold; a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are unmapped. More residents may fit than the upper bound gives, and fewer than the lower bound if a site turns out unusable.",
+      "ทั้งสองขอบเขตไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้ ทั้งสองต่างกันเพียงว่าสมมุติให้สถานที่ที่ไม่มีขอบเขตอาคารในแผนที่รับได้เท่าใด ส่วนสถานที่ที่มีขอบเขตอาคารนับตามค่าประมาณทั้งสองขอบเขต ซึ่งต่ำกว่าจริงในบริเวณที่อาคารยังไม่ถูกทำแผนที่ จึงอาจรองรับได้มากกว่าขอบเขตบน และอาจน้อยกว่าขอบเขตล่างหากสถานที่ใช้ไม่ได้จริง",
     ),
     t(
       "The sites are candidates to verify on the ground, not a list of sites to open.",
@@ -1127,8 +1171,8 @@ export function CapacityAwareBlock({ shelters, k, language, onShowCandidate }: {
           <thead>
             <tr>
               <td />
-              <th scope="col">{t("Lower bound", "ขอบเขตล่าง")}</th>
-              <th scope="col">{t("Upper bound", "ขอบเขตบน")}</th>
+              <th scope="col" data-testid="capacity-bound-lower">{t("Lower bound", "ขอบเขตล่าง")}<small>{t("a site with no footprint holds nobody", "สถานที่ที่ไม่มีขอบเขตอาคารรับไม่ได้เลย")}</small></th>
+              <th scope="col" data-testid="capacity-bound-upper">{t("Upper bound", "ขอบเขตบน")}<small>{t("a site with no footprint holds a typical size; not a maximum", "สถานที่ที่ไม่มีขอบเขตอาคารรับได้ตามขนาดทั่วไป ไม่ใช่ค่าสูงสุด")}</small></th>
             </tr>
           </thead>
           <tbody>
@@ -1184,6 +1228,7 @@ export function CapacityAwareBlock({ shelters, k, language, onShowCandidate }: {
                   `Assigned ${formatPeople(entry.lower.load)} of ${formatPeople(entry.lower.capacity)} places (lower bound) · ${formatPeople(entry.upper.load)} of ${formatPeople(entry.upper.capacity)} (upper bound)`,
                   `จัดให้ ${formatPeople(entry.lower.load)} จาก ${formatPeople(entry.lower.capacity)} ที่ (ขอบเขตล่าง) · ${formatPeople(entry.upper.load)} จาก ${formatPeople(entry.upper.capacity)} ที่ (ขอบเขตบน)`,
                 )}</span>
+                <LocalCheckBadge shelters={shelters} candidateId={candidate.id} language={language} />
                 <button type="button" className={styles.linkButton} onClick={() => onShowCandidate(candidate.id)} aria-label={t(`Show capacity-aware site ${index + 1}, ${title}, on the map`, `แสดงสถานที่แบบคิดความจุลำดับ ${index + 1} ${title} บนแผนที่`)}>
                   {t("Show on map", "แสดงบนแผนที่")}
                 </button>
@@ -1293,8 +1338,10 @@ export function checkLabel(row: Pick<ShelterCheckRow, "checked_by_role" | "check
 /**
  * Local check of the shelter candidates through the verification sheet of the export pack. Until a sheet is returned
  * and imported the block says the check was not conducted and states no result. A returned check lists each checked
- * candidate with the label "Checked by <role> on <date>; not an official shelter register". `sheet` is the blank
- * sheet's download file. Renders nothing for a manifest without the block.
+ * candidate with the label "Checked by <role> on <date>; not an official shelter register", under its confidence, the
+ * reason for it and the dates of the checks, and says that the rankings and the capacity figures above do not use it.
+ * The checker's access notes are never shown: only that one was given. `sheet` is the blank sheet's download file.
+ * Renders nothing for a manifest without the block.
  */
 export function ShelterVerificationBlock({ shelters, sheet, language }: { shelters: ShelterInfo; sheet?: ExportFile | null; language: Language }) {
   const t = translator(language);
@@ -1311,6 +1358,18 @@ export function ShelterVerificationBlock({ shelters, sheet, language }: { shelte
             `A local check of ${check.checked.length} of the ${check.candidates_listed} eligible candidates was returned${check.imported_on ? ` (imported ${formatDateWithYear(check.imported_on, "en")})` : ""}. It is reported by role and is not an official shelter register; a candidate that is not listed below was not checked.`,
             `มีผลการตรวจสอบในพื้นที่ส่งกลับมา ${check.checked.length} จาก ${check.candidates_listed} แห่งที่เข้าเกณฑ์${check.imported_on ? ` (นำเข้าเมื่อ ${formatDateWithYear(check.imported_on, "th")})` : ""} เป็นข้อมูลที่รายงานตามบทบาท ไม่ใช่ทะเบียนที่พักพิงทางการ สถานที่ที่ไม่อยู่ในรายการด้านล่างยังไม่ได้ตรวจสอบ`,
           )}</p>
+          {check.confidence && check.source_timestamp && (
+            <ProvenanceNote kind="verification" confidence={check.confidence} reason={check.confidence_reason} timestamp={check.source_timestamp} language={language}>
+              {t(
+                "One checker reported each site once; the project team did not audit the answers.",
+                "ผู้ตรวจสอบหนึ่งรายรายงานแต่ละสถานที่หนึ่งครั้ง ทีมโครงการไม่ได้ตรวจทานคำตอบ",
+              )}
+            </ProvenanceNote>
+          )}
+          <p className={styles.caveat} data-testid="verification-not-used">{t(
+            "The ranking, the capacity figures and the download tables above were computed without this check: a site reported not usable is still ranked, and a reported capacity does not replace the footprint estimate. Checked sites carry a “Local check” line in the lists above.",
+            "การจัดอันดับ ตัวเลขความจุ และตารางดาวน์โหลดด้านบนคำนวณโดยไม่ได้ใช้ผลตรวจนี้ สถานที่ที่รายงานว่าใช้ไม่ได้ยังคงอยู่ในการจัดอันดับ และความจุที่รายงานไม่ได้แทนค่าประมาณจากขอบเขตอาคาร สถานที่ที่ตรวจสอบแล้วมีบรรทัด “ผลตรวจในพื้นที่” ในรายการด้านบน",
+          )}</p>
           <ul className={styles.list} data-testid="verification-rows">
             {check.checked.map((row) => {
               const candidate = byId.get(row.candidate_id);
@@ -1319,7 +1378,7 @@ export function ShelterVerificationBlock({ shelters, sheet, language }: { shelte
                   <strong>{candidate ? candidateTitle(candidate, language) : row.candidate_id}</strong>{" — "}
                   {row.usable_as_shelter ? t("usable as a shelter", "ใช้เป็นที่พักพิงได้") : t("not usable as a shelter", "ใช้เป็นที่พักพิงไม่ได้")}
                   {row.verified_capacity !== null && t(`; capacity ${formatPeople(row.verified_capacity)} people`, ` ความจุ ${formatPeople(row.verified_capacity)} คน`)}
-                  {row.access_notes && <>{language === "th" ? " " : "; "}<span lang="und">{row.access_notes}</span></>}
+                  {row.access_notes_given && t("; access notes were given (not published)", " มีหมายเหตุการเข้าถึง (ไม่เผยแพร่)")}
                   {language === "th" ? " " : ". "}
                   <span className={styles.muted} data-testid="verification-label">{checkLabel(row, language)}{language === "th" ? "" : "."}</span>
                 </li>
@@ -1335,8 +1394,8 @@ export function ShelterVerificationBlock({ shelters, sheet, language }: { shelte
       )}
       <p className={styles.muted} data-testid="verification-sheet">
         {t(
-          `The verification sheet lists the ${check.candidates_listed} eligible candidates with empty columns for a local checker: usable as a shelter, capacity, access notes, role and date. A returned check is labelled “Checked by <role> on <date>; not an official shelter register”. The sheet takes a role, never a name: no names of people, phone numbers or ID numbers.`,
-          `แบบตรวจสอบมีรายการสถานที่ที่เข้าเกณฑ์ ${check.candidates_listed} แห่ง พร้อมคอลัมน์ว่างสำหรับผู้ตรวจสอบในพื้นที่ ได้แก่ ใช้เป็นที่พักพิงได้หรือไม่ ความจุ หมายเหตุการเข้าถึง บทบาท และวันที่ ผลที่ส่งกลับมาจะระบุว่า “ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ” แบบตรวจสอบรับเฉพาะบทบาท ไม่รับชื่อบุคคล หมายเลขโทรศัพท์ หรือเลขประจำตัว`,
+          `The verification sheet lists the ${check.candidates_listed} eligible candidates with empty columns for a local checker: usable as a shelter, capacity, access notes, role and date. A returned check is labelled “Checked by <role> on <date>; not an official shelter register”. The sheet takes a role, never a name: no names of people, phone numbers or ID numbers. Access notes are for the project team only and are never published.`,
+          `แบบตรวจสอบมีรายการสถานที่ที่เข้าเกณฑ์ ${check.candidates_listed} แห่ง พร้อมคอลัมน์ว่างสำหรับผู้ตรวจสอบในพื้นที่ ได้แก่ ใช้เป็นที่พักพิงได้หรือไม่ ความจุ หมายเหตุการเข้าถึง บทบาท และวันที่ ผลที่ส่งกลับมาจะระบุว่า “ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ” แบบตรวจสอบรับเฉพาะบทบาท ไม่รับชื่อบุคคล หมายเลขโทรศัพท์ หรือเลขประจำตัว หมายเหตุการเข้าถึงใช้ภายในทีมโครงการเท่านั้นและจะไม่ถูกเผยแพร่`,
         )}
         {sheet && (
           <>

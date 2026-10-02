@@ -12,13 +12,16 @@ The script
   outside Git (keep it under the external data root);
 * refuses personal data: a column for a person's name, a phone number, an ID number, an e-mail or an
   address, any other column that is not on the sheet, and any cell that reads as a phone number, an ID
-  number or an e-mail address;
+  number, an e-mail address or a messaging id (digits are counted with their separators ignored);
 * refuses an unknown candidate id, a candidate listed twice, a row that no longer describes the sheet's
-  candidate, and a malformed answer (``usable_as_shelter`` must be yes or no, ``verified_capacity`` a whole
-  number, ``checked_by_role`` a role code and never a name, ``checked_on`` a date);
+  candidate, a file that has lost the sheet's ``# candidate_set_sha256`` line unless every checked row still
+  carries the sheet's kind, latitude and longitude, and a malformed answer (``usable_as_shelter`` must be yes
+  or no, ``verified_capacity`` a whole number, ``checked_by_role`` a role code and never a name,
+  ``checked_on`` a date);
 * hashes the returned file (SHA-256) and writes only the whitelisted checker columns, with that hash, to
-  ``outputs/mae_sai_shelter_validation.json``. The free-text notes are left out unless
-  ``--include-access-notes`` is given.
+  ``outputs/mae_sai_shelter_validation.json``. The free-text access notes are never written: no screen can
+  recognise an untitled name, so only the fact that a note was given is kept. Whether notes may ever be
+  published is an owner decision (decision log, follow-up 8b); until then there is no option to keep them.
 
 The next bake reads that file and labels every row "Checked by <role> on <date>; not an official shelter
 register". Without it the replay says the check was not conducted. The script invents nothing: a row whose
@@ -77,8 +80,8 @@ def inside(path: Path, folder: Path) -> bool:
     return True
 
 
-def import_returned(returned: Path, sheet: Path, imported_on: date, *, include_access_notes: bool = False,
-                    study_id: str, revision: str, repository: Path | None = ROOT) -> dict:
+def import_returned(returned: Path, sheet: Path, imported_on: date, *, study_id: str, revision: str,
+                    repository: Path | None = ROOT) -> dict:
     """Judge ``returned`` against the blank ``sheet`` and return the derived document (nothing is written).
 
     Raises :class:`floodguard.shelter_validation.ShelterValidationError` with every problem found. ``repository``
@@ -92,7 +95,7 @@ def import_returned(returned: Path, sheet: Path, imported_on: date, *, include_a
         raise ShelterValidationError(["the blank sheet does not state its candidate_set_sha256"])
     data = returned.read_bytes()
     text, encoding = decode_returned(data)
-    rows = validate_returned_sheet(text, sheet_rows, candidate_set, imported_on, include_access_notes=include_access_notes)
+    rows = validate_returned_sheet(text, sheet_rows, candidate_set, imported_on)
     return check_document(rows, returned_sha256=file_sha256(data), returned_bytes=len(data), returned_encoding=encoding,
                           candidate_set_sha256=candidate_set, candidates_listed=len(sheet_rows), imported_on=imported_on,
                           study_id=study_id, revision=revision, generated_by=GENERATED_BY)
@@ -104,8 +107,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sheet", default=None, help="The blank sheet the file answers. Defaults to the served revision's sheet.")
     parser.add_argument("--out", default=str(ROOT / OUTPUT_REL), help="Where to write the derived document.")
     parser.add_argument("--imported-on", default=None, help="Date of the import, YYYY-MM-DD. Defaults to today.")
-    parser.add_argument("--include-access-notes", action="store_true",
-                        help="Keep the free-text access notes. Read them first: free text can name a person.")
     parser.add_argument("--check", action="store_true", help="Judge the file and print the result; write nothing.")
     args = parser.parse_args(argv)
     returned = Path(args.returned)
@@ -120,8 +121,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--imported-on must be a date written YYYY-MM-DD")
     manifest = json.loads(served_manifest().read_text(encoding="utf-8"))
     try:
-        document = import_returned(returned, sheet, imported_on, include_access_notes=args.include_access_notes,
-                                   study_id=manifest["study_id"], revision=manifest["revision"])
+        document = import_returned(returned, sheet, imported_on, study_id=manifest["study_id"], revision=manifest["revision"])
     except ShelterValidationError as error:
         print(str(error), file=sys.stderr)
         print("Nothing was written.", file=sys.stderr)

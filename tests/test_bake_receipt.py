@@ -565,7 +565,7 @@ def s2_check_figures() -> dict:
         "scenes": {"pre_event": dict(scene, water_km2=1.0), "event": dict(scene)},
         "change": {"both_clear_km2": 8.0, "event_water_km2": 1.8, "pre_event_water_km2": 0.9, "new_water_km2": 1.0, "no_longer_water_km2": 0.1},
         "model_at_event_scene": {"model_t": 6.4571, "model_stage_m": 0.278, "model_flood_km2_district": 1.5, "model_flood_km2_clear": 1.0,
-                                 "model_overlap_km2": 0.5, "model_union_km2": 2.5, "model_agreement_iou": 0.2,
+                                 "model_flood_km2_both_clear": 0.9, "model_overlap_km2": 0.5, "model_union_km2": 2.5, "model_agreement_iou": 0.2,
                                  "model_share_of_observed_water_reached": 0.25, "model_share_inside_observed_water": 0.5},
         "sensitivity": [{"id": "strict_clear", "rule": "stricter", "event_clear_share": 0.4, "event_water_km2": 1.9, "pre_event_clear_share": 0.4,
                          "pre_event_water_km2": 0.9, "new_water_km2": 0.9, "model_agreement_iou": 0.2}],
@@ -583,6 +583,9 @@ def test_sentinel2_block_dates_each_scene_and_refuses_an_unnamed_model_field() -
     assert block["model_at_event_scene"]["model_local_time"] == "2024-09-15T10:58:15+07:00"
     assert (block["label"], block["comparison"], block["confidence"]) == ("water or saturated mud", "indicative", "low")
     assert "consistent with" in block["reading"] and "explain" not in block["reading"].lower()
+    # No land-cover map is an input, so the reading names no land cover; without VIIRS rows it says nothing about the next day.
+    assert "on fields" not in block["reading"] and "following_day" not in block
+    assert any("No land-cover map is an input" in line for line in block["assumptions"])
     assert bake.model_key_paths(block) == sorted([
         "model_at_event_scene", "model_fields", "sensitivity[].model_agreement_iou",
         *(f"model_at_event_scene.{key}" for key in block["model_at_event_scene"])])
@@ -606,6 +609,31 @@ def test_sentinel2_block_dates_each_scene_and_refuses_an_unnamed_model_field() -
     figures["model_at_event_scene"]["water_km2"] = 2.0
     with pytest.raises(ValueError, match="not named as model output"):
         bake.s2_crosscheck_block(figures)
+
+
+def test_sentinel2_block_adds_the_next_clear_viirs_day_only_when_it_shows_less_than_the_model() -> None:
+    bake = load_bake()
+
+    def day(date: str, clear: float, viirs: float, model: float) -> dict:
+        return {"date": date, "nominal_local_time": f"{date}T13:30:00+07:00", "clear_km2": clear, "viirs_flood_km2_clear": viirs,
+                "model_flood_km2_clear": model}
+
+    event = "2024-09-15T10:58:15+07:00"
+    days = [day("2024-09-14", 5.9, 0.0, 0.18), day("2024-09-15", 292.2, 46.17, 19.5), day("2024-09-16", 234.9, 3.28, 7.7), day("2024-09-17", 202.5, 3.68, 0.0)]
+    # The day after the scene, not the scene's own day and not an earlier one.
+    assert bake.following_viirs_day(days, event)["date"] == "2024-09-16"
+    assert bake.following_viirs_day(list(reversed(days)), event)["date"] == "2024-09-16"  # Whatever the order of the rows.
+    block = bake.s2_crosscheck_block(s2_check_figures(), days)
+    assert block["following_day"] == {"viirs_date": "2024-09-16", "reading": bake.S2_FOLLOWING_DAY_READING}
+    reading = block["following_day"]["reading"]
+    assert "consistent with" in reading and "rather than lasting ponding" in reading and "explain" not in reading.lower()
+    assert bake.model_key_paths(block["following_day"]) == []  # It holds no model figure: those stay in viirs_daily.
+    # A wholly cloudy next day is skipped: the first day that saw the district decides.
+    cloudy = [day("2024-09-16", 0.0, 0.0, 0.0), day("2024-09-17", 202.5, 3.68, 0.0)]
+    assert bake.following_viirs_day(cloudy, event)["date"] == "2024-09-17"
+    assert "following_day" not in bake.s2_crosscheck_block(s2_check_figures(), cloudy)  # VIIRS shows more than the model there.
+    assert "following_day" not in bake.s2_crosscheck_block(s2_check_figures(), [day("2024-09-16", 234.9, 7.7, 7.7)])  # Not less.
+    assert bake.following_viirs_day(days[:2], event) is None and "following_day" not in bake.s2_crosscheck_block(s2_check_figures(), days[:2])
 
 
 def test_bake_reads_openstreetmap_from_the_pbf_and_keeps_no_derived_cache() -> None:

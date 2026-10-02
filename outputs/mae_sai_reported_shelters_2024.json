@@ -110,7 +110,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R02",
@@ -175,7 +176,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R03",
@@ -233,7 +235,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R04",
@@ -284,7 +287,8 @@
    "role": "shelter",
    "first_use": "2024-09-21",
    "in_access_set": false,
-   "access_set_note": "The temple was itself flooded and evacuated at the peak; it served as a shelter from 21 Sep."
+   "access_set_note": "The temple was itself flooded and evacuated at the peak; it served as a shelter from 21 Sep.",
+   "access_set_note_th": "วัดถูกน้ำท่วมและต้องอพยพในช่วงระดับน้ำสูงสุด แล้วจึงใช้เป็นที่พักพิงตั้งแต่ 21 ก.ย."
   },
   {
    "id": "R05",
@@ -328,7 +332,8 @@
    "role": "relief_command_centre",
    "first_use": "2024-09-11",
    "in_access_set": false,
-   "access_set_note": "Incident command centre and relief kitchens; not a documented overnight shelter in Sep 2024."
+   "access_set_note": "Incident command centre and relief kitchens; not a documented overnight shelter in Sep 2024.",
+   "access_set_note_th": "ศูนย์บัญชาการเหตุการณ์และโรงครัว ไม่มีหลักฐานว่าใช้เป็นที่พักค้างคืนในเดือน ก.ย. 2567 (2024)"
   },
   {
    "id": "R06",
@@ -372,7 +377,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R07",
@@ -409,7 +415,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R08",
@@ -446,7 +453,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R09",
@@ -490,7 +498,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R10",
@@ -534,7 +543,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R11",
@@ -585,7 +595,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R12",
@@ -629,7 +640,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R13",
@@ -666,7 +678,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R14",
@@ -703,7 +716,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R15",
@@ -740,7 +754,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R16",
@@ -777,7 +792,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R17",
@@ -814,7 +830,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R18",
@@ -851,7 +868,8 @@
    "role": "shelter",
    "first_use": "2024-09-15 or earlier",
    "in_access_set": true,
-   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled."
+   "access_set_note": "Reported in use by 15 Sep (ICC 9-15 Sep list or earlier reports); exact opening time not modelled.",
+   "access_set_note_th": "มีรายงานว่าใช้ภายใน 15 ก.ย. (รายชื่อของศูนย์บัญชาการฯ 9–15 ก.ย. หรือรายงานก่อนหน้า) ไม่ได้จำลองเวลาเปิดที่แน่นอน"
   },
   {
    "id": "R19",
@@ -888,7 +906,8 @@
    "role": "shelter",
    "first_use": "2024-09-14",
    "in_access_set": false,
-   "access_set_note": "Prepared as a shelter for vulnerable groups by 14 Sep, after the peak."
+   "access_set_note": "Prepared as a shelter for vulnerable groups by 14 Sep, after the peak.",
+   "access_set_note_th": "เตรียมเป็นที่พักพิงสำหรับกลุ่มเปราะบางภายใน 14 ก.ย. หลังช่วงระดับน้ำสูงสุด"
   }
  ],
  "access_set_rule": "The reported_2024 access set counts located sites reported as overnight shelters by 15 Sep; the command centre and sites first used after 12 Sep are shown on the map but not counted. Opening times within 10-12 Sep are not modelled."

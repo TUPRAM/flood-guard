@@ -552,6 +552,15 @@ try {
   if (await page.locator("main").getByRole("alert").count() !== 0) {
     throw new Error(`The saved case replay failed offline: ${await page.locator("main").getByRole("alert").first().innerText()}`);
   }
+  // Opened without a connection, the saved replay still says it is saved: the worker cannot re-check the deployment
+  // profile offline, and must then report what its cache holds instead of "0 of N files".
+  await page.getByText(`Offline copy: this replay's ${caseReplay.assets.length} data files are saved on this device`, { exact: false })
+    .waitFor({ state: "attached", timeout: 15_000 });
+  await page.getByText(`Offline copy: the ${caseReplay.exports.assets.length} download files are saved on this device too`, { exact: false })
+    .waitFor({ state: "attached", timeout: 15_000 });
+  if (await page.getByText("Offline copy incomplete", { exact: false }).count() !== 0) {
+    throw new Error("The saved case replay reports an incomplete offline copy when it is opened without a connection.");
+  }
   await page.locator('input[type="range"][aria-label="Replay time (hourly)"]').fill("120");
   await page.waitForFunction(() => document.querySelector("[data-testid='replay-readout']")?.textContent?.includes("14 Sep 2024 · 00:00"));
   // The residents raster and the access node file come from the same offline copy.

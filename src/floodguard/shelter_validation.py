@@ -8,8 +8,13 @@ the rules here before anything derived from it is kept:
 * the file may hold only the sheet's whitelisted columns. A column for a
   person's name, a phone number, an ID number, an e-mail or a home address is
   refused, and so is any other unknown column;
-* no cell may hold something that reads as a phone number, an ID number or an
-  e-mail address;
+* no cell may hold something that reads as a phone number, an ID number, an
+  e-mail address or a messaging id. Digits are counted with their separators
+  ignored (spaces, hyphens, dots, slashes, brackets), so ``081.234.5678`` and
+  ``(081) 234 5678`` are refused like ``0812345678``;
+* the file must still carry the sheet's ``# candidate_set_sha256`` line. A file
+  that has lost its ``#`` lines is accepted only when every checked row still
+  carries the sheet's own kind, latitude and longitude;
 * every candidate id must be on the sheet, once, and still describe the same
   site (kind and position);
 * every checked row needs ``usable_as_shelter`` (yes or no), a role code (never
@@ -17,8 +22,11 @@ the rules here before anything derived from it is kept:
 
 Only the whitelisted checker columns are returned, as a document that carries
 the returned file's hash, a source timestamp, a confidence and its assumptions.
-The free-text notes are left out unless the caller asks for them. The returned
-file itself stays outside the repository.
+The free-text notes are never kept: a screen can catch a phone number or a
+titled name, but not an untitled one ("contact Somchai Jaidee"), so the document
+records only whether a note was given. Publishing notes is an owner decision
+(decision log, follow-up 8b) and needs a reviewed route, not a flag. The
+returned file itself stays outside the repository.
 
 A check is labelled "Checked by <role> on <date>; not an official shelter
 register". Nothing here invents a result: without a returned file there is no
@@ -45,7 +53,11 @@ SHEET_KEYS: tuple[str, ...] = tuple(column.key for column in SHEET_COLUMNS)
 CHECKER_KEYS: tuple[str, ...] = tuple(column.key for column in SHEET_CHECKER)
 PREFILLED_KEYS: tuple[str, ...] = tuple(column.key for column in SHEET_PREFILLED)
 DERIVED_KEYS: tuple[str, ...] = ("candidate_id", "usable_as_shelter", "verified_capacity", "checked_by_role", "checked_on", "access_notes_given")
-"""Columns the derived document may hold for each checked candidate (``access_notes`` only on request)."""
+"""The only columns the derived document may hold for each checked candidate. The free-text ``access_notes`` are never
+among them: only ``access_notes_given`` (whether a note was written) is kept."""
+
+SITE_KEYS: tuple[str, ...] = ("kind", "lat", "lon")
+"""Prefilled columns that tie a row to its site. A returned file without the sheet's fingerprint line must keep them."""
 
 MAX_VERIFIED_CAPACITY = 20000
 MAX_NOTE_LENGTH = 300
@@ -65,9 +77,18 @@ _PERSONAL_COLUMNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("a home address", re.compile(r"(?<![a-z])address|ที่อยู่")),
 )
 _EMAIL = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
-_ID_NUMBER = re.compile(r"(?<!\d)\d[ -]?\d{4}[ -]?\d{5}[ -]?\d{2}[ -]?\d(?!\d)")
-_PHONE = re.compile(r"(?<!\d)(?:\+?66|0)[ -]?\d(?:[ -]?\d){7,8}(?!\d)|(?<!\d)\d(?:[ -]?\d){8,}(?!\d)")
-_NAME_MARKER = re.compile(r"(?:นาย|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.)\s*[ก-๙]{2,}|(?<![A-Za-z])(?:Mr|Mrs|Ms|Miss|Khun)\.?\s+[A-Z][a-z]+")
+_DIGIT_RUN = re.compile(r"\d(?:[ .\-/()+]{0,3}\d)+")
+"""Digits written with phone-style separators between them (spaces, dots, hyphens, slashes, brackets, a plus sign).
+The pattern also matches Thai digits."""
+PHONE_MIN_DIGITS = 9
+"""A run of this many digits (separators ignored) reads as a phone number: Thai numbers have 9 or 10, 11 with +66."""
+ID_DIGITS = 13
+"""A Thai national ID number has 13 digits."""
+_MESSAGING_ID = re.compile(
+    r"(?<![a-z])(?:line|whatsapp|facebook|fb|telegram|wechat|messenger)[ _-]*(?:id)?\s*[:=@]\s*\S"
+    r"|(?:ไลน์|ไอดีไลน์|เฟซบุ๊ก|เฟสบุ๊ก)\s*(?:ไอดี)?\s*[:=@]?\s*[a-z0-9_.@-]{3,}"
+    r"|(?<![a-z0-9._-])@[a-z0-9_.]{3,}")
+"""A messaging or social-media handle (``LINE: name99``, ``ไลน์ name99``, ``@name99``), matched on case-folded text."""
 _ISO_DATE = re.compile(r"^(\d{4})-(\d{1,2})-(\d{1,2})$")
 _DAY_FIRST_DATE = re.compile(r"^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$")
 _YES = frozenset({"yes", "y", "true", "1", "ใช่", "ได้", "ใช้ได้"})
@@ -113,13 +134,21 @@ def personal_data_kind(header_cell: str) -> str | None:
 
 
 def personal_data_in_value(text: str) -> str | None:
-    """What kind of personal data a cell seems to hold (an e-mail, an ID number or a phone number), or ``None``."""
+    """What kind of personal data a cell seems to hold, or ``None``.
+
+    An e-mail address; an ID number (13 digits) or a phone number (9 or more digits), counted on the digits alone so
+    that no way of writing the separators hides them; or a messaging id. A name cannot be recognised this way, which
+    is why free text is never kept (see the module docstring).
+    """
     if _EMAIL.search(text):
         return "an e-mail address"
-    if _ID_NUMBER.search(text):
+    longest = max((sum(1 for char in run.group() if char.isdigit()) for run in _DIGIT_RUN.finditer(text)), default=0)
+    if longest == ID_DIGITS:
         return "an ID number"
-    if _PHONE.search(text):
+    if longest >= PHONE_MIN_DIGITS:
         return "a phone number"
+    if _MESSAGING_ID.search(text.casefold()):
+        return "a messaging id"
     return None
 
 
@@ -187,8 +216,6 @@ def validate_returned_sheet(
     sheet_rows: Sequence[Mapping[str, str]],
     candidate_set_sha256: str,
     imported_on: date,
-    *,
-    include_access_notes: bool = False,
 ) -> list[dict[str, Any]]:
     """Check a returned sheet and return the whitelisted columns of every checked candidate.
 
@@ -197,11 +224,11 @@ def validate_returned_sheet(
         sheet_rows: The rows of the blank sheet this file answers (keyed by column key).
         candidate_set_sha256: The blank sheet's candidate fingerprint.
         imported_on: The date of the import; a check dated later is refused.
-        include_access_notes: Keep the free-text notes. Off by default: free text can name a person.
 
     Returns:
-        One mapping per checked candidate with the keys of :data:`DERIVED_KEYS` (plus ``access_notes`` on
-        request), sorted by candidate id. A row whose checker columns are all empty is not a check.
+        One mapping per checked candidate with the keys of :data:`DERIVED_KEYS`, sorted by candidate id. The
+        free-text notes are never returned, only whether one was given. A row whose checker columns are all empty
+        is not a check.
 
     Raises:
         ShelterValidationError: With every problem found. No message repeats a cell's content.
@@ -211,6 +238,9 @@ def validate_returned_sheet(
     stated = fields.get("candidate_set_sha256")
     if stated and stated != candidate_set_sha256:
         problems.append("the file answers another candidate list (candidate_set_sha256 differs); send out the current sheet again")
+    # Without the sheet's fingerprint line a C-number alone cannot say which site was checked: candidates are renumbered
+    # when the OpenStreetMap extract or the screening changes. Each checked row must then carry the site itself.
+    needs_site = not stated
     keys = [column_key(cell) for cell in header]
     index: dict[str, int] = {}
     for position, (key, cell) in enumerate(zip(keys, header)):
@@ -258,6 +288,9 @@ def validate_returned_sheet(
         if not any(answers.values()):
             continue
         row_problems: list[str] = []
+        if needs_site and not all(key in index and cell(key) for key in SITE_KEYS):
+            row_problems.append("the file has lost its '# candidate_set_sha256' line and this row does not carry the sheet's kind, lat and lon, "
+                                "so it cannot be matched to a site; fill in the current sheet again and keep its first lines and columns")
         usable = parse_usable(answers["usable_as_shelter"])
         if usable is None:
             row_problems.append("usable_as_shelter must be yes or no")
@@ -280,16 +313,11 @@ def validate_returned_sheet(
         notes = answers["access_notes"]
         if len(notes) > MAX_NOTE_LENGTH:
             row_problems.append(f"access_notes is longer than {MAX_NOTE_LENGTH} characters")
-        if include_access_notes and _NAME_MARKER.search(notes):
-            row_problems.append("access_notes seems to name a person; remove the name or import without the notes")
         if row_problems:
             problems.extend(f"{where}: {note}" for note in row_problems)
             continue
-        entry: dict[str, Any] = {"candidate_id": candidate_id, "usable_as_shelter": usable, "verified_capacity": capacity,
-                                 "checked_by_role": role, "checked_on": checked_on.isoformat(), "access_notes_given": bool(notes)}
-        if include_access_notes:
-            entry["access_notes"] = notes
-        derived.append(entry)
+        derived.append({"candidate_id": candidate_id, "usable_as_shelter": usable, "verified_capacity": capacity,
+                        "checked_by_role": role, "checked_on": checked_on.isoformat(), "access_notes_given": bool(notes)})
     if problems:
         raise ShelterValidationError(problems)
     if not derived:
@@ -350,7 +378,7 @@ def check_document(
             "Each row is what one local checker reported for one candidate; it is not an official shelter register.",
             "The returned file is kept outside the repository; only its SHA-256, its size and the whitelisted columns below are kept.",
             "A candidate without a row was not checked; nothing is implied about it.",
-            "Free-text access notes are left out unless the import was run with the notes included.",
+            "Free-text access notes are never kept or published; only whether a note was given is recorded.",
         ],
         "official_warning": False, "operational_status": "non_operational",
         "returned_file": {"sha256": returned_sha256, "bytes": returned_bytes, "encoding": returned_encoding, "kept": "outside the repository"},
@@ -366,7 +394,7 @@ def document_problems(document: Any, candidate_ids: Iterable[str], candidate_set
     """Why a derived check document may not be published with this revision (empty when it may).
 
     The document must answer this revision's candidate list, name only its candidates, hold only whitelisted
-    columns and carry its provenance.
+    columns (never the free-text notes) and carry its provenance: source timestamp, confidence and assumptions.
     """
     if not isinstance(document, Mapping):
         return ["the check document is not an object"]
@@ -375,7 +403,7 @@ def document_problems(document: Any, candidate_ids: Iterable[str], candidate_set
         problems.append(f"schema must be {CHECK_SCHEMA}")
     if document.get("status") != STATUS_CONDUCTED:
         problems.append("status must be conducted: a check that was not conducted has no document")
-    for key in ("source_timestamp", "confidence", "assumptions", "imported_on", "label_template"):
+    for key in ("source_timestamp", "confidence", "confidence_reason", "assumptions", "imported_on", "label_template"):
         if not document.get(key):
             problems.append(f"{key} is missing")
     returned = document.get("returned_file")
@@ -388,7 +416,7 @@ def document_problems(document: Any, candidate_ids: Iterable[str], candidate_set
     if not isinstance(rows, list) or not rows:
         problems.append("rows must list at least one checked candidate")
         return problems
-    allowed = set(DERIVED_KEYS) | {"access_notes"}
+    allowed = set(DERIVED_KEYS)
     known = set(candidate_ids)
     seen: set[str] = set()
     for row in rows:

@@ -20,8 +20,9 @@ import {
   type ShelterVerification,
   type TimelineManifest,
 } from "@/lib/flood-timeline";
+import { localizedText } from "@/lib/flood-timeline-copy";
 import { findWordingViolations, visibleText } from "@/lib/replay-wording-lint";
-import { checkLabel, ShelterPlanCard, ShelterVerificationBlock } from "./mae-sai-evacuation-panels";
+import { checkLabel, localCheck, localCheckText, ShelterPlanCard, ShelterVerificationBlock } from "./mae-sai-evacuation-panels";
 import { ExportDownloads, SourcesPanel } from "./mae-sai-flood-timeline";
 
 const publicRoot = resolve(import.meta.dirname, "../../public");
@@ -53,7 +54,7 @@ describe("Mae Sai export pack in the manifest", () => {
       expect(file.source_ids).toContain("osm");
       // No rain gauge, no product without a licence and nothing from product 4009 feeds a download file.
       expect(file.source_ids.filter((id) => ["hii-rain", "viirs", "unosat-4009"].includes(id))).toEqual([]);
-      // A modelled table is never named as a timetable of closures.
+      // A modelled table is never named as a list of closure times.
       expect(file.name).not.toMatch(/schedule|closure|cut[-_]?off|4009|unosat/i);
       expect(file.title.th).toMatch(THAI);
       expect(file.title.en).not.toMatch(THAI);
@@ -168,9 +169,16 @@ describe("Mae Sai export pack downloads", () => {
     expect(plain).toContain("ตาราง CSV");
     expect(plain).toContain("ความเชื่อมั่น: ต่ำ");
     expect(plain).not.toMatch(/25[67]\d(?! \(20\d\d\))/);
-    // The English copy does not leak into the Thai page (file names, licence names and the source timestamp stay as they are).
+    // The English copy does not leak into the Thai page (file names and licence names stay as they are).
     expect(plain).not.toContain("modelled, not observed");
     expect(plain).not.toContain("Download the tables");
+    // The footer is Thai throughout: the pack's source timestamp has a Thai rendering like every other one on the page.
+    const start = html.indexOf('data-testid="export-footer"');
+    const footerHtml = html.slice(start, html.indexOf("</p>", start));
+    expect(footerHtml).not.toContain('lang="en"');
+    expect(text(footerHtml)).toContain("เวลาของข้อมูลต้นทาง: ข้อมูล OSM 2026-07-09 · WorldPop 2020 · รวบรวมที่พักพิงที่มีรายงานเมื่อ 2026-09-27 · จุดกำหนดระดับน้ำเพื่อการอธิบายสำหรับ 2024-09-09/2024-09-19 เวลาประเทศไทย");
+    expect(text(footerHtml)).not.toContain("OSM extract");
+    expect(localizedText(pack.source_timestamp, "th").lang).toBe("th");
     expect(findWordingViolations(visibleText(html), "ExportDownloads th")).toEqual([]);
   });
 
@@ -223,6 +231,11 @@ describe("Mae Sai shelter-candidate check", () => {
     expect(plain).toContain(`lists the ${check.candidates_listed} eligible candidates`);
     expect(plain).toContain("“Checked by <role> on <date>; not an official shelter register”");
     expect(plain).toContain("no names of people, phone numbers or ID numbers");
+    expect(plain).toContain("Access notes are for the project team only and are never published.");
+    // No check, so no confidence chip for one, no local-check line on any site and no sentence about using it.
+    expect(html).not.toContain('data-testid="verification-provenance"');
+    expect(html).not.toContain('data-testid="verification-not-used"');
+    expect(localCheck(shelters, shelters.plan[0].candidate_id)).toBeNull();
     expect(html).toContain(`<a href="${sheet.href}" download="${sheet.name}"`);
     expect(plain).toContain(`Download the blank sheet (CSV, ${formatFileSize(sheet.bytes)})`);
     expect(html).not.toContain('data-testid="verification-rows"');
@@ -254,24 +267,16 @@ describe("Mae Sai shelter-candidate check", () => {
 
   it("labels every row of a returned check by role and date, never as an official register (made-up rows)", () => {
     const [first, second] = shelters.candidates.filter((candidate) => candidate.eligible);
-    const returned: ShelterVerification = {
-      ...check, status: "conducted", statement: "A made-up check for this test.", source_timestamp: "checks dated 2026-10-09/2026-10-10",
-      imported_on: "2026-10-20", returned_file_sha256: "a".repeat(64),
-      counts: { checked: 2, usable_yes: 1, usable_no: 1, with_verified_capacity: 1 },
-      checked: [
-        { candidate_id: first.id, usable_as_shelter: true, verified_capacity: 150, checked_by_role: "village_leader", checked_on: "2026-10-09",
-          access_notes_given: true, access_notes: "Paved road to the gate", label: "Checked by a village head or kamnan on 2026-10-09; not an official shelter register" },
-        { candidate_id: second.id, usable_as_shelter: false, verified_capacity: null, checked_by_role: "ddpm_officer", checked_on: "2026-10-10",
-          access_notes_given: false, label: "Checked by a DDPM officer on 2026-10-10; not an official shelter register" },
-      ],
-    };
+    const returned = conductedCheck(first.id, second.id);
     const data = { ...shelters, verification: returned };
     const html = renderToStaticMarkup(<ShelterVerificationBlock shelters={data} sheet={sheet} language="en" />);
     const plain = text(html);
     expect(html).toContain('data-status="conducted"');
     expect(plain).toContain(`A local check of 2 of the ${check.candidates_listed} eligible candidates was returned (imported 20 Oct 2026).`);
     expect(plain).toContain("It is reported by role and is not an official shelter register; a candidate that is not listed below was not checked.");
-    expect(plain).toContain("usable as a shelter; capacity 150 people; Paved road to the gate. Checked by a village head or kamnan on 9 Oct 2026; not an official shelter register.");
+    // The checker's free-text note is never shown: only that one was given.
+    expect(plain).toContain("usable as a shelter; capacity 150 people; access notes were given (not published). Checked by a village head or kamnan on 9 Oct 2026; not an official shelter register.");
+    expect(JSON.stringify(returned)).not.toContain("access_notes\":\"");
     expect(plain).toContain("not usable as a shelter. Checked by a DDPM officer on 10 Oct 2026; not an official shelter register.");
     expect(plain).not.toContain("Not conducted.");
     expect(html.match(/data-testid="verification-label"/g)).toHaveLength(2);
@@ -283,10 +288,90 @@ describe("Mae Sai shelter-candidate check", () => {
     expect(thai).toContain("ไม่ใช่ทะเบียนที่พักพิงทางการ");
     expect(thai).not.toMatch(/25[67]\d(?! \(20\d\d\))/);
     expect(findWordingViolations(visibleText(thaiHtml), "ShelterVerificationBlock conducted th")).toEqual([]);
+    expect(thai).toContain("มีหมายเหตุการเข้าถึง (ไม่เผยแพร่)");
     expect(checkLabel({ checked_by_role: "site_staff", checked_on: "2026-10-09" }, "en")).toBe("Checked by staff of the site on 9 Oct 2026; not an official shelter register");
     expect(checkLabel({ checked_by_role: "project_team", checked_on: "2026-10-09" }, "th")).toContain("ตรวจสอบโดยทีมโครงการ FloodGuard เมื่อ");
     // A "conducted" status without rows is shown as not conducted: the page never states a result it does not hold.
     const empty = { ...shelters, verification: { ...returned, checked: [] } };
     expect(renderToStaticMarkup(<ShelterVerificationBlock shelters={empty} sheet={sheet} language="en" />)).toContain('data-status="not_conducted"');
   });
+
+  it("shows a returned check with its confidence, the reason and the dates of the checks (made-up rows)", () => {
+    const [first, second] = shelters.candidates.filter((candidate) => candidate.eligible);
+    const data = { ...shelters, verification: conductedCheck(first.id, second.id) };
+    const html = renderToStaticMarkup(<ShelterVerificationBlock shelters={data} sheet={sheet} language="en" />);
+    const start = html.indexOf('data-testid="verification-provenance"');
+    expect(start).toBeGreaterThan(-1);
+    const note = text(html.slice(start, html.indexOf("</details>", start)));
+    expect(note).toContain("CONFIDENCE: LOW");
+    expect(note).toContain("One local check per site, reported by role and not audited by the project team.");
+    expect(note).toContain("One checker reported each site once; the project team did not audit the answers.");
+    expect(note).toContain("Source timestamp: checks dated 2026-10-09/2026-10-10.");
+    // The confidence sits above the rows, so no row is read as a bare fact.
+    expect(start).toBeLessThan(html.indexOf('data-testid="verification-rows"'));
+    const thaiHtml = renderToStaticMarkup(<ShelterVerificationBlock shelters={data} sheet={sheet} language="th" />);
+    const thaiStart = thaiHtml.indexOf('data-testid="verification-provenance"');
+    const thaiNote = thaiHtml.slice(thaiStart, thaiHtml.indexOf("</details>", thaiStart));
+    expect(thaiNote).not.toContain('lang="en"');
+    expect(text(thaiNote)).toContain("ความเชื่อมั่น: ต่ำ");
+    expect(text(thaiNote)).toContain("ตรวจสอบในพื้นที่หนึ่งครั้งต่อสถานที่ รายงานตามบทบาท และทีมโครงการไม่ได้ตรวจทาน");
+    expect(text(thaiNote)).toContain("เวลาของข้อมูลต้นทาง: ตรวจสอบระหว่าง 2026-10-09 ถึง 2026-10-10");
+    expect(localizedText("checks dated 2026-10-09/2026-10-09", "th")).toEqual({ text: "ตรวจสอบเมื่อ 2026-10-09", lang: "th" });
+    // A manifest baked before the block carried a confidence shows the rows without the chip, never a made-up one.
+    const older = { ...data, verification: { ...data.verification, confidence: undefined } };
+    expect(renderToStaticMarkup(<ShelterVerificationBlock shelters={older} sheet={sheet} language="en" />)).not.toContain('data-testid="verification-provenance"');
+  });
+
+  it("says the plans do not use a returned check and marks a site reported not usable where it is still ranked (made-up rows)", () => {
+    // The made-up check calls the plan's first site not usable and gives the second one a capacity.
+    const k = shelters.knee_k;
+    const [unusable, usable] = shelters.plan.slice(0, 2).map((entry) => entry.candidate_id);
+    const data = { ...shelters, verification: conductedCheck(usable, unusable) };
+    expect(localCheck(data, unusable)).toMatchObject({ usable_as_shelter: false });
+    expect(localCheck(data, usable)).toMatchObject({ usable_as_shelter: true, verified_capacity: 150 });
+    expect(localCheck(data, shelters.plan[2].candidate_id)).toBeNull();
+    const html = renderToStaticMarkup(<ShelterPlanCard shelters={data} k={k} onPlanK={noop} language="en" onShowCandidate={noop} verificationSheet={sheet} />);
+    const plain = text(html);
+    const notUsed = html.slice(html.indexOf('data-testid="verification-not-used"'));
+    expect(text(notUsed.slice(0, notUsed.indexOf("</p>")))).toContain(
+      "The ranking, the capacity figures and the download tables above were computed without this check: a site reported not usable is still ranked, and a reported capacity does not replace the footprint estimate.");
+    // In the plan list the first site still has rank 1 and its robust-core badge, with the local check beside them.
+    const list = html.slice(html.indexOf('class="' + html.match(/class="([^"]*planList[^"]*)"/)![1] + '"'));
+    const firstItem = list.slice(0, list.indexOf("</li>"));
+    expect(firstItem).toContain('data-testid="local-check"');
+    expect(firstItem).toContain('data-usable="no"');
+    expect(text(firstItem)).toContain("Local check: reported not usable as a shelter. The ranking and the capacity figures do not use the check, so the site is still listed.");
+    expect(text(firstItem)).toContain("Checked by a DDPM officer on 10 Oct 2026; not an official shelter register.");
+    expect(plain).toContain("Local check: reported usable, capacity 150 people. The figures here still use the footprint estimate.");
+    // Both the plan list and the capacity-aware list mark a checked site that they hold.
+    const marks = html.match(/data-testid="local-check"/g) ?? [];
+    const ranked = new Set(data.capacitated!.plan.slice(0, k).map((row) => row.candidate_id));
+    expect(marks).toHaveLength(2 + [unusable, usable].filter((id) => ranked.has(id)).length);
+    expect(localCheckText({ usable_as_shelter: true, verified_capacity: null }, "en")).toBe("Local check: reported usable as a shelter (no capacity given).");
+    expect(localCheckText({ usable_as_shelter: false, verified_capacity: null }, "th")).toContain("ผลตรวจในพื้นที่: รายงานว่าใช้เป็นที่พักพิงไม่ได้");
+    expect(findWordingViolations(visibleText(html), "ShelterPlanCard conducted")).toEqual([]);
+    const thaiHtml = renderToStaticMarkup(<ShelterPlanCard shelters={data} k={k} onPlanK={noop} language="th" onShowCandidate={noop} verificationSheet={sheet} />);
+    expect(text(thaiHtml)).toContain("การจัดอันดับ ตัวเลขความจุ และตารางดาวน์โหลดด้านบนคำนวณโดยไม่ได้ใช้ผลตรวจนี้");
+    expect(text(thaiHtml)).toContain("ผลตรวจในพื้นที่: รายงานว่าใช้ได้ ความจุ 150 คน");
+    expect(findWordingViolations(visibleText(thaiHtml), "ShelterPlanCard conducted th")).toEqual([]);
+    // Without a returned check no site carries the line.
+    expect(renderToStaticMarkup(<ShelterPlanCard shelters={shelters} k={k} onPlanK={noop} language="en" onShowCandidate={noop} />)).not.toContain('data-testid="local-check"');
+  });
 });
+
+/** A made-up returned check of two candidates: the first usable with a capacity and a note given, the second not usable. */
+function conductedCheck(usableId: string, unusableId: string): ShelterVerification {
+  return {
+    ...shelters.verification!, status: "conducted", statement: "A made-up check for this test.",
+    confidence: "low", confidence_reason: "One local check per site, reported by role and not audited by the project team.",
+    assumptions: ["Each row is what one local checker reported for one candidate; it is not an official shelter register."],
+    source_timestamp: "checks dated 2026-10-09/2026-10-10", imported_on: "2026-10-20", returned_file_sha256: "a".repeat(64),
+    counts: { checked: 2, usable_yes: 1, usable_no: 1, with_verified_capacity: 1 },
+    checked: [
+      { candidate_id: usableId, usable_as_shelter: true, verified_capacity: 150, checked_by_role: "village_leader", checked_on: "2026-10-09",
+        access_notes_given: true, label: "Checked by a village head or kamnan on 2026-10-09; not an official shelter register" },
+      { candidate_id: unusableId, usable_as_shelter: false, verified_capacity: null, checked_by_role: "ddpm_officer", checked_on: "2026-10-10",
+        access_notes_given: false, label: "Checked by a DDPM officer on 2026-10-10; not an official shelter register" },
+    ],
+  };
+}

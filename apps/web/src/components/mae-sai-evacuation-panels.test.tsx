@@ -781,22 +781,30 @@ describe("Capacity-aware view and what-if levels on the shelter plan card", () =
     expect(text(provenance)).toContain(shelters.capacitated!.source_timestamp);
   });
 
-  it("states the five caveats in English and Thai and never tells the reader which shelters to open", () => {
+  it("states the six caveats in English and Thai and never tells the reader which shelters to open", () => {
     const english = text(/data-testid="capacity-caveats".*?<\/ul>/s.exec(card("en"))![0]);
     for (const phrase of [
       "T1 scenario (model)",
       "Demand is every resident of a home that floods at the modelled peak. That is an upper bound: many people stay with relatives",
       "Capacity is an unverified estimate from mapped building footprints",
       "53 of the 95 eligible candidates have no footprint to estimate from",
+      "Neither bound is a limit on who fits.",
+      "More residents may fit than the upper bound gives, and fewer than the lower bound if a site turns out unusable.",
       "candidates to verify on the ground, not a list of sites to open",
       "The planning overlay's listed-capacity figures come from a different source",
     ]) expect(english).toContain(phrase);
-    expect(capacityCaveats(shelters, "en")).toHaveLength(5);
+    expect(capacityCaveats(shelters, "en")).toHaveLength(6);
+    // The column headings say what each bound assumes, so "upper bound" is not read as the most that can fit.
+    expect(card("en")).toContain('data-testid="capacity-bound-lower">Lower bound<small>a site with no footprint holds nobody</small></th>');
+    expect(card("en")).toContain('data-testid="capacity-bound-upper">Upper bound<small>a site with no footprint holds a typical size; not a maximum</small></th>');
+    expect(card("th")).toContain('data-testid="capacity-bound-upper">ขอบเขตบน<small>สถานที่ที่ไม่มีขอบเขตอาคารรับได้ตามขนาดทั่วไป ไม่ใช่ค่าสูงสุด</small></th>');
+    expect(shelters.capacitated!.bounds.note).toContain("Neither is a limit on who fits");
     const thai = text(/data-testid="capacity-caveats".*?<\/ul>/s.exec(card("th"))![0]);
     for (const phrase of [
       "สถานการณ์จำลองระดับ T1 (แบบจำลอง)",
       "เป็นค่าขอบเขตบน เพราะหลายคนไปพักกับญาติ",
       "ยังไม่ได้ตรวจสอบ",
+      "ทั้งสองขอบเขตไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้",
       "สถานที่ที่ควรตรวจสอบในพื้นที่ ไม่ใช่รายชื่อสถานที่ที่ต้องเปิด",
       "มาจากแหล่งข้อมูลอื่น",
     ]) expect(thai).toContain(phrase);

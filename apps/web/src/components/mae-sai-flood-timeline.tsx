@@ -190,7 +190,7 @@ import {
   Term,
   ThemeEyebrow,
 } from "./mae-sai-evacuation-panels";
-import { RainChart, rainStationName, s2SensitivityText, Sentinel2Evidence, ViirsComparisonCard, ViirsLegend, viirsMomentText } from "./mae-sai-observed-panels";
+import { followingViirsDay, RainChart, rainStationName, s2SensitivityText, Sentinel2Evidence, ViirsComparisonCard, ViirsLegend, viirsMomentText } from "./mae-sai-observed-panels";
 import { DIAMOND_PATH, ReplayExportPanel, STAR_PATH, STAR_SLASH_PATH, type ReplayExportSource } from "./mae-sai-replay-export";
 import { WorkspaceHeader } from "./workspace-header";
 
@@ -901,6 +901,8 @@ export function MaeSaiFloodTimeline() {
   const s2Check = s2CrosscheckAt(time, manifest?.s2_crosscheck);
   const s2Date = s2Check ? s2CrosscheckDate(s2Check) : null;
   const s2ViirsDay = s2Date ? viirsInfo?.days.find((day) => day.date === s2Date) ?? null : null;
+  // The next clear VIIRS day the manifest names: a day later the observation is smaller than the model.
+  const s2NextViirsDay = s2Check ? followingViirsDay(s2Check, viirsInfo) : null;
   const latestOptical = manifest ? latestObservation(time, manifest.observations, "optical") : null;
   const latestOpticalId = latestOptical?.observation.id ?? null;
   const resolveImagery = useCallback(
@@ -2545,7 +2547,7 @@ export function MaeSaiFloodTimeline() {
                     {viirsInfo && (
                       <div data-testid="viirs-evidence"><dt>{t("VIIRS (observed)", "VIIRS (สังเกตการณ์)")}</dt><dd>{viirsMomentText(viirsDay, viirsInfo, lang)}</dd></div>
                     )}
-                    {s2Check && <Sentinel2Evidence check={s2Check} viirsDay={s2ViirsDay} language={lang} />}
+                    {s2Check && <Sentinel2Evidence check={s2Check} viirsDay={s2ViirsDay} nextViirsDay={s2NextViirsDay} language={lang} />}
                     {rainfall && (
                       <div><dt>{t("Rain (observed)", "ฝน (ตรวจวัดจริง)")}</dt><dd>{t(
                         `Hourly rain at ${rainfall.stations.length} HII gauges is charted under the stage curve; it is the forcing, not a measure of flooding.`,

@@ -137,6 +137,7 @@ from floodguard.replay_manifest import (  # noqa: E402
     newest_timestamp,
     normalise_timestamp,
     schema_problems,
+    shelter_plan_problems,
 )
 from floodguard.rights_basis import (  # noqa: E402
     RIGHTS_BASIS_4009_PATH,
@@ -618,7 +619,7 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
     reported_public = [{**{k: r.get(k) for k in ("id", "name_en", "name_th", "type", "tambon", "lon", "lat", "location_method",
                                                  "location_evidence", "location_confidence", "period_used", "evidence_strength",
                                                  "sources", "notes", "reported_capacity_or_occupancy", "role", "first_use",
-                                                 "in_access_set", "access_set_note")},
+                                                 "in_access_set", "access_set_note", "access_set_note_th")},
                         "model_check": None if r.get("lat") is None else {
                             "h": r.get("h"), "k": r.get("k"), "freeboard_m": r.get("freeboard_m"), "snap_m": r.get("snap_m"),
                             "m": r.get("m"), "high_ground": r.get("m", True) and r.get("flood_stage") == float("inf"),
@@ -773,6 +774,9 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
 
 VERIFICATION_NOT_CONDUCTED = ("No verification sheet has been returned: the local check of the shelter candidates was not conducted. "
                               "Every capacity is an unverified estimate and every site is a candidate to verify on the ground.")
+VERIFICATION_NOT_USED = ("The coverage ranking, the capacity-aware plan, the what-if levels and the download tables were computed without this "
+                         "check: a site reported not usable is still ranked, and a reported capacity does not replace the footprint estimate.")
+"""Said with every conducted check until a plan restricted to checked sites exists (roadmap P2-8)."""
 
 
 def shelter_check(document: dict | None, candidates: list[dict], candidate_set: str) -> dict:
@@ -780,7 +784,9 @@ def shelter_check(document: dict | None, candidates: list[dict], candidate_set: 
 
     ``document`` is the file ``scripts/import_shelter_validation.py`` writes from a returned sheet, or ``None`` when
     no sheet has been returned: the check was then not conducted, and no result is implied. A document that answers
-    another candidate list, or holds anything outside the whitelist, stops the bake.
+    another candidate list, or holds anything outside the whitelist, stops the bake. A conducted check carries the
+    document's confidence, its reason and its assumptions, and says that the plans do not use it. Free-text notes are
+    never copied: only whether a note was given.
     """
     listed = replay_exports.sheet_candidates(candidates)
     base = {"label_template": replay_exports.VERIFICATION_LABEL, "sheet": "shelter_candidate_verification_sheet",
@@ -791,11 +797,12 @@ def shelter_check(document: dict | None, candidates: list[dict], candidate_set: 
     if problems:
         raise ReplayManifestError(f"{SHELTER_VALIDATION.as_posix()} cannot be published:\n  " + "\n  ".join(problems))
     checked = [{**{key: row[key] for key in shelter_validation.DERIVED_KEYS},
-                **({"access_notes": row["access_notes"]} if row.get("access_notes") else {}),
                 "label": shelter_validation.check_label(row["checked_by_role"], row["checked_on"])} for row in document["rows"]]
     return {"status": shelter_validation.STATUS_CONDUCTED, **base,
             "statement": (f"A local check of {len(checked)} of the {len(listed)} candidates was returned and imported on {document['imported_on']}. "
                           "It is reported by role and is not an official shelter register; a candidate without a row was not checked."),
+            "confidence": document["confidence"], "confidence_reason": document["confidence_reason"],
+            "assumptions": [*document["assumptions"], VERIFICATION_NOT_USED],
             "source_timestamp": document["source_timestamp"], "imported_on": document["imported_on"],
             "returned_file_sha256": document["returned_file"]["sha256"], "counts": dict(document["counts"]), "checked": checked}
 
@@ -825,7 +832,7 @@ def write_exports(result: dict, out_dir: Path, generated_at: str, inputs: list[d
         impassable_depth_m=IMPASSABLE_DEPTH_M, road_classes=ROAD_CLASSES, ways=data["ways"], tambons=data["tambons"],
         node_tambon=data["node_tambon"], node_population=data["node_population"], cut_codes=data["cut_codes"],
         level_step_m=evac.LEVELS[1] - evac.LEVELS[0], knee_k=knee_k, candidates=shelters["candidates"], plan=shelters["plan"],
-        capacitated={**CAPACITATED_META, **shelters["capacitated"]},
+        capacitated={**capacitated_meta(shelters["verification"]), **shelters["capacitated"]},
         robust_core=shelters["robustness"]["core_by_k"][knee_k - 1], reported=shelters["reported"],
         peak_stage_m=shelters["method"]["peak_stage_m"], walk_limit_m=evac.ACCESS_THRESHOLD_M,
         freeboard_m=evac.SHELTER_FREEBOARD_M, snap_max_m=evac.SNAP_MAX_M,
@@ -931,6 +938,7 @@ ASSUMPTIONS = [
     "The stage is the assumed Sai main-stem level at the Mae Sai bridges; tributaries rise k x stage (see the next assumption). Real water levels still differed reach by reach.",
     "Drainage channels are cells with at least 25 km² of upstream area on the 30 m Copernicus DSM; buildings and trees in the DSM bias HAND upward in town.",
     "Roads are impassable when reconstructed depth reaches 0.3 m at any 10 m sample along a 120 m piece (per-sample depth factor; the exported k makes h + 0.3/k equal the earliest sample closure); river-channel samples on bridges are ignored.",
+    "Bridge decks are not modelled: a bridge's road state reflects the ground at its approaches and beside it, so a raised deck can stay passable while the model shows the way impassable. Read a bridge's impassable hours as unknown.",
     "Road pieces whose lowest HAND exceeds 4 m never flood under these keyframes and are omitted, except trunk, primary and secondary roads.",
     "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.",
     "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km2 flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km2, so the 18:15 knot is set to the closest level (0.1 m).",
@@ -942,6 +950,7 @@ ASSUMPTIONS = [
     "Shelter candidates are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres; OSM amenity=shelter huts are excluded). A candidate is eligible only if it keeps 0.5 m freeboard at the modelled peak and a road node lies within 400 m. Ranking is greedy maximal coverage of residents whose homes are wet at the peak, within 2 km walking on normal roads (pre-emptive evacuation); late_cumulative_share repeats the check on roads still open at 1.0 m stage.",
     "Shelter capacity = mapped OSM building footprint within the site x 0.5 usable share / 3.5 m² per person (Sphere minimum covered space); OSM building coverage in Mae Sai is sparse, so many capacities are unknown or underestimated.",
     "The capacity-aware plan assigns residents of homes that flood at the modelled peak to eligible sites within the 2 km walk without exceeding a site's capacity. It gives two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). Demand is an upper bound (many people stay with relatives) and the sites are candidates to verify.",
+    "The two capacity bounds differ only in what a site without a mapped footprint is assumed to hold. Neither is a limit on who fits: a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are unmapped.",
     "Plan robustness repeats the coverage ranking at 2.5 m, 3.5 m and 4.0 m: what-if levels around an illustrative peak, not return periods.",
     "VIIRS daily flood maps (375 m) are compared with the reconstruction only in clear-sky pixels at a nominal 13:30 ICT; they cannot see flooding under cloud or at street scale.",
     "Filled pits and dead-flat ground in the elevation model that end up less than 0.1 m above their channel (flagged in the raster's B channel) read as wet at almost any stage; they are shown as low-confidence water.",
@@ -950,7 +959,7 @@ ASSUMPTIONS = [
 ]
 
 NO_PONDING_LIMITATION = ("No ponding or storage after the river falls: the terrain-only model dries every cell as soon as the assumed river level "
-                         "drops below it, so water or saturated mud left standing on fields is not reconstructed.")
+                         "drops below it, so water or saturated mud left behind after the river falls is not reconstructed.")
 
 
 CONFIDENCE_REASON = ("Water extents are a terrain-model reconstruction with illustrative stages; the late-recession size was tuned to "
@@ -959,7 +968,23 @@ PERMITTED_USE = ("Preparedness learning, planning exercises and post-event prior
                  "Not for emergency response, evacuation orders or any operational decision; not an official warning.")
 REASON_BLOCKED = ("Not a protocol case (decision D7): the replay is a narrative surface. Protocol v1b is not hashed, so no Flood Preparedness "
                   "Priority Score and no A-E action class is computed here; the accepted score and class stay null and the replay cannot feed "
-                  "the decision layer. Confidence is low and nothing was field-checked.")
+                  "the decision layer. Confidence is low and ")
+FIELD_CHECK = {
+    False: "nothing was field-checked.",
+    True: ("nothing was field-checked apart from a local check of some shelter candidates, reported by role (shelters.verification); the "
+           "water, the roads and the residents were not checked."),
+}
+"""How the manifest says what was checked on the ground: before, and after, a verification sheet has been returned."""
+
+
+def check_conducted(verification: dict) -> bool:
+    """True once a returned verification sheet has been imported (``shelters.verification.status`` is ``conducted``)."""
+    return verification.get("status") == shelter_validation.STATUS_CONDUCTED
+
+
+def sentence(text: str) -> str:
+    """``text`` with its first letter in upper case."""
+    return text[:1].upper() + text[1:]
 GIT_COMMIT_REASON = ("self_reference: a file cannot hold the hash of the commit that adds it. The input receipt identifies the bake sources "
                      "by SHA-256, and git_commit_lookup names the commit.")
 GENERATED_AT_NOTES = {
@@ -994,18 +1019,28 @@ EXPLORATORY_KNOWLEDGE = {
     "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS, the Sentinel-2 water check or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.",
 }
 
+CAPACITY_CONFIDENCE_REASON = {
+    False: ("Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; "
+            "demand is a modelled upper bound; nothing was checked on the ground."),
+    True: ("Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; "
+           "demand is a modelled upper bound; the local check that was returned is reported by role and is not used in these figures."),
+}
+"""Why the capacity-aware figures have low confidence: before, and after, a verification sheet has been returned."""
+
 CAPACITATED_META = {
     "scenario_tier": SCENARIO_TIER,
     "confidence": "low",
-    "confidence_reason": ("Capacity is a footprint estimate from sparse OpenStreetMap buildings, unverified, and unknown for most candidates; "
-                          "demand is a modelled upper bound; nothing was checked on the ground."),
+    "confidence_reason": CAPACITY_CONFIDENCE_REASON[False],
     "source_timestamp": f"OSM extract {OSM_EXTRACT_DATE} (building footprints and sites); WorldPop 2020; reconstructed peak 2024-09-12 ICT",
     "demand_basis": ("Every resident of a home that floods at the modelled peak (WorldPop 2020 residents at road nodes). An upper bound on "
                      "shelter demand: many people stay with relatives or on an upper floor."),
     "capacity_basis": {"estimate": evac.CAPACITY_ESTIMATE_BASIS, "unknown": evac.CAPACITY_UNKNOWN_BASIS},
     "bounds": {"lower": "An unknown capacity counts as 0.",
                "upper": ("An unknown capacity takes the median estimate of the same site kind (kind_median), or the median of every estimate "
-                         "when no site of that kind has one (all_kinds_median). Medians use every candidate with an estimate.")},
+                         "when no site of that kind has one (all_kinds_median). Medians use every candidate with an estimate."),
+               "note": ("The bounds differ only in what a site without a mapped footprint is assumed to hold. Neither is a limit on who "
+                        "fits: a site with a footprint counts at its estimate in both, and that estimate is too low where buildings are "
+                        "unmapped, so more residents may fit than the upper bound gives.")},
     "method": ("Residents are assigned to eligible sites within the walking limit on normal roads without exceeding a site's capacity, serving "
                "as many as possible (a maximum flow, solved in thousandths of a resident and published in whole residents). The capacity-aware "
                "ranking adds, at each step, the site that lets the most additional residents fit under the upper bound; it stops at the plan-size "
@@ -1019,9 +1054,20 @@ CAPACITATED_META = {
         "The sites are candidates to verify on the ground, not a list of sites to open.",
         "The planning overlay's shelter-capacity figures use listed capacities from a different source (DDPM); none of those values is used or published here, so the two sets of figures differ.",
         "Everyone is assumed to walk before the water rises (normal roads) and to accept any site within the limit; households are not kept together.",
+        "Neither bound is a limit on who fits: both count a site with a mapped footprint at its estimate, which is too low where buildings are unmapped.",
     ],
 }
-"""Wording and provenance of ``shelters.capacitated`` (the figures come from the build)."""
+"""Wording and provenance of ``shelters.capacitated`` while no local check has been returned (the figures come from the build)."""
+
+
+def capacitated_meta(verification: dict) -> dict:
+    """:data:`CAPACITATED_META` for this bake: once a local check has been returned it stops saying nothing was checked,
+    and says instead that the figures do not use the check."""
+    conducted = check_conducted(verification)
+    meta = {**CAPACITATED_META, "confidence_reason": CAPACITY_CONFIDENCE_REASON[conducted]}
+    if conducted:
+        meta["assumptions"] = [*CAPACITATED_META["assumptions"], VERIFICATION_NOT_USED]
+    return meta
 
 ROBUSTNESS_META = {
     "scenario_tier": SCENARIO_TIER,
@@ -1044,7 +1090,7 @@ EXPORTS_META = {
     "scenario_tier": SCENARIO_TIER,
     "tier": replay_exports.EXPORT_TIER,
     "confidence": "low",
-    "confidence_reason": replay_exports.CONFIDENCE_REASON,
+    "confidence_reason": replay_exports.confidence_reason(False)[0],
     "purpose": ("Tables and one map layer for spreadsheet and GIS users, written from the modelled blocks of this manifest: modelled, not "
                 "observed. Not a forecast, not an observed closure record and not an official warning."),
     "licence": replay_exports.EXPORT_LICENCE,
@@ -1063,6 +1109,7 @@ EXPORTS_META = {
         "Every table is a T1 scenario (model) on the reconstructed water; the reported-shelter table adds reported facts, kept apart in their own columns.",
         "Hours are replay hours on the hourly grid (hour 0 = 9 Sep 2024 00:00 ICT); the assumed stage is sampled at the start of each hour.",
         "The modelled road table lists one row per OpenStreetMap way of the classes the replay models; the legacy candidate columns of the source road file are not carried.",
+        "Bridge decks are not modelled: a row flagged as a bridge reflects the ground at its approaches, and its hours are best read as unknown.",
         "No listed capacity from a shelter register, no occupancy count and no personal data is in any file.",
     ],
 }
@@ -1097,7 +1144,7 @@ S2_CHECK_META = {
     "caveat": ("A positive MNDWI also flags saturated mud and wet sediment, so the area is water or saturated mud, not a flood extent. The scene "
                "classification can miss thin cloud and cloud shadow, and cloud hid part of the district on both dates. The comparison with the "
                "model is indicative only."),
-    "reading": ("Water or saturated mud standing on fields after the river fell is consistent with the larger observed area; the terrain-only "
+    "reading": ("The larger observed area is consistent with water or saturated mud left after the river fell; the terrain-only "
                 "model cannot hold water once the river level drops."),
     "model_fields": {"paths": ["model_at_event_scene", "sensitivity[].model_agreement_iou"], "evidence_tier": SCENARIO_TIER,
                      "note": "Model output on the reconstructed water, placed beside the observation for comparison; not part of the Sentinel-2 data."},
@@ -1107,9 +1154,24 @@ S2_CHECK_META = {
         "Clear pixels follow the provider's scene classification. Unclassified and dark pixels are kept; the strict_clear sensitivity row drops them.",
         "New water needs both dates clear. Water already there on 5 Sep, before the flood, is not counted as new.",
         "The model is sampled at the acquisition time of the 15 Sep scene. No keyframe was tuned to this check.",
+        "No land-cover map is an input, so the check does not say what kind of land the water or saturated mud lies on.",
     ],
 }
 """Wording and provenance of the manifest's ``s2_crosscheck`` block (the figures come from the build)."""
+
+S2_FOLLOWING_DAY_READING = ("A day later the VIIRS map shows less flood water than the model in its clear pixels, so the larger area on the "
+                            "day of the scene is consistent with saturated mud or short-lived water rather than lasting ponding.")
+"""Added to the block only when the next VIIRS day with clear sky shows less flood water than the model (see
+:func:`following_viirs_day`); the figures themselves stay in ``viirs_daily.days``."""
+
+
+def following_viirs_day(viirs_days: list[dict], event_local_time: str) -> dict | None:
+    """The first VIIRS day after the local date of the event scene on which the sky over the district was partly clear."""
+    event_date = event_local_time[:10]
+    for day in sorted(viirs_days, key=lambda item: item["date"]):
+        if day["date"] > event_date and day["clear_km2"] > 0:
+            return day
+    return None
 
 S2_MODEL_PATHS = tuple(S2_CHECK_META["model_fields"]["paths"])
 """Paths inside ``s2_crosscheck`` that hold model output placed beside the observation (the evidence block's scenario fields)."""
@@ -1130,11 +1192,13 @@ def model_key_paths(value, path: str = "") -> list[str]:
     return sorted(set(found))
 
 
-def s2_crosscheck_block(check: dict) -> dict:
+def s2_crosscheck_block(check: dict, viirs_days: list[dict] | tuple = ()) -> dict:
     """The manifest's ``s2_crosscheck`` block: observed areas per scene, the change, the model beside it and a caveat.
 
     Model output may sit only under the paths in :data:`S2_MODEL_PATHS`; a ``model_`` key anywhere else stops the
-    bake, because the evidence block would file it as observed.
+    bake, because the evidence block would file it as observed. ``viirs_days`` are the manifest's VIIRS rows: when
+    the next clear VIIRS day shows less flood water than the model, the block names that day (``following_day``)
+    and says what that is consistent with, so the reading of the scene's day is not left standing alone.
     """
     local = {observation["id"]: observation["local"] for observation in OBSERVATIONS}
     scenes = [{"id": key, "role": role, "scene": S2_SCENES[key][0], "source_timestamp": S2_SCENES[key][1], "local_time": local[key],
@@ -1144,6 +1208,9 @@ def s2_crosscheck_block(check: dict) -> dict:
              "change": {"pre_event_scene": S2_CHECK_PRE, "event_scene": S2_CHECK_EVENT, **check["change"]},
              "model_at_event_scene": {"model_local_time": local[S2_CHECK_EVENT], **check["model_at_event_scene"]},
              "sensitivity": check["sensitivity"]}
+    following = following_viirs_day(list(viirs_days), local[S2_CHECK_EVENT])
+    if following is not None and following["viirs_flood_km2_clear"] < following["model_flood_km2_clear"]:
+        block["following_day"] = {"viirs_date": following["date"], "reading": S2_FOLLOWING_DAY_READING}
     figures = {key: value for key, value in block.items() if key != "model_fields"}
     unnamed = [path for path in model_key_paths(figures)
                if not any(path == allowed or path.startswith(allowed + ".") for allowed in S2_MODEL_PATHS)]
@@ -1335,6 +1402,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
     if round(anchor["best_fit_stage_m"], 2) != S1_BEST_FIT_STAGE_M:
         raise ReplayManifestError(f"the disclosure states a Sentinel-1 best-fit stage of {S1_BEST_FIT_STAGE_M:.2f} m, but this bake found {anchor['best_fit_stage_m']} m")
     stamp, basis = generated_stamp(result, generated_at)
+    conducted = check_conducted(result["shelters"]["verification"])
     first_image = min(stamp_ for _, stamp_ in S2_SCENES.values())
     blocks = evidence_blocks(result)
     rights = result["rights_4009"]
@@ -1353,7 +1421,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
         "official_warning": False, "real_time": False, "can_feed_decision_layer": False,
         "accepted_fpps": None, "accepted_action_class": None,
         "protocol_sha256": None, "protocol_sha256_reason": "not_a_protocol_case",
-        "permitted_use": PERMITTED_USE, "reason_blocked": REASON_BLOCKED,
+        "permitted_use": PERMITTED_USE, "reason_blocked": REASON_BLOCKED + FIELD_CHECK[conducted],
         "confidence": "low", "confidence_class": "low",
         "confidence_reason": CONFIDENCE_REASON,
         "confidence_basis": [
@@ -1362,7 +1430,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
             "Tuning: the onset knot uses GISTDA's 10 Sep figure, the recession keyframes use the 16 Sep Sentinel-1 pass and UNOSAT 3991 was known, so no size comparison is independent.",
             f"Spatial agreement with the Sentinel-1 newly water-like area is weak (IoU {anchor['iou_at_best_fit']:.2f}).",
             "Onset and peak extents were not observed: no high-resolution image for 10-14 Sep, and VIIRS was mostly under cloud.",
-            "Nothing was field-checked.",
+            sentence(FIELD_CHECK[conducted]),
         ],
         "source_name": "FloodGuard Mae Sai September 2024 flood replay: terrain-model reconstruction with dated observations and reported facts",
         "event_time": {"start": EVENT_START, "end": EVENT_END, "timezone": "Asia/Bangkok",
@@ -1413,14 +1481,15 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
                    "source_timestamp": "OSM roads and sites 2026-07-09; WorldPop 2020; water model 2024-09-09/2024-09-19 ICT",
                    "definition": "A resident node loses access when no open, dry shelter of the chosen set is reachable within the threshold on roads that are still passable, having been reachable before the flood."},
         "shelters": {**result["shelters"],
-                     "capacitated": {**CAPACITATED_META, **result["shelters"]["capacitated"]},
+                     "capacitated": {**capacitated_meta(result["shelters"]["verification"]), **result["shelters"]["capacitated"]},
                      "robustness": {**ROBUSTNESS_META, **result["shelters"]["robustness"]},
                      "confidence": "low",
                      "confidence_reason": "Candidates are OSM public buildings with sparse footprints; eligibility and coverage use the reconstructed peak and walking distance, not site surveys.",
                      "source_timestamp": "OSM extract 2026-07-09; reported shelters compiled 2026-09-27 from reports dated 2024-09-11 to 2024-10-11",
                      "reported_status": result["reported_meta"]["status"], "reported_compiled": result["reported_meta"]["compiled"],
                      "reported_access_set_rule": result["reported_meta"]["access_set_rule"]},
-        **({"exports": {**EXPORTS_META, "source_timestamp": exports_source_timestamp(result["reported_meta"]["compiled"]), **result["exports"]}}
+        **({"exports": {**EXPORTS_META, "confidence_reason": replay_exports.confidence_reason(conducted)[0],
+                        "source_timestamp": exports_source_timestamp(result["reported_meta"]["compiled"]), **result["exports"]}}
            if "exports" in result else {}),
         "external_checks": result["external_checks"],
         "viirs_daily": {
@@ -1437,7 +1506,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
                              "note": "Model output on the reconstructed water, placed beside each day for comparison; not part of the VIIRS product."},
             "days": result["viirs_days"],
         },
-        **({"s2_crosscheck": s2_crosscheck_block(result["s2_check"])} if "s2_check" in result else {}),
+        **({"s2_crosscheck": s2_crosscheck_block(result["s2_check"], result["viirs_days"])} if "s2_check" in result else {}),
         "rainfall": {**result["rainfall"], "source": "HII ThaiWater open data, hourly rain gauges",
                      "source_url": "https://tiservice.hii.or.th/opendata/", "licence": "CC BY-NC (per the HII open-data catalogue)",
                      "units": "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT", "note": "Observed rainfall (forcing), not flooding."},
@@ -1469,11 +1538,13 @@ def manifest_problems(manifest: dict) -> list[str]:
     """Evidence-contract, rights and JSON-schema problems of a composed manifest (empty when it may be written).
 
     While the owners have not confirmed the product 4009 rights record, a manifest that names a file for the
-    product, or marks it as shown, is refused.
+    product, or marks it as shown, is refused. The shelter plan's sub-blocks are checked too
+    (``floodguard.replay_manifest.shelter_plan_problems``): each needs its own evidence block in its lane, the
+    capacity figures must add up, and no participation share or listed capacity may be published.
     """
     schema = json.loads((ROOT / SCHEMA_REL).read_text(encoding="utf-8"))
     rights = [] if owner_confirmed(load_rights_basis(ROOT / RIGHTS_BASIS_4009_PATH)) else unconfirmed_product_citations(manifest)
-    return evidence_problems(manifest) + rights + schema_problems(manifest, schema)
+    return evidence_problems(manifest) + shelter_plan_problems(manifest) + rights + schema_problems(manifest, schema)
 
 
 RECEIPT_ASSUMPTIONS = [

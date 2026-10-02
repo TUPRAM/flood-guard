@@ -646,7 +646,10 @@ def test_committed_receipt_matches_the_in_repo_inputs_and_the_committed_revision
     assert outputs["folder"] == COMMITTED_FOLDER.relative_to(ROOT).as_posix()
     listing = directory_listing(COMMITTED_FOLDER)
     assert outputs["files"] == listing  # The receipt describes exactly the committed revision, byte for byte.
-    assert outputs["file_count"] == len(listing) == 22
+    assert outputs["file_count"] == len(listing) == 30
+    # 22 files the page loads plus the 8 download files of the export pack, which the receipt lists like any other output.
+    exported = [row["name"] for row in listing if row["name"].startswith("exports/")]
+    assert len(exported) == 8 and all(name.count("/") == 1 for name in exported)
     assert outputs["bytes"] == sum(row["bytes"] for row in listing)
 
 
@@ -725,4 +728,4 @@ def test_the_real_bake_reproduces_the_committed_bytes_with_the_recorded_librarie
         pytest.skip(f"library versions differ from the recorded receipt, so bytes may differ: {drift}")
     comparison = compare_directories(real_bake["out"], COMMITTED_FOLDER)
     assert comparison.matches, (comparison.summary(), comparison.different, comparison.missing_from_fresh, comparison.extra_in_fresh)
-    assert comparison.summary() == "22/22 identical"
+    assert comparison.summary() == "30/30 identical"  # The export pack is rebuilt byte for byte too.

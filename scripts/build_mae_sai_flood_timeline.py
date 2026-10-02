@@ -17,11 +17,17 @@ Inputs
   ``outputs/mae_sai_facilities.geojson``, ``outputs/mae_sai_access_edges.csv``,
   ``outputs/mae_sai_population_nodes.csv``, ``outputs/mae_sai_reported_shelters_2024.json`` and
   ``docs/proposal_execution/rights_basis_4009_v1.json`` (the rights record of UNOSAT/GISTDA product 4009: the
-  manifest takes the product's status from it, so a confirmed record needs a new bake).
+  manifest takes the product's status from it, so a confirmed record needs a new bake). When a local check of the
+  shelter candidates has been returned and imported (``scripts/import_shelter_validation.py``), the bake also reads
+  ``outputs/mae_sai_shelter_validation.json``; without that file the manifest says the check was not conducted.
 
 Outputs (``apps/web/public/studies/mae-sai-2024-timeline/r4/``): a HAND code raster, dated
 Sentinel-1/2 image layers, a hillshade, VIIRS daily maps, a residents raster, the access node file,
-sampled road/facility/tambon vectors and ``timeline.json``.
+sampled road/facility/tambon vectors and ``timeline.json``; and, in ``exports/``, the export pack for
+spreadsheet and GIS users (``floodguard.replay_exports``): three shelter plan tables, one GeoJSON of the
+sites, modelled road inundation and modelled access loss by hour, the shelter-candidate verification sheet
+and a licence README. The export files are listed in the manifest with their hashes, are covered by
+``--verify`` and sit outside the replay's precache budget.
 
 Evidence fields
 ---------------
@@ -116,6 +122,8 @@ from floodguard.flood_timeline import (  # noqa: E402
     road_state,
     depth_factor,
 )
+import floodguard.replay_exports as replay_exports  # noqa: E402
+import floodguard.shelter_validation as shelter_validation  # noqa: E402
 from floodguard.replay_manifest import (  # noqa: E402
     LANES,
     SCENARIO_FIELDS_KEY,
@@ -149,6 +157,9 @@ HREF_PREFIX = f"/studies/mae-sai-2024-timeline/{REVISION}/"
 S2_CLOUD_REFLECTANCE = 0.35
 SAI_REFERENCE_LONLAT = (99.8826, 20.4460)  # Sai River at the Mae Sai border bridges (main-stem reference reach).
 REPORTED_SHELTERS = Path("outputs/mae_sai_reported_shelters_2024.json")
+# Written by scripts/import_shelter_validation.py once a local checker returns the verification sheet. Absent: not conducted.
+SHELTER_VALIDATION = Path("outputs/mae_sai_shelter_validation.json")
+REPLAY_HOURS = 11 * 24  # The replay's hourly grid: 9 Sep 00:00 to 19 Sep 23:00 ICT.
 EVENT_START = "2024-09-09T00:00:00+07:00"  # Replay origin (t = 0).
 EVENT_END = "2024-09-20T00:00:00+07:00"  # End of the replay and of the last rain hour (19 Sep 24:00 ICT).
 OSM_EXTRACT_DATE = "2026-07-09"
@@ -488,6 +499,8 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
 
     roads_src = json.loads(track(ROOT / "outputs/mae_sai_road_risk.geojson").read_text(encoding="utf-8"))
     road_features = []
+    ways = []  # One record per OpenStreetMap way, for the export pack; the legacy candidate columns are never read.
+    peak_road_stage = max(k.stage_m for k in KEYFRAMES)
     for f in roads_src["features"]:
         props = f["properties"]
         cls = props.get("road_class")
@@ -495,6 +508,9 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
             continue
         line = shp_transform(to_utm, shape(f["geometry"]))
         pieces = max(1, math.ceil(line.length / ROAD_PIECE_M))
+        way = {"road_id": props["road_id"], "road_name": props.get("road_name") or "", "road_class": cls,
+               "bridge_flag": bool(props.get("bridge_flag")), "tambon_id": props["subdistrict_id"], "length_m": line.length, "pieces": []}
+        ways.append(way)
         for p in range(pieces):
             piece = substring(line, p * line.length / pieces, (p + 1) * line.length / pieces)
             if not isinstance(piece, LineString) or piece.length == 0:
@@ -503,7 +519,11 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
             pts = np.array([piece.interpolate(d).coords[0] for d in steps])
             h, kf = evac.sample_road(codes_aoi, k_aoi, aoi, pts[:, 0], pts[:, 1])
             modelled = sample_mask(valid_aoi, aoi, pts[:, 0], pts[:, 1])
+            way["pieces"].append((h, kf, modelled))
             if cls not in ROAD_KEEP_ALWAYS and (not modelled or h is None or h > ROAD_MAX_HAND_M):
+                # A piece the page does not draw must never be impassable, or the export would disagree with the page.
+                if modelled and h is not None and road_state(h, peak_road_stage, kf) == "impassable":
+                    raise ReplayManifestError(f"a piece of way {props['road_id']} is left off the page but is impassable at the modelled peak")
                 continue
             coords = [[round(x, 5), round(y, 5)] for x, y in (to_ll(*c) for c in piece.coords)]
             road_features.append({"type": "Feature", "geometry": {"type": "LineString", "coordinates": coords},
@@ -597,6 +617,12 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
                             "m": r.get("m"), "high_ground": r.get("m", True) and r.get("flood_stage") == float("inf"),
                             "floods_at_modelled_peak": (r.get("freeboard_m") is not None and r["freeboard_m"] < 0) or r.get("flood_stage") == 0.0}}
                        for r in reported_all]
+
+    sites_public = [site_public(x) for x in sites]
+    candidate_set = replay_exports.candidate_set_sha256(sites_public)
+    validation_path = ROOT / SHELTER_VALIDATION
+    verification = shelter_check(json.loads(track(validation_path).read_text(encoding="utf-8")) if validation_path.exists() else None,
+                                 sites_public, candidate_set)
 
     vectors = {}
     for name, fc in (("tambons", tambons), ("roads", roads), ("facilities", facilities)):
@@ -711,14 +737,89 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
                        "totals": {"population": round(float(pop_df["total_population"].sum())),
                                   "vulnerable": round(float(pop_df["vulnerable_population"].sum()), 1),
                                   "non_vulnerable": round(float(pop_df["non_vulnerable_population"].sum()), 1)}},
-            "shelters": {"candidates": [site_public(x) for x in sites], "plan": access["ranking"], "knee_k": access["knee_k"],
+            "export_data": {
+                "ways": ways, "tambons": [dict(f["properties"]) for f in tambons["features"]],
+                "node_tambon": node_tambon, "node_population": pop_df["total_population"].to_numpy("<f4").astype(float),
+                "cut_codes": {set_id: access["node_codes"][index] for index, set_id in enumerate(access["set_ids"])
+                              if set_id in ("reported_2024", f"plan_{access['knee_k']}")},
+                "reported_licence": reported_doc.get("licence_note")},
+            "shelters": {"candidates": sites_public, "plan": access["ranking"], "knee_k": access["knee_k"],
                          "demand_people": access["demand_people"], "uncoverable_people": access["uncoverable_people"],
                          "eligible_count": access["eligible_count"], "reported": reported_public,
-                         "capacitated": capacitated, "robustness": robustness,
+                         "capacitated": capacitated, "robustness": robustness, "verification": verification,
                          "method": {"evacuation_stage_m": evac.EVACUATION_STAGE_M, "late_evacuation_stage_m": evac.LATE_EVACUATION_STAGE_M, "threshold_m": evac.ACCESS_THRESHOLD_M,
                                     "freeboard_m": evac.SHELTER_FREEBOARD_M, "peak_stage_m": peak_stage,
                                     "m2_per_person": evac.SPHERE_M2_PER_PERSON, "usable_floor_share": evac.USABLE_FLOOR_SHARE,
                                     "max_plan_sites": evac.MAX_PLAN_SITES, "snap_max_m": evac.SNAP_MAX_M}}}
+
+
+VERIFICATION_NOT_CONDUCTED = ("No verification sheet has been returned: the local check of the shelter candidates was not conducted. "
+                              "Every capacity is an unverified estimate and every site is a candidate to verify on the ground.")
+
+
+def shelter_check(document: dict | None, candidates: list[dict], candidate_set: str) -> dict:
+    """What the manifest says about the local check of the shelter candidates.
+
+    ``document`` is the file ``scripts/import_shelter_validation.py`` writes from a returned sheet, or ``None`` when
+    no sheet has been returned: the check was then not conducted, and no result is implied. A document that answers
+    another candidate list, or holds anything outside the whitelist, stops the bake.
+    """
+    listed = replay_exports.sheet_candidates(candidates)
+    base = {"label_template": replay_exports.VERIFICATION_LABEL, "sheet": "shelter_candidate_verification_sheet",
+            "candidate_set_sha256": candidate_set, "candidates_listed": len(listed)}
+    if document is None:
+        return {"status": shelter_validation.STATUS_NOT_CONDUCTED, **base, "statement": VERIFICATION_NOT_CONDUCTED, "checked": []}
+    problems = shelter_validation.document_problems(document, [site["id"] for site in listed], candidate_set)
+    if problems:
+        raise ReplayManifestError(f"{SHELTER_VALIDATION.as_posix()} cannot be published:\n  " + "\n  ".join(problems))
+    checked = [{**{key: row[key] for key in shelter_validation.DERIVED_KEYS},
+                **({"access_notes": row["access_notes"]} if row.get("access_notes") else {}),
+                "label": shelter_validation.check_label(row["checked_by_role"], row["checked_on"])} for row in document["rows"]]
+    return {"status": shelter_validation.STATUS_CONDUCTED, **base,
+            "statement": (f"A local check of {len(checked)} of the {len(listed)} candidates was returned and imported on {document['imported_on']}. "
+                          "It is reported by role and is not an official shelter register; a candidate without a row was not checked."),
+            "source_timestamp": document["source_timestamp"], "imported_on": document["imported_on"],
+            "returned_file_sha256": document["returned_file"]["sha256"], "counts": dict(document["counts"]), "checked": checked}
+
+
+def export_sources(reported_licence: str | None) -> list[dict]:
+    """The manifest's sources plus the reported-shelter list, with the licence each export header quotes."""
+    return [*SOURCES, {"id": "reported-shelters", "name": "Shelters reported in use in September 2024 (FloodGuard desk research)",
+                       "licence": reported_licence or "Facts with citations",
+                       "attribution": "FloodGuard desk research of public reporting, sources linked per site"}]
+
+
+def write_exports(result: dict, out_dir: Path, generated_at: str, inputs: list[dict]) -> dict:
+    """Write the export pack into ``out_dir/exports`` and return what the manifest lists about it.
+
+    The files are written by ``floodguard.replay_exports`` from the build result: nothing here reads the rain
+    gauges, the VIIRS maps or product 4009, and a file that breaks a header, licence or column rule is not written.
+    """
+    data, shelters = result["export_data"], result["shelters"]
+    knee_k = shelters["knee_k"]
+    context = replay_exports.ExportContext(
+        study_id=STUDY_ID, revision=REVISION, generated_at=generated_at, generated_by=GENERATED_BY,
+        receipt_path=RECEIPT_REL.as_posix(),
+        repo_folder=(OUT_REL / replay_exports.EXPORT_FOLDER).as_posix(), inputs=inputs,
+        sources=export_sources(data["reported_licence"]),
+        hourly_stages=[stage_at(hour / 24) for hour in range(REPLAY_HOURS)], event_start=EVENT_START,
+        osm_extract_date=OSM_EXTRACT_DATE, reported_compiled=result["reported_meta"]["compiled"],
+        impassable_depth_m=IMPASSABLE_DEPTH_M, road_classes=ROAD_CLASSES, ways=data["ways"], tambons=data["tambons"],
+        node_tambon=data["node_tambon"], node_population=data["node_population"], cut_codes=data["cut_codes"],
+        level_step_m=evac.LEVELS[1] - evac.LEVELS[0], knee_k=knee_k, candidates=shelters["candidates"], plan=shelters["plan"],
+        capacitated={**CAPACITATED_META, **shelters["capacitated"]},
+        robust_core=shelters["robustness"]["core_by_k"][knee_k - 1], reported=shelters["reported"],
+        peak_stage_m=shelters["method"]["peak_stage_m"], walk_limit_m=evac.ACCESS_THRESHOLD_M,
+        freeboard_m=evac.SHELTER_FREEBOARD_M, snap_max_m=evac.SNAP_MAX_M,
+        verification_status=shelters["verification"]["status"])
+    files = replay_exports.export_pack(context)
+    folder = out_dir / replay_exports.EXPORT_FOLDER
+    folder.mkdir(parents=True, exist_ok=True)
+    for file in files:
+        (folder / file.name).write_bytes(file.data)
+    prefix = f"{HREF_PREFIX}{replay_exports.EXPORT_FOLDER}/"
+    return {"folder": prefix, "file_count": len(files), "bytes": sum(len(file.data) for file in files),
+            "files": [file.record(prefix) for file in files]}
 
 
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -906,6 +1007,40 @@ ROBUSTNESS_META = {
 }
 """Wording and provenance of ``shelters.robustness`` (the figures come from the build)."""
 
+EXPORTS_META = {
+    "scenario_tier": SCENARIO_TIER,
+    "tier": replay_exports.EXPORT_TIER,
+    "confidence": "low",
+    "confidence_reason": replay_exports.CONFIDENCE_REASON,
+    "purpose": ("Tables and one map layer for spreadsheet and GIS users, written from the modelled blocks of this manifest: modelled, not "
+                "observed. Not a forecast, not an observed closure record and not an official warning."),
+    "licence": replay_exports.EXPORT_LICENCE,
+    "licence_rule": ("One licence lineage per file: every file is OpenStreetMap-derived (ODbL 1.0, attribution and share-alike) with "
+                     "attribution-only inputs. No file holds rain values (CC BY-NC) or anything from a source without a stated licence."),
+    "header": {
+        "csv": ("UTF-8 with a byte-order mark and LF line ends. Each file starts with provenance lines (first cell starts with #) and "
+                "then the column header; header_lines of each file gives their number. Header cells are the English key and the Thai "
+                "label in brackets."),
+        "geojson": "The same provenance fields sit in a top-level metadata member, before the features.",
+        "why_in_the_file": ("A sidecar file is lost when a table is forwarded on its own, so the tier, the confidence, the timestamps, the "
+                            "assumptions and the licence travel inside each file."),
+    },
+    "offline": "Saved with the replay's offline copy; outside the replay's precache budget, under a budget of their own.",
+    "assumptions": [
+        "Every table is a T1 scenario (model) on the reconstructed water; the reported-shelter table adds reported facts, kept apart in their own columns.",
+        "Hours are replay hours on the hourly grid (hour 0 = 9 Sep 2024 00:00 ICT); the assumed stage is sampled at the start of each hour.",
+        "The modelled road table lists one row per OpenStreetMap way of the classes the replay models; the legacy candidate columns of the source road file are not carried.",
+        "No listed capacity from a shelter register, no occupancy count and no personal data is in any file.",
+    ],
+}
+"""Wording and provenance of the manifest's ``exports`` block (the file list and the source timestamp come from the bake)."""
+
+
+def exports_source_timestamp(reported_compiled: str) -> str:
+    """Source timestamp of the export pack: the dated inputs its tables are written from."""
+    return (f"OSM extract {OSM_EXTRACT_DATE}; WorldPop 2020; reported shelters compiled {reported_compiled}; "
+            "illustrative stage keyframes for 2024-09-09/2024-09-19 ICT")
+
 VIIRS_MODEL_FIELDS = ("model_stage_m", "model_flood_km2_clear", "model_flood_km2_district")
 """Fields of every ``viirs_daily.days[]`` row that are model output placed beside the agency product."""
 
@@ -969,6 +1104,7 @@ def publication_eligibility(reported_licence: str | None, rights: dict) -> dict:
 def evidence_blocks(result: dict) -> list[dict]:
     """Lane, tier, temporal relation and source timestamp for every part of the manifest (see ``floodguard.replay_manifest``)."""
     compiled = result["reported_meta"]["compiled"]
+    verification = result["shelters"]["verification"]
     viirs = result["viirs_days"]
     s2 = {key: stamp for key, (_, stamp) in S2_SCENES.items()}
     scenario = {"lane": "SCN", "evidence_tier": SCENARIO_TIER}
@@ -998,6 +1134,10 @@ def evidence_blocks(result: dict) -> list[dict]:
         {"id": "reported_shelters", "lane": "REP", "evidence_tier": "Reported use from public sources; not an official register",
          "temporal_relation": "post_event_compilation", "covers": ["shelters.reported"],
          "source_timestamp": f"reports dated 2024-09-11 to 2024-10-11; compiled {compiled}"},
+        {"id": "shelter_candidate_check", "lane": "REP", "evidence_tier": "Local check reported by role; not an official shelter register",
+         "temporal_relation": "post_event_compilation", "covers": ["shelters.verification"],
+         "source_timestamp": verification.get("source_timestamp", "not conducted: no verification sheet had been returned when these files were generated"),
+         "note": verification["statement"]},
         {"id": "event_chronology", "lane": "REP", "evidence_tier": "Team summary of public reporting; not independently verified in this study",
          "temporal_relation": "post_event_compilation", "covers": ["phases"], "source_timestamp": f"compiled {CHRONOLOGY_COMPILED}"},
         {"id": "viirs_daily", "lane": "OBS", "evidence_tier": "Agency flood product, used as provided; unvalidated here",
@@ -1040,6 +1180,11 @@ def evidence_blocks(result: dict) -> list[dict]:
          "covers": ["external_references[unosat-3969]", "external_references[charter-912]", "external_references[hii-event-page]"],
          "source_timestamp": "event reports of September 2024"},
     ]
+    if "exports" in result:
+        blocks.append({"id": "export_pack", **scenario, "temporal_relation": "event_window_reconstruction", "covers": ["exports"],
+                       "source_timestamp": exports_source_timestamp(compiled),
+                       "note": ("Download files written from the modelled blocks above; each file names its own lanes. The reported-shelter table "
+                                "and the reported points of the site layer repeat reported facts (block reported_shelters) beside a model check.")})
     return blocks
 
 
@@ -1052,6 +1197,13 @@ def dated_inputs(result: dict) -> list[str]:
     return stamps
 
 
+def generated_stamp(result: dict, generated_at: str | None) -> tuple[str, str]:
+    """The ``generated_at`` value and its basis: the declared time, or else the newest dated input (never the clock)."""
+    if generated_at:
+        return normalise_timestamp(generated_at), "declared"
+    return newest_timestamp(dated_inputs(result)), "newest_input_timestamp"
+
+
 def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_at: str | None = None) -> dict:
     """Assemble ``timeline.json`` with provenance, confidence, evidence lanes and assumptions.
 
@@ -1061,8 +1213,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
     anchor = result["s1_anchor"]
     if round(anchor["best_fit_stage_m"], 2) != S1_BEST_FIT_STAGE_M:
         raise ReplayManifestError(f"the disclosure states a Sentinel-1 best-fit stage of {S1_BEST_FIT_STAGE_M:.2f} m, but this bake found {anchor['best_fit_stage_m']} m")
-    basis = "declared" if generated_at else "newest_input_timestamp"
-    stamp = normalise_timestamp(generated_at) if generated_at else newest_timestamp(dated_inputs(result))
+    stamp, basis = generated_stamp(result, generated_at)
     first_image = min(stamp_ for _, stamp_ in S2_SCENES.values())
     blocks = evidence_blocks(result)
     rights = result["rights_4009"]
@@ -1148,6 +1299,8 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
                      "source_timestamp": "OSM extract 2026-07-09; reported shelters compiled 2026-09-27 from reports dated 2024-09-11 to 2024-10-11",
                      "reported_status": result["reported_meta"]["status"], "reported_compiled": result["reported_meta"]["compiled"],
                      "reported_access_set_rule": result["reported_meta"]["access_set_rule"]},
+        **({"exports": {**EXPORTS_META, "source_timestamp": exports_source_timestamp(result["reported_meta"]["compiled"]), **result["exports"]}}
+           if "exports" in result else {}),
         "external_checks": result["external_checks"],
         "viirs_daily": {
             "product": "NOAA/GMU VIIRS 375 m daily flood-water fraction composite (block 090)",
@@ -1217,8 +1370,10 @@ BAKE_SOURCES = (
     "src/floodguard/bake_receipt.py",
     "src/floodguard/evacuation_access.py",
     "src/floodguard/flood_timeline.py",
+    "src/floodguard/replay_exports.py",
     "src/floodguard/replay_manifest.py",
     "src/floodguard/rights_basis.py",
+    "src/floodguard/shelter_validation.py",
     SCHEMA_REL.as_posix(),
 )
 """This script, the repository modules it imports and the schema the manifest must follow (a unit test checks the imports)."""
@@ -1237,6 +1392,9 @@ def bake(external: Path, out_dir: Path, generated_at: str | None = None) -> tupl
     """
     receipt = InputReceipt({"external": external, "repo": ROOT})
     result = build(external, out_dir, receipt.track)
+    if "export_data" in result:
+        # The export pack carries the same generation time and input hashes as the manifest that lists it.
+        result["exports"] = write_exports(result, out_dir, generated_stamp(result, generated_at)[0], receipt.entries())
     manifest = compose_manifest(result, inputs=receipt.entries(), generated_at=generated_at)
     problems = manifest_problems(manifest)
     if problems:

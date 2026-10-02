@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
-import { CASE_REPLAY_ROUTE, collectCaseReplay } from "./case-replay-inventory.mjs";
+import { CASE_REPLAY_EXPORT_BUDGET_BYTES, CASE_REPLAY_ROUTE, caseReplayExportBytes, collectCaseReplay, readCaseReplayExports } from "./case-replay-inventory.mjs";
 import { collectLandingArtwork } from "./landing-artwork-inventory.mjs";
 
 const out = resolve(process.cwd(), "out");
@@ -13,6 +13,10 @@ const optionalArtwork = appProfile === "competition" ? collectLandingArtwork(out
 // The case replay's data is a deferred, opt-in bucket (see case-replay-inventory.mjs): derived from its
 // manifest here, cached only after the replay page asks, never part of the blocking installation.
 const optionalCaseReplay = appProfile === "competition" ? collectCaseReplay(out) : [];
+// The replay's export pack (download files) is listed apart from the replay data, hash-verified against the
+// manifest and held to its own budget: it is outside the replay's precache budget.
+const optionalCaseReplayExports = appProfile === "competition" ? readCaseReplayExports(out) : [];
+const caseReplayExportTotal = caseReplayExportBytes(optionalCaseReplayExports);
 
 function walk(directory) {
   return readdirSync(directory).flatMap((name) => {
@@ -99,6 +103,7 @@ const versionedFiles = [
   ...proposalEvidenceAssets.map((url) => resolve(out, url.slice(1))),
   ...optionalArtwork.map((asset) => resolve(out, asset.url.slice(1))),
   ...optionalCaseReplay.map((asset) => resolve(out, asset.url.slice(1))),
+  ...optionalCaseReplayExports.map((asset) => resolve(out, asset.url.slice(1))),
 ];
 const serviceWorkerPath = resolve(out, "sw.js");
 const serviceWorker = readFileSync(serviceWorkerPath, "utf8");
@@ -113,9 +118,10 @@ buildHash.update(JSON.stringify(deploymentProfile));
 buildHash.update(JSON.stringify(coreAssets));
 buildHash.update(JSON.stringify(optionalArtwork));
 buildHash.update(JSON.stringify(optionalCaseReplay));
+buildHash.update(JSON.stringify(optionalCaseReplayExports));
 const cacheVersion = buildHash.digest("hex").slice(0, 12);
 const cacheCreatedAt = new Date().toISOString();
-if (!serviceWorker.includes("__BUILD__") || !serviceWorker.includes("__APP_PROFILE__") || !serviceWorker.includes("__CACHE_CREATED_AT__") || !serviceWorker.includes("__PROFILE_CORE_ASSETS__") || !serviceWorker.includes("__OPTIONAL_LANDING_ARTWORK__") || !serviceWorker.includes("__OPTIONAL_CASE_REPLAY__")) {
+if (!serviceWorker.includes("__BUILD__") || !serviceWorker.includes("__APP_PROFILE__") || !serviceWorker.includes("__CACHE_CREATED_AT__") || !serviceWorker.includes("__PROFILE_CORE_ASSETS__") || !serviceWorker.includes("__OPTIONAL_LANDING_ARTWORK__") || !serviceWorker.includes("__OPTIONAL_CASE_REPLAY__") || !serviceWorker.includes("__OPTIONAL_CASE_REPLAY_EXPORTS__")) {
   throw new Error("Service-worker build tokens are missing.");
 }
 writeFileSync(
@@ -130,6 +136,10 @@ writeFileSync(
       `const OPTIONAL_CASE_REPLAY = ${JSON.stringify(optionalCaseReplay.map(({ url, sha256 }) => ({ url, sha256 })))};`,
     )
     .replace(
+      "const OPTIONAL_CASE_REPLAY_EXPORTS = []; /* __OPTIONAL_CASE_REPLAY_EXPORTS__ */",
+      `const OPTIONAL_CASE_REPLAY_EXPORTS = ${JSON.stringify(optionalCaseReplayExports.map(({ url, sha256 }) => ({ url, sha256 })))};`,
+    )
+    .replace(
       "const CORE_ASSETS = []; /* __PROFILE_CORE_ASSETS__ */",
       `const CORE_ASSETS = ${JSON.stringify(coreAssets)};`,
     ),
@@ -138,7 +148,9 @@ writeFileSync(
 
 // Decimal megabytes, the unit of the replay's 6.5 MB precache budget (case-replay-inventory.mjs).
 const caseReplayMegabytes = (optionalCaseReplay.reduce((sum, asset) => sum + asset.bytes, 0) / 1e6).toFixed(1);
-console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets, ${optionalArtwork.length} deferred illustration assets, ${optionalCaseReplay.length} deferred case-replay files (${caseReplayMegabytes} MB, opt-in); profile ${appProfile}; cache ${cacheVersion}`);
+// The export pack has its own budget line (decimal megabytes), outside the precache budget.
+const caseReplayExportLine = `${optionalCaseReplayExports.length} case-replay export files (${caseReplayExportTotal} of ${CASE_REPLAY_EXPORT_BUDGET_BYTES} export-budget bytes, outside the precache budget)`;
+console.log(`offline asset manifest: ${assets.length} production chunks, ${proposalEvidenceAssets.length} proposal evidence assets, ${optionalArtwork.length} deferred illustration assets, ${optionalCaseReplay.length} deferred case-replay files (${caseReplayMegabytes} MB, opt-in), ${caseReplayExportLine}; profile ${appProfile}; cache ${cacheVersion}`);
 
 function resolveAppProfile(value) {
   const normalized = value?.trim().toLowerCase();

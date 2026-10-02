@@ -290,6 +290,80 @@ export interface PlanRobustness {
   core_by_k: string[][];
 }
 
+/** Role code of the person who checked a candidate: a role, never a name. */
+export type CheckerRole = "ddpm_officer" | "local_government_officer" | "village_leader" | "site_staff" | "project_team" | "other_local_contact";
+
+/** One candidate a local checker reported on. Whitelisted columns only: no name of a person, no phone or ID number. */
+export interface ShelterCheckRow {
+  candidate_id: string;
+  usable_as_shelter: boolean;
+  verified_capacity: number | null;
+  checked_by_role: CheckerRole;
+  /** Date of the check, YYYY-MM-DD. */
+  checked_on: string;
+  access_notes_given: boolean;
+  access_notes?: string;
+  /** "Checked by <role> on <date>; not an official shelter register". */
+  label: string;
+}
+
+/**
+ * Local check of the shelter candidates through the verification sheet in the export pack. `not_conducted` until a
+ * sheet is returned and imported: then `checked` is empty and nothing is implied about any site. A conducted check
+ * is reported by role and is never an official shelter register.
+ */
+export interface ShelterVerification {
+  status: "not_conducted" | "conducted";
+  label_template: string;
+  /** Id of the blank sheet in `exports.files`. */
+  sheet: string;
+  candidate_set_sha256: string;
+  candidates_listed: number;
+  statement: string;
+  source_timestamp?: string;
+  imported_on?: string;
+  returned_file_sha256?: string;
+  counts?: { checked: number; usable_yes: number; usable_no: number; with_verified_capacity: number };
+  checked: ShelterCheckRow[];
+}
+
+/** One download file of the export pack: a table or a map layer written from the replay's modelled blocks. */
+export interface ExportFile extends HashedAsset {
+  id: string;
+  name: string;
+  media_type: "text/csv" | "application/geo+json" | "text/plain";
+  title: Localized;
+  /** Evidence lanes of the file's content: "SCN" (model) and, for the reported-shelter files, "REP". */
+  lanes: EvidenceLane[];
+  licence: string;
+  source_ids: string[];
+  rows?: number;
+  /** Provenance lines before the column header of a CSV. */
+  header_lines?: number;
+}
+
+/**
+ * The export pack (r4 on): tables and one map layer for spreadsheet and GIS users. T1 scenario (model), modelled and
+ * not observed; one licence lineage per file. The files are downloads: outside the replay's precache budget.
+ */
+export interface ExportPack {
+  scenario_tier: string;
+  tier: string;
+  confidence: string;
+  confidence_reason: string;
+  source_timestamp: string;
+  purpose: string;
+  licence: string;
+  licence_rule: string;
+  header: { csv: string; geojson: string; why_in_the_file: string };
+  offline: string;
+  assumptions: string[];
+  folder: string;
+  file_count: number;
+  bytes: number;
+  files: ExportFile[];
+}
+
 export interface ShelterInfo {
   candidates: ShelterCandidate[];
   plan: ShelterPlanEntry[];
@@ -303,6 +377,8 @@ export interface ShelterInfo {
   capacitated?: CapacityAwarePlan;
   /** The coverage ranking at what-if levels around the illustrative peak (absent from an older manifest). */
   robustness?: PlanRobustness;
+  /** Local check of the candidates through the verification sheet (absent from an older manifest). */
+  verification?: ShelterVerification;
   /** Confidence class of the candidate screening and plan, why, and the timestamps behind the shelter figures. */
   confidence: string;
   confidence_reason: string;
@@ -492,6 +568,8 @@ export interface TimelineManifest {
   viirs_daily?: ViirsDaily;
   /** Observed hourly rain at nearby gauges (forcing, not flooding); absent before r3. */
   rainfall?: Rainfall;
+  /** Download files for spreadsheet and GIS users (absent from a manifest baked before the pack existed). */
+  exports?: ExportPack;
   // --- Evidence envelope (r4 on). Every field is optional so that an r3-shaped manifest, which a client may still
   // hold in its offline cache, is read too; `parseTimelineManifest` fills the defaults that revision implies. ---
   schema_version?: number;
@@ -653,12 +731,10 @@ export function licenceRows(manifest: Pick<TimelineManifest, "publication_eligib
 }
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
+/** Manifest key of the export pack: its files are downloads, not part of the replay's precache set. */
+export const EXPORT_PACK_KEY = "exports";
 
-/**
- * Every hashed asset a manifest references (`{ href, sha256, bytes }` anywhere in it: HAND raster,
- * imagery layers, vectors, and any record a later revision adds), first occurrence per href.
- */
-export function manifestAssets(manifest: unknown): HashedAsset[] {
+function hashedAssets(source: unknown): HashedAsset[] {
   const found = new Map<string, HashedAsset>();
   const visit = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -673,8 +749,35 @@ export function manifestAssets(manifest: unknown): HashedAsset[] {
     }
     Object.values(record).forEach(visit);
   };
-  visit(manifest);
+  visit(source);
   return [...found.values()];
+}
+
+/**
+ * Every hashed asset of the replay's precache set (`{ href, sha256, bytes }` anywhere in the manifest: HAND raster,
+ * imagery layers, vectors, and any record a later revision adds), first occurrence per href. The top-level export
+ * pack is left out: its files are downloads with a budget of their own (see `manifestExportAssets`).
+ */
+export function manifestAssets(manifest: unknown): HashedAsset[] {
+  if (!isRecord(manifest)) return hashedAssets(manifest);
+  return hashedAssets(Object.fromEntries(Object.entries(manifest).filter(([key]) => key !== EXPORT_PACK_KEY)));
+}
+
+/** The export pack's files (`exports.files`), first occurrence per href; empty for a manifest without a pack. */
+export function manifestExportAssets(manifest: unknown): HashedAsset[] {
+  const pack = isRecord(manifest) ? manifest[EXPORT_PACK_KEY] : null;
+  return isRecord(pack) ? hashedAssets(pack.files ?? []) : [];
+}
+
+/**
+ * File size for a download link, in decimal units with the unit a spreadsheet user knows: "342 kB", "1.2 MB".
+ * Below 1 kB the bytes are given as they are.
+ */
+export function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "";
+  if (bytes < 1000) return `${Math.round(bytes)} B`;
+  if (bytes < 999_500) return `${Math.round(bytes / 1000)} kB`;
+  return `${(bytes / 1e6).toFixed(1)} MB`;
 }
 
 /** Minimal GeoJSON shapes used by the replay (avoids a hard dependency on @types/geojson). */
@@ -1244,6 +1347,17 @@ export function formatMoment(t: number, language: Language): string {
 export function formatShortDate(input: string, language: Language): string {
   const p = ictParts(input.length === 10 ? Date.parse(`${input}T00:00:00+07:00`) : Date.parse(input));
   return `${p.day} ${MONTHS[language][p.month]}`;
+}
+
+/**
+ * "9 Oct 2026" / "9 ต.ค. 2569 (2026)" for a local ISO date outside the event year (the date of a local check, of an
+ * import); the input itself when it is not a date.
+ */
+export function formatDateWithYear(input: string, language: Language): string {
+  const ms = Date.parse(input.length === 10 ? `${input}T00:00:00+07:00` : input);
+  if (Number.isNaN(ms)) return input;
+  const p = ictParts(ms);
+  return `${p.day} ${MONTHS[language][p.month]} ${language === "th" ? thaiYear(p.year) : p.year}`;
 }
 
 /**

@@ -1,0 +1,63 @@
+﻿# floodguard_export,shelter_plan_capacitated.csv
+# header_lines,37,"The first 37 lines are provenance and the column header is on line 38. A spreadsheet shows them as rows; in QGIS discard 37 header lines, in pandas use skiprows=37.",37 บรรทัดแรกเป็นข้อมูลกำกับ และหัวคอลัมน์อยู่ที่บรรทัด 38 โปรแกรมตารางคำนวณจะแสดงเป็นแถว ใน QGIS ให้ข้าม 37 บรรทัดแรก
+# title,Capacity-aware shelter ranking under two capacity bounds: who fits (candidates to verify)
+# title_th,การจัดอันดับที่พักพิงแบบคิดความจุภายใต้ขอบเขตล่างและขอบเขตบน: รองรับได้กี่คน (สถานที่ที่ควรตรวจสอบ)
+# tier,"T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null"
+# tier_th,การย้อนดูสถานการณ์จำลองระดับ T1 (แบบจำลอง) ของเหตุการณ์ปี 2567 (2024) ที่จำลองขึ้นใหม่ เพื่อการวางแผนเตรียมความพร้อมและการฝึกซ้อม ใช้จุดกำหนดระดับน้ำเพื่อการอธิบาย ไม่ใช่การพยากรณ์ ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง ไม่ใช่การเตือนภัยอย่างเป็นทางการ ไม่ใช้ในการปฏิบัติการ และไม่มีคะแนนหรือระดับการดำเนินการที่ยอมรับ (accepted_* เป็น null)
+# operational_status,non_operational
+# confidence_class,low
+# confidence_reason,"The tables come from a terrain-model reconstruction with illustrative stages, WorldPop 2020 residents, OpenStreetMap roads and sites, and unverified capacity estimates; nothing was checked on the ground."
+# confidence_reason_th,ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
+# lanes,SCN
+# source_timestamp,"OpenStreetMap extract 2026-07-09 (sites, building footprints and roads); WorldPop 2020; reconstructed peak 2024-09-12 ICT"
+# generated_at,2026-10-02T14:33:00+07:00
+# generated_by,scripts/build_mae_sai_flood_timeline.py
+# study,mae-sai-2024-flood-timeline r4
+# accepted,accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
+# licence,"ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/): OpenStreetMap-derived, attribution and share-alike"
+# licence_th,ODbL 1.0: ดัดแปลงจาก OpenStreetMap ต้องแสดงที่มาและเผยแพร่งานดัดแปลงภายใต้สัญญาอนุญาตเดียวกัน
+# attribution,"© OpenStreetMap contributors; WorldPop (www.worldpop.org), University of Southampton; © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA"
+# licence_inputs,"OpenStreetMap roads and candidate facilities (Geofabrik extract): ODbL 1.0; WorldPop Thailand 100 m population 2020, unconstrained top-down (tha_ppp_2020): CC BY 4.0; Copernicus DEM GLO-30 (tiles N20 E099 and N20 E100): Copernicus DEM licence (free, attribution)"
+# not_included,"No HII rain values (CC BY-NC), nothing from a source without a stated licence and nothing from UNOSAT/GISTDA product 4009 is in this file."
+# not_included_th,ไฟล์นี้ไม่มีค่าปริมาณฝนของ สสน. (CC BY-NC) ไม่มีข้อมูลจากแหล่งที่ไม่ระบุสัญญาอนุญาต และไม่มีข้อมูลใดจากผลิตภัณฑ์ 4009 ของ UNOSAT/GISTDA
+# assumption_1,"The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed."
+# assumption_1_th,น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้
+# assumption_2,"The sites are candidates to verify on the ground, not a list of sites to open. They are OpenStreetMap public buildings and grounds (schools, places of worship, government offices, community centres)."
+# assumption_2_th,สถานที่เหล่านี้เป็นสถานที่ที่ควรตรวจสอบในพื้นที่ ไม่ใช่รายชื่อสถานที่ที่ต้องเปิด เป็นอาคารและพื้นที่สาธารณะใน OpenStreetMap (โรงเรียน ศาสนสถาน หน่วยงานราชการ ศูนย์ชุมชน)
+# assumption_3,"Capacity is an unverified estimate from mapped building footprints (footprint x 0.5 usable share / 3.5 m2 per person, Sphere) and is unknown for most candidates. No listed capacity from a shelter register is used or published here."
+# assumption_3_th,ความจุเป็นค่าประมาณที่ยังไม่ได้ตรวจสอบ คำนวณจากขอบเขตอาคารในแผนที่ (พื้นที่อาคาร x สัดส่วนใช้สอย 0.5 / 3.5 ตร.ม. ต่อคน ตามมาตรฐาน Sphere) และไม่ทราบค่าสำหรับสถานที่ส่วนใหญ่ ไม่มีการใช้หรือเผยแพร่ความจุจากทะเบียนที่พักพิงใด ๆ ในไฟล์นี้
+# assumption_4,"Demand is every resident of a home that floods at the modelled peak (14,169 residents), an upper bound: many people stay with relatives or on an upper floor."
+# assumption_4_th,"ความต้องการคือผู้อยู่อาศัยทุกคนในบ้านที่น้ำท่วม ณ ระดับสูงสุดตามแบบจำลอง (14,169 คน) ซึ่งเป็นค่าสูงสุดที่เป็นไปได้ เพราะหลายคนไปอาศัยกับญาติหรืออยู่ชั้นบน"
+# assumption_5,Two bounds: an unknown capacity counts as 0 (lower) or as the median estimate of its site kind (upper). A load is the number of residents a site adds when it joins; overflow is demand minus the residents who fit.
+# assumption_5_th,มีสองขอบเขต ความจุที่ไม่ทราบนับเป็น 0 (ขอบเขตล่าง) หรือใช้ค่ามัธยฐานของสถานที่ประเภทเดียวกัน (ขอบเขตบน) จำนวนที่จัดให้คือผู้อยู่อาศัยที่เพิ่มขึ้นเมื่อสถานที่นั้นเข้าสู่การจัดอันดับ ส่วนจำนวนที่ไม่มีที่รองรับคือความต้องการลบด้วยจำนวนที่รองรับได้
+# assumption_6,Everyone is assumed to walk before the water rises and to accept any site within the limit; households are not kept together.
+# assumption_6_th,สมมุติว่าทุกคนเดินเท้าก่อนน้ำขึ้นและยอมไปสถานที่ใดก็ได้ภายในระยะที่กำหนด ไม่ได้จัดให้ครัวเรือนอยู่ด้วยกัน
+# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=1ae21d84263d6b75e150c89b2f8029d551ac4d9a3155d6e8da10214170c6df89
+# input_sha256,external:open_context/osm_geofabrik/thailand-latest.osm.pbf=b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1; repo:outputs/mae_sai_facilities.geojson=5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce; repo:outputs/mae_sai_access_edges.csv=266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454; repo:outputs/mae_sai_population_nodes.csv=172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf
+# git_commit,null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv
+rank (ลำดับ),candidate_id (รหัสสถานที่),kind (ประเภท),name (ชื่อ),lat (ละติจูด),lon (ลองจิจูด),osm_source (ที่มาใน OSM),estimated_capacity (ความจุโดยประมาณ),capacity_basis (ที่มาของค่าความจุ),upper_capacity_basis (ที่มาของความจุในขอบเขตบน),flooded_home_residents_within_reach (ผู้อยู่อาศัยในบ้านที่น้ำท่วมในระยะเดิน),lower_capacity (ความจุ ขอบเขตล่าง),lower_load (จำนวนที่จัดให้ ขอบเขตล่าง),lower_cumulative_fit (จำนวนที่รองรับได้สะสม ขอบเขตล่าง),lower_overflow (จำนวนที่ไม่มีที่รองรับ ขอบเขตล่าง),upper_capacity (ความจุ ขอบเขตบน),upper_load (จำนวนที่จัดให้ ขอบเขตบน),upper_cumulative_fit (จำนวนที่รองรับได้สะสม ขอบเขตบน),upper_overflow (จำนวนที่ไม่มีที่รองรับ ขอบเขตบน)
+1,C006,school,โรงเรียนแม่สายประสิทธิ์ศาสตร์,20.42964,99.881465,OSM way/371215803,984,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,1109,984,984,984,13185,984,984,984,13185
+2,C007,school,โรงเรียนบ้านเหมืองแดง,20.437352,99.893756,OSM way/371233879,306,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,2772,306,306,1290,12879,306,306,1290,12879
+3,C010,school,โรงเรียนอนุบาลแม่สาย,20.435298,99.881307,OSM way/372005086,,unknown,kind_median,2772,0,0,1290,12879,253,253,1543,12626
+4,C073,school,โรงเรียนบ้านสันธาตุ,20.3667,99.967213,OSM node/2207495991,,unknown,kind_median,3110,0,0,1290,12879,253,253,1796,12373
+5,C038,worship,วัดพระธาตุดอยเวา,20.442704,99.877845,OSM way/544168721,212,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,3110,212,212,1502,12667,212,212,2008,12161
+6,C029,school,โรงเรียนบ้านจ้อง,20.368865,99.884471,OSM way/395972246,240,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,3283,240,173,1675,12494,240,173,2181,11988
+7,C017,school,โรงเรียนบ้านป่ายาง,20.42359,99.890878,OSM way/373241355,,unknown,kind_median,3283,0,0,1675,12494,253,130,2311,11858
+8,C002,worship,มูลนิธิกวงเม้งแม่สาย,20.436535,99.884614,OSM way/106085171,130,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,3283,130,130,1805,12364,130,130,2441,11728
+9,C008,government,สำนักงานเทศบาลตำบลแม่สาย,20.426533,99.88432,OSM way/371846370,121,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,3283,121,121,1926,12243,121,121,2562,11607
+10,C011,government,องค์การบริหารส่วนตำบลโป่งผา,20.378527,99.88522,OSM way/372608928,110,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,3502,110,110,2036,12133,110,110,2672,11497
+11,C068,school,โรงเรียนบ้านน้ำจำ,20.386877,99.885564,OSM node/2193414929,,unknown,kind_median,3526,0,0,2036,12133,253,109,2781,11388
+12,C070,school,โรงเรียนบ้านสันถนน,20.382452,99.952821,OSM node/2207472330,,unknown,kind_median,3617,0,0,2036,12133,253,100,2881,11288
+13,C025,worship,วัดเหมืองแดง,20.437428,99.89229,OSM way/375664608,88,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,3655,88,88,2124,12045,88,88,2969,11200
+14,C047,worship,,20.424352,99.894953,OSM way/1112440182,84,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,3655,84,84,2208,11961,84,84,3053,11116
+15,C107,government,สำนักงานองค์การบริหารส่วนตำบลศรีเมืองชุม,20.367975,99.987367,OSM node/13325257201,,unknown,kind_median,4342,0,0,2208,11961,81,81,3134,11035
+16,C026,worship,วัดเวียงพาน,20.433657,99.881577,OSM way/375707979,79,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,4342,79,79,2287,11882,79,79,3213,10956
+17,C049,worship,,20.441102,99.913447,OSM way/1112444544,79,"OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified",estimate,6476,79,79,2366,11803,79,79,3292,10877
+18,C020,worship,มัสยิด อัรเราะห์มานิยะฮ์,20.433015,99.893498,OSM way/374663602,,unknown,kind_median,6476,0,0,2366,11803,76,76,3368,10801
+19,C071,worship,วัดมรรคาราม,20.385982,99.947379,OSM node/2207485393,,unknown,kind_median,6611,0,0,2366,11803,76,76,3444,10725
+20,C072,worship,,20.395432,99.934887,OSM node/2207485396,,unknown,kind_median,6834,0,0,2366,11803,76,76,3520,10649
+21,C074,worship,วัดเจติยาราม(สันธาตุ),20.367727,99.967402,OSM node/2207495992,,unknown,kind_median,6834,0,0,2366,11803,76,76,3596,10573
+22,C083,worship,,20.305946,99.882024,OSM node/4527119263,,unknown,kind_median,6999,0,0,2366,11803,76,76,3672,10497
+23,C084,worship,วัดหนองอ้อ,20.354305,99.905982,OSM node/4527119264,,unknown,kind_median,7460,0,0,2366,11803,76,76,3748,10421
+24,C085,worship,,20.369255,99.930782,OSM node/4527119265,,unknown,kind_median,7633,0,0,2366,11803,76,76,3824,10345
+25,C094,worship,วัดสันปูเลย,20.324154,99.945429,OSM node/6395095585,,unknown,kind_median,8063,0,0,2366,11803,76,76,3900,10269

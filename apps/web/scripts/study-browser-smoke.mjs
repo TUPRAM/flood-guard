@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 import { expect } from "@playwright/test";
 import { launchFloodGuardBrowser } from "./browser-launch.mjs";
+import { CASE_REPLAY_EXPORT_BUDGET_BYTES } from "./case-replay-inventory.mjs";
 
 const output = resolve(process.env.FLOODGUARD_PROFILE_OUT ?? "out");
 const artifacts = resolve("test-results/studio-studies");
@@ -479,6 +480,36 @@ try {
   const sourcesText = await sourcesPanel.innerText();
   assert(sourcesText.includes("scaled by the depth factor f = clip(") && sourcesText.includes("the exported depth factor f makes h + 0.3/f"), "The sources panel names the depth factor f");
   assert(!/(?<![A-Za-z0-9_])k(?![A-Za-z0-9_])/.test(sourcesText), "The sources panel shows no standalone k");
+  // Export pack: download links under the standing sentence; each link answers from this origin with exactly the
+  // bytes the manifest lists, and no link text or file name calls a modelled table a timetable of closures.
+  const packInventory = await page.evaluate(async (budget) => {
+    const manifestUrl = performance.getEntriesByType("resource").map((entry) => entry.name).find((name) => name.endsWith("/timeline.json"));
+    const pack = (await (await fetch(manifestUrl)).json()).exports;
+    return { budget_bytes: budget, bytes: pack.bytes, assets: pack.files.map((file) => ({ url: file.href, sha256: file.sha256, bytes: file.bytes })) };
+  }, CASE_REPLAY_EXPORT_BUDGET_BYTES);
+  assert.equal(packInventory.assets.reduce((sum, asset) => sum + asset.bytes, 0), packInventory.bytes, "The export pack's size is the sum of its files");
+  const downloads = sourcesPanel.getByTestId("export-files");
+  await expect(downloads.locator("a[download]")).toHaveCount(packInventory.assets.length);
+  await expect(sourcesPanel.getByTestId("export-tier")).toContainText("T1 scenario (model): modelled, not observed.");
+  await expect(sourcesPanel.getByTestId("export-tier")).toContainText("not a forecast, not an observed closure record and not an official warning");
+  await expect(sourcesPanel.getByTestId("export-licence")).toContainText("under ODbL 1.0 (attribution and share-alike)");
+  await expect(sourcesPanel.getByTestId("export-footer")).toContainText("Confidence: low");
+  const downloadLinks = await downloads.locator("a[download]").evaluateAll((links) => links.map((link) => ({
+    href: link.getAttribute("href"), name: link.getAttribute("download"), text: link.textContent, box: link.getBoundingClientRect().width,
+  })));
+  assert.deepEqual(downloadLinks.map((link) => link.href), packInventory.assets.map((asset) => asset.url), "Every export file has a download link, in the manifest's order");
+  for (const link of downloadLinks) {
+    assert(link.href.endsWith(`/exports/${link.name}`) && link.box > 0, `The download link is visible and saves under its file name (${link.name})`);
+    assert(!/schedule|closure plan|cut-off list/i.test(`${link.name} ${link.text}`), `No download is named as a closure timetable (${link.name})`);
+  }
+  const downloaded = await page.evaluate(async (assets) => Promise.all(assets.map(async (asset) => {
+    const response = await fetch(asset.url);
+    const digest = await crypto.subtle.digest("SHA-256", await response.arrayBuffer());
+    return response.ok && [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("") === asset.sha256;
+  })), packInventory.assets);
+  assert(downloaded.every(Boolean), "Every download link answers with the bytes the manifest lists");
+  assert(packInventory.bytes <= packInventory.budget_bytes, "The export pack is within its own budget");
+  checks.push(`export pack: ${packInventory.assets.length} download links under the standing sentence (modelled, not observed), each answering with its hashed bytes (${packInventory.bytes} of ${packInventory.budget_bytes} export-budget bytes, outside the precache budget)`);
   await sourcesPanel.locator("summary").click();
   await expect(page.getByText("Radar size comparison (Sentinel-1", { exact: false })).toContainText("calibration-informed, not an independent check");
   await expect(page.getByText("Radar check", { exact: false })).toHaveCount(0);
@@ -765,6 +796,24 @@ try {
     .evaluateAll((boxes) => boxes.map((box) => ({ need: box.querySelector("table").scrollWidth, room: box.clientWidth })));
   assert(planTables.length === 2 && planTables.every((box) => box.need <= box.room), `The capacity and what-if tables fit the plan card (${JSON.stringify(planTables)})`);
   checks.push("capacity-aware view beside the plan: both bounds with overflow = demand − fit, five caveats, the 79-place site flagged, candidates to verify; what-if levels labelled as not return periods, robust core marked");
+  // Local check of the candidates: no verification sheet has been returned, so the card says so and states no result.
+  const verification = planCard.getByTestId("shelter-verification");
+  await expect(verification).toHaveAttribute("data-status", "not_conducted");
+  await expect(verification.getByTestId("verification-status")).toContainText("Not conducted. No verification sheet has been returned");
+  await expect(verification.getByTestId("verification-sheet")).toContainText("“Checked by <role> on <date>; not an official shelter register”");
+  await expect(verification.getByTestId("verification-rows")).toHaveCount(0);
+  const sheetLink = verification.getByTestId("verification-sheet-link");
+  await expect(sheetLink).toHaveAttribute("download", "shelter_candidate_verification_sheet.csv");
+  const sheetFile = await page.evaluate(async (href) => {
+    const bytes = new Uint8Array(await (await fetch(href)).arrayBuffer());
+    return { bom: [...bytes.slice(0, 3)], text: new TextDecoder("utf-8").decode(bytes) };
+  }, await sheetLink.getAttribute("href"));
+  const sheetText = sheetFile.text;
+  assert.deepEqual(sheetFile.bom, [0xef, 0xbb, 0xbf], "The blank sheet starts with a UTF-8 byte-order mark, so Excel reads its Thai text");
+  assert(sheetText.includes("# verification_status,not_conducted"), "The blank sheet says no check was conducted");
+  const sheetRows = sheetText.split("\n").filter((line) => /^C\d{3},/.test(line));
+  assert(sheetRows.length === 95 && sheetRows.every((line) => line.endsWith(",,,,,")), "The sheet lists the 95 eligible candidates with the five checker columns empty");
+  checks.push("shelter-candidate check: not conducted, no result stated; the blank sheet downloads with 95 candidates and empty checker columns");
   await planCard.getByRole("button", { name: /^Show plan site 1, / }).click();
   // A closing popup fades out for a moment, so each check picks the popup by its text.
   const popupWith = (text) => page.locator(".leaflet-popup-content").filter({ hasText: text });
@@ -960,6 +1009,20 @@ try {
   await expect(thaiPlan.getByTestId("robust-core")).toHaveCount(5);
   await expect(thaiPlan.getByTestId("robust-core").first()).toHaveText("แกนที่คงทน: อยู่ใน 8 แห่งแรกที่ระดับ 2.5 ม. และ 4.0 ม. ด้วย");
   await expect(thaiPlan).not.toContainText(/Lower bound|Upper bound|overflow|What-if|Robust core|เปิดที่พักพิงเหล่านี้/);
+  await expect(thaiPlan.getByTestId("verification-status")).toContainText("ยังไม่ได้ดำเนินการ ยังไม่มีแบบตรวจสอบส่งกลับมา");
+  await expect(thaiPlan.getByTestId("verification-sheet")).toContainText("“ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ”");
+  await expect(thaiPlan.getByTestId("shelter-verification")).not.toContainText(/Not conducted|Download the blank sheet/);
+  // The download list in Thai: Thai titles for every file, the standing sentence, and no overflow at 390 px.
+  await touchPage.getByTestId("sources-panel").locator("summary").click();
+  const thaiDownloads = touchPage.getByTestId("sources-panel").getByTestId("export-files");
+  await expect(thaiDownloads.locator("a[download]")).toHaveCount(8);
+  assert((await thaiDownloads.locator("a[download]").allInnerTexts()).every((label) => /[฀-๿]/.test(label)), "Every download link has a Thai title");
+  await expect(touchPage.getByTestId("sources-panel").getByTestId("export-tier")).toContainText("ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้");
+  await expect(touchPage.getByTestId("sources-panel").getByTestId("export-tier")).toContainText("ไม่ใช่การพยากรณ์ ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง และไม่ใช่การเตือนภัยอย่างเป็นทางการ");
+  const thaiDownloadOverflow = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert(thaiDownloadOverflow <= 1, `The Thai download list does not overflow at 390 px (${thaiDownloadOverflow}px)`);
+  assert.deepEqual(await spacedThai(touchPage), [], "No Thai text node is letter-spaced with the sources panel open at 390 px");
+  await touchPage.getByTestId("sources-panel").locator("summary").click();
   const thaiPlanSpacing = await thaiPlan.evaluate((card) => [...card.querySelectorAll("p, th, td, caption, h2, h3, li, small, strong, span, summary")]
     .filter((element) => /[\u0E00-\u0E7F]/.test(element.textContent ?? "") && !["normal", "0px"].includes(getComputedStyle(element).letterSpacing))
     .map((element) => `${element.tagName}: ${getComputedStyle(element).letterSpacing}`));
@@ -976,6 +1039,7 @@ try {
   await touch.close();
   checks.push("touch phone in Thai: keyboard hint hidden, พ.ศ. dates with the CE year, Thai eyebrows not letter-spaced, finger-sized day chips, non-operational status and generation time in Thai, shelter-set comparison in Thai without letter-spacing or overflow");
   checks.push("touch phone in Thai: capacity-aware bounds, caveats and what-if label in Thai, robust core marked, no letter-spacing, tables fit at 390 px");
+  checks.push("touch phone in Thai: the candidate check says not conducted, and the eight download links have Thai titles under the standing sentence without overflow or letter-spacing");
   for (const path of [study, `${study}data/`, `${study}results/`, `${study}explorer/?chip=${encodeURIComponent(initialChip)}`, `${study}mae-sai/`]) {
     await page.setViewportSize({width:390,height:844});
     await page.goto(`${baseUrl}${path}`,{waitUntil:"networkidle"});

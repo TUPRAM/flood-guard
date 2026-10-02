@@ -6,6 +6,10 @@ const OPTIONAL_LANDING_ARTWORK = []; /* __OPTIONAL_LANDING_ARTWORK__ */
 // Opt-in bucket: the Mae Sai case replay's manifest and the files it lists (derived from the manifest at
 // build time). Saved only when the replay page asks after rendering online, never during installation.
 const OPTIONAL_CASE_REPLAY = []; /* __OPTIONAL_CASE_REPLAY__ */
+// The replay's export pack: tables and one map layer to download, listed apart from the replay data and counted
+// against a budget of their own. Saved after the replay data, on the same request, so a download link on a
+// saved replay still answers without a connection.
+const OPTIONAL_CASE_REPLAY_EXPORTS = []; /* __OPTIONAL_CASE_REPLAY_EXPORTS__ */
 let artworkTask = null;
 let caseReplayTask = null;
 
@@ -69,8 +73,7 @@ self.addEventListener("message", (event) => {
     }));
   }
   if (event.data?.type === "FLOODGUARD_CACHE_CASE_REPLAY" && APP_PROFILE === "competition") {
-    // "no-cache" revalidates against the network, so files the page has just loaded are not downloaded twice.
-    caseReplayTask ??= cacheOptionalAssets(OPTIONAL_CASE_REPLAY, "no-cache").finally(() => { caseReplayTask = null; });
+    caseReplayTask ??= cacheCaseReplay().finally(() => { caseReplayTask = null; });
     event.waitUntil(caseReplayTask.then((result) => {
       const message = { type: "FLOODGUARD_CASE_REPLAY_STATUS", ...result };
       if (event.ports?.[0]) event.ports[0].postMessage(message);
@@ -86,6 +89,18 @@ self.addEventListener("message", (event) => {
 
 function cacheLandingArtwork() {
   return cacheOptionalAssets(OPTIONAL_LANDING_ARTWORK, "no-store");
+}
+
+/**
+ * Save the case replay's data, then its export pack. The replay's own counts (cached, failed, total) describe the
+ * data the page needs; the export pack is reported apart (exports_*), so a failed download file never makes the
+ * replay look incomplete.
+ */
+async function cacheCaseReplay() {
+  // "no-cache" revalidates against the network, so files the page has just loaded are not downloaded twice.
+  const result = await cacheOptionalAssets(OPTIONAL_CASE_REPLAY, "no-cache");
+  const pack = await cacheOptionalAssets(OPTIONAL_CASE_REPLAY_EXPORTS, "no-cache");
+  return { ...result, exports_cached: pack.cached, exports_failed: pack.failed, exports_total: pack.total };
 }
 
 /**

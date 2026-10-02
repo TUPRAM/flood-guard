@@ -73,6 +73,7 @@ import {
   thaiYear,
   TIMELINE_END_T,
   TIMELINE_MANIFEST_URL,
+  formatFileSize,
   formatGeneratedAt,
   licenceRows,
   parseTimelineManifest,
@@ -80,6 +81,7 @@ import {
   waterCandidates,
   type AreaGeometry,
   type ExploratoryKnowledgeItem,
+  type ExportFile,
   type FacilityProps,
   type GeoCollection,
   type HourClass,
@@ -690,7 +692,7 @@ export function MaeSaiFloodTimeline() {
   const [linkReady, setLinkReady] = useState(false);
   const [share, setShare] = useState<{ status: "idle" | "copied" | "manual"; url: string }>({ status: "idle", url: "" });
   const [basemapIssue, setBasemapIssue] = useState(false);
-  const [offlineCopy, setOfflineCopy] = useState<{ cached: number; failed: number; total: number } | null>(null);
+  const [offlineCopy, setOfflineCopy] = useState<OfflineCopy | null>(null);
   const [focusedRoute, setFocusedRoute] = useState<string | null>(null);
 
   const timeRef = useRef(START_T);
@@ -970,11 +972,17 @@ export function MaeSaiFloodTimeline() {
       const worker = registration.active;
       if (!active || !worker) return;
       channel = new MessageChannel();
-      channel.port1.onmessage = (event: MessageEvent<{ type?: string; cached?: number; failed?: number; total?: number }>) => {
+      channel.port1.onmessage = (event: MessageEvent<{
+        type?: string; cached?: number; failed?: number; total?: number; exports_cached?: number; exports_failed?: number; exports_total?: number;
+      }>) => {
         channel?.port1.close();
         const result = event.data;
         if (!active || result?.type !== "FLOODGUARD_CASE_REPLAY_STATUS") return;
-        setOfflineCopy({ cached: result.cached ?? 0, failed: result.failed ?? 0, total: result.total ?? 0 });
+        // The download files are counted apart from the replay's own data (their own list and budget).
+        setOfflineCopy({
+          cached: result.cached ?? 0, failed: result.failed ?? 0, total: result.total ?? 0,
+          exports: { cached: result.exports_cached ?? 0, failed: result.exports_failed ?? 0, total: result.exports_total ?? 0 },
+        });
       };
       worker.postMessage({ type: "FLOODGUARD_CACHE_CASE_REPLAY" }, [channel.port2]);
     }).catch(() => undefined);
@@ -2505,7 +2513,8 @@ export function MaeSaiFloodTimeline() {
 
                 {shelterInfo && (
                   <ShelterPlanCard shelters={shelterInfo} k={planK} onPlanK={choosePlanK}
-                    language={lang} onShowCandidate={showCandidateOnMap} />
+                    language={lang} onShowCandidate={showCandidateOnMap}
+                    verificationSheet={manifest.exports?.files.find((file) => file.id === shelterInfo.verification?.sheet) ?? null} />
                 )}
 
                 {shelterInfo && (
@@ -2757,7 +2766,83 @@ function PhaseLegend({ phases, activeId, language }: { phases: readonly Timeline
   );
 }
 
-type OfflineCopy = { cached: number; failed: number; total: number };
+/** What the service worker saved: the replay's data files and, counted apart, the download files of the export pack. */
+export type OfflineCopy = { cached: number; failed: number; total: number; exports?: { cached: number; failed: number; total: number } };
+
+const pick2 = (pair: [string, string], language: Language) => pair[language === "th" ? 1 : 0];
+const EXPORT_KINDS: Record<ExportFile["media_type"], [string, string]> = {
+  "text/csv": ["CSV table", "ตาราง CSV"],
+  "application/geo+json": ["GeoJSON map layer", "ชั้นข้อมูลแผนที่ GeoJSON"],
+  "text/plain": ["text file", "ไฟล์ข้อความ"],
+};
+
+/** Which evidence lanes a download file holds: model only, or reported facts beside a model check. */
+function exportLaneText(file: Pick<ExportFile, "lanes">, language: Language): string {
+  const reported = file.lanes.includes("REP");
+  const model = file.lanes.includes("SCN");
+  if (reported && model) return language === "th" ? "ข้อมูลตามรายงานคู่กับผลเทียบจากแบบจำลอง" : "reported facts beside a model check";
+  if (reported) return language === "th" ? "ข้อมูลตามรายงาน" : "reported facts";
+  return language === "th" ? "ค่าจากแบบจำลอง" : "modelled";
+}
+
+/**
+ * Download links of the export pack (r4 on): tables and one map layer for spreadsheet and GIS users. Each link says
+ * what the file holds, with its kind, size and lanes; the file name is the name the download is saved under (the panel
+ * shows no internal id). The standing sentence says the tables are modelled, not observed.
+ * The files come from the same origin, so a saved replay still serves them without a connection. Renders nothing for
+ * a manifest without a pack.
+ */
+export function ExportDownloads({ manifest, language, offlineCopy }: { manifest: TimelineManifest; language: Language; offlineCopy: OfflineCopy | null }) {
+  const pack = manifest.exports;
+  if (!pack || pack.files.length === 0) return null;
+  const th = language === "th";
+  const t = (en: string, thai: string) => (th ? thai : en);
+  const saved = offlineCopy?.exports;
+  const confidence = pack.confidence.toLowerCase() === "low" ? t("low", "ต่ำ") : pack.confidence;
+  return (
+    <>
+      <h3 id="mae-sai-downloads">{t("Download the tables (for spreadsheets and GIS)", "ดาวน์โหลดตาราง (สำหรับโปรแกรมตารางคำนวณและ GIS)")}</h3>
+      <p className={styles.note} data-testid="export-tier">
+        <strong>{t("T1 scenario (model): modelled, not observed.", "สถานการณ์จำลองระดับ T1 (แบบจำลอง): ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้")}</strong>{" "}
+        {t(
+          "The tables come from this replay of a reconstructed 2024 event and are for preparedness planning and exercises. Their hours come from illustrative stage keyframes. They are not a forecast, not an observed closure record and not an official warning, and they are non-operational: no priority score and no action class is computed.",
+          "ตารางมาจากการย้อนดูเหตุการณ์ปี 2567 (2024) ที่จำลองขึ้นใหม่ ใช้เพื่อการวางแผนเตรียมความพร้อมและการฝึกซ้อม ชั่วโมงในตารางมาจากจุดกำหนดระดับน้ำเพื่อการอธิบาย ตารางไม่ใช่การพยากรณ์ ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง และไม่ใช่การเตือนภัยอย่างเป็นทางการ ไม่ใช้ในการปฏิบัติการ และไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการ",
+        )}
+      </p>
+      <ul className={styles.list} data-testid="export-files">
+        {pack.files.map((file) => (
+          <li key={file.id}>
+            <a href={file.href} download={file.name} className={styles.inlineLink} data-testid={`export-${file.id}`}>{file.title[language]}</a>
+            <span className={styles.muted}>
+              ({pick2(EXPORT_KINDS[file.media_type], language)}, {formatFileSize(file.bytes)}
+              {file.rows != null && file.header_lines != null ? t(`, ${file.rows.toLocaleString("en-US")} rows`, ` ${file.rows.toLocaleString("en-US")} แถว`) : ""}
+              {file.rows != null && file.header_lines == null ? t(`, ${file.rows.toLocaleString("en-US")} points`, ` ${file.rows.toLocaleString("en-US")} จุด`) : ""}
+              {th ? " " : "; "}{exportLaneText(file, language)})
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className={styles.muted} data-testid="export-reading">{t(
+        "Each CSV is UTF-8 with a byte-order mark, so the Thai text opens correctly in Excel. It starts with provenance lines (what the table is and is not, its timestamps, confidence, assumptions and licence), and its second line gives their number; then comes the column header, in English with the Thai label in brackets. In QGIS or pandas, skip that number of lines. The GeoJSON layer carries the same fields in its metadata.",
+        "ไฟล์ CSV ทุกไฟล์เข้ารหัสแบบ UTF-8 พร้อมเครื่องหมาย BOM ข้อความภาษาไทยจึงเปิดใน Excel ได้ถูกต้อง แต่ละไฟล์เริ่มด้วยบรรทัดข้อมูลกำกับ (ตารางคืออะไรและไม่ใช่อะไร เวลาของข้อมูล ความเชื่อมั่น สมมติฐาน และสัญญาอนุญาต) โดยบรรทัดที่สองบอกจำนวนบรรทัดดังกล่าว จากนั้นเป็นหัวคอลัมน์ภาษาอังกฤษพร้อมคำอธิบายภาษาไทยในวงเล็บ ใน QGIS หรือ pandas ให้ข้ามบรรทัดตามจำนวนนั้น ส่วนชั้นข้อมูล GeoJSON มีข้อมูลกำกับเดียวกันอยู่ในส่วน metadata",
+      )}</p>
+      <p className={styles.muted} data-testid="export-licence">{t(
+        `Licence: every file is derived from OpenStreetMap and is under ${pack.licence} (attribution and share-alike); README_licences.txt lists the attributions to keep. One licence lineage per file: no rain values and nothing from a source without a stated licence is in any table.`,
+        `สัญญาอนุญาต: ทุกไฟล์ดัดแปลงจาก OpenStreetMap และใช้สัญญาอนุญาต ${pack.licence} (ต้องแสดงที่มาและเผยแพร่งานดัดแปลงภายใต้สัญญาอนุญาตเดียวกัน) ไฟล์ README_licences.txt ระบุข้อความแสดงที่มาที่ต้องคงไว้ แต่ละไฟล์มีสายสัญญาอนุญาตเดียว ไม่มีค่าปริมาณฝนและไม่มีข้อมูลจากแหล่งที่ไม่ระบุสัญญาอนุญาตในตารางใด`,
+      )}</p>
+      <p className={styles.muted} data-testid="export-footer">
+        {t("Confidence", "ความเชื่อมั่น")}: {confidence} · {t("source timestamp", "เวลาของข้อมูลต้นทาง")}: <Localized text={pack.source_timestamp} language={language} /> · {t(
+          `${pack.files.length} files, ${formatFileSize(pack.bytes)} in all`, `${pack.files.length} ไฟล์ รวม ${formatFileSize(pack.bytes)}`)}
+        <GeneratedAt manifest={manifest} language={language} />
+      </p>
+      {saved && saved.total > 0 && (
+        <p className={styles.muted} data-testid="export-offline">{saved.failed === 0 && saved.cached === saved.total
+          ? t(`Offline copy: the ${saved.total} download files are saved on this device too, so these links work without a connection.`, `สำเนาออฟไลน์: บันทึกไฟล์ดาวน์โหลด ${saved.total} ไฟล์ไว้ในอุปกรณ์แล้วเช่นกัน ลิงก์เหล่านี้จึงใช้ได้แม้ไม่มีการเชื่อมต่อ`)
+          : t(`Offline copy incomplete: ${saved.cached} of ${saved.total} download files saved on this device.`, `สำเนาออฟไลน์ยังไม่ครบ: บันทึกไฟล์ดาวน์โหลดแล้ว ${saved.cached} จาก ${saved.total} ไฟล์`)}</p>
+      )}
+    </>
+  );
+}
 
 /**
  * Sources, assumptions and limits. Manifest sentences are shown in Thai where the page knows a translation (source
@@ -2793,6 +2878,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
         )}
       </ul>
       <LicencesByInput manifest={manifest} language={language} />
+      <ExportDownloads manifest={manifest} language={language} offlineCopy={offlineCopy} />
       {(viirs || rain) && (
         <>
           <h3>{t("Observed data shown with the model", "ข้อมูลที่สังเกตได้ซึ่งแสดงคู่กับแบบจำลอง")}</h3>

@@ -18,14 +18,19 @@ import {
   smallestFloodedExtent,
   thaiYear,
   TIMELINE_END_T,
+  formatDateWithYear,
+  formatFileSize,
   type AccessInfo,
   type CapacityPlanRow,
+  type CheckerRole,
+  type ExportFile,
   type ExternalCheck,
   type Language,
   type PopulationInfo,
   type ReportedRole,
   type ReportedShelter,
   type ShelterCandidate,
+  type ShelterCheckRow,
   type ShelterInfo,
   type TambonProps,
   type TimelineManifest,
@@ -100,6 +105,15 @@ const LOCATION_METHODS: Record<string, [string, string]> = {
   unknown: ["Unknown", "ไม่ทราบ"],
 };
 const CONFIDENCE: Record<string, [string, string]> = { high: ["high", "สูง"], medium: ["medium", "ปานกลาง"], low: ["low", "ต่ำ"] };
+/** Who checked a candidate: a role, never a name (the codes of the verification sheet). */
+const CHECKER_ROLES: Record<CheckerRole, [string, string]> = {
+  ddpm_officer: ["a DDPM officer", "เจ้าหน้าที่ ปภ."],
+  local_government_officer: ["a tambon or municipality officer", "เจ้าหน้าที่ อบต. หรือเทศบาล"],
+  village_leader: ["a village head or kamnan", "ผู้ใหญ่บ้านหรือกำนัน"],
+  site_staff: ["staff of the site", "เจ้าหน้าที่ของสถานที่"],
+  project_team: ["the FloodGuard project team", "ทีมโครงการ FloodGuard"],
+  other_local_contact: ["another local contact", "ผู้ประสานงานในพื้นที่อื่น ๆ"],
+};
 
 const pick = (table: Record<string, [string, string]>, key: string, language: Language) => {
   const entry = table[key];
@@ -1267,17 +1281,90 @@ export function WhatIfBlock({ shelters, k, language }: { shelters: ShelterInfo; 
   );
 }
 
+/** "Checked by <role> on <date>; not an official shelter register", in the page's language. */
+export function checkLabel(row: Pick<ShelterCheckRow, "checked_by_role" | "checked_on">, language: Language): string {
+  const role = pick(CHECKER_ROLES, row.checked_by_role, language);
+  const date = formatDateWithYear(row.checked_on, language);
+  return language === "th"
+    ? `ตรวจสอบโดย${role} เมื่อ ${date} ไม่ใช่ทะเบียนที่พักพิงทางการ`
+    : `Checked by ${role} on ${date}; not an official shelter register`;
+}
+
+/**
+ * Local check of the shelter candidates through the verification sheet of the export pack. Until a sheet is returned
+ * and imported the block says the check was not conducted and states no result. A returned check lists each checked
+ * candidate with the label "Checked by <role> on <date>; not an official shelter register". `sheet` is the blank
+ * sheet's download file. Renders nothing for a manifest without the block.
+ */
+export function ShelterVerificationBlock({ shelters, sheet, language }: { shelters: ShelterInfo; sheet?: ExportFile | null; language: Language }) {
+  const t = translator(language);
+  const check = shelters.verification;
+  if (!check) return null;
+  const conducted = check.status === "conducted" && check.checked.length > 0;
+  const byId = new Map(shelters.candidates.map((candidate) => [candidate.id, candidate]));
+  return (
+    <div className={styles.whatIf} data-testid="shelter-verification" data-status={conducted ? "conducted" : "not_conducted"}>
+      <h3>{t("Local check of the candidates", "การตรวจสอบสถานที่ในพื้นที่")}</h3>
+      {conducted ? (
+        <>
+          <p data-testid="verification-status">{t(
+            `A local check of ${check.checked.length} of the ${check.candidates_listed} eligible candidates was returned${check.imported_on ? ` (imported ${formatDateWithYear(check.imported_on, "en")})` : ""}. It is reported by role and is not an official shelter register; a candidate that is not listed below was not checked.`,
+            `มีผลการตรวจสอบในพื้นที่ส่งกลับมา ${check.checked.length} จาก ${check.candidates_listed} แห่งที่เข้าเกณฑ์${check.imported_on ? ` (นำเข้าเมื่อ ${formatDateWithYear(check.imported_on, "th")})` : ""} เป็นข้อมูลที่รายงานตามบทบาท ไม่ใช่ทะเบียนที่พักพิงทางการ สถานที่ที่ไม่อยู่ในรายการด้านล่างยังไม่ได้ตรวจสอบ`,
+          )}</p>
+          <ul className={styles.list} data-testid="verification-rows">
+            {check.checked.map((row) => {
+              const candidate = byId.get(row.candidate_id);
+              return (
+                <li key={row.candidate_id}>
+                  <strong>{candidate ? candidateTitle(candidate, language) : row.candidate_id}</strong>{" — "}
+                  {row.usable_as_shelter ? t("usable as a shelter", "ใช้เป็นที่พักพิงได้") : t("not usable as a shelter", "ใช้เป็นที่พักพิงไม่ได้")}
+                  {row.verified_capacity !== null && t(`; capacity ${formatPeople(row.verified_capacity)} people`, ` ความจุ ${formatPeople(row.verified_capacity)} คน`)}
+                  {row.access_notes && <>{language === "th" ? " " : "; "}<span lang="und">{row.access_notes}</span></>}
+                  {language === "th" ? " " : ". "}
+                  <span className={styles.muted} data-testid="verification-label">{checkLabel(row, language)}{language === "th" ? "" : "."}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : (
+        <p className={styles.caveat} data-testid="verification-status">{t(
+          "Not conducted. No verification sheet has been returned, so no site on this page has been checked on the ground: every capacity is an unverified estimate and every site is a candidate to verify.",
+          "ยังไม่ได้ดำเนินการ ยังไม่มีแบบตรวจสอบส่งกลับมา จึงยังไม่มีสถานที่ใดในหน้านี้ที่ได้รับการตรวจสอบในพื้นที่ ความจุทุกค่าเป็นค่าประมาณที่ยังไม่ได้ตรวจสอบ และทุกแห่งเป็นสถานที่ที่ควรตรวจสอบ",
+        )}</p>
+      )}
+      <p className={styles.muted} data-testid="verification-sheet">
+        {t(
+          `The verification sheet lists the ${check.candidates_listed} eligible candidates with empty columns for a local checker: usable as a shelter, capacity, access notes, role and date. A returned check is labelled “Checked by <role> on <date>; not an official shelter register”. The sheet takes a role, never a name: no names of people, phone numbers or ID numbers.`,
+          `แบบตรวจสอบมีรายการสถานที่ที่เข้าเกณฑ์ ${check.candidates_listed} แห่ง พร้อมคอลัมน์ว่างสำหรับผู้ตรวจสอบในพื้นที่ ได้แก่ ใช้เป็นที่พักพิงได้หรือไม่ ความจุ หมายเหตุการเข้าถึง บทบาท และวันที่ ผลที่ส่งกลับมาจะระบุว่า “ตรวจสอบโดย <บทบาท> เมื่อ <วันที่> ไม่ใช่ทะเบียนที่พักพิงทางการ” แบบตรวจสอบรับเฉพาะบทบาท ไม่รับชื่อบุคคล หมายเลขโทรศัพท์ หรือเลขประจำตัว`,
+        )}
+        {sheet && (
+          <>
+            {" "}
+            <a href={sheet.href} download={sheet.name} className={styles.inlineLink} data-testid="verification-sheet-link">
+              {t(`Download the blank sheet (CSV, ${formatFileSize(sheet.bytes)})`, `ดาวน์โหลดแบบตรวจสอบเปล่า (CSV, ${formatFileSize(sheet.bytes)})`)}
+            </a>
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
 /**
  * Ranked shelter plan (planning scenario): coverage curve, the first k sites with loads and capacity, and the gap,
- * then the capacity-aware view (both bounds) and the what-if levels with the robust core.
+ * then the capacity-aware view (both bounds), the what-if levels with the robust core and the local check of the
+ * candidates (not conducted until a verification sheet is returned).
  * Memoised: it does not depend on the replay clock, so playback does not re-render it.
  */
-export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPlanK, language, onShowCandidate }: {
+export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPlanK, language, onShowCandidate, verificationSheet }: {
   shelters: ShelterInfo;
   k: number;
   onPlanK: (value: number) => void;
   language: Language;
   onShowCandidate: (id: string) => void;
+  /** The blank verification sheet of the export pack, for its download link. */
+  verificationSheet?: ExportFile | null;
 }) {
   const t = translator(language);
   const sliderId = useId();
@@ -1342,6 +1429,7 @@ export const ShelterPlanCard = memo(function ShelterPlanCard({ shelters, k, onPl
       )}</p>
       <CapacityAwareBlock shelters={shelters} k={k} language={language} onShowCandidate={onShowCandidate} />
       <WhatIfBlock shelters={shelters} k={k} language={language} />
+      <ShelterVerificationBlock shelters={shelters} sheet={verificationSheet} language={language} />
     </section>
   );
 });

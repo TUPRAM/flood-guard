@@ -2,8 +2,9 @@
 
 Scans the text the bake and the documents put in front of a reader with the rules shared with the web tests
 (``apps/web/src/lib/replay-wording-rules.json``): the served manifest, the strings of the bake scripts (the
-next manifest), the reported-shelter source file, the replay documents, the product 4009 rights record and its
-notice, and export headers. It must pass on the current text and fail on one seeded bad string per rule.
+next manifest) and of the export and shelter-check modules, the reported-shelter source file, the replay documents,
+the product 4009 rights record and its notice, and the header of every committed export file. It must pass on the
+current text and fail on one seeded bad string per rule.
 The web twin is ``apps/web/src/lib/replay-wording-lint.test.tsx``.
 """
 
@@ -15,6 +16,7 @@ import re
 
 import pytest
 
+from floodguard import replay_exports
 from floodguard.wording_lint import (
     WordingRulesError,
     find_violations,
@@ -30,7 +32,9 @@ ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "apps" / "web"
 RULES_PATH = WEB / "src" / "lib" / "replay-wording-rules.json"
 RULES = load_rules(RULES_PATH)
-BAKE_SCRIPTS = ("scripts/build_mae_sai_flood_timeline.py", "scripts/mae_sai_timeline_evacuation.py", "scripts/mae_sai_timeline_observations.py")
+BAKE_SCRIPTS = ("scripts/build_mae_sai_flood_timeline.py", "scripts/mae_sai_timeline_evacuation.py", "scripts/mae_sai_timeline_observations.py",
+                # The export pack's wording, the returned-sheet messages and the import script's output reach a reader too.
+                "src/floodguard/replay_exports.py", "src/floodguard/shelter_validation.py", "scripts/import_shelter_validation.py")
 JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "docs/proposal_execution/rights_basis_4009_v1.json",
                   "docs/mae_sai_timeline_r4_input_receipt.json", "apps/web/src/lib/__fixtures__/mae-sai-equity-access-parity.json")
 TEXT_DOCUMENTS = ("docs/decision-log-d1-d16.md", "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt")
@@ -38,6 +42,24 @@ STUDY_LIBRARY = "docs/studio-study-library.md"
 REPLAY_SECTION = "### Case replay: links, exports and offline copy"
 EXPORT_HEADER = ("T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage "
                  "keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null")
+
+
+def export_headers() -> list[tuple[str, str]]:
+    """Header text of every committed export file: the provenance lines and column header of a CSV, the metadata of
+    the GeoJSON layer and the whole README. Data rows are place names and numbers, not copy."""
+    folder = manifest_path().parent / replay_exports.EXPORT_FOLDER
+    items = []
+    for path in sorted(folder.iterdir()):
+        data = path.read_bytes()
+        if path.suffix == ".csv":
+            fields, _, _ = replay_exports.read_export_csv(data)
+            text = "\n".join(data.decode("utf-8-sig").split("\n")[:int(fields["header_lines"]) + 1])
+        elif path.suffix == ".geojson":
+            text = json.dumps(json.loads(data)["metadata"], ensure_ascii=False)
+        else:
+            text = data.decode("utf-8")
+        items.append((f"exports/{path.name} header", text))
+    return items
 
 
 def manifest_path() -> Path:
@@ -62,6 +84,7 @@ def corpus() -> list[tuple[str, str]]:
     items.append((f"{STUDY_LIBRARY} (case replay section)", markdown_section(library, REPLAY_SECTION)))
     items += [(f"{STUDY_LIBRARY} (route table)", line) for line in library.splitlines() if "/studio/cases/mae-sai-2024/" in line]
     items.append(("export header (P3-1 standard sentence)", EXPORT_HEADER))
+    items += export_headers()
     return items
 
 
@@ -170,7 +193,7 @@ def test_a_malformed_rules_file_is_refused(tmp_path: Path) -> None:
 def test_corpus_covers_manifest_bake_scripts_documents_and_export_header() -> None:
     sources = [source for source, _ in corpus()]
     assert sum(source.startswith("timeline.json") for source in sources) > 100
-    for needle in (*BAKE_SCRIPTS, *TEXT_DOCUMENTS, "export header"):
+    for needle in (*BAKE_SCRIPTS, *TEXT_DOCUMENTS, "export header", "exports/modelled_road_inundation_by_hour.csv header", "exports/README_licences.txt header"):
         assert any(source.startswith(needle) for source in sources), needle
     for document in JSON_DOCUMENTS:
         assert any(source.startswith(document) for source in sources), document
@@ -205,6 +228,13 @@ def test_lint_fails_on_one_seeded_bad_string_per_rule(rule_id: str) -> None:
 
 def test_export_headers_are_linted_like_any_other_text() -> None:
     assert find_violations(EXPORT_HEADER, RULES, "header") == []
+    # The sentence the roadmap fixed is the one the writer puts into every file.
+    assert replay_exports.EXPORT_TIER == EXPORT_HEADER
+    headers = export_headers()
+    assert len(headers) == 8 and all(EXPORT_HEADER in text for _, text in headers)
+    assert all(replay_exports.EXPORT_TIER_TH in text for _, text in headers)
+    seeded = [(source, text.replace("not an observed closure record", "the road closure schedule")) for source, text in headers]
+    assert ids(lint_texts(seeded, RULES)) == ["road_schedule"]
     assert ids(find_violations("# road_closure_schedule.csv - road closure schedule by hour", RULES)) == ["road_schedule"]
     assert ids(find_violations("# modelled_road_inundation_by_hour.csv - modelled, not observed", RULES)) == []
     assert ids(find_violations("# 100-year flood; forecast for district officers", RULES)) == ["forecast", "return_period"]

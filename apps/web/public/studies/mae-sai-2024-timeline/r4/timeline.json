@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-02T12:01:00+07:00",
+ "generated_at": "2026-10-02T14:33:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -154,6 +154,17 @@
     "shelters.reported"
    ],
    "source_timestamp": "reports dated 2024-09-11 to 2024-10-11; compiled 2026-09-27"
+  },
+  {
+   "id": "shelter_candidate_check",
+   "lane": "REP",
+   "evidence_tier": "Local check reported by role; not an official shelter register",
+   "temporal_relation": "post_event_compilation",
+   "covers": [
+    "shelters.verification"
+   ],
+   "source_timestamp": "not conducted: no verification sheet had been returned when these files were generated",
+   "note": "No verification sheet has been returned: the local check of the shelter candidates was not conducted. Every capacity is an unverified estimate and every site is a candidate to verify on the ground."
   },
   {
    "id": "event_chronology",
@@ -321,6 +332,17 @@
     "external_references[hii-event-page]"
    ],
    "source_timestamp": "event reports of September 2024"
+  },
+  {
+   "id": "export_pack",
+   "lane": "SCN",
+   "evidence_tier": "T1 scenario (model)",
+   "temporal_relation": "event_window_reconstruction",
+   "covers": [
+    "exports"
+   ],
+   "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT",
+   "note": "Download files written from the modelled blocks above; each file names its own lanes. The reported-shelter table and the reported points of the site layer repeat reported facts (block reported_shelters) beside a model check."
   }
  ],
  "exploratory_knowledge": {
@@ -10019,6 +10041,15 @@
     ]
    ]
   },
+  "verification": {
+   "status": "not_conducted",
+   "label_template": "Checked by <role> on <date>; not an official shelter register",
+   "sheet": "shelter_candidate_verification_sheet",
+   "candidate_set_sha256": "728655fd042e631241f5527a906ea7456380127bc9ed0de4aa6a461867cc7bb8",
+   "candidates_listed": 95,
+   "statement": "No verification sheet has been returned: the local check of the shelter candidates was not conducted. Every capacity is an unverified estimate and every site is a candidate to verify on the ground.",
+   "checked": []
+  },
   "method": {
    "evacuation_stage_m": 0.0,
    "late_evacuation_stage_m": 1.0,
@@ -10036,6 +10067,221 @@
   "reported_status": "Reported use from public sources; not an official register. Locations are OSM matches where possible; low-confidence locations are approximate.",
   "reported_compiled": "2026-09-27",
   "reported_access_set_rule": "The reported_2024 access set counts located sites reported as overnight shelters by 15 Sep; the command centre and sites first used after 12 Sep are shown on the map but not counted. Opening times within 10-12 Sep are not modelled."
+ },
+ "exports": {
+  "scenario_tier": "T1 scenario (model)",
+  "tier": "T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null",
+  "confidence": "low",
+  "confidence_reason": "The tables come from a terrain-model reconstruction with illustrative stages, WorldPop 2020 residents, OpenStreetMap roads and sites, and unverified capacity estimates; nothing was checked on the ground.",
+  "purpose": "Tables and one map layer for spreadsheet and GIS users, written from the modelled blocks of this manifest: modelled, not observed. Not a forecast, not an observed closure record and not an official warning.",
+  "licence": "ODbL 1.0",
+  "licence_rule": "One licence lineage per file: every file is OpenStreetMap-derived (ODbL 1.0, attribution and share-alike) with attribution-only inputs. No file holds rain values (CC BY-NC) or anything from a source without a stated licence.",
+  "header": {
+   "csv": "UTF-8 with a byte-order mark and LF line ends. Each file starts with provenance lines (first cell starts with #) and then the column header; header_lines of each file gives their number. Header cells are the English key and the Thai label in brackets.",
+   "geojson": "The same provenance fields sit in a top-level metadata member, before the features.",
+   "why_in_the_file": "A sidecar file is lost when a table is forwarded on its own, so the tier, the confidence, the timestamps, the assumptions and the licence travel inside each file."
+  },
+  "offline": "Saved with the replay's offline copy; outside the replay's precache budget, under a budget of their own.",
+  "assumptions": [
+   "Every table is a T1 scenario (model) on the reconstructed water; the reported-shelter table adds reported facts, kept apart in their own columns.",
+   "Hours are replay hours on the hourly grid (hour 0 = 9 Sep 2024 00:00 ICT); the assumed stage is sampled at the start of each hour.",
+   "The modelled road table lists one row per OpenStreetMap way of the classes the replay models; the legacy candidate columns of the source road file are not carried.",
+   "No listed capacity from a shelter register, no occupancy count and no personal data is in any file."
+  ],
+  "source_timestamp": "OSM extract 2026-07-09; WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT",
+  "folder": "/studies/mae-sai-2024-timeline/r4/exports/",
+  "file_count": 8,
+  "bytes": 771480,
+  "files": [
+   {
+    "id": "shelter_plan_reported_2024",
+    "name": "shelter_plan_reported_2024.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv",
+    "sha256": "6af029a6ea9307af9e7c51ddfa60ed64f8b69daa150ee64ca141f98dddf8074a",
+    "bytes": 21874,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Shelters reported in use in Mae Sai in September 2024, with a model check of each located site (not an official register)",
+     "th": "ที่พักพิงที่มีรายงานว่าใช้ในแม่สายเดือนกันยายน 2567 (2024) พร้อมผลเทียบกับแบบจำลองของสถานที่ที่ระบุตำแหน่งได้ (ไม่ใช่ทะเบียนทางการ)"
+    },
+    "lanes": [
+     "REP",
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "reported-shelters",
+     "copernicus-dem"
+    ],
+    "rows": 19,
+    "header_lines": 35
+   },
+   {
+    "id": "shelter_plan_k",
+    "name": "shelter_plan_k.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv",
+    "sha256": "c67a43b5a909dc939b0b40611f2b42943aa633703988aa56047fef6977711c13",
+    "bytes": 12754,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Modelled shelter coverage ranking, sites 1 to N: a plan of any size is its first rows (candidates to verify)",
+     "th": "การจัดอันดับความครอบคลุมของที่พักพิงตามแบบจำลอง ลำดับ 1 ถึง N แผนขนาดใดก็ตามคือแถวแรกตามจำนวนนั้น (สถานที่ที่ควรตรวจสอบ)"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "worldpop",
+     "copernicus-dem"
+    ],
+    "rows": 12,
+    "header_lines": 38
+   },
+   {
+    "id": "shelter_plan_capacitated",
+    "name": "shelter_plan_capacitated.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv",
+    "sha256": "1fd77def8f373f5d433648f3b16fda9e971d9c865e9f68eddcf0f616b8fbfb61",
+    "bytes": 16031,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Capacity-aware shelter ranking under two capacity bounds: who fits (candidates to verify)",
+     "th": "การจัดอันดับที่พักพิงแบบคิดความจุภายใต้ขอบเขตล่างและขอบเขตบน: รองรับได้กี่คน (สถานที่ที่ควรตรวจสอบ)"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "worldpop",
+     "copernicus-dem"
+    ],
+    "rows": 25,
+    "header_lines": 37
+   },
+   {
+    "id": "shelter_sites",
+    "name": "shelter_sites.geojson",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_sites.geojson",
+    "sha256": "07148d0474d72dd6c193f854958a4a333e49ef37ca21ade7d13c4b95c6e5153e",
+    "bytes": 88448,
+    "media_type": "application/geo+json",
+    "title": {
+     "en": "Shelter sites as points: every modelled candidate and every located site reported in use in September 2024",
+     "th": "ตำแหน่งที่พักพิงแบบจุด: สถานที่ที่เป็นไปได้ทุกแห่งตามแบบจำลอง และสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) ที่ระบุตำแหน่งได้"
+    },
+    "lanes": [
+     "SCN",
+     "REP"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "worldpop",
+     "copernicus-dem",
+     "reported-shelters"
+    ],
+    "rows": 128
+   },
+   {
+    "id": "modelled_road_inundation_by_hour",
+    "name": "modelled_road_inundation_by_hour.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv",
+    "sha256": "d04d3b45fba261df12249eb06b41466ba3eab8add057b6b8c77adc579add92c2",
+    "bytes": 345264,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Modelled road inundation by hour, one row per OpenStreetMap way (modelled, not observed)",
+     "th": "ถนนที่น้ำท่วมตามแบบจำลองรายชั่วโมง หนึ่งแถวต่อหนึ่งเส้นทางใน OpenStreetMap (ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้)"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "copernicus-dem",
+     "cod-ab"
+    ],
+    "rows": 3478,
+    "header_lines": 37
+   },
+   {
+    "id": "modelled_access_loss_by_hour",
+    "name": "modelled_access_loss_by_hour.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_access_loss_by_hour.csv",
+    "sha256": "2f84b43259c8ed50ba11a82dd4187d489bb9ddc94abf7999053f4dd202331c76",
+    "bytes": 241197,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Modelled loss of walking access to a shelter by hour, one row per subdistrict and replay hour",
+     "th": "การสูญเสียการเข้าถึงที่พักพิงด้วยการเดินตามแบบจำลองรายชั่วโมง หนึ่งแถวต่อตำบลและชั่วโมงของการย้อนดู"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "worldpop",
+     "cod-ab",
+     "copernicus-dem",
+     "reported-shelters"
+    ],
+    "rows": 2112,
+    "header_lines": 38
+   },
+   {
+    "id": "shelter_candidate_verification_sheet",
+    "name": "shelter_candidate_verification_sheet.csv",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv",
+    "sha256": "de8041b54142886e788c62868227c097628c45932dfd1021fe7f779ed711d2cc",
+    "bytes": 22074,
+    "media_type": "text/csv",
+    "title": {
+     "en": "Shelter-candidate verification sheet: a blank checklist for a local checker (no check has been conducted)",
+     "th": "แบบตรวจสอบสถานที่ที่อาจใช้เป็นที่พักพิง: รายการตรวจที่ยังว่างสำหรับผู้ตรวจสอบในพื้นที่ (ยังไม่มีการตรวจสอบ)"
+    },
+    "lanes": [
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "copernicus-dem"
+    ],
+    "rows": 95,
+    "header_lines": 43
+   },
+   {
+    "id": "readme_licences",
+    "name": "README_licences.txt",
+    "href": "/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt",
+    "sha256": "90b28ea994487c448c539faf471478eeafe714446f3635d0e3e09db10fd6f299",
+    "bytes": 23838,
+    "media_type": "text/plain",
+    "title": {
+     "en": "Licences, attributions and reading notes of the export pack (read this first)",
+     "th": "สัญญาอนุญาต การแสดงที่มา และข้อควรรู้ในการอ่านชุดไฟล์ส่งออก (โปรดอ่านก่อน)"
+    },
+    "lanes": [
+     "REP",
+     "SCN"
+    ],
+    "licence": "ODbL 1.0",
+    "source_ids": [
+     "osm",
+     "reported-shelters",
+     "copernicus-dem",
+     "worldpop",
+     "cod-ab"
+    ]
+   }
+  ]
  },
  "external_checks": [
   {

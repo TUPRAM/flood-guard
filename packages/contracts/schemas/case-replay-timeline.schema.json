@@ -291,7 +291,7 @@
     },
     "shelters": {
       "type": "object",
-      "required": ["candidates", "plan", "reported", "capacitated", "robustness", "confidence", "confidence_reason", "source_timestamp"],
+      "required": ["candidates", "plan", "reported", "capacitated", "robustness", "verification", "confidence", "confidence_reason", "source_timestamp"],
       "properties": {
         "capacitated": {
           "description": "Capacity-aware shelter plan (T1 scenario): who fits where under two capacity bounds. Whole residents; overflow = demand_people - served. Candidates to verify, never a list of sites to open.",
@@ -391,6 +391,131 @@
               "description": "core_by_k[k - 1]: the sites among the first k at every stage.",
               "type": "array",
               "items": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^C[0-9]{3}$" } }
+            }
+          }
+        },
+        "verification": {
+          "description": "Local check of the shelter candidates through the verification sheet. not_conducted until a sheet is returned and imported; a conducted check is reported by role and is never an official shelter register.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "label_template", "sheet", "candidate_set_sha256", "candidates_listed", "statement", "checked"],
+          "properties": {
+            "status": { "enum": ["not_conducted", "conducted"] },
+            "label_template": { "const": "Checked by <role> on <date>; not an official shelter register" },
+            "sheet": { "description": "Id of the blank sheet in exports.files.", "type": "string", "minLength": 1 },
+            "candidate_set_sha256": { "$ref": "#/$defs/sha256" },
+            "candidates_listed": { "type": "integer", "minimum": 0 },
+            "statement": { "type": "string", "minLength": 1 },
+            "source_timestamp": { "type": "string", "minLength": 1 },
+            "imported_on": { "type": "string", "format": "date" },
+            "returned_file_sha256": { "$ref": "#/$defs/sha256" },
+            "counts": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["checked", "usable_yes", "usable_no", "with_verified_capacity"],
+              "properties": {
+                "checked": { "type": "integer", "minimum": 1 },
+                "usable_yes": { "type": "integer", "minimum": 0 },
+                "usable_no": { "type": "integer", "minimum": 0 },
+                "with_verified_capacity": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "checked": {
+              "description": "Whitelisted columns only: no name of a person, no phone number, no ID number.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["candidate_id", "usable_as_shelter", "verified_capacity", "checked_by_role", "checked_on", "access_notes_given", "label"],
+                "properties": {
+                  "candidate_id": { "type": "string", "pattern": "^C[0-9]{3}$" },
+                  "usable_as_shelter": { "type": "boolean" },
+                  "verified_capacity": { "type": ["integer", "null"], "minimum": 0 },
+                  "checked_by_role": {
+                    "enum": ["ddpm_officer", "local_government_officer", "village_leader", "site_staff", "project_team", "other_local_contact"]
+                  },
+                  "checked_on": { "type": "string", "format": "date" },
+                  "access_notes_given": { "type": "boolean" },
+                  "access_notes": { "type": "string", "maxLength": 300 },
+                  "label": { "type": "string", "pattern": "^Checked by .+ on [0-9]{4}-[0-9]{2}-[0-9]{2}; not an official shelter register$" }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "status": { "const": "not_conducted" } } },
+              "then": { "properties": { "checked": { "maxItems": 0 } }, "not": { "anyOf": [{ "required": ["counts"] }, { "required": ["returned_file_sha256"] }] } },
+              "else": { "properties": { "checked": { "minItems": 1 } }, "required": ["source_timestamp", "imported_on", "returned_file_sha256", "counts"] }
+            }
+          ]
+        }
+      }
+    },
+    "exports": {
+      "description": "Export pack for spreadsheet and GIS users (T1 scenario tables, modelled and not observed). The files are downloads: they are hashed here but are not part of the replay's precache set. One licence lineage per file (OpenStreetMap-derived, ODbL 1.0).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_tier", "tier", "confidence", "confidence_reason", "source_timestamp", "purpose", "licence", "licence_rule", "header", "offline",
+        "assumptions", "folder", "file_count", "bytes", "files"
+      ],
+      "properties": {
+        "scenario_tier": { "const": "T1 scenario (model)" },
+        "tier": {
+          "const": "T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null"
+        },
+        "confidence": { "const": "low" },
+        "confidence_reason": { "type": "string", "minLength": 1 },
+        "source_timestamp": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "licence": { "const": "ODbL 1.0" },
+        "licence_rule": { "type": "string", "minLength": 1 },
+        "header": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["csv", "geojson", "why_in_the_file"],
+          "properties": {
+            "csv": { "type": "string", "minLength": 1 },
+            "geojson": { "type": "string", "minLength": 1 },
+            "why_in_the_file": { "type": "string", "minLength": 1 }
+          }
+        },
+        "offline": { "type": "string", "minLength": 1 },
+        "assumptions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "folder": { "type": "string", "pattern": "^/studies/[A-Za-z0-9._/-]+/exports/$" },
+        "file_count": { "type": "integer", "minimum": 1 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "allOf": [{ "$ref": "#/$defs/hashedAsset" }],
+            "type": "object",
+            "required": ["id", "name", "media_type", "title", "lanes", "licence", "source_ids"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              "name": {
+                "description": "A modelled table is named for what it is (modelled road inundation, modelled access loss); the pattern below refuses the banned names.",
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+\\.(csv|geojson|txt)$",
+                "not": { "pattern": "schedule|closure|cut[-_]?off" }
+              },
+              "href": { "type": "string", "pattern": "/exports/[A-Za-z0-9_]+\\.(csv|geojson|txt)$" },
+              "media_type": { "enum": ["text/csv", "application/geo+json", "text/plain"] },
+              "title": { "$ref": "#/$defs/localized" },
+              "lanes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["SCN", "REP"] } },
+              "licence": { "const": "ODbL 1.0" },
+              "source_ids": {
+                "description": "Sources the file derives from. The rain gauges, the VIIRS maps and product 4009 never feed an export.",
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "contains": { "const": "osm" },
+                "items": { "enum": ["osm", "worldpop", "cod-ab", "copernicus-dem", "reported-shelters"] }
+              },
+              "rows": { "type": "integer", "minimum": 0 },
+              "header_lines": { "type": "integer", "minimum": 1 }
             }
           }
         }

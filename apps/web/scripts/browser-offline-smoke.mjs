@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
@@ -487,6 +488,15 @@ try {
   }, caseReplay.assets.map((asset) => asset.url), { timeout: 60_000 });
   await page.getByText(`Offline copy: this replay's ${caseReplay.assets.length} data files are saved on this device`, { exact: false })
     .waitFor({ state: "attached", timeout: 15_000 });
+  // The export pack (download files) is saved by the same request, after the replay data and counted apart from it.
+  await page.waitForFunction(async (urls) => {
+    const key = (await caches.keys()).find((entry) => /^floodguard-offline-[0-9a-f]{12}$/.test(entry));
+    if (!key) return false;
+    const cache = await caches.open(key);
+    return (await Promise.all(urls.map((url) => cache.match(url)))).every(Boolean);
+  }, caseReplay.exports.assets.map((asset) => asset.url), { timeout: 60_000 });
+  await page.getByText(`Offline copy: the ${caseReplay.exports.assets.length} download files are saved on this device too`, { exact: false })
+    .waitFor({ state: "attached", timeout: 15_000 });
 
   offlineMode = true;
   await context.setOffline(true);
@@ -563,6 +573,31 @@ try {
     const image = document.querySelector(".leaflet-fg-viirs-pane img");
     return Boolean(image && image.complete && image.naturalWidth > 0);
   }, undefined, { timeout: 30_000 });
+  // The download links of the saved replay work without a connection: every export file answers with the bytes the
+  // manifest lists, and a click on a link saves the file under its own name.
+  const offlineDownloads = await page.evaluate(async (assets) => Promise.all(assets.map(async (asset) => {
+    const response = await fetch(asset.url);
+    const digest = await crypto.subtle.digest("SHA-256", await response.arrayBuffer());
+    return response.ok && [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("") === asset.sha256;
+  })), caseReplay.exports.assets);
+  if (!offlineDownloads.every(Boolean)) throw new Error("An export file of the saved replay is missing or changed offline.");
+  await page.getByTestId("sources-panel").locator("summary").click();
+  const roadTable = caseReplay.exports.assets.find((asset) => asset.url.endsWith("/modelled_road_inundation_by_hour.csv"));
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 20_000 }),
+    page.getByTestId("export-modelled_road_inundation_by_hour").click(),
+  ]);
+  if (download.suggestedFilename() !== "modelled_road_inundation_by_hour.csv") {
+    throw new Error(`The offline download has an unexpected file name: ${download.suggestedFilename()}`);
+  }
+  const savedTable = readFileSync(await download.path());
+  if (!roadTable || createHash("sha256").update(savedTable).digest("hex") !== roadTable.sha256 || savedTable.byteLength !== roadTable.bytes) {
+    throw new Error("The road table downloaded offline differs from the file the manifest lists.");
+  }
+  // Excel reads the Thai text only with the UTF-8 byte-order mark; the table says what it is before its first row.
+  if (savedTable[0] !== 0xef || savedTable[1] !== 0xbb || savedTable[2] !== 0xbf || !savedTable.toString("utf8").includes("not an observed closure record")) {
+    throw new Error("The road table downloaded offline lacks its byte-order mark or its standing sentence.");
+  }
 
   if (externalRequests.length > 0) {
     throw new Error(`Unapproved external requests were attempted: ${externalRequests.join(", ")}`);
@@ -613,7 +648,7 @@ try {
   }
   await legacyContext.close();
   console.log(
-    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline; approved basemaps failed gracefully and no unapproved external requests occurred`,
+    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
   );
   console.log("legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified");
 } finally {

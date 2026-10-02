@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve, sep } from "node:path";
-import { CASE_REPLAY_BUDGET_BYTES, caseReplayBytes, manifestDirectory, readCaseReplayAssets, timelineManifestUrl } from "./case-replay-inventory.mjs";
+import {
+  CASE_REPLAY_BUDGET_BYTES, CASE_REPLAY_EXPORT_BUDGET_BYTES, CASE_REPLAY_EXPORT_KEY, caseReplayBytes, caseReplayExportBytes, manifestDirectory,
+  readCaseReplayAssets, readCaseReplayExports, timelineManifestUrl,
+} from "./case-replay-inventory.mjs";
 
 const root = resolve(import.meta.dirname, "../../..");
 const publicRoot = resolve(root, "apps/web/public");
@@ -56,7 +59,47 @@ if (timelineRevisions.length !== 1 || timelineRevisions[0] !== timelineRevision)
 }
 const timelineListed = new Set(timelineFiles.map((file) => file.url.slice(file.url.lastIndexOf("/") + 1)));
 for (const entry of readdirSync(timelineDirectory, { withFileTypes: true })) {
+  // The one folder allowed beside the files is the export pack, checked below against its own list and budget.
+  if (entry.isDirectory() && entry.name === CASE_REPLAY_EXPORT_KEY && timeline.exports) continue;
   if (!entry.isFile() || !timelineListed.has(entry.name)) throw new Error(`Mae Sai timeline file is not listed in its manifest: ${entry.name}`);
+}
+// Export pack: download files, hash-verified against the manifest, outside the precache set and under their own
+// budget (throws when over). The folder holds nothing the manifest does not list, and no file of it is precached.
+const exportFiles = timeline.exports ? readCaseReplayExports(publicRoot, timelineUrl) : [];
+const exportBytes = caseReplayExportBytes(exportFiles, CASE_REPLAY_EXPORT_BUDGET_BYTES);
+if (timeline.exports) {
+  const exportDirectory = resolve(timelineDirectory, CASE_REPLAY_EXPORT_KEY);
+  const exportListed = new Set(exportFiles.map((file) => file.url.slice(file.url.lastIndexOf("/") + 1)));
+  for (const entry of readdirSync(exportDirectory, { withFileTypes: true })) {
+    if (!entry.isFile() || !exportListed.has(entry.name)) throw new Error(`Mae Sai export file is not listed in its manifest: ${entry.name}`);
+  }
+  if (exportFiles.length !== timeline.exports.file_count || exportBytes !== timeline.exports.bytes) {
+    throw new Error("Mae Sai export pack differs from the file count and size its manifest states");
+  }
+  if (timelineFiles.some((file) => file.url.includes(`/${CASE_REPLAY_EXPORT_KEY}/`))) throw new Error("An export file is in the replay's precache set");
+  for (const file of timeline.exports.files) {
+    // A modelled table is never named as a timetable of closures, and nothing here may come from product 4009.
+    if (/schedule|closure|cut[-_]?off|unosat|4009/i.test(file.name) || file.licence !== "ODbL 1.0" || !file.source_ids.includes("osm")
+      || file.source_ids.some((id) => ["hii-rain", "viirs", "unosat-4009"].includes(id))) {
+      throw new Error(`Mae Sai export file breaks its naming or licence rule: ${file.name}`);
+    }
+    const bytes = readAsset(file.href);
+    if (bytes.includes(13)) throw new Error(`Mae Sai export file has CR line ends: ${file.name}`);
+    const isCsv = file.media_type === "text/csv";
+    // A CSV starts with a UTF-8 byte-order mark (Thai text opens correctly in Excel) and its provenance lines.
+    if (isCsv !== (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)) throw new Error(`Mae Sai export file has the wrong byte-order mark: ${file.name}`);
+    const text = bytes.toString("utf8");
+    for (const needle of ["T1 scenario (model) replay of a reconstructed 2024 event", "not a forecast, not an observed closure record, not an official warning",
+      "non_operational", timeline.generated_at, "confidence_class", "source_timestamp", "assumption_1", "input_set_sha256="]) {
+      if (!text.includes(needle)) throw new Error(`Mae Sai export file lacks "${needle}" in its header: ${file.name}`);
+    }
+  }
+  if (!/^T1 scenario \(model\) replay/.test(timeline.exports.tier) || timeline.exports.confidence !== "low") {
+    throw new Error("Mae Sai export pack lacks its tier sentence");
+  }
+  if (timeline.shelters?.verification?.status === "not_conducted" && timeline.shelters.verification.checked.length !== 0) {
+    throw new Error("A shelter check that was not conducted states results");
+  }
 }
 // Every file the page loads must be among the hash-verified ones: the HAND raster, imagery layers, vectors, the
 // residents raster and the evacuation-access node file (r2 on), and the VIIRS daily flood maps (r3 on). The evidence envelope (r4 on) is checked below.
@@ -128,4 +171,4 @@ for (const entry of entries) {
   const actual = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
   if (actual !== blobId) throw new Error(`Git changes exact study bytes or has stale staged content: ${path}`);
 }
-console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets (${timeline.revision}, ${timelineBytes} of ${CASE_REPLAY_BUDGET_BYTES} budget bytes) and ${entries.length} byte-identical Git blobs.`);
+console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets (${timeline.revision}, ${timelineBytes} of ${CASE_REPLAY_BUDGET_BYTES} budget bytes), ${exportFiles.length} Mae Sai export files (${exportBytes} of ${CASE_REPLAY_EXPORT_BUDGET_BYTES} export-budget bytes, outside the precache budget) and ${entries.length} byte-identical Git blobs.`);

@@ -339,7 +339,7 @@ export interface ShelterVerification {
 export interface ExportFile extends HashedAsset {
   id: string;
   name: string;
-  media_type: "text/csv" | "application/geo+json" | "text/plain";
+  media_type: "text/csv" | "application/geo+json" | "application/json" | "text/plain";
   title: Localized;
   /** Evidence lanes of the file's content: "SCN" (model) and, for the reported-shelter files, "REP". */
   lanes: EvidenceLane[];
@@ -363,7 +363,8 @@ export interface ExportPack {
   purpose: string;
   licence: string;
   licence_rule: string;
-  header: { csv: string; geojson: string; why_in_the_file: string };
+  /** `json` describes the per-subdistrict summary (absent from a pack baked before it existed). */
+  header: { csv: string; geojson: string; json?: string; why_in_the_file: string };
   offline: string;
   assumptions: string[];
   folder: string;
@@ -506,7 +507,43 @@ export interface SeasonEnvelopeBlock {
   files: { raster: HashedAsset; statistics: HashedAsset; licence: HashedAsset };
 }
 
-export interface ExternalReference { name: string; url: string; note?: string; id?: string }
+/**
+ * A cited source this revision has not ingested. `case` names a separate case of the planning overlay (O2, the water
+ * layer dated 22 Oct 2024): the page gives it its own dated line, never a map layer or a slider position (D3b).
+ */
+export interface ExternalReference { name: string; url: string; note?: string; id?: string; case?: string; dated?: string }
+
+/** One radar image of the size comparison: acquisition time (UTC and ICT), pass direction and relative orbit. */
+export interface RadarImage {
+  id: string;
+  role: "pre_event" | "event";
+  scene: string;
+  utc: string;
+  local: string;
+  pass: "ascending" | "descending";
+  relative_orbit: number;
+  processor?: string;
+  published_as_layer: boolean;
+  note?: string;
+}
+
+/** A radar pair's fit: newly water-like area, the best-fit stage and model size, and their spatial agreement. */
+export interface RadarFit {
+  threshold_db_dn: number;
+  newly_dark_km2: number;
+  best_fit_stage_m: number;
+  best_fit_model_km2: number;
+  iou_at_best_fit: number;
+}
+
+/** The cross-track pair the recession keyframes were tuned with, kept beside the same-track figures as a sensitivity. */
+export interface RadarSensitivity extends RadarFit {
+  id: string;
+  pair: "same_track" | "cross_track";
+  pair_note?: string;
+  images: RadarImage[];
+  source_timestamp: string;
+}
 
 /**
  * One NOAA/GMU VIIRS daily flood map, clipped to the replay bounds: an observation (375 m optical, daily composite
@@ -720,13 +757,13 @@ export interface TimelineManifest {
   layers: TimelineLayer[];
   vectors: Record<"tambons" | "roads" | "facilities", HashedAsset & { features: number }>;
   tambon_histograms: Record<string, number[]>;
-  s1_anchor: {
-    threshold_db_dn: number;
-    newly_dark_km2: number;
-    best_fit_stage_m: number;
-    best_fit_model_km2: number;
-    iou_at_best_fit: number;
+  s1_anchor: RadarFit & {
     scope?: string;
+    /** From the r4 bake of 3 Oct 2026: the primary pair shares one track; its two images, and the cross-track sensitivity. */
+    pair?: "same_track";
+    pair_note?: string;
+    images?: RadarImage[];
+    sensitivity?: RadarSensitivity[];
     reconstruction_stage_at_pass_m: number;
     /** From r4: the recession keyframes were tuned to this pass, so the comparison is calibration-informed. */
     role?: SizeCheckRole;

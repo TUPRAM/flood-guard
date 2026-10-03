@@ -3,7 +3,9 @@
 District and DDPM staff work in spreadsheets and GIS, not in a web replay. This
 module turns the replay's modelled blocks into files they can open: three shelter
 plan tables, one GeoJSON of the sites, modelled road inundation by hour, modelled
-access loss by hour, a shelter-candidate verification sheet and a licence README.
+access loss by hour, a shelter-candidate verification sheet, a per-subdistrict
+summary at the modelled peak (JSON, one record per subdistrict, for one-page
+briefs) and a licence README.
 
 Everything here is pure: the functions take plain data and return rows or bytes;
 ``scripts/build_mae_sai_flood_timeline.py`` supplies the data and writes the
@@ -19,7 +21,9 @@ the timestamps, the assumptions and the licence travel inside the file. Excel an
 LibreOffice open such a file as it is (the lines show as rows above the header);
 QGIS and pandas skip the number of lines the second line states. A GeoJSON file
 cannot hold comments, so it carries the same fields in a top-level ``metadata``
-member written before the features.
+member written before the features; the JSON summary does the same before its
+records, and each record repeats its lane, tier, confidence, timestamps and
+assumptions so that it can travel alone.
 
 Licences
 --------
@@ -48,7 +52,7 @@ from typing import Any
 import numpy as np
 
 from floodguard.evacuation_access import NEVER_LOST, NO_BASELINE_ACCESS
-from floodguard.flood_timeline import road_state
+from floodguard.flood_timeline import CHANNEL_CODE, HAND_STEP_M, NEVER_CODE, road_state
 
 EXPORT_FOLDER = "exports"
 """Sub-folder of the replay revision that holds the pack."""
@@ -220,6 +224,20 @@ class ExportContext:
     verification_status: str = "not_conducted"
     """``conducted`` once a returned verification sheet has been imported; the blank sheet and the README then stop
     saying that no check has been conducted. The checked rows themselves are in the manifest, never in the sheet."""
+    tambon_peak: Sequence[Mapping[str, Any]] = ()
+    """Per subdistrict at the modelled peak, in ``tambons`` order, as the manifest gives it: ``tambon_id``, ``area_km2``
+    (``tambon_coverage.total_km2``), ``modelled_km2``, ``flooded_km2`` and ``residents_in_water`` (the peak day's
+    ``tambon_flooded_km2`` and ``tambon_people_in_water``) and ``road_km_impassable`` (the road pieces of the subdistrict
+    that are impassable at the peak stage, by the page's rule). The per-subdistrict summary needs it."""
+    district_flooded_km2: float | None = None
+    """The peak day's ``flooded_km2`` (district total), the denominator of each subdistrict's share of it."""
+    peak_local_time: str = ""
+    """Local time of the peak stage keyframe (ISO 8601 with its offset)."""
+    node_home_code: np.ndarray | None = None
+    """Effective HAND code of each resident node's home (``access-nodes.bin`` ``home_code``), for the flooded-homes scope."""
+    season_envelope_stage: str | None = None
+    """Id of the stage the season envelope's statistics file compares by subdistrict, when the replay ships the envelope;
+    the summary then says where that comparison is, without copying it (it is under another licence)."""
 
 
 # --- Hours ---------------------------------------------------------------------------------------------------
@@ -376,6 +394,185 @@ def access_loss_rows(tambons: Sequence[Mapping[str, str]], node_tambon: np.ndarr
                 row[f"{label}_lost_access"] = round(lost, 1)
             rows.append(row)
     return rows
+
+
+# --- Per-subdistrict summary at the modelled peak (roadmap P3-2) ---------------------------------------------------
+
+SUMMARY_NAME = "tambon_replay_summary.json"
+SUMMARY_ID = "tambon_replay_summary"
+SUMMARY_SCHEMA_ID = "https://floodguard.th/contracts/tambon-replay-summary.schema.json"
+"""The JSON schema the summary follows (``packages/contracts/schemas/tambon-replay-summary.schema.json``)."""
+SUMMARY_LANE = "SCN"
+SUMMARY_SETS: tuple[str, ...] = ("reported_2024", "knee_plan")
+"""The two shelter sets of the summary: the sites reported in use in September 2024 and the knee plan (``knee_k``)."""
+SUMMARY_SCOPES: Mapping[str, Mapping[str, str]] = {
+    "all_residents_at_road_nodes": {"en": "all residents at road nodes", "th": "ผู้อยู่อาศัยทั้งหมดที่จุดถนน"},
+    "residents_whose_homes_flood_at_peak": {"en": "residents whose homes flood at the modelled peak",
+                                            "th": "ผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง"},
+}
+"""The two ways the page counts residents for access (its two columns): every resident at a road node, and those whose home floods."""
+SUMMARY_MEASURES: Mapping[str, Mapping[str, str]] = {
+    "residents": {"en": "Residents counted in the subdistrict (WorldPop 2020 residents at road nodes)", "th": "ผู้อยู่อาศัยที่นับในตำบล (ผู้อยู่อาศัย WorldPop 2020 ที่จุดถนน)"},
+    "within_reach_before_flood": {"en": "Of those, residents with a shelter of the set within reach before the flood: the set's own baseline",
+                                  "th": "ในจำนวนนี้ ผู้ที่มีที่พักพิงของชุดนี้ในระยะเดินก่อนน้ำท่วม ซึ่งเป็นฐานของชุดนั้นเอง"},
+    "already_out_of_reach_before_flood": {"en": "Of those, residents with no shelter of the set within reach even before the flood",
+                                          "th": "ในจำนวนนี้ ผู้ที่ไม่มีที่พักพิงของชุดนี้ในระยะเดินตั้งแต่ก่อนน้ำท่วม"},
+    "lost_access": {"en": "Of the baseline, residents who have lost access at the modelled peak",
+                    "th": "ในฐานนั้น ผู้ที่สูญเสียการเข้าถึง ณ ระดับน้ำสูงสุดของแบบจำลอง"},
+    "keeping_access": {"en": "Of the baseline, residents who still have access at the modelled peak",
+                       "th": "ในฐานนั้น ผู้ที่ยังเดินถึงได้ ณ ระดับน้ำสูงสุดของแบบจำลอง"},
+    "lost_share_of_within_reach": {"en": "lost_access divided by within_reach_before_flood, four decimals (null when the baseline is 0.0)",
+                                   "th": "lost_access หารด้วย within_reach_before_flood ทศนิยมสี่ตำแหน่ง (เป็น null เมื่อฐานเป็น 0.0)"},
+}
+SUMMARY_PROVENANCE_KEYS: tuple[str, ...] = ("lane", "evidence_tier", "confidence_class", "source_timestamp", "generated_at", "operational_status", "assumptions")
+"""Evidence fields every record carries (AGENTS.md), so one record can travel alone, for example into a one-page brief."""
+ENVELOPE_POINTER_WHY = {
+    "en": ("The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest "
+           "names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps "
+           "one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation."),
+    "th": ("การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ "
+           "season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว "
+           "(ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง"),
+}
+"""Why a record points at the season-envelope comparison instead of holding it: one licence lineage per file."""
+
+
+def summary_columns(knee_k: int, with_envelope: bool) -> tuple[Column, ...]:
+    """Every leaf field of a summary record, in record order, as ``Column`` (dotted key, Thai label, what it holds)."""
+    plan_th, plan_en = f"แผน {knee_k} แห่งแรก", f"the first {knee_k} sites of the modelled coverage ranking"
+    set_labels = {"reported_2024": ("ชุดที่มีรายงานปี 2567 (2024)", "the sites reported in use in September 2024"), "knee_plan": (plan_th, plan_en)}
+    columns = [
+        Column("tambon_id", "รหัสตำบล", "Subdistrict code (COD-AB ADM3)"),
+        Column("tambon_name_th", "ชื่อตำบล", "Subdistrict name in Thai"),
+        Column("tambon_name_en", "ชื่อตำบลภาษาอังกฤษ", "Subdistrict name in English"),
+        Column("lane", "ช่องทางของหลักฐาน", "Evidence lane of the record's figures: SCN, scenario (model)"),
+        Column("evidence_tier", "ระดับของหลักฐาน", "T1 scenario (model): modelled, not observed"),
+        Column("confidence_class", "ระดับความเชื่อมั่น", "Confidence class of the figures (low)"),
+        Column("source_timestamp", "เวลาของข้อมูลต้นทาง", "The dated inputs the figures come from"),
+        Column("generated_at", "เวลาที่สร้างไฟล์", "When the replay's files were generated (declared, not a clock reading)"),
+        Column("operational_status", "สถานะการใช้งาน", "non_operational: not for emergency response or evacuation orders"),
+        Column("assumptions", "สมมติฐาน", "The assumptions behind the figures, in English and Thai"),
+        Column("area_km2", "พื้นที่ตำบล ตร.กม.", "Area of the subdistrict, km2 (COD-AB)"),
+        Column("modelled_share_of_area", "สัดส่วนพื้นที่ที่แบบจำลองครอบคลุม", "Share of the subdistrict inside the water model, at most 1"),
+        Column("modelled_peak_stage_m", "ระดับน้ำสูงสุดสมมุติ ม.", "The illustrative peak stage keyframe, metres above the mapped channel"),
+        Column("modelled_peak_local_time", "เวลาท้องถิ่นของระดับน้ำสูงสุด", "Local time of that keyframe (ICT, UTC+7)"),
+        Column("modelled_flooded_km2_at_peak", "พื้นที่น้ำท่วมตามแบบจำลอง ตร.กม.", "Modelled out-of-channel flooded area at the peak, km2"),
+        Column("modelled_flooded_share_of_subdistrict", "สัดส่วนน้ำท่วมของพื้นที่ตำบล", "That area divided by the subdistrict's area, four decimals"),
+        Column("modelled_flooded_share_of_district", "สัดส่วนของพื้นที่น้ำท่วมทั้งอำเภอ", "That area divided by the district's modelled flooded area at the peak, four decimals"),
+        Column("modelled_residents_in_water_at_peak", "ผู้อยู่อาศัยในพื้นที่น้ำท่วมตามแบบจำลอง", "WorldPop 2020 residents on modelled wet cells at the peak, one decimal"),
+        Column("modelled_road_km_impassable_at_peak", "ถนนที่สัญจรไม่ได้ตามแบบจำลอง กม.", "Modelled road length with at least 0.3 m of reconstructed depth at the peak, km"),
+    ]
+    for set_label, (set_th, set_en) in ((label, set_labels[label]) for label in SUMMARY_SETS):
+        for scope, scope_label in SUMMARY_SCOPES.items():
+            for measure, words in SUMMARY_MEASURES.items():
+                columns.append(Column(f"modelled_access_at_peak.{set_label}.{scope}.{measure}", f"{set_th} · {scope_label['th']} · {words['th']}",
+                                      f"{words['en']}; {set_en}; {scope_label['en']}"))
+    if with_envelope:
+        columns += [
+            Column("season_envelope_comparison.lane", "ช่องทางของหลักฐาน", "SCN-ENV: a scenario envelope, never an observation for a replay day"),
+            Column("season_envelope_comparison.stage", "ระดับน้ำที่เปรียบเทียบ", "Id of the modelled stage the comparison uses"),
+            Column("season_envelope_comparison.file", "ไฟล์ที่มีการเปรียบเทียบ", "Where the replay manifest names the statistics file that holds it"),
+            Column("season_envelope_comparison.entry", "รายการในไฟล์",
+                   "The entry of this subdistrict in that file; its figures are not copied here (one licence lineage per file, see the assumptions)"),
+        ]
+    return tuple(columns)
+
+
+def home_wet_mask(home_code: np.ndarray, stage_m: float, step_m: float = HAND_STEP_M) -> np.ndarray:
+    """Resident nodes whose home is wet at ``stage_m``: the rule of the page's ``homeWetAt`` and the bake's ``home_wet``
+    (a channel home is wet as soon as the stage rises, the never code never floods, otherwise code * step < stage)."""
+    code = np.asarray(home_code).astype(int)
+    return (code != NEVER_CODE) & (stage_m > 0) & ((code == CHANNEL_CODE) | (code * step_m < stage_m))
+
+
+def tambon_access_at_peak(ctx: ExportContext) -> dict[str, dict[str, dict[str, dict[str, float | None]]]]:
+    """Walking access per subdistrict at the modelled peak: for each of :data:`SUMMARY_SETS`, counted both ways
+    (:data:`SUMMARY_SCOPES`), the residents counted, the set's own baseline, those already out of reach, and of the
+    baseline those who lost access and those who keep it, with the lost share.
+
+    Sums are exact (``math.fsum``) and published to one decimal; the share is null when the baseline rounds to 0.0.
+    The same figures the page derives for that subdistrict from ``access-nodes.bin`` (a unit test compares them).
+    """
+    population = np.asarray(ctx.node_population, dtype=float)
+    index = np.asarray(ctx.node_tambon).astype(int)
+    if ctx.node_home_code is None or np.asarray(ctx.node_home_code).shape != population.shape:
+        raise ReplayExportError("the per-subdistrict summary needs the home code of every resident node")
+    sets = {"reported_2024": "reported_2024", "knee_plan": f"plan_{ctx.knee_k}"}
+    for label, set_id in sets.items():
+        if set_id not in ctx.cut_codes or np.asarray(ctx.cut_codes[set_id]).shape != population.shape:
+            raise ReplayExportError(f"cut codes of the {label} set ({set_id}) are missing or do not match the nodes")
+    flooded = home_wet_mask(ctx.node_home_code, ctx.peak_stage_m)
+    level = _level_index(ctx.peak_stage_m, ctx.level_step_m)
+    out: dict[str, dict[str, dict[str, dict[str, float | None]]]] = {}
+    for position, tambon in enumerate(ctx.tambons, start=1):
+        inside = index == position
+        per_set: dict[str, dict[str, dict[str, float | None]]] = {}
+        for label, set_id in sets.items():
+            codes = np.asarray(ctx.cut_codes[set_id]).astype(int)
+            with_baseline = codes != NO_BASELINE_ACCESS
+            lost_now = with_baseline & (codes != NEVER_LOST) & (codes <= level)
+            scopes: dict[str, dict[str, float | None]] = {}
+            for scope, mask in (("all_residents_at_road_nodes", inside), ("residents_whose_homes_flood_at_peak", inside & flooded)):
+                within = math.fsum(population[mask & with_baseline].tolist())
+                lost = math.fsum(population[mask & lost_now].tolist())
+                scopes[scope] = {
+                    "residents": round(math.fsum(population[mask].tolist()), 1),
+                    "within_reach_before_flood": round(within, 1),
+                    "already_out_of_reach_before_flood": round(math.fsum(population[mask & ~with_baseline].tolist()), 1),
+                    "lost_access": round(lost, 1),
+                    "keeping_access": round(max(0.0, within - lost), 1),
+                    "lost_share_of_within_reach": round(lost / within, 4) if round(within, 1) > 0 else None,
+                }
+            per_set[label] = scopes
+        out[tambon["id"]] = per_set
+    return out
+
+
+def tambon_summary_records(ctx: ExportContext, assumptions: Sequence[Mapping[str, str]], source_timestamp: str) -> list[dict[str, Any]]:
+    """One record per subdistrict at the modelled peak: water, residents in water, impassable road and walking access for the
+    reported 2024 set and the knee plan, each record with its lane, tier, confidence, timestamps and assumptions.
+
+    Every figure is the one the page derives from the manifest for that subdistrict; nothing here is a priority score
+    or an action class. The season-envelope comparison is named, not copied (:data:`ENVELOPE_POINTER_WHY`).
+    """
+    if not ctx.tambon_peak or ctx.district_flooded_km2 is None or not ctx.peak_local_time:
+        raise ReplayExportError("the per-subdistrict summary needs the peak figures of every subdistrict")
+    peak = {row["tambon_id"]: row for row in ctx.tambon_peak}
+    if [tambon["id"] for tambon in ctx.tambons] != [row["tambon_id"] for row in ctx.tambon_peak]:
+        raise ReplayExportError("the peak figures must list the subdistricts in the order of the tambons")
+    access = tambon_access_at_peak(ctx)
+    records = []
+    for tambon in ctx.tambons:
+        row = peak[tambon["id"]]
+        flooded, area = float(row["flooded_km2"]), float(row["area_km2"])
+        record: dict[str, Any] = {
+            "tambon_id": tambon["id"], "tambon_name_th": tambon.get("th", ""), "tambon_name_en": tambon.get("en", ""),
+            "lane": SUMMARY_LANE, "evidence_tier": SCENARIO_TIER, "confidence_class": CONFIDENCE_CLASS,
+            "source_timestamp": source_timestamp, "generated_at": ctx.generated_at, "operational_status": OPERATIONAL_STATUS,
+            "assumptions": [dict(item) for item in assumptions],
+            # The page's coverage share: modelled over total area, clamped to 0-1 (the two areas are counted differently).
+            "area_km2": area, "modelled_share_of_area": round(min(1.0, max(0.0, float(row["modelled_km2"]) / area)), 4) if area > 0 else None,
+            "modelled_peak_stage_m": ctx.peak_stage_m, "modelled_peak_local_time": ctx.peak_local_time,
+            "modelled_flooded_km2_at_peak": flooded,
+            "modelled_flooded_share_of_subdistrict": round(flooded / area, 4) if area > 0 else None,
+            "modelled_flooded_share_of_district": round(flooded / ctx.district_flooded_km2, 4) if ctx.district_flooded_km2 > 0 else None,
+            "modelled_residents_in_water_at_peak": float(row["residents_in_water"]),
+            "modelled_road_km_impassable_at_peak": float(row["road_km_impassable"]),
+            "modelled_access_at_peak": access[tambon["id"]],
+        }
+        if ctx.season_envelope_stage:
+            record["season_envelope_comparison"] = {
+                "lane": "SCN-ENV", "stage": ctx.season_envelope_stage, "file": "season_envelope.files.statistics",
+                "entry": f"comparison.by_tambon[tambon_id={tambon['id']}]"}
+        records.append(record)
+    return records
+
+
+def leaf_paths(value: Any, path: str = "") -> list[str]:
+    """Dotted paths of every leaf of a JSON object (a list counts as one leaf), in order."""
+    if isinstance(value, Mapping) and value:
+        return [found for key, item in value.items() for found in leaf_paths(item, f"{path}.{key}" if path else str(key))]
+    return [path]
 
 
 _BASIS_TH_COLUMN = Column("capacity_basis_th", "ที่มาของค่าความจุ ภาษาไทย", "The same phrase in Thai")
@@ -830,6 +1027,27 @@ def geojson_bytes(name: str, fields: Sequence[tuple[str, str]], columns: Sequenc
     return f"{head[:-2]},\n \"features\": [\n{body}\n ]\n}}\n".encode("utf-8")
 
 
+def summary_bytes(name: str, fields: Sequence[tuple[str, str]], columns: Sequence[Column], records: Sequence[Mapping[str, Any]]) -> bytes:
+    """The per-subdistrict summary as JSON bytes: the provenance in a ``metadata`` member first, then ``records``.
+
+    Every record must hold exactly the declared leaf fields, in order. The data fields follow the pack's column rules
+    (no legacy column, rain, product 4009, score or action class); the evidence fields every record repeats
+    (:data:`SUMMARY_PROVENANCE_KEYS`) are provenance, not data columns.
+    """
+    keys = [column.key for column in columns]
+    problems = column_problems(name, (key for key in keys if key.split(".", 1)[0] not in SUMMARY_PROVENANCE_KEYS))
+    for record in records:
+        if leaf_paths(record) != keys:
+            problems.append(f"{name}: a record's fields differ from the declared fields")
+            break
+    if problems:
+        raise ReplayExportError("; ".join(problems))
+    metadata: dict[str, Any] = {"floodguard_export": name, **dict(fields),
+                                "fields": [{"key": column.key, "th": column.th, "en": column.en} for column in columns]}
+    document = {"name": name.rsplit(".", 1)[0], "schema_id": SUMMARY_SCHEMA_ID, "metadata": metadata, "records": list(records)}
+    return (json.dumps(document, ensure_ascii=False, indent=1, allow_nan=False) + "\n").encode("utf-8")
+
+
 def read_export_csv(data: bytes) -> tuple[dict[str, str], list[str], list[dict[str, str]]]:
     """Read an export CSV back: ``(provenance fields, column keys, rows keyed by column key)``.
 
@@ -866,6 +1084,7 @@ _NODES = "outputs/mae_sai_population_nodes.csv"
 _ADMIN = "outputs/mae_sai_admin_context.geojson"
 _FACILITIES = "outputs/mae_sai_facilities.geojson"
 _REPORTED = "outputs/mae_sai_reported_shelters_2024.json"
+_WORLDPOP = "open_context/worldpop_population/tha_ppp_2020.tif"
 
 _A_WATER = {"en": "The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed.",
             "th": "น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้"}
@@ -1041,6 +1260,37 @@ def _specs(ctx: ExportContext) -> dict[str, dict[str, Any]]:
             "extra": (("verification_status", ctx.verification_status), ("verification_label", VERIFICATION_LABEL),
                       ("verification_label_th", VERIFICATION_LABEL_TH), ("candidate_set_sha256", candidate_set_sha256(ctx.candidates))),
         },
+        "summary": {
+            "name": SUMMARY_NAME,
+            "title": {"en": "Per-subdistrict replay summary at the modelled peak: water, residents, roads and walking access (modelled, not observed)",
+                      "th": "สรุปผลการย้อนดูรายตำบล ณ ระดับน้ำสูงสุดตามแบบจำลอง: น้ำ ผู้อยู่อาศัย ถนน และการเดินถึงที่พักพิง (ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้)"},
+            "lanes": ("SCN",), "sources": ("osm", "worldpop", "cod-ab", "copernicus-dem", "reported-shelters"),
+            "source_timestamp": (f"{osm} (roads and sites); WorldPop 2020; reported shelters compiled {ctx.reported_compiled}; {model}; "
+                                 f"peak keyframe {ctx.peak_local_time or 'not given'}"),
+            "inputs": (_ROADS, _EDGES, _NODES, _ADMIN, _REPORTED, _OSM_PBF, _FACILITIES, _WORLDPOP, *_DEM),
+            "assumptions": (
+                _A_WATER,
+                {"en": f"Every figure is for the modelled peak only: the illustrative {ctx.peak_stage_m} m stage keyframe at {ctx.peak_local_time or 'its keyframe time'} (ICT, UTC+7).",
+                 "th": f"ตัวเลขทุกตัวเป็นค่า ณ ระดับน้ำสูงสุดของแบบจำลองเท่านั้น คือจุดกำหนดระดับน้ำเพื่อการอธิบายที่ {ctx.peak_stage_m} ม. เวลา {ctx.peak_local_time or 'ของจุดกำหนดนั้น'} (เวลาประเทศไทย UTC+7)"},
+                {"en": "Flooded area and residents in water are counted per subdistrict on the replay's 10 m grid, outside mapped channels. Residents are WorldPop 2020 modelled residents, not the 2024 population, tourists or traders.",
+                 "th": "พื้นที่น้ำท่วมและผู้อยู่อาศัยในพื้นที่น้ำท่วมนับรายตำบลบนกริด 10 ม. ของการย้อนดู ไม่รวมร่องน้ำในแผนที่ ผู้อยู่อาศัยเป็นประชากรตามแบบจำลอง WorldPop 2020 ไม่ใช่ประชากรปี 2567 (2024) นักท่องเที่ยว หรือผู้ค้า"},
+                {"en": f"Impassable road length sums the modelled road pieces of the subdistrict whose reconstructed depth reaches {ctx.impassable_depth_m} m at the peak. Bridge decks are not modelled, and no closure report was used.",
+                 "th": f"ความยาวถนนที่สัญจรไม่ได้คือผลรวมของถนนช่วงต่าง ๆ ในตำบลที่ความลึกจำลองถึง {ctx.impassable_depth_m} ม. ณ ระดับน้ำสูงสุด ไม่ได้จำลองพื้นสะพาน และไม่ได้ใช้รายงานการปิดถนน"},
+                {"en": (f"A resident has access when a dry shelter of the set is within a {walk_km:g} km walk on roads that are still passable. Two sets are given "
+                        f"side by side, the sites reported in use in September 2024 and the first {ctx.knee_k} sites of the modelled coverage ranking, each "
+                        "against its own baseline and counted two ways (all residents at road nodes, and residents whose homes flood at the modelled peak). "
+                        "Nothing here grades a set or a subdistrict."),
+                 "th": (f"ผู้อยู่อาศัยเข้าถึงได้เมื่อมีที่พักพิงที่ไม่ถูกน้ำท่วมของชุดนั้นภายในระยะเดิน {walk_km:g} กม. บนถนนที่ยังสัญจรได้ แสดงสองชุดเคียงกัน "
+                        f"คือสถานที่ที่มีรายงานว่าใช้ในเดือนกันยายน 2567 (2024) และ {ctx.knee_k} แห่งแรกของการจัดอันดับความครอบคลุมตามแบบจำลอง แต่ละชุดเทียบกับฐานของตัวเอง "
+                        "และนับสองแบบ (ผู้อยู่อาศัยทั้งหมดที่จุดถนน และผู้ที่บ้านถูกน้ำท่วมที่ระดับสูงสุดของแบบจำลอง) ตัวเลขไม่ได้ตัดสินชุดหรือตำบลใด")},
+                {"en": "No priority score and no action class is computed for any subdistrict: the replay computes neither.",
+                 "th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง"},
+                *((ENVELOPE_POINTER_WHY,) if ctx.season_envelope_stage else ()),
+                *not_used,
+            ),
+            "extra": (("knee_k", str(ctx.knee_k)), ("peak_stage_m", f"{ctx.peak_stage_m}"), ("peak_local_time", ctx.peak_local_time),
+                      ("records", "one per subdistrict, in the order of the replay's subdistrict list")),
+        },
     }
 
 
@@ -1081,12 +1331,13 @@ def readme_bytes(ctx: ExportContext, files: Sequence[ExportFile], specs: Mapping
         "",
         "1. WHAT THIS IS / ไฟล์ชุดนี้คืออะไร",
         "",
-        "Tables and one map layer written from a model replay of the September 2024 flood in Mae Sai District. They are for",
-        "preparedness planning and exercises. Every table is modelled, not observed: it is not a forecast, not an observed",
-        "closure record and not an official warning, and it must not be used for emergency response or evacuation orders.",
+        "Tables, one map layer and one per-subdistrict summary written from a model replay of the September 2024 flood in Mae Sai",
+        "District. They are for preparedness planning and exercises. Every table is modelled, not observed: it is not a forecast,",
+        "not an observed closure record and not an official warning, and it must not be used for emergency response or evacuation",
+        "orders.",
         *ground_en.split("\n"),
         "",
-        "ตารางและชั้นข้อมูลแผนที่หนึ่งชั้นที่เขียนจากการย้อนดูด้วยแบบจำลองของเหตุการณ์น้ำท่วมอำเภอแม่สายเดือนกันยายน 2567 (2024)",
+        "ตาราง ชั้นข้อมูลแผนที่หนึ่งชั้น และสรุปรายตำบลหนึ่งไฟล์ที่เขียนจากการย้อนดูด้วยแบบจำลองของเหตุการณ์น้ำท่วมอำเภอแม่สายเดือนกันยายน 2567 (2024)",
         "ใช้สำหรับการวางแผนเตรียมความพร้อมและการฝึกซ้อม ทุกตารางเป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้ ไม่ใช่การพยากรณ์",
         "ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง และไม่ใช่การเตือนภัยอย่างเป็นทางการ ห้ามใช้ในการตอบสนองเหตุฉุกเฉินหรือการสั่งอพยพ",
         *ground_th.split("\n"),
@@ -1104,7 +1355,8 @@ def readme_bytes(ctx: ExportContext, files: Sequence[ExportFile], specs: Mapping
     for file in files:
         spec = next(item for item in specs.values() if item["name"] == file.name)
         size = f"{len(file.data):,} bytes"
-        rows = "" if file.rows is None else f"; {file.rows:,} {'features' if file.header_lines is None else 'rows'}"
+        unit = "rows" if file.header_lines is not None else "records" if file.media_type == "application/json" else "features"
+        rows = "" if file.rows is None else f"; {file.rows:,} {unit}"
         skip = "" if file.header_lines is None else f"; {file.header_lines} provenance lines before the column header"
         lines += [
             file.name,
@@ -1157,12 +1409,17 @@ def readme_bytes(ctx: ExportContext, files: Sequence[ExportFile], specs: Mapping
         "the English key and then the Thai label in brackets. In QGIS (Add Delimited Text Layer) set 'Number of header lines to",
         "discard' to that number; in pandas pass skiprows. The GeoJSON file opens in QGIS as it is and carries the same fields",
         "in its metadata member. Values yes and no are written in English; an empty cell means unknown or not applicable.",
+        f"{SUMMARY_NAME} is one JSON document: the same fields in its metadata member, then one record per subdistrict. Each",
+        "record repeats its lane, tier, confidence, timestamps and assumptions so that it can be used on its own, for example in",
+        "a one-page brief.",
         "",
         "ไฟล์ CSV เข้ารหัสแบบ UTF-8 พร้อมเครื่องหมาย BOM โปรแกรม Excel จึงแสดงข้อความภาษาไทยได้เมื่อเปิดไฟล์โดยตรง ทุกไฟล์ CSV",
         "เริ่มด้วยบรรทัดข้อมูลกำกับ (ช่องแรกขึ้นต้นด้วย #) ซึ่งบอกว่าตารางคืออะไรและไม่ใช่อะไร และจะติดไปกับตารางเมื่อส่งต่อ",
         "บรรทัดที่สองบอกจำนวนบรรทัดดังกล่าว จากนั้นเป็นหัวคอลัมน์ ซึ่งแต่ละช่องเป็นชื่อคอลัมน์ภาษาอังกฤษตามด้วยคำอธิบายภาษาไทยในวงเล็บ",
         "ใน QGIS ให้กำหนดจำนวนบรรทัดหัวตารางที่ต้องข้ามตามจำนวนนั้น ส่วนไฟล์ GeoJSON เปิดใน QGIS ได้ทันที",
         "ค่า yes และ no เขียนเป็นภาษาอังกฤษ ช่องว่างหมายถึงไม่ทราบหรือไม่เกี่ยวข้อง",
+        f"{SUMMARY_NAME} เป็นเอกสาร JSON หนึ่งไฟล์ มีข้อมูลกำกับเดียวกันในส่วน metadata ตามด้วยหนึ่งรายการต่อหนึ่งตำบล",
+        "แต่ละรายการระบุช่องทางของหลักฐาน ระดับ ความเชื่อมั่น เวลา และสมมติฐานซ้ำไว้ จึงนำไปใช้แยกได้ เช่น ในเอกสารสรุปหนึ่งหน้า",
         "",
         "6. THE SHELTER-CANDIDATE VERIFICATION SHEET / แบบตรวจสอบสถานที่ที่อาจใช้เป็นที่พักพิง",
         "",
@@ -1199,12 +1456,19 @@ def export_pack(ctx: ExportContext) -> list[ExportFile]:
     }
     ids = {"roads": "modelled_road_inundation_by_hour", "access": "modelled_access_loss_by_hour", "reported": "shelter_plan_reported_2024",
            "plan": "shelter_plan_k", "capacitated": "shelter_plan_capacitated", "sites": "shelter_sites",
-           "sheet": "shelter_candidate_verification_sheet"}
+           "sheet": "shelter_candidate_verification_sheet", "summary": SUMMARY_ID}
     files: list[ExportFile] = []
-    for key in ("reported", "plan", "capacitated", "sites", "roads", "access", "sheet"):
+    for key in ("reported", "plan", "capacitated", "sites", "roads", "access", "sheet", "summary"):
         spec = specs[key]
         fields = header_fields(ctx, spec)
         source_ids = tuple(ctx.licence_overrides.get(spec["name"], spec["sources"]))
+        if key == "summary":
+            columns = summary_columns(ctx.knee_k, bool(ctx.season_envelope_stage))
+            records = tambon_summary_records(ctx, spec["assumptions"], spec["source_timestamp"])
+            data = summary_bytes(spec["name"], fields, columns, records)
+            files.append(ExportFile(ids[key], spec["name"], "application/json", data, spec["title"], spec["lanes"], source_ids,
+                                    len(records), None, columns))
+            continue
         if key == "sites":
             features = site_features(ctx)
             data = geojson_bytes(spec["name"], fields, SITE_FIELDS, features)

@@ -306,7 +306,7 @@ def test_export_headers_are_linted_like_any_other_text() -> None:
     # The sentence the roadmap fixed is the one the writer puts into every file.
     assert replay_exports.EXPORT_TIER == EXPORT_HEADER
     headers = export_headers()
-    assert len(headers) == 8 and all(EXPORT_HEADER in text for _, text in headers)
+    assert len(headers) == 9 and all(EXPORT_HEADER in text for _, text in headers)
     assert all(replay_exports.EXPORT_TIER_TH in text for _, text in headers)
     seeded = [(source, text.replace("not an observed closure record", "the road closure schedule")) for source, text in headers]
     assert ids(lint_texts(seeded, RULES)) == ["road_schedule"]

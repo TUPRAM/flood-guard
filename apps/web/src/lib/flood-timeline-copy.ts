@@ -21,8 +21,8 @@ export function plainManifestText(text: string): string {
     .replace(/\s*\(see model_coverage\)/g, "")
     .replace(/\s+are flagged m=false and\s+/g, " are ")
     .replace(/\blate_cumulative_share\b/g, "the late-evacuation share")
-    .replace(/\s*\((?:scenario )?per decision D\d+\)/g, "")
-    .replace(/\s+\((?:decision )?D\d+\)/g, "")
+    .replace(/\s*\((?:scenario )?per decision D\d+[a-z]?\)/g, "")
+    .replace(/\s+\((?:decision )?D\d+[a-z]?\)/g, "")
     .replace(/\bk x stage\b/g, "to a fraction of the stage")
     .replace(/\b(depth factor) k\b/gi, "$1 f")
     .replace(/\bthe exported k\b/g, "the exported depth factor f")
@@ -121,6 +121,9 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ถนนช่วงที่ค่า HAND ต่ำสุดเกิน 4 ม. ไม่ถูกน้ำท่วมภายใต้จุดกำหนดระดับน้ำเหล่านี้จึงไม่แสดง ยกเว้นทางหลวงสายหลัก ถนนสายหลัก และถนนสายรอง",
   "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only; the two radar passes use different orbit directions.":
     "จุดกำหนดระดับน้ำช่วงน้ำลดปรับใหม่ตามภาพ Sentinel-1 วันที่ 16 กันยายน 06:16 น. (ระดับน้ำที่เข้ากันดีที่สุด 0.10 ม.) การเทียบกับเรดาร์นี้จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ ภาพนี้ใช้กำหนดขนาดของขอบเขตน้ำช่วงท้ายของการลดลงเท่านั้น และภาพเรดาร์ทั้งสองภาพถ่ายจากทิศทางวงโคจรต่างกัน",
+  // From the r4 bake of 3 Oct 2026 (roadmap P2-10): a same-track pair, with the cross-track pair kept as a sensitivity.
+  "The recession keyframes were re-tuned to the 16 September 06:16 ICT Sentinel-1 pass (best-fit stage 0.10 m), so that radar comparison is calibration-informed, not an independent check. It constrains the size of the late-recession extent only. The comparison pairs that pass with the 4 September 06:16 ICT pass of the same track (descending, relative orbit 135); the pairing with the 6 September ascending pass (a different orbit direction), which the keyframes were tuned with, is kept as a sensitivity and gives the same best-fit stage.":
+    "จุดกำหนดระดับน้ำช่วงน้ำลดปรับใหม่ตามภาพ Sentinel-1 วันที่ 16 กันยายน 06:16 น. (ระดับน้ำที่เข้ากันดีที่สุด 0.10 ม.) การเทียบกับเรดาร์นี้จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ ภาพนี้ใช้กำหนดขนาดของขอบเขตน้ำช่วงท้ายของการลดลงเท่านั้น การเทียบจับคู่ภาพนี้กับภาพวันที่ 4 กันยายน 06:16 น. ในแนวโคจรเดียวกัน (วงโคจรขาลง วงโคจรสัมพัทธ์ 135) ส่วนการจับคู่กับภาพวันที่ 6 กันยายนในวงโคจรขาขึ้น (ทิศทางวงโคจรต่างกัน) ซึ่งใช้ปรับจุดกำหนดระดับน้ำ ยังเก็บไว้เป็นการทดสอบความอ่อนไหว และให้ระดับน้ำที่เข้ากันดีที่สุดเท่ากัน",
   "The onset is shaped by GISTDA's RADARSAT-2 figure for 10 Sep 18:15 (about 9.9 km² flooded in Mae Sai) and reports of an overnight surge; the 11 Sep 02:00 knot (2.5 m) is illustrative. The model's smallest non-zero extent (flat land within 5 cm of channel level) already exceeds 9.9 km², so the 18:15 knot is set to the closest level (0.1 m).":
     "ช่วงเริ่มท่วมปรับตามตัวเลขจาก RADARSAT-2 ของ GISTDA ณ 10 ก.ย. 18:15 น. (น้ำท่วมในแม่สายประมาณ 9.9 ตร.กม.) และรายงานน้ำหลากในช่วงกลางคืน จุดกำหนด 11 ก.ย. 02:00 น. (2.5 ม.) เป็นค่าเพื่อการอธิบาย ขอบเขตน้ำท่วมที่เล็กที่สุดที่ไม่เป็นศูนย์ของแบบจำลอง (พื้นที่ราบที่สูงจากระดับร่องน้ำไม่เกิน 5 ซม.) เกิน 9.9 ตร.กม. อยู่แล้ว จุดกำหนด 18:15 น. จึงตั้งไว้ที่ระดับที่ใกล้ที่สุด (0.1 ม.)",
   "Cells that drain off the hydrology domain before meeting a mapped channel use their outlet on the domain edge as the HAND reference (the edge lies outside the replay area).":
@@ -212,6 +215,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ใช้เพื่อการเรียนรู้ด้านการเตรียมพร้อม การฝึกซ้อมวางแผน และการหารือจัดลำดับความสำคัญหลังเกิดเหตุ ในรุ่นสำหรับการแข่งขันและรุ่นทดลองเท่านั้น ไม่ใช้สำหรับการรับมือเหตุฉุกเฉิน คำสั่งอพยพ หรือการตัดสินใจเชิงปฏิบัติการใด ๆ และไม่ใช่คำเตือนทางการ",
   "Span of the dated event observations shown: from the Sentinel-2 image of 5 Sep 03:58 UTC to the end of the last HII rain hour (19 Sep 24:00 ICT). Sentinel-1 (6 and 15 Sep UTC) and VIIRS (10-18 Sep) fall inside it. Inputs dated outside the event (elevation 2011-2015, WorldPop 2020, boundaries 2022, OpenStreetMap 2026-07-09, reported shelters compiled 2026-09-27) are dated per evidence block and in sources.":
     "ช่วงเวลาของข้อมูลสังเกตการณ์ของเหตุการณ์ที่แสดง: ตั้งแต่ภาพ Sentinel-2 วันที่ 5 ก.ย. 03:58 UTC ถึงสิ้นชั่วโมงสุดท้ายของข้อมูลฝน สสน. (19 ก.ย. 24:00 น.) ภาพ Sentinel-1 (6 และ 15 ก.ย. ตามเวลา UTC) และ VIIRS (10–18 ก.ย.) อยู่ในช่วงนี้ ข้อมูลนำเข้าที่ลงวันที่นอกช่วงเหตุการณ์ (ความสูงภูมิประเทศ 2011–2015, WorldPop 2020, ขอบเขตการปกครอง 2022, OpenStreetMap 2026-07-09, ที่พักพิงที่มีรายงานรวบรวมเมื่อ 2026-09-27) ระบุวันที่ไว้ในแต่ละส่วนของหลักฐานและในรายการแหล่งข้อมูล",
+  "Span of the dated event observations used: from the Sentinel-1 pass of 3 Sep 23:16 UTC (4 Sep 06:16 ICT; read for the radar size comparison, not shown as an image) to the end of the last HII rain hour (19 Sep 24:00 ICT). Sentinel-2 (5 and 15 Sep), the other Sentinel-1 passes (6 and 15 Sep UTC) and VIIRS (10-18 Sep) fall inside it. Inputs dated outside the event (elevation 2011-2015, WorldPop 2020, boundaries 2022, OpenStreetMap 2026-07-09, reported shelters compiled 2026-09-27) are dated per evidence block and in sources.":
+    "ช่วงเวลาของข้อมูลสังเกตการณ์ของเหตุการณ์ที่ใช้: ตั้งแต่ภาพ Sentinel-1 วันที่ 3 ก.ย. 23:16 UTC (4 ก.ย. 06:16 น. ใช้ในการเทียบขนาดกับเรดาร์ ไม่ได้แสดงเป็นภาพ) ถึงสิ้นชั่วโมงสุดท้ายของข้อมูลฝน สสน. (19 ก.ย. 24:00 น.) ภาพ Sentinel-2 (5 และ 15 ก.ย.) ภาพ Sentinel-1 อื่น (6 และ 15 ก.ย. ตามเวลา UTC) และ VIIRS (10–18 ก.ย.) อยู่ในช่วงนี้ ข้อมูลนำเข้าที่ลงวันที่นอกช่วงเหตุการณ์ (ความสูงภูมิประเทศ 2011–2015, WorldPop 2020, ขอบเขตการปกครอง 2022, OpenStreetMap 2026-07-09, ที่พักพิงที่มีรายงานรวบรวมเมื่อ 2026-09-27) ระบุวันที่ไว้ในแต่ละส่วนของหลักฐานและในรายการแหล่งข้อมูล",
   // Licence per input: terms, conditions of use and the status of product 4009.
   "Use under the Copernicus DEM licence terms, with the DLR and Airbus attribution.":
     "ใช้ตามเงื่อนไขสัญญาอนุญาต Copernicus DEM พร้อมแสดงที่มาของ DLR และ Airbus",
@@ -265,6 +270,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "ตัวเลขจาก RADARSAT-2 ของ GISTDA ณ 10 ก.ย. 18:15 น. (น้ำท่วมในแม่สาย 9.9 ตร.กม.) ถูกนำมาใช้โดยตั้งใจเพื่อกำหนดจุดระดับน้ำช่วงเริ่มท่วม (10 ก.ย. 18:15 น., 0.1 ม.)",
   "The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m), so the radar size comparison is calibration-informed, not an independent check.":
     "ภาพ Sentinel-1 วันที่ 16 ก.ย. 06:16 น. ถูกใช้ปรับจุดกำหนดระดับน้ำช่วงน้ำลดใหม่ (ระดับน้ำที่เข้ากันดีที่สุด 0.10 ม.) การเทียบขนาดกับเรดาร์จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ",
+  "The Sentinel-1 pass of 16 Sep 06:16 ICT was used to re-tune the recession keyframes (best-fit stage 0.10 m), so the radar size comparison is calibration-informed, not an independent check. The tuning paired it with the 6 Sep ascending pass; the same-track pairing with the 4 Sep pass, added on 3 Oct 2026, gives the same best-fit stage.":
+    "ภาพ Sentinel-1 วันที่ 16 ก.ย. 06:16 น. ถูกใช้ปรับจุดกำหนดระดับน้ำช่วงน้ำลดใหม่ (ระดับน้ำที่เข้ากันดีที่สุด 0.10 ม.) การเทียบขนาดกับเรดาร์จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ การปรับครั้งนั้นจับคู่กับภาพวันที่ 6 ก.ย. ในวงโคจรขาขึ้น ส่วนการจับคู่ในแนวโคจรเดียวกันกับภาพวันที่ 4 ก.ย. ซึ่งเพิ่มเมื่อ 3 ต.ค. 2569 (2026) ให้ระดับน้ำที่เข้ากันดีที่สุดเท่ากัน",
   "UNOSAT 3991 (about 70 km² over 13-19 Sep) was known while the stage keyframes were tuned, so its size comparison is calibration-informed, not independent.":
     "ทราบตัวเลขของ UNOSAT 3991 (ประมาณ 70 ตร.กม. ในช่วง 13–19 ก.ย.) อยู่แล้วขณะปรับจุดกำหนดระดับน้ำ การเทียบขนาดกับตัวเลขนี้จึงมีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ",
   "The VIIRS daily comparison was not used for tuning. It was first computed in the change of 29 Sep 2026 (commit 129ff03) that also moved the 10 Sep 18:15 knot from 0.12 m to 0.1 m, the model's closest level to GISTDA's figure. The build history does not record which came first within that change, so the comparison is not presented as an independent check.":
@@ -339,6 +346,11 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
     "UNOSAT และ GISTDA ไม่ได้รับรอง FloodGuard หรือการใช้ผลิตภัณฑ์นี้ของ FloodGuard",
   "Not an official warning and not legal advice; for preparedness learning and planning exercises only.":
     "ไม่ใช่การเตือนภัยอย่างเป็นทางการ และไม่ใช่คำแนะนำทางกฎหมาย ใช้เพื่อการเรียนรู้ด้านการเตรียมพร้อมและการฝึกซ้อมวางแผนเท่านั้น",
+  // A separate observed case of the planning overlay (roadmap C-3): one dated line, no map layer, no slider position.
+  "UNOSAT and GISTDA water layer of 22 Oct 2024 (product 4009)":
+    "ชั้นข้อมูลน้ำของ UNOSAT และ GISTDA ลงวันที่ 22 ต.ค. 2567 (2024) (ผลิตภัณฑ์ 4009)",
+  "A separate observed case, O2, in the planning overlay. It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024; no 22 Oct data is in this replay.":
+    "เป็นกรณีสังเกตการณ์แยกต่างหาก คือ O2 ในชั้นข้อมูลการวางแผน (planning overlay) ไม่แสดงบนแผนที่นี้และไม่มีตำแหน่งบนแถบเลื่อนเวลาของการย้อนดู ซึ่งสิ้นสุดวันที่ 19 ก.ย. 2567 (2024) และไม่มีข้อมูลของวันที่ 22 ต.ค. ในการย้อนดูนี้",
 };
 
 /** A manifest sentence in Thai when a translation is known, otherwise the English original marked as such (ids removed). */

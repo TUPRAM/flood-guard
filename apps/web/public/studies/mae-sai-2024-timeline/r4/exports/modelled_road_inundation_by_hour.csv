@@ -10,7 +10,7 @@
 # confidence_reason_th,ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
 # lanes,SCN
 # source_timestamp,OpenStreetMap extract 2026-07-09 (roads); illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions)
-# generated_at,2026-10-02T20:59:00+07:00
+# generated_at,2026-10-03T13:51:00+07:00
 # generated_by,scripts/build_mae_sai_flood_timeline.py
 # study,mae-sai-2024-flood-timeline r4
 # accepted,accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
@@ -34,7 +34,7 @@
 # assumption_6_th,ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง ไม่ได้ใช้รายงานการปิดถนน การเปิดถนน หรือการจราจร ไม่ได้จำลองความเร็วกระแสน้ำ เศษวัสดุ โคลน และความเสียหาย ถนนจริงจึงอาจยังใช้ไม่ได้หลังน้ำลด
 # assumption_7,"The candidate columns of the source road file (an earlier Sentinel-1 change heuristic, now superseded) are not carried."
 # assumption_7_th,ไม่ได้นำคอลัมน์ความเสี่ยงเบื้องต้นของไฟล์ถนนต้นทาง (วิธีประมาณจากการเปลี่ยนแปลงของ Sentinel-1 รุ่นก่อน ซึ่งเลิกใช้แล้ว) มาใส่ในตารางนี้
-# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=c13ec2a4df586baf3b2de8cddfad40c6f025c9f2cd86a9779004fd60a17474bd
+# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=b4668d3a27ad34df3a6140f0c53a23d9780d09c0cc2a4309ff857ba7a53347ee
 # input_sha256,repo:outputs/mae_sai_road_risk.geojson=cd8648f8fbaabab14fdf45e9e98fff36d90902580831513be39a5dfe0af4439c; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf
 # git_commit,null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv
 road_id (รหัสทาง OSM),road_name (ชื่อถนน),road_class (ประเภทถนน),bridge_flag (เป็นสะพาน),tambon_id (รหัสตำบล),tambon_name_th (ชื่อตำบล),tambon_name_en (ชื่อตำบลภาษาอังกฤษ),length_m (ความยาว ม.),in_model_area (อยู่ในพื้นที่แบบจำลอง),modelled_first_impassable_hour (ชั่วโมงแรกที่สัญจรไม่ได้ตามแบบจำลอง),modelled_first_impassable_local_time (เวลาท้องถิ่นของชั่วโมงแรกที่สัญจรไม่ได้),modelled_passable_again_hour (ชั่วโมงที่กลับมาสัญจรได้ตามแบบจำลอง),modelled_passable_again_local_time (เวลาท้องถิ่นของชั่วโมงที่กลับมาสัญจรได้),modelled_impassable_hours (จำนวนชั่วโมงที่สัญจรไม่ได้ตามแบบจำลอง)

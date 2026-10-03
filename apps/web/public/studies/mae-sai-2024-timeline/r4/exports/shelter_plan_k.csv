@@ -10,7 +10,7 @@
 # confidence_reason_th,ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
 # lanes,SCN
 # source_timestamp,"OpenStreetMap extract 2026-07-09 (sites, building footprints and roads); WorldPop 2020; reconstructed peak 2024-09-12 ICT"
-# generated_at,2026-10-02T20:59:00+07:00
+# generated_at,2026-10-03T13:51:00+07:00
 # generated_by,scripts/build_mae_sai_flood_timeline.py
 # study,mae-sai-2024-flood-timeline r4
 # accepted,accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
@@ -32,7 +32,7 @@
 # assumption_5_th,ความจุเป็นค่าประมาณที่ยังไม่ได้ตรวจสอบ คำนวณจากขอบเขตอาคารในแผนที่ (พื้นที่อาคาร x สัดส่วนใช้สอย 0.5 / 3.5 ตร.ม. ต่อคน ตามมาตรฐาน Sphere) และไม่ทราบค่าสำหรับสถานที่ส่วนใหญ่ ไม่มีการใช้หรือเผยแพร่ความจุจากทะเบียนที่พักพิงใด ๆ ในไฟล์นี้
 # assumption_6,"The robust core is the set of sites among the first k at every what-if level (2.5 m, 3.5 m and 4.0 m): levels around an illustrative peak, not return periods."
 # assumption_6_th,แกนที่คงทนคือสถานที่ที่อยู่ใน k แห่งแรกที่ทุกระดับสมมุติ (2.5 ม. 3.5 ม. และ 4.0 ม.) ซึ่งเป็นระดับรอบค่าสูงสุดเพื่อการอธิบาย ไม่ใช่คาบการเกิดซ้ำ
-# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=c13ec2a4df586baf3b2de8cddfad40c6f025c9f2cd86a9779004fd60a17474bd
+# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=b4668d3a27ad34df3a6140f0c53a23d9780d09c0cc2a4309ff857ba7a53347ee
 # input_sha256,external:open_context/osm_geofabrik/thailand-latest.osm.pbf=b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1; repo:outputs/mae_sai_facilities.geojson=5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce; repo:outputs/mae_sai_access_edges.csv=266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454; repo:outputs/mae_sai_population_nodes.csv=172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf
 # git_commit,null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv
 # knee_k,8

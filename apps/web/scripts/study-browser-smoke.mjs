@@ -758,8 +758,17 @@ try {
   assert(downloaded.every(Boolean), "Every download link answers with the bytes the manifest lists");
   assert(packInventory.bytes <= packInventory.budget_bytes, "The export pack is within its own budget");
   checks.push(`export pack: ${packInventory.assets.length} download links under the standing sentence (modelled, not observed), each answering with its hashed bytes (${packInventory.bytes} of ${packInventory.budget_bytes} export-budget bytes, outside the precache budget)`);
+  // The water layer of 22 Oct 2024 (observed case O2 of the planning overlay) is one dated line: no layer, no slider position.
+  const o2Line = sourcesPanel.getByTestId("separate-case-o2");
+  await expect(o2Line).toBeVisible();
+  await expect(o2Line).toContainText("22 Oct 2024 · UNOSAT and GISTDA water layer of 22 Oct 2024 (product 4009). A separate observed case, O2, in the planning overlay.");
+  await expect(o2Line).toContainText("It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024");
+  checks.push("Sources panel: one dated line for the 22 Oct 2024 water layer (separate observed case O2), with no map layer and no slider position");
   await sourcesPanel.locator("summary").click();
   await expect(page.getByText("Radar size comparison (Sentinel-1", { exact: false })).toContainText("calibration-informed, not an independent check");
+  // The size comparison pairs the 16 Sep pass with the 4 Sep pass of the same track; the cross-track pair is a sensitivity.
+  await expect(page.getByText("Radar size comparison (Sentinel-1", { exact: false })).toContainText("4 Sep 06:16 ICT → 16 Sep 06:16 ICT; same track: descending, relative orbit 135");
+  await expect(page.getByTestId("radar-sensitivity")).toContainText("Sensitivity, cross-track pair (6 Sep 18:31 ICT → 16 Sep 06:16 ICT; ascending, relative orbit 172");
   await expect(page.getByText("Radar check", { exact: false })).toHaveCount(0);
   checks.push("evidence fields on the page: non-operational status, generation time, licence per input with product 4009 shown as a season envelope scenario layer, its licence notice and files in the Sources panel, tuning disclosure, calibration-informed radar line; depth factor written f, never k");
   // Season envelope at 1440 px. Off by default, and no replay day turns it on: every hour of the replay and every day
@@ -1593,7 +1602,7 @@ try {
   // The download list in Thai: Thai titles for every file, the standing sentence, and no overflow at 390 px.
   await touchPage.getByTestId("sources-panel").locator("summary").click();
   const thaiDownloads = touchPage.getByTestId("sources-panel").getByTestId("export-files");
-  await expect(thaiDownloads.locator("a[download]")).toHaveCount(8);
+  await expect(thaiDownloads.locator("a[download]")).toHaveCount(9);
   assert((await thaiDownloads.locator("a[download]").allInnerTexts()).every((label) => /[฀-๿]/.test(label)), "Every download link has a Thai title");
   await expect(touchPage.getByTestId("sources-panel").getByTestId("export-tier")).toContainText("ค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้");
   await expect(touchPage.getByTestId("sources-panel").getByTestId("export-tier")).toContainText("ไม่ใช่การพยากรณ์ ไม่ใช่บันทึกการปิดถนนที่สังเกตได้จริง และไม่ใช่การเตือนภัยอย่างเป็นทางการ");
@@ -1604,6 +1613,10 @@ try {
   assert.equal(await thaiFooter.locator("[lang='en']").count(), 0, "The Thai download footer carries no English sentence");
   const thaiDownloadOverflow = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   assert(thaiDownloadOverflow <= 1, `The Thai download list does not overflow at 390 px (${thaiDownloadOverflow}px)`);
+  const thaiO2 = touchPage.getByTestId("sources-panel").getByTestId("separate-case-o2");
+  await expect(thaiO2).toContainText("22 ต.ค. 2567 (2024) · ชั้นข้อมูลน้ำของ UNOSAT และ GISTDA");
+  await expect(thaiO2).toContainText("ไม่แสดงบนแผนที่นี้และไม่มีตำแหน่งบนแถบเลื่อนเวลา");
+  assert.equal(await thaiO2.locator("[lang='en']").count(), 0, "The Thai line for the 22 Oct layer carries no English sentence");
   assert.deepEqual(await spacedThai(touchPage), [], "No Thai text node is letter-spaced with the sources panel open at 390 px");
   await touchPage.getByTestId("sources-panel").locator("summary").click();
   const thaiPlanSpacing = await thaiPlan.evaluate((card) => [...card.querySelectorAll("p, th, td, caption, h2, h3, li, small, strong, span, summary")]

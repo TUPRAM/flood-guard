@@ -278,11 +278,11 @@ describe("Mae Sai replay panels", () => {
     expect(html).toContain(`${anchor.newly_dark_km2.toFixed(2)} km² turned newly water-like`);
     expect(html).toContain(`at a ${anchor.best_fit_stage_m.toFixed(2)} m stage`);
     expect(html).toContain(`${anchor.reconstruction_stage_at_pass_m.toFixed(3)} m`);
-    expect(html).toContain(`Spatial agreement is weak (IoU ${anchor.iou_at_best_fit.toFixed(2)})`);
-    // The recession keyframes were tuned to this pass (the manifest says so), so the page never calls it a check.
+    expect(html).toContain(`Spatial agreement is weak (IoU ${anchor.iou_at_best_fit.toFixed(3)})`);
+    // The recession keyframes were tuned to the 16 Sep pass (the manifest says so), so the page never calls it a check.
     expect(anchor.role).toBe("calibration_informed_magnitude_check");
-    expect(html).toContain("Radar size comparison (Sentinel-1, 6 Sep → 16 Sep 06:16 ICT; calibration-informed, not an independent check)");
-    expect(html).toContain("The recession keyframes were tuned to this pass, so the sizes agree by construction.");
+    expect(html).toContain("Radar size comparison (Sentinel-1, 4 Sep 06:16 ICT → 16 Sep 06:16 ICT; same track: descending, relative orbit 135; calibration-informed, not an independent check)");
+    expect(html).toContain("The recession keyframes were tuned to the 16 Sep pass, so the sizes agree by construction.");
     expect(html).toContain("so this constrains size, not location");
     expect(html).not.toMatch(/Radar check|this checks size/);
     expect(html).toContain(anchor.scope!);
@@ -291,7 +291,46 @@ describe("Mae Sai replay panels", () => {
     expect(thai).toContain("ท่าขี้เหล็ก (เมียนมา)");
     expect(thai).toContain("ขอบเขตการเทียบ");
     expect(thai).toContain("มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ");
+    expect(thai).toContain("4 ก.ย. 06:16 น. → 16 ก.ย. 06:16 น.; แนวโคจรเดียวกัน: วงโคจรขาลง วงโคจรสัมพัทธ์ 135");
     expect(thai).not.toContain("ตรวจสอบกับเรดาร์");
+    expect(findWordingViolations(html, "RadarCheck")).toEqual([]);
+    expect(findWordingViolations(thai, "RadarCheck th")).toEqual([]);
+  });
+
+  it("compares the same radar track and keeps the cross-track pair the keyframes were tuned with as a sensitivity (P2-10)", () => {
+    const anchor = manifest.s1_anchor;
+    // Primary pair: 4 Sep and 16 Sep 06:16 ICT, both descending on relative orbit 135. The 4 Sep image is not a layer.
+    expect(anchor.pair).toBe("same_track");
+    const [pre, post] = anchor.images!;
+    expect([pre.id, pre.utc, pre.local, pre.pass, pre.relative_orbit, pre.published_as_layer]).toEqual(
+      ["s1-20240903", "2024-09-03T23:16:00Z", "2024-09-04T06:16:00+07:00", "descending", 135, false]);
+    expect([post.id, post.utc, post.local, post.pass, post.relative_orbit, post.published_as_layer]).toEqual(
+      ["s1-20240915", "2024-09-15T23:16:01Z", "2024-09-16T06:16:01+07:00", "descending", 135, true]);
+    expect(anchor.source_timestamp).toBe("2024-09-03T23:16:00Z/2024-09-15T23:16:01Z");
+    expect([anchor.newly_dark_km2, anchor.best_fit_stage_m, anchor.best_fit_model_km2, anchor.iou_at_best_fit]).toEqual([19.54, 0.1, 22.54, 0.065]);
+    expect(manifest.layers.some((layer) => layer.id === pre.id) || manifest.observations.some((item) => item.id === pre.id)).toBe(false);
+    // Sensitivity: the cross-track pair (6 Sep ascending, relative orbit 172), the one the recession keyframes were tuned with.
+    const [cross] = anchor.sensitivity!;
+    expect(cross.pair).toBe("cross_track");
+    expect(cross.images.map((image) => [image.id, image.pass, image.relative_orbit])).toEqual([["s1-20240906", "ascending", 172], ["s1-20240915", "descending", 135]]);
+    expect([cross.newly_dark_km2, cross.best_fit_stage_m, cross.best_fit_model_km2, cross.iou_at_best_fit]).toEqual([23.57, 0.1, 22.54, 0.074]);
+    expect(cross.source_timestamp).toBe("2024-09-06T11:31:06Z/2024-09-15T23:16:01Z");
+    // The pass and orbit of every radar observation the page shows are in the manifest too.
+    for (const observation of manifest.observations.filter((item) => item.kind === "radar")) {
+      expect(observation.pass, observation.id).toMatch(/^(ascending|descending)$/);
+      expect(observation.relative_orbit, observation.id).toBeGreaterThan(0);
+    }
+    const html = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="" language="en" />));
+    expect(html).toContain("Sensitivity, cross-track pair (6 Sep 18:31 ICT → 16 Sep 06:16 ICT; ascending, relative orbit 172 → descending, relative orbit 135, the pair the keyframes were tuned with): 23.57 km² turned newly water-like; best fit at a 0.10 m stage (22.54 km²), IoU 0.074.");
+    expect(html).toContain("The 4 Sep image is used for this comparison only; it is not on the map.");
+    // The old caveat ("the two radar passes use different orbit directions") no longer describes the comparison.
+    expect(manifest.assumptions.join(" ")).not.toContain("the two radar passes use different orbit directions");
+    expect(manifest.assumptions.some((line) => line.includes("4 September 06:16 ICT pass of the same track (descending, relative orbit 135)"))).toBe(true);
+    const thai = text(renderToStaticMarkup(<RadarCheck manifest={manifest} radarSpan="" language="th" />));
+    expect(thai).toContain("ความอ่อนไหว คู่ภาพต่างแนวโคจร");
+    expect(thai).toContain("วงโคจรขาขึ้น วงโคจรสัมพัทธ์ 172 → วงโคจรขาลง วงโคจรสัมพัทธ์ 135");
+    expect(thai).toContain("ไม่ได้แสดงบนแผนที่");
+    expect(thai).not.toMatch(/\b(ascending|descending|relative orbit)\b/);
   });
 
   it("adds the low-confidence water entry to the legend and the evidence only when the manifest declares the flag", () => {
@@ -1144,5 +1183,64 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     expect(r3.s1_anchor.role).toBeUndefined();
     expect(text(renderToStaticMarkup(<RadarCheck manifest={r3} radarSpan="6 Sep → 16 Sep 06:16 ICT" language="en" />))).toContain("calibration-informed, not an independent check");
     expect(findWordingViolations(visibleText(html), "SourcesPanel r3")).toEqual([]);
+  });
+});
+
+describe("The replay ends on 19 Sep 2024; the 22 Oct layer is a separate case (C-3)", () => {
+  const END_MS = Date.parse("2024-09-20T00:00:00+07:00");
+  const LAST_DAY = "2024-09-19";
+  const within = (value: string) => (value.length === 10 ? value <= LAST_DAY : Date.parse(value) <= END_MS);
+  const piece = (html: string, testId: string, tag: string) => text(html.slice(html.indexOf(">", html.indexOf(`data-testid="${testId}"`)) + 1).split(`</${tag}>`)[0]);
+
+  it("dates no layer, observation, replay day or slider entry after 19 Sep 2024", () => {
+    const dated: [string, string][] = [
+      ...manifest.days.map((day): [string, string] => [`days[${day.date}]`, day.date]),
+      ...manifest.layers.flatMap((layer) => (layer.date ?? "").split("/").filter(Boolean).map((part): [string, string] => [`layers[${layer.id}]`, part])),
+      ...manifest.observations.map((item): [string, string] => [`observations[${item.id}]`, item.local]),
+      ...(manifest.viirs_daily?.days ?? []).map((day): [string, string] => [`viirs[${day.date}]`, day.nominal_local_time]),
+      ...(manifest.s2_crosscheck?.scenes ?? []).map((scene): [string, string] => [`s2[${scene.id}]`, scene.local_time]),
+      ...[manifest.s1_anchor, ...(manifest.s1_anchor.sensitivity ?? [])].flatMap((pair) => (pair.images ?? []).map((image): [string, string] => [`s1[${image.id}]`, image.local])),
+    ];
+    expect(dated.length).toBeGreaterThan(30);
+    expect(dated.filter(([, value]) => !within(value))).toEqual([]);
+    // The slider: every observation the page places on it, every stage anchor and every rain hour ends by 19 Sep 24:00.
+    for (const { observation, at } of observations) expect(at, observation.id).toBeLessThanOrEqual(11);
+    expect(Math.max(...manifest.stage_anchors.map((anchor) => anchor.t))).toBeLessThanOrEqual(11);
+    for (const series of Object.values(manifest.rainfall!.hourly_mm)) expect(series).toHaveLength(manifest.days.length * 24);
+    expect(manifest.days.at(-1)!.date).toBe(LAST_DAY);
+  });
+
+  it("cites the 22 Oct 2024 layer as one dated line in the Sources panel, with no layer, no slider position and no data", () => {
+    const o2 = (manifest.external_references ?? []).filter((reference) => reference.case === "O2");
+    expect(o2).toHaveLength(1);
+    const [reference] = o2;
+    expect([reference.dated, reference.url]).toEqual(["2024-10-22", "https://unosat.org/products/4009"]);
+    // Nothing dated 22 Oct is among the layers, observations, days, VIIRS days, scenes, radar images or envelope files.
+    const placed = JSON.stringify([manifest.layers, manifest.observations, manifest.days, manifest.viirs_daily, manifest.s2_crosscheck,
+      manifest.s1_anchor, manifest.season_envelope?.files, manifest.exports?.files]);
+    expect(placed).not.toMatch(/2024-10-22|20241022|22 Oct/);
+    const block = manifest.evidence_blocks!.find((item) => item.covers.includes(`external_references[${reference.id}]`))!;
+    expect([block.lane, block.temporal_relation]).toEqual(["REF", "not_ingested"]);
+    expect(block.source_timestamp).toContain("2024-10-22");
+    const html = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="en" offlineCopy={null} />);
+    expect(html.match(/data-testid="separate-case-o2"/g)).toHaveLength(1);
+    expect(piece(html, "separate-case-o2", "p")).toBe(
+      "22 Oct 2024 · UNOSAT and GISTDA water layer of 22 Oct 2024 (product 4009). A separate observed case, O2, in the planning overlay. "
+      + "It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024; no 22 Oct data is in this replay. "
+      + "https://unosat.org/products/4009");
+    // The internal decision number stays out of the copy, and the line is not repeated among the references to ingest.
+    expect(text(html)).not.toContain("D3b");
+    expect(text(html).split(reference.name)).toHaveLength(2);
+    expect(referencesNotIngested(manifest).filter((item) => !item.case).some((item) => item.id === reference.id)).toBe(false);
+    const thai = renderToStaticMarkup(<SourcesPanel manifest={manifest} language="th" offlineCopy={null} />);
+    const line = thai.slice(thai.indexOf('data-testid="separate-case-o2"'));
+    const thaiLine = piece(thai, "separate-case-o2", "p");
+    expect(thaiLine).toContain("22 ต.ค. 2567 (2024) · ชั้นข้อมูลน้ำของ UNOSAT และ GISTDA ลงวันที่ 22 ต.ค. 2567 (2024) (ผลิตภัณฑ์ 4009)");
+    expect(thaiLine).toContain("ไม่แสดงบนแผนที่นี้และไม่มีตำแหน่งบนแถบเลื่อนเวลา");
+    expect(line.split("</p>")[0]).not.toContain('lang="en"');
+    expect(findWordingViolations(thaiLine, "O2 line th")).toEqual([]);
+    expect(findWordingViolations(piece(html, "separate-case-o2", "p"), "O2 line")).toEqual([]);
+    // The map never offers the layer: no imagery choice, layer or observation names it.
+    expect(manifest.layers.map((layer) => layer.id).filter((id) => /4009|o2|1022/i.test(id))).toEqual([]);
   });
 });

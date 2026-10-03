@@ -358,14 +358,18 @@ def test_top_level_source_timestamp_covers_every_dated_event_observation(manifes
     start, end = (instant(part) for part in manifest["source_timestamp"].split("/"))
     stamps = [observation["utc"] for observation in manifest["observations"]]
     stamps += [day["nominal_local_time"] for day in manifest["viirs_daily"]["days"]]
+    stamps += [image["utc"] for pair in (manifest["s1_anchor"], *manifest["s1_anchor"]["sensitivity"]) for image in pair["images"]]
     stamps += [manifest["event_time"]["end"]]  # The last rain hour ends with the replay window.
     assert len(stamps) >= 14
     assert all(start <= instant(stamp) <= end for stamp in stamps)
-    assert instant(manifest["observations"][0]["utc"]) == start and instant(manifest["event_time"]["end"]) == end
+    # The span starts at the earliest observation used: the same-track radar pass of 3 Sep 23:16 UTC (4 Sep 06:16 ICT), which
+    # the size comparison reads although the page shows no image of it.
+    assert start == instant(manifest["s1_anchor"]["images"][0]["utc"]) == instant("2024-09-03T23:16:00Z")
+    assert instant(manifest["event_time"]["end"]) == end
     hours = len(next(iter(manifest["rainfall"]["hourly_mm"].values())))
     assert hours == (instant(manifest["event_time"]["end"]) - instant(manifest["event_time"]["start"])).total_seconds() / 3600
     note = manifest["source_timestamp_note"]
-    for needle in ("Sentinel-2", "rain", "VIIRS", "WorldPop 2020", "OpenStreetMap 2026-07-09"):
+    for needle in ("Sentinel-2", "rain", "VIIRS", "WorldPop 2020", "OpenStreetMap 2026-07-09", "3 Sep 23:16 UTC", "not shown as an image"):
         assert needle in note, needle
 
 
@@ -413,7 +417,8 @@ def test_product_4009_status_is_the_rights_records_status(manifest: dict) -> Non
     entry = next(item for item in manifest["publication_eligibility"]["inputs"] if item["id"] == "unosat-4009")
     block = next(item for item in manifest["evidence_blocks"] if item["id"] == "unosat_4009_season_envelope")
     # The product is ingested now, so it is no longer among the references; its rights note sits on its own block.
-    assert [item["id"] for item in manifest["external_references"]] == ["unosat-3969", "charter-912", "hii-event-page"]
+    # The 22 Oct 2024 layer of the same product is a separate observed case (O2): cited with its date, never ingested (C-3).
+    assert [item["id"] for item in manifest["external_references"]] == ["unosat-3969", "charter-912", "hii-event-page", "unosat-4009-o2-20241022"]
     note = manifest["season_envelope"]["rights_note"]
     condition = next(line for line in manifest["publication_eligibility"]["conditions"] if "product 4009" in line)
     assert entry["licence"] == record["licence"]["name"] == "CC BY-SA 4.0"
@@ -441,7 +446,7 @@ def test_product_4009_status_is_the_rights_records_status(manifest: dict) -> Non
 
 def test_input_hashes_are_the_receipts_and_name_no_machine_path(manifest: dict) -> None:
     rows = manifest["input_sha256"]
-    assert len(rows) == 37 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
+    assert len(rows) == 38 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
     for row in rows:
         assert row["root"] in ("external", "repo") and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) and row["bytes"] > 0
     receipt = json.loads((ROOT / "docs" / f"mae_sai_timeline_{manifest['revision']}_input_receipt.json").read_text(encoding="utf-8"))

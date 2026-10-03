@@ -40,6 +40,7 @@ import {
   facilityWet,
   floodedKm2,
   formatAge,
+  formatDateWithYear,
   formatHourSpan,
   formatHourStamp,
   formatLocalStamp,
@@ -84,6 +85,7 @@ import {
   type AreaGeometry,
   type ExploratoryKnowledgeItem,
   type ExportFile,
+  type ExternalReference,
   type FacilityProps,
   type GeoCollection,
   type HourClass,
@@ -92,6 +94,7 @@ import {
   type PngRaster,
   type PointGeometry,
   type Rainfall,
+  type RadarImage,
   type RoadCutGroup,
   type RoadProps,
   type RoadState,
@@ -2946,8 +2949,26 @@ const pick2 = (pair: [string, string], language: Language) => pair[language === 
 const EXPORT_KINDS: Record<ExportFile["media_type"], [string, string]> = {
   "text/csv": ["CSV table", "ตาราง CSV"],
   "application/geo+json": ["GeoJSON map layer", "ชั้นข้อมูลแผนที่ GeoJSON"],
+  "application/json": ["JSON summary", "สรุปแบบ JSON"],
   "text/plain": ["text file", "ไฟล์ข้อความ"],
 };
+
+/**
+ * One dated line for a separate case of the planning overlay that the replay cites but never ingests: the water layer
+ * UNOSAT and GISTDA dated 22 Oct 2024 (observed case O2). It is not on the map and has no slider position (D3b), so a
+ * reader does not take the replay's end on 19 Sep for the end of the water.
+ */
+export function SeparateCaseLine({ reference, language }: { reference: ExternalReference; language: Language }) {
+  const th = language === "th";
+  return (
+    <p className={styles.note} data-testid={`separate-case-${(reference.case ?? "").toLowerCase()}`}>
+      <strong>{reference.dated ? formatDateWithYear(reference.dated, language) : reference.case}</strong>
+      {" · "}<Localized text={reference.name} language={language} />{th ? " " : ". "}
+      {reference.note && <><Localized text={reference.note} language={language} />{" "}</>}
+      <a href={reference.url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{reference.url}</a>
+    </p>
+  );
+}
 
 /** Which evidence lanes a download file holds: model only, or reported facts beside a model check. */
 function exportLaneText(file: Pick<ExportFile, "lanes">, language: Language): string {
@@ -2989,7 +3010,8 @@ export function ExportDownloads({ manifest, language, offlineCopy }: { manifest:
             <span className={styles.muted}>
               ({pick2(EXPORT_KINDS[file.media_type], language)}, {formatFileSize(file.bytes)}
               {file.rows != null && file.header_lines != null ? t(`, ${file.rows.toLocaleString("en-US")} rows`, ` ${file.rows.toLocaleString("en-US")} แถว`) : ""}
-              {file.rows != null && file.header_lines == null ? t(`, ${file.rows.toLocaleString("en-US")} points`, ` ${file.rows.toLocaleString("en-US")} จุด`) : ""}
+              {file.rows != null && file.header_lines == null && file.media_type === "application/geo+json" ? t(`, ${file.rows.toLocaleString("en-US")} points`, ` ${file.rows.toLocaleString("en-US")} จุด`) : ""}
+              {file.rows != null && file.media_type === "application/json" ? t(`, ${file.rows.toLocaleString("en-US")} subdistricts`, ` ${file.rows.toLocaleString("en-US")} ตำบล`) : ""}
               {th ? " " : "; "}{exportLaneText(file, language)})
             </span>
           </li>
@@ -2998,6 +3020,9 @@ export function ExportDownloads({ manifest, language, offlineCopy }: { manifest:
       <p className={styles.muted} data-testid="export-reading">{t(
         "Each CSV is UTF-8 with a byte-order mark, so the Thai text opens correctly in Excel. It starts with provenance lines (what the table is and is not, its timestamps, confidence, assumptions and licence), and its second line gives their number; then comes the column header, in English with the Thai label in brackets. In QGIS or pandas, skip that number of lines. The GeoJSON layer carries the same fields in its metadata.",
         "ไฟล์ CSV ทุกไฟล์เข้ารหัสแบบ UTF-8 พร้อมเครื่องหมาย BOM ข้อความภาษาไทยจึงเปิดใน Excel ได้ถูกต้อง แต่ละไฟล์เริ่มด้วยบรรทัดข้อมูลกำกับ (ตารางคืออะไรและไม่ใช่อะไร เวลาของข้อมูล ความเชื่อมั่น สมมติฐาน และสัญญาอนุญาต) โดยบรรทัดที่สองบอกจำนวนบรรทัดดังกล่าว จากนั้นเป็นหัวคอลัมน์ภาษาอังกฤษพร้อมคำอธิบายภาษาไทยในวงเล็บ ใน QGIS หรือ pandas ให้ข้ามบรรทัดตามจำนวนนั้น ส่วนชั้นข้อมูล GeoJSON มีข้อมูลกำกับเดียวกันอยู่ในส่วน metadata",
+      )}{pack.files.some((file) => file.media_type === "application/json") && t(
+        " The JSON summary has one record per subdistrict at the modelled peak; each record repeats its lane, confidence, timestamps and assumptions, so it can be used on its own.",
+        " สรุปแบบ JSON มีหนึ่งรายการต่อหนึ่งตำบล ณ ระดับน้ำสูงสุดของแบบจำลอง แต่ละรายการระบุช่องทางของหลักฐาน ความเชื่อมั่น เวลา และสมมติฐานซ้ำไว้ จึงนำไปใช้แยกได้",
       )}</p>
       <p className={styles.muted} data-testid="export-licence">{t(
         `Licence: every file is derived from OpenStreetMap and is under ${pack.licence} (attribution and share-alike); README_licences.txt lists the attributions to keep. One licence lineage per file: no rain values and nothing from a source without a stated licence is in any table.`,
@@ -3033,7 +3058,11 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
   const t = (en: string, thai: string) => (th ? thai : en);
   const accessInfo = manifest.access ?? null;
   const confidenceText = manifest.confidence.toLowerCase() === "low" ? t("low", "ต่ำ") : manifest.confidence;
-  const pendingReferences = referencesNotIngested(manifest);
+  // A separate case of the planning overlay (O2, dated 22 Oct 2024) gets its own dated line, not a place among the
+  // references waiting to be ingested: it is never ingested here (D3b).
+  const references = referencesNotIngested(manifest);
+  const pendingReferences = references.filter((reference) => !reference.case);
+  const separateCases = references.filter((reference) => reference.case);
   const viirs = manifest.viirs_daily ?? null;
   const rain = manifest.rainfall ?? null;
   const s2 = manifest.s2_crosscheck ?? null;
@@ -3060,6 +3089,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
       </ul>
       <LicencesByInput manifest={manifest} language={language} />
       <SeasonEnvelopeSources envelope={envelope} language={language} />
+      {separateCases.map((reference) => <SeparateCaseLine key={reference.id ?? reference.url} reference={reference} language={language} />)}
       <ExportDownloads manifest={manifest} language={language} offlineCopy={offlineCopy} />
       {(viirs || rain || s2) && (
         <>
@@ -3488,24 +3518,62 @@ export function WetFacilitiesCard({ facilities, stage, language }: { facilities:
   );
 }
 
+const PASS_WORDS: Record<RadarImage["pass"], { en: string; th: string }> = {
+  ascending: { en: "ascending", th: "วงโคจรขาขึ้น" },
+  descending: { en: "descending", th: "วงโคจรขาลง" },
+};
+
+/** "descending, relative orbit 135" / "วงโคจรขาลง วงโคจรสัมพัทธ์ 135" for one radar image. */
+export function radarPassText(image: Pick<RadarImage, "pass" | "relative_orbit">, language: Language): string {
+  const words = PASS_WORDS[image.pass] ?? { en: image.pass, th: image.pass };
+  return language === "th" ? `${words.th} วงโคจรสัมพัทธ์ ${image.relative_orbit}` : `${words.en}, relative orbit ${image.relative_orbit}`;
+}
+
+/** "4 Sep 06:16 ICT → 16 Sep 06:16 ICT" for a radar pair, from each image's local acquisition time. */
+export function radarPairSpan(images: readonly Pick<RadarImage, "local">[], language: Language): string {
+  return images.map((image) => formatLocalStamp(image.local, language)).join(" → ");
+}
+
 /**
  * Sentinel-1 size comparison, rendered from `s1_anchor`; its scope is the whole image footprint, not the district.
- * The recession keyframes were tuned to this pass, so the page calls it calibration-informed, never a check.
+ * The recession keyframes were tuned to the 16 Sep pass, so the page calls it calibration-informed, never a check.
+ * From the bake of 3 Oct 2026 the figures come from a same-track pair (4 Sep and 16 Sep 06:16 ICT, both descending on
+ * relative orbit 135), and the cross-track pair the keyframes were tuned with is shown beside them as a sensitivity.
+ * An older manifest has no images: the span then comes from the radar observations (`radarSpan`).
  */
 export function RadarCheck({ manifest, radarSpan, language }: { manifest: TimelineManifest; radarSpan: string; language: Language }) {
   const th = language === "th";
   const anchor = manifest.s1_anchor;
+  const images = anchor.images?.length === 2 ? anchor.images : null;
   const newlyDark = km(anchor.newly_dark_km2, 2);
   const modelSize = km(anchor.best_fit_model_km2, 2);
   const bestStage = anchor.best_fit_stage_m.toFixed(2);
   const passStage = anchor.reconstruction_stage_at_pass_m.toFixed(3);
-  const iou = anchor.iou_at_best_fit.toFixed(2);
+  const iou = anchor.iou_at_best_fit.toFixed(3);
   const scope = anchor.scope ? localized(anchor.scope, language) : null;
+  const span = images ? radarPairSpan(images, language) : radarSpan;
+  const track = images && anchor.pair === "same_track"
+    ? (th ? `; แนวโคจรเดียวกัน: ${radarPassText(images[1], "th")}` : `; same track: ${radarPassText(images[1], "en")}`)
+    : "";
+  const tunedTo = images
+    ? (th ? `ภาพวันที่ ${formatShortDate(images[1].local, "th")}` : `the ${formatShortDate(images[1].local, "en")} pass`)
+    : (th ? "ภาพนี้" : "this pass");
+  const sensitivity = anchor.sensitivity?.find((row) => row.pair === "cross_track" && row.images.length === 2) ?? null;
+  const hiddenPre = images && !images[0].published_as_layer ? images[0] : null;
   return (
-    <div className={styles.anchor}>
+    <div className={styles.anchor} data-testid="radar-size-comparison">
       <p>{th
-        ? `เทียบขนาดกับเรดาร์ (Sentinel-1, ${radarSpan}; มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ): พื้นที่ ${newlyDark} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ แบบจำลองให้ขนาดใกล้เคียงกันคือ ${modelSize} ตร.กม. ที่ระดับน้ำ ${bestStage} ม. (ระดับในการจำลองขณะดาวเทียมผ่านคือ ${passStage} ม.) จุดกำหนดระดับน้ำช่วงน้ำลดปรับตามภาพนี้ ขนาดที่ใกล้เคียงกันจึงเป็นผลจากการปรับ ความสอดคล้องเชิงตำแหน่งต่ำ (IoU ${iou}) จึงบอกได้เพียงขนาดพื้นที่ ไม่ใช่ตำแหน่ง`
-        : `Radar size comparison (Sentinel-1, ${radarSpan}; calibration-informed, not an independent check): ${newlyDark} km² turned newly water-like. The model reaches a similar size, ${modelSize} km², at a ${bestStage} m stage; the replay's stage at that pass is ${passStage} m. The recession keyframes were tuned to this pass, so the sizes agree by construction. Spatial agreement is weak (IoU ${iou}), so this constrains size, not location.`}</p>
+        ? `เทียบขนาดกับเรดาร์ (Sentinel-1, ${span}${track}; มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ): พื้นที่ ${newlyDark} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ แบบจำลองให้ขนาดใกล้เคียงกันคือ ${modelSize} ตร.กม. ที่ระดับน้ำ ${bestStage} ม. (ระดับในการจำลองขณะดาวเทียมผ่านคือ ${passStage} ม.) จุดกำหนดระดับน้ำช่วงน้ำลดปรับตาม${tunedTo} ขนาดที่ใกล้เคียงกันจึงเป็นผลจากการปรับ ความสอดคล้องเชิงตำแหน่งต่ำ (IoU ${iou}) จึงบอกได้เพียงขนาดพื้นที่ ไม่ใช่ตำแหน่ง`
+        : `Radar size comparison (Sentinel-1, ${span}${track}; calibration-informed, not an independent check): ${newlyDark} km² turned newly water-like. The model reaches a similar size, ${modelSize} km², at a ${bestStage} m stage; the replay's stage at that pass is ${passStage} m. The recession keyframes were tuned to ${tunedTo}, so the sizes agree by construction. Spatial agreement is weak (IoU ${iou}), so this constrains size, not location.`}</p>
+      {sensitivity && (
+        <p data-testid="radar-sensitivity">{th
+          ? `ความอ่อนไหว คู่ภาพต่างแนวโคจร (${radarPairSpan(sensitivity.images, "th")}; ${radarPassText(sensitivity.images[0], "th")} → ${radarPassText(sensitivity.images[1], "th")} ซึ่งเป็นคู่ที่ใช้ปรับจุดกำหนดระดับน้ำ): พื้นที่ ${km(sensitivity.newly_dark_km2, 2)} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ ระดับน้ำที่เข้ากันดีที่สุด ${sensitivity.best_fit_stage_m.toFixed(2)} ม. (${km(sensitivity.best_fit_model_km2, 2)} ตร.กม.) IoU ${sensitivity.iou_at_best_fit.toFixed(3)}`
+          : `Sensitivity, cross-track pair (${radarPairSpan(sensitivity.images, "en")}; ${radarPassText(sensitivity.images[0], "en")} → ${radarPassText(sensitivity.images[1], "en")}, the pair the keyframes were tuned with): ${km(sensitivity.newly_dark_km2, 2)} km² turned newly water-like; best fit at a ${sensitivity.best_fit_stage_m.toFixed(2)} m stage (${km(sensitivity.best_fit_model_km2, 2)} km²), IoU ${sensitivity.iou_at_best_fit.toFixed(3)}.`}
+          {hiddenPre && (th
+            ? ` ภาพวันที่ ${formatShortDate(hiddenPre.local, "th")} ใช้เฉพาะในการเทียบนี้ ไม่ได้แสดงบนแผนที่`
+            : ` The ${formatShortDate(hiddenPre.local, "en")} image is used for this comparison only; it is not on the map.`)}
+        </p>
+      )}
       <p>
         {scope && <>{th ? "ขอบเขตการเทียบ: " : "Scope: "}<span lang={scope.lang}>{scope.text}</span>{" "}</>}
         {th

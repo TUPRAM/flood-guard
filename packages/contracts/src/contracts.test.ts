@@ -18,6 +18,7 @@ import proposalEvidenceSchema from "../schemas/proposal-evidence.schema.json";
 import publicPreparednessAreaSchema from "../schemas/public-preparedness-area.schema.json";
 import sourceComponentSchema from "../schemas/source-component.schema.json";
 import statusSchema from "../schemas/status.schema.json";
+import tambonReplaySummarySchema from "../schemas/tambon-replay-summary.schema.json";
 import {
   ACCEPTANCE_RECEIPT_STATES,
   ACTION_CLASSES,
@@ -252,5 +253,27 @@ describe("contract drift", () => {
       expect.arrayContaining(["lane", "source_timestamp", "evidence_tier", "temporal_relation"]),
     );
     expect(replay.properties.input_sha256.minItems).toBe(1);
+    // The radar size comparison's primary pair is one track; a cross-track pair is only a sensitivity row (P2-10).
+    expect(replay.properties.s1_anchor.properties.pair.const).toBe("same_track");
+    expect(replay.$defs.radarPair.items.required).toEqual(expect.arrayContaining(["utc", "local", "pass", "relative_orbit"]));
+  });
+
+  it("keeps every record of the per-subdistrict replay summary self-describing, with no score and no action class", () => {
+    const summary = tambonReplaySummarySchema;
+    const record = summary.$defs.record;
+    // Each record carries its own lane, tier, confidence class, timestamps and assumptions (AGENTS.md: every output).
+    expect(record.required).toEqual(expect.arrayContaining([
+      "lane", "evidence_tier", "confidence_class", "source_timestamp", "generated_at", "operational_status", "assumptions",
+    ]));
+    expect(record.properties.confidence_class.enum).toEqual(CONFIDENCE_CLASSES);
+    expect(record.properties.operational_status.const).toBe("non_operational");
+    expect(record.properties.evidence_tier.const).toBe("T1 scenario (model)");
+    expect(record.additionalProperties).toBe(false);
+    expect(Object.keys(record.properties).filter((key) => /fpps|action_class|priority_score/.test(key))).toEqual([]);
+    // The season-envelope comparison is named, never copied: its pointer holds words only.
+    const pointer = record.properties.season_envelope_comparison;
+    expect(pointer.additionalProperties).toBe(false);
+    expect(Object.values(pointer.properties).every((property) => !("type" in property) || property.type === "string")).toBe(true);
+    expect(summary.properties.metadata.properties.operational_status.const).toBe("non_operational");
   });
 });

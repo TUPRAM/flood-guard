@@ -43,7 +43,8 @@ SOURCES = [
     {"id": "reported-shelters", "name": "Shelters reported in use in September 2024", "attribution": "FloodGuard desk research",
      "licence": "Facts with citations; OSM-derived coordinates © OpenStreetMap contributors (ODbL)."},
 ]
-INPUT_PATHS = (exports._ROADS, exports._EDGES, exports._NODES, exports._ADMIN, exports._FACILITIES, exports._REPORTED, exports._OSM_PBF, *exports._DEM)
+INPUT_PATHS = (exports._ROADS, exports._EDGES, exports._NODES, exports._ADMIN, exports._FACILITIES, exports._REPORTED, exports._OSM_PBF,
+               exports._WORLDPOP, *exports._DEM)
 
 
 def synthetic_context(**changes) -> exports.ExportContext:
@@ -104,7 +105,12 @@ def synthetic_context(**changes) -> exports.ExportContext:
                    "location_method": "not_located", "location_confidence": "low", "role": "shelter", "first_use": "2024-09-15 or earlier",
                    "in_access_set": True, "access_set_note": "Not located.", "access_set_note_th": "ระบุตำแหน่งไม่ได้",
                    "evidence_strength": "media", "sources": [], "model_check": None}],
-        peak_stage_m=3.5, walk_limit_m=2000.0, freeboard_m=0.5, snap_max_m=400.0)
+        peak_stage_m=3.5, walk_limit_m=2000.0, freeboard_m=0.5, snap_max_m=400.0,
+        # Per-subdistrict figures at the peak, as the manifest gives them, and each node's home code (wet below code 70 at 3.5 m).
+        tambon_peak=[{"tambon_id": "T1", "area_km2": 20.0, "modelled_km2": 20.0, "flooded_km2": 5.0, "residents_in_water": 60.8, "road_km_impassable": 0.24},
+                     {"tambon_id": "T2", "area_km2": 40.0, "modelled_km2": 30.0, "flooded_km2": 2.5, "residents_in_water": 5.5, "road_km_impassable": 0.0}],
+        district_flooded_km2=7.5, peak_local_time="2024-09-12T12:00:00+07:00",
+        node_home_code=np.array([10, 255, 0, 100, 60, 20], dtype=np.uint8), season_envelope_stage="modelled_peak")
     return replace(context, **changes)
 
 
@@ -121,6 +127,10 @@ def header_texts(file: exports.ExportFile) -> list[tuple[str, str]]:
     if file.media_type == "application/geo+json":
         metadata = json.loads(file.data)["metadata"]
         return [(f"{file.name} metadata", json.dumps(metadata, ensure_ascii=False))]
+    if file.media_type == "application/json":
+        document = json.loads(file.data)
+        return [(f"{file.name} metadata", json.dumps(document["metadata"], ensure_ascii=False)),
+                *((f"{file.name} {record['tambon_id']}", json.dumps(record, ensure_ascii=False)) for record in document["records"])]
     return [(file.name, file.data.decode("utf-8"))]
 
 
@@ -379,13 +389,13 @@ def test_nothing_says_nothing_was_checked_once_a_check_has_been_returned() -> No
 # --- Files: headers, encoding and format -----------------------------------------------------------------------
 
 
-def test_pack_holds_the_eight_files_with_fixed_names() -> None:
+def test_pack_holds_the_nine_files_with_fixed_names() -> None:
     files = exports.export_pack(synthetic_context())
     assert [file.name for file in files] == [
         "shelter_plan_reported_2024.csv", "shelter_plan_k.csv", "shelter_plan_capacitated.csv", "shelter_sites.geojson",
         "modelled_road_inundation_by_hour.csv", "modelled_access_loss_by_hour.csv", "shelter_candidate_verification_sheet.csv",
-        "README_licences.txt"]
-    assert [file.rows for file in files] == [2, 3, 2, 5, 3, 24, 3, None]
+        "tambon_replay_summary.json", "README_licences.txt"]
+    assert [file.rows for file in files] == [2, 3, 2, 5, 3, 24, 3, 2, None]
     for file in files:
         assert not re.search(r"schedule|closure|cut[-_]?off|4009|unosat", file.name, re.IGNORECASE), file.name
         record = file.record("/studies/x/r9/exports/")
@@ -434,7 +444,7 @@ def test_every_file_header_carries_the_evidence_fields() -> None:
     for file in pack(context).values():
         if file.media_type == "text/csv":
             fields = exports.read_export_csv(file.data)[0]
-        elif file.media_type == "application/geo+json":
+        elif file.media_type in ("application/geo+json", "application/json"):
             fields = json.loads(file.data)["metadata"]
         else:
             text = file.data.decode("utf-8")
@@ -576,7 +586,10 @@ def test_one_licence_lineage_per_file() -> None:
 def test_no_export_column_is_a_legacy_candidate_column_rain_a_score_or_an_action_class() -> None:
     assert exports.LEGACY_ROAD_COLUMNS == ("road_disruption_probability_0_1", "candidate_status", "confidence_class")
     for file in pack().values():
-        assert exports.column_problems(file.name, (column.key for column in file.columns)) == []
+        # The summary's evidence fields (confidence_class among them) are provenance each record repeats, not data columns.
+        keys = [column.key for column in file.columns
+                if file.id != exports.SUMMARY_ID or column.key.split(".", 1)[0] not in exports.SUMMARY_PROVENANCE_KEYS]
+        assert exports.column_problems(file.name, keys) == []
     problems = exports.column_problems
     for key in exports.LEGACY_ROAD_COLUMNS:
         assert problems("x.csv", [key]) == [f"x.csv: legacy column {key} comes from the superseded candidate lane"]
@@ -648,13 +661,13 @@ def test_committed_pack_is_exactly_what_the_manifest_lists(manifest: dict, commi
     assert sorted(entry["record"]["name"] for entry in committed.values()) == sorted([
         "shelter_plan_reported_2024.csv", "shelter_plan_k.csv", "shelter_plan_capacitated.csv", "shelter_sites.geojson",
         "modelled_road_inundation_by_hour.csv", "modelled_access_loss_by_hour.csv", "shelter_candidate_verification_sheet.csv",
-        "README_licences.txt"])
+        "tambon_replay_summary.json", "README_licences.txt"])
     for entry in committed.values():
         record, data = entry["record"], entry["data"]
         assert hashlib.sha256(data).hexdigest() == record["sha256"] and len(data) == record["bytes"], record["name"]
         assert b"\r" not in data and record["licence"] == "ODbL 1.0" and "osm" in record["source_ids"]
         assert not set(record["source_ids"]) & exports.FORBIDDEN_SOURCES
-    assert pack_info["file_count"] == len(committed) == 8
+    assert pack_info["file_count"] == len(committed) == 9
     assert pack_info["bytes"] == sum(len(entry["data"]) for entry in committed.values())
     assert pack_info["tier"] == exports.EXPORT_TIER and pack_info["scenario_tier"] == "T1 scenario (model)"
     assert pack_info["confidence"] == "low" and pack_info["confidence_reason"] and pack_info["source_timestamp"] and pack_info["assumptions"]
@@ -672,7 +685,7 @@ def test_committed_headers_carry_the_manifests_time_tier_and_input_hashes(manife
         if record["media_type"] == "text/csv":
             fields = entry["fields"]
             assert entry["data"].startswith(exports.BOM) and int(fields["header_lines"]) == record["header_lines"]
-        elif record["media_type"] == "application/geo+json":
+        elif record["media_type"] in ("application/geo+json", "application/json"):
             fields = json.loads(entry["data"])["metadata"]
         else:
             fields = dict(re.findall(r"^# ([a-z0-9_]+): (.*)$", entry["data"].decode("utf-8"), re.MULTILINE))
@@ -868,6 +881,8 @@ def test_wording_lint_is_clean_over_every_committed_export_header(committed: dic
             texts = ["\n".join(lines[:record["header_lines"] + 1])]
         elif record["media_type"] == "application/geo+json":
             texts = [json.dumps(json.loads(entry["data"])["metadata"], ensure_ascii=False)]
+        elif record["media_type"] == "application/json":
+            texts = [json.dumps(json.loads(entry["data"]), ensure_ascii=False)]  # The summary is all text: metadata and records.
         else:
             texts = [entry["data"].decode("utf-8")]
         texts += [record["name"], record["title"]["en"], record["title"]["th"]]
@@ -875,4 +890,168 @@ def test_wording_lint_is_clean_over_every_committed_export_header(committed: dic
             findings = find_violations(text, RULES, record["name"])
             assert [finding.describe() for finding in findings] == []
             checked += 1
-    assert checked == 8 * 4
+    assert checked == 9 * 4
+
+
+# --- Per-subdistrict summary at the modelled peak (roadmap P3-2) -----------------------------------------------------
+
+SUMMARY_SCHEMA = ROOT / "packages" / "contracts" / "schemas" / "tambon-replay-summary.schema.json"
+
+
+def schema_errors(document: dict) -> list[str]:
+    from jsonschema import Draft202012Validator, FormatChecker
+
+    schema = json.loads(SUMMARY_SCHEMA.read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    return sorted(f"{'/'.join(str(part) for part in error.absolute_path) or '$'}: {error.message}" for error in validator.iter_errors(document))
+
+
+def test_home_wet_mask_follows_the_page_rule() -> None:
+    codes = np.array([0, 1, 69, 70, 71, 254, 255], dtype=np.uint8)
+    # Channel homes are wet as soon as the stage rises; the never code never floods; otherwise code * 0.05 < stage.
+    assert exports.home_wet_mask(codes, 3.5).tolist() == [True, True, True, False, False, False, False]
+    assert exports.home_wet_mask(codes, 0.0).tolist() == [False] * 7
+    assert exports.home_wet_mask(codes, 0.06).tolist() == [True, True, False, False, False, False, False]
+
+
+def test_summary_counts_each_set_both_ways_per_subdistrict_at_the_peak() -> None:
+    access = exports.tambon_access_at_peak(synthetic_context())
+    reported_t1, plan_t1 = access["T1"]["reported_2024"], access["T1"]["knee_plan"]
+    # T1: nodes of 10.5 (home code 10, wet), 20.25 (never floods) and 30.0 (channel, wet) residents; level 70 at 3.5 m.
+    assert reported_t1["all_residents_at_road_nodes"] == {
+        "residents": 60.8, "within_reach_before_flood": 30.8, "already_out_of_reach_before_flood": 30.0, "lost_access": 10.5,
+        "keeping_access": 20.2, "lost_share_of_within_reach": 0.3415}
+    assert reported_t1["residents_whose_homes_flood_at_peak"] == {
+        "residents": 40.5, "within_reach_before_flood": 10.5, "already_out_of_reach_before_flood": 30.0, "lost_access": 10.5,
+        "keeping_access": 0.0, "lost_share_of_within_reach": 1.0}
+    assert plan_t1["all_residents_at_road_nodes"] == {
+        "residents": 60.8, "within_reach_before_flood": 50.2, "already_out_of_reach_before_flood": 10.5, "lost_access": 50.2,
+        "keeping_access": 0.0, "lost_share_of_within_reach": 1.0}
+    # T2: a node that never loses access under the plan (code 254) and one cut exactly at the peak level (code 70).
+    plan_t2 = access["T2"]["knee_plan"]["all_residents_at_road_nodes"]
+    assert plan_t2 == {"residents": 45.5, "within_reach_before_flood": 45.5, "already_out_of_reach_before_flood": 0.0, "lost_access": 5.5,
+                       "keeping_access": 40.0, "lost_share_of_within_reach": 0.1209}
+    assert access["T2"]["knee_plan"]["residents_whose_homes_flood_at_peak"]["residents"] == 5.5
+    # The access-loss table gives the same baseline and loss at the peak hour for every subdistrict (all residents).
+    context = synthetic_context()
+    rows = exports.access_loss_rows(context.tambons, context.node_tambon, context.node_population, context.cut_codes,
+                                    context.hourly_stages, EVENT_START, 0.05, "plan_2")
+    peak_hour = context.hourly_stages.index(3.5)
+    for tambon in context.tambons:
+        row = next(row for row in rows if row["tambon_id"] == tambon["id"] and row["replay_hour"] == peak_hour)
+        for label in ("reported_2024", "knee_plan"):
+            counted = access[tambon["id"]][label]["all_residents_at_road_nodes"]
+            assert (row[f"{label}_within_reach_before_flood"], row[f"{label}_lost_access"]) == (counted["within_reach_before_flood"], counted["lost_access"])
+    # Without a baseline the share is null, never 0 or a division by zero.
+    lone = synthetic_context(cut_codes={"reported_2024": np.full(6, NO_BASELINE_ACCESS, dtype=np.uint8), "plan_2": context.cut_codes["plan_2"]})
+    assert exports.tambon_access_at_peak(lone)["T1"]["reported_2024"]["all_residents_at_road_nodes"]["lost_share_of_within_reach"] is None
+
+
+def test_summary_records_carry_their_evidence_fields_and_the_manifest_figures() -> None:
+    files = pack()
+    summary = files[exports.SUMMARY_ID]
+    assert (summary.name, summary.media_type, summary.rows, summary.header_lines, summary.lanes) == (
+        "tambon_replay_summary.json", "application/json", 2, None, ("SCN",))
+    text = summary.data.decode("utf-8")
+    assert b"\r" not in summary.data and not summary.data.startswith(exports.BOM) and text.endswith("}\n")
+    document = json.loads(text)
+    assert list(document) == ["name", "schema_id", "metadata", "records"] and document["schema_id"] == exports.SUMMARY_SCHEMA_ID
+    assert schema_errors(document) == []
+    metadata = document["metadata"]
+    assumptions = [{"en": metadata[key], "th": metadata[f"{key}_th"]} for key in metadata if re.fullmatch(r"assumption_\d+", key)]
+    assert [field["key"] for field in metadata["fields"]] == [column.key for column in summary.columns]
+    first, second = document["records"]
+    assert (first["tambon_id"], first["tambon_name_th"], first["tambon_name_en"]) == ("T1", "แม่สาย", "Mae Sai")
+    for record in document["records"]:
+        assert exports.leaf_paths(record) == [column.key for column in summary.columns]
+        assert (record["lane"], record["evidence_tier"], record["confidence_class"], record["operational_status"]) == (
+            "SCN", "T1 scenario (model)", "low", "non_operational")
+        assert record["generated_at"] == "2026-10-02T15:00:00+07:00" and record["source_timestamp"] == metadata["source_timestamp"]
+        assert record["assumptions"] == assumptions and all(THAI.search(item["th"]) for item in record["assumptions"])
+        assert record["modelled_peak_local_time"] == "2024-09-12T12:00:00+07:00" and record["modelled_peak_stage_m"] == 3.5
+        # The comparison with the season envelope is named, never copied: words only, and it says where.
+        assert record["season_envelope_comparison"] == {"lane": "SCN-ENV", "stage": "modelled_peak", "file": "season_envelope.files.statistics",
+                                                         "entry": f"comparison.by_tambon[tambon_id={record['tambon_id']}]"}
+    assert (first["modelled_flooded_km2_at_peak"], first["modelled_flooded_share_of_subdistrict"], first["modelled_flooded_share_of_district"]) == (5.0, 0.25, 0.6667)
+    assert (second["modelled_share_of_area"], second["modelled_residents_in_water_at_peak"], second["modelled_road_km_impassable_at_peak"]) == (0.75, 5.5, 0.0)
+    assert any("one licence lineage" in item["en"] for item in first["assumptions"])
+    assert any("No priority score and no action class" in item["en"] for item in first["assumptions"])
+    assert not re.search(r"fpps|action[_-]?class|priority[_-]?score", json.dumps([exports.leaf_paths(record) for record in document["records"]]), re.IGNORECASE)
+    assert "4009" not in text.replace(exports.NOT_INCLUDED, "").replace(exports.NOT_INCLUDED_TH, "")
+    # Without a season envelope the records carry no pointer, and the schema still holds.
+    bare = json.loads(pack(synthetic_context(season_envelope_stage=None))[exports.SUMMARY_ID].data)
+    assert all("season_envelope_comparison" not in record for record in bare["records"]) and schema_errors(bare) == []
+
+
+def test_summary_refuses_missing_peak_figures_or_home_codes_and_a_record_that_differs_from_its_fields() -> None:
+    with pytest.raises(exports.ReplayExportError, match="peak figures of every subdistrict"):
+        exports.export_pack(synthetic_context(tambon_peak=()))
+    context = synthetic_context()
+    with pytest.raises(exports.ReplayExportError, match="order of the tambons"):
+        exports.export_pack(replace(context, tambon_peak=list(reversed(context.tambon_peak))))
+    with pytest.raises(exports.ReplayExportError, match="home code of every resident node"):
+        exports.export_pack(synthetic_context(node_home_code=None))
+    columns = exports.summary_columns(2, False)
+    with pytest.raises(exports.ReplayExportError, match="differ from the declared fields"):
+        exports.summary_bytes("x.json", [], columns, [{"tambon_id": "T1"}])
+    # A data field may not be a score, an action class or anything of product 4009.
+    with pytest.raises(exports.ReplayExportError, match="not allowed in an export"):
+        exports.summary_bytes("x.json", [], (*columns, exports.Column("priority_score", "คะแนน", "x")), [])
+    with pytest.raises(exports.ReplayExportError, match="not allowed in an export"):
+        exports.summary_bytes("x.json", [], (*columns, exports.Column("inside_4009", "ภายใน", "x")), [])
+    # The schema refuses a figure in the envelope pointer and a record without its confidence class.
+    document = json.loads(pack()[exports.SUMMARY_ID].data)
+    document["records"][0]["season_envelope_comparison"]["agreement_iou"] = 0.43
+    del document["records"][1]["confidence_class"]
+    errors = schema_errors(document)
+    assert any("agreement_iou" in error for error in errors) and any("confidence_class" in error for error in errors)
+
+
+def test_committed_summary_follows_its_schema_and_repeats_the_manifests_figures(manifest: dict, committed: dict[str, dict]) -> None:
+    entry = committed[exports.SUMMARY_ID]
+    record, document = entry["record"], json.loads(entry["data"])
+    assert (record["media_type"], record["rows"], record["lanes"]) == ("application/json", 8, ["SCN"])
+    assert schema_errors(document) == []
+    peak = max(manifest["days"], key=lambda day: day["stage_m"])
+    assert (peak["date"], peak["stage_m"]) == ("2024-09-12", 3.5)
+    public = WEB / "public"
+    names = {feature["properties"]["id"]: feature["properties"] for feature in
+             json.loads((public / manifest["vectors"]["tambons"]["href"].lstrip("/")).read_text(encoding="utf-8"))["features"]}
+    roads = json.loads((public / manifest["vectors"]["roads"]["href"].lstrip("/")).read_text(encoding="utf-8"))["features"]
+    assert [item["tambon_id"] for item in document["records"]] == manifest["access"]["tambons"]
+    for item in document["records"]:
+        tid = item["tambon_id"]
+        coverage = manifest["tambon_coverage"][tid]
+        assert (item["tambon_name_th"], item["tambon_name_en"]) == (names[tid]["th"], names[tid]["en"])
+        assert item["area_km2"] == coverage["total_km2"] and item["modelled_share_of_area"] == round(min(1.0, coverage["modelled_km2"] / coverage["total_km2"]), 4)
+        assert item["modelled_flooded_km2_at_peak"] == peak["stats"]["tambon_flooded_km2"][tid]
+        assert item["modelled_flooded_share_of_subdistrict"] == round(peak["stats"]["tambon_flooded_km2"][tid] / coverage["total_km2"], 4)
+        assert item["modelled_flooded_share_of_district"] == round(peak["stats"]["tambon_flooded_km2"][tid] / peak["stats"]["flooded_km2"], 4)
+        assert item["modelled_residents_in_water_at_peak"] == peak["stats"]["tambon_people_in_water"][tid]
+        length = sum(feature["properties"]["len"] for feature in roads
+                     if feature["properties"]["t"] == tid and feature["properties"]["m"] and feature["properties"]["h"] is not None
+                     and road_state(feature["properties"]["h"], 3.5, feature["properties"]["k"]) == "impassable")
+        assert item["modelled_road_km_impassable_at_peak"] == round(length / 1000, 2)
+        assert item["generated_at"] == manifest["generated_at"] and item["confidence_class"] == manifest["confidence_class"] == "low"
+    # The subdistricts add up to the district figures of the peak day and of the access card (all residents).
+    records = document["records"]
+    assert sum(item["modelled_flooded_km2_at_peak"] for item in records) == pytest.approx(peak["stats"]["flooded_km2"], abs=0.005)
+    assert sum(item["modelled_road_km_impassable_at_peak"] for item in records) == pytest.approx(peak["stats"]["road_km_impassable"], abs=0.05)
+    for label, set_id in (("reported_2024", "reported_2024"), ("knee_plan", f"plan_{manifest['shelters']['knee_k']}")):
+        lost = sum(item["modelled_access_at_peak"][label]["all_residents_at_road_nodes"]["lost_access"] for item in records)
+        assert lost == pytest.approx(peak["stats"]["access"][set_id]["people_lost_access"], abs=0.5)
+    # The access figures repeat the hourly access table at the peak hour.
+    table = committed["modelled_access_loss_by_hour"]["rows"]
+    for item in records:
+        row = next(row for row in table if row["tambon_id"] == item["tambon_id"] and row["local_time"] == "2024-09-12T12:00:00+07:00")
+        for label in ("reported_2024", "knee_plan"):
+            counted = item["modelled_access_at_peak"][label]["all_residents_at_road_nodes"]
+            assert (float(row[f"{label}_within_reach_before_flood"]), float(row[f"{label}_lost_access"]), float(row["residents"])) == (
+                counted["within_reach_before_flood"], counted["lost_access"], counted["residents"]), item["tambon_id"]
+    # The envelope pointer names an entry that exists in the envelope's statistics file, and copies none of its figures.
+    statistics = json.loads((public / manifest["season_envelope"]["files"]["statistics"]["href"].lstrip("/")).read_text(encoding="utf-8"))
+    entries = {row["tambon_id"] for row in statistics["comparison"]["by_tambon"]}
+    for item in records:
+        pointer = item["season_envelope_comparison"]
+        assert pointer["stage"] == statistics["comparison"]["by_tambon_stage"] and item["tambon_id"] in entries
+        assert all(isinstance(value, str) for value in pointer.values())

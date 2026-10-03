@@ -10,7 +10,7 @@
 # confidence_reason_th,ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
 # lanes,"REP, SCN"
 # source_timestamp,"reports dated 2024-09-11 to 2024-10-11, compiled 2026-09-27; OpenStreetMap extract 2026-07-09 (locations); reconstructed peak 2024-09-12 ICT (model check)"
-# generated_at,2026-10-02T20:59:00+07:00
+# generated_at,2026-10-03T13:51:00+07:00
 # generated_by,scripts/build_mae_sai_flood_timeline.py
 # study,mae-sai-2024-flood-timeline r4
 # accepted,accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
@@ -30,7 +30,7 @@
 # assumption_4_th,ตารางนี้ไม่มีจำนวนผู้เข้าพักและความจุ รายงานสาธารณะที่ระบุตัวเลขเหล่านั้นอยู่ในลิงก์ของคอลัมน์ source_urls
 # assumption_5,"The water is a HAND terrain-model reconstruction driven by illustrative stage keyframes (no gauge record was used): modelled, not observed."
 # assumption_5_th,น้ำเป็นการจำลองจากแบบจำลองภูมิประเทศ HAND ด้วยจุดกำหนดระดับน้ำเพื่อการอธิบาย (ไม่ได้ใช้ข้อมูลจากสถานีวัดน้ำ) เป็นค่าจากแบบจำลอง ไม่ใช่ค่าที่สังเกตได้
-# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=c13ec2a4df586baf3b2de8cddfad40c6f025c9f2cd86a9779004fd60a17474bd
+# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=b4668d3a27ad34df3a6140f0c53a23d9780d09c0cc2a4309ff857ba7a53347ee
 # input_sha256,repo:outputs/mae_sai_reported_shelters_2024.json=674d95881b857916f65f864e555a1b20f815a25bd9c43e2d475fc0c8f2d00d35; repo:outputs/mae_sai_access_edges.csv=266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf
 # git_commit,null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv
 site_id (รหัสสถานที่),name_th (ชื่อ),name_en (ชื่อภาษาอังกฤษ),type (ประเภท),tambon_as_reported (ตำบลตามรายงาน),lat (ละติจูด),lon (ลองจิจูด),location_method (วิธีระบุตำแหน่ง),location_confidence (ความเชื่อมั่นของตำแหน่ง),role (บทบาท),first_use (วันที่เริ่มใช้ตามรายงาน),first_use_th (วันที่เริ่มใช้ตามรายงาน ภาษาไทย),counted_in_access_set (นับในชุดการเข้าถึง),access_set_note (เหตุผลที่นับหรือไม่นับ),access_set_note_th (เหตุผลที่นับหรือไม่นับ ภาษาไทย),evidence_strength (น้ำหนักของหลักฐาน),source_urls (ลิงก์แหล่งข้อมูล),modelled_in_model_area (อยู่ในพื้นที่แบบจำลอง),modelled_floods_at_peak (น้ำถึงสถานที่ที่ระดับสูงสุดตามแบบจำลอง),modelled_freeboard_m (ระยะพ้นน้ำตามแบบจำลอง ม.)

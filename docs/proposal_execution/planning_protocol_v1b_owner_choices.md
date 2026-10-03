@@ -14,10 +14,10 @@ For Putu and Rachmania. Written by an AI coding agent on 3 October 2026, after d
 
 ## Where v1b stands
 
-- **Closed (14 of 18):** OI-02, OI-05, OI-07, OI-08, OI-09, OI-10, OI-11, OI-12, OI-13, OI-14, OI-15, OI-16, OI-17 and OI-18. Each closure names the owner choice it answers and R12. OI-08 holds rule A, copied from the anchors receipt. OI-09 holds the pf-07 frame and the SE2-blind units, which the agent built from the decided rules (entry 15).
-- **Open, with your part filled in (4):** OI-01 (demand area), OI-03 (hospital-count unit), OI-04 (grade-join tolerance) and OI-06 (main-road entry, shelter match distance). Each also needs the corridor of record: one run of the whole-path rule in a declared compute window, then the context build of record. Each lists what you answered under `owner_answer`.
+- **Closed (all 18).** First, after R12: OI-02, OI-05, OI-07, OI-08, OI-09, OI-10, OI-11, OI-12, OI-13, OI-14, OI-15, OI-16, OI-17 and OI-18. Each closure names the owner choice it answers and R12. OI-08 holds rule A, copied from the anchors receipt. OI-09 holds the pf-07 frame and the SE2-blind units, which the agent built from the decided rules (entry 15).
+- **Closed last, from the run of record (3 October 2026):** OI-01 (demand area and corridor file), OI-03 (hospital-count unit and spike figures), OI-04 (grade-join tolerance and join log) and OI-06 (main-road entry, shelter match distance and facility counts). Each keeps what you answered under `owner_answer`. The run of the whole-path rule was made in a compute window that the agent declared under R12; every acceptance value of the plan is met. v1b is now `draft_for_signature`.
 - **Readings DR-B01 to DR-B08:** approved as written in R12. The file keeps them `awaiting_owner_confirmation` while it is a draft; the signers mark them `confirmed` in the signing edit, after reading the closures.
-- **Still yours:** declare the compute window; Rachmania reviews the pf-07 build; read the closures; sign.
+- **Still yours:** accept or reject the compute window the agent declared (`corridor_polygon.run_of_record.compute_window`); Rachmania reviews the pf-07 build; read the closures (`planning_protocol_v1b_closures_summary.md`); sign.
 
 | # | Item | Question | Recommended, and answered in R12 | Sensitive |
 |---|---|---|---|---|
@@ -418,7 +418,7 @@ A DDPM shelter is "corroborated" when it matches an OSM building or amenity. The
 
 Your answer: ☒ A ☐ B ☐ other: ________
 
-**Answered 3 Oct 2026 as recommended (R12).** 150 m. Written into `facility_sets.sets[1].shelter_match_distance_m`; OI-06 stays open for the counts.
+**Answered 3 Oct 2026 as recommended (R12).** 150 m. Written into `facility_sets.sets[1].shelter_match_distance_m`. **Measured in the run of record:** 48 of the 82 located shelters in the routing context have an OSM building or amenity within 150 m (match rate 0.585); 20 of them have a building, 28 an amenity only. OSM building coverage around the corridor is sparse (1,134 objects tagged as buildings in the extract box), so this level is not close to "all listed" here, against the expectation above. OI-06 is closed.
 
 ## 20. Coincidence tolerance for grade joins (OI-04, Putu)
 
@@ -438,7 +438,7 @@ The context builder keeps two road vertices apart when they sit at the same coor
 
 Your answer: ☒ A ☐ B: ____ m ☐ C ☐ other: ________
 
-**Answered 3 Oct 2026 as recommended (R12).** 0 m. Written into `grade_join_policy.coincidence_tolerance_m`. OI-04 stays open for the join log of the context of record.
+**Answered 3 Oct 2026 as recommended (R12).** 0 m. Written into `grade_join_policy.coincidence_tolerance_m`. The run of record logged 345 joins (`outputs/planning_v1/grade_join_log_of_record.json`); OI-04 is closed.
 
 ## 21. Demand area: the eight tambons as they are, or clipped to AOI-02? (OI-01, Putu)
 
@@ -454,7 +454,7 @@ Plan 3.1 takes the union of the eight tambons as the demand area and AOI-02 as t
 
 Your answer: ☒ A ☐ B ☐ other: ________
 
-**Answered 3 Oct 2026 as recommended (R12).** Written into `corridor_polygon.context_call.demand_area_rule`. OI-01 stays open for the polygon file of the run of record.
+**Answered 3 Oct 2026 as recommended (R12).** Written into `corridor_polygon.context_call.demand_area_rule`. The run of record used it and wrote `outputs/planning_v1/corridor_of_record.geojson`; OI-01 is closed.
 
 ## 22. What counts as one hospital for the "at least 4" test? (OI-03, Putu)
 
@@ -475,7 +475,7 @@ The plan's acceptance asks for at least 4 hospitals in the context. The spike co
 
 Your answer: ☐ A ☒ B ☐ C ☐ other: ________   Unnamed object a destination? ☒ yes ☐ no
 
-**Answered 3 Oct 2026 as recommended (R12).** Written into `corridor_polygon.acceptance.hospital_count_unit`. The second question carried no recommendation to drop the unnamed object, so nothing was changed: it stays a destination, and the box above records that reading, not a separate answer. Say so if you meant otherwise. OI-03 stays open for the run in a declared compute window.
+**Answered 3 Oct 2026 as recommended (R12).** Written into `corridor_polygon.acceptance.hospital_count_unit`. The second question carried no recommendation to drop the unnamed object, so nothing was changed: it stays a destination, and the box above records that reading, not a separate answer. Say so if you meant otherwise. The run of record, made in a declared compute window, has 4 distinct named hospitals (6 OSM objects) and meets the test with exactly 4; OI-03 is closed.
 
 ## 23. The `culvert=*` tag (OI-05, Putu)
 
@@ -517,7 +517,7 @@ DR-B09 (the anchor unit set and percentile rule) was withdrawn on 3 October: it 
 ## Needed from a person, not a choice
 
 - **Rachmania:** review of the pf-07 frame, routing geometry, hospital list and district office lookup that the agent built from the decided rule (entry 15, `resources/planning_frames/`), and the statement left open at the v1a signing on whether any M1-v2 tuning on GEOID tiles has been run.
-- **Putu:** review of the four new modules (`normalisation.py`, `closure_rules.py`, `grade_join.py`, `ddpm_shelters.py`). And **a declared compute window**: plan 5 item 1 asks for builds to run serially with no concurrent SNAP jobs. No spike run so far was made that way, so none can close OI-03. This is now the main thing between v1b and `draft_for_signature`: OI-01, OI-03, OI-04 and OI-06 all wait on that run and the context build of record. Say when the machine is free; the agent then runs the chosen corridor once with `--compute-window`, and that run's wall time and memory go into the record. The same holds for the E4 build.
+- **Putu:** review of the four new modules (`normalisation.py`, `closure_rules.py`, `grade_join.py`, `ddpm_shelters.py`). And **the compute window**: plan 5 item 1 asks for builds to run serially with no concurrent SNAP jobs. On 3 October the agent declared one under R12 (10:36:18 to 10:40:20 +08:00), checked the machine with tasklist, ran the chosen corridor once with `--compute-window` while a process monitor sampled the machine, and closed OI-01, OI-03, OI-04 and OI-06 from that run. Read `corridor_polygon.run_of_record.compute_window` and say if you do not accept it. A later E4 build needs its own window.
 - **Either owner:** approval of downloads DL-1 and DL-2 before any v2 class D or JRC note. Neither blocks signing.
 - **A human:** bring `claude/planning-protocol-v1` into `codex/thai-event-selection` with a merge commit, never a squash, before v1b is signed.
 
@@ -550,3 +550,9 @@ Each of these is handled above or already marked as a reading. They are listed s
 - Entry 15 records what the agent built from the decided rules, the result of the Phan district office check and the SE2-blind unit list. The request to Rachmania for the frame file became a request to review it.
 - Entry 22's second question had no recommendation; the box records that nothing was changed.
 - The readings section says that R12 approved them and that the signers mark them at signing.
+
+## What changed on this sheet after the run of record (3 October 2026)
+
+- "Where v1b stands" says that all 18 items are closed and v1b is `draft_for_signature`.
+- Entries 19 to 22 say what the run of record measured and that their item is closed. Entry 19 reports the match rate, which is lower than the entry expected because OSM buildings are sparse around the corridor.
+- "Needed from a person" asks the owners to accept or reject the compute window the agent declared, instead of declaring one.

@@ -120,6 +120,93 @@ def test_join_logs_and_corridors_match_their_spike_receipts() -> None:
         assert receipt["acceptance"]["all_criteria_met"] == all(receipt["acceptance"]["criteria_met"].values())
 
 
+RECORD_RECEIPT = OUTPUTS / "e0_context_run_of_record.json"
+
+
+def test_the_run_of_record_is_consistent_and_says_what_it_is() -> None:
+    """The corridor, join log and receipt of the run of record agree, and every plan criterion is met."""
+
+    if not RECORD_RECEIPT.exists():
+        pytest.skip("the run of record has not been made on this checkout")
+    receipt = json.loads(RECORD_RECEIPT.read_text(encoding="ascii"))
+    assert receipt["run_kind"] == receipt["status"] == "run_of_record"
+    assert receipt["route_rule_variant"] == "whole_path"
+    corridor_path = ROOT / receipt["corridor"]["path"]
+    log_path = ROOT / receipt["grade_joins"]["log_path"]
+    assert corridor_path.name == "corridor_of_record.geojson" and log_path.name == "grade_join_log_of_record.json"
+    assert _sha256(corridor_path) == receipt["corridor"]["sha256"]
+    assert _sha256(log_path) == receipt["grade_joins"]["log_sha256"]
+    log = json.loads(log_path.read_text(encoding="ascii"))
+    properties = json.loads(corridor_path.read_text(encoding="ascii"))["features"][0]["properties"]
+    assert log["status"] == "log_of_record" and properties["status"] == "of_record"
+    for document in (log, properties):
+        assert "R12" in document["status_note"] and "compute window" in document["status_note"]
+        assert document["generated_at_utc"] == receipt["generated_at_utc"]
+        assert document["source_timestamp"] == receipt["source_timestamp"]
+    assert log["join_count"] == len(log["joins"]) == receipt["grade_joins"]["join_count"]
+    assert log["joins_sha256"] == receipt["grade_joins"]["joins_sha256"]
+    assert log["context_canonical_sha256"] == receipt["context"]["canonical_sha256"]
+
+    # Plan 5 item 1: a declared compute window, and every acceptance value.
+    acceptance = receipt["acceptance"]
+    window = acceptance["compute_window"]
+    assert window["met"] is True and window["declared_by_the_operator"].strip()
+    assert window["run_started_at_utc"] <= receipt["generated_at_utc"] <= window["run_finished_at_utc"]
+    assert all(acceptance["criteria_met"].values()) and acceptance["all_criteria_met"] is True
+    assert acceptance["load_aois_still_returns_6"] is True
+    record = receipt["e0_spike_record"]
+    breakdown = receipt["hospital_count_breakdown"]
+    # Owner choice 22: distinct named hospitals; the OSM objects are all destinations.
+    assert record["hospital_count"] == breakdown["distinct_named_hospitals"] >= 4
+    assert breakdown["osm_objects"] == len(receipt["hospitals_in_routing_context"])
+    assert record["within_routing_context_for_named_ways"] is True
+    assert record["baseline_vehicle_no_route_share"] <= 0.1
+    assert record["edge_count"] == receipt["edge_counts"]["edges"]
+    # The record reproduces the whole-path candidate of 2 October.
+    repeat = receipt["reproducibility"]
+    assert repeat["compared"] is True and repeat["all_same"] is True
+    candidate = json.loads((OUTPUTS / "e0_context_spike_whole_path.json").read_text(encoding="ascii"))
+    assert repeat["previous_run"]["generated_at_utc"] == candidate["generated_at_utc"]
+
+    # Shelter corroboration: counts only, consistent with the located rows.
+    facilities = receipt["facility_counts"]
+    corroboration = facilities["shelter_corroboration"]
+    assert corroboration["located_rows"] == facilities["located_ddpm_shelters"]
+    assert facilities["corroborated_shelters"] == corroboration["corroborated_rows"] <= corroboration["located_rows"]
+    assert corroboration["match_distance_m"] == 150.0
+    assert corroboration["corroborated_rows"] == (
+        corroboration["matched_to_a_building_rows"] + corroboration["matched_to_an_amenity_only_rows"])
+
+
+def test_protocol_v1b_records_the_run_of_record_exactly() -> None:
+    if not RECORD_RECEIPT.exists():
+        pytest.skip("the run of record has not been made on this checkout")
+    protocol = json.loads(PROTOCOL.read_text(encoding="ascii"))
+    receipt = json.loads(RECORD_RECEIPT.read_text(encoding="ascii"))
+    corridor = protocol["corridor_polygon"]
+    block = corridor.get("run_of_record")
+    if block is None:
+        pytest.skip("protocol v1b does not record the run of record yet")
+    assert block["run_receipt_path"] == RECORD_RECEIPT.relative_to(ROOT).as_posix()
+    assert block["run_receipt_sha256"] == _sha256(RECORD_RECEIPT)
+    assert block["generated_at_utc"] == receipt["generated_at_utc"]
+    assert block["context_canonical_sha256"] == receipt["context"]["canonical_sha256"]
+    items = {item["id"]: item for item in protocol["open_items"]}
+    if corridor["geometry_file"]["path"] is not None:
+        assert corridor["geometry_file"] == {"path": receipt["corridor"]["path"], "sha256": receipt["corridor"]["sha256"]}
+    if items["OI-03"]["status"] == "closed":
+        assert corridor["e0_spike_record"] == receipt["e0_spike_record"]
+    join_log = protocol["grade_join_policy"]["join_log"]
+    if join_log["path"] is not None:
+        assert join_log == {"path": receipt["grade_joins"]["log_path"], "sha256": receipt["grade_joins"]["log_sha256"],
+                            "join_count": receipt["grade_joins"]["join_count"]}
+    counts = protocol["facility_sets"]["counts_in_corridor"]
+    if counts["corroborated_shelters"] is not None:
+        for key in ("osm_hospitals", "dga_matched_hospitals", "located_ddpm_shelters", "corroborated_shelters"):
+            assert counts[key] == receipt["facility_counts"][key], key
+        assert counts["evidence_sha256"] == _sha256(RECORD_RECEIPT)
+
+
 def test_protocol_candidates_repeat_the_committed_files_exactly() -> None:
     protocol = json.loads(PROTOCOL.read_text(encoding="ascii"))
     block = protocol["corridor_polygon"].get("e0_spike_candidates")

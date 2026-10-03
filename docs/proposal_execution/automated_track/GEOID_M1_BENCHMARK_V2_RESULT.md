@@ -14,6 +14,23 @@ Revised on 3 October 2026 after a review. The revision corrects wording and
 adds checks computed from the committed counts. No score, no configuration
 and no line of the frozen method code changed. See "Review corrections".
 
+## Owner answers (3 October 2026)
+
+Putu answered for both owners in a Claude Code session on 3 October 2026. The answers will be recorded in the decision log on the replay lineage.
+
+1. **Earlier tuning.** No M1-v2 tuning on GEOID tiles was run before the agent's run of 2 October 2026. This answers the statement left open when protocol v1a was signed, and it matches the repository: no earlier M1-v2 code or output exists.
+2. **The frozen M1-v2.** Rachmania accepts it with the limits written in this document (decision log R13). No v3 is opened.
+3. **How to read the 0.40 condition.** The owners left this reading to the AI coding agent. The agent's reading:
+   - **The signed rule is applied as written.** Protocol v1a asks for a held-out GEOID test IoU of at least 0.40. This benchmark's protocol fixed, before any tuning, that both readings must reach it. They do: 0.411 strict and 0.506 on covered cells. So the GEOID condition is met on the point estimate.
+   - **No new rule is added after the score was seen,** in either direction. That means no uncertainty margin and no cap on declined cells for GEOID. Signed protocol v1a allows such a change only through a `planning_protocol_v2` with a written reason.
+   - **Every report of this result says three things beside the number:**
+     - it is not distinguishable from 0.40 on 14 tiles (tile bootstrap 95% range 0.098 to 0.513; 51.1% of resamples at or above 0.40; 0.297 without tile 42);
+     - 67.9% of test cells had no answer;
+     - it is agreement with a same-pass CEMS map, not independent accuracy.
+   - **The GEOID condition is one of four.** The T2 skill label still needs the Mae Sai conditions: abstention at most 0.20, coverage at least 0.80, and recency. Plan task A4 tests them. Given that M1-v2 declined 67.9% of the test cells here, the Mae Sai abstention condition is likely to fail, and M1-v2 would then stay at low confidence (T2, no demonstrated skill).
+
+The decisions below are those raised by the review. Points 1 to 3 above answer them.
+
 ## Decisions for the owners
 
 Read these before the numbers.

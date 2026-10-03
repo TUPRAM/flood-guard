@@ -76,7 +76,8 @@ def test_the_document_names_the_files_it_was_made_from(files: numbers.ReplayFile
     "9.9 km² reported (Mae Sai 6,182 rai); model 13.6 km² at 0.10 m", "about 70 km² and 13,600 people; model 72.2 km² and 12,813 residents in water at 2.65 m",
     "| 19.54 km²; 0.10 m; 22.54 km²; IoU 0.065 |", "| 23.57 km²; 0.10 m; 22.54 km²; IoU 0.074 |",
     # Reported depths (C-2).
-    "| 12 (9 points) |", "| 3 | 0 | 9 | 9 |", "| 6 | 3 | 3 | 9 |",
+    "| 12 (9 points) |", "| 1 | 0 | 2 | 9 | 9 | – |", "| 2 | 3 | 4 | 3 | 9 | – |", "| 0 | 0 | 2 | 6 | 8 | 1 |",
+    "| 21 place records from 17 statements in 14 articles<br>", "Mueang Daeng community (consistent), Pha Mak Khwai community (not comparable)",
     # The season envelope comparison (P2-3).
     "| IoU 0.48; 60.5%; 70.4% |", "| IoU 0.46; 64.5%; 61.1% |", "| 59.3% against 60.8% |", "| about 17,927; 17,344; 16,060 |", "| 77.74 km²; 76.29 km² |",
     # The export pack (P3-1, P3-2).

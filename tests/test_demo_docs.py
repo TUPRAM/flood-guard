@@ -132,7 +132,48 @@ def test_the_video_recorded_in_the_readme_is_the_committed_file() -> None:
     seconds = duration / timescale
     assert 60 <= seconds <= 90, seconds
     assert f"| Duration | {seconds:.1f} s |" in README
-    assert "1280 × 720 (16:9)" in README and "| Language | English |" in README
+    # The frame size is read from the video track's header, not taken from the README: 16:9, and the size the README gives.
+    width, height = video_frame_size(data, moov_at, moov_size)
+    assert width * 9 == height * 16, (width, height)
+    assert f"{width} × {height} (16:9)" in README and "| Language | English |" in README
+
+
+def video_frame_size(data: bytes, moov_at: int, moov_size: int) -> tuple[int, int]:
+    """Width and height of the video track: the last 8 bytes of its ``tkhd`` box, 16.16 fixed point (ISO/IEC 14496-12).
+
+    Only a track whose ``mdia/hdlr`` handler is ``vide`` counts, and exactly one is expected.
+    """
+    sizes = []
+    for kind, at, size in mp4_boxes(data, moov_at + 8, moov_at + moov_size):
+        if kind != "trak":
+            continue
+        children = {child: (child_at, child_size) for child, child_at, child_size in mp4_boxes(data, at + 8, at + size)}
+        mdia_at, mdia_size = children["mdia"]
+        hdlr_at = next(child_at for child, child_at, _ in mp4_boxes(data, mdia_at + 8, mdia_at + mdia_size) if child == "hdlr")
+        if data[hdlr_at + 16:hdlr_at + 20] != b"vide":  # size, type, version and flags, pre_defined, then the handler type
+            continue
+        tkhd_at, tkhd_size = children["tkhd"]
+        width, height = struct.unpack(">II", data[tkhd_at + tkhd_size - 8:tkhd_at + tkhd_size])
+        sizes.append((width >> 16, height >> 16))
+    assert len(sizes) == 1, sizes
+    return sizes[0]
+
+
+def test_the_frame_size_reader_takes_the_video_track_header() -> None:
+    def box(kind: bytes, payload: bytes) -> bytes:
+        return struct.pack(">I4s", 8 + len(payload), kind) + payload
+
+    def trak(handler: bytes, width: int, height: int) -> bytes:
+        tkhd = box(b"tkhd", bytes(4 + 20 + 8 + 8 + 36) + struct.pack(">II", width << 16, height << 16))  # version 0 layout
+        hdlr = box(b"hdlr", bytes(8) + handler + bytes(12) + b"\0")
+        return box(b"trak", tkhd + box(b"mdia", box(b"mdhd", bytes(24)) + hdlr))
+
+    for size in ((1280, 720), (1080, 1080), (720, 1280)):
+        moov = box(b"moov", box(b"mvhd", bytes(100)) + trak(b"soun", 0, 0) + trak(b"vide", *size))
+        data = box(b"ftyp", b"isom") + moov
+        assert video_frame_size(data, 12, len(moov)) == size
+    # The square and portrait shapes the export can also record are not 16:9.
+    assert [w * 9 == h * 16 for w, h in ((1280, 720), (1080, 1080), (720, 1280))] == [True, False, False]
 
 
 def test_the_checklist_records_the_automated_result_and_a_signature_line() -> None:

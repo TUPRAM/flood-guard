@@ -17,9 +17,15 @@
  "depth_rule": "Numbers are kept as the source gives them: a lower bound (more than 1 m) or a range (2-3 m in places, whose lower end is the lower bound). A storey or body reference is kept as a class and never turned into a number.",
  "assumptions": [
   "The depths are what reporters and residents said, not measurements; none was surveyed or checked on the ground.",
-  "A statement that names several communities is recorded once per community, with the same words and a note that it is shared.",
-  "Community and street points are centroids of mapped streets or a nearby landmark; the reported spot may lie up to location_tolerance_m away.",
+  "A statement that names several communities is recorded once per community, with the same depth, time and source and a note that it is shared. Counts are given per place record and, separately, once per statement.",
+  "Community and street points are centroids of mapped streets or a nearby landmark; the reported spot may lie up to the record's location tolerance away.",
   "Reports of other floods (August and early October 2024, 2025, 2022) and of places outside Mae Sai district are left out."
+ ],
+ "assumptions_th": [
+  "ความลึกเป็นคำบอกเล่าของผู้สื่อข่าวและผู้อยู่อาศัย ไม่ใช่ค่าที่วัดได้ ไม่มีรายการใดได้รับการสำรวจหรือตรวจดูในพื้นที่",
+  "ข้อความที่กล่าวถึงหลายชุมชนบันทึกแยกเป็นหนึ่งรายการต่อหนึ่งชุมชน โดยใช้ความลึก เวลา และแหล่งข่าวเดียวกัน พร้อมหมายเหตุว่าเป็นข้อความร่วม ตัวเลขสรุปนับแบบรายรายการตามสถานที่ และแยกนับแบบหนึ่งครั้งต่อหนึ่งข้อความ",
+  "จุดของชุมชนและถนนคือจุดกึ่งกลางของถนนในแผนที่หรือสถานที่สำคัญใกล้เคียง จุดที่รายงานอาจห่างออกไปได้ถึงระยะคลาดเคลื่อนของตำแหน่งของรายการนั้น",
+  "ไม่นับรายงานน้ำท่วมครั้งอื่น (สิงหาคมและต้นตุลาคม 2567 (2024), ปี 2568 (2025) และปี 2565 (2022)) และรายงานของสถานที่นอกอำเภอแม่สาย"
  ],
  "depth_classes": [
   {
@@ -82,6 +88,7 @@
  "reports": [
   {
    "id": "ms-c2-01",
+   "statement_id": "ms-c2-01",
    "place": {
     "en": "Sai Lom Joy border market",
     "th": "ตลาดสายลมจอย"
@@ -130,6 +137,7 @@
   },
   {
    "id": "ms-c2-02",
+   "statement_id": "ms-c2-02",
    "place": {
     "en": "Sai Lom Joy border market (Mae Sai trading area)",
     "th": "ตลาดสายลมจอย ย่านการค้าในเมืองแม่สาย"
@@ -178,6 +186,7 @@
   },
   {
    "id": "ms-c2-04",
+   "statement_id": "ms-c2-04",
    "place": {
     "en": "Sai Lom Joy market (a building in the market)",
     "th": "ตลาดสายลมจอย (อาคารหนึ่งในตลาด)"
@@ -225,6 +234,7 @@
   },
   {
    "id": "ms-c2-06",
+   "statement_id": "ms-c2-06",
    "place": {
     "en": "Hua Fai community (where the Sai River enters Mae Sai town)",
     "th": "ชุมชนหัวฝาย (บ้านหัวฝาย)"
@@ -270,6 +280,7 @@
   },
   {
    "id": "ms-c2-07",
+   "statement_id": "ms-c2-07",
    "place": {
     "en": "Ko Sai community",
     "th": "ชุมชนเกาะทราย (บ้านเกาะทราย หมู่ 7)"
@@ -318,6 +329,7 @@
   },
   {
    "id": "ms-c2-08",
+   "statement_id": "ms-c2-07",
    "place": {
     "en": "Mai Lung Khon community",
     "th": "ชุมชนไม้ลุงขน (บ้านไม้ลุงขน หมู่ 10)"
@@ -366,6 +378,7 @@
   },
   {
    "id": "ms-c2-09",
+   "statement_id": "ms-c2-07",
    "place": {
     "en": "Mueang Daeng community",
     "th": "ชุมชนเหมืองแดง (หมู่ 2)"
@@ -414,6 +427,7 @@
   },
   {
    "id": "ms-c2-10",
+   "statement_id": "ms-c2-10",
    "place": {
     "en": "Ko Sai, Soi 4/1",
     "th": "เกาะทราย ซอย 4/1"
@@ -460,6 +474,7 @@
   },
   {
    "id": "ms-c2-11",
+   "statement_id": "ms-c2-11",
    "place": {
     "en": "Ko Sai, Soi 14",
     "th": "เกาะทราย ซอย 14"
@@ -507,6 +522,7 @@
   },
   {
    "id": "ms-c2-12",
+   "statement_id": "ms-c2-12",
    "place": {
     "en": "Mueang Daeng, Soi 2 (end of the soi)",
     "th": "เหมืองแดง ซอย 2 (สุดซอย)"
@@ -557,6 +573,7 @@
   },
   {
    "id": "ms-c2-13",
+   "statement_id": "ms-c2-13",
    "place": {
     "en": "Mai Lung Khon market, Soi 5",
     "th": "ตลาดไม้ลุงขน ซอย 5"
@@ -602,6 +619,7 @@
   },
   {
    "id": "ms-c2-14",
+   "statement_id": "ms-c2-14",
    "place": {
     "en": "Mai Lung Khon market community",
     "th": "ชุมชนตลาดไม้ลุงขน"
@@ -650,6 +668,7 @@
   },
   {
    "id": "ms-c2-15",
+   "statement_id": "ms-c2-14",
    "place": {
     "en": "Mueang Daeng community",
     "th": "ชุมชนเหมืองแดง"
@@ -698,6 +717,7 @@
   },
   {
    "id": "ms-c2-16",
+   "statement_id": "ms-c2-14",
    "place": {
     "en": "Pha Mak Khwai community",
     "th": "ชุมชนผามควาย (บ้านผามควาย)"
@@ -743,6 +763,7 @@
   },
   {
    "id": "ms-c2-17",
+   "statement_id": "ms-c2-17",
    "place": {
     "en": "Seven riverside communities: Sai Lom Joy, Hua Fai, Pha Mak Khwai, Mai Lung Khon, Ko Sai, Mueang Daeng, Mueang Daeng Tai",
     "th": "ชุมชนริมน้ำ 7 แห่ง: สายลมจอย หัวฝาย ผามควาย ไม้ลุงขน เกาะทราย เหมืองแดง เหมืองแดงใต้"
@@ -789,6 +810,7 @@
   },
   {
    "id": "ms-c2-18",
+   "statement_id": "ms-c2-18",
    "place": {
     "en": "Ban Mueang Daeng School (teachers' housing)",
     "th": "โรงเรียนบ้านเหมืองแดง (บ้านพักครู)"
@@ -839,6 +861,7 @@
   },
   {
    "id": "ms-c2-19",
+   "statement_id": "ms-c2-19",
    "place": {
     "en": "Mueang Daeng Road, Soi 4 and Soi 6",
     "th": "ถนนเหมืองแดง ซอย 4 และซอย 6"
@@ -887,6 +910,7 @@
   },
   {
    "id": "ms-c2-20",
+   "statement_id": "ms-c2-20",
    "place": {
     "en": "Ban Tham Pha Chom",
     "th": "บ้านถ้ำผาจม (ชุมชนถ้ำผาจม หมู่ 1)"
@@ -935,6 +959,7 @@
   },
   {
    "id": "ms-c2-22",
+   "statement_id": "ms-c2-22",
    "place": {
     "en": "Piyaphon village (off Mueang Daeng Road)",
     "th": "หมู่บ้านปิยะพร ถนนเหมืองแดง"
@@ -984,6 +1009,7 @@
   },
   {
    "id": "ms-c2-23",
+   "statement_id": "ms-c2-23",
    "place": {
     "en": "Mae Sai town (unspecified spots)",
     "th": "ตัวเมืองแม่สาย (ไม่ระบุจุด)"
@@ -1029,6 +1055,7 @@
   },
   {
    "id": "ms-c2-24",
+   "statement_id": "ms-c2-24",
    "place": {
     "en": "Ban Ko Sai (moo 7), Ban Mueang Daeng (moo 2) and Ban Mai Lung Khon (moo 10)",
     "th": "บ้านเกาะทราย (หมู่ 7) บ้านเหมืองแดง (หมู่ 2) และบ้านไม้ลุงขน (หมู่ 10)"

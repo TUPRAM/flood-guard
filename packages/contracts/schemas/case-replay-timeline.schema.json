@@ -796,13 +796,13 @@
       }
     },
     "reported_depths": {
-      "description": "Flood depths that news reports gave at named places, 10-13 Sep 2024: reported (anecdotal, not surveyed), lane REP (roadmap C-2). Each report keeps its paraphrase, time, source and location confidence; a report with a medium or high location confidence has a point, and the model read at that point over the report's time window sits under reports[].model (T1 scenario values, named as scenario_fields by the block's evidence block). The outcome says whether the model reaches the reported lower bound (or, for a storey or body reference, has the place wet). It is a consistency check, never a validation, and the reports are never used to tune the model.",
+      "description": "Flood depths that news reports gave at named places, 10-13 Sep 2024: reported (anecdotal, not surveyed), lane REP (roadmap C-2). Each report keeps its paraphrase, time, source and location confidence; a report with a medium or high location confidence has a point, and the model read at that point over the report's time window sits under reports[].model (T1 scenario values, named as scenario_fields by the block's evidence block). The outcome says whether the model reaches the reported lower bound of a number (consistent or model shallower) or, for a storey or body reference, has the place wet (model wet: its depth is not compared, so it is never counted as consistent). Each report is a place record; a statement that names several communities is recorded once per community, and those records share a statement_id, so the counts are given per place record and once per statement. It is a consistency check, never a validation, and the reports are never used to tune the model.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "id", "label", "status", "lane", "evidence_tier", "confidence", "confidence_reason", "source_timestamp", "compiled", "data_file", "use_rule",
-        "comparison_rule", "tolerance_rule", "peak_stage_m", "depth_classes", "counts", "counts_within_tolerance", "likely_causes", "model_fields",
-        "left_out", "reports"
+        "assumptions", "comparison_rule", "tolerance_rule", "peak_stage_m", "depth_classes", "counted", "counts", "counts_within_tolerance",
+        "counts_by_statement", "shared_statements", "likely_causes", "model_fields", "left_out", "reports"
       ],
       "properties": {
         "id": { "const": "reported-depths-2024" },
@@ -830,6 +830,16 @@
             "th": { "type": "string", "minLength": 1 }
           }
         },
+        "assumptions": {
+          "description": "The data file's assumptions, the shared-statement rule among them, in English and Thai (one Thai line per English line).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["en", "th"],
+          "properties": {
+            "en": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "th": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "[฀-๿]" } }
+          }
+        },
         "comparison_rule": { "$ref": "#/$defs/localized" },
         "tolerance_rule": { "$ref": "#/$defs/localized" },
         "peak_stage_m": { "type": "number", "exclusiveMinimum": 0 },
@@ -843,8 +853,47 @@
             "properties": { "id": { "$ref": "#/$defs/reportedDepthClass" }, "label": { "$ref": "#/$defs/localized" } }
           }
         },
+        "counted": {
+          "description": "How many place records, statements and news articles the reports hold.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["place_records", "statements", "articles"],
+          "properties": {
+            "place_records": { "type": "integer", "minimum": 1 },
+            "statements": { "type": "integer", "minimum": 1 },
+            "articles": { "type": "integer", "minimum": 1 }
+          }
+        },
         "counts": { "$ref": "#/$defs/reportedDepthCounts" },
         "counts_within_tolerance": { "$ref": "#/$defs/reportedDepthCounts" },
+        "counts_by_statement": {
+          "description": "Outcomes with each statement counted once; a statement whose places have different outcomes is mixed.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["consistent", "model_shallower", "model_wet", "model_dry", "not_comparable", "mixed"],
+          "properties": {
+            "consistent": { "type": "integer", "minimum": 0 },
+            "model_shallower": { "type": "integer", "minimum": 0 },
+            "model_wet": { "type": "integer", "minimum": 0 },
+            "model_dry": { "type": "integer", "minimum": 0 },
+            "not_comparable": { "type": "integer", "minimum": 0 },
+            "mixed": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "shared_statements": {
+          "description": "Every statement recorded at more than one place: its place records and their outcomes, in order.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["statement_id", "reports", "outcomes"],
+            "properties": {
+              "statement_id": { "type": "string", "pattern": "^ms-c2-\\d{2}$" },
+              "reports": { "type": "array", "minItems": 2, "items": { "type": "string", "pattern": "^ms-c2-\\d{2}$" } },
+              "outcomes": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/reportedDepthStatus" } }
+            }
+          }
+        },
         "likely_causes": {
           "description": "Likely causes of the misses, said plainly; neither the model nor the reports are judged.",
           "type": "array",
@@ -855,6 +904,11 @@
             "required": ["id", "text"],
             "properties": {
               "id": { "type": "string", "pattern": "^[a-z_]+$" },
+              "figures": {
+                "description": "The counts the text states, taken from the reports at bake time (the bake rebuilds the text from them).",
+                "type": "object",
+                "additionalProperties": { "type": ["integer", "number", "string", "null"] }
+              },
               "text": {
                 "type": "object",
                 "additionalProperties": false,
@@ -889,9 +943,10 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["id", "place", "tambon", "point", "location_confidence", "location_tolerance_m", "depth", "time", "source", "model", "consistency", "consistency_within_tolerance"],
+            "required": ["id", "statement_id", "place", "tambon", "point", "location_confidence", "location_tolerance_m", "depth", "time", "source", "model", "consistency", "consistency_within_tolerance"],
             "properties": {
               "id": { "type": "string", "pattern": "^ms-c2-\\d{2}$" },
+              "statement_id": { "description": "The statement this place record comes from (the id of its first record).", "type": "string", "pattern": "^ms-c2-\\d{2}$" },
               "place": { "$ref": "#/$defs/localized" },
               "tambon": { "$ref": "#/$defs/localized" },
               "point": {
@@ -1082,11 +1137,11 @@
       "enum": ["waist_deep", "chest_deep", "neck_deep", "over_head", "ground_floor_submerged", "above_ground_floor", "roof_level_refuge", "not_stated"]
     },
     "reportedDepthStatus": {
-      "description": "Outcome of the consistency check of one reported depth with the model.",
-      "enum": ["consistent", "model_shallower", "model_dry", "not_comparable"]
+      "description": "Outcome of the consistency check of one reported depth with the model. consistent and model_shallower compare a number with its lower bound; model_wet is a storey or body reference where the model has water (no depth is compared).",
+      "enum": ["consistent", "model_shallower", "model_wet", "model_dry", "not_comparable"]
     },
     "reportedDepthCounts": {
-      "description": "Reports per outcome: numbers (lower bounds and ranges), storey or body references, and both together.",
+      "description": "Place records per outcome: numbers (lower bounds and ranges), storey or body references, and both together.",
       "type": "object",
       "additionalProperties": false,
       "required": ["numeric", "qualitative", "all"],
@@ -1099,10 +1154,11 @@
     "reportedDepthTally": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["consistent", "model_shallower", "model_dry", "not_comparable"],
+      "required": ["consistent", "model_shallower", "model_wet", "model_dry", "not_comparable"],
       "properties": {
         "consistent": { "type": "integer", "minimum": 0 },
         "model_shallower": { "type": "integer", "minimum": 0 },
+        "model_wet": { "type": "integer", "minimum": 0 },
         "model_dry": { "type": "integer", "minimum": 0 },
         "not_comparable": { "type": "integer", "minimum": 0 }
       }

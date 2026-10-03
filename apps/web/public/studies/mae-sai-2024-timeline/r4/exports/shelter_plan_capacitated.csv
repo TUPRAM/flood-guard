@@ -10,7 +10,7 @@
 # confidence_reason_th,ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่
 # lanes,SCN
 # source_timestamp,"OpenStreetMap extract 2026-07-09 (sites, building footprints and roads); WorldPop 2020; reconstructed peak 2024-09-12 ICT"
-# generated_at,2026-10-03T15:07:00+07:00
+# generated_at,2026-10-03T17:47:00+07:00
 # generated_by,scripts/build_mae_sai_flood_timeline.py
 # study,mae-sai-2024-flood-timeline r4
 # accepted,accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)
@@ -34,7 +34,7 @@
 # assumption_6_th,ทั้งสองขอบเขตไม่ใช่ค่าจำกัดของจำนวนคนที่รองรับได้ ทั้งสองขอบเขตนับสถานที่ที่มีขอบเขตอาคารในแผนที่ตามค่าประมาณ ซึ่งต่ำกว่าจริงในบริเวณที่อาคารยังไม่ถูกทำแผนที่ จึงอาจรองรับได้มากกว่าขอบเขตบน และสถานที่อาจใช้ไม่ได้จริง จึงอาจรองรับได้น้อยกว่าขอบเขตล่าง
 # assumption_7,Everyone is assumed to walk before the water rises and to accept any site within the limit; households are not kept together.
 # assumption_7_th,สมมุติว่าทุกคนเดินเท้าก่อนน้ำขึ้นและยอมไปสถานที่ใดก็ได้ภายในระยะที่กำหนด ไม่ได้จัดให้ครัวเรือนอยู่ด้วยกัน
-# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=472fd930894cff8734701403b100bb74c78d5288b8977654dd9a1f7ab6b4ad9f
+# input_receipt,docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=d56c09f9d9c9551eda1e3b6fbfbff145e0d1358ad7faeec9b8c0612657f75110
 # input_sha256,external:open_context/osm_geofabrik/thailand-latest.osm.pbf=b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1; repo:outputs/mae_sai_facilities.geojson=5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce; repo:outputs/mae_sai_access_edges.csv=266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454; repo:outputs/mae_sai_population_nodes.csv=172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf
 # git_commit,null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv
 rank (ลำดับ),candidate_id (รหัสสถานที่),kind (ประเภท),name (ชื่อ),lat (ละติจูด),lon (ลองจิจูด),osm_source (ที่มาใน OSM),estimated_capacity (ความจุโดยประมาณ),capacity_basis (ที่มาของค่าความจุ),capacity_basis_th (ที่มาของค่าความจุ ภาษาไทย),upper_capacity_basis (ที่มาของความจุในขอบเขตบน),flooded_home_residents_within_reach (ผู้อยู่อาศัยในบ้านที่น้ำท่วมในระยะเดิน),lower_capacity (ความจุ ขอบเขตล่าง),lower_load (จำนวนที่จัดให้ ขอบเขตล่าง),lower_cumulative_fit (จำนวนที่รองรับได้สะสม ขอบเขตล่าง),lower_overflow (จำนวนที่ไม่มีที่รองรับ ขอบเขตล่าง),upper_capacity (ความจุ ขอบเขตบน),upper_load (จำนวนที่จัดให้ ขอบเขตบน),upper_cumulative_fit (จำนวนที่รองรับได้สะสม ขอบเขตบน),upper_overflow (จำนวนที่ไม่มีที่รองรับ ขอบเขตบน)

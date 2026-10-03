@@ -136,6 +136,7 @@ def test_rules_cover_the_six_banned_groups_and_the_shelter_comparison_rules() ->
         "shelter_directive",  # "open these shelters": the plans list candidates to verify (P2-9)
         "equity_denominator",  # the equity rates stated over all residents counted, not those within reach before the flood (R8)
         "report_confirmation",  # a news report "confirming" the model, or the model "confirmed by" reports (C-2)
+        "report_count",  # the reported depths counted as news reports: they are place records (one statement per community)
     )
     assert len(RULES.allow) >= 8
 

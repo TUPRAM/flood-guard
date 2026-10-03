@@ -130,8 +130,8 @@ The replay of the September 2024 Mae Sai flood is a historical reconstruction fo
 
 ### Before the beat
 
-- **Online:** `https://flood-guard-tau.vercel.app` (public, no login). Production serves master until this branch is merged; the six links below use only parameters that master's replay already reads, so they open the same moments there.
-- **Offline laptop:** `http://127.0.0.1:3100` after the steps in `docs/demo/offline_dry_run_checklist.md`.
+- **Primary until this branch is merged: the offline laptop.** `http://127.0.0.1:3100`, built from this branch after the steps in `docs/demo/offline_dry_run_checklist.md`. Every figure below, and `docs/demo/replay_numbers.md`, is this build's.
+- **Online, unverified:** `https://flood-guard-tau.vercel.app` is production, built from master. Nobody has yet opened it logged out on a phone, and whether it is public is the owners' decision H8: check both before relying on it. Until this branch is merged and production rebuilt, production serves master's replay. The six links below use only parameters that master's replay already reads, so they open the same moments there, but two answers under "If asked" differ (marked there): production has no reported-depth layer, and its radar line shows the cross-track pair (6 Sep 18:31 ICT to 16 Sep 06:16 ICT, 23.57 km² newly water-like, IoU 0.07) instead of the same-track pair.
 - **Venue fallback:** `docs/demo/mae-sai-replay-demo.mp4`, 73 s, 16:9, English, recorded with the page's own video export (see `docs/demo/README.md`). Play it if neither the network nor the laptop works, and say the same lines.
 - **Screen:** a full-screen browser at 1920 × 1080, zoom 100%. Open each link from a bookmark; the page writes the same link back into the address bar once it has loaded.
 
@@ -154,7 +154,7 @@ Append each path to the base above. Parameters: `t` replay hour since 9 Sep 00:0
    - Do: let the map settle; point at the purple areas of the "First flooded (model, local time)" legend.
    - Say: "Mae Sai, September 2024, replayed hour by hour. The water is a model reconstruction with low confidence, not observed and not real-time. By 22:00 on 10 September the model has 48.1 km² under water; purple flooded first."
    - พูด: "นี่คือแม่สาย เดือนกันยายน 2567 (2024) ย้อนดูทีละชั่วโมง น้ำที่เห็นเป็นการจำลองจากแบบจำลอง ความเชื่อมั่นต่ำ ไม่ใช่การสังเกตการณ์ และไม่ใช่ข้อมูลเรียลไทม์ เวลา 22:00 น. วันที่ 10 กันยายน แบบจำลองมีน้ำท่วม 48.1 ตร.กม. สีม่วงคือพื้นที่ที่ท่วมก่อน"
-   - On screen: the banner "Historical reconstruction for preparedness learning — not real-time, not an official warning."; the readout "Tue 10 Sep 2024 · 22:00 ICT" and "Onset · assumed stage 1.26 m"; the line "Onset · Model: 48.1 km² flooded · 8,211 residents in flood water".
+   - On screen: the banner "Historical reconstruction for preparedness learning — not real-time, not an official warning."; the readout "Tue 10 Sep 2024 · 22:00 ICT" and "Onset · assumed stage 1.26 m"; in the right column, the card "Impact (model)" with "Flooded area" 48.1 km² and the card "People in flood water (model)" with 8,211 "Modelled residents in reconstructed water, at this replay hour". (The one-line summary under the readout, "Onset · Model: 48.1 km² flooded · 8,211 residents in flood water", shows only on screens 1080 px wide or less.)
 2. **Peak, access and the shelter comparison (0:15-0:35), link 2.**
    - Do: scroll the right column to "The two shelter sets side by side" (the map stays in view).
    - Say: "At the modelled peak, noon on 12 September, 88.7 km² and 16,060 residents are in water. Walking access is a T1 scenario: the shelters used in 2024 lose 21% of the people they could reach, the plan of eight loses 54% but reaches more homes that flood. Read both columns; we rank neither."
@@ -196,7 +196,8 @@ Append each path to the base above. Parameters: `t` replay hour since 9 Sep 00:0
 ### If asked
 
 - About the river level: the stage is an illustrative keyframe curve shaped to the event chronology; no public hourly gauge record for September 2024 was found.
-- About how close the model is: the radar comparison agrees on size only (IoU 0.065 on location); the season envelope comparison is plausibility, not validation; 9 of the 21 news reports read dry in the model, mostly reports from the morning of 10 September, before the modelled rise.
+- About how close the model is: the radar comparison agrees on size only (IoU 0.065 on location, on this branch's build); the season envelope comparison is plausibility, not validation; the news reports give 21 place records from 17 statements in 14 articles (a statement that names three communities is recorded once per community), and the model is dry at 9 of them over their time window, mostly records from the morning of 10 September, before the modelled rise; only 1 reported number is reached, and 2 storey or body references are wet in the model with no depth compared.
+  - On production before the merge: the radar line shows the cross-track pair instead (IoU 0.07), and there is no reported-depth layer to point to; say that the reported-depth check is in the next build.
 - About population: residents are WorldPop 2020 modelled estimates, not the 2024 population.
 - About where the scored ranking is: in the planning overlay, under the signed protocol; the replay never computes or copies it.
 
@@ -222,3 +223,4 @@ The shared wording lint (`apps/web/src/lib/replay-wording-rules.json`) flags eve
 | "the last safe time to leave" | "the modelled access cut-off hour" |
 | "open these shelters" | "candidates to verify on the ground" |
 | "confirmed by news reports" | "reported in news, not surveyed" |
+| "21 news reports read dry" | "the model is dry at 9 of 21 place records" |

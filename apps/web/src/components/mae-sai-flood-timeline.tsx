@@ -95,6 +95,7 @@ import {
   type PointGeometry,
   type Rainfall,
   type RadarImage,
+  type ReportedDepthReport,
   type RoadCutGroup,
   type RoadProps,
   type RoadState,
@@ -179,12 +180,12 @@ import {
 } from "@/lib/flood-timeline-water";
 import { competitionPagesAvailable, POLICY_ROUTE } from "@/lib/policy-links";
 import {
+  groupNearbyPlaces,
   REPORTED_DEPTH_COPY,
   reportedDepthMarkerTitle,
   reportedDepthPlaces,
   reportedDepthPopup,
   shippableReportedDepths,
-  type ReportedDepthPlace,
 } from "@/lib/flood-timeline-reported-depths";
 import { useLanguage } from "@/lib/use-language";
 import {
@@ -227,7 +228,14 @@ import {
   settledSeasonEnvelope,
   type SeasonEnvelopeState,
 } from "./mae-sai-season-envelope";
-import { REPORTED_DEPTH_ICON, ReportedDepthLegend, ReportedDepthsSources, ReportedDepthSwatch } from "./mae-sai-reported-depths";
+import {
+  REPORTED_DEPTH_GROUP_PX,
+  REPORTED_DEPTH_ICON_BOX,
+  ReportedDepthLegend,
+  reportedDepthIconHtml,
+  ReportedDepthsSources,
+  ReportedDepthSwatch,
+} from "./mae-sai-reported-depths";
 import { WorkspaceHeader } from "./workspace-header";
 
 import styles from "./mae-sai-flood-timeline.module.css";
@@ -1095,6 +1103,7 @@ export function MaeSaiFloodTimeline() {
     let resizeObserver: ResizeObserver | undefined;
     let attributionObserver: ResizeObserver | undefined;
     let footObserver: ResizeObserver | undefined;
+    let removeMapKeys: (() => void) | undefined;
     const timers = new Set<number>();
     const frames = new Set<number>();
 
@@ -1160,6 +1169,39 @@ export function MaeSaiFloodTimeline() {
         }, 0);
         timers.add(timer);
       });
+      // Keyboard: Enter on a focused marker opens its popup (Leaflet turns it into a click). Focus then moves into the
+      // popup so its links can be reached and a screen reader reads it; Escape closes it from the marker or from inside
+      // it (Leaflet listens for keys only while the map container itself has focus), and closing hands focus back to
+      // the marker. A popup opened with the pointer leaves focus where it is.
+      let keyedMarker: HTMLElement | null = null;
+      const mapContainer = map.getContainer();
+      const onMapKey = (event: KeyboardEvent) => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        if (event.key === "Enter" && target?.classList.contains("leaflet-marker-icon")) keyedMarker = target;
+        if (event.key === "Escape" && openPopups > 0) map.closePopup();
+      };
+      mapContainer.addEventListener("keydown", onMapKey);
+      removeMapKeys = () => mapContainer.removeEventListener("keydown", onMapKey);
+      const keyboardPopup = (marker: Marker) => {
+        let keyed = false;
+        marker.on("popupopen", () => {
+          const element = marker.getElement();
+          keyed = Boolean(element) && keyedMarker === element;
+          keyedMarker = null;
+          if (!keyed) return;
+          const content = marker.getPopup()?.getElement()?.querySelector<HTMLElement>(".leaflet-popup-content");
+          if (!content) return;
+          content.tabIndex = -1;
+          content.focus({ preventScroll: true });
+        });
+        marker.on("popupclose", () => {
+          const popup = marker.getPopup()?.getElement();
+          const focused = document.activeElement;
+          const inside = Boolean(popup && focused && popup.contains(focused));
+          if (keyed || inside) marker.getElement()?.focus({ preventScroll: true });
+          keyed = false;
+        });
+      };
       /** Size a layer's popup for the map as it is right now, then build its content. */
       const fitted = (layer: Layer, preferredWidth: number, content: () => HTMLElement) => () => {
         const popup = layer.getPopup();
@@ -1176,9 +1218,11 @@ export function MaeSaiFloodTimeline() {
         return content();
       };
 
+      // The reported depths sit above the shelters: they are off until the reader turns them on, and then a report point
+      // a few metres from a shelter (Ban Tham Pha Chom and its temple) must open its own popup, not the shelter's.
       for (const [name, zIndex] of [
         ["fg-imagery", 250], ["fg-compare-left", 251], ["fg-compare-right", 252], ["fg-water", 350], ["fg-envelope", 352], ["fg-viirs", 355], ["fg-cutoff", 360],
-        ["fg-tambons", 380], ["fg-highlight", 390], ["fg-roads", 400], ["fg-facilities", 450], ["fg-gauges", 455], ["fg-reported-depths", 458], ["fg-shelters", 460],
+        ["fg-tambons", 380], ["fg-highlight", 390], ["fg-roads", 400], ["fg-facilities", 450], ["fg-gauges", 455], ["fg-shelters", 460], ["fg-reported-depths", 462],
       ] as const) {
         const pane = map.createPane(name);
         pane.style.zIndex = String(zIndex);
@@ -1537,6 +1581,7 @@ export function MaeSaiFloodTimeline() {
           zIndexOffset: 2000,
         });
         marker.bindPopup(fitted(marker, POPUP_WIDTH.reported, () => reportedPopup(shelter)), { className: styles.popupFrame, autoPan: true });
+        keyboardPopup(marker);
         popupLayers.push(marker);
         const markerTitle = () => `${command
           ? tr("Relief and command site (2024), not a shelter", `ศูนย์บัญชาการและจุดช่วยเหลือ ปี ${thaiYear(2024)} ไม่ใช่ที่พักพิง`)
@@ -1611,6 +1656,7 @@ export function MaeSaiFloodTimeline() {
             const markerTitle = () => `${tr("Plan site", "ที่พักพิงในแผน")} ${rank}: ${candidateTitle(candidate, popupLanguage())}${flag ? ` · ${capacityFlagText(site, popupLanguage())}` : ""}`;
             candidateTitles.push({ element: () => marker.getElement(), title: markerTitle });
             hoverTip(marker, markerTitle);
+            keyboardPopup(marker);
             planGroup.addLayer(marker);
             layer = marker;
           } else {
@@ -1629,8 +1675,11 @@ export function MaeSaiFloodTimeline() {
         }
         builtK = k;
       };
+      // The reported-depth markers are rebuilt when their grouping changes (after a zoom), so they are listed apart.
+      let depthMarkers: { marker: Marker; ids: string[]; title: () => string }[] = [];
       const refreshTitles = () => {
-        for (const entry of [...titled, ...candidateTitles]) {
+        const depthTitles = depthMarkers.map((entry) => ({ element: () => entry.marker.getElement(), title: entry.title }));
+        for (const entry of [...titled, ...candidateTitles, ...depthTitles]) {
           const element = entry.element();
           if (!element) continue;
           const title = entry.title();
@@ -1640,7 +1689,7 @@ export function MaeSaiFloodTimeline() {
         }
       };
       const refreshPopups = () => {
-        for (const layer of [...popupLayers, ...candidatePopups]) if (layer.isPopupOpen()) layer.getPopup()?.update();
+        for (const layer of [...popupLayers, ...candidatePopups, ...depthMarkers.map((entry) => entry.marker)]) if (layer.isPopupOpen()) layer.getPopup()?.update();
       };
       const setGroup = (group: Layer, visible: boolean) => {
         if (visible && !map.hasLayer(group)) group.addTo(map);
@@ -1716,6 +1765,7 @@ export function MaeSaiFloodTimeline() {
           ];
           return popupElement(lines, [{ href: rain!.source_url, text: rain!.source_url }]);
         }), { className: styles.popupFrame, autoPan: true });
+        keyboardPopup(marker);
         popupLayers.push(marker);
         const gaugeTitle = () => `${tr("Rain gauge (observed)", "สถานีวัดฝน (ตรวจวัดจริง)")}: ${station.code} ${rainStationName(station, popupLanguage())}`;
         hoverTip(marker, gaugeTitle);
@@ -1723,17 +1773,19 @@ export function MaeSaiFloodTimeline() {
         gaugeGroup.addLayer(marker);
       }
 
-      // --- Reported depths (news, not surveyed): one speech-bubble marker per point, its popup listing every report that
-      // names the place, with the paraphrase, the time, the location confidence, the model at that point and the source.
-      // The markers never change with the replay hour; only their own toggle shows them.
+      // --- Reported depths (news, not surveyed): speech-bubble markers, their popups listing every place record they hold,
+      // with the paraphrase, the time, the location confidence, the model at that point and the source. Places whose
+      // markers would overlap on screen at the current zoom are drawn as one marker with a count (rebuilt after a zoom),
+      // so every marker can be hit and opens its own records. The markers never change with the replay hour; only their
+      // own toggle shows them.
       const depthBlock = shippableReportedDepths(m);
       const depthGroup = L.layerGroup();
-      const depthPopup = (place: ReportedDepthPlace) => {
+      const depthPopup = (reports: readonly ReportedDepthReport[]) => {
         const lang = popupLanguage();
         const root = document.createElement("div");
         root.className = styles.popup;
         root.setAttribute("data-testid", "reported-depth-popup");
-        for (const report of place.reports) {
+        for (const report of reports) {
           const { lines, link } = reportedDepthPopup(report, depthBlock!, lang);
           const section = document.createElement("section");
           section.className = styles.reportedDepthReport;
@@ -1761,20 +1813,44 @@ export function MaeSaiFloodTimeline() {
         }
         return root;
       };
-      for (const place of depthBlock ? reportedDepthPlaces(depthBlock) : []) {
-        const marker = L.marker([place.lat, place.lon], {
-          pane: "fg-reported-depths",
-          icon: L.divIcon({ className: styles.reportedDepthIcon, html: REPORTED_DEPTH_ICON, iconSize: [22, 22], iconAnchor: [6, 20], popupAnchor: [5, -18] }),
-          keyboard: true,
-          riseOnHover: true,
+      const depthPlaces = depthBlock ? reportedDepthPlaces(depthBlock) : [];
+      let depthGrouping = "";
+      const buildDepthMarkers = () => {
+        if (!depthBlock || !map.hasLayer(depthGroup)) return;
+        const groups = groupNearbyPlaces(depthPlaces.map((place) => map.latLngToLayerPoint([place.lat, place.lon])), REPORTED_DEPTH_GROUP_PX);
+        const grouping = groups.map((members) => members.join("+")).join("|");
+        if (grouping === depthGrouping) return;
+        depthGrouping = grouping;
+        // A popup open across the regrouping reopens on the marker that now holds its first record.
+        const open = depthMarkers.find((entry) => entry.marker.isPopupOpen())?.ids[0];
+        for (const { marker } of depthMarkers) {
+          const index = tooltipLayers.indexOf(marker);
+          if (index >= 0) tooltipLayers.splice(index, 1);
+        }
+        depthGroup.clearLayers();
+        depthMarkers = groups.map((members) => {
+          const places = members.map((index) => depthPlaces[index]);
+          const reports = places.flatMap((place) => place.reports);
+          const ids = reports.map((report) => report.id);
+          // A merged marker stands at its first place's point: the bubble's tail still marks a reported place.
+          const marker = L.marker([places[0].lat, places[0].lon], {
+            pane: "fg-reported-depths",
+            icon: L.divIcon({ className: styles.reportedDepthIcon, html: reportedDepthIconHtml(reports.length), ...REPORTED_DEPTH_ICON_BOX }),
+            keyboard: true,
+            riseOnHover: true,
+          });
+          marker.bindPopup(fitted(marker, POPUP_WIDTH.reportedDepth, () => depthPopup(reports)), { className: styles.popupFrame, autoPan: true });
+          keyboardPopup(marker);
+          const title = () => reportedDepthMarkerTitle({ reports }, popupLanguage());
+          hoverTip(marker, title);
+          marker.on("add", () => marker.getElement()?.setAttribute("data-reports", ids.join(" ")));
+          depthGroup.addLayer(marker);
+          return { marker, ids, title };
         });
-        marker.bindPopup(fitted(marker, POPUP_WIDTH.reportedDepth, () => depthPopup(place)), { className: styles.popupFrame, autoPan: true });
-        popupLayers.push(marker);
-        const depthTitle = () => reportedDepthMarkerTitle(place, popupLanguage());
-        hoverTip(marker, depthTitle);
-        titled.push({ element: () => marker.getElement(), title: depthTitle });
-        depthGroup.addLayer(marker);
-      }
+        refreshTitles();
+        if (open) depthMarkers.find((entry) => entry.ids.includes(open))?.marker.openPopup();
+      };
+      map.on("zoomend", buildDepthMarkers);
 
       controllerRef.current = {
         update(frame, exact) {
@@ -1986,6 +2062,7 @@ export function MaeSaiFloodTimeline() {
         },
         setReportedDepths(visible) {
           setGroup(depthGroup, visible);
+          buildDepthMarkers();
           refreshTitles();
         },
         refreshTooltips() {
@@ -2010,6 +2087,7 @@ export function MaeSaiFloodTimeline() {
       resizeObserver?.disconnect();
       attributionObserver?.disconnect();
       footObserver?.disconnect();
+      removeMapKeys?.();
       controllerRef.current = null;
       setMapReady(false);
       mounted?.stop();

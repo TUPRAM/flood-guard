@@ -152,6 +152,29 @@ def test_data_file_rules_refuse_a_point_at_low_confidence_a_number_for_a_class_a
     broken = copy.deepcopy(document)
     broken["status"] = "surveyed"
     assert any("status must be" in line for line in rd.document_problems(broken))
+    broken = copy.deepcopy(document)
+    broken["assumptions_th"] = broken["assumptions_th"][:-1]
+    assert any("one Thai assumption per English assumption" in line for line in rd.document_problems(broken))
+
+
+def test_data_file_records_one_statement_per_community_and_the_records_of_a_statement_agree(document: dict) -> None:
+    groups = rd.statement_groups(document["reports"])
+    # 21 place records from 17 statements in 14 articles: PPTV's statement names three communities, and so does Thai PBS's.
+    assert (len(document["reports"]), len(groups), len({report["source"]["url"] for report in document["reports"]})) == (21, 17, 14)
+    shared = {statement: [report["id"] for report in members] for statement, members in groups.items() if len(members) > 1}
+    assert shared == {"ms-c2-07": ["ms-c2-07", "ms-c2-08", "ms-c2-09"], "ms-c2-14": ["ms-c2-14", "ms-c2-15", "ms-c2-16"]}
+    assert all("statement" in report["depth"]["statement"]["en"] for members in shared.values() for report in groups[members[0]])
+    # The shared-statement rule is an assumption of the file, in both languages.
+    assert any("recorded once per community" in line and "once per statement" in line for line in document["assumptions"])
+    assert len(document["assumptions_th"]) == len(document["assumptions"]) and all(re.search(r"[฀-๿]", line) for line in document["assumptions_th"])
+    for change, needle in (
+        (lambda value: value["reports"][5].__setitem__("statement_id", "ms-c2-09"), "first place record"),  # ms-c2-08 under ms-c2-09
+        (lambda value: value["reports"][6]["time"].__setitem__("window_end", "2024-09-10T11:00:00+07:00"), "share one source, depth and time window"),
+        (lambda value: value["reports"][11]["depth"].__setitem__("upper_m", 4.0), "share one source, depth and time window"),
+    ):
+        broken = copy.deepcopy(document)
+        change(broken)
+        assert any(needle in line for line in rd.document_problems(broken)), needle
 
 
 # --- Consistency maths on synthetic cases --------------------------------------------------------------------
@@ -226,18 +249,32 @@ def test_consistency_status_and_counts() -> None:
     assert status("numeric", 1.5, 0.4) == "model_shallower"
     assert status("numeric", 1.5, 0.0) == "model_dry"
     assert status("numeric", 1.5, None) == "not_comparable"
-    assert status("qualitative", None, 0.05) == "consistent"  # A class: wet or dry only, no depth compared.
+    # A class is wet or dry only: no depth is compared, so it is never "consistent", however deep the body reference.
+    assert status("qualitative", None, 0.05) == "model_wet" and status("qualitative", None, 0.78) == "model_wet"
     assert status("qualitative", None, 0.0) == "model_dry"
     assert status("qualitative", None, None) == "not_comparable"
     with pytest.raises(rd.ReportedDepthsError):
         status("numeric", None, 1.0)
     with pytest.raises(rd.ReportedDepthsError):
         status("survey", 1.0, 1.0)
-    counts = rd.consistency_counts([("numeric", "consistent"), ("numeric", "model_dry"), ("qualitative", "model_dry"), ("qualitative", "not_comparable")])
-    assert counts["numeric"] == {"consistent": 1, "model_shallower": 0, "model_dry": 1, "not_comparable": 0}
-    assert counts["all"] == {"consistent": 1, "model_shallower": 0, "model_dry": 2, "not_comparable": 1}
+    counts = rd.consistency_counts([("numeric", "consistent"), ("numeric", "model_dry"), ("qualitative", "model_dry"), ("qualitative", "not_comparable"),
+                                    ("qualitative", "model_wet")])
+    assert counts["numeric"] == {"consistent": 1, "model_shallower": 0, "model_wet": 0, "model_dry": 1, "not_comparable": 0}
+    assert counts["all"] == {"consistent": 1, "model_shallower": 0, "model_wet": 1, "model_dry": 2, "not_comparable": 1}
+    for row in (("numeric", "validated"), ("qualitative", "consistent"), ("qualitative", "model_shallower"), ("numeric", "model_wet")):
+        with pytest.raises(rd.ReportedDepthsError):
+            rd.consistency_counts([row])
+    # Once per statement: a statement whose places agree keeps their outcome; one whose places differ is mixed.
+    by_statement = rd.statement_counts([("a", "model_dry"), ("a", "model_dry"), ("b", "model_dry"), ("b", "consistent"), ("c", "model_wet")])
+    assert by_statement == {"consistent": 0, "model_shallower": 0, "model_wet": 1, "model_dry": 1, "not_comparable": 0, "mixed": 1}
+
+
+def test_the_assumed_stage_first_rises_above_the_early_level_on_the_evening_of_10_sep() -> None:
+    assert rd.early_stage_until([(0.0, 0.0), (1.0, 0.0), (1.5, 0.1), (1.75, 0.1), (2.0, 2.5)], ORIGIN) == datetime.fromisoformat("2024-09-10T18:00:00+07:00")
+    assert rd.early_stage_until([(0.0, 0.0), (1.0, 0.3)], ORIGIN) == datetime.fromisoformat("2024-09-09T08:00:00+07:00")
+    assert rd.local_iso(rd.early_stage_until(stage_anchors(), ORIGIN)) == "2024-09-10T18:15:00+07:00"
     with pytest.raises(rd.ReportedDepthsError):
-        rd.consistency_counts([("numeric", "validated")])
+        rd.early_stage_until([(0.0, 0.0), (1.0, 0.05)], ORIGIN)
 
 
 def test_manifest_block_assembles_outcomes_from_the_models_and_keeps_its_rules(document: dict) -> None:
@@ -245,12 +282,15 @@ def test_manifest_block_assembles_outcomes_from_the_models_and_keeps_its_rules(d
                              "peak_depth_m": 2.5, "first_wet_hour": 40, "max_within_tolerance_m": 1.9}
               for report in document["reports"] if report["point"]}
     built = rd.manifest_block(document, models, origin=ORIGIN, data_file={"path": rd.REPORTED_DEPTHS_PATH.as_posix(), "sha256": "0" * 64},
-                              window_stage=lambda start, end: rd.window_max_stage(start, end, stage_anchors()), peak_stage_m=3.5)
+                              window_stage=lambda start, end: rd.window_max_stage(start, end, stage_anchors()), peak_stage_m=3.5,
+                              early_until=rd.early_stage_until(stage_anchors(), ORIGIN))
     assert rd.block_problems(built) == []
     outcome = {report["id"]: report["consistency"] for report in built["reports"]}
-    # 1.6 m reaches 1.0 and 1.5 m, not 2.0 m; a class is wet; a report without a point is not comparable.
+    # 1.6 m reaches 1.0 and 1.5 m, not 2.0 m; a class is wet (no depth compared); a report without a point is not comparable.
     assert outcome["ms-c2-01"] == "consistent" and outcome["ms-c2-07"] == "consistent" and outcome["ms-c2-02"] == "model_shallower"
-    assert outcome["ms-c2-14"] == "model_shallower" and outcome["ms-c2-12"] == "consistent" and outcome["ms-c2-04"] == "not_comparable"
+    assert outcome["ms-c2-14"] == "model_shallower" and outcome["ms-c2-12"] == "model_wet" and outcome["ms-c2-04"] == "not_comparable"
+    assert built["counted"] == {"place_records": 21, "statements": 17, "articles": 14}
+    assert built["assumptions"] == {"en": document["assumptions"], "th": document["assumptions_th"]}
     assert built["counts"]["all"]["not_comparable"] == 9 and sum(built["counts"]["all"].values()) == 21
     assert built["reports"][0]["model"]["first_wet"] == "2024-09-10T16:00:00+07:00"
     # The block refuses outcomes or counts that do not follow from its figures, and a point at low confidence.
@@ -260,6 +300,14 @@ def test_manifest_block_assembles_outcomes_from_the_models_and_keeps_its_rules(d
         (lambda value: value["reports"][2].__setitem__("point", {"lat": 20.44, "lon": 99.88}), "a point is given exactly"),
         (lambda value: value["use_rule"].__setitem__("en", "A consistency check."), "never used to tune"),
         (lambda value: value.__setitem__("status", "observed"), "reported (anecdotal, not surveyed)"),
+        (lambda value: value["reports"][9].__setitem__("consistency", "consistent"), "does not follow"),  # ms-c2-12, a class
+        (lambda value: value["counted"].__setitem__("statements", 21), "counted"),
+        (lambda value: value["counts_by_statement"].__setitem__("mixed", 0), "once"),
+        (lambda value: value["shared_statements"].pop(), "more than one place"),
+        (lambda value: value["reports"][5].__setitem__("statement_id", "ms-c2-09"), "first place record"),  # ms-c2-08 under ms-c2-09
+        (lambda value: value["likely_causes"][1]["text"].__setitem__("en", "Town ground: one point sits above the encoded range."), "rebuilt causes differ"),
+        (lambda value: value["likely_causes"][0]["figures"].__setitem__("located_numbers", 12), "rebuilt causes differ"),
+        (lambda value: value["assumptions"]["th"].pop(), "assumptions"),
     ):
         broken = copy.deepcopy(built)
         change(broken)
@@ -309,19 +357,46 @@ def test_manifest_reports_follow_the_data_file_and_the_counts_are_the_measured_o
     for name in ("ms-c2-01", "ms-c2-02", "ms-c2-07", "ms-c2-08", "ms-c2-09", "ms-c2-12"):
         assert outcome[name] == "model_dry", name
         assert next(report for report in block["reports"] if report["id"] == name)["model"]["window_max_stage_m"] <= 0.1
-    assert (outcome["ms-c2-15"], outcome["ms-c2-19"], outcome["ms-c2-22"]) == ("consistent", "consistent", "consistent")
+    # One number reaches its lower bound; two storey or body references are wet in the model, with no depth compared
+    # (Piyaphon's "chest-deep" beside 0.78 m of modelled water is wet, not consistent).
+    assert (outcome["ms-c2-15"], outcome["ms-c2-19"], outcome["ms-c2-22"]) == ("consistent", "model_wet", "model_wet")
     assert (outcome["ms-c2-14"], outcome["ms-c2-18"], outcome["ms-c2-20"]) == ("model_dry", "model_dry", "model_dry")
     assert block["counts"] == {
-        "numeric": {"consistent": 1, "model_shallower": 0, "model_dry": 6, "not_comparable": 5},
-        "qualitative": {"consistent": 2, "model_shallower": 0, "model_dry": 3, "not_comparable": 4},
-        "all": {"consistent": 3, "model_shallower": 0, "model_dry": 9, "not_comparable": 9},
+        "numeric": {"consistent": 1, "model_shallower": 0, "model_wet": 0, "model_dry": 6, "not_comparable": 5},
+        "qualitative": {"consistent": 0, "model_shallower": 0, "model_wet": 2, "model_dry": 3, "not_comparable": 4},
+        "all": {"consistent": 1, "model_shallower": 0, "model_wet": 2, "model_dry": 9, "not_comparable": 9},
     }
-    assert block["counts_within_tolerance"]["all"] == {"consistent": 6, "model_shallower": 3, "model_dry": 3, "not_comparable": 9}
+    assert block["counts_within_tolerance"]["all"] == {"consistent": 2, "model_shallower": 3, "model_wet": 4, "model_dry": 3, "not_comparable": 9}
+    # 21 place records from 17 statements in 14 articles; counted once per statement, Thai PBS's three places differ.
+    assert block["counted"] == {"place_records": 21, "statements": 17, "articles": 14}
+    assert block["counts_by_statement"] == {"consistent": 0, "model_shallower": 0, "model_wet": 2, "model_dry": 6, "not_comparable": 8, "mixed": 1}
+    assert block["shared_statements"] == [
+        {"statement_id": "ms-c2-07", "reports": ["ms-c2-07", "ms-c2-08", "ms-c2-09"], "outcomes": ["model_dry"] * 3},
+        {"statement_id": "ms-c2-14", "reports": ["ms-c2-14", "ms-c2-15", "ms-c2-16"], "outcomes": ["model_dry", "consistent", "not_comparable"]},
+    ]
+    assert block["assumptions"]["en"] == json.loads(DATA.read_text(encoding="utf-8"))["assumptions"]
     # Ko Sai's point falls on the mapped river channel: it is read at the nearest cell outside it.
     ko_sai = next(report for report in block["reports"] if report["id"] == "ms-c2-07")["model"]
     assert ko_sai["cell"] == "nearest_out_of_channel" and 0 < ko_sai["moved_m"] <= 150
     # The likely causes are said plainly, without judging the model or the reports.
     assert [cause["id"] for cause in block["likely_causes"]] == ["timing", "surface_model", "local_drainage", "location"]
+    # Every count they state is the reports' own, recounted here from the place records (not from the bake's helper).
+    causes = {cause["id"]: cause for cause in block["likely_causes"]}
+    located = [report for report in block["reports"] if report["model"]]
+    early = [report for report in located if report["model"]["window_max_stage_m"] <= 0.1]
+    numbers = [report for report in located if report["depth"]["basis"] == "numeric"]
+    early_numbers = [report for report in early if report["depth"]["basis"] == "numeric"]
+    assert (len(numbers), len(early_numbers), len(located) - len(numbers), len(early) - len(early_numbers)) == (7, 5, 5, 1)
+    assert all(report["consistency"] == "model_dry" for report in early)
+    assert causes["timing"]["text"]["en"].startswith("Timing: 5 of the 7 located numbers and 1 of the 5 located storey or body references")
+    assert "until 10 Sep 18:15 ICT" in causes["timing"]["text"]["en"] and "all 6 of these read dry" in causes["timing"]["text"]["en"]
+    points = {(report["point"]["lat"], report["point"]["lon"]): report["model"]["height_above_channel_m"] for report in located}
+    above = sorted(report["id"] for report in located if report["model"]["height_above_channel_m"] is None)
+    assert above == ["ms-c2-18", "ms-c2-20"] and len(points) == 9  # The school and Wat Tham Pha Chom: two distinct points.
+    raised = sum(1 for height in points.values() if height is not None and height >= 2.0)
+    assert f"{raised} of the 9 report points sit 2 m or more above their channel, and 2 sit above the highest level" in causes["surface_model"]["text"]["en"]
+    assert "2 จุดอยู่สูงกว่าระดับสูงสุดที่แบบจำลองบันทึกไว้" in causes["surface_model"]["text"]["th"]
+    assert "2 statements each name several communities" in causes["location"]["text"]["en"]
     for cause in block["likely_causes"]:
         assert not re.search(r"wrong|too (low|high|shallow|deep)|validat|confirm", cause["text"]["en"], re.IGNORECASE)
         assert re.search(r"[฀-๿]", cause["text"]["th"])

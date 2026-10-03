@@ -13,7 +13,7 @@
   "confidence_reason_th": "ตารางมาจากการจำลองด้วยแบบจำลองภูมิประเทศและระดับน้ำสมมุติ ผู้อยู่อาศัยตาม WorldPop 2020 ถนนและสถานที่จาก OpenStreetMap และค่าประมาณความจุที่ยังไม่ได้ตรวจสอบ ยังไม่มีการตรวจสอบในพื้นที่",
   "lanes": "SCN",
   "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-  "generated_at": "2026-10-03T15:07:00+07:00",
+  "generated_at": "2026-10-03T17:47:00+07:00",
   "generated_by": "scripts/build_mae_sai_flood_timeline.py",
   "study": "mae-sai-2024-flood-timeline r4",
   "accepted": "accepted_fpps=null; accepted_action_class=null (no priority score and no action class is computed)",
@@ -37,7 +37,7 @@
   "assumption_6_th": "ไม่มีการคำนวณคะแนนลำดับความสำคัญหรือระดับการดำเนินการของตำบลใด การย้อนดูไม่ได้คำนวณทั้งสองอย่าง",
   "assumption_7": "The comparison of this subdistrict with the 2024 season envelope is in the envelope's statistics file, which the replay manifest names at season_envelope.files.statistics. That file is shared under its product's own licence (CC BY-SA 4.0) and this file keeps one licence lineage (ODbL 1.0), so its figures are not copied here. It is a scenario plausibility comparison, not a validation.",
   "assumption_7_th": "การเปรียบเทียบตำบลนี้กับขอบเขตน้ำตลอดฤดูปี 2567 (2024) อยู่ในไฟล์สถิติของขอบเขตน้ำ ซึ่งไฟล์กำกับของการย้อนดูระบุไว้ที่ season_envelope.files.statistics ไฟล์นั้นเผยแพร่ภายใต้สัญญาอนุญาตของผลิตภัณฑ์ต้นทาง (CC BY-SA 4.0) ส่วนไฟล์นี้มีสายสัญญาอนุญาตเดียว (ODbL 1.0) จึงไม่ได้คัดลอกตัวเลขมาไว้ที่นี่ การเปรียบเทียบนี้เป็นการดูความเป็นไปได้ของสถานการณ์จำลอง ไม่ใช่การยืนยันความถูกต้อง",
-  "input_receipt": "docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=472fd930894cff8734701403b100bb74c78d5288b8977654dd9a1f7ab6b4ad9f",
+  "input_receipt": "docs/mae_sai_timeline_r4_input_receipt.json lists every input file of the bake with its SHA-256 (also timeline.json input_sha256); input_set_sha256=d56c09f9d9c9551eda1e3b6fbfbff145e0d1358ad7faeec9b8c0612657f75110",
   "input_sha256": "repo:outputs/mae_sai_road_risk.geojson=cd8648f8fbaabab14fdf45e9e98fff36d90902580831513be39a5dfe0af4439c; repo:outputs/mae_sai_access_edges.csv=266fd0f662b44b8210fc5ab064eadbb26b822ccb869221c92d666f4b172de454; repo:outputs/mae_sai_population_nodes.csv=172235bb7954bb8a60d944c5acc8414e3f73c6b7c204a84e10c3b0b35411f4ac; repo:outputs/mae_sai_admin_context.geojson=5cd03ca936c188d37704f5249afa87da0c687b967db8a0f9c9ebd72b27204db1; repo:outputs/mae_sai_reported_shelters_2024.json=674d95881b857916f65f864e555a1b20f815a25bd9c43e2d475fc0c8f2d00d35; external:open_context/osm_geofabrik/thailand-latest.osm.pbf=b7f46018249638413b1d318bc86519f140c27af20cac7c00d42fe03775b7add1; repo:outputs/mae_sai_facilities.geojson=5f9d2381fc6dccec5343e48e6526a92f80028840e27e4753bb3fbb42445b97ce; external:open_context/worldpop_population/tha_ppp_2020.tif=fb39d85dd150c45c7b25771f29bcd548e611afa0967224ac6d8ca05727230e20; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E099_00_DEM.tif=8965f85514b577b4b606c658412bfe3d713c0abf478d237539af309d8edb3757; external:open_context/copernicus_dem_glo30/Copernicus_DSM_COG_10_N20_00_E100_00_DEM.tif=353574d52c8d93f0e650207acf4c9045bcebe02bb956b30ca1596cb2dafa17bf",
   "git_commit": "null: a file cannot hold the hash of the commit that adds it; git log -1 --format=%H -- apps/web/public/studies/mae-sai-2024-timeline/r4/exports/tambon_replay_summary.json",
   "knee_k": "8",
@@ -291,7 +291,7 @@
    "evidence_tier": "T1 scenario (model)",
    "confidence_class": "low",
    "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-   "generated_at": "2026-10-03T15:07:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
    "operational_status": "non_operational",
    "assumptions": [
     {
@@ -385,7 +385,7 @@
    "evidence_tier": "T1 scenario (model)",
    "confidence_class": "low",
    "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-   "generated_at": "2026-10-03T15:07:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
    "operational_status": "non_operational",
    "assumptions": [
     {
@@ -479,7 +479,7 @@
    "evidence_tier": "T1 scenario (model)",
    "confidence_class": "low",
    "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-   "generated_at": "2026-10-03T15:07:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
    "operational_status": "non_operational",
    "assumptions": [
     {
@@ -573,7 +573,7 @@
    "evidence_tier": "T1 scenario (model)",
    "confidence_class": "low",
    "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-   "generated_at": "2026-10-03T15:07:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
    "operational_status": "non_operational",
    "assumptions": [
     {
@@ -667,7 +667,7 @@
    "evidence_tier": "T1 scenario (model)",
    "confidence_class": "low",
    "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-   "generated_at": "2026-10-03T15:07:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
    "operational_status": "non_operational",
    "assumptions": [
     {
@@ -761,7 +761,7 @@
    "evidence_tier": "T1 scenario (model)",
    "confidence_class": "low",
    "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-   "generated_at": "2026-10-03T15:07:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
    "operational_status": "non_operational",
    "assumptions": [
     {
@@ -855,7 +855,7 @@
    "evidence_tier": "T1 scenario (model)",
    "confidence_class": "low",
    "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-   "generated_at": "2026-10-03T15:07:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
    "operational_status": "non_operational",
    "assumptions": [
     {
@@ -949,7 +949,7 @@
    "evidence_tier": "T1 scenario (model)",
    "confidence_class": "low",
    "source_timestamp": "OpenStreetMap extract 2026-07-09 (roads and sites); WorldPop 2020; reported shelters compiled 2026-09-27; illustrative stage keyframes for 2024-09-09/2024-09-19 ICT on the Copernicus DEM (2011-2015 acquisitions); peak keyframe 2024-09-12T12:00:00+07:00",
-   "generated_at": "2026-10-03T15:07:00+07:00",
+   "generated_at": "2026-10-03T17:47:00+07:00",
    "operational_status": "non_operational",
    "assumptions": [
     {

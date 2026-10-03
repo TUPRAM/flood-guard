@@ -267,6 +267,7 @@ describe("Replay wording rules (shared with Python)", () => {
       "shelter_directive", // "open these shelters": the plans list candidates to verify (P2-9)
       "equity_denominator", // the equity rates stated over all residents counted, not those within reach before the flood (R8)
       "report_confirmation", // a news report "confirming" the model, or the model "confirmed by" reports (C-2)
+      "report_count", // the reported depths counted as news reports: they are place records (one statement per community)
     ]);
     expect(new Set(REPLAY_WORDING_RULES.allow.map((item) => item.id)).size).toBe(REPLAY_WORDING_RULES.allow.length);
   });

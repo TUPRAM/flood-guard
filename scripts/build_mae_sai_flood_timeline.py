@@ -948,7 +948,8 @@ def reported_depth_block(path: Path, codes: np.ndarray, factors: np.ndarray, val
     return reported_depths.manifest_block(
         document, models, origin=origin, peak_stage_m=peak_stage,
         data_file={"path": REPORTED_DEPTHS.as_posix(), "sha256": sha256_bytes(data)},
-        window_stage=lambda start, end: reported_depths.window_max_stage(start, end, anchors))
+        window_stage=lambda start, end: reported_depths.window_max_stage(start, end, anchors),
+        early_until=reported_depths.early_stage_until(anchors, origin))
 
 
 VERIFICATION_NOT_CONDUCTED = ("No verification sheet has been returned: the local check of the shelter candidates was not conducted. "
@@ -1164,10 +1165,14 @@ O2_REFERENCE = {
     "name": "UNOSAT and GISTDA water layer of 22 Oct 2024 (product 4009)",
     "url": "https://unosat.org/products/4009",
     "note": ("A separate observed case, O2, in the planning overlay (decision D3b). It is not on this map and has no position on the "
-             "replay slider, which ends on 19 Sep 2024; no 22 Oct data is in this replay."),
+             "replay slider, which ends on 19 Sep 2024; its layer (CHIANGRAI_20241022_FloodExtent) is not read. The season envelope, a "
+             "scenario layer with its own toggle that accumulates water to 12 Oct, is the only layer here that includes water after 19 Sep."),
 }
 """Roadmap C-3: the dated line that stops a reader assuming the water was gone after 19 Sep. A reference only: nothing of
-the 22 Oct layer is read, drawn or placed on the slider (D3b)."""
+the 22 Oct layer (``CHIANGRAI_20241022_FloodExtent``) is read, drawn or placed on the slider (D3b). The season envelope is the
+one deliberate exemption from the replay's date gate (:func:`dated_after_replay`): the same product's accumulated layer
+(``CHIANGRAI_20240801_20241012_AccumulatedFlood``), dated to the product's 2024-08-01/2024-10-22 window, on its own toggle
+and never placed on the slider."""
 
 
 def envelope_source(rights: dict) -> dict:
@@ -1659,8 +1664,10 @@ def evidence_blocks(result: dict) -> list[dict]:
          "evidence_tier": "Cited source: a separate observed case (O2) in the planning overlay; not ingested in this revision",
          "temporal_relation": "not_ingested", "covers": [f"external_references[{O2_REFERENCE['id']}]"],
          "source_timestamp": f"{O2_REFERENCE['dated']} (the date UNOSAT and GISTDA give the layer)",
-         "note": (f"After the replay's last day ({REPLAY_LAST_DAY}): no layer, observation or replay day is dated after it, and nothing "
-                  "of the 22 Oct layer is read, drawn or placed on the slider.")},
+         "note": (f"After the replay's last day ({REPLAY_LAST_DAY}): no observation, replay day or slider entry is dated after it, and "
+                  "nothing of the 22 Oct layer (CHIANGRAI_20241022_FloodExtent) is read, drawn or placed on the slider. The one layer "
+                  "that reaches past it is the season envelope (season_window 2024-08-01/2024-10-22, accumulated to 12 Oct): a "
+                  "scenario layer with its own toggle and no replay day.")},
     ]
     if "exports" in result:
         blocks.append({"id": "export_pack", **scenario, "temporal_relation": "event_window_reconstruction", "covers": ["exports"],
@@ -1928,6 +1935,11 @@ def dated_after_replay(manifest: dict) -> list[str]:
 
     The water layer UNOSAT and GISTDA dated 22 Oct 2024 is a separate observed case (O2) in the planning overlay: it
     may be cited among the external references, never placed on the map or the slider (D3b).
+
+    One deliberate exemption: the season envelope (``season_envelope``, product 4009's accumulated layer, whose
+    ``season_window`` runs to 2024-10-22) is not among :func:`replay_dates`. It is a scenario layer with its own toggle,
+    ``day_independent``, and no replay day or slider position selects it; its own rules are
+    ``floodguard.replay_manifest.season_envelope_problems``.
     """
     end = datetime.fromisoformat(EVENT_END)
     problems = []

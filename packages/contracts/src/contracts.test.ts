@@ -275,7 +275,13 @@ describe("contract drift", () => {
     expect(block.properties.lane.const).toBe("REP");
     expect(block.properties.status.const).toBe(data.properties.status.const);
     expect(block.properties.use_rule.properties.en.allOf.map((item: { pattern: string }) => item.pattern)).toEqual(["never used to tune", "never a validation"]);
-    expect(caseReplayTimelineSchema.$defs.reportedDepthStatus.enum).toEqual(["consistent", "model_shallower", "model_dry", "not_comparable"]);
+    expect(caseReplayTimelineSchema.$defs.reportedDepthStatus.enum).toEqual(["consistent", "model_shallower", "model_wet", "model_dry", "not_comparable"]);
+    // Place records: a statement that names several communities is recorded once per community, and the counts are also
+    // given once per statement, with the data file's assumptions beside them.
+    expect(report.required).toContain("statement_id");
+    expect(data.required).toContain("assumptions_th");
+    expect(block.required).toEqual(expect.arrayContaining(["assumptions", "counted", "counts_by_statement", "shared_statements"]));
+    expect(block.properties.counts_by_statement.required).toEqual(["consistent", "model_shallower", "model_wet", "model_dry", "not_comparable", "mixed"]);
     expect(caseReplayTimelineSchema.$defs.reportedDepthClass.enum).toEqual(data.$defs.depthClass.enum);
     expect(caseReplayTimelineSchema.required).not.toContain("reported_depths");
   });

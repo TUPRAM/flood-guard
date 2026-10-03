@@ -654,30 +654,66 @@ def calibration_section(files: ReplayFiles) -> Section:
                    figures=tuple(figures))
 
 
+REPORTED_OUTCOMES: tuple[tuple[str, str], ...] = (
+    ("consistent", "Consistent (numbers only)"), ("model_shallower", "Model shallower"), ("model_wet", "Model wet (depth not compared)"),
+    ("model_dry", "Model dry"), ("not_comparable", "Not comparable"),
+)
+REPORTED_APPLIES: Mapping[str, tuple[str, ...]] = {
+    "numeric": ("consistent", "model_shallower", "model_dry", "not_comparable"),
+    "qualitative": ("model_wet", "model_dry", "not_comparable"),
+}
+"""The outcomes each basis can have; any other cell is a dash (the page's table does the same)."""
+
+
 def reported_section(files: ReplayFiles) -> Section:
     block = files.manifest["reported_depths"]
     reports = block["reports"]
+    counted = block["counted"]
     located = [report for report in reports if report.get("point")]
     points = {(report["point"]["lat"], report["point"]["lon"]) for report in located}
-    labels = {"numeric": ("Numbers (lower bounds and ranges)", "ตัวเลข (ค่าขั้นต่ำและช่วง)"),
-              "qualitative": ("Storey or body references (wet or dry only)", "อ้างอิงชั้นของอาคารหรือระดับร่างกาย (เปียกหรือแห้งเท่านั้น)"),
-              "all": (f"All {len(reports)} reports", f"รายงานทั้งหมด {len(reports)} ฉบับ")}
-    outcomes = ("consistent", "model_shallower", "model_dry", "not_comparable")
-    rows = [tuple([f"{labels[key][0]}<br>{labels[key][1]}", *(str(block["counts"][key][outcome]) for outcome in outcomes)]) for key in ("numeric", "qualitative", "all")]
-    rows.append(tuple(["Within each report's location tolerance (sensitivity), all reports<br>ภายในระยะคลาดเคลื่อนของตำแหน่งของแต่ละรายงาน (การทดสอบความไว) ทุกรายงาน",
-                       *(str(block["counts_within_tolerance"]["all"][outcome]) for outcome in outcomes)]))
-    table = Table("reported.counts", "Reported depths against the model", "ความลึกตามรายงานเทียบกับแบบจำลอง",
-                  ("Reports", "Consistent", "Model shallower", "Model dry", "Not comparable"), tuple(rows), "REP",
-                  "timeline.json $.reported_depths.counts, .counts_within_tolerance")
+    records = f"{counted['place_records']} place records from {counted['statements']} statements in {counted['articles']} articles"
+    records_th = f"{counted['place_records']} รายการตามสถานที่ จาก {counted['statements']} ข้อความใน {counted['articles']} ข่าว"
+    labels = {"numeric": ("Numbers (lower bounds and ranges), place records", "ตัวเลข (ค่าขั้นต่ำและช่วง) รายการตามสถานที่"),
+              "qualitative": ("Storey or body references (wet or dry only), place records", "อ้างอิงชั้นของอาคารหรือระดับร่างกาย (มีน้ำหรือแห้งเท่านั้น) รายการตามสถานที่"),
+              "all": (f"All {counted['place_records']} place records", f"ทุกรายการ {counted['place_records']} รายการตามสถานที่")}
+    outcomes = [outcome for outcome, _ in REPORTED_OUTCOMES]
+
+    def cell(counts: Mapping[str, int], basis: str, outcome: str) -> str:
+        return str(counts[outcome]) if basis == "all" or outcome in REPORTED_APPLIES[basis] else "–"
+
+    rows = [tuple([f"{labels[key][0]}<br>{labels[key][1]}", *(cell(block["counts"][key], key, outcome) for outcome in outcomes), "–"])
+            for key in ("numeric", "qualitative", "all")]
+    by_statement = block["counts_by_statement"]
+    rows.append(tuple([f"Each of the {counted['statements']} statements counted once<br>นับหนึ่งครั้งต่อข้อความ ({counted['statements']} ข้อความ)",
+                       *(str(by_statement[outcome]) for outcome in outcomes), str(by_statement["mixed"])]))
+    rows.append(tuple(["Within each record's location tolerance (sensitivity), all place records<br>ภายในระยะคลาดเคลื่อนของตำแหน่งของแต่ละรายการ (การทดสอบความไว) ทุกรายการ",
+                       *(str(block["counts_within_tolerance"]["all"][outcome]) for outcome in outcomes), "–"]))
+    table = Table("reported.counts", "Reported depths against the model: place records by outcome, and each statement counted once",
+                  "ความลึกตามรายงานเทียบกับแบบจำลอง: รายการตามสถานที่แยกตามผล และนับหนึ่งครั้งต่อข้อความ",
+                  ("Counted", *(label for _, label in REPORTED_OUTCOMES), "Different outcomes at its places"), tuple(rows), "REP",
+                  "timeline.json $.reported_depths.counts, .counts_by_statement, .counts_within_tolerance")
+    names = {report["id"]: report for report in reports}
+    shared = "; ".join(
+        f"{names[item['reports'][0]]['source']['publisher']}: " + ", ".join(f"{names[rid]['place']['en']} ({status.replace('_', ' ')})"
+                                                                            for rid, status in zip(item["reports"], item["outcomes"]))
+        for item in block["shared_statements"])
     figures = (
-        Figure("reported.reports", "News reports of flood depth at named places, 10-13 Sep 2024", "รายงานข่าวความลึกของน้ำ ณ สถานที่ที่ระบุชื่อ 10-13 ก.ย. 2567 (2024)",
-               str(len(reports)), exact(len(reports)), "REP", "timeline.json $.reported_depths.reports"),
-        Figure("reported.located", "Of those, located at medium or high confidence (distinct map points)", "ในจำนวนนี้ ระบุตำแหน่งได้ที่ความเชื่อมั่นปานกลางหรือสูง (จำนวนจุดบนแผนที่)",
+        Figure("reported.reports", "News statements of flood depth at named places, 10-13 Sep 2024: place records, statements and articles (a statement that names several communities is recorded once per community)",
+               "ข้อความในข่าวที่ระบุความลึกของน้ำ ณ สถานที่ที่ระบุชื่อ 10-13 ก.ย. 2567 (2024): รายการตามสถานที่ ข้อความ และข่าว (ข้อความที่กล่าวถึงหลายชุมชนบันทึกหนึ่งรายการต่อหนึ่งชุมชน)",
+               f"{records}<br>{records_th}", exact(counted), "REP", "timeline.json $.reported_depths.counted"),
+        Figure("reported.located", "Of those, place records located at medium or high confidence (distinct map points)", "ในจำนวนนี้ รายการที่ระบุตำแหน่งได้ที่ความเชื่อมั่นปานกลางหรือสูง (จำนวนจุดบนแผนที่)",
                f"{len(located)} ({len(points)} points)", f"{len(located)}; {len(points)}", "REP", "timeline.json $.reported_depths.reports[*].point"),
+        Figure("reported.shared", "Statements recorded at several places, with each place's outcome", "ข้อความที่บันทึกไว้หลายสถานที่ พร้อมผลของแต่ละสถานที่",
+               shared, exact(block["shared_statements"]), "REP", "timeline.json $.reported_depths.shared_statements"),
     )
+    several = len(block["shared_statements"])
     return Section("reported", "Reported depths (news, not surveyed)", "ความลึกตามรายงานข่าว (ไม่ได้สำรวจ)",
-                   "Anecdotal reports, paraphrased; a consistency check, never used to tune the model and never a validation of it.",
-                   "เป็นรายงานจากคำบอกเล่าที่เรียบเรียงใหม่ ใช้ตรวจความสอดคล้อง ไม่เคยใช้ปรับแบบจำลองและไม่ใช่การยืนยันความถูกต้องของแบบจำลอง",
+                   ("Anecdotal reports, paraphrased; a consistency check, never used to tune the model and never a validation of it. Say "
+                    f"\"place records\", not \"news reports\": {several} statements name several communities each and are recorded once per "
+                    "community. A storey or body reference is compared only as wet or dry, so it is never counted as consistent."),
+                   ("เป็นรายงานจากคำบอกเล่าที่เรียบเรียงใหม่ ใช้ตรวจความสอดคล้อง ไม่เคยใช้ปรับแบบจำลองและไม่ใช่การยืนยันความถูกต้องของแบบจำลอง "
+                    f"ให้พูดว่า \"รายการตามสถานที่\" ไม่ใช่ \"รายงานข่าว\" เพราะมี {several} ข้อความที่กล่าวถึงหลายชุมชนและบันทึกแยกหนึ่งรายการต่อหนึ่งชุมชน "
+                    "การอ้างอิงชั้นอาคารหรือระดับร่างกายเทียบเพียงว่ามีน้ำหรือแห้ง จึงไม่นับเป็นสอดคล้อง"),
                    figures=figures, tables=(table,))
 
 
@@ -799,6 +835,13 @@ def render_markdown(files: ReplayFiles, sections: Sequence[Section]) -> str:
     ]
     lines += _table(("Item", "Value"), status)
     lines += ["", "Every file except the manifest was checked against the SHA-256 the manifest lists for it.",
+              "",
+              "These are the figures of the files in this checkout. A site built from another commit can serve other files under the "
+              "same revision path, and production is built from master: before quoting a figure from a deployed site, check that its "
+              "`timeline.json` has the SHA-256 above. Where it does not, quote the site's own page, not this file.",
+              "",
+              "ตัวเลขเหล่านี้มาจากไฟล์ใน checkout นี้ เว็บที่สร้างจาก commit อื่นอาจให้ไฟล์อื่นภายใต้เส้นทาง revision เดียวกัน และเว็บจริง (production) "
+              "สร้างจาก master ก่อนอ้างตัวเลขจากเว็บที่เปิดใช้งาน ให้ตรวจว่า `timeline.json` ของเว็บนั้นมี SHA-256 ตรงกับด้านบน หากไม่ตรง ให้อ้างจากหน้าเว็บนั้นเอง ไม่ใช่จากไฟล์นี้",
               "",
               "No priority score and no action class is computed or quoted for the replay: those belong to the planning overlay. "
               "The figures are not a forecast, not real-time and not an official warning.",

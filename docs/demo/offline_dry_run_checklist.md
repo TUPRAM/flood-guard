@@ -62,11 +62,11 @@ Turn airplane mode off and stop the server (Ctrl+C).
 
 ## Recorded result of the automated check
 
-- **When and what:** 3 Oct 2026, 16:34 ICT, on the working tree of branch `claude/mae-sai-next` (parent commit `f2bbe1c`), against the competition build made at 15:50 ICT the same day from the same web sources; Windows 11, Node 24.14.1, Playwright Chromium 149.0.7827.55.
-- **Command:** `pnpm test:offline`. **Result:** exit 0 in 24.6 s; the policy test 8 of 8 passed.
+- **When and what:** 3 Oct 2026, about 19:00 ICT, on the working tree of branch `claude/mae-sai-next` (parent commit `f76572d`, with the review fixes: grouped reported-depth markers and r4 baked at 17:47 ICT), as part of `pnpm verify:frontend` (18:58 to 19:07 ICT), against the competition build of the same sources; Windows 11, Node 24.14.1, Playwright Chromium 149.0.7827.55.
+- **Command:** `pnpm test:offline`. **Result:** exit 0; the policy test 8 of 8 passed.
 - **Summary lines:**
   - `offline smoke: 5 polished routes and 15 core assets verified; case replay route precached with 25 deferred data files (6.3 MB, opt-in) and 9 export files (0.91 MB of a 1.0 MB export budget); internal safety contracts retained and no external runtime resources`
-  - `browser offline smoke: 5 routes rendered from a content-versioned service-worker cache; the case replay and its 25 opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: 1440 px: hatch period 9.1 px; 390 px: hatch period 9 px), the reported depths' nine markers and counts table from the saved manifest, and its 9 export files downloaded offline (906375 of 1000000 export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`
+  - `browser offline smoke: 5 routes rendered from a content-versioned service-worker cache; the case replay and its 25 opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: 1440 px: hatch period 9.1 px; 390 px: hatch period 9 px), the reported depths' markers (all 12 located place records) and counts table from the saved manifest, and its 9 export files downloaded offline (906375 of 1000000 export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`
   - `legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified`
 - **Not covered by the automated check:** it switches the browser offline instead of the laptop's network, and it does not open the Thai page offline or play the fallback video. Steps 5 and 6 cover those, by hand.
 

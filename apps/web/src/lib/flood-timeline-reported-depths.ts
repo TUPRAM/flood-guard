@@ -21,39 +21,68 @@ import {
 
 /** The block's status, as the bake writes it; any other status withholds the layer. */
 export const REPORTED_DEPTH_STATUS = "reported (anecdotal, not surveyed)";
-export const REPORTED_DEPTH_STATUSES: readonly ReportedDepthStatus[] = ["consistent", "model_shallower", "model_dry", "not_comparable"];
+export const REPORTED_DEPTH_STATUSES: readonly ReportedDepthStatus[] = ["consistent", "model_shallower", "model_wet", "model_dry", "not_comparable"];
 export const REPORTED_DEPTH_BASES = ["numeric", "qualitative", "all"] as const;
+export type ReportedDepthBasis = (typeof REPORTED_DEPTH_BASES)[number];
+/**
+ * The outcomes each basis can have: a number is compared with its lower bound (consistent or model shallower); a storey or
+ * body reference only as wet or dry (model wet), so the "consistent" count of all place records holds numbers only.
+ */
+export const REPORTED_DEPTH_APPLIES: Record<ReportedDepthBasis, readonly ReportedDepthStatus[]> = {
+  numeric: ["consistent", "model_shallower", "model_dry", "not_comparable"],
+  qualitative: ["model_wet", "model_dry", "not_comparable"],
+  all: REPORTED_DEPTH_STATUSES,
+};
 
 export const REPORTED_DEPTH_COPY = {
   toggle: { en: "Reported depths (news, not surveyed)", th: "ความลึกตามรายงานข่าว (ไม่ได้สำรวจ)" },
-  legend: { en: "Reported depth (news, not surveyed); select for the report", th: "ความลึกตามรายงานข่าว (ไม่ได้สำรวจ) เลือกเพื่อดูรายงาน" },
+  legend: {
+    en: "Reported depth (news, not surveyed); select for the report. A number counts the place records a marker holds; zoom in to separate nearby places.",
+    th: "ความลึกตามรายงานข่าว (ไม่ได้สำรวจ) เลือกเพื่อดูรายงาน ตัวเลขบนเครื่องหมายคือจำนวนรายการตามสถานที่ที่รวมไว้ ซูมเข้าเพื่อแยกสถานที่ที่อยู่ใกล้กัน",
+  },
   marker: { en: "Reported depth (news, not surveyed)", th: "ความลึกตามรายงานข่าว (ไม่ได้สำรวจ)" },
   title: { en: "Reported depths (news, not surveyed)", th: "ความลึกตามรายงานข่าว (ไม่ได้สำรวจ)" },
   status: { en: "Status: reported (anecdotal, not surveyed).", th: "สถานะ: ตามรายงาน (คำบอกเล่า ไม่ได้สำรวจ)" },
-  tableCaption: { en: "Consistency with the model, number of reports", th: "ความสอดคล้องกับแบบจำลอง (จำนวนรายงาน)" },
+  tableCaption: { en: "Consistency with the model, number of place records by outcome", th: "ความสอดคล้องกับแบบจำลอง จำนวนรายการตามสถานที่แยกตามผล" },
+  tableNote: {
+    en: "Numbers (lower bounds and ranges) are compared with their lower bound; storey or body references only as wet or dry, so the consistent count holds numbers only. A dash marks an outcome a group cannot have.",
+    th: "ตัวเลข (ค่าขั้นต่ำและช่วงค่า) เทียบกับค่าขั้นต่ำ ส่วนการอ้างอิงชั้นอาคารหรือระดับร่างกายเทียบเพียงมีน้ำหรือแห้ง จำนวนที่สอดคล้องจึงนับเฉพาะตัวเลข เครื่องหมายขีดคือผลที่เป็นไปไม่ได้สำหรับกลุ่มนั้น",
+  },
+  outcome: { en: "Outcome", th: "ผลการเทียบ" },
   causes: { en: "Likely causes where the model is dry or shallower", th: "สาเหตุที่น่าจะเป็นเมื่อแบบจำลองแห้งหรือตื้นกว่า" },
-  allReports: { en: "Every report, with its source", th: "รายงานทั้งหมดพร้อมแหล่งข่าว" },
+  assumptions: { en: "Assumptions of the data file", th: "ข้อสมมุติของไฟล์ข้อมูล" },
+  allReports: { en: "Every place record, with its source", th: "รายการตามสถานที่ทั้งหมดพร้อมแหล่งข่าว" },
+  notApplicable: { en: "not applicable", th: "ไม่เกี่ยวข้อง" },
 } as const satisfies Record<string, Localized>;
 
 const COLUMN_TEXT: Record<ReportedDepthStatus, Localized> = {
   consistent: { en: "Consistent", th: "สอดคล้อง" },
   model_shallower: { en: "Model shallower", th: "แบบจำลองตื้นกว่า" },
+  model_wet: { en: "Model wet (depth not compared)", th: "แบบจำลองมีน้ำ (ไม่ได้เทียบความลึก)" },
   model_dry: { en: "Model dry", th: "แบบจำลองแห้ง" },
   not_comparable: { en: "Not comparable", th: "เทียบไม่ได้" },
 };
-const ROW_TEXT: Record<(typeof REPORTED_DEPTH_BASES)[number], Localized> = {
-  numeric: { en: "Numbers (lower bounds and ranges)", th: "ตัวเลข (ค่าขั้นต่ำและช่วงค่า)" },
-  qualitative: { en: "Storey or body references (wet or dry only)", th: "อ้างอิงชั้นอาคารหรือระดับร่างกาย (เทียบเพียงมีน้ำหรือแห้ง)" },
-  all: { en: "All reports", th: "รายงานทั้งหมด" },
+const MIXED_TEXT: Localized = { en: "with different outcomes at its places", th: "ผลต่างกันในแต่ละสถานที่" };
+const ROW_TEXT: Record<ReportedDepthBasis, Localized> = {
+  numeric: { en: "Numbers", th: "ตัวเลข" },
+  qualitative: { en: "Storey or body references", th: "อ้างอิงชั้นอาคารหรือร่างกาย" },
+  all: { en: "All place records", th: "ทุกรายการ" },
 };
 const STATUS_TEXT: Record<ReportedDepthStatus, { numeric: Localized; qualitative: Localized }> = {
   consistent: {
     numeric: { en: "consistent: the model reaches the reported lower bound", th: "สอดคล้อง: แบบจำลองลึกถึงค่าขั้นต่ำที่รายงาน" },
-    qualitative: { en: "consistent: the model has water here (no depth is compared)", th: "สอดคล้อง: แบบจำลองมีน้ำที่จุดนี้ (ไม่ได้เทียบความลึก)" },
+    qualitative: { en: "consistent: the model reaches the reported lower bound", th: "สอดคล้อง: แบบจำลองลึกถึงค่าขั้นต่ำที่รายงาน" },
   },
   model_shallower: {
     numeric: { en: "the model is shallower than the reported lower bound", th: "แบบจำลองตื้นกว่าค่าขั้นต่ำที่รายงาน" },
-    qualitative: { en: "the model is shallower than reported", th: "แบบจำลองตื้นกว่าที่รายงาน" },
+    qualitative: { en: "the model is shallower than the reported lower bound", th: "แบบจำลองตื้นกว่าค่าขั้นต่ำที่รายงาน" },
+  },
+  model_wet: {
+    numeric: { en: "model wet: the model has water here (no depth is compared)", th: "แบบจำลองมีน้ำ: แบบจำลองมีน้ำที่จุดนี้ (ไม่ได้เทียบความลึก)" },
+    qualitative: {
+      en: "model wet: the model has water here over the report's time window; a storey or body reference has no number, so no depth is compared",
+      th: "แบบจำลองมีน้ำ: แบบจำลองมีน้ำที่จุดนี้ในช่วงเวลาของรายงาน การอ้างอิงชั้นอาคารหรือระดับร่างกายไม่มีตัวเลข จึงไม่ได้เทียบความลึก",
+    },
   },
   model_dry: {
     numeric: { en: "the model is dry here over the report's time window", th: "แบบจำลองไม่มีน้ำที่จุดนี้ในช่วงเวลาของรายงาน" },
@@ -88,9 +117,18 @@ export function shippableReportedDepths(manifest: Pick<TimelineManifest, "report
   if (!isLocalized(rule) || !rule.en.includes("never used to tune") || !rule.en.includes("never a validation")) return null;
   if (!isLocalized(block.label) || !isLocalized(block.comparison_rule) || !isLocalized(block.confidence_reason)) return null;
   if (!isRecord(block.counts) || !REPORTED_DEPTH_BASES.every((basis) => isTally((block.counts as Record<string, unknown>)[basis]))) return null;
+  if (!isTally(block.counts_by_statement) || !Number.isInteger((block.counts_by_statement as Record<string, unknown>).mixed)) return null;
+  const counted = block.counted;
+  if (!isRecord(counted) || !["place_records", "statements", "articles"].every((key) => Number.isInteger(counted[key]))) return null;
+  if (!Array.isArray(block.shared_statements)) return null;
+  // The data file's assumptions (the shared-statement rule among them) travel with the counts, in both languages.
+  const assumptions = block.assumptions;
+  if (!isRecord(assumptions) || !Array.isArray(assumptions.en) || !Array.isArray(assumptions.th) || assumptions.en.length === 0
+    || assumptions.en.length !== assumptions.th.length || ![...assumptions.en, ...assumptions.th].every((line) => typeof line === "string" && line)) return null;
   if (!Array.isArray(block.reports) || block.reports.length === 0) return null;
   for (const report of block.reports as unknown[]) {
-    if (!isRecord(report) || !isLocalized(report.place) || !isRecord(report.depth) || !isLocalized(report.depth.statement)) return null;
+    if (!isRecord(report) || typeof report.statement_id !== "string" || !report.statement_id) return null;
+    if (!isLocalized(report.place) || !isRecord(report.depth) || !isLocalized(report.depth.statement)) return null;
     if (!isRecord(report.time) || !isLocalized(report.time.text) || !isRecord(report.source) || typeof report.source.url !== "string") return null;
     if (!REPORTED_DEPTH_STATUSES.includes(report.consistency as ReportedDepthStatus)) return null;
     const point = report.point;
@@ -99,8 +137,23 @@ export function shippableReportedDepths(manifest: Pick<TimelineManifest, "report
   return block as unknown as ReportedDepths;
 }
 
-/** Reports that share one point, drawn as one marker. */
+/** Place records that share one point. */
 export interface ReportedDepthPlace { key: string; lat: number; lon: number; reports: ReportedDepthReport[] }
+
+/**
+ * Places whose markers would overlap on screen, merged into groups (one marker each). `positions` are the places'
+ * screen points at the current zoom, in the places' order; a place joins the first group whose first place lies within
+ * `radius` pixels, or starts a group of its own. Returns the indices of each group's places, in order.
+ */
+export function groupNearbyPlaces(positions: readonly { x: number; y: number }[], radius: number): number[][] {
+  const groups: number[][] = [];
+  positions.forEach((point, index) => {
+    const group = groups.find((members) => Math.hypot(positions[members[0]].x - point.x, positions[members[0]].y - point.y) <= radius);
+    if (group) group.push(index);
+    else groups.push([index]);
+  });
+  return groups;
+}
 
 /** The located reports grouped by point, in the order of their first report (several reports can name one place). */
 export function reportedDepthPlaces(block: Pick<ReportedDepths, "reports">): ReportedDepthPlace[] {
@@ -154,16 +207,50 @@ export function reportedDepthStatusText(report: Pick<ReportedDepthReport, "consi
   return pick(STATUS_TEXT[report.consistency][report.depth.basis], language);
 }
 
-/** Column and row labels of the counts table. */
-export const reportedDepthColumn = (status: ReportedDepthStatus, language: Language) => pick(COLUMN_TEXT[status], language);
-export const reportedDepthRow = (basis: (typeof REPORTED_DEPTH_BASES)[number], language: Language) => pick(ROW_TEXT[basis], language);
+/** Labels of the counts table: an outcome (a row) and a basis (a column). */
+export const reportedDepthOutcome = (status: ReportedDepthStatus, language: Language) => pick(COLUMN_TEXT[status], language);
+export const reportedDepthBasis = (basis: ReportedDepthBasis, language: Language) => pick(ROW_TEXT[basis], language);
 export const locationConfidenceText = (level: ReportedDepthReport["location_confidence"], language: Language) => pick(CONFIDENCE_TEXT[level], language);
 
-/** One sentence of counts, e.g. "3 consistent, 0 model shallower, 9 model dry, 9 not comparable". */
+/** An outcome in running text: lower case in English ("model dry"), as labelled in Thai. */
+const outcomeWords = (status: ReportedDepthStatus, language: Language) => (language === "th" ? COLUMN_TEXT[status].th : COLUMN_TEXT[status].en.toLowerCase());
+
+/** One sentence of counts, e.g. "1 consistent, 0 model shallower, 2 model wet (depth not compared), 9 model dry, 9 not comparable". */
 export function reportedDepthTallyText(counts: ReportedDepthCounts["all"], language: Language): string {
   return REPORTED_DEPTH_STATUSES.map((status) => (language === "th"
-    ? `${pick(COLUMN_TEXT[status], language)} ${counts[status]}`
-    : `${counts[status]} ${pick(COLUMN_TEXT[status], language).toLowerCase()}`)).join(language === "th" ? " · " : ", ");
+    ? `${outcomeWords(status, language)} ${counts[status]}`
+    : `${counts[status]} ${outcomeWords(status, language)}`)).join(language === "th" ? " · " : ", ");
+}
+
+/** The counts with each statement counted once, ending with the statements whose places read differently. */
+export function reportedDepthStatementTallyText(counts: ReportedDepths["counts_by_statement"], language: Language): string {
+  const mixed = language === "th" ? `${pick(MIXED_TEXT, language)} ${counts.mixed}` : `${counts.mixed} ${pick(MIXED_TEXT, language)}`;
+  return `${reportedDepthTallyText(counts, language)}${language === "th" ? " · " : ", "}${mixed}`;
+}
+
+/** "21 place records from 17 statements in 14 news articles" (Thai: the same counts). */
+export function reportedDepthCountedText(counted: ReportedDepths["counted"], language: Language): string {
+  return language === "th"
+    ? `${counted.place_records} รายการตามสถานที่ จาก ${counted.statements} ข้อความใน ${counted.articles} ข่าว`
+    : `${counted.place_records} place records from ${counted.statements} statements in ${counted.articles} news articles`;
+}
+
+/**
+ * One line per statement recorded at more than one place: its publisher and date, its places and their outcomes, e.g.
+ * "PPTV HD36, 10 Sep 2024: Ko Sai community, Mai Lung Khon community, Mueang Daeng community (model dry at each)".
+ */
+export function reportedDepthSharedText(block: Pick<ReportedDepths, "reports" | "shared_statements">, language: Language): string[] {
+  const byId = new Map(block.reports.map((report) => [report.id, report]));
+  return block.shared_statements.map((statement) => {
+    const members = statement.reports.map((id) => byId.get(id)).filter((report): report is ReportedDepthReport => Boolean(report));
+    const first = members[0];
+    const outcomes = [...new Set(statement.outcomes)];
+    const reading = outcomes.length === 1
+      ? language === "th" ? `${outcomeWords(outcomes[0], language)}ทุกแห่ง` : `${outcomeWords(outcomes[0], language)} at each`
+      : statement.outcomes.map((status) => outcomeWords(status, language)).join(language === "th" ? " · " : ", ");
+    const places = members.map((report) => pick(report.place, language)).join(language === "th" ? " · " : ", ");
+    return `${first?.source.publisher ?? ""}, ${first ? formatDateWithYear(first.source.published, language) : ""}: ${places} (${reading})`;
+  });
 }
 
 /**
@@ -232,7 +319,7 @@ export function reportedDepthPopup(report: ReportedDepthReport, block: Pick<Repo
     { text: `${th ? "ตำแหน่ง" : "Location"}: ${th ? "ความเชื่อมั่น" : "confidence"} ${locationConfidenceText(report.location_confidence, language)}${report.location_tolerance_m !== null
       ? th ? ` (จุดที่รายงานอาจห่างได้ถึงราว ${report.location_tolerance_m} ม.)` : ` (the reported spot may lie up to about ${report.location_tolerance_m} m away)` : ""} · ${th ? "ตำบล" : "Subdistrict"} ${pick(report.tambon, language)}`, tone: "muted" },
     ...reportedDepthModelText(report, block as Pick<ReportedDepths, "peak_stage_m">, language).map((text) => ({ text, tone: "muted" as const })),
-    { text: `${th ? "ผลการเทียบ" : "Consistency"}: ${reportedDepthStatusText(report, language)}` },
+    { text: `${th ? "ผลการเทียบกับแบบจำลอง" : "Comparison with the model"}: ${reportedDepthStatusText(report, language)}` },
   ];
   return {
     lines,
@@ -240,9 +327,9 @@ export function reportedDepthPopup(report: ReportedDepthReport, block: Pick<Repo
   };
 }
 
-/** Hover title of a marker: what it is and the place names it holds. */
-export function reportedDepthMarkerTitle(place: ReportedDepthPlace, language: Language): string {
+/** Hover title of a marker: what it is, the place names it holds and how many place records. */
+export function reportedDepthMarkerTitle(place: Pick<ReportedDepthPlace, "reports">, language: Language): string {
   const names = [...new Set(place.reports.map((report) => pick(report.place, language)))].join(" · ");
-  const count = place.reports.length > 1 ? (language === "th" ? ` (${place.reports.length} รายงาน)` : ` (${place.reports.length} reports)`) : "";
+  const count = place.reports.length > 1 ? (language === "th" ? ` (${place.reports.length} รายการ)` : ` (${place.reports.length} place records)`) : "";
   return `${pick(REPORTED_DEPTH_COPY.marker, language)}: ${names}${count}`;
 }

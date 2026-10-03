@@ -8,7 +8,7 @@
   "required": [
     "dataset", "dataset_th", "schema_id", "compiled", "compiled_by", "status", "status_th", "source_timestamp", "confidence",
     "confidence_reason", "use_rule", "licence_note", "copyright_rule", "location_rule", "time_rule", "depth_rule", "assumptions",
-    "depth_classes", "reports", "left_out"
+    "assumptions_th", "depth_classes", "reports", "left_out"
   ],
   "properties": {
     "dataset": { "$ref": "#/$defs/text" },
@@ -32,6 +32,10 @@
     "time_rule": { "$ref": "#/$defs/text" },
     "depth_rule": { "$ref": "#/$defs/text" },
     "assumptions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/text" } },
+    "assumptions_th": {
+      "description": "The assumptions in Thai, one per English assumption and in the same order (the page shows them in both languages).",
+      "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/thai" }
+    },
     "depth_classes": {
       "type": "array",
       "minItems": 1,
@@ -91,11 +95,15 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "id", "place", "tambon", "tambon_note", "point", "location_confidence", "location_tolerance_m", "location_basis", "depth",
+        "id", "statement_id", "place", "tambon", "tambon_note", "point", "location_confidence", "location_tolerance_m", "location_basis", "depth",
         "source_kind", "time", "event_date_basis", "source", "checker_corrections"
       ],
       "properties": {
         "id": { "type": "string", "pattern": "^ms-c2-\\d{2}$" },
+        "statement_id": {
+          "description": "The statement this place record comes from: the id of the first record of that statement. A statement that names several communities is recorded once per community, and those records share it; any other record carries its own id.",
+          "type": "string", "pattern": "^ms-c2-\\d{2}$"
+        },
         "place": { "$ref": "#/$defs/localized" },
         "tambon": { "$ref": "#/$defs/localized" },
         "tambon_note": { "type": ["string", "null"], "minLength": 1 },

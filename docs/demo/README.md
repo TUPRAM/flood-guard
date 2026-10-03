@@ -40,6 +40,8 @@ Roadmap item P4-1 (demo readiness). The replay is a historical reconstruction fo
 | 42.5 s | Sun 15 Sep 2024 · 14:00 ICT, receding: the 15 Sep Sentinel-2 image with brown mud, 19.6 km² flooded in the model |
 | 72 s | The end card: "End of the replay: Thu 19 Sep 2024 · 23:00 ICT" and the modelled peak |
 
+**Not re-recorded on 3 Oct 2026, 17:47 ICT.** r4 was baked again then (`generated_at` 2026-10-03T17:47:00+07:00) for the review fixes: the reported-depth counts by place record and by statement, their likely causes, and the dated 22 Oct line. The video's frames draw neither the reported depths nor the Sources panel nor the generation time, and the water, roads, shelters, captions and credits it draws come from files that did not change in that bake, so the recording above still shows this revision. Re-record it if a later bake changes anything the export draws.
+
 **Re-record it** after any re-bake, and once more after the numbers freeze on 23 Oct, from a fresh `pnpm build:web`:
 
 ```powershell

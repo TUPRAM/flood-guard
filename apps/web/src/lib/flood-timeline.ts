@@ -681,11 +681,17 @@ export interface S2Crosscheck {
   sensitivity: S2CrosscheckSensitivity[];
 }
 
-/** Outcome of the consistency check of one reported depth with the model (never a validation). */
-export type ReportedDepthStatus = "consistent" | "model_shallower" | "model_dry" | "not_comparable";
+/**
+ * Outcome of the consistency check of one reported depth with the model (never a validation). "consistent" and
+ * "model_shallower" compare a number with its lower bound; "model_wet" is a storey or body reference where the model has
+ * water, whose depth is not compared, so it is never counted as consistent.
+ */
+export type ReportedDepthStatus = "consistent" | "model_shallower" | "model_wet" | "model_dry" | "not_comparable";
 export type ReportedDepthTally = Record<ReportedDepthStatus, number>;
-/** Reports per outcome: numbers (lower bounds and ranges), storey or body references, and both together. */
+/** Place records per outcome: numbers (lower bounds and ranges), storey or body references, and both together. */
 export type ReportedDepthCounts = Record<"numeric" | "qualitative" | "all", ReportedDepthTally>;
+/** Outcomes with each statement counted once; "mixed" is a statement whose places have different outcomes. */
+export type ReportedDepthStatementTally = ReportedDepthTally & { mixed: number };
 
 /** Model values read at a report's point over the report's time window (T1 scenario values, not part of the report). */
 export interface ReportedDepthModel {
@@ -706,9 +712,14 @@ export interface ReportedDepthModel {
   max_within_tolerance_m: number;
 }
 
-/** One news report of a depth at a named place: paraphrased and cited; reported (anecdotal, not surveyed). */
+/**
+ * One place record: a news statement of a depth at a named place, paraphrased and cited; reported (anecdotal, not
+ * surveyed). A statement that names several communities is recorded once per community; those records share a statement.
+ */
 export interface ReportedDepthReport {
   id: string;
+  /** The statement this record comes from: the id of its first record (its own id when the statement names one place). */
+  statement_id: string;
   place: Localized;
   tambon: Localized;
   /** Present only at medium or high location confidence. */
@@ -748,13 +759,21 @@ export interface ReportedDepths {
   compiled: string;
   data_file: { path: string; sha256: string };
   use_rule: Localized;
+  /** The data file's assumptions (the shared-statement rule among them), one Thai line per English line. */
+  assumptions: { en: string[]; th: string[] };
   comparison_rule: Localized;
   tolerance_rule: Localized;
   peak_stage_m: number;
   depth_classes: { id: string; label: Localized }[];
+  /** How many place records, statements and news articles the reports hold. */
+  counted: { place_records: number; statements: number; articles: number };
   counts: ReportedDepthCounts;
   counts_within_tolerance: ReportedDepthCounts;
-  likely_causes: { id: string; text: Localized }[];
+  counts_by_statement: ReportedDepthStatementTally;
+  /** Every statement recorded at more than one place, with its place records and their outcomes in order. */
+  shared_statements: { statement_id: string; reports: string[]; outcomes: ReportedDepthStatus[] }[];
+  /** Likely causes of the misses; `figures` holds the counts the text states, taken from the reports at bake time. */
+  likely_causes: { id: string; text: Localized; figures?: Record<string, number | string | null> }[];
   model_fields: { paths: string[]; evidence_tier: string; note: string };
   left_out: { dropped: number; excluded: number };
   reports: ReportedDepthReport[];

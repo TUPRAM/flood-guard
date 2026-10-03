@@ -1229,8 +1229,16 @@ describe("The replay ends on 19 Sep 2024; the 22 Oct layer is a separate case (C
     expect(html.match(/data-testid="separate-case-o2"/g)).toHaveLength(1);
     expect(piece(html, "separate-case-o2", "p")).toBe(
       "22 Oct 2024 · UNOSAT and GISTDA water layer of 22 Oct 2024 (product 4009). A separate observed case, O2, in the planning overlay. "
-      + "It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024; no 22 Oct data is in this replay. "
+      + "It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024; its layer (CHIANGRAI_20241022_FloodExtent) is not read. "
+      + "The season envelope, a scenario layer with its own toggle that accumulates water to 12 Oct, is the only layer here that includes water after 19 Sep. "
       + "https://unosat.org/products/4009");
+    // The season envelope is the one deliberate exemption from the date gate: dated to the product's window (to 22 Oct),
+    // on its own toggle, never a replay day or a slider position; the O2 line and its evidence block name it.
+    const envelope = manifest.season_envelope!;
+    expect([envelope.season_window, envelope.day_independent]).toEqual(["2024-08-01/2024-10-22", true]);
+    expect(manifest.layers.some((layer) => /envelope|4009/i.test(layer.id))).toBe(false);
+    expect(block.note).toContain("The one layer that reaches past it is the season envelope (season_window 2024-08-01/2024-10-22");
+    expect(block.note).toContain("CHIANGRAI_20241022_FloodExtent");
     // The internal decision number stays out of the copy, and the line is not repeated among the references to ingest.
     expect(text(html)).not.toContain("D3b");
     expect(text(html).split(reference.name)).toHaveLength(2);

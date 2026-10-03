@@ -4,7 +4,7 @@
  "schema_version": 2,
  "schema_id": "https://floodguard.th/contracts/case-replay-timeline.schema.json",
  "generated_by": "scripts/build_mae_sai_flood_timeline.py",
- "generated_at": "2026-10-03T15:07:00+07:00",
+ "generated_at": "2026-10-03T17:47:00+07:00",
  "generated_at_basis": "declared",
  "generated_at_note": "Declared with --generated-at when the revision was baked and recorded in the input receipt. It is not read from the machine clock, so --verify rebuilds the same bytes.",
  "git_commit": null,
@@ -372,7 +372,7 @@
     "external_references[unosat-4009-o2-20241022]"
    ],
    "source_timestamp": "2024-10-22 (the date UNOSAT and GISTDA give the layer)",
-   "note": "After the replay's last day (2024-09-19): no layer, observation or replay day is dated after it, and nothing of the 22 Oct layer is read, drawn or placed on the slider."
+   "note": "After the replay's last day (2024-09-19): no observation, replay day or slider entry is dated after it, and nothing of the 22 Oct layer (CHIANGRAI_20241022_FloodExtent) is read, drawn or placed on the slider. The one layer that reaches past it is the season envelope (season_window 2024-08-01/2024-10-22, accumulated to 12 Oct): a scenario layer with its own toggle and no replay day."
   },
   {
    "id": "export_pack",
@@ -773,8 +773,8 @@
   {
    "root": "repo",
    "path": "outputs/mae_sai_reported_depths_2024.json",
-   "bytes": 61750,
-   "sha256": "96f064023d520491ed9eb0b3bdeb6c0cbb3aaf47c544cef9a951c6d141653f99"
+   "bytes": 64226,
+   "sha256": "3b0fa63348d29433449f974760d5ec774100499e52f989dce77ffc42ce524bf3"
   },
   {
    "root": "repo",
@@ -10287,7 +10287,7 @@
     "id": "shelter_plan_reported_2024",
     "name": "shelter_plan_reported_2024.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_reported_2024.csv",
-    "sha256": "351ae7a92b8e520c5dd1a09e33aaf29180156db25bc957ab9f638687c08ca6f3",
+    "sha256": "baccab26efd83583efed97203557055a3e6246323a6b354e4de58bac3b871d94",
     "bytes": 28398,
     "media_type": "text/csv",
     "title": {
@@ -10311,7 +10311,7 @@
     "id": "shelter_plan_k",
     "name": "shelter_plan_k.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_k.csv",
-    "sha256": "42d04e7271f93488f309d163c5b18a8a8c612e74d9f2a99a2b4ea91d23ddc830",
+    "sha256": "8fc514d185351607c37ff3fc795ddab0789bf4eb6b348c19cb808323e5ed313a",
     "bytes": 13604,
     "media_type": "text/csv",
     "title": {
@@ -10334,7 +10334,7 @@
     "id": "shelter_plan_capacitated",
     "name": "shelter_plan_capacitated.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_plan_capacitated.csv",
-    "sha256": "96df9ce41c66fec0ae9789729a693d0df4f3b036d42ab745d4224e5fee22894d",
+    "sha256": "3b815f3b08ec92db8f6fd845bd3ce553301a6367e164495ee665b3b596d42c86",
     "bytes": 19081,
     "media_type": "text/csv",
     "title": {
@@ -10357,7 +10357,7 @@
     "id": "shelter_sites",
     "name": "shelter_sites.geojson",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_sites.geojson",
-    "sha256": "a0fd2ec1eab5cbd967c0ee3bfa6ec71db399078290fb200a051dda46726c5529",
+    "sha256": "e09dcecbc041fd946b626b48190d0c9911b80e36250e4b999c5a28775b7e7b12",
     "bytes": 99373,
     "media_type": "application/geo+json",
     "title": {
@@ -10381,7 +10381,7 @@
     "id": "modelled_road_inundation_by_hour",
     "name": "modelled_road_inundation_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_road_inundation_by_hour.csv",
-    "sha256": "08d39aca6f90d85f325eecaba18ce49593000ada4e6c1180621c6ea302261b9c",
+    "sha256": "a899fc24c87ec4100a56f54bea9b61e1c2a23fe20cfb045fb259dc9c051d50f4",
     "bytes": 346104,
     "media_type": "text/csv",
     "title": {
@@ -10404,7 +10404,7 @@
     "id": "modelled_access_loss_by_hour",
     "name": "modelled_access_loss_by_hour.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/modelled_access_loss_by_hour.csv",
-    "sha256": "7b6224d5f99a4509c12dd7215f73b22002952f7485a8972cf09fdf9966b64939",
+    "sha256": "b319c639934c37ce18a0d2a2dfdb0efa0c76143509f2de4a77a8ab11e40fffec",
     "bytes": 241197,
     "media_type": "text/csv",
     "title": {
@@ -10429,7 +10429,7 @@
     "id": "shelter_candidate_verification_sheet",
     "name": "shelter_candidate_verification_sheet.csv",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/shelter_candidate_verification_sheet.csv",
-    "sha256": "554e7c9590da3e37af067e139735b12220e8f6c573c851d0c2923db7d55c4e6f",
+    "sha256": "86af04b69f3a24af1ec72b9d40416c31aa23dc14d5d008fc3fa55290023a5258",
     "bytes": 31025,
     "media_type": "text/csv",
     "title": {
@@ -10451,7 +10451,7 @@
     "id": "tambon_replay_summary",
     "name": "tambon_replay_summary.json",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/tambon_replay_summary.json",
-    "sha256": "435731d1833720caba02ad425afd1d882c259b5d56236a85f9e73ee5bb9f4796",
+    "sha256": "c055b0d7a282e99d6f002e6a216764f0f4335d02d6941bde040416c3f0f4ede2",
     "bytes": 99614,
     "media_type": "application/json",
     "title": {
@@ -10475,7 +10475,7 @@
     "id": "readme_licences",
     "name": "README_licences.txt",
     "href": "/studies/mae-sai-2024-timeline/r4/exports/README_licences.txt",
-    "sha256": "b12e0016cfa7782f86a8c101148133a2c1b0b581a525237561b53a5057b07029",
+    "sha256": "c65eeae69acd88fafa0bb48d00a6e4a834938e5367a4f491cdd80494874e9300",
     "bytes": 27979,
     "media_type": "text/plain",
     "title": {
@@ -10539,7 +10539,7 @@
    "scope": "Mae Sai district",
    "statistics": {
     "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.json",
-    "sha256": "71d5223c89fe310f2332680852c82421a90fd75fcfade71784d1caeb84ca13fb",
+    "sha256": "1fa010ce04b4cb699be9c73f26e624bbb7c9c061165415433460593941d59d92",
     "bytes": 16008
    },
    "use": "Plausibility against a season envelope, not a validation. The envelope also holds August and early-October water and the modelled peak is illustrative, so the figures say where the two differ, not which one is right.",
@@ -10588,7 +10588,7 @@
    },
    "statistics": {
     "href": "/studies/mae-sai-2024-timeline/r4/unosat4009/envelope.json",
-    "sha256": "71d5223c89fe310f2332680852c82421a90fd75fcfade71784d1caeb84ca13fb",
+    "sha256": "1fa010ce04b4cb699be9c73f26e624bbb7c9c061165415433460593941d59d92",
     "bytes": 16008
    },
    "licence": {
@@ -10937,15 +10937,29 @@
   "compiled": "2026-10-03",
   "data_file": {
    "path": "outputs/mae_sai_reported_depths_2024.json",
-   "sha256": "96f064023d520491ed9eb0b3bdeb6c0cbb3aaf47c544cef9a951c6d141653f99"
+   "sha256": "3b0fa63348d29433449f974760d5ec774100499e52f989dce77ffc42ce524bf3"
   },
   "use_rule": {
    "en": "A consistency check of anecdotal reports, never a validation: the reports were not surveyed and the model is illustrative. The reports are never used to tune the model: no keyframe, depth-factor or terrain change may be set from them.",
    "th": "เป็นการตรวจความสอดคล้องกับรายงานที่เป็นคำบอกเล่า ไม่ใช่การยืนยันความถูกต้อง: รายงานไม่ได้ผ่านการสำรวจ และแบบจำลองใช้ค่าเพื่อการอธิบาย รายงานเหล่านี้ไม่ถูกนำไปใช้ปรับแบบจำลองเลย จะไม่มีการกำหนดจุดระดับน้ำ ตัวคูณความลึก หรือภูมิประเทศจากรายงานเหล่านี้"
   },
+  "assumptions": {
+   "en": [
+    "The depths are what reporters and residents said, not measurements; none was surveyed or checked on the ground.",
+    "A statement that names several communities is recorded once per community, with the same depth, time and source and a note that it is shared. Counts are given per place record and, separately, once per statement.",
+    "Community and street points are centroids of mapped streets or a nearby landmark; the reported spot may lie up to the record's location tolerance away.",
+    "Reports of other floods (August and early October 2024, 2025, 2022) and of places outside Mae Sai district are left out."
+   ],
+   "th": [
+    "ความลึกเป็นคำบอกเล่าของผู้สื่อข่าวและผู้อยู่อาศัย ไม่ใช่ค่าที่วัดได้ ไม่มีรายการใดได้รับการสำรวจหรือตรวจดูในพื้นที่",
+    "ข้อความที่กล่าวถึงหลายชุมชนบันทึกแยกเป็นหนึ่งรายการต่อหนึ่งชุมชน โดยใช้ความลึก เวลา และแหล่งข่าวเดียวกัน พร้อมหมายเหตุว่าเป็นข้อความร่วม ตัวเลขสรุปนับแบบรายรายการตามสถานที่ และแยกนับแบบหนึ่งครั้งต่อหนึ่งข้อความ",
+    "จุดของชุมชนและถนนคือจุดกึ่งกลางของถนนในแผนที่หรือสถานที่สำคัญใกล้เคียง จุดที่รายงานอาจห่างออกไปได้ถึงระยะคลาดเคลื่อนของตำแหน่งของรายการนั้น",
+    "ไม่นับรายงานน้ำท่วมครั้งอื่น (สิงหาคมและต้นตุลาคม 2567 (2024), ปี 2568 (2025) และปี 2565 (2022)) และรายงานของสถานที่นอกอำเภอแม่สาย"
+   ]
+  },
   "comparison_rule": {
-   "en": "For each report with a point, the model is read at that point over the report's time window, on the replay's 10 m grid and hourly stage curve, and the deepest modelled water in the window is kept. A number is compared with its lower bound (consistent when the model reaches it, model shallower when it is wet but shallower); a storey or body reference is compared only as wet or dry. A point on the mapped river channel is read at the nearest cell outside it. A report without a point or a window is not comparable.",
-   "th": "รายงานที่มีตำแหน่งจะอ่านค่าจากแบบจำลอง ณ จุดนั้นตลอดช่วงเวลาของรายงาน บนตารางกริด 10 ม. และเส้นระดับน้ำรายชั่วโมงของการย้อนดู แล้วเก็บความลึกมากที่สุดในช่วงนั้น ค่าที่เป็นตัวเลขเทียบกับค่าขั้นต่ำที่รายงาน (สอดคล้องเมื่อแบบจำลองลึกถึงค่านั้น แบบจำลองตื้นกว่าเมื่อมีน้ำแต่ตื้นกว่า) ส่วนการอ้างอิงชั้นของอาคารหรือระดับร่างกายเทียบเพียงว่ามีน้ำหรือแห้ง จุดที่ตกบนร่องน้ำของแม่น้ำในแผนที่จะอ่านจากช่องที่ใกล้ที่สุดนอกร่องน้ำ รายงานที่ไม่มีตำแหน่งหรือไม่มีช่วงเวลาเทียบไม่ได้"
+   "en": "For each report with a point, the model is read at that point over the report's time window, on the replay's 10 m grid and hourly stage curve, and the deepest modelled water in the window is kept. A number is compared with its lower bound (consistent when the model reaches it, model shallower when it is wet but shallower); a storey or body reference is compared only as wet or dry (model wet or model dry), so its depth is never compared and it is never counted as consistent. A point on the mapped river channel is read at the nearest cell outside it. A report without a point or a window is not comparable.",
+   "th": "รายงานที่มีตำแหน่งจะอ่านค่าจากแบบจำลอง ณ จุดนั้นตลอดช่วงเวลาของรายงาน บนตารางกริด 10 ม. และเส้นระดับน้ำรายชั่วโมงของการย้อนดู แล้วเก็บความลึกมากที่สุดในช่วงนั้น ค่าที่เป็นตัวเลขเทียบกับค่าขั้นต่ำที่รายงาน (สอดคล้องเมื่อแบบจำลองลึกถึงค่านั้น แบบจำลองตื้นกว่าเมื่อมีน้ำแต่ตื้นกว่า) ส่วนการอ้างอิงชั้นของอาคารหรือระดับร่างกายเทียบเพียงว่ามีน้ำหรือแห้ง (แบบจำลองมีน้ำหรือแบบจำลองแห้ง) จึงไม่ได้เทียบความลึกและไม่นับเป็นสอดคล้อง จุดที่ตกบนร่องน้ำของแม่น้ำในแผนที่จะอ่านจากช่องที่ใกล้ที่สุดนอกร่องน้ำ รายงานที่ไม่มีตำแหน่งหรือไม่มีช่วงเวลาเทียบไม่ได้"
   },
   "tolerance_rule": {
    "en": "Sensitivity, not part of the counts above: the same check with the deepest out-of-channel cell within each report's location tolerance instead of its point, since a community or street point can lie a few hundred metres from the reported spot.",
@@ -11010,22 +11024,30 @@
     }
    }
   ],
+  "counted": {
+   "place_records": 21,
+   "statements": 17,
+   "articles": 14
+  },
   "counts": {
    "numeric": {
     "consistent": 1,
     "model_shallower": 0,
+    "model_wet": 0,
     "model_dry": 6,
     "not_comparable": 5
    },
    "qualitative": {
-    "consistent": 2,
+    "consistent": 0,
     "model_shallower": 0,
+    "model_wet": 2,
     "model_dry": 3,
     "not_comparable": 4
    },
    "all": {
-    "consistent": 3,
+    "consistent": 1,
     "model_shallower": 0,
+    "model_wet": 2,
     "model_dry": 9,
     "not_comparable": 9
    }
@@ -11034,35 +11056,89 @@
    "numeric": {
     "consistent": 2,
     "model_shallower": 3,
+    "model_wet": 0,
     "model_dry": 2,
     "not_comparable": 5
    },
    "qualitative": {
-    "consistent": 4,
+    "consistent": 0,
     "model_shallower": 0,
+    "model_wet": 4,
     "model_dry": 1,
     "not_comparable": 4
    },
    "all": {
-    "consistent": 6,
+    "consistent": 2,
     "model_shallower": 3,
+    "model_wet": 4,
     "model_dry": 3,
     "not_comparable": 9
    }
   },
+  "counts_by_statement": {
+   "consistent": 0,
+   "model_shallower": 0,
+   "model_wet": 2,
+   "model_dry": 6,
+   "not_comparable": 8,
+   "mixed": 1
+  },
+  "shared_statements": [
+   {
+    "statement_id": "ms-c2-07",
+    "reports": [
+     "ms-c2-07",
+     "ms-c2-08",
+     "ms-c2-09"
+    ],
+    "outcomes": [
+     "model_dry",
+     "model_dry",
+     "model_dry"
+    ]
+   },
+   {
+    "statement_id": "ms-c2-14",
+    "reports": [
+     "ms-c2-14",
+     "ms-c2-15",
+     "ms-c2-16"
+    ],
+    "outcomes": [
+     "model_dry",
+     "consistent",
+     "not_comparable"
+    ]
+   }
+  ],
   "likely_causes": [
    {
     "id": "timing",
+    "figures": {
+     "located_numbers": 7,
+     "located_numbers_before_rise": 5,
+     "located_references": 5,
+     "located_references_before_rise": 1,
+     "before_rise_model_dry": 6,
+     "before_rise_last_window_end": "2024-09-10T13:00:00+07:00",
+     "early_stage_m": 0.1,
+     "early_stage_until": "2024-09-10T18:15:00+07:00"
+    },
     "text": {
-     "en": "Timing: most numbers describe the morning and midday of 10 Sep. The model's assumed river level stays at or below 0.1 m until 10 Sep 18:15, the level set to GISTDA's district-wide area figure for that evening, and rises mainly overnight, so riverside streets are dry in the model at those hours even where it floods them later.",
-     "th": "เวลา: ตัวเลขส่วนใหญ่บรรยายช่วงเช้าและเที่ยงของวันที่ 10 ก.ย. ระดับน้ำสมมุติของแบบจำลองไม่เกิน 0.1 ม. จนถึง 10 ก.ย. เวลา 18:15 น. ซึ่งเป็นระดับที่ตั้งตามตัวเลขพื้นที่น้ำท่วมทั้งอำเภอของ GISTDA ในเย็นวันนั้น และสูงขึ้นส่วนใหญ่ในช่วงกลางคืน ถนนริมน้ำในแบบจำลองจึงยังแห้งในชั่วโมงเหล่านั้น แม้จะมีน้ำท่วมในภายหลัง"
+     "en": "Timing: 5 of the 7 located numbers and 1 of the 5 located storey or body references have a time window that ends by 10 Sep 13:00 ICT. The model's assumed river level stays at or below 0.1 m until 10 Sep 18:15 ICT, the level set to GISTDA's district-wide area figure for that evening, and rises mainly overnight, so riverside streets are dry in the model at those hours even where it floods them later; all 6 of these read dry.",
+     "th": "เวลา: ตัวเลขที่มีตำแหน่ง 5 จาก 7 รายการ และการอ้างอิงชั้นอาคารหรือระดับร่างกายที่มีตำแหน่ง 1 จาก 5 รายการ มีช่วงเวลาที่สิ้นสุดไม่เกิน 10 ก.ย. 13:00 น. ระดับน้ำสมมุติของแบบจำลองไม่เกิน 0.1 ม. จนถึง 10 ก.ย. 18:15 น. ซึ่งเป็นระดับที่ตั้งตามตัวเลขพื้นที่น้ำท่วมทั้งอำเภอของ GISTDA ในเย็นวันนั้น และสูงขึ้นส่วนใหญ่ในช่วงกลางคืน ถนนริมน้ำในแบบจำลองจึงยังแห้งในชั่วโมงเหล่านั้น แม้จะมีน้ำท่วมในภายหลัง แบบจำลองแห้งที่ทั้ง 6 รายการนี้"
     }
    },
    {
     "id": "surface_model",
+    "figures": {
+     "points": 9,
+     "points_raised": 3,
+     "points_above_encoded_range": 2
+    },
     "text": {
-     "en": "Town ground: the 30 m surface model includes buildings and trees, so it raises the ground of the market and the riverside lanes; some report points sit several metres above the channel in the model, and one sits above the highest level the model encodes.",
-     "th": "ระดับพื้นในเมือง: แบบจำลองพื้นผิวความละเอียด 30 ม. รวมอาคารและต้นไม้ไว้ด้วย จึงทำให้พื้นของตลาดและซอยริมน้ำสูงขึ้น บางจุดของรายงานอยู่สูงกว่าร่องน้ำหลายเมตรในแบบจำลอง และมีจุดหนึ่งอยู่สูงกว่าระดับสูงสุดที่แบบจำลองบันทึกไว้"
+     "en": "Town ground: the 30 m surface model includes buildings and trees, so it raises the ground of the market and the riverside lanes; in the model 3 of the 9 report points sit 2 m or more above their channel, and 2 sit above the highest level the model encodes.",
+     "th": "ระดับพื้นในเมือง: แบบจำลองพื้นผิวความละเอียด 30 ม. รวมอาคารและต้นไม้ไว้ด้วย จึงทำให้พื้นของตลาดและซอยริมน้ำสูงขึ้น ในแบบจำลอง จุดของรายงาน 3 จาก 9 จุดอยู่สูงจากร่องน้ำตั้งแต่ 2 ม. ขึ้นไป และ 2 จุดอยู่สูงกว่าระดับสูงสุดที่แบบจำลองบันทึกไว้"
     }
    },
    {
@@ -11074,9 +11150,13 @@
    },
    {
     "id": "location",
+    "figures": {
+     "shared_statements": 2,
+     "records_in_shared_statements": 6
+    },
     "text": {
-     "en": "Location: community points are the middle of mapped streets or a nearby landmark, and several statements cover a whole community (in places), so the reported spot can lie a few hundred metres from the point.",
-     "th": "ตำแหน่ง: จุดของชุมชนคือกึ่งกลางของถนนในแผนที่หรือสถานที่ใกล้เคียง และหลายข้อความกล่าวถึงทั้งชุมชน (บางจุด) จุดที่รายงานจึงอาจห่างจากจุดบนแผนที่หลายร้อยเมตร"
+     "en": "Location: community points are the middle of mapped streets or a nearby landmark, and several statements cover a whole community (in places), so the reported spot can lie a few hundred metres from the point. 2 statements each name several communities and are recorded once per community (6 place records), so one statement can read differently at its places.",
+     "th": "ตำแหน่ง: จุดของชุมชนคือกึ่งกลางของถนนในแผนที่หรือสถานที่ใกล้เคียง และหลายข้อความกล่าวถึงทั้งชุมชน (บางจุด) จุดที่รายงานจึงอาจห่างจากจุดบนแผนที่หลายร้อยเมตร มี 2 ข้อความที่กล่าวถึงหลายชุมชนและบันทึกแยกหนึ่งรายการต่อหนึ่งชุมชน (6 รายการตามสถานที่) ข้อความเดียวจึงอาจให้ผลต่างกันในแต่ละสถานที่"
     }
    }
   ],
@@ -11094,6 +11174,7 @@
   "reports": [
    {
     "id": "ms-c2-01",
+    "statement_id": "ms-c2-01",
     "place": {
      "en": "Sai Lom Joy border market",
      "th": "ตลาดสายลมจอย"
@@ -11150,6 +11231,7 @@
    },
    {
     "id": "ms-c2-02",
+    "statement_id": "ms-c2-02",
     "place": {
      "en": "Sai Lom Joy border market (Mae Sai trading area)",
      "th": "ตลาดสายลมจอย ย่านการค้าในเมืองแม่สาย"
@@ -11206,6 +11288,7 @@
    },
    {
     "id": "ms-c2-04",
+    "statement_id": "ms-c2-04",
     "place": {
      "en": "Sai Lom Joy market (a building in the market)",
      "th": "ตลาดสายลมจอย (อาคารหนึ่งในตลาด)"
@@ -11249,6 +11332,7 @@
    },
    {
     "id": "ms-c2-06",
+    "statement_id": "ms-c2-06",
     "place": {
      "en": "Hua Fai community (where the Sai River enters Mae Sai town)",
      "th": "ชุมชนหัวฝาย (บ้านหัวฝาย)"
@@ -11292,6 +11376,7 @@
    },
    {
     "id": "ms-c2-07",
+    "statement_id": "ms-c2-07",
     "place": {
      "en": "Ko Sai community",
      "th": "ชุมชนเกาะทราย (บ้านเกาะทราย หมู่ 7)"
@@ -11348,6 +11433,7 @@
    },
    {
     "id": "ms-c2-08",
+    "statement_id": "ms-c2-07",
     "place": {
      "en": "Mai Lung Khon community",
      "th": "ชุมชนไม้ลุงขน (บ้านไม้ลุงขน หมู่ 10)"
@@ -11404,6 +11490,7 @@
    },
    {
     "id": "ms-c2-09",
+    "statement_id": "ms-c2-07",
     "place": {
      "en": "Mueang Daeng community",
      "th": "ชุมชนเหมืองแดง (หมู่ 2)"
@@ -11460,6 +11547,7 @@
    },
    {
     "id": "ms-c2-10",
+    "statement_id": "ms-c2-10",
     "place": {
      "en": "Ko Sai, Soi 4/1",
      "th": "เกาะทราย ซอย 4/1"
@@ -11503,6 +11591,7 @@
    },
    {
     "id": "ms-c2-11",
+    "statement_id": "ms-c2-11",
     "place": {
      "en": "Ko Sai, Soi 14",
      "th": "เกาะทราย ซอย 14"
@@ -11546,6 +11635,7 @@
    },
    {
     "id": "ms-c2-12",
+    "statement_id": "ms-c2-12",
     "place": {
      "en": "Mueang Daeng, Soi 2 (end of the soi)",
      "th": "เหมืองแดง ซอย 2 (สุดซอย)"
@@ -11602,6 +11692,7 @@
    },
    {
     "id": "ms-c2-13",
+    "statement_id": "ms-c2-13",
     "place": {
      "en": "Mai Lung Khon market, Soi 5",
      "th": "ตลาดไม้ลุงขน ซอย 5"
@@ -11645,6 +11736,7 @@
    },
    {
     "id": "ms-c2-14",
+    "statement_id": "ms-c2-14",
     "place": {
      "en": "Mai Lung Khon market community",
      "th": "ชุมชนตลาดไม้ลุงขน"
@@ -11701,6 +11793,7 @@
    },
    {
     "id": "ms-c2-15",
+    "statement_id": "ms-c2-14",
     "place": {
      "en": "Mueang Daeng community",
      "th": "ชุมชนเหมืองแดง"
@@ -11757,6 +11850,7 @@
    },
    {
     "id": "ms-c2-16",
+    "statement_id": "ms-c2-14",
     "place": {
      "en": "Pha Mak Khwai community",
      "th": "ชุมชนผามควาย (บ้านผามควาย)"
@@ -11800,6 +11894,7 @@
    },
    {
     "id": "ms-c2-17",
+    "statement_id": "ms-c2-17",
     "place": {
      "en": "Seven riverside communities: Sai Lom Joy, Hua Fai, Pha Mak Khwai, Mai Lung Khon, Ko Sai, Mueang Daeng, Mueang Daeng Tai",
      "th": "ชุมชนริมน้ำ 7 แห่ง: สายลมจอย หัวฝาย ผามควาย ไม้ลุงขน เกาะทราย เหมืองแดง เหมืองแดงใต้"
@@ -11843,6 +11938,7 @@
    },
    {
     "id": "ms-c2-18",
+    "statement_id": "ms-c2-18",
     "place": {
      "en": "Ban Mueang Daeng School (teachers' housing)",
      "th": "โรงเรียนบ้านเหมืองแดง (บ้านพักครู)"
@@ -11895,10 +11991,11 @@
      "max_within_tolerance_m": 2.26
     },
     "consistency": "model_dry",
-    "consistency_within_tolerance": "consistent"
+    "consistency_within_tolerance": "model_wet"
    },
    {
     "id": "ms-c2-19",
+    "statement_id": "ms-c2-19",
     "place": {
      "en": "Mueang Daeng Road, Soi 4 and Soi 6",
      "th": "ถนนเหมืองแดง ซอย 4 และซอย 6"
@@ -11950,11 +12047,12 @@
      "first_wet": "2024-09-10T23:00:00+07:00",
      "max_within_tolerance_m": 3.2
     },
-    "consistency": "consistent",
-    "consistency_within_tolerance": "consistent"
+    "consistency": "model_wet",
+    "consistency_within_tolerance": "model_wet"
    },
    {
     "id": "ms-c2-20",
+    "statement_id": "ms-c2-20",
     "place": {
      "en": "Ban Tham Pha Chom",
      "th": "บ้านถ้ำผาจม (ชุมชนถ้ำผาจม หมู่ 1)"
@@ -12007,10 +12105,11 @@
      "max_within_tolerance_m": 3.14
     },
     "consistency": "model_dry",
-    "consistency_within_tolerance": "consistent"
+    "consistency_within_tolerance": "model_wet"
    },
    {
     "id": "ms-c2-22",
+    "statement_id": "ms-c2-22",
     "place": {
      "en": "Piyaphon village (off Mueang Daeng Road)",
      "th": "หมู่บ้านปิยะพร ถนนเหมืองแดง"
@@ -12062,11 +12161,12 @@
      "first_wet": "2024-09-10T22:00:00+07:00",
      "max_within_tolerance_m": 1.83
     },
-    "consistency": "consistent",
-    "consistency_within_tolerance": "consistent"
+    "consistency": "model_wet",
+    "consistency_within_tolerance": "model_wet"
    },
    {
     "id": "ms-c2-23",
+    "statement_id": "ms-c2-23",
     "place": {
      "en": "Mae Sai town (unspecified spots)",
      "th": "ตัวเมืองแม่สาย (ไม่ระบุจุด)"
@@ -12110,6 +12210,7 @@
    },
    {
     "id": "ms-c2-24",
+    "statement_id": "ms-c2-24",
     "place": {
      "en": "Ban Ko Sai (moo 7), Ban Mueang Daeng (moo 2) and Ban Mai Lung Khon (moo 10)",
      "th": "บ้านเกาะทราย (หมู่ 7) บ้านเหมืองแดง (หมู่ 2) และบ้านไม้ลุงขน (หมู่ 10)"
@@ -12738,7 +12839,7 @@
    "dated": "2024-10-22",
    "name": "UNOSAT and GISTDA water layer of 22 Oct 2024 (product 4009)",
    "url": "https://unosat.org/products/4009",
-   "note": "A separate observed case, O2, in the planning overlay (decision D3b). It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024; no 22 Oct data is in this replay."
+   "note": "A separate observed case, O2, in the planning overlay (decision D3b). It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024; its layer (CHIANGRAI_20241022_FloodExtent) is not read. The season envelope, a scenario layer with its own toggle that accumulates water to 12 Oct, is the only layer here that includes water after 19 Sep."
   }
  ],
  "gauge_note": "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.",

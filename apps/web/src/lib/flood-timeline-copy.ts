@@ -359,8 +359,8 @@ export const KNOWN_THAI: Readonly<Record<string, string>> = {
   // A separate observed case of the planning overlay (roadmap C-3): one dated line, no map layer, no slider position.
   "UNOSAT and GISTDA water layer of 22 Oct 2024 (product 4009)":
     "ชั้นข้อมูลน้ำของ UNOSAT และ GISTDA ลงวันที่ 22 ต.ค. 2567 (2024) (ผลิตภัณฑ์ 4009)",
-  "A separate observed case, O2, in the planning overlay. It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024; no 22 Oct data is in this replay.":
-    "เป็นกรณีสังเกตการณ์แยกต่างหาก คือ O2 ในชั้นข้อมูลการวางแผน (planning overlay) ไม่แสดงบนแผนที่นี้และไม่มีตำแหน่งบนแถบเลื่อนเวลาของการย้อนดู ซึ่งสิ้นสุดวันที่ 19 ก.ย. 2567 (2024) และไม่มีข้อมูลของวันที่ 22 ต.ค. ในการย้อนดูนี้",
+  "A separate observed case, O2, in the planning overlay. It is not on this map and has no position on the replay slider, which ends on 19 Sep 2024; its layer (CHIANGRAI_20241022_FloodExtent) is not read. The season envelope, a scenario layer with its own toggle that accumulates water to 12 Oct, is the only layer here that includes water after 19 Sep.":
+    "เป็นกรณีสังเกตการณ์แยกต่างหาก คือ O2 ในชั้นข้อมูลการวางแผน (planning overlay) ไม่แสดงบนแผนที่นี้และไม่มีตำแหน่งบนแถบเลื่อนเวลาของการย้อนดู ซึ่งสิ้นสุดวันที่ 19 ก.ย. 2567 (2024) และไม่มีการอ่านชั้นข้อมูลของกรณีนี้ (CHIANGRAI_20241022_FloodExtent) ขอบเขตน้ำตลอดฤดู ซึ่งเป็นชั้นข้อมูลสถานการณ์จำลองที่มีปุ่มเปิดปิดของตนเองและสะสมน้ำถึงวันที่ 12 ต.ค. 2567 (2024) เป็นชั้นข้อมูลเดียวในหน้านี้ที่รวมน้ำหลังวันที่ 19 ก.ย.",
 };
 
 /** A manifest sentence in Thai when a translation is known, otherwise the English original marked as such (ids removed). */

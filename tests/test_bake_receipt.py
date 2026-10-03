@@ -752,6 +752,15 @@ def test_nothing_is_dated_after_the_replays_last_day() -> None:
     assert len(problems) == 7 and all("after the replay's last day (2024-09-19)" in problem for problem in problems)
     assert bake.O2_REFERENCE["dated"] == "2024-10-22" and bake.O2_REFERENCE["case"] == "O2"
     assert "not on this map" in bake.O2_REFERENCE["note"] and "no position on the replay slider" in bake.O2_REFERENCE["note"]
+    # The season envelope is the one deliberate exemption: dated to the product's window (to 22 Oct) on a toggle of its
+    # own, never a replay day. The gate skips it by design, and the O2 line says so rather than claiming no later data.
+    exempt = dict(manifest, season_envelope={"season_window": "2024-08-01/2024-10-22", "day_independent": True,
+                                             "files": {"raster": {"href": "/studies/x/r4/unosat4009/envelope.png"}}})
+    assert bake.dated_after_replay(exempt) == [] and not any(path.startswith("season_envelope") for path, _ in bake.replay_dates(exempt))
+    assert "season envelope" in (bake.dated_after_replay.__doc__ or "") and "exemption" in (bake.dated_after_replay.__doc__ or "")
+    note = bake.O2_REFERENCE["note"]
+    assert "CHIANGRAI_20241022_FloodExtent) is not read" in note and "only layer here that includes water after 19 Sep" in note
+    assert "no 22 Oct data" not in note
 
 
 def test_per_subdistrict_peak_figures_come_from_the_peak_day_and_the_drawn_road_pieces() -> None:

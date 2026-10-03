@@ -428,6 +428,10 @@ def test_reported_windows_are_placed_in_time_inside_the_replay() -> None:
     import importlib.util
     import sys
 
+    # The bake script imports the imaging stack at module level; CI's core job does not install it.
+    pytest.importorskip("PIL")
+    pytest.importorskip("rasterio")
+
     spec = importlib.util.spec_from_file_location("bake_for_dates", ROOT / "scripts" / "build_mae_sai_flood_timeline.py")
     sys.path.insert(0, str(ROOT / "scripts"))
     bake = importlib.util.module_from_spec(spec)

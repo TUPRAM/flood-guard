@@ -882,6 +882,9 @@ try {
     }
     await page.goto(`${baseUrl}${caseRoute}?t=84&lang=en`, { waitUntil: "networkidle" });
     await waterModel();
+    // Measure once the stage has stuck, as the checks with the layer do: on a slow runner the first scroll can land
+    // before the page has settled. A stage that is genuinely too tall never sticks, so the assertion below still fails.
+    await expect.poll(async () => (await stuckStage()).top, { message: `${width} x ${height}: the stage without the layer sticks under the header` }).toBe(12);
     const without = await stuckStage();
     assert(without.caption === 0 && without.map >= 360 && (height < 640 || without.over <= 0), `${width} x ${height}: without the layer the map keeps its usual height (${JSON.stringify(without)})`);
   }

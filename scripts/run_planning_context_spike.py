@@ -351,6 +351,39 @@ def _windows_working_set_bytes() -> tuple[int, int] | None:
     return int(counters.PeakWorkingSetSize), int(counters.WorkingSetSize)
 
 
+def peak_private_memory_gib() -> float | None:
+    """Return this process's peak committed private memory in GiB on Windows, or None elsewhere.
+
+    Windows trims working sets when memory is short, so a peak working set can
+    understate what a step needed. The peak of committed private bytes
+    (``PeakPagefileUsage``) is not trimmed; it is reported beside it.
+    """
+
+    if os.name != "nt":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    class Counters(ctypes.Structure):
+        _fields_ = [
+            ("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+            ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
+            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t), ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+            ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t),
+        ]
+
+    counters = Counters()
+    counters.cb = ctypes.sizeof(Counters)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    psapi = ctypes.WinDLL("psapi", use_last_error=True)
+    kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(Counters), wintypes.DWORD]
+    if not psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
+        return None
+    return int(counters.PeakPagefileUsage) / 1024 ** 3
+
+
 def peak_memory_gib() -> float | None:
     """Return this process's peak resident memory in GiB, or None when it cannot be read."""
 
@@ -896,6 +929,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     facilities = facility_counts(destinations, routing_context, args.dga_facilities, args.ddpm_shelters)
     # The figures of the E0 record are taken here, before the corroboration step below.
     peak = peak_memory_gib()
+    peak_private = peak_private_memory_gib()
 
     corroboration_seconds = None
     peak_after_corroboration = None
@@ -1153,6 +1187,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "after_context_build": _round(peak_after_build),
             "after_baseline_access_and_facility_counts": _round(peak),
             "after_shelter_corroboration": _round(peak_after_corroboration),
+        },
+        "peak_private_memory_gib": {
+            "at_the_e0_record": _round(peak_private),
+            "at_the_end": _round(peak_private_memory_gib()),
+            "note": "Peak committed private bytes of this Python process (Windows PeakPagefileUsage). Windows trims "
+                    "working sets when memory is short, so the peak working set (peak_ram_gib) can understate what "
+                    "the run needed; this figure is not trimmed. It also leaves out the ogr2ogr child processes.",
         },
         "context_build_memory": {
             "sampled_peak_gib": _round(build_memory.peak_gib),

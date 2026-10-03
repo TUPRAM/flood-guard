@@ -80,6 +80,8 @@ def test_spike_variants_and_helpers(spike) -> None:
     assert "every segment" in spike.ROUTE_RULES["whole_path"]
     peak = spike.peak_memory_gib()
     assert peak is None or peak > 0
+    private = spike.peak_private_memory_gib()
+    assert private is None or private > 0
     assert spike.encode({"a": "\u0e01"}) == b'{\n  "a": "\\u0e01"\n}\n'
 
 

@@ -2241,6 +2241,60 @@
               "closed"
             ]
           },
+          "owner_answer": {
+            "description": "An owner answer recorded in the decision log and written into some of the item's parameters before the rest of the item is produced. The item stays open until every parameter it names is filled; it then closes in one edit with a closure object. A test checks that every pointer listed here is one of the item's parameter_pointers and is filled, and that an owner-decision slot of an open item is filled only when it is listed here.",
+            "type": "object",
+            "required": [
+              "answered_on",
+              "answered_by",
+              "owner_choices",
+              "pointers_filled",
+              "answer",
+              "still_needed",
+              "evidence_sha256"
+            ],
+            "properties": {
+              "answered_on": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              "answered_by": {
+                "type": "string",
+                "minLength": 1
+              },
+              "owner_choices": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "pointers_filled": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^/"
+                }
+              },
+              "answer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "still_needed": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            },
+            "additionalProperties": false
+          },
           "closure": {
             "type": "object",
             "required": [

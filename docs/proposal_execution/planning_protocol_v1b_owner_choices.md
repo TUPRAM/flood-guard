@@ -2,7 +2,9 @@
 
 For Putu and Rachmania. Written by an AI coding agent on 3 October 2026, after decision-log entry R11 (v1b approved in principle; the agent closes the engineering items and writes one proposal for each owner choice). Corrected the same day after a review; what changed is listed at the end.
 
-**Nothing on this sheet is decided.** Each entry gives a question, the options, the option the agent recommends and why. A recommendation is not a decision. Tick an option or write your own. The agent then writes your answer into `planning_protocol_v1b.json`, quotes it in the item's closure, and closes the item.
+**Answered on 3 October 2026.** Putu and Rachmania approved all 23 choices exactly as recommended, including the readings DR-B01 to DR-B08 (decision log R12, relayed by Putu). The recommended box of every entry is ticked below, and each entry says where the answer was written. For the four outcome-aware entries (4, 6, 13 and 15) the owners gave no reason of their own; the protocol says so and quotes the recommendation's reason.
+
+**Every entry is now answered (R12).** Each entry gives a question, the options, the option the agent recommended and why, and the recorded answer. Until R12 nothing here was decided: a recommendation is not a decision. The agent wrote each answer into `planning_protocol_v1b.json`, quoted it in the item's closure, and closed every item that needed nothing else.
 
 **"Sensitive"** means the choice can change a class, a headline or a confidence level for a real tambon. No FPPS, class or ensemble has been computed under this protocol. For most entries nobody has seen which way the choice would move a result, so please answer them before anyone looks.
 
@@ -12,11 +14,12 @@ For Putu and Rachmania. Written by an AI coding agent on 3 October 2026, after d
 
 ## Where v1b stands
 
-- **Closed:** OI-11 (v1a hash). OI-08 was closed on 3 October and reopened the same day: its closure rested on two proposals of the drafting agent (entry 6).
-- **Engineering done, waiting on you:** the national anchors under four candidate rules (OI-08), the E0 spike (OI-01, OI-03, OI-04, counts of OI-06), the closure regression (OI-05) and the SE2-blind district (OI-09). Results are in section 6 of `planning_protocol_v1_signing.md`.
-- **Yours:** the 23 choices below. Choices 1 to 8 are the ones that matter most.
+- **Closed (14 of 18):** OI-02, OI-05, OI-07, OI-08, OI-09, OI-10, OI-11, OI-12, OI-13, OI-14, OI-15, OI-16, OI-17 and OI-18. Each closure names the owner choice it answers and R12. OI-08 holds rule A, copied from the anchors receipt. OI-09 holds the pf-07 frame and the SE2-blind units, which the agent built from the decided rules (entry 15).
+- **Open, with your part filled in (4):** OI-01 (demand area), OI-03 (hospital-count unit), OI-04 (grade-join tolerance) and OI-06 (main-road entry, shelter match distance). Each also needs the corridor of record: one run of the whole-path rule in a declared compute window, then the context build of record. Each lists what you answered under `owner_answer`.
+- **Readings DR-B01 to DR-B08:** approved as written in R12. The file keeps them `awaiting_owner_confirmation` while it is a draft; the signers mark them `confirmed` in the signing edit, after reading the closures.
+- **Still yours:** declare the compute window; Rachmania reviews the pf-07 build; read the closures; sign.
 
-| # | Item | Question | Recommended | Sensitive |
+| # | Item | Question | Recommended, and answered in R12 | Sensitive |
 |---|---|---|---|---|
 | 1 | OI-02 | Which roads make the corridor to the three hospitals? | Buffer the whole fastest path | Yes |
 | 2 | OI-15 | How many metres is "one pixel"? | 20 m everywhere | **Yes, high** |
@@ -72,7 +75,9 @@ The plan says "3 km corridor buffers along the trunk and primary routes" to the 
 - **Sensitive:** yes. It decides which hospitals are destinations and how large the road graph is. Mae Fa Luang is 42 modelled minutes from the edge of AOI-02, so it matters for "any route" and the 60-minute threshold more than for 30 minutes.
 - **In the draft:** a proposal, which is option A. The slot is empty.
 
-Your answer: ☐ A ☐ B as written above ☐ B with changes: ________ ☐ C ☐ other: ________
+Your answer: ☐ A ☒ B as written above ☐ B with changes: ________ ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** B as written, with its seven sub-rules. Written into `corridor_polygon.route_selection_rule.rule` and `.sub_rules`; OI-02 is closed.
 
 ## 2. How many metres is "one pixel"? (OI-15, Putu)
 
@@ -88,7 +93,9 @@ The flood-state axis grows and shrinks each flood input by one pixel. The plan g
 - **Sensitive: yes, high.** C4 asks whether exposure moves by more than 15 points between the grown and the shrunk input. If it does, the unit is low confidence and is forced to class E. A larger distance makes more units low.
 - **In the draft:** a proposal, which is option A.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________
+Your answer: ☒ A ☐ B ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** 20 m everywhere. Written into `ensemble_grid.core_axes[0].one_pixel_m`; OI-15 is closed.
 
 ## 3. Which cell is the reference for class retention? (OI-10, Putu with Rachmania)
 
@@ -104,7 +111,9 @@ A class is headlined only if at least 60% of the ensemble cells keep it. "Keep" 
 - **Sensitive: yes, high.** It decides whether a class is shown or replaced by "unstable: verify".
 - **In the draft:** a proposal, which is option A.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________
+Your answer: ☒ A ☐ B ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** The default cell. Written into `ensemble_grid.headline_rule.reference_cell`; OI-10 is closed (with entries 17 and 18).
 
 ## 4. Closure thresholds for the three road classes the plan leaves out (OI-05, Putu)
 
@@ -120,7 +129,9 @@ Under the central level a road closes when the flooded length reaches a threshol
 - **Sensitive: yes, high, and outcome-aware.** The v1a disclosure records that access gap and road criticality for the Mae Sai tambons were seen under four closure variants (EK-02) and that 20 m and 50 m rules were tried on Hat Yai (EK-13).
 - **In the draft:** a proposal, which is option A. The new `closure_rules.py` refuses to run the central level on these classes until you answer.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________
+Your answer: ☒ A ☐ B ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Motorway 50 m, residential 30 m, unclassified 30 m. Written into `closure_rule_v1.unassigned_road_classes.length_threshold_m`; OI-05 is closed (with entries 5 and 23). Your reason: none given. Because this choice is outcome-aware (EK-02, EK-13), the closure says that no reason was given and quotes the recommendation's reason.
 
 ## 5. Is an edge delayed under the strict level? (OI-05, Putu)
 
@@ -135,7 +146,9 @@ The plan says strict means "fraction ≥ 0.5 only", gives the delay formula for 
 - **Sensitive:** yes.
 - **In the draft:** a proposal, which is option A.
 
-Your answer: ☐ A ☐ B ☐ other: ________
+Your answer: ☒ A ☐ B ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Delayed with k = 2. Written into `closure_rule_v1.delay_under_strict.rule`.
 
 ## 6. National anchors: which units, and count each once or weight by residents? (OI-08, both)
 
@@ -163,7 +176,9 @@ Two questions, four combinations:
 - **In the draft:** the four rules are candidates. The slots for the values, the unit set and the percentile rule are empty. An earlier edit had filled them in as A and closed OI-08 (as reading DR-B09); that was undone after review, and DR-B09 no longer exists.
 - **After you answer:** for A, B, C or D the agent copies that rule's values from the receipt and closes OI-08 with your answer and your reason quoted. For any other rule the builder is changed and run again with `--replace --reason`, and the new receipt names the one it replaces.
 
-Your answer: ☐ A ☐ B ☐ C ☐ D ☐ other: ________   Reason: ________
+Your answer: ☒ A ☐ B ☐ C ☐ D ☐ other: ________   Reason: none given
+
+**Answered 3 Oct 2026 as recommended (R12).** Rule A. The agent copied rule A's values from the receipt (key `values`) into `national_vulnerability_anchors.values`, with the unit set, the percentile rule and the receipt, and closed OI-08. Your reason: none given. The closure and `national_vulnerability_anchors.owner_decision` say so, quote the recommendation's reason, and record that the choice is outcome-aware (EK-04, EK-B01) and must not be called blind.
 
 ## 7. How do DDPM shelters enter a vehicle-only ensemble? (OI-16, both)
 
@@ -178,7 +193,9 @@ The ensemble runs in vehicle mode. Two of its three facility levels add DDPM she
 - **Sensitive:** yes. A tambon can be headlined in the pitch overlay and "unstable" in the public one, or the reverse, because they count different cells.
 - **In the draft:** a proposal, which is option A.
 
-Your answer: ☐ A ☐ B ☐ other: ________
+Your answer: ☒ A ☐ B ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Written into `facility_sets.shelters_in_the_ensemble`; OI-16 is closed.
 
 ## 8. What is a "main-road entry"? (OI-06, Putu)
 
@@ -194,7 +211,9 @@ Main-road entry is one of the two public services (vehicle, 15 minutes). The pla
 - **Sensitive:** yes.
 - **In the draft:** a proposal, which is option A.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________
+Your answer: ☒ A ☐ B ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Written into `facility_sets.services.main_road_entry.definition`. OI-06 stays open for the facility counts of the corridor of record (`owner_answer` lists this answer and entry 19's).
 
 ## 9. Destinations for the critical-link ranking (OI-07, Putu; Rachmania reviews)
 
@@ -210,7 +229,9 @@ Links are ranked by how many residents' baseline routes use them. Routes to what
 - **Sensitive:** yes.
 - **In the draft:** a proposal, which is option A.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________
+Your answer: ☒ A ☐ B ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Written into `critical_link_selection.destination_set_for_ranking`; OI-07 is closed (with entry 10).
 
 ## 10. Fix the ranking before signing, or in the first run receipt? (OI-07, Putu)
 
@@ -224,7 +245,9 @@ Plan 6.3 wants links fixed before any scoring. Plan row G7b schedules the rankin
 - **Sensitive:** no, as long as the rule is fixed.
 - **In the draft:** both options are described; none is chosen.
 
-Your answer: ☐ A ☐ B
+Your answer: ☒ A ☐ B
+
+**Answered 3 Oct 2026 as recommended (R12).** Written into `critical_link_selection.ranking_output.binding` as `bound_in_first_run_receipt`.
 
 ## 11. Class rule v2: three definitions (OI-18, both)
 
@@ -251,7 +274,9 @@ Recommended: B. **No defensible value exists** in the plan or in any data the te
 
 - **Sensitive:** yes, for the v2 axis only.
 
-Your answers: (a) ☐ A ☐ B   (b) ☐ A ☐ B   (c) ☐ A ☐ B ☐ C   other: ________
+Your answers: (a) ☒ A ☐ B   (b) ☒ A ☐ B   (c) ☐ A ☒ B ☐ C   other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** (a) A, (b) A with the 100 tied to guardrail GR1, (c) B. Written into `class_rule_v2_inputs`; OI-18 is closed. The JRC flag still cannot be computed for the east of Mae Sai and for SE2 until downloads DL-1 and DL-2 are approved.
 
 ## 12. Formula for "2024-rescaled demand" (OI-13, both)
 
@@ -266,7 +291,9 @@ The population axis compares WorldPop 2020 with "2024-rescaled demand". The plan
 - **Sensitive:** yes. It changes exposure shares and every access denominator in half the cells.
 - **In the draft:** a proposal, which is option A.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________
+Your answer: ☒ A ☐ B ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Written into `ensemble_grid.core_axes[3].rescale_formula`; OI-13 is closed.
 
 ## 13. Terrain / remoteness proxy: definition and anchor (OI-12, both)
 
@@ -281,7 +308,9 @@ The proxy replaces age-based vulnerability in one sensitivity run on case O1 and
 - **Sensitive:** low. O1 rows are tier T2 and are forced to E unless a detector passes the skill bar. It decides what S8 shows. Outcome-aware for option B.
 - **In the draft:** the definition is proposed; no anchor is proposed.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________
+Your answer: ☒ A ☐ B ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** The code definition, no anchor. Written into `ensemble_grid.terrain_remoteness_proxy`; OI-12 is closed. Your reason: none given; the closure says so and quotes the recommendation's reason (outcome-aware for option B only).
 
 ## 14. Flood-state levels for three detectors, and the A6′ threshold (OI-14, Rachmania; Putu confirms)
 
@@ -301,7 +330,9 @@ The plan defines the three levels for M1-v2 and the legacy mask only. **None of 
 
 - **Sensitive:** moderate. O1 is forced to E unless a detector passes the skill bar; these levels move the ensemble spread, the would-be classes and the divergence matrix.
 
-Your answer: ☐ A ☐ B: ________
+Your answer: ☒ A ☐ B: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** All four proposals, as a default and nothing more. Written into `ensemble_grid.core_axes[0].t2_levels_by_input` and `a6_prime_extent_threshold`; OI-14 is closed. The status beside them still says that the numbers were made up and that Rachmania may amend them at signing.
 
 ## 15. The pf-07 frame and the SE2-blind tambons (OI-09, Rachmania)
 
@@ -321,27 +352,39 @@ Recommended: A. SE2 is already disclosed as chosen with the outcome in view. A l
 
 Recommended: B. It is the closest reading of the plan's plural that still gives more than one unit. It has no other basis.
 
-**Still needed from Rachmania, whatever you choose:** the frame file `resources/planning_frames/pf-07_mueang_chiang_rai.geojson`.
+**Still needed from Rachmania, whatever you choose:** the frame file `resources/planning_frames/pf-07_mueang_chiang_rai.geojson`. *(Overtaken by R12: with the rule decided, the agent built the file from the rule; Rachmania reviews it. See below.)*
 
 - **Sensitive:** yes for SE2 (which units can show a class). SE2-blind is blind by rule, not by ignorance: flooded shares for all 124 Chiang Rai tambons were seen in exploration (EK-09). That makes (a) and (c) outcome-aware.
 
-Your answers: (a) ☐ A ☐ B   (b) ☐ as recommended ☐ other: ________   (c) ☐ A ☐ B ☐ C ☐ D
+Your answers: (a) ☒ A ☐ B   (b) ☒ as recommended ☐ other: ________   (c) ☐ A ☒ B ☐ C ☐ D
+
+**Answered 3 Oct 2026 as recommended (R12).** Your reason: none given; the closure of OI-09 says so and quotes the recommendation's reasons for (a) and (c). What the agent then did (`scripts/build_planning_frames.py`, receipt `resources/planning_frames/planning_frames_v1_receipt.json`):
+
+- **(a) pf-07:** the 16 COD-AB tambons of Mueang Chiang Rai district (TH570101 to TH570121), written to `resources/planning_frames/pf-07_mueang_chiang_rai.geojson`, SHA-256 `2bdf946b6ff759f0950d4d7e0fcf9319cc42391db15a9af30a7ae87f417cf0ba`. A rebuild gives the same bytes.
+- **(b) Routing and hospitals:** the union buffered by 3 km and clipped to Thailand, about 2,422 km² (`pf-07_mueang_chiang_rai_routing.geojson`). Every OSM hospital inside it: 17 objects, 15 distinct named hospitals and 2 unnamed objects. The buffer reaches Mae Chan hospital in the next district, and some objects are small (health-promoting hospitals, a traditional-medicine clinic, a dental school). The rule takes them all; please say if any should leave the facility set.
+- **(c) The district office, checked:** OSM node 3840722494, named "ที่ว่าการอำเภอพาน" (Phan district office), tagged `office=administrative`, at 99.7405302 E, 19.5538862 N. It lies in **TH570513 (Mueang Phan)**, as the agent had expected. No object tagged `amenity=townhall` or `office=government` carries that name; the rule accepts any `office=*` tag. An area named "สำนักงานอำเภอพาน" (district office), tagged `landuse=commercial`, lies in the same tambon and corroborates it.
+- **SE2-blind units (rule B):** TH570513 and the five Phan tambons that share a boundary with it: TH570504 (Santi Suk), TH570506 (Hua Ngom), TH570508 (Pa Hung), TH570509 (Muang Kham) and TH570511 (San Klang). No tambon of another district touches it.
+- **Rachmania:** please review the frame, the routing geometry, the hospital list and the office lookup. OI-09 is closed on the build; a correction would be a re-run of the script and a new closure.
 
 ## 16. Scenario S5 (OI-17, Putu)
 
 S5 adds a temporary shelter at a pre-declared node in each tambon that is class A or B.
 
-**(a) When is the node list fixed?** ☐ **A. In the first run receipt, before any scoring** (recommended, for the same reason as entry 10) ☐ B. In v1b, after the E4 build.
+**(a) When is the node list fixed?** ☒ **A. In the first run receipt, before any scoring** (recommended, for the same reason as entry 10) ☐ B. In v1b, after the E4 build.
 
-**(b) Which class decides "A or B"?** ☐ **A. The binding v1 scenario class of the SE1 reference cell** (recommended; it follows D6 and entry 3) ☐ B. The v2 class ☐ C. A or B in any ensemble cell.
+**(b) Which class decides "A or B"?** ☒ **A. The binding v1 scenario class of the SE1 reference cell** (recommended; it follows D6 and entry 3) ☐ B. The v2 class ☐ C. A or B in any ensemble cell.
 
 - **Sensitive:** scenario cells only. Cut line 5 drops S5 first.
 
+**Answered 3 Oct 2026 as recommended (R12).** Written into scenario S5 (`add_destination_nodes.binding`, `class_used_for_selection`); OI-17 is closed.
+
 ## 17. k for scenario S3b (OI-10, Putu with Rachmania)
 
-S3b fails "the top-k bridge edges". ☐ **A. 3 per tambon**, to match S3 (recommended) ☐ B. Another number: ________
+S3b fails "the top-k bridge edges". ☒ **A. 3 per tambon**, to match S3 (recommended) ☐ B. Another number: ________
 
 - **Sensitive:** scenario cells only.
+
+**Answered 3 Oct 2026 as recommended (R12).** k = 3, written into scenario S3b.
 
 ## 18. Selection rule for engine cell E3 (OI-10, Putu with Rachmania)
 
@@ -358,7 +401,9 @@ E3 changes one real O2 row as little as possible to show a counterfactual class 
 - **Sensitive:** no. The row is labelled synthetic and counted in the ENG column. The rule is fixed here so that nobody picks the row after seeing the scores.
 - **In the draft:** a proposal, which is option A.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________
+Your answer: ☐ A ☐ B ☒ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Rule C, with flood likelihood raised for an FPPS shortfall. Written into scenario E3 `selection_rule`.
 
 ## 19. Match distance for corroborated shelters (OI-06, Putu)
 
@@ -371,7 +416,9 @@ A DDPM shelter is "corroborated" when it matches an OSM building or amenity. The
 
 - **Sensitive:** low.
 
-Your answer: ☐ A ☐ B ☐ other: ________
+Your answer: ☒ A ☐ B ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** 150 m. Written into `facility_sets.sets[1].shelter_match_distance_m`; OI-06 stays open for the counts.
 
 ## 20. Coincidence tolerance for grade joins (OI-04, Putu)
 
@@ -389,7 +436,9 @@ The context builder keeps two road vertices apart when they sit at the same coor
 - **Sensitive:** yes.
 - **In the draft:** a proposal of 0 m; the slot is empty. An earlier edit had filled it in as "from D13"; that was undone after review, because D13 names no tolerance.
 
-Your answer: ☐ A ☐ B: ____ m ☐ C ☐ other: ________
+Your answer: ☒ A ☐ B: ____ m ☐ C ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** 0 m. Written into `grade_join_policy.coincidence_tolerance_m`. OI-04 stays open for the join log of the context of record.
 
 ## 21. Demand area: the eight tambons as they are, or clipped to AOI-02? (OI-01, Putu)
 
@@ -403,7 +452,9 @@ Plan 3.1 takes the union of the eight tambons as the demand area and AOI-02 as t
 - **Sensitive:** no.
 - **In the draft:** `context_call.aoi_geometry` keeps the plan's wording; `context_call.demand_area_rule` is empty with A as its proposal.
 
-Your answer: ☐ A ☐ B ☐ other: ________
+Your answer: ☒ A ☐ B ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Written into `corridor_polygon.context_call.demand_area_rule`. OI-01 stays open for the polygon file of the run of record.
 
 ## 22. What counts as one hospital for the "at least 4" test? (OI-03, Putu)
 
@@ -422,7 +473,9 @@ The plan's acceptance asks for at least 4 hospitals in the context. The spike co
 - **Sensitive:** low. It decides whether a corridor passes acceptance, not a score.
 - **In the draft:** `acceptance.hospital_count_unit` is empty, with B as its proposal.
 
-Your answer: ☐ A ☐ B ☐ C ☐ other: ________   Unnamed object a destination? ☐ yes ☐ no
+Your answer: ☐ A ☒ B ☐ C ☐ other: ________   Unnamed object a destination? ☒ yes ☐ no
+
+**Answered 3 Oct 2026 as recommended (R12).** Written into `corridor_polygon.acceptance.hospital_count_unit`. The second question carried no recommendation to drop the unnamed object, so nothing was changed: it stays a destination, and the box above records that reading, not a separate answer. Say so if you meant otherwise. OI-03 stays open for the run in a declared compute window.
 
 ## 23. The `culvert=*` tag (OI-05, Putu)
 
@@ -436,13 +489,17 @@ The plan's central closure level closes bridges and culverts at a lower flooded 
 - **Sensitive:** low as far as measured. It can only matter for edges that carry `culvert=*` and are flooded for between a quarter and a half of their length.
 - **In the draft:** `closure_rule_v1.culvert_tag_handling.rule` is empty, with A as its proposal. `bridge_culvert_note` describes the limitation and says it awaits your decision.
 
-Your answer: ☐ A ☐ B ☐ other: ________
+Your answer: ☒ A ☐ B ☐ other: ________
+
+**Answered 3 Oct 2026 as recommended (R12).** Written into `closure_rule_v1.culvert_tag_handling.rule`.
 
 ---
 
 ## Readings to confirm or amend at signing
 
 These are not new questions. Each is a value the drafting agent filled in where the plan is silent; the file cannot be signed until each is marked `confirmed` or `amended`. There are eight. The engineering runs bear on some of them.
+
+**Approved as written in R12.** The schema keeps every reading `awaiting_owner_confirmation` while the file is a draft, so the agent did not change their status. The signers set each to `confirmed` in the signing edit, after reading the closures.
 
 | ID | Reading | What the runs add |
 |---|---|---|
@@ -459,8 +516,8 @@ DR-B09 (the anchor unit set and percentile rule) was withdrawn on 3 October: it 
 
 ## Needed from a person, not a choice
 
-- **Rachmania:** the pf-07 frame file (entry 15), and the statement left open at the v1a signing on whether any M1-v2 tuning on GEOID tiles has been run.
-- **Putu:** review of the four new modules (`normalisation.py`, `closure_rules.py`, `grade_join.py`, `ddpm_shelters.py`). And **a declared compute window**: plan 5 item 1 asks for builds to run serially with no concurrent SNAP jobs. No spike run so far was made that way, so none can close OI-03. Say when the machine is free; the agent then runs the chosen corridor once with `--compute-window`, and that run's wall time and memory go into the record. The same holds for the E4 build.
+- **Rachmania:** review of the pf-07 frame, routing geometry, hospital list and district office lookup that the agent built from the decided rule (entry 15, `resources/planning_frames/`), and the statement left open at the v1a signing on whether any M1-v2 tuning on GEOID tiles has been run.
+- **Putu:** review of the four new modules (`normalisation.py`, `closure_rules.py`, `grade_join.py`, `ddpm_shelters.py`). And **a declared compute window**: plan 5 item 1 asks for builds to run serially with no concurrent SNAP jobs. No spike run so far was made that way, so none can close OI-03. This is now the main thing between v1b and `draft_for_signature`: OI-01, OI-03, OI-04 and OI-06 all wait on that run and the context build of record. Say when the machine is free; the agent then runs the chosen corridor once with `--compute-window`, and that run's wall time and memory go into the record. The same holds for the E4 build.
 - **Either owner:** approval of downloads DL-1 and DL-2 before any v2 class D or JRC note. Neither blocks signing.
 - **A human:** bring `claude/planning-protocol-v1` into `codex/thai-event-selection` with a merge commit, never a squash, before v1b is signed.
 
@@ -485,3 +542,11 @@ Each of these is handled above or already marked as a reading. They are listed s
 - Entries 20 to 23 are new. Entry 20 was a value the agent had filled in. Entries 21 to 23 were listed as "corrections the agent will make" unless you objected; each is now a choice with its own empty slot in the protocol.
 - Entry 1 prints the full rule text of option B and names its seven sub-rules. Entry 14 says which numbers were made up. Entry 18 states what class C needs and adds option C. Entry 12 quotes cut line 6 as written. Entry 15(c) has its own slots and option D.
 - The road-class shares, bridge counts and hospital breakdown now come from the spike receipts, and each receipt compares its run with the one before it.
+
+## What changed on this sheet after the owners answered (R12, 3 October 2026)
+
+- Every recommended box is ticked, and each entry says where its answer was written in `planning_protocol_v1b.json` and whether its item closed.
+- Entries 4, 6, 13 and 15 say that you gave no reason of your own. The protocol quotes the recommendation's reason instead and keeps each choice marked outcome-aware.
+- Entry 15 records what the agent built from the decided rules, the result of the Phan district office check and the SE2-blind unit list. The request to Rachmania for the frame file became a request to review it.
+- Entry 22's second question had no recommendation; the box records that nothing was changed.
+- The readings section says that R12 approved them and that the signers mark them at signing.

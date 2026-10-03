@@ -699,11 +699,12 @@ def test_v1b_owner_decision_slots_stay_empty_while_their_item_is_open(
     protocol = protocols["v1b"]
     items = {item["id"]: item for item in protocol["open_items"]}
     for identifier, pointers in OWNER_DECISION_SLOTS.items():
+        answered = set(items[identifier].get("owner_answer", {}).get("pointers_filled", []))
         for pointer in pointers:
             assert pointer in items[identifier]["parameter_pointers"], (identifier, pointer)
-            if items[identifier]["status"] == "open":
+            if items[identifier]["status"] == "open" and pointer not in answered:
                 assert receipt_tool.resolve_pointer(protocol, pointer) is None, (
-                    f"{pointer} is filled in while {identifier} is open: an owner decides it"
+                    f"{pointer} is filled in while {identifier} is open and no owner answer names it"
                 )
 
     # The SE2-blind district alone does not define the case: the unit rule and the unit list have their own slots.
@@ -715,6 +716,53 @@ def test_v1b_owner_decision_slots_stay_empty_while_their_item_is_open(
     assert closure["parameters"]["bridge_culvert_tags"] == ["bridge=yes", "tunnel=culvert", "culvert=*"]
     if items["OI-05"]["status"] == "open":
         assert "awaiting an owner decision" in closure["bridge_culvert_note"]
+
+
+# Owner choices answered with values for real tambons already in view (owner-choices sheet entries 4, 6, 13
+# and 15). Decision log R12 approved them as recommended and gave no separate reason.
+OUTCOME_AWARE_ITEMS = {"OI-05": 4, "OI-08": 6, "OI-12": 13, "OI-09": 15}
+R12_LINE_SHA256 = "8c3f7e20cedabb8f4593311f1f3603880595cc40994006b6253e0b92cc579f50"
+
+
+def test_v1b_owner_answers_on_open_items_fill_only_what_the_owners_decided(
+    protocols: dict[str, dict[str, Any]]
+) -> None:
+    protocol = protocols["v1b"]
+    for item in protocol["open_items"]:
+        answer = item.get("owner_answer")
+        if answer is None:
+            continue
+        assert "R12" in answer["answered_by"] and answer["answer"].strip(), item["id"]
+        assert set(answer["pointers_filled"]) <= set(item["parameter_pointers"]), item["id"]
+        for pointer in answer["pointers_filled"]:
+            assert receipt_tool.resolve_pointer(protocol, pointer) is not None, (item["id"], pointer)
+        if item["status"] == "open":
+            # An item whose parameters are all filled is closed, not left open with an answer.
+            assert any(
+                receipt_tool.resolve_pointer(protocol, pointer) is None for pointer in item["parameter_pointers"]
+            ), item["id"]
+            assert answer["still_needed"].strip(), item["id"]
+
+
+def test_v1b_items_closed_on_owner_answers_quote_the_decision(protocols: dict[str, dict[str, Any]]) -> None:
+    protocol = protocols["v1b"]
+    items = {item["id"]: item for item in protocol["open_items"]}
+    record = protocol["source_documents"].get("decision_log_at_owner_choices")
+    for item in items.values():
+        closure = item.get("closure")
+        if closure is None or "R12" not in closure["closed_by"]:
+            continue
+        assert record is not None and record["r12_line_sha256"] == R12_LINE_SHA256
+        assert "entered by the AI coding agent" in closure["closed_by"], item["id"]
+        assert closure["evidence_sha256"] and "owner choice" in closure["value_or_location"], item["id"]
+    for identifier, entry in OUTCOME_AWARE_ITEMS.items():
+        item = items[identifier]
+        text = item["closure"]["value_or_location"] if "closure" in item else item.get("owner_answer", {}).get("answer")
+        if not text:
+            continue
+        # The owners gave no reason of their own; the record says so and quotes the recommendation's reason.
+        assert f"owner choice {entry}" in text, identifier
+        assert "none given" in text and "recommendation's reason" in text and "outcome-aware" in text, identifier
 
 
 def test_v1b_anchor_candidates_are_not_presented_as_decided(protocols: dict[str, dict[str, Any]]) -> None:
@@ -739,6 +787,13 @@ def test_v1b_anchor_candidates_are_not_presented_as_decided(protocols: dict[str,
     assert "EK-B01" in candidates["outcome_awareness"] and "EK-04" in added["EK-B01"]["what_was_already_known"]
     assert "outcome-aware" in added["EK-B01"]["could_bias"]
     assert "exploratory_knowledge_added_for_v1b" in protocol["depends_on"]["exploratory_knowledge_disclosure"]
+    if item["status"] == "closed":
+        # The values in force are the chosen rule's values, copied from the receipt the candidates came from.
+        decision = anchors["owner_decision"]
+        assert anchors["values"] == rules[decision["rule_chosen"]]["values"]
+        assert anchors["output_receipt"]["sha256"] == candidates["evidence_sha256"] == item["closure"]["evidence_sha256"]
+        assert anchors["output_receipt"]["unit_count"] == rules[decision["rule_chosen"]]["unit_count"]
+        assert "none given" in decision["owners_reason"] and "EK-B01" in decision["outcome_awareness"]
 
 
 def test_v1b_spike_candidates_say_which_acceptance_criteria_are_met(protocols: dict[str, dict[str, Any]]) -> None:
@@ -785,9 +840,13 @@ def test_v1b_lists_every_engineering_run_with_its_receipt(protocols: dict[str, d
         for earlier in run.get("earlier_runs", []):
             assert earlier["generated_at_utc"] < run["generated_at_utc"] and len(earlier["evidence_sha256"]) == 64
     committed = sorted(
-        path.relative_to(ROOT).as_posix()
-        for path in (ROOT / "outputs" / "planning_v1").glob("*.json")
-        if "grade_join_log" not in path.name
+        [
+            path.relative_to(ROOT).as_posix()
+            for path in (ROOT / "outputs" / "planning_v1").glob("*.json")
+            if "grade_join_log" not in path.name
+        ]
+        # Planning-frame builds name tambons, so their receipts sit beside the frames, not in outputs/.
+        + [path.relative_to(ROOT).as_posix() for path in (ROOT / "resources" / "planning_frames").glob("*_receipt.json")]
     )
     assert sorted(receipts_named) == committed
 

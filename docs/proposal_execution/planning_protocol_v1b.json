@@ -3,8 +3,8 @@
   "protocol_id": "planning_protocol_v1b",
   "title": "FloodGuard planning protocol v1b: engineering addendum",
   "protocol_kind": "declared_protocol_after_exploratory_analysis",
-  "status": "draft_for_signature",
-  "status_note": "Draft for signature, written by an AI coding agent. Agents draft, humans sign. Nothing in this file is in force. Every open item is closed, every parameter an open item names is filled in and every section is fixed. It cannot be signed while any entry in drafter_readings awaits confirmation, or before an owner accepts the compute windows of the corridor run of record and of the E4 build of record (corridor_polygon.run_of_record.compute_window.owner_acceptance and corridor_polygon.e4_build_of_record.compute_window.owner_acceptance; both were accepted in decision-log entry R13). Nor can it be signed before an owner confirms the E4 window record (corridor_polygon.e4_build_of_record.compute_window.owner_check_of_the_record): R13 accepted that window in advance and the agent certified its terms itself, so a review of the E4 build on 3 October 2026 asked that an owner look at the record before signing. The owners are asked when they confirm the closures summary. Until the signed file's SHA-256 is recorded in docs/proposal_execution/RECEIPTS.jsonl, no FPPS, no A-E class and no ensemble may be computed for any real unit. No receipt has been written. The owners approved this file in principle (decision-log entry R11) and approved all 23 owner choices of docs/proposal_execution/planning_protocol_v1b_owner_choices.md exactly as recommended (decision-log entry R12, 3 October 2026); neither is a signature. On 3 October 2026 the agent closed every item from R12 and the corridor run of record and set the status to draft_for_signature; a review the same day reopened OI-04 (the join log) and the counts of OI-06, because their produced_by, owner-choices entry 1 and plan row G7b name task E4. In R13 (3 October 2026) the owners answered owner-choices entry 24 with option A (the two items close from the E4 build, not from the spike run), accepted the compute window of the corridor run of record, and accepted in advance that the agent declares the window of the E4 build on the same terms. The agent then made the E4 build of record (corridor_polygon.e4_build_of_record) in a window it declared on those terms. It reproduced every value of corridor_polygon.run_of_record.e4_reproduction_check exactly, so OI-04 and OI-06 closed from it and the status is draft_for_signature again. The drafter readings still await confirmation: R12 approved them as written, and the signers mark them in the signing edit, after reading the closures. The same review also found that --verify did not compare the retained context, that the builder would have cited R13 for any build of record, that the backstop for personal column names missed common names, that the corridor window's record leaves out two helper processes of another program and that the list of runs was incomplete. All are corrected (corridor_polygon.e4_build_of_record.code_changed_after_the_build, corridor_polygon.run_of_record.compute_window.helpers_not_named_in_this_record, blinding.runs_before_v1b_is_in_force); none changes a value of the build or reopens an item.",
+  "status": "signed",
+  "status_note": "Signed. In force only once the SHA-256 of this committed file is recorded in docs/proposal_execution/RECEIPTS.jsonl.",
   "drafted_on": "2026-10-01",
   "drafted_by": "AI coding agent (Claude), on the owner go-ahead R5 of 2026-10-01",
   "official_warning": false,
@@ -129,7 +129,7 @@
       "Any A-E class for a real unit, including would-be classes and v2 classes.",
       "Any ensemble cell."
     ],
-    "reading_status": "Drafter reading DR-B07. Plan 2.3 item 5 allows 'context, access and closure builds' before v1b. The draft adds two things to that list: the baseline critical-link ranking (E6), which the plan schedules after v1b, and the national dependent-share percentiles, which plan 3.4 says are computed in v1b. It also limits the ban to real units, as in v1a drafter reading DR-A06. The owners confirm or amend the list at signing.",
+    "reading_status": "Drafter reading DR-B07. Plan 2.3 item 5 allows 'context, access and closure builds' before v1b. The draft adds two things to that list: the baseline critical-link ranking (E6), which the plan schedules after v1b, and the national dependent-share percentiles, which plan 3.4 says are computed in v1b. It also limits the ban to real units, as in v1a drafter reading DR-A06. The owners confirm or amend the list at signing. Confirmed by the owners at signing on 2026-10-03 (decision log R12).",
     "status_at_drafting": "When this file was drafted on 2026-10-01, none of the builds above had been run for this protocol and no value in it came from a new computation. The runs made since then are listed in runs_before_v1b_is_in_force.",
     "runs_before_v1b_is_in_force": [
       {
@@ -910,9 +910,9 @@
         },
         "owner_check_of_the_record": {
           "question": "Do you confirm, from this record, that the two terms of R13 were met for the E4 window of 3 October 2026, 13:26:50 to 13:29:08 +08:00: no other project job running (checked_before, checked_after, process_monitor, serial), and the window recorded (this block)?",
-          "confirmed": null,
-          "confirmed_by": null,
-          "confirmed_on": null,
+          "confirmed": true,
+          "confirmed_by": "Putu and Rachmania (relayed by Putu in a Claude Code session; decision log R14)",
+          "confirmed_on": "2026-10-03",
           "rule": "Added on 3 October 2026 after a review of the E4 build. R13 accepted in advance a window the agent declares on two terms; the agent entered that acceptance (owner_acceptance) and certified the terms itself (terms_of_r13_met), and no person had looked at this record. The five attestations stay as the owners attested them in R13 and do not cover this window. The owners are asked this question when they confirm the closures summary and the attestations. The answer is entered here: confirmed (true or false), confirmed_by (the owner's name) and confirmed_on (the date), typed by an owner or entered by the agent from a decision-log entry in which an owner recorded it, which confirmed_by then names. The schema refuses status signed unless confirmed is true. If an owner does not confirm, owner_acceptance.accepted is set to false and the build is repeated in a window an owner names."
         }
       },
@@ -1120,7 +1120,7 @@
       "OI-05"
     ],
     "geometry": "Each edge is the straight segment between its two nodes, projected to EPSG:32647. Intersected length is the length of that segment inside the flood extent. Intersected fraction f is min(1, intersected length / segment length). This is the measurement used in src/floodguard/evidence_flood_scenario.py.",
-    "geometry_status": "Drafter reading DR-B02. The plan does not say how intersected length is measured or what counts as 'any intersection'. Both are taken from src/floodguard/evidence_flood_scenario.py (straight node-to-node segment in EPSG:32647; an edge is intersected when the length inside the extent is greater than 1e-6 m), so that the permissive regression can match the finals closed-edge IDs exactly. The owners confirm at signing.",
+    "geometry_status": "Drafter reading DR-B02. The plan does not say how intersected length is measured or what counts as 'any intersection'. Both are taken from src/floodguard/evidence_flood_scenario.py (straight node-to-node segment in EPSG:32647; an edge is intersected when the length inside the extent is greater than 1e-6 m), so that the permissive regression can match the finals closed-edge IDs exactly. The owners confirm at signing. Confirmed by the owners at signing on 2026-10-03 (decision log R12).",
     "levels": {
       "strict": {
         "closed_when": "f >= 0.5",
@@ -1136,7 +1136,7 @@
         "note": "Under this level no intersected edge stays open, so the delay factor has no effect."
       }
     },
-    "delay_factor_pairing_status": "Drafter reading DR-B01. Plan 5 item 11 axis 2 lists 'strict / central / permissive, with delay penalty k = 2 / 4 / 6', and plan 5 item 2 states the delay formula only for the central level, with k = 4. The draft pairs k = 2 with strict, 4 with central and 6 with permissive, which gives the plan's 540 cells and 27 routing combinations. The other reading, k as a separate three-level axis, would give 1,620 cells. The owners confirm at signing.",
+    "delay_factor_pairing_status": "Drafter reading DR-B01. Plan 5 item 11 axis 2 lists 'strict / central / permissive, with delay penalty k = 2 / 4 / 6', and plan 5 item 2 states the delay formula only for the central level, with k = 4. The draft pairs k = 2 with strict, 4 with central and 6 with permissive, which gives the plan's 540 cells and 27 routing combinations. The other reading, k as a separate three-level axis, would give 1,620 cells. The owners confirm at signing. Confirmed by the owners at signing on 2026-10-03 (decision log R12).",
     "parameters": {
       "closed_fraction_min": 0.5,
       "length_threshold_m_by_road_class": {
@@ -1359,7 +1359,7 @@
       "tie_break": "stable edge ID"
     },
     "demand_weight": "WorldPop 2020 residents at each origin node.",
-    "selection_details_status": "Drafter reading DR-B03. The plan says 'demand-weighted SPT flow' and names no demand layer and no tie-break. The draft uses WorldPop 2020 residents at each origin node and breaks ties on stable edge ID, following src/floodguard/evidence_interventions.py. The owners confirm at signing.",
+    "selection_details_status": "Drafter reading DR-B03. The plan says 'demand-weighted SPT flow' and names no demand layer and no tie-break. The draft uses WorldPop 2020 residents at each origin node and breaks ties on stable edge ID, following src/floodguard/evidence_interventions.py. The owners confirm at signing. Confirmed by the owners at signing on 2026-10-03 (decision log R12).",
     "destination_set_for_ranking": "The public facility set (OSM hospitals and main-road entry), vehicle mode, so the ranking does not depend on DDPM data.",
     "destination_set_status": "Decided by the owners on 3 October 2026 (decision log R12, owner choice 9, option A, as recommended).",
     "destination_set_proposal": "The public facility set (OSM hospitals and main-road entry), vehicle mode, so the ranking does not depend on DDPM data.",
@@ -1457,7 +1457,7 @@
         ]
       },
       "allocation": "Each 1 km cell's counts are allocated to a tambon by the projected-area fraction of the cell inside the tambon, as in scripts/bridge_worldpop_age_access.py.",
-      "allocation_status": "Drafter reading DR-B04. The plan does not say how 1 km cells are assigned to tambons. The draft follows scripts/bridge_worldpop_age_access.py (projected-area fraction). The owners confirm at signing.",
+      "allocation_status": "Drafter reading DR-B04. The plan does not say how 1 km cells are assigned to tambons. The draft follows scripts/bridge_worldpop_age_access.py (projected-area fraction). The owners confirm at signing. Confirmed by the owners at signing on 2026-10-03 (decision log R12).",
       "unit_set": "Every tha_admin3 unit in Thailand with at least 100 modelled 2024 residents on the cells where all 20 age bands are valid (the minimum-denominator figure of v1a guardrail GR1), Bangkok khwaeng included. 7,425 units are used and none is excluded.",
       "unit_set_proposal": "Every tha_admin3 unit in Thailand with at least 100 modelled 2024 residents on the cells where all 20 age bands are valid (the minimum-denominator figure of v1a guardrail GR1). The number of units used and the number excluded are recorded. All 7,425 units pass. The set includes 169 Bangkok khwaeng.",
       "percentile_method": "Unweighted across units: every unit counts once. Linear interpolation between order statistics at position (n - 1) x p / 100 (Hyndman and Fan type 7, the numpy default). Each value is rounded to six decimal places, and the rounded values are the anchors.",
@@ -1678,7 +1678,7 @@
       "Class rule v1 and v2.",
       "Terrain / remoteness proxy in place of the age-based vulnerability, case O1 only."
     ],
-    "one_at_a_time_status": "Drafter reading DR-B05. Plan 5 item 11 lists the terrain proxy under axis 4, beside the two anchor levels, but the 540-cell count (3 x 3 x 3 x 2 x 2 x 5) leaves no room for it as a core level. The draft runs it one at a time, on O1 only. The owners confirm at signing.",
+    "one_at_a_time_status": "Drafter reading DR-B05. Plan 5 item 11 lists the terrain proxy under axis 4, beside the two anchor levels, but the 540-cell count (3 x 3 x 3 x 2 x 2 x 5) leaves no room for it as a core level. The draft runs it one at a time, on O1 only. The owners confirm at signing. Confirmed by the owners at signing on 2026-10-03 (decision log R12).",
     "terrain_remoteness_proxy": {
       "definition": "A WorldPop cell is proxy-vulnerable when its sampled slope is at least 8 degrees or its nearest drivable OSM road is at least 750 m away (the definition in src/floodguard/mae_sai_context.py). The component is 100 x the share of the unit's residents in proxy-vulnerable cells.",
       "anchor": "None: no anchor is applied (owner choice 13, option A). The component is 100 x the proxy-vulnerable share of the unit's residents, so the 0.25 the replay used is not adopted.",
@@ -1753,7 +1753,7 @@
         ],
         "perturbation": "Fail the top 3 pre-ranked critical links per tambon.",
         "selection_rule": "The three highest-ranked links of the baseline critical-link ranking whose edge lies in the tambon. An edge that crosses a tambon boundary belongs to the tambon that holds its midpoint. Ties break on stable edge ID.",
-        "selection_rule_status": "Drafter reading DR-B06. The plan says 'the top-3 pre-ranked critical links per tambon' and does not say how a link is assigned to a tambon. The draft assigns it by where the edge lies, and by the midpoint for an edge that crosses a boundary. The owners confirm at signing.",
+        "selection_rule_status": "Drafter reading DR-B06. The plan says 'the top-3 pre-ranked critical links per tambon' and does not say how a link is assigned to a tambon. The draft assigns it by where the edge lies, and by the midpoint for an edge that crosses a boundary. The owners confirm at signing. Confirmed by the owners at signing on 2026-10-03 (decision log R12).",
         "parameters": {
           "links_per_tambon": 3
         }
@@ -1834,7 +1834,7 @@
         ],
         "perturbation": "Age-based vulnerability versus the terrain / remoteness proxy.",
         "selection_rule": "No selection: both.",
-        "note": "Drafter reading DR-B08. Plan 6.2 names O2 as the base; plan 3.4 and the signed frame restrict the terrain proxy to O1. This draft follows 3.4. O1 and O2 share the same eight-tambon frame. The owners confirm at signing."
+        "note": "Drafter reading DR-B08. Plan 6.2 names O2 as the base; plan 3.4 and the signed frame restrict the terrain proxy to O1. This draft follows 3.4. O1 and O2 share the same eight-tambon frame. The owners confirm at signing. Confirmed by the owners at signing on 2026-10-03 (decision log R12)."
       },
       {
         "id": "S9",
@@ -2485,7 +2485,7 @@
       "plan_says": "'strict / central / permissive, with delay penalty k = 2 / 4 / 6'; the delay formula is stated for central only, with k = 4.",
       "draft_says": "k = 2 with strict, 4 with central, 6 with permissive: one axis of three levels.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-B02",
@@ -2494,7 +2494,7 @@
       "plan_says": "No statement of how intersected length is measured or what 'any intersection' means.",
       "draft_says": "Straight node-to-node segment in EPSG:32647; intersected when the length inside the extent is greater than 1e-6 m, as in the finals code.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-B03",
@@ -2503,7 +2503,7 @@
       "plan_says": "'Demand-weighted SPT flow'. No demand layer and no tie-break named.",
       "draft_says": "WorldPop 2020 residents at each origin node; ties break on stable edge ID.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-B04",
@@ -2512,7 +2512,7 @@
       "plan_says": "No statement of how 1 km cells are assigned to tambons.",
       "draft_says": "By the projected-area fraction of the cell inside the tambon.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-B05",
@@ -2521,7 +2521,7 @@
       "plan_says": "Terrain proxy listed under axis 4, O1 only; core grid of 540 cells.",
       "draft_says": "Run one at a time on O1, outside the 540-cell core grid.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-B06",
@@ -2530,7 +2530,7 @@
       "plan_says": "'Top-3 pre-ranked critical links per tambon'. No rule for assigning a link to a tambon.",
       "draft_says": "A link (S3) or bridge edge (S3b) belongs to the tambon where its edge lies; a boundary-crossing edge goes by its midpoint.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-B07",
@@ -2539,7 +2539,7 @@
       "plan_says": "Context, access and closure builds may run before v1b.",
       "draft_says": "Also allows the baseline critical-link ranking (E6) and the national percentiles; the ban covers real units.",
       "outcome_sensitive": true,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     },
     {
       "id": "DR-B08",
@@ -2548,7 +2548,7 @@
       "plan_says": "Plan 6.2 names O2 as the base; plan 3.4 restricts the terrain proxy to O1.",
       "draft_says": "Base case O1.",
       "outcome_sensitive": false,
-      "status": "awaiting_owner_confirmation"
+      "status": "confirmed"
     }
   ],
   "dependencies_that_do_not_block_signing": [
@@ -2609,19 +2609,24 @@
         "role": "owner",
         "required_signer": "Putu (I Putu Pramana Putra)",
         "action": "signs",
-        "signed_by": null,
-        "signed_at_utc": null,
-        "attestation": null
+        "signed_by": "I Putu Pramana Putra (Putu)",
+        "signed_at_utc": "2026-10-03T06:27:33Z",
+        "attestation": "I confirm the five statements in attestations_required. Given by Putu for both owners in a Claude Code session on 2026-10-03 (decision log R12, R13 and R14) and typed into this entry by the AI coding agent on Putu's instruction."
       },
       {
         "role": "method_co_signer",
         "required_signer": "Rachmania (Rachmania Ulwani)",
         "action": "co-signs",
-        "signed_by": null,
-        "signed_at_utc": null,
-        "attestation": null
+        "signed_by": "Rachmania Ulwani (Rachmania)",
+        "signed_at_utc": "2026-10-03T06:27:33Z",
+        "attestation": "I confirm the five statements in attestations_required. Relayed by Putu: Putu stated that Rachmania approves and attests with Putu. Given by Putu for both owners in a Claude Code session on 2026-10-03 (decision log R12, R13 and R14) and typed into this entry by the AI coding agent on Putu's instruction. Rachmania did not type this entry and did not make the signing commit."
       }
     ],
-    "amendments_at_signing": []
+    "amendments_at_signing": [
+      "How the signatures were entered: on 2026-10-03 Putu told the AI coding agent, in a Claude Code session, that Putu and Rachmania approve every owner choice as recommended (R12), accept both compute windows, have read the closures summary and attest its five statements, authorised signing if E4 reproduced the spike values exactly (R13), and confirmed the E4 window record (R14). E4 reproduced every value exactly. The agent typed both entries on that instruction, which departs from the note in this block that each signer fills their own entry. Rachmania can add her own confirmation in a later commit that does not change this file.",
+      "Drafter readings DR-B01 to DR-B08 are confirmed as drafted (R12). None is amended.",
+      "No rule of the draft for signature was changed at signing. The only edits at signing are the reading statuses, the owners' answer to the E4 window-record question, the status and the signature block.",
+      "Open at signing, and not part of v1b: whether any M1-v2 tuning on GEOID tiles was run before the agent's run of 2 October 2026 (not stated), and how to read the 0.40 skill bar for M1-v2 (point estimate 0.411, not distinguishable from 0.40 on 14 tiles)."
+    ]
   }
 }

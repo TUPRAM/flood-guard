@@ -1,6 +1,6 @@
 {
   "schema": "floodguard.replay_wording_rules.v1",
-  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets, present a modelled hour as a safe time to leave, tell the reader which shelters to open or state the equity rates over all residents counted. Text about the 2024 season envelope (UNOSAT and GISTDA product 4009) must not speak of precision, recall, accuracy, a validated model or corroboration, must not say that the model is too low or too high (or that it under- or overestimates), and must not call the envelope observed. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
+  "purpose": "Wording rules for the Mae Sai replay. The replay is a historical reconstruction and a planning scenario, so its text must not claim real-time detection, a forecast, an official warning, a validation, return periods or a road schedule, and it must not rank the shelter sets, present a modelled hour as a safe time to leave, tell the reader which shelters to open or state the equity rates over all residents counted. Text about the 2024 season envelope (UNOSAT and GISTDA product 4009) must not speak of precision, recall, accuracy, a validated model or corroboration, must not say that the model is too low or too high (or that it under- or overestimates), and must not call the envelope observed. Text about the depths reported in news (not surveyed) must not say that a report confirms, verifies or validates the model, or the reverse. One file feeds both linters: apps/web/src/lib/replay-wording-lint.ts (vitest) and src/floodguard/wording_lint.py (pytest).",
   "how_it_works": [
     "Text is normalised first: web addresses are removed, runs of white space become one space, curly apostrophes become straight ones, and non-breaking hyphens, figure dashes, en dashes and minus signs become plain hyphens.",
     "Each pattern in allow is then removed, in order. They are explicit negations such as 'not a forecast'. A new negation needs a new entry here; a plain 'not' somewhere in the sentence is not enough.",
@@ -8,7 +8,7 @@
     "Patterns are case-insensitive regular expressions that mean the same in JavaScript (flags iu) and in Python (re.IGNORECASE). Word edges are written as (?<![A-Za-z0-9_]) and (?![A-Za-z0-9_]) because \\b treats Thai letters differently in the two engines.",
     "Each Thai rule lists the common renderings of the banned claim, not one spelling: a translator's wording of a banned English claim must fail too. A Thai denial needs its own allow entry, as in English."
   ],
-  "thai_terms_review": "The Thai terms and denials were widened on 2 Oct 2026 (ตามเวลาจริง, คาดการณ์, ทำนาย, แม่นยำ, ยืนยันแล้ว, ผ่านการตรวจสอบ, ประกาศเตือน, คาบการเกิดซ้ำ, Thai digits), and again the same day for the shelter and road rules (ศูนย์พักพิง, ศูนย์อพยพ, ตารางเวลาปิดถนน, แผนการปิดถนน) and for the season-envelope rules (ประเมินต่ำเกินไป, สูงกว่าความเป็นจริง, ขอบเขตน้ำตลอดฤดูที่สังเกต; ยืนยันผล and รับรองผล no longer match the start of ผลิตภัณฑ์). The Thai language reviewer has not signed the list off yet (roadmap H12, due 22 Oct 2026).",
+  "thai_terms_review": "The Thai terms and denials were widened on 2 Oct 2026 (ตามเวลาจริง, คาดการณ์, ทำนาย, แม่นยำ, ยืนยันแล้ว, ผ่านการตรวจสอบ, ประกาศเตือน, คาบการเกิดซ้ำ, Thai digits), and again the same day for the shelter and road rules (ศูนย์พักพิง, ศูนย์อพยพ, ตารางเวลาปิดถนน, แผนการปิดถนน) and for the season-envelope rules (ประเมินต่ำเกินไป, สูงกว่าความเป็นจริง, ขอบเขตน้ำตลอดฤดูที่สังเกต; ยืนยันผล and รับรองผล no longer match the start of ผลิตภัณฑ์). On 3 Oct 2026 the rule on reported depths added ยืนยันโดยรายงาน, รายงานข่าวยืนยัน and ได้รับการยืนยันจากรายงาน. The Thai language reviewer has not signed the list off yet (roadmap H12, due 22 Oct 2026).",
   "allow": [
     {
       "id": "not_real_time_or_warning",
@@ -154,7 +154,7 @@
       "id": "validation_as_agreement",
       "pattern": "(?<![A-Za-z0-9_])(?:validat|accura)[a-z]*|แม่นยำ|ความถูกต้อง|ยืนยันแล้ว|ผ่านการตรวจสอบ|ผ่านการยืนยัน",
       "message": "Agreement with another data set is not validation or accuracy. Say 'agreement', 'size check' or 'plausibility'.",
-      "bad": ["The model is validated against VIIRS", "Validation against the season envelope", "Model accuracy: 0.48", "ความแม่นยำของแบบจำลอง 48%", "แบบจำลองแม่นยำ 48%", "ขอบเขตน้ำยืนยันแล้วด้วยภาพดาวเทียม", "แบบจำลองผ่านการตรวจสอบกับ VIIRS"]
+      "bad": ["The model is validated against VIIRS", "Validation against the season envelope", "Model accuracy: 0.48", "The modelled depths are validated by news reports", "ความแม่นยำของแบบจำลอง 48%", "แบบจำลองแม่นยำ 48%", "ขอบเขตน้ำยืนยันแล้วด้วยภาพดาวเทียม", "แบบจำลองผ่านการตรวจสอบกับ VIIRS"]
     },
     {
       "id": "precision_recall",
@@ -221,6 +221,12 @@
       "pattern": "(?<![A-Za-z0-9_])divid(?:e|es|ed|ing) (?:[a-z-]+ ){0,8}by all (?:the )?residents(?![A-Za-z0-9_])|หารด้วยผู้อยู่อาศัยทั้งหมด",
       "message": "Each group's loss rate divides by its residents who had a shelter within reach before the flood (owner decision R8, option B), not by all residents counted. All residents counted may be shown beside the rate as context.",
       "bad": ["Each rate divides the residents who lost access by all residents counted in that group", "The loss rate is divided by all the residents of the group", "แต่ละอัตราคือผู้ที่สูญเสียการเข้าถึงหารด้วยผู้อยู่อาศัยทั้งหมดที่นับในกลุ่มนั้น"]
+    },
+    {
+      "id": "report_confirmation",
+      "pattern": "(?<![A-Za-z0-9_])confirm(?:s|ed|ing|ation)? (?:by|from|in) (?:the |these |those |local |many |several )?(?:news|press|media|reports?|reporting|residents?|eyewitness(?:es)?|witnesses|journalists?|accounts?)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?:news|press|media|eyewitness|residents?)(?: [a-z]+){0,2} (?:reports? |accounts? )?confirm(?:s|ed|ing)?(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])reports? (?:confirm|verif|validat|prove)[a-z]*|(?<![A-Za-z0-9_])confirmed (?:depths?|flood(?:ing)?|water)(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])verified by (?:the )?(?:news|press|media|reports?|residents?)(?![A-Za-z0-9_])|ยืนยันโดย(?:รายงาน|ข่าว|สื่อ|ผู้อยู่อาศัย|ชาวบ้าน)|(?:รายงาน|ข่าว|สื่อ)(?:ข่าว)?(?:ช่วย|ได้)?ยืนยัน|ได้รับการยืนยันจาก(?:รายงาน|ข่าว|สื่อ|ผู้อยู่อาศัย|ชาวบ้าน)|ความลึกที่(?:ได้รับการ)?ยืนยัน",
+      "message": "Reported depths are news reports, anecdotal and not surveyed (roadmap C-2). A model that reaches a reported depth is consistent with the report; it is never confirmed, verified or validated by it, and the reports never confirm the model. Say 'consistent with the report' or 'the model reaches the reported lower bound'.",
+      "bad": ["The modelled depth is confirmed by news reports", "Depths at Sai Lom Joy confirmed by residents", "News reports confirm the modelled peak", "The reports validate the model in Mueang Daeng", "Confirmed depth at Mueang Daeng: 2.5 m", "Flooding verified by the press", "ความลึกของแบบจำลองยืนยันโดยรายงานข่าว", "รายงานข่าวยืนยันระดับน้ำของแบบจำลอง", "ได้รับการยืนยันจากรายงานของชาวบ้าน"]
     }
   ],
   "mixed": [
@@ -263,6 +269,10 @@
     {"text": "ขอบเขตน้ำตลอดฤดูยืนยันผลการจำลอง", "rules": ["corroboration"]},
     {"text": "Scenario (SCN-ENV): 2024 season envelope; not an observation for any replay day. The envelope is never an observation; VIIRS is observed.", "rules": []},
     {"text": "ขอบเขตน้ำตลอดฤดูปี 2567 (2024) (สถานการณ์จำลอง ไม่ใช่การสังเกตการณ์ของวันใดในการย้อนดู)", "rules": []},
-    {"text": "Not an observation for any replay day, yet the envelope observed in September shows the town under water.", "rules": ["envelope_as_observation"]}
+    {"text": "Not an observation for any replay day, yet the envelope observed in September shows the town under water.", "rules": ["envelope_as_observation"]},
+    {"text": "Reported (anecdotal, not surveyed): the model reaches the reported lower bound, so it is consistent with the report.", "rules": []},
+    {"text": "A consistency check of anecdotal reports, never a validation; the reports are never used to tune the model.", "rules": []},
+    {"text": "Consistent with the report, so the depth is confirmed by news and the model is validated by news.", "rules": ["report_confirmation", "validation_as_agreement"]},
+    {"text": "การตรวจความสอดคล้องกับรายงานที่เป็นคำบอกเล่า ไม่ใช่การยืนยันความถูกต้อง แต่รายงานข่าวยืนยันแบบจำลอง", "rules": ["report_confirmation"]}
   ]
 }

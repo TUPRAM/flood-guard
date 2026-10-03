@@ -323,8 +323,10 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     assert SCENARIO_TIER in blocks["viirs_daily"]["note"] and "not part of the agency product" in blocks["viirs_daily"]["note"]
     assert sorted(manifest["viirs_daily"]["model_fields"]["names"]) == model_fields
     assert manifest["viirs_daily"]["model_fields"]["evidence_tier"] == SCENARIO_TIER
-    # Only the two observed blocks that place model figures beside an observation name scenario fields.
-    assert sorted(block["id"] for block in blocks.values() if "scenario_fields" in block) == ["sentinel2_water_check", "viirs_daily"]
+    # Only the blocks that place model figures beside an observation or a report name scenario fields: the two observed
+    # blocks and the reported depths (the model read at each report's point).
+    assert sorted(block["id"] for block in blocks.values() if "scenario_fields" in block) == ["reported_depths", "sentinel2_water_check", "viirs_daily"]
+    assert blocks["reported_depths"]["scenario_fields"] == ["reported_depths.reports[].model"]
     assert len({blocks[name]["source_timestamp"] for name in observed}) == len(observed)
     assert blocks["sentinel2_20240915"]["source_timestamp"] == "2024-09-15T03:58:15Z"
     assert blocks["sentinel1_20240915"]["source_timestamp"] == "2024-09-15T23:16:01Z"
@@ -345,7 +347,7 @@ def test_every_block_has_a_lane_and_a_source_timestamp_in_the_right_lane(manifes
     assert envelope["note"].startswith("Never an observation for a replay day.")
     assert "scenario_fields" not in envelope  # The manifest holds no figure of the comparison to name.
     # Reported facts are never filed as observed or as model output.
-    assert lane("reported_shelters") == lane("event_chronology") == "REP"
+    assert lane("reported_shelters") == lane("event_chronology") == lane("reported_depths") == "REP"
     assert not any(block["lane"] == "OBS" and block["temporal_relation"] == "season_envelope" for block in blocks.values())
 
 
@@ -446,7 +448,7 @@ def test_product_4009_status_is_the_rights_records_status(manifest: dict) -> Non
 
 def test_input_hashes_are_the_receipts_and_name_no_machine_path(manifest: dict) -> None:
     rows = manifest["input_sha256"]
-    assert len(rows) == 38 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
+    assert len(rows) == 39 and [(row["root"], row["path"]) for row in rows] == sorted((row["root"], row["path"]) for row in rows)
     for row in rows:
         assert row["root"] in ("external", "repo") and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) and row["bytes"] > 0
     receipt = json.loads((ROOT / "docs" / f"mae_sai_timeline_{manifest['revision']}_input_receipt.json").read_text(encoding="utf-8"))

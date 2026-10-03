@@ -31,6 +31,7 @@ import {
 } from "@/components/mae-sai-flood-timeline";
 import { RainChart, Sentinel2Evidence, ViirsComparisonCard } from "@/components/mae-sai-observed-panels";
 import { ReplayExportPanel } from "@/components/mae-sai-replay-export";
+import { ReportedDepthsSources } from "@/components/mae-sai-reported-depths";
 import { SeasonEnvelopeCaption, SeasonEnvelopeChip, SeasonEnvelopeLegend, type SeasonEnvelopeState } from "@/components/mae-sai-season-envelope";
 import {
   districtStats,
@@ -48,6 +49,7 @@ import {
   type TimelineManifest,
 } from "./flood-timeline";
 import { parseSeasonEnvelopeDocument, shippableEnvelope } from "./flood-timeline-envelope";
+import { reportedDepthPopup, shippableReportedDepths } from "./flood-timeline-reported-depths";
 import {
   accessLostSeries,
   accessSnapshot,
@@ -216,6 +218,9 @@ function renderedPanels(language: Language): { name: string; html: string }[] {
     panel("ExternalChecks", <ExternalChecks manifest={manifest} language={language} />),
     panel("ShelterPlanCard", <ShelterPlanCard shelters={manifest.shelters!} k={manifest.shelters!.knee_k} onPlanK={noop} language={language} onShowCandidate={noop} />),
     panel("ReportedSheltersCard", <ReportedSheltersCard shelters={manifest.shelters!} language={language} onShowReported={noop} />),
+    // Reported depths (news, not surveyed): the Sources entry with its counts table, and the legend entry of the layer.
+    panel("ReportedDepthsSources", <ReportedDepthsSources block={shippableReportedDepths(manifest)!} language={language} />),
+    panel("TimelineLegend with reported depths", <TimelineLegend language={language} unmodelledRoads unmodelledFacilities reportedDepths />),
   ];
 }
 
@@ -229,12 +234,18 @@ function corpus(): { source: string; text: string }[] {
     // The licence notice that ships beside it, English and Thai halves (the Thai half states the changes in Thai).
     { source: "unosat4009/LICENSE", text: readFileSync(resolve(publicRoot, envelopeBlock.files.licence.href.replace(/^\//, "")), "utf8") },
   ];
+  // The map popups of the reported depths are built from text nodes on the page; their lines are linted as they are built.
+  const depths = shippableReportedDepths(manifest)!;
+  const popups = (["en", "th"] as const).flatMap((language) => depths.reports.filter((report) => report.point).map((report) => {
+    const { lines, link } = reportedDepthPopup(report, depths, language);
+    return { source: `reported-depth popup ${report.id} ${language}`, text: [...lines.map((line) => line.text), link.text].join("\n") };
+  }));
   const rendered = [
     { name: "MaeSaiFloodTimeline shell (en)", html: renderToStaticMarkup(<MaeSaiFloodTimeline />) },
     ...renderedPanels("en"),
     ...renderedPanels("th"),
   ].map(({ name, html }) => ({ source: name, text: visibleText(html) }));
-  return [...sources, ...manifestText, ...rendered];
+  return [...sources, ...manifestText, ...popups, ...rendered];
 }
 
 const lint = (items: { source: string; text: string }[]) => items.flatMap(({ source, text }) => findWordingViolations(text, source));
@@ -255,6 +266,7 @@ describe("Replay wording rules (shared with Python)", () => {
       "safe_departure", // the modelled cut-off hour presented as a safe time to leave (P2-4)
       "shelter_directive", // "open these shelters": the plans list candidates to verify (P2-9)
       "equity_denominator", // the equity rates stated over all residents counted, not those within reach before the flood (R8)
+      "report_confirmation", // a news report "confirming" the model, or the model "confirmed by" reports (C-2)
     ]);
     expect(new Set(REPLAY_WORDING_RULES.allow.map((item) => item.id)).size).toBe(REPLAY_WORDING_RULES.allow.length);
   });
@@ -365,7 +377,13 @@ describe("Replay wording lint: current text", () => {
     const sources = new Set(items.map((item) => item.source));
     for (const file of files) expect(sources.has(file), file).toBe(true);
     expect(items.filter((item) => item.source.startsWith("timeline.json")).length).toBeGreaterThan(100);
-    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(71);
+    expect(items.filter((item) => / \((en|th)\)$/.test(item.source)).length).toBe(75);
+    // Reported depths: the Sources entry and the legend in both languages, and the popup of every located report.
+    expect(items.filter((item) => item.source.startsWith("reported-depth popup ")).length).toBe(24);
+    const depthText = items.filter((item) => /ReportedDepths|reported depths|reported-depth popup/.test(item.source)).map((item) => item.text).join(" ");
+    expect(depthText).toContain("Status: reported (anecdotal, not surveyed).");
+    expect(depthText).toContain("never a validation");
+    expect(depthText).toContain("สถานะ: ตามรายงาน (คำบอกเล่า ไม่ได้สำรวจ)");
     // Product 4009 text is in the corpus three ways: the page's own strings, the statistics file and the rendered panels.
     for (const file of ["src/components/mae-sai-season-envelope.tsx", "src/lib/flood-timeline-envelope.ts"]) expect(files).toContain(file);
     expect(items.filter((item) => item.source.startsWith("unosat4009/envelope.json")).length).toBeGreaterThan(30);

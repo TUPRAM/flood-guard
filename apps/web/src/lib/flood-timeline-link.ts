@@ -37,6 +37,11 @@ export interface LayerVisibility {
    * on or off, and it is not an imagery choice.
    */
   envelope: boolean;
+  /**
+   * Flood depths reported in news at named places (not surveyed), with their consistency with the model. Static
+   * points: the hour in `t` never turns them on or off.
+   */
+  reportedDepths: boolean;
 }
 
 export interface ReplayLinkState {
@@ -76,11 +81,11 @@ export const LINK_PARAMS = ["t", "img", "wm", "wo", "rm", "cmp", "lang", "layers
 /**
  * One letter per map layer in `layers=`: t r f subdistricts, roads, facilities; s c i x reported shelters, plan
  * candidates, ineligible candidates, people cut off; v g the observed VIIRS daily flood map and the rain gauges;
- * e the 2024 season envelope (scenario).
+ * e the 2024 season envelope (scenario); d the reported depths (news, not surveyed).
  */
 const LAYER_LETTERS: [keyof LayerVisibility, string][] = [
   ["tambons", "t"], ["roads", "r"], ["facilities", "f"], ["reported", "s"], ["candidates", "c"], ["ineligible", "i"], ["cutoff", "x"],
-  ["viirs", "v"], ["gauges", "g"], ["envelope", "e"],
+  ["viirs", "v"], ["gauges", "g"], ["envelope", "e"], ["reportedDepths", "d"],
 ];
 const LAYER_PATTERN = new RegExp(`^[${LAYER_LETTERS.map(([, letter]) => letter).join("")}]{1,${LAYER_LETTERS.length}}$`);
 

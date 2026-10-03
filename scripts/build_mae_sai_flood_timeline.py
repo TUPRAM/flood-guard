@@ -20,7 +20,10 @@ Inputs
     ``CHIANGRAI_20240801_20241012_AccumulatedFlood`` is read, as the 2024 season envelope)
 * In-repo files: ``outputs/mae_sai_admin_context.geojson``, ``outputs/mae_sai_road_risk.geojson``,
   ``outputs/mae_sai_facilities.geojson``, ``outputs/mae_sai_access_edges.csv``,
-  ``outputs/mae_sai_population_nodes.csv``, ``outputs/mae_sai_reported_shelters_2024.json`` and
+  ``outputs/mae_sai_population_nodes.csv``, ``outputs/mae_sai_reported_shelters_2024.json``,
+  ``outputs/mae_sai_reported_depths_2024.json`` (flood depths that news reports gave at named places, 10-13 Sep 2024:
+  paraphrased, cited and never used for tuning; checked against
+  ``packages/contracts/schemas/reported-depths-2024.schema.json`` and ``floodguard.reported_depths``) and
   ``docs/proposal_execution/rights_basis_4009_v1.json`` (the rights record of UNOSAT/GISTDA product 4009: the
   bake stops unless the owners have confirmed it, and the licence, the credit and the change notice of the derived
   files come from it). When a local check of the
@@ -36,7 +39,11 @@ and a licence README. The export files are listed in the manifest with their has
 ``--verify`` and sit outside the replay's precache budget. ``timeline.json`` also holds the Sentinel-2 water check
 (``s2_crosscheck``): water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes inside
 the district, with the modelled water at the 15 Sep acquisition time beside it. It writes no raster; the comparison
-is indicative and the block says so.
+is indicative and the block says so. ``timeline.json`` also holds the reported depths (``reported_depths``, lane REP:
+"reported (anecdotal, not surveyed)") and their consistency with the model: for each report with a point, the deepest
+modelled water at that point over the report's time window, set against the reported lower bound (or, for a storey or
+body reference, wet or dry), with the counts per outcome. It is a consistency check, never a validation, and the
+reports are never used to tune the model.
 
 The season-envelope stage (``scripts/mae_sai_timeline_unosat4009.py``) writes three more files into their own folder,
 ``unosat4009/``: ``envelope.png`` (product 4009's accumulated water, August to October 2024, clipped to the district
@@ -139,6 +146,7 @@ from floodguard.flood_timeline import (  # noqa: E402
     depth_factor,
 )
 import floodguard.replay_exports as replay_exports  # noqa: E402
+import floodguard.reported_depths as reported_depths  # noqa: E402
 import floodguard.shelter_validation as shelter_validation  # noqa: E402
 from floodguard.replay_manifest import (  # noqa: E402
     LANES,
@@ -148,6 +156,7 @@ from floodguard.replay_manifest import (  # noqa: E402
     evidence_problems,
     newest_timestamp,
     normalise_timestamp,
+    reported_depth_problems,
     schema_problems,
     season_envelope_problems,
     shelter_plan_problems,
@@ -186,6 +195,8 @@ SAI_REFERENCE_LONLAT = (99.8826, 20.4460)  # Sai River at the Mae Sai border bri
 REPORTED_SHELTERS = Path("outputs/mae_sai_reported_shelters_2024.json")
 # Written by scripts/import_shelter_validation.py once a local checker returns the verification sheet. Absent: not conducted.
 SHELTER_VALIDATION = Path("outputs/mae_sai_shelter_validation.json")
+REPORTED_DEPTHS = reported_depths.REPORTED_DEPTHS_PATH
+"""Flood depths that news reports gave at named places (roadmap C-2): a consistency check, never used for tuning."""
 REPLAY_HOURS = 11 * 24  # The replay's hourly grid: 9 Sep 00:00 to 19 Sep 23:00 ICT.
 EVENT_START = "2024-09-09T00:00:00+07:00"  # Replay origin (t = 0).
 EVENT_END = "2024-09-20T00:00:00+07:00"  # End of the replay and of the last rain hour (19 Sep 24:00 ICT).
@@ -852,9 +863,12 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
                  "model_extent": "Largest modelled extent within 13-19 Sep ICT"}],
         clip_source=BOUNDARY_SOURCE, track=track)
 
+    # --- Reported depths (news, not surveyed): the model at each located report's point over the report's window ----
+    depths_block = reported_depth_block(track(ROOT / REPORTED_DEPTHS), codes_aoi, k_aoi, valid_aoi, aoi, to_utm, peak_stage)
+
     south, west = to_ll_3857(display.bounds[0], display.bounds[1])
     north, east = to_ll_3857(display.bounds[2], display.bounds[3])
-    return {"rights_4009": rights_status(rights), "season_envelope_data": {"figures": envelope_data, "rights": rights,
+    return {"reported_depths": depths_block, "rights_4009": rights_status(rights), "season_envelope_data": {"figures": envelope_data, "rights": rights,
                                                                           "raster_cell_m": water.res / MERCATOR_SCALE},
             "layers": layers, "hand": hand_record, "vectors": vectors, "days": days, "histograms": histograms,
             "bounds": [[south, west], [north, east]], "display": {"width": display.width, "height": display.height},
@@ -900,6 +914,41 @@ def build(external: Path, out_dir: Path, track: Track = untracked) -> dict:
                                     "freeboard_m": evac.SHELTER_FREEBOARD_M, "peak_stage_m": peak_stage,
                                     "m2_per_person": evac.SPHERE_M2_PER_PERSON, "usable_floor_share": evac.USABLE_FLOOR_SHARE,
                                     "max_plan_sites": evac.MAX_PLAN_SITES, "snap_max_m": evac.SNAP_MAX_M}}}
+
+
+def reported_depth_block(path: Path, codes: np.ndarray, factors: np.ndarray, valid: np.ndarray, grid: Grid, to_utm, peak_stage: float) -> dict:
+    """The manifest's ``reported_depths`` block, from the data file at ``path`` and the model on ``grid`` (the 10 m grid).
+
+    The data file must keep its schema and its rules (``floodguard.reported_depths.document_problems``, the copyright
+    guard included), or the bake stops. Each report with a point and a time window is read at its point: the highest
+    assumed stage of the window, the depth there, at the modelled peak and the first wet hour, and the deepest
+    out-of-channel cell within the report's location tolerance (a sensitivity). The reports are never used to tune the
+    model; nothing here changes a keyframe, the depth factor or the terrain.
+    """
+    data = path.read_bytes()
+    document = json.loads(data.decode("utf-8"))
+    schema = json.loads((ROOT / reported_depths.SCHEMA_PATH).read_text(encoding="utf-8"))
+    problems = schema_problems(document, schema) + reported_depths.document_problems(document)
+    if problems:
+        raise ReplayManifestError(f"{REPORTED_DEPTHS.as_posix()} cannot be published:\n  " + "\n  ".join(problems))
+    origin = datetime.fromisoformat(EVENT_START)
+    anchors = stage_anchors()
+    hourly = [stage_at(hour / 24) for hour in range(REPLAY_HOURS)]
+    days = lambda value: (reported_depths.local_instant(value) - origin).total_seconds() / 86400  # noqa: E731
+    models: dict[str, dict] = {}
+    for report in document["reports"]:
+        point, window = report["point"], report["time"]
+        if point is None or window["window_start"] is None:
+            continue
+        stage, _ = reported_depths.window_max_stage(days(window["window_start"]), days(window["window_end"]), anchors)
+        x, y = to_utm(point["lon"], point["lat"])
+        row, col = int(math.floor((grid.bounds[3] - y) / grid.res)), int(math.floor((x - grid.bounds[0]) / grid.res))
+        models[report["id"]] = reported_depths.point_model(codes, factors, valid, row, col, grid.res, report["location_tolerance_m"],
+                                                           stage, peak_stage, hourly)
+    return reported_depths.manifest_block(
+        document, models, origin=origin, peak_stage_m=peak_stage,
+        data_file={"path": REPORTED_DEPTHS.as_posix(), "sha256": sha256_bytes(data)},
+        window_stage=lambda start, end: reported_depths.window_max_stage(start, end, anchors))
 
 
 VERIFICATION_NOT_CONDUCTED = ("No verification sheet has been returned: the local check of the shelter candidates was not conducted. "
@@ -1156,6 +1205,10 @@ ASSUMPTIONS = [
     "The Sentinel-2 water check counts water or saturated mud (MNDWI above 0) on the clear pixels of the 5 Sep and 15 Sep scenes, inside the district and outside mapped channels; its comparison with the model is indicative.",
 ]
 
+REPORTED_DEPTHS_ASSUMPTION = ("Flood depths that news reports gave at named places (10-13 Sep 2024) are anecdotal and were not surveyed; they are "
+                              "set beside the model only as a consistency check, never a validation, and are never used to tune the model.")
+"""Added to the manifest's assumptions when the reported depths ship."""
+
 ENVELOPE_ASSUMPTIONS = [
     ("The 2024 season envelope (UNOSAT/GISTDA product 4009) is a scenario layer with its own toggle: accumulated water from August to "
      "October 2024, never an observation for a replay day. Setting the modelled water beside it is a plausibility comparison, not a validation."),
@@ -1225,10 +1278,18 @@ EXPLORATORY_KNOWLEDGE = {
                        "used for tuning: the last keyframe change is commit 129ff03 of 29 Sep 2026, and the check entered the bake on 2 Oct 2026. "
                        "The two true-colour images have been on the page since the first revision, so they were seen while the keyframes were "
                        "set, but no water area had been derived from them.")},
+        {"id": "reported-depths-2024", "relation": "computed_after_keyframes_final", "known_during_tuning": False,
+         "statement": ("The reported depths (news reports of 10-13 Sep 2024 at named places, compiled on 3 Oct 2026) and their consistency "
+                       "check were computed after the keyframes were final (the last keyframe change is commit 129ff03 of 29 Sep 2026) and "
+                       "were not used for tuning. The event chronology the keyframes were shaped to is a general summary of public reporting "
+                       "(ground floors under water, people on rooftops); no depth at a named place was taken from it. Recorded rule: the "
+                       "reported depths are never used to tune the model.")},
     ],
     "depth_factor": (f"The depth factor k = clip((A / A_Sai) ** {DEPTH_FACTOR_EXPONENT}, {DEPTH_FACTOR_FLOOR}, 1) was added on 28 Sep 2026, when the GISTDA and "
                      "UNOSAT 3991 figures were already known. Its exponent and floor follow a hydraulic-geometry rule of thumb; the build history records no fit to an external figure."),
-    "rule": "No keyframe, depth-factor or terrain change may be tuned to VIIRS, the Sentinel-2 water check or product 4009 from here on; if one is, that comparison is relabelled calibration-informed.",
+    "rule": ("No keyframe, depth-factor or terrain change may be tuned to VIIRS, the Sentinel-2 water check or product 4009 from here on; if "
+             "one is, that comparison is relabelled calibration-informed. The reported depths (news, not surveyed) are never used to tune "
+             "the model."),
 }
 
 CAPACITY_CONFIDENCE_REASON = {
@@ -1487,6 +1548,10 @@ def publication_eligibility(reported_licence: str | None, rights: dict) -> dict:
              "licence": reported_licence or "Facts with citations", "licence_stated": True, "shown": True,
              "terms": "Facts quoted with their sources; coordinates matched to OpenStreetMap stay under ODbL 1.0."},
             entry("chronology", "Team summary of public reporting, shown with its compile date."),
+            {"id": "reported-depths", "name": "Flood depths reported in news at named places, 10-13 Sep 2024 (FloodGuard desk research)",
+             "licence": "Facts with citations; paraphrased, no article text copied", "licence_stated": True, "shown": True,
+             "terms": ("Each report is paraphrased and linked to its article; only the title is cited. Coordinates matched to OpenStreetMap "
+                       "stay under ODbL 1.0.")},
             {"id": "external-figures", "name": "GISTDA 10 Sep 2024 and UNOSAT 3991 reported figures", "licence": "Cited figures with links; no data copied",
              "licence_stated": False, "shown": True, "terms": "Quoted as reported, with a link to each source."},
             {"id": ENVELOPE_SOURCE_ID, "name": ENVELOPE_SOURCE_NAME, "licence": rights["licence"],
@@ -1534,6 +1599,13 @@ def evidence_blocks(result: dict) -> list[dict]:
          "temporal_relation": "post_event_compilation", "covers": ["shelters.verification"],
          "source_timestamp": verification.get("source_timestamp", "not conducted: no verification sheet had been returned when these files were generated"),
          "note": verification["statement"]},
+        *([{"id": "reported_depths", "lane": reported_depths.LANE, "evidence_tier": reported_depths.EVIDENCE_TIER,
+            "temporal_relation": "post_event_compilation", "covers": ["reported_depths"],
+            "source_timestamp": result["reported_depths"]["source_timestamp"],
+            SCENARIO_FIELDS_KEY: ["reported_depths.reports[].model"],
+            "note": ("News reports of depth at named places, paraphrased and cited: reported (anecdotal, not surveyed). The figures under "
+                     f"reports[].model are {SCENARIO_TIER} values read at each report's point for a consistency check, which is never a "
+                     "validation; the reports are never used to tune the model.")}] if "reported_depths" in result else []),
         {"id": "event_chronology", "lane": "REP", "evidence_tier": "Team summary of public reporting; not independently verified in this study",
          "temporal_relation": "post_event_compilation", "covers": ["phases"], "source_timestamp": f"compiled {CHRONOLOGY_COMPILED}"},
         {"id": "viirs_daily", "lane": "OBS", "evidence_tier": "Agency flood product, used as provided; unvalidated here",
@@ -1604,6 +1676,8 @@ def dated_inputs(result: dict) -> list[str]:
     stamps += [day["nominal_local_time"] for day in result.get("viirs_days", [])]
     if result.get("reported_meta", {}).get("compiled"):
         stamps.append(result["reported_meta"]["compiled"])
+    if result.get("reported_depths", {}).get("compiled"):
+        stamps.append(result["reported_depths"]["compiled"])
     return stamps
 
 
@@ -1734,6 +1808,7 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
             "days": result["viirs_days"],
         },
         **({"s2_crosscheck": s2_crosscheck_block(result["s2_check"], result["viirs_days"])} if "s2_check" in result else {}),
+        **({"reported_depths": result["reported_depths"]} if "reported_depths" in result else {}),
         "rainfall": {**result["rainfall"], "source": "HII ThaiWater open data, hourly rain gauges",
                      "source_url": "https://tiservice.hii.or.th/opendata/", "licence": "CC BY-NC (per the HII open-data catalogue)",
                      "units": "mm per hour; index 0 = 9 Sep 00:00-01:00 ICT", "note": "Observed rainfall (forcing), not flooding."},
@@ -1744,7 +1819,8 @@ def compose_manifest(result: dict, inputs: list[dict] | None = None, generated_a
             dict(O2_REFERENCE)],
         "gauge_note": "No public hourly Sai River water-level record for Sep 2024 was found (HII MYA004 installed 2025; RID Kh.50 closed; DWR Ban Mae Sai EWS unverified), so stage values remain illustrative.",
         "sources": [*SOURCES, *([envelope_source(rights)] if "season_envelope" in result else [])],
-        "assumptions": [*ASSUMPTIONS, *(ENVELOPE_ASSUMPTIONS if "season_envelope" in result else [])],
+        "assumptions": [*ASSUMPTIONS, *([REPORTED_DEPTHS_ASSUMPTION] if "reported_depths" in result else []),
+                        *(ENVELOPE_ASSUMPTIONS if "season_envelope" in result else [])],
         "limitations": [
             "Not a real-time product or an official warning; for preparedness learning and post-event prioritisation only.",
             "No high-resolution satellite image exists for 10-14 September over Mae Sai in these inputs; VIIRS (375 m) was cloud-covered on 10-11 Sep and mostly cloud-covered on 12-14 Sep, so onset and peak extents are not observed.",
@@ -1805,12 +1881,14 @@ def manifest_problems(manifest: dict) -> list[str]:
     and sizes and no other number, and nothing of it may sit among the day observations
     (``floodguard.replay_manifest.season_envelope_problems``). The shelter plan's sub-blocks are checked too
     (``floodguard.replay_manifest.shelter_plan_problems``): each needs its own evidence block in its lane, the
-    capacity figures must add up, and no participation share or listed capacity may be published.
+    capacity figures must add up, and no participation share or listed capacity may be published. The reported depths
+    (``floodguard.replay_manifest.reported_depth_problems``) sit in lane REP with the model's figures named as scenario
+    values, say they are never used for tuning, and their outcomes and counts must follow from their figures.
     """
     schema = json.loads((ROOT / SCHEMA_REL).read_text(encoding="utf-8"))
     rights = [] if owner_confirmed(load_rights_basis(RIGHTS_RECORD)) else unconfirmed_product_citations(manifest)
     return (evidence_problems(manifest) + shelter_plan_problems(manifest) + season_envelope_problems(manifest) + rights
-            + dated_after_replay(manifest) + schema_problems(manifest, schema))
+            + reported_depth_problems(manifest) + dated_after_replay(manifest) + schema_problems(manifest, schema))
 
 
 def local_day(value: str) -> str:
@@ -1824,7 +1902,8 @@ def local_day(value: str) -> str:
 
 def replay_dates(manifest: dict) -> list[tuple[str, str]]:
     """Every dated entry the replay places in time, as ``(path, ISO date or instant)``: layers (both ends of a pair),
-    observations, replay days, VIIRS days, the Sentinel-2 scenes, the radar size comparison's images and the stage anchors."""
+    observations, replay days, VIIRS days, the Sentinel-2 scenes, the reported depths' time windows, the radar size
+    comparison's images and the stage anchors."""
     found: list[tuple[str, str]] = []
     for layer in manifest.get("layers", []):
         for part in str(layer.get("date") or "").split("/"):
@@ -1834,6 +1913,8 @@ def replay_dates(manifest: dict) -> list[tuple[str, str]]:
     found += [(f"days[{item['date']}]", item["date"]) for item in manifest.get("days", [])]
     found += [(f"viirs_daily.days[{item['date']}]", item["nominal_local_time"]) for item in (manifest.get("viirs_daily") or {}).get("days", [])]
     found += [(f"s2_crosscheck.scenes[{item['id']}]", item["local_time"]) for item in (manifest.get("s2_crosscheck") or {}).get("scenes", [])]
+    for report in (manifest.get("reported_depths") or {}).get("reports", []):
+        found += [(f"reported_depths.reports[{report['id']}]", value) for value in (report["time"].get("window_start"), report["time"].get("window_end")) if value]
     anchor = manifest.get("s1_anchor") or {}
     for pair in (anchor, *anchor.get("sensitivity", [])):
         found += [(f"s1_anchor.images[{item['id']}]", item["local"]) for item in pair.get("images", [])]
@@ -1878,10 +1959,12 @@ BAKE_SOURCES = (
     "src/floodguard/optical_water_check.py",
     "src/floodguard/replay_exports.py",
     "src/floodguard/replay_manifest.py",
+    "src/floodguard/reported_depths.py",
     "src/floodguard/rights_basis.py",
     "src/floodguard/season_envelope.py",
     "src/floodguard/shelter_validation.py",
     SCHEMA_REL.as_posix(),
+    reported_depths.SCHEMA_PATH.as_posix(),
 )
 """This script, the repository modules it imports and the schema the manifest must follow (a unit test checks the imports)."""
 

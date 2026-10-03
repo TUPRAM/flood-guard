@@ -1106,6 +1106,66 @@ try {
   await expect(page.getByTestId("rain-now")).toContainText("MOU189");
   checks.push("observed VIIRS daily map (day at or before the playhead, pixelated, deep-linked) with its clear-sky comparison card, and the hourly rain chart");
   checks.push("15 Sep names both observations (VIIRS and the Sentinel-2 water check) with the consistent-with reading, the next clear VIIRS day beside it and the indicative label; no land cover named; no Sentinel-2 rows on another day");
+  // Reported depths (news, not surveyed; roadmap C-2) at 1440 px: off by default and selected by no replay hour; their
+  // own toggle draws one speech-bubble marker per point, with a legend entry; a popup gives the place, the paraphrase,
+  // the time, the location confidence, the model at that point and the source link; the Sources panel has the counts.
+  const depthMarkers = (target = page) => target.locator(".leaflet-fg-reported-depths-pane [class*='reportedDepthIcon']");
+  const depthToggle = (target = page, name = "Reported depths (news, not surveyed)") => target.getByRole("checkbox", { name });
+  await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
+  await waterModel();
+  await expect(depthMarkers()).toHaveCount(0);
+  for (const hour of ["0", "40", "84", "158", "264"]) {
+    await slider.fill(hour);
+    await expect(depthMarkers(), `hour ${hour} shows no reported depth while the layer is off`).toHaveCount(0);
+  }
+  await openLayers();
+  await expect(depthToggle()).not.toBeChecked();
+  await depthToggle().check();
+  await expect(page).toHaveURL(/[?&]layers=[a-z]*d(&|$)/);
+  await expect(depthMarkers()).toHaveCount(9);
+  for (const hour of ["0", "84", "264"]) {
+    await slider.fill(hour);
+    await expect(depthMarkers(), `hour ${hour} keeps the reported depths on`).toHaveCount(9);
+  }
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.getByTestId("map-legend").getByTestId("reported-depth-legend")).toContainText("Reported depth (news, not surveyed); select for the report");
+  const depthTitles = await depthMarkers().evaluateAll((markers) => markers.map((marker) => marker.getAttribute("aria-label")));
+  assert(depthTitles.every((title) => title?.startsWith("Reported depth (news, not surveyed): ")), `Every reported-depth marker names what it is (${depthTitles.join(" | ")})`);
+  const saiLomJoy = depthMarkers().nth(depthTitles.findIndex((title) => title.includes("Sai Lom Joy border market ·")));
+  await saiLomJoy.dispatchEvent("click");
+  const depthPopup = page.locator(".leaflet-popup-content [data-testid='reported-depth-popup']");
+  await expect(depthPopup).toBeVisible();
+  await expect(depthPopup.locator("section[data-report]")).toHaveCount(2);
+  const firstReport = depthPopup.locator("section[data-report='ms-c2-01']");
+  await expect(firstReport).toContainText("Sai Lom Joy border market");
+  await expect(firstReport).toContainText("Reported in news (not surveyed): more than 1 m (lower bound)");
+  await expect(firstReport).toContainText("Thansettakij reports Sai River water spreading into the market area");
+  await expect(firstReport).toContainText("When: Early morning of 10 Sep 2024 (article time-stamped 05:32 ICT)");
+  await expect(firstReport).toContainText("Location: confidence medium (the reported spot may lie up to about 150 m away)");
+  await expect(firstReport).toContainText("Model at this point, 10 Sep 00:00–05:32 ICT: dry");
+  await expect(firstReport).toContainText("Consistency: the model is dry here over the report's time window");
+  await expect(firstReport.locator("a[href='https://www.thansettakij.com/news/general-news/606236']")).toHaveAttribute("target", "_blank");
+  const popupText = await depthPopup.innerText();
+  assert(!/confirm|validated|validation of/i.test(popupText), "A reported-depth popup never calls the comparison a validation or a confirmation");
+  await expectClearMap(["zoom", "attribution", "popup"], "1440 px, reported-depth popup (notes and legend step aside)");
+  await page.locator(".leaflet-popup-close-button").click();
+  await expect(depthPopup).toHaveCount(0);
+  // The counts table in the Sources panel: numbers and storey or body references, by outcome, and both together.
+  const depthSources = page.getByTestId("sources-panel");
+  await depthSources.locator("summary").click();
+  const countsTable = depthSources.getByTestId("reported-depth-counts");
+  await expect(countsTable).toBeVisible();
+  await expect(countsTable.locator("tr[data-basis='all'] td")).toHaveText(["3", "0", "9", "9"]);
+  await expect(depthSources.getByTestId("reported-depths-use")).toContainText("never a validation");
+  await expect(depthSources.getByTestId("reported-depths-use")).toContainText("never used to tune the model");
+  await expect(depthSources.getByTestId("reported-depths-causes").locator("li")).toHaveCount(4);
+  await depthSources.locator("summary").click();
+  await openLayers();
+  await depthToggle().uncheck();
+  await expect(depthMarkers()).toHaveCount(0);
+  await expect(page).not.toHaveURL(/[?&]layers=[a-z]*d(&|$)/);
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  checks.push("reported depths (news, not surveyed) at 1440 px: off by default and selected by no replay hour; their own toggle draws 9 speech-bubble markers for the 12 located reports, with a legend entry and the link letter d; a popup gives the place, the paraphrase, the time, the location confidence, the model at that point and the source link, never a validation; the Sources panel shows the counts (3 consistent, 0 model shallower, 9 model dry, 9 not comparable)");
   // While the residents raster is still loading, a resident view draws water depth, and the legend says exactly that.
   let releaseResidents;
   const residentsHeld = new Promise((release) => { releaseResidents = release; });
@@ -1502,6 +1562,29 @@ try {
       await expectHatchedExport(`first-flooded view at ${at}`);
     }
   }
+  // Reported depths on a 390 px phone (English): the markers by link, a popup inside the map and the screen, clear of the
+  // zoom buttons and the attribution, the counts table in the Sources panel, and no horizontal scroll.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${baseUrl}${caseRoute}?t=84&layers=trscd`, { waitUntil: "networkidle" });
+  await waterModel();
+  await expect(depthMarkers()).toHaveCount(9);
+  await depthMarkers().first().dispatchEvent("click");
+  await expect(page.locator(".leaflet-popup-content [data-testid='reported-depth-popup']")).toBeVisible();
+  await expectClearMap(["zoom", "attribution", "popup"], "390 px, reported-depth popup (notes and legend step aside)");
+  const phoneDepthPopup = await page.locator(".leaflet-popup").evaluate((popup) => {
+    const box = popup.getBoundingClientRect();
+    return { left: Math.round(box.left), right: Math.round(box.right), width: window.innerWidth };
+  });
+  assert(phoneDepthPopup.left >= 0 && phoneDepthPopup.right <= phoneDepthPopup.width, `The reported-depth popup stays inside a 390 px screen (${JSON.stringify(phoneDepthPopup)})`);
+  await page.locator(".leaflet-popup-close-button").click();
+  const phoneSources = page.getByTestId("sources-panel");
+  await phoneSources.locator("summary").click();
+  await expect(phoneSources.getByTestId("reported-depth-counts").locator("tr[data-basis='all'] td")).toHaveText(["3", "0", "9", "9"]);
+  const phoneDepthFit = await phoneSources.getByTestId("reported-depths-sources").evaluate((box) => ({ need: box.scrollWidth, room: box.clientWidth }));
+  assert(phoneDepthFit.need <= phoneDepthFit.room + 1, `The reported depths fit the Sources panel at 390 px (${JSON.stringify(phoneDepthFit)})`);
+  const phoneDepthScroll = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert(phoneDepthScroll <= 1, `No horizontal scroll at 390 px with the reported depths (${phoneDepthScroll}px)`);
+  checks.push(`reported depths at 390 px: 9 markers by link, a popup inside the map and the screen (${phoneDepthPopup.left}–${phoneDepthPopup.right} px) clear of the zoom buttons and the attribution, the counts table fits the Sources panel, no horizontal scroll`);
   await page.goto(`${baseUrl}${caseRoute}?t=84`, { waitUntil: "networkidle" });
   await page.screenshot({ path: resolve(artifacts, "case-replay-mobile.png"), fullPage: true });
   // The tile route stays: this page keeps its map until the next navigation.
@@ -1566,6 +1649,35 @@ try {
   const thaiComparisonFit = await thaiComparisonGroup.evaluate((box) => ({ need: box.scrollWidth, room: box.clientWidth }));
   assert(thaiComparisonFit.need <= thaiComparisonFit.room, `The Thai envelope comparison fits its card at 390 px (${JSON.stringify(thaiComparisonFit)})`);
   checks.push(`touch phone in Thai: the season envelope's chip and caption in Thai with the CE year, hatched (period ${envelopeThai.hatch.periodPx} px), credited, without overlap, overflow or letter-spacing; the comparison group in Thai`);
+  // Reported depths on the touch phone in Thai: the Thai toggle, a Thai popup clear of the other boxes, the Thai counts
+  // table, no letter-spacing on Thai text and no horizontal scroll.
+  await touchPage.goto(`${baseUrl}${caseRoute}?t=84&lang=th&layers=trscd`, { waitUntil: "networkidle" });
+  await touchPage.waitForFunction(() => !document.body.innerText.includes("กำลังเตรียมแบบจำลองน้ำ"), undefined, { timeout: 30_000 });
+  await expect(depthMarkers(touchPage)).toHaveCount(9);
+  await depthMarkers(touchPage).first().dispatchEvent("click");
+  const thaiDepthPopup = touchPage.locator(".leaflet-popup-content [data-testid='reported-depth-popup']");
+  await expect(thaiDepthPopup).toBeVisible();
+  await expect(thaiDepthPopup).toContainText("ตามรายงานข่าว (ไม่ได้สำรวจ)");
+  await expect(thaiDepthPopup).toContainText("ความเชื่อมั่น");
+  await expect(thaiDepthPopup).toContainText("ผลการเทียบ");
+  await expectClearMap(["zoom", "attribution", "popup"], "touch phone in Thai, reported-depth popup", touchPage);
+  assert.deepEqual(await spacedThai(touchPage), [], "No Thai text is letter-spaced with a reported-depth popup open at 390 px");
+  await touchPage.locator(".leaflet-popup-close-button").click();
+  await touchPage.getByRole("button", { name: "ชั้นแผนที่", exact: true }).click();
+  await expect(depthToggle(touchPage, "ความลึกตามรายงานข่าว (ไม่ได้สำรวจ)")).toBeChecked();
+  await touchPage.getByRole("button", { name: "ปิด", exact: true }).click();
+  const thaiDepthSources = touchPage.getByTestId("sources-panel");
+  await thaiDepthSources.locator("summary").click();
+  const thaiDepthTable = thaiDepthSources.getByTestId("reported-depth-counts");
+  await expect(thaiDepthTable).toContainText("แบบจำลองตื้นกว่า");
+  await expect(thaiDepthTable.locator("tr[data-basis='all'] td")).toHaveText(["3", "0", "9", "9"]);
+  await expect(thaiDepthSources.getByTestId("reported-depths-sources")).toContainText("สถานะ: ตามรายงาน (คำบอกเล่า ไม่ได้สำรวจ)");
+  const thaiDepthFit = await thaiDepthSources.getByTestId("reported-depths-sources").evaluate((box) => ({ need: box.scrollWidth, room: box.clientWidth }));
+  assert(thaiDepthFit.need <= thaiDepthFit.room + 1, `The Thai reported depths fit the Sources panel at 390 px (${JSON.stringify(thaiDepthFit)})`);
+  assert.deepEqual(await spacedThai(touchPage), [], "No Thai text is letter-spaced with the reported depths in the Sources panel at 390 px");
+  const thaiDepthScroll = await touchPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert(thaiDepthScroll <= 1, `No horizontal scroll in Thai at 390 px with the reported depths (${thaiDepthScroll}px)`);
+  checks.push("touch phone in Thai: reported depths by link, a Thai popup clear of the zoom buttons and the attribution, the Thai toggle on, the Thai counts table in the Sources panel, no letter-spacing on Thai text and no horizontal scroll");
   await touchPage.goto(`${baseUrl}${caseRoute}?t=84&lang=th`, { waitUntil: "networkidle" });
   await touchPage.getByTestId("access-card").getByTestId("equity-gap").waitFor({ state: "visible" });
   const thaiSpacing = await touchPage.getByTestId("access-card").evaluate((card) => [...card.querySelectorAll("p, th, td, caption, legend, h2, h3, small, strong, span")]

@@ -18,6 +18,7 @@ import proposalEvidenceSchema from "../schemas/proposal-evidence.schema.json";
 import publicPreparednessAreaSchema from "../schemas/public-preparedness-area.schema.json";
 import sourceComponentSchema from "../schemas/source-component.schema.json";
 import statusSchema from "../schemas/status.schema.json";
+import reportedDepthsSchema from "../schemas/reported-depths-2024.schema.json";
 import tambonReplaySummarySchema from "../schemas/tambon-replay-summary.schema.json";
 import {
   ACCEPTANCE_RECEIPT_STATES,
@@ -256,6 +257,27 @@ describe("contract drift", () => {
     // The radar size comparison's primary pair is one track; a cross-track pair is only a sensitivity row (P2-10).
     expect(replay.properties.s1_anchor.properties.pair.const).toBe("same_track");
     expect(replay.$defs.radarPair.items.required).toEqual(expect.arrayContaining(["utc", "local", "pass", "relative_orbit"]));
+  });
+
+  it("keeps reported depths reported, anecdotal and never a tuning target, in the data file and in the replay manifest", () => {
+    // The data file (roadmap C-2): news reports of depth at named places, paraphrased and cited.
+    const data = reportedDepthsSchema;
+    expect(data.properties.status.const).toBe("reported (anecdotal, not surveyed)");
+    expect(data.properties.confidence.const).toBe("low");
+    expect(data.properties.use_rule.pattern).toBe("never used to tune");
+    expect(data.required).toEqual(expect.arrayContaining(["source_timestamp", "confidence", "assumptions", "use_rule", "copyright_rule"]));
+    const report = data.$defs.report;
+    expect(report.additionalProperties).toBe(false);
+    expect(report.properties.source.properties.title.maxLength).toBe(160);
+    expect(Object.keys(report.properties).filter((key) => /fpps|action_class|priority_score/.test(key))).toEqual([]);
+    // The manifest block: lane REP, the same status, a use rule that denies validation and tuning, outcomes from a fixed list.
+    const block = caseReplayTimelineSchema.properties.reported_depths;
+    expect(block.properties.lane.const).toBe("REP");
+    expect(block.properties.status.const).toBe(data.properties.status.const);
+    expect(block.properties.use_rule.properties.en.allOf.map((item: { pattern: string }) => item.pattern)).toEqual(["never used to tune", "never a validation"]);
+    expect(caseReplayTimelineSchema.$defs.reportedDepthStatus.enum).toEqual(["consistent", "model_shallower", "model_dry", "not_comparable"]);
+    expect(caseReplayTimelineSchema.$defs.reportedDepthClass.enum).toEqual(data.$defs.depthClass.enum);
+    expect(caseReplayTimelineSchema.required).not.toContain("reported_depths");
   });
 
   it("keeps every record of the per-subdistrict replay summary self-describing, with no score and no action class", () => {

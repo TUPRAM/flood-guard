@@ -582,6 +582,11 @@ try {
     const image = document.querySelector(".leaflet-fg-viirs-pane img");
     return Boolean(image && image.complete && image.naturalWidth > 0);
   }, undefined, { timeout: 30_000 });
+  // The reported depths (news, not surveyed) live inside the manifest, so the saved manifest draws them without a
+  // connection: their nine markers by link, and the counts table in the Sources panel.
+  await page.goto(`${baseUrl}${caseReplay.route}?t=84&layers=trd`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => document.querySelectorAll(".leaflet-fg-reported-depths-pane [class*='reportedDepthIcon']").length === 9, undefined, { timeout: 30_000 });
+  if (await page.getByTestId("reported-depth-counts").count() !== 1) throw new Error("The reported depths' counts table is missing offline.");
   // The season envelope (UNOSAT and GISTDA product 4009, a scenario layer) comes from the same offline copy: its raster,
   // its statistics and its licence notice. With its toggle on, by link, the layer is drawn hatched and credited without a
   // connection, at 1440 px and at 390 px, clear of the legend, the notes, the zoom buttons and the attribution.
@@ -750,7 +755,7 @@ try {
   }
   await legacyContext.close();
   console.log(
-    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
+    `browser offline smoke: ${routes.length} routes rendered from a content-versioned service-worker cache; the case replay and its ${caseReplay.assets.length} opt-in data files replayed offline, the season envelope's raster, statistics and licence notice among them (toggle on, hatched and credited: ${envelopeOffline.join("; ")}), the reported depths' nine markers and counts table from the saved manifest, and its ${caseReplay.exports.assets.length} export files downloaded offline (${caseReplay.exports.bytes} of ${caseReplay.exports.budget_bytes} export-budget bytes); approved basemaps failed gracefully and no unapproved external requests occurred`,
   );
   console.log("legacy dashboard offline smoke: embedded Leaflet vectors, text equivalent, and dataset control verified");
 } finally {

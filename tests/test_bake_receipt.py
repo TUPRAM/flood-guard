@@ -851,9 +851,10 @@ def test_committed_receipt_lists_every_input_kind_the_bake_opens(committed_recei
     repo_inputs = sorted(path for root, path in keys if root == "repo")
     assert repo_inputs == ["docs/proposal_execution/rights_basis_4009_v1.json",
                            "outputs/mae_sai_access_edges.csv", "outputs/mae_sai_admin_context.geojson", "outputs/mae_sai_facilities.geojson",
-                           "outputs/mae_sai_population_nodes.csv", "outputs/mae_sai_reported_shelters_2024.json",
-                           "outputs/mae_sai_road_risk.geojson"]
-    assert len(inputs) == 38
+                           "outputs/mae_sai_population_nodes.csv", "outputs/mae_sai_reported_depths_2024.json",
+                           "outputs/mae_sai_reported_shelters_2024.json", "outputs/mae_sai_road_risk.geojson"]
+    # The reported depths (news, not surveyed; roadmap C-2) are an in-repo input like the reported shelters.
+    assert len(inputs) == 39
 
 
 def test_committed_receipt_matches_the_in_repo_inputs_and_the_committed_revision(committed_receipt: dict) -> None:

@@ -36,8 +36,10 @@ BAKE_SCRIPTS = ("scripts/build_mae_sai_flood_timeline.py", "scripts/mae_sai_time
                 # The season-envelope stage writes the product 4009 files: its strings are their text.
                 "scripts/mae_sai_timeline_unosat4009.py",
                 # The export pack's wording, the returned-sheet messages and the import script's output reach a reader too.
-                "src/floodguard/replay_exports.py", "src/floodguard/shelter_validation.py", "scripts/import_shelter_validation.py")
-JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "docs/proposal_execution/rights_basis_4009_v1.json",
+                "src/floodguard/replay_exports.py", "src/floodguard/shelter_validation.py", "scripts/import_shelter_validation.py",
+                # The reported depths' block (rules, likely causes, labels) is written by this module.
+                "src/floodguard/reported_depths.py")
+JSON_DOCUMENTS = ("outputs/mae_sai_reported_shelters_2024.json", "outputs/mae_sai_reported_depths_2024.json", "docs/proposal_execution/rights_basis_4009_v1.json",
                   "docs/mae_sai_timeline_r4_input_receipt.json", "apps/web/src/lib/__fixtures__/mae-sai-equity-access-parity.json")
 TEXT_DOCUMENTS = ("docs/decision-log-d1-d16.md", "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt")
 STUDY_LIBRARY = "docs/studio-study-library.md"
@@ -123,6 +125,7 @@ def test_rules_cover_the_six_banned_groups_and_the_shelter_comparison_rules() ->
         "safe_departure",  # the modelled cut-off hour presented as a safe time to leave (P2-4)
         "shelter_directive",  # "open these shelters": the plans list candidates to verify (P2-9)
         "equity_denominator",  # the equity rates stated over all residents counted, not those within reach before the flood (R8)
+        "report_confirmation",  # a news report "confirming" the model, or the model "confirmed by" reports (C-2)
     )
     assert len(RULES.allow) >= 8
 

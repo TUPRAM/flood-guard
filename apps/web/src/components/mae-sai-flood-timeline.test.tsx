@@ -1123,7 +1123,10 @@ describe("Mae Sai replay evidence envelope on the page (r4)", () => {
     expect(plain).toContain("they were seen while the keyframes were set, but no water area had been derived from them.");
     expect(html.match(/data-relation="used_for_tuning"/g)).toHaveLength(2);
     expect(html.match(/data-relation="known_during_tuning"/g)).toHaveLength(1);
-    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(2);
+    // The reported depths (news, not surveyed) were compiled after the keyframes were final; a recorded rule keeps them out of tuning.
+    expect(plain).toContain("Not used for tuning: The reported depths (news reports of 10-13 Sep 2024 at named places, compiled on 3 Oct 2026)");
+    expect(plain).toContain("Recorded rule: the reported depths are never used to tune the model.");
+    expect(html.match(/data-relation="computed_after_keyframes_final"/g)).toHaveLength(3);
     expect(html.match(/data-relation="not_used_for_tuning"/g)).toHaveLength(1);
     expect(plain).toContain(plainManifestText(manifest.exploratory_knowledge!.rule));
     expect(findWordingViolations(visibleText(html), "TuningDisclosure")).toEqual([]);

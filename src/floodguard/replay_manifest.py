@@ -25,6 +25,9 @@ This module holds the rules that do not depend on any one study:
 * :func:`season_envelope_problems`, the rules of a season envelope (lane ``SCN-ENV``): the manifest names its files
   by address, hash and size and holds no figure derived from the product, and the envelope is never among the day
   observations;
+* :func:`reported_depth_problems`, the rules of the reported depths (news, not surveyed; lane ``REP``): one evidence
+  block in that lane covers them and names the model's figures as scenario fields, the use rule says the reports are
+  never used to tune the model, and every outcome and count follows from the figures (``floodguard.reported_depths``);
 * :func:`schema_problems`, validation against the JSON schema in
   ``packages/contracts/schemas/case-replay-timeline.schema.json``.
 
@@ -37,6 +40,8 @@ from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time, timezone
 import re
 from typing import Any
+
+from floodguard import reported_depths as _reported_depths
 
 LANES: Mapping[str, str] = {
     "SCN": "Scenario (model): computed on the reconstructed water with stated assumptions; not an observation.",
@@ -496,6 +501,34 @@ def season_envelope_problems(manifest: Mapping[str, Any]) -> list[str]:
         for key in ("layers", "observations", "days", "viirs_daily", "exports", "vectors", "hand", "population", "access"):
             if folder in _text_of(manifest.get(key)):
                 problems.append(f"{key} names a file of the season envelope: it is never a day observation, a replay layer or an export file")
+    return problems
+
+
+REPORTED_DEPTH_MODEL_PATH = "reported_depths.reports[].model"
+"""Where the reported depths hold the model's figures, which their evidence block must name as scenario fields."""
+
+
+def reported_depth_problems(manifest: Mapping[str, Any]) -> list[str]:
+    """Return every way a manifest's reported depths break their rules (empty when they hold, or when there are none).
+
+    Reported depths are news reports of depth at named places: "reported (anecdotal, not surveyed)", lane ``REP``. One
+    evidence block in that lane covers ``reported_depths`` and names ``reported_depths.reports[].model`` as scenario
+    fields, because the figures there are model output read at each report's point. The block's own rules
+    (``floodguard.reported_depths.block_problems``) hold: the use rule says the reports are never used to tune the model
+    and that the check is never a validation, a point is given only at medium or high location confidence, and every
+    outcome and count follows from the published figures.
+    """
+    block = manifest.get("reported_depths")
+    if block is None:
+        return []
+    if not isinstance(block, Mapping):
+        return ["reported_depths is not an object"]
+    problems = _reported_depths.block_problems(block)
+    covering = [item for item in manifest.get("evidence_blocks") or () if isinstance(item, Mapping) and "reported_depths" in (item.get("covers") or ())]
+    if len(covering) != 1 or covering[0].get("lane") != _reported_depths.LANE:
+        problems.append(f"one evidence block in lane {_reported_depths.LANE} must cover reported_depths")
+    elif REPORTED_DEPTH_MODEL_PATH not in (covering[0].get(SCENARIO_FIELDS_KEY) or ()):
+        problems.append(f"the reported depths' evidence block must name {REPORTED_DEPTH_MODEL_PATH} as scenario fields")
     return problems
 
 

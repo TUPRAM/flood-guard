@@ -795,6 +795,182 @@
         }
       }
     },
+    "reported_depths": {
+      "description": "Flood depths that news reports gave at named places, 10-13 Sep 2024: reported (anecdotal, not surveyed), lane REP (roadmap C-2). Each report keeps its paraphrase, time, source and location confidence; a report with a medium or high location confidence has a point, and the model read at that point over the report's time window sits under reports[].model (T1 scenario values, named as scenario_fields by the block's evidence block). The outcome says whether the model reaches the reported lower bound (or, for a storey or body reference, has the place wet). It is a consistency check, never a validation, and the reports are never used to tune the model.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "label", "status", "lane", "evidence_tier", "confidence", "confidence_reason", "source_timestamp", "compiled", "data_file", "use_rule",
+        "comparison_rule", "tolerance_rule", "peak_stage_m", "depth_classes", "counts", "counts_within_tolerance", "likely_causes", "model_fields",
+        "left_out", "reports"
+      ],
+      "properties": {
+        "id": { "const": "reported-depths-2024" },
+        "label": { "$ref": "#/$defs/localized" },
+        "status": { "const": "reported (anecdotal, not surveyed)" },
+        "lane": { "const": "REP" },
+        "evidence_tier": { "type": "string", "pattern": "not surveyed" },
+        "confidence": { "const": "low" },
+        "confidence_reason": { "$ref": "#/$defs/localized" },
+        "source_timestamp": { "type": "string", "minLength": 1 },
+        "compiled": { "type": "string", "format": "date" },
+        "data_file": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256"],
+          "properties": { "path": { "const": "outputs/mae_sai_reported_depths_2024.json" }, "sha256": { "$ref": "#/$defs/sha256" } }
+        },
+        "use_rule": {
+          "description": "Says the check is never a validation and the reports are never used to tune the model.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["en", "th"],
+          "properties": {
+            "en": { "type": "string", "allOf": [{ "pattern": "never used to tune" }, { "pattern": "never a validation" }], "not": { "pattern": "[Cc]onfirm|[Vv]alidated" } },
+            "th": { "type": "string", "minLength": 1 }
+          }
+        },
+        "comparison_rule": { "$ref": "#/$defs/localized" },
+        "tolerance_rule": { "$ref": "#/$defs/localized" },
+        "peak_stage_m": { "type": "number", "exclusiveMinimum": 0 },
+        "depth_classes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label"],
+            "properties": { "id": { "$ref": "#/$defs/reportedDepthClass" }, "label": { "$ref": "#/$defs/localized" } }
+          }
+        },
+        "counts": { "$ref": "#/$defs/reportedDepthCounts" },
+        "counts_within_tolerance": { "$ref": "#/$defs/reportedDepthCounts" },
+        "likely_causes": {
+          "description": "Likely causes of the misses, said plainly; neither the model nor the reports are judged.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "text"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z_]+$" },
+              "text": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["en", "th"],
+                "properties": {
+                  "en": { "type": "string", "minLength": 1, "not": { "pattern": "[Vv]alidat|[Cc]onfirm|too (low|high|shallow|deep)|wrong" } },
+                  "th": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          }
+        },
+        "model_fields": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paths", "evidence_tier", "note"],
+          "properties": {
+            "paths": { "const": ["reports[].model"] },
+            "evidence_tier": { "const": "T1 scenario (model)" },
+            "note": { "type": "string", "minLength": 1 }
+          }
+        },
+        "left_out": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["dropped", "excluded"],
+          "properties": { "dropped": { "type": "integer", "minimum": 0 }, "excluded": { "type": "integer", "minimum": 0 } }
+        },
+        "reports": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "place", "tambon", "point", "location_confidence", "location_tolerance_m", "depth", "time", "source", "model", "consistency", "consistency_within_tolerance"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^ms-c2-\\d{2}$" },
+              "place": { "$ref": "#/$defs/localized" },
+              "tambon": { "$ref": "#/$defs/localized" },
+              "point": {
+                "oneOf": [
+                  { "type": "null" },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["lat", "lon"],
+                    "properties": { "lat": { "type": "number" }, "lon": { "type": "number" } }
+                  }
+                ]
+              },
+              "location_confidence": { "enum": ["low", "medium", "high"] },
+              "location_tolerance_m": { "type": ["number", "null"] },
+              "depth": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["basis", "kind", "lower_bound_m", "upper_m", "class", "statement"],
+                "properties": {
+                  "basis": { "enum": ["numeric", "qualitative"] },
+                  "kind": { "enum": ["lower_bound", "range", "class"] },
+                  "lower_bound_m": { "type": ["number", "null"] },
+                  "upper_m": { "type": ["number", "null"] },
+                  "class": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/reportedDepthClass" }] },
+                  "statement": { "$ref": "#/$defs/localized" }
+                }
+              },
+              "time": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["text", "window_start", "window_end"],
+                "properties": {
+                  "text": { "$ref": "#/$defs/localized" },
+                  "window_start": { "type": ["string", "null"], "format": "date-time" },
+                  "window_end": { "type": ["string", "null"], "format": "date-time" }
+                }
+              },
+              "source": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["title", "publisher", "url", "published", "language"],
+                "properties": {
+                  "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+                  "publisher": { "type": "string", "minLength": 1 },
+                  "url": { "type": "string", "pattern": "^https://" },
+                  "published": { "type": "string", "minLength": 10 },
+                  "language": { "enum": ["th", "en"] }
+                }
+              },
+              "model": {
+                "description": "T1 scenario (model) values at the report's point; null for a report that is not compared.",
+                "oneOf": [
+                  { "type": "null" },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["cell", "moved_m", "height_above_channel_m", "window_max_stage_m", "window_max_at", "depth_m", "peak_depth_m", "first_wet", "max_within_tolerance_m"],
+                    "properties": {
+                      "cell": { "enum": ["point", "nearest_out_of_channel"] },
+                      "moved_m": { "type": "number", "minimum": 0 },
+                      "height_above_channel_m": { "type": ["number", "null"], "minimum": 0 },
+                      "window_max_stage_m": { "type": "number", "minimum": 0 },
+                      "window_max_at": { "type": "string", "format": "date-time" },
+                      "depth_m": { "type": "number", "minimum": 0 },
+                      "peak_depth_m": { "type": "number", "minimum": 0 },
+                      "first_wet": { "type": ["string", "null"], "format": "date-time" },
+                      "max_within_tolerance_m": { "type": "number", "minimum": 0 }
+                    }
+                  }
+                ]
+              },
+              "consistency": { "$ref": "#/$defs/reportedDepthStatus" },
+              "consistency_within_tolerance": { "$ref": "#/$defs/reportedDepthStatus" }
+            }
+          }
+        }
+      }
+    },
     "rainfall": { "type": "object", "required": ["stations", "hourly_mm", "source", "source_url", "licence", "units", "note"] },
     "external_references": {
       "type": "array",
@@ -900,6 +1076,36 @@
           "else": { "properties": { "capacity_basis": { "const": "OSM footprint x 0.5 / 3.5 m2 (Sphere), unverified" }, "upper_capacity_basis": { "const": "estimate" } } }
         }
       ]
+    },
+    "reportedDepthClass": {
+      "description": "Class of a storey or body reference in a reported depth; a class is never turned into a number.",
+      "enum": ["waist_deep", "chest_deep", "neck_deep", "over_head", "ground_floor_submerged", "above_ground_floor", "roof_level_refuge", "not_stated"]
+    },
+    "reportedDepthStatus": {
+      "description": "Outcome of the consistency check of one reported depth with the model.",
+      "enum": ["consistent", "model_shallower", "model_dry", "not_comparable"]
+    },
+    "reportedDepthCounts": {
+      "description": "Reports per outcome: numbers (lower bounds and ranges), storey or body references, and both together.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numeric", "qualitative", "all"],
+      "properties": {
+        "numeric": { "$ref": "#/$defs/reportedDepthTally" },
+        "qualitative": { "$ref": "#/$defs/reportedDepthTally" },
+        "all": { "$ref": "#/$defs/reportedDepthTally" }
+      }
+    },
+    "reportedDepthTally": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consistent", "model_shallower", "model_dry", "not_comparable"],
+      "properties": {
+        "consistent": { "type": "integer", "minimum": 0 },
+        "model_shallower": { "type": "integer", "minimum": 0 },
+        "model_dry": { "type": "integer", "minimum": 0 },
+        "not_comparable": { "type": "integer", "minimum": 0 }
+      }
     },
     "lane": {
       "description": "SCN scenario (model); OBS observed; CAL calibration (used or known during tuning); SCN-ENV season envelope scenario; REP reported; CTX static context; REF cited, not ingested.",

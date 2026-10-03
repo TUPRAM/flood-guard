@@ -462,6 +462,15 @@ details.card summary { cursor: pointer; font-weight: 700; color: #17253b; min-he
 :is(.legend, .toggleSwatch) i.legendGauge { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; }
 :is(.legend, .toggleSwatch) i.legendGauge svg { fill: #1f7a8c; stroke: #fff; stroke-width: 1.6; }
 .popupFrame :global(.leaflet-popup-content) { margin: .7rem .8rem; }
+/* Reported depths (news, not surveyed): a speech bubble with two wave lines, so it never reads as a shelter, a gauge or a facility. */
+.reportedDepthIcon { display: grid; place-items: center; background: none; border: 0; filter: drop-shadow(0 1px 2px rgb(15 23 42 / 45%)); }
+.reportedDepthIcon svg { fill: #9a3412; stroke: #fff; stroke-width: 1.5; stroke-linejoin: round; }
+.reportedDepthIcon:focus-visible { outline: 3px solid #e8a526; outline-offset: 2px; border-radius: 4px; }
+:is(.legend, .toggleSwatch) i.legendReportedDepth { display: inline-grid; place-items: center; width: 16px; height: 16px; background: none; }
+:is(.legend, .toggleSwatch) i.legendReportedDepth svg { fill: #9a3412; stroke: #fff; stroke-width: 1.5; }
+.popup .reportedDepthReport + .reportedDepthReport { margin-top: .45rem; padding-top: .45rem; border-top: 1px solid #e3e8f1; }
+.popup .reportedDepthReport { display: grid; gap: .2rem; }
+.reportedDepthList li { overflow-wrap: anywhere; }
 
 /* --- Observed evidence: VIIRS daily maps and hourly rain ---------------------------------------- */
 .legend i.viirsSwatch { box-shadow: inset 0 0 0 1px rgb(12 39 64 / 22%); }

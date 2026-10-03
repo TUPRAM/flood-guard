@@ -681,6 +681,85 @@ export interface S2Crosscheck {
   sensitivity: S2CrosscheckSensitivity[];
 }
 
+/** Outcome of the consistency check of one reported depth with the model (never a validation). */
+export type ReportedDepthStatus = "consistent" | "model_shallower" | "model_dry" | "not_comparable";
+export type ReportedDepthTally = Record<ReportedDepthStatus, number>;
+/** Reports per outcome: numbers (lower bounds and ranges), storey or body references, and both together. */
+export type ReportedDepthCounts = Record<"numeric" | "qualitative" | "all", ReportedDepthTally>;
+
+/** Model values read at a report's point over the report's time window (T1 scenario values, not part of the report). */
+export interface ReportedDepthModel {
+  /** "point", or the nearest cell outside the mapped river channel when the point falls on it. */
+  cell: "point" | "nearest_out_of_channel";
+  moved_m: number;
+  /** Height of the cell above its drainage channel in the terrain model; null above the highest level it encodes. */
+  height_above_channel_m: number | null;
+  window_max_stage_m: number;
+  window_max_at: string;
+  /** Deepest modelled water at the point over the window (m). */
+  depth_m: number;
+  /** Modelled water at the point at the modelled peak (m). */
+  peak_depth_m: number;
+  /** First replay hour at which the model has the point wet; null when it never is. */
+  first_wet: string | null;
+  /** Deepest out-of-channel cell within the report's location tolerance (a sensitivity). */
+  max_within_tolerance_m: number;
+}
+
+/** One news report of a depth at a named place: paraphrased and cited; reported (anecdotal, not surveyed). */
+export interface ReportedDepthReport {
+  id: string;
+  place: Localized;
+  tambon: Localized;
+  /** Present only at medium or high location confidence. */
+  point: { lat: number; lon: number } | null;
+  location_confidence: "low" | "medium" | "high";
+  location_tolerance_m: number | null;
+  depth: {
+    /** "numeric" for a lower bound or a range (its lower end is the lower bound), "qualitative" for a storey or body reference. */
+    basis: "numeric" | "qualitative";
+    kind: "lower_bound" | "range" | "class";
+    lower_bound_m: number | null;
+    upper_m: number | null;
+    class: string | null;
+    /** The source's words, paraphrased. */
+    statement: Localized;
+  };
+  time: { text: Localized; window_start: string | null; window_end: string | null };
+  source: { title: string; publisher: string; url: string; published: string; language: string };
+  model: ReportedDepthModel | null;
+  consistency: ReportedDepthStatus;
+  consistency_within_tolerance: ReportedDepthStatus;
+}
+
+/**
+ * Flood depths that news reports gave at named places, 10-13 Sep 2024 (roadmap C-2): reported (anecdotal, not surveyed),
+ * lane REP, with their consistency with the model. Never a validation, and never used to tune the model.
+ */
+export interface ReportedDepths {
+  id: string;
+  label: Localized;
+  status: string;
+  lane: "REP";
+  evidence_tier: string;
+  confidence: string;
+  confidence_reason: Localized;
+  source_timestamp: string;
+  compiled: string;
+  data_file: { path: string; sha256: string };
+  use_rule: Localized;
+  comparison_rule: Localized;
+  tolerance_rule: Localized;
+  peak_stage_m: number;
+  depth_classes: { id: string; label: Localized }[];
+  counts: ReportedDepthCounts;
+  counts_within_tolerance: ReportedDepthCounts;
+  likely_causes: { id: string; text: Localized }[];
+  model_fields: { paths: string[]; evidence_tier: string; note: string };
+  left_out: { dropped: number; excluded: number };
+  reports: ReportedDepthReport[];
+}
+
 /** Hourly rain gauge (observed forcing, not flooding). */
 export interface RainStation {
   code: string;
@@ -788,6 +867,8 @@ export interface TimelineManifest {
   viirs_daily?: ViirsDaily;
   /** Sentinel-2 water check for the first clear scene after the river fell (15 Sep); absent before the later r4 bakes. */
   s2_crosscheck?: S2Crosscheck;
+  /** Depths reported in news at named places, with their consistency with the model (r4 bakes from 3 Oct 2026). */
+  reported_depths?: ReportedDepths;
   /** Observed hourly rain at nearby gauges (forcing, not flooding); absent before r3. */
   rainfall?: Rainfall;
   /** Download files for spreadsheet and GIS users (absent from a manifest baked before the pack existed). */

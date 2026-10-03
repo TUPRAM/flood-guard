@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://floodguard.th/proposal-execution/planning-protocol-v1b.schema.json",
   "title": "FloodGuard planning protocol v1b (engineering addendum)",
-  "description": "Shape of docs/proposal_execution/planning_protocol_v1b.json. While any open item is open the status must be incomplete_draft. A file with status draft_for_signature or signed has no open item, every section fixed and every parameter that an open item names filled in ($defs/fixed_parameters). A signed file also has both signatures, by two different named signers, every drafter reading confirmed or amended and the recorded v1a SHA-256. The file never records its own SHA-256.",
+  "description": "Shape of docs/proposal_execution/planning_protocol_v1b.json. While any open item is open the status must be incomplete_draft. A file with status draft_for_signature or signed has no open item, every section fixed and every parameter that an open item names filled in ($defs/fixed_parameters). A signed file also has both signatures, by two different named signers, every drafter reading confirmed or amended, the recorded v1a SHA-256 and an owner's acceptance of the compute window of the corridor run of record (corridor_polygon.run_of_record.compute_window.owner_acceptance). The file never records its own SHA-256.",
   "type": "object",
   "additionalProperties": false,
   "$defs": {
@@ -802,10 +802,10 @@
                     "parameters": {
                       "type": "object",
                       "required": [
-                        "k"
+                        "bridge_edges_per_tambon"
                       ],
                       "properties": {
-                        "k": {
+                        "bridge_edges_per_tambon": {
                           "not": {
                             "type": "null"
                           }
@@ -1513,6 +1513,112 @@
                 "null"
               ],
               "minLength": 1
+            }
+          }
+        },
+        "run_of_record": {
+          "type": "object",
+          "required": [
+            "compute_window",
+            "acceptance_result"
+          ],
+          "properties": {
+            "compute_window": {
+              "type": "object",
+              "required": [
+                "declared_by",
+                "owner_acceptance"
+              ],
+              "properties": {
+                "owner_acceptance": {
+                  "description": "Filled by an owner, never by the agent: whether the owner accepts the compute window the agent declared for the corridor run of record.",
+                  "type": "object",
+                  "required": [
+                    "accepted",
+                    "accepted_by",
+                    "accepted_on",
+                    "rule"
+                  ],
+                  "properties": {
+                    "accepted": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "accepted_by": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1
+                    },
+                    "accepted_on": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                    },
+                    "rule": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "additionalProperties": false,
+                  "if": {
+                    "properties": {
+                      "accepted": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "accepted"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "accepted_by": {
+                        "type": "string",
+                        "pattern": "Putu|Rachmania"
+                      },
+                      "accepted_on": {
+                        "type": "string",
+                        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "accepted_by": {
+                        "type": "null"
+                      },
+                      "accepted_on": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "acceptance_result": {
+              "type": "object",
+              "required": [
+                "declared_compute_window",
+                "all_criteria_met"
+              ],
+              "properties": {
+                "declared_compute_window": {
+                  "enum": [
+                    true,
+                    false,
+                    "declared_by_agent_pending_owner_acceptance"
+                  ]
+                },
+                "all_criteria_met": {
+                  "type": "boolean"
+                }
+              }
             }
           }
         }
@@ -2284,6 +2390,11 @@
                 "type": "string",
                 "minLength": 1
               },
+              "agent_note": {
+                "description": "Written by the agent, not the owners: what the owners left unanswered and what the file does by default.",
+                "type": "string",
+                "minLength": 1
+              },
               "still_needed": {
                 "type": "string",
                 "minLength": 1
@@ -2522,6 +2633,43 @@
                 "properties": {
                   "v1a_sha256": {
                     "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "required": [
+              "corridor_polygon"
+            ],
+            "properties": {
+              "corridor_polygon": {
+                "required": [
+                  "run_of_record"
+                ],
+                "properties": {
+                  "run_of_record": {
+                    "properties": {
+                      "compute_window": {
+                        "properties": {
+                          "owner_acceptance": {
+                            "properties": {
+                              "accepted": {
+                                "const": true
+                              },
+                              "accepted_by": {
+                                "type": "string",
+                                "pattern": "Putu|Rachmania"
+                              },
+                              "accepted_on": {
+                                "type": "string",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }

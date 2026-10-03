@@ -86,6 +86,7 @@ from floodguard.evidence_context import (  # noqa: E402
 )
 from floodguard.evidence_scenarios import MODELLED_ROAD_SPEED_KMH, calculate_total_access  # noqa: E402
 from floodguard.grade_join import apply_grade_joins, join_log, joins_sha256  # noqa: E402
+from floodguard.hospital_counts import UNNAMED_FACILITY, count_hospitals  # noqa: E402
 from floodguard.shelter_corroboration import corroborate_shelters, osm_match_kinds  # noqa: E402
 
 SCHEMA_VERSION = "floodguard.e0_context_spike.v1"
@@ -98,7 +99,6 @@ HOSPITAL_MATCH_DISTANCE_M = 150.0
 # Room around the routing context for OSM objects that a shelter near its edge can match (about 210 m at 20 N).
 MATCH_OBJECT_MARGIN_DEG = 0.002
 MAE_SAI_HOSPITAL_NAME_TH = "โรงพยาบาลแม่สาย"
-UNNAMED_FACILITY = "Unnamed OSM candidate"
 MEMORY_SAMPLE_SECONDS = 0.2
 RECORD_FILES = {
     "receipt": "e0_context_run_of_record.json",
@@ -487,16 +487,12 @@ def hospital_breakdown(destinations: list[dict[str, Any]]) -> dict[str, Any]:
     The plan's acceptance asks for at least four hospitals and does not say
     whether two OSM objects for one hospital count twice. Objects with the same
     OSM name are one named hospital; an object without a name is counted apart.
+    The counting rule is ``floodguard.hospital_counts.count_hospitals``, which the
+    planning-frame build uses too.
     """
 
-    names = Counter(" ".join(str(row["name"]).split()).casefold() for row in destinations
-                    if row["name"] != UNNAMED_FACILITY)
-    unnamed = sum(row["name"] == UNNAMED_FACILITY for row in destinations)
     return {
-        "osm_objects": len(destinations),
-        "distinct_named_hospitals": len(names),
-        "unnamed_objects": unnamed,
-        "objects_that_repeat_a_named_hospital": sum(count - 1 for count in names.values()),
+        **count_hospitals(destinations),
         "rule": "Objects with the same OSM name are one named hospital. An object without a name is counted apart; "
                 "nothing here shows that it is a hospital in its own right.",
     }
@@ -524,17 +520,29 @@ def previous_run(variant: str, output_dir: Path = OUTPUT_DIR) -> dict[str, Any] 
     }
 
 
-def reproducibility(previous: dict[str, Any] | None, current: dict[str, Any]) -> dict[str, Any]:
-    """Compare this run with the previous run of the same variant."""
+def reproducibility(previous: dict[str, Any] | None, current: dict[str, Any], *,
+                    of_record: bool = False) -> dict[str, Any]:
+    """Compare this run with the previous candidate run of the same variant.
+
+    A candidate run overwrites the candidate files it compares with. A run of
+    record writes its own files of record and leaves the candidate files as they
+    are, and its note says so.
+    """
 
     if previous is None:
         return {"compared": False, "note": "No earlier run of this variant was found in outputs/planning_v1."}
     keys = ("context_canonical_sha256", "corridor_geometry_sha256", "joins_sha256", "edge_count", "join_count")
     same = {key: previous[key] == current[key] for key in keys}
+    read_note = (
+        "The candidate run's receipt, corridor and join log were read from outputs/planning_v1 and compared with "
+        "this run of record, which writes its own files of record and does not replace the candidate files."
+        if of_record else
+        "The earlier run's receipt, corridor and join log were read from outputs/planning_v1 before this run "
+        "replaced them."
+    )
     return {
         "compared": True,
-        "note": "The earlier run's receipt, corridor and join log were read from outputs/planning_v1 before this "
-                "run replaced them. Run times, timings and memory figures differ between runs and are not compared.",
+        "note": read_note + " Run times, timings and memory figures differ between runs and are not compared.",
         "previous_run": previous,
         "this_run": {key: current[key] for key in keys},
         "same": same,
@@ -972,7 +980,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "joins_sha256": joins_sha256(joins),
         "edge_count": len(context["edges"]),
         "join_count": len(joins),
-    })
+    }, of_record=of_record)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False)
 
     # Every file of the run carries the same generation time; they are written last, together.

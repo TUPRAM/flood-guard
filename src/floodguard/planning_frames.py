@@ -23,7 +23,6 @@ FPPS, an A-E class or an ensemble.
 
 from __future__ import annotations
 
-from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 import hashlib
 import json
@@ -34,14 +33,15 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from floodguard.evidence_context import _tags
+from floodguard.hospital_counts import count_hospitals
 
 ROUTING_BUFFER_M = 3000.0
 BUFFER_QUAD_SEGS = 16
 METRIC_EPSG = 32647
 # Thai "district office" (thi wa kan amphoe) and "district office" (samnak ngan amphoe),
 # written as escapes so the source stays ASCII.
-DISTRICT_OFFICE_PREFIX_TH = "ที่ว่าการอำเภอ"
-DISTRICT_OFFICE_ALT_PREFIX_TH = "สำนักงานอำเภอ"
+DISTRICT_OFFICE_PREFIX_TH = "\u0e17\u0e35\u0e48\u0e27\u0e48\u0e32\u0e01\u0e32\u0e23\u0e2d\u0e33\u0e40\u0e20\u0e2d"
+DISTRICT_OFFICE_ALT_PREFIX_TH = "\u0e2a\u0e33\u0e19\u0e31\u0e01\u0e07\u0e32\u0e19\u0e2d\u0e33\u0e40\u0e20\u0e2d"
 UNIT_FIELDS = ("adm3_pcode", "adm3_name", "adm3_name_th", "adm2_pcode", "adm2_name", "adm1_pcode")
 
 
@@ -171,16 +171,12 @@ def hospitals_inside(
 
 
 def hospital_counts(hospitals: Sequence[Mapping[str, Any]]) -> dict[str, int]:
-    """Count OSM objects, distinct named hospitals and unnamed objects (owner choice 22 counts named hospitals)."""
+    """Count OSM objects, distinct named hospitals and unnamed objects (owner choice 22 counts named hospitals).
 
-    names = Counter(row["name"] for row in hospitals if row["name"] and row["name"] != "Unnamed OSM candidate")
-    unnamed = sum(1 for row in hospitals if not row["name"] or row["name"] == "Unnamed OSM candidate")
-    return {
-        "osm_objects": len(hospitals),
-        "distinct_named_hospitals": len(names),
-        "unnamed_objects": unnamed,
-        "objects_that_repeat_a_named_hospital": sum(count - 1 for count in names.values()),
-    }
+    The rule is ``floodguard.hospital_counts.count_hospitals``, which the E0 context spike uses too.
+    """
+
+    return count_hospitals(hospitals)
 
 
 def district_office_candidates(

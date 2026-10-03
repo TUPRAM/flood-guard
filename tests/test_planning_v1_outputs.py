@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 
 from floodguard.config import VALID_CONFIDENCE_CLASSES
+from floodguard.hospital_counts import count_hospitals
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUTS = ROOT / "outputs" / "planning_v1"
@@ -200,11 +201,46 @@ def test_protocol_v1b_records_the_run_of_record_exactly() -> None:
     if join_log["path"] is not None:
         assert join_log == {"path": receipt["grade_joins"]["log_path"], "sha256": receipt["grade_joins"]["log_sha256"],
                             "join_count": receipt["grade_joins"]["join_count"]}
+    count_keys = ("osm_hospitals", "dga_matched_hospitals", "located_ddpm_shelters", "corroborated_shelters")
     counts = protocol["facility_sets"]["counts_in_corridor"]
-    if counts["corroborated_shelters"] is not None:
-        for key in ("osm_hospitals", "dga_matched_hospitals", "located_ddpm_shelters", "corroborated_shelters"):
+    if counts["corroborated_shelters"] is not None and counts.get("evidence_sha256") == _sha256(RECORD_RECEIPT):
+        for key in count_keys:
             assert counts[key] == receipt["facility_counts"][key], key
-        assert counts["evidence_sha256"] == _sha256(RECORD_RECEIPT)
+
+    # OI-04 and the counts of OI-06 follow from the E4 build. What this spike run measured is kept beside their
+    # slots and is what E4 must reproduce; both copies repeat the receipt exactly.
+    spike_log = protocol["grade_join_policy"]["join_log_from_spike_run_of_record"]
+    assert {key: spike_log[key] for key in ("path", "sha256", "join_count", "joins_sha256")} == {
+        "path": receipt["grade_joins"]["log_path"], "sha256": receipt["grade_joins"]["log_sha256"],
+        "join_count": receipt["grade_joins"]["join_count"], "joins_sha256": receipt["grade_joins"]["joins_sha256"]}
+    spike_counts = protocol["facility_sets"]["counts_from_spike_run_of_record"]
+    assert {key: spike_counts[key] for key in count_keys} == {key: receipt["facility_counts"][key] for key in count_keys}
+    assert spike_counts["evidence_sha256"] == _sha256(RECORD_RECEIPT)
+    check = block["e4_reproduction_check"]
+    assert check["source"] == RECORD_RECEIPT.relative_to(ROOT).as_posix() and check["source_sha256"] == _sha256(RECORD_RECEIPT)
+    assert check["joins_sha256"] == receipt["grade_joins"]["joins_sha256"]
+    assert check["join_count"] == receipt["grade_joins"]["join_count"]
+    assert check["edge_count"] == receipt["e0_spike_record"]["edge_count"]
+    assert check["grade_split_count"] == receipt["e0_spike_record"]["grade_split_count"]
+    assert check["corridor_geometry_sha256"] == receipt["corridor"]["geometry_sha256"]
+    assert check["context_canonical_sha256"] == receipt["context"]["canonical_sha256"]
+    assert check["facility_counts"] == {key: receipt["facility_counts"][key] for key in count_keys}
+    assert receipt["context_call"]["facilities_supplied"] == 0, "the context-hash note says no facility was supplied"
+    assert check["mae_sai_hospital_facility_id"] in {row["facility_id"] for row in receipt["hospitals_in_routing_context"]}
+
+    # The run's receipt is not edited; the protocol corrects what it got wrong.
+    corrected = {entry["receipt_key"] for entry in block["receipt_corrections"]}
+    assert {"reproducibility.note", "acceptance.compute_window.declared_by_the_operator"} <= corrected
+    assert "replaced them" in receipt["reproducibility"]["note"]
+    candidate_sha256 = next(candidate["spike_record_sha256"] for candidate in corridor["e0_spike_candidates"]["candidates"]
+                            if candidate["route_rule_variant"] == "whole_path")
+    assert _sha256(OUTPUTS / "e0_context_spike_whole_path.json") == candidate_sha256, "the run of record replaced nothing"
+
+    # The spike now counts hospitals through the rule the planning frames use; it gives this run's breakdown.
+    breakdown = receipt["hospital_count_breakdown"]
+    assert count_hospitals(receipt["hospitals_in_routing_context"]) == {
+        key: breakdown[key] for key in ("osm_objects", "distinct_named_hospitals", "unnamed_objects",
+                                        "objects_that_repeat_a_named_hospital")}
 
 
 def test_protocol_candidates_repeat_the_committed_files_exactly() -> None:

@@ -135,6 +135,10 @@ def test_a_run_is_compared_with_the_previous_run_of_the_same_variant(spike, tmp_
     different = spike.reproducibility(previous, {**current, "corridor_geometry_sha256": spike.geometry_sha256(moved)})
     assert different["all_same"] is False and different["same"]["corridor_geometry_sha256"] is False
     assert different["same"]["joins_sha256"] is True
+    # A candidate run overwrites the files it compares with; a run of record writes its own and says so.
+    assert "before this run replaced them" in same["note"]
+    of_record = spike.reproducibility(previous, current, of_record=True)
+    assert "does not replace the candidate files" in of_record["note"] and "replaced them" not in of_record["note"]
 
 
 def test_memory_sampler_gives_a_block_its_own_peak(spike) -> None:

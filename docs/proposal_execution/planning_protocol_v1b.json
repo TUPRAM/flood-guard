@@ -3,8 +3,8 @@
   "protocol_id": "planning_protocol_v1b",
   "title": "FloodGuard planning protocol v1b: engineering addendum",
   "protocol_kind": "declared_protocol_after_exploratory_analysis",
-  "status": "draft_for_signature",
-  "status_note": "Draft for signature, written by an AI coding agent. Agents draft, humans sign. Nothing in this file is in force. Every open item is closed and every parameter it names is filled in; the schema refuses this status otherwise. The owners approved this file in principle (decision-log entry R11) and approved all 23 owner choices of docs/proposal_execution/planning_protocol_v1b_owner_choices.md exactly as recommended (decision-log entry R12, 3 October 2026); neither is a signature. The last four items (OI-01, OI-03, OI-04 and OI-06) were closed on 3 October 2026 from the run of record of the chosen corridor, made in a compute window that the agent declared under R12 (corridor_polygon.run_of_record). The drafter readings still await confirmation: the signers mark them in the signing edit, after reading the closures (docs/proposal_execution/planning_protocol_v1b_closures_summary.md). Until the signed file's SHA-256 is recorded in docs/proposal_execution/RECEIPTS.jsonl, no FPPS, no A-E class and no ensemble may be computed for any real unit. No receipt has been written.",
+  "status": "incomplete_draft",
+  "status_note": "Incomplete draft written by an AI coding agent. Agents draft, humans sign. Nothing in this file is in force. It cannot be signed while any entry in open_items is open, while any parameter named by an open item is empty, while any entry in drafter_readings awaits confirmation, or before an owner accepts the compute window of the corridor run of record (corridor_polygon.run_of_record.compute_window.owner_acceptance). Until the signed file's SHA-256 is recorded in docs/proposal_execution/RECEIPTS.jsonl, no FPPS, no A-E class and no ensemble may be computed for any real unit. No receipt has been written. The owners approved this file in principle (decision-log entry R11) and approved all 23 owner choices of docs/proposal_execution/planning_protocol_v1b_owner_choices.md exactly as recommended (decision-log entry R12, 3 October 2026); neither is a signature. On 3 October 2026 the agent closed every item and set the status to draft_for_signature. A review the same day found that OI-04 (the join log) and the counts of OI-06 had been closed from the E0 spike run of record, while their produced_by, owner-choices entry 1 (approved in R12) and plan row G7b name task E4, which has not been built, and no owner decision accepts the spike run in its place. Both items are open again, the spike's values are kept beside their empty slots as what E4 must reproduce (corridor_polygon.run_of_record.e4_reproduction_check), and the status is incomplete_draft. Owner-choices entry 24 asks the owners whether the spike run stands as the E4 output for these two items. The drafter readings still await confirmation: R12 approved them as written, and the signers mark them in the signing edit, after reading the closures.",
   "drafted_on": "2026-10-01",
   "drafted_by": "AI coding agent (Claude), on the owner go-ahead R5 of 2026-10-01",
   "official_warning": false,
@@ -194,7 +194,7 @@
         "per_unit_values_note": "The frame and the receipt list tambon codes, names and polygons, the OSM hospitals, and the length of boundary each touching tambon shares with the seat tambon. No population, flood, access or score value is written for any tambon. The receipt sits beside the frames, not in outputs/planning_v1, because it names tambons."
       },
       {
-        "run": "Run of record of the whole_path corridor (open items OI-01, OI-03, OI-04 and OI-06): baseline vehicle access to hospitals for the whole frame, and the count of corroborated shelters against OSM buildings and amenities; in a declared compute window",
+        "run": "Run of record of the whole_path corridor (open items OI-01, OI-03, OI-04 and OI-06): baseline vehicle access to hospitals for the whole frame, and the count of corroborated shelters against OSM buildings and amenities; in a compute window that the agent declared, awaiting an owner's acceptance",
         "generated_at_utc": "2026-10-03T02:40:10Z",
         "receipt": "outputs/planning_v1/e0_context_run_of_record.json",
         "allowed_by": "Plan 2.3 item 5: context and access builds. The shelter corroboration reads the DDPM list through its column whitelist and OSM objects, and writes counts only.",
@@ -278,7 +278,7 @@
       "hospitals_in_context_min": 4,
       "hospital_count_unit": "A distinct named hospital. OSM objects with the same name are one hospital, and an object without a name is not counted. The record also states the number of OSM objects, which is what the spike counted.",
       "hospital_count_unit_proposal": "A distinct named hospital. OSM objects with the same name are one hospital, and an object without a name is not counted. The record also states the number of OSM objects, which is what the spike counted.",
-      "hospital_count_unit_status": "Decided by the owners on 3 October 2026 (decision log R12, owner choice 22, option B, as recommended). Not in the plan: the plan asks for at least 4 hospitals and does not say whether two OSM objects for one hospital count twice, or whether an unnamed object counts. Under this unit the whole_path candidate and the run of record each have exactly 4 hospitals. The facility set does not change: the unnamed OSM object stays a destination, because the sheet recommended no change to the facility set (OI-06).",
+      "hospital_count_unit_status": "Decided by the owners on 3 October 2026 (decision log R12, owner choice 22, option B, as recommended). Not in the plan: the plan asks for at least 4 hospitals and does not say whether two OSM objects for one hospital count twice, or whether an unnamed object counts. Under this unit the whole_path candidate and the run of record each have exactly 4 hospitals. Not answered by the owners: the sheet also asked, with no recommendation, whether the unnamed OSM object should stay a destination. The facility set is unchanged by default, because the facility rule takes every OSM hospital in the routing context; an owner can still decide otherwise under OI-06.",
       "hospital_count_unit_open_items": [
         "OI-03"
       ],
@@ -569,7 +569,7 @@
       ]
     },
     "e0_spike_candidates": {
-      "status": "Measured on 2026-10-02 (UTC) by scripts/run_planning_context_spike.py, and measured again the same day after review. Candidates only: neither run was made in a declared compute window. The owners chose the whole_path rule on 3 October 2026 (OI-02 closed, R12), and the run of record of that rule was made the same day in a declared compute window (run_of_record). It gave the same corridor geometry, joins and context as the whole_path candidate; geometry_file, e0_spike_record, the join log and the facility counts come from it.",
+      "status": "Measured on 2026-10-02 (UTC) by scripts/run_planning_context_spike.py, and measured again the same day after review. Candidates only: neither run was made in a declared compute window. The owners chose the whole_path rule on 3 October 2026 (OI-02 closed, R12), and the run of record of that rule was made the same day in a compute window that the agent declared (run_of_record). It gave the same corridor geometry, joins and context as the whole_path candidate; geometry_file and e0_spike_record come from it. Its join log and facility counts are kept beside the empty slots of OI-04 and OI-06, which close from task E4.",
       "finding": "Under the proposal as written (buffer only the trunk and primary segments of the fastest path) the Mae Fa Luang hospital way 549948901 is outside the routing context: its fastest path from AOI-02 has no trunk or primary segment. The file could not be signed with that corridor, because the schema requires the three named ways in context. Buffering the whole fastest path brings all three in.",
       "peak_ram_note": "peak_ram_gib is the peak working set of the Python process over the whole spike. In the whole_path run that peak is reached while the spike buffers the path, before the context build starts, so it does not measure the context build. context_build_sampled_peak_gib is the working set sampled every 0.2 s while build_context_inputs ran; it can miss a short spike and leaves out the ogr2ogr child processes. Timing was taken with other sessions running on the machine, not in the declared compute window the plan requires. None of these figures can close OI-03.",
       "reproducibility_note": "Each receipt compares its run with the previous run of the same variant (reproducibility in the receipt). For both variants the run of 2026-10-02T17:03Z / 17:06Z gave the same corridor geometry, the same joins and the same context SHA-256 as the run of 16:24Z / 16:27Z. The file hashes differ, because each file now carries its generation time; the geometry and the joins have their own hashes.",
@@ -687,10 +687,10 @@
         }
       ],
       "hospital_count_note": "hospital_count counts OSM objects. hospital_count_breakdown gives the distinct named hospitals, the unnamed objects and the objects that repeat a named hospital. The owners decided on 3 October 2026 that the plan's 'at least 4 hospitals' counts distinct named hospitals (acceptance.hospital_count_unit, owner choice 22).",
-      "meets_plan_acceptance_note": "One entry per criterion. declared_compute_window is false for both candidates: plan 5 item 1 asks for builds to run serially in a declared compute window, and no such window was declared for these runs. The whole_path candidate meets the three measured criteria; it does not meet the plan's acceptance as a whole. The run of record does (run_of_record.acceptance_result)."
+      "meets_plan_acceptance_note": "One entry per criterion. declared_compute_window is false for both candidates: plan 5 item 1 asks for builds to run serially in a declared compute window, and no such window was declared for these runs. The whole_path candidate meets the three measured criteria; it does not meet the plan's acceptance as a whole. The run of record meets the measured criteria; the compute window it ran in was declared by the agent and awaits an owner's acceptance (run_of_record.acceptance_result)."
     },
     "run_of_record": {
-      "status": "Run of record of the whole_path rule (owner choice 1, option B), made on 3 October 2026 in a declared compute window. Its corridor, join log and counts are the values recorded under geometry_file, e0_spike_record, grade_join_policy.join_log and facility_sets.counts_in_corridor.",
+      "status": "Run of record of the whole_path rule (owner choice 1, option B), made on 3 October 2026 in a compute window that the AI coding agent declared under R12; no owner has accepted the window yet (compute_window.owner_acceptance). Its corridor and its E0 figures are the values recorded under geometry_file and e0_spike_record (OI-01, OI-03). Its join log and facility counts are not values of record: OI-04 and the counts of OI-06 close from task E4 (their produced_by, owner-choices entry 1 and plan row G7b), so they are kept beside those empty slots (grade_join_policy.join_log_from_spike_run_of_record, facility_sets.counts_from_spike_run_of_record) and repeated in e4_reproduction_check as what the E4 build must reproduce.",
       "script": "scripts/run_planning_context_spike.py --variant whole_path --compute-window",
       "run_receipt_path": "outputs/planning_v1/e0_context_run_of_record.json",
       "run_receipt_sha256": "e038546b84e96715bac5b649a3996201cfaf5c9c67d7f6dcd6b0f88b316c678d",
@@ -699,7 +699,14 @@
       "builder_sha256": "8fd1f69e0b9aaaf064032e6faea7c9a9a0bb25ec8ec0fcb6f8aca39f16f808a8",
       "compute_window": {
         "plan_rule": "Builds run serially in a declared compute window with no concurrent SNAP jobs (plan 5 item 1).",
-        "declared_by": "The AI coding agent, under decision log R12 (3 October 2026, Putu for both owners), which says the agent closes every open item, including the corridor run of record in a declared compute window. The owners did not name the window's times themselves; they attest to it when they read the closures.",
+        "declared_by": "The AI coding agent, under decision log R12 (3 October 2026, Putu for both owners), which says the agent closes every open item, including the corridor run of record in a declared compute window. R12 does not say who declares the window, and open item OI-03 had named Putu. The owners did not name the window's times; an owner accepts or rejects the window in owner_acceptance, and the file cannot be signed before an owner accepts it.",
+        "declared_at_note": "The agent declared the window at 10:36 +08:00, the minute the run started (run_started_local); it was not announced ahead of the run.",
+        "owner_acceptance": {
+          "accepted": null,
+          "accepted_by": null,
+          "accepted_on": null,
+          "rule": "An owner sets accepted to true or false and fills accepted_by (the owner's name) and accepted_on (the date), as for a download approval. The agent does not fill this in. The schema refuses status signed unless accepted is true. If an owner rejects the window, the run is repeated in a window an owner names, and OI-01 and OI-03 are closed again from that run."
+        },
         "time_zone_of_the_machine": "UTC+08:00 (Windows time zone Singapore Standard Time)",
         "window_start_local": "2026-10-03T10:36:18+08:00",
         "window_start_utc": "2026-10-03T02:36:18Z",
@@ -737,15 +744,17 @@
         "unnamed_objects": 1,
         "objects_that_repeat_a_named_hospital": 1
       },
-      "hospital_count_note": "e0_spike_record.hospital_count counts distinct named hospitals (acceptance.hospital_count_unit, owner choice 22). Every OSM object stays a destination.",
+      "hospital_count_note": "e0_spike_record.hospital_count counts distinct named hospitals (acceptance.hospital_count_unit, owner choice 22). Every OSM object in the routing context is a destination under the facility rule (facility_sets.services.hospital). The sheet asked, with no recommendation, whether the unnamed object should stay one; the owners did not answer that question.",
       "acceptance_result": {
         "hospitals_in_context_min": true,
         "named_ways_within_routing_context": true,
         "baseline_vehicle_no_route_share_max": true,
-        "declared_compute_window": true,
+        "declared_compute_window": "declared_by_agent_pending_owner_acceptance",
         "load_aois_still_returns_6": true,
         "pii_whitelist_test": "tests/test_ddpm_shelters.py::test_output_keys_are_a_subset_of_the_whitelist_and_no_personal_field_survives, run with the suite",
-        "all_criteria_met": true
+        "measured_criteria_met": true,
+        "all_criteria_met": false,
+        "all_criteria_met_note": "The measured criteria are all met. The compute-window criterion counts as met only once an owner accepts the window the agent declared (compute_window.owner_acceptance.accepted = true); until then all_criteria_met is false and the file cannot be signed. The run receipt marks the window met because the operator passed --compute-window (receipt_corrections)."
       },
       "baseline_vehicle_no_route_share_without_grade_joins": 0.014129,
       "timing_seconds": {
@@ -765,6 +774,49 @@
         "python": "3.11.8",
         "physical_memory_gib": 15.19,
         "available_memory_gib_at_start": 2.63
+      },
+      "receipt_corrections": [
+        {
+          "receipt_key": "reproducibility.note",
+          "receipt_says": "The earlier run's receipt, corridor and join log were read from outputs/planning_v1 before this run replaced them.",
+          "correction": "This run of record wrote its own files of record (e0_context_run_of_record.json, corridor_of_record.geojson, grade_join_log_of_record.json) and did not replace the candidate files: outputs/planning_v1/e0_context_spike_whole_path.json still has SHA-256 294eb36faeea66395faffceaeb72e5731b0bfe6a3d0ed461caa6a85bb6cd16ba. The script wrote the candidate run's wording; it now writes a separate note for a run of record (scripts/run_planning_context_spike.py, function reproducibility)."
+        },
+        {
+          "receipt_key": "acceptance.compute_window.declared_by_the_operator",
+          "receipt_says": "Serial: the agent runs nothing else in the window",
+          "correction": "During the window the agent also ran short read-only commands to watch the run: tail, ls, date and one Python read of the protocol file of under a second (compute_window.serial). It ran no test, build or download. The declaration was written before the run as a promise, and the promise was not kept to the letter."
+        },
+        {
+          "receipt_key": "acceptance.compute_window.met",
+          "receipt_says": "met: true",
+          "correction": "The receipt marks the window met because the operator passed --compute-window. The window was declared by the agent, not by an owner, so this protocol counts the criterion as met only once an owner accepts the window (compute_window.owner_acceptance, acceptance_result.declared_compute_window)."
+        }
+      ],
+      "receipt_corrections_note": "The run receipt is the evidence of OI-03 and is named by its SHA-256, so it is not edited; its wrong statements are corrected here.",
+      "script_changed_after_the_run": "scripts/run_planning_context_spike.py was changed after the run (builder_sha256 above is the version that ran). Its hospital count now goes through floodguard.hospital_counts, the rule the planning-frame build uses too, and its reproducibility note for a run of record is corrected. Neither change alters a figure of this run: the shared rule gives the same breakdown for the six hospital objects of the receipt (tests/test_planning_v1_outputs.py).",
+      "e4_reproduction_check": {
+        "rule": "Open items OI-04 (the join log) and OI-06 (the facility counts) close from plan task E4 (build_planning_context.py with grade_join.py) on the corridor of record, as their produced_by, owner-choices entry 1 (approved in R12) and plan row G7b say. The E4 receipt is compared with the values below. A value that differs is reported in the E4 receipt with the reason, and the item does not close on it until the owners accept the difference in the decision log (accepted_differences). A test checks the slots of OI-04 and OI-06 against these values whenever the items are closed.",
+        "source": "outputs/planning_v1/e0_context_run_of_record.json",
+        "source_sha256": "e038546b84e96715bac5b649a3996201cfaf5c9c67d7f6dcd6b0f88b316c678d",
+        "corridor_geometry_sha256": "4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b",
+        "edge_count": 65328,
+        "grade_split_count": 371,
+        "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+        "join_count": 345,
+        "facility_counts": {
+          "osm_hospitals": 6,
+          "dga_matched_hospitals": 6,
+          "located_ddpm_shelters": 82,
+          "corroborated_shelters": 48
+        },
+        "mae_sai_hospital_facility_id": "OSM-way-371233866",
+        "context_canonical_sha256": "62749072c90c1ad72b07ff78f073f9f0c2bd1c66b52a812995414fbfc95c1c10",
+        "context_canonical_sha256_note": "The spike passed no supplied facility to build_context_inputs (context_call.facilities_supplied 0 in the run receipt). Plan P2 has E4 pass the DDPM located shelters, with the DGA flag on the hospitals, and the context's canonical SHA-256 covers the supplied facilities, so an E4 context that supplies facilities has a different hash by construction. The E4 receipt then gives both hashes and that reason; the road graph, the joins and the counts above must still match.",
+        "accepted_differences": [],
+        "spike_run_as_e4_output": {
+          "decision": "none",
+          "note": "Owner-choices entry 24 asks the owners whether this spike run stands as the E4 output for OI-04 and the counts of OI-06. Until a decision-log entry says so, and decision names that entry, those items close only from an E4 build."
+        }
       }
     }
   },
@@ -774,7 +826,7 @@
       "plan 3.1 P2",
       "plan 5 item 1"
     ],
-    "status": "fixed",
+    "status": "open",
     "open_items": [
       "OI-04"
     ],
@@ -790,9 +842,18 @@
     "coincidence_rule": "Two nodes are joined only when their OSM coordinates are identical (to 1e-7 degree) and each is the end of at least one way (owner choice 20, option A). This is what src/floodguard/grade_join.py does.",
     "coincidence_tolerance_proposal": "0 m: identical OSM coordinates at 1e-7 degree precision.",
     "join_log": {
+      "path": null,
+      "sha256": null,
+      "join_count": null
+    },
+    "join_log_from_spike_run_of_record": {
       "path": "outputs/planning_v1/grade_join_log_of_record.json",
       "sha256": "25450c57b829c274921ca5dd21385f6411b12cc7d921696bdea971cfea8fab0a",
-      "join_count": 345
+      "join_count": 345,
+      "joins_sha256": "d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357",
+      "context_canonical_sha256": "62749072c90c1ad72b07ff78f073f9f0c2bd1c66b52a812995414fbfc95c1c10",
+      "status_inside_the_file": "log_of_record",
+      "note": "Written by the E0 spike run of record of 3 October 2026 (corridor_polygon.run_of_record), which labelled the file log_of_record inside. It is not the join log of record of this protocol: OI-04 closes from task E4 (its produced_by, owner-choices entry 1 and plan row G7b). E4 must reproduce its joins (corridor_polygon.run_of_record.e4_reproduction_check), unless the owners record in the decision log that this run stands as the E4 output (owner-choices entry 24)."
     },
     "join_log_format_note": "A join log carries its status (candidate or log_of_record), generation time, source timestamp, confidence class, assumptions and a SHA-256 of the joins alone.",
     "coincidence_tolerance_status": "Decided by the owners on 3 October 2026 (decision log R12, owner choice 20, option A, as recommended). 0 m. Not in the plan and not in D13, which says endpoint-only coincident joins are logged and names no tolerance. Weighed with it: the context builder's own connectivity review says that equal coordinates and endpoint tags do not establish shared OSM node identity or traversability, and this rule joins on exactly that. Every join is logged with passability unknown; none has been looked at by a person. A larger tolerance would let nearness create a join, which the finals rule forbids."
@@ -903,7 +964,7 @@
       "plan 2.2 G32 and G33",
       "D8b"
     ],
-    "status": "fixed",
+    "status": "open",
     "open_items": [
       "OI-06",
       "OI-16"
@@ -970,7 +1031,7 @@
         "label": "corroborated, not confirmed-open",
         "hospital_match_distance_m": 150,
         "shelter_match_distance_m": 150,
-        "shelter_match_distance_status": "Decided by the owners on 3 October 2026 (decision log R12, owner choice 19, option A, as recommended). 150 m, as for hospitals: the only distance the plan states. In a town almost every point is within 150 m of some building, so this level may differ little from all_listed; the run of record reports the match rate: 48 of 82 located shelters (0.585), 20 of them with a building and 28 with an amenity only (facility_sets.counts_in_corridor). Cut line 8 drops this level first.",
+        "shelter_match_distance_status": "Decided by the owners on 3 October 2026 (decision log R12, owner choice 19, option A, as recommended). 150 m, as for hospitals: the only distance the plan states. In a town almost every point is within 150 m of some building, so this level may differ little from all_listed. The E0 spike run of record measured the match rate: 48 of 82 located shelters (0.585), 20 of them with a building and 28 with an amenity only (facility_sets.counts_from_spike_run_of_record). The count of record comes from the E4 build (OI-06). Cut line 8 drops this level first.",
         "shelter_match_distance_proposal": "150 m, the same as for hospitals.",
         "dga_source": "Project Support/FloodGuard/open-data/2026-09-21/healthcare/thailand_health_facilities_th.geojson"
       },
@@ -1005,16 +1066,24 @@
       ]
     },
     "counts_in_corridor": {
+      "osm_hospitals": null,
+      "dga_matched_hospitals": null,
+      "located_ddpm_shelters": null,
+      "corroborated_shelters": null,
+      "counts_note": "Filled from the E4 build of the corridor of record (OI-06; owner-choices entry 1, approved in R12; plan row G7b), or from the spike run of record if the owners record in the decision log that it stands as the E4 output (owner-choices entry 24). The spike's figures are in counts_from_spike_run_of_record."
+    },
+    "counts_from_spike_run_of_record": {
       "osm_hospitals": 6,
       "dga_matched_hospitals": 6,
       "located_ddpm_shelters": 82,
       "corroborated_shelters": 48,
       "counts_note": "From key facility_counts of outputs/planning_v1/e0_context_run_of_record.json. osm_hospitals counts the OSM hospital objects in the routing context, which are all destinations (4 distinct named hospitals). dga_matched_hospitals: OSM objects with a DGA record within 150 m. located_ddpm_shelters: DDPM rows located under the shared-coordinate rule whose coordinate lies in the routing context (92 listed rows there). corroborated_shelters: located rows with an OSM building or amenity within 150 m (owner choice 19), 20 of them with a building; match rate 0.585. The OSM buildings and amenities were extracted from the same OSM file in the same run, after the E0 figures were taken (receipt key facility_counts.shelter_corroboration). Counts of map and list records; no hospital or shelter was checked on the ground.",
       "evidence_path": "outputs/planning_v1/e0_context_run_of_record.json",
-      "evidence_sha256": "e038546b84e96715bac5b649a3996201cfaf5c9c67d7f6dcd6b0f88b316c678d"
+      "evidence_sha256": "e038546b84e96715bac5b649a3996201cfaf5c9c67d7f6dcd6b0f88b316c678d",
+      "status": "Measured by the E0 spike run of record (corridor_polygon.run_of_record). Not the counts of record: OI-06 takes them from the E4 build (its produced_by, owner-choices entry 1 and plan row G7b). E4 must reproduce them (corridor_polygon.run_of_record.e4_reproduction_check), unless the owners record in the decision log that this run stands as the E4 output (owner-choices entry 24)."
     },
     "mae_sai_hospital_osm_id": "way/371233866",
-    "mae_sai_hospital_osm_id_evidence": "OSM way 371233866 carries the Thai name of the hospital and is the only hospital-tagged object with that name in the routing context of both E0 spike runs (facility_id OSM-way-371233866). It lies inside AOI-02, so it does not depend on the corridor rule. docs/mae_sai_model_audit_20260922.md names the same way."
+    "mae_sai_hospital_osm_id_evidence": "OSM way 371233866 carries the Thai name of the hospital and is the only hospital-tagged object with that name in the routing context of both E0 spike runs (facility_id OSM-way-371233866). It lies inside AOI-02, so it does not depend on the corridor rule. docs/mae_sai_model_audit_20260922.md names the same way. The E4 context must hold the same object (corridor_polygon.run_of_record.e4_reproduction_check)."
   },
   "critical_link_selection": {
     "basis": [
@@ -1399,7 +1468,7 @@
       "plan 6.3",
       "D8b"
     ],
-    "status": "fixed",
+    "status": "open",
     "open_items": [
       "OI-06",
       "OI-07",
@@ -1444,12 +1513,13 @@
           "O2"
         ],
         "perturbation": "Fail the top-k bridge edges only (OSM bridge=yes on the shortest-path-tree union).",
-        "selection_rule": "The k highest-ranked bridge edges of the baseline ranking.",
+        "selection_rule": "Per tambon, the three highest-ranked bridge edges (OSM bridge=yes, on the shortest-path-tree union) of the baseline critical-link ranking whose edge lies in the tambon. An edge that crosses a tambon boundary belongs to the tambon that holds its midpoint, as in S3 (drafter reading DR-B06). Ties break on stable edge ID.",
         "parameters": {
-          "k": 3
+          "bridge_edges_per_tambon": 3
         },
-        "k_proposal": "3 per tambon, to match S3.",
-        "k_status": "Decided by the owners on 3 October 2026 (decision log R12, owner choice 17, option A, as recommended). 3 per tambon, to match S3.",
+        "bridge_edges_per_tambon_proposal": "3 per tambon, to match S3.",
+        "bridge_edges_per_tambon_status": "Decided by the owners on 3 October 2026 (decision log R12, owner choice 17, option A, as recommended). 3 per tambon, to match S3.",
+        "selection_rule_status": "Rewritten on 3 October 2026 after review. The rule had read 'The k highest-ranked bridge edges of the baseline ranking' with k = 3, which can be read as three edges for the whole case. Owner choice 17 (R12) is 3 per tambon, to match S3, so the cell also takes S3's rule for assigning an edge to a tambon. Drafter reading DR-B06 was extended to S3b after R12 for that reason; the signers confirm it as extended.",
         "open_items": [
           "OI-10"
         ]
@@ -1578,7 +1648,7 @@
     "open_items": [
       "OI-18"
     ],
-    "note": "v1a class_rules.v2 names inputs that depend on v1b. The plan does not define them. Each definition is empty until an owner decides. The proposals are the drafting agent's, and the numbers in them (100 residents, 10 percent) have no data behind them.",
+    "note": "v1a class_rules.v2 names inputs that depend on v1b. The plan does not define them. The definitions were empty until the owners decided them on 3 October 2026 (R12, owner choice 11). The proposals beside them are the drafting agent's first drafts, and the two numbers in those drafts (100 residents, 10 percent) had no data behind them; the decided definitions reuse signed numbers (status_of_proposals).",
     "trigger_B_isolation": {
       "definition": "A top-20 link of the case's baseline critical-link ranking that intersects the flood extent is closed on its own. The trigger fires when at least 500 of the unit's residents who had a baseline vehicle route to a hospital or a main-road entry lose every such route.",
       "proposal": "A top-20 link of the case's baseline critical-link ranking that intersects the flood extent is closed on its own. The trigger fires when at least 500 of the unit's residents who had a baseline vehicle route to a hospital or a main-road entry lose every such route."
@@ -1715,7 +1785,7 @@
       "id": "OI-01",
       "parameter": "corridor_polygon.geometry_file and corridor_polygon.context_call.demand_area_rule",
       "what_is_missing": "The corridor polygon itself: a GeoJSON file and its SHA-256. Also the rule for the demand area: the plan takes the union of the eight tambons, which is not inside AOI-02; a proposal (clip to AOI-02) is in the file.",
-      "produced_by": "E0 context spike (build the vehicle context once with the corrected call), then E4 build_planning_context.py.",
+      "produced_by": "E0 context spike, run of record of the chosen route rule: the corridor polygon is an output of task E0 (plan row E0: 'Context spike (corridor, corrected call)'). Task E4 (build_planning_context.py) builds the context of record on this polygon and does not change it.",
       "who": "AI coding agent with Putu; Putu decides the demand-area rule",
       "download_needed": false,
       "parameter_pointers": [
@@ -1737,10 +1807,10 @@
         "still_needed": "The corridor polygon of record (geometry_file path and SHA-256), from the run of record of the whole_path rule (OI-02) in a declared compute window. The candidate polygon of 2 October has the same geometry in every run, but the protocol takes the file written by the run of record. (Filled on 3 October 2026 by the run of record; see closure.)",
         "evidence_sha256": "8c3f7e20cedabb8f4593311f1f3603880595cc40994006b6253e0b92cc579f50"
       },
-      "note": "Closed on 3 October 2026. The demand-area rule was answered in R12 (owner choice 21); the polygon file is the corridor of the run of record, built in a declared compute window (corridor_polygon.run_of_record). Its geometry equals the whole_path candidate of 2 October.",
+      "note": "Closed on 3 October 2026. The demand-area rule was answered in R12 (owner choice 21); the polygon file is the corridor of the run of record (corridor_polygon.run_of_record), made in a compute window the agent declared, which awaits an owner's acceptance. Its geometry equals the whole_path candidate of 2 October. produced_by was reworded after the review of 3 October: it had read 'E0 context spike ..., then E4 build_planning_context.py'; the polygon is the E0 output that E4 reads.",
       "closure": {
         "closed_on": "2026-10-03",
-        "closed_by": "AI coding agent, from the run of record of 3 October 2026 in a declared compute window (corridor_polygon.run_of_record); owner part from owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
+        "closed_by": "AI coding agent, from the run of record of 3 October 2026, in a compute window the agent declared under R12 with owner acceptance pending (corridor_polygon.run_of_record); owner part from owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
         "value_or_location": "corridor_polygon.geometry_file: outputs/planning_v1/corridor_of_record.geojson, SHA-256 4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2 (geometry SHA-256 4b271a6619db2a78442476895c58f93e6ba1079ff6b7bb52f63cabefa796353b, 827.4 square kilometres, one polygon), written by the run of record of the whole_path rule (owner choice 1, option B). corridor_polygon.context_call.demand_area_rule: the eight-tambon union clipped to AOI-02 (owner choice 21, option A). The evidence is the corridor file itself; the run's receipt is outputs/planning_v1/e0_context_run_of_record.json, SHA-256 e038546b84e96715bac5b649a3996201cfaf5c9c67d7f6dcd6b0f88b316c678d.",
         "evidence_sha256": "4e49d5eca2f7522e2de10cf81cc68b4ebcbea036225d1b862f4a80cb1affbac2"
       }
@@ -1769,7 +1839,7 @@
       "parameter": "corridor_polygon.e0_spike_record and corridor_polygon.acceptance.hospital_count_unit",
       "what_is_missing": "The recorded spike values: hospital count (at least 4), within_routing_context for ways 447735125, 527539157 and 549948901, edge count, wall time, peak RAM, grade-split count and baseline no-route share (at most 10 percent). Also what counts as one hospital for the 'at least 4' test; a proposal is in the file.",
       "produced_by": "E0 context spike, run serially in a declared compute window with no concurrent SNAP jobs (plan 5 item 1): scripts/run_planning_context_spike.py --compute-window. An owner decision for the hospital-count unit.",
-      "who": "AI coding agent with Putu; Putu declares the compute window and decides the hospital-count unit",
+      "who": "AI coding agent with Putu. Putu decides the hospital-count unit. The plan asks for a declared compute window, and this item named Putu as the one who declares it; the window of the run of record was declared by the AI coding agent under R12, and an owner accepts or rejects it (corridor_polygon.run_of_record.compute_window.owner_acceptance) before signing.",
       "download_needed": false,
       "parameter_pointers": [
         "/corridor_polygon/e0_spike_record/hospital_count",
@@ -1791,15 +1861,16 @@
         "pointers_filled": [
           "/corridor_polygon/acceptance/hospital_count_unit"
         ],
-        "answer": "One hospital is a distinct named hospital (owner choice 22, option B, as recommended). No change to the facility set: the sheet's question whether the unnamed object stays a destination carried no recommendation to drop it, so it stays.",
+        "answer": "One hospital is a distinct named hospital (owner choice 22, option B, as recommended).",
+        "agent_note": "Not answered by the owners: entry 22 of the sheet also asked whether the unnamed OSM object stays a destination. That question had no recommendation, so R12's 'as recommended' does not cover it. The facility set is unchanged by default, because the facility rule takes every OSM hospital in the routing context; an owner can still decide otherwise under OI-06.",
         "still_needed": "The e0_spike_record values from one run of the whole_path rule in a declared compute window: scripts/run_planning_context_spike.py --variant whole_path --compute-window \"<who declared it, when>\". (Filled on 3 October 2026 by the run of record; see closure.)",
         "evidence_sha256": "8c3f7e20cedabb8f4593311f1f3603880595cc40994006b6253e0b92cc579f50"
       },
-      "note": "Closed on 3 October 2026 from the run of record, made in a declared compute window (corridor_polygon.run_of_record.compute_window). The hospital-count unit was answered in R12 (owner choice 22). Every acceptance value of the plan is met.",
+      "note": "Closed on 3 October 2026 from the run of record (corridor_polygon.run_of_record). The hospital-count unit was answered in R12 (owner choice 22). The measured acceptance values of the plan are met. The compute window was declared by the AI coding agent, not by an owner; the schema refuses a signature until an owner accepts it (run_of_record.compute_window.owner_acceptance).",
       "closure": {
         "closed_on": "2026-10-03",
-        "closed_by": "AI coding agent, from the run of record of 3 October 2026 in a declared compute window (corridor_polygon.run_of_record); owner part from owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
-        "value_or_location": "corridor_polygon.e0_spike_record from key e0_spike_record of outputs/planning_v1/e0_context_run_of_record.json: 4 distinct named hospitals (6 OSM objects: 1 unnamed, 1 repeating a named hospital; plan: at least 4), the three named hospital ways inside the routing context (True), 65328 edges, 2.92 minutes wall time (route search and context build), 2.44 GiB peak working set, 371 grade splits, baseline vehicle no-route share 0.00075 (plan: at most 0.10). acceptance.hospital_count_unit: a distinct named hospital (owner choice 22, option B). The run was made in a declared compute window (plan 5 item 1).",
+        "closed_by": "AI coding agent, from the run of record of 3 October 2026, in a compute window the agent declared under R12 with owner acceptance pending (corridor_polygon.run_of_record); owner part from owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
+        "value_or_location": "corridor_polygon.e0_spike_record from key e0_spike_record of outputs/planning_v1/e0_context_run_of_record.json: 4 distinct named hospitals (6 OSM objects: 1 unnamed, 1 repeating a named hospital; plan: at least 4), the three named hospital ways inside the routing context (True), 65328 edges, 2.92 minutes wall time (route search and context build), 2.44 GiB peak working set, 371 grade splits, baseline vehicle no-route share 0.00075 (plan: at most 0.10). acceptance.hospital_count_unit: a distinct named hospital (owner choice 22, option B). The run was made in a compute window that the agent declared under R12 (plan 5 item 1); no owner has accepted it yet, and the file cannot be signed until one does (run_of_record.compute_window.owner_acceptance).",
         "evidence_sha256": "e038546b84e96715bac5b649a3996201cfaf5c9c67d7f6dcd6b0f88b316c678d"
       }
     },
@@ -1807,7 +1878,7 @@
       "id": "OI-04",
       "parameter": "grade_join_policy.coincidence_tolerance_m and grade_join_policy.join_log",
       "what_is_missing": "The coincidence tolerance (proposal: 0 m; not stated in D13) and the logged join list with its SHA-256 and count.",
-      "produced_by": "E4: build_planning_context.py and the new grade_join.py.",
+      "produced_by": "E4: build_planning_context.py and the new grade_join.py. The E0 spike run of record wrote a join log for the same corridor (grade_join_policy.join_log_from_spike_run_of_record); E4 must reproduce its joins (corridor_polygon.run_of_record.e4_reproduction_check).",
       "who": "AI coding agent with Putu",
       "download_needed": false,
       "parameter_pointers": [
@@ -1816,7 +1887,7 @@
         "/grade_join_policy/join_log/sha256",
         "/grade_join_policy/join_log/join_count"
       ],
-      "status": "closed",
+      "status": "open",
       "owner_answer": {
         "answered_on": "2026-10-03",
         "answered_by": "Owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
@@ -1827,16 +1898,10 @@
           "/grade_join_policy/coincidence_tolerance_m"
         ],
         "answer": "Coincidence tolerance 0 m: identical OSM coordinates at 1e-7 degree, each node the end of a way (owner choice 20, option A, as recommended).",
-        "still_needed": "The join log of record (path, SHA-256, join count) from the context build of record of the whole_path corridor. (Filled on 3 October 2026 by the run of record; see closure.)",
+        "still_needed": "The join log of record (path, SHA-256, join count) from task E4 (build_planning_context.py with grade_join.py) on the corridor of record, matching corridor_polygon.run_of_record.e4_reproduction_check or reporting why not; or a decision-log entry in which the owners accept the E0 spike run of record as the E4 output for this item (owner-choices entry 24).",
         "evidence_sha256": "8c3f7e20cedabb8f4593311f1f3603880595cc40994006b6253e0b92cc579f50"
       },
-      "note": "Closed on 3 October 2026. The tolerance was answered in R12 (owner choice 20); the join log is the one of the context built in the run of record. src/floodguard/grade_join.py (awaiting Putu's review) wrote it. The context of record was built by scripts/run_planning_context_spike.py through the unchanged build_context_inputs; plan task E4 (build_planning_context.py) does not exist on this lineage, and a later E4 build of the same corridor must give the same context SHA-256 and the same joins, or report why not.",
-      "closure": {
-        "closed_on": "2026-10-03",
-        "closed_by": "AI coding agent, from the run of record of 3 October 2026 in a declared compute window (corridor_polygon.run_of_record); owner part from owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
-        "value_or_location": "grade_join_policy.coincidence_tolerance_m = 0 (owner choice 20, option A) and grade_join_policy.join_log: outputs/planning_v1/grade_join_log_of_record.json, SHA-256 25450c57b829c274921ca5dd21385f6411b12cc7d921696bdea971cfea8fab0a, 345 joins (joins SHA-256 d289f728feafef649687b39f7da71228c79427bf377f7e63bc1c0eed4f2ee357), status log_of_record, for the context of record (canonical SHA-256 62749072c90c1ad72b07ff78f073f9f0c2bd1c66b52a812995414fbfc95c1c10). 371 grade splits; every join links way end points at an identical coordinate, and the passability of each is unknown.",
-        "evidence_sha256": "25450c57b829c274921ca5dd21385f6411b12cc7d921696bdea971cfea8fab0a"
-      }
+      "note": "Reopened on 3 October 2026 after review. It had been closed the same day from the join log of the E0 spike run of record, but this item's produced_by, owner-choices entry 1 (approved in R12: 'OI-04 and the counts of OI-06 follow from the E4 build') and plan row G7b name task E4. build_planning_context.py does not exist on this lineage, and no owner decision accepts the spike run in its place. The tolerance stays answered (owner choice 20). The spike's join log is kept beside the empty slot (grade_join_policy.join_log_from_spike_run_of_record), and corridor_polygon.run_of_record.e4_reproduction_check records the joins E4 must reproduce. Owner-choices entry 24 asks whether the spike run stands as the E4 output."
     },
     {
       "id": "OI-05",
@@ -1866,7 +1931,7 @@
       "id": "OI-06",
       "parameter": "facility_sets.services.main_road_entry.definition, facility_sets.sets[corroborated].shelter_match_distance_m, facility_sets.counts_in_corridor and facility_sets.mae_sai_hospital_osm_id",
       "what_is_missing": "The main-road entry definition and the shelter match distance (proposals are in the file), the facility counts in the corridor context, the DGA match result, and the OSM ID of Mae Sai Hospital for scenario S4.",
-      "produced_by": "Owner decision for the two definitions; E4 context build for the counts and IDs.",
+      "produced_by": "Owner decision for the two definitions; E4 context build for the counts and IDs. The E0 spike run of record measured the counts (facility_sets.counts_from_spike_run_of_record); E4 must reproduce them (corridor_polygon.run_of_record.e4_reproduction_check).",
       "who": "Putu decides; AI coding agent with Putu builds",
       "download_needed": false,
       "parameter_pointers": [
@@ -1878,7 +1943,7 @@
         "/facility_sets/counts_in_corridor/corroborated_shelters",
         "/facility_sets/mae_sai_hospital_osm_id"
       ],
-      "status": "closed",
+      "status": "open",
       "owner_answer": {
         "answered_on": "2026-10-03",
         "answered_by": "Owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
@@ -1891,16 +1956,10 @@
           "/facility_sets/sets/1/shelter_match_distance_m"
         ],
         "answer": "Main-road entry: the nearest node on a trunk or primary edge, links included, inside the routing context (owner choice 8, option A). Shelter match distance: 150 m (owner choice 19, option A). Both as recommended.",
-        "still_needed": "The facility counts in the corridor of record (OSM hospitals, DGA-matched hospitals, located DDPM shelters, corroborated shelters) from the context build of record of the whole_path corridor; the corroborated-shelter count also needs an OSM building extract. (Filled on 3 October 2026 by the run of record; see closure.)",
+        "still_needed": "The facility counts of record (OSM hospitals, DGA-matched hospitals, located DDPM shelters, corroborated shelters) from the E4 build of the corridor of record, matching corridor_polygon.run_of_record.e4_reproduction_check or reporting why not; or a decision-log entry in which the owners accept the E0 spike run of record as the E4 output for these counts (owner-choices entry 24).",
         "evidence_sha256": "8c3f7e20cedabb8f4593311f1f3603880595cc40994006b6253e0b92cc579f50"
       },
-      "note": "Closed on 3 October 2026. The two definitions were answered in R12 (owner choices 8 and 19); the OSM ID of Mae Sai Hospital was filled in on 2 October; the four counts come from the run of record, including the corroborated-shelter count against an OSM building and amenity extract derived from the same OSM file.",
-      "closure": {
-        "closed_on": "2026-10-03",
-        "closed_by": "AI coding agent, from the run of record of 3 October 2026 in a declared compute window (corridor_polygon.run_of_record); owner part from owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
-        "value_or_location": "facility_sets.services.main_road_entry.definition (owner choice 8, option A), facility_sets.sets[corroborated].shelter_match_distance_m = 150 (owner choice 19, option A), facility_sets.mae_sai_hospital_osm_id = way/371233866, and facility_sets.counts_in_corridor from the run of record: 6 OSM hospital objects, 6 matched to a DGA record within 150 m, 82 located DDPM shelters, 48 corroborated by an OSM building or amenity within 150 m (match rate 0.585).",
-        "evidence_sha256": "e038546b84e96715bac5b649a3996201cfaf5c9c67d7f6dcd6b0f88b316c678d"
-      }
+      "note": "Reopened on 3 October 2026 after review, for the same reason as OI-04: the four counts had been closed from the E0 spike run of record, while this item's produced_by, owner-choices entry 1 (approved in R12) and plan row G7b name the E4 build. The two definitions stay answered (owner choices 8 and 19). The OSM ID of Mae Sai Hospital stays filled in (2 October): the object lies inside AOI-02 and does not depend on the corridor, and E4 must find it too. The spike's counts are kept beside the empty slots (facility_sets.counts_from_spike_run_of_record) and in corridor_polygon.run_of_record.e4_reproduction_check. Owner-choices entry 24 asks whether the spike run stands as the E4 output."
     },
     {
       "id": "OI-07",
@@ -1973,28 +2032,28 @@
       "note": "Closed on 3 October 2026. The SE2-blind district was filled in on 2 October by the population ranking. The frame, the routing geometry, the hospitals and the SE2-blind units were built on 3 October from the rules the owners adopted in R12 (owner choice 15). The sheet had asked Rachmania for the frame file; with the rule decided the agent built it, and Rachmania reviews it.",
       "closure": {
         "closed_on": "2026-10-03",
-        "closed_by": "Owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
+        "closed_by": "AI coding agent, build of the rules decided in R12 (owner choice 15), awaiting Rachmania's review; rules from owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
         "value_or_location": "corridor_polygon.se2_frame. The pf-07 frame (owner choice 15a, option A): the 16 tambons of Mueang Chiang Rai district, resources/planning_frames/pf-07_mueang_chiang_rai.geojson, SHA-256 2bdf946b6ff759f0950d4d7e0fcf9319cc42391db15a9af30a7ae87f417cf0ba. The SE2 routing geometry and hospitals (owner choice 15b, as recommended): the union buffered by 3 km and clipped to Thailand, 17 OSM hospital objects inside it. The SE2-blind units (owner choice 15c, option B): the seat tambon and the 5 tambons of Phan that touch it. The Phan district office is OSM node 3840722494 at 99.7405302 E, 19.5538862 N (office=administrative). The tambon that covers it is TH570513 (Mueang Phan), the seat. Built by the AI coding agent from the decided rules (receipt resources/planning_frames/planning_frames_v1_receipt.json); Rachmania reviews the build. Owner choice 15 is outcome-aware: v1a disclosure item EK-09 records that results for every Chiang Rai tambon were seen in exploration, and SE2 itself was chosen with the outcome in view. Owners' reason: none given (R12 approved owner choice 15 as recommended, with no separate reason); recommendation's reason for (a): 'SE2 is already disclosed as chosen with the outcome in view. A list picked tambon by tambon would add to that; a whole district does not.'; for (c): 'It is the closest reading of the plan's plural that still gives more than one unit. It has no other basis.'",
         "evidence_sha256": "86f31d8a748be13b7a5a30ce7e46f988d8cbfc53c76f2bf3a96aebf533b130b3"
       }
     },
     {
       "id": "OI-10",
-      "parameter": "ensemble_grid.headline_rule.reference_cell, scenario_engine_grid S3b k and E3 selection rule",
-      "what_is_missing": "Owner decisions on three points the plan leaves unstated: the reference cell for class retention, k for S3b, and the selection rule for E3. Proposals are in the file. The base case of S8, which an earlier draft listed here, is filled in and is drafter reading DR-B08.",
+      "parameter": "ensemble_grid.headline_rule.reference_cell, scenario_engine_grid S3b bridge_edges_per_tambon and E3 selection rule",
+      "what_is_missing": "Owner decisions on three points the plan leaves unstated: the reference cell for class retention, the number of bridge edges per tambon for S3b (the plan's 'top-k'), and the selection rule for E3. Proposals are in the file. The base case of S8, which an earlier draft listed here, is filled in and is drafter reading DR-B08.",
       "produced_by": "An owner decision at signing. No computation.",
       "who": "Putu, with Rachmania as method co-signer",
       "download_needed": false,
       "parameter_pointers": [
         "/ensemble_grid/headline_rule/reference_cell",
-        "/scenario_engine_grid/cells/3/parameters/k",
+        "/scenario_engine_grid/cells/3/parameters/bridge_edges_per_tambon",
         "/scenario_engine_grid/cells/13/selection_rule"
       ],
       "status": "closed",
       "closure": {
         "closed_on": "2026-10-03",
         "closed_by": "Owners Putu and Rachmania (decision log R12, relayed by Putu); entered by the AI coding agent",
-        "value_or_location": "ensemble_grid.headline_rule.reference_cell (owner choice 3, option A: the default cell), scenario S3b k = 3 per tambon (owner choice 17, option A) and the E3 selection rule (owner choice 18, option C).",
+        "value_or_location": "ensemble_grid.headline_rule.reference_cell (owner choice 3, option A: the default cell), scenario S3b: 3 bridge edges per tambon, assigned to a tambon as in S3 (owner choice 17, option A: '3 per tambon, to match S3'; the rule text was made explicit after review) and the E3 selection rule (owner choice 18, option C).",
         "evidence_sha256": "8c3f7e20cedabb8f4593311f1f3603880595cc40994006b6253e0b92cc579f50"
       }
     },
@@ -2203,10 +2262,10 @@
     },
     {
       "id": "DR-B06",
-      "where": "scenario_engine_grid S3.selection_rule",
+      "where": "scenario_engine_grid S3.selection_rule, and S3b.selection_rule (extended after R12)",
       "pointer": "/scenario_engine_grid/cells/2/selection_rule_status",
       "plan_says": "'Top-3 pre-ranked critical links per tambon'. No rule for assigning a link to a tambon.",
-      "draft_says": "A link belongs to the tambon where its edge lies; a boundary-crossing edge goes by its midpoint.",
+      "draft_says": "A link (S3) or bridge edge (S3b) belongs to the tambon where its edge lies; a boundary-crossing edge goes by its midpoint.",
       "outcome_sensitive": true,
       "status": "awaiting_owner_confirmation"
     },
@@ -2246,6 +2305,7 @@
       "A closed item with an empty parameter is refused by the tests, and a file with status draft_for_signature or signed that has an empty parameter is refused by the schema.",
       "When every open item is closed and every section's status is fixed, the status becomes draft_for_signature, and the signers may amend and sign.",
       "At signing, every entry in drafter_readings is set to confirmed or amended. An amended entry is also listed in signature_block.amendments_at_signing, and the parameter it points to is edited to match.",
+      "The compute window of the corridor run of record was declared by the agent. An owner records acceptance in corridor_polygon.run_of_record.compute_window.owner_acceptance (accepted, accepted_by, accepted_on); the schema refuses status signed unless accepted is true.",
       "After the signed file's SHA-256 is recorded in RECEIPTS.jsonl, this file is not edited again.",
       "Any later change needs planning_protocol_v2 with a written reason. Every run is reported."
     ],
@@ -2261,19 +2321,21 @@
     }
   },
   "assumptions": [
-    "Parameters marked as proposals are the drafting agent's reading of a point the plan leaves unstated; their slots are empty and each is named by an open item. Values that are filled in but do not come from the plan are listed in drafter_readings. Neither kind carries authority until an owner confirms it.",
+    "Parameters marked as proposals are the drafting agent's reading of a point the plan leaves unstated. Each such slot was empty and named by an open item until an owner decided it; since R12 (3 October 2026) every one holds the owners' answer, with the proposal kept beside it. Values that are filled in but do not come from the plan are listed in drafter_readings. Neither kind carries authority until an owner confirms it.",
     "Counts quoted from the plan were verified by the plan's authors. Three were re-run for this file after drafting: the closed-edge counts (1,824 walking and 1,738 vehicle, reproduced exactly), the DDPM counts for Mae Sai district (27 rows, 6,050 places, 17 located rows, 5,550 places, 500 unlocated places, reproduced exactly by src/floodguard/ddpm_shelters.py) and the three hospital ways (all three exist in the OSM extract). The plan's distance note of 27-33 km was not re-measured the same way: by road from the edge of AOI-02 the spike gives about 14 km, 5 km and 31 km.",
     "The on-disk check of 2026-10-01 covered file presence and, for the age rasters, the manifest SHA-256 and byte sizes. The age rasters, the boundary file, the WorldPop 2020 raster and the OSM extract were opened and their SHA-256 checked when the runs listed under blinding.runs_before_v1b_is_in_force were made.",
     "The open-item list was extended after review from 11 to 18 items. It covers every empty parameter in this file; a test checks that. It cannot show that no further unstated choice remains, and the signers add any they find.",
     "A second review on 3 October 2026 found two values that the drafting agent had filled in from its own proposals (the anchor unit set and percentile rule, with OI-08 closed on them; the grade-join tolerance) and four choices that had no slot (the demand-area rule, the hospital-count unit, the culvert tag, the SE2-blind unit rule and list). Each is now an empty slot named by an open item: OI-08 (reopened), OI-04, OI-01, OI-03, OI-05 and OI-09. Measured values are kept as candidates beside the slots.",
     "On 3 October 2026 the owners approved every owner choice as recommended (decision log R12). Each closure that rests on R12 says so in closed_by and names the owner choice it answers. For the four outcome-aware choices (owner-choices sheet entries 4, 6, 13 and 15) the owners gave no separate reason; the closure quotes the recommendation's own reason and says that none was given.",
-    "The corridor of record was built on 3 October 2026 in a compute window that the AI coding agent declared under decision log R12, after checking the machine with tasklist and while a process monitor sampled it (corridor_polygon.run_of_record.compute_window). The owners did not name the window themselves; they attest to it when they read the closures. OSM building coverage around the corridor is sparse (1134 objects tagged building in the extract box), so the corroborated-shelter count rests more on amenities than on buildings."
+    "The corridor of record was built on 3 October 2026 in a compute window that the AI coding agent declared under decision log R12, after checking the machine with tasklist and while a process monitor sampled it (corridor_polygon.run_of_record.compute_window). The owners did not name the window; an owner accepts or rejects it in compute_window.owner_acceptance, and the schema refuses a signature until an owner accepts it. OSM building coverage around the corridor is sparse (1134 objects tagged building in the extract box), so the corroborated-shelter count of the spike run rests more on amenities than on buildings.",
+    "A review on 3 October 2026, after the run of record, found that OI-04 and the counts of OI-06 had been closed from the E0 spike run, not from task E4 as their produced_by, owner-choices entry 1 and plan row G7b say. Both are open again, and the status went back from draft_for_signature to incomplete_draft. The same review found the agent's compute window with no owner acceptance recorded (now a slot that blocks signing), an S3b rule that did not say 'per tambon' (rewritten as owner choice 17 says), an unanswered sub-question of entry 22 written as an owner answer (now an agent note), and the OI-09 build credited to the owners (now credited to the agent's build, awaiting Rachmania's review)."
   ],
   "signature_block": {
     "kind": "team_governance_signature",
     "note": "Not an independent review. The two signers are different people. Each signer fills their own entry; nobody fills an entry for someone else. This file cannot be signed while it is an incomplete draft.",
     "attestations_required": [
       "Every open item is closed, every parameter it names is filled in, and I have read each closure.",
+      "An owner has accepted the compute window of the corridor run of record (corridor_polygon.run_of_record.compute_window.owner_acceptance), or the run was repeated in a window an owner named.",
       "Every entry in drafter_readings is marked confirmed or amended.",
       "No FPPS, A-E class or ensemble has been computed for a real unit since the plan date (2026-09-26) other than the items in the v1a exploratory-knowledge disclosure.",
       "v1a_sha256 above equals the SHA-256 of the committed v1a file and the value recorded in RECEIPTS.jsonl."

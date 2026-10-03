@@ -2,9 +2,9 @@
 
 For Putu and Rachmania. Written by an AI coding agent on 3 October 2026, after decision-log entry R11 (v1b approved in principle; the agent closes the engineering items and writes one proposal for each owner choice). Corrected the same day after a review; what changed is listed at the end.
 
-**Answered on 3 October 2026.** Putu and Rachmania approved all 23 choices exactly as recommended, including the readings DR-B01 to DR-B08 (decision log R12, relayed by Putu). The recommended box of every entry is ticked below, and each entry says where the answer was written. For the four outcome-aware entries (4, 6, 13 and 15) the owners gave no reason of their own; the protocol says so and quotes the recommendation's reason.
+**Answered on 3 October 2026.** Putu and Rachmania approved all 23 choices exactly as recommended, including the readings DR-B01 to DR-B08 (decision log R12, relayed by Putu). The recommended box of entries 1 to 23 is ticked below, and each entry says where the answer was written. A question that had no recommendation (the second question of entry 22) and entry 24, added after R12, are not ticked. For the four outcome-aware entries (4, 6, 13 and 15) the owners gave no reason of their own; the protocol says so and quotes the recommendation's reason.
 
-**Every entry is now answered (R12).** Each entry gives a question, the options, the option the agent recommended and why, and the recorded answer. Until R12 nothing here was decided: a recommendation is not a decision. The agent wrote each answer into `planning_protocol_v1b.json`, quoted it in the item's closure, and closed every item that needed nothing else.
+**Entries 1 to 23 are answered (R12). Entry 24 is new and not answered:** it was added after a review of the corridor run of record on 3 October. Each entry gives a question, the options, the option the agent recommended and why, and the recorded answer. Until R12 nothing here was decided: a recommendation is not a decision. The agent wrote each answer into `planning_protocol_v1b.json`, quoted it in the item's closure, and closed every item that needed nothing else.
 
 **"Sensitive"** means the choice can change a class, a headline or a confidence level for a real tambon. No FPPS, class or ensemble has been computed under this protocol. For most entries nobody has seen which way the choice would move a result, so please answer them before anyone looks.
 
@@ -14,10 +14,10 @@ For Putu and Rachmania. Written by an AI coding agent on 3 October 2026, after d
 
 ## Where v1b stands
 
-- **Closed (all 18).** First, after R12: OI-02, OI-05, OI-07, OI-08, OI-09, OI-10, OI-11, OI-12, OI-13, OI-14, OI-15, OI-16, OI-17 and OI-18. Each closure names the owner choice it answers and R12. OI-08 holds rule A, copied from the anchors receipt. OI-09 holds the pf-07 frame and the SE2-blind units, which the agent built from the decided rules (entry 15).
-- **Closed last, from the run of record (3 October 2026):** OI-01 (demand area and corridor file), OI-03 (hospital-count unit and spike figures), OI-04 (grade-join tolerance and join log) and OI-06 (main-road entry, shelter match distance and facility counts). Each keeps what you answered under `owner_answer`. The run of the whole-path rule was made in a compute window that the agent declared under R12; every acceptance value of the plan is met. v1b is now `draft_for_signature`.
-- **Readings DR-B01 to DR-B08:** approved as written in R12. The file keeps them `awaiting_owner_confirmation` while it is a draft; the signers mark them `confirmed` in the signing edit, after reading the closures.
-- **Still yours:** accept or reject the compute window the agent declared (`corridor_polygon.run_of_record.compute_window`); Rachmania reviews the pf-07 build; read the closures (`planning_protocol_v1b_closures_summary.md`); sign.
+- **Closed (16 of 18).** First, after R12: OI-02, OI-05, OI-07, OI-08, OI-09, OI-10, OI-11, OI-12, OI-13, OI-14, OI-15, OI-16, OI-17 and OI-18. Each closure names the owner choice it answers and R12. OI-08 holds rule A, copied from the anchors receipt. OI-09 holds the pf-07 frame and the SE2-blind units, which the agent built from the decided rules (entry 15). Then, from the run of record (3 October 2026): OI-01 (demand area and corridor file) and OI-03 (hospital-count unit and spike figures).
+- **Open again (2): OI-04 (join log) and OI-06 (facility counts).** The agent closed both from the E0 spike run of record on 3 October and moved v1b to `draft_for_signature`. A review the same day found that entry 1 below, which you approved, says "OI-04 and the counts of OI-06 follow from the E4 build", and plan row G7b makes v1b depend on E0 and E4. E4 has not been built, and none of your decisions lets the spike run stand in for it. Your answers to entries 8, 19 and 20 stay written. New entry 24 asks whether the spike run should stand in for E4. v1b is back to `incomplete_draft`.
+- **Readings DR-B01 to DR-B08:** approved as written in R12. The file keeps them `awaiting_owner_confirmation` while it is a draft; the signers mark them `confirmed` in the signing edit, after reading the closures. DR-B06 was extended to scenario S3b after R12, because entry 17 says "to match S3".
+- **Still yours:** entry 24; accept or reject the compute window the agent declared, in `corridor_polygon.run_of_record.compute_window.owner_acceptance` (the file cannot be signed until an owner accepts it); Rachmania reviews the pf-07 build; read the closures (`planning_protocol_v1b_closures_summary.md`); sign.
 
 | # | Item | Question | Recommended, and answered in R12 | Sensitive |
 |---|---|---|---|---|
@@ -44,6 +44,7 @@ For Putu and Rachmania. Written by an AI coding agent on 3 October 2026, after d
 | 21 | OI-01 | Demand area: the eight tambons as they are, or clipped to AOI-02? | Clipped to AOI-02 | No |
 | 22 | OI-03 | What counts as one hospital for the "at least 4" test? | Distinct named hospitals | Low |
 | 23 | OI-05 | The `culvert=*` tag, which the context builder does not carry | Not read, and say so | Low as far as measured |
+| 24 | OI-04, OI-06 | Does the E0 spike run of record stand in for the E4 build? *Added after R12; not answered* | Recommended: no, wait for E4 | Low |
 
 ---
 
@@ -384,7 +385,7 @@ S3b fails "the top-k bridge edges". ☒ **A. 3 per tambon**, to match S3 (recomm
 
 - **Sensitive:** scenario cells only.
 
-**Answered 3 Oct 2026 as recommended (R12).** k = 3, written into scenario S3b.
+**Answered 3 Oct 2026 as recommended (R12).** 3 per tambon, to match S3. Written into scenario S3b as `parameters.bridge_edges_per_tambon` = 3, with S3's rule for assigning an edge to a tambon (reading DR-B06, extended to S3b for that reason). An earlier version wrote only "k = 3" beside a rule that said "the k highest-ranked bridge edges", which can be read as three for the whole case; a review on 3 October caught it.
 
 ## 18. Selection rule for engine cell E3 (OI-10, Putu with Rachmania)
 
@@ -418,7 +419,7 @@ A DDPM shelter is "corroborated" when it matches an OSM building or amenity. The
 
 Your answer: ☒ A ☐ B ☐ other: ________
 
-**Answered 3 Oct 2026 as recommended (R12).** 150 m. Written into `facility_sets.sets[1].shelter_match_distance_m`. **Measured in the run of record:** 48 of the 82 located shelters in the routing context have an OSM building or amenity within 150 m (match rate 0.585); 20 of them have a building, 28 an amenity only. OSM building coverage around the corridor is sparse (1,134 objects tagged as buildings in the extract box), so this level is not close to "all listed" here, against the expectation above. OI-06 is closed.
+**Answered 3 Oct 2026 as recommended (R12).** 150 m. Written into `facility_sets.sets[1].shelter_match_distance_m`. **Measured in the E0 spike run of record:** 48 of the 82 located shelters in the routing context have an OSM building or amenity within 150 m (match rate 0.585); 20 of them have a building, 28 an amenity only. OSM building coverage around the corridor is sparse (1,134 objects tagged as buildings in the extract box), so this level is not close to "all listed" here, against the expectation above. OI-06 was closed on these counts and opened again after review: as entry 1 says, its counts follow from the E4 build, or from the spike run if you choose B in entry 24. The figures are kept in `facility_sets.counts_from_spike_run_of_record`.
 
 ## 20. Coincidence tolerance for grade joins (OI-04, Putu)
 
@@ -438,7 +439,7 @@ The context builder keeps two road vertices apart when they sit at the same coor
 
 Your answer: ☒ A ☐ B: ____ m ☐ C ☐ other: ________
 
-**Answered 3 Oct 2026 as recommended (R12).** 0 m. Written into `grade_join_policy.coincidence_tolerance_m`. The run of record logged 345 joins (`outputs/planning_v1/grade_join_log_of_record.json`); OI-04 is closed.
+**Answered 3 Oct 2026 as recommended (R12).** 0 m. Written into `grade_join_policy.coincidence_tolerance_m`. The E0 spike run of record logged 345 joins (`outputs/planning_v1/grade_join_log_of_record.json`). OI-04 was closed on that log and opened again after review: as entry 1 says, the join log follows from the E4 build, or from the spike run if you choose B in entry 24. The log is kept in `grade_join_policy.join_log_from_spike_run_of_record`.
 
 ## 21. Demand area: the eight tambons as they are, or clipped to AOI-02? (OI-01, Putu)
 
@@ -473,9 +474,9 @@ The plan's acceptance asks for at least 4 hospitals in the context. The spike co
 - **Sensitive:** low. It decides whether a corridor passes acceptance, not a score.
 - **In the draft:** `acceptance.hospital_count_unit` is empty, with B as its proposal.
 
-Your answer: ☐ A ☒ B ☐ C ☐ other: ________   Unnamed object a destination? ☒ yes ☐ no
+Your answer: ☐ A ☒ B ☐ C ☐ other: ________   Unnamed object a destination? ☐ yes ☐ no
 
-**Answered 3 Oct 2026 as recommended (R12).** Written into `corridor_polygon.acceptance.hospital_count_unit`. The second question carried no recommendation to drop the unnamed object, so nothing was changed: it stays a destination, and the box above records that reading, not a separate answer. Say so if you meant otherwise. The run of record, made in a declared compute window, has 4 distinct named hospitals (6 OSM objects) and meets the test with exactly 4; OI-03 is closed.
+**Answered 3 Oct 2026 as recommended (R12).** Written into `corridor_polygon.acceptance.hospital_count_unit`. **The second question is not answered.** It had no recommendation, so "as recommended" does not cover it, and both of its boxes are empty. Nothing was changed: the facility rule takes every OSM hospital in the routing context, so the unnamed object stays a destination by default. Tick a box if you want to decide it; "no" would be a change to the facility set (OI-06). The run of record, made in a compute window that the agent declared and that awaits your acceptance, has 4 distinct named hospitals (6 OSM objects) and meets the test with exactly 4; OI-03 is closed.
 
 ## 23. The `culvert=*` tag (OI-05, Putu)
 
@@ -493,6 +494,22 @@ Your answer: ☒ A ☐ B ☐ other: ________
 
 **Answered 3 Oct 2026 as recommended (R12).** Written into `closure_rule_v1.culvert_tag_handling.rule`.
 
+## 24. Does the E0 spike run of record stand in for the E4 build? (OI-04, OI-06, Putu) *Added after R12; not answered*
+
+Entry 1, which you approved in R12, says "OI-04 and the counts of OI-06 follow from the E4 build", and plan row G7b makes v1b depend on "E0 spike, E4". Task E4 (`build_planning_context.py`) has not been built. On 3 October the agent closed OI-04 (the join log) and the counts of OI-06 from the E0 spike run of record instead, and moved v1b to `draft_for_signature`. A review the same day found that none of your decisions allows that substitution. Both items are open again, and v1b is `incomplete_draft`.
+
+What the spike run measured is kept beside the empty slots and in `corridor_polygon.run_of_record.e4_reproduction_check`: 345 joins (joins SHA-256 `d289f728…e357`), 6 OSM hospital objects, 6 with a DGA record within 150 m, 82 located DDPM shelters, 48 of them corroborated.
+
+- **A. Wait for E4.** Build `build_planning_context.py` (plan budget 3.5 days) and close OI-04 and OI-06 from its output. E4 must give the same joins and counts as the spike run, or its receipt says which differ and why, and a difference needs your acceptance in the decision log before the item closes. E4's context SHA-256 will differ from the spike's if E4 supplies the DDPM shelters as facilities (plan P2), because that hash covers supplied facilities; the joins and counts must still match.
+- **B. Let the spike run stand in for E4 for these two items.** Record that in the decision log. OI-04 and OI-06 then close from the spike run, as they did before the review. A later E4 build must still reproduce the joins and counts, or report why not.
+
+**Recommended: A.** It is what plan row G7b and entry 1 say, and it keeps the protocol from binding numbers that no E4 build has produced. B is a fair choice if signing v1b sooner matters more: the spike called the unchanged context builder and `grade_join.py`, which plan P2 also has E4 call, and the reproduction check still binds E4.
+
+- **Sensitive:** low. The joins and counts are measurements; neither option changes a rule. B lets v1b be signed before E4 exists.
+- **Either way:** an E4 build needs its own compute window.
+
+Your answer: ☐ A ☐ B ☐ other: ________
+
 ---
 
 ## Readings to confirm or amend at signing
@@ -508,7 +525,7 @@ These are not new questions. Each is a value the drafting agent filled in where 
 | DR-B03 | Critical links weighted by WorldPop 2020 residents; ties on edge ID | Nothing new |
 | DR-B04 | 1 km cells assigned to tambons by projected-area fraction | Used for the anchor candidates; 99.6% of the raster's residents fall inside a unit (`allocation_totals` in the anchors receipt) |
 | DR-B05 | Terrain proxy run one at a time, outside the 540 cells | Nothing new |
-| DR-B06 | A link belongs to the tambon that holds its midpoint | Nothing new |
+| DR-B06 | A link (S3) or bridge edge (S3b) belongs to the tambon that holds its midpoint | Extended to S3b after R12, because entry 17 says "to match S3" |
 | DR-B07 | The critical-link ranking and the national percentiles may run before v1b | The percentiles were run (plan 3.4 also asks for them in v1b). The ranking was not run |
 | DR-B08 | Scenario S8 is based on O1 | Nothing new |
 
@@ -517,7 +534,7 @@ DR-B09 (the anchor unit set and percentile rule) was withdrawn on 3 October: it 
 ## Needed from a person, not a choice
 
 - **Rachmania:** review of the pf-07 frame, routing geometry, hospital list and district office lookup that the agent built from the decided rule (entry 15, `resources/planning_frames/`), and the statement left open at the v1a signing on whether any M1-v2 tuning on GEOID tiles has been run.
-- **Putu:** review of the four new modules (`normalisation.py`, `closure_rules.py`, `grade_join.py`, `ddpm_shelters.py`). And **the compute window**: plan 5 item 1 asks for builds to run serially with no concurrent SNAP jobs. On 3 October the agent declared one under R12 (10:36:18 to 10:40:20 +08:00), checked the machine with tasklist, ran the chosen corridor once with `--compute-window` while a process monitor sampled the machine, and closed OI-01, OI-03, OI-04 and OI-06 from that run. Read `corridor_polygon.run_of_record.compute_window` and say if you do not accept it. A later E4 build needs its own window.
+- **Putu:** review of the four new modules (`normalisation.py`, `closure_rules.py`, `grade_join.py`, `ddpm_shelters.py`) and of `hospital_counts.py`, which now holds the one counting rule for entry 22. And **the compute window**: plan 5 item 1 asks for builds to run serially with no concurrent SNAP jobs. On 3 October the agent declared one under R12 at 10:36 +08:00, the minute the run started (10:36:18 to 10:40:20 +08:00), checked the machine with tasklist, ran the chosen corridor once with `--compute-window` while a process monitor sampled the machine, and closed OI-01 and OI-03 from that run (OI-04 and OI-06 too, until the review reopened them). Read `corridor_polygon.run_of_record.compute_window`. An owner then sets `owner_acceptance.accepted` to `true` or `false`, with `accepted_by` and `accepted_on`; the file cannot be signed until an owner accepts the window. If you reject it, the run is repeated in a window you name. A later E4 build needs its own window.
 - **Either owner:** approval of downloads DL-1 and DL-2 before any v2 class D or JRC note. Neither blocks signing.
 - **A human:** bring `claude/planning-protocol-v1` into `codex/thai-event-selection` with a merge commit, never a squash, before v1b is signed.
 
@@ -532,7 +549,7 @@ Each of these is handled above or already marked as a reading. They are listed s
 5. **Terrain proxy.** It is listed inside axis 4, but 540 cells leave no room for it (DR-B05); section 6.2 bases S8 on O2 and section 3.4 restricts the proxy to O1 (DR-B08).
 6. **SE2-blind.** It is to be "computed before any overlay", but flooded shares for every Chiang Rai tambon were already seen (EK-09). The selection rule itself uses population only. Also, "all 124 Chiang Rai tambons inside the 4009 analysis extent" is the whole province: Chiang Rai has 124 tambons.
 7. **Culverts.** The closure rule reads a tag that the unchanged context builder does not carry (entry 23).
-8. **Compute window.** The plan wants the spike numbers from a serial run in a declared compute window. The spike ran four times on a shared machine without one.
+8. **Compute window.** The plan wants the spike numbers from a serial run in a declared compute window. The spike ran four times on a shared machine without one. The fifth run, the run of record, ran in a window that the agent declared, which awaits your acceptance.
 9. **Schedule.** The plan had the E0 spike on 26–27 September, the E4 build done by 1 October and v1b recorded on 2 October. The spike ran on 2 October and E4 has not started, so the first results (plan: 7 October) move with it.
 
 ## What changed on this sheet after the review of 3 October
@@ -556,3 +573,11 @@ Each of these is handled above or already marked as a reading. They are listed s
 - "Where v1b stands" says that all 18 items are closed and v1b is `draft_for_signature`.
 - Entries 19 to 22 say what the run of record measured and that their item is closed. Entry 19 reports the match rate, which is lower than the entry expected because OSM buildings are sparse around the corridor.
 - "Needed from a person" asks the owners to accept or reject the compute window the agent declared, instead of declaring one.
+
+## What changed on this sheet after the review of the run of record (3 October 2026)
+
+- OI-04 and OI-06 are open again, and v1b is `incomplete_draft`. The agent had closed them from the E0 spike run of record, while entry 1 has them follow from the E4 build. New entry 24 asks whether the spike run stands in for E4; it is not answered.
+- The compute window that the agent declared now has a slot for your acceptance (`owner_acceptance`), and the file cannot be signed until an owner accepts it. "Needed from a person" says how to fill it.
+- Entry 22: neither box of the unnamed-object question is ticked any more. That question had no recommendation, and you did not answer it.
+- Entry 17: S3b now says 3 bridge edges per tambon, assigned to a tambon as in S3; reading DR-B06 covers both cells.
+- Entries 19 and 20 say that their figures come from the spike run and wait for E4 (or entry 24).

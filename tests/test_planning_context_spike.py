@@ -301,3 +301,107 @@ def test_facility_counts_are_counts_only(spike, tmp_path: Path) -> None:
     assert PERSON not in text and PHONE not in text
     bare = spike.facility_counts(destinations, box(99.0, 19.9, 99.1, 20.1), None, None)
     assert bare["dga_matched_hospitals"] is None and bare["located_ddpm_shelters"] is None
+
+    # Corroboration: a building beside the first shelter, an amenity about 1 km from the second.
+    objects = [(frozenset({"building"}), box(99.0500, 20.0000, 99.0502, 20.0002)),
+               (frozenset({"amenity"}), box(99.0700, 20.0100, 99.0701, 20.0101))]
+    corroborated = spike.corroborated_shelter_counts(ddpm, box(99.0, 19.9, 99.1, 20.1), objects, 150.0)
+    assert corroborated["located_rows"] == counts["located_ddpm_shelters"] == 2
+    assert corroborated["corroborated_rows"] == 1 and corroborated["matched_to_a_building_rows"] == 1
+    assert corroborated["match_rate"] == pytest.approx(0.5)
+    text = json.dumps(corroborated)
+    assert PERSON not in text and PHONE not in text and "place 1" not in text
+
+
+def _protocol() -> dict:
+    return json.loads(PROTOCOL.read_text(encoding="utf-8"))
+
+
+def test_only_the_decided_rule_with_a_declared_window_is_the_run_of_record(spike) -> None:
+    from copy import deepcopy
+
+    v1b = _protocol()
+    decided = spike.decided_variant(v1b)
+    items = {item["id"]: item for item in v1b["open_items"]}
+    if items["OI-02"]["status"] == "closed":
+        assert decided == "whole_path"
+        assert v1b["corridor_polygon"]["route_selection_rule"]["rule"] == spike.ROUTE_RULES["whole_path"]
+    assert spike.is_run_of_record("whole_path", "declared by test", v1b) is (decided == "whole_path")
+    assert spike.is_run_of_record("whole_path", None, v1b) is False
+    assert spike.is_run_of_record("whole_path", "   ", v1b) is False
+    assert spike.is_run_of_record("proposal", "declared by test", v1b) is False
+
+    undecided = deepcopy(v1b)
+    next(item for item in undecided["open_items"] if item["id"] == "OI-02")["status"] = "open"
+    assert spike.decided_variant(undecided) is None
+    assert spike.is_run_of_record("whole_path", "declared by test", undecided) is False
+    changed = deepcopy(v1b)
+    changed["corridor_polygon"]["route_selection_rule"]["rule"] = "some other rule"
+    assert spike.decided_variant(changed) is None
+
+
+def test_record_and_candidate_files_have_different_names_and_labels(spike, tmp_path: Path) -> None:
+    record = spike.output_paths("whole_path", True, tmp_path)
+    candidate = spike.output_paths("whole_path", False, tmp_path)
+    assert {path.name for path in record.values()} == set(spike.RECORD_FILES.values())
+    assert not any("candidate" in path.name for path in record.values())
+    assert all("candidate" in path.name or "spike" in path.name for path in candidate.values())
+    assert not set(record.values()) & set(candidate.values())
+
+    v1b = _protocol()
+    labels = spike.run_labels("whole_path", True, v1b)
+    assert labels["file_status"] == "of_record" and labels["log_status"] == "log_of_record"
+    assert labels["receipt_status"] == "run_of_record" and "R12" in labels["status_note"]
+    for variant in ("proposal", "whole_path"):
+        labels = spike.run_labels(variant, False, v1b)
+        # A candidate file says so inside itself and names the open item it is not the answer to.
+        assert labels["file_status"] == "candidate" and labels["log_status"] == "candidate"
+        assert "OI-02" in labels["status_note"] and "not" in labels["status_note"]
+
+
+def test_match_objects_are_read_from_both_osm_layers_and_classified(spike, tmp_path: Path, monkeypatch) -> None:
+    import floodguard.evidence_context as evidence_context
+    import floodguard.open_context_extract as extract
+
+    layers = {
+        "multipolygons": [
+            {"osm_way_id": "1", "building": "yes", "amenity": None},
+            {"osm_way_id": "2", "building": None, "amenity": "school"},
+            {"osm_way_id": "3", "building": "no", "amenity": None},
+        ],
+        "points": [
+            {"osm_id": "4", "other_tags": '"building"=>"house"'},
+            {"osm_id": "5", "other_tags": '"amenity"=>"bench","building"=>"no"'},
+            {"osm_id": "6", "other_tags": '"buildingpart"=>"yes"'},
+        ],
+    }
+
+    def fake_ogr2ogr(_bin_dir: Path, arguments: list[str]) -> None:
+        target = Path(next(argument for argument in arguments if argument.endswith(".geojson")))
+        layer = arguments[-1]
+        features = []
+        for index, properties in enumerate(layers[layer]):
+            x = 99.0 + index * 0.001
+            geometry = ({"type": "Point", "coordinates": [x, 20.0]} if layer == "points" else
+                        {"type": "Polygon", "coordinates": [[[x, 20.0], [x + 0.0001, 20.0], [x + 0.0001, 20.0001],
+                                                             [x, 20.0001], [x, 20.0]]]})
+            features.append({"type": "Feature", "properties": properties, "geometry": geometry})
+        target.write_text(json.dumps({"type": "FeatureCollection", "features": features}), encoding="utf-8")
+
+    monkeypatch.setattr(extract, "_run_ogr2ogr", fake_ogr2ogr)
+    monkeypatch.setattr(extract, "find_qgis_bin", lambda: tmp_path)
+    monkeypatch.setattr(evidence_context, "ogr_runtime_identity", lambda _bin: {"gdal_version": "test"})
+    objects, info = spike.extract_match_objects(Path("unused.pbf"), (98.9, 19.9, 99.1, 20.1), tmp_path / "match")
+    kinds = sorted(sorted(kind) for kind, _geometry in objects)
+    assert kinds == [["amenity"], ["amenity"], ["building"], ["building"]]
+    assert info["layers"]["multipolygons"]["features_read"] == 3 and info["layers"]["multipolygons"]["objects_kept"] == 2
+    assert info["layers"]["points"]["objects_kept"] == 2 and info["layers"]["points"]["with_building"] == 1
+    assert info["retained"] is False and len(info["layers"]["points"]["file_sha256"]) == 64
+
+
+def test_machine_description_and_aoi_count(spike) -> None:
+    machine = spike.machine_description()
+    assert machine["logical_processors"] and machine["system"]
+    assert set(machine) >= {"physical_memory_gib", "available_memory_gib_at_start"}
+    # Plan 3.1 P2 acceptance: the planning frames do not change the six AOIs load_aois returns.
+    assert spike.load_aois_counts() == {"resources/aoi": 6, "resources/aoi/upload": 6}

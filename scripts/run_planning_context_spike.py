@@ -13,16 +13,31 @@ decision). This spike builds the corridor under one of two candidate rules:
   ``ROUTE_RULES`` below (buffer the trunk and primary segments of the fastest path);
 * ``whole_path``: the same path, with every segment buffered whatever its class.
 
-Its outputs are CANDIDATES: they close nothing until the owners pick a rule.
-The corridor file and the join log say so themselves, and each carries its
-source timestamp, a confidence class and its assumptions.
+A run is a CANDIDATE unless two things hold: the owners have chosen its rule
+(protocol v1b records the rule text under ``route_selection_rule.rule``, which
+must equal ``ROUTE_RULES[variant]``), and the operator declared a compute window
+for it. Such a run is the RUN OF RECORD: its corridor, join log and counts are
+the ones protocol v1b records. A candidate writes ``*_candidate_<variant>``
+files; the run of record writes ``e0_context_run_of_record.json``,
+``corridor_of_record.geojson`` and ``grade_join_log_of_record.json``, and
+refuses to replace an earlier run of record unless ``--supersede-record`` gives
+the reason. Every file says inside itself which of the two it is, and carries
+its source timestamp, a confidence class and its assumptions.
 
 The plan asks for builds to run serially in a declared compute window with no
 concurrent SNAP jobs. A run counts as made in such a window only when the
 operator passes ``--compute-window`` with the declaration; otherwise the receipt
-records that criterion as not met. A run compares itself with the previous run
-of the same variant found in ``outputs/planning_v1`` and records whether the
-polygon, the joins and the context are the same.
+records that criterion as not met. A run compares itself with the previous
+candidate run of the same variant found in ``outputs/planning_v1`` and records
+whether the polygon, the joins and the context are the same.
+
+When the shelter match distance is decided in protocol v1b and the DDPM file is
+given, the run also counts corroborated shelters: located DDPM rows with an OSM
+building or amenity within that distance (``floodguard.shelter_corroboration``).
+The OSM buildings and amenities are extracted from the same OSM file, in the
+bounding box of the routing context widened by ``MATCH_OBJECT_MARGIN_DEG``. This
+step runs after the figures of the E0 record are taken; its time and memory are
+reported apart.
 
 A context build is allowed before v1b is in force. The spike reads no flood
 layer and computes no closure, no access loss, no FPPS, no A-E class and no
@@ -38,7 +53,8 @@ Inputs live outside Git, so their locations are arguments::
         --reviewed-junctions <finals run>/review/osm_junction_review.json \
         --dga-facilities <open data>/healthcare/thailand_health_facilities_th.geojson \
         --ddpm-shelters <open data>/shelters/dpm-gd002_final2.csv \
-        --work-dir <a scratch folder outside Git>
+        --work-dir <a scratch folder outside Git> \
+        [--compute-window "<who declared it, when, what was checked>"]
 """
 
 from __future__ import annotations
@@ -51,6 +67,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 import subprocess
 import sys
 import threading
@@ -69,6 +86,7 @@ from floodguard.evidence_context import (  # noqa: E402
 )
 from floodguard.evidence_scenarios import MODELLED_ROAD_SPEED_KMH, calculate_total_access  # noqa: E402
 from floodguard.grade_join import apply_grade_joins, join_log, joins_sha256  # noqa: E402
+from floodguard.shelter_corroboration import corroborate_shelters, osm_match_kinds  # noqa: E402
 
 SCHEMA_VERSION = "floodguard.e0_context_spike.v1"
 PROTOCOL_V1A = ROOT / "docs" / "proposal_execution" / "planning_protocol_v1a.json"
@@ -77,16 +95,32 @@ OUTPUT_DIR = ROOT / "outputs" / "planning_v1"
 SEARCH_MARGIN_DEG = 0.45
 HOSPITAL_SNAP_LIMIT_M = 100.0
 HOSPITAL_MATCH_DISTANCE_M = 150.0
+# Room around the routing context for OSM objects that a shelter near its edge can match (about 210 m at 20 N).
+MATCH_OBJECT_MARGIN_DEG = 0.002
 MAE_SAI_HOSPITAL_NAME_TH = "โรงพยาบาลแม่สาย"
 UNNAMED_FACILITY = "Unnamed OSM candidate"
 MEMORY_SAMPLE_SECONDS = 0.2
+RECORD_FILES = {
+    "receipt": "e0_context_run_of_record.json",
+    "corridor": "corridor_of_record.geojson",
+    "log": "grade_join_log_of_record.json",
+}
 CANDIDATE_STATUS_NOTE = (
     "Candidate: open item OI-02 (the route rule) is an owner decision that has not been made. This file is not "
     "the corridor or the join log of record."
 )
+RECORD_STATUS_NOTE = (
+    "Of record: built under the route rule the owners chose for open item OI-02 (owner choice 1, option B, "
+    "decision log R12), in a compute window the operator declared (plan 5 item 1). Protocol v1b records this "
+    "file by its SHA-256."
+)
 CONFIDENCE_BASIS = (
     "OSM roads and hospitals are unverified map records; travel times are modelled class speeds on an undirected "
     "graph; the timing was taken on a shared machine."
+)
+RECORD_CONFIDENCE_BASIS = (
+    "OSM roads, hospitals, buildings and amenities are unverified map records; travel times are modelled class "
+    "speeds on an undirected graph; the timing is one measurement on one desktop machine in a declared compute window."
 )
 CORRIDOR_ASSUMPTIONS = [
     "The route rule is a candidate for open item OI-02; it is not an owner decision.",
@@ -96,6 +130,10 @@ CORRIDOR_ASSUMPTIONS = [
     "an evacuation zone or a flood extent.",
     "OSM hospital ways are map records. Their operation, entrance and capacity are not verified.",
 ]
+RULE_DECIDED_ASSUMPTION = (
+    "The route rule is the one the owners chose for open item OI-02 (owner choice 1, option B, with its seven "
+    "sub-rules; decision log R12)."
+)
 # Variant -> the road classes of the fastest path that are buffered (None buffers every segment).
 VARIANTS: dict[str, tuple[str, ...] | None] = {"proposal": ("trunk", "primary"), "whole_path": None}
 _ROUTE_RULE_START = (
@@ -110,6 +148,165 @@ ROUTE_RULES = {
     "whole_path": _ROUTE_RULE_START + "keep every segment of that path, whatever its road class; buffer the path by "
                   "3 km in EPSG:32647; and union the three buffers with AOI-02.",
 }
+
+
+def decided_variant(v1b: dict[str, Any]) -> str | None:
+    """Return the variant whose rule protocol v1b records as decided (open item OI-02 closed), or None."""
+
+    items = {item["id"]: item for item in v1b["open_items"]}
+    if items.get("OI-02", {}).get("status") != "closed":
+        return None
+    rule = v1b["corridor_polygon"]["route_selection_rule"].get("rule")
+    matches = [variant for variant, text in ROUTE_RULES.items() if text == rule]
+    return matches[0] if len(matches) == 1 else None
+
+
+def is_run_of_record(variant: str, compute_window: str | None, v1b: dict[str, Any]) -> bool:
+    """A run is of record when its rule is the decided one and a compute window was declared for it."""
+
+    return bool(compute_window and compute_window.strip()) and decided_variant(v1b) == variant
+
+
+def output_paths(variant: str, of_record: bool, output_dir: Path = OUTPUT_DIR) -> dict[str, Path]:
+    """Return where the receipt, the corridor and the join log of a run go."""
+
+    if of_record:
+        return {key: output_dir / name for key, name in RECORD_FILES.items()}
+    return {
+        "receipt": output_dir / f"e0_context_spike_{variant}.json",
+        "corridor": output_dir / f"corridor_candidate_{variant}.geojson",
+        "log": output_dir / f"grade_join_log_candidate_{variant}.json",
+    }
+
+
+def run_labels(variant: str, of_record: bool, v1b: dict[str, Any]) -> dict[str, Any]:
+    """Return the status words, notes, confidence basis and rule assumption a run's files carry."""
+
+    if of_record:
+        return {
+            "file_status": "of_record",
+            "receipt_status": "run_of_record",
+            "log_status": "log_of_record",
+            "status_note": RECORD_STATUS_NOTE,
+            "receipt_status_note": RECORD_STATUS_NOTE + " The figures under e0_spike_record are the ones the plan "
+                                   "asks for (plan 5 item 1).",
+            "confidence_basis": RECORD_CONFIDENCE_BASIS,
+            "rule_assumption": RULE_DECIDED_ASSUMPTION,
+        }
+    decided = decided_variant(v1b)
+    if decided is None:
+        note = CANDIDATE_STATUS_NOTE
+        rule_assumption = CORRIDOR_ASSUMPTIONS[0]
+    elif decided == variant:
+        note = ("Candidate: the owners chose this route rule for open item OI-02, but no compute window was "
+                "declared for this run, so it is not the run of record.")
+        rule_assumption = RULE_DECIDED_ASSUMPTION
+    else:
+        note = "Candidate: this is not the route rule the owners chose for open item OI-02."
+        rule_assumption = "The route rule is not the one the owners chose for open item OI-02."
+    return {
+        "file_status": "candidate",
+        "receipt_status": "candidate_measurement",
+        "log_status": "candidate",
+        "status_note": note,
+        "receipt_status_note": note + " Nothing here closes an open item.",
+        "confidence_basis": CONFIDENCE_BASIS,
+        "rule_assumption": rule_assumption,
+    }
+
+
+def machine_description() -> dict[str, Any]:
+    """Describe the machine a run was timed on: processors and installed memory. No user or host names."""
+
+    description: dict[str, Any] = {
+        "logical_processors": os.cpu_count(),
+        "system": platform.system(),
+        "release": platform.release(),
+        "python": platform.python_version(),
+        "physical_memory_gib": None,
+        "available_memory_gib_at_start": None,
+    }
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        class Status(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", wintypes.DWORD), ("dwMemoryLoad", wintypes.DWORD),
+                ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        status = Status()
+        status.dwLength = ctypes.sizeof(Status)
+        if ctypes.WinDLL("kernel32").GlobalMemoryStatusEx(ctypes.byref(status)):
+            description["physical_memory_gib"] = round(status.ullTotalPhys / 1024 ** 3, 2)
+            description["available_memory_gib_at_start"] = round(status.ullAvailPhys / 1024 ** 3, 2)
+    return description
+
+
+def extract_match_objects(pbf: Path, bounds: tuple[float, float, float, float],
+                          target: Path) -> tuple[list[tuple[frozenset[str], Any]], dict[str, Any]]:
+    """Extract OSM buildings and amenities from ``pbf`` inside ``bounds`` for shelter corroboration.
+
+    Two passes of the GDAL OSM driver, as the context builder makes them:
+    closed ways and multipolygon relations tagged building or amenity, and
+    nodes whose other tags mention either key. Each object keeps its match
+    kinds (``osm_match_kinds``); an object with neither kind is dropped. The
+    extracted files stay in ``target`` (outside Git) and are named in the
+    receipt by their SHA-256.
+    """
+
+    import pyogrio
+
+    from floodguard.evidence_context import ogr_runtime_identity
+    from floodguard.open_context_extract import _run_ogr2ogr, find_qgis_bin
+
+    target.mkdir(parents=True, exist_ok=True)
+    bin_dir = find_qgis_bin()
+    layers = (
+        ("multipolygons", "building IS NOT NULL OR amenity IS NOT NULL"),
+        ("points", "other_tags LIKE '%building%' OR other_tags LIKE '%amenity%'"),
+    )
+    objects: list[tuple[frozenset[str], Any]] = []
+    info: dict[str, Any] = {
+        "bounds_wgs84": [round(value, 6) for value in bounds],
+        "margin_deg": MATCH_OBJECT_MARGIN_DEG,
+        "ogr_runtime": ogr_runtime_identity(bin_dir),
+        "layers": {},
+        "retained": False,
+        "retained_note": "The extracted files were written outside Git and not kept; their SHA-256 values name them.",
+    }
+    for layer, where in layers:
+        path = target / f"osm_{layer}_building_or_amenity.geojson"
+        _run_ogr2ogr(bin_dir, ["-f", "GeoJSON", "-spat", *[str(value) for value in bounds], "-where", where,
+                               "-lco", "RFC7946=YES", str(path), str(pbf), layer])
+        frame = pyogrio.read_dataframe(path)
+        columns = [column for column in frame.columns if column != "geometry"]
+        kept = Counter()
+        for values, geometry in zip(frame[columns].itertuples(index=False, name=None), frame.geometry):
+            if geometry is None or geometry.is_empty:
+                continue
+            # OSM attributes are strings; a missing one comes back as NaN or None and is left out.
+            properties = {key: value for key, value in zip(columns, values) if isinstance(value, str)}
+            kinds = osm_match_kinds(_tags(properties))
+            if kinds:
+                objects.append((kinds, geometry))
+                kept["kept"] += 1
+                for kind in kinds:
+                    kept[kind] += 1
+        info["layers"][layer] = {
+            "where": where,
+            "features_read": int(len(frame)),
+            "objects_kept": kept["kept"],
+            "with_building": kept["building"],
+            "with_amenity": kept["amenity"],
+            "file_sha256": sha256_file(path),
+        }
+        del frame
+    return objects, info
 
 
 def sha256_file(path: Path) -> str:
@@ -522,8 +719,9 @@ def facility_counts(destinations: list[dict[str, Any]], routing: Any,
         "dga_matched_hospitals": None,
         "located_ddpm_shelters": None,
         "corroborated_shelters": None,
-        "corroborated_shelters_note": "Not measured: it needs the shelter match distance (an owner decision) and an "
-                                      "extract of OSM buildings, which this spike does not make.",
+        "corroborated_shelters_note": "Not measured here: it needs the DDPM file, the shelter match distance in "
+                                      "protocol v1b and an extract of OSM buildings and amenities "
+                                      "(corroborated_shelter_counts).",
     }
     if dga_path is not None:
         records = json.loads(dga_path.read_text(encoding="utf-8"))["features"]
@@ -554,18 +752,76 @@ def facility_counts(destinations: list[dict[str, Any]], routing: Any,
     return counts
 
 
+def corroborated_shelter_counts(ddpm_path: Path, routing: Any, match_objects: list[tuple[frozenset[str], Any]],
+                                distance_m: float) -> dict[str, Any]:
+    """Count the located DDPM rows in the routing context that an OSM building or amenity corroborates.
+
+    The rows are those ``facility_counts`` counts as located in the routing
+    context. Counts only; no row leaves this function.
+    """
+
+    from shapely.geometry import Point
+
+    rows = read_ddpm_shelters(ddpm_path)
+    inside = [row for row in rows if row["latitude"] is not None and row["longitude"] is not None
+              and routing.covers(Point(row["longitude"], row["latitude"]))]
+    return corroborate_shelters(inside, match_objects, distance_m=distance_m)
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _local_now() -> str:
+    return datetime.now().astimezone().replace(microsecond=0).isoformat()
+
+
+def _round(value: float | None, digits: int = 2) -> float | None:
+    return None if value is None else round(value, digits)
+
+
+def load_aois_counts() -> dict[str, Any]:
+    """Count the AOIs ``load_aois`` returns from both AOI folders; it refuses anything but six."""
+
+    from floodguard.evidence_catalog import load_aois
+
+    counts: dict[str, Any] = {}
+    for folder in ("resources/aoi", "resources/aoi/upload"):
+        try:
+            counts[folder] = len(load_aois(ROOT / folder))
+        except ValueError as error:
+            counts[folder] = f"refused: {error}"
+    return counts
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    """Run the spike and return the receipt; candidate files are written beside it."""
+    """Run the spike and return the receipt; the corridor and the join log are written beside it at the end."""
 
     import pyogrio
     from shapely.geometry import box, mapping, shape
     from shapely.ops import transform, unary_union
     from pyproj import Transformer
 
+    run_started_utc, run_started_local = _utc_now(), _local_now()
+    machine = machine_description()
     v1a = json.loads(PROTOCOL_V1A.read_text(encoding="utf-8"))
     v1b = json.loads(PROTOCOL_V1B.read_text(encoding="utf-8"))
+    of_record = is_run_of_record(args.variant, args.compute_window, v1b)
+    labels = run_labels(args.variant, of_record, v1b)
+    paths = output_paths(args.variant, of_record)
+    supersedes = None
+    if of_record and paths["receipt"].exists():
+        if not (args.supersede_record and args.supersede_record.strip()):
+            raise ValueError("a run of record exists; pass --supersede-record with the reason to replace it")
+        earlier = json.loads(paths["receipt"].read_text(encoding="ascii"))
+        supersedes = {
+            "receipt_sha256": sha256_file(paths["receipt"]),
+            "generated_at_utc": earlier["generated_at_utc"],
+            "reason": args.supersede_record.strip(),
+        }
     construction = v1b["corridor_polygon"]["construction"]
     acceptance = v1b["corridor_polygon"]["acceptance"]
+    shelter_distance = v1b["facility_sets"]["sets"][1].get("shelter_match_distance_m")
     hospital_ways = {row["osm_way"]: row["name"] for row in construction["hospital_destinations"]}
     tambons = v1a["case_portfolio"]["mae_sai_reporting_frame"]["units"]
     aoi_path = ROOT / construction["base"]
@@ -607,10 +863,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     demand = tambon_union.intersection(aoi_02)
     outside_m2 = transform(to_metres, tambon_union.difference(aoi_02)).area
 
+    # The comparison is always with the previous candidate run of the same rule.
     previous = previous_run(args.variant)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    corridor_path = OUTPUT_DIR / f"corridor_candidate_{args.variant}.geojson"
-    generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
     context_dir = args.work_dir / "context_vehicle"
     gc.collect()
@@ -623,40 +878,6 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     build_seconds = time.perf_counter() - build_started
     peak_after_build = peak_memory_gib()
     osm_retrieved_at = context["source_metadata"]["osm"]["retrieved_at_utc"]
-
-    # Round-trip through JSON so the hash is taken over exactly what the file holds.
-    corridor_geometry = json.loads(json.dumps(mapping(corridor)))
-    corridor_geometry_sha256 = geometry_sha256(corridor_geometry)
-    corridor_feature = {
-        "type": "FeatureCollection",
-        "features": [{
-            "type": "Feature",
-            "properties": {
-                "id": f"corridor_candidate_{args.variant}",
-                "status": "candidate",
-                "status_note": CANDIDATE_STATUS_NOTE,
-                "generated_at_utc": generated_at,
-                "source_timestamp": osm_retrieved_at,
-                "source_timestamp_note": "Retrieval time of the OpenStreetMap extract the routes were found on. "
-                                         "AOI-02 and the boundaries are named by their SHA-256.",
-                "confidence_class": "low",
-                "confidence_basis": CONFIDENCE_BASIS,
-                "assumptions": CORRIDOR_ASSUMPTIONS,
-                "route_rule_variant": args.variant,
-                "route_rule": ROUTE_RULES[args.variant],
-                "base": construction["base"],
-                "base_sha256": construction["base_sha256"],
-                "buffer_m": construction["buffer_m"],
-                "osm_pbf_sha256": pbf_sha256,
-                "boundaries_sha256": boundaries_sha256,
-                "geometry_sha256": corridor_geometry_sha256,
-                "official_warning": False,
-                "operational_status": "non_operational",
-            },
-            "geometry": corridor_geometry,
-        }],
-    }
-    corridor_path.write_bytes(encode(corridor_feature))
 
     hospitals = [row for row in context["osm_facilities"] if row["service_type"] == "hospital"]
     destinations = [row for row in hospitals
@@ -671,19 +892,37 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     joined_edges, joins = apply_grade_joins(context)
     joined = calculate_total_access(context["population"], joined_edges, destinations)
     access_seconds = time.perf_counter() - access_started
-    facilities = facility_counts(destinations, corridor.intersection(reporting), args.dga_facilities,
-                                 args.ddpm_shelters)
-    log_path = OUTPUT_DIR / f"grade_join_log_candidate_{args.variant}.json"
-    log_path.write_bytes(encode(join_log(
-        joins, context_canonical_sha256=context["canonical_sha256"], status="candidate",
-        status_note=CANDIDATE_STATUS_NOTE, source_timestamp=osm_retrieved_at, generated_at_utc=generated_at,
-    )))
+    routing_context = corridor.intersection(reporting)
+    facilities = facility_counts(destinations, routing_context, args.dga_facilities, args.ddpm_shelters)
+    # The figures of the E0 record are taken here, before the corroboration step below.
+    peak = peak_memory_gib()
+
+    corroboration_seconds = None
+    peak_after_corroboration = None
+    corroborated = False
+    if args.ddpm_shelters is not None and shelter_distance is not None:
+        corroboration_started = time.perf_counter()
+        bounds = routing_context.bounds
+        bounds = (bounds[0] - MATCH_OBJECT_MARGIN_DEG, bounds[1] - MATCH_OBJECT_MARGIN_DEG,
+                  bounds[2] + MATCH_OBJECT_MARGIN_DEG, bounds[3] + MATCH_OBJECT_MARGIN_DEG)
+        match_objects, extract_info = extract_match_objects(pbf, bounds, args.work_dir / "osm_buildings_amenities")
+        counts = corroborated_shelter_counts(args.ddpm_shelters, routing_context, match_objects, float(shelter_distance))
+        del match_objects
+        if counts["located_rows"] != facilities["located_ddpm_shelters"]:
+            raise ValueError("the corroboration step saw a different set of located shelters")
+        facilities["corroborated_shelters"] = counts["corroborated_rows"]
+        facilities.pop("corroborated_shelters_note", None)
+        facilities["shelter_corroboration"] = {**counts, "osm_extract": extract_info}
+        corroboration_seconds = time.perf_counter() - corroboration_started
+        peak_after_corroboration = peak_memory_gib()
+        corroborated = True
 
     review = context["connectivity_review"]
     share_unjoined, share_joined = no_route_share(unjoined), no_route_share(joined)
-    hospital_count = len(destinations)
+    breakdown = hospital_breakdown(destinations)
+    hospital_count = breakdown["distinct_named_hospitals"] if of_record else len(destinations)
     wall_minutes = (route_seconds + build_seconds) / 60
-    peak = peak_memory_gib()
+    aoi_counts = load_aois_counts()
     criteria_met = {
         "hospitals_in_context_min": hospital_count >= acceptance["hospitals_in_context_min"],
         "named_ways_within_routing_context": all(named.values()),
@@ -691,6 +930,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             share_joined["share"] <= acceptance["baseline_vehicle_no_route_share_max"],
         "declared_compute_window": bool(args.compute_window),
     }
+    corridor_geometry = json.loads(json.dumps(mapping(corridor)))
+    corridor_geometry_sha256 = geometry_sha256(corridor_geometry)
     compared = reproducibility(previous, {
         "context_canonical_sha256": context["canonical_sha256"],
         "corridor_geometry_sha256": corridor_geometry_sha256,
@@ -699,13 +940,85 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "join_count": len(joins),
     })
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False)
+
+    # Every file of the run carries the same generation time; they are written last, together.
+    generated_at = _utc_now()
+    corridor_feature = {
+        "type": "FeatureCollection",
+        "features": [{
+            "type": "Feature",
+            "properties": {
+                "id": paths["corridor"].stem,
+                "status": labels["file_status"],
+                "status_note": labels["status_note"],
+                "generated_at_utc": generated_at,
+                "source_timestamp": osm_retrieved_at,
+                "source_timestamp_note": "Retrieval time of the OpenStreetMap extract the routes were found on. "
+                                         "AOI-02 and the boundaries are named by their SHA-256.",
+                "confidence_class": "low",
+                "confidence_basis": labels["confidence_basis"],
+                "assumptions": [labels["rule_assumption"], *CORRIDOR_ASSUMPTIONS[1:]],
+                "route_rule_variant": args.variant,
+                "route_rule": ROUTE_RULES[args.variant],
+                "base": construction["base"],
+                "base_sha256": construction["base_sha256"],
+                "buffer_m": construction["buffer_m"],
+                "osm_pbf_sha256": pbf_sha256,
+                "boundaries_sha256": boundaries_sha256,
+                "geometry_sha256": corridor_geometry_sha256,
+                "official_warning": False,
+                "operational_status": "non_operational",
+            },
+            "geometry": corridor_geometry,
+        }],
+    }
+    corridor_bytes = encode(corridor_feature)
+    log_bytes = encode(join_log(
+        joins, context_canonical_sha256=context["canonical_sha256"], status=labels["log_status"],
+        status_note=labels["status_note"], source_timestamp=osm_retrieved_at, generated_at_utc=generated_at,
+    ))
+    record_key = "e0_spike_record" if of_record else "e0_spike_record_candidate"
+    hospital_assumption = (
+        "hospital_count counts distinct named hospitals, the unit the owners chose (acceptance.hospital_count_unit, "
+        "owner choice 22): OSM objects with the same name are one hospital and an unnamed object is not counted. "
+        "hospital_count_breakdown gives the number of OSM objects too; every object is a destination."
+        if of_record else
+        "hospital_count counts OSM objects. Two objects can describe one hospital, and an unnamed object may not "
+        "be a hospital; hospital_count_breakdown says how many there are of each."
+    )
+    assumptions = [
+        labels["rule_assumption"],
+        "The route-selection graph joins ways at every shared vertex coordinate, whatever their grade tags. The "
+        "context graph does not: it keeps grade-separated vertices apart and joins them only under decision D13.",
+        "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road "
+        "condition are not represented.",
+        "A hospital is an OSM object tagged as a hospital. Its operation, entrance and capacity are not verified.",
+        "A grade join shows that two ways end at the same OSM coordinate. It does not show the transition can be driven.",
+        hospital_assumption,
+    ]
+    if corroborated:
+        assumptions.append(
+            "A corroborated shelter is a located DDPM row with an OSM building or amenity within the match distance. "
+            "That shows a mapped structure near the listed coordinate, not that the structure is the shelter or that "
+            "it was open. OSM building coverage is not complete, and in a built-up area almost any point has a "
+            "building nearby; the match rate is reported for that reason."
+        )
+    limitations = [
+        "One build on one day on one machine. The context file is not kept; its canonical SHA-256 names it."
+        if of_record else
+        "This is one build on one day. It is a measurement for the owners, not the context of record.",
+        "Facility counts are counts of map and list records. No hospital and no shelter was checked on the ground.",
+    ]
+    if not corroborated:
+        limitations.append("The number of corroborated shelters is not measured.")
+    run_finished_utc, run_finished_local = _utc_now(), _local_now()
     receipt = {
         "schema_version": SCHEMA_VERSION,
         "generated_at_utc": generated_at,
         "protocol_item": "planning_protocol_v1b open items OI-01, OI-03, OI-04 and OI-06 (plan 5 item 1, task E0)",
-        "status": "candidate_measurement",
-        "status_note": "The corridor is built under one candidate for open item OI-02 (the route rule), which is an "
-                       "owner decision. Nothing here closes an open item until the owners pick a rule.",
+        "run_kind": "run_of_record" if of_record else "candidate",
+        "status": labels["receipt_status"],
+        "status_note": labels["receipt_status_note"],
         "route_rule_variant": args.variant,
         "official_warning": False,
         "operational_status": "non_operational",
@@ -718,13 +1031,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "boundaries_valid_on": "2022-01-22",
         },
         "confidence_class": "low",
-        "confidence_basis": CONFIDENCE_BASIS,
+        "confidence_basis": labels["confidence_basis"],
         "route_rule": ROUTE_RULES[args.variant],
         "search_window_wgs84": [round(value, 4) for value in window.bounds],
         "hospital_routes": hospital_routes,
         "corridor": {
-            "path": corridor_path.relative_to(ROOT).as_posix(),
-            "sha256": sha256_file(corridor_path),
+            "path": paths["corridor"].relative_to(ROOT).as_posix(),
+            "sha256": hashlib.sha256(corridor_bytes).hexdigest(),
             "geometry_sha256": corridor_geometry_sha256,
             "area_km2": round(transform(to_metres, corridor).area / 1e6, 2),
             "aoi_02_area_km2": round(transform(to_metres, aoi_02).area / 1e6, 2),
@@ -736,22 +1049,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "aoi_geometry_note": "The unclipped union lies partly outside AOI-02, and the builder refuses a demand "
                                  "area that the routing polygon does not contain.",
             "tambon_union_outside_aoi_02_m2": round(outside_m2, 1),
-            "routing_geometry": "the corridor candidate",
+            "routing_geometry": "the corridor of record" if of_record else "the corridor candidate",
             "reporting_geometry": "union of the Thai COD-AB ADM3 polygons that intersect the corridor",
             "travel_mode": "legacy_vehicle",
             "facilities_supplied": 0,
             "reviewed_junctions_supplied": len(reviewed),
             "reviewed_junctions_applied": len(context["coverage"]["reviewed_shared_node_junctions_applied"]),
         },
-        "e0_spike_record_candidate": {
+        record_key: {
             "hospital_count": hospital_count,
             "within_routing_context_for_named_ways": all(named.values()),
             "edge_count": len(context["edges"]),
             "wall_time_minutes": round(wall_minutes, 2),
-            "peak_ram_gib": None if peak is None else round(peak, 2),
+            "peak_ram_gib": _round(peak),
             "grade_split_count": review["shared_coordinate_grade_split_count"],
             "baseline_vehicle_no_route_share": round(share_joined["share"], 6),
         },
+        "hospital_count_unit": acceptance["hospital_count_unit"] if of_record else "OSM objects",
         "acceptance": {
             "hospitals_in_context_min": acceptance["hospitals_in_context_min"],
             "hospitals_in_context_met": hospital_count >= acceptance["hospitals_in_context_min"],
@@ -764,14 +1078,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "plan_rule": v1b["corridor_polygon"]["compute_window"],
                 "declared_by_the_operator": args.compute_window,
                 "met": bool(args.compute_window),
+                "run_started_at_utc": run_started_utc,
+                "run_started_at_local": run_started_local,
+                "run_finished_at_utc": run_finished_utc,
+                "run_finished_at_local": run_finished_local,
                 "note": "Met only when the operator passes --compute-window with the declaration. This script "
                         "cannot see what else runs on the machine.",
             },
             "criteria_met": criteria_met,
             "all_criteria_met": all(criteria_met.values()),
-            "criteria_note": "The PII whitelist test and the load_aois count are checked by the test suite, not here.",
+            "load_aois_counts": aoi_counts,
+            "load_aois_still_returns_6": all(value == 6 for value in aoi_counts.values()),
+            "criteria_note": "The PII whitelist test is checked by the test suite, not here. load_aois was called on "
+                             "both AOI folders during this run.",
         },
-        "hospital_count_breakdown": hospital_breakdown(destinations),
+        "hospital_count_breakdown": breakdown,
         "edge_counts": edge_tag_counts(context["edges"]),
         "reproducibility": compared,
         "baseline_no_route": {
@@ -789,8 +1110,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "possible_endpoint_transition_count": review["possible_endpoint_transition_count"],
             "joins_where_every_node_is_an_endpoint": sum(join["all_nodes_at_coordinate_are_endpoints"] for join in joins),
             "joins_sha256": joins_sha256(joins),
-            "log_path": log_path.relative_to(ROOT).as_posix(),
-            "log_sha256": sha256_file(log_path),
+            "log_path": paths["log"].relative_to(ROOT).as_posix(),
+            "log_sha256": hashlib.sha256(log_bytes).hexdigest(),
         },
         "context": {
             "canonical_sha256": context["canonical_sha256"],
@@ -802,7 +1123,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "modelled_population_2020": round(context["coverage"]["modelled_population_2020"], 1),
             "population_snap_coverage_fraction": round(context["coverage"]["population_snap_coverage_fraction"], 6),
             "retained": False,
-            "retained_note": "The context file is a spike product and was not kept; plan task E4 builds the context of record.",
+            "retained_note": (
+                "The context of record was written outside Git and not kept. Its canonical SHA-256 names it; a "
+                "rebuild from the same inputs gives the same hash (reproducibility compares it with the candidate "
+                "run of the same rule)."
+                if of_record else
+                "The context file is a spike product and was not kept; plan task E4 builds the context of record."
+            ),
         },
         "hospitals_in_routing_context": [
             {
@@ -814,20 +1141,22 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             for row in destinations
         ],
         "hospitals_outside_routing_context": sum(row.get("within_routing_context") is not True for row in hospitals),
-        "facility_counts_candidate": facilities,
+        ("facility_counts" if of_record else "facility_counts_candidate"): facilities,
         "timing_seconds": {
             "route_search_and_corridor": round(route_seconds, 1),
             "context_build": round(build_seconds, 1),
             "baseline_access_twice": round(access_seconds, 1),
+            "shelter_corroboration": _round(corroboration_seconds, 1),
         },
         "peak_memory_gib_so_far": {
-            "after_route_search_and_corridor": None if peak_after_route is None else round(peak_after_route, 2),
-            "after_context_build": None if peak_after_build is None else round(peak_after_build, 2),
-            "at_the_end": None if peak is None else round(peak, 2),
+            "after_route_search_and_corridor": _round(peak_after_route),
+            "after_context_build": _round(peak_after_build),
+            "after_baseline_access_and_facility_counts": _round(peak),
+            "after_shelter_corroboration": _round(peak_after_corroboration),
         },
         "context_build_memory": {
-            "sampled_peak_gib": None if build_memory.peak_gib is None else round(build_memory.peak_gib, 2),
-            "at_start_gib": None if build_memory.start_gib is None else round(build_memory.start_gib, 2),
+            "sampled_peak_gib": _round(build_memory.peak_gib),
+            "at_start_gib": _round(build_memory.start_gib),
             "samples": build_memory.samples,
             "sample_interval_seconds": MEMORY_SAMPLE_SECONDS,
             "note": "Current working set of this Python process, sampled while build_context_inputs ran. It "
@@ -840,8 +1169,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                           if args.compute_window else
                           "No compute window was declared for this run, so the timing and memory figures are not "
                           "the ones the plan asks for and cannot close open item OI-03. ")
-                       + "Peak RAM is the peak working set of this Python process, read at the end of the run; it "
-                         "leaves out the ogr2ogr child processes.",
+                       + "peak_ram_gib is the peak working set of this Python process from the start of the run "
+                         "through the route search, the context build, the two baseline access runs and the "
+                         "facility counts; it leaves out the ogr2ogr child processes. The shelter corroboration "
+                         "step runs after that and is timed and measured apart.",
+        "machine": machine,
         "input_hashes": {
             "osm_pbf_sha256": pbf_sha256,
             "worldpop_2020_sha256": context["input_hashes"]["worldpop"],
@@ -854,24 +1186,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "builder_sha256": sha256_file(Path(__file__)),
             "evidence_context_sha256": sha256_file(ROOT / "src" / "floodguard" / "evidence_context.py"),
             "grade_join_sha256": sha256_file(ROOT / "src" / "floodguard" / "grade_join.py"),
+            "shelter_corroboration_sha256": sha256_file(ROOT / "src" / "floodguard" / "shelter_corroboration.py"),
         },
-        "assumptions": [
-            "The route rule is a candidate for open item OI-02; it is not an owner decision.",
-            "The route-selection graph joins ways at every shared vertex coordinate, whatever their grade tags. The "
-            "context graph does not: it keeps grade-separated vertices apart and joins them only under decision D13.",
-            "Road times are fixed class speeds on an undirected graph. One-way rules, turn restrictions and road "
-            "condition are not represented.",
-            "A hospital is an OSM object tagged as a hospital. Its operation, entrance and capacity are not verified.",
-            "A grade join shows that two ways end at the same OSM coordinate. It does not show the transition can be driven.",
-            "hospital_count counts OSM objects. Two objects can describe one hospital, and an unnamed object may not "
-            "be a hospital; hospital_count_breakdown says how many there are of each.",
-        ],
-        "limitations": [
-            "This is one build on one day. It is a measurement for the owners, not the context of record.",
-            "Facility counts are counts of map and list records. No hospital and no shelter was checked on the ground.",
-            "The number of corroborated shelters is not measured.",
-        ],
+        "assumptions": assumptions,
+        "limitations": limitations,
     }
+    if supersedes is not None:
+        receipt["supersedes"] = supersedes
+    paths["corridor"].write_bytes(corridor_bytes)
+    paths["log"].write_bytes(log_bytes)
     return receipt
 
 
@@ -891,14 +1214,20 @@ def main() -> int:
         help="the operator's declaration that this run is serial, in a declared compute window with no concurrent "
              "SNAP jobs: who declared it and when. Leave it out for any other run.",
     )
+    parser.add_argument(
+        "--supersede-record",
+        help="the reason for replacing an existing run of record; without it a run of record is never replaced.",
+    )
     args = parser.parse_args()
     if args.work_dir.resolve().is_relative_to(ROOT):
         parser.error("the work folder must be outside Git")
     receipt = run(args)
-    output = OUTPUT_DIR / f"e0_context_spike_{args.variant}.json"
+    output = output_paths(args.variant, receipt["run_kind"] == "run_of_record")["receipt"]
     output.write_bytes(encode(receipt))
-    print(json.dumps({"variant": args.variant, "e0_spike_record_candidate": receipt["e0_spike_record_candidate"],
-                      "acceptance": receipt["acceptance"], "receipt_sha256": sha256_file(output)}))
+    record_key = "e0_spike_record" if receipt["run_kind"] == "run_of_record" else "e0_spike_record_candidate"
+    print(json.dumps({"variant": args.variant, "run_kind": receipt["run_kind"], record_key: receipt[record_key],
+                      "acceptance": receipt["acceptance"], "receipt_path": output.relative_to(ROOT).as_posix(),
+                      "receipt_sha256": sha256_file(output)}))
     return 0
 
 

@@ -1,0 +1,477 @@
+{
+  "accepted_observation": false,
+  "access_record_scope": "Tiles read through the tile store of this run. A raster read that goes around the store is not recorded.",
+  "action_class_computed": false,
+  "amendment_check": {
+    "comparison_with_amendment_text": [
+      {
+        "differences": {},
+        "matches": true,
+        "tile": "EMSR712-3-22"
+      },
+      {
+        "differences": {},
+        "matches": true,
+        "tile": "EMSR712-3-25"
+      },
+      {
+        "differences": {},
+        "matches": true,
+        "tile": "EMSR712-3-30"
+      },
+      {
+        "differences": {},
+        "matches": true,
+        "tile": "EMSR712-3-31"
+      },
+      {
+        "differences": {},
+        "matches": true,
+        "tile": "EMSR712-3-32"
+      },
+      {
+        "differences": {},
+        "matches": true,
+        "tile": "EMSR712-3-33"
+      }
+    ],
+    "configuration": {
+      "block_pixels": 256,
+      "channel": "mean_vv_vh",
+      "direction": "darkening",
+      "threshold_scope": "per_tile"
+    },
+    "every_published_value_recomputed": true,
+    "per_tile": {
+      "EMSR712-3-10": {
+        "selected_blocks": 0
+      },
+      "EMSR712-3-12": {
+        "selected_blocks": 0
+      },
+      "EMSR712-3-13": {
+        "selected_blocks": 0
+      },
+      "EMSR712-3-20": {
+        "selected_blocks": 0
+      },
+      "EMSR712-3-21": {
+        "selected_blocks": 0
+      },
+      "EMSR712-3-22": {
+        "admissible_range_db": [
+          -6.0,
+          9.5
+        ],
+        "j_at_ki_before_amendment_1": 3.6732,
+        "j_at_local_minima": [
+          3.6732
+        ],
+        "ki_before_amendment_1_is_edge_of_admissible_range": false,
+        "ki_threshold_db_after_amendment_1": 2.5,
+        "ki_threshold_db_before_amendment_1": 2.5,
+        "local_minima_between_fitted_modes_db": [
+          2.5
+        ],
+        "local_minima_db": [
+          2.5
+        ],
+        "otsu_threshold_db": 1.7,
+        "pooled_cells": 261873,
+        "pooled_fit": {
+          "mean_high": 4.971,
+          "mean_low": -1.604,
+          "std_high": 2.389,
+          "std_low": 2.053,
+          "weight_high": 0.376,
+          "weight_low": 0.624
+        },
+        "pooled_fit_ashman_d": 2.952,
+        "selected_blocks": 4
+      },
+      "EMSR712-3-23": {
+        "selected_blocks": 0
+      },
+      "EMSR712-3-24": {
+        "selected_blocks": 0
+      },
+      "EMSR712-3-25": {
+        "admissible_range_db": [
+          -8.2,
+          8.1
+        ],
+        "j_at_ki_before_amendment_1": 3.6248,
+        "j_at_local_minima": [],
+        "ki_before_amendment_1_is_edge_of_admissible_range": true,
+        "ki_threshold_db_after_amendment_1": null,
+        "ki_threshold_db_before_amendment_1": 8.1,
+        "local_minima_between_fitted_modes_db": [],
+        "local_minima_db": [],
+        "otsu_threshold_db": -0.1,
+        "pooled_cells": 64925,
+        "pooled_fit": {
+          "mean_high": 3.225,
+          "mean_low": -2.575,
+          "std_high": 2.617,
+          "std_low": 2.512,
+          "weight_high": 0.302,
+          "weight_low": 0.698
+        },
+        "pooled_fit_ashman_d": 2.261,
+        "selected_blocks": 1
+      },
+      "EMSR712-3-26": {
+        "selected_blocks": 0
+      },
+      "EMSR712-3-30": {
+        "admissible_range_db": [
+          -8.5,
+          9.7
+        ],
+        "j_at_ki_before_amendment_1": 3.8288,
+        "j_at_local_minima": [
+          3.8356
+        ],
+        "ki_before_amendment_1_is_edge_of_admissible_range": true,
+        "ki_threshold_db_after_amendment_1": 6.2,
+        "ki_threshold_db_before_amendment_1": 9.7,
+        "local_minima_between_fitted_modes_db": [
+          6.2
+        ],
+        "local_minima_db": [
+          6.2
+        ],
+        "otsu_threshold_db": 0.4,
+        "pooled_cells": 130766,
+        "pooled_fit": {
+          "mean_high": 6.274,
+          "mean_low": -1.656,
+          "std_high": 2.35,
+          "std_low": 3.13,
+          "weight_high": 0.139,
+          "weight_low": 0.861
+        },
+        "pooled_fit_ashman_d": 2.865,
+        "selected_blocks": 2
+      },
+      "EMSR712-3-31": {
+        "admissible_range_db": [
+          -6.6,
+          8.7
+        ],
+        "j_at_ki_before_amendment_1": 3.4014,
+        "j_at_local_minima": [],
+        "ki_before_amendment_1_is_edge_of_admissible_range": true,
+        "ki_threshold_db_after_amendment_1": null,
+        "ki_threshold_db_before_amendment_1": 8.7,
+        "local_minima_between_fitted_modes_db": [],
+        "local_minima_db": [],
+        "otsu_threshold_db": 1.1,
+        "pooled_cells": 261723,
+        "pooled_fit": {
+          "mean_high": 5.177,
+          "mean_low": -0.606,
+          "std_high": 2.291,
+          "std_low": 2.592,
+          "weight_high": 0.158,
+          "weight_low": 0.842
+        },
+        "pooled_fit_ashman_d": 2.364,
+        "selected_blocks": 4
+      },
+      "EMSR712-3-32": {
+        "admissible_range_db": [
+          -6.4,
+          10.7
+        ],
+        "j_at_ki_before_amendment_1": 3.8902,
+        "j_at_local_minima": [
+          3.8902
+        ],
+        "ki_before_amendment_1_is_edge_of_admissible_range": false,
+        "ki_threshold_db_after_amendment_1": 2.9,
+        "ki_threshold_db_before_amendment_1": 2.9,
+        "local_minima_between_fitted_modes_db": [
+          2.9
+        ],
+        "local_minima_db": [
+          2.9
+        ],
+        "otsu_threshold_db": 2.3,
+        "pooled_cells": 458397,
+        "pooled_fit": {
+          "mean_high": 6.098,
+          "mean_low": -1.066,
+          "std_high": 2.294,
+          "std_low": 2.411,
+          "weight_high": 0.414,
+          "weight_low": 0.586
+        },
+        "pooled_fit_ashman_d": 3.045,
+        "selected_blocks": 7
+      },
+      "EMSR712-3-33": {
+        "admissible_range_db": [
+          -6.8,
+          10.3
+        ],
+        "j_at_ki_before_amendment_1": 3.6989,
+        "j_at_local_minima": [
+          3.6989
+        ],
+        "ki_before_amendment_1_is_edge_of_admissible_range": false,
+        "ki_threshold_db_after_amendment_1": 4.0,
+        "ki_threshold_db_before_amendment_1": 4.0,
+        "local_minima_between_fitted_modes_db": [
+          4.0
+        ],
+        "local_minima_db": [
+          4.0
+        ],
+        "otsu_threshold_db": 2.0,
+        "pooled_cells": 196508,
+        "pooled_fit": {
+          "mean_high": 6.111,
+          "mean_low": -1.228,
+          "std_high": 2.491,
+          "std_low": 2.387,
+          "weight_high": 0.243,
+          "weight_low": 0.757
+        },
+        "pooled_fit_ashman_d": 3.008,
+        "selected_blocks": 3
+      },
+      "EMSR712-3-9": {
+        "selected_blocks": 0
+      }
+    },
+    "threshold_rule_described": "ki_threshold_db_before_amendment_1 is the lowest admissible value of the criterion, as the code of the first session returned it. ki_threshold_db_after_amendment_1 is the interior minimum between the fitted modes, or null.",
+    "tiles_with_a_positive_threshold_before_amendment_1": [
+      "EMSR712-3-22",
+      "EMSR712-3-25",
+      "EMSR712-3-30",
+      "EMSR712-3-31",
+      "EMSR712-3-32",
+      "EMSR712-3-33"
+    ]
+  },
+  "assumptions": [
+    "GEOID S1GRD tiles are linear sigma0 at 10 m with about 4.4 equivalent looks.",
+    "The CEMS-derived label was drawn from the same Sentinel-1 pass as the post-event input.",
+    "Mapped background is not confirmed dry land.",
+    "Permanent water in the label is modelled; it is a non-flood class in the primary comparison and left out of the secondary one.",
+    "No DEM, slope, HAND or land-cover layer for these tiles is on disk, so neither method uses one.",
+    "Pre-event and post-event passes are almost four months apart and come from different orbit directions."
+  ],
+  "can_feed_decision_layer": false,
+  "confidence": "low: a research benchmark on one foreign event with a spatial split by tile; every score is agreement with a same-pass CEMS map, not independent accuracy",
+  "declared_benchmark_protocol_sha256": "7478d424c5ebb5ac316a384b9ea17ac0cc65a08847c94fb290388613732f2741",
+  "evidence_tier": "research_benchmark_diagnostic",
+  "fpps_computed": false,
+  "frozen_method_binding": {
+    "code_sha256": {
+      "src/floodguard/geoid_m1_benchmark.py": "26d98f5cbdbcdcb1eeafe0b83a6e44b0ff4c9c7fb245078469952d95829e409f",
+      "src/floodguard/sar_change_v2.py": "3127b370303b08902dc545442f7aa5a2aa54d283b471c0d65f5899c9c19e1134"
+    },
+    "frozen_config_sha256": "2bfcb0c6ebf4b79402afa63c56209f2c5cda26491f08883d67908195b6c64a68",
+    "planning_protocol_v1a_sha256": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954"
+  },
+  "generated_at_utc": "2026-10-02T17:36:53Z",
+  "human_reviewed_by_floodguard": false,
+  "input_sha256": {
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-10_label.tif": "1beac1093e0343c1cc0cf9156a87eef1d9e3df7eba82c3c74df9c43c05c4fd21",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-12_label.tif": "f791a8f0835926cf41b71e246de53eced96275450a0fc434a53552cfe66e677b",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-13_label.tif": "c915b8f4b6823b6358fc9c4904f4a1c17617a258e15a9b55b2b9186848f884b4",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-20_label.tif": "87a34265a08c01232b4a2840b4a8cf5f5bf205f8442e8514a982db226898c466",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-21_label.tif": "583f0dadd43a2906643810f9eb5492e9cc6ede142f1724d917ecb26505bec5b8",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-22_label.tif": "da3f3f1c281856c2c7b8441fad4d36a923b50432794ab045ef2f1a3a14406c8e",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-23_label.tif": "47ae4a086fe4a7baf8a1a606d50c4318e3a69f7d84f7547d390bf3fee42520d7",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-24_label.tif": "13f096038f98a3ad4111c1217079307fcc6dc47643ea23148dac08a6800bbef7",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-25_label.tif": "f7f3e642bc8f915f1cb8c548e3a0b439c433dec42f088cc831c73e2502a10276",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-26_label.tif": "217d32650cd9a4e0af13e69144ab9e5f5c5701804f474852be03e5188f3f629e",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-30_label.tif": "6b715091b4b4f72f138781dafce9837c00480838905156b610807f9190d3f67f",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-31_label.tif": "50d688eaf3c89e363f39538d1a3b014e8a451cf30da453767bb4c48c08234dd6",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-32_label.tif": "4bc79ccc7644ad180ea0cb029feb4f7910f2fe476eb1564ffcbb8ba8250524e1",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-33_label.tif": "ba46cf5cdb95bcc2312c176e1016cc147299db3c2c656f57d2bd01991a44e121",
+    "sample/geoid-flood/EMSR712-3/label/EMSR712-3-9_label.tif": "01d30ea30c2916f5de7e6d879a35d3879aad18a43ea3faa953f1c091e1c9abd1",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-10_s1grd_post_20240103T053341.tif": "7d63b47e72cde25bd4ae9cffa66cd9cb7fcfdfa53f90c8d148adb7a5a1144c29",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-10_s1grd_pre_20230908T170931.tif": "9d441e7f4a7ffc005e21e755e20674ca4534111b7e4ac505f78fbc133725504d",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-12_s1grd_post_20240103T053406.tif": "49d4cc55e867be6a4cc81397b11926b3b0f14efc156cd45f96f0829960c7217e",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-12_s1grd_pre_20230908T170906.tif": "a484e5f0b2a3da767005d6b90bb85b8250a036759c3c5998b802d922c1445873",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-13_s1grd_post_20240103T053406.tif": "58eab33b6ce81f7ded791c09edd3c9cfd3ec05d3b32eb3bcaf07af0e13dad602",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-13_s1grd_pre_20230908T170906.tif": "57f22d0bb9b13184a72a4fe02c425e44291df021ba0c81953fa2469b28824afe",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-20_s1grd_post_20240103T053341.tif": "1997799a66005e0964613b8cd592a616e89af864948622def0791690b49a026b",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-20_s1grd_pre_20230908T170906.tif": "244923a80eb338c5193481e8e0e01349e2ff1559f12d9169f65af0163c66e72a",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-21_s1grd_post_20240103T053341.tif": "f6bb201403aaaa3b01e04f5c7be10d6057da47dd2288cb0f21911decd6698fc3",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-21_s1grd_pre_20230908T170906.tif": "f3177dc9ad97bb163d9f159903ce69d1e69cf167eddb8b1af8df45abb6cb3574",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-22_s1grd_post_20240103T053341.tif": "e099a23b90eb23c7766d2c93c1380ccd5d9781c6681d6d7048a8fd1e58626468",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-22_s1grd_pre_20230908T170931.tif": "43a5ef4b9ae95d6655d62791a8864c3ff1cbfa433235274b7b3e351fea9383bf",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-23_s1grd_post_20240103T053406.tif": "4af8bf833ed00b6d4b99a1dfc84bab18bf17ea145fc749b8131e4fe18a1e0d5b",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-23_s1grd_pre_20230908T170906.tif": "231f50d4272f4e62e88d21bf43ce65c25aa815499daad7d22746e641e60c3d23",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-24_s1grd_post_20240103T053406.tif": "97a3c2bb281f71cc6d1a7c131c877a21da4967b8fc356b2b0cbb2150104dc5f4",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-24_s1grd_pre_20230908T170906.tif": "aeb9abe4fdda1919cde44d313d1207d5defe37f6f84558e6c78e61b3e29c570c",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-25_s1grd_post_20240103T053406.tif": "95ee0b1abcaa652dea5ade2e6c66938d7b24c8ecb2b02b66efbaf37ae2c6fc6c",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-25_s1grd_pre_20230908T170906.tif": "b06c59ed7f34be9f23f023c36914eb3f8c6de003aec756a71a58fdeec11f4c87",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-26_s1grd_post_20240103T053406.tif": "cf5953dc895d75a10ae7005880c57fc9c9a029b8d05ebe26ebb397a45c58dddd",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-26_s1grd_pre_20230908T170906.tif": "da7ff753dd7cf1957542f491bb3303a0fe1f4602a4aad1a7f30469ec066d148f",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-30_s1grd_post_20240103T053341.tif": "271d3c790a75a778c8519dbcdfe05f825ed3a625afc31d361d08e6cc63136e02",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-30_s1grd_pre_20230908T170906.tif": "332926421ecdd12c38df447d90b7c8da7a457b562d6d8c592f3e568be4d37f2e",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-31_s1grd_post_20240103T053341.tif": "1a7a2bb7bdd4e758007bd85f82ca68d8d2701776b6f88898b4e869e22d176981",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-31_s1grd_pre_20230908T170906.tif": "b87d19cec6bbefaeae60c8bda8a4470c0f0e71bc4a3709846eafaadffbc91a47",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-32_s1grd_post_20240103T053341.tif": "4e18ac3229b2b88061813b8abda3bdba041be1d1b4a8475effd824abbb0acaf3",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-32_s1grd_pre_20230908T170906.tif": "839c48f5480958293218b2e6e0d1929187e8cc11d5765d1bdab4fe490967129f",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-33_s1grd_post_20240103T053341.tif": "e01471c2a88cfc27777c465961404162ae676a5be9ecd03caf6518251b2821a9",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-33_s1grd_pre_20230908T170931.tif": "46117bad7bbd9c15e2a9cf38be123826ccc8fc61c9f15c6946fffa1bc70ecc13",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-9_s1grd_post_20240103T053341.tif": "3d30b2c74e6dee614b6eb5c5ab7f8df81597ff8d0f10c168e72627e35c3c0a6a",
+    "sample/geoid-flood/EMSR712-3/s1grd/EMSR712-3-9_s1grd_pre_20230908T170931.tif": "43ec4b33f601c8bf6fb69dbf7f30edf89a1aea95ea853b8adc75968a51de6da4",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-10_validity.tif": "b124dc18221d3b98e8f80226975eaac8f1a991cec8730a414e4d336caa903e12",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-12_validity.tif": "18bf02a16e6addc9f8bffdb7e0bd5c18386ff28ae54ad9ceec4789bd33f921cb",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-13_validity.tif": "416dd26b5c3e8549a15ec79e2fb6be063b8b800e5ea2f07dbf7dbec9343f33d2",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-20_validity.tif": "4cc034352184aff26be17eaf00c17f4b495a8e5877cde2eb5a63692aab43497e",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-21_validity.tif": "3c562b7fd6b08fbe7d64e8bd9575dbddb9131266028d9d647b25146ce197621a",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-22_validity.tif": "2b91e975f7756192057b40ae0513bef299aa57624551f9aaec60589573e494f3",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-23_validity.tif": "a0bd1f9837895780d051aa086804c4f32a16759930ab23ec1994554120560f8c",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-24_validity.tif": "f148aedecbbdab85128546b2f946ca0e8e0f5be51976043a8b02cc46976f3645",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-25_validity.tif": "62f4dd8383b45f727fc9bdf6808866713483932cd055728b362a26c68d128178",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-26_validity.tif": "eb7022d9c5d4c05abb72663a4fae5501a10462fb29efa5aba72c1dc2a094bc6b",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-30_validity.tif": "ba2d518466e1b7787bd4ad62a9c10b07b46ad51f05add913f724a1e619f426e4",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-31_validity.tif": "4f4eab982589ac98308f40d70905166a48cfff8c4e052841878f6ae6f6042aae",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-32_validity.tif": "c5b451fbeca31e46970dfa196bd0c02c734893bcfe6958818f21dde52619e3fb",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-33_validity.tif": "ac981e1489daf9e410788954d0895072c932634aa0e68f585691d5175063fb60",
+    "sample/geoid-flood/EMSR712-3/validity/EMSR712-3-9_validity.tif": "4a3e1f0e03132977f1418b5c6d8b2c6f730a38abddb6b8ac14018549cf80f277"
+  },
+  "limit": "The original check was not committed or logged. This file shows that its published values can be recomputed from the 15 development tiles and committed code. It does not show what was looked at when the amendment was designed.",
+  "m1_literal_step_4_readings": {
+    "as_implemented": {
+      "coverage": 0.998209,
+      "dice_strict": 0.225478,
+      "equals_the_committed_development_score": true,
+      "false_positive": 2266221,
+      "iou_strict": 0.127064,
+      "precision": 0.130651,
+      "predicted_to_reference_area_ratio": 6.294112,
+      "recall_strict": 0.822329,
+      "rule": "delta-VH below the Otsu threshold and below zero",
+      "true_positive": 340580
+    },
+    "meaning": "Not scored on the test tiles: the held-out scoring is computed once. The reading without the clause is not a candidate for any use.",
+    "per_tile": {
+      "EMSR712-3-10": {
+        "iou_as_implemented": 0.0,
+        "iou_without_zero_clause": 0.0,
+        "otsu_threshold_delta_vh_db": 1.2
+      },
+      "EMSR712-3-12": {
+        "iou_as_implemented": 0.0,
+        "iou_without_zero_clause": 0.0,
+        "otsu_threshold_delta_vh_db": 1.5
+      },
+      "EMSR712-3-13": {
+        "iou_as_implemented": 0.0,
+        "iou_without_zero_clause": 0.0,
+        "otsu_threshold_delta_vh_db": 2.7
+      },
+      "EMSR712-3-20": {
+        "iou_as_implemented": 0.011491,
+        "iou_without_zero_clause": 0.008169,
+        "otsu_threshold_delta_vh_db": 1.3
+      },
+      "EMSR712-3-21": {
+        "iou_as_implemented": 0.000331,
+        "iou_without_zero_clause": 0.000259,
+        "otsu_threshold_delta_vh_db": 0.8
+      },
+      "EMSR712-3-22": {
+        "iou_as_implemented": 0.157181,
+        "iou_without_zero_clause": 0.157181,
+        "otsu_threshold_delta_vh_db": -1.6
+      },
+      "EMSR712-3-23": {
+        "iou_as_implemented": 0.0,
+        "iou_without_zero_clause": 0.0,
+        "otsu_threshold_delta_vh_db": 1.5
+      },
+      "EMSR712-3-24": {
+        "iou_as_implemented": 0.00171,
+        "iou_without_zero_clause": 0.000991,
+        "otsu_threshold_delta_vh_db": 2.0
+      },
+      "EMSR712-3-25": {
+        "iou_as_implemented": 0.016461,
+        "iou_without_zero_clause": 0.009877,
+        "otsu_threshold_delta_vh_db": 2.4
+      },
+      "EMSR712-3-26": {
+        "iou_as_implemented": 0.0,
+        "iou_without_zero_clause": 0.0,
+        "otsu_threshold_delta_vh_db": 2.7
+      },
+      "EMSR712-3-30": {
+        "iou_as_implemented": 0.0,
+        "iou_without_zero_clause": 0.0,
+        "otsu_threshold_delta_vh_db": 1.4
+      },
+      "EMSR712-3-31": {
+        "iou_as_implemented": 0.294856,
+        "iou_without_zero_clause": 0.294856,
+        "otsu_threshold_delta_vh_db": -0.6
+      },
+      "EMSR712-3-32": {
+        "iou_as_implemented": 0.643007,
+        "iou_without_zero_clause": 0.643007,
+        "otsu_threshold_delta_vh_db": -2.9
+      },
+      "EMSR712-3-33": {
+        "iou_as_implemented": 0.220002,
+        "iou_without_zero_clause": 0.220002,
+        "otsu_threshold_delta_vh_db": -0.3
+      },
+      "EMSR712-3-9": {
+        "iou_as_implemented": 0.009307,
+        "iou_without_zero_clause": 0.00641,
+        "otsu_threshold_delta_vh_db": 0.9
+      }
+    },
+    "split": "development",
+    "tiles": 15,
+    "without_zero_clause": {
+      "coverage": 0.998209,
+      "dice_strict": 0.162211,
+      "false_positive": 3453979,
+      "iou_strict": 0.088264,
+      "precision": 0.089956,
+      "predicted_to_reference_area_ratio": 9.163976,
+      "recall_strict": 0.824355,
+      "rule": "delta-VH below the Otsu threshold",
+      "true_positive": 341419
+    }
+  },
+  "mae_sai_run": false,
+  "official_warning": false,
+  "phase": "tuning",
+  "review_module_sha256": "5eec3548778914c54da6d9f294029ed4a51a86b24b5cb833ddf634969a2abf7b",
+  "schema": "floodguard.geoid_m1_v2_amendment_check_reproduction.v1",
+  "selects_a_configuration": false,
+  "source_timestamp": "2024-01-03T05:34:06Z",
+  "test_tiles_opened": [],
+  "tiles_opened": [
+    "EMSR712-3-9",
+    "EMSR712-3-10",
+    "EMSR712-3-12",
+    "EMSR712-3-13",
+    "EMSR712-3-20",
+    "EMSR712-3-21",
+    "EMSR712-3-22",
+    "EMSR712-3-23",
+    "EMSR712-3-24",
+    "EMSR712-3-25",
+    "EMSR712-3-26",
+    "EMSR712-3-30",
+    "EMSR712-3-31",
+    "EMSR712-3-32",
+    "EMSR712-3-33"
+  ],
+  "tiles_refused": [],
+  "what_this_is": "A recomputation, after the held-out scoring, of the development-only check quoted in amendment 1 of the declared benchmark protocol, and of the proposal's step 4 without the added 'below zero' clause. Development tiles only. Nothing is selected or tuned and no committed score changes.",
+  "wording": "agreement with a same-pass CEMS map, not independent accuracy"
+}

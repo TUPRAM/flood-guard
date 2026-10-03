@@ -57,7 +57,7 @@ _SPEC.loader.exec_module(receipt_tool)
 # docs/proposal_execution/planning_protocol_v1_signing.md.
 #   v1a: draft_for_signature -> signed
 #   v1b: incomplete_draft -> draft_for_signature -> signed
-EXPECTED_STATUS = {"v1a": "signed", "v1b": "incomplete_draft"}
+EXPECTED_STATUS = {"v1a": "signed", "v1b": "draft_for_signature"}
 DRAFT_STATUSES = {"draft_for_signature", "incomplete_draft"}
 
 DISCLOSURE_KEY = "exploratory_knowledge_disclosure"
@@ -74,6 +74,8 @@ SECTIONS_WITH_STATUS = (
     "corridor_polygon", "grade_join_policy", "closure_rule_v1", "facility_sets", "critical_link_selection",
     "national_vulnerability_anchors", "ensemble_grid", "scenario_engine_grid", "class_rule_v2_inputs",
 )
+# Blocks of v1b corridor_polygon that record a run made in a compute window the agent declared.
+WINDOW_BLOCKS = ("run_of_record", "e4_build_of_record")
 
 # Tokens that name a real scored unit in the Chiang Rai cases.
 REAL_UNIT = re.compile(
@@ -270,19 +272,25 @@ def _as_draft(protocol: dict[str, Any]) -> dict[str, Any]:
     draft["signature_block"]["amendments_at_signing"] = []
     for entry in draft["drafter_readings"]:
         entry["status"] = AWAITING
-    acceptance = _window_acceptance(draft)
-    if acceptance is not None:
+    for acceptance in _window_acceptances(draft):
         acceptance.update(accepted=None, accepted_by=None, accepted_on=None)
     if draft["status"] == "signed":
         draft["status"] = "draft_for_signature"
     return draft
 
 
-def _window_acceptance(protocol: dict[str, Any]) -> dict[str, Any] | None:
-    """The owner-acceptance slot of the compute window of the v1b corridor run of record, if the file has one."""
+def _window_acceptance(protocol: dict[str, Any], block: str = "run_of_record") -> dict[str, Any] | None:
+    """The owner-acceptance slot of a compute window in v1b (corridor run or E4 build of record), if the file has one."""
 
-    run = protocol.get("corridor_polygon", {}).get("run_of_record")
+    run = protocol.get("corridor_polygon", {}).get(block)
     return None if run is None else run["compute_window"]["owner_acceptance"]
+
+
+def _window_acceptances(protocol: dict[str, Any]) -> list[dict[str, Any]]:
+    """Every compute-window acceptance slot of a v1b file: the corridor run of record and the E4 build of record."""
+
+    slots = (_window_acceptance(protocol, block) for block in WINDOW_BLOCKS)
+    return [slot for slot in slots if slot is not None]
 
 
 def _signed_copy(protocol: dict[str, Any], *, same_person: bool = False) -> dict[str, Any]:
@@ -295,8 +303,7 @@ def _signed_copy(protocol: dict[str, Any], *, same_person: bool = False) -> dict
         signer.update(signed_by=name, signed_at_utc="2026-10-02T03:00:00Z", attestation="Synthetic test entry.")
     for entry in signed["drafter_readings"]:
         entry["status"] = "confirmed"
-    acceptance = _window_acceptance(signed)
-    if acceptance is not None:
+    for acceptance in _window_acceptances(signed):
         acceptance.update(accepted=True, accepted_by=names[0], accepted_on="2026-10-02")
     return signed
 
@@ -659,8 +666,9 @@ def test_v1b_open_items_name_real_parameters_and_cover_every_empty_one(
         r"|^/downloads_requiring_owner_approval/\d+/(approved|approved_by|approved_on)$"
         r"|^/open_items/\d+/closure/evidence_sha256$"
         r"|/(ranking_output|add_destination_nodes)/(path|sha256)$"  # required only when binding is bound_here
-        # Filled by an owner, never by the agent; required for a signature (schema, signed branch).
-        r"|^/corridor_polygon/run_of_record/compute_window/owner_acceptance/(accepted|accepted_by|accepted_on)$"
+        # Decided by an owner (typed by an owner, or entered from a decision-log entry); required for a signature.
+        r"|^/corridor_polygon/(run_of_record|e4_build_of_record)/compute_window/owner_acceptance"
+        r"/(accepted|accepted_by|accepted_on)$"
     )
     orphans = []
     for path, node in _walk(protocol):
@@ -847,7 +855,7 @@ def test_v1b_spike_candidates_say_which_acceptance_criteria_are_met(protocols: d
 def test_v1b_cannot_be_signed_until_an_owner_accepts_the_compute_window(
     protocols: dict[str, dict[str, Any]], schemas: dict[str, dict[str, Any]]
 ) -> None:
-    """The agent declared the window of the corridor run of record; an owner accepts it before any signature."""
+    """The agent declared the windows of the corridor run and the E4 build; an owner accepts both before signing."""
 
     protocol = protocols["v1b"]
     run = protocol["corridor_polygon"]["run_of_record"]
@@ -861,31 +869,48 @@ def test_v1b_cannot_be_signed_until_an_owner_accepts_the_compute_window(
         assert result["all_criteria_met"] is False and result["measured_criteria_met"] is True
     else:
         assert result["declared_compute_window"] is acceptance["accepted"]
-    assert "agent" in run["compute_window"]["declared_by"]
+        assert result["all_criteria_met"] is (acceptance["accepted"] and result["measured_criteria_met"])
+    for block in WINDOW_BLOCKS:
+        record = protocol["corridor_polygon"].get(block)
+        if record is None:
+            continue
+        assert "agent" in record["compute_window"]["declared_by"], block
+        slot = record["compute_window"]["owner_acceptance"]
+        if slot["accepted"] is not None and "agent" in slot["rule"]:
+            # An acceptance the agent entered names the decision-log entry an owner recorded it in.
+            assert re.search(r"decision log R\d+", slot["accepted_by"]), block
     assert "owner_acceptance" in items["OI-03"]["who"] and "owner_acceptance" in items["OI-03"]["note"]
     assert any("owner_acceptance" in line for line in protocol["signature_block"]["attestations_required"])
 
     signed = _signed_copy(_filled_v1b(protocol, "0" * 64))
     assert _errors(schemas["v1b"], signed) == []
-    for change in (
-        {"accepted": None, "accepted_by": None, "accepted_on": None},
-        {"accepted": False},
-        {"accepted_by": "AI coding agent"},
-        {"accepted_on": None},
-    ):
-        refused = deepcopy(signed)
-        acceptance_slot = _window_acceptance(refused)
-        assert acceptance_slot is not None
-        acceptance_slot.update(change)
-        assert _errors(schemas["v1b"], refused), change
+    blocks = [block for block in WINDOW_BLOCKS if _window_acceptance(signed, block) is not None]
+    assert "run_of_record" in blocks
+    for block in blocks:
+        for change in (
+            {"accepted": None, "accepted_by": None, "accepted_on": None},
+            {"accepted": False},
+            {"accepted_by": "AI coding agent"},
+            {"accepted_on": None},
+        ):
+            refused = deepcopy(signed)
+            acceptance_slot = _window_acceptance(refused, block)
+            assert acceptance_slot is not None
+            acceptance_slot.update(change)
+            assert _errors(schemas["v1b"], refused), (block, change)
+    # A signed file needs the E4 build of record (owner-choices entry 24, option A in decision log R13).
+    without_e4 = deepcopy(signed)
+    del without_e4["corridor_polygon"]["e4_build_of_record"]
+    assert _errors(schemas["v1b"], without_e4)
     # Before signing an owner may record a refusal; an acceptance always names an owner.
-    draft = _filled_v1b(protocol, "0" * 64)
-    draft_slot = _window_acceptance(draft)
-    assert draft_slot is not None
-    draft_slot.update(accepted=False, accepted_by="Rachmania Ulwani", accepted_on="2026-10-04")
-    assert _errors(schemas["v1b"], draft) == []
-    draft_slot.update(accepted=True, accepted_by="AI coding agent")
-    assert _errors(schemas["v1b"], draft)
+    for block in blocks:
+        draft = _filled_v1b(protocol, "0" * 64)
+        draft_slot = _window_acceptance(draft, block)
+        assert draft_slot is not None
+        draft_slot.update(accepted=False, accepted_by="Rachmania Ulwani", accepted_on="2026-10-04")
+        assert _errors(schemas["v1b"], draft) == [], block
+        draft_slot.update(accepted=True, accepted_by="AI coding agent")
+        assert _errors(schemas["v1b"], draft), block
 
 
 E4_ITEMS = ("OI-04", "OI-06")
@@ -947,6 +972,55 @@ def test_v1b_items_that_e4_produces_close_only_on_values_e4_reproduces(protocols
         if items["OI-06"]["closure"]["evidence_sha256"] == run["run_receipt_sha256"]:
             assert spike_accepted, "OI-06 closed on the spike run without an owner decision"
 
+    # The E4 build of record: its receipt and join log are the committed files, it compared itself with the values
+    # above, it ran inside its recorded window, and the two items close on exactly what it wrote.
+    e4 = protocol["corridor_polygon"].get("e4_build_of_record")
+    if any(items[identifier]["status"] == "closed" for identifier in E4_ITEMS) and not spike_accepted:
+        assert e4 is not None, "OI-04 or OI-06 closed with no E4 build of record"
+    if e4 is None:
+        return
+    raw = (ROOT / e4["build_receipt_path"]).read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == e4["build_receipt_sha256"]
+    receipt = json.loads(raw.decode("ascii"))
+    assert receipt["run_kind"] == "build_of_record" and receipt["status"] == "of_record"
+    assert receipt["case"] == "se1_mae_sai" and receipt["travel_mode"] == "legacy_vehicle"
+    assert receipt["generated_at_utc"] == e4["generated_at_utc"]
+    assert receipt["run"]["compute_window"]["declared"] is True
+    assert re.search(r"R\d+", receipt["run"]["compute_window"]["authority"])
+    log_path = ROOT / e4["join_log_path"]
+    assert receipt["grade_joins"]["log_path"] == e4["join_log_path"]
+    assert receipt["grade_joins"]["log_sha256"] == e4["join_log_sha256"] == hashlib.sha256(log_path.read_bytes()).hexdigest()
+    reproduced = receipt["reproduction_check"]
+    assert reproduced["source_sha256"] == check["source_sha256"]
+    for key in ("corridor_geometry_sha256", "edge_count", "grade_split_count", "joins_sha256", "join_count"):
+        assert reproduced["values"][key]["expected"] == check[key], key
+    for key in COUNT_KEYS:
+        assert reproduced["values"][f"facility_counts.{key}"]["expected"] == check["facility_counts"][key], key
+    result = e4["reproduction_result"]
+    assert result["all_same"] == reproduced["all_same"] and result["differences"] == reproduced["differences"]
+    for key, row in result["values_compared"].items():
+        expected = reproduced["values"][key]
+        assert (row["spike"], row["e4"], row["same"]) == (expected["expected"], expected["observed"], expected["same"]), key
+    window = e4["compute_window"]
+    assert window["window_start_utc"] <= receipt["run"]["run_started_at_utc"] <= receipt["generated_at_utc"]
+    assert receipt["generated_at_utc"] <= receipt["run"]["run_finished_at_utc"] <= window["window_end_utc"]
+    not_accepted = set(reproduced["differences"]) - accepted
+    if items["OI-04"]["status"] == "closed" and not spike_accepted:
+        assert not not_accepted, f"OI-04 closed on values E4 did not reproduce: {sorted(not_accepted)}"
+        assert log_slot == {"path": e4["join_log_path"], "sha256": e4["join_log_sha256"],
+                            "join_count": receipt["grade_joins"]["join_count"]}
+        closure = items["OI-04"]["closure"]
+        assert closure["evidence_sha256"] == e4["join_log_sha256"]
+        assert e4["build_receipt_sha256"] in closure["value_or_location"]
+        assert window["owner_acceptance"]["accepted"] is not False
+    if items["OI-06"]["status"] == "closed" and not spike_accepted:
+        assert not not_accepted, f"OI-06 closed on values E4 did not reproduce: {sorted(not_accepted)}"
+        assert {key: counts[key] for key in COUNT_KEYS} == receipt["facilities"]["counts"]
+        assert items["OI-06"]["closure"]["evidence_sha256"] == e4["build_receipt_sha256"] == counts["evidence_sha256"]
+        hospitals = {row["facility_id"] for row in receipt["facilities"]["hospitals_in_routing_context"]}
+        assert check["mae_sai_hospital_facility_id"] in hospitals
+        assert window["owner_acceptance"]["accepted"] is not False
+
 
 def test_v1b_s3b_fails_bridge_edges_per_tambon_as_owner_choice_17_says(protocols: dict[str, dict[str, Any]]) -> None:
     protocol = protocols["v1b"]
@@ -967,16 +1041,18 @@ TICKED, EMPTY_BOX = chr(0x2612), chr(0x2610)
 
 
 def test_owner_choices_sheet_ticks_no_box_the_owners_did_not_answer() -> None:
-    """R12 approved the recommended answers. A question with no recommendation, or added later, stays unticked."""
+    """R12 approved the recommended answers and R13 answered entry 24. A question with no answer stays unticked."""
 
     sheet = OWNER_CHOICES.read_text(encoding="utf-8")
     question = "Unnamed object a destination?"
     line = next(line for line in sheet.splitlines() if question in line)
     after = line.split(question, 1)[1]
     assert TICKED not in after and after.count(EMPTY_BOX) == 2
+    # Entry 24 was added after R12 and answered in R13 (3 October 2026): option A, wait for E4. Nothing else is ticked.
     entry_24 = sheet.split("\n## 24.", 1)[1].split("\n## ", 1)[0]
     answer = next(line for line in entry_24.splitlines() if line.startswith("Your answer:"))
-    assert TICKED not in answer
+    assert answer.count(TICKED) == 1 and f"{TICKED} A" in answer, answer
+    assert "R13" in entry_24
 
 
 

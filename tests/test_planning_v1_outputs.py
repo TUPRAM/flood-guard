@@ -198,7 +198,7 @@ def test_protocol_v1b_records_the_run_of_record_exactly() -> None:
     if items["OI-03"]["status"] == "closed":
         assert corridor["e0_spike_record"] == receipt["e0_spike_record"]
     join_log = protocol["grade_join_policy"]["join_log"]
-    if join_log["path"] is not None:
+    if join_log["path"] == receipt["grade_joins"]["log_path"]:
         assert join_log == {"path": receipt["grade_joins"]["log_path"], "sha256": receipt["grade_joins"]["log_sha256"],
                             "join_count": receipt["grade_joins"]["join_count"]}
     count_keys = ("osm_hospitals", "dga_matched_hospitals", "located_ddpm_shelters", "corroborated_shelters")
@@ -241,6 +241,67 @@ def test_protocol_v1b_records_the_run_of_record_exactly() -> None:
     assert count_hospitals(receipt["hospitals_in_routing_context"]) == {
         key: breakdown[key] for key in ("osm_objects", "distinct_named_hospitals", "unnamed_objects",
                                         "objects_that_repeat_a_named_hospital")}
+
+
+E4_RECEIPT = OUTPUTS / "e4_planning_context_se1_vehicle.json"
+
+
+def test_the_e4_build_of_record_is_consistent_and_protocol_v1b_records_it_exactly() -> None:
+    """The E4 receipt and join log agree, the build met plan row E4, and v1b repeats the receipt exactly."""
+
+    if not E4_RECEIPT.exists():
+        pytest.skip("the E4 build of record has not been made on this checkout")
+    receipt = json.loads(E4_RECEIPT.read_text(encoding="ascii"))
+    assert receipt["run_kind"] == "build_of_record" and receipt["status"] == "of_record"
+    log_path = ROOT / receipt["grade_joins"]["log_path"]
+    assert log_path.name == "grade_join_log_e4_se1_vehicle.json"
+    assert _sha256(log_path) == receipt["grade_joins"]["log_sha256"]
+    log = json.loads(log_path.read_text(encoding="ascii"))
+    assert log["status"] == "log_of_record"
+    for document in (log, receipt):
+        assert "R13" in document["status_note"] and "compute window" in document["status_note"]
+    assert log["generated_at_utc"] == receipt["generated_at_utc"] and log["source_timestamp"] == receipt["source_timestamp"]
+    assert log["join_count"] == len(log["joins"]) == receipt["grade_joins"]["join_count"]
+    assert log["joins_sha256"] == receipt["grade_joins"]["joins_sha256"]
+    assert log["context_canonical_sha256"] == receipt["context"]["canonical_sha256"]
+    # Plan row E4: every measured criterion met, the window declared, and the spike reproduced.
+    assert all(receipt["acceptance"]["criteria_met"].values()) and receipt["acceptance"]["measured_criteria_met"]
+    assert receipt["run"]["compute_window"]["declared"] is True
+    assert receipt["reproduction_check"]["all_same"] is True and receipt["reproduction_check"]["differences"] == []
+    assert receipt["reproduction_check"]["source_sha256"] == _sha256(RECORD_RECEIPT)
+    assert receipt["context_call"]["facilities_supplied"] == receipt["facilities"]["counts"]["located_ddpm_shelters"]
+    breakdown = receipt["facilities"]["hospital_count_breakdown"]
+    assert count_hospitals(receipt["facilities"]["hospitals_in_routing_context"]) == breakdown
+
+    protocol = json.loads(PROTOCOL.read_text(encoding="ascii"))
+    block = protocol["corridor_polygon"].get("e4_build_of_record")
+    if block is None:
+        pytest.skip("protocol v1b does not record the E4 build of record yet")
+    assert block["build_receipt_path"] == E4_RECEIPT.relative_to(ROOT).as_posix()
+    assert block["build_receipt_sha256"] == _sha256(E4_RECEIPT)
+    assert block["join_log_path"] == receipt["grade_joins"]["log_path"]
+    assert block["join_log_sha256"] == receipt["grade_joins"]["log_sha256"]
+    for key in ("generated_at_utc", "source_timestamp", "confidence_class"):
+        assert block[key] == receipt[key], key
+    assert block["context_canonical_sha256"] == receipt["context"]["canonical_sha256"]
+    assert block["edges"] == receipt["context"]["edges"] == receipt["edge_counts"]["edges"]
+    assert block["facilities"]["counts"] == receipt["facilities"]["counts"]
+    assert block["facilities"]["hospital_count_breakdown"] == breakdown
+    assert block["facilities"]["facility_table_sha256"] == receipt["facilities"]["facility_table"]["sha256"]
+    assert block["acceptance"]["criteria_met"] == receipt["acceptance"]["criteria_met"]
+    assert block["acceptance"]["baseline_vehicle_no_route_share"] == receipt["acceptance"]["baseline_vehicle_no_route_share"]
+    run = receipt["run"]
+    assert block["builder_sha256"] == run["implementation"]["builder_sha256"]
+    assert block["base_commit"] == run["implementation"]["base_commit"]
+    assert block["wall_time_minutes"] == run["wall_time_minutes"] and block["timing_seconds"] == run["timing_seconds"]
+    assert block["peak_working_set_gib"] == run["peak_working_set_gib"]
+    window = block["compute_window"]
+    assert window["declaration_in_the_receipt"] == run["compute_window"]["declared_by_the_operator"]
+    assert window["run_started_local"] == run["run_started_at_local"]
+    assert window["run_finished_local"] == run["run_finished_at_local"]
+    assert window["window_start_utc"] <= run["run_started_at_utc"] <= run["run_finished_at_utc"] <= window["window_end_utc"]
+    assert block["reproduction_result"]["all_same"] is receipt["reproduction_check"]["all_same"]
+    assert block["reproduction_result"]["context_canonical_sha256"]["e4"] == receipt["context"]["canonical_sha256"]
 
 
 def test_protocol_candidates_repeat_the_committed_files_exactly() -> None:

@@ -274,9 +274,19 @@ def _as_draft(protocol: dict[str, Any]) -> dict[str, Any]:
         entry["status"] = AWAITING
     for acceptance in _window_acceptances(draft):
         acceptance.update(accepted=None, accepted_by=None, accepted_on=None)
+    check = _e4_window_check(draft)
+    if check is not None:
+        check.update(confirmed=None, confirmed_by=None, confirmed_on=None)
     if draft["status"] == "signed":
         draft["status"] = "draft_for_signature"
     return draft
+
+
+def _e4_window_check(protocol: dict[str, Any]) -> dict[str, Any] | None:
+    """The slot for an owner's confirmation of the E4 window record (review of 3 October 2026), if the file has one."""
+
+    e4 = protocol.get("corridor_polygon", {}).get("e4_build_of_record")
+    return None if e4 is None else e4["compute_window"].get("owner_check_of_the_record")
 
 
 def _window_acceptance(protocol: dict[str, Any], block: str = "run_of_record") -> dict[str, Any] | None:
@@ -305,6 +315,9 @@ def _signed_copy(protocol: dict[str, Any], *, same_person: bool = False) -> dict
         entry["status"] = "confirmed"
     for acceptance in _window_acceptances(signed):
         acceptance.update(accepted=True, accepted_by=names[0], accepted_on="2026-10-02")
+    check = _e4_window_check(signed)
+    if check is not None:
+        check.update(confirmed=True, confirmed_by=names[0], confirmed_on="2026-10-02")
     return signed
 
 
@@ -669,6 +682,9 @@ def test_v1b_open_items_name_real_parameters_and_cover_every_empty_one(
         # Decided by an owner (typed by an owner, or entered from a decision-log entry); required for a signature.
         r"|^/corridor_polygon/(run_of_record|e4_build_of_record)/compute_window/owner_acceptance"
         r"/(accepted|accepted_by|accepted_on)$"
+        # An owner's confirmation of the E4 window record (review of 3 October 2026); required for a signature.
+        r"|^/corridor_polygon/e4_build_of_record/compute_window/owner_check_of_the_record"
+        r"/(confirmed|confirmed_by|confirmed_on)$"
     )
     orphans = []
     for path, node in _walk(protocol):
@@ -913,8 +929,61 @@ def test_v1b_cannot_be_signed_until_an_owner_accepts_the_compute_window(
         assert _errors(schemas["v1b"], draft), block
 
 
+def test_v1b_cannot_be_signed_until_an_owner_confirms_the_e4_window_record(
+    protocols: dict[str, dict[str, Any]], schemas: dict[str, dict[str, Any]]
+) -> None:
+    """R13 accepted the E4 window in advance and the agent certified its terms itself; an owner checks the record.
+
+    Review of 3 October 2026: no attestation covers the E4 window, so the owners are asked about its record when
+    they confirm the closures summary, and their answer is entered before the signing edit.
+    """
+
+    protocol = protocols["v1b"]
+    e4 = protocol["corridor_polygon"].get("e4_build_of_record")
+    if e4 is None:
+        pytest.skip("protocol v1b does not record the E4 build of record yet")
+    window = e4["compute_window"]
+    check = window["owner_check_of_the_record"]
+    for time in (window["window_start_local"], window["window_end_local"]):
+        assert time[11:19] in check["question"], time
+    if check["confirmed"] is None:
+        assert check["confirmed_by"] is None and check["confirmed_on"] is None
+        assert protocol["status"] != "signed"
+    else:
+        # An answer the agent entered names the decision-log entry an owner recorded it in.
+        assert re.search(r"Putu|Rachmania", check["confirmed_by"])
+    # The five attestations stay as the owners attested them in R13; the window check is a question of its own.
+    attestations = protocol["signature_block"]["attestations_required"]
+    assert len(attestations) == 5 and not any("e4_build_of_record" in line for line in attestations)
+
+    signed = _signed_copy(_filled_v1b(protocol, "0" * 64))
+    assert _errors(schemas["v1b"], signed) == []
+    for change in (
+        {"confirmed": None, "confirmed_by": None, "confirmed_on": None},
+        {"confirmed": False},
+        {"confirmed_by": "AI coding agent"},
+        {"confirmed_on": None},
+    ):
+        refused = deepcopy(signed)
+        slot = _e4_window_check(refused)
+        assert slot is not None
+        slot.update(change)
+        assert _errors(schemas["v1b"], refused), change
+    missing = deepcopy(signed)
+    del missing["corridor_polygon"]["e4_build_of_record"]["compute_window"]["owner_check_of_the_record"]
+    assert _errors(schemas["v1b"], missing)
+    # Before signing an owner may answer no; an answer always names an owner.
+    draft = _filled_v1b(protocol, "0" * 64)
+    slot = _e4_window_check(draft)
+    assert slot is not None
+    slot.update(confirmed=False, confirmed_by="Putu (decision log R99, test)", confirmed_on="2026-10-04")
+    assert _errors(schemas["v1b"], draft) == []
+    slot.update(confirmed=True, confirmed_by="AI coding agent")
+    assert _errors(schemas["v1b"], draft)
+
+
 E4_ITEMS = ("OI-04", "OI-06")
-COUNT_KEYS = ("osm_hospitals", "dga_matched_hospitals", "located_ddpm_shelters", "corroborated_shelters")
+COUNT_KEYS =("osm_hospitals", "dga_matched_hospitals", "located_ddpm_shelters", "corroborated_shelters")
 
 
 def test_v1b_items_that_e4_produces_close_only_on_values_e4_reproduces(protocols: dict[str, dict[str, Any]]) -> None:

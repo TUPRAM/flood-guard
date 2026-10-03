@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://floodguard.th/proposal-execution/planning-protocol-v1b.schema.json",
   "title": "FloodGuard planning protocol v1b (engineering addendum)",
-  "description": "Shape of docs/proposal_execution/planning_protocol_v1b.json. While any open item is open the status must be incomplete_draft. A file with status draft_for_signature or signed has no open item, every section fixed and every parameter that an open item names filled in ($defs/fixed_parameters). A signed file also has both signatures, by two different named signers, every drafter reading confirmed or amended, the recorded v1a SHA-256, the E4 build of record (corridor_polygon.e4_build_of_record) and an owner's acceptance of the compute windows of the corridor run of record and of the E4 build of record (corridor_polygon.run_of_record.compute_window.owner_acceptance and corridor_polygon.e4_build_of_record.compute_window.owner_acceptance). The file never records its own SHA-256.",
+  "description": "Shape of docs/proposal_execution/planning_protocol_v1b.json. While any open item is open the status must be incomplete_draft. A file with status draft_for_signature or signed has no open item, every section fixed and every parameter that an open item names filled in ($defs/fixed_parameters). A signed file also has both signatures, by two different named signers, every drafter reading confirmed or amended, the recorded v1a SHA-256, the E4 build of record (corridor_polygon.e4_build_of_record) and an owner's acceptance of the compute windows of the corridor run of record and of the E4 build of record (corridor_polygon.run_of_record.compute_window.owner_acceptance and corridor_polygon.e4_build_of_record.compute_window.owner_acceptance), and an owner's confirmation of the E4 window record (corridor_polygon.e4_build_of_record.compute_window.owner_check_of_the_record). The file never records its own SHA-256.",
   "type": "object",
   "additionalProperties": false,
   "$defs": {
@@ -1103,6 +1103,80 @@
           }
         }
       }
+    },
+    "window_record_owner_check": {
+      "description": "Whether an owner confirms, from the record, that a compute window the agent declared under an advance acceptance met the terms of that acceptance. Decided by an owner, never by the agent: typed by an owner, or entered by the agent from a decision-log entry in which an owner recorded the answer, which confirmed_by then names. An answer names Putu or Rachmania.",
+      "type": "object",
+      "required": [
+        "question",
+        "confirmed",
+        "confirmed_by",
+        "confirmed_on",
+        "rule"
+      ],
+      "properties": {
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confirmed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "confirmed_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "confirmed_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "confirmed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirmed"
+        ]
+      },
+      "then": {
+        "properties": {
+          "confirmed_by": {
+            "type": "string",
+            "pattern": "Putu|Rachmania"
+          },
+          "confirmed_on": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "confirmed_by": {
+            "type": "null"
+          },
+          "confirmed_on": {
+            "type": "null"
+          }
+        }
+      }
     }
   },
   "required": [
@@ -1666,11 +1740,15 @@
                 "window_start_utc",
                 "window_end_utc",
                 "checked_before",
-                "checked_after"
+                "checked_after",
+                "owner_check_of_the_record"
               ],
               "properties": {
                 "owner_acceptance": {
                   "$ref": "#/$defs/window_owner_acceptance"
+                },
+                "owner_check_of_the_record": {
+                  "$ref": "#/$defs/window_record_owner_check"
                 }
               }
             },
@@ -2769,8 +2847,32 @@
                                 "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
                               }
                             }
+                          },
+                          "owner_check_of_the_record": {
+                            "required": [
+                              "confirmed",
+                              "confirmed_by",
+                              "confirmed_on"
+                            ],
+                            "properties": {
+                              "confirmed": {
+                                "const": true
+                              },
+                              "confirmed_by": {
+                                "type": "string",
+                                "pattern": "Putu|Rachmania"
+                              },
+                              "confirmed_on": {
+                                "type": "string",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+                              }
+                            }
                           }
-                        }
+                        },
+                        "required": [
+                          "owner_acceptance",
+                          "owner_check_of_the_record"
+                        ]
                       }
                     }
                   }

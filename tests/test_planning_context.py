@@ -230,8 +230,16 @@ def test_pii_whitelist_keeps_no_personal_column_and_refuses_one(tmp_path: Path) 
         assert set(row) <= SHELTER_FACILITY_KEYS
     # The whitelist holds no personal-looking name, and the guard catches every one of these.
     assert not [key for key in SHELTER_FACILITY_KEYS if PERSONAL_FIELD.search(key)]
+    # Nor the DDPM file's other headers: the guard is aimed at personal columns, not at the shelter's own fields.
+    assert not [column for number, column in enumerate(HEADER) if number not in (9, 10) and PERSONAL_FIELD.search(column)]
+    for column in ("hotel", "header", "telemetry", "name"):
+        assert not PERSONAL_FIELD.search(column), column
     for column in ("coordinator_name", "phone", "telephone", "mobile_number", "contact_person", "national_id",
-                   "id_card", "email", "surname", HEADER[9], HEADER[10]):
+                   "id_card", "email", "surname", HEADER[9], HEADER[10],
+                   # Names a review found the first pattern let through (3 October 2026); the Thai ones are
+                   # e-mail, address and number.
+                   "tel", "tel_no", "tel1", "telno", "owner_name", "head_name", "village_head", "address", "line_id",
+                   "อีเมล", "ที่อยู่", "เบอร์"):
         assert PERSONAL_FIELD.search(column), column
         with pytest.raises(PlanningContextError, match="PII whitelist"):
             assert_no_personal_fields([{**supplied[0], column: "x"}])
@@ -481,6 +489,38 @@ def test_build_writes_candidates_outside_git_and_verify_compares_bytes(script, t
     assert result["verified"] is False and result["problems"] == ["facility_table: the rebuild differs byte for byte"]
 
 
+def test_verify_compares_the_retained_context_itself(script, tmp_path: Path, capsys) -> None:
+    """A change anywhere in the retained context fails --verify, even where the recorded hash at its end still matches."""
+
+    assert script.main(_arguments(tmp_path)) == 0
+    capsys.readouterr()
+    context = (tmp_path / "external" / "proposal_execution" / "planning_v1" / "se1_mae_sai" / "e4_vehicle_candidate"
+               / "context_inputs.json")
+    original = context.read_bytes()
+    assert script.main(_arguments(tmp_path, "--verify")) == 0
+    passed = json.loads(capsys.readouterr().out)
+    # The rebuild wrote a different generation time; only that value is left out of the comparison.
+    assert passed["verified"] is True and "context_except_generation_time" in passed["compared"]
+    assert json.loads(original)["generated_at"] != ""
+
+    altered = original.replace(b'"total_population":100.0', b'"total_population":900.0', 1)
+    assert altered != original and altered[-200:] == original[-200:], "the recorded hash at the end is unchanged"
+    context.write_bytes(altered)
+    assert script.main(_arguments(tmp_path, "--verify")) == 1
+    failed = json.loads(capsys.readouterr().out)
+    assert failed["problems"] == [
+        "context: the retained context differs from the rebuild byte for byte (generation time aside)"]
+
+    # A different generation time alone is not a difference.
+    head = json.loads(original)["generated_at"].encode("ascii")
+    context.write_bytes(original.replace(head, b"2000-01-01T00:00:00+00:00", 1))
+    assert script.main(_arguments(tmp_path, "--verify")) == 0
+    capsys.readouterr()
+    context.unlink()
+    assert script.main(_arguments(tmp_path, "--verify")) == 1
+    assert json.loads(capsys.readouterr().out)["problems"] == ["context: the retained context file is missing"]
+
+
 def test_a_build_of_record_writes_to_git_and_is_never_replaced_silently(script, tmp_path: Path, capsys) -> None:
     window = "Declared by the operator for a test; nothing else ran."
     assert script.main(_arguments(tmp_path, "--compute-window", window)) == 0
@@ -509,6 +549,73 @@ def test_a_build_of_record_writes_to_git_and_is_never_replaced_silently(script, 
     again = json.loads(receipt_path.read_text(encoding="ascii"))
     assert again["run"]["supersedes"]["reason"] == "a test rerun"
     assert receipt_body(again)["facilities"]["counts"] == receipt_body(receipt)["facilities"]["counts"]
+    # R13 accepted in advance the window of the first se1 vehicle build of record only, not a rerun's.
+    _assert_awaits_acceptance(again, json.loads(log_path.read_text(encoding="ascii")))
+    assert script.main(_arguments(tmp_path, "--verify")) == 0
+    assert json.loads(capsys.readouterr().out)["verified"] is True
+
+
+def _assert_awaits_acceptance(receipt: dict[str, Any], log: dict[str, Any]) -> None:
+    window = receipt["run"]["compute_window"]
+    assert window["declared"] is True and window["authority"] is None
+    assert window["authority_note"].startswith("Awaiting owner acceptance")
+    for document in (receipt, log):
+        assert "R13" not in document["status_note"] and "authority is null" in document["status_note"]
+
+
+@pytest.mark.parametrize(("case_key", "mode"), [("se2", "legacy_vehicle"), ("se1", "walking"), ("se2", "walking")])
+def test_a_build_of_record_outside_r13_does_not_cite_it(script, tmp_path: Path, capsys, case_key: str,
+                                                        mode: str) -> None:
+    """R13 accepted in advance one window: the agent's, for the first se1 vehicle build of record (review, 3 Oct)."""
+
+    window = "Declared by a person for a test; nothing else ran."
+    arguments = _arguments(tmp_path, "--travel-mode", mode, "--compute-window", window)
+    arguments[arguments.index("--case") + 1] = case_key
+    assert script.main(arguments) == 0
+    capsys.readouterr()
+    short = script.MODES[mode]
+    receipt_path = tmp_path / "outputs" / f"e4_planning_context_{case_key}_{short}.json"
+    log_path = tmp_path / "outputs" / f"grade_join_log_e4_{case_key}_{short}.json"
+    receipt = json.loads(receipt_path.read_text(encoding="ascii"))
+    assert receipt["run_kind"] == "build_of_record"
+    _assert_awaits_acceptance(receipt, json.loads(log_path.read_text(encoding="ascii")))
+
+    # An owner's acceptance is cited explicitly, and --verify rebuilds the same note from the receipt.
+    cited = "Decision log R99 (test): an owner accepted this window."
+    assert script.main([*arguments, "--window-authority", cited, "--supersede-record", "cite the acceptance"]) == 0
+    capsys.readouterr()
+    again = json.loads(receipt_path.read_text(encoding="ascii"))
+    assert again["run"]["compute_window"]["authority"] == cited
+    assert again["run"]["compute_window"]["authority_note"].startswith("Cited by the operator")
+    assert "cites the owners' acceptance" in again["status_note"] and "R13" not in again["status_note"]
+    verify = [argument for argument in arguments if argument not in ("--compute-window", window)]
+    assert script.main([*verify, "--verify"]) == 0
+    assert json.loads(capsys.readouterr().out)["verified"] is True
+
+
+def test_window_authority_needs_a_build_of_record(script, tmp_path: Path) -> None:
+    with pytest.raises(SystemExit):
+        script.parse_args(_arguments(tmp_path, "--window-authority", "Decision log R99"))
+    with pytest.raises(SystemExit):
+        script.parse_args(_arguments(tmp_path, "--verify", "--window-authority", "Decision log R99"))
+
+
+def test_the_r13_wording_is_the_one_the_e4_build_of_record_wrote() -> None:
+    """--verify of the E4 build of record rebuilds its status note from the receipt's authority, byte for byte."""
+
+    module = _script()
+    receipt_path = ROOT / "outputs" / "planning_v1" / "e4_planning_context_se1_vehicle.json"
+    if not receipt_path.exists():
+        pytest.skip("the E4 build of record has not been made on this checkout")
+    receipt = json.loads(receipt_path.read_text(encoding="ascii"))
+    authority = receipt["run"]["compute_window"]["authority"]
+    assert authority == module.R13_WINDOW_AUTHORITY
+    assert module.window_authority("se1", "legacy_vehicle", cited=None, earlier_record=False) == authority
+    case = module.Case("se1", DEMAND, ROUTING, mapping(ROUTING), REPORTING, {"case_id": "se1_mae_sai"})
+    assert module.status_notes(case, "legacy_vehicle", authority)["record"] == receipt["status_note"]
+    outside_r13 = (("se1", "legacy_vehicle", True), ("se1", "walking", False), ("se2", "legacy_vehicle", False))
+    for key, mode, earlier in outside_r13:
+        assert module.window_authority(key, mode, cited=None, earlier_record=earlier) is None
 
 
 def test_work_folders_inside_the_repository_are_refused(script, tmp_path: Path) -> None:

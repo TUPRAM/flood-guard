@@ -30,21 +30,33 @@ Cases:
 
 A build is the BUILD OF RECORD when the operator declares a compute window
 (``--compute-window``): plan 5 item 1 asks for builds to run serially in a
-declared window, and decision log R13 (3 October 2026) accepted in advance that
-the agent declares the E4 window on the terms of the corridor run (no other
-project job running, the window recorded). It writes its receipt and join log to
-``outputs/planning_v1/`` and refuses to replace an earlier build of record unless
-``--supersede-record`` gives the reason. Any other build is a candidate and
-writes nothing into Git.
+declared window. It writes its receipt and join log to ``outputs/planning_v1/``
+and refuses to replace an earlier build of record unless ``--supersede-record``
+gives the reason. Any other build is a candidate and writes nothing into Git.
+
+The receipt also records who accepted the window (``run.compute_window.authority``):
+
+* the decision-log entry the operator cites with ``--window-authority``;
+* otherwise, for the first build of record of case ``se1`` in vehicle mode only,
+  decision log R13 (3 October 2026), in which the owners accepted in advance that
+  the agent declares the window of that build (the one that closes protocol v1b
+  OI-04 and OI-06) on the terms of the corridor run: no other project job
+  running, and the window recorded;
+* otherwise nobody: the authority is null and the window awaits owner acceptance.
+  R13 accepted nothing in advance for case ``se2``, for walking mode or for a
+  build that supersedes a record.
 
 The facility table and a copy of the context hold DDPM rows (pitch level) and
 are written outside Git, under
 ``<context root>/proposal_execution/planning_v1/<case>/e4_<mode>[_candidate]/``.
 
 ``--verify`` rebuilds the case into a temporary folder under ``--work-dir`` and
-compares byte for byte: the join log, the facility table, and the receipt without
-its ``run`` section; it also checks the context hash of the retained context.
-The rebuild takes the generation time and run kind of the receipt it checks.
+compares byte for byte: the join log, the facility table, the receipt without
+its ``run`` section, and the retained context with the rebuilt one apart from the
+value of its top-level ``generated_at`` (the context builder writes the time of
+the build there, and leaves it out of the context's canonical SHA-256). It also
+checks the context hash the receipt records. The rebuild takes the generation
+time, run kind and window authority of the receipt it checks.
 
 No flood layer is read. No closure, access loss, FPPS, A-E class or ensemble is
 computed; the only access figure is the baseline connected-no-route share to
@@ -58,7 +70,7 @@ arguments::
         --reviewed-junctions <finals run>/review/osm_junction_review.json \
         --work-dir <a scratch folder outside Git> \
         [--travel-mode legacy_vehicle|walking] [--compute-window "<declaration>"] \
-        [--supersede-record "<reason>"] [--verify]
+        [--window-authority "<decision-log entry>"] [--supersede-record "<reason>"] [--verify]
 """
 
 from __future__ import annotations
@@ -98,11 +110,23 @@ CASE_TITLES = {
     "se1": "Mae Sai: the eight tambons, routed through the corridor of record",
     "se2": "Mueang Chiang Rai: the pf-07 frame, routed through its 3 km routing geometry",
 }
-WINDOW_AUTHORITY = (
+# Decision log R13 accepted in advance one window only: the agent-declared window of the first E4 build of record of
+# case se1 in vehicle mode, the build that closes protocol v1b OI-04 and OI-06. The text is the one that build recorded.
+R13_WINDOW_AUTHORITY = (
     "Decision log R13 (3 October 2026, Putu for both owners): the owners accepted in advance that the agent "
     "declares the E4 build's compute window on the terms of the corridor run of record: no other project job "
     "running, and the window recorded."
 )
+R13_CASE = ("se1", "legacy_vehicle")
+AUTHORITY_NOTES = {
+    "cited": "Cited by the operator with --window-authority: the decision-log entry in which an owner accepted this "
+             "window.",
+    "r13": "Decision log R13 covers only the first E4 build of record of case se1 in vehicle mode, whose window the "
+           "agent declares on the terms above. It covers no other build.",
+    "none": "Awaiting owner acceptance: no decision-log entry accepting this window was cited (--window-authority). "
+            "Decision log R13 accepted in advance only the window of the first E4 build of record of case se1 in "
+            "vehicle mode, so it does not cover this build.",
+}
 CANDIDATE_NOTE = (
     "Candidate: an E4 build without a declared compute window. It is not the build of record and closes no open item."
 )
@@ -334,11 +358,52 @@ def load_aois_counts() -> dict[str, Any]:
     return counts
 
 
-def status_notes(case: Case, travel_mode: str) -> dict[str, str]:
-    """Return the status notes of a build of record and a candidate for this case and mode."""
+def window_authority(case_key: str, travel_mode: str, *, cited: str | None, earlier_record: bool) -> str | None:
+    """Return who accepted the compute window of a build of record, as its receipt records it.
+
+    Args:
+        case_key: ``se1`` or ``se2``.
+        travel_mode: ``legacy_vehicle`` or ``walking``.
+        cited: The decision-log entry the operator cites with ``--window-authority``, or None.
+        earlier_record: True when a build of record of this case and mode exists, so this build supersedes it.
+
+    Returns:
+        The operator's citation when given; else the text of decision log R13 for the first build of record of
+        case se1 in vehicle mode, the only window R13 accepted in advance; else None: the window awaits owner
+        acceptance.
+    """
+
+    if cited and cited.strip():
+        return cited.strip()
+    if (case_key, travel_mode) == R13_CASE and not earlier_record:
+        return R13_WINDOW_AUTHORITY
+    return None
+
+
+def authority_note(authority: str | None) -> str:
+    """Return the note that says where the window authority of a build of record comes from."""
+
+    if authority is None:
+        return AUTHORITY_NOTES["none"]
+    return AUTHORITY_NOTES["r13" if authority == R13_WINDOW_AUTHORITY else "cited"]
+
+
+def status_notes(case: Case, travel_mode: str, authority: str | None = None) -> dict[str, str]:
+    """Return the status notes of a build of record and a candidate for this case and mode.
+
+    The note of a build of record names decision log R13 only when the build's window authority is R13
+    (``window_authority``); otherwise it points at ``run.compute_window.authority`` or says that no owner had
+    accepted the window.
+    """
 
     record = (f"Build of record of plan task E4 for case {case.description['case_id']} ({MODES[travel_mode]}), made "
-              "in a compute window the operator declared (run.compute_window) under decision log R13. ")
+              "in a compute window the operator declared (run.compute_window)")
+    if authority == R13_WINDOW_AUTHORITY:
+        record += " under decision log R13. "
+    elif authority is not None:
+        record += "; run.compute_window.authority cites the owners' acceptance of the window. "
+    else:
+        record += "; no owner had accepted the window when it ran (run.compute_window.authority is null). "
     if case.key == "se1" and travel_mode == "legacy_vehicle":
         record += ("Protocol v1b open items OI-04 (join log) and OI-06 (facility counts) close from it only if its "
                    "values match corridor_polygon.run_of_record.e4_reproduction_check (reproduction_check) or the "
@@ -349,8 +414,13 @@ def status_notes(case: Case, travel_mode: str) -> dict[str, str]:
 
 
 def build(case: Case, sources: Sources, *, v1b: dict[str, Any], context_root: Path, scratch: Path,
-          travel_mode: str, record: bool, paths: dict[str, Path], generated_at_utc: str | None = None) -> dict[str, Any]:
-    """Run one E4 build in ``scratch`` and return its outputs in memory, with the path of the context it wrote."""
+          travel_mode: str, record: bool, paths: dict[str, Path], generated_at_utc: str | None = None,
+          authority: str | None = None) -> dict[str, Any]:
+    """Run one E4 build in ``scratch`` and return its outputs in memory, with the path of the context it wrote.
+
+    ``authority`` is the window authority of a build of record (``window_authority``); it only chooses the wording
+    of the status note.
+    """
 
     from shapely.geometry import mapping
 
@@ -397,7 +467,7 @@ def build(case: Case, sources: Sources, *, v1b: dict[str, Any], context_root: Pa
         acceptance=v1b["corridor_polygon"]["acceptance"],
         load_aois_counts=load_aois_counts(),
         expected=expected,
-        status_notes=status_notes(case, travel_mode),
+        status_notes=status_notes(case, travel_mode, authority),
     )
     timings["assembly_and_baseline_access"] = round(time.perf_counter() - started, 1)
     del context
@@ -451,16 +521,36 @@ def _implementation() -> dict[str, Any]:
     }
 
 
-def _retained_context_hash(path: Path) -> str | None:
-    """Read the canonical SHA-256 at the end of a context file without loading it (the builder writes it last)."""
+# build_context_inputs writes compact JSON whose first two keys are schema_version and generated_at, the time of the
+# build. That value is the only part of a context file a rebuild may change (its canonical SHA-256 leaves it out).
+CONTEXT_HEAD = re.compile(rb'\A(\{"schema_version":"[^"\\]*","generated_at":")[^"\\]*(")')
 
-    if not path.is_file():
+
+def _split_generation_time(data: bytes) -> tuple[bytes, memoryview] | None:
+    """Split a context file into its head with the generation time left out and the rest, or None if it is not one."""
+
+    head = CONTEXT_HEAD.match(data)
+    if head is None:
         return None
-    with path.open("rb") as stream:
-        stream.seek(max(0, path.stat().st_size - 256))
-        tail = stream.read().decode("utf-8", errors="replace")
-    match = re.search(r'"canonical_sha256":"([0-9a-f]{64})"\}\s*$', tail)
-    return match.group(1) if match else None
+    return head.group(1) + head.group(2), memoryview(data)[head.end():]
+
+
+def compare_contexts(retained: Path, rebuilt: Path) -> str | None:
+    """Compare a retained context file with its rebuild byte for byte, apart from the top-level ``generated_at`` value.
+
+    Returns:
+        None when they are the same, otherwise the problem (never any content of the files).
+    """
+
+    if not retained.is_file():
+        return "context: the retained context file is missing"
+    before = _split_generation_time(retained.read_bytes())
+    after = _split_generation_time(rebuilt.read_bytes())
+    if before is None or after is None:
+        return "context: a context file does not start with schema_version and generated_at as the builder writes it"
+    if before[0] != after[0] or before[1] != after[1]:
+        return "context: the retained context differs from the rebuild byte for byte (generation time aside)"
+    return None
 
 
 def run_build(args: argparse.Namespace, case: Case, sources: Sources, v1b: dict[str, Any]) -> dict[str, Any]:
@@ -468,8 +558,11 @@ def run_build(args: argparse.Namespace, case: Case, sources: Sources, v1b: dict[
 
     record = bool(args.compute_window and args.compute_window.strip())
     paths = output_paths(case, args.travel_mode, record, args.context_root)
+    earlier_record = record and paths["receipt"].exists()
+    authority = (window_authority(case.key, args.travel_mode, cited=args.window_authority, earlier_record=earlier_record)
+                 if record else None)
     supersedes = None
-    if record and paths["receipt"].exists():
+    if earlier_record:
         if not (args.supersede_record and args.supersede_record.strip()):
             raise BuildError("a build of record exists; pass --supersede-record with the reason to replace it")
         earlier = json.loads(paths["receipt"].read_text(encoding="ascii"))
@@ -484,7 +577,7 @@ def run_build(args: argparse.Namespace, case: Case, sources: Sources, v1b: dict[
     scratch = Path(tempfile.mkdtemp(prefix="e4-build-", dir=args.work_dir))
     try:
         outputs = build(case, sources, v1b=v1b, context_root=args.context_root, scratch=scratch,
-                        travel_mode=args.travel_mode, record=record, paths=paths)
+                        travel_mode=args.travel_mode, record=record, paths=paths, authority=authority)
         peak = peak_memory_gib()
         body = outputs["receipt_body"]
         paths["processed"].mkdir(parents=True, exist_ok=True)
@@ -509,7 +602,8 @@ def run_build(args: argparse.Namespace, case: Case, sources: Sources, v1b: dict[
             "plan_rule": v1b["corridor_polygon"]["compute_window"],
             "declared": record,
             "declared_by_the_operator": args.compute_window.strip() if record else None,
-            "authority": WINDOW_AUTHORITY if record else None,
+            "authority": authority,
+            "authority_note": authority_note(authority) if record else None,
             "note": "Declared when the operator passes --compute-window. This script cannot see what else runs on the "
                     "machine; the declaration says what was checked.",
         },
@@ -551,12 +645,14 @@ def run_verify(args: argparse.Namespace, case: Case, sources: Sources, v1b: dict
         raise BuildError("there is no build of this case and mode to verify")
     committed = json.loads(paths["receipt"].read_text(encoding="ascii"))
     record = committed["run_kind"] == "build_of_record"
+    # The window authority chose the wording of the status note, so the rebuild takes it from the receipt.
+    authority = committed.get("run", {}).get("compute_window", {}).get("authority") if record else None
     args.work_dir.mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix="e4-verify-", dir=args.work_dir))
     try:
         outputs = build(case, sources, v1b=v1b, context_root=args.context_root, scratch=scratch,
                         travel_mode=args.travel_mode, record=record, paths=paths,
-                        generated_at_utc=committed["generated_at_utc"])
+                        generated_at_utc=committed["generated_at_utc"], authority=authority)
         rebuilt = scratch / "rebuilt"
         rebuilt.mkdir()
         files = {
@@ -579,9 +675,12 @@ def run_verify(args: argparse.Namespace, case: Case, sources: Sources, v1b: dict
             compared.append(name)
             if before != target.read_bytes():
                 problems.append(f"{name}: the rebuild differs byte for byte")
-        retained = _retained_context_hash(paths["context"])
-        if retained != outputs["context_canonical_sha256"]:
-            problems.append("context: the retained context's canonical SHA-256 differs from the rebuild's")
+        if paths["context"].is_file():
+            compared.append("context_except_generation_time")
+        context_problem = compare_contexts(paths["context"], outputs["context_file"])
+        if context_problem is not None:
+            problems.append(context_problem)
+        compared.append("receipt_context_canonical_sha256")
         if committed["context"]["canonical_sha256"] != outputs["context_canonical_sha256"]:
             problems.append("context: the receipt's canonical SHA-256 differs from the rebuild's")
     finally:
@@ -593,7 +692,7 @@ def run_verify(args: argparse.Namespace, case: Case, sources: Sources, v1b: dict
         "travel_mode": args.travel_mode,
         "run_kind": committed["run_kind"],
         "receipt": _logical(paths["receipt"], args.context_root),
-        "compared": compared + ["context_canonical_sha256"],
+        "compared": compared,
         "problems": problems,
     }
 
@@ -613,6 +712,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--work-dir", type=Path, required=True, help="a scratch folder outside Git")
     parser.add_argument("--compute-window", help="the operator's declaration of the compute window: who declared it, "
                                                  "when, and what was checked. Makes the build the build of record.")
+    parser.add_argument("--window-authority",
+                        help="for a build of record: the decision-log entry in which an owner accepted its compute "
+                             "window. Without it only the first se1 vehicle build of record cites decision log R13; any "
+                             "other build of record records that its window awaits owner acceptance.")
     parser.add_argument("--supersede-record", help="the reason for replacing an existing build of record")
     parser.add_argument("--verify", action="store_true", help="rebuild into a temporary folder and compare")
     parser.add_argument("--keep-verify-folder", action="store_true", help="keep the temporary folder of --verify")
@@ -621,8 +724,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         resolved = getattr(args, name).resolve()
         if resolved == ROOT.resolve() or ROOT.resolve() in resolved.parents:
             parser.error(f"--{name.replace('_', '-')} must be outside the repository")
-    if args.verify and args.compute_window:
-        parser.error("--verify takes the run kind from the receipt it checks; leave out --compute-window")
+    if args.verify and (args.compute_window or args.window_authority):
+        parser.error("--verify takes the run kind and window authority from the receipt it checks; leave out "
+                     "--compute-window and --window-authority")
+    if args.window_authority and not (args.compute_window and args.compute_window.strip()):
+        parser.error("--window-authority belongs to a build of record; pass --compute-window too")
     if args.boundaries is None:
         args.boundaries = args.context_root / "open_context" / "hdx_cod_ab" / "tha_admin_boundaries.gdb.zip"
     return args

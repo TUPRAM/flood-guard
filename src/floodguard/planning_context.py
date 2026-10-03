@@ -95,14 +95,21 @@ SHELTER_SOURCE_KEYS = (
 # The keys build_context_inputs adds when it snaps a supplied facility.
 BUILDER_SNAP_KEYS = ("node_id", "snap_distance_m", "within_routing_context", "connector_walkability")
 SHELTER_FACILITY_KEYS = frozenset((*SHELTER_SOURCE_KEYS, *BUILDER_SNAP_KEYS))
-# A second guard behind the whitelist: a column whose name reads like a personal field is refused even if someone
-# adds it to the whitelist. English and Thai: phone, mobile, coordinator, person, contact, citizen or national ID,
-# ID card, passport, e-mail, surname; Thai "name", "surname", "telephone", "coordinator", "card".
+# A second guard behind the whitelist: a column whose name holds one of these parts is refused even if someone adds
+# it to the whitelist (case ignored). English: phone; tel as a word or followed by a digit, "_", "no" or "num" (tel,
+# tel_no, tel1, telno; not hotel); telephone; mobile; coordinator; person; contact; owner; head as a word (head,
+# head_name, village_head; not header); citizen; national ID; ID card; passport; e-mail; address (addr); LINE ID;
+# surname; first, last and full name. Thai: name, surname, telephone, coordinator, card, e-mail, address, number (as
+# in phone number), owner, head. It is narrower than "anything personal": a plain English "name" passes, because
+# the shelter's place name is the whitelisted column "name", and so does any personal column named otherwise. The
+# whitelist is the rule; this pattern catches the DDPM file's personal headers and the common names above.
 PERSONAL_FIELD = re.compile(
-    r"phone|\btel\b|telephone|mobile|coordinator|person|contact|citizen|national_id|id_card|idcard|passport|e-?mail"
-    r"|surname|first_name|last_name|full_name"
+    r"phone|(?<![a-z])tel(?:no|num|[^a-z]|$)|telephone|mobile|coordinator|person|contact|owner"
+    r"|(?<![a-z])head(?![a-z])|citizen|national_?id|id_?card|passport|e-?mail|addr|(?<![a-z])line_?id"
+    r"|surname|first_?name|last_?name|full_?name"
     r"|\u0e0a\u0e37\u0e48\u0e2d|\u0e2a\u0e01\u0e38\u0e25|\u0e42\u0e17\u0e23|\u0e1c\u0e39\u0e49\u0e1b\u0e23\u0e30\u0e2a\u0e32\u0e19"
-    r"|\u0e1a\u0e31\u0e15\u0e23",
+    r"|\u0e1a\u0e31\u0e15\u0e23|\u0e2d\u0e35\u0e40\u0e21\u0e25|\u0e17\u0e35\u0e48\u0e2d\u0e22\u0e39\u0e48"
+    r"|\u0e40\u0e1a\u0e2d\u0e23\u0e4c|\u0e40\u0e08\u0e49\u0e32\u0e02\u0e2d\u0e07|\u0e2b\u0e31\u0e27\u0e2b\u0e19\u0e49\u0e32",
     re.IGNORECASE,
 )
 FACILITY_CONFIDENCE_BASIS = (

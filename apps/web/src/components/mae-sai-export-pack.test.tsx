@@ -37,11 +37,11 @@ const noop = () => undefined;
 const TIER = "T1 scenario (model) replay of a reconstructed 2024 event for preparedness planning and exercises; illustrative stage keyframes; not a forecast, not an observed closure record, not an official warning; non_operational; accepted_* null";
 
 describe("Mae Sai export pack in the manifest", () => {
-  it("lists eight download files with their hashes, apart from the replay's precache set", () => {
+  it("lists nine download files with their hashes, apart from the replay's precache set", () => {
     expect(pack.files.map((file) => file.name)).toEqual([
       "shelter_plan_reported_2024.csv", "shelter_plan_k.csv", "shelter_plan_capacitated.csv", "shelter_sites.geojson",
       "modelled_road_inundation_by_hour.csv", "modelled_access_loss_by_hour.csv", "shelter_candidate_verification_sheet.csv",
-      "README_licences.txt",
+      "tambon_replay_summary.json", "README_licences.txt",
     ]);
     expect(pack.file_count).toBe(pack.files.length);
     expect(pack.bytes).toBe(pack.files.reduce((sum, file) => sum + file.bytes, 0));
@@ -147,7 +147,10 @@ describe("Mae Sai export pack downloads", () => {
     const footer = text(html.slice(html.indexOf('data-testid="export-footer"')));
     expect(footer).toContain("Confidence: low");
     expect(footer).toContain(`source timestamp: ${pack.source_timestamp}`);
-    expect(footer).toContain(`8 files, ${formatFileSize(pack.bytes)} in all`);
+    expect(footer).toContain(`9 files, ${formatFileSize(pack.bytes)} in all`);
+    // The per-subdistrict summary is named for what it holds, with its record count.
+    expect(plain).toMatch(/Per-subdistrict replay summary at the modelled peak: water, residents, roads and walking access \(modelled, not observed\)\(JSON summary, \d+ kB, 8 subdistricts; modelled\)/);
+    expect(plain).toContain("The JSON summary has one record per subdistrict at the modelled peak");
     expect(footer).toContain("Data files generated");
     expect(html).not.toContain('data-testid="export-offline"');
     expect(plain).not.toMatch(/schedule|closure plan|cut-off list/i);

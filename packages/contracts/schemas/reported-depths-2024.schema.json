@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://floodguard.th/contracts/reported-depths-2024.schema.json",
+  "title": "Reported flood depths at named places (news, not surveyed)",
+  "description": "Depths that news reports gave for named places in Mae Sai district, 10-13 Sep 2024, paraphrased and cited (roadmap C-2). Status 'reported (anecdotal, not surveyed)'. A depth is a lower bound, a range or a class taken from a storey or body reference; a point is given only where the location confidence is medium or high. The data are never used to tune the replay model. The file holds no score and no action class.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dataset", "dataset_th", "schema_id", "compiled", "compiled_by", "status", "status_th", "source_timestamp", "confidence",
+    "confidence_reason", "use_rule", "licence_note", "copyright_rule", "location_rule", "time_rule", "depth_rule", "assumptions",
+    "assumptions_th", "depth_classes", "reports", "left_out"
+  ],
+  "properties": {
+    "dataset": { "$ref": "#/$defs/text" },
+    "dataset_th": { "$ref": "#/$defs/thai" },
+    "schema_id": { "const": "https://floodguard.th/contracts/reported-depths-2024.schema.json" },
+    "compiled": { "type": "string", "format": "date" },
+    "compiled_by": { "$ref": "#/$defs/text" },
+    "status": { "const": "reported (anecdotal, not surveyed)" },
+    "status_th": { "$ref": "#/$defs/thai" },
+    "source_timestamp": { "$ref": "#/$defs/text" },
+    "confidence": { "const": "low" },
+    "confidence_reason": { "$ref": "#/$defs/text" },
+    "use_rule": {
+      "description": "The data are a consistency check and are never used to tune the model.",
+      "type": "string",
+      "pattern": "never used to tune"
+    },
+    "licence_note": { "$ref": "#/$defs/text" },
+    "copyright_rule": { "$ref": "#/$defs/text" },
+    "location_rule": { "$ref": "#/$defs/text" },
+    "time_rule": { "$ref": "#/$defs/text" },
+    "depth_rule": { "$ref": "#/$defs/text" },
+    "assumptions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/text" } },
+    "assumptions_th": {
+      "description": "The assumptions in Thai, one per English assumption and in the same order (the page shows them in both languages).",
+      "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/thai" }
+    },
+    "depth_classes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "$ref": "#/$defs/depthClass" },
+          "label": { "$ref": "#/$defs/localized" }
+        }
+      }
+    },
+    "reports": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/report" } },
+    "left_out": {
+      "description": "Candidates the checker dropped and the count of hits excluded by rule; none of them is a report of this file.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dropped", "excluded_count", "excluded_reasons"],
+      "properties": {
+        "dropped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "place", "url", "reason"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^ms-c2-\\d{2}$" },
+              "place": { "$ref": "#/$defs/text" },
+              "url": { "type": "string", "pattern": "^https://" },
+              "reason": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "excluded_count": { "type": "integer", "minimum": 0 },
+        "excluded_reasons": { "type": "array", "items": { "$ref": "#/$defs/text" } }
+      }
+    }
+  },
+  "$defs": {
+    "text": { "type": "string", "minLength": 1 },
+    "thai": { "type": "string", "pattern": "[฀-๿]" },
+    "localized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "th"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1 },
+        "th": { "type": "string", "pattern": "[฀-๿]" }
+      }
+    },
+    "localTime": { "type": "string", "pattern": "^2024-09-1[0-9]T\\d{2}:\\d{2}:\\d{2}\\+07:00$" },
+    "depthClass": {
+      "enum": ["waist_deep", "chest_deep", "neck_deep", "over_head", "ground_floor_submerged", "above_ground_floor", "roof_level_refuge", "not_stated"]
+    },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "statement_id", "place", "tambon", "tambon_note", "point", "location_confidence", "location_tolerance_m", "location_basis", "depth",
+        "source_kind", "time", "event_date_basis", "source", "checker_corrections"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^ms-c2-\\d{2}$" },
+        "statement_id": {
+          "description": "The statement this place record comes from: the id of the first record of that statement. A statement that names several communities is recorded once per community, and those records share it; any other record carries its own id.",
+          "type": "string", "pattern": "^ms-c2-\\d{2}$"
+        },
+        "place": { "$ref": "#/$defs/localized" },
+        "tambon": { "$ref": "#/$defs/localized" },
+        "tambon_note": { "type": ["string", "null"], "minLength": 1 },
+        "point": {
+          "description": "Given only where the location confidence is medium or high.",
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["lat", "lon"],
+              "properties": {
+                "lat": { "type": "number", "minimum": 20.2, "maximum": 20.55 },
+                "lon": { "type": "number", "minimum": 99.75, "maximum": 100.1 }
+              }
+            }
+          ]
+        },
+        "location_confidence": { "enum": ["low", "medium", "high"] },
+        "location_tolerance_m": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "location_basis": { "$ref": "#/$defs/text" },
+        "depth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "lower_bound_m", "upper_m", "class", "statement"],
+          "properties": {
+            "kind": { "enum": ["lower_bound", "range", "class"] },
+            "lower_bound_m": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+            "upper_m": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+            "class": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/depthClass" }] },
+            "statement": { "$ref": "#/$defs/localized" }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "kind": { "const": "lower_bound" } } },
+              "then": { "properties": { "lower_bound_m": { "type": "number" }, "upper_m": { "type": "null" }, "class": { "type": "null" } } }
+            },
+            {
+              "if": { "properties": { "kind": { "const": "range" } } },
+              "then": { "properties": { "lower_bound_m": { "type": "number" }, "upper_m": { "type": "number" }, "class": { "type": "null" } } }
+            },
+            {
+              "if": { "properties": { "kind": { "const": "class" } } },
+              "then": { "properties": { "lower_bound_m": { "type": "null" }, "upper_m": { "type": "null" }, "class": { "$ref": "#/$defs/depthClass" } } }
+            }
+          ]
+        },
+        "source_kind": { "enum": ["eyewitness_or_journalist", "unclear"] },
+        "time": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "window_start", "window_end", "window_basis"],
+          "properties": {
+            "text": { "$ref": "#/$defs/localized" },
+            "window_start": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/localTime" }] },
+            "window_end": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/localTime" }] },
+            "window_basis": { "$ref": "#/$defs/text" }
+          }
+        },
+        "event_date_basis": { "$ref": "#/$defs/text" },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title", "publisher", "url", "published", "language"],
+          "properties": {
+            "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+            "publisher": { "$ref": "#/$defs/text" },
+            "url": { "type": "string", "pattern": "^https://" },
+            "published": { "type": "string", "pattern": "^2024-09-1[0-3](T\\d{2}:\\d{2}:\\d{2}\\+07:00)?$" },
+            "language": { "enum": ["th", "en"] },
+            "read_via": { "$ref": "#/$defs/text" },
+            "access_note": { "$ref": "#/$defs/text" }
+          }
+        },
+        "checker_corrections": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "location_confidence": { "const": "low" } } },
+          "then": { "properties": { "point": { "type": "null" }, "location_tolerance_m": { "type": "null" } } },
+          "else": { "properties": { "point": { "type": "object" }, "location_tolerance_m": { "type": "number" } } }
+        }
+      ]
+    }
+  }
+}

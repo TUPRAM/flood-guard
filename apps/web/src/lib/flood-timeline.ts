@@ -339,7 +339,7 @@ export interface ShelterVerification {
 export interface ExportFile extends HashedAsset {
   id: string;
   name: string;
-  media_type: "text/csv" | "application/geo+json" | "text/plain";
+  media_type: "text/csv" | "application/geo+json" | "application/json" | "text/plain";
   title: Localized;
   /** Evidence lanes of the file's content: "SCN" (model) and, for the reported-shelter files, "REP". */
   lanes: EvidenceLane[];
@@ -363,7 +363,8 @@ export interface ExportPack {
   purpose: string;
   licence: string;
   licence_rule: string;
-  header: { csv: string; geojson: string; why_in_the_file: string };
+  /** `json` describes the per-subdistrict summary (absent from a pack baked before it existed). */
+  header: { csv: string; geojson: string; json?: string; why_in_the_file: string };
   offline: string;
   assumptions: string[];
   folder: string;
@@ -506,7 +507,43 @@ export interface SeasonEnvelopeBlock {
   files: { raster: HashedAsset; statistics: HashedAsset; licence: HashedAsset };
 }
 
-export interface ExternalReference { name: string; url: string; note?: string; id?: string }
+/**
+ * A cited source this revision has not ingested. `case` names a separate case of the planning overlay (O2, the water
+ * layer dated 22 Oct 2024): the page gives it its own dated line, never a map layer or a slider position (D3b).
+ */
+export interface ExternalReference { name: string; url: string; note?: string; id?: string; case?: string; dated?: string }
+
+/** One radar image of the size comparison: acquisition time (UTC and ICT), pass direction and relative orbit. */
+export interface RadarImage {
+  id: string;
+  role: "pre_event" | "event";
+  scene: string;
+  utc: string;
+  local: string;
+  pass: "ascending" | "descending";
+  relative_orbit: number;
+  processor?: string;
+  published_as_layer: boolean;
+  note?: string;
+}
+
+/** A radar pair's fit: newly water-like area, the best-fit stage and model size, and their spatial agreement. */
+export interface RadarFit {
+  threshold_db_dn: number;
+  newly_dark_km2: number;
+  best_fit_stage_m: number;
+  best_fit_model_km2: number;
+  iou_at_best_fit: number;
+}
+
+/** The cross-track pair the recession keyframes were tuned with, kept beside the same-track figures as a sensitivity. */
+export interface RadarSensitivity extends RadarFit {
+  id: string;
+  pair: "same_track" | "cross_track";
+  pair_note?: string;
+  images: RadarImage[];
+  source_timestamp: string;
+}
 
 /**
  * One NOAA/GMU VIIRS daily flood map, clipped to the replay bounds: an observation (375 m optical, daily composite
@@ -644,6 +681,104 @@ export interface S2Crosscheck {
   sensitivity: S2CrosscheckSensitivity[];
 }
 
+/**
+ * Outcome of the consistency check of one reported depth with the model (never a validation). "consistent" and
+ * "model_shallower" compare a number with its lower bound; "model_wet" is a storey or body reference where the model has
+ * water, whose depth is not compared, so it is never counted as consistent.
+ */
+export type ReportedDepthStatus = "consistent" | "model_shallower" | "model_wet" | "model_dry" | "not_comparable";
+export type ReportedDepthTally = Record<ReportedDepthStatus, number>;
+/** Place records per outcome: numbers (lower bounds and ranges), storey or body references, and both together. */
+export type ReportedDepthCounts = Record<"numeric" | "qualitative" | "all", ReportedDepthTally>;
+/** Outcomes with each statement counted once; "mixed" is a statement whose places have different outcomes. */
+export type ReportedDepthStatementTally = ReportedDepthTally & { mixed: number };
+
+/** Model values read at a report's point over the report's time window (T1 scenario values, not part of the report). */
+export interface ReportedDepthModel {
+  /** "point", or the nearest cell outside the mapped river channel when the point falls on it. */
+  cell: "point" | "nearest_out_of_channel";
+  moved_m: number;
+  /** Height of the cell above its drainage channel in the terrain model; null above the highest level it encodes. */
+  height_above_channel_m: number | null;
+  window_max_stage_m: number;
+  window_max_at: string;
+  /** Deepest modelled water at the point over the window (m). */
+  depth_m: number;
+  /** Modelled water at the point at the modelled peak (m). */
+  peak_depth_m: number;
+  /** First replay hour at which the model has the point wet; null when it never is. */
+  first_wet: string | null;
+  /** Deepest out-of-channel cell within the report's location tolerance (a sensitivity). */
+  max_within_tolerance_m: number;
+}
+
+/**
+ * One place record: a news statement of a depth at a named place, paraphrased and cited; reported (anecdotal, not
+ * surveyed). A statement that names several communities is recorded once per community; those records share a statement.
+ */
+export interface ReportedDepthReport {
+  id: string;
+  /** The statement this record comes from: the id of its first record (its own id when the statement names one place). */
+  statement_id: string;
+  place: Localized;
+  tambon: Localized;
+  /** Present only at medium or high location confidence. */
+  point: { lat: number; lon: number } | null;
+  location_confidence: "low" | "medium" | "high";
+  location_tolerance_m: number | null;
+  depth: {
+    /** "numeric" for a lower bound or a range (its lower end is the lower bound), "qualitative" for a storey or body reference. */
+    basis: "numeric" | "qualitative";
+    kind: "lower_bound" | "range" | "class";
+    lower_bound_m: number | null;
+    upper_m: number | null;
+    class: string | null;
+    /** The source's words, paraphrased. */
+    statement: Localized;
+  };
+  time: { text: Localized; window_start: string | null; window_end: string | null };
+  source: { title: string; publisher: string; url: string; published: string; language: string };
+  model: ReportedDepthModel | null;
+  consistency: ReportedDepthStatus;
+  consistency_within_tolerance: ReportedDepthStatus;
+}
+
+/**
+ * Flood depths that news reports gave at named places, 10-13 Sep 2024 (roadmap C-2): reported (anecdotal, not surveyed),
+ * lane REP, with their consistency with the model. Never a validation, and never used to tune the model.
+ */
+export interface ReportedDepths {
+  id: string;
+  label: Localized;
+  status: string;
+  lane: "REP";
+  evidence_tier: string;
+  confidence: string;
+  confidence_reason: Localized;
+  source_timestamp: string;
+  compiled: string;
+  data_file: { path: string; sha256: string };
+  use_rule: Localized;
+  /** The data file's assumptions (the shared-statement rule among them), one Thai line per English line. */
+  assumptions: { en: string[]; th: string[] };
+  comparison_rule: Localized;
+  tolerance_rule: Localized;
+  peak_stage_m: number;
+  depth_classes: { id: string; label: Localized }[];
+  /** How many place records, statements and news articles the reports hold. */
+  counted: { place_records: number; statements: number; articles: number };
+  counts: ReportedDepthCounts;
+  counts_within_tolerance: ReportedDepthCounts;
+  counts_by_statement: ReportedDepthStatementTally;
+  /** Every statement recorded at more than one place, with its place records and their outcomes in order. */
+  shared_statements: { statement_id: string; reports: string[]; outcomes: ReportedDepthStatus[] }[];
+  /** Likely causes of the misses; `figures` holds the counts the text states, taken from the reports at bake time. */
+  likely_causes: { id: string; text: Localized; figures?: Record<string, number | string | null> }[];
+  model_fields: { paths: string[]; evidence_tier: string; note: string };
+  left_out: { dropped: number; excluded: number };
+  reports: ReportedDepthReport[];
+}
+
 /** Hourly rain gauge (observed forcing, not flooding). */
 export interface RainStation {
   code: string;
@@ -720,13 +855,13 @@ export interface TimelineManifest {
   layers: TimelineLayer[];
   vectors: Record<"tambons" | "roads" | "facilities", HashedAsset & { features: number }>;
   tambon_histograms: Record<string, number[]>;
-  s1_anchor: {
-    threshold_db_dn: number;
-    newly_dark_km2: number;
-    best_fit_stage_m: number;
-    best_fit_model_km2: number;
-    iou_at_best_fit: number;
+  s1_anchor: RadarFit & {
     scope?: string;
+    /** From the r4 bake of 3 Oct 2026: the primary pair shares one track; its two images, and the cross-track sensitivity. */
+    pair?: "same_track";
+    pair_note?: string;
+    images?: RadarImage[];
+    sensitivity?: RadarSensitivity[];
     reconstruction_stage_at_pass_m: number;
     /** From r4: the recession keyframes were tuned to this pass, so the comparison is calibration-informed. */
     role?: SizeCheckRole;
@@ -751,6 +886,8 @@ export interface TimelineManifest {
   viirs_daily?: ViirsDaily;
   /** Sentinel-2 water check for the first clear scene after the river fell (15 Sep); absent before the later r4 bakes. */
   s2_crosscheck?: S2Crosscheck;
+  /** Depths reported in news at named places, with their consistency with the model (r4 bakes from 3 Oct 2026). */
+  reported_depths?: ReportedDepths;
   /** Observed hourly rain at nearby gauges (forcing, not flooding); absent before r3. */
   rainfall?: Rainfall;
   /** Download files for spreadsheet and GIS users (absent from a manifest baked before the pack existed). */

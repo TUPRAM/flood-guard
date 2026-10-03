@@ -32,6 +32,7 @@ from rasterio.features import rasterize  # noqa: E402
 from rasterio.transform import from_origin  # noqa: E402
 from shapely.geometry import MultiPolygon, Polygon, box, mapping, shape  # noqa: E402
 
+import floodguard.replay_exports as replay_exports  # noqa: E402
 from floodguard.rights_basis import RIGHTS_BASIS_4009_PATH, RightsNotConfirmedError, file_sha256, load_rights_basis  # noqa: E402
 from floodguard.season_envelope import COMPARISON_ROLE, credit_holders, document_problems, fill_change_notice, mask_agreement  # noqa: E402
 from floodguard.wording_lint import find_violations, json_strings, load_rules  # noqa: E402
@@ -624,6 +625,13 @@ def test_no_4009_figure_is_in_the_manifest_or_the_export_pack(manifest: dict, do
     exports = manifest_path().parent / "exports"
     for path in sorted(exports.iterdir()):
         body = path.read_text(encoding="utf-8-sig")
+        if path.name == replay_exports.SUMMARY_NAME:
+            # The per-subdistrict summary says, in one sentence, where its subdistrict's envelope comparison is and why it is not
+            # copied (another licence). It names no figure and no field of that comparison: the checks below still apply.
+            assert body.count(replay_exports.ENVELOPE_POINTER_WHY["en"]) >= 1
+            body = body.replace(replay_exports.ENVELOPE_POINTER_WHY["en"], "")
+            summary = json.loads(path.read_text(encoding="utf-8"))
+            assert {key for record in summary["records"] for key in record["season_envelope_comparison"]} == {"lane", "stage", "file", "entry"}
         assert not re.search(r"unosat4009|season envelope|agreement_iou|containment_", body, re.IGNORECASE), path.name
         assert "nothing from UNOSAT/GISTDA product 4009 is in this file" in body or path.name == "README_licences.txt", path.name
     assert "Nothing from UNOSAT/GISTDA product 4009." in (exports / "README_licences.txt").read_text(encoding="utf-8")

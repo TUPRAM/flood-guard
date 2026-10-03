@@ -293,6 +293,24 @@ if (!Array.isArray(timeline.evidence_blocks) || timeline.evidence_blocks.length 
   || !timeline.evidence_blocks.every((block) => block.lane && block.source_timestamp && block.evidence_tier && block.temporal_relation)) {
   throw new Error("Every Mae Sai evidence block must carry its lane, tier, temporal relation and source timestamp");
 }
+// Reported depths (news, not surveyed; roadmap C-2): inline in the manifest, so they are in the precache set and offline.
+// They ship only as reported facts in lane REP, with the model's figures named as scenario values and a use rule that
+// denies validation and tuning.
+let reportedDepthPoints = 0;
+if (timeline.reported_depths) {
+  const depths = timeline.reported_depths;
+  const block = timeline.evidence_blocks.filter((item) => item.covers.includes("reported_depths"));
+  if (depths.status !== "reported (anecdotal, not surveyed)" || depths.lane !== "REP" || !depths.use_rule?.en?.includes("never used to tune")
+    || !depths.use_rule?.en?.includes("never a validation") || !depths.use_rule?.th || block.length !== 1 || block[0].lane !== "REP"
+    || !block[0].scenario_fields?.includes("reported_depths.reports[].model")) {
+    throw new Error("The reported depths must ship as reported facts in lane REP, never a validation and never used to tune the model");
+  }
+  if (!depths.reports.every((report) => (report.point !== null) === ["medium", "high"].includes(report.location_confidence)
+    && report.place?.en && report.place?.th && report.depth?.statement?.th && report.source?.url?.startsWith("https://"))) {
+    throw new Error("Every reported depth needs its place and paraphrase in both languages and its source, and a point only at medium or high location confidence");
+  }
+  reportedDepthPoints = depths.reports.filter((report) => report.point).length;
+}
 
 // Windows newline conversion must not change a hash-bound artifact on checkout.
 const entries = execFileSync("git", ["ls-files", "--stage", "-z", "apps/web/public/studies"], { cwd: root, encoding: "utf8" }).split("\0").filter(Boolean);
@@ -303,4 +321,4 @@ for (const entry of entries) {
   const actual = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
   if (actual !== blobId) throw new Error(`Git changes exact study bytes or has stale staged content: ${path}`);
 }
-console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets (${timeline.revision}, ${timelineBytes} of ${CASE_REPLAY_BUDGET_BYTES} budget bytes; ${envelopeUrls.length} of them the season envelope's, with its licence notice), ${exportFiles.length} Mae Sai export files (${exportBytes} of ${CASE_REPLAY_EXPORT_BUDGET_BYTES} export-budget bytes, outside the precache budget) and ${entries.length} byte-identical Git blobs.`);
+console.log(`Study integrity passed: ${manifest.assets.length} C2S JSON assets, ${pngs.size} previews, ${historical.assets.length + 1} historical assets, ${timelineAssets.length} Mae Sai timeline assets (${timeline.revision}, ${timelineBytes} of ${CASE_REPLAY_BUDGET_BYTES} budget bytes; ${envelopeUrls.length} of them the season envelope's, with its licence notice; ${reportedDepthPoints} reported-depth points inside the manifest), ${exportFiles.length} Mae Sai export files (${exportBytes} of ${CASE_REPLAY_EXPORT_BUDGET_BYTES} export-budget bytes, outside the precache budget) and ${entries.length} byte-identical Git blobs.`);

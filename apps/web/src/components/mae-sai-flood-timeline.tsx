@@ -40,6 +40,7 @@ import {
   facilityWet,
   floodedKm2,
   formatAge,
+  formatDateWithYear,
   formatHourSpan,
   formatHourStamp,
   formatLocalStamp,
@@ -84,6 +85,7 @@ import {
   type AreaGeometry,
   type ExploratoryKnowledgeItem,
   type ExportFile,
+  type ExternalReference,
   type FacilityProps,
   type GeoCollection,
   type HourClass,
@@ -92,6 +94,8 @@ import {
   type PngRaster,
   type PointGeometry,
   type Rainfall,
+  type RadarImage,
+  type ReportedDepthReport,
   type RoadCutGroup,
   type RoadProps,
   type RoadState,
@@ -175,6 +179,14 @@ import {
   type WaterTimings,
 } from "@/lib/flood-timeline-water";
 import { competitionPagesAvailable, POLICY_ROUTE } from "@/lib/policy-links";
+import {
+  groupNearbyPlaces,
+  REPORTED_DEPTH_COPY,
+  reportedDepthMarkerTitle,
+  reportedDepthPlaces,
+  reportedDepthPopup,
+  shippableReportedDepths,
+} from "@/lib/flood-timeline-reported-depths";
 import { useLanguage } from "@/lib/use-language";
 import {
   AccessCard,
@@ -216,6 +228,14 @@ import {
   settledSeasonEnvelope,
   type SeasonEnvelopeState,
 } from "./mae-sai-season-envelope";
+import {
+  REPORTED_DEPTH_GROUP_PX,
+  REPORTED_DEPTH_ICON_BOX,
+  ReportedDepthLegend,
+  reportedDepthIconHtml,
+  ReportedDepthsSources,
+  ReportedDepthSwatch,
+} from "./mae-sai-reported-depths";
 import { WorkspaceHeader } from "./workspace-header";
 
 import styles from "./mae-sai-flood-timeline.module.css";
@@ -323,6 +343,8 @@ interface MapController {
    * and takes its credit away. It takes no replay time: no day or hour selects the layer.
    */
   setEnvelope: (cells: Uint32Array | null, credit: string) => void;
+  /** Show or hide the reported depths (news, not surveyed): static points, never selected by the replay hour. */
+  setReportedDepths: (visible: boolean) => void;
   /** Re-render the content of any open tooltip or popup (stage, plan size or language changed). */
   refreshTooltips: () => void;
 }
@@ -621,12 +643,12 @@ function layerSpan(layer: TimelineLayer | undefined, language: Language): string
 /** The 42 OpenStreetMap key facilities start hidden (the layer toggle keeps them available) to keep the town readable. */
 const DEFAULT_LAYERS: LayerVisibility = {
   tambons: true, roads: true, facilities: false, reported: true, candidates: true, ineligible: false, cutoff: false, viirs: false, gauges: false,
-  envelope: false,
+  envelope: false, reportedDepths: false,
 };
 /** Water opacity while the imagery swipe is on, so the two images stay comparable under the model water. */
 const COMPARE_WATER_OPACITY = 0.3;
 /** Popup body widths on a wide map; `popupFit` narrows them and sets the height and the pan paddings per map size. */
-const POPUP_WIDTH = { reported: 300, candidate: 290, gauge: 280 } as const;
+const POPUP_WIDTH = { reported: 300, candidate: 290, gauge: 280, reportedDepth: 310 } as const;
 /** While a popup is open the map may pan this far (as a share of the replay area) past it, so a popup near the edge fits. */
 const POPUP_BOUNDS_PAD = 2;
 /** The map's usual panning limit around the replay area. */
@@ -727,6 +749,8 @@ export function MaeSaiFloodTimeline() {
   /** The season envelope's own toggle. Nothing but this toggle (and a shared link's `layers=`) turns the layer on. */
   const [showEnvelope, setShowEnvelope] = useState(DEFAULT_LAYERS.envelope);
   const [envelope, setEnvelope] = useState<SeasonEnvelopeState>({ status: "absent" });
+  /** The reported depths' own toggle: off until the reader (or a shared link's `layers=`) turns it on. */
+  const [showReportedDepths, setShowReportedDepths] = useState(DEFAULT_LAYERS.reportedDepths);
   const [shelterSet, setShelterSet] = useState<ShelterSetChoice>("reported");
   const [accessScope, setAccessScope] = useState<AccessScopeChoice>("flooded");
   const [planK, setPlanK] = useState(1);
@@ -832,6 +856,7 @@ export function MaeSaiFloodTimeline() {
         setShowViirs(link.layers.viirs && Boolean(manifest.viirs_daily));
         setShowGauges(link.layers.gauges && Boolean(manifest.rainfall));
         setShowEnvelope(link.layers.envelope && envelopeBlock !== null);
+        setShowReportedDepths(link.layers.reportedDepths && shippableReportedDepths(manifest) !== null);
         setShelterSet(link.shelterSet);
         setAccessScope(link.accessScope);
         setPlanK(manifest.shelters ? clampPlanK(link.planK, manifest.shelters) : 1);
@@ -992,13 +1017,13 @@ export function MaeSaiFloodTimeline() {
       tambons: showTambons, roads: showRoads, facilities: showFacilities,
       reported: showReported, candidates: showCandidates, ineligible: showIneligible, cutoff: showCutoff,
       // A layer that could not be loaded is not on the map, so a shared link does not ask for it.
-      viirs: showViirs, gauges: showGauges, envelope: showEnvelope && !envelopeFailed,
+      viirs: showViirs, gauges: showGauges, envelope: showEnvelope && !envelopeFailed, reportedDepths: showReportedDepths,
     },
     shelterSet,
     planK,
     accessScope,
   }), [hour, imagery, waterMode, waterOpacity, roadMode, comparing, sides, language, showTambons, showRoads, showFacilities,
-    showReported, showCandidates, showIneligible, showCutoff, showViirs, showGauges, showEnvelope, envelopeFailed, shelterSet, planK, accessScope]);
+    showReported, showCandidates, showIneligible, showCutoff, showViirs, showGauges, showEnvelope, envelopeFailed, showReportedDepths, shelterSet, planK, accessScope]);
 
   useEffect(() => {
     languageRef.current = language;
@@ -1078,6 +1103,7 @@ export function MaeSaiFloodTimeline() {
     let resizeObserver: ResizeObserver | undefined;
     let attributionObserver: ResizeObserver | undefined;
     let footObserver: ResizeObserver | undefined;
+    let removeMapKeys: (() => void) | undefined;
     const timers = new Set<number>();
     const frames = new Set<number>();
 
@@ -1143,6 +1169,39 @@ export function MaeSaiFloodTimeline() {
         }, 0);
         timers.add(timer);
       });
+      // Keyboard: Enter on a focused marker opens its popup (Leaflet turns it into a click). Focus then moves into the
+      // popup so its links can be reached and a screen reader reads it; Escape closes it from the marker or from inside
+      // it (Leaflet listens for keys only while the map container itself has focus), and closing hands focus back to
+      // the marker. A popup opened with the pointer leaves focus where it is.
+      let keyedMarker: HTMLElement | null = null;
+      const mapContainer = map.getContainer();
+      const onMapKey = (event: KeyboardEvent) => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        if (event.key === "Enter" && target?.classList.contains("leaflet-marker-icon")) keyedMarker = target;
+        if (event.key === "Escape" && openPopups > 0) map.closePopup();
+      };
+      mapContainer.addEventListener("keydown", onMapKey);
+      removeMapKeys = () => mapContainer.removeEventListener("keydown", onMapKey);
+      const keyboardPopup = (marker: Marker) => {
+        let keyed = false;
+        marker.on("popupopen", () => {
+          const element = marker.getElement();
+          keyed = Boolean(element) && keyedMarker === element;
+          keyedMarker = null;
+          if (!keyed) return;
+          const content = marker.getPopup()?.getElement()?.querySelector<HTMLElement>(".leaflet-popup-content");
+          if (!content) return;
+          content.tabIndex = -1;
+          content.focus({ preventScroll: true });
+        });
+        marker.on("popupclose", () => {
+          const popup = marker.getPopup()?.getElement();
+          const focused = document.activeElement;
+          const inside = Boolean(popup && focused && popup.contains(focused));
+          if (keyed || inside) marker.getElement()?.focus({ preventScroll: true });
+          keyed = false;
+        });
+      };
       /** Size a layer's popup for the map as it is right now, then build its content. */
       const fitted = (layer: Layer, preferredWidth: number, content: () => HTMLElement) => () => {
         const popup = layer.getPopup();
@@ -1159,9 +1218,11 @@ export function MaeSaiFloodTimeline() {
         return content();
       };
 
+      // The reported depths sit above the shelters: they are off until the reader turns them on, and then a report point
+      // a few metres from a shelter (Ban Tham Pha Chom and its temple) must open its own popup, not the shelter's.
       for (const [name, zIndex] of [
         ["fg-imagery", 250], ["fg-compare-left", 251], ["fg-compare-right", 252], ["fg-water", 350], ["fg-envelope", 352], ["fg-viirs", 355], ["fg-cutoff", 360],
-        ["fg-tambons", 380], ["fg-highlight", 390], ["fg-roads", 400], ["fg-facilities", 450], ["fg-gauges", 455], ["fg-shelters", 460],
+        ["fg-tambons", 380], ["fg-highlight", 390], ["fg-roads", 400], ["fg-facilities", 450], ["fg-gauges", 455], ["fg-shelters", 460], ["fg-reported-depths", 462],
       ] as const) {
         const pane = map.createPane(name);
         pane.style.zIndex = String(zIndex);
@@ -1520,6 +1581,7 @@ export function MaeSaiFloodTimeline() {
           zIndexOffset: 2000,
         });
         marker.bindPopup(fitted(marker, POPUP_WIDTH.reported, () => reportedPopup(shelter)), { className: styles.popupFrame, autoPan: true });
+        keyboardPopup(marker);
         popupLayers.push(marker);
         const markerTitle = () => `${command
           ? tr("Relief and command site (2024), not a shelter", `ศูนย์บัญชาการและจุดช่วยเหลือ ปี ${thaiYear(2024)} ไม่ใช่ที่พักพิง`)
@@ -1594,6 +1656,7 @@ export function MaeSaiFloodTimeline() {
             const markerTitle = () => `${tr("Plan site", "ที่พักพิงในแผน")} ${rank}: ${candidateTitle(candidate, popupLanguage())}${flag ? ` · ${capacityFlagText(site, popupLanguage())}` : ""}`;
             candidateTitles.push({ element: () => marker.getElement(), title: markerTitle });
             hoverTip(marker, markerTitle);
+            keyboardPopup(marker);
             planGroup.addLayer(marker);
             layer = marker;
           } else {
@@ -1612,8 +1675,11 @@ export function MaeSaiFloodTimeline() {
         }
         builtK = k;
       };
+      // The reported-depth markers are rebuilt when their grouping changes (after a zoom), so they are listed apart.
+      let depthMarkers: { marker: Marker; ids: string[]; title: () => string }[] = [];
       const refreshTitles = () => {
-        for (const entry of [...titled, ...candidateTitles]) {
+        const depthTitles = depthMarkers.map((entry) => ({ element: () => entry.marker.getElement(), title: entry.title }));
+        for (const entry of [...titled, ...candidateTitles, ...depthTitles]) {
           const element = entry.element();
           if (!element) continue;
           const title = entry.title();
@@ -1623,7 +1689,7 @@ export function MaeSaiFloodTimeline() {
         }
       };
       const refreshPopups = () => {
-        for (const layer of [...popupLayers, ...candidatePopups]) if (layer.isPopupOpen()) layer.getPopup()?.update();
+        for (const layer of [...popupLayers, ...candidatePopups, ...depthMarkers.map((entry) => entry.marker)]) if (layer.isPopupOpen()) layer.getPopup()?.update();
       };
       const setGroup = (group: Layer, visible: boolean) => {
         if (visible && !map.hasLayer(group)) group.addTo(map);
@@ -1699,12 +1765,92 @@ export function MaeSaiFloodTimeline() {
           ];
           return popupElement(lines, [{ href: rain!.source_url, text: rain!.source_url }]);
         }), { className: styles.popupFrame, autoPan: true });
+        keyboardPopup(marker);
         popupLayers.push(marker);
         const gaugeTitle = () => `${tr("Rain gauge (observed)", "สถานีวัดฝน (ตรวจวัดจริง)")}: ${station.code} ${rainStationName(station, popupLanguage())}`;
         hoverTip(marker, gaugeTitle);
         titled.push({ element: () => marker.getElement(), title: gaugeTitle });
         gaugeGroup.addLayer(marker);
       }
+
+      // --- Reported depths (news, not surveyed): speech-bubble markers, their popups listing every place record they hold,
+      // with the paraphrase, the time, the location confidence, the model at that point and the source. Places whose
+      // markers would overlap on screen at the current zoom are drawn as one marker with a count (rebuilt after a zoom),
+      // so every marker can be hit and opens its own records. The markers never change with the replay hour; only their
+      // own toggle shows them.
+      const depthBlock = shippableReportedDepths(m);
+      const depthGroup = L.layerGroup();
+      const depthPopup = (reports: readonly ReportedDepthReport[]) => {
+        const lang = popupLanguage();
+        const root = document.createElement("div");
+        root.className = styles.popup;
+        root.setAttribute("data-testid", "reported-depth-popup");
+        for (const report of reports) {
+          const { lines, link } = reportedDepthPopup(report, depthBlock!, lang);
+          const section = document.createElement("section");
+          section.className = styles.reportedDepthReport;
+          section.dataset.report = report.id;
+          for (const line of lines) {
+            const element = document.createElement(line.tone === "title" ? "strong" : "p");
+            element.textContent = line.text;
+            if (line.tone === "muted") element.dataset.tone = "muted";
+            if (line.lang) element.lang = line.lang;
+            section.append(element);
+          }
+          const anchor = document.createElement("a");
+          anchor.href = link.href;
+          anchor.target = "_blank";
+          anchor.rel = "noopener noreferrer";
+          anchor.textContent = link.text;
+          const title = document.createElement("span");
+          title.lang = link.titleLang;
+          title.textContent = link.title;
+          anchor.append(title);
+          const source = document.createElement("p");
+          source.append(anchor);
+          section.append(source);
+          root.append(section);
+        }
+        return root;
+      };
+      const depthPlaces = depthBlock ? reportedDepthPlaces(depthBlock) : [];
+      let depthGrouping = "";
+      const buildDepthMarkers = () => {
+        if (!depthBlock || !map.hasLayer(depthGroup)) return;
+        const groups = groupNearbyPlaces(depthPlaces.map((place) => map.latLngToLayerPoint([place.lat, place.lon])), REPORTED_DEPTH_GROUP_PX);
+        const grouping = groups.map((members) => members.join("+")).join("|");
+        if (grouping === depthGrouping) return;
+        depthGrouping = grouping;
+        // A popup open across the regrouping reopens on the marker that now holds its first record.
+        const open = depthMarkers.find((entry) => entry.marker.isPopupOpen())?.ids[0];
+        for (const { marker } of depthMarkers) {
+          const index = tooltipLayers.indexOf(marker);
+          if (index >= 0) tooltipLayers.splice(index, 1);
+        }
+        depthGroup.clearLayers();
+        depthMarkers = groups.map((members) => {
+          const places = members.map((index) => depthPlaces[index]);
+          const reports = places.flatMap((place) => place.reports);
+          const ids = reports.map((report) => report.id);
+          // A merged marker stands at its first place's point: the bubble's tail still marks a reported place.
+          const marker = L.marker([places[0].lat, places[0].lon], {
+            pane: "fg-reported-depths",
+            icon: L.divIcon({ className: styles.reportedDepthIcon, html: reportedDepthIconHtml(reports.length), ...REPORTED_DEPTH_ICON_BOX }),
+            keyboard: true,
+            riseOnHover: true,
+          });
+          marker.bindPopup(fitted(marker, POPUP_WIDTH.reportedDepth, () => depthPopup(reports)), { className: styles.popupFrame, autoPan: true });
+          keyboardPopup(marker);
+          const title = () => reportedDepthMarkerTitle({ reports }, popupLanguage());
+          hoverTip(marker, title);
+          marker.on("add", () => marker.getElement()?.setAttribute("data-reports", ids.join(" ")));
+          depthGroup.addLayer(marker);
+          return { marker, ids, title };
+        });
+        refreshTitles();
+        if (open) depthMarkers.find((entry) => entry.ids.includes(open))?.marker.openPopup();
+      };
+      map.on("zoomend", buildDepthMarkers);
 
       controllerRef.current = {
         update(frame, exact) {
@@ -1914,6 +2060,11 @@ export function MaeSaiFloodTimeline() {
           }
           paintEnvelopeLayer();
         },
+        setReportedDepths(visible) {
+          setGroup(depthGroup, visible);
+          buildDepthMarkers();
+          refreshTitles();
+        },
         refreshTooltips() {
           refreshTooltips();
           refreshTitles();
@@ -1936,6 +2087,7 @@ export function MaeSaiFloodTimeline() {
       resizeObserver?.disconnect();
       attributionObserver?.disconnect();
       footObserver?.disconnect();
+      removeMapKeys?.();
       controllerRef.current = null;
       setMapReady(false);
       mounted?.stop();
@@ -1981,6 +2133,12 @@ export function MaeSaiFloodTimeline() {
   useEffect(() => {
     if (mapReady) controllerRef.current?.setGauges(showGauges);
   }, [mapReady, showGauges]);
+
+  // The reported depths are static points: their own toggle shows them, whatever the replay hour.
+  const reportedDepths = useMemo(() => shippableReportedDepths(manifest), [manifest]);
+  useEffect(() => {
+    if (mapReady) controllerRef.current?.setReportedDepths(showReportedDepths && reportedDepths !== null);
+  }, [mapReady, showReportedDepths, reportedDepths]);
 
   // The season envelope is drawn while its toggle is on and its files have loaded; the replay time plays no part.
   const envelopeOnMap = envelope.status === "ready" && seasonEnvelopeDrawn(showEnvelope, true) ? envelope : null;
@@ -2323,6 +2481,7 @@ export function MaeSaiFloodTimeline() {
     viirs: showViirs ? viirsInfo : null,
     gauges: showGauges && !!rainfall,
     envelope: envelopeOnMap !== null,
+    reportedDepths: showReportedDepths && reportedDepths !== null,
     facilities: showFacilities,
     lowConfidence: !!lowConfidence && !!hand?.lowCells && hatchesLowConfidence(legendWaterMode),
     residentsPending,
@@ -2527,6 +2686,7 @@ export function MaeSaiFloodTimeline() {
                   {accessInfo && layerToggle(showCutoff, setShowCutoff, t("People cut off (scenario)", "ผู้ที่ถูกตัดขาด (สถานการณ์จำลอง)"), <i className={styles.cutoffRamp} />)}
                   {viirsInfo && layerToggle(showViirs, setShowViirs, t("VIIRS daily flood map (375 m, observed)", "แผนที่น้ำท่วมรายวัน VIIRS (375 ม. สังเกตการณ์)"), <i style={{ background: rgbaCss([118, 42, 131, 245]) }} />)}
                   {rainfall && layerToggle(showGauges, setShowGauges, t("Rain gauges (observed)", "สถานีวัดฝน (ตรวจวัดจริง)"), <i className={styles.legendGauge}><svg viewBox="0 0 24 24" width="14" height="14" focusable="false"><path d={GAUGE_PATH} /></svg></i>)}
+                  {reportedDepths && layerToggle(showReportedDepths, setShowReportedDepths, REPORTED_DEPTH_COPY.toggle[lang], <ReportedDepthSwatch />)}
                 </fieldset>
                 {/* The season envelope is a scenario layer of its own: its toggle sits apart from the layers that follow the
                     replay hour, and no day or hour switches it. Without its label, licence and credit there is no toggle. */}
@@ -2761,7 +2921,7 @@ export function MaeSaiFloodTimeline() {
                   </div>
                 </section>
 
-                <SourcesPanel manifest={manifest} language={lang} offlineCopy={offlineCopy} envelope={envelope} />
+                <SourcesPanel manifest={manifest} language={lang} offlineCopy={offlineCopy} envelope={envelope} reportedDepths={reportedDepths} />
               </>
             )}
           </aside>
@@ -2946,8 +3106,26 @@ const pick2 = (pair: [string, string], language: Language) => pair[language === 
 const EXPORT_KINDS: Record<ExportFile["media_type"], [string, string]> = {
   "text/csv": ["CSV table", "ตาราง CSV"],
   "application/geo+json": ["GeoJSON map layer", "ชั้นข้อมูลแผนที่ GeoJSON"],
+  "application/json": ["JSON summary", "สรุปแบบ JSON"],
   "text/plain": ["text file", "ไฟล์ข้อความ"],
 };
+
+/**
+ * One dated line for a separate case of the planning overlay that the replay cites but never ingests: the water layer
+ * UNOSAT and GISTDA dated 22 Oct 2024 (observed case O2). It is not on the map and has no slider position (D3b), so a
+ * reader does not take the replay's end on 19 Sep for the end of the water.
+ */
+export function SeparateCaseLine({ reference, language }: { reference: ExternalReference; language: Language }) {
+  const th = language === "th";
+  return (
+    <p className={styles.note} data-testid={`separate-case-${(reference.case ?? "").toLowerCase()}`}>
+      <strong>{reference.dated ? formatDateWithYear(reference.dated, language) : reference.case}</strong>
+      {" · "}<Localized text={reference.name} language={language} />{th ? " " : ". "}
+      {reference.note && <><Localized text={reference.note} language={language} />{" "}</>}
+      <a href={reference.url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>{reference.url}</a>
+    </p>
+  );
+}
 
 /** Which evidence lanes a download file holds: model only, or reported facts beside a model check. */
 function exportLaneText(file: Pick<ExportFile, "lanes">, language: Language): string {
@@ -2989,7 +3167,8 @@ export function ExportDownloads({ manifest, language, offlineCopy }: { manifest:
             <span className={styles.muted}>
               ({pick2(EXPORT_KINDS[file.media_type], language)}, {formatFileSize(file.bytes)}
               {file.rows != null && file.header_lines != null ? t(`, ${file.rows.toLocaleString("en-US")} rows`, ` ${file.rows.toLocaleString("en-US")} แถว`) : ""}
-              {file.rows != null && file.header_lines == null ? t(`, ${file.rows.toLocaleString("en-US")} points`, ` ${file.rows.toLocaleString("en-US")} จุด`) : ""}
+              {file.rows != null && file.header_lines == null && file.media_type === "application/geo+json" ? t(`, ${file.rows.toLocaleString("en-US")} points`, ` ${file.rows.toLocaleString("en-US")} จุด`) : ""}
+              {file.rows != null && file.media_type === "application/json" ? t(`, ${file.rows.toLocaleString("en-US")} subdistricts`, ` ${file.rows.toLocaleString("en-US")} ตำบล`) : ""}
               {th ? " " : "; "}{exportLaneText(file, language)})
             </span>
           </li>
@@ -2998,6 +3177,9 @@ export function ExportDownloads({ manifest, language, offlineCopy }: { manifest:
       <p className={styles.muted} data-testid="export-reading">{t(
         "Each CSV is UTF-8 with a byte-order mark, so the Thai text opens correctly in Excel. It starts with provenance lines (what the table is and is not, its timestamps, confidence, assumptions and licence), and its second line gives their number; then comes the column header, in English with the Thai label in brackets. In QGIS or pandas, skip that number of lines. The GeoJSON layer carries the same fields in its metadata.",
         "ไฟล์ CSV ทุกไฟล์เข้ารหัสแบบ UTF-8 พร้อมเครื่องหมาย BOM ข้อความภาษาไทยจึงเปิดใน Excel ได้ถูกต้อง แต่ละไฟล์เริ่มด้วยบรรทัดข้อมูลกำกับ (ตารางคืออะไรและไม่ใช่อะไร เวลาของข้อมูล ความเชื่อมั่น สมมติฐาน และสัญญาอนุญาต) โดยบรรทัดที่สองบอกจำนวนบรรทัดดังกล่าว จากนั้นเป็นหัวคอลัมน์ภาษาอังกฤษพร้อมคำอธิบายภาษาไทยในวงเล็บ ใน QGIS หรือ pandas ให้ข้ามบรรทัดตามจำนวนนั้น ส่วนชั้นข้อมูล GeoJSON มีข้อมูลกำกับเดียวกันอยู่ในส่วน metadata",
+      )}{pack.files.some((file) => file.media_type === "application/json") && t(
+        " The JSON summary has one record per subdistrict at the modelled peak; each record repeats its lane, confidence, timestamps and assumptions, so it can be used on its own.",
+        " สรุปแบบ JSON มีหนึ่งรายการต่อหนึ่งตำบล ณ ระดับน้ำสูงสุดของแบบจำลอง แต่ละรายการระบุช่องทางของหลักฐาน ความเชื่อมั่น เวลา และสมมติฐานซ้ำไว้ จึงนำไปใช้แยกได้",
       )}</p>
       <p className={styles.muted} data-testid="export-licence">{t(
         `Licence: every file is derived from OpenStreetMap and is under ${pack.licence} (attribution and share-alike); README_licences.txt lists the attributions to keep. One licence lineage per file: no rain values and nothing from a source without a stated licence is in any table.`,
@@ -3022,22 +3204,29 @@ export function ExportDownloads({ manifest, language, offlineCopy }: { manifest:
  * names, licences and attributions stay as published, marked English); where this revision states an assumption too
  * simply, the page adds a bilingual note under it. Memoised: it does not depend on the replay clock.
  */
-export const SourcesPanel = memo(function SourcesPanel({ manifest, language, offlineCopy, envelope = { status: "absent" } }: {
+export const SourcesPanel = memo(function SourcesPanel({ manifest, language, offlineCopy, envelope = { status: "absent" }, reportedDepths }: {
   manifest: TimelineManifest;
   language: Language;
   offlineCopy: OfflineCopy | null;
   /** The season envelope as the page holds it (its block, and its statistics file once loaded). */
   envelope?: SeasonEnvelopeState;
+  /** The reported depths when they may be shown (defaults to the manifest's, checked by `shippableReportedDepths`). */
+  reportedDepths?: ReturnType<typeof shippableReportedDepths>;
 }) {
   const th = language === "th";
   const t = (en: string, thai: string) => (th ? thai : en);
   const accessInfo = manifest.access ?? null;
   const confidenceText = manifest.confidence.toLowerCase() === "low" ? t("low", "ต่ำ") : manifest.confidence;
-  const pendingReferences = referencesNotIngested(manifest);
+  // A separate case of the planning overlay (O2, dated 22 Oct 2024) gets its own dated line, not a place among the
+  // references waiting to be ingested: it is never ingested here (D3b).
+  const references = referencesNotIngested(manifest);
+  const pendingReferences = references.filter((reference) => !reference.case);
+  const separateCases = references.filter((reference) => reference.case);
   const viirs = manifest.viirs_daily ?? null;
   const rain = manifest.rainfall ?? null;
   const s2 = manifest.s2_crosscheck ?? null;
   const s2Confidence = s2 ? (s2.confidence.toLowerCase() === "low" ? t("low", "ต่ำ") : s2.confidence) : "";
+  const depths = reportedDepths === undefined ? shippableReportedDepths(manifest) : reportedDepths;
   return (
     <details className={styles.card} data-testid="sources-panel" id="mae-sai-sources">
       <summary>{t("Sources, assumptions and limits", "แหล่งข้อมูล สมมติฐาน และข้อจำกัด")}</summary>
@@ -3060,6 +3249,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
       </ul>
       <LicencesByInput manifest={manifest} language={language} />
       <SeasonEnvelopeSources envelope={envelope} language={language} />
+      {separateCases.map((reference) => <SeparateCaseLine key={reference.id ?? reference.url} reference={reference} language={language} />)}
       <ExportDownloads manifest={manifest} language={language} offlineCopy={offlineCopy} />
       {(viirs || rain || s2) && (
         <>
@@ -3100,6 +3290,7 @@ export const SourcesPanel = memo(function SourcesPanel({ manifest, language, off
           </ul>
         </>
       )}
+      {depths && <ReportedDepthsSources block={depths} language={language} />}
       {pendingReferences.length > 0 && (
         <>
           <h3>{t("Other references (not ingested)", "เอกสารอ้างอิงอื่น (ยังไม่ได้นำเข้า)")}</h3>
@@ -3488,24 +3679,62 @@ export function WetFacilitiesCard({ facilities, stage, language }: { facilities:
   );
 }
 
+const PASS_WORDS: Record<RadarImage["pass"], { en: string; th: string }> = {
+  ascending: { en: "ascending", th: "วงโคจรขาขึ้น" },
+  descending: { en: "descending", th: "วงโคจรขาลง" },
+};
+
+/** "descending, relative orbit 135" / "วงโคจรขาลง วงโคจรสัมพัทธ์ 135" for one radar image. */
+export function radarPassText(image: Pick<RadarImage, "pass" | "relative_orbit">, language: Language): string {
+  const words = PASS_WORDS[image.pass] ?? { en: image.pass, th: image.pass };
+  return language === "th" ? `${words.th} วงโคจรสัมพัทธ์ ${image.relative_orbit}` : `${words.en}, relative orbit ${image.relative_orbit}`;
+}
+
+/** "4 Sep 06:16 ICT → 16 Sep 06:16 ICT" for a radar pair, from each image's local acquisition time. */
+export function radarPairSpan(images: readonly Pick<RadarImage, "local">[], language: Language): string {
+  return images.map((image) => formatLocalStamp(image.local, language)).join(" → ");
+}
+
 /**
  * Sentinel-1 size comparison, rendered from `s1_anchor`; its scope is the whole image footprint, not the district.
- * The recession keyframes were tuned to this pass, so the page calls it calibration-informed, never a check.
+ * The recession keyframes were tuned to the 16 Sep pass, so the page calls it calibration-informed, never a check.
+ * From the bake of 3 Oct 2026 the figures come from a same-track pair (4 Sep and 16 Sep 06:16 ICT, both descending on
+ * relative orbit 135), and the cross-track pair the keyframes were tuned with is shown beside them as a sensitivity.
+ * An older manifest has no images: the span then comes from the radar observations (`radarSpan`).
  */
 export function RadarCheck({ manifest, radarSpan, language }: { manifest: TimelineManifest; radarSpan: string; language: Language }) {
   const th = language === "th";
   const anchor = manifest.s1_anchor;
+  const images = anchor.images?.length === 2 ? anchor.images : null;
   const newlyDark = km(anchor.newly_dark_km2, 2);
   const modelSize = km(anchor.best_fit_model_km2, 2);
   const bestStage = anchor.best_fit_stage_m.toFixed(2);
   const passStage = anchor.reconstruction_stage_at_pass_m.toFixed(3);
-  const iou = anchor.iou_at_best_fit.toFixed(2);
+  const iou = anchor.iou_at_best_fit.toFixed(3);
   const scope = anchor.scope ? localized(anchor.scope, language) : null;
+  const span = images ? radarPairSpan(images, language) : radarSpan;
+  const track = images && anchor.pair === "same_track"
+    ? (th ? `; แนวโคจรเดียวกัน: ${radarPassText(images[1], "th")}` : `; same track: ${radarPassText(images[1], "en")}`)
+    : "";
+  const tunedTo = images
+    ? (th ? `ภาพวันที่ ${formatShortDate(images[1].local, "th")}` : `the ${formatShortDate(images[1].local, "en")} pass`)
+    : (th ? "ภาพนี้" : "this pass");
+  const sensitivity = anchor.sensitivity?.find((row) => row.pair === "cross_track" && row.images.length === 2) ?? null;
+  const hiddenPre = images && !images[0].published_as_layer ? images[0] : null;
   return (
-    <div className={styles.anchor}>
+    <div className={styles.anchor} data-testid="radar-size-comparison">
       <p>{th
-        ? `เทียบขนาดกับเรดาร์ (Sentinel-1, ${radarSpan}; มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ): พื้นที่ ${newlyDark} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ แบบจำลองให้ขนาดใกล้เคียงกันคือ ${modelSize} ตร.กม. ที่ระดับน้ำ ${bestStage} ม. (ระดับในการจำลองขณะดาวเทียมผ่านคือ ${passStage} ม.) จุดกำหนดระดับน้ำช่วงน้ำลดปรับตามภาพนี้ ขนาดที่ใกล้เคียงกันจึงเป็นผลจากการปรับ ความสอดคล้องเชิงตำแหน่งต่ำ (IoU ${iou}) จึงบอกได้เพียงขนาดพื้นที่ ไม่ใช่ตำแหน่ง`
-        : `Radar size comparison (Sentinel-1, ${radarSpan}; calibration-informed, not an independent check): ${newlyDark} km² turned newly water-like. The model reaches a similar size, ${modelSize} km², at a ${bestStage} m stage; the replay's stage at that pass is ${passStage} m. The recession keyframes were tuned to this pass, so the sizes agree by construction. Spatial agreement is weak (IoU ${iou}), so this constrains size, not location.`}</p>
+        ? `เทียบขนาดกับเรดาร์ (Sentinel-1, ${span}${track}; มีส่วนในการปรับแบบจำลอง ไม่ใช่การตรวจสอบอิสระ): พื้นที่ ${newlyDark} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ แบบจำลองให้ขนาดใกล้เคียงกันคือ ${modelSize} ตร.กม. ที่ระดับน้ำ ${bestStage} ม. (ระดับในการจำลองขณะดาวเทียมผ่านคือ ${passStage} ม.) จุดกำหนดระดับน้ำช่วงน้ำลดปรับตาม${tunedTo} ขนาดที่ใกล้เคียงกันจึงเป็นผลจากการปรับ ความสอดคล้องเชิงตำแหน่งต่ำ (IoU ${iou}) จึงบอกได้เพียงขนาดพื้นที่ ไม่ใช่ตำแหน่ง`
+        : `Radar size comparison (Sentinel-1, ${span}${track}; calibration-informed, not an independent check): ${newlyDark} km² turned newly water-like. The model reaches a similar size, ${modelSize} km², at a ${bestStage} m stage; the replay's stage at that pass is ${passStage} m. The recession keyframes were tuned to ${tunedTo}, so the sizes agree by construction. Spatial agreement is weak (IoU ${iou}), so this constrains size, not location.`}</p>
+      {sensitivity && (
+        <p data-testid="radar-sensitivity">{th
+          ? `ความอ่อนไหว คู่ภาพต่างแนวโคจร (${radarPairSpan(sensitivity.images, "th")}; ${radarPassText(sensitivity.images[0], "th")} → ${radarPassText(sensitivity.images[1], "th")} ซึ่งเป็นคู่ที่ใช้ปรับจุดกำหนดระดับน้ำ): พื้นที่ ${km(sensitivity.newly_dark_km2, 2)} ตร.กม. เปลี่ยนเป็นลักษณะคล้ายน้ำใหม่ ระดับน้ำที่เข้ากันดีที่สุด ${sensitivity.best_fit_stage_m.toFixed(2)} ม. (${km(sensitivity.best_fit_model_km2, 2)} ตร.กม.) IoU ${sensitivity.iou_at_best_fit.toFixed(3)}`
+          : `Sensitivity, cross-track pair (${radarPairSpan(sensitivity.images, "en")}; ${radarPassText(sensitivity.images[0], "en")} → ${radarPassText(sensitivity.images[1], "en")}, the pair the keyframes were tuned with): ${km(sensitivity.newly_dark_km2, 2)} km² turned newly water-like; best fit at a ${sensitivity.best_fit_stage_m.toFixed(2)} m stage (${km(sensitivity.best_fit_model_km2, 2)} km²), IoU ${sensitivity.iou_at_best_fit.toFixed(3)}.`}
+          {hiddenPre && (th
+            ? ` ภาพวันที่ ${formatShortDate(hiddenPre.local, "th")} ใช้เฉพาะในการเทียบนี้ ไม่ได้แสดงบนแผนที่`
+            : ` The ${formatShortDate(hiddenPre.local, "en")} image is used for this comparison only; it is not on the map.`)}
+        </p>
+      )}
       <p>
         {scope && <>{th ? "ขอบเขตการเทียบ: " : "Scope: "}<span lang={scope.lang}>{scope.text}</span>{" "}</>}
         {th
@@ -3536,7 +3765,7 @@ function LowConfidenceSwatch({ waterMode, arrival }: { waterMode: WaterMode; arr
  */
 export function TimelineLegend({
   language, unmodelledRoads, unmodelledFacilities, waterMode = "depth", roadMode = "state", arrival = [], densityMax, shelters, cutoff = false,
-  viirs = null, gauges = false, envelope = false, facilities = true, lowConfidence = false, residentsPending = null, part = "all",
+  viirs = null, gauges = false, envelope = false, reportedDepths = false, facilities = true, lowConfidence = false, residentsPending = null, part = "all",
 }: {
   language: Language;
   unmodelledRoads: boolean;
@@ -3560,6 +3789,8 @@ export function TimelineLegend({
   gauges?: boolean;
   /** The season envelope (a scenario layer, hatched) is shown. */
   envelope?: boolean;
+  /** The reported depths (news, not surveyed) are shown. */
+  reportedDepths?: boolean;
   /** The key facilities (OSM) layer is shown. */
   facilities?: boolean;
   /** Low-confidence water is drawn (the manifest declares its channel and the view shows water). */
@@ -3685,7 +3916,8 @@ export function TimelineLegend({
           </ul>
         </div>
       )}
-      {symbols && !facilities && !anyShelter && !gauges && (
+      {symbols && reportedDepths && <ReportedDepthLegend language={language} />}
+      {symbols && !facilities && !anyShelter && !gauges && !reportedDepths && (
         <p className={styles.muted}>{th ? "ไม่มีสัญลักษณ์เปิดอยู่ เปิดได้ที่ “ชั้นแผนที่”" : "No marker layers are on; turn them on under “Map layers”."}</p>
       )}
     </div>

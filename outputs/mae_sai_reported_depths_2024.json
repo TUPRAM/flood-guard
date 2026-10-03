@@ -1,0 +1,1132 @@
+{
+ "dataset": "Reported flood depths at named places in Mae Sai district, 10-13 Sep 2024 (Thai and English news, paraphrased)",
+ "dataset_th": "ความลึกของน้ำท่วมตามรายงานข่าว ณ สถานที่ที่ระบุชื่อในอำเภอแม่สาย 10–13 ก.ย. 2567 (2024) (ข่าวภาษาไทยและอังกฤษ เรียบเรียงใหม่)",
+ "schema_id": "https://floodguard.th/contracts/reported-depths-2024.schema.json",
+ "compiled": "2026-10-03",
+ "compiled_by": "FloodGuard desk research of Thai and English news (roadmap C-2), read by a second checker whose corrections are applied; locations from OpenStreetMap (Nominatim) and place listings.",
+ "status": "reported (anecdotal, not surveyed)",
+ "status_th": "ตามรายงาน (คำบอกเล่า ไม่ได้สำรวจ)",
+ "source_timestamp": "reports published 2024-09-10T05:32+07:00/2024-09-13T11:32+07:00; compiled 2026-10-03",
+ "confidence": "low",
+ "confidence_reason": "Anecdotal news reports, not surveys: depths are lower bounds, ranges or body and storey references, several statements cover more than one community, times are article times rather than measurement times, and most locations are community or street points.",
+ "use_rule": "A consistency check only. The reported depths are never used to tune the model: no keyframe, depth-factor or terrain change may be set from them.",
+ "licence_note": "Facts with citations. Each report is paraphrased in the project's own words; only the article title is quoted, as a citation. Coordinates matched to OpenStreetMap stay under ODbL 1.0.",
+ "copyright_rule": "Paraphrase only: no sentence of an article is copied, a title is cited at most once per report and is no longer than 160 characters, and a record carries at most one quoted phrase of under 15 words per source.",
+ "location_rule": "A point is given only where the location confidence is medium or high. location_tolerance_m is how far the reported spot may lie from the point, read from the location basis.",
+ "time_rule": "Each report has a window in local time (ICT, UTC+7). It ends at the article's time stamp, because a report cannot describe a later moment, and starts at the earliest time the text allows.",
+ "depth_rule": "Numbers are kept as the source gives them: a lower bound (more than 1 m) or a range (2-3 m in places, whose lower end is the lower bound). A storey or body reference is kept as a class and never turned into a number.",
+ "assumptions": [
+  "The depths are what reporters and residents said, not measurements; none was surveyed or checked on the ground.",
+  "A statement that names several communities is recorded once per community, with the same depth, time and source and a note that it is shared. Counts are given per place record and, separately, once per statement.",
+  "Community and street points are centroids of mapped streets or a nearby landmark; the reported spot may lie up to the record's location tolerance away.",
+  "Reports of other floods (August and early October 2024, 2025, 2022) and of places outside Mae Sai district are left out."
+ ],
+ "assumptions_th": [
+  "ความลึกเป็นคำบอกเล่าของผู้สื่อข่าวและผู้อยู่อาศัย ไม่ใช่ค่าที่วัดได้ ไม่มีรายการใดได้รับการสำรวจหรือตรวจดูในพื้นที่",
+  "ข้อความที่กล่าวถึงหลายชุมชนบันทึกแยกเป็นหนึ่งรายการต่อหนึ่งชุมชน โดยใช้ความลึก เวลา และแหล่งข่าวเดียวกัน พร้อมหมายเหตุว่าเป็นข้อความร่วม ตัวเลขสรุปนับแบบรายรายการตามสถานที่ และแยกนับแบบหนึ่งครั้งต่อหนึ่งข้อความ",
+  "จุดของชุมชนและถนนคือจุดกึ่งกลางของถนนในแผนที่หรือสถานที่สำคัญใกล้เคียง จุดที่รายงานอาจห่างออกไปได้ถึงระยะคลาดเคลื่อนของตำแหน่งของรายการนั้น",
+  "ไม่นับรายงานน้ำท่วมครั้งอื่น (สิงหาคมและต้นตุลาคม 2567 (2024), ปี 2568 (2025) และปี 2565 (2022)) และรายงานของสถานที่นอกอำเภอแม่สาย"
+ ],
+ "depth_classes": [
+  {
+   "id": "waist_deep",
+   "label": {
+    "en": "waist-deep (or more)",
+    "th": "ระดับเอว (หรือมากกว่า)"
+   }
+  },
+  {
+   "id": "chest_deep",
+   "label": {
+    "en": "chest-deep",
+    "th": "ระดับอก"
+   }
+  },
+  {
+   "id": "neck_deep",
+   "label": {
+    "en": "neck-deep",
+    "th": "ระดับคอ"
+   }
+  },
+  {
+   "id": "over_head",
+   "label": {
+    "en": "over head height",
+    "th": "สูงเกินศีรษะ"
+   }
+  },
+  {
+   "id": "ground_floor_submerged",
+   "label": {
+    "en": "ground floor under water",
+    "th": "ชั้นล่างจมน้ำทั้งชั้น"
+   }
+  },
+  {
+   "id": "above_ground_floor",
+   "label": {
+    "en": "above the ground floor (second floor reached)",
+    "th": "สูงกว่าชั้นล่าง (ถึงชั้นสอง)"
+   }
+  },
+  {
+   "id": "roof_level_refuge",
+   "label": {
+    "en": "roof-level refuge",
+    "th": "ต้องหนีขึ้นหลังคา"
+   }
+  },
+  {
+   "id": "not_stated",
+   "label": {
+    "en": "depth not stated",
+    "th": "ไม่ระบุความลึก"
+   }
+  }
+ ],
+ "reports": [
+  {
+   "id": "ms-c2-01",
+   "statement_id": "ms-c2-01",
+   "place": {
+    "en": "Sai Lom Joy border market",
+    "th": "ตลาดสายลมจอย"
+   },
+   "tambon": {
+    "en": "Wiang Phang Kham",
+    "th": "เวียงพางคำ"
+   },
+   "tambon_note": null,
+   "point": {
+    "lat": 20.4441,
+    "lon": 99.8791
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 150,
+   "location_basis": "Point from a place listing found by web search (20.44408, 99.87907). The listing's plus code CVVJ+H5R decodes to about 20.4440, 99.8804, some 130 m east, which matches a second listing (20.44399, 99.88039). Both fall on the riverside market strip by the U-turn bridge north of the Friendship Bridge 1 checkpoint (OpenStreetMap bridge at 20.4447, 99.8804); the first point is kept, so allow about 150 m.",
+   "depth": {
+    "kind": "lower_bound",
+    "lower_bound_m": 1.0,
+    "upper_m": null,
+    "class": null,
+    "statement": {
+     "en": "Thansettakij reports Sai River water spreading into the market area to more than 1 m deep (lower bound) after heavy rain.",
+     "th": "ฐานเศรษฐกิจรายงานว่าน้ำจากแม่น้ำสายไหลเข้ามาในย่านตลาด ลึกเกิน 1 ม. (ค่าขั้นต่ำ) หลังฝนตกหนัก"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Early morning of 10 Sep 2024 (article time-stamped 05:32 ICT)",
+     "th": "เช้ามืดวันที่ 10 ก.ย. 2567 (2024) (ข่าวลงเวลา 05:32 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T05:32:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "The article is dated 10 Sep 2024 and describes flooding under way after rain that began on 8 Sep.",
+   "source": {
+    "title": "พายุยางิพ่นพิษ เชียงรายฝนตกหนัก น้ำท่วมแม่สายตลาดสายลมจอย",
+    "publisher": "Thansettakij (ฐานเศรษฐกิจ)",
+    "url": "https://www.thansettakij.com/news/general-news/606236",
+    "published": "2024-09-10T05:32:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": "The plus code decodes about 130 m east of the given point; both points lie on the market strip, so medium confidence holds and the basis now says so. The article says the water spread into the area rather than that the river overflowed its banks. The Khaosod English figure was seen only in a search summary and the Bangkok Insight one was not checked, so both are left out."
+  },
+  {
+   "id": "ms-c2-02",
+   "statement_id": "ms-c2-02",
+   "place": {
+    "en": "Sai Lom Joy border market (Mae Sai trading area)",
+    "th": "ตลาดสายลมจอย ย่านการค้าในเมืองแม่สาย"
+   },
+   "tambon": {
+    "en": "Wiang Phang Kham",
+    "th": "เวียงพางคำ"
+   },
+   "tambon_note": null,
+   "point": {
+    "lat": 20.4441,
+    "lon": 99.8791
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 150,
+   "location_basis": "Same market point as ms-c2-01. Point from a place listing found by web search (20.44408, 99.87907). The listing's plus code CVVJ+H5R decodes to about 20.4440, 99.8804, some 130 m east, which matches a second listing (20.44399, 99.88039). Both fall on the riverside market strip by the U-turn bridge north of the Friendship Bridge 1 checkpoint (OpenStreetMap bridge at 20.4447, 99.8804); the first point is kept, so allow about 150 m.",
+   "depth": {
+    "kind": "lower_bound",
+    "lower_bound_m": 2.0,
+    "upper_m": null,
+    "class": null,
+    "statement": {
+     "en": "A Thai PBS reporter describes the Sai Lom Joy trading area under more than 2 m of water (lower bound), with a fast current in several riverside communities and river water reaching Phahonyothin Road at the Doi Wao market entrance for the first time (no depth given for the road).",
+     "th": "ผู้สื่อข่าวไทยพีบีเอสระบุว่าย่านการค้าสายลมจอยมีน้ำลึกเกิน 2 ม. (ค่าขั้นต่ำ) หลายชุมชนริมน้ำมีกระแสน้ำไหลแรง และน้ำจากแม่น้ำขึ้นถึงถนนพหลโยธินหน้าทางเข้าตลาดดอยเวาเป็นครั้งแรก (ไม่ระบุความลึกบนถนน)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Midday of 10 Sep 2024 (article 13:00 ICT)",
+     "th": "เที่ยงวันที่ 10 ก.ย. 2567 (2024) (ข่าวเวลา 13:00 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T13:00:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article dated 10 Sep 2024 13:00, describing the situation that day.",
+   "source": {
+    "title": "เปิดภาพ อ.แม่สาย อ่วม ฝนตกหนักต่อเนื่อง น้ำท่วมตลาดสายลมจอย",
+    "publisher": "Thai PBS",
+    "url": "https://www.thaipbs.or.th/news/content/344023",
+    "published": "2024-09-10T13:00:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-04",
+   "statement_id": "ms-c2-04",
+   "place": {
+    "en": "Sai Lom Joy market (a building in the market)",
+    "th": "ตลาดสายลมจอย (อาคารหนึ่งในตลาด)"
+   },
+   "tambon": {
+    "en": "Wiang Phang Kham",
+    "th": "เวียงพางคำ"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "The appeal names only Sai Lom Joy; the building is unknown, so no point is given.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "roof_level_refuge",
+    "statement": {
+     "en": "A plea for help reprinted by Matichon says water had reached the second floor of a building and the people inside had spent the whole night on the roof (no number given).",
+     "th": "คำขอความช่วยเหลือที่มติชนนำมาเผยแพร่ระบุว่าน้ำขึ้นถึงชั้นสองของอาคาร และผู้ที่อยู่ข้างในต้องอยู่บนหลังคาตลอดคืน (ไม่ระบุตัวเลข)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Night of 10-11 Sep 2024 (article 11 Sep 01:23 ICT)",
+     "th": "คืนวันที่ 10–11 ก.ย. 2567 (2024) (ข่าวลงวันที่ 11 ก.ย. เวลา 01:23 น.)"
+    },
+    "window_start": "2024-09-10T18:00:00+07:00",
+    "window_end": "2024-09-11T01:23:00+07:00",
+    "window_basis": "The window runs from 18:00 on the evening the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article published 11 Sep 2024 01:23 (updated 02:32), quoting overnight social-media appeals.",
+   "source": {
+    "title": "แม่สายอ่วม ครู-นร.กว่า 30 คน ติดน้ำท่วมอยู่ในร.ร. ตาวัย 80 ในชุมชนไม้ลุงขน ต้องปีนขึ้นฝ้า",
+    "publisher": "Matichon",
+    "url": "https://today.line.me/th/v3/article/peznJGp",
+    "published": "2024-09-11T01:23:00+07:00",
+    "language": "th",
+    "read_via": "LINE Today",
+    "access_note": "Matichon's own page returned HTTP 403; read through LINE Today."
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-06",
+   "statement_id": "ms-c2-06",
+   "place": {
+    "en": "Hua Fai community (where the Sai River enters Mae Sai town)",
+    "th": "ชุมชนหัวฝาย (บ้านหัวฝาย)"
+   },
+   "tambon": {
+    "en": "Wiang Phang Kham (from a web listing; the source names no subdistrict)",
+    "th": "เวียงพางคำ (จากรายชื่อในเว็บ แหล่งข่าวไม่ได้ระบุตำบล)"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "MGR places Hua Fai at the upstream end of town, where the river reaches the Thai side, next to Sai Lom Joy. No map point was found for the village, so no point is given.",
+   "depth": {
+    "kind": "lower_bound",
+    "lower_bound_m": 1.0,
+    "upper_m": null,
+    "class": null,
+    "statement": {
+     "en": "MGR Online says that by the evening of 10 Sep the water entering town through the Hua Fai and Sai Lom Joy communities was 1 m deep or more (lower bound). It spread onto Phahonyothin Road in front of the Friendship Bridge 1 checkpoint, some 200-300 m inland, and the road was closed (no depth given for the road). Ch3Plus carried the same passage on 11 Sep.",
+     "th": "ผู้จัดการออนไลน์ระบุว่าช่วงค่ำวันที่ 10 ก.ย. น้ำที่ไหลเข้าเมืองทางชุมชนหัวฝายและสายลมจอยลึก 1 ม. ขึ้นไป (ค่าขั้นต่ำ) และล้นขึ้นถนนพหลโยธินหน้าด่านพรมแดนสะพานมิตรภาพแห่งที่ 1 เข้าไปราว 200–300 ม. จนต้องปิดถนน (ไม่ระบุความลึกบนถนน) ช่อง 3 พลัสนำข้อความเดียวกันมาเผยแพร่เมื่อ 11 ก.ย."
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Evening of 10 Sep 2024 (article 21:15 ICT)",
+     "th": "ค่ำวันที่ 10 ก.ย. 2567 (2024) (ข่าวเวลา 21:15 น.)"
+    },
+    "window_start": "2024-09-10T17:00:00+07:00",
+    "window_end": "2024-09-10T21:15:00+07:00",
+    "window_basis": "The window runs from 17:00, the evening the report describes, to the article's time stamp."
+   },
+   "event_date_basis": "Article published 10 Sep 2024 21:15 (updated 11 Sep 00:51), describing the situation as night fell; Ch3Plus dates the same passage to the evening of 10 Sep.",
+   "source": {
+    "title": "(คลิป)น้ำท่วมแม่สายหนักสุด-ยิ่งค่ำยิ่งวิกฤต!จมตั้งแต่ต้นน้ำสาย-หน้าด่านฯ-ชุมชนที่ลุ่มท้ายน้ำ",
+    "publisher": "MGR Online (ผู้จัดการออนไลน์)",
+    "url": "https://mgronline.com/local/detail/9670000084199",
+    "published": "2024-09-10T21:15:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-07",
+   "statement_id": "ms-c2-07",
+   "place": {
+    "en": "Ko Sai community",
+    "th": "ชุมชนเกาะทราย (บ้านเกาะทราย หมู่ 7)"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 7)",
+    "th": "แม่สาย (หมู่ 7)"
+   },
+   "tambon_note": "The moo and subdistrict follow the disaster-prevention office's (DDPM) figures; OpenStreetMap's address field puts these streets in Wiang Phang Kham.",
+   "point": {
+    "lat": 20.4434,
+    "lon": 99.8831
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 150,
+   "location_basis": "Point is the centroid of the OpenStreetMap streets Ko Sai Soi 1, 3, 9 and 10 (20.4423-20.4446 N, 99.8822-99.8840 E); allow about 150 m.",
+   "depth": {
+    "kind": "lower_bound",
+    "lower_bound_m": 1.5,
+    "upper_m": null,
+    "class": null,
+    "statement": {
+     "en": "PPTV says water came over the municipal barrier under Friendship Bridge 1 into the Ko Sai, Mai Lung Khon and Mueang Daeng communities and was deeper than 1.5 m at some spots (lower bound; one statement for all three communities).",
+     "th": "พีพีทีวีรายงานว่าน้ำข้ามแนวกั้นของเทศบาลใต้สะพานมิตรภาพแห่งที่ 1 ไหลเข้าชุมชนเกาะทราย ไม้ลุงขน และเหมืองแดง บางจุดลึกเกิน 1.5 ม. (ค่าขั้นต่ำ เป็นข้อความเดียวที่กล่าวถึงทั้งสามชุมชน)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Morning of 10 Sep 2024 (article 10:52 ICT)",
+     "th": "เช้าวันที่ 10 ก.ย. 2567 (2024) (ข่าวเวลา 10:52 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T10:52:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article published 10 Sep 2024 10:52, describing conditions at the time.",
+   "source": {
+    "title": "ฝนถล่มหนัก! แม่สายน้ำท่วมหนักสุดรอบปี",
+    "publisher": "PPTV HD36",
+    "url": "https://www.pptvhd36.com/news/%E0%B8%AA%E0%B8%B1%E0%B8%87%E0%B8%84%E0%B8%A1/232292",
+    "published": "2024-09-10T10:52:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": "OpenStreetMap labels these streets Wiang Phang Kham, against the DDPM's Mae Sai; the DDPM subdistrict is kept and the conflict is noted."
+  },
+  {
+   "id": "ms-c2-08",
+   "statement_id": "ms-c2-07",
+   "place": {
+    "en": "Mai Lung Khon community",
+    "th": "ชุมชนไม้ลุงขน (บ้านไม้ลุงขน หมู่ 10)"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 10)",
+    "th": "แม่สาย (หมู่ 10)"
+   },
+   "tambon_note": "The moo follows the DDPM figures reported by Thai PBS.",
+   "point": {
+    "lat": 20.4401,
+    "lon": 99.8872
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 200,
+   "location_basis": "Point is on the OpenStreetMap street Mai Lung Khon Road (20.44014, 99.88720); the community spreads around it, so allow about 200 m.",
+   "depth": {
+    "kind": "lower_bound",
+    "lower_bound_m": 1.5,
+    "upper_m": null,
+    "class": null,
+    "statement": {
+     "en": "The same PPTV statement as for Ko Sai: some spots in Ko Sai, Mai Lung Khon and Mueang Daeng were deeper than 1.5 m (lower bound; one statement for the three communities).",
+     "th": "ข้อความเดียวกับของชุมชนเกาะทรายจากพีพีทีวี: บางจุดในชุมชนเกาะทราย ไม้ลุงขน และเหมืองแดงลึกเกิน 1.5 ม. (ค่าขั้นต่ำ ข้อความเดียวสำหรับทั้งสามชุมชน)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Morning of 10 Sep 2024 (article 10:52 ICT)",
+     "th": "เช้าวันที่ 10 ก.ย. 2567 (2024) (ข่าวเวลา 10:52 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T10:52:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article published 10 Sep 2024 10:52.",
+   "source": {
+    "title": "ฝนถล่มหนัก! แม่สายน้ำท่วมหนักสุดรอบปี",
+    "publisher": "PPTV HD36",
+    "url": "https://www.pptvhd36.com/news/%E0%B8%AA%E0%B8%B1%E0%B8%87%E0%B8%84%E0%B8%A1/232292",
+    "published": "2024-09-10T10:52:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-09",
+   "statement_id": "ms-c2-07",
+   "place": {
+    "en": "Mueang Daeng community",
+    "th": "ชุมชนเหมืองแดง (หมู่ 2)"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 2)",
+    "th": "แม่สาย (หมู่ 2)"
+   },
+   "tambon_note": "The moo follows the DDPM figures reported by Thai PBS.",
+   "point": {
+    "lat": 20.4399,
+    "lon": 99.89
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 300,
+   "location_basis": "Point is near the middle of the OpenStreetMap streets Mueang Daeng Soi 2 to Soi 12 (20.4394-20.4406 N, 99.8857-99.8926 E), which run about 700 m east to west; allow about 300 m.",
+   "depth": {
+    "kind": "lower_bound",
+    "lower_bound_m": 1.5,
+    "upper_m": null,
+    "class": null,
+    "statement": {
+     "en": "The same PPTV statement as for Ko Sai: some spots in Ko Sai, Mai Lung Khon and Mueang Daeng were deeper than 1.5 m (lower bound; one statement for the three communities). PPTV spells the community's name เมืองแดง.",
+     "th": "ข้อความเดียวกับของชุมชนเกาะทรายจากพีพีทีวี: บางจุดในชุมชนเกาะทราย ไม้ลุงขน และเหมืองแดงลึกเกิน 1.5 ม. (ค่าขั้นต่ำ ข้อความเดียวสำหรับทั้งสามชุมชน) พีพีทีวีสะกดชื่อชุมชนว่า เมืองแดง"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Morning of 10 Sep 2024 (article 10:52 ICT)",
+     "th": "เช้าวันที่ 10 ก.ย. 2567 (2024) (ข่าวเวลา 10:52 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T10:52:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article published 10 Sep 2024 10:52.",
+   "source": {
+    "title": "ฝนถล่มหนัก! แม่สายน้ำท่วมหนักสุดรอบปี",
+    "publisher": "PPTV HD36",
+    "url": "https://www.pptvhd36.com/news/%E0%B8%AA%E0%B8%B1%E0%B8%87%E0%B8%84%E0%B8%A1/232292",
+    "published": "2024-09-10T10:52:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-10",
+   "statement_id": "ms-c2-10",
+   "place": {
+    "en": "Ko Sai, Soi 4/1",
+    "th": "เกาะทราย ซอย 4/1"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 7)",
+    "th": "แม่สาย (หมู่ 7)"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "Soi 4/1 is not in OpenStreetMap; it lies within about 200 m of the Ko Sai community point (ms-c2-07), so no point of its own is given.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "waist_deep",
+    "statement": {
+     "en": "A plea reprinted by Khaosod says the water had reached waist level at a single-storey house where elderly and disabled people could not get out (no number given).",
+     "th": "คำขอความช่วยเหลือที่ข่าวสดนำมาเผยแพร่ระบุว่าน้ำขึ้นถึงระดับเอวที่บ้านชั้นเดียวหลังหนึ่ง ซึ่งมีผู้สูงอายุและผู้พิการออกมาไม่ได้ (ไม่ระบุตัวเลข)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Morning of 10 Sep 2024 (article first published about 09:00 ICT)",
+     "th": "เช้าวันที่ 10 ก.ย. 2567 (2024) (ข่าวเผยแพร่ครั้งแรกราว 09:00 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T09:00:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "LINE Today copy of a Khaosod article dated 10 Sep 2024 09:00 (updated 09:19), which opens with that morning's overflow.",
+   "source": {
+    "title": "น้ำท่วมแม่สาย อิทธิพล พายุยางิ ฝนตกหนักทั้งวัน คนติดในบ้านหลายหลัง วอนช่วยด่วน",
+    "publisher": "Khaosod",
+    "url": "https://today.line.me/th/v3/article/MLwEMmQ",
+    "published": "2024-09-10T09:00:00+07:00",
+    "language": "th",
+    "read_via": "LINE Today"
+   },
+   "checker_corrections": "The appeal names waist level; that the water was inside the house is implied, not stated. The appeal's phone number is not recorded."
+  },
+  {
+   "id": "ms-c2-11",
+   "statement_id": "ms-c2-11",
+   "place": {
+    "en": "Ko Sai, Soi 14",
+    "th": "เกาะทราย ซอย 14"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 7)",
+    "th": "แม่สาย (หมู่ 7)"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "Soi 14 is not in OpenStreetMap and may lie a few hundred metres from the Ko Sai community point, so no point is given.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "ground_floor_submerged",
+    "statement": {
+     "en": "A plea reprinted by Khaosod says the whole ground floor of a rented two-storey house (concrete below, wood above) was under water (no number given).",
+     "th": "คำขอความช่วยเหลือที่ข่าวสดนำมาเผยแพร่ระบุว่าชั้นล่างของบ้านเช่าสองชั้น (ชั้นล่างปูน ชั้นบนไม้) จมน้ำทั้งชั้น (ไม่ระบุตัวเลข)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Late morning of 10 Sep 2024 (article 11:03 ICT)",
+     "th": "สายวันที่ 10 ก.ย. 2567 (2024) (ข่าวเวลา 11:03 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T11:03:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Khaosod article dated 10 Sep 2024 11:03, quoting appeals posted that morning.",
+   "source": {
+    "title": "แม่สายวิกฤตหนัก น้ำท่วม เด็กทารก ติดในบ้าน ออกไม่ได้ ระดับน้ำสูงถึงชั้น 2 แล้ว",
+    "publisher": "Khaosod",
+    "url": "https://today.line.me/th/v3/article/3Nm8Lzr",
+    "published": "2024-09-10T11:03:00+07:00",
+    "language": "th",
+    "read_via": "LINE Today",
+    "access_note": "Khaosod's own page returned HTTP 403; read through LINE Today."
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-12",
+   "statement_id": "ms-c2-12",
+   "place": {
+    "en": "Mueang Daeng, Soi 2 (end of the soi)",
+    "th": "เหมืองแดง ซอย 2 (สุดซอย)"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 2)",
+    "th": "แม่สาย (หมู่ 2)"
+   },
+   "tambon_note": null,
+   "point": {
+    "lat": 20.4394,
+    "lon": 99.8857
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 200,
+   "location_basis": "Point is the OpenStreetMap street Mueang Daeng Soi 2 (20.43941, 99.88565). The appeal names the end of the soi, which may be 100-200 m from this point.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "neck_deep",
+    "statement": {
+     "en": "A plea reprinted by Khaosod says the water at the end of Mueang Daeng Soi 2 was up to the neck, with five or six people adrift inside a house (no number given).",
+     "th": "คำขอความช่วยเหลือที่ข่าวสดนำมาเผยแพร่ระบุว่าน้ำที่ท้ายเหมืองแดง ซอย 2 สูงถึงระดับคอ และมีคน 5–6 คนลอยตัวอยู่ในบ้าน (ไม่ระบุตัวเลข)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Late morning of 10 Sep 2024 (article 11:03 ICT)",
+     "th": "สายวันที่ 10 ก.ย. 2567 (2024) (ข่าวเวลา 11:03 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T11:03:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Khaosod article dated 10 Sep 2024 11:03, quoting appeals posted that morning.",
+   "source": {
+    "title": "แม่สายวิกฤตหนัก น้ำท่วม เด็กทารก ติดในบ้าน ออกไม่ได้ ระดับน้ำสูงถึงชั้น 2 แล้ว",
+    "publisher": "Khaosod",
+    "url": "https://today.line.me/th/v3/article/3Nm8Lzr",
+    "published": "2024-09-10T11:03:00+07:00",
+    "language": "th",
+    "read_via": "LINE Today",
+    "access_note": "Khaosod's own page returned HTTP 403; read through LINE Today."
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-13",
+   "statement_id": "ms-c2-13",
+   "place": {
+    "en": "Mai Lung Khon market, Soi 5",
+    "th": "ตลาดไม้ลุงขน ซอย 5"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 10)",
+    "th": "แม่สาย (หมู่ 10)"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "Soi 5 is not in OpenStreetMap; it lies near the Mai Lung Khon Road point (ms-c2-08), so no point of its own is given.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "chest_deep",
+    "statement": {
+     "en": "One Facebook message quoted by Thai PBS: a person had stood on a table in the water for hours at a spot in the soi marked by a black tarpaulin, and the water still came up to the chest; the same message says children and elderly people were stuck on the second floor or the roof (no number given).",
+     "th": "ข้อความเฟซบุ๊กหนึ่งข้อความที่ไทยพีบีเอสอ้างถึง: มีคนยืนบนโต๊ะในน้ำนานหลายชั่วโมง ณ จุดในซอยที่มีผ้าใบสีดำเป็นที่สังเกต และน้ำยังสูงถึงระดับอก ข้อความเดียวกันระบุว่าเด็กและผู้สูงอายุติดอยู่ที่ชั้นสองหรือบนหลังคา (ไม่ระบุตัวเลข)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Afternoon of 10 Sep 2024 (article 17:55 ICT)",
+     "th": "บ่ายวันที่ 10 ก.ย. 2567 (2024) (ข่าวเวลา 17:55 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-10T17:55:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article published 10 Sep 2024 17:55, compiling that day's appeals.",
+   "source": {
+    "title": "\"แม่สาย\" อ่วมน้ำทะลักท่วมเมือง หลายคนยังรอความช่วยเหลือ",
+    "publisher": "Thai PBS",
+    "url": "https://www.thaipbs.or.th/news/content/344039",
+    "published": "2024-09-10T17:55:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": "Both statements come from one Facebook message, not two pleas. The black tarpaulin marks the spot in the soi; the person did not stand under it."
+  },
+  {
+   "id": "ms-c2-14",
+   "statement_id": "ms-c2-14",
+   "place": {
+    "en": "Mai Lung Khon market community",
+    "th": "ชุมชนตลาดไม้ลุงขน"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 10)",
+    "th": "แม่สาย (หมู่ 10)"
+   },
+   "tambon_note": null,
+   "point": {
+    "lat": 20.4401,
+    "lon": 99.8872
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 200,
+   "location_basis": "Point is on the OpenStreetMap street Mai Lung Khon Road (20.44014, 99.88720); the community spreads around it, so allow about 200 m.",
+   "depth": {
+    "kind": "range",
+    "lower_bound_m": 2.0,
+    "upper_m": 3.0,
+    "class": null,
+    "statement": {
+     "en": "Thai PBS lists Mai Lung Khon market, Pha Mak Khwai and Mueang Daeng among the places where people were trapped overnight and the water was fairly high, 2-3 m in places (range; one statement for the three communities). The same report gives 1-2 m for low-lying parts of Mae Sai in general.",
+     "th": "ไทยพีบีเอสระบุว่าตลาดไม้ลุงขน ผามควาย และเหมืองแดงเป็นพื้นที่ที่มีผู้ติดค้างตลอดคืนและน้ำค่อนข้างสูง บางจุดลึก 2–3 ม. (เป็นช่วง ข้อความเดียวสำหรับทั้งสามชุมชน) รายงานเดียวกันระบุว่าพื้นที่ลุ่มต่ำของแม่สายโดยทั่วไปลึก 1–2 ม."
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Overnight 10-11 Sep 2024 (article 11 Sep 06:45 ICT)",
+     "th": "คืนวันที่ 10 ถึงเช้าวันที่ 11 ก.ย. 2567 (2024) (ข่าวลงวันที่ 11 ก.ย. เวลา 06:45 น.)"
+    },
+    "window_start": "2024-09-10T18:00:00+07:00",
+    "window_end": "2024-09-11T06:45:00+07:00",
+    "window_basis": "The window runs from 18:00 on the evening the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article dated 11 Sep 2024 06:45, describing the night of 10-11 Sep.",
+   "source": {
+    "title": "แม่สายน้ำท่วมสูง หลายชีวิตติดค้างในบ้านรอความช่วยเหลือ",
+    "publisher": "Thai PBS",
+    "url": "https://www.thaipbs.or.th/news/content/344049",
+    "published": "2024-09-11T06:45:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": "Thai PBS calls these spots places where the water was fairly high, not the deepest spots; the paraphrase says so."
+  },
+  {
+   "id": "ms-c2-15",
+   "statement_id": "ms-c2-14",
+   "place": {
+    "en": "Mueang Daeng community",
+    "th": "ชุมชนเหมืองแดง"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 2)",
+    "th": "แม่สาย (หมู่ 2)"
+   },
+   "tambon_note": null,
+   "point": {
+    "lat": 20.4399,
+    "lon": 99.89
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 300,
+   "location_basis": "Point is near the middle of the OpenStreetMap streets Mueang Daeng Soi 2 to Soi 12 (20.4394-20.4406 N, 99.8857-99.8926 E), which run about 700 m east to west; allow about 300 m.",
+   "depth": {
+    "kind": "range",
+    "lower_bound_m": 2.0,
+    "upper_m": 3.0,
+    "class": null,
+    "statement": {
+     "en": "The same Thai PBS statement as for Mai Lung Khon market: the water was fairly high, 2-3 m in places (range; one statement for three communities).",
+     "th": "ข้อความเดียวกับของตลาดไม้ลุงขนจากไทยพีบีเอส: น้ำค่อนข้างสูง บางจุดลึก 2–3 ม. (เป็นช่วง ข้อความเดียวสำหรับสามชุมชน)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Overnight 10-11 Sep 2024 (article 11 Sep 06:45 ICT)",
+     "th": "คืนวันที่ 10 ถึงเช้าวันที่ 11 ก.ย. 2567 (2024) (ข่าวลงวันที่ 11 ก.ย. เวลา 06:45 น.)"
+    },
+    "window_start": "2024-09-10T18:00:00+07:00",
+    "window_end": "2024-09-11T06:45:00+07:00",
+    "window_basis": "The window runs from 18:00 on the evening the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article dated 11 Sep 2024 06:45, describing the night of 10-11 Sep.",
+   "source": {
+    "title": "แม่สายน้ำท่วมสูง หลายชีวิตติดค้างในบ้านรอความช่วยเหลือ",
+    "publisher": "Thai PBS",
+    "url": "https://www.thaipbs.or.th/news/content/344049",
+    "published": "2024-09-11T06:45:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": "As for ms-c2-14: fairly high, not among the deepest spots."
+  },
+  {
+   "id": "ms-c2-16",
+   "statement_id": "ms-c2-14",
+   "place": {
+    "en": "Pha Mak Khwai community",
+    "th": "ชุมชนผามควาย (บ้านผามควาย)"
+   },
+   "tambon": {
+    "en": "unknown (probably Mae Sai)",
+    "th": "ไม่ทราบ (น่าจะเป็นแม่สาย)"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "English reports name it Ban Pham Kwai among the flooded villages, but no map point was found.",
+   "depth": {
+    "kind": "range",
+    "lower_bound_m": 2.0,
+    "upper_m": 3.0,
+    "class": null,
+    "statement": {
+     "en": "The same Thai PBS statement as for Mai Lung Khon market: the water was fairly high, 2-3 m in places (range; one statement for three communities).",
+     "th": "ข้อความเดียวกับของตลาดไม้ลุงขนจากไทยพีบีเอส: น้ำค่อนข้างสูง บางจุดลึก 2–3 ม. (เป็นช่วง ข้อความเดียวสำหรับสามชุมชน)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Overnight 10-11 Sep 2024 (article 11 Sep 06:45 ICT)",
+     "th": "คืนวันที่ 10 ถึงเช้าวันที่ 11 ก.ย. 2567 (2024) (ข่าวลงวันที่ 11 ก.ย. เวลา 06:45 น.)"
+    },
+    "window_start": "2024-09-10T18:00:00+07:00",
+    "window_end": "2024-09-11T06:45:00+07:00",
+    "window_basis": "The window runs from 18:00 on the evening the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article dated 11 Sep 2024 06:45.",
+   "source": {
+    "title": "แม่สายน้ำท่วมสูง หลายชีวิตติดค้างในบ้านรอความช่วยเหลือ",
+    "publisher": "Thai PBS",
+    "url": "https://www.thaipbs.or.th/news/content/344049",
+    "published": "2024-09-11T06:45:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": "As for ms-c2-14: fairly high, not the deepest."
+  },
+  {
+   "id": "ms-c2-17",
+   "statement_id": "ms-c2-17",
+   "place": {
+    "en": "Seven riverside communities: Sai Lom Joy, Hua Fai, Pha Mak Khwai, Mai Lung Khon, Ko Sai, Mueang Daeng, Mueang Daeng Tai",
+    "th": "ชุมชนริมน้ำ 7 แห่ง: สายลมจอย หัวฝาย ผามควาย ไม้ลุงขน เกาะทราย เหมืองแดง เหมืองแดงใต้"
+   },
+   "tambon": {
+    "en": "Mae Sai and Wiang Phang Kham",
+    "th": "แม่สายและเวียงพางคำ"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "One statement covers seven communities, so no point is given; the per-community points are ms-c2-01, ms-c2-07, ms-c2-08 and ms-c2-09. The OpenStreetMap streets of Mueang Daeng Tai cluster around 20.4405 N, 99.8965 E.",
+   "depth": {
+    "kind": "lower_bound",
+    "lower_bound_m": 1.0,
+    "upper_m": null,
+    "class": null,
+    "statement": {
+     "en": "The States Times describes the listed critical points as 1-2 m deep or more with a fast current, so people could not leave buildings and rescuers could not reach them; by the morning of 11 Sep several communities had 2-3 m (lower bound 1 m; the ranges are not tied to one community).",
+     "th": "ดิ สเตทส์ ไทมส์ ระบุว่าจุดวิกฤตที่ระบุชื่อมีน้ำลึก 1–2 ม. หรือมากกว่าและไหลแรง ผู้คนออกจากอาคารไม่ได้และเจ้าหน้าที่กู้ภัยเข้าไม่ถึง และถึงเช้าวันที่ 11 ก.ย. หลายชุมชนลึก 2–3 ม. (ค่าขั้นต่ำ 1 ม. ช่วงความลึกไม่ได้ผูกกับชุมชนใด)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Night of 10 Sep to the morning of 11 Sep 2024 (published 11 Sep 05:30 ICT)",
+     "th": "คืนวันที่ 10 ถึงเช้าวันที่ 11 ก.ย. 2567 (2024) (เผยแพร่ 11 ก.ย. เวลา 05:30 น.)"
+    },
+    "window_start": "2024-09-10T18:00:00+07:00",
+    "window_end": "2024-09-11T05:30:00+07:00",
+    "window_basis": "The window runs from 18:00 on the evening the report describes to the article's time stamp."
+   },
+   "event_date_basis": "LINE Today copy dated 11 Sep 2024 (published 05:30; an update stamp reads 03:14) that refers to that morning.",
+   "source": {
+    "title": "'แม่สาย' อ่วม!! น้ำป่าไหลทะลักเขตชุมชนตลอดทั้งคืน 'น้ำ-ไฟฟ้า-อินเทอร์เน็ต' ถูกตัดขาด เข้าช่วยเหลือยากลำบาก",
+    "publisher": "The States Times",
+    "url": "https://today.line.me/th/v3/article/rm2nL0Y",
+    "published": "2024-09-11T05:30:00+07:00",
+    "language": "th",
+    "read_via": "LINE Today"
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-18",
+   "statement_id": "ms-c2-18",
+   "place": {
+    "en": "Ban Mueang Daeng School (teachers' housing)",
+    "th": "โรงเรียนบ้านเหมืองแดง (บ้านพักครู)"
+   },
+   "tambon": {
+    "en": "Mae Sai",
+    "th": "แม่สาย"
+   },
+   "tambon_note": "The DDPM lists Ban Mueang Daeng (moo 2) under Mae Sai; OpenStreetMap's address puts the school in Wiang Phang Kham.",
+   "point": {
+    "lat": 20.4374,
+    "lon": 99.8938
+   },
+   "location_confidence": "high",
+   "location_tolerance_m": 100,
+   "location_basis": "Point is the OpenStreetMap node of the school (20.43735, 99.89376); the school grounds and the teachers' housing lie within about 100 m.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "waist_deep",
+    "statement": {
+     "en": "A message from about 30 teachers and pupils and a three-month-old baby sheltering at the school, reprinted by Matichon, says the water was about to enter the teachers' housing and stood between waist and chest height outside (no number given). A second copy of the message (LINE Today, 11 Sep 04:46) carries the publisher name Mum Khao.",
+     "th": "ข้อความจากครูและนักเรียนราว 30 คนกับทารกอายุ 3 เดือนที่หลบอยู่ในโรงเรียน ซึ่งมติชนนำมาเผยแพร่ ระบุว่าน้ำกำลังจะเข้าบ้านพักครู และด้านนอกสูงราวระดับเอวถึงอก (ไม่ระบุตัวเลข) สำเนาอีกชุดของข้อความเดียวกัน (LINE Today 11 ก.ย. เวลา 04:46 น.) ระบุผู้เผยแพร่ว่ามุมข่าว"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Night of 10-11 Sep 2024 (article 11 Sep 01:23 ICT)",
+     "th": "คืนวันที่ 10–11 ก.ย. 2567 (2024) (ข่าวลงวันที่ 11 ก.ย. เวลา 01:23 น.)"
+    },
+    "window_start": "2024-09-10T18:00:00+07:00",
+    "window_end": "2024-09-11T01:23:00+07:00",
+    "window_basis": "The window runs from 18:00 on the evening the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Matichon article published 11 Sep 2024 01:23, quoting appeals sent overnight.",
+   "source": {
+    "title": "แม่สายอ่วม ครู-นร.กว่า 30 คน ติดน้ำท่วมอยู่ในร.ร. ตาวัย 80 ในชุมชนไม้ลุงขน ต้องปีนขึ้นฝ้า",
+    "publisher": "Matichon",
+    "url": "https://today.line.me/th/v3/article/peznJGp",
+    "published": "2024-09-11T01:23:00+07:00",
+    "language": "th",
+    "read_via": "LINE Today",
+    "access_note": "Matichon's own page returned HTTP 403; read through LINE Today."
+   },
+   "checker_corrections": "The second copy of the message showed the publisher Mum Khao, not Siam News. OpenStreetMap's address puts the school in Wiang Phang Kham, against the DDPM's Mae Sai; the DDPM subdistrict is kept and the conflict is noted."
+  },
+  {
+   "id": "ms-c2-19",
+   "statement_id": "ms-c2-19",
+   "place": {
+    "en": "Mueang Daeng Road, Soi 4 and Soi 6",
+    "th": "ถนนเหมืองแดง ซอย 4 และซอย 6"
+   },
+   "tambon": {
+    "en": "Mae Sai (moo 2)",
+    "th": "แม่สาย (หมู่ 2)"
+   },
+   "tambon_note": null,
+   "point": {
+    "lat": 20.4403,
+    "lon": 99.8894
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 150,
+   "location_basis": "Point is the OpenStreetMap street Mueang Daeng Soi 6 (20.44034, 99.88941). Soi 4 is not in OpenStreetMap but lies on the same road nearby; allow about 150 m.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "over_head",
+    "statement": {
+     "en": "FM91 names Soi 4 and Soi 6 off Mueang Daeng Road as the worst-hit spots, with fast water above head height and residents still stranded (no number given).",
+     "th": "สวพ.91 ระบุว่าซอย 4 กับซอย 6 บนถนนเหมืองแดงเป็นจุดที่ได้รับผลกระทบหนักที่สุด น้ำไหลแรงสูงเกินศีรษะ และยังมีผู้อยู่อาศัยติดค้าง (ไม่ระบุตัวเลข)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "11 Sep 2024 (article 15:54 ICT)",
+     "th": "11 ก.ย. 2567 (2024) (ข่าวเวลา 15:54 น.)"
+    },
+    "window_start": "2024-09-11T00:00:00+07:00",
+    "window_end": "2024-09-11T15:54:00+07:00",
+    "window_basis": "The window runs from the start of the day the report describes to the article's time stamp."
+   },
+   "event_date_basis": "Article dated 11 Sep 2024 15:54, written while officials met at the Mae Sai district command centre.",
+   "source": {
+    "title": "ระดมสรรพกำลังเร่งช่วยชาวแม่สาย พื้นที่กระทบหนัก \"ซอย4 ซอย 6 ถนนเหมืองแดง\" น้ำท่วมศรีษะไหลเชี่ยวกราก",
+    "publisher": "FM91 Trafficpro (สวพ.91)",
+    "url": "https://www.fm91bkk.com/newsarticle/36665",
+    "published": "2024-09-11T15:54:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-20",
+   "statement_id": "ms-c2-20",
+   "place": {
+    "en": "Ban Tham Pha Chom",
+    "th": "บ้านถ้ำผาจม (ชุมชนถ้ำผาจม หมู่ 1)"
+   },
+   "tambon": {
+    "en": "Wiang Phang Kham (moo 1)",
+    "th": "เวียงพางคำ (หมู่ 1)"
+   },
+   "tambon_note": "The moo comes from a Chiang Rai public-radio (PRD) page.",
+   "point": {
+    "lat": 20.4418,
+    "lon": 99.8735
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 300,
+   "location_basis": "Point is the OpenStreetMap node of Wat Tham Pha Chom (20.44181, 99.87348), standing in for the village; the flooded houses are along the river nearby, so allow about 300 m.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "above_ground_floor",
+    "statement": {
+     "en": "An appeal reprinted by Ch3Plus says 12 people at Tham Pha Chom had water up to the second floor (no number given).",
+     "th": "คำขอความช่วยเหลือที่ช่อง 3 พลัสนำมาเผยแพร่ระบุว่ามีผู้ติดค้าง 12 คนที่ถ้ำผาจม และน้ำขึ้นถึงชั้นสอง (ไม่ระบุตัวเลข)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Night of 10 Sep to the morning of 11 Sep 2024 (appeal reprinted in an 11 Sep morning-news article; no time given)",
+     "th": "คืนวันที่ 10 ถึงเช้าวันที่ 11 ก.ย. 2567 (2024) (คำขอความช่วยเหลือที่นำมาลงในข่าวเช้าวันที่ 11 ก.ย. ไม่ระบุเวลา)"
+    },
+    "window_start": "2024-09-10T18:00:00+07:00",
+    "window_end": "2024-09-11T12:00:00+07:00",
+    "window_basis": "The article gives a date but no time; it sits in a morning-news section, so the window runs from 18:00 on 10 Sep to noon on 11 Sep."
+   },
+   "event_date_basis": "Ch3Plus article dated 11 Sep 2024, compiling appeals posted during the 10-11 Sep flood.",
+   "source": {
+    "title": "แม่สายอ่วมหนัก! น้ำท่วมมิดบ้าน ต้องหนีขึ้นหลังคา โพสต์รอกู้ภัยช่วยเหลือ กลางน้ำเชี่ยวกราก",
+    "publisher": "Ch3Plus (Channel 3)",
+    "url": "https://ch3plus.com/news/social/morning/416422",
+    "published": "2024-09-11",
+    "language": "th"
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-22",
+   "statement_id": "ms-c2-22",
+   "place": {
+    "en": "Piyaphon village (off Mueang Daeng Road)",
+    "th": "หมู่บ้านปิยะพร ถนนเหมืองแดง"
+   },
+   "tambon": {
+    "en": "Mae Sai",
+    "th": "แม่สาย"
+   },
+   "tambon_note": "A municipal page places the village in moo 13; the article itself names no moo.",
+   "point": {
+    "lat": 20.433,
+    "lon": 99.8975
+   },
+   "location_confidence": "medium",
+   "location_tolerance_m": 400,
+   "location_basis": "Point is the centroid of the OpenStreetMap streets Piyaphon 1-5 (20.4300-20.4374 N, 99.8968-99.8983 E); the village runs about 800 m north to south, so allow about 400 m.",
+   "depth": {
+    "kind": "class",
+    "lower_bound_m": null,
+    "upper_m": null,
+    "class": "chest_deep",
+    "statement": {
+     "en": "A resident told The Reporters that on the day the water came (10 Sep) she waded home through very fast, chest-deep water and nearly did not make it (no number given). On 13 Sep some areas were still flooded and passable only in high vehicles (no depth given).",
+     "th": "ผู้อยู่อาศัยคนหนึ่งเล่ากับ The Reporters ว่าในวันที่น้ำมา (10 ก.ย.) เธอลุยน้ำที่ไหลแรงมากระดับอกกลับบ้านและเกือบไม่รอด (ไม่ระบุตัวเลข) ถึงวันที่ 13 ก.ย. บางพื้นที่ยังมีน้ำท่วม ผ่านได้เฉพาะรถยกสูง (ไม่ระบุความลึก)"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "10 Sep 2024 for the chest-deep water (reported 13 Sep 11:32 ICT)",
+     "th": "10 ก.ย. 2567 (2024) สำหรับน้ำระดับอก (รายงานเมื่อ 13 ก.ย. เวลา 11:32 น.)"
+    },
+    "window_start": "2024-09-10T00:00:00+07:00",
+    "window_end": "2024-09-11T00:00:00+07:00",
+    "window_basis": "The resident dates the water to 10 Sep without a time, so the window is that whole day."
+   },
+   "event_date_basis": "Report filed 13 Sep 2024; the resident dates the arrival of the water to 10 Sep.",
+   "source": {
+    "title": "หมู่บ้านปิยะพร อ.แม่สาย น้ำลดแล้ว ชาวบ้านเริ่มทำความสะอาด",
+    "publisher": "The Reporters",
+    "url": "https://today.line.me/th/v3/article/gzPko2G",
+    "published": "2024-09-13T11:32:00+07:00",
+    "language": "th",
+    "read_via": "LINE Today"
+   },
+   "checker_corrections": "The resident waded home herself, not a neighbour. The residual flooding of 13 Sep is in some areas, not on named stretches of Mueang Daeng Road, which is the village's address. The article names no moo."
+  },
+  {
+   "id": "ms-c2-23",
+   "statement_id": "ms-c2-23",
+   "place": {
+    "en": "Mae Sai town (unspecified spots)",
+    "th": "ตัวเมืองแม่สาย (ไม่ระบุจุด)"
+   },
+   "tambon": {
+    "en": "Mae Sai and Wiang Phang Kham (town area)",
+    "th": "แม่สายและเวียงพางคำ (เขตเมือง)"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "The report names only some spots in Mae Sai town, so no point is given.",
+   "depth": {
+    "kind": "range",
+    "lower_bound_m": 0.3,
+    "upper_m": 0.5,
+    "class": null,
+    "statement": {
+     "en": "Thai PBS says that from the morning of 12 Sep the water in Mae Sai began to fall, leaving 30-50 cm standing at some spots (range); residents began returning to check their property, and Ko Sai residents left the community that day, some wading out.",
+     "th": "ไทยพีบีเอสระบุว่าตั้งแต่เช้าวันที่ 12 ก.ย. น้ำในแม่สายเริ่มลดลง บางจุดยังมีน้ำขังลึก 30–50 ซม. (เป็นช่วง) ผู้อยู่อาศัยเริ่มกลับไปดูทรัพย์สิน และชาวเกาะทรายออกจากชุมชนในวันนั้น บางคนเดินลุยน้ำออกมา"
+    }
+   },
+   "source_kind": "eyewitness_or_journalist",
+   "time": {
+    "text": {
+     "en": "Morning of 12 Sep 2024 (article 12:57 ICT)",
+     "th": "เช้าวันที่ 12 ก.ย. 2567 (2024) (ข่าวเวลา 12:57 น.)"
+    },
+    "window_start": "2024-09-12T06:00:00+07:00",
+    "window_end": "2024-09-12T12:57:00+07:00",
+    "window_basis": "The article describes that morning, so the window runs from 06:00 to the article's time stamp."
+   },
+   "event_date_basis": "The article is dated 12 Sep 2024 (published 12:57) and describes that day.",
+   "source": {
+    "title": "ตาย 1 คนน้ำท่วมแม่สาย ผู้ตกค้างอ่อนแรงอดข้าว 3 วัน",
+    "publisher": "Thai PBS",
+    "url": "https://www.thaipbs.or.th/news/content/344112",
+    "published": "2024-09-12T12:57:00+07:00",
+    "language": "th"
+   },
+   "checker_corrections": ""
+  },
+  {
+   "id": "ms-c2-24",
+   "statement_id": "ms-c2-24",
+   "place": {
+    "en": "Ban Ko Sai (moo 7), Ban Mueang Daeng (moo 2) and Ban Mai Lung Khon (moo 10)",
+    "th": "บ้านเกาะทราย (หมู่ 7) บ้านเหมืองแดง (หมู่ 2) และบ้านไม้ลุงขน (หมู่ 10)"
+   },
+   "tambon": {
+    "en": "Mae Sai",
+    "th": "แม่สาย"
+   },
+   "tambon_note": null,
+   "point": null,
+   "location_confidence": "low",
+   "location_tolerance_m": null,
+   "location_basis": "The depth sentence follows a list of three villages where an army task force worked and is not tied to any one of them, so no point is given.",
+   "depth": {
+    "kind": "range",
+    "lower_bound_m": 0.5,
+    "upper_m": 0.6,
+    "class": null,
+    "statement": {
+     "en": "Describing an army task force's relief work in the three villages, Ch3Plus says the water was about 50-60 cm deep as soldiers moved belongings and three bedridden patients by motorboat, with some spots still hard to reach because of the current (range). The paragraph gives no time; it may describe an early stage and differs from the 1.5-3 m reports for the same communities.",
+     "th": "ช่อง 3 พลัสเล่าถึงงานช่วยเหลือของหน่วยทหารในสามหมู่บ้านนี้ว่าน้ำลึกราว 50–60 ซม. ขณะที่ทหารใช้เรือยนต์ขนย้ายข้าวของและผู้ป่วยติดเตียง 3 ราย บางจุดยังเข้าถึงยากเพราะกระแสน้ำ (เป็นช่วง) ย่อหน้านี้ไม่ระบุเวลา อาจเป็นช่วงแรกของน้ำท่วม และต่างจากรายงาน 1.5–3 ม. ของชุมชนเดียวกัน"
+    }
+   },
+   "source_kind": "unclear",
+   "time": {
+    "text": {
+     "en": "Not stated in the paragraph (article dated 11 Sep 2024)",
+     "th": "ย่อหน้านี้ไม่ระบุเวลา (ข่าวลงวันที่ 11 ก.ย. 2567 (2024))"
+    },
+    "window_start": null,
+    "window_end": null,
+    "window_basis": "The paragraph gives no time, so no window is set."
+   },
+   "event_date_basis": "Ch3Plus article dated 11 Sep 2024, summarising relief work during the 10-11 Sep flood; elsewhere it refers only to the day before.",
+   "source": {
+    "title": "แม่สายอ่วมหนัก! น้ำท่วมมิดบ้าน ต้องหนีขึ้นหลังคา โพสต์รอกู้ภัยช่วยเหลือ กลางน้ำเชี่ยวกราก",
+    "publisher": "Ch3Plus (Channel 3)",
+    "url": "https://ch3plus.com/news/social/morning/416422",
+    "published": "2024-09-11",
+    "language": "th"
+   },
+   "checker_corrections": "The paragraph names Ban Ko Sai (moo 7), Ban Mueang Daeng (moo 2) and Ban Mai Lung Khon (moo 10), all in Mae Sai; Sai Lom Joy is not in it. The time stays not stated in the paragraph."
+  }
+ ],
+ "left_out": {
+  "dropped": [
+   {
+    "id": "ms-c2-03",
+    "place": "Sai Lom Joy border market",
+    "url": "https://www.chiangraitimes.com/chiangrai/raiextreme-flooding-mae-sai/",
+    "reason": "The page shows no publication date within 10-13 Sep 2024, and its 2 m figure repeats ms-c2-02."
+   },
+   {
+    "id": "ms-c2-05",
+    "place": "Riverside locations around Sai Lom Joy market",
+    "url": "https://www.bangkokpost.com/thailand/general/2862876/busy-mae-sai-border-market-flooded-out",
+    "reason": "The article sits behind a paywall and could not be read; only search summaries were seen."
+   },
+   {
+    "id": "ms-c2-21",
+    "place": "Ban Tham Pha Chom (mud traces left in houses)",
+    "url": "https://www.thaipbs.or.th/news/content/344278",
+    "reason": "Published 17 Sep 2024, outside the window, and it describes mud deposits rather than a water depth."
+   }
+  ],
+  "excluded_count": 24,
+  "excluded_reasons": [
+   "another flood: August 2024, early October 2024, 2025 or 2022",
+   "a place outside Mae Sai district (Tachileik, Mueang Chiang Rai or the Golden Triangle)",
+   "a river stage, a rate of rise, mud thickness or a flood extent rather than a depth at a named place",
+   "no place named, or a source that could not be opened to check the wording"
+  ]
+ }
+}

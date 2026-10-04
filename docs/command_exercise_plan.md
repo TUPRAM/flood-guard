@@ -16,6 +16,26 @@ Build notes that follow from the decisions (set by the build brief, not by the o
 - The Studio replay component is not reshaped. Three small map helpers and their popup styles move to a shared file (`apps/web/src/components/mae-sai-map-kit.tsx`), as section 11 describes.
 - Five phrases of the plan were reworded on 5 Oct 2026 so that the shared wording lint can scan this file (`tests/test_replay_wording_lint.py` lists it). The meaning is unchanged: the banner note in section 1, "location tolerance" in section 6, "sit in neutral chips" in section 8, "to the day" in section 9 and "a callsign rule" in the critic's list. The local folder name in the opening paragraph was replaced by the branch name, because the project rules keep local paths out of the repo.
 
+## Build status
+
+**Stage 1 (5 Oct 2026): the shell and the map, at `/command/exercise/`.** Built: regions A, B1, C, E, F, G, H and I of section 3. B2 is a reserved card and D is not built. Files, under `apps/web/src/`:
+
+- `app/command/exercise/page.tsx` (the route);
+- `components/mae-sai-command-exercise.tsx` with its style sheet (the shell), `mae-sai-command-map.tsx`, `mae-sai-command-situation.tsx` (B1), `mae-sai-command-timebar.tsx` (F) and `mae-sai-command-chrome.tsx` (banner, drawer, navigation, tools, legend, credits, notice, help);
+- `lib/flood-timeline-command-replay.ts` (replay state, keys, the hour in the address), `flood-timeline-command-map.ts` (water tones, label points, veil, scale bar) and `flood-timeline-command-data.ts` (loader);
+- `clearRect` in `lib/flood-timeline-layout.ts`, beside `popupFit`: the clear rectangle that every fit, zoom and popup uses.
+
+Where the build differs from the plan:
+
+- **Sizes.** At 1440 x 800 the clock card is 213 px tall in English and 264 px in Thai, not 164 px. It carries the "Model · low confidence" tag and a fixed two-line slot for the "what changed" line and the model-limit chip, so that no panel moves while the replay plays. The table card takes the rest of the column: 423 px in English and 372 px in Thai.
+- **Water outside the district is not drawn.** The terrain grid reaches past the eight subdistricts. The water layer and the terrain shading are clipped to them, so the veil reads "not modelled" everywhere outside.
+- **The replay hour** stands beside the card's label, not beside the replay time: the Thai replay time needs the whole line.
+- **The town view** of the fit tool is the located place records and the command centre, with about 500 m around them.
+- **Start hour.** Without an hour in the address the page opens on 10 Sep 12:00 (replay hour 36), the midday before the river rises.
+- **Legend.** It lists what the map draws. The r4 data holds no road outside the model and no reported site in modelled water, so those two entries stay out until the data has them.
+
+Not in this stage: the page is not in the offline list, the route swap of section 11 is not done, the event buttons stop at the phase starts and the peak hour only, and find-a-place is a disabled button.
+
 Prepared 4 Oct 2026 for Putu and Rachmania; corrected by the critic the same day. The repo was read only on the branch `claude/unify-lineages`, in a local checkout; nothing was edited, built or run. All paths below are relative to the repo root.
 
 Terms used in this plan:

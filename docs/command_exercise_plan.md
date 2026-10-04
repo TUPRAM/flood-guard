@@ -36,6 +36,38 @@ Where the build differs from the plan:
 
 Not in this stage: the page is not in the offline list, the route swap of section 11 is not done, the event buttons stop at the phase starts and the peak hour only, and find-a-place is a disabled button.
 
+**Stage 2 (5 Oct 2026): the subdistrict table, the inspector and the find-place box.** Built: region B2 (section 5), region D with its "Detail" tab, and the find-place box of the tool rail. The "Known by now" tab is a placeholder until stage 3. Files, under `apps/web/src/`:
+
+- `components/mae-sai-command-queue.tsx` with its style sheet (B2: the controls, the table, its footer, and on a tablet the tabs of the left column);
+- `components/mae-sai-command-inspector.tsx` with its style sheet (D: the card, its chip, the inspector of a subdistrict, one card per protocol case);
+- `components/mae-sai-command-find.tsx` with its style sheet (the find-place box);
+- `lib/flood-timeline-command-table.ts` (the rows as the table prints them, the hold of the order, the plan cells read from an overlay, the figures of one subdistrict, the find-place index);
+- `ACTION_TEXT` is exported from `components/command-workspace.tsx`, unchanged.
+
+What the table and the inspector do:
+
+- The left group is this hour's count: place in the hour's order, Thai name with the romanised name under it, residents who lost shelter access with a thin bar and the change since the hour before, residents in modelled water, the "+" mark and the count of located place records. The bar has one fixed scale of 10,000 residents for the whole replay and for both shelter sets.
+- The right group reads two optional files, `apps/web/public/planning-overlays/mae-sai-2024/o1.json` and `se1.json`, with `parsePlanningAssessmentOverlay`. Neither exists, so every chip is a dash and the footer of the table says "Not issued yet". A file is used only when the parser accepts it, it is a portfolio case, it is the case asked for and its publication level is public. The E11 fixture is refused by that reader and is used in tests only, on invented rows.
+- The order of the rows is held while the pointer or keyboard focus is in the table, or the time thumb is dragged. The head of the table then shows "Order held" and a slim dark bar.
+- Selecting a row outlines the subdistrict, fits it inside the clear rectangle and opens the inspector. Escape clears the selection. The legend and the right card are one panel group: opening one closes the other.
+- The find-place box searches the names the replay data holds: 8 subdistricts, 19 reported sites, the places of the 21 place records, 26 named facilities and 6 named roads.
+
+Where stage 2 differs from the plan:
+
+- **Row heights.** The clock card is taller than the plan's 164 px, so the rows cannot be 50 px at 1440 x 800. On a mouse the eight rows share the height of the card: 42 px in English and 39 px in Thai at 1440 x 800, up to 50 px where there is room, never under 33 px. On a touch screen and on a tablet they are 44 px and the table scrolls inside its card.
+- **Controls behind a button on a short screen.** On a screen up to 840 px tall and on a tablet, the three controls start behind the options button in the head of the table, so the eight rows and the footer fit. On a taller desktop they are open.
+- **The clock card** gives the table a few pixels on a short screen, and its first figure has a wider column in Thai: 201 px tall in English and 219 px in Thai at 1440 x 800.
+- **"Not issued yet"** stands in the footer of the table, and every dash chip says it on hover and to a screen reader. The plan group is 112 px wide and has no room for the words.
+- **The "+" mark** is on every row where more than half of the residents had no shelter of the set in reach before the flood. With the 2024 set that is six rows, not only the four the plan names.
+- **Ordering by planning** is switched off until the chosen case gives a unit a planning position.
+- **Several rows for one unit.** A unit with one row per flood input shows the row of the first flood input in the protocol's order; the card counts the others.
+- **The planning score** of a row is printed in its inspector card only, with the tier, the protocol versions and the anchors.
+- **The O1 chip is amber**, as the protocol's display rule says. Everywhere else on the page amber is for wet roads and the exercise tag.
+- **Place records in the inspector** are all the located records of the subdistrict. They do not follow the replay hour yet: trainee mode arrives with stage 3. No record carries a "plea" tag (owner decision 4).
+- **Find-place** lists at most six names and leaves out the candidate sites, which the map does not draw yet.
+
+Known side effects: the two overlay files do not exist, so a browser shows two "404" lines in its console on every load of the page; and importing `ACTION_TEXT` brings the module of the Command workspace into this page's bundle.
+
 Prepared 4 Oct 2026 for Putu and Rachmania; corrected by the critic the same day. The repo was read only on the branch `claude/unify-lineages`, in a local checkout; nothing was edited, built or run. All paths below are relative to the repo root.
 
 Terms used in this plan:

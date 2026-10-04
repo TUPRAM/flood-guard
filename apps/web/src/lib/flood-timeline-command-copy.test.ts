@@ -23,19 +23,35 @@ import { buildCommandModel, changeSinceHourBefore, districtFiguresAt } from "./f
 import {
   COMMAND_BANNER,
   COMMAND_CLOCK,
+  COMMAND_CREDITS,
   COMMAND_DRAWER,
   COMMAND_DRAWER_NOT,
+  COMMAND_DRAWER_SOURCES,
+  COMMAND_FACILITY_TYPES,
   COMMAND_FIGURES,
+  COMMAND_HELP,
+  COMMAND_HELP_KEYS,
   COMMAND_LANE_OF,
   COMMAND_LANE_ORDER,
   COMMAND_LANES,
+  COMMAND_LEGEND,
+  COMMAND_MAP,
+  COMMAND_NAV,
+  COMMAND_PHASE_SHORT,
+  COMMAND_SITUATION,
+  COMMAND_SPEED_COPY,
+  COMMAND_TIMEBAR,
+  COMMAND_TOOLS,
   commandBannerLine,
   commandBannerParts,
   commandBaseText,
   commandChangeLine,
   commandDataLine,
+  commandDayLabel,
   commandDrawerHeading,
+  commandFacilityType,
   commandFigureCells,
+  commandFocusFigures,
   commandHourOf,
   commandHourShort,
   commandLaneMeaning,
@@ -45,11 +61,16 @@ import {
   commandMomentShort,
   commandOpenItems,
   commandPhaseLine,
+  commandPhaseShortLine,
   commandPlaceRecordLine,
   commandRoadList,
+  commandScaleLabel,
+  commandSliderText,
+  commandSourceSpan,
   commandStageText,
   commandText,
 } from "./flood-timeline-command-copy";
+import { COMMAND_SPEEDS } from "./flood-timeline-command-replay";
 import { localizedText } from "./flood-timeline-copy";
 import { parseAccessNodes } from "./flood-timeline-evacuation";
 import { describeWordingFindings, findWordingViolations, REPLAY_WORDING_RULES } from "./replay-wording-lint";
@@ -65,12 +86,23 @@ const LANGUAGES: readonly Language[] = ["en", "th"];
 const THAI = /[฀-๿]/;
 const THAI_DIGIT = /[๐-๙]/;
 const EMOJI = /\p{Extended_Pictographic}/u;
+/** A Thai entry may end with the full stop of a unit ("ชม." for hours); a sentence never ends with one. */
+const THAI_UNIT_END = /(?:ชม|กม|ม|น)\.$/;
 
 /** Every `{ en, th }` entry of the copy, with a name for the failure message. */
 function entries(): { name: string; text: Localized }[] {
-  const blocks: Record<string, Record<string, Localized>> = { COMMAND_BANNER, COMMAND_CLOCK, COMMAND_FIGURES, COMMAND_DRAWER };
+  const blocks: Record<string, Record<string, Localized>> = {
+    COMMAND_BANNER, COMMAND_CLOCK, COMMAND_FIGURES, COMMAND_DRAWER,
+    // The shell: the situation card, the navigation, the map tools, the time bar, the legend, the map and the help sheet.
+    COMMAND_SITUATION, COMMAND_NAV, COMMAND_TOOLS, COMMAND_TIMEBAR, COMMAND_LEGEND, COMMAND_MAP, COMMAND_HELP, COMMAND_DRAWER_SOURCES,
+    COMMAND_PHASE_SHORT, COMMAND_FACILITY_TYPES,
+  };
   return [
     ...Object.entries(blocks).flatMap(([block, items]) => Object.entries(items).map(([key, text]) => ({ name: `${block}.${key}`, text }))),
+    ...Object.entries(COMMAND_SPEED_COPY).flatMap(([speed, copy]) => [
+      { name: `COMMAND_SPEED_COPY.${speed}.short`, text: copy.short },
+      { name: `COMMAND_SPEED_COPY.${speed}.meaning`, text: copy.meaning },
+    ]),
     ...COMMAND_LANE_ORDER.flatMap((lane) => [
       { name: `COMMAND_LANES.${lane}.tag`, text: COMMAND_LANES[lane].tag },
       { name: `COMMAND_LANES.${lane}.meaning`, text: COMMAND_LANES[lane].meaning },
@@ -94,6 +126,15 @@ function builtLines(language: Language): string[] {
     ...changes.map((change) => commandChangeLine(change, hourText(change.sinceHour), language).text),
     ...(["assumptions", "limits", "sources"] as const).map((list) => commandDrawerHeading(list, 4, language)),
     commandDataLine("r4", "3 Oct 2026", "3–19 Sep 2024", language),
+    // The shell's built lines: the collapsed situation line, the narrow phase line, the day chips, the slider text,
+    // the scale bar and the span of the sources.
+    ...[0, 84, 200].map((hour) => commandFocusFigures(districtFiguresAt(model, hour), language)),
+    ...manifest.phases.map((phase) => commandPhaseShortLine(phase.label, 3.5, language)),
+    ...manifest.days.map((day) => commandDayLabel(day.date, language)),
+    ...[0, 84, 264].map((hour) => commandSliderText(hour, language)),
+    ...[200, 1000, 5000].map((metres) => commandScaleLabel(metres, language)),
+    commandSourceSpan(manifest.source_timestamp, language),
+    ...Object.keys(COMMAND_FACILITY_TYPES).map((type) => commandFacilityType(type, language)),
   ];
 }
 
@@ -109,7 +150,7 @@ describe("Command exercise copy", () => {
 
   it("has an English and a Thai text for every entry, in Western digits, without emoji or stray spaces", () => {
     const all = entries();
-    expect(all.length).toBeGreaterThanOrEqual(69);
+    expect(all.length).toBeGreaterThanOrEqual(190);
     for (const { name, text } of all) {
       expect(Object.keys(text).sort(), name).toEqual(["en", "th"]);
       for (const language of LANGUAGES) {
@@ -122,7 +163,7 @@ describe("Command exercise copy", () => {
       }
       expect(text.th, name).toMatch(THAI);
       // Thai sentences carry no full stop.
-      expect(text.th, name).not.toMatch(/\.$/);
+      if (!THAI_UNIT_END.test(text.th)) expect(text.th, name).not.toMatch(/\.$/);
       if (name !== "COMMAND_BANNER.watermark") expect(text.en, name).not.toMatch(THAI);
     }
     expect(commandText(COMMAND_CLOCK.label, "th")).toBe("เวลาในการย้อนดู");
@@ -284,5 +325,75 @@ describe("Command lane tags", () => {
     for (const code of codes) expect(COMMAND_LANES[COMMAND_LANE_OF[code as keyof typeof COMMAND_LANE_OF]], code).toBeDefined();
     expect(COMMAND_LANE_OF.SCN).toBe("model");
     expect(COMMAND_LANE_OF["SCN-ENV"]).toBe("scenario");
+  });
+});
+
+describe("Command shell wording", () => {
+  it("names the three sections of the site, with this page as the exercise", () => {
+    expect([COMMAND_NAV.public.en, COMMAND_NAV.command.en, COMMAND_NAV.studio.en]).toEqual(["Public", "Command (exercise)", "Studio"]);
+    expect([COMMAND_NAV.public.th, COMMAND_NAV.command.th, COMMAND_NAV.studio.th]).toEqual(["ประชาชน", "ฝึกซ้อมสั่งการ", "สตูดิโอ"]);
+    // The language button is named in the language it switches to.
+    expect(COMMAND_NAV.switchLanguage).toEqual({ en: "Switch to Thai", th: "เปลี่ยนเป็นภาษาอังกฤษ" });
+  });
+
+  it("labels the time bar: the three speeds, the eleven days and the part of the track after the playhead", () => {
+    expect(Object.keys(COMMAND_SPEED_COPY)).toEqual(COMMAND_SPEEDS.map((speed) => speed.id));
+    expect(Object.values(COMMAND_SPEED_COPY).map((copy) => copy.meaning.en)).toEqual([
+      "1 replay hour per second", "4 replay hours per second", "Drill speed: 1 replay hour per minute",
+    ]);
+    expect(Object.values(COMMAND_SPEED_COPY).map((copy) => copy.short.en)).toEqual(["1 h/s", "4 h/s", "Drill"]);
+    expect(COMMAND_TIMEBAR.notYetKnown).toEqual({ en: "not yet known at this hour", th: "ยังไม่ทราบ ณ ชั่วโมงนี้" });
+    expect(manifest.days.map((day) => commandDayLabel(day.date, "en"))).toEqual([9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map((day) => `Go to ${day} Sep`));
+    expect(commandDayLabel("2024-09-12", "th")).toBe("ไปยังวันที่ 12 ก.ย.");
+    expect(commandSliderText(84, "en")).toBe("12 Sep 2024 · 12:00 ICT, hour 84 of 264");
+    // Every phase of the replay data has a short name for a narrow band.
+    expect(Object.keys(COMMAND_PHASE_SHORT).sort()).toEqual(manifest.phases.map((phase) => phase.id).sort());
+    for (const phase of manifest.phases) expect(COMMAND_PHASE_SHORT[phase.id].en.length).toBeLessThanOrEqual(phase.label.en.length + 2);
+  });
+
+  it("prints the collapsed situation line, the narrow phase line and the model-limit chip", () => {
+    expect(commandFocusFigures(districtFiguresAt(model, 84), "en")).toBe("~7,100 lost access · ~16,100 in water");
+    expect(commandFocusFigures(districtFiguresAt(model, 84), "th")).toBe("~7,100 สูญเสียการเข้าถึง · ~16,100 ในน้ำ");
+    expect(commandFocusFigures(districtFiguresAt(model, 0), "en")).toBe("0 lost access · 0 in water");
+    const peak = manifest.phases.find((phase) => phase.id === "peak")!;
+    expect(commandPhaseShortLine(peak.label, 3.5, "en")).toBe("Peak · assumed stage 3.5 m");
+    expect(commandPhaseShortLine(peak.label, 3.5, "th")).toBe("ระดับสูงสุด · ระดับสมมุติ 3.5 ม.");
+    // The chip is the short form of the model limit the replay data states.
+    expect(COMMAND_SITUATION.modelLimitShort.en).toBe("Model limit: standing water and mud are not reconstructed");
+    expect(COMMAND_FIGURES.modelLimit.en).toContain("standing water and mud are not reconstructed");
+    expect(manifest.limitations.join(" ")).toContain("is not reconstructed");
+  });
+
+  it("keys the legend to the 0.3 m depth of the replay data and says what is not modelled", () => {
+    expect(manifest.impassable_depth_m).toBe(0.3);
+    expect([COMMAND_LEGEND.shallow.en, COMMAND_LEGEND.deep.en]).toEqual(["under 0.3 m", "0.3 m or more"]);
+    expect([COMMAND_LEGEND.roadDry.en, COMMAND_LEGEND.roadWet.en, COMMAND_LEGEND.roadImpassable.en, COMMAND_LEGEND.roadUnmodelled.en]).toEqual([
+      "dry", "wet, under 0.3 m", "impassable", "not modelled",
+    ]);
+    expect(COMMAND_LEGEND.note.en).toBe("Model, low confidence. Bridge decks and the current are not modelled.");
+    expect(COMMAND_MAP.outside).toEqual({ en: "outside the district · not modelled", th: "นอกเขตอำเภอ · ไม่ได้จำลอง" });
+    // A reported shelter is never called surveyed, and the command centre is never called a shelter.
+    expect(COMMAND_MAP.reported.en).toBe("Reported, not surveyed");
+    expect(COMMAND_MAP.commandCentre.en).toContain("not a shelter");
+    expect(COMMAND_CREDITS.osm).toBe("© OpenStreetMap contributors");
+  });
+
+  it("prints the scale and the span of the sources", () => {
+    expect([commandScaleLabel(200, "en"), commandScaleLabel(1000, "en"), commandScaleLabel(5000, "th"), commandScaleLabel(500, "th")]).toEqual(["200 m", "1 km", "5 กม.", "500 ม."]);
+    expect(commandSourceSpan(manifest.source_timestamp, "en")).toBe("3–19 Sep 2024");
+    expect(commandSourceSpan(manifest.source_timestamp, "th")).toBe("3–19 ก.ย. 2567 (2024)");
+    expect(commandSourceSpan("2024-08-30T00:00:00Z/2024-09-19T17:00:00Z", "en")).toBe("30 Aug – 19 Sep 2024");
+    expect(commandSourceSpan("2021 release", "en")).toBe("2021 release");
+  });
+
+  it("lists the keys of the page in the help sheet and names the official hotlines", () => {
+    expect(COMMAND_HELP_KEYS.map((row) => row.keys.join(" "))).toEqual(["Space", "← →", "Shift ← →", "[ ]", "F", "?", "Esc"]);
+    for (const row of COMMAND_HELP_KEYS) expect(COMMAND_HELP[row.text], row.text).toBeDefined();
+    for (const number of ["1784", "1669", "191"]) {
+      expect(COMMAND_HELP.hotlines.en).toContain(number);
+      expect(COMMAND_HELP.hotlines.th).toContain(number);
+    }
+    expect(commandFacilityType("school", "th")).toBe("โรงเรียน");
+    expect(commandFacilityType("unknown_kind", "en")).toBe("unknown_kind");
   });
 });

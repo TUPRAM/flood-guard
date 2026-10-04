@@ -113,3 +113,97 @@ export function tipReducer(state: TipState, event: TipEvent): TipState {
 
 /** A tooltip shows while the pointer is over its term or the term has focus. */
 export const tipOpen = (state: TipState): boolean => state.hover || state.focus;
+
+// --- The clear rectangle of a map that lies under floating panels (the Command exercise replay) ---------------
+
+/** A rectangle in the pixel coordinates of the map container; `right` and `bottom` are edges, not sizes. */
+export interface ScreenRect { left: number; top: number; right: number; bottom: number }
+
+/** How close the clear rectangle may come to the map edge, and to a panel. */
+export const CLEAR_MARGIN_PX = 12;
+export const CLEAR_GAP_PX = 12;
+/** A clear rectangle smaller than this is not used: the map falls back to its own edges less the margin. */
+export const CLEAR_MIN_PX = { width: 160, height: 120 } as const;
+
+export interface ClearRectOptions { margin?: number; gap?: number; minWidth?: number; minHeight?: number }
+
+const rectArea = (rect: ScreenRect): number => Math.max(0, rect.right - rect.left) * Math.max(0, rect.bottom - rect.top);
+const rectsOverlap = (a: ScreenRect, b: ScreenRect): boolean => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+/**
+ * The part of a full-screen map that no panel covers, as one rectangle: every pan, fit and popup of the Command
+ * exercise replay stays inside it, so a selected thing is never under a panel.
+ *
+ * `panels` are the measured boxes of the panels drawn over the map (in the map container's coordinates; a hidden
+ * panel is left out or has no area). Starting from the map less `margin`, each panel that still reaches into the
+ * rectangle takes one side of it away, `gap` clear of the panel: the side whose loss leaves the most map. Panels are
+ * taken largest first, so the result does not depend on their order. When the panels leave less than the minimum
+ * size, the map less its margin is returned.
+ */
+export function clearRect(map: { width: number; height: number }, panels: readonly ScreenRect[], options: ClearRectOptions = {}): ScreenRect {
+  const margin = options.margin ?? CLEAR_MARGIN_PX;
+  const gap = options.gap ?? CLEAR_GAP_PX;
+  const base: ScreenRect = { left: margin, top: margin, right: Math.max(margin, map.width - margin), bottom: Math.max(margin, map.height - margin) };
+  let rect = base;
+  const ordered = panels
+    .filter((panel) => panel.right > panel.left && panel.bottom > panel.top)
+    .map((panel, index) => ({ panel, index }))
+    .sort((a, b) => rectArea(b.panel) - rectArea(a.panel) || a.index - b.index);
+  for (const { panel } of ordered) {
+    // The panel with its gap; a panel that only touches the rectangle through its gap still moves the edge.
+    const padded: ScreenRect = { left: panel.left - gap, top: panel.top - gap, right: panel.right + gap, bottom: panel.bottom + gap };
+    if (!rectsOverlap(rect, padded)) continue;
+    const cuts: ScreenRect[] = [
+      { ...rect, left: Math.max(rect.left, padded.right) },
+      { ...rect, right: Math.min(rect.right, padded.left) },
+      { ...rect, top: Math.max(rect.top, padded.bottom) },
+      { ...rect, bottom: Math.min(rect.bottom, padded.top) },
+    ];
+    rect = cuts.reduce((best, cut) => (rectArea(cut) > rectArea(best) ? cut : best));
+  }
+  const tooSmall = rect.right - rect.left < (options.minWidth ?? CLEAR_MIN_PX.width) || rect.bottom - rect.top < (options.minHeight ?? CLEAR_MIN_PX.height);
+  return tooSmall ? base : rect;
+}
+
+/** Leaflet paddings (`paddingTopLeft`, `paddingBottomRight`) that keep a fit or a pan inside a clear rectangle. */
+export function clearRectPadding(rect: ScreenRect, map: { width: number; height: number }): { paddingTopLeft: [number, number]; paddingBottomRight: [number, number] } {
+  const whole = (value: number) => Math.max(0, Math.round(value));
+  return {
+    paddingTopLeft: [whole(rect.left), whole(rect.top)],
+    paddingBottomRight: [whole(map.width - rect.right), whole(map.height - rect.bottom)],
+  };
+}
+
+/**
+ * How far the map must be panned (pixels, as Leaflet's `panBy` takes them) so that a point of the map container
+ * lies inside `rect`, at least `inset` from its edges. `{ x: 0, y: 0 }` when the point already does. A rectangle
+ * narrower than twice the inset brings the point to its middle.
+ */
+export function panIntoRect(point: { x: number; y: number }, rect: ScreenRect, inset = 0): { x: number; y: number } {
+  const along = (value: number, low: number, high: number): number => {
+    const from = low + inset;
+    const to = high - inset;
+    if (from > to) return value - (low + high) / 2;
+    if (value < from) return value - from;
+    if (value > to) return value - to;
+    return 0;
+  };
+  // Panning by a positive x moves the map content to the left: a point right of the rectangle needs a positive pan.
+  return { x: Math.round(along(point.x, rect.left, rect.right)) || 0, y: Math.round(along(point.y, rect.top, rect.bottom)) || 0 };
+}
+
+/**
+ * Leaflet popup options that keep a popup inside a clear rectangle: the popup body is capped so that popup, chrome
+ * and tip fit in it, and the auto-pan paddings are the panels around it.
+ */
+export function popupFitInRect(rect: ScreenRect, map: { width: number; height: number }, preferredWidth: number): PopupFit {
+  const { paddingTopLeft, paddingBottomRight } = clearRectPadding(rect, map);
+  const width = Math.floor(rect.right - rect.left - POPUP_CHROME_PX.x);
+  const height = Math.floor(rect.bottom - rect.top - POPUP_CHROME_PX.y);
+  return {
+    maxWidth: Math.max(POPUP_MIN_WIDTH_PX, Math.min(preferredWidth, width)),
+    maxHeight: Math.max(POPUP_MIN_HEIGHT_PX, Math.min(POPUP_MAX_HEIGHT_PX, height)),
+    autoPanPaddingTopLeft: paddingTopLeft,
+    autoPanPaddingBottomRight: paddingBottomRight,
+  };
+}

@@ -436,3 +436,243 @@ export const COMMAND_DRAWER_NOT: readonly (keyof typeof COMMAND_DRAWER)[] = ["no
 
 /** A copy entry in the page language. */
 export const commandText = pick;
+
+// --- The shell: navigation, tools, time bar, legend, notices and help -------------------------------------
+
+/** The situation card (clock and figures) beyond the figures themselves, and the card reserved under it. */
+export const COMMAND_SITUATION = {
+  label: { en: "Situation at the replay hour", th: "สถานการณ์ ณ ชั่วโมงของการย้อนดู" },
+  /** The model-limit chip of the Receding and Mostly receded phases; the full sentence is `COMMAND_FIGURES.modelLimit`. */
+  modelLimitShort: { en: "Model limit: standing water and mud are not reconstructed", th: "ข้อจำกัดของแบบจำลอง: ไม่ได้จำลองน้ำท่วมขังและโคลน" },
+  exerciseSlot: { en: "exercise items", th: "รายการฝึกซ้อม" },
+  tableTitle: { en: "Subdistrict table", th: "ตารางรายตำบล" },
+  tableSoon: { en: "The table of the eight subdistricts is not built yet", th: "ยังไม่ได้จัดทำตารางของ 8 ตำบล" },
+  loading: { en: "Loading the replay data", th: "กำลังโหลดข้อมูลการย้อนดู" },
+  error: { en: "The replay data could not be loaded", th: "โหลดข้อมูลการย้อนดูไม่สำเร็จ" },
+  retry: { en: "Try again", th: "ลองอีกครั้ง" },
+} as const satisfies Record<string, Localized>;
+
+/** The collapsed situation line of focus mode: "~7,100 lost access · ~16,100 in water". */
+export function commandFocusFigures(figures: Pick<CommandFigures, "lostAccess" | "inWater">, language: Language): string {
+  return `${roundModelFigure(figures.lostAccess).text} ${pick(COMMAND_FIGURES.changeLost, language)} · ${roundModelFigure(figures.inWater).text} ${pick(COMMAND_FIGURES.changeWater, language)}`;
+}
+
+/** "Peak · stage 3.5 m": the phase line of a narrow card. */
+export function commandPhaseShortLine(phaseLabel: Localized, stage: number, language: Language): string {
+  return `${pick(phaseLabel, language)} · ${language === "th" ? "ระดับสมมุติ" : "assumed stage"} ${commandStageText(stage, language)}`;
+}
+
+export const COMMAND_NAV = {
+  label: { en: "Sections of the site", th: "ส่วนต่าง ๆ ของเว็บไซต์" },
+  public: { en: "Public", th: "ประชาชน" },
+  command: { en: "Command (exercise)", th: "ฝึกซ้อมสั่งการ" },
+  studio: { en: "Studio", th: "สตูดิโอ" },
+  studioHint: { en: "Open the Studio replay at this replay hour", th: "เปิดหน้าย้อนดูในสตูดิโอที่ชั่วโมงเดียวกันนี้" },
+  switchLanguage: { en: "Switch to Thai", th: "เปลี่ยนเป็นภาษาอังกฤษ" },
+  help: { en: "Help and keys", th: "วิธีใช้และปุ่มลัด" },
+  menu: { en: "Menu", th: "เมนู" },
+  skip: { en: "Skip to the replay controls", th: "ข้ามไปยังตัวควบคุมการย้อนดู" },
+} as const satisfies Record<string, Localized>;
+
+export const COMMAND_TOOLS = {
+  label: { en: "Map tools", th: "เครื่องมือแผนที่" },
+  view: { en: "Map view", th: "มุมมองแผนที่" },
+  viewTitle: { en: "What the map shows", th: "สิ่งที่แสดงบนแผนที่" },
+  rescue: { en: "Rescue view", th: "มุมมองกู้ภัย" },
+  rescueNote: { en: "Modelled water, roads, reported shelters and the command centre", th: "น้ำตามแบบจำลอง ถนน ที่พักพิงตามรายงาน และศูนย์บัญชาการ" },
+  evidence: { en: "Evidence view", th: "มุมมองหลักฐาน" },
+  evidenceNote: { en: "Not built yet: candidate sites, satellite images and the season envelope", th: "ยังไม่ได้จัดทำ: สถานที่ที่เป็นไปได้ ภาพถ่ายดาวเทียม และขอบเขตน้ำตลอดฤดู" },
+  facilities: { en: "Key facilities", th: "สถานที่สำคัญ" },
+  facilitiesNote: { en: "Schools, health, emergency service and community sites from OpenStreetMap", th: "โรงเรียน สถานพยาบาล หน่วยบริการฉุกเฉิน และสถานที่ชุมชน จาก OpenStreetMap" },
+  basemap: { en: "Basemap", th: "แผนที่ฐาน" },
+  basemapStreet: { en: "Grey street map", th: "แผนที่ถนนสีเทา" },
+  basemapTerrain: { en: "Terrain shading", th: "ภูมิประเทศแบบแสงเงา" },
+  zoomIn: { en: "Zoom in", th: "ขยายแผนที่" },
+  zoomOut: { en: "Zoom out", th: "ย่อแผนที่" },
+  fitTown: { en: "Show the town", th: "แสดงเขตเมืองแม่สาย" },
+  fitDistrict: { en: "Show the whole district", th: "แสดงทั้งอำเภอ" },
+  find: { en: "Find a place (not built yet)", th: "ค้นหาสถานที่ (ยังไม่ได้จัดทำ)" },
+  focusOn: { en: "Focus mode: more map, smaller panels", th: "โหมดเน้นแผนที่: ย่อแผงข้อมูลให้เห็นแผนที่มากขึ้น" },
+  focusOff: { en: "Leave focus mode", th: "ออกจากโหมดเน้นแผนที่" },
+  close: { en: "Close", th: "ปิด" },
+} as const satisfies Record<string, Localized>;
+
+export const COMMAND_TIMEBAR = {
+  label: { en: "Replay time controls", th: "ตัวควบคุมเวลาในการย้อนดู" },
+  play: { en: "Play", th: "เล่น" },
+  pause: { en: "Pause", th: "หยุดชั่วคราว" },
+  playAgain: { en: "Play again from the first hour", th: "เล่นใหม่ตั้งแต่ชั่วโมงแรก" },
+  previousEvent: { en: "Previous event", th: "เหตุการณ์ก่อนหน้า" },
+  nextEvent: { en: "Next event", th: "เหตุการณ์ถัดไป" },
+  back: { en: "Back one hour", th: "ย้อนกลับ 1 ชั่วโมง" },
+  forward: { en: "Forward one hour", th: "ไปข้างหน้า 1 ชั่วโมง" },
+  backShort: { en: "−1 h", th: "−1 ชม." },
+  forwardShort: { en: "+1 h", th: "+1 ชม." },
+  speed: { en: "Playback speed", th: "ความเร็วในการเล่น" },
+  days: { en: "Go to a day of September 2024", th: "ไปยังวันที่ในเดือนกันยายน 2567 (2024)" },
+  slider: { en: "Replay hour", th: "ชั่วโมงของการย้อนดู" },
+  notYetKnown: { en: "not yet known at this hour", th: "ยังไม่ทราบ ณ ชั่วโมงนี้" },
+  phases: { en: "Phases of the event", th: "ระยะของเหตุการณ์" },
+  rain: { en: "Rain per hour at two gauges (observed)", th: "ฝนรายชั่วโมงที่สถานีวัดฝน 2 แห่ง (ข้อมูลตรวจวัด)" },
+  rainShort: { en: "Rain mm/h · observed", th: "ฝน มม./ชม. · ตรวจวัด" },
+} as const satisfies Record<string, Localized>;
+
+/** Short label and full meaning of each playback speed. */
+export const COMMAND_SPEED_COPY: Readonly<Record<"hour_per_second" | "four_per_second" | "drill", { short: Localized; meaning: Localized }>> = {
+  hour_per_second: {
+    short: { en: "1 h/s", th: "1 ชม./วิ" },
+    meaning: { en: "1 replay hour per second", th: "1 ชั่วโมงของการย้อนดูต่อ 1 วินาที" },
+  },
+  four_per_second: {
+    short: { en: "4 h/s", th: "4 ชม./วิ" },
+    meaning: { en: "4 replay hours per second", th: "4 ชั่วโมงของการย้อนดูต่อ 1 วินาที" },
+  },
+  drill: {
+    short: { en: "Drill", th: "ฝึกซ้อม" },
+    meaning: { en: "Drill speed: 1 replay hour per minute", th: "ความเร็วฝึกซ้อม: 1 ชั่วโมงของการย้อนดูต่อ 1 นาที" },
+  },
+};
+
+/** Phase names short enough for a narrow band; the manifest's own label is used where there is room. */
+export const COMMAND_PHASE_SHORT: Readonly<Record<string, Localized>> = {
+  dry: { en: "Dry", th: "ปกติ" },
+  onset: { en: "Onset", th: "เริ่มท่วม" },
+  peak: { en: "Peak", th: "สูงสุด" },
+  receding: { en: "Receding", th: "น้ำลด" },
+  gone: { en: "Mostly receded", th: "ลดเกือบหมด" },
+};
+
+/** "Go to 12 Sep" / "ไปยังวันที่ 12 ก.ย.": the name of a day chip. */
+export function commandDayLabel(date: string, language: Language): string {
+  return language === "th" ? `ไปยังวันที่ ${formatShortDate(date, language)}` : `Go to ${formatShortDate(date, language)}`;
+}
+
+/** What the slider says to a screen reader: "12 Sep 2024 · 12:00 ICT, hour 84 of 264". */
+export function commandSliderText(hour: number, language: Language): string {
+  return `${commandMoment(hour, language)}, ${commandHourOf(hour, language)}`;
+}
+
+export const COMMAND_LEGEND = {
+  chip: { en: "Legend", th: "สัญลักษณ์" },
+  title: { en: "Legend", th: "คำอธิบายสัญลักษณ์" },
+  close: { en: "Close the legend", th: "ปิดคำอธิบายสัญลักษณ์" },
+  water: { en: "Modelled water", th: "น้ำตามแบบจำลอง" },
+  shallow: { en: "under 0.3 m", th: "ลึกไม่ถึง 0.3 เมตร" },
+  deep: { en: "0.3 m or more", th: "ลึก 0.3 เมตรขึ้นไป" },
+  lowConfidence: { en: "lowest confidence", th: "ความเชื่อมั่นต่ำที่สุด" },
+  veil: { en: "outside the district", th: "นอกเขตอำเภอ" },
+  roads: { en: "Roads (model)", th: "ถนน (แบบจำลอง)" },
+  roadDry: { en: "dry", th: "แห้ง" },
+  roadWet: { en: "wet, under 0.3 m", th: "มีน้ำ ไม่ถึง 0.3 เมตร" },
+  roadImpassable: { en: "impassable", th: "สัญจรไม่ได้" },
+  roadUnmodelled: { en: "not modelled", th: "ไม่ได้จำลอง" },
+  places: { en: "Places", th: "สถานที่" },
+  shelter: { en: "shelter reported in 2024", th: "ที่พักพิงตามรายงานปี 2567 (2024)" },
+  shelterWet: { en: "shelter, wet in the model", th: "ที่พักพิงที่มีน้ำตามแบบจำลอง" },
+  commandCentre: { en: "command centre (reported)", th: "ศูนย์บัญชาการ (ตามรายงาน)" },
+  facility: { en: "key facility", th: "สถานที่สำคัญ" },
+  facilityWet: { en: "facility in modelled water", th: "สถานที่สำคัญในน้ำตามแบบจำลอง" },
+  boundary: { en: "subdistrict boundary", th: "เขตตำบล" },
+  note: { en: "Model, low confidence. Bridge decks and the current are not modelled.", th: "แบบจำลอง ความเชื่อมั่นต่ำ ไม่ได้จำลองพื้นสะพานและกระแสน้ำ" },
+} as const satisfies Record<string, Localized>;
+
+export const COMMAND_MAP = {
+  label: { en: "Map of Mae Sai district at the replay hour", th: "แผนที่อำเภอแม่สาย ณ ชั่วโมงของการย้อนดู" },
+  outside: { en: "outside the district · not modelled", th: "นอกเขตอำเภอ · ไม่ได้จำลอง" },
+  waterError: {
+    en: "The water layer could not be loaded. The figures and the roads still follow the replay hour.",
+    th: "โหลดชั้นข้อมูลน้ำไม่สำเร็จ ตัวเลขและถนนยังเปลี่ยนตามชั่วโมงของการย้อนดู",
+  },
+  basemapFallback: { en: "Street map unavailable: showing terrain shading", th: "โหลดแผนที่ถนนไม่ได้ จึงแสดงภูมิประเทศแบบแสงเงาแทน" },
+  credits: { en: "Map credits and scale", th: "ที่มาของแผนที่และมาตราส่วน" },
+  shelter: { en: "Shelter reported in use in 2024", th: "ที่พักพิงที่มีรายงานว่าใช้ในปี 2567 (2024)" },
+  commandCentre: { en: "District incident command centre in 2024, not a shelter", th: "ศูนย์บัญชาการเหตุการณ์อำเภอ ปี 2567 (2024) ไม่ใช่ที่พักพิง" },
+  reported: { en: "Reported, not surveyed", th: "ตามรายงาน ไม่ได้สำรวจ" },
+  dryNow: { en: "Dry in the model at this replay hour", th: "แห้งตามแบบจำลอง ณ ชั่วโมงนี้ของการย้อนดู" },
+  wetNow: { en: "In modelled water at this replay hour", th: "อยู่ในน้ำตามแบบจำลอง ณ ชั่วโมงนี้ของการย้อนดู" },
+  notModelled: { en: "Outside the modelled area", th: "อยู่นอกพื้นที่ที่แบบจำลองครอบคลุม" },
+  counted: { en: "Counted in the access figures", th: "นับรวมในตัวเลขการเข้าถึง" },
+  notCounted: { en: "Not counted in the access figures", th: "ไม่นับรวมในตัวเลขการเข้าถึง" },
+  firstUse: { en: "First reported use", th: "รายงานการใช้ครั้งแรก" },
+  occupancy: { en: "Occupancy as reported", th: "จำนวนผู้พักพิงตามรายงาน" },
+  notReported: { en: "not reported", th: "ไม่มีรายงาน" },
+  select: { en: "Select for details", th: "เลือกเพื่อดูรายละเอียด" },
+  unnamed: { en: "Unnamed", th: "ไม่มีชื่อ" },
+} as const satisfies Record<string, Localized>;
+
+/** Credits printed on the map itself; the full list is in the information drawer. */
+export const COMMAND_CREDITS = { osm: "© OpenStreetMap contributors", terrain: "Copernicus DEM © DLR, Airbus DS" } as const;
+
+/** Types of the key facilities (OpenStreetMap). */
+export const COMMAND_FACILITY_TYPES: Readonly<Record<string, Localized>> = {
+  shelter_candidate: { en: "Possible shelter site", th: "จุดพักพิงที่เป็นไปได้" },
+  school: { en: "School", th: "โรงเรียน" },
+  emergency_service: { en: "Emergency service", th: "หน่วยบริการฉุกเฉิน" },
+  community_facility: { en: "Community facility", th: "สถานที่ชุมชน" },
+  healthcare: { en: "Healthcare", th: "สถานพยาบาล" },
+};
+export const commandFacilityType = (type: string, language: Language): string => {
+  const known = COMMAND_FACILITY_TYPES[type];
+  return known ? pick(known, language) : type;
+};
+
+/** "1 km" / "500 m" / "1 กม.": the length under the scale bar. */
+export function commandScaleLabel(metres: number, language: Language): string {
+  if (metres >= 1000) return `${metres / 1000} ${language === "th" ? "กม." : "km"}`;
+  return `${metres} ${language === "th" ? "ม." : "m"}`;
+}
+
+/**
+ * The span of the sources as the replay data dates it ("2024-09-03T23:16:00Z/2024-09-19T17:00:00Z" reads
+ * "3–19 Sep 2024"); the text itself when it is not such a span.
+ */
+export function commandSourceSpan(sourceTimestamp: string, language: Language): string {
+  const [start, end] = sourceTimestamp.split("/").map((part) => part.slice(0, 10));
+  if (!start || !end || !/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return sourceTimestamp;
+  const year = Number(end.slice(0, 4));
+  const yearText = language === "th" ? `${year + 543} (${year})` : String(year);
+  if (start.slice(0, 7) === end.slice(0, 7)) {
+    const [, ...month] = formatShortDate(end, language).split(" ");
+    return `${Number(start.slice(8))}–${Number(end.slice(8))} ${month.join(" ")} ${yearText}`;
+  }
+  return `${formatShortDate(start, language)} – ${formatShortDate(end, language)} ${yearText}`;
+}
+
+export const COMMAND_HELP = {
+  title: { en: "Help and keys", th: "วิธีใช้และปุ่มลัด" },
+  intro: {
+    en: "This page replays the September 2024 flood for exercises. Press play, or step through the hours: the figures and the map follow the replay hour.",
+    th: "หน้านี้ย้อนดูเหตุการณ์น้ำท่วมเดือนกันยายน 2567 (2024) เพื่อการฝึกซ้อม กดเล่นหรือเลื่อนทีละชั่วโมง ตัวเลขและแผนที่จะเปลี่ยนตามชั่วโมงของการย้อนดู",
+  },
+  keys: { en: "Keys", th: "ปุ่มลัด" },
+  keySpace: { en: "Play or pause", th: "เล่นหรือหยุดชั่วคราว" },
+  keyArrows: { en: "One replay hour back or forward", th: "ย้อนกลับหรือไปข้างหน้า 1 ชั่วโมง" },
+  keyShiftArrows: { en: "One day back or forward", th: "ย้อนกลับหรือไปข้างหน้า 1 วัน" },
+  keyBrackets: { en: "Previous or next event", th: "เหตุการณ์ก่อนหน้าหรือถัดไป" },
+  keyFocus: { en: "Focus mode on or off", th: "เปิดหรือปิดโหมดเน้นแผนที่" },
+  keyHelp: { en: "This help", th: "หน้าวิธีใช้นี้" },
+  keyEscape: { en: "Close what is open", th: "ปิดสิ่งที่เปิดอยู่" },
+  hotlines: {
+    en: "In a real emergency call 1784 (disaster), 1669 (medical emergency) or 191 (police). This page does not reach them.",
+    th: "หากเกิดเหตุฉุกเฉินจริง โทร 1784 (สาธารณภัย) 1669 (การแพทย์ฉุกเฉิน) หรือ 191 (ตำรวจ) หน้านี้ไม่ได้เชื่อมต่อกับหน่วยงานดังกล่าว",
+  },
+  more: { en: "About this exercise", th: "เกี่ยวกับการฝึกซ้อมนี้" },
+} as const satisfies Record<string, Localized>;
+
+/** The keys of the help sheet in reading order: the keycaps as printed, and the entry that says what they do. */
+export const COMMAND_HELP_KEYS: readonly { keys: readonly string[]; text: keyof typeof COMMAND_HELP }[] = [
+  { keys: ["Space"], text: "keySpace" },
+  { keys: ["←", "→"], text: "keyArrows" },
+  { keys: ["Shift", "←", "→"], text: "keyShiftArrows" },
+  { keys: ["[", "]"], text: "keyBrackets" },
+  { keys: ["F"], text: "keyFocus" },
+  { keys: ["?"], text: "keyHelp" },
+  { keys: ["Esc"], text: "keyEscape" },
+];
+
+/** Further labels of the information drawer. */
+export const COMMAND_DRAWER_SOURCES = {
+  licence: { en: "Licence", th: "สัญญาอนุญาต" },
+  dated: { en: "Dated", th: "วันที่ของข้อมูล" },
+  showAll: { en: "Show all", th: "แสดงทั้งหมด" },
+} as const satisfies Record<string, Localized>;

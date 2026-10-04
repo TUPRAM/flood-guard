@@ -304,6 +304,7 @@ def un_spider_candidate(
         "cells_with_zero_before_mean": int((valid & (before_mean == 0)).sum()),
         "cells_with_positive_before_mean_db": int((valid & (before_mean > 0)).sum()),
         "cells_above_threshold": int(flagged.sum()),
+        "cells_above_threshold_with_positive_before_mean_db": int((flagged & (before_mean > 0)).sum()),
         "cells_removed_as_perennial_water": int((flagged & water).sum()),
         "cells_removed_by_connected_pixel_rule": int((outside_water & ~grouped).sum()),
         "cells_removed_by_slope_rule": int((grouped & ~gentle).sum()),

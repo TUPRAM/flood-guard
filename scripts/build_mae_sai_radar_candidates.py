@@ -87,22 +87,26 @@ CASE_FOLDER = Path("proposal_execution") / "planning_v1" / "o1_mae_sai"
 RUN_OF_RECORD = "run_of_record_plan_fallback"
 SENSITIVITY_RUN = "sensitivity_run_not_in_the_plan"
 HEIGHT_AWARE_LABEL = "sensitivity geocoding, not in the plan: annotation grid with a DEM height for every cell"
+# No file name holds the word "candidate": tests/test_planning_v1_outputs.py reserves it for the corridor
+# candidates of the E0 spike.
 GEOCODINGS: dict[str, dict[str, Any]] = {
     s1.GEOCODING_GCP_POLYNOMIAL: {
         "role": RUN_OF_RECORD,
         "label": s1.PLAN_FALLBACK_LABEL,
-        "table": "radar_candidates_mae_sai_o1_v1.json",
-        "receipt": "radar_candidates_mae_sai_o1_v1_receipt.json",
-        "raster_folder": CASE_FOLDER / "radar_candidates_v1",
+        "table": "radar_o1_mae_sai_v1.json",
+        "receipt": "radar_o1_mae_sai_v1_receipt.json",
+        "raster_folder": CASE_FOLDER / "radar_o1_v1",
     },
     s1.GEOCODING_HEIGHT_AWARE: {
         "role": SENSITIVITY_RUN,
         "label": HEIGHT_AWARE_LABEL,
-        "table": "radar_candidates_mae_sai_o1_v1_height_aware_sensitivity.json",
-        "receipt": "radar_candidates_mae_sai_o1_v1_height_aware_sensitivity_receipt.json",
-        "raster_folder": CASE_FOLDER / "radar_candidates_v1_height_aware_sensitivity",
+        "table": "radar_o1_mae_sai_v1_height_aware_sensitivity.json",
+        "receipt": "radar_o1_mae_sai_v1_height_aware_sensitivity_receipt.json",
+        "raster_folder": CASE_FOLDER / "radar_o1_v1_height_aware_sensitivity",
     },
 }
+SUPERSEDED_FOLDER = CASE_FOLDER / "radar_o1_superseded_runs"
+REGISTER_PREFIX = "a2_a4_"
 TABLE_NAME = GEOCODINGS[s1.GEOCODING_GCP_POLYNOMIAL]["table"]
 RECEIPT_NAME = GEOCODINGS[s1.GEOCODING_GCP_POLYNOMIAL]["receipt"]
 GEOID_SUMMARY = ROOT / "outputs" / "geoid_m1_benchmark_v2_summary.json"
@@ -213,7 +217,8 @@ def assumptions_for(geocoding: str) -> list[str]:
     return [line.format(**GEOCODING_ASSUMPTIONS[geocoding]) if line.startswith("{") else line
             for line in ASSUMPTIONS]
 LIMITS = [
-    "One pair, twelve days after the flood began: residual water only. Nothing here describes the peak.",
+    "One pair of images, twelve days apart. The second was taken on 16 September 2024 at 06:16 in Thailand, "
+    "several days after the flood peak: residual water only. Nothing here describes the peak.",
     "Approximate geocoding in the run of record: no cell-level or road-level use until the displacement is "
     "removed. The sensitivity run removes most of it with a mapping the plan does not name.",
     "No qualified reference exists for Mae Sai. No figure here is an accuracy, and nothing is validated.",
@@ -221,6 +226,8 @@ LIMITS = [
     "Radar shadow and layover are not flagged; that needs the terrain-corrected geometry of the SNAP path.",
     "Urban areas, wet soil, crops that changed between the two dates and wind on water all change the "
     "backscatter. A candidate cell is a cell that became darker, not a cell that was seen under water.",
+    "The UN-SPIDER practice divides one dB value by another. Where the smoothed pre-event VH is above 0 dB "
+    "(a few very bright cells) its quotient means the opposite of what it means elsewhere.",
 ]
 NOT_COMPUTED = [
     "FPPS", "A-E class", "would-be class", "ensemble cell", "exposure", "road closure", "access loss",
@@ -275,6 +282,19 @@ OPEN_POINTS = [
         "what_this_run_does": "Leaves the candidate rasters as the frozen functions return them and gives "
                               "every area twice: all candidate cells, and candidate cells outside class 80.",
         "for_the_owners": "Whether the flood-input reader removes class 80 or the candidate raster does.",
+    },
+    {
+        "id": "A4-OP6",
+        "point": "How M1-literal and M1-v2 are tiled on Mae Sai.",
+        "protocol_says": "Nothing. M1-v2 was frozen on GEOID tiles of 1024 by 1024 cells of 10 m and declines a "
+                         "whole tile at a time; the protocol does not say how a frame that is not made of such "
+                         "tiles is cut.",
+        "what_this_run_does": "Uses the lattice of the GEOID sample in UTM zone 47N (tile corners at multiples "
+                              "of 10,240 m). Nine tiles hold part of the frame. Each tile is run whole, with "
+                              "the land outside the eight tambons that it holds, and the result is cut to the "
+                              "frame afterwards. Another lattice origin would give other tiles and could give "
+                              "other declined tiles; none was tried.",
+        "for_the_owners": "To confirm the lattice, or to state another tiling rule.",
     },
     {
         "id": "A2-OP1",
@@ -818,6 +838,8 @@ def method_table(
         "tier": TIER,
         "label": f"{rc.FLOOD_INPUT_NAMES[name]} ({label})",
         "display": "Own model candidate: verify before action",
+        "area_note": "A candidate cell is a cell the method's rule flagged from the change in backscatter. It "
+                     "is not a cell that was seen under water.",
         "frame": rc.frame_totals(rows, cell_area_km2=cell_area_km2),
         "units": rows,
         "strata": {
@@ -829,9 +851,22 @@ def method_table(
     }
 
 
+def declined_because(summary: Mapping[str, Any]) -> str | None:
+    """Say why a method gave no answer for a tile, from the summary of the frozen function."""
+
+    if not summary["abstained"]:
+        return None
+    if "sides" not in summary:
+        return "no Otsu threshold"
+    if all(side["selected_blocks"] == 0 for side in summary["sides"].values()):
+        return "no bimodal block in the tile"
+    return ("bimodal blocks were found, but their pooled histogram gave no threshold that the frozen rule "
+            "accepts (an interior Kittler-Illingworth minimum between the two fitted modes, above 0 dB)")
+
+
 def tile_rows(
     tiles: Sequence[rc.LatticeTile], grid: s1.RasterGrid, unit_index: np.ndarray, candidate: np.ndarray,
-    summaries: Mapping[str, Mapping[str, Any]],
+    summaries: Mapping[str, Mapping[str, Any]], unit_ids: Sequence[str],
 ) -> list[dict[str, Any]]:
     """One row per tile: its place, how much of the frame it holds and what the method did on it."""
 
@@ -840,11 +875,16 @@ def tile_rows(
         window = rc.tile_window(tile, grid.west, grid.north, grid.cell_m)
         summary = {key: value for key, value in summaries[tile.name].items() if key != "configuration"}
         in_frame = unit_index[window] > 0
+        counts = np.bincount(unit_index[window].ravel(), minlength=len(unit_ids) + 1)
         rows.append({
             "tile": tile.name,
             "bounds_epsg_32647": [tile.west, tile.south, tile.east, tile.north],
             "frame_cells_in_tile": int(in_frame.sum()),
+            "frame_cells_by_unit": {unit_id: int(counts[position])
+                                    for position, unit_id in enumerate(unit_ids, start=1) if counts[position]},
             "candidate_cells_in_frame": int((in_frame & (candidate[window] == sar.CANDIDATE_YES)).sum()),
+            "declined": bool(summary["abstained"]),
+            "declined_because": declined_because(summary),
             "whole_tile": summary,
         })
     return rows
@@ -986,22 +1026,32 @@ def skill_sentence(name: str, entry: Mapping[str, Any], rule: confidence.Confide
     ]
     every = (abstention["passes_for_every_unit"] and coverage["passes_for_every_unit_by_answer_coverage"]
              and conditions["recency_passes"])
-    none = not entry["units_passing_all_four_conditions"]["input_coverage"]
+    frame_passes = abstention["frame_at_most_max"] and conditions["recency_passes"]
+    passing = entry["units_passing_all_four_conditions"]["answer_coverage"]
     label = rc.FLOOD_INPUT_NAMES[name]
+    frame_clause = (
+        f"For the frame as a whole, {abstention['frame_abstention_fraction']:.3f} of the cells have no answer, "
+        f"{'within' if abstention['frame_at_most_max'] else 'above'} the maximum of "
+        f"{rule.skill_abstention_fraction_max:g}."
+    )
     if entry["status_in_protocol_v1a"] != confidence.SKILL_EVALUATED:
         verdict = (f"{label} is declared unable to meet the T2 skill bar by protocol v1a, whatever these "
                    "figures are: low confidence.")
-    elif every:
-        verdict = (f"{label} meets the three Mae Sai conditions in every tambon. With the GEOID point "
-                   "estimate the rule then evaluates to pass; the three sentences on the GEOID result apply.")
-    elif none:
+    elif every and frame_passes:
+        verdict = (f"{label} meets the three Mae Sai conditions in every tambon and for the frame. With the "
+                   "GEOID point estimate the rule then evaluates to pass; the three sentences on the GEOID "
+                   "result apply.")
+    elif not passing:
         verdict = (f"{label} does not meet the Mae Sai conditions in any tambon: it stays at low confidence "
-                   "(tier T2, no demonstrated skill).")
+                   f"(tier T2, no demonstrated skill). {frame_clause}")
     else:
-        passing = ", ".join(entry["units_passing_all_four_conditions"]["input_coverage"])
-        verdict = (f"{label} meets the Mae Sai conditions in some tambons only ({passing}); in the others it "
-                   "stays at low confidence.")
-    return f"{verdict} " + "; ".join(parts) + "."
+        failing = count - len(passing)
+        scope = "in" if frame_passes else "for the frame, nor in"
+        verdict = (f"{label} does not meet the Mae Sai conditions {scope} {failing} of {count} tambons, where "
+                   f"it stays at low confidence (tier T2, no demonstrated skill). {frame_clause} Read tambon by "
+                   f"tambon, the conditions pass in {len(passing)} of {count} ({', '.join(passing)}); whether one "
+                   "tambon can pass on its own is open point A4-OP3.")
+    return f"{verdict} Counts: " + "; ".join(parts) + "."
 
 
 # ---------------------------------------------------------------------------
@@ -1148,7 +1198,7 @@ def build(
             **method_table(name, candidate, reason, layers, unit_ids, unit_names, cell_area_km2, thresholds,
                            label),
             "configuration": sar.config_to_json(literal_config if name == "m1_literal" else v2_config),
-            "tiles": tile_rows(tiles, grid, unit_index, candidate, summaries),
+            "tiles": tile_rows(tiles, grid, unit_index, candidate, summaries, unit_ids),
             "tiles_declined": sorted(tile for tile, item in summaries.items() if item["abstained"]),
             "threshold_levels": rc.level_areas(levels, unit_index, unit_ids, cell_area_km2=cell_area_km2),
         }
@@ -1247,7 +1297,8 @@ def build(
             "flood_input_fields": {
                 "tier": TIER, "temporal_relation": "event_aligned",
                 "acquisition_time": source_timestamp, "case_reference_date": frame["case_reference_date"].isoformat(),
-                "rights_level": "public (Copernicus Sentinel data, own processing)",
+                "rights_level": "not assigned here: the rights registry of the flood-inputs lane assigns it. "
+                                "Copernicus Sentinel data are free and open, with attribution.",
                 "attribution": "Contains modified Copernicus Sentinel data 2024",
             },
             "use_restriction": (
@@ -1399,8 +1450,16 @@ def build(
     return table, receipt, {"files": files, "grid": grid, "tags": tags}
 
 
-def supersedes(table_path: Path, receipt_path: Path, table: Mapping[str, Any], reason: str) -> dict[str, Any]:
-    """Describe the table and the receipt that a replacement run supersedes."""
+def supersedes(table_path: Path, receipt_path: Path, table: Mapping[str, Any], reason: str,
+               archive_dir: Path, archive_label: str) -> dict[str, Any]:
+    """Describe the table and the receipt that a replacement run supersedes, and keep a copy of both.
+
+    The copies go to ``archive_dir``, outside Git, under the generation time
+    of the superseded run, so a superseded run that was never committed can
+    still be read.
+    """
+
+    import shutil
 
     previous = json.loads(table_path.read_text(encoding="utf-8"))
 
@@ -1408,24 +1467,51 @@ def supersedes(table_path: Path, receipt_path: Path, table: Mapping[str, Any], r
         return {name: {"frame": method.get("frame"), "units": method.get("units")}
                 for name, method in (document.get("methods") or {}).items()}
 
+    stamp = str(previous.get("generated_at_utc", "unknown")).replace(":", "").replace("-", "")
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    kept = []
+    for path in (table_path, receipt_path):
+        if path.exists():
+            shutil.copyfile(path, archive_dir / f"{stamp}_{path.name}")
+            kept.append(f"{archive_label}/{stamp}_{path.name}")
     return {
         "table_sha256": sha256_file(table_path),
         "receipt_sha256": sha256_file(receipt_path) if receipt_path.exists() else None,
         "generated_at_utc": previous.get("generated_at_utc"),
         "reason": reason,
         "same_frame_and_unit_figures": figures(previous) == figures(table),
-        "note": "The superseded table and receipt stay in the Git history.",
+        "copies_kept_outside_git": kept,
+        "note": "The superseded table and receipt are named by SHA-256 and copied outside Git. They are in "
+                "the Git history only if they were committed.",
     }
+
+
+def write_register_entries(register_dir: Path, paths: Sequence[Path], root: Path) -> list[str]:
+    """Register a run: one small file per output, with its repository path and its SHA-256.
+
+    ``tests/test_planning_protocol.py`` reads these files. A run that
+    supersedes a registered output rewrites its entry.
+    """
+
+    register_dir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for path in paths:
+        entry = {"path": repo_label(path, root) if _inside(path, root) else path.name, "sha256": sha256_file(path)}
+        target = register_dir / f"{REGISTER_PREFIX}{path.name}"
+        target.write_bytes(encode(entry))
+        written.append(target.name)
+    return written
 
 
 def run(inputs: BuildInputs, output_dir: Path, *, geocoding: str = s1.GEOCODING_GCP_POLYNOMIAL,
         docs: Path = DOCS, root: Path = ROOT, replace_reason: str | None = None,
-        notes: Sequence[str] = ()) -> dict[str, Any]:
+        notes: Sequence[str] = (), register_dir: Path | None = None) -> dict[str, Any]:
     """Compute, write the rasters, the table and the receipt, and return a short summary.
 
     The file names depend on the geocoding, so the sensitivity run never
     overwrites the run of record. A sensitivity run names the table and the
-    receipt of the run of record by SHA-256 when they exist.
+    receipt of the run of record by SHA-256 when they exist. With
+    ``register_dir`` the table and the receipt are registered there.
 
     Raises:
         FileExistsError: when the table exists and no replacement reason is given.
@@ -1443,7 +1529,11 @@ def run(inputs: BuildInputs, output_dir: Path, *, geocoding: str = s1.GEOCODING_
         raise FileNotFoundError("--replace needs an existing table")
     started = utc_now()
     table, receipt, rasters = build(inputs, geocoding=geocoding, docs=docs, root=root)
-    replaced = supersedes(table_path, receipt_path, table, replace_reason) if replace_reason is not None else None
+    replaced = None
+    if replace_reason is not None:
+        archive = inputs.raster_dir.parent / SUPERSEDED_FOLDER.name
+        label = f"{inputs.labels['raster_dir'].rsplit('/', 1)[0]}/{SUPERSEDED_FOLDER.name}"
+        replaced = supersedes(table_path, receipt_path, table, replace_reason, archive, label)
     raster_outputs = []
     for name, (array, nodata, descriptions) in rasters["files"].items():
         written = write_raster(inputs.raster_dir / name, array, rasters["grid"], nodata=nodata,
@@ -1480,7 +1570,9 @@ def run(inputs: BuildInputs, output_dir: Path, *, geocoding: str = s1.GEOCODING_
             "note": "This sensitivity run replaces nothing. The run of record is the fallback of plan row A4.",
         }
     receipt_path.write_bytes(encode(receipt))
+    registered = write_register_entries(register_dir, (table_path, receipt_path), root) if register_dir else []
     return {
+        "registered": registered,
         "table": table_path.name, "table_sha256": receipt["outputs"]["table"]["sha256"],
         "receipt": receipt_path.name, "receipt_sha256": sha256_file(receipt_path),
         "rasters": len(raster_outputs), "generated_at_utc": finished,
@@ -1520,7 +1612,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error(f"give --external-data or set {EXTERNAL_DATA_VARIABLE}")
     try:
         summary = run(BuildInputs.under(external, args.geocoding), OUTPUT_DIR, geocoding=args.geocoding,
-                      replace_reason=args.reason.strip() if args.replace else None, notes=args.note)
+                      replace_reason=args.reason.strip() if args.replace else None, notes=args.note,
+                      register_dir=OUTPUT_DIR / "run_register")
     except (FileExistsError, FileNotFoundError, ValueError) as error:
         print(f"REFUSED: {error}", file=sys.stderr)
         return 2

@@ -286,11 +286,14 @@ def test_every_method_finds_the_darkened_block_and_counts_it_per_unit(run: dict[
         "the published 93.38% OA does not transfer"
     )
     assert table["methods"]["m1_v2"]["tiles_declined"] == []
+    assert "not a cell that was seen under water" in table["methods"]["un_spider"]["area_note"]
     levels = table["methods"]["m1_v2"]["threshold_levels"]["frame_km2"]
     assert levels["strictest"] <= levels["central"] <= levels["loosest"]
     assert levels["central"] == areas["m1_v2"]
     tile = table["methods"]["m1_v2"]["tiles"][0]
     assert tile["tile"] == "E058N220" and tile["whole_tile"]["abstained"] is False
+    assert tile["declined"] is False and tile["declined_because"] is None
+    assert tile["frame_cells_by_unit"] == {unit["unit_id"]: unit["cells"] for unit in table["units"]}
     assert tile["whole_tile"]["sides"]["darkening"]["threshold_db"] > 0
     assert "jrc_sensitivity_note" in table["methods"]["un_spider"]
     assert 0 < table["methods"]["un_spider"]["jrc_sensitivity_note"]["share_of_frame_covered_by_the_jrc_tile"] <= 1
@@ -377,12 +380,27 @@ def test_a_second_run_needs_a_reason_and_names_what_it_replaces(
         builder.run(inputs, output / "elsewhere", replace_reason="no table there")
     first_receipt = builder.sha256_file(output / builder.RECEIPT_NAME)
     first_table = builder.sha256_file(output / builder.TABLE_NAME)
-    builder.run(inputs, output, replace_reason="repeat for the test")
+    stamp = run["table"]["generated_at_utc"].replace(":", "").replace("-", "")
+    summary = builder.run(inputs, output, replace_reason="repeat for the test", register_dir=output / "register")
     receipt = json.loads((output / builder.RECEIPT_NAME).read_text(encoding="ascii"))
     assert receipt["supersedes"]["table_sha256"] == first_table
     assert receipt["supersedes"]["receipt_sha256"] == first_receipt
     assert receipt["supersedes"]["reason"] == "repeat for the test"
     assert receipt["supersedes"]["same_frame_and_unit_figures"] is True
+    # The superseded files are copied outside Git under the time of the run they belong to.
+    archive = inputs.raster_dir.parent / builder.SUPERSEDED_FOLDER.name
+    assert builder.sha256_file(archive / f"{stamp}_{builder.TABLE_NAME}") == first_table
+    assert builder.sha256_file(archive / f"{stamp}_{builder.RECEIPT_NAME}") == first_receipt
+    assert receipt["supersedes"]["copies_kept_outside_git"] == [
+        f"<external_data_workspace>/synthetic/radar_o1_superseded_runs/{stamp}_{builder.TABLE_NAME}",
+        f"<external_data_workspace>/synthetic/radar_o1_superseded_runs/{stamp}_{builder.RECEIPT_NAME}",
+    ]
+    # The run registers its table and its receipt: one small file each, with the bytes as written.
+    assert summary["registered"] == [f"a2_a4_{builder.TABLE_NAME}", f"a2_a4_{builder.RECEIPT_NAME}"]
+    for name in (builder.TABLE_NAME, builder.RECEIPT_NAME):
+        raw = (output / "register" / f"a2_a4_{name}").read_bytes()
+        assert raw.endswith(b"\n") and b"\r" not in raw
+        assert json.loads(raw.decode("ascii")) == {"path": name, "sha256": builder.sha256_file(output / name)}
 
 
 def test_the_sensitivity_run_has_its_own_files_and_replaces_nothing(
@@ -442,6 +460,52 @@ def test_the_builder_refuses_a_changed_frozen_method_and_a_frame_it_does_not_kno
     broken = builder.BuildInputs(**{**inputs.__dict__, "boundaries": short})
     with pytest.raises(ValueError, match="exactly the units of the frame"):
         builder.build(broken)
+
+
+def test_file_names_and_reasons_for_a_declined_tile() -> None:
+    # tests/test_planning_v1_outputs.py reserves the word "candidate" in a file name for the E0 corridor files.
+    for names in builder.GEOCODINGS.values():
+        assert "candidate" not in names["table"] and "candidate" not in names["receipt"]
+    assert builder.declined_because({"abstained": False}) is None
+    assert builder.declined_because({"abstained": True}) == "no Otsu threshold"
+    assert builder.declined_because(
+        {"abstained": True, "sides": {"darkening": {"selected_blocks": 0}}}) == "no bimodal block in the tile"
+    assert "no threshold that the frozen rule accepts" in builder.declined_because(
+        {"abstained": True, "sides": {"darkening": {"selected_blocks": 33}}})
+
+
+def test_the_skill_sentence_says_frame_and_tambons_apart() -> None:
+    rule = builder.confidence.load_confidence_rule(
+        builder.DOCS / "planning_protocol_v1a.json", builder.DOCS / "RECEIPTS.jsonl")
+
+    def entry(passing: list[str], frame_share: float, status: str = "evaluated") -> dict[str, object]:
+        return {
+            "status_in_protocol_v1a": status,
+            "mae_sai_conditions": {
+                "abstention": {"units_at_most_max": len(passing), "units": 8,
+                               "frame_abstention_fraction": frame_share, "frame_at_most_max": frame_share <= 0.2,
+                               "passes_for_every_unit": len(passing) == 8},
+                "coverage": {"units_with_input_coverage_at_least_min": 8,
+                             "units_with_answer_coverage_at_least_min": len(passing), "units": 8,
+                             "passes_for_every_unit_by_input_coverage": True,
+                             "passes_for_every_unit_by_answer_coverage": len(passing) == 8},
+                "recency_passes": True,
+            },
+            "units_passing_all_four_conditions": {"input_coverage": passing, "answer_coverage": passing},
+        }
+
+    mixed = builder.skill_sentence("m1_v2", entry(["TH570908"], 0.7726), rule)
+    assert mixed.startswith("M1-v2 does not meet the Mae Sai conditions for the frame, nor in 7 of 8 tambons")
+    assert "0.773 of the cells have no answer, above the maximum of 0.2" in mixed
+    assert "pass in 1 of 8 (TH570908)" in mixed and "open point A4-OP3" in mixed
+    none = builder.skill_sentence("m1_v2", entry([], 0.9), rule)
+    assert "does not meet the Mae Sai conditions in any tambon" in none and "above the maximum" in none
+    partly = builder.skill_sentence("m1_v2", entry(["A", "B", "C", "D", "E", "F", "G"], 0.1), rule)
+    assert "does not meet the Mae Sai conditions in 1 of 8 tambons" in partly and "within the maximum" in partly
+    every = builder.skill_sentence("m1_v2", entry(list("ABCDEFGH"), 0.0), rule)
+    assert "in every tambon and for the frame" in every
+    unable = builder.skill_sentence("m1_literal", entry(list("ABCDEFGH"), 0.0, "declared_unable_to_meet"), rule)
+    assert unable.startswith("M1-literal is declared unable to meet the T2 skill bar")
 
 
 def test_the_builder_reads_its_locations_from_arguments_only() -> None:

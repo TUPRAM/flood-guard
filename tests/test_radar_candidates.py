@@ -135,6 +135,7 @@ def test_un_spider_flags_a_quotient_above_one_point_two_five() -> None:
     assert quotient[3, 3] == pytest.approx(1.3125) and quotient[13, 3] == pytest.approx(1.1875)
     assert (reason == rc.REASON_ANSWERED).all()
     assert summary["cells_above_threshold"] == summary["candidate_cells"] == 36
+    assert summary["cells_above_threshold_with_positive_before_mean_db"] == 0
     assert summary["configuration"]["difference_threshold"] == 1.25
     assert summary["median_before_db"] == pytest.approx(-16.0)
 
@@ -205,6 +206,20 @@ def test_un_spider_gives_no_answer_without_valid_radar_input() -> None:
     assert summary["valid_cells"] == 142 and candidate[5, 5] == 1
     with pytest.raises(rc.RadarCandidateError, match="share one"):
         rc.un_spider_candidate(pre, post[:6], cell_m=10.0, **_un_spider_layers(shape))
+
+
+def test_un_spider_counts_the_cells_where_the_db_quotient_changes_its_meaning() -> None:
+    shape = (12, 12)
+    pre = np.full(shape, _linear(-16.0))
+    post = pre.copy()
+    pre[2:6, 2:6] = _linear(2.0)  # Very bright before: a positive dB value.
+    post[2:6, 2:6] = _linear(3.0)  # Brighter still, and 3 / 2 = 1.5 is above the threshold.
+    candidate, _, quotient, summary = rc.un_spider_candidate(
+        pre, post, cell_m=10.0, config=NO_SMOOTHING, **_un_spider_layers(shape)
+    )
+    assert quotient[3, 3] == pytest.approx(1.5) and candidate[3, 3] == 1
+    assert summary["cells_with_positive_before_mean_db"] == 16
+    assert summary["cells_above_threshold_with_positive_before_mean_db"] == 16
 
 
 def test_un_spider_default_parameters_are_the_published_ones() -> None:

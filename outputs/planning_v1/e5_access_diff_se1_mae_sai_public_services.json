@@ -1,0 +1,3150 @@
+{
+  "schema_version": "floodguard.access_diff_units.v2",
+  "generated_at_utc": "2026-10-04T15:38:45Z",
+  "receipt_file": "outputs/planning_v1/e5_access_diff_mae_sai.json",
+  "access_diff_version": "access_diff_v1",
+  "plan_task": "E5: access diff (two runs) x services x thresholds; per-tambon table",
+  "case_id": "SE1",
+  "case_frame": "mae_sai",
+  "lane": "SCN-ENV",
+  "tier": "T1",
+  "temporal_relation": "season_window",
+  "case_reference_date": null,
+  "service_set": "public_services",
+  "status": "unit_inputs",
+  "status_note": "Written with protocol v1a and v1b in force (protocol_sha256). These are inputs of the access-gap and road-criticality components for plan task E8. They are not the components and not an FPPS; the components, the FPPS and the A-E class belong to task E8 and are not here. The definitions say how close each input is to its component.",
+  "usable_by_task_e8": true,
+  "usable_by_task_e8_basis": "Every context this table rests on is a build of record.",
+  "official_warning": false,
+  "operational_status": "non_operational",
+  "can_feed_decision_layer": false,
+  "computes": "For cases SE1 and O2 over the Mae Sai frame, at the flood level as provided and under the strict, central and permissive levels of closure rule v1: a baseline run and a flooded run of modelled access, and per tambon the residents with baseline access, the residents among them newly losing it, the residents with a baseline route to any hospital or main-road entry and those among them who lose all routes. Counts of residents only: no ratio of them is written. These are inputs of the access-gap and road-criticality components. No component value, no FPPS, no A-E class and no ensemble.",
+  "source_timestamp": "2024-08-01/2024-10-12",
+  "source_timestamps": {
+    "flood_input": "2024-08-01/2024-10-12",
+    "osm_retrieved_at_utc": "2026-07-10T02:46:49Z",
+    "population_year_represented": 2020,
+    "tambon_boundaries_valid_on": [
+      "2022-01-22"
+    ]
+  },
+  "confidence_class": "low",
+  "confidence_basis": "Modelled access on OpenStreetMap roads at fixed class speeds, with WorldPop 2020 modelled residents, under closures assumed from an unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0) that FloodGuard did not validate. No closure, route, facility or count was checked on the ground or against an independent source.",
+  "protocol_sha256": {
+    "planning_protocol_v1a": "b6dc549ce9430e0d540fcd0490db1a5dc332758b8cc0a513f773880d0951a954",
+    "planning_protocol_v1b": "6ed7d7e93c86df6ed0cf30b3a3383582632b5efbb678b377ca2ee1990fb393e7"
+  },
+  "publication_level": "public",
+  "licence": {
+    "applies_to": "Every figure of this file: each is derived from UNOSAT/GISTDA product 4009.",
+    "name": "CC BY-SA 4.0",
+    "full_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+    "spdx_id": "CC-BY-SA-4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "legal_code_url": "https://creativecommons.org/licenses/by-sa/4.0/legalcode",
+    "credit": "UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009",
+    "share_alike": "Every layer or table derived from product 4009 is shared under CC BY-SA 4.0, in its own file, with the attribution and a change notice. Keeping product 4009 derivatives in their own files is a caution, not legal advice.",
+    "standard_sentence": "unvalidated preliminary agency extent (UNOSAT product 4009 with GISTDA; Field_Validation=0), used as provided under CC BY-SA 4.0. FloodGuard did not validate it.",
+    "change_notice": "Changed by FloodGuard: the layer CHIANGRAI_20240801_20241012_AccumulatedFlood was repaired (make_valid), projected from EPSG:4326 to EPSG:32647 and clipped to the routing corridor (plan task E1); road segments were then measured against it, closure rule v1 was applied to them, and modelled access was compared with and without those closures. This file holds resident counts per subdistrict, not the layer. Source: UNOSAT and GISTDA, FL20240912THA, UNOSAT product 4009, CC BY-SA 4.0.",
+    "rights_record": {
+      "path": "docs/proposal_execution/rights_basis_4009_v1.json",
+      "sha256": "531ab40beb2b3e80a02d6de0d4d7d791b299176af0b192bfe105ca23c7e50cb3",
+      "record_status": "confirmed",
+      "confirmed_by": [
+        "Putu",
+        "Rachmania"
+      ],
+      "confirmed_on": "2026-10-02"
+    },
+    "flood_input_rights_level": "public",
+    "flood_input_rights_level_basis": "The confirmed record rights_basis_4009_v1 names this layer as its layer in scope. Layers derived from it may be published under CC BY-SA 4.0 with the credit and a change notice, as a season envelope only (decisions D2, D3 and R6).",
+    "publication_level": "public",
+    "publication_level_rule": "Protocol v1a guardrail GR6: the rights level of an output is the minimum across its lineage. Nothing here is written under apps/web/public/.",
+    "licence_notice_file": "docs/proposal_execution/rights_basis_4009_v1_NOTICE.txt",
+    "other_inputs": [
+      {
+        "id": "osm",
+        "name": "OpenStreetMap Thailand extract (Geofabrik), roads and hospitals of the planning context",
+        "licence": "ODbL 1.0",
+        "attribution": "(c) OpenStreetMap contributors",
+        "used_for": "The road graph, the hospitals and the main-road entries."
+      },
+      {
+        "id": "worldpop-2020",
+        "name": "WorldPop Thailand 100 m population 2020 (tha_ppp_2020.tif)",
+        "licence": "CC BY 4.0",
+        "attribution": "WorldPop (www.worldpop.org), University of Southampton",
+        "used_for": "The residents of each demand cell."
+      },
+      {
+        "id": "cod-ab",
+        "name": "HDX Thailand COD-AB subdistrict boundaries (tha_admin3)",
+        "licence": "CC BY-IGO",
+        "attribution": "OCHA / HDX Thailand COD-AB",
+        "used_for": "The tambon each demand cell counts for."
+      }
+    ],
+    "not_legal_advice": true
+  },
+  "flood_input": {
+    "input_id": "unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+    "input_name": "UNOSAT/GISTDA product 4009, accumulated layer",
+    "label": null,
+    "used_as_provided": true,
+    "field_validation": 0,
+    "levels_run": [
+      "as_provided"
+    ],
+    "frame": "routing_context",
+    "files": {
+      "as_provided": {
+        "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e1_flood_input/flood_extent__as_provided__routing_context.geojson",
+        "sha256": "5d7c1c0ca7909284317a66d2a3611452de3f91d729dfb4cc31b96840e147b794",
+        "bytes": 18110603,
+        "rights_level": "public"
+      }
+    }
+  },
+  "contexts": {
+    "vehicle": {
+      "status": "of_record",
+      "run_kind": "build_of_record",
+      "path": "<external_data_workspace>/proposal_execution/planning_v1/se1_mae_sai/e4_vehicle/context_inputs.json",
+      "canonical_sha256": "0b2672b6d4d1d94da3a4c39d819d980a9e5bf7845bb22fea1284a2893a6351a6"
+    }
+  },
+  "closure_rule": {
+    "version": "closure_rule_v1",
+    "levels": [
+      "strict",
+      "central",
+      "permissive"
+    ],
+    "length_thresholds_m": {
+      "trunk": 50.0,
+      "primary": 50.0,
+      "secondary": 50.0,
+      "tertiary": 30.0,
+      "local": 30.0,
+      "motorway": 50.0,
+      "residential": 30.0,
+      "unclassified": 30.0
+    },
+    "delay_factor_k": {
+      "strict": 2,
+      "central": 4,
+      "permissive": 6
+    },
+    "strict_delay_rule": "Under strict, an edge intersected for at least 20 m with f < 0.5 is delayed with k = 2: travel time x (1 + 2 x f). Under central the plan's wording applies with k = 4.",
+    "culvert_tag_handling": "culvert=* is not read: the central level applies the 0.25 fraction to edges tagged bridge=yes or tunnel=culvert only, and every closure output says so. parameters.bridge_culvert_tags keeps the plan's three tags beside this statement.",
+    "closure_is_an_assumption": "Every run carries closure_basis: modelled_from_<input>. A flood intersection does not prove a road closure."
+  },
+  "services": [
+    {
+      "service": "hospital",
+      "mode": "vehicle",
+      "thresholds_minutes": [
+        15,
+        30,
+        60
+      ],
+      "access_gap_threshold_minutes": 30,
+      "publication_level": "public"
+    },
+    {
+      "service": "main_road_entry",
+      "mode": "vehicle",
+      "thresholds_minutes": [
+        15,
+        30,
+        60
+      ],
+      "access_gap_threshold_minutes": 15,
+      "publication_level": "public"
+    }
+  ],
+  "definitions": {
+    "baseline_access_residents": "Residents whose modelled time to the nearest destination of the service is at most the threshold in the baseline run.",
+    "newly_lost_residents": "Residents with baseline access who do not have access within the threshold in the flooded run. A resident with no baseline access is never counted (EQ-04).",
+    "baseline_access_unavailable_reason": "Set where nobody had baseline access to the service within the threshold: the protocols state no newly-lost share for that case.",
+    "counts_only": "Beside the thresholds of the services, every figure of a row is a count of residents or of demand cells. No ratio of two counts is written, because a ratio is a component or one step from it. newly_lost_residents / baseline_access_residents is the newly-lost share of one service; the access-gap component of protocol v1a is 100 x the mean of those shares over the services at their access-gap thresholds, weighted by baseline access, and one service's share equals it wherever the services have the same share (open point E5-OP8).",
+    "access_gap_inputs": "For each service at its access-gap threshold: what floodguard.normalisation.access_gap takes. An input of the component, not the component.",
+    "road_criticality_inputs": "Residents with a baseline route to any hospital or main-road entry, and those among them with no route to any of them in the flooded run: what floodguard.normalisation.road_criticality takes. They are the numerator and the denominator of the road-criticality component of protocol v1a, which is 100 x their ratio. The ratio is not written here: task E8 computes the component.",
+    "routes": "The same two counts, the services whose routes are read, and the connected residents with no baseline route to any of them. Counts only.",
+    "residents_not_connected_to_the_graph": "Residents of cells that do not snap to the graph of the mode within 250 m. They are in no numerator and no denominator.",
+    "unit_rule": "A WorldPop 2020 cell counts for the tambon whose polygon holds its centre (open point E5-OP1)."
+  },
+  "unit_ids": [
+    "TH570901",
+    "TH570902",
+    "TH570903",
+    "TH570904",
+    "TH570905",
+    "TH570906",
+    "TH570908",
+    "TH570909"
+  ],
+  "runs": [
+    {
+      "flood_level": "as_provided",
+      "closure_level": "strict",
+      "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "closure": {
+        "vehicle": {
+          "closure_rule_version": "closure_rule_v1",
+          "level": "strict",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+          "edges": 65673,
+          "intersected_edges": 8288,
+          "closed_edges": 7842,
+          "delayed_edges": 137,
+          "intersected_edges_left_open": 309,
+          "closed_edges_by_road_class": {
+            "local": 3450,
+            "primary": 32,
+            "residential": 2728,
+            "secondary": 82,
+            "tertiary": 326,
+            "trunk": 129,
+            "unclassified": 1095
+          },
+          "delayed_edges_by_road_class": {
+            "local": 38,
+            "primary": 6,
+            "residential": 47,
+            "secondary": 1,
+            "tertiary": 17,
+            "trunk": 2,
+            "unclassified": 26
+          },
+          "closed_bridge_tagged_edges": 59,
+          "largest_travel_time_factor": 1.9987043303609324,
+          "closure_result_sha256": "288a9584eac37d415448e6f769b1c303eb4184c490f8c68b4a082d0783809e7a",
+          "grade_join_connectors": 345,
+          "connectors_with_their_coordinate_inside_the_extent": 108,
+          "main_road_entries": 1939,
+          "entries_with_every_main_road_edge_closed": 163,
+          "entries_with_every_edge_closed": 127
+        }
+      },
+      "units": [
+        {
+          "unit_id": "TH570901",
+          "residents": 17893.069298028946,
+          "demand_cells": 2484,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 17453.231825232506,
+              "residents_not_connected_to_the_graph": 439.8374727964401,
+              "residents_with_a_baseline_route": 17453.231825232506,
+              "residents_with_a_route_in_the_flooded_run": 5420.488571166992,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 17203.707630574703,
+                  "flooded_access_residents": 5417.398753941059,
+                  "newly_lost_residents": 11786.308876633644,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5420.488571166992,
+                  "newly_lost_residents": 12032.743254065514,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5420.488571166992,
+                  "newly_lost_residents": 12032.743254065514,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 17453.231825232506,
+              "residents_not_connected_to_the_graph": 439.8374727964401,
+              "residents_with_a_baseline_route": 17453.231825232506,
+              "residents_with_a_route_in_the_flooded_run": 5879.644119262695,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5879.644119262695,
+                  "newly_lost_residents": 11573.58770596981,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5879.644119262695,
+                  "newly_lost_residents": 11573.58770596981,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5879.644119262695,
+                  "newly_lost_residents": 11573.58770596981,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 17453.231825232506,
+              "newly_lost_residents": 12032.743254065514
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 17453.231825232506,
+              "newly_lost_residents": 11573.58770596981
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 11573.58770596981,
+            "residents_with_baseline_route": 17453.231825232506
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 17453.231825232506,
+            "residents_losing_all_routes": 11573.58770596981,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570902",
+          "residents": 8911.487386196852,
+          "demand_cells": 5523,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 7217.2481516599655,
+              "residents_not_connected_to_the_graph": 1694.2392345368862,
+              "residents_with_a_baseline_route": 7213.945144534111,
+              "residents_with_a_route_in_the_flooded_run": 7213.945144534111,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 670.0241041183472,
+                  "flooded_access_residents": 670.0241041183472,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 7148.752592325211,
+                  "flooded_access_residents": 7140.4926553964615,
+                  "newly_lost_residents": 8.259936928749084,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 7217.2481516599655,
+              "residents_not_connected_to_the_graph": 1694.2392345368862,
+              "residents_with_a_baseline_route": 7213.945144534111,
+              "residents_with_a_route_in_the_flooded_run": 7213.945144534111,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 7010.764011472464,
+                  "flooded_access_residents": 7010.764011472464,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 7148.752592325211,
+              "newly_lost_residents": 8.259936928749084
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 7010.764011472464,
+              "newly_lost_residents": 0.0
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 0.0,
+            "residents_with_baseline_route": 7213.945144534111
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 7213.945144534111,
+            "residents_losing_all_routes": 0.0,
+            "connected_residents_without_a_baseline_route": 3.303007125854492,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570903",
+          "residents": 6708.402898967266,
+          "demand_cells": 5553,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 5972.365630179644,
+              "residents_not_connected_to_the_graph": 736.0372687876225,
+              "residents_with_a_baseline_route": 5972.365630179644,
+              "residents_with_a_route_in_the_flooded_run": 0.0,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 306.54498898983,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 306.54498898983,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 5709.620454907417,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5709.620454907417,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 5972.365630179644,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5972.365630179644,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 5972.365630179644,
+              "residents_not_connected_to_the_graph": 736.0372687876225,
+              "residents_with_a_baseline_route": 5972.365630179644,
+              "residents_with_a_route_in_the_flooded_run": 0.0,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 2963.1568821668625,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 2963.1568821668625,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 5959.719019174576,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5959.719019174576,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 5972.365630179644,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5972.365630179644,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 5709.620454907417,
+              "newly_lost_residents": 5709.620454907417
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 2963.1568821668625,
+              "newly_lost_residents": 2963.1568821668625
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 5972.365630179644,
+            "residents_with_baseline_route": 5972.365630179644
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 5972.365630179644,
+            "residents_losing_all_routes": 5972.365630179644,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570904",
+          "residents": 9349.407581597567,
+          "demand_cells": 5423,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 8655.610491335392,
+              "residents_not_connected_to_the_graph": 693.7970902621746,
+              "residents_with_a_baseline_route": 8609.448951303959,
+              "residents_with_a_route_in_the_flooded_run": 7897.2006548941135,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 7215.507275283337,
+                  "flooded_access_residents": 7004.075131356716,
+                  "newly_lost_residents": 211.43214392662048,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7897.2006548941135,
+                  "newly_lost_residents": 712.2482964098454,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7897.2006548941135,
+                  "newly_lost_residents": 712.2482964098454,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 8655.610491335392,
+              "residents_not_connected_to_the_graph": 693.7970902621746,
+              "residents_with_a_baseline_route": 8609.448951303959,
+              "residents_with_a_route_in_the_flooded_run": 7897.2006548941135,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 8557.12553074956,
+                  "flooded_access_residents": 7892.316162019968,
+                  "newly_lost_residents": 664.8093687295914,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7897.2006548941135,
+                  "newly_lost_residents": 712.2482964098454,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7897.2006548941135,
+                  "newly_lost_residents": 712.2482964098454,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 8609.448951303959,
+              "newly_lost_residents": 712.2482964098454
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 8557.12553074956,
+              "newly_lost_residents": 664.8093687295914
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 712.2482964098454,
+            "residents_with_baseline_route": 8609.448951303959
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 8609.448951303959,
+            "residents_losing_all_routes": 712.2482964098454,
+            "connected_residents_without_a_baseline_route": 46.161540031433105,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570905",
+          "residents": 7157.560930967331,
+          "demand_cells": 5204,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 6565.2774775624275,
+              "residents_not_connected_to_the_graph": 592.2834534049034,
+              "residents_with_a_baseline_route": 6558.295188009739,
+              "residents_with_a_route_in_the_flooded_run": 4063.638004541397,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 1209.3925459980965,
+                  "flooded_access_residents": 1183.2235684990883,
+                  "newly_lost_residents": 26.16897749900818,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6529.838788986206,
+                  "flooded_access_residents": 4063.638004541397,
+                  "newly_lost_residents": 2466.200784444809,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 4063.638004541397,
+                  "newly_lost_residents": 2494.657183468342,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 6565.2774775624275,
+              "residents_not_connected_to_the_graph": 592.2834534049034,
+              "residents_with_a_baseline_route": 6558.295188009739,
+              "residents_with_a_route_in_the_flooded_run": 4063.638004541397,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 4919.861739993095,
+                  "flooded_access_residents": 3441.485631644726,
+                  "newly_lost_residents": 1478.3761083483696,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 4063.638004541397,
+                  "newly_lost_residents": 2494.657183468342,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 4063.638004541397,
+                  "newly_lost_residents": 2494.657183468342,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 6529.838788986206,
+              "newly_lost_residents": 2466.200784444809
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 4919.861739993095,
+              "newly_lost_residents": 1478.3761083483696
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 2494.657183468342,
+            "residents_with_baseline_route": 6558.295188009739
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 6558.295188009739,
+            "residents_losing_all_routes": 2494.657183468342,
+            "connected_residents_without_a_baseline_route": 6.982289552688599,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570906",
+          "residents": 19532.080106675625,
+          "demand_cells": 3362,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 19164.54236626625,
+              "residents_not_connected_to_the_graph": 367.53774040937424,
+              "residents_with_a_baseline_route": 19164.54236626625,
+              "residents_with_a_route_in_the_flooded_run": 19089.06719994545,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 19085.21457991004,
+                  "flooded_access_residents": 19009.73941358924,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 19164.54236626625,
+              "residents_not_connected_to_the_graph": 367.53774040937424,
+              "residents_with_a_baseline_route": 19164.54236626625,
+              "residents_with_a_route_in_the_flooded_run": 19089.06719994545,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 19138.949023991823,
+                  "flooded_access_residents": 19063.473857671022,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 19164.54236626625,
+              "newly_lost_residents": 75.47516632080078
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 19138.949023991823,
+              "newly_lost_residents": 75.47516632080078
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 75.47516632080078,
+            "residents_with_baseline_route": 19164.54236626625
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 19164.54236626625,
+            "residents_losing_all_routes": 75.47516632080078,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570908",
+          "residents": 5036.142388254404,
+          "demand_cells": 4199,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 4005.1396268308163,
+              "residents_not_connected_to_the_graph": 1031.0027614235878,
+              "residents_with_a_baseline_route": 4005.1396268308163,
+              "residents_with_a_route_in_the_flooded_run": 3650.015324562788,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 0.0,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": "no_resident_with_baseline_access"
+                },
+                "30": {
+                  "baseline_access_residents": 3787.849869519472,
+                  "flooded_access_residents": 2308.457790017128,
+                  "newly_lost_residents": 1479.3920795023441,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3650.015324562788,
+                  "newly_lost_residents": 355.12430226802826,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 4005.1396268308163,
+              "residents_not_connected_to_the_graph": 1031.0027614235878,
+              "residents_with_a_baseline_route": 4005.1396268308163,
+              "residents_with_a_route_in_the_flooded_run": 3650.015324562788,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 2702.4764673113823,
+                  "flooded_access_residents": 2160.45265096426,
+                  "newly_lost_residents": 542.0238163471222,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3650.015324562788,
+                  "newly_lost_residents": 355.12430226802826,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3650.015324562788,
+                  "newly_lost_residents": 355.12430226802826,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 3787.849869519472,
+              "newly_lost_residents": 1479.3920795023441
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 2702.4764673113823,
+              "newly_lost_residents": 542.0238163471222
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 355.12430226802826,
+            "residents_with_baseline_route": 4005.1396268308163
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 4005.1396268308163,
+            "residents_losing_all_routes": 355.12430226802826,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570909",
+          "residents": 7248.738848656416,
+          "demand_cells": 5017,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 6193.561620861292,
+              "residents_not_connected_to_the_graph": 1055.177227795124,
+              "residents_with_a_baseline_route": 6193.561620861292,
+              "residents_with_a_route_in_the_flooded_run": 6044.247051537037,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 1476.1674485206604,
+                  "flooded_access_residents": 1223.3656651973724,
+                  "newly_lost_residents": 252.80178332328796,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6034.246510356665,
+                  "newly_lost_residents": 159.31511050462723,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6044.247051537037,
+                  "newly_lost_residents": 149.314569324255,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 6193.561620861292,
+              "residents_not_connected_to_the_graph": 1055.177227795124,
+              "residents_with_a_baseline_route": 6193.561620861292,
+              "residents_with_a_route_in_the_flooded_run": 6044.247051537037,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 6142.379286378622,
+                  "flooded_access_residents": 5979.460070431232,
+                  "newly_lost_residents": 162.9192159473896,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6044.247051537037,
+                  "newly_lost_residents": 149.314569324255,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6044.247051537037,
+                  "newly_lost_residents": 149.314569324255,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 6193.561620861292,
+              "newly_lost_residents": 159.31511050462723
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 6142.379286378622,
+              "newly_lost_residents": 162.9192159473896
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 149.314569324255,
+            "residents_with_baseline_route": 6193.561620861292
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 6193.561620861292,
+            "residents_losing_all_routes": 149.314569324255,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        }
+      ],
+      "whole_frame": {
+        "residents": 81836.8894393444,
+        "demand_cells": 36765,
+        "access": {
+          "hospital": {
+            "mode": "vehicle",
+            "publication_level": "public",
+            "access_gap_threshold_minutes": 30,
+            "residents_connected_to_the_graph": 75226.9771899283,
+            "residents_not_connected_to_the_graph": 6609.912249416113,
+            "residents_with_a_baseline_route": 75170.53035321832,
+            "residents_with_a_route_in_the_flooded_run": 53378.60195118189,
+            "thresholds_minutes": {
+              "15": {
+                "baseline_access_residents": 47166.558573395014,
+                "flooded_access_residents": 34507.82663670182,
+                "newly_lost_residents": 12658.731936693192,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "30": {
+                "baseline_access_residents": 74596.84646940231,
+                "flooded_access_residents": 51953.59138631821,
+                "newly_lost_residents": 22643.255083084106,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "60": {
+                "baseline_access_residents": 75170.53035321832,
+                "flooded_access_residents": 53378.60195118189,
+                "newly_lost_residents": 21791.92840203643,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              }
+            }
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "publication_level": "public",
+            "access_gap_threshold_minutes": 15,
+            "residents_connected_to_the_graph": 75226.9771899283,
+            "residents_not_connected_to_the_graph": 6609.912249416113,
+            "residents_with_a_baseline_route": 75170.53035321832,
+            "residents_with_a_route_in_the_flooded_run": 53837.75749927759,
+            "thresholds_minutes": {
+              "15": {
+                "baseline_access_residents": 68887.94476729631,
+                "flooded_access_residents": 51427.59650346637,
+                "newly_lost_residents": 17460.348263829947,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "30": {
+                "baseline_access_residents": 75157.88374221325,
+                "flooded_access_residents": 53837.75749927759,
+                "newly_lost_residents": 21320.126242935658,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "60": {
+                "baseline_access_residents": 75170.53035321832,
+                "flooded_access_residents": 53837.75749927759,
+                "newly_lost_residents": 21332.772853940725,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              }
+            }
+          }
+        },
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 22643.255083084106
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 17460.348263829947
+          }
+        },
+        "access_gap_inputs_unavailable_reason": null,
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 21332.772853940725,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "road_criticality_inputs_unavailable_reason": null,
+        "routes": {
+          "services": [
+            "hospital",
+            "main_road_entry"
+          ],
+          "residents_with_baseline_route": 75170.53035321832,
+          "residents_losing_all_routes": 21332.772853940725,
+          "connected_residents_without_a_baseline_route": 56.446836709976196,
+          "baseline_route_unavailable_reason": null
+        }
+      },
+      "cells_in_no_unit": {
+        "demand_cells": 0,
+        "residents": 0.0,
+        "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+      }
+    },
+    {
+      "flood_level": "as_provided",
+      "closure_level": "central",
+      "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "closure": {
+        "vehicle": {
+          "closure_rule_version": "closure_rule_v1",
+          "level": "central",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+          "edges": 65673,
+          "intersected_edges": 8288,
+          "closed_edges": 7926,
+          "delayed_edges": 55,
+          "intersected_edges_left_open": 307,
+          "closed_edges_by_road_class": {
+            "local": 3472,
+            "primary": 34,
+            "residential": 2754,
+            "secondary": 83,
+            "tertiary": 338,
+            "trunk": 131,
+            "unclassified": 1114
+          },
+          "delayed_edges_by_road_class": {
+            "local": 16,
+            "primary": 4,
+            "residential": 23,
+            "tertiary": 5,
+            "unclassified": 7
+          },
+          "closed_bridge_tagged_edges": 61,
+          "largest_travel_time_factor": 2.982560838481897,
+          "closure_result_sha256": "7c1e9bd288d4fe8f285a7d499d3826b5da7b30a617b44e7f8d3cb1daf581f766",
+          "grade_join_connectors": 345,
+          "connectors_with_their_coordinate_inside_the_extent": 108,
+          "main_road_entries": 1939,
+          "entries_with_every_main_road_edge_closed": 165,
+          "entries_with_every_edge_closed": 129
+        }
+      },
+      "units": [
+        {
+          "unit_id": "TH570901",
+          "residents": 17893.069298028946,
+          "demand_cells": 2484,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 17453.231825232506,
+              "residents_not_connected_to_the_graph": 439.8374727964401,
+              "residents_with_a_baseline_route": 17453.231825232506,
+              "residents_with_a_route_in_the_flooded_run": 5379.932127594948,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 17203.707630574703,
+                  "flooded_access_residents": 5379.932127594948,
+                  "newly_lost_residents": 11823.775502979755,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5379.932127594948,
+                  "newly_lost_residents": 12073.299697637558,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5379.932127594948,
+                  "newly_lost_residents": 12073.299697637558,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 17453.231825232506,
+              "residents_not_connected_to_the_graph": 439.8374727964401,
+              "residents_with_a_baseline_route": 17453.231825232506,
+              "residents_with_a_route_in_the_flooded_run": 5839.087675690651,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5839.087675690651,
+                  "newly_lost_residents": 11614.144149541855,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5839.087675690651,
+                  "newly_lost_residents": 11614.144149541855,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5839.087675690651,
+                  "newly_lost_residents": 11614.144149541855,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 17453.231825232506,
+              "newly_lost_residents": 12073.299697637558
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 17453.231825232506,
+              "newly_lost_residents": 11614.144149541855
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 11614.144149541855,
+            "residents_with_baseline_route": 17453.231825232506
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 17453.231825232506,
+            "residents_losing_all_routes": 11614.144149541855,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570902",
+          "residents": 8911.487386196852,
+          "demand_cells": 5523,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 7217.2481516599655,
+              "residents_not_connected_to_the_graph": 1694.2392345368862,
+              "residents_with_a_baseline_route": 7213.945144534111,
+              "residents_with_a_route_in_the_flooded_run": 7213.945144534111,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 670.0241041183472,
+                  "flooded_access_residents": 670.0241041183472,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 7148.752592325211,
+                  "flooded_access_residents": 6956.105574786663,
+                  "newly_lost_residents": 192.64701753854752,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 7217.2481516599655,
+              "residents_not_connected_to_the_graph": 1694.2392345368862,
+              "residents_with_a_baseline_route": 7213.945144534111,
+              "residents_with_a_route_in_the_flooded_run": 7213.945144534111,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 7010.764011472464,
+                  "flooded_access_residents": 7010.764011472464,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 7148.752592325211,
+              "newly_lost_residents": 192.64701753854752
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 7010.764011472464,
+              "newly_lost_residents": 0.0
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 0.0,
+            "residents_with_baseline_route": 7213.945144534111
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 7213.945144534111,
+            "residents_losing_all_routes": 0.0,
+            "connected_residents_without_a_baseline_route": 3.303007125854492,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570903",
+          "residents": 6708.402898967266,
+          "demand_cells": 5553,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 5972.365630179644,
+              "residents_not_connected_to_the_graph": 736.0372687876225,
+              "residents_with_a_baseline_route": 5972.365630179644,
+              "residents_with_a_route_in_the_flooded_run": 0.0,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 306.54498898983,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 306.54498898983,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 5709.620454907417,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5709.620454907417,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 5972.365630179644,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5972.365630179644,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 5972.365630179644,
+              "residents_not_connected_to_the_graph": 736.0372687876225,
+              "residents_with_a_baseline_route": 5972.365630179644,
+              "residents_with_a_route_in_the_flooded_run": 0.0,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 2963.1568821668625,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 2963.1568821668625,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 5959.719019174576,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5959.719019174576,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 5972.365630179644,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5972.365630179644,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 5709.620454907417,
+              "newly_lost_residents": 5709.620454907417
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 2963.1568821668625,
+              "newly_lost_residents": 2963.1568821668625
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 5972.365630179644,
+            "residents_with_baseline_route": 5972.365630179644
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 5972.365630179644,
+            "residents_losing_all_routes": 5972.365630179644,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570904",
+          "residents": 9349.407581597567,
+          "demand_cells": 5423,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 8655.610491335392,
+              "residents_not_connected_to_the_graph": 693.7970902621746,
+              "residents_with_a_baseline_route": 8609.448951303959,
+              "residents_with_a_route_in_the_flooded_run": 7859.651148706675,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 7215.507275283337,
+                  "flooded_access_residents": 6320.404772222042,
+                  "newly_lost_residents": 895.1025030612946,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7859.651148706675,
+                  "newly_lost_residents": 749.7978025972843,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7859.651148706675,
+                  "newly_lost_residents": 749.7978025972843,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 8655.610491335392,
+              "residents_not_connected_to_the_graph": 693.7970902621746,
+              "residents_with_a_baseline_route": 8609.448951303959,
+              "residents_with_a_route_in_the_flooded_run": 7879.751785427332,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 8557.12553074956,
+                  "flooded_access_residents": 7879.223211616278,
+                  "newly_lost_residents": 677.9023191332817,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7879.751785427332,
+                  "newly_lost_residents": 729.697165876627,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7879.751785427332,
+                  "newly_lost_residents": 729.697165876627,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 8609.448951303959,
+              "newly_lost_residents": 749.7978025972843
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 8557.12553074956,
+              "newly_lost_residents": 677.9023191332817
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 729.697165876627,
+            "residents_with_baseline_route": 8609.448951303959
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 8609.448951303959,
+            "residents_losing_all_routes": 729.697165876627,
+            "connected_residents_without_a_baseline_route": 46.161540031433105,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570905",
+          "residents": 7157.560930967331,
+          "demand_cells": 5204,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 6565.2774775624275,
+              "residents_not_connected_to_the_graph": 592.2834534049034,
+              "residents_with_a_baseline_route": 6558.295188009739,
+              "residents_with_a_route_in_the_flooded_run": 3660.8045927882195,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 1209.3925459980965,
+                  "flooded_access_residents": 1140.9459188580513,
+                  "newly_lost_residents": 68.44662714004517,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6529.838788986206,
+                  "flooded_access_residents": 3660.8045927882195,
+                  "newly_lost_residents": 2869.0341961979866,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 3660.8045927882195,
+                  "newly_lost_residents": 2897.4905952215195,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 6565.2774775624275,
+              "residents_not_connected_to_the_graph": 592.2834534049034,
+              "residents_with_a_baseline_route": 6558.295188009739,
+              "residents_with_a_route_in_the_flooded_run": 3660.8045927882195,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 4919.861739993095,
+                  "flooded_access_residents": 3360.2052711844444,
+                  "newly_lost_residents": 1559.656468808651,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 3660.8045927882195,
+                  "newly_lost_residents": 2897.4905952215195,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 3660.8045927882195,
+                  "newly_lost_residents": 2897.4905952215195,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 6529.838788986206,
+              "newly_lost_residents": 2869.0341961979866
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 4919.861739993095,
+              "newly_lost_residents": 1559.656468808651
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 2897.4905952215195,
+            "residents_with_baseline_route": 6558.295188009739
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 6558.295188009739,
+            "residents_losing_all_routes": 2897.4905952215195,
+            "connected_residents_without_a_baseline_route": 6.982289552688599,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570906",
+          "residents": 19532.080106675625,
+          "demand_cells": 3362,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 19164.54236626625,
+              "residents_not_connected_to_the_graph": 367.53774040937424,
+              "residents_with_a_baseline_route": 19164.54236626625,
+              "residents_with_a_route_in_the_flooded_run": 19089.06719994545,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 19085.21457991004,
+                  "flooded_access_residents": 19009.73941358924,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 19164.54236626625,
+              "residents_not_connected_to_the_graph": 367.53774040937424,
+              "residents_with_a_baseline_route": 19164.54236626625,
+              "residents_with_a_route_in_the_flooded_run": 19089.06719994545,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 19138.949023991823,
+                  "flooded_access_residents": 19063.473857671022,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 19164.54236626625,
+              "newly_lost_residents": 75.47516632080078
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 19138.949023991823,
+              "newly_lost_residents": 75.47516632080078
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 75.47516632080078,
+            "residents_with_baseline_route": 19164.54236626625
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 19164.54236626625,
+            "residents_losing_all_routes": 75.47516632080078,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570908",
+          "residents": 5036.142388254404,
+          "demand_cells": 4199,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 4005.1396268308163,
+              "residents_not_connected_to_the_graph": 1031.0027614235878,
+              "residents_with_a_baseline_route": 4005.1396268308163,
+              "residents_with_a_route_in_the_flooded_run": 3645.932029634714,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 0.0,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": "no_resident_with_baseline_access"
+                },
+                "30": {
+                  "baseline_access_residents": 3787.849869519472,
+                  "flooded_access_residents": 1138.2899397015572,
+                  "newly_lost_residents": 2649.559929817915,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3645.932029634714,
+                  "newly_lost_residents": 359.20759719610214,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 4005.1396268308163,
+              "residents_not_connected_to_the_graph": 1031.0027614235878,
+              "residents_with_a_baseline_route": 4005.1396268308163,
+              "residents_with_a_route_in_the_flooded_run": 3645.932029634714,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 2702.4764673113823,
+                  "flooded_access_residents": 2160.45265096426,
+                  "newly_lost_residents": 542.0238163471222,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3645.932029634714,
+                  "newly_lost_residents": 359.20759719610214,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3645.932029634714,
+                  "newly_lost_residents": 359.20759719610214,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 3787.849869519472,
+              "newly_lost_residents": 2649.559929817915
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 2702.4764673113823,
+              "newly_lost_residents": 542.0238163471222
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 359.20759719610214,
+            "residents_with_baseline_route": 4005.1396268308163
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 4005.1396268308163,
+            "residents_losing_all_routes": 359.20759719610214,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570909",
+          "residents": 7248.738848656416,
+          "demand_cells": 5017,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 6193.561620861292,
+              "residents_not_connected_to_the_graph": 1055.177227795124,
+              "residents_with_a_baseline_route": 6193.561620861292,
+              "residents_with_a_route_in_the_flooded_run": 6044.247051537037,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 1476.1674485206604,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 1476.1674485206604,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6007.809010207653,
+                  "newly_lost_residents": 185.75261065363884,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6044.247051537037,
+                  "newly_lost_residents": 149.314569324255,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 6193.561620861292,
+              "residents_not_connected_to_the_graph": 1055.177227795124,
+              "residents_with_a_baseline_route": 6193.561620861292,
+              "residents_with_a_route_in_the_flooded_run": 6044.247051537037,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 6142.379286378622,
+                  "flooded_access_residents": 5979.460070431232,
+                  "newly_lost_residents": 162.9192159473896,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6044.247051537037,
+                  "newly_lost_residents": 149.314569324255,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6044.247051537037,
+                  "newly_lost_residents": 149.314569324255,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 6193.561620861292,
+              "newly_lost_residents": 185.75261065363884
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 6142.379286378622,
+              "newly_lost_residents": 162.9192159473896
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 149.314569324255,
+            "residents_with_baseline_route": 6193.561620861292
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 6193.561620861292,
+            "residents_losing_all_routes": 149.314569324255,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        }
+      ],
+      "whole_frame": {
+        "residents": 81836.8894393444,
+        "demand_cells": 36765,
+        "access": {
+          "hospital": {
+            "mode": "vehicle",
+            "publication_level": "public",
+            "access_gap_threshold_minutes": 30,
+            "residents_connected_to_the_graph": 75226.9771899283,
+            "residents_not_connected_to_the_graph": 6609.912249416113,
+            "residents_with_a_baseline_route": 75170.53035321832,
+            "residents_with_a_route_in_the_flooded_run": 52893.579294741154,
+            "thresholds_minutes": {
+              "15": {
+                "baseline_access_residents": 47166.558573395014,
+                "flooded_access_residents": 32521.046336382627,
+                "newly_lost_residents": 14645.512237012386,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "30": {
+                "baseline_access_residents": 74596.84646940231,
+                "flooded_access_residents": 50091.659593731165,
+                "newly_lost_residents": 24505.18687567115,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "60": {
+                "baseline_access_residents": 75170.53035321832,
+                "flooded_access_residents": 52893.579294741154,
+                "newly_lost_residents": 22276.951058477163,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              }
+            }
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "publication_level": "public",
+            "access_gap_threshold_minutes": 15,
+            "residents_connected_to_the_graph": 75226.9771899283,
+            "residents_not_connected_to_the_graph": 6609.912249416113,
+            "residents_with_a_baseline_route": 75170.53035321832,
+            "residents_with_a_route_in_the_flooded_run": 53372.835479557514,
+            "thresholds_minutes": {
+              "15": {
+                "baseline_access_residents": 68887.94476729631,
+                "flooded_access_residents": 51292.66674903035,
+                "newly_lost_residents": 17595.278018265963,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "30": {
+                "baseline_access_residents": 75157.88374221325,
+                "flooded_access_residents": 53372.835479557514,
+                "newly_lost_residents": 21785.048262655735,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "60": {
+                "baseline_access_residents": 75170.53035321832,
+                "flooded_access_residents": 53372.835479557514,
+                "newly_lost_residents": 21797.694873660803,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              }
+            }
+          }
+        },
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 24505.18687567115
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 17595.278018265963
+          }
+        },
+        "access_gap_inputs_unavailable_reason": null,
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 21797.694873660803,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "road_criticality_inputs_unavailable_reason": null,
+        "routes": {
+          "services": [
+            "hospital",
+            "main_road_entry"
+          ],
+          "residents_with_baseline_route": 75170.53035321832,
+          "residents_losing_all_routes": 21797.694873660803,
+          "connected_residents_without_a_baseline_route": 56.446836709976196,
+          "baseline_route_unavailable_reason": null
+        }
+      },
+      "cells_in_no_unit": {
+        "demand_cells": 0,
+        "residents": 0.0,
+        "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+      }
+    },
+    {
+      "flood_level": "as_provided",
+      "closure_level": "permissive",
+      "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+      "closure": {
+        "vehicle": {
+          "closure_rule_version": "closure_rule_v1",
+          "level": "permissive",
+          "closure_basis": "modelled_from_unosat_4009:CHIANGRAI_20240801_20241012_AccumulatedFlood",
+          "edges": 65673,
+          "intersected_edges": 8288,
+          "closed_edges": 8288,
+          "delayed_edges": 0,
+          "intersected_edges_left_open": 0,
+          "closed_edges_by_road_class": {
+            "local": 3564,
+            "primary": 49,
+            "residential": 2926,
+            "secondary": 87,
+            "tertiary": 368,
+            "trunk": 133,
+            "unclassified": 1161
+          },
+          "delayed_edges_by_road_class": {},
+          "closed_bridge_tagged_edges": 61,
+          "largest_travel_time_factor": null,
+          "closure_result_sha256": "fe1973ac7a9af8dd117cfcb1f3c1ee6af8a24c9af392c1db20696bcc355553c2",
+          "grade_join_connectors": 345,
+          "connectors_with_their_coordinate_inside_the_extent": 108,
+          "main_road_entries": 1939,
+          "entries_with_every_main_road_edge_closed": 177,
+          "entries_with_every_edge_closed": 141
+        }
+      },
+      "units": [
+        {
+          "unit_id": "TH570901",
+          "residents": 17893.069298028946,
+          "demand_cells": 2484,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 17453.231825232506,
+              "residents_not_connected_to_the_graph": 439.8374727964401,
+              "residents_with_a_baseline_route": 17453.231825232506,
+              "residents_with_a_route_in_the_flooded_run": 5166.7091826200485,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 17203.707630574703,
+                  "flooded_access_residents": 5166.7091826200485,
+                  "newly_lost_residents": 12036.998447954655,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5166.7091826200485,
+                  "newly_lost_residents": 12286.522642612457,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5166.7091826200485,
+                  "newly_lost_residents": 12286.522642612457,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 17453.231825232506,
+              "residents_not_connected_to_the_graph": 439.8374727964401,
+              "residents_with_a_baseline_route": 17453.231825232506,
+              "residents_with_a_route_in_the_flooded_run": 5637.099523901939,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5637.099523901939,
+                  "newly_lost_residents": 11816.132301330566,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5637.099523901939,
+                  "newly_lost_residents": 11816.132301330566,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 17453.231825232506,
+                  "flooded_access_residents": 5637.099523901939,
+                  "newly_lost_residents": 11816.132301330566,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 17453.231825232506,
+              "newly_lost_residents": 12286.522642612457
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 17453.231825232506,
+              "newly_lost_residents": 11816.132301330566
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 11816.132301330566,
+            "residents_with_baseline_route": 17453.231825232506
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 17453.231825232506,
+            "residents_losing_all_routes": 11816.132301330566,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570902",
+          "residents": 8911.487386196852,
+          "demand_cells": 5523,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 7217.2481516599655,
+              "residents_not_connected_to_the_graph": 1694.2392345368862,
+              "residents_with_a_baseline_route": 7213.945144534111,
+              "residents_with_a_route_in_the_flooded_run": 7213.945144534111,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 670.0241041183472,
+                  "flooded_access_residents": 670.0241041183472,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 7148.752592325211,
+                  "flooded_access_residents": 6956.105574786663,
+                  "newly_lost_residents": 192.64701753854752,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 7217.2481516599655,
+              "residents_not_connected_to_the_graph": 1694.2392345368862,
+              "residents_with_a_baseline_route": 7213.945144534111,
+              "residents_with_a_route_in_the_flooded_run": 7213.945144534111,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 7010.764011472464,
+                  "flooded_access_residents": 7010.764011472464,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 7213.945144534111,
+                  "flooded_access_residents": 7213.945144534111,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 7148.752592325211,
+              "newly_lost_residents": 192.64701753854752
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 7010.764011472464,
+              "newly_lost_residents": 0.0
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 0.0,
+            "residents_with_baseline_route": 7213.945144534111
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 7213.945144534111,
+            "residents_losing_all_routes": 0.0,
+            "connected_residents_without_a_baseline_route": 3.303007125854492,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570903",
+          "residents": 6708.402898967266,
+          "demand_cells": 5553,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 5972.365630179644,
+              "residents_not_connected_to_the_graph": 736.0372687876225,
+              "residents_with_a_baseline_route": 5972.365630179644,
+              "residents_with_a_route_in_the_flooded_run": 0.0,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 306.54498898983,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 306.54498898983,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 5709.620454907417,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5709.620454907417,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 5972.365630179644,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5972.365630179644,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 5972.365630179644,
+              "residents_not_connected_to_the_graph": 736.0372687876225,
+              "residents_with_a_baseline_route": 5972.365630179644,
+              "residents_with_a_route_in_the_flooded_run": 0.0,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 2963.1568821668625,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 2963.1568821668625,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 5959.719019174576,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5959.719019174576,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 5972.365630179644,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 5972.365630179644,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 5709.620454907417,
+              "newly_lost_residents": 5709.620454907417
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 2963.1568821668625,
+              "newly_lost_residents": 2963.1568821668625
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 5972.365630179644,
+            "residents_with_baseline_route": 5972.365630179644
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 5972.365630179644,
+            "residents_losing_all_routes": 5972.365630179644,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570904",
+          "residents": 9349.407581597567,
+          "demand_cells": 5423,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 8655.610491335392,
+              "residents_not_connected_to_the_graph": 693.7970902621746,
+              "residents_with_a_baseline_route": 8609.448951303959,
+              "residents_with_a_route_in_the_flooded_run": 7845.145851224661,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 7215.507275283337,
+                  "flooded_access_residents": 6314.142657637596,
+                  "newly_lost_residents": 901.3646176457405,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7845.145851224661,
+                  "newly_lost_residents": 764.303100079298,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7845.145851224661,
+                  "newly_lost_residents": 764.303100079298,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 8655.610491335392,
+              "residents_not_connected_to_the_graph": 693.7970902621746,
+              "residents_with_a_baseline_route": 8609.448951303959,
+              "residents_with_a_route_in_the_flooded_run": 7865.246487945318,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 8557.12553074956,
+                  "flooded_access_residents": 7864.717914134264,
+                  "newly_lost_residents": 692.4076166152954,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7865.246487945318,
+                  "newly_lost_residents": 744.2024633586407,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 8609.448951303959,
+                  "flooded_access_residents": 7865.246487945318,
+                  "newly_lost_residents": 744.2024633586407,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 8609.448951303959,
+              "newly_lost_residents": 764.303100079298
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 8557.12553074956,
+              "newly_lost_residents": 692.4076166152954
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 744.2024633586407,
+            "residents_with_baseline_route": 8609.448951303959
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 8609.448951303959,
+            "residents_losing_all_routes": 744.2024633586407,
+            "connected_residents_without_a_baseline_route": 46.161540031433105,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570905",
+          "residents": 7157.560930967331,
+          "demand_cells": 5204,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 6565.2774775624275,
+              "residents_not_connected_to_the_graph": 592.2834534049034,
+              "residents_with_a_baseline_route": 6558.295188009739,
+              "residents_with_a_route_in_the_flooded_run": 3572.496940791607,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 1209.3925459980965,
+                  "flooded_access_residents": 1139.8612720370293,
+                  "newly_lost_residents": 69.5312739610672,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6529.838788986206,
+                  "flooded_access_residents": 3572.496940791607,
+                  "newly_lost_residents": 2957.341848194599,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 3572.496940791607,
+                  "newly_lost_residents": 2985.798247218132,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 6565.2774775624275,
+              "residents_not_connected_to_the_graph": 592.2834534049034,
+              "residents_with_a_baseline_route": 6558.295188009739,
+              "residents_with_a_route_in_the_flooded_run": 3572.496940791607,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 4919.861739993095,
+                  "flooded_access_residents": 3324.36612790823,
+                  "newly_lost_residents": 1595.4956120848656,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 3572.496940791607,
+                  "newly_lost_residents": 2985.798247218132,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6558.295188009739,
+                  "flooded_access_residents": 3572.496940791607,
+                  "newly_lost_residents": 2985.798247218132,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 6529.838788986206,
+              "newly_lost_residents": 2957.341848194599
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 4919.861739993095,
+              "newly_lost_residents": 1595.4956120848656
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 2985.798247218132,
+            "residents_with_baseline_route": 6558.295188009739
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 6558.295188009739,
+            "residents_losing_all_routes": 2985.798247218132,
+            "connected_residents_without_a_baseline_route": 6.982289552688599,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570906",
+          "residents": 19532.080106675625,
+          "demand_cells": 3362,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 19164.54236626625,
+              "residents_not_connected_to_the_graph": 367.53774040937424,
+              "residents_with_a_baseline_route": 19164.54236626625,
+              "residents_with_a_route_in_the_flooded_run": 19089.06719994545,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 19085.21457991004,
+                  "flooded_access_residents": 19009.73941358924,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 19164.54236626625,
+              "residents_not_connected_to_the_graph": 367.53774040937424,
+              "residents_with_a_baseline_route": 19164.54236626625,
+              "residents_with_a_route_in_the_flooded_run": 19089.06719994545,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 19138.949023991823,
+                  "flooded_access_residents": 19063.473857671022,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 19164.54236626625,
+                  "flooded_access_residents": 19089.06719994545,
+                  "newly_lost_residents": 75.47516632080078,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 19164.54236626625,
+              "newly_lost_residents": 75.47516632080078
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 19138.949023991823,
+              "newly_lost_residents": 75.47516632080078
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 75.47516632080078,
+            "residents_with_baseline_route": 19164.54236626625
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 19164.54236626625,
+            "residents_losing_all_routes": 75.47516632080078,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570908",
+          "residents": 5036.142388254404,
+          "demand_cells": 4199,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 4005.1396268308163,
+              "residents_not_connected_to_the_graph": 1031.0027614235878,
+              "residents_with_a_baseline_route": 4005.1396268308163,
+              "residents_with_a_route_in_the_flooded_run": 3642.093462854624,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 0.0,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 0.0,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": "no_resident_with_baseline_access"
+                },
+                "30": {
+                  "baseline_access_residents": 3787.849869519472,
+                  "flooded_access_residents": 1138.2899397015572,
+                  "newly_lost_residents": 2649.559929817915,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3642.093462854624,
+                  "newly_lost_residents": 363.0461639761925,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 4005.1396268308163,
+              "residents_not_connected_to_the_graph": 1031.0027614235878,
+              "residents_with_a_baseline_route": 4005.1396268308163,
+              "residents_with_a_route_in_the_flooded_run": 3642.093462854624,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 2702.4764673113823,
+                  "flooded_access_residents": 2156.6140841841698,
+                  "newly_lost_residents": 545.8623831272125,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3642.093462854624,
+                  "newly_lost_residents": 363.0461639761925,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 4005.1396268308163,
+                  "flooded_access_residents": 3642.093462854624,
+                  "newly_lost_residents": 363.0461639761925,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 3787.849869519472,
+              "newly_lost_residents": 2649.559929817915
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 2702.4764673113823,
+              "newly_lost_residents": 545.8623831272125
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 363.0461639761925,
+            "residents_with_baseline_route": 4005.1396268308163
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 4005.1396268308163,
+            "residents_losing_all_routes": 363.0461639761925,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        },
+        {
+          "unit_id": "TH570909",
+          "residents": 7248.738848656416,
+          "demand_cells": 5017,
+          "access": {
+            "hospital": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 30,
+              "residents_connected_to_the_graph": 6193.561620861292,
+              "residents_not_connected_to_the_graph": 1055.177227795124,
+              "residents_with_a_baseline_route": 6193.561620861292,
+              "residents_with_a_route_in_the_flooded_run": 6041.023534655571,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 1476.1674485206604,
+                  "flooded_access_residents": 0.0,
+                  "newly_lost_residents": 1476.1674485206604,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6004.585493326187,
+                  "newly_lost_residents": 188.97612753510475,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6041.023534655571,
+                  "newly_lost_residents": 152.5380862057209,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "publication_level": "public",
+              "access_gap_threshold_minutes": 15,
+              "residents_connected_to_the_graph": 6193.561620861292,
+              "residents_not_connected_to_the_graph": 1055.177227795124,
+              "residents_with_a_baseline_route": 6193.561620861292,
+              "residents_with_a_route_in_the_flooded_run": 6041.023534655571,
+              "thresholds_minutes": {
+                "15": {
+                  "baseline_access_residents": 6142.379286378622,
+                  "flooded_access_residents": 5976.2365535497665,
+                  "newly_lost_residents": 166.14273282885551,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "30": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6041.023534655571,
+                  "newly_lost_residents": 152.5380862057209,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                },
+                "60": {
+                  "baseline_access_residents": 6193.561620861292,
+                  "flooded_access_residents": 6041.023534655571,
+                  "newly_lost_residents": 152.5380862057209,
+                  "newly_gained_residents": 0.0,
+                  "baseline_access_unavailable_reason": null
+                }
+              }
+            }
+          },
+          "access_gap_inputs": {
+            "hospital": {
+              "mode": "vehicle",
+              "threshold_minutes": 30,
+              "baseline_access_residents": 6193.561620861292,
+              "newly_lost_residents": 188.97612753510475
+            },
+            "main_road_entry": {
+              "mode": "vehicle",
+              "threshold_minutes": 15,
+              "baseline_access_residents": 6142.379286378622,
+              "newly_lost_residents": 166.14273282885551
+            }
+          },
+          "access_gap_inputs_unavailable_reason": null,
+          "road_criticality_inputs": {
+            "residents_losing_all_routes": 152.5380862057209,
+            "residents_with_baseline_route": 6193.561620861292
+          },
+          "road_criticality_inputs_unavailable_reason": null,
+          "routes": {
+            "services": [
+              "hospital",
+              "main_road_entry"
+            ],
+            "residents_with_baseline_route": 6193.561620861292,
+            "residents_losing_all_routes": 152.5380862057209,
+            "connected_residents_without_a_baseline_route": 0.0,
+            "baseline_route_unavailable_reason": null
+          }
+        }
+      ],
+      "whole_frame": {
+        "residents": 81836.8894393444,
+        "demand_cells": 36765,
+        "access": {
+          "hospital": {
+            "mode": "vehicle",
+            "publication_level": "public",
+            "access_gap_threshold_minutes": 30,
+            "residents_connected_to_the_graph": 75226.9771899283,
+            "residents_not_connected_to_the_graph": 6609.912249416113,
+            "residents_with_a_baseline_route": 75170.53035321832,
+            "residents_with_a_route_in_the_flooded_run": 52570.48131662607,
+            "thresholds_minutes": {
+              "15": {
+                "baseline_access_residents": 47166.558573395014,
+                "flooded_access_residents": 32300.47663000226,
+                "newly_lost_residents": 14866.081943392754,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "30": {
+                "baseline_access_residents": 74596.84646940231,
+                "flooded_access_residents": 49772.40018239617,
+                "newly_lost_residents": 24824.44628700614,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "60": {
+                "baseline_access_residents": 75170.53035321832,
+                "flooded_access_residents": 52570.48131662607,
+                "newly_lost_residents": 22600.049036592245,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              }
+            }
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "publication_level": "public",
+            "access_gap_threshold_minutes": 15,
+            "residents_connected_to_the_graph": 75226.9771899283,
+            "residents_not_connected_to_the_graph": 6609.912249416113,
+            "residents_with_a_baseline_route": 75170.53035321832,
+            "residents_with_a_route_in_the_flooded_run": 53060.97229462862,
+            "thresholds_minutes": {
+              "15": {
+                "baseline_access_residents": 68887.94476729631,
+                "flooded_access_residents": 51033.272072821856,
+                "newly_lost_residents": 17854.67269447446,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "30": {
+                "baseline_access_residents": 75157.88374221325,
+                "flooded_access_residents": 53060.97229462862,
+                "newly_lost_residents": 22096.91144758463,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              },
+              "60": {
+                "baseline_access_residents": 75170.53035321832,
+                "flooded_access_residents": 53060.97229462862,
+                "newly_lost_residents": 22109.558058589697,
+                "newly_gained_residents": 0.0,
+                "baseline_access_unavailable_reason": null
+              }
+            }
+          }
+        },
+        "access_gap_inputs": {
+          "hospital": {
+            "mode": "vehicle",
+            "threshold_minutes": 30,
+            "baseline_access_residents": 74596.84646940231,
+            "newly_lost_residents": 24824.44628700614
+          },
+          "main_road_entry": {
+            "mode": "vehicle",
+            "threshold_minutes": 15,
+            "baseline_access_residents": 68887.94476729631,
+            "newly_lost_residents": 17854.67269447446
+          }
+        },
+        "access_gap_inputs_unavailable_reason": null,
+        "road_criticality_inputs": {
+          "residents_losing_all_routes": 22109.558058589697,
+          "residents_with_baseline_route": 75170.53035321832
+        },
+        "road_criticality_inputs_unavailable_reason": null,
+        "routes": {
+          "services": [
+            "hospital",
+            "main_road_entry"
+          ],
+          "residents_with_baseline_route": 75170.53035321832,
+          "residents_losing_all_routes": 22109.558058589697,
+          "connected_residents_without_a_baseline_route": 56.446836709976196,
+          "baseline_route_unavailable_reason": null
+        }
+      },
+      "cells_in_no_unit": {
+        "demand_cells": 0,
+        "residents": 0.0,
+        "note": "Cells whose centre lies in no unit of the frame, or in more than one. They are in the whole frame and in no unit row."
+      }
+    }
+  ],
+  "open_points": [
+    {
+      "id": "E5-OP1",
+      "point": "Which unit a demand cell counts for.",
+      "signed_files_say": "Protocol v1b corridor_polygon.context_call.tambon_attribution: 'Done downstream of the context build.' Protocol v1a states the cell-centre rule for exposure, and v1b for the SE2-blind district total; neither states it for the access tables.",
+      "what_this_task_does": "A WorldPop 2020 cell counts for the unit whose polygon holds its centre. A cell whose centre lies in no unit, or in more than one, is counted in no unit and reported.",
+      "for_the_owners": "Whether the cell-centre rule is the rule for the access tables too."
+    },
+    {
+      "id": "E5-OP2",
+      "point": "A unit where nobody had baseline access to a service, or nobody had a baseline route.",
+      "signed_files_say": "The access gap is counted 'only for people who had access at baseline' and road criticality divides by the residents with a baseline route. Nothing on a zero denominator.",
+      "what_this_task_does": "Writes the counts and a reason code. No value is put in the place of the missing ratio. floodguard.normalisation refuses such a unit in the same way.",
+      "for_the_owners": "What such a unit gets in task E8: no component, or a stated value."
+    },
+    {
+      "id": "E5-OP3",
+      "point": "Residents whose cell does not snap to the road graph within 250 m.",
+      "signed_files_say": "Nothing. The context builder leaves such a cell without a node, and calculate_total_access reports it as missing graph coverage.",
+      "what_this_task_does": "Reports them per unit as not connected. They have no modelled access in either run, so they are in no numerator and no denominator.",
+      "for_the_owners": "Whether they stay outside both, as residents with no baseline access do."
+    },
+    {
+      "id": "E5-OP4",
+      "point": "A destination inside the flood extent.",
+      "signed_files_say": "The main-road entry is 'the nearest node on a trunk or primary edge (including links) inside the routing context'. Nothing on an entry whose main-road edges are closed in the flooded run, or on a hospital or shelter inside the extent (class rule v2 trigger C reads the latter, in task E8).",
+      "what_this_task_does": "Keeps the same destinations in both runs. A resident whose cell snaps to a main-road entry keeps that entry at zero road distance even when every main-road edge at it is closed. The receipt counts the entries in that state.",
+      "for_the_owners": "Whether a main-road entry whose trunk or primary edges are all closed is still an entry."
+    },
+    {
+      "id": "E5-OP5",
+      "point": "Which planning context the walking service uses.",
+      "signed_files_say": "The DDPM located shelter service is walking, 30 minutes (v1a pitch_level_adds, v1b facility_sets, owner choice 7). The E4 build of record is a vehicle context, and decision R13 accepted a compute window for that build only.",
+      "what_this_task_does": "Uses a walking context built by the unchanged E4 builder (travel mode walking: 5 km/h on OSM roads and paths where walking is not prohibited) when one is supplied, and says whether it is a build of record or a candidate. The vehicle context is never walked. A candidate was built by this task's lane without a declared compute window, which is outside what plan row E5 names; the builder keeps a candidate's receipt outside Git, so the run that uses it writes a report of that build into outputs/planning_v1 and registers it. Tables that rest on a candidate are marked as not usable by task E8.",
+      "for_the_owners": "A walking build of record in a declared compute window they accept (plan 5 item 1; decision R13 covers the vehicle build only), with its receipt in outputs/planning_v1; then a new run of this task. Until then the shelter tables are not inputs of task E8."
+    },
+    {
+      "id": "E5-OP6",
+      "point": "A grade-join connector inside the flood extent.",
+      "signed_files_say": "Closure rule v1 measures the length of an edge inside the extent. A grade join (decision D13) has no length.",
+      "what_this_task_does": "A connector is never intersected, so it stays open under every level. The receipt counts the connectors whose coordinate lies inside the extent.",
+      "for_the_owners": "Whether a join inside the extent closes with the edges it links."
+    },
+    {
+      "id": "E5-OP7",
+      "point": "Which runs the difference is taken between when an edge is delayed.",
+      "signed_files_say": "Plan 3.1 P4: calculate_total_access unchanged, run twice, on the original and the modified edges. The protocols name no function.",
+      "what_this_task_does": "Both runs use one multi-source tree per service (floodguard.critical_links), which gives the travel times of calculate_total_access; tests and a check on the hospital service of the real context compare the two.",
+      "for_the_owners": "Nothing, unless the per-destination runs of calculate_total_access are wanted as the record."
+    },
+    {
+      "id": "E5-OP8",
+      "point": "Ratios of the counts.",
+      "signed_files_say": "Protocol v1a: road criticality is '100 x residents with a baseline route to any hospital or main road who lose all routes / those residents'; the access gap is the 'baseline-access-weighted mean of newly-lost access shares'. Plan row E5 names the access difference and a per-tambon table; the components belong to task E8.",
+      "what_this_task_does": "Writes counts of residents and no ratio of them. The ratio of the two route counts is the road-criticality component divided by 100. A service's newly-lost share is one step from the access gap: it equals that component divided by 100 wherever the services have the same share, and at a long threshold it can equal the route ratio. The first run of this task wrote both ratios for each tambon; the run that replaced it writes neither, and its receipt says so.",
+      "for_the_owners": "Whether the per-service newly-lost share is wanted from this task as a descriptive figure, or comes from task E8 with the components; and whether the first table, which is in the Git history, needs more than the note in the receipt that replaced it."
+    }
+  ],
+  "not_computed": [
+    "access-gap component (0-100)",
+    "the newly-lost share of a service (newly lost / baseline access) and the weighted mean of those shares",
+    "road-criticality component (0-100)",
+    "the share of residents with a baseline route who lose all routes (it is the road-criticality component divided by 100)",
+    "any other component",
+    "FPPS",
+    "A-E class",
+    "would-be class",
+    "ensemble cell",
+    "class rule v2 triggers (top-20 link closed on its own; serving facility)",
+    "equity difference and ratio by age group",
+    "2SFCA shelter supply",
+    "travel-time summaries per tambon",
+    "the minus and plus flood levels",
+    "the corroborated shelter set",
+    "2024-rescaled demand",
+    "case O1 (no radar candidate has been delivered to this lane)"
+  ],
+  "assumptions": [
+    "A closure is a modelled assumption of closure rule v1 (closure_basis), not an observed closure. A flood intersection does not prove that a road was closed, and an edge outside the extent is unchanged by assumption, not because it was seen dry.",
+    "The product 4009 layers are used as provided: preliminary agency extents that were not checked in the field (Field_Validation=0). FloodGuard did not validate them.",
+    "SE1 is the 2024 season envelope scenario: every area ever mapped as water in the season is treated as flooded at once, and every road it meets is treated under the closure rule at once. It is not an observation of any day and not the water of September 2024.",
+    "O2 is the layer of 22 October 2024, its own dated case: late-season residual water. It does not describe the September event.",
+    "Each edge is the straight segment between its two nodes in EPSG:32647, and the length inside the extent is measured on that segment (protocol v1b closure_rule_v1.geometry). The central level applies the 0.25 fraction to edges tagged bridge=yes or tunnel=culvert only; culvert=* is not read (owner choice 23).",
+    "Travel time is the fastest modelled route on an undirected graph from the road node a WorldPop 2020 cell snaps to (within 250 m) to the nearest destination, plus the connectors of the cell and the destination at 5 km/h. Vehicle edges use fixed class speeds; walking edges use 5 km/h. One-way rules, turn restrictions, road condition and the time of day are not represented.",
+    "A resident has access within a threshold when the modelled time is at most the threshold. A resident is newly lost when they had access in the baseline run and do not have it in the flooded run. A resident with no baseline access is never counted as losing it (requirement EQ-04).",
+    "A resident loses all routes when they had a baseline route, of any length, to a hospital or a main-road entry and have none to any of them in the flooded run. A longer route is not a lost route.",
+    "A WorldPop 2020 cell counts for the tambon whose 2022 COD-AB polygon holds its centre (open point E5-OP1). Residents are modelled 2020 counts, roads are OpenStreetMap as retrieved in July 2026, boundaries are of 2022 and the flood layers of 2024.",
+    "Destinations are the same in both runs. A hospital, a shelter or a main-road entry inside the flood extent stays a destination (open point E5-OP4)."
+  ],
+  "limitations": [
+    "One flood level is run: the layer as provided. The minus and plus levels, the corroborated shelter set and the population vintage are axes of the ensemble (plan task E10) and are not run here.",
+    "A resident whose cell does not snap to the graph within 250 m has no modelled access in either run and is in no numerator and no denominator; the tables give their number per tambon.",
+    "A unit where nobody had baseline access, or nobody had a baseline route, has its counts and a reason code. The protocols state no value for it (open point E5-OP2).",
+    "The permissive level closes every intersected edge, however short the stretch inside the extent; the strict level closes an edge only when half of it is inside. The three levels are reported side by side and none is a central estimate of what was passable.",
+    "Routes stay inside the routing context of the case. Roads and destinations outside it are not seen.",
+    "The third-party satellite imagery UNOSAT and GISTDA used to make the product is not relicensed by these files, and UNOSAT and GISTDA do not endorse FloodGuard or its use of the product."
+  ]
+}

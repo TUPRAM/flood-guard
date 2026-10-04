@@ -12,6 +12,13 @@ export interface CaseSelection {
 
 const CASE_KEYS = ["aoi", "event", "version", "service", "mode", "scenario", "origin"] as const;
 
+/**
+ * Route of the candidate-package validation report (shared case header plus `StudioCandidateReport`).
+ * `/studio/` itself is the study library; the report keeps its own address below it, and the shared-case
+ * pages link here when they mean "the Studio view of this case".
+ */
+export const STUDIO_CANDIDATE_REPORT_ROUTE = "/studio/candidate-report/";
+
 export function readCaseSelection(search: string): CaseSelection {
   const query = new URLSearchParams(search);
   return Object.fromEntries(CASE_KEYS.flatMap((key) => {

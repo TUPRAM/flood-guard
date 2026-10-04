@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { EvidenceLibraryCatalog, EvidenceLibraryPackage, FinalsServiceId } from "@floodguard/contracts";
-import { caseHref, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
+import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, fetchEvidencePackage, parseEvidenceCatalog } from "@/lib/evidence-library";
 import { useLanguage } from "@/lib/use-language";
 import { SERVICE_NAMES } from "./finals-analysis";
@@ -142,7 +142,7 @@ export function PlanningCandidateOverview() {
             <a href={caseHref("/studio/library/", query)}>{th ? "ตรวจสอบแหล่งข้อมูล สิทธิ์ และค่าแฮชทั้งหมด" : "Inspect all sources, rights and hashes"} →</a>
           </details>
         </section>
-        <nav className={styles.footerNav} aria-label={th ? "มุมมองที่เกี่ยวข้อง" : "Related views"}><a href={caseHref("/studio/", query)}>{th ? "รายงานการตรวจสอบ" : "Validation report"} →</a><a href={caseHref("/studio/brief/", query)}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"} →</a><a href="/command/archive/">{th ? "คลังเปรียบเทียบงานวิจัยเดิม" : "Historical research archive"} →</a></nav>
+        <nav className={styles.footerNav} aria-label={th ? "มุมมองที่เกี่ยวข้อง" : "Related views"}><a href={caseHref(STUDIO_CANDIDATE_REPORT_ROUTE, query)}>{th ? "รายงานการตรวจสอบ" : "Validation report"} →</a><a href={caseHref("/studio/brief/", query)}>{th ? "บทสรุปเพื่อการตัดสินใจ" : "Decision brief"} →</a><a href="/command/archive/">{th ? "คลังเปรียบเทียบงานวิจัยเดิม" : "Historical research archive"} →</a></nav>
       </> : null}
     </> : null}
   </main>;

@@ -6,6 +6,7 @@ import { WorkspaceHeader } from "@/components/workspace-header";
 import { ModelRegistryPanel } from "@/components/model-registry-panel";
 import { QualifiedEvidenceFoundationPanel } from "@/components/qualified-evidence-foundation-panel";
 import { StatusBar } from "@/components/status-bar";
+import { STUDIO_CANDIDATE_REPORT_ROUTE } from "@/lib/case-selection";
 import { downloadText } from "@/lib/download";
 import { formatConfidence, formatSourceTime } from "@/lib/format";
 import {
@@ -214,7 +215,7 @@ export function StudioWorkspace({ evidenceContextId, archive = false }: StudioWo
         {archive ? <aside className={styles.archiveBanner}>
           <strong>{th ? "รายงานแม่สายฉบับเก่า · บริบทหลักฐานแยกต่างหาก" : "Historical Mae Sai report · separate evidence context"}</strong>
           <p>{th ? "ผลการตรวจสอบและข้อกำหนดด้านล่างเป็นของชุดหลักฐานที่ระบุในรายงานนี้เท่านั้น ไม่ได้อนุมัติกรณีศึกษาผู้สมัครที่เลือกในรายงานปัจจุบัน" : "The checks and gates below belong only to this report's named evidence package. They do not validate or authorize the selected candidate study case."}</p>
-          <a href={archiveHref("/studio/")}>{th ? "เปิดรายงานกรณีศึกษาปัจจุบัน" : "Open the current study-case report"}</a>
+          <a href={archiveHref(STUDIO_CANDIDATE_REPORT_ROUTE)}>{th ? "เปิดรายงานกรณีศึกษาปัจจุบัน" : "Open the current study-case report"}</a>
         </aside> : null}
         <section className={styles.hero} aria-labelledby="research-console-title">
           <div>

@@ -9,7 +9,7 @@ import { GenerationTimes } from "./generation-times";
 import { MainRoadStatus } from "./main-road-status";
 import { EvidenceFeatureBrowser } from "./evidence-library-features";
 import { useLanguage } from "@/lib/use-language";
-import { caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
+import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, evidenceAssetUrl, fetchEvidencePackage, gaugeSegments, parseEvidenceCatalog, sourceClockCoordinate } from "@/lib/evidence-library";
 import styles from "./evidence-library.module.css";
 
@@ -112,16 +112,16 @@ export function EvidenceLibrary({ initialCatalog = null, initialPackage = null, 
   const workspace = view === "brief" && Boolean(evidence?.decision_brief?.finals_analysis?.routes);
   return <main className={`${styles.library} ${workspace ? styles.workspace : ""}`} data-evidence-library="true" data-route-workspace={workspace ? "true" : undefined}>
     <header className={styles.header}>
-      <a className={styles.brand} href={link(role === "planning" ? "/command/" : role === "public" ? "/public/" : "/studio/")}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : role === "public" ? "Public" : "Studio"}</span></a>
+      <a className={styles.brand} href={link(role === "planning" ? "/command/" : role === "public" ? "/public/" : STUDIO_CANDIDATE_REPORT_ROUTE)}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : role === "public" ? "Public" : "Studio"}</span></a>
       <nav aria-label={th ? "พื้นที่หลัก" : "Main areas"}>
         <a href={link("/public/")} aria-current={role === "public" ? "page" : undefined}>{th ? "ประชาชน" : "Public"}</a>
         <a href={link("/command/")} aria-current={role === "planning" ? "page" : undefined}>{th ? "การวางแผน" : "Planning"}</a>
-        <a href={link("/studio/")} aria-current={role === "studio" ? "page" : undefined}>{th ? "หลักฐาน" : "Studio"}</a>
+        <a href={link(STUDIO_CANDIDATE_REPORT_ROUTE)} aria-current={role === "studio" ? "page" : undefined}>{th ? "หลักฐาน" : "Studio"}</a>
       </nav>
       <LanguageToggle language={language} onChange={setLanguage} />
     </header>
     <nav className={styles.subnav} aria-label={th ? "หน้าของพื้นที่นี้" : "Pages in this area"}>
-      {role === "public" ? <><a href={link("/public/")}>{th ? "หน้าแรก" : "Home"}</a><a href={link("/public-cases/")} aria-current="page">{th ? "กรณีศึกษา" : "Study cases"}</a></> : role === "planning" ? <><a href={link("/command/")}>{th ? "ภาพรวม" : "Overview"}</a><a href={link("/command/cases/")} aria-current="page">{th ? "เปรียบเทียบเส้นทาง" : "Route comparison"}</a><a href={link("/command/archive/")}>{th ? "คลังงานวิจัย" : "Research archive"}</a></> : <><a href={link("/studio/")}>{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={link("/studio/brief/")} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปและเส้นทาง" : "Decision brief"}</a><a href={link("/studio/library/")} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังหลักฐาน" : "Evidence library"}</a><a href={link("/studio/archive/")}>{th ? "รายงานเก่า" : "Historical report"}</a></>}
+      {role === "public" ? <><a href={link("/public/")}>{th ? "หน้าแรก" : "Home"}</a><a href={link("/public-cases/")} aria-current="page">{th ? "กรณีศึกษา" : "Study cases"}</a></> : role === "planning" ? <><a href={link("/command/")}>{th ? "ภาพรวม" : "Overview"}</a><a href={link("/command/cases/")} aria-current="page">{th ? "เปรียบเทียบเส้นทาง" : "Route comparison"}</a><a href={link("/command/archive/")}>{th ? "คลังงานวิจัย" : "Research archive"}</a></> : <><a href={link(STUDIO_CANDIDATE_REPORT_ROUTE)}>{th ? "รายงานการตรวจสอบ" : "Validation report"}</a><a href={link("/studio/brief/")} aria-current={view === "brief" ? "page" : undefined}>{th ? "บทสรุปและเส้นทาง" : "Decision brief"}</a><a href={link("/studio/library/")} aria-current={view === "evidence" ? "page" : undefined}>{th ? "คลังหลักฐาน" : "Evidence library"}</a><a href={link("/studio/archive/")}>{th ? "รายงานเก่า" : "Historical report"}</a></>}
     </nav>
     <div data-app-availability-slot />
     <div id="main-content" tabIndex={-1} className={styles.content}>

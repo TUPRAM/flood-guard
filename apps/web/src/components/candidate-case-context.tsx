@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { EvidenceLibraryCatalog, EvidenceLibraryPackage } from "@floodguard/contracts";
 import { LanguageToggle } from "./language-toggle";
-import { caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
+import { STUDIO_CANDIDATE_REPORT_ROUTE, caseHref, pushCaseSelection, readCaseSelection, resolveAnalysisSelection, resolveEvidenceCase, type CaseSelection } from "@/lib/case-selection";
 import { EVIDENCE_CATALOG_URL, fetchEvidencePackage, parseEvidenceCatalog } from "@/lib/evidence-library";
 import { useLanguage } from "@/lib/use-language";
 import { SERVICE_NAMES } from "./finals-analysis";
@@ -58,11 +58,11 @@ export function CandidateCaseContext({ role }: { role: "planning" | "studio" }) 
 
   return <section className={styles.case} aria-labelledby={`${role}-shared-case-title`} data-shared-case={role} data-case-id={evidence?.id}>
     <header className={styles.header}>
-      <a className={styles.brand} href={caseHref(role === "planning" ? "/command/" : "/studio/", query)}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : (th ? "หลักฐาน" : "Studio")}</span></a>
+      <a className={styles.brand} href={caseHref(role === "planning" ? "/command/" : STUDIO_CANDIDATE_REPORT_ROUTE, query)}>FloodGuard <span>{role === "planning" ? (th ? "การวางแผน" : "Planning") : (th ? "หลักฐาน" : "Studio")}</span></a>
       <nav aria-label={th ? "พื้นที่หลัก" : "Main areas"}>
         <a href={caseHref("/public/", query)}>{th ? "ประชาชน" : "Public"}</a>
         <a href={caseHref("/command/", query)} aria-current={role === "planning" ? "page" : undefined}>{th ? "การวางแผน" : "Planning"}</a>
-        <a href={caseHref("/studio/", query)} aria-current={role === "studio" ? "page" : undefined}>{th ? "หลักฐาน" : "Studio"}</a>
+        <a href={caseHref(STUDIO_CANDIDATE_REPORT_ROUTE, query)} aria-current={role === "studio" ? "page" : undefined}>{th ? "หลักฐาน" : "Studio"}</a>
       </nav>
       <LanguageToggle language={language} onChange={setLanguage} />
     </header>

@@ -193,7 +193,7 @@ export function requiredOfflinePaths(profile: AppProfile): string[] {
   ];
   return profile === "public-production"
     ? publicPaths
-    : [...publicPaths, "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/brief/", "/studio/library/", "/studio/archive/", "/offline-demo/mae-sai/bundle.json"];
+    : [...publicPaths, "/public-cases/", "/command/", "/command/cases/", "/command/archive/", "/studio/", "/studio/planning-evidence/", "/studio/candidate-report/", "/studio/brief/", "/studio/library/", "/studio/archive/", "/offline-demo/mae-sai/bundle.json"];
 }
 
 async function inspectOfflineCache(status: WorkerCacheStatus | null): Promise<CacheState> {
